@@ -489,6 +489,7 @@ void LeAudioDevice::ClearPACs(void) {
 
 LeAudioDevice::~LeAudioDevice(void) {
   alarm_free(link_quality_timer);
+  alarm_free(update_to_relaxed_conn_interval_timer);
   this->ClearPACs();
 }
 

@@ -52,10 +52,6 @@ namespace lpp {
 class LppOffloadInterface;
 }
 
-namespace metrics {
-class CounterMetrics;
-}
-
 namespace storage {
 class StorageModule;
 }
@@ -75,7 +71,6 @@ lpp::LppOffloadInterface* GetLppOffloadManager();
 hal::SnoopLogger* GetSnoopLogger();
 storage::StorageModule* GetStorage();
 hci::AclManager* GetAclManager();
-metrics::CounterMetrics* GetCounterMetrics();
 hci::MsftExtensionManager* GetMsftExtensionManager();
 
 }  // namespace shim

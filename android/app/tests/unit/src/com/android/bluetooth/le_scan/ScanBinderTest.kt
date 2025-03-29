@@ -31,6 +31,7 @@ import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.TestUtils.MockitoRule
 import com.android.bluetooth.TestUtils.getTestDevice
+import com.android.bluetooth.btservice.AdapterService
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -46,6 +47,7 @@ class ScanBinderTest {
 
     @get:Rule val mockitoRule = MockitoRule()
 
+    @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var scanController: ScanController
 
     private val attributionSource =
@@ -59,7 +61,7 @@ class ScanBinderTest {
 
     @Before
     fun setUp() {
-        binder = ScanBinder(scanController)
+        binder = ScanBinder(adapterService, scanController)
     }
 
     @Test
@@ -76,7 +78,7 @@ class ScanBinderTest {
         val scannerId = 1
 
         binder.unregisterScanner(scannerId, attributionSource)
-        verify(scanController).unregisterScanner(scannerId, attributionSource)
+        verify(scanController).unregisterScanner(scannerId)
     }
 
     @Test
@@ -90,7 +92,7 @@ class ScanBinderTest {
     }
 
     @Test
-    fun startScanForIntent() {
+    fun registerPiAndStartScan() {
         val intent =
             PendingIntent.getBroadcast(
                 InstrumentationRegistry.getInstrumentation().targetContext,
@@ -101,7 +103,7 @@ class ScanBinderTest {
         val settings = ScanSettings.Builder().build()
         val filters = listOf<ScanFilter>()
 
-        binder.startScanForIntent(intent, settings, filters, attributionSource)
+        binder.registerPiAndStartScan(intent, settings, filters, attributionSource)
         verify(scanController).registerPiAndStartScan(intent, settings, filters, attributionSource)
     }
 
@@ -110,7 +112,7 @@ class ScanBinderTest {
         val scannerId = 1
 
         binder.stopScan(scannerId, attributionSource)
-        verify(scanController).stopScan(scannerId, attributionSource)
+        verify(scanController).stopScan(scannerId)
     }
 
     @Test
@@ -124,7 +126,7 @@ class ScanBinderTest {
             )
 
         binder.stopScanForIntent(intent, attributionSource)
-        verify(scanController).stopScan(intent, attributionSource)
+        verify(scanController).stopScan(intent)
     }
 
     @Test
@@ -132,7 +134,7 @@ class ScanBinderTest {
         val scannerId = 1
 
         binder.flushPendingBatchResults(scannerId, attributionSource)
-        verify(scanController).flushPendingBatchResults(scannerId, attributionSource)
+        verify(scanController).flushPendingBatchResults(scannerId)
     }
 
     @Test

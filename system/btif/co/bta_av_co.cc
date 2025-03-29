@@ -668,9 +668,6 @@ bool BtaAvCo::SetActivePeer(const RawAddress& peer_address, const uint8_t t_loca
   if (peer_address.IsEmpty()) {
     // Reset the active peer;
     reference_state->setActivePeer(nullptr);
-    if (!com::android::bluetooth::flags::bta_av_use_peer_codec()) {
-      reference_state->clearCodecConfig();
-    }
     return true;
   }
 
@@ -681,12 +678,7 @@ bool BtaAvCo::SetActivePeer(const RawAddress& peer_address, const uint8_t t_loca
   }
 
   reference_state->setActivePeer(p_peer);
-  if (com::android::bluetooth::flags::bta_av_use_peer_codec()) {
-    log::info("codec = {}", A2DP_CodecInfoString(p_peer->getCodecConfig()));
-  } else {
-    reference_state->setCodecConfig(p_peer->codec_config);
-    log::info("codec = {}", A2DP_CodecInfoString(reference_state->getCodecConfig()));
-  }
+  log::info("codec = {}", A2DP_CodecInfoString(p_peer->getCodecConfig()));
   // report the selected codec configuration of this new active peer.
   ReportSourceCodecState(p_peer);
   return true;
@@ -704,16 +696,12 @@ BtaAvCoState* BtaAvCo::getStateFromLocalProfile(const uint8_t t_local_sep) {
 }
 
 void BtaAvCo::SaveCodec(const RawAddress& peer_address, const uint8_t* new_codec_config) {
-  if (com::android::bluetooth::flags::bta_av_use_peer_codec()) {
-    BtaAvCoPeer* p_peer = peer_cache_->FindPeer(peer_address);
-    if (p_peer != nullptr) {
-      p_peer->setCodecConfig(new_codec_config);
-    } else {
-      log::error("Unable to find the peer address {}", peer_address);
-    }
-    return;
+  BtaAvCoPeer* p_peer = peer_cache_->FindPeer(peer_address);
+  if (p_peer != nullptr) {
+    p_peer->setCodecConfig(new_codec_config);
+  } else {
+    log::error("Unable to find the peer address {}", peer_address);
   }
-  bta_av_sink_state_.setCodecConfig(new_codec_config);
 }
 
 void BtaAvCo::GetPeerEncoderParameters(const RawAddress& peer_address,
@@ -746,16 +734,13 @@ void BtaAvCo::GetPeerEncoderParameters(const RawAddress& peer_address,
 
 const tA2DP_ENCODER_INTERFACE* BtaAvCo::GetSourceEncoderInterface(const RawAddress& peer_address) {
   std::lock_guard<std::recursive_mutex> lock(peer_cache_->codec_lock_);
-  if (com::android::bluetooth::flags::bta_av_use_peer_codec()) {
-    BtaAvCoPeer* p_peer = peer_cache_->FindPeer(peer_address);
-    if (p_peer != nullptr) {
-      return A2DP_GetEncoderInterface(p_peer->getCodecConfig());
-    } else {
-      log::error("Unable to find the peer address {}", peer_address);
-    }
-    return nullptr;
+  BtaAvCoPeer* p_peer = peer_cache_->FindPeer(peer_address);
+  if (p_peer != nullptr) {
+    return A2DP_GetEncoderInterface(p_peer->getCodecConfig());
+  } else {
+    log::error("Unable to find the peer address {}", peer_address);
   }
-  return A2DP_GetEncoderInterface(bta_av_source_state_.getCodecConfig());
+  return nullptr;
 }
 
 bool BtaAvCo::SetCodecUserConfig(const RawAddress& peer_address,
@@ -913,7 +898,6 @@ bool BtaAvCo::SetCodecAudioConfig(const btav_a2dp_codec_config_t& codec_audio_co
 int BtaAvCo::GetSourceEncoderEffectiveFrameSize(const RawAddress& peer_address) {
   std::lock_guard<std::recursive_mutex> lock(peer_cache_->codec_lock_);
 
-  if (com::android::bluetooth::flags::bta_av_use_peer_codec()) {
     BtaAvCoPeer* p_peer = peer_cache_->FindPeer(peer_address);
     if (p_peer != nullptr) {
       return A2DP_GetEecoderEffectiveFrameSize(p_peer->getCodecConfig());
@@ -921,8 +905,6 @@ int BtaAvCo::GetSourceEncoderEffectiveFrameSize(const RawAddress& peer_address) 
       log::error("Unable to find the peer address {}", peer_address);
     }
     return 0;
-  }
-  return A2DP_GetEecoderEffectiveFrameSize(bta_av_source_state_.getCodecConfig());
 }
 
 int BtaAvCo::GetSourceEncoderPreferredIntervalUs() {
@@ -1289,12 +1271,8 @@ void BtaAvCo::SaveNewCodecConfig(BtaAvCoPeer* p_peer, const uint8_t* new_codec_c
               t_local_sep);
     return;
   }
-  if (com::android::bluetooth::flags::bta_av_use_peer_codec()) {
-    p_peer->setCodecConfig(new_codec_config);
-  } else {
-    reference_state->setCodecConfig(new_codec_config);
-    memcpy(p_peer->codec_config, new_codec_config, AVDT_CODEC_SIZE);
-  }
+
+  p_peer->setCodecConfig(new_codec_config);
 
   if (ContentProtectEnabled()) {
     // Check if this Sink supports SCMS

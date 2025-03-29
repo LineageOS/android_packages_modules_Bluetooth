@@ -27,7 +27,6 @@ aconfig("bluetooth_flags_c_lib") {
     "le_scanning.aconfig",
     "leaudio.aconfig",
     "mapclient.aconfig",
-    "mcp.aconfig",
     "metric.aconfig",
     "opp.aconfig",
     "pairing.aconfig",
@@ -44,6 +43,7 @@ aconfig("bluetooth_flags_c_lib") {
     "vcp.aconfig",
     "vsc.aconfig",
   ]
+
   # LINT.ThenChange(/flags/Android.bp)
   package = "com.android.bluetooth.flags"
   deps = [ "//bt/floss/libflags:libflags" ]

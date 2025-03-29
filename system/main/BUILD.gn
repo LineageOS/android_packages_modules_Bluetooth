@@ -22,16 +22,11 @@ config("libbluetooth_config") {
 static_library("bluetooth-static") {
   complete_static_lib = true
 
-  sources = [
-  ]
+  sources = []
 
-  configs += [
-    "//bt/system:target_defaults"
-  ]
+  configs += [ "//bt/system:target_defaults" ]
 
-  deps = [
-    ":bluetooth",
-  ]
+  deps = [ ":bluetooth" ]
 }
 
 # Configure libbluetooth as either dynamic or static library
@@ -42,11 +37,8 @@ if (defined(use.bt_dynlib) && use.bt_dynlib) {
 }
 
 target(lib_type, "bluetooth") {
-
   # Platform specific
-  sources = [
-    "stack_config.cc",
-  ]
+  sources = [ "stack_config.cc" ]
 
   public_configs = [ ":libbluetooth_config" ]
 
@@ -80,13 +72,12 @@ target(lib_type, "bluetooth") {
     "//bt/system/embdrv/g722",
     "//bt/system/embdrv/sbc",
     "//bt/system/gd:libbluetooth_gd",
-    "//bt/system/log:libbluetooth_log",
     "//bt/system/hci",
+    "//bt/system/log:libbluetooth_log",
     "//bt/system/main/shim:BluetoothStackManagerSources",
     "//bt/system/main/shim:LibBluetoothShimSources",
     "//bt/system/osi",
     "//bt/system/packet",
-    "//bt/system/rust:core_rs",
     "//bt/system/stack",
     "//bt/system/udrv",
   ]

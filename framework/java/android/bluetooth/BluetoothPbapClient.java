@@ -50,8 +50,8 @@ import java.util.List;
 public final class BluetoothPbapClient implements BluetoothProfile, AutoCloseable {
     private static final String TAG = BluetoothPbapClient.class.getSimpleName();
 
-    private static final boolean DBG = false;
-    private static final boolean VDBG = false;
+    private static final boolean DBG = Log.isLoggable("bluetooth", Log.DEBUG);
+    private static final boolean VDBG = Log.isLoggable("bluetooth", Log.VERBOSE);
 
     private final CloseGuard mCloseGuard;
 

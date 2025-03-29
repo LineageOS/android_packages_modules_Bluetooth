@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.hfpclient;
 
 import android.bluetooth.BluetoothDevice;
@@ -21,13 +22,13 @@ import android.telecom.Connection;
 import android.telecom.PhoneAccountHandle;
 import android.util.Log;
 
-public class HfpClientConference extends Conference {
+class HfpClientConference extends Conference {
     private static final String TAG = HfpClientConference.class.getSimpleName();
 
     private final BluetoothDevice mDevice;
     private final HeadsetClientServiceInterface mServiceInterface;
 
-    public HfpClientConference(
+    HfpClientConference(
             BluetoothDevice device,
             PhoneAccountHandle handle,
             HeadsetClientServiceInterface serviceInterface) {

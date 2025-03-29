@@ -26,7 +26,6 @@
 #include <utility>
 
 #include "common/bind.h"
-#include "metrics/counter_metrics.h"
 #include "os/alarm.h"
 #include "os/files.h"
 #include "os/handler.h"
@@ -184,11 +183,6 @@ void StorageModule::Start() {
   pimpl_ = std::make_unique<impl>(GetHandler(), std::move(config.value()), temp_devices_capacity_);
   pimpl_->cache_.SetPersistentConfigChangedCallback(
           [this] { this->CallOn(this, &StorageModule::SaveDelayed); });
-
-  // Cleanup temporary pairings if we have left guest mode
-  if (!com::android::bluetooth::flags::guest_mode_bond() && !is_restricted_mode_) {
-    pimpl_->cache_.RemoveSectionWithProperty("Restricted");
-  }
 
   pimpl_->cache_.FixDeviceTypeInconsistencies();
   if (bluetooth::os::ParameterProvider::GetBtKeystoreInterface() != nullptr) {

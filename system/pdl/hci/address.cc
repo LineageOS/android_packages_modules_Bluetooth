@@ -24,6 +24,8 @@
 #include <iomanip>
 #include <sstream>
 
+#include "types/raw_address.h"
+
 namespace bluetooth {
 namespace hci {
 
@@ -37,6 +39,16 @@ Address::Address(const uint8_t (&addr)[6]) { std::copy(addr, addr + kLength, dat
 Address::Address(std::initializer_list<uint8_t> l) {
   std::copy(l.begin(), std::min(l.begin() + kLength, l.end()), data());
 }
+
+Address::Address(const RawAddress& address)
+    : address({
+              address.address[5],
+              address.address[4],
+              address.address[3],
+              address.address[2],
+              address.address[1],
+              address.address[0],
+      }) {}
 
 std::string Address::_ToMaskedColonSepHexString(int bytes_to_mask) const {
   std::stringstream ss;

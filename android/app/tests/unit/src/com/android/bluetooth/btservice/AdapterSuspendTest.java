@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.btservice;
 
 import static android.bluetooth.BluetoothAdapter.SCAN_MODE_CONNECTABLE;

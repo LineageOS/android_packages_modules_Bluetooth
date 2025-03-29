@@ -70,7 +70,7 @@ public class HeadsetClientServiceTest {
 
     @Mock private AdapterService mAdapterService;
     @Mock private HeadsetClientStateMachine mStateMachine;
-    @Mock private NativeInterface mNativeInterface;
+    @Mock private HeadsetClientNativeInterface mNativeInterface;
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private RemoteDevices mRemoteDevices;
 
@@ -92,12 +92,12 @@ public class HeadsetClientServiceTest {
         mockGetSystemService(Context.BATTERY_SERVICE, BatteryManager.class);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
-        NativeInterface.setInstance(mNativeInterface);
+        HeadsetClientNativeInterface.setInstance(mNativeInterface);
     }
 
     @After
     public void tearDown() throws Exception {
-        NativeInterface.setInstance(null);
+        HeadsetClientNativeInterface.setInstance(null);
         stopServiceIfStarted();
     }
 

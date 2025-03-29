@@ -65,11 +65,7 @@ typedef struct {
 
 /* SBC Source codec capabilities */
 static const tA2DP_SBC_CIE a2dp_sbc_source_caps = {
-#ifdef TARGET_FLOSS
-        (A2DP_SBC_IE_SAMP_FREQ_48 | A2DP_SBC_IE_SAMP_FREQ_44), /* samp_freq */
-#else
-        (A2DP_SBC_IE_SAMP_FREQ_44), /* samp_freq */
-#endif
+        (A2DP_SBC_IE_SAMP_FREQ_44),                         /* samp_freq */
         (A2DP_SBC_IE_CH_MD_MONO | A2DP_SBC_IE_CH_MD_JOINT), /* ch_mode */
         (A2DP_SBC_IE_BLOCKS_16 | A2DP_SBC_IE_BLOCKS_12 | A2DP_SBC_IE_BLOCKS_8 |
          A2DP_SBC_IE_BLOCKS_4),            /* block_len */
@@ -96,11 +92,7 @@ static const tA2DP_SBC_CIE a2dp_sbc_sink_caps = {
 
 /* Default SBC codec configuration */
 const tA2DP_SBC_CIE a2dp_sbc_default_config = {
-#ifdef TARGET_FLOSS
-        (A2DP_SBC_IE_SAMP_FREQ_48), /* samp_freq */
-#else
-        (A2DP_SBC_IE_SAMP_FREQ_44), /* samp_freq */
-#endif
+        A2DP_SBC_IE_SAMP_FREQ_44,          /* samp_freq */
         A2DP_SBC_IE_CH_MD_JOINT,           /* ch_mode */
         A2DP_SBC_IE_BLOCKS_16,             /* block_len */
         A2DP_SBC_IE_SUBBAND_8,             /* num_subbands */
@@ -1013,20 +1005,6 @@ tA2DP_STATUS A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_
   if (status != A2DP_SUCCESS) {
     log::error("can't parse peer's capabilities: error = {}", status);
     goto fail;
-  }
-
-  // Try using the prefered peer codec config (if valid), instead of the peer
-  // capability.
-  if (is_capability) {
-    if (A2DP_IsCodecValidSbc(ota_codec_peer_config_)) {
-      status =
-          A2DP_ParseInfoSbc(&peer_info_cie, ota_codec_peer_config_, false);
-    }
-    if (status != A2DP_SUCCESS) {
-      // Use the peer codec capability
-      status = A2DP_ParseInfoSbc(&peer_info_cie, p_peer_codec_info, is_capability);
-      log::assert_that(status == A2DP_SUCCESS, "assert failed: status == A2DP_SUCCESS");
-    }
   }
 
   //

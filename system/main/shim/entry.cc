@@ -29,7 +29,6 @@
 #include "lpp/lpp_offload_manager.h"
 #include "main/shim/shim.h"
 #include "main/shim/stack.h"
-#include "metrics/counter_metrics.h"
 #include "os/handler.h"
 #include "storage/storage_module.h"
 
@@ -69,8 +68,6 @@ lpp::LppOffloadInterface* GetLppOffloadManager() {
 storage::StorageModule* GetStorage() { return Stack::GetInstance()->GetStorage(); }
 
 hci::AclManager* GetAclManager() { return Stack::GetInstance()->GetInstance<hci::AclManager>(); }
-
-metrics::CounterMetrics* GetCounterMetrics() { return Stack::GetInstance()->GetCounterMetrics(); }
 
 hci::MsftExtensionManager* GetMsftExtensionManager() {
   return Stack::GetInstance()->GetInstance<hci::MsftExtensionManager>();

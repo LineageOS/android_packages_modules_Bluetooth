@@ -2,26 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "adm_verify_active_fallback_device"
-    namespace: "bluetooth"
-    description: "Verify if device selected for fallback is different then last one"
-    bug: "369799111"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "adm_fix_disconnect_of_set_member"
-    namespace: "bluetooth"
-    description: "Fix disconnecting of the set member device. Make sure the other set member is not considered as fallback device."
-    bug: "374320313"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "adm_remove_handling_wired"
     namespace: "bluetooth"
     description: "ActiveDeviceManager doesn't need to handle adding and removing wired devices."

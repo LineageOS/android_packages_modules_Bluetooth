@@ -87,6 +87,7 @@ static constexpr uint8_t kAttHeaderSize = 5;         // Section 3.2.2.1 of RAS 1
 static constexpr uint8_t kRasSegmentHeaderSize = 1;
 static constexpr uint16_t kEnableSecurityTimeoutMs = 10000;  // 10s
 static constexpr uint16_t kProcedureScheduleGuardMs = 1000;  // 1s
+static constexpr double kConnIntervalUnitMs = 1.25;          // 1.25 ms
 
 struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
   struct CsProcedureData {
@@ -829,9 +830,9 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
         cs_requester_trackers_[connection_handle].interval_ms > 100) {
       // TODO(b/398253048): keep the burst mode for 'HIGH' for now. allow app to disable it.
       uint16_t measurement_interval_ms = cs_requester_trackers_[connection_handle].interval_ms;
-      min_procedure_interval = static_cast<uint16_t>(
-              std::round((double)measurement_interval_ms /
-                         cs_requester_trackers_[connection_handle].conn_interval_));
+      min_procedure_interval = static_cast<uint16_t>(std::round(
+              (double)measurement_interval_ms /
+              (cs_requester_trackers_[connection_handle].conn_interval_ * kConnIntervalUnitMs)));
     }
     log::debug("procedure params: min_int = {}", min_procedure_interval);
     hci_layer_->EnqueueCommand(
@@ -1299,7 +1300,7 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
         uint32_t schedule_interval = live_tracker->interval_ms;
         if (live_tracker->n_procedure_count > 1) {
           schedule_interval = live_tracker->n_procedure_count * event_view.GetProcedureInterval() *
-                                      live_tracker->conn_interval_ +
+                                      live_tracker->conn_interval_ * kConnIntervalUnitMs +
                               kProcedureScheduleGuardMs;
           log::debug("guard interval is {} ms", schedule_interval);
         }
@@ -1391,8 +1392,7 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
       subevent_abort_reason = cs_event_result.GetSubeventAbortReason();
       result_data_structures = cs_event_result.GetResultDataStructures();
 
-      procedure_data = init_cs_procedure_data(connection_handle, live_tracker,
-                                              cs_event_result.GetProcedureCounter(),
+      procedure_data = init_cs_procedure_data(live_tracker, cs_event_result.GetProcedureCounter(),
                                               cs_event_result.GetNumAntennaPaths());
       if (live_tracker->role == CsRole::INITIATOR) {
         procedure_data->frequency_compensation.push_back(
@@ -1462,6 +1462,16 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
           const SubeventAbortReason& subevent_abort_reason) {
     uint16_t counter = live_tracker->procedure_counter;
     CsProcedureDoneStatus procedure_done_status = procedure_data->local_status;
+    if (live_tracker->local_start && live_tracker->n_procedure_count > 1 &&
+        (procedure_done_status == CsProcedureDoneStatus::ABORTED ||
+         procedure_done_status == CsProcedureDoneStatus::ALL_RESULTS_COMPLETE)) {
+      live_tracker->procedure_counting_after_enable += 1;
+      if (live_tracker->procedure_counting_after_enable == live_tracker->n_procedure_count) {
+        log::debug("enable procedure after finishing the last procedure");
+        live_tracker->procedure_schedule_guard_alarm->Cancel();
+        send_le_cs_procedure_enable(connection_handle, Enable::ENABLED);
+      }
+    }
     ProcedureAbortReason procedure_abort_reason =
             procedure_data->procedure_data_v2_.local_procedure_abort_reason_;
     log::debug(
@@ -2026,8 +2036,8 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
                                 connection_handle);
   }
 
-  CsProcedureData* init_cs_procedure_data(uint16_t connection_handle, CsTracker* live_tracker,
-                                          uint16_t procedure_counter, uint8_t num_antenna_paths) {
+  CsProcedureData* init_cs_procedure_data(CsTracker* live_tracker, uint16_t procedure_counter,
+                                          uint8_t num_antenna_paths) {
     // Update procedure count
     live_tracker->procedure_counter = procedure_counter;
     std::vector<CsProcedureData>& data_list = live_tracker->procedure_data_list;
@@ -2037,13 +2047,6 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
         log::warn("duplicated procedure counter - {}.", procedure_counter);
         return &data;
       }
-    }
-    live_tracker->procedure_counting_after_enable += 1;
-    if (live_tracker->local_start && live_tracker->procedure_counting_after_enable > 0 &&
-        live_tracker->n_procedure_count > 1 &&
-        live_tracker->procedure_counting_after_enable == live_tracker->n_procedure_count) {
-      log::debug("enable procedure after finishing the last procedure");
-      send_le_cs_procedure_enable(connection_handle, Enable::ENABLED);
     }
 
     log::info("Create data for procedure_counter: {}", procedure_counter);

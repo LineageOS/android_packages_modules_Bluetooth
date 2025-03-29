@@ -79,6 +79,7 @@ void ModuleRegistry::set_registry_and_handler(Module* instance, Thread* thread,
   if (com::android::bluetooth::flags::same_handler_for_all_modules()) {
     // Use same handler for all modules initialization.
     // TODO: remove the dependency on the `thread` when the flag is removed.
+    log::info("Registering handler for module {}", instance->ToString());
     instance->handler_ = handler;
   } else {
     instance->handler_ = new Handler(thread);

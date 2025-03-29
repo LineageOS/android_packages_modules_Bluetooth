@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
+#include "btif/include/btif_bqr.h"
+
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 #include <fcntl.h>
-#ifdef __ANDROID__
-#include <statslog_bt.h>
-#endif
 #include <sys/stat.h>
 
 #include <cerrno>
 #include <cstdint>
 
-#include "btif/include/btif_bqr.h"
 #include "btif/include/btif_common.h"
 #include "btif/include/btif_storage.h"
 #include "btif/include/core_callbacks.h"
@@ -38,6 +36,7 @@
 #include "hci/hci_packets.h"
 #include "internal_include/bt_trace.h"
 #include "main/shim/entry.h"
+#include "os/metrics.h"
 #include "osi/include/properties.h"
 #include "packet/raw_builder.h"
 #include "stack/btm/btm_dev.h"
@@ -780,9 +779,8 @@ static void AddLinkQualityEventToQueue(uint8_t length, const uint8_t* p_link_qua
           p_bqr_event->bqr_link_quality_event_.no_rx_count,
           p_bqr_event->bqr_link_quality_event_.nak_count);
 
-#ifdef __ANDROID__
-  int ret = stats_write(
-          BLUETOOTH_QUALITY_REPORT_REPORTED, p_bqr_event->bqr_link_quality_event_.quality_report_id,
+  os::LogMetricBluetoothQualityReport(
+          p_bqr_event->bqr_link_quality_event_.quality_report_id,
           p_bqr_event->bqr_link_quality_event_.packet_types,
           p_bqr_event->bqr_link_quality_event_.connection_handle,
           p_bqr_event->bqr_link_quality_event_.connection_role,
@@ -800,12 +798,7 @@ static void AddLinkQualityEventToQueue(uint8_t length, const uint8_t* p_link_qua
           p_bqr_event->bqr_link_quality_event_.last_flow_on_timestamp,
           p_bqr_event->bqr_link_quality_event_.buffer_overflow_bytes,
           p_bqr_event->bqr_link_quality_event_.buffer_underflow_bytes);
-  if (ret < 0) {
-    log::warn("failed to log BQR event to statsd, error {}", ret);
-  }
-#else
-  // TODO(abps) Metrics for non-Android build
-#endif
+
   BluetoothQualityReportInterface* bqrItf = getBluetoothQualityReportInterface();
 
   if (bqrItf != NULL) {

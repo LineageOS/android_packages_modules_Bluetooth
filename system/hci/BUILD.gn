@@ -27,9 +27,7 @@ static_library("hci") {
     "//bt/system/stack/include",
   ]
 
-  deps = [
-    "//bt/system/common",
-  ]
+  deps = [ "//bt/system/common" ]
 
   configs += [
     "//bt/system:target_defaults",
@@ -39,9 +37,7 @@ static_library("hci") {
 
 if (use.test) {
   executable("net_test_hci") {
-    sources = [
-      "test/packet_fragmenter_test.cc",
-    ]
+    sources = [ "test/packet_fragmenter_test.cc" ]
 
     include_dirs = [
       "//bt/system/",
@@ -50,9 +46,9 @@ if (use.test) {
     ]
 
     deps = [
+      "//bt/system/btcore",
       "//bt/system/hci",
       "//bt/system/osi",
-      "//bt/system/btcore",
     ]
 
     configs += [

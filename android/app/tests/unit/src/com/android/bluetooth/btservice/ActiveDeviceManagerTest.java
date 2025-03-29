@@ -50,7 +50,6 @@ import android.content.Context;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.platform.test.annotations.DisableFlags;
-import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.util.ArrayMap;
 import android.util.SparseIntArray;
@@ -926,7 +925,6 @@ public class ActiveDeviceManagerTest {
 
     /** One LE Audio is connected and disconnected later. Should then set active device to null. */
     @Test
-    @EnableFlags(Flags.FLAG_ADM_FIX_DISCONNECT_OF_SET_MEMBER)
     public void lastLeAudioDisconnected_clearLeAudioActive() {
         when(mLeAudioService.getGroupId(mLeAudioDevice)).thenReturn(1);
         when(mLeAudioService.getLeadDevice(mLeAudioDevice)).thenReturn(mLeAudioDevice);
@@ -939,22 +937,6 @@ public class ActiveDeviceManagerTest {
         mTestLooper.dispatchAll();
         verify(mLeAudioService, never()).removeActiveDevice(anyBoolean());
         verify(mLeAudioService).deviceDisconnected(mLeAudioDevice, false);
-    }
-
-    /** One LE Audio is connected and disconnected later. Should then set active device to null. */
-    @Test
-    @DisableFlags(Flags.FLAG_ADM_FIX_DISCONNECT_OF_SET_MEMBER)
-    public void lastLeAudioDisconnected_clearLeAudioActive_NoFixDisconnectFlag() {
-        when(mLeAudioService.getGroupId(mLeAudioDevice)).thenReturn(1);
-        when(mLeAudioService.getLeadDevice(mLeAudioDevice)).thenReturn(mLeAudioDevice);
-
-        leAudioConnected(mLeAudioDevice);
-        mTestLooper.dispatchAll();
-        verify(mLeAudioService).setActiveDevice(mLeAudioDevice);
-
-        leAudioDisconnected(mLeAudioDevice);
-        mTestLooper.dispatchAll();
-        verify(mLeAudioService).removeActiveDevice(false);
     }
 
     /** Two LE Audio are connected and active device is explicitly set. */
@@ -1006,7 +988,6 @@ public class ActiveDeviceManagerTest {
      * fallback device should not be set to true active device to fallback device.
      */
     @Test
-    @EnableFlags(Flags.FLAG_ADM_FIX_DISCONNECT_OF_SET_MEMBER)
     public void leAudioSecondDeviceDisconnected_noFallbackDeviceActive_ModeNormal() {
         when(mAudioManager.getMode()).thenReturn(AudioManager.MODE_NORMAL);
 
@@ -1037,7 +1018,6 @@ public class ActiveDeviceManagerTest {
      * fallback device should not be set to true active device to fallback device.
      */
     @Test
-    @EnableFlags(Flags.FLAG_ADM_FIX_DISCONNECT_OF_SET_MEMBER)
     public void leAudioSecondDeviceDisconnected_noFallbackDeviceActive_ModeInCall() {
         when(mAudioManager.getMode()).thenReturn(AudioManager.MODE_IN_CALL);
 
@@ -1068,7 +1048,6 @@ public class ActiveDeviceManagerTest {
      * fallback device should not be set to true active device to fallback device.
      */
     @Test
-    @EnableFlags(Flags.FLAG_ADM_FIX_DISCONNECT_OF_SET_MEMBER)
     public void twoLeAudioSets_OneSetDisconnected_FallbackToAnotherOne_ModeNormal() {
         when(mAudioManager.getMode()).thenReturn(AudioManager.MODE_NORMAL);
 
@@ -1115,7 +1094,6 @@ public class ActiveDeviceManagerTest {
      * fallback device should not be set to true active device to fallback device.
      */
     @Test
-    @EnableFlags(Flags.FLAG_ADM_FIX_DISCONNECT_OF_SET_MEMBER)
     public void twoLeAudioSets_OneSetDisconnected_FallbackToAnotherOne_ModeInCall() {
         when(mAudioManager.getMode()).thenReturn(AudioManager.MODE_IN_CALL);
 
@@ -1296,7 +1274,6 @@ public class ActiveDeviceManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_ADM_FIX_DISCONNECT_OF_SET_MEMBER)
     public void leAudioSetConnectedGroupThenDisconnected_noFallback() {
         when(mAudioManager.getMode()).thenReturn(AudioManager.MODE_NORMAL);
 
@@ -1324,38 +1301,6 @@ public class ActiveDeviceManagerTest {
         leAudioDisconnected(mLeAudioDevice);
         mTestLooper.dispatchAll();
         order.verify(mLeAudioService, never()).removeActiveDevice(anyBoolean());
-        order.verify(mLeAudioService).deviceDisconnected(mLeAudioDevice, false);
-    }
-
-    @Test
-    @DisableFlags(Flags.FLAG_ADM_FIX_DISCONNECT_OF_SET_MEMBER)
-    public void leAudioSetConnectedGroupThenDisconnected_noFallback_NoFixDisconnectFlag() {
-        when(mAudioManager.getMode()).thenReturn(AudioManager.MODE_NORMAL);
-
-        when(mLeAudioService.getGroupId(mLeAudioDevice)).thenReturn(1);
-        when(mLeAudioService.getGroupId(mLeAudioDevice2)).thenReturn(1);
-        when(mLeAudioService.getLeadDevice(mLeAudioDevice2)).thenReturn(mLeAudioDevice);
-        when(mLeAudioService.getLeadDevice(mLeAudioDevice)).thenReturn(mLeAudioDevice);
-
-        InOrder order = inOrder(mLeAudioService);
-
-        leAudioConnected(mLeAudioDevice);
-        mTestLooper.dispatchAll();
-        order.verify(mLeAudioService).setActiveDevice(mLeAudioDevice);
-
-        leAudioConnected(mLeAudioDevice2);
-        mTestLooper.dispatchAll();
-        order.verify(mLeAudioService, never()).setActiveDevice(any());
-
-        leAudioDisconnected(mLeAudioDevice2);
-        mTestLooper.dispatchAll();
-        order.verify(mLeAudioService, never()).setActiveDevice(any());
-        order.verify(mLeAudioService, never()).removeActiveDevice(anyBoolean());
-        order.verify(mLeAudioService).deviceDisconnected(mLeAudioDevice2, false);
-
-        leAudioDisconnected(mLeAudioDevice);
-        mTestLooper.dispatchAll();
-        order.verify(mLeAudioService).removeActiveDevice(false);
         order.verify(mLeAudioService).deviceDisconnected(mLeAudioDevice, false);
     }
 
@@ -1388,7 +1333,6 @@ public class ActiveDeviceManagerTest {
      * and selected as active. First LE Audio device disconnects with fallback to new one.
      */
     @Test
-    @EnableFlags(Flags.FLAG_ADM_VERIFY_ACTIVE_FALLBACK_DEVICE)
     public void sameDeviceAsAshaAndLeAudio_noFallbackOnSwitch() {
         /* Dual mode ASHA/LeAudio device from group 1 */
         when(mLeAudioService.getGroupId(mHearingAidDevice)).thenReturn(1);
@@ -1426,7 +1370,6 @@ public class ActiveDeviceManagerTest {
      * and selected as active. First ASHA device disconnects with fallback to new one.
      */
     @Test
-    @EnableFlags(Flags.FLAG_ADM_VERIFY_ACTIVE_FALLBACK_DEVICE)
     public void sameDeviceAsLeAudioAndAsha_noFallbackOnSwitch() {
         // Turn on the dual mode audio flag so the A2DP won't disconnect LE Audio
         when(mAudioManager.getMode()).thenReturn(AudioManager.MODE_NORMAL);

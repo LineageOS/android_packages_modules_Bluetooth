@@ -26,16 +26,6 @@ flag {
 }
 
 flag {
-    name: "fix_add_device_properties"
-    namespace: "bluetooth"
-    description: "Make sure single entry for mDevices. Race fix."
-    bug: "375158716"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "identity_address_type_api"
     is_exported: true
     namespace: "bluetooth"

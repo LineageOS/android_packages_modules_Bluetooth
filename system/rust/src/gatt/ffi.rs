@@ -10,10 +10,9 @@ pub use inner::*;
 use log::{error, info, trace, warn};
 use tokio::task::spawn_local;
 
-use crate::do_in_rust_thread;
 use crate::packets::att::{self, AttErrorCode};
+use crate::{do_in_rust_thread, RustModuleRunner};
 
-use super::arbiter::with_arbiter;
 use super::callbacks::{GattWriteRequestType, GattWriteType, TransactionDecision};
 use super::channel::AttTransport;
 use super::ids::{AdvertiserId, AttHandle, ConnectionId, ServerId, TransactionId, TransportIndex};
@@ -97,17 +96,6 @@ mod inner {
         fn on_indication_sent_confirmation(self: &GattServerCallbacks, conn_id: u16, status: i32);
     }
 
-    /// What action the arbiter should take in response to an incoming packet
-    #[namespace = "bluetooth::shim::arbiter"]
-    enum InterceptAction {
-        /// Forward the packet to the legacy stack
-        #[cxx_name = "FORWARD"]
-        Forward = 0u32,
-        /// Discard the packet (typically because it has been intercepted)
-        #[cxx_name = "DROP"]
-        Drop = 1u32,
-    }
-
     /// The type of GATT record supplied over FFI
     #[derive(Debug)]
     #[namespace = "bluetooth::gatt"]
@@ -135,19 +123,6 @@ mod inner {
 
     #[namespace = "bluetooth::shim::arbiter"]
     unsafe extern "C++" {
-        include!("stack/arbiter/acl_arbiter.h");
-        type InterceptAction;
-
-        /// Register callbacks from C++ into Rust within the Arbiter
-        fn StoreCallbacksFromRust(
-            on_le_connect: fn(tcb_idx: u8, advertiser: u8),
-            on_le_disconnect: fn(tcb_idx: u8),
-            intercept_packet: fn(tcb_idx: u8, packet: Vec<u8>) -> InterceptAction,
-            on_outgoing_mtu_req: fn(tcb_idx: u8),
-            on_incoming_mtu_resp: fn(tcb_idx: u8, mtu: usize),
-            on_incoming_mtu_req: fn(tcb_idx: u8, mtu: usize),
-        );
-
         /// Send an outgoing packet on the specified tcb_idx
         fn SendPacketToPeer(tcb_idx: u8, packet: Vec<u8>);
     }
@@ -399,7 +374,9 @@ fn remove_service(server_id: u8, service_handle: u16) {
 }
 
 fn is_connection_isolated(conn_id: u16) -> bool {
-    with_arbiter(|arbiter| arbiter.is_connection_isolated(ConnectionId(conn_id).get_tcb_idx()))
+    RustModuleRunner::isolation_manager().map_or(false, |im| {
+        im.lock().unwrap().is_connection_isolated(ConnectionId(conn_id).get_tcb_idx())
+    })
 }
 
 fn send_response(_server_id: u8, conn_id: u16, trans_id: u32, status: u8, value: &[u8]) {

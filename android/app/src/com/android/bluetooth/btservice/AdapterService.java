@@ -536,7 +536,9 @@ public class AdapterService extends Service {
                         mNativeInterface.enable();
                     } else if (mRegisteredProfiles.size() == Config.getSupportedProfiles().length
                             && mRegisteredProfiles.size() == mRunningProfiles.size()) {
-                        mAdapterProperties.onBluetoothReady();
+                        if (!Flags.callBluetoothReadyBeforeProfilesStart()) {
+                            mAdapterProperties.onBluetoothReady();
+                        }
                         setScanMode(SCAN_MODE_CONNECTABLE, "processProfileServiceStateChanged");
                         updateUuids();
                         initProfileServices();
@@ -593,10 +595,6 @@ public class AdapterService extends Service {
             // The device with which the request was made. Used for sending the callback.
             BluetoothDevice device) {}
 
-    final @NonNull <T> T getNonNullSystemService(@NonNull Class<T> clazz) {
-        return requireNonNull(getSystemService(clazz));
-    }
-
     @Override
     public void onCreate() {
         super.onCreate();
@@ -606,17 +604,23 @@ public class AdapterService extends Service {
         mAdapterProperties = new AdapterProperties(this, mRemoteDevices, mLooper);
         mAdapterStateMachine = new AdapterState(this, mLooper);
         mBinder = new AdapterServiceBinder(this);
-        mUserManager = getNonNullSystemService(UserManager.class);
-        mAppOps = getNonNullSystemService(AppOpsManager.class);
-        mPowerManager = getNonNullSystemService(PowerManager.class);
-        mBatteryStatsManager = getNonNullSystemService(BatteryStatsManager.class);
-        mCompanionDeviceManager = getNonNullSystemService(CompanionDeviceManager.class);
+        mUserManager = requireNonNull(getSystemService(UserManager.class));
+        mAppOps = requireNonNull(getSystemService(AppOpsManager.class));
+        mPowerManager = requireNonNull(getSystemService(PowerManager.class));
+        mBatteryStatsManager = requireNonNull(getSystemService(BatteryStatsManager.class));
+        mCompanionDeviceManager = requireNonNull(getSystemService(CompanionDeviceManager.class));
         setAdapterService(this);
     }
 
     @SuppressLint("AndroidFrameworkRequiresPermission")
     private void init() {
         Log.d(TAG, "init()");
+
+        if (Flags.gattClearCacheOnFactoryReset()
+                && BluetoothProperties.factory_reset().orElse(false)) {
+            clearStorage();
+        }
+
         Config.init(this);
         mDeviceConfigListener.start();
 
@@ -625,7 +629,7 @@ public class AdapterService extends Service {
         clearDiscoveringPackages();
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         boolean isCommonCriteriaMode =
-                getNonNullSystemService(DevicePolicyManager.class)
+                requireNonNull(getSystemService(DevicePolicyManager.class))
                         .isCommonCriteriaModeEnabled(null);
         mBluetoothKeystoreService =
                 new BluetoothKeystoreService(
@@ -1040,13 +1044,18 @@ public class AdapterService extends Service {
     }
 
     void startProfileServices() {
-        Log.d(TAG, "startCoreServices()");
+        Log.d(TAG, "startProfileServices()");
+        if (Flags.callBluetoothReadyBeforeProfilesStart()) {
+            mAdapterProperties.onBluetoothReady();
+        }
         int[] supportedProfileServices = Config.getSupportedProfiles();
         if (Flags.onlyStartScanDuringBleOn()) {
             // Scanning is always supported, started separately, and is not a profile service.
             // This will check other profile services.
             if (supportedProfileServices.length == 0) {
-                mAdapterProperties.onBluetoothReady();
+                if (!Flags.callBluetoothReadyBeforeProfilesStart()) {
+                    mAdapterProperties.onBluetoothReady();
+                }
                 setScanMode(SCAN_MODE_CONNECTABLE, "startProfileServices");
                 updateUuids();
                 mAdapterStateMachine.sendMessage(AdapterState.BREDR_STARTED);
@@ -1059,7 +1068,9 @@ public class AdapterService extends Service {
             // adapter initialization failures
             if (supportedProfileServices.length == 1
                     && supportedProfileServices[0] == BluetoothProfile.GATT) {
-                mAdapterProperties.onBluetoothReady();
+                if (!Flags.callBluetoothReadyBeforeProfilesStart()) {
+                    mAdapterProperties.onBluetoothReady();
+                }
                 setScanMode(SCAN_MODE_CONNECTABLE, "startProfileServices");
                 updateUuids();
                 mAdapterStateMachine.sendMessage(AdapterState.BREDR_STARTED);
@@ -3955,10 +3966,6 @@ public class AdapterService extends Service {
             mBtCompanionManager.factoryReset();
         }
 
-        if (Flags.gattClearCacheOnFactoryReset()) {
-            clearStorage();
-        }
-
         return mNativeInterface.factoryReset();
     }
 
@@ -4456,6 +4463,7 @@ public class AdapterService extends Service {
 
         writer.println();
         mAdapterProperties.dump(fd, writer, args);
+        mRemoteDevices.dump(writer);
 
         writer.println("ScanMode: " + scanModeName(getScanMode()));
         StringBuilder sb = new StringBuilder();

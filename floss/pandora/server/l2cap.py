@@ -55,8 +55,9 @@ class L2CAPService(l2cap_grpc_aio.L2CAPServicer):
         # key = connection_value, val = stream
         self.outgoing_connections = dict()
 
-    async def ListenL2CAPChannel(self, request: l2cap_pb2.ListenL2CAPChannelRequest,
-                                 context: grpc.ServicerContext) -> l2cap_pb2.ListenL2CAPChannelResponse:
+    async def ListenL2CAPChannel(
+            self, request: l2cap_pb2.ListenL2CAPChannelRequest,
+            context: grpc.ServicerContext) -> l2cap_pb2.ListenL2CAPChannelResponse:
 
         class ListenL2CAPObserver(socket_manager.SocketManagerCallbacks):
             """Observer to observe listening on the L2CAP channel."""
@@ -74,8 +75,9 @@ class L2CAPService(l2cap_grpc_aio.L2CAPServicer):
                     return
 
                 if status is None or floss_enums.BtStatus(status) != floss_enums.BtStatus.SUCCESS:
-                    logging.error('Failed to listen on the L2CAP channel with socket_id: %s. Status: %s', socket_id,
-                                  status)
+                    logging.error(
+                        'Failed to listen on the L2CAP channel with socket_id: %s. Status: %s',
+                        socket_id, status)
 
                 future = self.task['listen_l2cap_channel']
                 future.get_loop().call_soon_threadsafe(future.set_result, (status, socket))
@@ -100,11 +102,13 @@ class L2CAPService(l2cap_grpc_aio.L2CAPServicer):
             observer = ListenL2CAPObserver(l2cap_channel_listener)
             name = utils.create_observer_name(observer)
             self.bluetooth.socket_manager.register_callback_observer(name, observer)
-            status, socket = await asyncio.wait_for(l2cap_channel_listener['listen_l2cap_channel'], timeout=5)
+            status, socket = await asyncio.wait_for(l2cap_channel_listener['listen_l2cap_channel'],
+                                                    timeout=5)
             if status != floss_enums.BtStatus.SUCCESS:
                 await context.abort(
                     grpc.StatusCode.INTERNAL,
-                    f'Failed to listen on the L2CAP channel with socket_id: {socket_id}. Status: {status}')
+                    f'Failed to listen on the L2CAP channel with socket_id: {socket_id}. Status: {status}'
+                )
 
             self.incoming_connections[request.connection.cookie.value] = (socket['id'], [])
         finally:
@@ -112,8 +116,9 @@ class L2CAPService(l2cap_grpc_aio.L2CAPServicer):
 
         return empty_pb2.Empty()
 
-    async def CreateLECreditBasedChannel(self, request: l2cap_pb2.CreateLECreditBasedChannelRequest,
-                                         context: grpc.ServicerContext) -> l2cap_pb2.CreateLECreditBasedChannelResponse:
+    async def CreateLECreditBasedChannel(
+            self, request: l2cap_pb2.CreateLECreditBasedChannelRequest,
+            context: grpc.ServicerContext) -> l2cap_pb2.CreateLECreditBasedChannelResponse:
 
         class CreateL2CAPObserver(socket_manager.SocketManagerCallbacks):
             """Observer to observe the creation of the L2CAP channel."""
@@ -122,14 +127,20 @@ class L2CAPService(l2cap_grpc_aio.L2CAPServicer):
                 self.task = task
 
             @utils.glib_callback()
-            def on_outgoing_connection_result(self, connecting_id, result, socket, *, dbus_unix_fd_list=None):
+            def on_outgoing_connection_result(self,
+                                              connecting_id,
+                                              result,
+                                              socket,
+                                              *,
+                                              dbus_unix_fd_list=None):
                 if connecting_id != self.task['connecting_id']:
                     return
 
                 future = self.task['create_l2cap_channel']
                 if result is None or floss_enums.BtStatus(result) != floss_enums.BtStatus.SUCCESS:
-                    logging.error('Failed to create the L2CAP channel with connecting_id: %s. Status: %s',
-                                  connecting_id, result)
+                    logging.error(
+                        'Failed to create the L2CAP channel with connecting_id: %s. Status: %s',
+                        connecting_id, result)
                     future.get_loop().call_soon_threadsafe(future.set_result, None)
                     return
 
@@ -168,7 +179,8 @@ class L2CAPService(l2cap_grpc_aio.L2CAPServicer):
                 socket_result = self.bluetooth.create_l2cap_channel(address, request.psm)
 
             if socket_result is None:
-                await context.abort(grpc.StatusCode.INTERNAL, f'Failed to call create_{channel_type}_l2cap_channel.')
+                await context.abort(grpc.StatusCode.INTERNAL,
+                                    f'Failed to call create_{channel_type}_l2cap_channel.')
 
             connecting_id = socket_result['id']
             l2cap_channel_creation = {
@@ -180,8 +192,9 @@ class L2CAPService(l2cap_grpc_aio.L2CAPServicer):
             self.bluetooth.socket_manager.register_callback_observer(name, observer)
             fd = await asyncio.wait_for(l2cap_channel_creation['create_l2cap_channel'], timeout=5)
             if fd is None:
-                await context.abort(grpc.StatusCode.INTERNAL,
-                                    f'Failed to get the fd from L2CAP socket with connecting_id: {connecting_id}')
+                await context.abort(
+                    grpc.StatusCode.INTERNAL,
+                    f'Failed to get the fd from L2CAP socket with connecting_id: {connecting_id}')
 
             stream = socket_module.fromfd(fd, socket_module.AF_UNIX, socket_module.SOCK_STREAM)
             self.outgoing_connections[connection_value] = stream
@@ -190,8 +203,9 @@ class L2CAPService(l2cap_grpc_aio.L2CAPServicer):
 
         return empty_pb2.Empty()
 
-    async def AcceptL2CAPChannel(self, request: l2cap_pb2.AcceptL2CAPChannelRequest,
-                                 context: grpc.ServicerContext) -> l2cap_pb2.AcceptL2CAPChannelResponse:
+    async def AcceptL2CAPChannel(
+            self, request: l2cap_pb2.AcceptL2CAPChannelRequest,
+            context: grpc.ServicerContext) -> l2cap_pb2.AcceptL2CAPChannelResponse:
 
         class AcceptL2CAPObserver(socket_manager.SocketManagerCallbacks):
             """Observer to observe the acceptance of the L2CAP channel."""
@@ -200,7 +214,11 @@ class L2CAPService(l2cap_grpc_aio.L2CAPServicer):
                 self.task = task
 
             @utils.glib_callback()
-            def on_handle_incoming_connection(self, listener_id, connection, *, dbus_unix_fd_list=None):
+            def on_handle_incoming_connection(self,
+                                              listener_id,
+                                              connection,
+                                              *,
+                                              dbus_unix_fd_list=None):
                 if listener_id != self.task['listener_id']:
                     return
 
@@ -247,12 +265,14 @@ class L2CAPService(l2cap_grpc_aio.L2CAPServicer):
             if accept_socket_status != floss_enums.BtStatus.SUCCESS:
                 await context.abort(
                     grpc.StatusCode.INTERNAL,
-                    f'Failed to accept the L2CAP socket with socket_id: {socket_id}. Status: {accept_socket_status}.')
+                    f'Failed to accept the L2CAP socket with socket_id: {socket_id}. Status: {accept_socket_status}.'
+                )
 
             fd = await asyncio.wait_for(l2cap_channel_acceptance['accept_l2cap_channel'], timeout=5)
             if fd is None:
-                await context.abort(grpc.StatusCode.INTERNAL,
-                                    f'Failed to get the fd from L2CAP socket with socket_id: {socket_id}')
+                await context.abort(
+                    grpc.StatusCode.INTERNAL,
+                    f'Failed to get the fd from L2CAP socket with socket_id: {socket_id}')
 
             stream = socket_module.fromfd(fd, socket_module.AF_UNIX, socket_module.SOCK_STREAM)
             incoming_streams.append(stream)
@@ -274,7 +294,8 @@ class L2CAPService(l2cap_grpc_aio.L2CAPServicer):
             return None
 
         current_index = self.interleave_connection_current_index.get(connection_value, 0)
-        self.interleave_connection_current_index[connection_value] = (current_index + 1) % len(streams)
+        self.interleave_connection_current_index[connection_value] = (current_index +
+                                                                      1) % len(streams)
         return streams[current_index]
 
     async def SendData(self, request: l2cap_pb2.SendDataRequest,
@@ -290,7 +311,8 @@ class L2CAPService(l2cap_grpc_aio.L2CAPServicer):
             except Exception as e:
                 logging.error('Exception during writing to output stream: %s', e)
         else:
-            logging.error('Output stream: %s not found for the connection_value: %s', output_stream, connection_value)
+            logging.error('Output stream: %s not found for the connection_value: %s', output_stream,
+                          connection_value)
 
         return empty_pb2.Empty()
 
@@ -309,7 +331,8 @@ class L2CAPService(l2cap_grpc_aio.L2CAPServicer):
             except Exception as e:
                 logging.error('Exception during reading from input stream: %s', e)
         else:
-            logging.error('Input stream: %s not found for the connection_value: %s', input_stream, connection_value)
+            logging.error('Input stream: %s not found for the connection_value: %s', input_stream,
+                          connection_value)
 
         # Return an empty byte array.
         return l2cap_pb2.ReceiveDataResponse(data=b'')

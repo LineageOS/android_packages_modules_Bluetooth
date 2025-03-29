@@ -32,23 +32,27 @@ class BREDRDisplayOnlyTestClass(BREDRSSPPairTestBase):
 
         self.ref.config.setdefault(
             'server',
-             {
+            {
                 'pairing_sc_enable': False,
                 'pairing_mitm_enable': False,
                 'pairing_bonding_enable': True,
                 # Android IO CAP: Display_YESNO
                 # Ref IO CAP:
                 'io_capability': 'display_output_only',
-             },
+            },
         )
 
     async def accept_pairing(self):
         init_ev = await anext(self.initiator_pairing_event_stream)
-        logging.debug(f'[{self.initiator_pairing_event_stream.device.name}] init_ev.method_variant():{init_ev.method_variant()}')
+        logging.debug(
+            f'[{self.initiator_pairing_event_stream.device.name}] init_ev.method_variant():{init_ev.method_variant()}'
+        )
 
         # responder receives just works
         responder_ev = await anext(self.responder_pairing_event_stream)
-        logging.debug(f'[{self.responder_pairing_event_stream.device.name}] responder_ev.method_variant():{responder_ev.method_variant()}')
+        logging.debug(
+            f'[{self.responder_pairing_event_stream.device.name}] responder_ev.method_variant():{responder_ev.method_variant()}'
+        )
 
         if self.initiator_pairing_event_stream == self.android_pairing_stream:
             assert_equal(init_ev.method_variant(), 'numeric_comparison')

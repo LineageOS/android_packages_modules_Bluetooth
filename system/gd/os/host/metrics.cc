@@ -67,7 +67,7 @@ void LogMetricReadTxPowerLevelResult(const Address& /* address */, uint16_t /* h
 void LogMetricRemoteVersionInfo(uint16_t /* handle */, uint8_t /* status */, uint8_t /* version */,
                                 uint16_t /* manufacturer_name */, uint16_t /* subversion */) {}
 
-void LogMetricLinkLayerConnectionEvent(const Address* /* address */,
+void LogMetricLinkLayerConnectionEvent(const Address& /* address */,
                                        uint32_t /* connection_handle */,
                                        android::bluetooth::DirectionEnum /* direction */,
                                        uint16_t /* link_type */, uint32_t /* hci_cmd */,
@@ -118,7 +118,8 @@ void LogMetricBluetoothRemoteSupportedFeatures(const Address& /* address */, uin
                                                uint64_t /* features */,
                                                uint32_t /* connection_handle */) {}
 
-void LogMetricBluetoothCodePathCounterMetrics(int32_t /* key */, int64_t /* count */) {}
+void CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum /* key */,
+                         int64_t /* count */) {}
 
 void LogMetricBluetoothLEConnection(os::LEConnectionSessionOptions /* session_options */) {}
 
@@ -148,6 +149,15 @@ void LogMetricLeAudioConnectionSessionReported(
         const std::vector<int32_t>& /*streaming_context_type*/) {}
 
 void LogMetricLeAudioBroadcastSessionReported(int64_t /*duration_nanos*/) {}
+
+void LogMetricBluetoothQualityReport(
+        uint8_t /*quality_report_id*/, uint8_t /*packet_types*/, uint16_t /*connection_handle*/,
+        uint8_t /*connection_role*/, int8_t /*tx_power_level*/, int8_t /*rssi*/, uint8_t /*snr*/,
+        uint8_t /*unused_afh_channel_count*/, uint8_t /*afh_select_unideal_channel_count*/,
+        uint16_t /*lsto*/, uint32_t /*connection_piconet_clock*/, uint32_t /*retransmission_count*/,
+        uint32_t /*no_rx_count*/, uint32_t /*nak_count*/, uint32_t /*last_tx_ack_timestamp*/,
+        uint32_t /*flow_off_count*/, uint32_t /*last_flow_on_timestamp*/,
+        uint32_t /*buffer_overflow_bytes*/, uint32_t /*buffer_underflow_bytes*/) {}
 
 }  // namespace os
 }  // namespace bluetooth

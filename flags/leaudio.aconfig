@@ -69,16 +69,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_big_depends_on_audio_state"
-    namespace: "bluetooth"
-    description: "BIG creation/termination depends on audio resume/pause"
-    bug: "347204335"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "le_ase_read_multiple_variable"
     namespace: "bluetooth"
     description: "Use GATT read multiple variable length characteristic values"
@@ -107,26 +97,6 @@ flag {
     namespace: "bluetooth"
     description: "enable Gaming Audio Profile"
     bug: "353978074"
-}
-
-flag {
-    name: "leaudio_broadcast_resync_helper"
-    namespace: "bluetooth"
-    description: "Helps sinks to resync to external broadcast when BIS or PA unsynced"
-    bug: "363168099"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_sort_scans_to_sync_by_fails"
-    namespace: "bluetooth"
-    description: "Sort scan results for source sync by fails counter"
-    bug: "370639684"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
 }
 
 flag {
@@ -297,3 +267,44 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_broadcast_remove_sink_metadata_on_switch_to_local"
+    namespace: "bluetooth"
+    description: "Allow to remove sink metadata while switching to local broadcast"
+    bug: "404752913"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_broadcast_allow_monitoring_on_resume"
+    namespace: "bluetooth"
+    description: "Allow broadcast monitoring on resume from suspend"
+    bug: "404797794"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_fix_stop_reconfiguration_timeout"
+    namespace: "bluetooth"
+    description: "Fix for stop the reconfiguration timeout"
+    bug: "406570963"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_use_context_type_manager"
+    namespace: "bluetooth"
+    description: "Use brand new context type manager supporting bidirectional GAME use cases"
+    bug: "406589272"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+

@@ -69,6 +69,9 @@ struct formatter<android::bluetooth::BtaStatus> : enum_formatter<android::blueto
 template <>
 struct formatter<android::bluetooth::SocketErrorEnum>
     : enum_formatter<android::bluetooth::SocketErrorEnum> {};
+template <>
+struct formatter<android::bluetooth::CodePathCounterKeyEnum>
+    : enum_formatter<android::bluetooth::CodePathCounterKeyEnum> {};
 }  // namespace std
 
 namespace bluetooth {
@@ -84,27 +87,22 @@ using bluetooth::hci::EventCode;
  */
 static const BytesField byteField(nullptr, 0);
 
-void LogMetricLinkLayerConnectionEvent(const Address* address, uint32_t connection_handle,
+void LogMetricLinkLayerConnectionEvent(const Address& address, uint32_t connection_handle,
                                        android::bluetooth::DirectionEnum direction,
                                        uint16_t link_type, uint32_t hci_cmd, uint16_t hci_event,
                                        uint16_t hci_ble_event, uint16_t cmd_status,
                                        uint16_t reason_code) {
-  int metric_id = 0;
-  if (address != nullptr) {
-    metric_id = MetricIdManager::GetInstance().AllocateId(*address);
-  }
+  int metric_id = address.IsEmpty() ? 0 : MetricIdManager::GetInstance().AllocateId(address);
   int ret = stats_write(BLUETOOTH_LINK_LAYER_CONNECTION_EVENT, byteField, connection_handle,
                         direction, link_type, hci_cmd, hci_event, hci_ble_event, cmd_status,
                         reason_code, metric_id);
   if (ret < 0) {
     log::warn(
             "Failed to log status {} , reason {}, from cmd {}, event {},  ble_event {}, for {}, "
-            "handle "
-            "{}, type {}, error {}",
+            "handle {}, type {}, error {}",
             common::ToHexString(cmd_status), common::ToHexString(reason_code),
             common::ToHexString(hci_cmd), common::ToHexString(hci_event),
-            common::ToHexString(hci_ble_event),
-            address ? address->ToRedactedStringForLogging() : "(NULL)", connection_handle,
+            common::ToHexString(hci_ble_event), address, connection_handle,
             common::ToHexString(link_type), ret);
   }
 }
@@ -453,7 +451,7 @@ void LogMetricBluetoothRemoteSupportedFeatures(const Address& address, uint32_t 
   }
 }
 
-void LogMetricBluetoothCodePathCounterMetrics(int32_t key, int64_t count) {
+void CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum key, int64_t count) {
   int ret = stats_write(BLUETOOTH_CODE_PATH_COUNTER, key, count);
   if (ret < 0) {
     log::warn("Failed counter metrics for {}, count {}, error {}", key, count, ret);
@@ -489,11 +487,7 @@ void LogMetricBluetoothEvent(const Address& address, android::bluetooth::EventTy
     return;
   }
   int metric_id = MetricIdManager::GetInstance().AllocateId(address);
-  int ret = stats_write(BLUETOOTH_CROSS_LAYER_EVENT_REPORTED,
-                        event_type,
-                        state,
-                        0,
-                        metric_id,
+  int ret = stats_write(BLUETOOTH_CROSS_LAYER_EVENT_REPORTED, event_type, state, 0, metric_id,
                         BytesField(nullptr, 0));
   if (ret < 0) {
     log::warn("Failed BluetoothEvent Upload - Address {}, Event_type {}, State {}", address,
@@ -538,8 +532,7 @@ void LogMetricLeAudioConnectionSessionReported(
   std::vector<int32_t> device_metric_id(device_address.size());
   for (uint64_t i = 0; i < device_address.size(); i++) {
     if (!device_address[i].IsEmpty()) {
-      device_metric_id[i] =
-              MetricIdManager::GetInstance().AllocateId(ToGdAddress(device_address[i]));
+      device_metric_id[i] = MetricIdManager::GetInstance().AllocateId(device_address[i]);
     } else {
       device_metric_id[i] = 0;
     }
@@ -569,6 +562,25 @@ void LogMetricLeAudioBroadcastSessionReported(int64_t duration_nanos) {
   int ret = stats_write(LE_AUDIO_BROADCAST_SESSION_REPORTED, duration_nanos);
   if (ret < 0) {
     log::warn("failed for duration={}", duration_nanos);
+  }
+}
+
+void LogMetricBluetoothQualityReport(
+        uint8_t quality_report_id, uint8_t packet_types, uint16_t connection_handle,
+        uint8_t connection_role, int8_t tx_power_level, int8_t rssi, uint8_t snr,
+        uint8_t unused_afh_channel_count, uint8_t afh_select_unideal_channel_count, uint16_t lsto,
+        uint32_t connection_piconet_clock, uint32_t retransmission_count, uint32_t no_rx_count,
+        uint32_t nak_count, uint32_t last_tx_ack_timestamp, uint32_t flow_off_count,
+        uint32_t last_flow_on_timestamp, uint32_t buffer_overflow_bytes,
+        uint32_t buffer_underflow_bytes) {
+  int ret = stats_write(BLUETOOTH_QUALITY_REPORT_REPORTED, quality_report_id, packet_types,
+                        connection_handle, connection_role, tx_power_level, rssi, snr,
+                        unused_afh_channel_count, afh_select_unideal_channel_count, lsto,
+                        connection_piconet_clock, retransmission_count, no_rx_count, nak_count,
+                        last_tx_ack_timestamp, flow_off_count, last_flow_on_timestamp,
+                        buffer_overflow_bytes, buffer_underflow_bytes);
+  if (ret < 0) {
+    log::warn("failed to log BQR event to statsd, error {}", ret);
   }
 }
 

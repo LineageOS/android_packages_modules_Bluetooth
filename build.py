@@ -211,8 +211,9 @@ class HostBuild():
         self.libdir = self.args.libdir
         self.install_dir = os.path.join(self.output_dir, 'install')
 
-        assert os.path.samefile(self.bt_dir,
-                                os.path.dirname(__file__)), "Please rerun bootstrap for the current project!"
+        assert os.path.samefile(
+            self.bt_dir,
+            os.path.dirname(__file__)), "Please rerun bootstrap for the current project!"
 
         # If default target isn't set, build everything
         self.target = 'all'
@@ -229,7 +230,8 @@ class HostBuild():
 
         # Validate platform directory
         assert os.path.isdir(self.platform_dir), 'Platform dir does not exist'
-        assert os.path.isfile(os.path.join(self.platform_dir, '.gn')), 'Platform dir does not have .gn at root'
+        assert os.path.isfile(os.path.join(self.platform_dir,
+                                           '.gn')), 'Platform dir does not have .gn at root'
 
         # Make sure output directory exists (or create it)
         os.makedirs(self.output_dir, exist_ok=True)
@@ -470,7 +472,9 @@ class HostBuild():
 
     def _target_docs(self):
         """Build the Rust docs."""
-        self.run_command('docs', ['cargo', 'doc'], cwd=os.path.join(self.platform_dir, 'bt'), env=self.env)
+        self.run_command('docs', ['cargo', 'doc'],
+                         cwd=os.path.join(self.platform_dir, 'bt'),
+                         env=self.env)
 
     def _target_rust(self):
         """ Build rust artifacts in an already prepared environment.
@@ -491,9 +495,14 @@ class HostBuild():
             rust_test_cmd.append('--release')
 
         if self.args.test_name:
-            rust_test_cmd = rust_test_cmd + [self.args.test_name, "--", "--test-threads=1", "--nocapture"]
+            rust_test_cmd = rust_test_cmd + [
+                self.args.test_name, "--", "--test-threads=1", "--nocapture"
+            ]
 
-        self.run_command('test', rust_test_cmd, cwd=os.path.join(self.platform_dir, 'bt'), env=self.env)
+        self.run_command('test',
+                         rust_test_cmd,
+                         cwd=os.path.join(self.platform_dir, 'bt'),
+                         env=self.env)
 
         # Host tests second based on host test list
         for t in HOST_TESTS:
@@ -576,12 +585,14 @@ class HostBuild():
         """Run cargo bloat on workspace.
         """
         crate_paths = [
-            os.path.join(self.platform_dir, 'bt', 'system', 'gd', 'rust', 'linux', 'mgmt'),
-            os.path.join(self.platform_dir, 'bt', 'system', 'gd', 'rust', 'linux', 'service'),
-            os.path.join(self.platform_dir, 'bt', 'system', 'gd', 'rust', 'linux', 'client')
+            os.path.join(self.platform_dir, 'bt', 'floss', 'rust', 'linux', 'mgmt'),
+            os.path.join(self.platform_dir, 'bt', 'floss', 'rust', 'linux', 'service'),
+            os.path.join(self.platform_dir, 'bt', 'floss', 'rust', 'linux', 'client')
         ]
         for crate in crate_paths:
-            self.run_command('bloat', ['cargo', 'bloat', '--release', '--crates', '--wide'], cwd=crate, env=self.env)
+            self.run_command('bloat', ['cargo', 'bloat', '--release', '--crates', '--wide'],
+                             cwd=crate,
+                             env=self.env)
 
     def _target_clean(self):
         """ Delete the output directory entirely.
@@ -754,16 +765,20 @@ class Bootstrap():
 
                 # Pin to commit.
                 if commit is not None:
-                    subprocess.check_call(['git', 'checkout', commit], cwd=os.path.join(self.git_dir, project))
+                    subprocess.check_call(['git', 'checkout', commit],
+                                          cwd=os.path.join(self.git_dir, project))
 
         # Symlink things
         symlinks = [
-            (os.path.join(self.git_dir, 'platform2', 'common-mk'), os.path.join(self.staging_dir, 'common-mk')),
-            (os.path.join(self.git_dir, 'platform2', 'system_api'), os.path.join(self.staging_dir, 'system_api')),
+            (os.path.join(self.git_dir, 'platform2',
+                          'common-mk'), os.path.join(self.staging_dir, 'common-mk')),
+            (os.path.join(self.git_dir, 'platform2',
+                          'system_api'), os.path.join(self.staging_dir, 'system_api')),
             (os.path.join(self.git_dir, 'platform2', '.gn'), os.path.join(self.staging_dir, '.gn')),
             (os.path.join(self.bt_dir), os.path.join(self.staging_dir, 'bt')),
             (os.path.join(self.git_dir, 'rust_crates'), os.path.join(self.external_dir, 'rust')),
-            (os.path.join(self.git_dir, 'proto_logging'), os.path.join(self.external_dir, 'proto_logging')),
+            (os.path.join(self.git_dir,
+                          'proto_logging'), os.path.join(self.external_dir, 'proto_logging')),
         ]
 
         # Create symlinks
@@ -937,13 +952,19 @@ if __name__ == '__main__':
                         help='Print environment variables used for build.',
                         default=False,
                         action='store_true')
-    parser.add_argument('--no-clang', help='Don\'t use clang compiler.', default=False, action='store_true')
+    parser.add_argument('--no-clang',
+                        help='Don\'t use clang compiler.',
+                        default=False,
+                        action='store_true')
     parser.add_argument('--no-strip',
                         help='Skip stripping binaries during install.',
                         default=False,
                         action='store_true')
     parser.add_argument('--use', help='Set a specific use flag.')
-    parser.add_argument('--notest', help='Don\'t compile test code.', default=False, action='store_true')
+    parser.add_argument('--notest',
+                        help='Don\'t compile test code.',
+                        default=False,
+                        action='store_true')
     parser.add_argument('--test-name', help='Run test with this string in the name.', default=None)
     parser.add_argument('--target', help='Run specific build target')
     parser.add_argument('--sysroot', help='Set a specific sysroot path', default='/')
@@ -954,10 +975,14 @@ if __name__ == '__main__':
                         default=False,
                         action='store_true')
     parser.add_argument('--verbose', help='Verbose logs for build.')
-    parser.add_argument('--rust-debug', help='Build Rust code as debug.', default=False, action='store_true')
+    parser.add_argument('--rust-debug',
+                        help='Build Rust code as debug.',
+                        default=False,
+                        action='store_true')
     parser.add_argument(
         '--partial-staging',
-        help='Bootstrap git repositories with partial clones. Use to speed up initial git clone for automated builds.',
+        help=
+        'Bootstrap git repositories with partial clones. Use to speed up initial git clone for automated builds.',
         default=False,
         action='store_true')
     parser.add_argument('--clone-timeout',
@@ -975,7 +1000,8 @@ if __name__ == '__main__':
         raise Exception("Only x86_64 machines are currently supported by this build script.")
 
     if args.run_bootstrap:
-        bootstrap = Bootstrap(args.bootstrap_dir, os.path.dirname(__file__), args.partial_staging, args.clone_timeout)
+        bootstrap = Bootstrap(args.bootstrap_dir, os.path.dirname(__file__), args.partial_staging,
+                              args.clone_timeout)
         bootstrap.bootstrap()
     elif args.print_env:
         build = HostBuild(args)

@@ -402,7 +402,7 @@ void BleScannerInterfaceImpl::StopSync(uint16_t handle) {
 
 void BleScannerInterfaceImpl::CancelCreateSync(uint8_t sid, RawAddress address) {
   log::info("in shim layer");
-  bluetooth::shim::GetScanning()->CancelCreateSync(sid, ToGdAddress(address));
+  bluetooth::shim::GetScanning()->CancelCreateSync(sid, address);
 }
 
 void BleScannerInterfaceImpl::TransferSync(RawAddress address, uint16_t service_data,
@@ -417,8 +417,8 @@ void BleScannerInterfaceImpl::TransferSync(RawAddress address, uint16_t service_
     return;
   }
 
-  bluetooth::shim::GetScanning()->TransferSync(ToGdAddress(address), p_acl->Handle(), service_data,
-                                               sync_handle, pa_source);
+  bluetooth::shim::GetScanning()->TransferSync(address, p_acl->Handle(), service_data, sync_handle,
+                                               pa_source);
 }
 
 void BleScannerInterfaceImpl::TransferSetInfo(RawAddress address, uint16_t service_data,
@@ -433,14 +433,14 @@ void BleScannerInterfaceImpl::TransferSetInfo(RawAddress address, uint16_t servi
     return;
   }
 
-  bluetooth::shim::GetScanning()->TransferSetInfo(ToGdAddress(address), p_acl->Handle(),
-                                                  service_data, adv_handle, pa_source);
+  bluetooth::shim::GetScanning()->TransferSetInfo(address, p_acl->Handle(), service_data,
+                                                  adv_handle, pa_source);
 }
 
 void BleScannerInterfaceImpl::SyncTxParameters(RawAddress addr, uint8_t mode, uint16_t skip,
                                                uint16_t timeout, int reg_id) {
   log::info("in shim layer");
-  bluetooth::shim::GetScanning()->SyncTxParameters(ToGdAddress(addr), mode, skip, timeout, reg_id);
+  bluetooth::shim::GetScanning()->SyncTxParameters(addr, mode, skip, timeout, reg_id);
 }
 
 void BleScannerInterfaceImpl::RegisterCallbacks(ScanningCallbacks* callbacks) {
@@ -618,7 +618,7 @@ bool BleScannerInterfaceImpl::parse_filter_command(
         ApcfCommand apcf_command) {
   advertising_packet_content_filter_command.filter_type =
           static_cast<bluetooth::hci::ApcfFilterType>(apcf_command.type);
-  bluetooth::hci::Address address = ToGdAddress(apcf_command.address);
+  bluetooth::hci::Address address = apcf_command.address;
   advertising_packet_content_filter_command.address = address;
   advertising_packet_content_filter_command.application_address_type =
           static_cast<bluetooth::hci::ApcfApplicationAddressType>(apcf_command.addr_type);
@@ -744,7 +744,7 @@ void BleScannerInterfaceImpl::handle_remote_properties(RawAddress bd_addr, tBLE_
   }
 
   auto* storage_module = bluetooth::shim::GetStorage();
-  bluetooth::hci::Address address = ToGdAddress(bd_addr);
+  bluetooth::hci::Address address = bd_addr;
 
   // update device type
   auto mutation = storage_module->Modify();

@@ -503,38 +503,47 @@ def hogp_device(device):
     # Create an 'input report' characteristic to send keyboard reports to the host
     input_report_kb_characteristic = Characteristic(
         GATT_REPORT_CHARACTERISTIC,
-        Characteristic.Properties.READ | Characteristic.Properties.WRITE | Characteristic.Properties.NOTIFY,
+        Characteristic.Properties.READ | Characteristic.Properties.WRITE |
+        Characteristic.Properties.NOTIFY,
         Characteristic.READABLE | Characteristic.WRITEABLE,
         bytes([0, 0, 0, 0, 0, 0, 0, 0, 0]),
-        [Descriptor(
-            GATT_REPORT_REFERENCE_DESCRIPTOR,
-            Descriptor.READABLE,
-            bytes([0x01, HID_INPUT_REPORT]),
-        )],
+        [
+            Descriptor(
+                GATT_REPORT_REFERENCE_DESCRIPTOR,
+                Descriptor.READABLE,
+                bytes([0x01, HID_INPUT_REPORT]),
+            )
+        ],
     )
     # Create an 'input report' characteristic to send mouse reports to the host
     input_report_mouse_characteristic = Characteristic(
         GATT_REPORT_CHARACTERISTIC,
-        Characteristic.Properties.READ | Characteristic.Properties.WRITE | Characteristic.Properties.NOTIFY,
+        Characteristic.Properties.READ | Characteristic.Properties.WRITE |
+        Characteristic.Properties.NOTIFY,
         Characteristic.READABLE | Characteristic.WRITEABLE,
         bytes([0, 0, 0, 0]),
-        [Descriptor(
-            GATT_REPORT_REFERENCE_DESCRIPTOR,
-            Descriptor.READABLE,
-            bytes([0x02, HID_INPUT_REPORT]),
-        )],
+        [
+            Descriptor(
+                GATT_REPORT_REFERENCE_DESCRIPTOR,
+                Descriptor.READABLE,
+                bytes([0x02, HID_INPUT_REPORT]),
+            )
+        ],
     )
     # Create an 'output report' characteristic to receive keyboard reports from the host
     output_report_characteristic = Characteristic(
         GATT_REPORT_CHARACTERISTIC,
-        Characteristic.Properties.READ | Characteristic.Properties.WRITE | Characteristic.WRITE_WITHOUT_RESPONSE,
+        Characteristic.Properties.READ | Characteristic.Properties.WRITE |
+        Characteristic.WRITE_WITHOUT_RESPONSE,
         Characteristic.READABLE | Characteristic.WRITEABLE,
         bytes([0]),
-        [Descriptor(
-            GATT_REPORT_REFERENCE_DESCRIPTOR,
-            Descriptor.READABLE,
-            bytes([0x01, HID_OUTPUT_REPORT]),
-        )],
+        [
+            Descriptor(
+                GATT_REPORT_REFERENCE_DESCRIPTOR,
+                Descriptor.READABLE,
+                bytes([0x01, HID_OUTPUT_REPORT]),
+            )
+        ],
     )
 
     # Add the services to the GATT sever
@@ -632,8 +641,8 @@ async def handle_virtual_cable_unplug():
 
 def on_get_report_cb(report_id: int, report_type: int, buffer_size: int):
     retValue = hid_device.GetSetStatus()
-    logging.info("GET_REPORT report_id: " + str(report_id) + "report_type: " + str(report_type) + "buffer_size:" +
-                 str(buffer_size))
+    logging.info("GET_REPORT report_id: " + str(report_id) + "report_type: " + str(report_type) +
+                 "buffer_size:" + str(buffer_size))
     if report_type == Message.ReportType.INPUT_REPORT:
         if report_id == 1:
             retValue.data = bytearray([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
@@ -649,8 +658,8 @@ def on_get_report_cb(report_id: int, report_type: int, buffer_size: int):
 
 def on_set_report_cb(report_id: int, report_type: int, report_size: int, data: bytes):
     retValue = hid_device.GetSetStatus()
-    logging.info("SET_REPORT report_id: " + str(report_id) + "report_type: " + str(report_type) + "report_size " +
-                 str(report_size) + "data:" + str(data))
+    logging.info("SET_REPORT report_id: " + str(report_id) + "report_type: " + str(report_type) +
+                 "report_size " + str(report_size) + "data:" + str(data))
 
     report = ReportEvent()
     report.report_type = report_type
@@ -734,7 +743,8 @@ class HIDService(HIDServicer):
         self.event_queue: Optional[asyncio.Queue[ProtocolModeEvent]] = None
 
     @utils.rpc
-    async def RegisterService(self, request: empty_pb2.Empty, context: grpc.ServicerContext) -> empty_pb2.Empty:
+    async def RegisterService(self, request: empty_pb2.Empty,
+                              context: grpc.ServicerContext) -> empty_pb2.Empty:
 
         if request.service_type == SERVICE_TYPE_HID:
             logging.info(f'Registering HID')
@@ -750,7 +760,8 @@ class HIDService(HIDServicer):
         return empty_pb2.Empty()
 
     @utils.rpc
-    async def ConnectHost(self, request: empty_pb2.Empty, context: grpc.ServicerContext) -> empty_pb2.Empty:
+    async def ConnectHost(self, request: empty_pb2.Empty,
+                          context: grpc.ServicerContext) -> empty_pb2.Empty:
 
         logging.info(f'ConnectHost')
         try:
@@ -770,7 +781,8 @@ class HIDService(HIDServicer):
         return empty_pb2.Empty()
 
     @utils.rpc
-    async def DisconnectHost(self, request: empty_pb2.Empty, context: grpc.ServicerContext) -> empty_pb2.Empty:
+    async def DisconnectHost(self, request: empty_pb2.Empty,
+                             context: grpc.ServicerContext) -> empty_pb2.Empty:
 
         logging.info(f'DisconnectHost')
         try:
@@ -788,7 +800,8 @@ class HIDService(HIDServicer):
         return empty_pb2.Empty()
 
     @utils.rpc
-    async def VirtualCableUnplugHost(self, request: empty_pb2.Empty, context: grpc.ServicerContext) -> empty_pb2.Empty:
+    async def VirtualCableUnplugHost(self, request: empty_pb2.Empty,
+                                     context: grpc.ServicerContext) -> empty_pb2.Empty:
 
         logging.info(f'VirtualCableUnplugHost')
         try:
@@ -805,8 +818,9 @@ class HIDService(HIDServicer):
         return empty_pb2.Empty()
 
     @utils.rpc
-    async def OnSetProtocolMode(self, request: empty_pb2.Empty,
-                                context: grpc.ServicerContext) -> AsyncGenerator[ProtocolModeEvent, None]:
+    async def OnSetProtocolMode(
+            self, request: empty_pb2.Empty,
+            context: grpc.ServicerContext) -> AsyncGenerator[ProtocolModeEvent, None]:
         logging.info(f'OnSetProtocolMode')
 
         if self.event_queue is not None:

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.server.bluetooth
 
 import android.bluetooth.IBluetooth
@@ -81,6 +82,11 @@ class AdapterBinder(rawBinder: IBinder) {
     @Throws(RemoteException::class)
     fun unregAllGattClient(source: AttributionSource) {
         adapterBinder.unregAllGattClient(source)
+    }
+
+    @Throws(RemoteException::class)
+    fun factoryReset() {
+        adapterBinder.onewayFactoryReset()
     }
 
     fun isMediaProfileConnected(source: AttributionSource): Boolean {

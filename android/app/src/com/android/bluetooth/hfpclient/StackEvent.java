@@ -16,14 +16,14 @@
 
 // Defines an event that is sent via a callback from JNI -> Java.
 //
-// See examples in NativeInterface.java
+// See examples in HeadsetClientNativeInterface.java
 package com.android.bluetooth.hfpclient;
 
 import android.bluetooth.BluetoothDevice;
 
 import com.android.internal.annotations.VisibleForTesting;
 
-public class StackEvent {
+class StackEvent {
     // Type of event that signifies a native event and consumed by state machine
     public static final int STACK_EVENT = 100;
 

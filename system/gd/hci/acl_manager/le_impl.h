@@ -39,9 +39,10 @@
 #include "hci/hci_packets.h"
 #include "hci/le_address_manager.h"
 #include "macros.h"
-#include "main/shim/metrics_api.h"
+#include "metrics/bluetooth_event.h"
 #include "os/alarm.h"
 #include "os/handler.h"
+#include "os/metrics.h"
 #include "os/system_properties.h"
 #include "stack/include/btm_ble_api_types.h"
 
@@ -426,7 +427,7 @@ public:
       return;
     }
 
-    bluetooth::shim::LogMetricLeConnectionStatus(address, true /* is_connect */, status);
+    bluetooth::metrics::LogMetricLeConnectionStatus(address, true /* is_connect */, status);
 
     const bool in_filter_accept_list = is_device_in_accept_list(remote_address);
 
@@ -586,8 +587,8 @@ public:
       arm_on_resume_ = true;
       add_device_to_accept_list(remote_address);
     }
-    bluetooth::shim::LogMetricLeConnectionStatus(remote_address.GetAddress(),
-                                                 false /* is_connect */, reason);
+    bluetooth::metrics::LogMetricLeConnectionStatus(remote_address.GetAddress(),
+                                                    false /* is_connect */, reason);
   }
 
   void on_le_connection_update_complete(LeMetaEventView view) {
@@ -725,8 +726,7 @@ public:
   }
 
   void add_device_to_accept_list(AddressWithType address_with_type) {
-    bluetooth::shim::LogMetricLeDeviceInAcceptList(address_with_type.GetAddress(),
-                                                   true /* is_add */);
+    metrics::LogMetricLeDeviceInAcceptList(address_with_type.GetAddress(), true /* is_add */);
     if (connections.alreadyConnected(address_with_type)) {
       log::info("Device already connected, return");
       return;
@@ -749,8 +749,7 @@ public:
   }
 
   void remove_device_from_accept_list(AddressWithType address_with_type) {
-    bluetooth::shim::LogMetricLeDeviceInAcceptList(address_with_type.GetAddress(),
-                                                   false /* is_add */);
+    metrics::LogMetricLeDeviceInAcceptList(address_with_type.GetAddress(), false /* is_add */);
     if (accept_list.find(address_with_type) == accept_list.end()) {
       log::warn("Device not in acceptlist and cannot be removed: {}", address_with_type);
       return;
@@ -1132,9 +1131,9 @@ public:
       remove_device_from_accept_list(address_with_type);
     }
     // Temporary mapping the error code to PAGE_TIMEOUT
-    bluetooth::shim::LogMetricLeConnectionCompletion(address_with_type.GetAddress(),
-                                                     ErrorCode::PAGE_TIMEOUT,
-                                                     true /* is locally initiated */);
+    bluetooth::metrics::LogLeAclCompletionEvent(address_with_type.GetAddress(),
+                                                ErrorCode::PAGE_TIMEOUT,
+                                                true /* is locally initiated */);
     le_client_handler_->Post(common::BindOnce(
             &LeConnectionCallbacks::OnLeConnectFail, common::Unretained(le_client_callbacks_),
             address_with_type, ErrorCode::CONNECTION_ACCEPT_TIMEOUT));

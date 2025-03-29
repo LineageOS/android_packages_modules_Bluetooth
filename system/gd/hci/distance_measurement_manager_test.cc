@@ -47,6 +47,7 @@ namespace {
 static constexpr auto kTimeout = std::chrono::seconds(1);
 static constexpr uint8_t kMaxRetryCounterForCreateConfig = 0x03;
 static constexpr uint8_t kMaxRetryCounterForCsEnable = 0x03;
+static constexpr uint8_t kConnInterval = 24;
 }
 
 namespace bluetooth {
@@ -157,6 +158,19 @@ struct CsProcedureEnableCompleteEvent {
   uint16_t procedure_interval = 2;  // number of acl conn interval
   uint16_t procedure_count = 5;     // 0x0001 to 0xFFFF
   uint16_t max_procedure_len = 10;  // N x 0.625 ms
+};
+
+struct CsSubeventResultEvent {
+  uint8_t config_id = 0;                 // 0 to 3
+  uint16_t start_acl_conn_event = 1000;  // 0x0000 to 0xFFFF
+  uint16_t frequency_compensation = 0;   // 0x58F0(-100ppm) to 0x2710(100ppm) x 0.01ppm
+  uint8_t reference_power_level = 0;     // -127dBm to 20dBm
+  CsProcedureDoneStatus procedure_done_status = CsProcedureDoneStatus::ALL_RESULTS_COMPLETE;
+  CsSubeventDoneStatus subevent_done_status = CsSubeventDoneStatus::ALL_RESULTS_COMPLETE;
+  ProcedureAbortReason procedure_abort_reason = ProcedureAbortReason::NO_ABORT;
+  SubeventAbortReason subevent_abort_reason = SubeventAbortReason::NO_ABORT;
+  uint8_t num_antenna_paths = 4;  //  normal: 0x01 to 0x04, 0x00: no PCT CS step
+  std::vector<LeCsResultDataStructure> result_data_structures;
 };
 
 struct StartMeasurementParameters {
@@ -293,6 +307,18 @@ protected:
             complete_event.max_procedure_len);
   }
 
+  static std::unique_ptr<LeCsSubeventResultBuilder> GetSubeventResultEvent(
+          uint16_t connection_handle, uint16_t procedure_counter,
+          CsSubeventResultEvent subevent_result) {
+    return LeCsSubeventResultBuilder::Create(
+            connection_handle, subevent_result.config_id, subevent_result.start_acl_conn_event,
+            procedure_counter, subevent_result.frequency_compensation,
+            subevent_result.reference_power_level, subevent_result.procedure_done_status,
+            subevent_result.subevent_done_status, subevent_result.procedure_abort_reason,
+            subevent_result.subevent_abort_reason, subevent_result.num_antenna_paths,
+            subevent_result.result_data_structures);
+  }
+
   void StartMeasurement(const StartMeasurementParameters& params) {
     dm_manager_->StartDistanceMeasurement(params.remote_address, params.connection_handle,
                                           params.local_hci_role, params.interval, params.method);
@@ -318,7 +344,7 @@ protected:
             params.remote_address, params.connection_handle,
             /*att_handle=*/0,
             /*vendor_specific_data=*/std::vector<hal::VendorSpecificCharacteristic>(),
-            /*conn_interval=*/24);
+            /*conn_interval=*/kConnInterval);
   }
 
   void StartMeasurementTillReadRemoteCaps(const StartMeasurementParameters& params) {
@@ -364,7 +390,13 @@ protected:
   void StartMeasurementTillSetProcedureParameters(const StartMeasurementParameters& params) {
     StartMeasurementTillSecurityEnable(params);
 
-    test_hci_layer_->GetCommand(OpCode::LE_CS_SET_PROCEDURE_PARAMETERS);
+    auto command_view =
+            LeCsSetProcedureParametersView::Create(DistanceMeasurementCommandView::Create(
+                    test_hci_layer_->GetCommand(OpCode::LE_CS_SET_PROCEDURE_PARAMETERS)));
+    EXPECT_EQ(command_view.IsValid(), true);
+    auto expected_min_procedure_interval =
+            static_cast<uint16_t>(std::round(params.interval / (kConnInterval * 1.25)));
+    EXPECT_EQ(command_view.GetMinProcedureInterval(), expected_min_procedure_interval);
     test_hci_layer_->IncomingEvent(LeCsSetProcedureParametersCompleteBuilder::Create(
             /*num_hci_command_packets=*/static_cast<uint8_t>(0xEE), ErrorCode::SUCCESS,
             params.connection_handle));
@@ -621,6 +653,53 @@ TEST_F(DistanceMeasurementManagerTest, unexpected_procedure_enable_complete_as_d
   test_hci_layer_->IncomingLeMetaEvent(GetProcedureEnableCompleteEvent(
           params.connection_handle, Enable::DISABLED, complete_event));
 
+  sync_client_handler();
+}
+
+TEST_F(DistanceMeasurementManagerTest, schedule_next_cs_procedures) {
+  auto dm_session_future = GetDmSessionFuture();
+  StartMeasurementParameters params;
+  StartMeasurementTillSetProcedureParameters(params);
+  EXPECT_CALL(
+          mock_dm_callbacks_,
+          OnDistanceMeasurementStarted(params.remote_address, DistanceMeasurementMethod::METHOD_CS))
+          .WillOnce([this](const Address& /*address*/, DistanceMeasurementMethod /*method*/) {
+            ASSERT_NE(dm_session_promise_, nullptr);
+            dm_session_promise_->set_value();
+            dm_session_promise_.reset();
+          });
+
+  CsProcedureEnableCompleteEvent complete_event;
+  test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+  test_hci_layer_->IncomingEvent(LeCsProcedureEnableStatusBuilder::Create(
+          /*status=*/ErrorCode::SUCCESS, /*num_hci_command_packets=*/0xff));
+  test_hci_layer_->IncomingLeMetaEvent(GetProcedureEnableCompleteEvent(
+          params.connection_handle, Enable::ENABLED, complete_event));
+  uint16_t procedure_counter = 0;
+  CsSubeventResultEvent subevent_result;
+  for (int i = 0; i < 4; i++) {
+    test_hci_layer_->IncomingLeMetaEvent(
+            GetSubeventResultEvent(params.connection_handle, procedure_counter, subevent_result));
+    procedure_counter += 1;
+  }
+  subevent_result.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  test_hci_layer_->IncomingLeMetaEvent(
+          GetSubeventResultEvent(params.connection_handle, procedure_counter, subevent_result));
+  sync_client_handler();
+
+  test_hci_layer_->AssertNoQueuedCommand();
+
+  subevent_result.procedure_done_status = CsProcedureDoneStatus::ABORTED;
+  test_hci_layer_->IncomingLeMetaEvent(
+          GetSubeventResultEvent(params.connection_handle, procedure_counter, subevent_result));
+  sync_client_handler();
+
+  CommandView command_view = test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+  LeCsProcedureEnableView enable_view =
+          LeCsProcedureEnableView::Create(DistanceMeasurementCommandView::Create(command_view));
+
+  EXPECT_EQ(enable_view.IsValid(), true);
+  EXPECT_EQ(enable_view.GetProcedureEnable(), Enable::ENABLED);
   sync_client_handler();
 }
 

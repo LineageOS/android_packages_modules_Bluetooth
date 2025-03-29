@@ -74,12 +74,10 @@ class AshaGattService(TemplateService):
             if opcode == AshaGattService.OPCODE_START:
                 # Start
                 audio_type = ("Unknown", "Ringtone", "Phone Call", "Media")[value[2]]
-                logger.info(
-                    f"### START: codec={value[1]}, "
-                    f"audio_type={audio_type}, "
-                    f"volume={value[3]}, "
-                    f"otherstate={value[4]}"
-                )
+                logger.info(f"### START: codec={value[1]}, "
+                            f"audio_type={audio_type}, "
+                            f"volume={value[3]}, "
+                            f"otherstate={value[4]}")
                 self.emit(
                     "start",
                     connection,
@@ -98,22 +96,19 @@ class AshaGattService(TemplateService):
 
             # OPCODE_STATUS does not need audio status point update
             if opcode != AshaGattService.OPCODE_STATUS:
-                AsyncRunner.spawn(device.notify_subscribers(self.audio_status_characteristic, force=True))  # type: ignore[no-untyped-call]
+                AsyncRunner.spawn(
+                    device.notify_subscribers(self.audio_status_characteristic,
+                                              force=True))  # type: ignore[no-untyped-call]
 
         def on_read_only_properties_read(connection: Connection) -> bytes:
             value = (
-                bytes(
-                    [
-                        AshaGattService.PROTOCOL_VERSION,  # Version
-                        self.capability,
-                    ]
-                )
-                + bytes(self.hisyncid)
-                + bytes(AshaGattService.FEATURE_MAP)
-                + bytes(AshaGattService.RENDER_DELAY)
-                + bytes(AshaGattService.RESERVED_FOR_FUTURE_USE)
-                + bytes(AshaGattService.SUPPORTED_CODEC_ID)
-            )
+                bytes([
+                    AshaGattService.PROTOCOL_VERSION,  # Version
+                    self.capability,
+                ]) + bytes(self.hisyncid) + bytes(AshaGattService.FEATURE_MAP) +
+                bytes(AshaGattService.RENDER_DELAY) +
+                bytes(AshaGattService.RESERVED_FOR_FUTURE_USE) +
+                bytes(AshaGattService.SUPPORTED_CODEC_ID))
             self.emit("read_only_properties", connection, value)
             return value
 
@@ -132,7 +127,8 @@ class AshaGattService(TemplateService):
             GATT_ASHA_AUDIO_CONTROL_POINT_CHARACTERISTIC,
             Characteristic.WRITE | Characteristic.WRITE_WITHOUT_RESPONSE,
             Characteristic.WRITEABLE,
-            CharacteristicValue(write=on_audio_control_point_write),  # type: ignore[no-untyped-call]
+            CharacteristicValue(
+                write=on_audio_control_point_write),  # type: ignore[no-untyped-call]
         )
         self.audio_status_characteristic = Characteristic(
             GATT_ASHA_AUDIO_STATUS_CHARACTERISTIC,
@@ -149,6 +145,7 @@ class AshaGattService(TemplateService):
 
         # Register an L2CAP CoC server
         def on_coc(channel: Channel) -> None:
+
             def on_data(data: bytes) -> None:
                 logging.debug(f"data received:{data.hex()}")
 
@@ -158,7 +155,8 @@ class AshaGattService(TemplateService):
             channel.sink = on_data  # type: ignore[no-untyped-call]
 
         # let the server find a free PSM
-        self.psm = self.device.register_l2cap_channel_server(self.psm, on_coc, 8)  # type: ignore[no-untyped-call]
+        self.psm = self.device.register_l2cap_channel_server(self.psm, on_coc,
+                                                             8)  # type: ignore[no-untyped-call]
         self.le_psm_out_characteristic = Characteristic(
             GATT_ASHA_LE_PSM_OUT_CHARACTERISTIC,
             Characteristic.READ,
@@ -179,22 +177,15 @@ class AshaGattService(TemplateService):
     def get_advertising_data(self) -> bytes:
         # Advertisement only uses 4 least significant bytes of the HiSyncId.
         return bytes(
-            AdvertisingData(
-                [
-                    (
-                        AdvertisingData.SERVICE_DATA_16_BIT_UUID,
-                        bytes(GATT_ASHA_SERVICE)
-                        + bytes(
-                            [
-                                AshaGattService.PROTOCOL_VERSION,
-                                self.capability,
-                            ]
-                        )
-                        + bytes(self.hisyncid[:4]),
-                    ),
-                ]
-            )
-        )
+            AdvertisingData([
+                (
+                    AdvertisingData.SERVICE_DATA_16_BIT_UUID,
+                    bytes(GATT_ASHA_SERVICE) + bytes([
+                        AshaGattService.PROTOCOL_VERSION,
+                        self.capability,
+                    ]) + bytes(self.hisyncid[:4]),
+                ),
+            ]))
 
 
 class AshaService(AshaServicer):
@@ -204,7 +195,10 @@ class AshaService(AshaServicer):
     asha_service: Optional[AshaGattService]
 
     def __init__(self, device: Device) -> None:
-        self.log = utils.BumbleServerLoggerAdapter(logging.getLogger(), {"service_name": "Asha", "device": device})
+        self.log = utils.BumbleServerLoggerAdapter(logging.getLogger(), {
+            "service_name": "Asha",
+            "device": device
+        })
         self.device = device
         self.asha_service = None
 
@@ -221,8 +215,8 @@ class AshaService(AshaServicer):
 
     @utils.rpc
     async def CaptureAudio(
-        self, request: CaptureAudioRequest, context: grpc.ServicerContext
-    ) -> AsyncGenerator[CaptureAudioResponse, None]:
+            self, request: CaptureAudioRequest,
+            context: grpc.ServicerContext) -> AsyncGenerator[CaptureAudioResponse, None]:
         connection_handle = int.from_bytes(request.connection.cookie.value, "big")
         logging.info(f"CaptureAudioData connection_handle:{connection_handle}")
 
@@ -245,10 +239,9 @@ class AshaService(AshaServicer):
                 audio_payload = data[1:]
                 data_length = int(len(audio_payload) / AshaService.DECODE_FRAME_LENGTH)
                 for i in range(0, data_length):
-                    input_data = audio_payload[
-                        i * AshaService.DECODE_FRAME_LENGTH : i * AshaService.DECODE_FRAME_LENGTH
-                        + AshaService.DECODE_FRAME_LENGTH
-                    ]
+                    input_data = audio_payload[i * AshaService.DECODE_FRAME_LENGTH:i *
+                                               AshaService.DECODE_FRAME_LENGTH +
+                                               AshaService.DECODE_FRAME_LENGTH]
                     decoded_data = decoder.decode_frame(input_data)  # type: ignore
                     output_bytes.extend(decoded_data)
 

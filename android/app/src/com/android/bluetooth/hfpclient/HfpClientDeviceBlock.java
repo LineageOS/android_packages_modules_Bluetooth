@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.hfpclient;
 
 import android.bluetooth.BluetoothDevice;
@@ -37,7 +38,7 @@ import java.util.UUID;
 //
 // Lifecycle of a Device Block is managed entirely by the Service which creates it. In essence it
 // has only the active state otherwise the block should be GCed.
-public class HfpClientDeviceBlock {
+class HfpClientDeviceBlock {
     private static final String TAG = HfpClientDeviceBlock.class.getSimpleName();
 
     private static final String KEY_SCO_STATE = "com.android.bluetooth.hfpclient.SCO_STATE";

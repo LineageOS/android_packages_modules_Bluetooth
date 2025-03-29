@@ -72,9 +72,9 @@
 #include "main/shim/helpers.h"
 #include "main/shim/le_advertising_manager.h"
 #include "main/shim/metric_id_api.h"
-#include "main/shim/metrics_api.h"
 #include "main_thread.h"
 #include "metrics/bluetooth_event.h"
+#include "os/metrics.h"
 #include "os/system_properties.h"
 #include "osi/include/properties.h"
 #include "osi/include/stack_power_telemetry.h"
@@ -574,6 +574,7 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
     state = BT_BOND_STATE_NONE;
   } else if (com::android::bluetooth::flags::reset_security_flags_on_pairing_failure() &&
              state == BT_BOND_STATE_NONE) {
+    log::warn("Clearing security flags for {} on pairing failure", bd_addr);
     get_security_client_interface().BTM_SecClearSecurityFlags(bd_addr);
   }
 
@@ -1126,7 +1127,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
           (p_auth_cmpl->key_type == HCI_LKEY_TYPE_CHANGED_COMB) ||
           (p_auth_cmpl->key_type == HCI_LKEY_TYPE_AUTH_COMB_P_256) ||
           pairing_cb.bond_type == BOND_TYPE_PERSISTENT) {
-        ASSERTC(bd_addr.IsEmpty(), "bd_addr is empty", BT_STATUS_PARM_INVALID);
+        ASSERTC(!bd_addr.IsEmpty(), "bd_addr is empty", BT_STATUS_PARM_INVALID);
         log::debug("Storing link key. key_type=0x{:x}, bond_type={}", p_auth_cmpl->key_type,
                    pairing_cb.bond_type);
         bt_status_t ret = btif_storage_add_bonded_device(
@@ -1972,10 +1973,33 @@ void BTIF_dm_report_inquiry_status_change(tBTM_INQUIRY_STATE status) {
   }
 }
 
-void BTIF_dm_enable() {
-  if (com::android::bluetooth::flags::guest_mode_bond()) {
-    btif_storage_prune_devices();
+static void btif_add_local_irk_to_resolving_list() {
+  /* Bluetooth Core Specification version 5.4
+   *   7.8.5 LE Set Advertising Parameters command
+   *   7.8.53 LE Set Extended Advertising Parameters command
+   *   7.8.64 LE Set Extended Scan Parameters command
+   *   7.8.12 LE Create Connection command
+   *   7.8.66 LE Extended Create Connection command
+   * Set all-zero set to resolving list to make controller generate RPA for
+   * un-direct (broadcast) advertising RPA */
+  if (bluetooth::shim::GetController()->IsRpaGenerationSupported()) {
+    log::info("Support RPA offload, set all-zero set in resolving list");
+    tBLE_BD_ADDR all_zero_address_with_type = {0};
+    const Octet16 all_zero_peer_irk = {0};
+
+    if (com::android::bluetooth::flags::non_zero_local_irk() &&
+        ble_local_key_cb.id_keys.irk == all_zero_peer_irk) {
+      log::warn("Local IRK is all-zero");
+      return;
+    }
+    log::info("");
+    bluetooth::shim::ACL_AddToAddressResolution(all_zero_address_with_type, all_zero_peer_irk,
+                                                ble_local_key_cb.id_keys.irk);
   }
+}
+
+void BTIF_dm_enable() {
+  btif_storage_prune_devices();
 
   BD_NAME bdname;
   bt_property_t prop{
@@ -2016,20 +2040,8 @@ void BTIF_dm_enable() {
   pairing_cb = {};
   pairing_cb.bond_type = BOND_TYPE_PERSISTENT;
 
-  /* Bluetooth Core Specification version 5.4
-   *   7.8.5 LE Set Advertising Parameters command
-   *   7.8.53 LE Set Extended Advertising Parameters command
-   *   7.8.64 LE Set Extended Scan Parameters command
-   *   7.8.12 LE Create Connection command
-   *   7.8.66 LE Extended Create Connection command
-   * Set all-zero set to resolving list to make controller generate RPA for
-   * un-direct (broadcast) advertising RPA */
-  if (bluetooth::shim::GetController()->IsRpaGenerationSupported()) {
-    log::info("Support RPA offload, set all-zero set in resolving list");
-    tBLE_BD_ADDR all_zero_address_with_type = {0};
-    const Octet16 all_zero_peer_irk = {0};
-    bluetooth::shim::ACL_AddToAddressResolution(all_zero_address_with_type, all_zero_peer_irk,
-                                                ble_local_key_cb.id_keys.irk);
+  if (!com::android::bluetooth::flags::non_zero_local_irk()) {
+    btif_add_local_irk_to_resolving_list();
   }
 
   // Enable address consolidation.
@@ -2208,6 +2220,9 @@ void btif_dm_sec_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
       btif_storage_add_ble_local_key(ble_local_key_cb.id_keys.irk, BTIF_DM_LE_LOCAL_KEY_IRK);
       btif_storage_add_ble_local_key(ble_local_key_cb.id_keys.ir, BTIF_DM_LE_LOCAL_KEY_IR);
       btif_storage_add_ble_local_key(ble_local_key_cb.id_keys.dhk, BTIF_DM_LE_LOCAL_KEY_DHK);
+      if (com::android::bluetooth::flags::non_zero_local_irk()) {
+        btif_add_local_irk_to_resolving_list();
+      }
       break;
     case BTA_DM_BLE_LOCAL_ER_EVT:
       log::verbose("BTA_DM_BLE_LOCAL_ER_EVT");
@@ -2291,7 +2306,9 @@ void btif_dm_acl_evt(tBTA_DM_ACL_EVT event, tBTA_DM_ACL* p_data) {
 
     case BTA_DM_LINK_DOWN_EVT: {
       bd_addr = p_data->link_down.bd_addr;
-      btm_set_bond_type_dev(p_data->link_down.bd_addr, BOND_TYPE_UNKNOWN);
+      if (!com::android::bluetooth::flags::temporary_pairing_tracking()) {
+        btm_set_bond_type_dev(p_data->link_down.bd_addr, BOND_TYPE_UNKNOWN);
+      }
       GetInterfaceToProfiles()->onLinkDown(bd_addr, p_data->link_down.transport_link_type);
 
       bt_conn_direction_t direction;
@@ -3491,6 +3508,10 @@ void btif_dm_load_ble_local_keys(void) {
        BT_STATUS_SUCCESS)) {
     ble_local_key_cb.is_id_keys_rcvd = true;
     log::verbose("BLE ID keys loaded");
+  }
+
+  if (com::android::bluetooth::flags::non_zero_local_irk()) {
+    btif_add_local_irk_to_resolving_list();
   }
 }
 void btif_dm_get_ble_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK* p_key_mask, Octet16* p_er,

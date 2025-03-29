@@ -449,7 +449,7 @@ public class ScanControllerTest {
 
     @Test
     public void unregisterScanner() {
-        mScanController.unregisterScanner(TEST_SCANNER_ID, mAttributionSource);
+        mScanController.unregisterScanner(TEST_SCANNER_ID);
 
         verify(mScannerMap).remove(TEST_SCANNER_ID);
         verify(mScanManager).unregisterScanner(TEST_SCANNER_ID);
@@ -501,7 +501,7 @@ public class ScanControllerTest {
 
     @Test
     public void flushPendingBatchResults() {
-        mScanController.flushPendingBatchResults(TEST_SCANNER_ID, mAttributionSource);
+        mScanController.flushPendingBatchResults(TEST_SCANNER_ID);
         verify(mScanManager).flushBatchScanResults(new ScanClient(TEST_SCANNER_ID));
     }
 

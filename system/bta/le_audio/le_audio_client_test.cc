@@ -35,6 +35,7 @@
 #include "btif_storage_mock.h"
 #include "btm_api_mock.h"
 #include "btm_iso_api.h"
+#include "common/le_conn_params.h"
 #include "common/message_loop_thread.h"
 #include "fake_osi.h"
 #include "gatt/database_builder.h"
@@ -54,9 +55,11 @@
 #include "osi/include/properties.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/main_thread.h"
+#include "storage_helper.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_stack_btm_iso.h"
+#include "test/mock/mock_stack_l2cap_interface.h"
 
 #define TEST_BT com::android::bluetooth::flags
 
@@ -103,6 +106,8 @@ constexpr bluetooth::le_audio::types::LeAudioContextType kLeAudioDefaultConfigur
 
 static constexpr char kNotifyUpperLayerAboutGroupBeingInIdleDuringCall[] =
         "persist.bluetooth.leaudio.notify.idle.during.call";
+
+static constexpr char kPropGmapEnabled[] = "bluetooth.profile.gmap.enabled";
 
 // Disables most likely false-positives from base::SplitString()
 extern "C" const char* __asan_default_options();
@@ -712,6 +717,9 @@ protected:
                           } else if (svc->handle == device->pacs->start) {
                             std::tie(status, value) =
                                     device->pacs->OnGetCharacteristicValue(handle);
+                          } else if (svc->handle == device->gmas->start) {
+                            std::tie(status, value) =
+                                    device->gmas->OnGetCharacteristicValue(handle);
                           } else {
                             return;
                           }
@@ -756,6 +764,8 @@ protected:
                             return device.ascs->OnGetCharacteristicValue(handle);
                           } else if (svc->handle == device.pacs->start) {
                             return device.pacs->OnGetCharacteristicValue(handle);
+                          } else if (svc->handle == device.gmas->start) {
+                            return device.gmas->OnGetCharacteristicValue(handle);
                           } else {
                             return std::make_pair(GATT_ERROR, std::vector<uint8_t>());
                           };
@@ -1488,6 +1498,7 @@ protected:
     gatt::SetMockBtaGattInterface(&mock_gatt_interface_);
     gatt::SetMockBtaGattQueue(&mock_gatt_queue_);
     bluetooth::storage::SetMockBtifStorageInterface(&mock_btif_storage_);
+    bluetooth::testing::stack::l2cap::set_interface(&mock_stack_l2cap_interface_);
 
     iso_manager_ = bluetooth::hci::IsoManager::GetInstance();
     ASSERT_NE(iso_manager_, nullptr);
@@ -1596,6 +1607,8 @@ protected:
       bluetooth::le_audio::AudioSetConfigurationProvider::Cleanup();
     }
 
+    bluetooth::testing::stack::l2cap::reset_interface();
+
     iso_manager_->Stop();
     hci::testing::mock_controller_.reset();
   }
@@ -1640,6 +1653,24 @@ protected:
       uint16_t start = 0;
       uint16_t end = 0;
       uint16_t csis_include = 0;
+
+      MOCK_METHOD((std::pair<GattStatus, std::vector<uint8_t>>), OnGetCharacteristicValue,
+                  (uint16_t handle), (override));
+      MOCK_METHOD((void), OnWriteCharacteristic,
+                  (uint16_t handle, std::vector<uint8_t> value, tGATT_WRITE_TYPE write_type,
+                   GATT_WRITE_OP_CB cb, void* cb_data),
+                  (override));
+    };
+
+    struct gmas_mock : public IGattHandlers {
+      // GMAS attribute handles
+      uint16_t start = 0;
+      uint16_t role_char = 0;
+      uint16_t ugt_features_char = 0;
+      uint16_t end = 0;
+
+      // UGT features
+      std::bitset<8> ugt_features = 0;
 
       MOCK_METHOD((std::pair<GattStatus, std::vector<uint8_t>>), OnGetCharacteristicValue,
                   (uint16_t handle), (override));
@@ -1698,13 +1729,15 @@ protected:
                       std::unique_ptr<NiceMock<MockDeviceWrapper::csis_mock>> csis,
                       std::unique_ptr<NiceMock<MockDeviceWrapper::cas_mock>> cas,
                       std::unique_ptr<NiceMock<MockDeviceWrapper::ascs_mock>> ascs,
-                      std::unique_ptr<NiceMock<MockDeviceWrapper::pacs_mock>> pacs)
+                      std::unique_ptr<NiceMock<MockDeviceWrapper::pacs_mock>> pacs,
+                      std::unique_ptr<NiceMock<MockDeviceWrapper::gmas_mock>> gmas)
         : addr(addr) {
       this->services = services;
       this->csis = std::move(csis);
       this->cas = std::move(cas);
       this->ascs = std::move(ascs);
       this->pacs = std::move(pacs);
+      this->gmas = std::move(gmas);
     }
 
     ~MockDeviceWrapper() {
@@ -1712,6 +1745,7 @@ protected:
       Mock::VerifyAndClearExpectations(cas.get());
       Mock::VerifyAndClearExpectations(ascs.get());
       Mock::VerifyAndClearExpectations(pacs.get());
+      Mock::VerifyAndClearExpectations(gmas.get());
     }
 
     RawAddress addr;
@@ -1723,6 +1757,7 @@ protected:
     std::unique_ptr<cas_mock> cas;
     std::unique_ptr<ascs_mock> ascs;
     std::unique_ptr<pacs_mock> pacs;
+    std::unique_ptr<gmas_mock> gmas;
   };
 
   void SyncOnMainLoop() {
@@ -2060,7 +2095,8 @@ protected:
                            std::unique_ptr<NiceMock<MockDeviceWrapper::csis_mock>> csis,
                            std::unique_ptr<NiceMock<MockDeviceWrapper::cas_mock>> cas,
                            std::unique_ptr<NiceMock<MockDeviceWrapper::ascs_mock>> ascs,
-                           std::unique_ptr<NiceMock<MockDeviceWrapper::pacs_mock>> pacs) {
+                           std::unique_ptr<NiceMock<MockDeviceWrapper::pacs_mock>> pacs,
+                           std::unique_ptr<NiceMock<MockDeviceWrapper::gmas_mock>> gmas) {
     gatt::DatabaseBuilder bob;
 
     /* Generic Access Service */
@@ -2212,10 +2248,27 @@ protected:
       }
     }
 
+    if (gmas && gmas->start) {
+      constexpr auto is_primary = true;
+      bob.AddService(gmas->start, gmas->end, bluetooth::le_audio::uuid::kGamingAudioServiceUuid,
+                     is_primary);
+
+      if (gmas->role_char) {
+        bob.AddCharacteristic(gmas->role_char, gmas->role_char + 1,
+                              bluetooth::le_audio::uuid::kRoleCharacteristicUuid,
+                              GATT_CHAR_PROP_BIT_READ);
+      }
+      if (gmas->ugt_features_char) {
+        bob.AddCharacteristic(gmas->ugt_features_char, gmas->ugt_features_char + 1,
+                              bluetooth::le_audio::uuid::kUnicastGameTerminalCharacteristicUuid,
+                              GATT_CHAR_PROP_BIT_READ);
+      }
+    }
+
     // Assign conn_id to a certain device - this does not mean it is connected
     auto dev_wrapper = std::make_unique<NiceMock<MockDeviceWrapper>>(
             addr, bob.Build().Services(), std::move(csis), std::move(cas), std::move(ascs),
-            std::move(pacs));
+            std::move(pacs), std::move(gmas));
     peer_devices.emplace(conn_id, std::move(dev_wrapper));
   }
 
@@ -2224,8 +2277,9 @@ protected:
     auto cas = std::make_unique<NiceMock<MockDeviceWrapper::cas_mock>>();
     auto pacs = std::make_unique<NiceMock<MockDeviceWrapper::pacs_mock>>();
     auto ascs = std::make_unique<NiceMock<MockDeviceWrapper::ascs_mock>>();
+    auto gmas = std::make_unique<NiceMock<MockDeviceWrapper::gmas_mock>>();
     set_sample_database(conn_id, addr, std::move(csis), std::move(cas), std::move(ascs),
-                        std::move(pacs));
+                        std::move(pacs), std::move(gmas));
   }
 
   struct SampleDatabaseParameters {
@@ -2245,6 +2299,7 @@ protected:
     uint8_t rank = 1;
     GattStatus gatt_status = GATT_SUCCESS;
     uint8_t max_supported_codec_frames_per_sdu = 1;
+    std::bitset<8> ugt_features = 0;
   };
 
   void SetSampleDatabaseEarbudsValid(
@@ -2369,8 +2424,25 @@ protected:
       // other params
     }
 
+    auto gmas = std::make_unique<NiceMock<MockDeviceWrapper::gmas_mock>>();
+    auto add_gmap = params.ugt_features.count() != 0;
+    if (add_gmap) {
+      // attribute handles
+      uint16_t handle = 0x00B0;
+      gmas->start = handle++;
+
+      gmas->role_char = handle;
+      handle += 2;
+
+      gmas->ugt_features_char = handle;
+      handle += 2;
+
+      gmas->end = handle;
+      gmas->ugt_features = params.ugt_features;
+    }
+
     set_sample_database(conn_id, addr, std::move(csis), std::move(cas), std::move(ascs),
-                        std::move(pacs));
+                        std::move(pacs), std::move(gmas));
 
     if (add_pacs) {
       uint8_t sample_freq[2];
@@ -2611,6 +2683,24 @@ protected:
                 return std::make_pair(gatt_status, value);
               });
     }
+
+    if (add_gmap) {
+      ON_CALL(*peer_devices.at(conn_id)->gmas, OnGetCharacteristicValue(_))
+              .WillByDefault([this, conn_id, gatt_status](uint16_t handle) {
+                auto& gmas = peer_devices.at(conn_id)->gmas;
+                std::vector<uint8_t> value;
+
+                if (gatt_status == GATT_SUCCESS) {
+                  if (handle == gmas->role_char + 1) {
+                    std::bitset<8> role = 0b0001;  // UG Terminal
+                    value = UINT8_TO_VEC_UINT8((uint8_t)role.to_ulong());
+                  } else if (handle == gmas->ugt_features_char + 1) {
+                    value = UINT8_TO_VEC_UINT8((uint8_t)gmas->ugt_features.to_ulong());
+                  }
+                }
+                return std::make_pair(gatt_status, value);
+              });
+    }
   }
 
   void TestAudioDataTransfer(int group_id, uint8_t cis_count_out, uint8_t cis_count_in,
@@ -2752,6 +2842,7 @@ protected:
   bool empty_sink_pack_;
 
   NiceMock<bluetooth::storage::MockBtifStorageInterface> mock_btif_storage_;
+  NiceMock<bluetooth::testing::stack::l2cap::Mock> mock_stack_l2cap_interface_;
 
   std::map<uint16_t, std::unique_ptr<NiceMock<MockDeviceWrapper>>> peer_devices;
   std::list<int> group_locks;
@@ -2968,6 +3059,24 @@ protected:
 
   void TearDown() override {
     delete group_;
+    UnicastTest::TearDown();
+  }
+
+  const int group_id_ = 0;
+  LeAudioDeviceGroup* group_ = nullptr;
+};
+
+class UnicastTestLockConnParamsForStreaming : public UnicastTest {
+protected:
+  void SetUp() override {
+    UnicastTest::SetUp();
+    group_ = new LeAudioDeviceGroup(group_id_);
+    com::android::bluetooth::flags::provider_->leaudio_use_aggressive_params(true);
+  }
+
+  void TearDown() override {
+    delete group_;
+    com::android::bluetooth::flags::provider_->leaudio_use_aggressive_params(false);
     UnicastTest::TearDown();
   }
 
@@ -13421,4 +13530,214 @@ TEST_F(UnicastTestHandoverMode, UpdateMetadataToNotAllowedContextsInCallMode) {
   EXPECT_CALL(mock_state_machine_, StopStream(_));
   LeAudioClient::Get()->SetInCall(false);
 }
+
+class UnicastTestGmap : public UnicastTest {
+protected:
+  void SetUp() override {
+    UnicastTest::SetUp();
+    com::android::bluetooth::flags::provider_->reset_flags();
+    com::android::bluetooth::flags::provider_->leaudio_gmap_client(true);
+  }
+
+  void TearDown() override {
+    UnicastTest::TearDown();
+    osi_property_set_bool(kPropGmapEnabled, false);
+    com::android::bluetooth::flags::provider_->reset_flags();
+  }
+};
+
+TEST_F(UnicastTestGmap, GmapServiceDiscovery) {
+  log::info("Start with GMAP disabled");
+  osi_property_set_bool(kPropGmapEnabled, false);
+
+  log::info("Setup the remote device");
+  uint16_t conn_id = 1;
+  uint8_t group_id = 2;
+  uint8_t ase_cnt = 2;
+
+  const RawAddress test_address0 = GetTestAddress(0);
+  auto db_params = SampleDatabaseParameters{
+          .conn_id = conn_id,
+          .addr = test_address0,
+          .sink_audio_allocation = codec_spec_conf::kLeAudioLocationStereo,
+          .source_audio_allocation = codec_spec_conf::kLeAudioLocationStereo,
+          .sink_channel_cnt = default_channel_cnt,
+          .source_channel_cnt = default_channel_cnt,
+          .sample_freq_mask = 0x0004,
+          .add_csis = true,
+          .add_cas = true,
+          .add_pacs = true,
+          .add_ascs_cnt = ase_cnt,
+          .set_size = 2,
+          .rank = 1,
+          .gatt_status = GATT_SUCCESS,
+          .max_supported_codec_frames_per_sdu = 1,
+          .ugt_features = 0b111,  // Source | 80kbps_Source | Sink
+  };
+  SetSampleDatabaseEarbudsValid(db_params);
+
+  log::info("Connect device");
+  ConnectLeAudio(test_address0);
+
+  log::info("Verify GMAP service info exists");
+  std::vector<uint8_t> gmap_data;
+  GmapClient gmap_verifier(test_address0);
+
+  LeAudioClient::GetGmapForStorage(test_address0, gmap_data);
+  le_audio::DeserializeGmap(&gmap_verifier, gmap_data);
+  ASSERT_NE(gmap_verifier.getRoleHandle(), 0);
+  ASSERT_NE(gmap_verifier.getUGTFeatureHandle(), 0);
+  // Role and feature characteristics were read
+  ASSERT_FALSE(gmap_verifier.getRole().none());
+  ASSERT_FALSE(gmap_verifier.getUGTFeature().none());
+
+  LeAudioClient::Cleanup();
+  Mock::VerifyAndClearExpectations(&mock_gatt_interface_);
+}
+
+TEST_F(UnicastTestLockConnParamsForStreaming, LockConnParamsForStreaming) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  SetSampleDatabaseEarbudsValid(1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+                                codec_spec_conf::kLeAudioLocationStereo);
+
+  EXPECT_CALL(mock_stack_l2cap_interface_,
+              L2CA_LockBleConnParamsForProfileConnection(test_address0, true))
+          .Times(1);
+  ConnectLeAudio(test_address0);
+}
+
+TEST_F(UnicastTestLockConnParamsForStreaming,
+        LockConnParamsForStreaming_NotLock_CurrConIntval_Greater_Than_Aggressive) {
+  uint16_t current_interval = LeConnectionParameters::GetMaxConnIntervalAggressive() + 10;
+  const RawAddress test_address0 = GetTestAddress(0);
+  SetSampleDatabaseEarbudsValid(1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+                                codec_spec_conf::kLeAudioLocationStereo);
+
+  ON_CALL(mock_stack_l2cap_interface_, L2CA_GetBleConnInterval(test_address0))
+      .WillByDefault(Return(current_interval));
+  EXPECT_CALL(mock_stack_l2cap_interface_,
+              L2CA_LockBleConnParamsForProfileConnection(test_address0, true))
+          .Times(0);
+  ConnectLeAudio(test_address0);
+}
+
+TEST_F(UnicastTestLockConnParamsForStreaming, UnlockConnParamsForStreaming_Timeout) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  SetSampleDatabaseEarbudsValid(1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+                                codec_spec_conf::kLeAudioLocationStereo);
+
+  EXPECT_CALL(mock_stack_l2cap_interface_,
+              L2CA_LockBleConnParamsForProfileConnection(test_address0, true))
+          .Times(1);
+  ConnectLeAudio(test_address0);
+
+  Mock::VerifyAndClearExpectations(&mock_stack_l2cap_interface_);
+
+  // simulate suspend timeout passed, alarm executing
+  EXPECT_CALL(mock_stack_l2cap_interface_,
+              L2CA_LockBleConnParamsForProfileConnection(test_address0, false))
+          .Times(1);
+  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  SyncOnMainLoop();
+}
+
+TEST_F(UnicastTestLockConnParamsForStreaming, UnlockConnParamsForStreaming_Streaming) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  int group_id = bluetooth::groups::kGroupUnknown;
+
+  SetSampleDatabaseEarbudsValid(
+          1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+          codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt, default_channel_cnt, 0x0004,
+          /* source sample freq 16khz */ false /*add_csis*/, true /*add_cas*/, true /*add_pacs*/,
+          default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/, 0 /*rank*/);
+
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
+          .WillOnce(DoAll(SaveArg<1>(&group_id)));
+  EXPECT_CALL(mock_stack_l2cap_interface_,
+              L2CA_LockBleConnParamsForProfileConnection(test_address0, true))
+          .Times(1);
+  ConnectLeAudio(test_address0);
+  ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
+
+  // Audio sessions are started only when device gets active
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(&mock_stack_l2cap_interface_);
+
+  EXPECT_CALL(mock_stack_l2cap_interface_,
+              L2CA_LockBleConnParamsForProfileConnection(test_address0, false))
+          .Times(1);
+  StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
+
+  Mock::VerifyAndClearExpectations(&mock_stack_l2cap_interface_);
+
+  //if streaming again, unlocking is not called repeatedly
+  EXPECT_CALL(mock_stack_l2cap_interface_,
+              L2CA_LockBleConnParamsForProfileConnection(test_address0, false))
+          .Times(0);
+  StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
+}
+
+TEST_F(UnicastTestLockConnParamsForStreaming, UnlockConnParamsForStreaming_TwoEarbuds_Streaming) {
+  uint8_t group_size = 2;
+  int group_id = 2;
+
+  // Report working CSIS
+  ON_CALL(mock_csis_client_module_, IsCsisClientRunning()).WillByDefault(Return(true));
+  ON_CALL(mock_csis_client_module_, GetDesiredSize(group_id))
+          .WillByDefault(Invoke([&](int /*group_id*/) { return group_size; }));
+
+  // First earbud
+  const RawAddress test_address0 = GetTestAddress(0);
+  EXPECT_CALL(mock_stack_l2cap_interface_,
+              L2CA_LockBleConnParamsForProfileConnection(test_address0, true))
+          .Times(1);
+  ConnectCsisDevice(test_address0, 1 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontLeft,
+                    codec_spec_conf::kLeAudioLocationFrontLeft, group_size, group_id, 1 /* rank*/);
+
+  // Second earbud
+  const RawAddress test_address1 = GetTestAddress(1);
+  EXPECT_CALL(mock_stack_l2cap_interface_,
+              L2CA_LockBleConnParamsForProfileConnection(test_address1, true))
+          .Times(1);
+  ConnectCsisDevice(test_address1, 2 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontRight,
+                    codec_spec_conf::kLeAudioLocationFrontRight, group_size, group_id, 2 /* rank*/,
+                    true /*connect_through_csis*/);
+
+  // Start streaming
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(&mock_stack_l2cap_interface_);
+
+  /* Make sure configurations are non empty */
+  btle_audio_codec_config_t call_config = {.codec_type = LE_AUDIO_CODEC_INDEX_SOURCE_LC3,
+                                           .sample_rate = LE_AUDIO_SAMPLE_RATE_INDEX_32000HZ,
+                                           .bits_per_sample = LE_AUDIO_BITS_PER_SAMPLE_INDEX_16,
+                                           .channel_count = LE_AUDIO_CHANNEL_COUNT_INDEX_1,
+                                           .frame_duration = LE_AUDIO_FRAME_DURATION_INDEX_10000US,
+                                           .octets_per_frame = 80};
+
+  EXPECT_CALL(mock_stack_l2cap_interface_,
+              L2CA_LockBleConnParamsForProfileConnection(_, false))
+          .Times(2);
+  StartStreaming(AUDIO_USAGE_VOICE_COMMUNICATION, AUDIO_CONTENT_TYPE_SPEECH, group_id);
+
+  // Suspend
+  LeAudioClient::Get()->GroupSuspend(group_id);
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(&mock_stack_l2cap_interface_);
+
+  //if streaming again, unlocking is not called repeatedly
+  EXPECT_CALL(mock_stack_l2cap_interface_,
+              L2CA_LockBleConnParamsForProfileConnection(_, false))
+          .Times(0);
+  // Resume
+  StartStreaming(AUDIO_USAGE_VOICE_COMMUNICATION, AUDIO_CONTENT_TYPE_SPEECH, group_id);
+  SyncOnMainLoop();
+}
+
 }  // namespace bluetooth::le_audio

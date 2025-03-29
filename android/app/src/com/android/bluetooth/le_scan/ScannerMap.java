@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.le_scan;
 
 import static com.android.bluetooth.Utils.getSystemClock;

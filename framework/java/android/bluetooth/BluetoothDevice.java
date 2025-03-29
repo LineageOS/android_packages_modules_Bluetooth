@@ -94,7 +94,7 @@ import java.util.UUID;
 public final class BluetoothDevice implements Parcelable, Attributable {
     private static final String TAG = BluetoothDevice.class.getSimpleName();
 
-    private static final boolean DBG = false;
+    private static final boolean DBG = Log.isLoggable("bluetooth", Log.DEBUG);
 
     /**
      * Connection state bitmask disconnected bit as returned by getConnectionState.

@@ -22,9 +22,10 @@ source_set("nonstandard_codecs") {
       "a2dp/a2dp_aac_decoder_linux.cc",
       "a2dp/a2dp_aac_encoder_linux.cc",
       "a2dp/a2dp_vendor.cc",
+      "a2dp/a2dp_vendor_aptx_hd_linux.cc",
+
       # Following are unimplemented
       "a2dp/a2dp_vendor_aptx_linux.cc",
-      "a2dp/a2dp_vendor_aptx_hd_linux.cc",
       "a2dp/a2dp_vendor_ldac_linux.cc",
       "a2dp/a2dp_vendor_opus_linux.cc",
     ]
@@ -39,9 +40,7 @@ source_set("nonstandard_codecs") {
       "//bt/system/utils/include",
     ]
 
-    deps = [
-      "//bt/system/stack/mmc",
-    ]
+    deps = [ "//bt/system/stack/mmc" ]
 
     configs += [
       "//bt/system:target_defaults",
@@ -52,7 +51,6 @@ source_set("nonstandard_codecs") {
 
 source_set("stack") {
   sources = [
-    "ais/ais_ble.cc",
     "a2dp/a2dp_api.cc",
     "a2dp/a2dp_codec_config.cc",
     "a2dp/a2dp_ext.cc",
@@ -64,6 +62,7 @@ source_set("stack") {
     "acl/ble_acl.cc",
     "acl/btm_acl.cc",
     "acl/btm_pm.cc",
+    "ais/ais_ble.cc",
     "arbiter/acl_arbiter.cc",
     "avct/avct_api.cc",
     "avct/avct_bcb_act.cc",
@@ -113,18 +112,18 @@ source_set("stack") {
     "btm/btm_sec.cc",
     "btm/btm_sec_cb.cc",
     "btm/btm_security_client_interface.cc",
-    "btm/security_event_parser.cc",
-    "btm/hfp_lc3_encoder_linux.cc",
     "btm/hfp_lc3_decoder_linux.cc",
-    "btm/hfp_msbc_encoder.cc",
+    "btm/hfp_lc3_encoder_linux.cc",
     "btm/hfp_msbc_decoder.cc",
+    "btm/hfp_msbc_encoder.cc",
+    "btm/security_event_parser.cc",
     "btu/btu_hcif.cc",
     "btu/main_thread.cc",
+    "connection_manager/connection_manager.cc",
     "eatt/eatt.cc",
     "gap/gap_ble.cc",
     "gap/gap_conn.cc",
     "gatt/att_protocol.cc",
-    "connection_manager/connection_manager.cc",
     "gatt/gatt_api.cc",
     "gatt/gatt_attr.cc",
     "gatt/gatt_auth.cc",
@@ -216,18 +215,16 @@ source_set("stack") {
   ]
 
   deps = [
-    "//bt/sysprop:libcom.android.sysprop.bluetooth",
-    "//bt/system/gd/crypto_toolbox:crypto_toolbox",
-    "//bt/system/gd/rust/topshim:cxxlibheader",
     ":nonstandard_codecs",
+    "//bt/floss/rust/topshim:cxxlibheader",
+    "//bt/sysprop:libcom.android.sysprop.bluetooth",
     "//bt/system:libbt-platform-protos-lite",
+    "//bt/system/gd/crypto_toolbox:crypto_toolbox",
     "//bt/system/stack/mmc",
     "//bt/system/types",
   ]
   if (use.test) {
-    deps += [
-      ":sco_hci_linux_test",
-    ]
+    deps += [ ":sco_hci_linux_test" ]
   }
 
   configs += [
@@ -239,8 +236,6 @@ source_set("stack") {
 if (use.test) {
   executable("sco_hci_linux_test") {
     sources = [
-      "btm/btm_sco_hci.cc",
-      "test/btm/sco_hci_linux_test.cc",
       "//bt/system/test/common/core_interface.cc",
       "//bt/system/test/common/mock_functions.cc",
       "//bt/system/test/fake/fake_osi.cc",
@@ -252,6 +247,8 @@ if (use.test) {
       "//bt/system/test/mock/mock_osi_list.cc",
       "//bt/system/test/mock/mock_stack_rnr_interface.cc",
       "//bt/system/test/mock/mock_udrv_ulinux_uipc.cc",
+      "btm/btm_sco_hci.cc",
+      "test/btm/sco_hci_linux_test.cc",
     ]
 
     include_dirs = [
@@ -259,12 +256,10 @@ if (use.test) {
       "include",
       "test/common",
     ]
-    libs = [
-      "fmt",
-    ]
+    libs = [ "fmt" ]
     deps = [
-      "//bt/system/log:libbluetooth_log",
       "//bt/system/common",
+      "//bt/system/log:libbluetooth_log",
       "//bt/system/osi",
       "//bt/system/types",
     ]

@@ -12,16 +12,6 @@ flag {
 }
 
 flag {
-    name: "guest_mode_bond"
-    namespace: "bluetooth"
-    description: "Do not remove guest mode bonded devices on BT restart in guest mode"
-    bug: "349882273"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "remove_dup_pairing_response_in_oob_pairing"
     namespace: "bluetooth"
     description: "Avoid sending duplicate pairing response when device is in peripheral role & OOB pairing mode chosen"
@@ -276,6 +266,36 @@ flag {
     namespace: "bluetooth"
     description: "Don't cancel SMP pairing if encryption fails for unrelated device"
     bug: "404658828"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "separate_encryption_queue"
+    namespace: "bluetooth"
+    description: "Create separate pending encryption queue"
+    bug: "405594028"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "ignore_le_smp_conn_when_sm_over_br_progress"
+    namespace: "bluetooth"
+    description: "Ignore LE SMP connection when smp over br is still in progress"
+    bug: "405996470"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "non_bonded_device_properties"
+    namespace: "bluetooth"
+    description: "ACL disconnection should not remove device properties for devices which were never bonded"
+    bug: "406602074"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

@@ -34,7 +34,11 @@ int CustomFieldFixedSize::GenBounds(std::ostream& s, Size start_offset, Size end
                                     Size size) const {
   if (!start_offset.empty()) {
     // Default to start if available.
-    s << "auto " << GetName() << "_it = to_bound + (" << start_offset << ") / 8;";
+    if (!start_offset.has_dynamic()) {
+      s << "auto " << GetName() << "_it = to_bound + " << (start_offset.bits() / 8) << ";";
+    } else {
+      s << "auto " << GetName() << "_it = to_bound + (" << start_offset << ") / 8;";
+    }
   } else if (!end_offset.empty()) {
     Size byte_offset = size + end_offset;
     s << "auto " << GetName() << "_it = to_bound (+ to_bound.NumBytesRemaining() - (" << byte_offset
@@ -47,6 +51,27 @@ int CustomFieldFixedSize::GenBounds(std::ostream& s, Size start_offset, Size end
 
 void CustomFieldFixedSize::GenExtractor(std::ostream& s, int, bool) const {
   s << "*" << GetName() << "_ptr = " << GetName() << "_it.extract<" << GetDataType() << ">();";
+}
+
+void CustomFieldFixedSize::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
+  s << GetDataType() << " " << GetGetterFunctionName() << "() const {";
+  s << "ASSERT(was_validated_);";
+
+  if (!start_offset.empty() && (start_offset.bits() % 8 == 0) && !start_offset.has_dynamic()) {
+    s << "return ((begin() + " << (start_offset.bits() / 8) << ").extract<" << GetDataType()
+      << ">());";
+    s << "}";
+    return;
+  }
+
+  s << "auto to_bound = begin();";
+  int num_leading_bits = GenBounds(s, start_offset, end_offset, GetSize());
+
+  s << GetDataType() << " " << GetName() << "_value{};";
+  s << GetDataType() << "* " << GetName() << "_ptr = &" << GetName() << "_value;";
+  GenExtractor(s, num_leading_bits, false);
+  s << "return " << GetName() << "_value;";
+  s << "}";
 }
 
 bool CustomFieldFixedSize::HasParameterValidator() const { return false; }

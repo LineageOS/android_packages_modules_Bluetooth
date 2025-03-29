@@ -22,13 +22,13 @@
 
 #pragma once
 
+#include <base/thread_annotations.h>
+
 #include "rust/cxx.h"
 #include "stack/include/bt_hdr.h"
 #include "types/raw_address.h"
 
-namespace bluetooth {
-namespace shim {
-namespace arbiter {
+namespace bluetooth::shim::arbiter {
 
 enum class InterceptAction {
   /// The packet should be forwarded to the legacy stack
@@ -37,8 +37,29 @@ enum class InterceptAction {
   DROP
 };
 
+// The backing arbiter implements this interface.
+class ArbiterInterface {
+public:
+  virtual ~ArbiterInterface() = default;
+
+  virtual void OnLeConnect(uint8_t tcb_idx, uint16_t advertiser_id) = 0;
+  virtual void OnLeDisconnect(uint8_t tcb_idx) = 0;
+  virtual InterceptAction InterceptPacket(uint8_t tcb_idx, rust::Vec<uint8_t> buffer);
+
+  virtual void OnOutgoingMtuReq(uint8_t tcb_idx) = 0;
+  virtual void OnIncomingMtuResp(uint8_t tcb_idx, size_t mtu) = 0;
+  virtual void OnIncomingMtuReq(uint8_t tcb_idx, size_t mtu) = 0;
+};
+
 class AclArbiter {
 public:
+  // Sets the backing arbiter. If arbiter == nullptr, the arbiter will default to forwarding
+  // packets.
+  void set_arbiter(ArbiterInterface* arbiter) const {
+    std::lock_guard lock(mutex_);
+    arbiter_ = arbiter;
+  }
+
   void OnLeConnect(uint8_t tcb_idx, uint16_t advertiser_id);
   void OnLeDisconnect(uint8_t tcb_idx);
   InterceptAction InterceptAttPacket(uint8_t tcb_idx, const BT_HDR* packet);
@@ -49,24 +70,15 @@ public:
 
   void SendPacketToPeer(uint8_t tcb_idx, ::rust::Vec<uint8_t> buffer);
 
-  AclArbiter() = default;
-  AclArbiter(AclArbiter&& other) = default;
-  AclArbiter& operator=(AclArbiter&& other) = default;
-  ~AclArbiter() = default;
+private:
+  // NOTE: These are `mutable` because `set_arbiter` above is `const` which helps when referencing
+  // from within Rust.
+  mutable std::mutex mutex_;
+  mutable ArbiterInterface* arbiter_ GUARDED_BY(mutex_) = nullptr;
 };
-
-void StoreCallbacksFromRust(
-        ::rust::Fn<void(uint8_t tcb_idx, uint8_t advertiser)> on_le_connect,
-        ::rust::Fn<void(uint8_t tcb_idx)> on_le_disconnect,
-        ::rust::Fn<InterceptAction(uint8_t tcb_idx, ::rust::Vec<uint8_t> buffer)> intercept_packet,
-        ::rust::Fn<void(uint8_t tcb_idx)> on_outgoing_mtu_req,
-        ::rust::Fn<void(uint8_t tcb_idx, size_t mtu)> on_incoming_mtu_resp,
-        ::rust::Fn<void(uint8_t tcb_idx, size_t mtu)> on_incoming_mtu_req);
 
 void SendPacketToPeer(uint8_t tcb_idx, ::rust::Vec<uint8_t> buffer);
 
 AclArbiter& GetArbiter();
 
-}  // namespace arbiter
-}  // namespace shim
-}  // namespace bluetooth
+}  // namespace bluetooth::shim::arbiter

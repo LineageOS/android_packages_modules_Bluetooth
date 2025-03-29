@@ -41,6 +41,7 @@
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_cb.h"
 #include "stack/btm/btm_sec_int_types.h"
+#include "stack/l2cap/l2c_api.h"
 #include "stack/btm/security_device_record.h"
 #include "stack/eatt/eatt.h"
 #include "stack/include/acl_api.h"
@@ -59,6 +60,7 @@
 #include "stack/include/l2cap_security_interface.h"
 #include "stack/include/smp_api.h"
 #include "stack/include/smp_api_types.h"
+#include "stack/l2cap/l2c_int.h"
 #include "types/raw_address.h"
 
 using namespace bluetooth;
@@ -148,18 +150,16 @@ void BTM_SecAddBleDevice(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
  *
  ******************************************************************************/
 bool BTM_GetRemoteDeviceName(const RawAddress& bd_addr, BD_NAME bd_name) {
-  log::verbose("bd_addr:{}", bd_addr);
-
-  bool ret = FALSE;
-  bt_bdname_t bdname;
+  bool ret = false;
+  bt_bdname_t bdname = {};
   bt_property_t prop_name;
   BTIF_STORAGE_FILL_PROPERTY(&prop_name, BT_PROPERTY_BDNAME, sizeof(bt_bdname_t), &bdname);
 
   if (btif_storage_get_remote_device_property(&bd_addr, &prop_name) == BT_STATUS_SUCCESS) {
-    log::verbose("NV name={}", reinterpret_cast<const char*>(bdname.name));
     bd_name_copy(bd_name, bdname.name);
-    ret = TRUE;
+    ret = true;
   }
+  log::verbose("bd_addr:{} name:{}", bd_addr, reinterpret_cast<const char*>(bdname.name));
   return ret;
 }
 
@@ -573,7 +573,8 @@ bool BTM_ReadConnectedTransportAddress(RawAddress* remote_bda, tBT_TRANSPORT tra
   return false;
 }
 
-tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr, uint16_t tx_pdu_length) {
+tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr, uint16_t tx_pdu_length,
+                                 bool is_privileged_client) {
   if (!bluetooth::shim::GetController()->SupportsBleDataPacketLengthExtension()) {
     log::info("Local controller does not support le packet extension");
     return tBTM_STATUS::BTM_ILLEGAL_VALUE;
@@ -587,13 +588,31 @@ tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr, uint16_t tx_pdu_leng
     return tBTM_STATUS::BTM_UNKNOWN_ADDR;
   }
 
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_LE);
+  if (p_lcb == nullptr) {
+    log::error("L2CAP lcb for {} not found", bd_addr);
+    return tBTM_STATUS::BTM_UNKNOWN_ADDR;
+  }
+
   if (tx_pdu_length > BTM_BLE_DATA_SIZE_MAX) {
     tx_pdu_length = BTM_BLE_DATA_SIZE_MAX;
   } else if (tx_pdu_length < BTM_BLE_DATA_SIZE_MIN) {
     tx_pdu_length = BTM_BLE_DATA_SIZE_MIN;
   }
 
-  if (p_dev_rec->get_suggested_tx_octets() >= tx_pdu_length) {
+  if (com::android::bluetooth::flags::set_max_data_length_for_lecoc() &&
+      p_lcb->is_datalen_set_by_privileged_client() && !is_privileged_client) {
+    log::info(
+            "Data length set by prev client can't be overridden by non-privileged clienit, "
+            "currently set to {}",
+            p_dev_rec->get_suggested_tx_octets());
+    return tBTM_STATUS::BTM_MODE_UNSUPPORTED;
+  }
+
+  /* privileged client can override to have lesser Data length & this can happen
+   * multiple times from privileged clients.
+   */
+  if (p_dev_rec->get_suggested_tx_octets() >= tx_pdu_length && !is_privileged_client) {
     log::info("Suggested TX octet already set to controller {} >= {}",
               p_dev_rec->get_suggested_tx_octets(), tx_pdu_length);
     return tBTM_STATUS::BTM_SUCCESS;
@@ -631,6 +650,9 @@ tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr, uint16_t tx_pdu_leng
 
   btsnd_hcic_ble_set_data_length(hci_handle, tx_pdu_length, tx_time);
   p_dev_rec->set_suggested_tx_octect(tx_pdu_length);
+  if (is_privileged_client) {
+    p_lcb->set_is_datalen_set_by_privileged_client(true);
+  }
 
   return tBTM_STATUS::BTM_SUCCESS;
 }
@@ -1210,17 +1232,19 @@ void btm_ble_ltk_request(uint16_t handle, BT_OCTET8 rand, uint16_t ediv) {
   tBTM_SEC_CB* p_cb = &btm_sec_cb;
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
 
-  log::verbose("handle:0x{:x}", handle);
-
   p_cb->ediv = ediv;
-
   memcpy(p_cb->enc_rand, rand, BT_OCTET8_LEN);
 
-  if (p_dev_rec != NULL) {
-    if (!smp_proc_ltk_request(p_dev_rec->bd_addr)) {
-      btm_ble_ltk_request_reply(p_dev_rec->bd_addr, false, Octet16{0});
-    }
+  if (p_dev_rec == NULL) {
+    log::warn("No device found for handle 0x{:x}", handle);
+    return;
+  } else if(smp_proc_ltk_request(p_dev_rec->bd_addr)) {
+    log::warn("Failed to process LTK request for device {}, handle {}", p_dev_rec->bd_addr, handle);
+    return;
   }
+
+  log::verbose("handle 0x{:x}", handle);
+  btm_ble_ltk_request_reply(p_dev_rec->bd_addr, false, Octet16{0});
 }
 
 /** This function is called to start LE encryption.
@@ -1731,6 +1755,12 @@ static void btm_ble_complete_evt(const RawAddress& bd_addr, tBTM_SEC_DEV_REC* p_
 
   if (res != tBTM_STATUS::BTM_SUCCESS && p_data->complt.reason != SMP_CONN_TOUT) {
     log::verbose("Pairing failed - prepare to remove ACL");
+
+    if (p_data->complt.reason == SMP_RSP_TIMEOUT) {
+      stack::l2cap::get_interface().L2CA_SetIdleTimeoutByBdAddr(p_dev_rec->bd_addr, 0,
+                                                                 BT_TRANSPORT_LE);
+    }
+
     l2cu_start_post_bond_timer(p_dev_rec->ble_hci_handle);
   }
 

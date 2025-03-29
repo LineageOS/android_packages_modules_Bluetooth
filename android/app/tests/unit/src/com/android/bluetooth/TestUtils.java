@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -23,6 +24,8 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 import android.annotation.IntRange;
+import android.annotation.NonNull;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
@@ -124,6 +127,24 @@ public class TestUtils {
                         .getSystemService(BluetoothManager.class)
                         .getAdapter()
                         .getRemoteDevice(String.format("00:01:02:03:04:%02X", id));
+        assertThat(testDevice).isNotNull();
+        return testDevice;
+    }
+
+    /**
+     * Create a test device.
+     *
+     * @param address the test device address string.
+     * @return {@link BluetoothDevice} test device for the device address.
+     */
+    public static BluetoothDevice getTestDevice(@NonNull String address) {
+        assertThat(BluetoothAdapter.checkBluetoothAddress(address)).isTrue();
+        BluetoothDevice testDevice =
+                InstrumentationRegistry.getInstrumentation()
+                        .getTargetContext()
+                        .getSystemService(BluetoothManager.class)
+                        .getAdapter()
+                        .getRemoteDevice(address);
         assertThat(testDevice).isNotNull();
         return testDevice;
     }

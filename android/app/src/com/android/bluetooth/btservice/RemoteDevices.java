@@ -65,6 +65,7 @@ import com.android.bluetooth.hfp.HeadsetHalConstants;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.build.SdkLevel;
 
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -97,9 +98,8 @@ public class RemoteDevices {
     private static final int MESSAGE_UUID_STATUS_TIMEOUT = 1;
     private static final String LOG_SOURCE_DIS = "DIS";
 
-    private final HashMap<String, DeviceProperties> mDevices;
+    private final LinkedHashMap<String, DeviceProperties> mDevices;
     private final HashMap<String, String> mDualDevicesMap;
-    private final ArrayDeque<String> mDeviceQueue;
 
     /**
      * Bluetooth HFP v1.8 specifies the Battery Charge indicator of AG can take values from {@code
@@ -175,9 +175,8 @@ public class RemoteDevices {
         mAdapter = service.getSystemService(BluetoothManager.class).getAdapter();
         mAdapterService = service;
         mSdpTracker = new ArrayList<>();
-        mDevices = new HashMap<>();
+        mDevices = new LinkedHashMap<>(MAX_DEVICE_QUEUE_SIZE);
         mDualDevicesMap = new HashMap<>();
-        mDeviceQueue = new ArrayDeque<>();
         mHandler = new RemoteDevicesHandler(looper);
         mMainHandler = new Handler(Looper.getMainLooper());
     }
@@ -226,7 +225,6 @@ public class RemoteDevices {
         }
 
         mDualDevicesMap.clear();
-        mDeviceQueue.clear();
     }
 
     @Override
@@ -308,7 +306,7 @@ public class RemoteDevices {
     DeviceProperties addDeviceProperties(byte[] address) {
         synchronized (mDevices) {
             String key = Utils.getAddressStringFromByte(address);
-            if (Flags.fixAddDeviceProperties() && mDevices.containsKey(key)) {
+            if (mDevices.containsKey(key)) {
                 debugLog("Properties for device " + key + " are already added");
                 return mDevices.get(key);
             }
@@ -319,17 +317,26 @@ public class RemoteDevices {
 
             DeviceProperties pv = mDevices.put(key, prop);
 
-            if (pv == null) {
-                mDeviceQueue.offer(key);
-                if (mDeviceQueue.size() > MAX_DEVICE_QUEUE_SIZE) {
-                    String deleteKey = mDeviceQueue.poll();
-                    for (BluetoothDevice device : mAdapterService.getBondedDevices()) {
-                        if (device.getAddress().equals(deleteKey)) {
-                            return prop;
-                        }
+            // If new device causes overflow, remove the oldest non-bonded device
+            if (pv == null && mDevices.size() >= MAX_DEVICE_QUEUE_SIZE) {
+                String eldestAddress = null;
+                for (Map.Entry<String, DeviceProperties> entry : mDevices.entrySet()) {
+                    // Device to remove should not be bonded or same as the new device
+                    if (entry.getValue().getBondState() == BluetoothDevice.BOND_NONE
+                            && !entry.getKey().equals(key)) {
+                        eldestAddress = entry.getKey();
+                        break;
                     }
-                    debugLog("Removing device " + deleteKey + " from property map");
-                    mDevices.remove(deleteKey);
+                }
+
+                if (eldestAddress != null) {
+                    mDevices.remove(eldestAddress);
+                    debugLog(
+                            "Ejected "
+                                    + BluetoothUtils.toAnonymizedAddress(eldestAddress)
+                                    + " from property map");
+                } else {
+                    warnLog("No non-bonded device to eject");
                 }
             }
             return prop;
@@ -338,6 +345,9 @@ public class RemoteDevices {
 
     class DeviceProperties {
         private static final int MAX_PACKAGE_NAMES = 4;
+        private static final int BONDING_INITIATOR_NONE = 0;
+        private static final int BONDING_INITIATOR_LOCAL = 1;
+        private static final int BONDING_INITIATOR_REMOTE = 2;
         private String mName;
         private byte[] mAddress;
         private String mIdentityAddress;
@@ -349,7 +359,7 @@ public class RemoteDevices {
         private short mRssi;
         private String mAlias;
         private BluetoothDevice mDevice;
-        private boolean mIsBondingInitiatedLocally;
+        private int mBondingInitiator;
         private int mBatteryLevelFromHfp = BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
         private int mBatteryLevelFromBatteryService = BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
         private boolean mIsCoordinatedSetMember;
@@ -715,6 +725,11 @@ public class RemoteDevices {
                     mUuidsBrEdr = null;
                     mUuidsLe = null;
                     mAlias = null;
+                } else if (newBondState == BluetoothDevice.BOND_BONDED
+                        && getBondingInitiator() == BONDING_INITIATOR_NONE) {
+                    // Device bonded but not initiated locally. This may happen if remote device
+                    // initiated bonded or bonded device was loaded on BT restart.
+                    setBondingInitiatedLocally(false);
                 }
             }
         }
@@ -741,16 +756,29 @@ public class RemoteDevices {
          */
         void setBondingInitiatedLocally(boolean isBondingInitiatedLocally) {
             synchronized (mObject) {
-                this.mIsBondingInitiatedLocally = isBondingInitiatedLocally;
+                if (isBondingInitiatedLocally) {
+                    this.mBondingInitiator = BONDING_INITIATOR_LOCAL;
+                } else {
+                    this.mBondingInitiator = BONDING_INITIATOR_REMOTE;
+                }
             }
         }
 
         /**
-         * @return the isBondingInitiatedLocally
+         * @return the mBondingInitiator
+         */
+        int getBondingInitiator() {
+            synchronized (mObject) {
+                return mBondingInitiator;
+            }
+        }
+
+        /**
+         * @return whether the current bonding attempt is initiated locally
          */
         boolean isBondingInitiatedLocally() {
             synchronized (mObject) {
-                return mIsBondingInitiatedLocally;
+                return mBondingInitiator == BONDING_INITIATOR_LOCAL;
             }
         }
 
@@ -1414,7 +1442,12 @@ public class RemoteDevices {
                 // Send PAIRING_CANCEL intent to dismiss any dialog requesting bonding.
                 sendPairingCancelIntent(device);
             } else if (getBondState(device) == BluetoothDevice.BOND_NONE) {
-                removeAddressMapping(Utils.getAddressStringFromByte(address));
+                // Don't remove device properties if bonding never attempted
+                if (!Flags.nonBondedDeviceProperties()
+                        || deviceProperties.getBondingInitiator()
+                                != DeviceProperties.BONDING_INITIATOR_NONE) {
+                    removeDeviceProperties(Utils.getAddressStringFromByte(address));
+                }
             }
             if (state == BluetoothAdapter.STATE_ON || state == BluetoothAdapter.STATE_TURNING_OFF) {
                 mAdapterService.notifyAclDisconnected(device, transportLinkType);
@@ -1437,7 +1470,7 @@ public class RemoteDevices {
 
             if (mAdapterService.isAllProfilesUnknown(device)) {
                 DeviceProperties deviceProp = getDeviceProperties(device);
-                if (deviceProp != null) {
+                if (deviceProp != null && deviceProp.isBondingInitiatedLocally()) {
                     deviceProp.setBondingInitiatedLocally(false);
                 }
             }
@@ -1534,7 +1567,7 @@ public class RemoteDevices {
                 intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
     }
 
-    private void removeAddressMapping(String address) {
+    private void removeDeviceProperties(String address) {
         DeviceProperties deviceProperties = mDevices.get(address);
         if (deviceProperties != null) {
             String pseudoAddress = mDualDevicesMap.get(address);
@@ -1555,9 +1588,10 @@ public class RemoteDevices {
             }
         }
 
+        Log.i(TAG, "removeDeviceProperties: " + BluetoothUtils.toAnonymizedAddress(address));
+
         synchronized (mDevices) {
             mDevices.remove(address);
-            mDeviceQueue.remove(address); // Remove from LRU cache
 
             // Remove from dual mode device mappings
             mDualDevicesMap.values().remove(address);
@@ -1569,7 +1603,7 @@ public class RemoteDevices {
         String address = device.getAddress();
 
         if (newState == BluetoothDevice.BOND_NONE) {
-            removeAddressMapping(address);
+            removeDeviceProperties(address);
         }
     }
 
@@ -2112,5 +2146,117 @@ public class RemoteDevices {
 
     private static void warnLog(String msg) {
         Log.w(TAG, msg);
+    }
+
+    private static String deviceTypeToString(int deviceType) {
+        switch (deviceType) {
+            case BluetoothDevice.DEVICE_TYPE_UNKNOWN:
+                return " ???? ";
+            case BluetoothDevice.DEVICE_TYPE_CLASSIC:
+                return "BR/EDR";
+            case BluetoothDevice.DEVICE_TYPE_LE:
+                return "  LE  ";
+            case BluetoothDevice.DEVICE_TYPE_DUAL:
+                return " DUAL ";
+            default:
+                return "Invalid device type: " + deviceType;
+        }
+    }
+
+    private static String addressTypeToString(int addressType) {
+        switch (addressType) {
+            case BluetoothDevice.ADDRESS_TYPE_PUBLIC:
+                return "Public ";
+            case BluetoothDevice.ADDRESS_TYPE_RANDOM:
+                return "Random ";
+            default:
+                return "Unknown";
+        }
+    }
+
+    protected void dump(PrintWriter writer) {
+        int bondedCount = 0;
+        int knownCount = 0;
+        StringBuilder sbBonded = new StringBuilder();
+        StringBuilder sbKnown = new StringBuilder();
+        for (Map.Entry<String, DeviceProperties> entry : mDevices.entrySet()) {
+            String address = entry.getKey();
+            DeviceProperties deviceProperties = entry.getValue();
+            if (address == null || deviceProperties == null) {
+                continue;
+            }
+
+            boolean bonded = deviceProperties.getBondState() == BluetoothDevice.BOND_BONDED;
+            String identityAddress = deviceProperties.getIdentityAddress();
+            String anonAddress = BluetoothUtils.toAnonymizedAddress(address);
+            String anonIdentityAddress =
+                    identityAddress != null
+                            ? BluetoothUtils.toAnonymizedAddress(identityAddress)
+                            : bonded ? anonAddress : "XX:XX:XX:XX:XX:XX";
+
+            boolean connectedBrEdr =
+                    deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_BREDR)
+                            != BluetoothDevice.ERROR;
+            boolean connectedLe =
+                    deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_LE)
+                            != BluetoothDevice.ERROR;
+
+            StringBuilder sb = bonded ? sbBonded : sbKnown;
+            sb.append("    ")
+                    .append(anonAddress)
+                    .append(" => ")
+                    .append(anonIdentityAddress)
+                    .append("(")
+                    .append(addressTypeToString(deviceProperties.getIdentityAddressType()))
+                    .append(")")
+                    .append(" [")
+                    .append(deviceTypeToString(deviceProperties.getDeviceType()))
+                    .append("] [0x")
+                    .append(String.format("%06X", deviceProperties.getBluetoothClass()))
+                    .append("] [ACL BR/EDR:")
+                    .append(connectedBrEdr ? "Y" : "N")
+                    .append(" LE:")
+                    .append(connectedLe ? "Y" : "N")
+                    .append("] ")
+                    .append(deviceProperties.getName())
+                    .append("\n");
+
+            ParcelUuid[] uuidsBrEdr = deviceProperties.getUuidsBrEdr();
+            if (uuidsBrEdr != null) {
+                sb.append("        [BR/EDR UUIDs]: ");
+                for (ParcelUuid uuid : deviceProperties.getUuidsBrEdr()) {
+                    sb.append(uuid.toString()).append(" ");
+                }
+                sb.append("\n");
+            }
+
+            ParcelUuid[] uuidsLe = deviceProperties.getUuidsLe();
+            if (uuidsLe != null) {
+                sb.append("        [LE UUIDs    ]: ");
+                for (ParcelUuid uuid : deviceProperties.getUuidsLe()) {
+                    sb.append(uuid.toString()).append(" ");
+                }
+                sb.append("\n");
+            }
+
+            String[] packages = deviceProperties.getPackages();
+            if (packages.length > 0) {
+                sb.append("        [Packages    ]: ").append(Arrays.toString(packages)).append("\n");
+            }
+
+            if (bonded) {
+                bondedCount++;
+            } else {
+                knownCount++;
+            }
+        }
+
+        writer.println("");
+        writer.println(TAG);
+        writer.println("  Bonded devices: " + bondedCount);
+        writer.println(sbBonded.toString());
+        writer.println("  Other devices: " + knownCount);
+        writer.println(sbKnown.toString());
+        writer.println("");
     }
 }

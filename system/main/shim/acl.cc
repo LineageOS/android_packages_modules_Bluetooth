@@ -61,6 +61,7 @@
 #include "osi/include/properties.h"
 #include "stack/acl/acl.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/connection_manager/connection_manager.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/main_thread.h"
@@ -984,7 +985,7 @@ struct shim::Acl::impl {
     handle_to_classic_connection_map_[handle]->SetConnectionEncryption(enable);
   }
 
-  void disconnect_classic(uint16_t handle, tHCI_STATUS reason, std::string comment) {
+  void disconnect_classic(uint16_t handle, tHCI_STATUS reason, const std::string& comment) {
     auto connection = handle_to_classic_connection_map_.find(handle);
     if (connection != handle_to_classic_connection_map_.end()) {
       auto remote_address = connection->second->GetRemoteAddress();
@@ -999,21 +1000,25 @@ struct shim::Acl::impl {
     }
   }
 
-  void disconnect_le(uint16_t handle, tHCI_STATUS reason, std::string comment) {
+  void disconnect_le(uint16_t handle, tHCI_STATUS reason, const std::string& comment) {
     auto connection = handle_to_le_connection_map_.find(handle);
-    if (connection != handle_to_le_connection_map_.end()) {
-      auto remote_address_with_type = connection->second->GetRemoteAddressWithType();
-      GetAclManager()->RemoveFromBackgroundList(remote_address_with_type);
-      connection->second->InitiateDisconnect(ToDisconnectReasonFromLegacy(reason));
-      log::debug("Disconnection initiated le remote:{} handle:{}", remote_address_with_type,
-                 handle);
-      BTM_LogHistory(kBtmLogTag, ToLegacyAddressWithType(remote_address_with_type),
-                     "Disconnection initiated",
-                     std::format("Le reason:{} comment:{}", hci_status_code_text(reason), comment));
-      le_acl_disconnect_reason_.Put(comment);
-    } else {
+    if (connection == handle_to_le_connection_map_.end()) {
       log::warn("Unable to disconnect unknown le connection handle:0x{:04x}", handle);
+      return;
     }
+
+    auto remote_address_with_type = connection->second->GetRemoteAddressWithType();
+    if (com::android::bluetooth::flags::remove_device_with_connection_manager()) {
+      connection_manager::remove_unconditional(ToRawAddress(remote_address_with_type.GetAddress()));
+    } else {
+      GetAclManager()->RemoveFromBackgroundList(remote_address_with_type);
+    }
+    connection->second->InitiateDisconnect(ToDisconnectReasonFromLegacy(reason));
+    log::debug("Disconnection initiated le remote:{} handle:{}", remote_address_with_type, handle);
+    BTM_LogHistory(kBtmLogTag, ToLegacyAddressWithType(remote_address_with_type),
+                   "Disconnection initiated",
+                   std::format("Le reason:{} comment:{}", hci_status_code_text(reason), comment));
+    le_acl_disconnect_reason_.Put(comment);
   }
 
   void update_connection_parameters(uint16_t handle, uint16_t conn_int_min, uint16_t conn_int_max,
@@ -1073,7 +1078,7 @@ struct shim::Acl::impl {
   void get_advertising_set_connected_to(const RawAddress& remote_bda,
                                         std::promise<std::optional<uint8_t>> promise) {
     log::debug("get_advertising_set_connected_to {}", remote_bda);
-    auto remote_address = ToGdAddress(remote_bda);
+    bluetooth::hci::Address remote_address = remote_bda;
     for (auto& [handle, connection] : handle_to_le_connection_map_) {
       if (connection->GetRemoteAddressWithType().GetAddress() == remote_address) {
         promise.set_value(connection->GetAdvertisingSetConnectedTo());
@@ -1552,11 +1557,11 @@ void shim::Acl::OnLeConnectFail(hci::AddressWithType address_with_type, hci::Err
                  std::format("le reason:{}", hci::ErrorCodeText(reason)));
 }
 
-void shim::Acl::DisconnectClassic(uint16_t handle, tHCI_STATUS reason, std::string comment) {
+void shim::Acl::DisconnectClassic(uint16_t handle, tHCI_STATUS reason, const std::string& comment) {
   handler_->CallOn(pimpl_.get(), &Acl::impl::disconnect_classic, handle, reason, comment);
 }
 
-void shim::Acl::DisconnectLe(uint16_t handle, tHCI_STATUS reason, std::string comment) {
+void shim::Acl::DisconnectLe(uint16_t handle, tHCI_STATUS reason, const std::string& comment) {
   handler_->CallOn(pimpl_.get(), &Acl::impl::disconnect_le, handle, reason, comment);
 }
 

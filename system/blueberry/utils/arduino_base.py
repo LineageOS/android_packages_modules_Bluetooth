@@ -13,7 +13,7 @@ import serial
 
 
 class ArduinoBase(object):
-  """Implements an Arduino base class.
+    """Implements an Arduino base class.
 
   Attributes:
     config: A device configuration.
@@ -21,29 +21,29 @@ class ArduinoBase(object):
       Arduino board.
   """
 
-  def __init__(self, config: Dict[str, str]):
-    """Initializes an Arduino base class."""
-    self._verify_config(config)
-    self.config = config
-    self.serial = serial.Serial(config['arduino_port'], 9600)
-    self.serial.timeout = 30
-    # Buffer between calling serial.Serial() and serial.Serial.write().
-    time.sleep(2)
+    def __init__(self, config: Dict[str, str]):
+        """Initializes an Arduino base class."""
+        self._verify_config(config)
+        self.config = config
+        self.serial = serial.Serial(config['arduino_port'], 9600)
+        self.serial.timeout = 30
+        # Buffer between calling serial.Serial() and serial.Serial.write().
+        time.sleep(2)
 
-  def _verify_config(self, config):
-    """Checks the device config's required config parameters.
+    def _verify_config(self, config):
+        """Checks the device config's required config parameters.
 
     Args:
       config: dict, Mobly controller config for ArduinoBass. The config should
         include the key "arduino_port" whose value is a string representing
         Arduino board name. e.g. /dev/ttyACM0.
     """
-    if 'arduino_port' not in config:
-      raise ControllerError('Please provide an Arduino board port for the'
-                            ' ArduinoBase in Mobile Harness config')
+        if 'arduino_port' not in config:
+            raise ControllerError('Please provide an Arduino board port for the'
+                                  ' ArduinoBase in Mobile Harness config')
 
-  def _send_string_to_arduino(self, tx_string):
-    """Sends a particular string to communicate with Arduino.
+    def _send_string_to_arduino(self, tx_string):
+        """Sends a particular string to communicate with Arduino.
 
     The method requires that Arduino code can read string which is received from
     a python serial object and then send the same string to the serial object.
@@ -72,10 +72,10 @@ class ArduinoBase(object):
     Raises:
       ControllerError: raised if not received a response from Arduino.
     """
-    self.serial.write(str.encode(tx_string))
-    start_time = time.time()
-    rx_string = self.serial.read_until(tx_string, len(tx_string)).decode()
-    if rx_string == tx_string:
-      return time.time() - start_time
-    raise ControllerError('Timed out after %ds waiting for the string "%s" from'
-                          ' Arduino.' % (self.serial.timeout, tx_string))
+        self.serial.write(str.encode(tx_string))
+        start_time = time.time()
+        rx_string = self.serial.read_until(tx_string, len(tx_string)).decode()
+        if rx_string == tx_string:
+            return time.time() - start_time
+        raise ControllerError('Timed out after %ds waiting for the string "%s" from'
+                              ' Arduino.' % (self.serial.timeout, tx_string))

@@ -16,19 +16,13 @@
 
 package com.android.bluetooth.le_scan;
 
-import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
-import static android.Manifest.permission.BLUETOOTH_SCAN;
-import static android.Manifest.permission.UPDATE_DEVICE_STATS;
 import static android.bluetooth.BluetoothUtils.extractBytes;
 
 import static com.android.bluetooth.Utils.checkCallerTargetSdk;
-import static com.android.bluetooth.Utils.checkScanPermissionForDataDelivery;
 import static com.android.bluetooth.flags.Flags.leaudioBassScanWithInternalScanController;
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.RequiresPermission;
-import android.annotation.SuppressLint;
 import android.app.AppOpsManager;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
@@ -115,7 +109,7 @@ public class ScanController {
             new PendingIntent.CancelListener() {
                 public void onCanceled(PendingIntent intent) {
                     Log.d(TAG, "scanning PendingIntent canceled");
-                    stopScanInternal(intent);
+                    stopScan(intent);
                 }
             };
 
@@ -162,7 +156,7 @@ public class ScanController {
                     return false;
                 };
         mMainLooper = adapterService.getMainLooper();
-        mBinder = new ScanBinder(this);
+        mBinder = new ScanBinder(mAdapterService, this);
         mScanThread = new HandlerThread("BluetoothScanManager");
         mScanThread.start();
         mAppOps = mAdapterService.getSystemService(AppOpsManager.class);
@@ -504,8 +498,8 @@ public class ScanController {
         } catch (PendingIntent.CanceledException e) {
             final long token = Binder.clearCallingIdentity();
             try {
-                stopScanInternal(client.mScannerId);
-                unregisterScannerInternal(client.mScannerId);
+                stopScan(client.mScannerId);
+                unregisterScanner(client.mScannerId);
             } finally {
                 Binder.restoreCallingIdentity(token);
             }
@@ -631,7 +625,7 @@ public class ScanController {
         if (client.mStats != null) {
             client.mStats.isAppDead = true;
         }
-        stopScanInternal(client.mScannerId);
+        stopScan(client.mScannerId);
     }
 
     /** Callback method for scan filter enablement/disablement. */
@@ -911,7 +905,7 @@ public class ScanController {
 
     void onBatchScanThresholdCrossed(int clientIf) {
         Log.d(TAG, "onBatchScanThresholdCrossed() - clientIf=" + clientIf);
-        flushPendingBatchResultsInternal(clientIf);
+        flushPendingBatchResults(clientIf);
     }
 
     AdvtFilterOnFoundOnLostInfo createOnTrackAdvFoundLostObject(
@@ -1080,15 +1074,8 @@ public class ScanController {
      * Scan functions - Shared CLIENT/SERVER
      *************************************************************************/
 
-    @RequiresPermission(BLUETOOTH_SCAN)
     void registerScanner(
             IScannerCallback callback, WorkSource workSource, AttributionSource source) {
-        if (!checkScanPermissionForDataDelivery(mAdapterService, source, TAG, "registerScanner")) {
-            return;
-        }
-
-        enforceImpersonationPermissionIfNeeded(workSource);
-
         AppScanStats app = mScannerMap.getAppScanStatsByUid(Binder.getCallingUid());
         if (app != null
                 && app.isScanningTooFrequently()
@@ -1114,18 +1101,7 @@ public class ScanController {
         mScanManager.registerScanner(uuid);
     }
 
-    @RequiresPermission(BLUETOOTH_SCAN)
-    void unregisterScanner(int scannerId, AttributionSource source) {
-        if (!checkScanPermissionForDataDelivery(
-                mAdapterService, source, TAG, "unregisterScanner")) {
-            return;
-        }
-
-        unregisterScannerInternal(scannerId);
-    }
-
-    /** Intended for internal use within the Bluetooth app. Bypass permission check */
-    public void unregisterScannerInternal(int scannerId) {
+    public void unregisterScanner(int scannerId) {
         Log.d(TAG, "unregisterScanner() - scannerId=" + scannerId);
         mScannerMap.remove(scannerId);
         mScanManager.unregisterScanner(scannerId);
@@ -1156,21 +1132,14 @@ public class ScanController {
         return Collections.emptyList();
     }
 
-    @RequiresPermission(BLUETOOTH_SCAN)
     void startScan(
             int scannerId,
             ScanSettings settings,
             List<ScanFilter> filters,
             AttributionSource source) {
         Log.d(TAG, "Start scan with filters");
-        if (!checkScanPermissionForDataDelivery(mAdapterService, source, TAG, "startScan")) {
-            return;
-        }
-
-        enforcePrivilegedPermissionIfNeeded(settings);
         String callingPackage = source.getPackageName();
         settings = enforceReportDelayFloor(settings);
-        enforcePrivilegedPermissionIfNeeded(filters);
         final ScanClient scanClient = new ScanClient(scannerId, settings, filters);
         scanClient.mUserHandle = Binder.getCallingUserHandle();
         mAppOps.checkPackage(Binder.getCallingUid(), callingPackage);
@@ -1248,21 +1217,13 @@ public class ScanController {
         mScanManager.startScan(scanClient);
     }
 
-    @RequiresPermission(BLUETOOTH_SCAN)
     void registerPiAndStartScan(
             PendingIntent pendingIntent,
             ScanSettings settings,
             List<ScanFilter> filters,
             AttributionSource source) {
-        Log.d(TAG, "Start scan with filters, for PendingIntent");
-        if (!checkScanPermissionForDataDelivery(
-                mAdapterService, source, TAG, "registerPiAndStartScan")) {
-            return;
-        }
-
-        enforcePrivilegedPermissionIfNeeded(settings);
+        Log.d(TAG, "Register pendingIntent with filters and start scan");
         settings = enforceReportDelayFloor(settings);
-        enforcePrivilegedPermissionIfNeeded(filters);
         UUID uuid = UUID.randomUUID();
         String callingPackage = source.getPackageName();
         int callingUid = source.getUid();
@@ -1319,7 +1280,7 @@ public class ScanController {
         // If this fails, we should stop the scan immediately.
         if (!pendingIntent.addCancelListener(Runnable::run, mScanIntentCancelListener)) {
             Log.d(TAG, "scanning PendingIntent is already cancelled, stopping scan.");
-            stopScan(pendingIntent, source);
+            stopScan(pendingIntent);
         }
     }
 
@@ -1358,30 +1319,12 @@ public class ScanController {
         mScanManager.startScan(scanClient);
     }
 
-    @RequiresPermission(BLUETOOTH_SCAN)
-    void flushPendingBatchResults(int scannerId, AttributionSource source) {
-        if (!checkScanPermissionForDataDelivery(
-                mAdapterService, source, TAG, "flushPendingBatchResults")) {
-            return;
-        }
-        flushPendingBatchResultsInternal(scannerId);
-    }
-
-    private void flushPendingBatchResultsInternal(int scannerId) {
-        Log.d(TAG, "flushPendingBatchResultsInternal - scannerId=" + scannerId);
+    void flushPendingBatchResults(int scannerId) {
+        Log.d(TAG, "flushPendingBatchResults - scannerId=" + scannerId);
         mScanManager.flushBatchScanResults(new ScanClient(scannerId));
     }
 
-    @RequiresPermission(BLUETOOTH_SCAN)
-    void stopScan(int scannerId, AttributionSource source) {
-        if (!checkScanPermissionForDataDelivery(mAdapterService, source, TAG, "stopScan")) {
-            return;
-        }
-        stopScanInternal(scannerId);
-    }
-
-    /** Intended for internal use within the Bluetooth app. Bypass permission check */
-    public void stopScanInternal(int scannerId) {
+    public void stopScan(int scannerId) {
         int scanQueueSize =
                 mScanManager.getBatchScanQueue().size() + mScanManager.getRegularScanQueue().size();
         Log.d(TAG, "stopScan() - queue size =" + scanQueueSize);
@@ -1394,79 +1337,49 @@ public class ScanController {
         mScanManager.stopScan(scannerId);
     }
 
-    @RequiresPermission(BLUETOOTH_SCAN)
-    void stopScan(PendingIntent intent, AttributionSource source) {
-        if (!checkScanPermissionForDataDelivery(mAdapterService, source, TAG, "stopScan")) {
-            return;
-        }
-        stopScanInternal(intent);
-    }
-
-    /** Intended for internal use within the Bluetooth app. Bypass permission check */
-    private void stopScanInternal(PendingIntent intent) {
+    void stopScan(PendingIntent intent) {
         ScannerMap.ScannerApp app = mScannerMap.getByPendingIntentInfo(intent);
         Log.v(TAG, "stopScan(PendingIntent): app found = " + app);
         if (app != null) {
             intent.removeCancelListener(mScanIntentCancelListener);
             final int scannerId = app.mId;
-            stopScanInternal(scannerId);
+            stopScan(scannerId);
             // Also unregister the scanner
-            unregisterScannerInternal(scannerId);
+            unregisterScanner(scannerId);
         }
     }
 
     /**************************************************************************
      * PERIODIC SCANNING
      *************************************************************************/
-    @RequiresPermission(BLUETOOTH_SCAN)
     void registerSync(
             ScanResult scanResult,
             int skip,
             int timeout,
             IPeriodicAdvertisingCallback callback,
             AttributionSource source) {
-        if (!checkScanPermissionForDataDelivery(mAdapterService, source, TAG, "registerSync")) {
-            return;
-        }
         mPeriodicScanManager.startSync(scanResult, skip, timeout, callback);
     }
 
-    @RequiresPermission(BLUETOOTH_SCAN)
     void unregisterSync(IPeriodicAdvertisingCallback callback, AttributionSource source) {
-        if (!checkScanPermissionForDataDelivery(mAdapterService, source, TAG, "unregisterSync")) {
-            return;
-        }
         mPeriodicScanManager.stopSync(callback);
     }
 
-    @RequiresPermission(BLUETOOTH_SCAN)
     void transferSync(
             BluetoothDevice bda, int serviceData, int syncHandle, AttributionSource source) {
-        if (!checkScanPermissionForDataDelivery(mAdapterService, source, TAG, "transferSync")) {
-            return;
-        }
         mPeriodicScanManager.transferSync(bda, serviceData, syncHandle);
     }
 
-    @RequiresPermission(BLUETOOTH_SCAN)
     void transferSetInfo(
             BluetoothDevice bda,
             int serviceData,
             int advHandle,
             IPeriodicAdvertisingCallback callback,
             AttributionSource source) {
-        if (!checkScanPermissionForDataDelivery(mAdapterService, source, TAG, "transferSetInfo")) {
-            return;
-        }
         mPeriodicScanManager.transferSetInfo(bda, serviceData, advHandle, callback);
     }
 
-    @RequiresPermission(BLUETOOTH_SCAN)
     int numHwTrackFiltersAvailable(AttributionSource source) {
-        if (!checkScanPermissionForDataDelivery(
-                mAdapterService, source, TAG, "numHwTrackFiltersAvailable")) {
-            return 0;
-        }
         return (mAdapterService.getTotalNumOfTrackableAdvertisements()
                 - mScanManager.getCurrentUsedTrackingAdvertisement());
     }
@@ -1512,85 +1425,6 @@ public class ScanController {
                 }
             }
             return null;
-        }
-    }
-
-    private boolean needsPrivilegedPermissionForScan(ScanSettings settings) {
-        // BLE scan only mode needs special permission.
-        if (mAdapterService.getState() != BluetoothAdapter.STATE_ON) {
-            return true;
-        }
-
-        // Regular scan, no special permission.
-        if (settings == null) {
-            return false;
-        }
-
-        // Ambient discovery mode, needs privileged permission.
-        if (settings.getScanMode() == ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY) {
-            return true;
-        }
-
-        // Regular scan, no special permission.
-        if (settings.getReportDelayMillis() == 0) {
-            return false;
-        }
-
-        // Batch scan, truncated mode needs permission.
-        return settings.getScanResultType() == ScanSettings.SCAN_RESULT_TYPE_ABBREVIATED;
-    }
-
-    /*
-     * The ScanFilter#setDeviceAddress API overloads are @SystemApi access methods.  This
-     * requires that the permissions be BLUETOOTH_PRIVILEGED.
-     */
-    @SuppressLint("AndroidFrameworkRequiresPermission")
-    private void enforcePrivilegedPermissionIfNeeded(List<ScanFilter> filters) {
-        Log.d(TAG, "enforcePrivilegedPermissionIfNeeded(" + filters + ")");
-        // Some 3p API cases may have null filters, need to allow
-        if (filters != null) {
-            for (ScanFilter filter : filters) {
-                // The only case to enforce here is if there is an address
-                // If there is an address, enforce if the correct combination criteria is met.
-                if (filter.getDeviceAddress() != null) {
-                    // At this point we have an address, that means a caller used the
-                    // setDeviceAddress(address) public API for the ScanFilter
-                    // We don't want to enforce if the type is PUBLIC and the IRK is null
-                    // However, if we have a different type that means the caller used a new
-                    // @SystemApi such as setDeviceAddress(address, type) or
-                    // setDeviceAddress(address, type, irk) which are both @SystemApi and require
-                    // permissions to be enforced
-                    if (filter.getAddressType() == BluetoothDevice.ADDRESS_TYPE_PUBLIC
-                            && filter.getIrk() == null) {
-                        // Do not enforce
-                    } else {
-                        mAdapterService.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-                    }
-                }
-            }
-        }
-    }
-
-    @SuppressLint("AndroidFrameworkRequiresPermission")
-    private void enforcePrivilegedPermissionIfNeeded(ScanSettings settings) {
-        if (needsPrivilegedPermissionForScan(settings)) {
-            mAdapterService.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        }
-    }
-
-    // Enforce caller has UPDATE_DEVICE_STATS permission, which allows the caller to blame other
-    // apps for Bluetooth usage. A {@link SecurityException} will be thrown if the caller app does
-    // not have UPDATE_DEVICE_STATS permission.
-    @RequiresPermission(UPDATE_DEVICE_STATS)
-    private void enforceImpersonationPermission() {
-        mAdapterService.enforceCallingOrSelfPermission(
-                UPDATE_DEVICE_STATS, "Need UPDATE_DEVICE_STATS permission");
-    }
-
-    @SuppressLint("AndroidFrameworkRequiresPermission")
-    private void enforceImpersonationPermissionIfNeeded(WorkSource workSource) {
-        if (workSource != null) {
-            enforceImpersonationPermission();
         }
     }
 

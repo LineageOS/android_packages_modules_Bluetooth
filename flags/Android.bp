@@ -34,7 +34,6 @@ aconfig_declarations {
         "le_scanning.aconfig",
         "leaudio.aconfig",
         "mapclient.aconfig",
-        "mcp.aconfig",
         "metric.aconfig",
         "opp.aconfig",
         "pairing.aconfig",

@@ -114,6 +114,7 @@ public:
   uint16_t link_quality_timer_data;
 
   uint8_t last_ase_ctp_command_sent;
+  alarm_t* update_to_relaxed_conn_interval_timer;
 
   LeAudioDevice(const RawAddress& address, DeviceConnectState state,
                 int group_id = bluetooth::groups::kGroupUnknown)
@@ -136,6 +137,10 @@ public:
         acl_phy_update_done_(false),
         link_quality_timer(nullptr),
         last_ase_ctp_command_sent(0x00),
+        update_to_relaxed_conn_interval_timer(alarm_new(
+          (std::string("update_to_relaxed_conn_interval_timer_") +
+           address.ToString().substr(10, 4)).c_str()
+        )),
         dsa_({{DsaMode::DISABLED},
               types::DataPathState::IDLE,
               LE_AUDIO_INVALID_CIS_HANDLE,

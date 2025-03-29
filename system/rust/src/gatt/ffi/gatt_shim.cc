@@ -27,6 +27,7 @@
 #include "include/hardware/bt_gatt_client.h"
 #include "include/hardware/bt_gatt_server.h"
 #include "rust/cxx.h"
+#include "src/gatt/arbiter.rs.h"
 #include "stack/include/gatt_api.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
@@ -123,4 +124,24 @@ void GattServerCallbacks::OnExecute(uint16_t conn_id, uint32_t trans_id, bool ex
 }
 
 }  // namespace gatt
+
+namespace shim::arbiter {
+
+void ArbiterShim::OnLeConnect(uint8_t tcb_idx, uint16_t advertiser_id) {
+  arbiter_->OnLeConnect(tcb_idx, advertiser_id);
+}
+void ArbiterShim::OnLeDisconnect(uint8_t tcb_idx) { arbiter_->OnLeDisconnect(tcb_idx); }
+InterceptAction ArbiterShim::InterceptPacket(uint8_t tcb_idx, rust::Vec<uint8_t> buffer) {
+  return arbiter_->InterceptPacket(tcb_idx, buffer);
+}
+void ArbiterShim::OnOutgoingMtuReq(uint8_t tcb_idx) { arbiter_->OnOutgoingMtuReq(tcb_idx); }
+void ArbiterShim::OnIncomingMtuResp(uint8_t tcb_idx, size_t mtu) {
+  arbiter_->OnIncomingMtuResp(tcb_idx, mtu);
+}
+void ArbiterShim::OnIncomingMtuReq(uint8_t tcb_idx, size_t mtu) {
+  arbiter_->OnIncomingMtuReq(tcb_idx, mtu);
+}
+
+}  // namespace shim::arbiter
+
 }  // namespace bluetooth

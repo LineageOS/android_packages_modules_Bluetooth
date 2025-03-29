@@ -75,10 +75,16 @@ mod inner {
         type GattServerCallbacks = crate::gatt::GattServerCallbacks;
     }
 
+    #[namespace = "bluetooth::shim::arbiter"]
+    unsafe extern "C++" {
+        type AclArbiter = crate::gatt::arbiter::ffi::AclArbiter;
+    }
+
     #[namespace = "bluetooth::rust_shim"]
     extern "Rust" {
         fn start(
             gatt_server_callbacks: UniquePtr<GattServerCallbacks>,
+            acl_arbiter: &'static AclArbiter,
             on_started: Pin<&'static mut Future>,
         );
 

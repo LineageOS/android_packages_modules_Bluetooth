@@ -105,7 +105,7 @@ public class HeadsetClientStateMachineTest {
     @Mock private AudioManager mAudioManager;
     @Mock private RemoteDevices mRemoteDevices;
     @Mock private PackageManager mPackageManager;
-    @Mock private NativeInterface mNativeInterface;
+    @Mock private HeadsetClientNativeInterface mNativeInterface;
 
     @Before
     public void setUp() throws Exception {
@@ -139,7 +139,6 @@ public class HeadsetClientStateMachineTest {
                         mHeadsetService,
                         mTestLooper.getLooper(),
                         mNativeInterface);
-        mHeadsetClientStateMachine.start();
         mTestLooper.dispatchAll();
     }
 
@@ -1592,7 +1591,7 @@ public class HeadsetClientStateMachineTest {
                 HeadsetClientService context,
                 HeadsetService headsetService,
                 Looper looper,
-                NativeInterface nativeInterface) {
+                HeadsetClientNativeInterface nativeInterface) {
             super(adapterService, context, headsetService, looper, nativeInterface);
         }
 

@@ -22,28 +22,28 @@ import java.util.BitSet;
 /** Service features definition */
 public final class ServiceFeature {
     // LS word is used for the characteristic support bits
-    public static final long PLAYER_NAME = 0x00000001;
-    public static final long PLAYER_ICON_OBJ_ID = 0x00000002;
-    public static final long PLAYER_ICON_URL = 0x00000004;
-    public static final long TRACK_CHANGED = 0x00000008;
-    public static final long TRACK_TITLE = 0x00000010;
-    public static final long TRACK_DURATION = 0x00000020;
-    public static final long TRACK_POSITION = 0x00000040;
-    public static final long PLAYBACK_SPEED = 0x00000080;
-    public static final long SEEKING_SPEED = 0x00000100;
-    public static final long CURRENT_TRACK_SEGMENT_OBJ_ID = 0x00000200;
-    public static final long CURRENT_TRACK_OBJ_ID = 0x00000400;
-    public static final long NEXT_TRACK_OBJ_ID = 0x00000800;
-    public static final long CURRENT_GROUP_OBJ_ID = 0x00001000;
-    public static final long PARENT_GROUP_OBJ_ID = 0x00002000;
-    public static final long PLAYING_ORDER = 0x00004000;
-    public static final long PLAYING_ORDER_SUPPORTED = 0x00008000;
-    public static final long MEDIA_STATE = 0x00010000;
-    public static final long MEDIA_CONTROL_POINT = 0x00020000;
-    public static final long MEDIA_CONTROL_POINT_OPCODES_SUPPORTED = 0x00040000;
-    public static final long SEARCH_RESULT_OBJ_ID = 0x00080000;
-    public static final long SEARCH_CONTROL_POINT = 0x00100000;
-    public static final long CONTENT_CONTROL_ID = 0x00200000;
+    public static final long PLAYER_NAME = 0x00000001L;
+    public static final long PLAYER_ICON_OBJ_ID = 0x00000002L;
+    public static final long PLAYER_ICON_URL = 0x00000004L;
+    public static final long TRACK_CHANGED = 0x00000008L;
+    public static final long TRACK_TITLE = 0x00000010L;
+    public static final long TRACK_DURATION = 0x00000020L;
+    public static final long TRACK_POSITION = 0x00000040L;
+    public static final long PLAYBACK_SPEED = 0x00000080L;
+    public static final long SEEKING_SPEED = 0x00000100L;
+    public static final long CURRENT_TRACK_SEGMENT_OBJ_ID = 0x00000200L;
+    public static final long CURRENT_TRACK_OBJ_ID = 0x00000400L;
+    public static final long NEXT_TRACK_OBJ_ID = 0x00000800L;
+    public static final long CURRENT_GROUP_OBJ_ID = 0x00001000L;
+    public static final long PARENT_GROUP_OBJ_ID = 0x00002000L;
+    public static final long PLAYING_ORDER = 0x00004000L;
+    public static final long PLAYING_ORDER_SUPPORTED = 0x00008000L;
+    public static final long MEDIA_STATE = 0x00010000L;
+    public static final long MEDIA_CONTROL_POINT = 0x00020000L;
+    public static final long MEDIA_CONTROL_POINT_OPCODES_SUPPORTED = 0x00040000L;
+    public static final long SEARCH_RESULT_OBJ_ID = 0x00080000L;
+    public static final long SEARCH_CONTROL_POINT = 0x00100000L;
+    public static final long CONTENT_CONTROL_ID = 0x00200000L;
 
     // MS word is used for the optional notification support bits
     public static final long PLAYER_NAME_NOTIFY = PLAYER_NAME << 32;
@@ -72,30 +72,29 @@ public final class ServiceFeature {
                     | CONTENT_CONTROL_ID;
 
     static String toString(long serviceFeature) {
-        if (serviceFeature == PLAYER_NAME) return "PLAYER_NAME(BIT 1)";
-        if (serviceFeature == PLAYER_ICON_OBJ_ID) return "PLAYER_ICON_OBJ_ID(BIT 2)";
-        if (serviceFeature == PLAYER_ICON_URL) return "PLAYER_ICON_URL(BIT 3)";
-        if (serviceFeature == TRACK_CHANGED) return "TRACK_CHANGED(BIT 4)";
-        if (serviceFeature == TRACK_TITLE) return "TRACK_TITLE(BIT 5)";
-        if (serviceFeature == TRACK_DURATION) return "TRACK_DURATION(BIT 6)";
-        if (serviceFeature == TRACK_POSITION) return "TRACK_POSITION(BIT 7)";
-        if (serviceFeature == PLAYBACK_SPEED) return "PLAYBACK_SPEED(BIT 8)";
-        if (serviceFeature == SEEKING_SPEED) return "SEEKING_SPEED(BIT 9)";
-        if (serviceFeature == CURRENT_TRACK_SEGMENT_OBJ_ID)
-            return "CURRENT_TRACK_SEGMENT_OBJ_ID(BIT 10)";
-        if (serviceFeature == CURRENT_TRACK_OBJ_ID) return "CURRENT_TRACK_OBJ_ID(BIT 11)";
-        if (serviceFeature == NEXT_TRACK_OBJ_ID) return "NEXT_TRACK_OBJ_ID(BIT 12)";
-        if (serviceFeature == CURRENT_GROUP_OBJ_ID) return "CURRENT_GROUP_OBJ_ID(BIT 13)";
-        if (serviceFeature == PARENT_GROUP_OBJ_ID) return "PARENT_GROUP_OBJ_ID(BIT 14)";
-        if (serviceFeature == PLAYING_ORDER) return "PLAYING_ORDER(BIT 15)";
-        if (serviceFeature == PLAYING_ORDER_SUPPORTED) return "PLAYING_ORDER_SUPPORTED(BIT 16)";
-        if (serviceFeature == MEDIA_STATE) return "MEDIA_STATE(BIT 17)";
-        if (serviceFeature == MEDIA_CONTROL_POINT) return "MEDIA_CONTROL_POINT(BIT 18)";
+        if (serviceFeature == PLAYER_NAME) return "PLAYER_NAME";
+        if (serviceFeature == PLAYER_ICON_OBJ_ID) return "PLAYER_ICON_OBJ_ID";
+        if (serviceFeature == PLAYER_ICON_URL) return "PLAYER_ICON_URL";
+        if (serviceFeature == TRACK_CHANGED) return "TRACK_CHANGED";
+        if (serviceFeature == TRACK_TITLE) return "TRACK_TITLE";
+        if (serviceFeature == TRACK_DURATION) return "TRACK_DURATION";
+        if (serviceFeature == TRACK_POSITION) return "TRACK_POSITION";
+        if (serviceFeature == PLAYBACK_SPEED) return "PLAYBACK_SPEED";
+        if (serviceFeature == SEEKING_SPEED) return "SEEKING_SPEED";
+        if (serviceFeature == CURRENT_TRACK_SEGMENT_OBJ_ID) return "CURRENT_TRACK_SEGMENT_OBJ_ID";
+        if (serviceFeature == CURRENT_TRACK_OBJ_ID) return "CURRENT_TRACK_OBJ_ID";
+        if (serviceFeature == NEXT_TRACK_OBJ_ID) return "NEXT_TRACK_OBJ_ID";
+        if (serviceFeature == CURRENT_GROUP_OBJ_ID) return "CURRENT_GROUP_OBJ_ID";
+        if (serviceFeature == PARENT_GROUP_OBJ_ID) return "PARENT_GROUP_OBJ_ID";
+        if (serviceFeature == PLAYING_ORDER) return "PLAYING_ORDER";
+        if (serviceFeature == PLAYING_ORDER_SUPPORTED) return "PLAYING_ORDER_SUPPORTED";
+        if (serviceFeature == MEDIA_STATE) return "MEDIA_STATE";
+        if (serviceFeature == MEDIA_CONTROL_POINT) return "MEDIA_CONTROL_POINT";
         if (serviceFeature == MEDIA_CONTROL_POINT_OPCODES_SUPPORTED)
-            return "MEDIA_CONTROL_POINT_OPCODES_SUPPORTED(BIT 19)";
-        if (serviceFeature == SEARCH_RESULT_OBJ_ID) return "SEARCH_RESULT_OBJ_ID(BIT 20)";
-        if (serviceFeature == SEARCH_CONTROL_POINT) return "SEARCH_CONTROL_POINT(BIT 21)";
-        if (serviceFeature == CONTENT_CONTROL_ID) return "CONTENT_CONTROL_ID(BIT 22)";
+            return "MEDIA_CONTROL_POINT_OPCODES_SUPPORTED";
+        if (serviceFeature == SEARCH_RESULT_OBJ_ID) return "SEARCH_RESULT_OBJ_ID";
+        if (serviceFeature == SEARCH_CONTROL_POINT) return "SEARCH_CONTROL_POINT";
+        if (serviceFeature == CONTENT_CONTROL_ID) return "CONTENT_CONTROL_ID";
         if (serviceFeature == PLAYER_NAME_NOTIFY) return "PLAYER_NAME_NOTIFY";
         if (serviceFeature == TRACK_TITLE_NOTIFY) return "TRACK_TITLE_NOTIFY";
         if (serviceFeature == TRACK_DURATION_NOTIFY) return "TRACK_DURATION_NOTIFY";
@@ -113,16 +112,15 @@ public final class ServiceFeature {
         return "UNKNOWN(0x" + Long.toHexString(serviceFeature) + ")";
     }
 
-    static String featuresToString(long serviceFeatures, String indent) {
+    static String featuresToString(long serviceFeatures) {
         BitSet bs = BitSet.valueOf(new long[] {serviceFeatures});
         StringBuilder sb = new StringBuilder();
 
         for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i + 1)) {
             if (i == Integer.MAX_VALUE) {
                 break;
-            } else {
-                sb.append(indent).append(toString(1 << i));
             }
+            sb.append(" | ").append(toString(1L << i));
         }
 
         return sb.toString();

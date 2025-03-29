@@ -31,71 +31,78 @@ namespace bluetooth {
 namespace shim {
 namespace arbiter {
 
-namespace {
-struct RustArbiterCallbacks {
-  ::rust::Fn<void(uint8_t tcb_idx, uint8_t advertiser)> on_le_connect;
-  ::rust::Fn<void(uint8_t tcb_idx)> on_le_disconnect;
-  ::rust::Fn<InterceptAction(uint8_t tcb_idx, ::rust::Vec<uint8_t> buffer)> intercept_packet;
-  ::rust::Fn<void(uint8_t tcb_idx)> on_outgoing_mtu_req;
-  ::rust::Fn<void(uint8_t tcb_idx, size_t mtu)> on_incoming_mtu_resp;
-  ::rust::Fn<void(uint8_t tcb_idx, size_t mtu)> on_incoming_mtu_req;
-};
-
-RustArbiterCallbacks callbacks_{};
-}  // namespace
-
 void AclArbiter::OnLeConnect(uint8_t tcb_idx, uint16_t advertiser_id) {
 #ifdef TARGET_FLOSS
   return;
 #endif
-  log::info("Notifying Rust of LE connection");
-  callbacks_.on_le_connect(tcb_idx, advertiser_id);
+  std::lock_guard lock(mutex_);
+  if (arbiter_) {
+    log::info("Notifying Rust of LE connection");
+    arbiter_->OnLeConnect(tcb_idx, advertiser_id);
+  }
 }
 
 void AclArbiter::OnLeDisconnect(uint8_t tcb_idx) {
 #ifdef TARGET_FLOSS
   return;
 #endif
-  log::info("Notifying Rust of LE disconnection");
-  callbacks_.on_le_disconnect(tcb_idx);
+  std::lock_guard lock(mutex_);
+  if (arbiter_) {
+    log::info("Notifying Rust of LE disconnection");
+    arbiter_->OnLeDisconnect(tcb_idx);
+  }
 }
 
 InterceptAction AclArbiter::InterceptAttPacket(uint8_t tcb_idx, const BT_HDR* packet) {
 #ifdef TARGET_FLOSS
   return InterceptAction::FORWARD;
 #endif
-  log::debug("Intercepting ATT packet and forwarding to Rust");
+  std::lock_guard lock(mutex_);
+  if (arbiter_) {
+    log::debug("Intercepting ATT packet and forwarding to Rust");
 
-  uint8_t* packet_start = (uint8_t*)(packet + 1) + packet->offset;
-  uint8_t* packet_end = packet_start + packet->len;
+    uint8_t* packet_start = (uint8_t*)(packet + 1) + packet->offset;
+    uint8_t* packet_end = packet_start + packet->len;
 
-  auto vec = ::rust::Vec<uint8_t>();
-  std::copy(packet_start, packet_end, std::back_inserter(vec));
-  return callbacks_.intercept_packet(tcb_idx, std::move(vec));
+    auto vec = ::rust::Vec<uint8_t>();
+    std::copy(packet_start, packet_end, std::back_inserter(vec));
+    return arbiter_->InterceptPacket(tcb_idx, std::move(vec));
+  } else {
+    return InterceptAction::FORWARD;
+  }
 }
 
 void AclArbiter::OnOutgoingMtuReq(uint8_t tcb_idx) {
 #ifdef TARGET_FLOSS
   return;
 #endif
-  log::debug("Notifying Rust of outgoing MTU request");
-  callbacks_.on_outgoing_mtu_req(tcb_idx);
+  std::lock_guard lock(mutex_);
+  if (arbiter_) {
+    log::debug("Notifying Rust of outgoing MTU request");
+    arbiter_->OnOutgoingMtuReq(tcb_idx);
+  }
 }
 
 void AclArbiter::OnIncomingMtuResp(uint8_t tcb_idx, size_t mtu) {
 #ifdef TARGET_FLOSS
   return;
 #endif
-  log::debug("Notifying Rust of incoming MTU response {}", mtu);
-  callbacks_.on_incoming_mtu_resp(tcb_idx, mtu);
+  std::lock_guard lock(mutex_);
+  if (arbiter_) {
+    log::debug("Notifying Rust of incoming MTU response {}", mtu);
+    arbiter_->OnIncomingMtuResp(tcb_idx, mtu);
+  }
 }
 
 void AclArbiter::OnIncomingMtuReq(uint8_t tcb_idx, size_t mtu) {
 #ifdef TARGET_FLOSS
   return;
 #endif
-  log::debug("Notifying Rust of incoming MTU request {}", mtu);
-  callbacks_.on_incoming_mtu_req(tcb_idx, mtu);
+  std::lock_guard lock(mutex_);
+  if (arbiter_) {
+    log::debug("Notifying Rust of incoming MTU request {}", mtu);
+    arbiter_->OnIncomingMtuReq(tcb_idx, mtu);
+  }
 }
 
 void AclArbiter::SendPacketToPeer(uint8_t tcb_idx, ::rust::Vec<uint8_t> buffer) {
@@ -122,26 +129,14 @@ void AclArbiter::SendPacketToPeer(uint8_t tcb_idx, ::rust::Vec<uint8_t> buffer) 
   }
 }
 
-void StoreCallbacksFromRust(
-        ::rust::Fn<void(uint8_t tcb_idx, uint8_t advertiser)> on_le_connect,
-        ::rust::Fn<void(uint8_t tcb_idx)> on_le_disconnect,
-        ::rust::Fn<InterceptAction(uint8_t tcb_idx, ::rust::Vec<uint8_t> buffer)> intercept_packet,
-        ::rust::Fn<void(uint8_t tcb_idx)> on_outgoing_mtu_req,
-        ::rust::Fn<void(uint8_t tcb_idx, size_t mtu)> on_incoming_mtu_resp,
-        ::rust::Fn<void(uint8_t tcb_idx, size_t mtu)> on_incoming_mtu_req) {
-  log::info("Received callbacks from Rust, registering in Arbiter");
-  callbacks_ = {on_le_connect,       on_le_disconnect,     intercept_packet,
-                on_outgoing_mtu_req, on_incoming_mtu_resp, on_incoming_mtu_req};
-}
-
 void SendPacketToPeer(uint8_t tcb_idx, ::rust::Vec<uint8_t> buffer) {
   do_in_main_thread(base::BindOnce(&AclArbiter::SendPacketToPeer, base::Unretained(&GetArbiter()),
                                    tcb_idx, std::move(buffer)));
 }
 
 AclArbiter& GetArbiter() {
-  static auto singleton = AclArbiter();
-  return singleton;
+  static auto* singleton = new AclArbiter();
+  return *singleton;
 }
 
 }  // namespace arbiter

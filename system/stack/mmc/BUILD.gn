@@ -29,8 +29,8 @@ group("mmc") {
   ]
   if (use.test) {
     deps += [
-      ":hfp_lc3_mmc_encoder_test",
       ":hfp_lc3_mmc_decoder_test",
+      ":hfp_lc3_mmc_encoder_test",
     ]
   }
 }
@@ -44,9 +44,7 @@ pkg_config("target_defaults") {
     "//bt/system/stack",
     "//bt/system/stack/include",
   ]
-  pkg_deps = [
-    "libchrome",
-  ]
+  pkg_deps = [ "libchrome" ]
   if (use.fuzzer) {
     pkg_deps += [ "protobuf" ]
   } else {
@@ -87,13 +85,11 @@ source_set("libmmc") {
     ":target_defaults",
     "//bt/system/log:log_defaults",
   ]
-  sources = [
-    "daemon/service.cc",
-  ]
+  sources = [ "daemon/service.cc" ]
   deps = [
     "//bt/system/common",
-    "//bt/system/stack/mmc/proto:mmc_service_proto",
     "//bt/system/stack/mmc/codec_server:libcodec_server_hfp_lc3",
+    "//bt/system/stack/mmc/proto:mmc_service_proto",
   ]
   if (defined(use.bt_nonstandard_codecs) && use.bt_nonstandard_codecs) {
     deps += [ "//bt/system/stack/mmc/codec_server:libcodec_server_a2dp_aac" ]
@@ -109,67 +105,57 @@ executable("mmc_service") {
     ":libmmc",
     "//bt/system/log:libbluetooth_log",
   ]
-  libs = [
-    "fmt",
-  ]
+  libs = [ "fmt" ]
   sources = [ "main.cc" ]
 }
 
 if (use.test) {
   executable("hfp_lc3_mmc_encoder_test") {
     sources = [
+      "//bt/system/test/common/mock_functions.cc",
+      "//bt/system/test/mock/mock_common_address_obfuscator.cc",
+      "//bt/system/test/mock/mock_osi_allocator.cc",
       "codec_server/hfp_lc3_mmc_encoder.cc",
       "test/hfp_lc3_mmc_encoder_test.cc",
       "test/mock/mock_embdrv_lc3.cc",
-      "//bt/system/test/mock/mock_common_address_obfuscator.cc",
-      "//bt/system/test/mock/mock_osi_allocator.cc",
-      "//bt/system/test/common/mock_functions.cc",
     ]
-    include_dirs = [
-      "//bt/system",
-    ]
+    include_dirs = [ "//bt/system" ]
     configs += [
       ":target_defaults",
       "//bt/system/log:log_defaults",
       "//bt/system:external_gtest_main",
     ]
-    libs = [
-      "fmt",
-    ]
+    libs = [ "fmt" ]
     deps = [
-      "//bt/system/stack/mmc/proto:mmc_config_proto",
-      "//bt/system/log:libbluetooth_log",
       "//bt/system/common",
+      "//bt/system/log:libbluetooth_log",
       "//bt/system/osi",
+      "//bt/system/stack/mmc/proto:mmc_config_proto",
       "//bt/system/types",
     ]
   }
 
   executable("hfp_lc3_mmc_decoder_test") {
     sources = [
+      "//bt/system/test/common/mock_functions.cc",
+      "//bt/system/test/mock/mock_common_address_obfuscator.cc",
+      "//bt/system/test/mock/mock_osi_allocator.cc",
       "codec_server/hfp_lc3_mmc_decoder.cc",
       "test/hfp_lc3_mmc_decoder_test.cc",
       "test/mock/mock_embdrv_lc3.cc",
-      "//bt/system/test/mock/mock_common_address_obfuscator.cc",
-      "//bt/system/test/mock/mock_osi_allocator.cc",
-      "//bt/system/test/common/mock_functions.cc",
     ]
-    include_dirs = [
-      "//bt/system",
-    ]
+    include_dirs = [ "//bt/system" ]
     configs += [
       ":target_defaults",
       "//bt/system/log:log_defaults",
       "//bt/system:external_gtest_main",
     ]
-    libs = [
-      "fmt",
-    ]
+    libs = [ "fmt" ]
     deps = [
-      "//bt/system/stack/mmc/proto:mmc_config_proto",
-      "//bt/system/log:libbluetooth_log",
       "//bt/system/common",
+      "//bt/system/log:libbluetooth_log",
       "//bt/system/osi",
+      "//bt/system/stack/mmc/proto:mmc_config_proto",
       "//bt/system/types",
     ]
   }
