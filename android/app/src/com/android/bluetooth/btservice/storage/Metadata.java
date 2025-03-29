@@ -38,8 +38,6 @@ import java.util.List;
 public class Metadata {
     @PrimaryKey @NonNull private final String address;
 
-    public boolean migrated;
-
     @Embedded public ProfilePrioritiesEntity profileConnectionPolicies;
 
     @Embedded @NonNull public CustomizedMetadataEntity publicMetadata;
@@ -85,7 +83,6 @@ public class Metadata {
 
     private Metadata(String address, boolean isActiveA2dp, boolean isActiveHfp) {
         this.address = address;
-        migrated = false;
         profileConnectionPolicies = new ProfilePrioritiesEntity();
         publicMetadata = new CustomizedMetadataEntity();
         a2dpSupportsOptionalCodecs = BluetoothA2dp.OPTIONAL_CODECS_SUPPORT_UNKNOWN;
