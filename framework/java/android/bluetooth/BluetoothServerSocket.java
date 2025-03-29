@@ -73,7 +73,7 @@ import java.io.IOException;
 public final class BluetoothServerSocket implements Closeable {
     private static final String TAG = BluetoothServerSocket.class.getSimpleName();
 
-    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
+    private static final boolean DBG = Log.isLoggable("bluetooth", Log.DEBUG);
 
     @UnsupportedAppUsage(
             publicAlternatives = "Use public {@link BluetoothServerSocket} API " + "instead.")

@@ -252,10 +252,10 @@ flag {
 }
 
 flag {
-    name: "fix_private_gatt_advertising_not_working"
+    name: "fix_private_gatt_advertisement"
     namespace: "bluetooth"
     description: "Fix that private GATT advertising is handled as a normal GATT"
-    bug: "405315235"
+    bug: "406124107"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -266,6 +266,16 @@ flag {
     namespace: "bluetooth"
     description: "Remove device through connection_manager to sync accept list"
     bug: "405283189"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "irk_scan_bond_check_update"
+    namespace: "bluetooth"
+    description: "Update bond state check in IRK scan to cover all identity address types."
+    bug: "406905829"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

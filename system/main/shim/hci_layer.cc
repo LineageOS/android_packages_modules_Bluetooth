@@ -20,6 +20,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <algorithm>
 #include <cstdint>
@@ -152,6 +153,24 @@ static void subevent_callback(bluetooth::hci::LeMetaEventView le_meta_event_view
   send_data_upwards.Run(WrapPacketAndCopy(MSG_HC_TO_STACK_HCI_EVT, &le_meta_event_view));
 }
 
+static void event_callback_with_hop(bluetooth::hci::EventView event_packet_view) {
+  // Adding a hop to the GD thread before sending the event to the main thread.
+  log::verbose("Adding a hop to the GD thread for event_callback, event_code: {}",
+               event_packet_view.GetEventCode());
+
+  auto handler = bluetooth::shim::GetGdShimHandler();
+  handler->Call(event_callback, event_packet_view);
+}
+
+static void subevent_callback_with_hop(bluetooth::hci::LeMetaEventView le_meta_event_view) {
+  // Adding a hop to the GD thread before sending the subevent to the main thread.
+  log::verbose("Adding a hop to the GD thread for subevent_callback, subevent_code: {}",
+               le_meta_event_view.GetSubeventCode());
+
+  auto handler = bluetooth::shim::GetGdShimHandler();
+  handler->Call(subevent_callback, le_meta_event_view);
+}
+
 static void OnTransmitPacketCommandComplete(command_complete_cb complete_callback, void* context,
                                             bluetooth::hci::CommandCompleteView view) {
   log::debug("Received cmd complete for {}", bluetooth::hci::OpCodeText(view.GetCommandOpCode()));
@@ -226,13 +245,31 @@ static void transmit_iso_fragment(const uint8_t* stream, size_t length) {
 
 static void register_event(bluetooth::hci::EventCode event_code) {
   auto handler = bluetooth::shim::GetGdShimHandler();
-  bluetooth::shim::GetHciLayer()->RegisterEventHandler(event_code, handler->Bind(event_callback));
+  // Register the event handler, but do not send it directly to main, instead do another hop on
+  // the GD thread.
+  if (!com::android::bluetooth::flags::add_hop_to_event_callback()) {
+    bluetooth::shim::GetHciLayer()->RegisterEventHandler(event_code, handler->Bind(event_callback));
+    return;
+  }
+
+  // Do not send it directly to main, instead do another hop on the GD thread.
+  bluetooth::shim::GetHciLayer()->RegisterEventHandler(event_code,
+                                                       handler->Bind(event_callback_with_hop));
 }
 
 static void register_le_event(bluetooth::hci::SubeventCode subevent_code) {
   auto handler = bluetooth::shim::GetGdShimHandler();
+  // Register the event handler, but do not send it directly to main, instead do another hop on the
+  // GD thread.
+  if (!com::android::bluetooth::flags::add_hop_to_event_callback()) {
+    bluetooth::shim::GetHciLayer()->RegisterLeEventHandler(subevent_code,
+                                                           handler->Bind(subevent_callback));
+    return;
+  }
+
+  // Do not send it directly to main, instead do another hop on the GD thread.
   bluetooth::shim::GetHciLayer()->RegisterLeEventHandler(subevent_code,
-                                                         handler->Bind(subevent_callback));
+                                                         handler->Bind(subevent_callback_with_hop));
 }
 
 static void iso_data_callback() {

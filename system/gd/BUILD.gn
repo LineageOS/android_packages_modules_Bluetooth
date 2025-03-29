@@ -37,10 +37,6 @@ config("gd_defaults") {
   ]
 }
 
-config("rust_defaults") {
-  # Empty for now
-}
-
 group("gd_default_deps") {
   deps = [
     "//bt/system:libbt-platform-protos-lite",
@@ -49,20 +45,124 @@ group("gd_default_deps") {
 }
 
 static_library("libbluetooth_gd") {
-  sources = [ "module.cc" ]
+  sources = [
+    "common/audit_log.cc",
+    "common/metric_id_manager.cc",
+    "common/stop_watch.cc",
+    "common/strings.cc",
+    "hal/link_clocker.cc",
+    "hal/ranging_hal_host.cc",
+    "hal/snoop_logger.cc",
+    "hal/snoop_logger_socket.cc",
+    "hal/snoop_logger_socket_thread.cc",
+    "hal/socket_hal_host.cc",
+    "hal/syscall_wrapper_impl.cc",
+    "hci/acl_manager.cc",
+    "hci/acl_manager/acl_connection.cc",
+    "hci/acl_manager/acl_fragmenter.cc",
+    "hci/acl_manager/acl_scheduler.cc",
+    "hci/acl_manager/classic_acl_connection.cc",
+    "hci/acl_manager/le_acl_connection.cc",
+    "hci/acl_manager/round_robin_scheduler.cc",
+    "hci/controller.cc",
+    "hci/distance_measurement_manager.cc",
+    "hci/hci_layer.cc",
+    "hci/hci_metrics_logging.cc",
+    "hci/le_address_manager.cc",
+    "hci/le_advertising_manager.cc",
+    "hci/le_scanning_manager.cc",
+    "hci/le_scanning_reassembler.cc",
+    "hci/link_key.cc",
+    "hci/msft.cc",
+    "hci/remote_name_request.cc",
+    "hci/uuid.cc",
+    "lpp/lpp_offload_manager.cc",
+    "metrics/bluetooth_event.cc",
+    "metrics/utils.cc",
+    "module.cc",
+    "os/handler.cc",
+    "os/linux_generic/alarm.cc",
+    "os/linux_generic/files.cc",
+    "os/linux_generic/mgmt.cc",
+    "os/linux_generic/reactive_semaphore.cc",
+    "os/linux_generic/reactor.cc",
+    "os/linux_generic/repeating_alarm.cc",
+    "os/linux_generic/thread.cc",
+    "os/linux_generic/wakelock_manager.cc",
+    "os/system_properties_common.cc",
+    "storage/classic_device.cc",
+    "storage/config_cache.cc",
+    "storage/config_cache_helper.cc",
+    "storage/device.cc",
+    "storage/le_device.cc",
+    "storage/legacy_config_file.cc",
+    "storage/mutation.cc",
+    "storage/mutation_entry.cc",
+    "storage/storage_module.cc",
+    "sysprops/sysprops_module.cc",
+  ]
+
+  if (use.floss_rootcanal) {
+    sources += [ "hal/hci_hal_host_rootcanal.cc" ]
+  } else {
+    sources += [ "hal/hci_hal_host.cc" ]
+  }
 
   include_dirs = [ "." ]
-  configs += [ ":gd_defaults" ]
+  configs += [
+    ":gd_defaults",
+    "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
+  ]
   deps = [
+    "//bt/flags:bluetooth_flags_c_lib",
     "//bt/floss/rust/topshim:libbluetooth_topshim",
-    "//bt/system/gd/common:BluetoothCommonSources",
-    "//bt/system/gd/hal:BluetoothHalSources",
-    "//bt/system/gd/hal:BluetoothHalSources_hci_host",
-    "//bt/system/gd/hal:BluetoothHalSources_ranging_host",
-    "//bt/system/gd/hal:BluetoothHalSources_socket_host",
-    "//bt/system/gd/metrics:BluetoothMetricsSources",
-    "//bt/system/gd/storage:BluetoothStorageSources",
-    "//bt/system/gd/sysprops:BluetoothSyspropsSources",
+    "//bt/sysprop:libcom.android.sysprop.bluetooth",
+    "//bt/system/gd:gd_default_deps",
     "//bt/system/pdl:BluetoothGeneratedPackets_h",
   ]
+
+  if (target_os == "chromeos") {
+    sources += [
+      "metrics/chromeos/metrics.cc",
+      "metrics/chromeos/metrics_allowlist.cc",
+      "metrics/chromeos/metrics_event.cc",
+      "os/chromeos/metrics.cc",
+      "os/chromeos/parameter_provider.cc",
+      "os/chromeos/system_properties.cc",
+      "os/chromeos/wakelock_native.cc",
+    ]
+    deps += [ "//bt/floss/android-base:android-base" ]
+  } else {
+    sources += [
+      "metrics/linux/metrics.cc",
+      "os/linux/metrics.cc",
+      "os/linux/parameter_provider.cc",
+      "os/linux/system_properties.cc",
+      "os/linux/wakelock_native.cc",
+    ]
+  }
+}
+
+if (use.test) {
+  executable("hci_tests") {
+    sources = [ "hci/hci_packets_test.cc" ]
+
+    include_dirs = [ "//bt/system/gd" ]
+
+    deps = [ "//bt/system/main:bluetooth-static" ]
+
+    configs += [
+      "//bt/system:target_defaults",
+      "//bt/system:external_gtest_main",
+    ]
+
+    libs = [
+      "pthread",
+      "rt",
+      "dl",
+    ]
+
+    ldflags = [ "-lpthread" ]
+  }
 }

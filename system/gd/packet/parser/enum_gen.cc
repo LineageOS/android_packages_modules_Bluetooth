@@ -16,6 +16,7 @@
 
 #include "enum_gen.h"
 
+#include <format>
 #include <iostream>
 
 #include "util.h"

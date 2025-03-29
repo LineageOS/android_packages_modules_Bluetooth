@@ -857,7 +857,7 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
             return;
         }
         int connectionPolicy = hidHostService.getConnectionPolicy(device);
-        if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
+        if (connectionPolicy != CONNECTION_POLICY_ALLOWED) {
             Log.d(TAG, log + "Skipped HID auto-connect. connectionPolicy=" + connectionPolicy);
             return;
         }

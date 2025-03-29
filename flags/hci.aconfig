@@ -10,3 +10,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "add_hop_to_event_callback"
+    namespace: "bluetooth"
+    description: "Add an additional hop to event callback"
+    bug: "406123458"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
