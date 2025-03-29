@@ -44,9 +44,7 @@ import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothUtils;
 import android.bluetooth.IBluetoothConnectionCallback;
-import android.content.AttributionSource;
 import android.content.Intent;
-import android.content.pm.Attribution;
 import android.net.MacAddress;
 import android.os.Build;
 import android.os.Handler;
@@ -67,7 +65,6 @@ import com.android.modules.utils.build.SdkLevel;
 
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -960,14 +957,11 @@ public class RemoteDevices {
      * we must add device first before setting it's properties. This is a helper method for doing
      * that.
      */
-    void setBondingInitiatedLocally(byte[] address) {
-        DeviceProperties properties;
+    void setBondingInitiatedLocally(BluetoothDevice device) {
+        DeviceProperties properties = getDeviceProperties(device);
 
-        BluetoothDevice device = getDevice(address);
-        if (device == null) {
-            properties = addDeviceProperties(address);
-        } else {
-            properties = getDeviceProperties(device);
+        if (properties == null) {
+            properties = addDeviceProperties(Utils.getByteAddress(device));
         }
 
         properties.setBondingInitiatedLocally(true);
