@@ -2321,8 +2321,7 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event, void* p_data)
         btif_av_source_dispatch_sm_event(peer_.PeerAddress(), BTIF_AV_SUSPEND_STREAM_REQ_EVT);
       }
 
-      if (com::android::bluetooth::flags::av_stream_reconfigure_fix() &&
-          peer_.CheckFlags(BtifAvPeer::kFlagPendingReconfigure)) {
+      if (peer_.CheckFlags(BtifAvPeer::kFlagPendingReconfigure)) {
         log::info(
                 "Peer {} : Stream started but reconfiguration pending. "
                 "Reconfiguring stream",
@@ -3630,7 +3629,6 @@ bt_status_t btif_av_source_set_codec_config_preference(
   std::future<void> peer_ready_future = peer_ready_promise.get_future();
   bt_status_t status = BT_STATUS_FAIL;
 
-  if (com::android::bluetooth::flags::av_stream_reconfigure_fix()) {
     status = btif_av_source.SetPeerReconfigureStreamData(peer_address, codec_preferences,
                                                          std::move(peer_ready_promise));
     if (status != BT_STATUS_SUCCESS) {
@@ -3642,15 +3640,10 @@ bt_status_t btif_av_source_set_codec_config_preference(
     status = do_in_main_thread(base::BindOnce(&btif_av_handle_event,
                                               AVDT_TSEP_SNK,  // peer_sep
                                               peer_address, kBtaHandleUnknown, btif_av_event));
-  } else {
-    status = do_in_main_thread(base::BindOnce(&BtifAvSource::UpdateCodecConfig,
-                                              base::Unretained(&btif_av_source), peer_address,
-                                              codec_preferences, std::move(peer_ready_promise)));
-  }
 
-  if (status != BT_STATUS_SUCCESS) {
-    log::error("do_in_main_thread failed, status: {}", status);
-    return status;
+    if (status != BT_STATUS_SUCCESS) {
+      log::error("do_in_main_thread failed, status: {}", status);
+      return status;
   }
 
   if (peer_ready_future.wait_for(std::chrono::seconds(10)) != std::future_status::ready) {
