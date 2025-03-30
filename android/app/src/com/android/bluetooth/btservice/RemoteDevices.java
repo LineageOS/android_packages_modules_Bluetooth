@@ -311,7 +311,11 @@ public class RemoteDevices {
             }
 
             DeviceProperties prop = new DeviceProperties();
-            prop.setDevice(mAdapter.getRemoteDevice(Utils.getAddressStringFromByte(address)));
+            BluetoothDevice device =
+                    Flags.retainAddressType()
+                            ? mAdapter.getRemoteLeDevice(key, addressType)
+                            : mAdapter.getRemoteDevice(key);
+            prop.setDevice(device);
             prop.setAddress(address);
 
             DeviceProperties pv = mDevices.put(key, prop);
