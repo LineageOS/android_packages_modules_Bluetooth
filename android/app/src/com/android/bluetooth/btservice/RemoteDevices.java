@@ -2204,6 +2204,9 @@ public class RemoteDevices {
             StringBuilder sb = bonded ? sbBonded : sbKnown;
             sb.append("    ")
                     .append(anonAddress)
+                    .append("(")
+                    .append(addressTypeToString(deviceProperties.getDevice().getAddressType()))
+                    .append(")")
                     .append(" => ")
                     .append(anonIdentityAddress)
                     .append("(")
