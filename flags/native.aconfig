@@ -1,0 +1,12 @@
+package: "com.android.bluetooth.flags"
+container: "com.android.bt"
+
+flag {
+    name: "dump_without_promise_timeout"
+    namespace: "bluetooth"
+    description: "Remove the promise timeout for the dump"
+    bug: "404703494"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

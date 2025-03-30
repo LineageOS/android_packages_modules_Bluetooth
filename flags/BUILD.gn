@@ -28,6 +28,7 @@ aconfig("bluetooth_flags_c_lib") {
     "leaudio.aconfig",
     "mapclient.aconfig",
     "metric.aconfig",
+    "native.aconfig",
     "opp.aconfig",
     "pairing.aconfig",
     "pbapclient.aconfig",
