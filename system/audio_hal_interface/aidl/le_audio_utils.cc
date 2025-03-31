@@ -588,14 +588,18 @@ static std::string GenerateNameForConfig(
                 << +current_codec.id.vendor_company_id << "_" << +current_codec.id.vendor_codec_id
                 << "-";
         // Codec parameters
-        cfg_str << current_codec.GetSamplingFrequencyHz() << "hz";
-        if (current_codec.id.coding_format ==
-            ::bluetooth::le_audio::types::kLeAudioCodingFormatLC3) {
-          cfg_str << "_" << current_codec.GetOctetsPerFrame() << "oct";
-          cfg_str << "_" << current_codec.GetDataIntervalUs() << "us";
+        if (current_codec.id == ::bluetooth::le_audio::types::kLeAudioCodecHeadtracking) {
+          cfg_str << "Headtracking";
+        } else {
+          cfg_str << current_codec.GetSamplingFrequencyHz() << "hz";
+          if (current_codec.id.coding_format ==
+              ::bluetooth::le_audio::types::kLeAudioCodingFormatLC3) {
+            cfg_str << "_" << current_codec.GetOctetsPerFrame() << "oct";
+            cfg_str << "_" << current_codec.GetDataIntervalUs() << "us";
+          }
+          // QoS
+          cfg_str << "-" << StackTargetLatencyToString(current_config->qos.target_latency);
         }
-        // QoS
-        cfg_str << "-" << StackTargetLatencyToString(current_config->qos.target_latency);
 
         if (last_equal_config == configs.end()) {
           break;
@@ -869,6 +873,11 @@ std::optional<bluetooth::le_audio::ProviderInfo> GetStackProviderInfoFromAidl(
     if (flags & ::bluetooth::le_audio::CodecManager::Flags::LOW_LATENCY) {
       aidl_reqs.flags->bitmask |=
               ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::LOW_LATENCY;
+    }
+
+    if (flags & ::bluetooth::le_audio::CodecManager::Flags::SPATIAL_AUDIO) {
+      aidl_reqs.flags->bitmask |=
+              ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::SPATIAL_AUDIO;
     }
   }
 
