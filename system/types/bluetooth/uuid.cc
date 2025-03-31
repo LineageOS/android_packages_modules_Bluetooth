@@ -28,7 +28,15 @@
 
 namespace bluetooth {
 
-static_assert(sizeof(Uuid) == 16, "Uuid must be 16 bytes long!");
+static_assert(Uuid::kNumBytes128 == 16, "kNumBytes128 must be 16 bytes long!");
+static_assert(std::is_trivial<Uuid>(), "Uuid must be trivial!");
+static_assert(std::is_standard_layout<Uuid>(), "Uuid must have standard layout!");
+static_assert(sizeof(Uuid) == Uuid::kNumBytes128, "Uuid must be 16 bytes long!");
+static_assert(std::is_trivial<Uuid::UUID128Bit>(), "Uuid::UUID128Bit must be trivial!");
+static_assert(std::is_standard_layout<Uuid::UUID128Bit>(),
+              "Uuid::UUID128Bit must have standard layout!");
+static_assert(sizeof(Uuid::UUID128Bit) == Uuid::kNumBytes128,
+              "Uuid::UUID128Bit must be 16 bytes long!");
 
 using UUID128Bit = Uuid::UUID128Bit;
 
