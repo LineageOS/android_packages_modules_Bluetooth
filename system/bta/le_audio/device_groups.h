@@ -184,6 +184,8 @@ public:
   bool IsGroupStreamReady(void) const;
   bool IsGroupReadyToCreateStream(void) const;
   bool IsGroupReadyToSuspendStream(void) const;
+  bool IsDirectionAvailableForConfiguration(types::LeAudioContextType configuration_contex_type,
+                                            uint8_t remote_direction) const;
   bool HaveAllCisesDisconnected(void) const;
   void ClearAllCises(void);
   void UpdateCisConfiguration(uint8_t direction);
