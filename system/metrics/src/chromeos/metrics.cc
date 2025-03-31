@@ -105,26 +105,6 @@ void LogMetricHfpPacketLossStats(const Address& address, int num_decoded_frames,
           .Record();
 }
 
-void LogMetricMmcTranscodeRttStats(int maximum_rtt, double mean_rtt, int num_requests,
-                                   int codec_type) {
-  std::string boot_id;
-
-  if (!metrics::GetBootId(&boot_id)) {
-    return;
-  }
-
-  log::debug("MmcTranscodeRttStats: {}, {}, {:f}, {}, {}", boot_id, maximum_rtt, mean_rtt,
-             num_requests, codec_type);
-
-  ::metrics::structured::events::bluetooth::BluetoothMmcTranscodeRtt()
-          .SetBootId(boot_id)
-          .SetMaximumRtt(maximum_rtt)
-          .SetMeanRtt(mean_rtt)
-          .SetNumRequests(num_requests)
-          .SetCodecType(codec_type)
-          .Record();
-}
-
 void LogMetricReadRssiResult(const Address& address, uint16_t handle, uint32_t cmd_status,
                              int8_t rssi) {}
 

@@ -348,5 +348,25 @@ void LogMetricsLLPrivacyState(uint32_t llp_state, uint32_t rpa_state) {
           .Record();
 }
 
+void LogMetricMmcTranscodeRttStats(int maximum_rtt, double mean_rtt, int num_requests,
+                                   int codec_type) {
+  std::string boot_id;
+
+  if (!metrics::GetBootId(&boot_id)) {
+    return;
+  }
+
+  log::debug("MmcTranscodeRttStats: {}, {}, {:f}, {}, {}", boot_id, maximum_rtt, mean_rtt,
+             num_requests, codec_type);
+
+  ::metrics::structured::events::bluetooth::BluetoothMmcTranscodeRtt()
+          .SetBootId(boot_id)
+          .SetMaximumRtt(maximum_rtt)
+          .SetMeanRtt(mean_rtt)
+          .SetNumRequests(num_requests)
+          .SetCodecType(codec_type)
+          .Record();
+}
+
 }  // namespace metrics
 }  // namespace bluetooth
