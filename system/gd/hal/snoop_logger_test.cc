@@ -100,15 +100,13 @@ static const std::vector<bluetooth::hal::HciPacket> kTestData = {
 
 }  // namespace
 
-class SnoopLoggerTest : public testing::Test {
-public:
-  os::Thread* thread_;
-  os::Handler* handler_;
-
+class SnoopLoggerTest : public testing::TestWithParam<bool> {
 protected:
   void SetUp() override {
+    com::android::bluetooth::flags::provider_->same_handler_for_all_modules(GetParam());
+
     thread_ = new os::Thread("test_thread", bluetooth::os::Thread::Priority::NORMAL);
-    handler_ = new os::Handler(thread_);
+    shared_handler_ = new os::Handler(thread_);
 
     const testing::TestInfo* const test_info =
             testing::UnitTest::GetInstance()->current_test_info();
@@ -116,15 +114,15 @@ protected:
     log::debug("Setup for test {} in test suite {}.", test_info->name(),
                test_info->test_suite_name());
     const std::filesystem::path temp_dir_ = std::filesystem::temp_directory_path();
+    test_name_ = test_info->name();
+    std::replace(test_name_.begin(), test_name_.end(), '/', '_');
 
-    temp_snoop_log_ = temp_dir_ / (std::string(test_info->name()) + "_btsnoop_hci.log");
-    temp_snoop_log_last_ = temp_dir_ / (std::string(test_info->name()) + "_btsnoop_hci.log.last");
-    temp_snooz_log_ = temp_dir_ / (std::string(test_info->name()) + "_btsnooz_hci.log");
-    temp_snooz_log_last_ = temp_dir_ / (std::string(test_info->name()) + "_btsnooz_hci.log.last");
-    temp_snoop_log_filtered_ =
-            temp_dir_ / (std::string(test_info->name()) + "_btsnoop_hci.log.filtered");
-    temp_snoop_log_filtered_last_ =
-            temp_dir_ / (std::string(test_info->name()) + "_btsnoop_hci.log.filtered.last");
+    temp_snoop_log_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log");
+    temp_snoop_log_last_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log.last");
+    temp_snooz_log_ = temp_dir_ / (test_name_ + "_btsnooz_hci.log");
+    temp_snooz_log_last_ = temp_dir_ / (test_name_ + "_btsnooz_hci.log.last");
+    temp_snoop_log_filtered_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log.filtered");
+    temp_snoop_log_filtered_last_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log.filtered.last");
 
     DeleteSnoopLogFiles();
     ASSERT_FALSE(std::filesystem::exists(temp_snoop_log_));
@@ -136,10 +134,11 @@ protected:
   }
 
   void TearDown() override {
-    handler_->Clear();
-    handler_->WaitUntilStopped(200ms);
+    shared_handler_->Clear();
+    shared_handler_->WaitUntilStopped(200ms);
+    delete shared_handler_;
+
     thread_->Stop();
-    delete handler_;
     delete thread_;
 
     com::android::bluetooth::flags::provider_->reset_flags();
@@ -157,19 +156,19 @@ protected:
     return SnoopLogger::MAX_HCI_ACL_LEN - SnoopLogger::PACKET_TYPE_LENGTH;
   }
 
-  SnoopLogger* NewSnoopLogger(size_t max_packets_per_file, const std::string& btsnoop_mode,
-                              bool qualcomm_debug_log_enabled, bool snoop_log_persists) {
-    return new SnoopLogger(handler_, temp_snoop_log_.string(), temp_snooz_log_.string(),
-                           max_packets_per_file, SnoopLogger::GetMaxPacketsPerBuffer(),
-                           btsnoop_mode, qualcomm_debug_log_enabled, 20ms, 5ms, snoop_log_persists);
-  }
+  std::unique_ptr<SnoopLogger> NewSnoopLogger(size_t max_packets_per_file,
+                                              const std::string& btsnoop_mode,
+                                              bool qualcomm_debug_log_enabled,
+                                              bool snoop_log_persists) {
+    os::Handler* handler = com::android::bluetooth::flags::provider_->same_handler_for_all_modules()
+                                   ? shared_handler_
+                                   : new os::Handler(thread_);
 
-  std::filesystem::path temp_snoop_log_;
-  std::filesystem::path temp_snoop_log_last_;
-  std::filesystem::path temp_snooz_log_;
-  std::filesystem::path temp_snooz_log_last_;
-  std::filesystem::path temp_snoop_log_filtered_;
-  std::filesystem::path temp_snoop_log_filtered_last_;
+    return std::unique_ptr<SnoopLogger>(new SnoopLogger(
+            handler, temp_snoop_log_.string(), temp_snooz_log_.string(), max_packets_per_file,
+            SnoopLogger::GetMaxPacketsPerBuffer(), btsnoop_mode, qualcomm_debug_log_enabled, 20ms,
+            5ms, snoop_log_persists));
+  }
 
   void DeleteSnoopLogFiles() {
     if (std::filesystem::exists(temp_snoop_log_)) {
@@ -191,11 +190,21 @@ protected:
       ASSERT_TRUE(std::filesystem::remove(temp_snooz_log_last_));
     }
   }
+
+  os::Thread* thread_ = nullptr;
+  os::Handler* shared_handler_ = nullptr;  // Not necessarily used, depending on flags.
+  std::filesystem::path temp_snoop_log_;
+  std::filesystem::path temp_snoop_log_last_;
+  std::filesystem::path temp_snooz_log_;
+  std::filesystem::path temp_snooz_log_last_;
+  std::filesystem::path temp_snoop_log_filtered_;
+  std::filesystem::path temp_snoop_log_filtered_last_;
+  std::string test_name_;
 };
 
-TEST_F(SnoopLoggerTest, empty_snoop_log_test) {
+TEST_P(SnoopLoggerTest, empty_snoop_log_test) {
   // Actual test
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, false, false);
   snoop_logger->Start();
   snoop_logger->Stop();
 
@@ -205,9 +214,9 @@ TEST_F(SnoopLoggerTest, empty_snoop_log_test) {
   ASSERT_EQ(std::filesystem::file_size(temp_snoop_log_), sizeof(SnoopLoggerCommon::FileHeaderType));
 }
 
-TEST_F(SnoopLoggerTest, disable_snoop_log_test) {
+TEST_P(SnoopLoggerTest, disable_snoop_log_test) {
   // Actual test
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, false, false);
   snoop_logger->Start();
   snoop_logger->Stop();
 
@@ -217,9 +226,9 @@ TEST_F(SnoopLoggerTest, disable_snoop_log_test) {
   ASSERT_FALSE(std::filesystem::exists(temp_snooz_log_));
 }
 
-TEST_F(SnoopLoggerTest, capture_one_packet_test) {
+TEST_P(SnoopLoggerTest, capture_one_packet_test) {
   // Actual test
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, false, false);
   snoop_logger->Start();
   snoop_logger->Capture(kInformationRequest, SnoopLogger::Direction::OUTGOING,
                         SnoopLogger::PacketType::CMD);
@@ -233,9 +242,9 @@ TEST_F(SnoopLoggerTest, capture_one_packet_test) {
                     kInformationRequest.size());
 }
 
-TEST_F(SnoopLoggerTest, capture_hci_cmd_btsnooz_test) {
+TEST_P(SnoopLoggerTest, capture_hci_cmd_btsnooz_test) {
   // Actual test
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, false, false);
   snoop_logger->Start();
   snoop_logger->Capture(kInformationRequest, SnoopLogger::Direction::OUTGOING,
                         SnoopLogger::PacketType::CMD);
@@ -253,9 +262,9 @@ TEST_F(SnoopLoggerTest, capture_hci_cmd_btsnooz_test) {
   ASSERT_FALSE(std::filesystem::exists(temp_snooz_log_));
 }
 
-TEST_F(SnoopLoggerTest, capture_l2cap_signal_packet_btsnooz_test) {
+TEST_P(SnoopLoggerTest, capture_l2cap_signal_packet_btsnooz_test) {
   // Actual test
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, false, false);
   snoop_logger->Start();
   snoop_logger->Capture(kSdpConnectionRequest, SnoopLogger::Direction::OUTGOING,
                         SnoopLogger::PacketType::ACL);
@@ -274,9 +283,9 @@ TEST_F(SnoopLoggerTest, capture_l2cap_signal_packet_btsnooz_test) {
   ASSERT_FALSE(std::filesystem::exists(temp_snooz_log_));
 }
 
-TEST_F(SnoopLoggerTest, capture_l2cap_short_data_packet_btsnooz_test) {
+TEST_P(SnoopLoggerTest, capture_l2cap_short_data_packet_btsnooz_test) {
   // Actual test
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, false, false);
   snoop_logger->Start();
   snoop_logger->Capture(kAvdtpSuspend, SnoopLogger::Direction::OUTGOING,
                         SnoopLogger::PacketType::ACL);
@@ -295,9 +304,9 @@ TEST_F(SnoopLoggerTest, capture_l2cap_short_data_packet_btsnooz_test) {
   ASSERT_FALSE(std::filesystem::exists(temp_snooz_log_));
 }
 
-TEST_F(SnoopLoggerTest, capture_l2cap_long_data_packet_btsnooz_test) {
+TEST_P(SnoopLoggerTest, capture_l2cap_long_data_packet_btsnooz_test) {
   // Actual test
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, false, false);
   snoop_logger->Start();
   snoop_logger->Capture(kHfpAtNrec0, SnoopLogger::Direction::OUTGOING,
                         SnoopLogger::PacketType::ACL);
@@ -315,9 +324,9 @@ TEST_F(SnoopLoggerTest, capture_l2cap_long_data_packet_btsnooz_test) {
   ASSERT_FALSE(std::filesystem::exists(temp_snooz_log_));
 }
 
-TEST_F(SnoopLoggerTest, snoop_log_persists) {
+TEST_P(SnoopLoggerTest, snoop_log_persists) {
   // Actual test
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, false, true);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, false, true);
   snoop_logger->Start();
   snoop_logger->Capture(kHfpAtNrec0, SnoopLogger::Direction::OUTGOING,
                         SnoopLogger::PacketType::ACL);
@@ -340,35 +349,35 @@ static void sync_handler(bluetooth::os::Handler* handler) {
   ASSERT_EQ(future_status, std::future_status::ready);
 }
 
-TEST_F(SnoopLoggerTest, delete_old_snooz_log_files) {
+TEST_P(SnoopLoggerTest, delete_old_snooz_log_files) {
   // Actual test
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, false, false);
   snoop_logger->Start();
 
   std::filesystem::create_directories(temp_snooz_log_.parent_path());
   os::WriteToFile(temp_snooz_log_.string(), "");
 
   ASSERT_TRUE(std::filesystem::exists(temp_snooz_log_));
-  handler_->Post(bluetooth::common::BindOnce(fake_timerfd_advance, 10));
+  snoop_logger->GetHandler()->Post(bluetooth::common::BindOnce(fake_timerfd_advance, 10));
   ASSERT_TRUE(std::filesystem::exists(temp_snooz_log_));
-  handler_->Post(bluetooth::common::BindOnce(fake_timerfd_advance, 15));
-  sync_handler(handler_);
-  handler_->Post(bluetooth::common::BindOnce(
+  snoop_logger->GetHandler()->Post(bluetooth::common::BindOnce(fake_timerfd_advance, 15));
+  sync_handler(snoop_logger->GetHandler());
+  snoop_logger->GetHandler()->Post(bluetooth::common::BindOnce(
           [](std::filesystem::path path) {
             log::info("path: {}", path.string());
             ASSERT_FALSE(std::filesystem::exists(path));
           },
           temp_snooz_log_));
-  sync_handler(handler_);
+  sync_handler(snoop_logger->GetHandler());
 
   snoop_logger->Stop();
   ASSERT_FALSE(std::filesystem::exists(temp_snooz_log_));
 }
 
-TEST_F(SnoopLoggerTest, rotate_file_at_new_session_test) {
+TEST_P(SnoopLoggerTest, rotate_file_at_new_session_test) {
   // Start once
   {
-    auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, false, false);
+    auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, false, false);
     snoop_logger->Start();
     snoop_logger->Capture(kInformationRequest, SnoopLogger::Direction::OUTGOING,
                           SnoopLogger::PacketType::CMD);
@@ -384,7 +393,7 @@ TEST_F(SnoopLoggerTest, rotate_file_at_new_session_test) {
 
   // Start again
   {
-    auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, false, false);
+    auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, false, false);
     snoop_logger->Start();
     snoop_logger->Capture(kInformationRequest, SnoopLogger::Direction::OUTGOING,
                           SnoopLogger::PacketType::CMD);
@@ -404,9 +413,9 @@ TEST_F(SnoopLoggerTest, rotate_file_at_new_session_test) {
                     kInformationRequest.size());
 }
 
-TEST_F(SnoopLoggerTest, rotate_file_after_full_test) {
+TEST_P(SnoopLoggerTest, rotate_file_after_full_test) {
   // Actual test
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, false, false);
   snoop_logger->Start();
 
   for (int i = 0; i < 11; i++) {
@@ -427,8 +436,8 @@ TEST_F(SnoopLoggerTest, rotate_file_after_full_test) {
                     (sizeof(SnoopLogger::PacketHeaderType) + kInformationRequest.size()) * 10);
 }
 
-TEST_F(SnoopLoggerTest, qualcomm_debug_log_test) {
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, true, false);
+TEST_P(SnoopLoggerTest, qualcomm_debug_log_test) {
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, true, false);
   snoop_logger->Start();
   snoop_logger->Capture(kQualcommConnectionRequest, SnoopLogger::Direction::OUTGOING,
                         SnoopLogger::PacketType::ACL);
@@ -447,9 +456,9 @@ TEST_F(SnoopLoggerTest, qualcomm_debug_log_test) {
   ASSERT_FALSE(std::filesystem::exists(temp_snooz_log_));
 }
 
-TEST_F(SnoopLoggerTest, qualcomm_debug_log_regression_test) {
+TEST_P(SnoopLoggerTest, qualcomm_debug_log_regression_test) {
   {
-    auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, true, false);
+    auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, true, false);
     snoop_logger->Start();
     snoop_logger->Capture(kHfpAtNrec0, SnoopLogger::Direction::OUTGOING,
                           SnoopLogger::PacketType::ACL);
@@ -468,7 +477,7 @@ TEST_F(SnoopLoggerTest, qualcomm_debug_log_regression_test) {
   ASSERT_FALSE(std::filesystem::exists(temp_snooz_log_));
 
   {
-    auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, false, false);
+    auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, false, false);
     snoop_logger->Start();
     snoop_logger->Capture(kQualcommConnectionRequest, SnoopLogger::Direction::OUTGOING,
                           SnoopLogger::PacketType::ACL);
@@ -487,7 +496,7 @@ TEST_F(SnoopLoggerTest, qualcomm_debug_log_regression_test) {
   ASSERT_FALSE(std::filesystem::exists(temp_snooz_log_));
 }
 
-TEST_F(SnoopLoggerTest, filter_tracker_test) {
+TEST_P(SnoopLoggerTest, filter_tracker_test) {
   std::unordered_map<uint16_t, bluetooth::hal::FilterTracker> filter_list;
   uint16_t handle = 1;
   uint16_t local_cid = 0x40;
@@ -515,7 +524,7 @@ TEST_F(SnoopLoggerTest, filter_tracker_test) {
   ASSERT_FALSE(filter_list[handle].IsAcceptlistedDlci(dlci));
 }
 
-TEST_F(SnoopLoggerTest, a2dp_packets_filtered_test) {
+TEST_P(SnoopLoggerTest, a2dp_packets_filtered_test) {
   // Actual test
   uint16_t conn_handle = 0x000b;
   uint16_t local_cid = 0x0001;
@@ -527,7 +536,7 @@ TEST_F(SnoopLoggerTest, a2dp_packets_filtered_test) {
           bluetooth::os::GetSystemProperty(SnoopLogger::kBtSnoopLogFilterProfileA2dpProperty);
   ASSERT_TRUE(filter_a2dp_property && filter_a2dp_property.value() == "true");
 
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
   snoop_logger->Start();
 
   // Simulate A2dp Media channel setup
@@ -551,7 +560,7 @@ TEST_F(SnoopLoggerTest, a2dp_packets_filtered_test) {
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
 
-TEST_F(SnoopLoggerTest, a2dp_packets_filtered_negative_test) {
+TEST_P(SnoopLoggerTest, a2dp_packets_filtered_negative_test) {
   // Actual test
   uint16_t conn_handle = 0x000b;
   uint16_t local_cid = 0x0001;
@@ -563,7 +572,7 @@ TEST_F(SnoopLoggerTest, a2dp_packets_filtered_negative_test) {
           bluetooth::os::GetSystemProperty(SnoopLogger::kBtSnoopLogFilterProfileA2dpProperty);
   ASSERT_TRUE(filter_a2dp_property && filter_a2dp_property.value() == "true");
 
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
 
   snoop_logger->Start();
 
@@ -590,14 +599,14 @@ TEST_F(SnoopLoggerTest, a2dp_packets_filtered_negative_test) {
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
 
-TEST_F(SnoopLoggerTest, headers_filtered_test) {
+TEST_P(SnoopLoggerTest, headers_filtered_test) {
   ASSERT_TRUE(
           bluetooth::os::SetSystemProperty(SnoopLogger::kBtSnoopLogFilterHeadersProperty, "true"));
   auto filter_headers_property =
           bluetooth::os::GetSystemProperty(SnoopLogger::kBtSnoopLogFilterHeadersProperty);
   ASSERT_TRUE(filter_headers_property && filter_headers_property.value() == "true");
 
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
 
   snoop_logger->Start();
 
@@ -628,7 +637,7 @@ TEST_F(SnoopLoggerTest, headers_filtered_test) {
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
 
-TEST_F(SnoopLoggerTest, rfcomm_channel_filtered_sabme_ua_test) {
+TEST_P(SnoopLoggerTest, rfcomm_channel_filtered_sabme_ua_test) {
   // Actual test
   uint16_t conn_handle = 0x000b;
   uint16_t local_cid = 0x0044;
@@ -641,7 +650,7 @@ TEST_F(SnoopLoggerTest, rfcomm_channel_filtered_sabme_ua_test) {
   ASSERT_TRUE(filter_rfcomm_property);
   ASSERT_EQ("true", filter_rfcomm_property.value());
 
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
 
   snoop_logger->Start();
 
@@ -677,7 +686,7 @@ TEST_F(SnoopLoggerTest, rfcomm_channel_filtered_sabme_ua_test) {
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
 
-TEST_F(SnoopLoggerTest, rfcomm_channel_filtered_acceptlisted_dlci_test) {
+TEST_P(SnoopLoggerTest, rfcomm_channel_filtered_acceptlisted_dlci_test) {
   // Actual test
   uint16_t conn_handle = 0x000b;
   uint16_t local_cid = 0x0041;
@@ -692,7 +701,7 @@ TEST_F(SnoopLoggerTest, rfcomm_channel_filtered_acceptlisted_dlci_test) {
   ASSERT_TRUE(filter_rfcomm_property);
   ASSERT_EQ("true", filter_rfcomm_property.value());
 
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
 
   snoop_logger->Start();
 
@@ -725,7 +734,7 @@ TEST_F(SnoopLoggerTest, rfcomm_channel_filtered_acceptlisted_dlci_test) {
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
 
-TEST_F(SnoopLoggerTest, rfcomm_channel_filtered_not_acceptlisted_dlci_test) {
+TEST_P(SnoopLoggerTest, rfcomm_channel_filtered_not_acceptlisted_dlci_test) {
   // Actual test
   uint16_t conn_handle = 0x000b;
   uint16_t local_cid = 0x0041;
@@ -740,7 +749,7 @@ TEST_F(SnoopLoggerTest, rfcomm_channel_filtered_not_acceptlisted_dlci_test) {
   ASSERT_TRUE(filter_rfcomm_property);
   ASSERT_EQ("true", filter_rfcomm_property.value());
 
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
 
   snoop_logger->Start();
 
@@ -773,7 +782,7 @@ TEST_F(SnoopLoggerTest, rfcomm_channel_filtered_not_acceptlisted_dlci_test) {
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
 
-TEST_F(SnoopLoggerTest, rfcomm_channel_filtered_not_acceptlisted_l2cap_channel_test) {
+TEST_P(SnoopLoggerTest, rfcomm_channel_filtered_not_acceptlisted_l2cap_channel_test) {
   // Actual test
   uint16_t conn_handle = 0x000b;
   uint16_t local_cid = 0x0041;
@@ -786,7 +795,7 @@ TEST_F(SnoopLoggerTest, rfcomm_channel_filtered_not_acceptlisted_l2cap_channel_t
   ASSERT_TRUE(filter_rfcomm_property);
   ASSERT_EQ("true", filter_rfcomm_property.value());
 
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
 
   snoop_logger->Start();
 
@@ -816,7 +825,7 @@ TEST_F(SnoopLoggerTest, rfcomm_channel_filtered_not_acceptlisted_l2cap_channel_t
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
 
-TEST_F(SnoopLoggerTest, rfcomm_channel_filtered_acceptlisted_l2cap_channel_test) {
+TEST_P(SnoopLoggerTest, rfcomm_channel_filtered_acceptlisted_l2cap_channel_test) {
   // Actual test
   uint16_t conn_handle = 0x000b;
   uint16_t local_cid = 0x0041;
@@ -829,7 +838,7 @@ TEST_F(SnoopLoggerTest, rfcomm_channel_filtered_acceptlisted_l2cap_channel_test)
   ASSERT_TRUE(filter_rfcomm_property);
   ASSERT_EQ("true", filter_rfcomm_property.value());
 
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
 
   snoop_logger->Start();
   snoop_logger->AcceptlistL2capChannel(conn_handle, local_cid, remote_cid);
@@ -860,7 +869,7 @@ TEST_F(SnoopLoggerTest, rfcomm_channel_filtered_acceptlisted_l2cap_channel_test)
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
 
-TEST_F(SnoopLoggerTest, profiles_filtered_hfp_hf_test) {
+TEST_P(SnoopLoggerTest, profiles_filtered_hfp_hf_test) {
   // Actual test
   uint16_t conn_handle = 0x000b;
   uint16_t local_cid = 0x0043;
@@ -890,7 +899,7 @@ TEST_F(SnoopLoggerTest, profiles_filtered_hfp_hf_test) {
               (filterMapModeProperty->find(SnoopLogger::kBtSnoopLogFilterProfileModeMagic) !=
                std::string::npos));
 
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
 
   snoop_logger->Start();
   snoop_logger->SetL2capChannelOpen(conn_handle, local_cid, remote_cid, psm, false);
@@ -928,7 +937,7 @@ TEST_F(SnoopLoggerTest, profiles_filtered_hfp_hf_test) {
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
 
-TEST_F(SnoopLoggerTest, profiles_filtered_pbap_magic_test) {
+TEST_P(SnoopLoggerTest, profiles_filtered_pbap_magic_test) {
   // Actual test
   constexpr uint16_t PROFILE_PSM_PBAP = 0x1025;
   constexpr uint16_t PROFILE_UUID_PBAP = 0x112f;
@@ -959,7 +968,7 @@ TEST_F(SnoopLoggerTest, profiles_filtered_pbap_magic_test) {
               (filterMapModeProperty->find(SnoopLogger::kBtSnoopLogFilterProfileModeMagic) !=
                std::string::npos));
 
-  auto* snoop_logger = NewSnoopLogger(15, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
+  auto snoop_logger = NewSnoopLogger(15, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
 
   snoop_logger->Start();
   snoop_logger->SetL2capChannelOpen(conn_handle, local_cid, remote_cid, psm, false);
@@ -995,7 +1004,7 @@ TEST_F(SnoopLoggerTest, profiles_filtered_pbap_magic_test) {
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
 
-TEST_F(SnoopLoggerTest, profiles_filtered_pbap_header_test) {
+TEST_P(SnoopLoggerTest, profiles_filtered_pbap_header_test) {
   // Actual test
   constexpr uint16_t PROFILE_PSM_PBAP = 0x1025;
   constexpr uint16_t PROFILE_UUID_PBAP = 0x112f;
@@ -1025,7 +1034,7 @@ TEST_F(SnoopLoggerTest, profiles_filtered_pbap_header_test) {
               (filterMapModeProperty->find(SnoopLogger::kBtSnoopLogFilterProfileModeHeader) !=
                std::string::npos));
 
-  auto* snoop_logger = NewSnoopLogger(15, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
+  auto snoop_logger = NewSnoopLogger(15, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
 
   snoop_logger->Start();
   snoop_logger->SetL2capChannelOpen(conn_handle, local_cid, remote_cid, psm, false);
@@ -1060,7 +1069,7 @@ TEST_F(SnoopLoggerTest, profiles_filtered_pbap_header_test) {
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
 
-TEST_F(SnoopLoggerTest, profiles_filtered_pbap_fullfilter_test) {
+TEST_P(SnoopLoggerTest, profiles_filtered_pbap_fullfilter_test) {
   // Actual test
   constexpr uint16_t PROFILE_PSM_PBAP = 0x1025;
   constexpr uint16_t PROFILE_UUID_PBAP = 0x112f;
@@ -1090,7 +1099,7 @@ TEST_F(SnoopLoggerTest, profiles_filtered_pbap_fullfilter_test) {
               (filterMapModeProperty->find(SnoopLogger::kBtSnoopLogFilterProfileModeFullfillter) !=
                std::string::npos));
 
-  auto* snoop_logger = NewSnoopLogger(15, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
+  auto snoop_logger = NewSnoopLogger(15, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
 
   snoop_logger->Start();
   snoop_logger->SetL2capChannelOpen(conn_handle, local_cid, remote_cid, psm, false);
@@ -1126,8 +1135,8 @@ TEST_F(SnoopLoggerTest, profiles_filtered_pbap_fullfilter_test) {
 
 static constexpr int INVALID_FD = -1;
 
-TEST_F(SnoopLoggerTest, socket_disabled_connect_fail_test) {
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, true, false);
+TEST_P(SnoopLoggerTest, socket_disabled_connect_fail_test) {
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, true, false);
   snoop_logger->Start();
 
   // // Create a TCP socket file descriptor
@@ -1149,9 +1158,9 @@ TEST_F(SnoopLoggerTest, socket_disabled_connect_fail_test) {
   close(socket_fd);
 }
 
-TEST_F(SnoopLoggerTest, default_socket_enabled_capture_recv_test) {
+TEST_P(SnoopLoggerTest, default_socket_enabled_capture_recv_test) {
   int ret;
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, true, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, true, false);
   snoop_logger->Start();
 
   // // Create a TCP socket file descriptor
@@ -1194,8 +1203,8 @@ TEST_F(SnoopLoggerTest, default_socket_enabled_capture_recv_test) {
   close(socket_fd);
 }
 
-TEST_F(SnoopLoggerTest, custom_socket_register_enabled_capture_recv_test) {
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, true, false);
+TEST_P(SnoopLoggerTest, custom_socket_register_enabled_capture_recv_test) {
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, true, false);
   snoop_logger->Start();
 
   int new_port = 8873;
@@ -1250,8 +1259,8 @@ TEST_F(SnoopLoggerTest, custom_socket_register_enabled_capture_recv_test) {
   close(socket_fd);
 }
 
-TEST_F(SnoopLoggerTest, custom_socket_interface_register_logging_disabled_test) {
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, true, false);
+TEST_P(SnoopLoggerTest, custom_socket_interface_register_logging_disabled_test) {
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, true, false);
   snoop_logger->Start();
 
   class SnoopLoggerSocketMock : public SnoopLoggerSocketInterface {
@@ -1272,8 +1281,8 @@ TEST_F(SnoopLoggerTest, custom_socket_interface_register_logging_disabled_test) 
   snoop_logger->Stop();
 }
 
-TEST_F(SnoopLoggerTest, custom_socket_interface_register_logging_enabled_test) {
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, true, false);
+TEST_P(SnoopLoggerTest, custom_socket_interface_register_logging_enabled_test) {
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, true, false);
   snoop_logger->Start();
 
   class SnoopLoggerSocketMock : public SnoopLoggerSocketInterface {
@@ -1294,7 +1303,7 @@ TEST_F(SnoopLoggerTest, custom_socket_interface_register_logging_enabled_test) {
   snoop_logger->Stop();
 }
 
-TEST_F(SnoopLoggerTest, custom_socket_profiles_filtered_hfp_hf_test) {
+TEST_P(SnoopLoggerTest, custom_socket_profiles_filtered_hfp_hf_test) {
   uint16_t conn_handle = 0x000b;
   uint16_t local_cid = 0x0043;
   uint16_t remote_cid = 0x3040;
@@ -1340,7 +1349,7 @@ TEST_F(SnoopLoggerTest, custom_socket_profiles_filtered_hfp_hf_test) {
               (filterMapModeProperty->find(SnoopLogger::kBtSnoopLogFilterProfileModeMagic) !=
                std::string::npos));
 
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
 
   snoop_logger->Start();
 
@@ -1408,7 +1417,7 @@ TEST_F(SnoopLoggerTest, custom_socket_profiles_filtered_hfp_hf_test) {
 }
 
 #ifdef __ANDROID__
-TEST_F(SnoopLoggerTest, recreate_log_directory_when_enabled_test) {
+TEST_P(SnoopLoggerTest, recreate_log_directory_when_enabled_test) {
   com::android::bluetooth::flags::provider_->snoop_logger_recreate_logs_directory(true);
   const testing::TestInfo* const test_info = testing::UnitTest::GetInstance()->current_test_info();
   const std::filesystem::path file_path = os::ParameterProvider::SnoopLogFilePath();
@@ -1416,20 +1425,18 @@ TEST_F(SnoopLoggerTest, recreate_log_directory_when_enabled_test) {
 
   // Override the paths used for the test. The feature tested here relies on the actual
   // snoop path on Android to work.
-  temp_snoop_log_ = temp_dir_ / (std::string(test_info->name()) + "_btsnoop_hci.log");
-  temp_snoop_log_last_ = temp_dir_ / (std::string(test_info->name()) + "_btsnoop_hci.log.last");
-  temp_snooz_log_ = temp_dir_ / (std::string(test_info->name()) + "_btsnooz_hci.log");
-  temp_snooz_log_last_ = temp_dir_ / (std::string(test_info->name()) + "_btsnooz_hci.log.last");
-  temp_snoop_log_filtered_ =
-          temp_dir_ / (std::string(test_info->name()) + "_btsnoop_hci.log.filtered");
-  temp_snoop_log_filtered_last_ =
-          temp_dir_ / (std::string(test_info->name()) + "_btsnoop_hci.log.filtered.last");
+  temp_snoop_log_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log");
+  temp_snoop_log_last_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log.last");
+  temp_snooz_log_ = temp_dir_ / (test_name_ + "_btsnooz_hci.log");
+  temp_snooz_log_last_ = temp_dir_ / (test_name_ + "_btsnooz_hci.log.last");
+  temp_snoop_log_filtered_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log.filtered");
+  temp_snoop_log_filtered_last_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log.filtered.last");
   DeleteSnoopLogFiles();
   std::filesystem::remove_all(temp_dir_);
 
   ASSERT_FALSE(std::filesystem::exists(temp_dir_));
 
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, false, false);
   snoop_logger->Start();
 
   ASSERT_TRUE(std::filesystem::exists(temp_dir_));
@@ -1441,7 +1448,7 @@ TEST_F(SnoopLoggerTest, recreate_log_directory_when_enabled_test) {
   ASSERT_FALSE(std::filesystem::exists(temp_snooz_log_));
 }
 
-TEST_F(SnoopLoggerTest, recreate_log_directory_when_filtered_test) {
+TEST_P(SnoopLoggerTest, recreate_log_directory_when_filtered_test) {
   com::android::bluetooth::flags::provider_->snoop_logger_recreate_logs_directory(true);
   const testing::TestInfo* const test_info = testing::UnitTest::GetInstance()->current_test_info();
   const std::filesystem::path file_path = os::ParameterProvider::SnoopLogFilePath();
@@ -1449,20 +1456,18 @@ TEST_F(SnoopLoggerTest, recreate_log_directory_when_filtered_test) {
 
   // Override the paths used for the test. The feature tested here relies on the actual
   // snoop path on Android to work.
-  temp_snoop_log_ = temp_dir_ / (std::string(test_info->name()) + "_btsnoop_hci.log");
-  temp_snoop_log_last_ = temp_dir_ / (std::string(test_info->name()) + "_btsnoop_hci.log.last");
-  temp_snooz_log_ = temp_dir_ / (std::string(test_info->name()) + "_btsnooz_hci.log");
-  temp_snooz_log_last_ = temp_dir_ / (std::string(test_info->name()) + "_btsnooz_hci.log.last");
-  temp_snoop_log_filtered_ =
-          temp_dir_ / (std::string(test_info->name()) + "_btsnoop_hci.log.filtered");
-  temp_snoop_log_filtered_last_ =
-          temp_dir_ / (std::string(test_info->name()) + "_btsnoop_hci.log.filtered.last");
+  temp_snoop_log_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log");
+  temp_snoop_log_last_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log.last");
+  temp_snooz_log_ = temp_dir_ / (test_name_ + "_btsnooz_hci.log");
+  temp_snooz_log_last_ = temp_dir_ / (test_name_ + "_btsnooz_hci.log.last");
+  temp_snoop_log_filtered_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log.filtered");
+  temp_snoop_log_filtered_last_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log.filtered.last");
   DeleteSnoopLogFiles();
   std::filesystem::remove_all(temp_dir_);
 
   ASSERT_FALSE(std::filesystem::exists(temp_dir_));
 
-  auto* snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFiltered, false, false);
   snoop_logger->Start();
 
   ASSERT_TRUE(std::filesystem::exists(temp_dir_));
@@ -1473,5 +1478,8 @@ TEST_F(SnoopLoggerTest, recreate_log_directory_when_filtered_test) {
   ASSERT_TRUE(std::filesystem::exists(temp_snoop_log_filtered_));
 }
 #endif  // __ANDROID__
+
+// Run the tests twice with different values for the same_handler_for_all_modules flag.
+INSTANTIATE_TEST_SUITE_P(, SnoopLoggerTest, testing::Values(false, true));
 
 }  // namespace bluetooth::hal
