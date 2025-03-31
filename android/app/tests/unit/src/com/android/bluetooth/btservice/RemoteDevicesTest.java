@@ -258,8 +258,9 @@ public class RemoteDevicesTest {
         mRemoteDevices.aclStateChangeCallback(
                 0,
                 Utils.getByteAddress(mDevice),
+                0, // Public address type
+                2, // LE transport
                 AbstractionLayer.BT_ACL_STATE_DISCONNECTED,
-                2,
                 19,
                 BluetoothDevice.ERROR); // HCI code 19 remote terminated
         // Verify ACTION_ACL_DISCONNECTED and BATTERY_LEVEL_CHANGED intent are sent

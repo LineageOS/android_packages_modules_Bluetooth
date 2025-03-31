@@ -81,8 +81,8 @@
 #include "stack/include/l2cdefs.h"
 #include "stack/include/main_thread.h"
 #include "stack/l2cap/l2c_int.h"
+#include "types/ble_address_with_type.h"
 #include "types/hci_role.h"
-#include "types/raw_address.h"
 
 #ifndef PROPERTY_LINK_SUPERVISION_TIMEOUT
 #define PROPERTY_LINK_SUPERVISION_TIMEOUT "bluetooth.core.acl.link_supervision_timeout"
@@ -161,14 +161,14 @@ void NotifyAclLinkUp(tACL_CONN& p_acl) {
     return;
   }
   p_acl.link_up_issued = true;
-  BTA_dm_acl_up(p_acl.remote_addr, p_acl.transport, p_acl.hci_handle);
+  BTA_dm_acl_up(p_acl.link_spec, p_acl.hci_handle);
 }
 
 void NotifyAclLinkDown(tACL_CONN& p_acl) {
   /* Only notify if link up has had a chance to be issued */
   if (p_acl.link_up_issued) {
     p_acl.link_up_issued = false;
-    BTA_dm_acl_down(p_acl.remote_addr, p_acl.transport);
+    BTA_dm_acl_down(p_acl.link_spec);
   }
 }
 
@@ -182,15 +182,16 @@ void NotifyAclFeaturesReadComplete(tACL_CONN& p_acl, uint8_t max_page_number) {
   btm_set_link_policy(&p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
   int32_t flush_timeout = osi_property_get_int32(PROPERTY_AUTO_FLUSH_TIMEOUT, 0);
   if (bluetooth::shim::GetController()->SupportsNonFlushablePb() && flush_timeout != 0) {
-    acl_write_automatic_flush_timeout(p_acl.remote_addr, static_cast<uint16_t>(flush_timeout));
+    acl_write_automatic_flush_timeout(p_acl.link_spec.addrt.bda,
+                                      static_cast<uint16_t>(flush_timeout));
   }
-  BTA_dm_notify_remote_features_complete(p_acl.remote_addr);
+  BTA_dm_notify_remote_features_complete(p_acl.link_spec.addrt.bda);
 }
 
 }  // namespace
 
 static void disconnect_acl(tACL_CONN& p_acl, tHCI_STATUS reason, std::string comment) {
-  log::info("Disconnecting peer:{} reason:{} comment:{}", p_acl.remote_addr,
+  log::info("Disconnecting peer:{} reason:{} comment:{}", p_acl.link_spec,
             hci_error_code_text(reason), comment);
   p_acl.disconnect_reason = reason;
 
@@ -199,7 +200,7 @@ static void disconnect_acl(tACL_CONN& p_acl, tHCI_STATUS reason, std::string com
 }
 
 void StackAclBtmAcl::hci_start_role_switch_to_central(tACL_CONN& p_acl) {
-  GetInterface().StartRoleSwitch(p_acl.remote_addr, static_cast<uint8_t>(HCI_ROLE_CENTRAL));
+  GetInterface().StartRoleSwitch(p_acl.link_spec.addrt.bda, static_cast<uint8_t>(HCI_ROLE_CENTRAL));
   p_acl.set_switch_role_in_progress();
   p_acl.rs_disc_pending = BTM_SEC_RS_PENDING;
 }
@@ -266,7 +267,8 @@ void BTM_acl_after_controller_started() {
 tACL_CONN* StackAclBtmAcl::btm_bda_to_acl(const RawAddress& bda, tBT_TRANSPORT transport) {
   tACL_CONN* p_acl = &btm_cb.acl_cb_.acl_db[0];
   for (uint8_t index = 0; index < MAX_L2CAP_LINKS; index++, p_acl++) {
-    if ((p_acl->in_use) && p_acl->remote_addr == bda && p_acl->transport == transport) {
+    if (p_acl->in_use && p_acl->link_spec.addrt.bda == bda &&
+        p_acl->link_spec.transport == transport) {
       return p_acl;
     }
   }
@@ -275,14 +277,16 @@ tACL_CONN* StackAclBtmAcl::btm_bda_to_acl(const RawAddress& bda, tBT_TRANSPORT t
 
 void StackAclBtmAcl::btm_acl_consolidate(const RawAddress& identity_addr, const RawAddress& rpa) {
   tACL_CONN* p_acl = &btm_cb.acl_cb_.acl_db[0];
+  tBLE_BD_ADDR addrt = {.type = BLE_ADDR_RANDOM, .bda = rpa};
+
   for (uint8_t index = 0; index < MAX_L2CAP_LINKS; index++, p_acl++) {
     if (!p_acl->in_use) {
       continue;
     }
 
-    if (p_acl->remote_addr == rpa) {
-      log::info("consolidate {} -> {}", rpa, identity_addr);
-      p_acl->remote_addr = identity_addr;
+    if (p_acl->link_spec.addrt == addrt) {
+      log::info("consolidate {} -> {}", addrt, identity_addr);
+      p_acl->link_spec.addrt = {.type = BLE_ADDR_PUBLIC, .bda = identity_addr};
       return;
     }
   }
@@ -366,20 +370,19 @@ tACL_CONN* StackAclBtmAcl::acl_allocate_connection() {
   return nullptr;
 }
 
-void btm_acl_created(const RawAddress& bda, uint16_t hci_handle, tHCI_ROLE link_role,
-                     tBT_TRANSPORT transport) {
-  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bda, transport);
+void btm_acl_created(const tAclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role) {
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(link_spec.addrt.bda, link_spec.transport);
   if (p_acl != (tACL_CONN*)NULL) {
     p_acl->hci_handle = hci_handle;
     p_acl->link_role = link_role;
-    p_acl->transport = transport;
-    if (transport == BT_TRANSPORT_BR_EDR) {
+    p_acl->link_spec = link_spec;
+    if (link_spec.transport == BT_TRANSPORT_BR_EDR) {
       btm_set_link_policy(p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
     }
     log::warn(
             "Unable to create duplicate acl when one already exists handle:{} "
-            "role:{} transport:{}",
-            hci_handle, RoleText(link_role), bt_transport_text(transport));
+            "role:{} link_spec:{}",
+            hci_handle, RoleText(link_role), link_spec);
     return;
   }
 
@@ -393,17 +396,16 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle, tHCI_ROLE link_
   p_acl->hci_handle = hci_handle;
   p_acl->link_role = link_role;
   p_acl->link_up_issued = false;
-  p_acl->remote_addr = bda;
+  p_acl->link_spec = link_spec;
   p_acl->sca = 0xFF;
-  p_acl->transport = transport;
   p_acl->switch_role_failed_attempts = 0;
   p_acl->reset_switch_role();
 
-  log::debug("Created new ACL connection peer:{} role:{} handle:0x{:04x} transport:{}", bda,
-             RoleText(p_acl->link_role), hci_handle, bt_transport_text(transport));
+  log::debug("Created new ACL connection peer:{} role:{} handle:0x{:04x}", link_spec,
+             RoleText(p_acl->link_role), hci_handle);
 
   if (p_acl->is_transport_br_edr()) {
-    BTM_PM_OnConnected(hci_handle, bda);
+    BTM_PM_OnConnected(hci_handle, link_spec.addrt.bda);
     btm_set_link_policy(p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
   }
 
@@ -411,13 +413,12 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle, tHCI_ROLE link_
   btm_iot_save_remote_properties(p_acl);
 
   /* if BR/EDR do something more */
-  if (transport == BT_TRANSPORT_BR_EDR) {
+  if (link_spec.transport == BT_TRANSPORT_BR_EDR) {
     btsnd_hcic_read_rmt_clk_offset(hci_handle);
   }
 
-  if (transport == BT_TRANSPORT_LE) {
-    btm_ble_get_acl_remote_addr(hci_handle, p_acl->active_remote_addr,
-                                &p_acl->active_remote_addr_type);
+  if (link_spec.transport == BT_TRANSPORT_LE) {
+    btm_ble_get_acl_remote_addr(hci_handle, p_acl->active_addrt.bda, &p_acl->active_addrt.type);
 
     if (bluetooth::shim::GetController()->SupportsBlePeripheralInitiatedFeaturesExchange() ||
         link_role == HCI_ROLE_CENTRAL) {
@@ -428,8 +429,8 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle, tHCI_ROLE link_
   }
 }
 
-void btm_acl_create_failed(const RawAddress& bda, tBT_TRANSPORT transport, tHCI_STATUS hci_status) {
-  BTA_dm_acl_up_failed(bda, transport, hci_status);
+void btm_acl_create_failed(const tAclLinkSpec& link_spec, tHCI_STATUS hci_status) {
+  BTA_dm_acl_up_failed(link_spec, hci_status);
 }
 
 /*******************************************************************************
@@ -548,7 +549,7 @@ tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
   }
 
   tBTM_PM_MODE pwr_mode;
-  if (!BTM_ReadPowerMode(p_acl->remote_addr, &pwr_mode)) {
+  if (!BTM_ReadPowerMode(p_acl->link_spec.addrt.bda, &pwr_mode)) {
     log::warn(
             "Unable to find device to read current power mode prior to role "
             "switch");
@@ -556,7 +557,7 @@ tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
   };
 
   if (pwr_mode == BTM_PM_MD_PARK || pwr_mode == BTM_PM_MD_SNIFF) {
-    if (!BTM_SetLinkPolicyActiveMode(p_acl->remote_addr)) {
+    if (!BTM_SetLinkPolicyActiveMode(p_acl->link_spec.addrt.bda)) {
       log::warn("Unable to set link policy active before attempting switch");
       return tBTM_STATUS::BTM_WRONG_MODE;
     }
@@ -667,7 +668,7 @@ static void btm_set_link_policy(tACL_CONN* conn, tLINK_POLICY policy) {
   conn->link_policy = policy;
   check_link_policy(&conn->link_policy);
   if ((conn->link_policy & HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH) &&
-      interop_match_addr(INTEROP_DISABLE_SNIFF, &(conn->remote_addr))) {
+      interop_match_addr(INTEROP_DISABLE_SNIFF, &(conn->link_spec.addrt.bda))) {
     conn->link_policy &= (~HCI_ENABLE_SNIFF_MODE);
   }
   btsnd_hcic_write_policy_set(conn->hci_handle, static_cast<uint16_t>(conn->link_policy));
@@ -744,11 +745,11 @@ static void maybe_chain_more_commands_after_read_remote_version_complete(uint8_t
     return;
   }
 
-  switch (p_acl_cb->transport) {
+  switch (p_acl_cb->link_spec.transport) {
     case BT_TRANSPORT_LE:
-      l2cble_notify_le_connection(p_acl_cb->remote_addr);
-      l2cble_use_preferred_conn_params(p_acl_cb->remote_addr);
-      bta_gattc_continue_discovery_if_needed(p_acl_cb->remote_addr, p_acl_cb->Handle());
+      l2cble_notify_le_connection(p_acl_cb->link_spec.addrt.bda);
+      l2cble_use_preferred_conn_params(p_acl_cb->link_spec.addrt.bda);
+      bta_gattc_continue_discovery_if_needed(p_acl_cb->link_spec.addrt.bda, p_acl_cb->Handle());
       break;
     case BT_TRANSPORT_BR_EDR:
       /**
@@ -758,8 +759,7 @@ static void maybe_chain_more_commands_after_read_remote_version_complete(uint8_t
        */
       break;
     default:
-      log::error("Unable to determine transport:{} device:{}",
-                 bt_transport_text(p_acl_cb->transport), p_acl_cb->remote_addr);
+      log::error("Unable to determine transport for {}", p_acl_cb->link_spec);
   }
 
   // save remote versions to iot conf file
@@ -903,7 +903,7 @@ void btm_read_remote_ext_features_complete(uint16_t handle, uint8_t page_num, ui
   /* save remote extended features to iot conf file */
   std::string key = IOT_CONF_KEY_RT_EXT_FEATURES "_" + std::to_string(page_num);
 
-  DEVICE_IOT_CONFIG_ADDR_SET_BIN(p_acl_cb->remote_addr, key,
+  DEVICE_IOT_CONFIG_ADDR_SET_BIN(p_acl_cb->link_spec.addrt.bda, key,
                                  p_acl_cb->peer_lmp_feature_pages[page_num], BD_FEATURES_LEN);
 
   /* If there is the next remote features page and
@@ -976,7 +976,7 @@ void StackAclBtmAcl::btm_establish_continue(tACL_CONN* p_acl) {
     }
     btm_set_link_policy(p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
   } else if (p_acl->is_transport_ble()) {
-    btm_ble_connection_established(p_acl->remote_addr);
+    btm_ble_connection_established(p_acl->link_spec.addrt.bda);
   }
   NotifyAclLinkUp(*p_acl);
 }
@@ -1643,7 +1643,7 @@ tBTM_STATUS BTM_ReadTxPower(const RawAddress& remote_bda, tBT_TRANSPORT transpor
     alarm_set_on_mloop(btm_cb.devcb.read_tx_power_timer, BTM_DEV_REPLY_TIMEOUT_MS,
                        btm_read_tx_power_timeout, NULL);
 
-    if (p->transport == BT_TRANSPORT_LE) {
+    if (p->link_spec.transport == BT_TRANSPORT_LE) {
       btm_cb.devcb.read_tx_pwr_addr = remote_bda;
       btsnd_hcic_ble_read_adv_chnl_tx_power();
     } else {
@@ -1716,7 +1716,7 @@ void btm_read_tx_power_complete(uint8_t* p, uint16_t evt_len, bool is_ble) {
 
         tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
         if (p_acl_cb != nullptr) {
-          result.rem_bda = p_acl_cb->remote_addr;
+          result.rem_bda = p_acl_cb->link_spec.addrt.bda;
         }
       } else {
         if (evt_len < 2) {
@@ -1800,7 +1800,7 @@ void btm_read_rssi_complete(uint8_t* p, uint16_t evt_len) {
 
       tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
       if (p_acl_cb != nullptr) {
-        result.rem_bda = p_acl_cb->remote_addr;
+        result.rem_bda = p_acl_cb->link_spec.addrt.bda;
         result.status = tBTM_STATUS::BTM_SUCCESS;
       }
     }
@@ -1867,7 +1867,7 @@ void btm_read_failed_contact_counter_complete(uint8_t* p) {
 
       tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
       if (p_acl_cb != nullptr) {
-        result.rem_bda = p_acl_cb->remote_addr;
+        result.rem_bda = p_acl_cb->link_spec.addrt.bda;
       }
     } else {
       result.status = tBTM_STATUS::BTM_ERR_PROCESSING;
@@ -1912,7 +1912,7 @@ void btm_read_automatic_flush_timeout_complete(uint8_t* p) {
 
       tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
       if (p_acl_cb != nullptr) {
-        result.rem_bda = p_acl_cb->remote_addr;
+        result.rem_bda = p_acl_cb->link_spec.addrt.bda;
       }
     }
     (*p_cb)(&result);
@@ -2009,18 +2009,15 @@ bool acl_refresh_remote_address(const RawAddress& identity_address,
   if (rra_type == BTM_BLE_ADDR_PSEUDO) {
     /* use identity address, resolvable_private_addr is empty */
     if (rpa.IsEmpty()) {
-      p_acl->active_remote_addr_type = identity_address_type;
-      p_acl->active_remote_addr = identity_address;
+      p_acl->active_addrt = {.type = identity_address_type, .bda = identity_address};
     } else {
-      p_acl->active_remote_addr_type = BLE_ADDR_RANDOM;
-      p_acl->active_remote_addr = rpa;
+      p_acl->active_addrt = {.type = BLE_ADDR_RANDOM, .bda = rpa};
     }
   } else {
-    p_acl->active_remote_addr_type = static_cast<tBLE_ADDR_TYPE>(rra_type);
-    p_acl->active_remote_addr = rpa;
+    p_acl->active_addrt = {.type = static_cast<tBLE_ADDR_TYPE>(rra_type), .bda = rpa};
   }
 
-  log::debug("active_remote_addr_type: {}", p_acl->active_remote_addr_type);
+  log::info("Active address updated to {} for {}", p_acl->active_addrt, p_acl->link_spec.addrt);
   return true;
 }
 
@@ -2125,7 +2122,7 @@ const RawAddress acl_address_from_handle(uint16_t handle) {
   if (p_acl == nullptr) {
     return RawAddress::kEmpty;
   }
-  return p_acl->remote_addr;
+  return p_acl->link_spec.addrt.bda;
 }
 
 bool acl_is_switch_role_idle(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
@@ -2235,7 +2232,8 @@ bool acl_set_peer_le_features_from_handle(uint16_t hci_handle, const uint8_t* p)
   /* save LE remote supported features to iot conf file */
   std::string key = IOT_CONF_KEY_RT_SUPP_FEATURES "_" + std::to_string(0);
 
-  DEVICE_IOT_CONFIG_ADDR_SET_BIN(p_acl->remote_addr, key, p_acl->peer_le_features, BD_FEATURES_LEN);
+  DEVICE_IOT_CONFIG_ADDR_SET_BIN(p_acl->link_spec.addrt.bda, key, p_acl->peer_le_features,
+                                 BD_FEATURES_LEN);
   return true;
 }
 
@@ -2271,6 +2269,8 @@ void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle, uint8_t enc
 }
 
 void on_acl_br_edr_failed(const RawAddress& bda, tHCI_STATUS status, bool locally_initiated) {
+  tAclLinkSpec link_spec = {.addrt = {.type = BLE_ADDR_PUBLIC, .bda = bda},
+                            .transport = BT_TRANSPORT_BR_EDR};
   log::assert_that(status != HCI_SUCCESS, "Successful connection entering failing code path");
   if (delayed_role_change_ != nullptr && delayed_role_change_->bd_addr == bda) {
     btm_sec_connected(bda, HCI_INVALID_HANDLE, status, false, delayed_role_change_->new_role);
@@ -2281,7 +2281,7 @@ void on_acl_br_edr_failed(const RawAddress& bda, tHCI_STATUS status, bool locall
   l2c_link_hci_conn_comp(status, HCI_INVALID_HANDLE, bda);
 
   acl_set_locally_initiated(locally_initiated);
-  btm_acl_create_failed(bda, BT_TRANSPORT_BR_EDR, status);
+  btm_acl_create_failed(link_spec, status);
 }
 
 void btm_acl_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS status,

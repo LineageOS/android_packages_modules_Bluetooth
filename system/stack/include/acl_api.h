@@ -270,10 +270,9 @@ void btm_acl_notif_conn_collision(const RawAddress& bda);
  ******************************************************************************/
 bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode);
 
-void btm_acl_created(const RawAddress& bda, uint16_t hci_handle, tHCI_ROLE link_role,
-                     tBT_TRANSPORT transport);
+void btm_acl_created(const tAclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role);
 
-void btm_acl_create_failed(const RawAddress& bda, tBT_TRANSPORT transport, tHCI_STATUS reason);
+void btm_acl_create_failed(const tAclLinkSpec& link_spec, tHCI_STATUS reason);
 
 void btm_acl_removed(uint16_t handle);
 

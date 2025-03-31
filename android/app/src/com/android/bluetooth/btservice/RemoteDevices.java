@@ -1380,8 +1380,9 @@ public class RemoteDevices {
     void aclStateChangeCallback(
             int status,
             byte[] address,
-            int newState,
+            int addressType,
             int transportLinkType,
+            int newState,
             int hciReason,
             int handle) {
         if (status != AbstractionLayer.BT_STATUS_SUCCESS) {
@@ -1400,8 +1401,7 @@ public class RemoteDevices {
                                                     + Utils.getRedactedAddressStringFromByte(
                                                             address))
                                             + (" newState=" + newState));
-                            // TODO: Set the correct address type
-                            return addDeviceProperties(address).getDevice();
+                            return addDeviceProperties(address, addressType).getDevice();
                         });
 
         DeviceProperties deviceProperties = getDeviceProperties(device);

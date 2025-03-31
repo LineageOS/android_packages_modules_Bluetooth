@@ -63,8 +63,10 @@ TEST_F(StackAclTest, acl_process_extended_features) {
   const uint16_t hci_handle = 0x123;
   const tBT_TRANSPORT transport = BT_TRANSPORT_LE;
   const tHCI_ROLE link_role = HCI_ROLE_CENTRAL;
+  const tAclLinkSpec link_spec = {.addrt = {.type = BLE_ADDR_PUBLIC, .bda = kRawAddress},
+                                  .transport = transport};
 
-  btm_acl_created(kRawAddress, hci_handle, link_role, transport);
+  btm_acl_created(link_spec, hci_handle, link_role);
   tACL_CONN* p_acl = btm_acl_for_bda(kRawAddress, transport);
   ASSERT_NE(nullptr, p_acl);
 

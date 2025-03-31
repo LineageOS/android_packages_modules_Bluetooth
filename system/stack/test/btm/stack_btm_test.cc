@@ -38,7 +38,7 @@
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_legacy_hci_interface.h"
 #include "test/mock/mock_main_shim_entry.h"
-#include "types/raw_address.h"
+#include "types/ble_address_with_type.h"
 
 using ::testing::_;
 using ::testing::Each;
@@ -199,7 +199,9 @@ TEST_F(StackBtmWithQueuesTest, change_packet_type) {
 
   // Create connection
   RawAddress bda({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
-  btm_acl_created(bda, handle, HCI_ROLE_CENTRAL, BT_TRANSPORT_BR_EDR);
+  tAclLinkSpec link_spec = {.addrt = {.type = BLE_ADDR_PUBLIC, .bda = bda},
+                            .transport = BT_TRANSPORT_BR_EDR};
+  btm_acl_created(link_spec, handle, HCI_ROLE_CENTRAL);
 
   uint64_t features = 0xffffffffffffffff;
   acl_process_supported_features(0x123, features);

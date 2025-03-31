@@ -833,6 +833,15 @@ static void btif_dm_cb_create_bond_le(const RawAddress bd_addr, tBLE_ADDR_TYPE a
   BTA_DmBond(bd_addr, addr_type, BT_TRANSPORT_LE, BT_DEVICE_TYPE_BLE);
   /*  Track  originator of bond creation  */
   pairing_cb.is_local_initiated = true;
+
+  // Store address type if not already stored
+  tBLE_ADDR_TYPE stored_addr_type;
+  if (btif_storage_get_remote_addr_type(&bd_addr, &stored_addr_type) != BT_STATUS_SUCCESS) {
+    btif_storage_set_remote_addr_type(&bd_addr, addr_type);
+  } else if (stored_addr_type != addr_type) {
+    log::warn("Address type does not match for {}, stored: {}, requested:{}", bd_addr,
+              AddressTypeText(stored_addr_type), AddressTypeText(addr_type));
+  }
 }
 
 /*******************************************************************************
@@ -2296,32 +2305,30 @@ void btif_dm_sec_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
  *
  ******************************************************************************/
 void btif_dm_acl_evt(tBTA_DM_ACL_EVT event, tBTA_DM_ACL* p_data) {
-  RawAddress bd_addr;
-
   switch (event) {
-    case BTA_DM_LINK_UP_EVT:
-      bd_addr = p_data->link_up.bd_addr;
-      log::verbose("BTA_DM_LINK_UP_EVT. Sending BT_ACL_STATE_CONNECTED");
+    case BTA_DM_LINK_UP_EVT: {
+      tAclLinkSpec& link_spec = p_data->link_up.link_spec;
+      log::verbose("BTA_DM_LINK_UP_EVT: Sending BT_ACL_STATE_CONNECTED {}", link_spec);
 
-      btif_update_remote_version_property(&bd_addr);
+      btif_update_remote_version_property(&link_spec.addrt.bda);
 
       GetInterfaceToProfiles()->events->invoke_acl_state_changed_cb(
-              BT_STATUS_SUCCESS, bd_addr, BT_ACL_STATE_CONNECTED,
-              (int)p_data->link_up.transport_link_type, HCI_SUCCESS,
+              BT_STATUS_SUCCESS, link_spec, BT_ACL_STATE_CONNECTED, HCI_SUCCESS,
               btm_is_acl_locally_initiated() ? bt_conn_direction_t::BT_CONN_DIRECTION_OUTGOING
                                              : bt_conn_direction_t::BT_CONN_DIRECTION_INCOMING,
               p_data->link_up.acl_handle);
 
-      if (p_data->link_up.transport_link_type == BT_TRANSPORT_LE && pairing_cb.bd_addr == bd_addr &&
-          is_device_le_audio_capable(bd_addr)) {
-        stack::l2cap::get_interface().L2CA_LockBleConnParamsForProfileConnection(bd_addr, true);
+      if (link_spec.transport == BT_TRANSPORT_LE && pairing_cb.bd_addr == link_spec.addrt.bda &&
+          is_device_le_audio_capable(link_spec.addrt.bda)) {
+        stack::l2cap::get_interface().L2CA_LockBleConnParamsForProfileConnection(
+                link_spec.addrt.bda, true);
       }
-      break;
+    } break;
 
     case BTA_DM_LINK_UP_FAILED_EVT:
       GetInterfaceToProfiles()->events->invoke_acl_state_changed_cb(
-              hci_error_to_bt_status(p_data->link_up_failed.status), p_data->link_up_failed.bd_addr,
-              BT_ACL_STATE_DISCONNECTED, p_data->link_up_failed.transport_link_type,
+              hci_error_to_bt_status(p_data->link_up_failed.status),
+              p_data->link_up_failed.link_spec, BT_ACL_STATE_DISCONNECTED,
               p_data->link_up_failed.status,
               btm_is_acl_locally_initiated() ? bt_conn_direction_t::BT_CONN_DIRECTION_OUTGOING
                                              : bt_conn_direction_t::BT_CONN_DIRECTION_INCOMING,
@@ -2329,11 +2336,11 @@ void btif_dm_acl_evt(tBTA_DM_ACL_EVT event, tBTA_DM_ACL* p_data) {
       break;
 
     case BTA_DM_LINK_DOWN_EVT: {
-      bd_addr = p_data->link_down.bd_addr;
+      tAclLinkSpec& link_spec = p_data->link_down.link_spec;
       if (!com::android::bluetooth::flags::temporary_pairing_tracking()) {
-        btm_set_bond_type_dev(p_data->link_down.bd_addr, BOND_TYPE_UNKNOWN);
+        btm_set_bond_type_dev(link_spec.addrt.bda, BOND_TYPE_UNKNOWN);
       }
-      GetInterfaceToProfiles()->onLinkDown(bd_addr, p_data->link_down.transport_link_type);
+      GetInterfaceToProfiles()->onLinkDown(link_spec.addrt.bda, link_spec.transport);
 
       bt_conn_direction_t direction;
       switch (btm_get_acl_disc_reason_code()) {
@@ -2350,14 +2357,13 @@ void btif_dm_acl_evt(tBTA_DM_ACL_EVT event, tBTA_DM_ACL* p_data) {
           direction = bt_conn_direction_t::BT_CONN_DIRECTION_UNKNOWN;
       }
       GetInterfaceToProfiles()->events->invoke_acl_state_changed_cb(
-              BT_STATUS_SUCCESS, bd_addr, BT_ACL_STATE_DISCONNECTED,
-              (int)p_data->link_down.transport_link_type,
+              BT_STATUS_SUCCESS, link_spec, BT_ACL_STATE_DISCONNECTED,
               static_cast<bt_hci_error_code_t>(btm_get_acl_disc_reason_code()), direction,
               INVALID_ACL_HANDLE);
       log::debug(
               "Sent BT_ACL_STATE_DISCONNECTED upward as ACL link down event "
               "device:{} reason:{}",
-              bd_addr,
+              link_spec,
               hci_reason_code_text(static_cast<tHCI_REASON>(btm_get_acl_disc_reason_code())));
     } break;
     case BTA_DM_LE_FEATURES_READ:

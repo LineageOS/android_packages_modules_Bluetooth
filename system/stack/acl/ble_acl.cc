@@ -33,7 +33,7 @@
 #include "stack/include/btm_ble_privacy.h"
 #include "stack/include/gatt_api.h"
 #include "stack/include/l2cap_hci_link_interface.h"
-#include "types/raw_address.h"
+#include "types/ble_address_with_type.h"
 
 using namespace bluetooth;
 
@@ -63,8 +63,10 @@ static bool acl_ble_common_connection(const tBLE_BD_ADDR& address_with_type, uin
     return false;
   }
 
+  tAclLinkSpec link_spec = { .addrt = address_with_type, .transport = BT_TRANSPORT_LE};
+
   /* Tell BTM Acl management about the link */
-  btm_acl_created(address_with_type.bda, handle, role, BT_TRANSPORT_LE);
+  btm_acl_created(link_spec, handle, role);
 
   return true;
 }
@@ -118,8 +120,9 @@ void acl_ble_enhanced_connection_complete_from_shim(
 
 void acl_ble_connection_fail(const tBLE_BD_ADDR& address_with_type, uint16_t /* handle */,
                              bool /* enhanced */, tHCI_STATUS status) {
+  tAclLinkSpec link_spec = {.addrt = address_with_type, .transport = BT_TRANSPORT_LE};
   acl_set_locally_initiated(true);  // LE connection failures are always locally initiated
-  btm_acl_create_failed(address_with_type.bda, BT_TRANSPORT_LE, status);
+  btm_acl_create_failed(link_spec, status);
 
   if (status != HCI_ERR_ADVERTISING_TIMEOUT) {
     btm_cb.ble_ctr_cb.set_connection_state_idle();
