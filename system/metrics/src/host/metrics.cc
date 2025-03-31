@@ -16,7 +16,7 @@
  *
  ******************************************************************************/
 
-#include "os/metrics.h"
+#include <bluetooth/metrics/os_metrics.h>
 
 namespace bluetooth {
 namespace os {

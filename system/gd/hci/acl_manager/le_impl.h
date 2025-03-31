@@ -17,6 +17,8 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -39,10 +41,8 @@
 #include "hci/hci_packets.h"
 #include "hci/le_address_manager.h"
 #include "macros.h"
-#include "metrics/bluetooth_event.h"
 #include "os/alarm.h"
 #include "os/handler.h"
-#include "os/metrics.h"
 #include "os/system_properties.h"
 #include "stack/include/btm_ble_api_types.h"
 

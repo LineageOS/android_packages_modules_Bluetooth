@@ -27,6 +27,7 @@
 #include "hidh_api.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,7 +38,6 @@
 #include "hiddefs.h"
 #include "hidh_int.h"
 #include "internal_include/bt_target.h"
-#include "os/metrics.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "sdp_api.h"

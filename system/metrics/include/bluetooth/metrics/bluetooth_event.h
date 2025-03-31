@@ -16,10 +16,11 @@
 
 #pragma once
 
+#include <bluetooth/metrics/os_metrics.h>
+
 #include "bta/include/bta_sec_api.h"
 #include "hci/address.h"
 #include "hci/hci_packets.h"
-#include "os/metrics.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
 #include "types/raw_address.h"

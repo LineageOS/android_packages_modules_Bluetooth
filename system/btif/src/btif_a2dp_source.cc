@@ -24,6 +24,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
 
@@ -51,7 +52,6 @@
 #include "common/repeating_timer.h"
 #include "common/time_util.h"
 #include "hardware/bt_av.h"
-#include "os/metrics.h"
 #include "osi/include/allocator.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/wakelock.h"

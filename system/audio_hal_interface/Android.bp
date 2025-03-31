@@ -250,7 +250,6 @@ cc_defaults {
         "libopus",
         "libosi",
         "libprotobuf-cpp-lite",
-        "libstatslog_bt",
         "libudrv-uipc",
         "libutils",
     ],
@@ -305,7 +304,6 @@ cc_test {
         "libbluetooth_log",
         "libbt-bta",
         "libbt-common",
-        "libbt-platform-protos-lite",
         "libchrome",
         "libevent",
         "libgmock",
@@ -344,7 +342,6 @@ cc_test {
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
         "libbt-bta",
-        "libbt-platform-protos-lite",
         "libcutils",
         "libgmock",
         "server_configurable_flags",

@@ -22,6 +22,8 @@
 #include <base/functional/callback.h>
 #include <base/location.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
+#include <bluetooth/metrics/os_metrics.h>
 
 #include <map>
 #include <memory>
@@ -33,8 +35,6 @@
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/le_scanning_manager.h"
-#include "metrics/bluetooth_event.h"
-#include "os/metrics.h"
 #include "osi/include/alarm.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/include/advertise_data_parser.h"

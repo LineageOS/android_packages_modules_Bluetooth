@@ -16,15 +16,27 @@
  *
  ******************************************************************************/
 
-#include "os/metrics.h"
-
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <metrics/structured_events.h>
-
-#include "metrics/utils.h"
 
 namespace bluetooth {
 namespace os {
+
+namespace {
+
+// The path to the kernel's boot_id.
+const char kBootIdPath[] = "/proc/sys/kernel/random/boot_id";
+
+static bool GetBootId(std::string* boot_id) {
+  if (!base::ReadFileToString(base::FilePath(kBootIdPath), boot_id)) {
+    return false;
+  }
+  base::TrimWhitespaceASCII(*boot_id, base::TRIM_TRAILING, boot_id);
+  return true;
+}
+
+}  // namespace
 
 using bluetooth::hci::Address;
 

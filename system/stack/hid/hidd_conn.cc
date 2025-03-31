@@ -25,6 +25,7 @@
 
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 
 #include <cstddef>
@@ -37,7 +38,6 @@
 #include "hiddefs.h"
 #include "internal_include/bt_target.h"
 #include "l2cap_types.h"
-#include "os/metrics.h"
 #include "osi/include/allocator.h"
 #include "stack/hid/hidd_int.h"
 #include "stack/include/bt_hdr.h"

@@ -23,7 +23,6 @@
 #include "common/time_util.h"
 #include "metrics/chromeos/metrics_allowlist.h"
 #include "metrics/chromeos/metrics_event.h"
-#include "metrics/utils.h"
 
 namespace bluetooth {
 namespace metrics {
@@ -32,6 +31,21 @@ static constexpr uint32_t DEVICE_MAJOR_CLASS_MASK = 0x1F00;
 static constexpr uint32_t DEVICE_MAJOR_CLASS_BIT_OFFSET = 8;
 static constexpr uint32_t DEVICE_CATEGORY_MASK = 0xFFC0;
 static constexpr uint32_t DEVICE_CATEGORY_BIT_OFFSET = 6;
+
+namespace {
+
+// The path to the kernel's boot_id.
+const char kBootIdPath[] = "/proc/sys/kernel/random/boot_id";
+
+static bool GetBootId(std::string* boot_id) {
+  if (!base::ReadFileToString(base::FilePath(kBootIdPath), boot_id)) {
+    return false;
+  }
+  base::TrimWhitespaceASCII(*boot_id, base::TRIM_TRAILING, boot_id);
+  return true;
+}
+
+}  // namespace
 
 void LogMetricsAdapterStateChanged(uint32_t state) {
   int64_t adapter_state;

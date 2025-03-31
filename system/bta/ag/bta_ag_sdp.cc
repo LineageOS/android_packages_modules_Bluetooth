@@ -26,6 +26,8 @@
 #include <base/functional/bind.h>
 #include <base/location.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
+#include <bluetooth/metrics/os_metrics.h>
 
 #include <cstdint>
 #include <cstring>
@@ -44,8 +46,6 @@
 #include "device/include/interop_config.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/helpers.h"
-#include "metrics/bluetooth_event.h"
-#include "os/metrics.h"
 #include "osi/include/allocator.h"
 #include "sdp_callback.h"
 #include "sdp_status.h"

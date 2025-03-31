@@ -18,6 +18,7 @@
 
 #include <base/location.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
 #include <com_android_bluetooth_flags.h>
 #include <time.h>
 
@@ -53,7 +54,6 @@
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/stack.h"
-#include "metrics/bluetooth_event.h"
 #include "os/handler.h"
 #include "os/wakelock_manager.h"
 #include "osi/include/alarm.h"

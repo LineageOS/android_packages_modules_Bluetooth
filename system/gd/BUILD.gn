@@ -38,16 +38,12 @@ config("gd_defaults") {
 }
 
 group("gd_default_deps") {
-  deps = [
-    "//bt/system:libbt-platform-protos-lite",
-    "//bt/system/pdl:BluetoothGeneratedPackets_h",
-  ]
+  deps = [ "//bt/system/pdl:BluetoothGeneratedPackets_h" ]
 }
 
 static_library("libbluetooth_gd") {
   sources = [
     "common/audit_log.cc",
-    "common/metric_id_manager.cc",
     "common/stop_watch.cc",
     "common/strings.cc",
     "hal/link_clocker.cc",
@@ -77,8 +73,6 @@ static_library("libbluetooth_gd") {
     "hci/remote_name_request.cc",
     "hci/uuid.cc",
     "lpp/lpp_offload_manager.cc",
-    "metrics/bluetooth_event.cc",
-    "metrics/utils.cc",
     "module.cc",
     "os/handler.cc",
     "os/linux_generic/alarm.cc",
@@ -119,6 +113,7 @@ static_library("libbluetooth_gd") {
     "//bt/floss/rust/topshim:libbluetooth_topshim",
     "//bt/sysprop:libcom.android.sysprop.bluetooth",
     "//bt/system/gd:gd_default_deps",
+    "//bt/system/metrics",
     "//bt/system/pdl:BluetoothGeneratedPackets_h",
   ]
 
@@ -127,7 +122,6 @@ static_library("libbluetooth_gd") {
       "metrics/chromeos/metrics.cc",
       "metrics/chromeos/metrics_allowlist.cc",
       "metrics/chromeos/metrics_event.cc",
-      "os/chromeos/metrics.cc",
       "os/chromeos/parameter_provider.cc",
       "os/chromeos/system_properties.cc",
       "os/chromeos/wakelock_native.cc",
@@ -136,7 +130,6 @@ static_library("libbluetooth_gd") {
   } else {
     sources += [
       "metrics/linux/metrics.cc",
-      "os/linux/metrics.cc",
       "os/linux/parameter_provider.cc",
       "os/linux/system_properties.cc",
       "os/linux/wakelock_native.cc",
