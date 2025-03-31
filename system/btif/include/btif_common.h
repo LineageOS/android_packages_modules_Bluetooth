@@ -125,7 +125,8 @@ int btif_is_enabled(void);
  */
 void btif_enable_bluetooth_evt();
 void btif_adapter_properties_evt(bt_status_t status, uint32_t num_props, bt_property_t* p_props);
-void btif_remote_properties_evt(bt_status_t status, RawAddress* remote_addr, uint32_t num_props,
+void btif_remote_properties_evt(bt_status_t status, RawAddress* remote_addr,
+                                tBLE_ADDR_TYPE addr_type, uint32_t num_props,
                                 bt_property_t* p_props);
 
 bt_status_t btif_transfer_context(tBTIF_CBACK* p_cback, uint16_t event, char* p_params,
@@ -136,7 +137,8 @@ void btif_init_ok();
 void invoke_adapter_state_changed_cb(bt_state_t state);
 void invoke_adapter_properties_cb(bt_status_t status, int num_properties,
                                   bt_property_t* properties);
-void invoke_remote_device_properties_cb(bt_status_t status, RawAddress bd_addr, int num_properties,
+void invoke_remote_device_properties_cb(bt_status_t status, RawAddress bd_addr,
+                                        uint8_t address_type, int num_properties,
                                         bt_property_t* properties);
 void invoke_device_found_cb(int num_properties, bt_property_t* properties);
 void invoke_discovery_state_changed_cb(bt_discovery_state_t state);

@@ -39,9 +39,8 @@
 #include "com_android_bluetooth.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_sock.h"
+#include "types/ble_address_with_type.h"
 #include "types/bluetooth/uuid.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 using bluetooth::Uuid;
 extern bt_interface_t bluetoothInterface;
@@ -230,7 +229,8 @@ static void adapter_properties_callback(bt_status_t status, int num_properties,
 }
 
 static void remote_device_properties_callback(bt_status_t status, RawAddress* bd_addr,
-                                              int num_properties, bt_property_t* properties) {
+                                              tBLE_ADDR_TYPE address_type, int num_properties,
+                                              bt_property_t* properties) {
   std::shared_lock<std::shared_timed_mutex> lock(jniObjMutex);
   if (!sJniCallbacksObj) {
     log::error("JNI obj is null. Failed to call JNI callback");
@@ -293,7 +293,7 @@ static void remote_device_properties_callback(bt_status_t status, RawAddress* bd
   }
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_devicePropertyChangedCallback, addr.get(),
-                               types.get(), props.get());
+                               (jint)address_type, types.get(), props.get());
 }
 
 static void device_found_callback(int num_properties, bt_property_t* properties) {
@@ -308,33 +308,35 @@ static void device_found_callback(int num_properties, bt_property_t* properties)
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), NULL);
-  int addr_index;
+  RawAddress* addr = nullptr;
+  tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
   for (int i = 0; i < num_properties; i++) {
     if (properties[i].type == BT_PROPERTY_BDADDR) {
-      addr.reset(sCallbackEnv->NewByteArray(properties[i].len));
-      if (!addr.get()) {
-        log::error("Address is NULL (unable to allocate)");
-        return;
-      }
-      sCallbackEnv->SetByteArrayRegion(addr.get(), 0, properties[i].len,
-                                       reinterpret_cast<jbyte*>(properties[i].val));
-      addr_index = i;
+      addr = reinterpret_cast<RawAddress*>(properties[i].val);
+    } else if (properties[i].type == BT_PROPERTY_REMOTE_ADDR_TYPE) {
+      addr_type = *reinterpret_cast<tBLE_ADDR_TYPE*>(properties[i].val);
     }
   }
-  if (!addr.get()) {
-    log::error("Address is NULL");
+
+  if (addr == nullptr) {
+    log::error("No address found");
     return;
   }
 
-  log::verbose("Properties: {}, Address: {}", num_properties,
-               *reinterpret_cast<RawAddress*>(properties[addr_index].val));
+  ScopedLocalRef<jbyteArray> jaddr(sCallbackEnv.get(),
+                                   sCallbackEnv->NewByteArray(sizeof(RawAddress)));
+  if (!jaddr.get()) {
+    log::error("Address is NULL (unable to allocate)");
+    return;
+  }
+  sCallbackEnv->SetByteArrayRegion(jaddr.get(), 0, sizeof(RawAddress),
+                                   reinterpret_cast<jbyte*>(addr));
+  log::verbose("Properties: {}, Address: {}", num_properties, *addr);
 
-  remote_device_properties_callback(BT_STATUS_SUCCESS,
-                                    reinterpret_cast<RawAddress*>(properties[addr_index].val),
-                                    num_properties, properties);
+  // Add device properties before announcing device found
+  remote_device_properties_callback(BT_STATUS_SUCCESS, addr, addr_type, num_properties, properties);
 
-  sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_deviceFoundCallback, addr.get());
+  sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_deviceFoundCallback, jaddr.get());
 }
 
 static void bond_state_changed_callback(bt_status_t status, RawAddress* bd_addr,
@@ -2353,7 +2355,7 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
           {"stateChangeCallback", "(I)V", &method_stateChangeCallback},
           {"adapterPropertyChangedCallback", "([I[[B)V", &method_adapterPropertyChangedCallback},
           {"discoveryStateChangeCallback", "(I)V", &method_discoveryStateChangeCallback},
-          {"devicePropertyChangedCallback", "([B[I[[B)V", &method_devicePropertyChangedCallback},
+          {"devicePropertyChangedCallback", "([BI[I[[B)V", &method_devicePropertyChangedCallback},
           {"deviceFoundCallback", "([B)V", &method_deviceFoundCallback},
           {"pinRequestCallback", "([B[BIZ)V", &method_pinRequestCallback},
           {"sspRequestCallback", "([BII)V", &method_sspRequestCallback},

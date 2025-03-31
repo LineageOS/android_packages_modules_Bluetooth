@@ -17,6 +17,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 
 #include <future>  // NOLINT
 #include <map>
@@ -137,7 +138,8 @@ void adapter_state_changed_callback(bt_state_t /* state */) {}
 void adapter_properties_callback(bt_status_t /* status */, int /* num_properties */,
                                  bt_property_t* /* properties */) {}
 void remote_device_properties_callback(bt_status_t /* status */, RawAddress* /* bd_addr */,
-                                       int /* num_properties */, bt_property_t* /* properties */) {}
+                                       uint8_t /* address_type */, int /* num_properties */,
+                                       bt_property_t* /* properties */) {}
 void device_found_callback(int /* num_properties */, bt_property_t* /* properties */) {}
 void discovery_state_changed_callback(bt_discovery_state_t /* state */) {}
 void pin_request_callback(RawAddress* /* remote_bd_addr */, bt_bdname_t* /* bd_name */,
