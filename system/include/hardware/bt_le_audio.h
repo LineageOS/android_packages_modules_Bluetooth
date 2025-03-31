@@ -150,6 +150,7 @@ inline std::ostream& operator<<(std::ostream& os, const UnicastMonitorModeStatus
 
 typedef enum {
   LE_AUDIO_CODEC_INDEX_SOURCE_LC3 = 0,
+  LE_AUDIO_CODEC_INDEX_SOURCE_OPUS = 1,
   LE_AUDIO_CODEC_INDEX_SOURCE_INVALID = 1000 * 1000,
 } btle_audio_codec_index_t;
 
