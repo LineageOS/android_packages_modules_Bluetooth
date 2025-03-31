@@ -126,8 +126,10 @@ public:
     std::lock_guard<std::mutex> lock(api_mutex_);
     log::assert_that(sock_fd_ != INVALID_FD, "assert failed: sock_fd_ != INVALID_FD");
     std::vector<uint8_t> packet = std::move(command);
-    btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING,
-                             SnoopLogger::PacketType::CMD);
+    if (btsnoop_logger_) {
+      btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING,
+                               SnoopLogger::PacketType::CMD);
+    }
     packet.insert(packet.cbegin(), kH4Command);
     write_to_fd(packet);
   }
@@ -136,8 +138,10 @@ public:
     std::lock_guard<std::mutex> lock(api_mutex_);
     log::assert_that(sock_fd_ != INVALID_FD, "assert failed: sock_fd_ != INVALID_FD");
     std::vector<uint8_t> packet = std::move(data);
-    btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING,
-                             SnoopLogger::PacketType::ACL);
+    if (btsnoop_logger_) {
+      btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING,
+                               SnoopLogger::PacketType::ACL);
+    }
     packet.insert(packet.cbegin(), kH4Acl);
     write_to_fd(packet);
   }
@@ -146,8 +150,10 @@ public:
     std::lock_guard<std::mutex> lock(api_mutex_);
     log::assert_that(sock_fd_ != INVALID_FD, "assert failed: sock_fd_ != INVALID_FD");
     std::vector<uint8_t> packet = std::move(data);
-    btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING,
-                             SnoopLogger::PacketType::SCO);
+    if (btsnoop_logger_) {
+      btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING,
+                               SnoopLogger::PacketType::SCO);
+    }
     packet.insert(packet.cbegin(), kH4Sco);
     write_to_fd(packet);
   }
@@ -156,8 +162,10 @@ public:
     std::lock_guard<std::mutex> lock(api_mutex_);
     log::assert_that(sock_fd_ != INVALID_FD, "assert failed: sock_fd_ != INVALID_FD");
     std::vector<uint8_t> packet = std::move(data);
-    btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING,
-                             SnoopLogger::PacketType::ISO);
+    if (btsnoop_logger_) {
+      btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING,
+                               SnoopLogger::PacketType::ISO);
+    }
     packet.insert(packet.cbegin(), kH4Iso);
     write_to_fd(packet);
   }
@@ -286,8 +294,10 @@ private:
       HciPacket receivedHciPacket;
       receivedHciPacket.assign(buf + kH4HeaderSize, buf + kH4HeaderSize + kHciEvtHeaderSize +
                                                             hci_evt_parameter_total_length);
-      btsnoop_logger_->Capture(receivedHciPacket, SnoopLogger::Direction::INCOMING,
-                               SnoopLogger::PacketType::EVT);
+      if (btsnoop_logger_) {
+        btsnoop_logger_->Capture(receivedHciPacket, SnoopLogger::Direction::INCOMING,
+                                 SnoopLogger::PacketType::EVT);
+      }
       {
         std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
         if (incoming_packet_callback_ == nullptr) {
@@ -310,8 +320,10 @@ private:
       HciPacket receivedHciPacket;
       receivedHciPacket.assign(buf + kH4HeaderSize,
                                buf + kH4HeaderSize + kHciAclHeaderSize + hci_acl_data_total_length);
-      btsnoop_logger_->Capture(receivedHciPacket, SnoopLogger::Direction::INCOMING,
-                               SnoopLogger::PacketType::ACL);
+      if (btsnoop_logger_) {
+        btsnoop_logger_->Capture(receivedHciPacket, SnoopLogger::Direction::INCOMING,
+                                 SnoopLogger::PacketType::ACL);
+      }
       {
         std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
         if (incoming_packet_callback_ == nullptr) {
@@ -334,8 +346,10 @@ private:
       HciPacket receivedHciPacket;
       receivedHciPacket.assign(buf + kH4HeaderSize,
                                buf + kH4HeaderSize + kHciScoHeaderSize + hci_sco_data_total_length);
-      btsnoop_logger_->Capture(receivedHciPacket, SnoopLogger::Direction::INCOMING,
-                               SnoopLogger::PacketType::SCO);
+      if (btsnoop_logger_) {
+        btsnoop_logger_->Capture(receivedHciPacket, SnoopLogger::Direction::INCOMING,
+                                 SnoopLogger::PacketType::SCO);
+      }
       {
         std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
         if (incoming_packet_callback_ == nullptr) {
@@ -358,8 +372,10 @@ private:
       HciPacket receivedHciPacket;
       receivedHciPacket.assign(buf + kH4HeaderSize,
                                buf + kH4HeaderSize + kHciIsoHeaderSize + hci_iso_data_total_length);
-      btsnoop_logger_->Capture(receivedHciPacket, SnoopLogger::Direction::INCOMING,
-                               SnoopLogger::PacketType::ISO);
+      if (btsnoop_logger_) {
+        btsnoop_logger_->Capture(receivedHciPacket, SnoopLogger::Direction::INCOMING,
+                                 SnoopLogger::PacketType::ISO);
+      }
       {
         std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
         if (incoming_packet_callback_ == nullptr) {
