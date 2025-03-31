@@ -218,11 +218,12 @@ source_set("stack") {
     ":nonstandard_codecs",
     "//bt/floss/rust/topshim:cxxlibheader",
     "//bt/sysprop:libcom.android.sysprop.bluetooth",
-    "//bt/system:libbt-platform-protos-lite",
     "//bt/system/gd/crypto_toolbox:crypto_toolbox",
+    "//bt/system/metrics",
     "//bt/system/stack/mmc",
     "//bt/system/types",
   ]
+
   if (use.test) {
     deps += [ ":sco_hci_linux_test" ]
   }

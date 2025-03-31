@@ -18,10 +18,10 @@
 #include "bta_rfcomm_metrics.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/rfcomm/enums.pb.h>
 
 #include "bta_sec_api.h"
-#include "os/metrics.h"
 #include "stack/include/btm_sec_api_types.h"
 
 using namespace bluetooth;

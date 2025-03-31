@@ -19,7 +19,8 @@
  *   Functions generated:7
  */
 
-#include "main/shim/metric_id_api.h"
+#include <bluetooth/metrics/metric_id_api.h>
+
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
@@ -30,11 +31,11 @@ bool InitMetricIdAllocator(const std::unordered_map<RawAddress, int>& /* paired_
                            CallbackLegacy /* save_id_callback */,
                            CallbackLegacy /* forget_device_callback */) {
   inc_func_call_count(__func__);
-  return false;
+  return true;
 }
 bool CloseMetricIdAllocator() {
   inc_func_call_count(__func__);
-  return false;
+  return true;
 }
 bool IsEmptyMetricIdAllocator() {
   inc_func_call_count(__func__);

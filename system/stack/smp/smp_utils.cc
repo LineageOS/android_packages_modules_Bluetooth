@@ -24,6 +24,8 @@
 #define LOG_TAG "smp"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -35,8 +37,6 @@
 #include "internal_include/stack_config.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
-#include "metrics/bluetooth_event.h"
-#include "os/metrics.h"
 #include "osi/include/allocator.h"
 #include "p_256_ecc_pp.h"
 #include "smp_int.h"

@@ -32,6 +32,7 @@
 #include <base/functional/bind.h>
 #include <base/location.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -39,7 +40,6 @@
 #include "btm_iso_api.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/hci_layer.h"
-#include "os/metrics.h"
 #include "osi/include/allocator.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_hci_link_interface.h"

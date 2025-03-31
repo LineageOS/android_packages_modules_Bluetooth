@@ -52,7 +52,6 @@ rust_defaults {
                 "libbinder_ndk",
                 "libcutils",
                 "libhidlbase",
-                "libstatslog_bt",
                 "libutils",
             ],
             rustlibs: [

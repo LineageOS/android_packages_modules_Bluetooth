@@ -381,6 +381,23 @@ bool LeAudioDeviceGroup::IsGroupReadyToSuspendStream(void) const {
   return iter == leAudioDevices_.end();
 }
 
+bool LeAudioDeviceGroup::IsDirectionAvailableForConfiguration(
+        LeAudioContextType configuration_context_type, uint8_t remote_direction) const {
+  auto current_config = IsUsingPreferredAudioSetConfiguration(configuration_context_type)
+                                ? GetCachedPreferredConfiguration(configuration_context_type)
+                                : GetCachedConfiguration(configuration_context_type);
+  log::debug("configuration_context_type_ = {}, group_id: {}, remote_direction: {}",
+             common::ToString(configuration_context_type), group_id_,
+             remote_direction == types::kLeAudioDirectionSink ? "Sink" : "Source");
+  if (current_config) {
+    log::debug("name: {}, size: {}", current_config->name,
+               current_config->confs.get(remote_direction).size());
+    return current_config->confs.get(remote_direction).size() != 0;
+  }
+  log::debug("no cached configuration");
+  return false;
+}
+
 bool LeAudioDeviceGroup::HaveAnyActiveDeviceInStreamingState() const {
   auto iter = std::find_if(leAudioDevices_.begin(), leAudioDevices_.end(), [](auto& d) {
     if (d.expired()) {

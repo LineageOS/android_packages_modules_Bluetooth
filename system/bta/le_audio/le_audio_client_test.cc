@@ -1484,6 +1484,7 @@ protected:
   void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com::android::bluetooth::flags::provider_->reset_flags();
+    com::android::bluetooth::flags::provider_->leaudio_fix_stop_reconfiguration_timeout(true);
 
     init_message_loop_thread();
     reset_mock_function_count_map();
@@ -2049,11 +2050,6 @@ protected:
 
     UpdateLocalSourceMetadata(usage, content_type, reconfigure_existing_stream);
     UpdateLocalSinkMetadata(audio_source);
-
-    /* Stream has been automatically restarted on UpdateLocalSourceMetadata */
-    if (reconfigure_existing_stream) {
-      return;
-    }
 
     LocalAudioSourceResume(expected_resume_confirmation);
     SyncOnMainLoop();
@@ -10924,8 +10920,9 @@ TEST_F(UnicastTest, SwitchBetweenSoundEffectAndMicrophoneScenario) {
   uint8_t cis_count_in = 1;
   TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920, 60);
 
+  /* We expect Reconfiguration timer to be started and canceled. */
   ASSERT_EQ(1, get_func_call_count("alarm_set_on_mloop"));
-  ASSERT_EQ(0, get_func_call_count("alarm_cancel"));
+  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
 }
 
 /* When a certain context is unavailable and not supported we should stream
@@ -10934,7 +10931,7 @@ TEST_F(UnicastTest, SwitchBetweenSoundEffectAndMicrophoneScenario) {
  * What we can do now is to keep streaming (and reconfigure if needed for the
  * use case).
  */
-TEST_F(UnicastTest, UpdateNotSupportedContextTypeUnspecifiedAvailable_SpeedUpReconfigFlagEnabled) {
+TEST_F(UnicastTest, UpdateNotSupportedContextTypeUnspecifiedAvailable) {
   const RawAddress test_address0 = GetTestAddress(0);
   int group_id = bluetooth::groups::kGroupUnknown;
 
@@ -10965,8 +10962,6 @@ TEST_F(UnicastTest, UpdateNotSupportedContextTypeUnspecifiedAvailable_SpeedUpRec
   uint8_t cis_count_out = 1;
   uint8_t cis_count_in = 0;
 
-  LeAudioClient::Get()->SetInCall(true);
-
   // Audio sessions are started only when device gets active
   EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
   EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
@@ -10984,7 +10979,6 @@ TEST_F(UnicastTest, UpdateNotSupportedContextTypeUnspecifiedAvailable_SpeedUpRec
   // Verify Data transfer on one audio source cis
   TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920);
 
-  LeAudioClient::Get()->SetInCall(false);
   LocalAudioSinkSuspend();
 
   /* We should use GAME configuration, but do not send the GAME context type, as

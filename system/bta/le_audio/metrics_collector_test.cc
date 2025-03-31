@@ -16,6 +16,7 @@
 
 #include "metrics_collector.h"
 
+#include <bluetooth/metrics/os_metrics.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <unistd.h>
@@ -23,7 +24,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "os/metrics.h"
+#include "metrics/mock/mock_main_shim_metrics_api.h"
 #include "types/raw_address.h"
 
 using testing::_;
@@ -55,42 +56,6 @@ std::vector<RawAddress> last_device_address;
 std::vector<int64_t> last_streaming_offset_nanos;
 std::vector<int64_t> last_streaming_duration_nanos;
 std::vector<int32_t> last_streaming_context_type;
-
-namespace bluetooth {
-namespace os {
-
-void LogMetricLeAudioConnectionSessionReported(
-        int32_t group_size, int32_t group_metric_id, int64_t connection_duration_nanos,
-        const std::vector<int64_t>& device_connecting_offset_nanos,
-        const std::vector<int64_t>& device_connected_offset_nanos,
-        const std::vector<int64_t>& device_connection_duration_nanos,
-        const std::vector<int32_t>& device_connection_status,
-        const std::vector<int32_t>& device_disconnection_status,
-        const std::vector<RawAddress>& device_address,
-        const std::vector<int64_t>& streaming_offset_nanos,
-        const std::vector<int64_t>& streaming_duration_nanos,
-        const std::vector<int32_t>& streaming_context_type) {
-  log_count++;
-  last_group_size = group_size;
-  last_group_metric_id = group_metric_id;
-  last_connection_duration_nanos = connection_duration_nanos;
-  last_device_connecting_offset_nanos = device_connecting_offset_nanos;
-  last_device_connected_offset_nanos = device_connected_offset_nanos;
-  last_device_connection_duration_nanos = device_connection_duration_nanos;
-  last_device_connection_status = device_connection_status;
-  last_device_disconnection_status = device_disconnection_status;
-  last_device_address = device_address;
-  last_streaming_offset_nanos = streaming_offset_nanos;
-  last_streaming_duration_nanos = streaming_duration_nanos;
-  last_streaming_context_type = streaming_context_type;
-}
-
-void LogMetricLeAudioBroadcastSessionReported(int64_t duration_nanos) {
-  last_broadcast_duration_nanos = duration_nanos;
-}
-
-}  // namespace os
-}  // namespace bluetooth
 
 namespace bluetooth::le_audio {
 
@@ -127,6 +92,35 @@ protected:
     last_streaming_offset_nanos = {};
     last_streaming_duration_nanos = {};
     last_streaming_context_type = {};
+
+    test::mock::main_shim_metrics_api::LogMetricLeAudioConnectionSessionReported.body =
+            [](int32_t group_size, int32_t group_metric_id, int64_t connection_duration_nanos,
+               const std::vector<int64_t>& device_connecting_offset_nanos,
+               const std::vector<int64_t>& device_connected_offset_nanos,
+               const std::vector<int64_t>& device_connection_duration_nanos,
+               const std::vector<int32_t>& device_connection_status,
+               const std::vector<int32_t>& device_disconnection_status,
+               const std::vector<RawAddress>& device_address,
+               const std::vector<int64_t>& streaming_offset_nanos,
+               const std::vector<int64_t>& streaming_duration_nanos,
+               const std::vector<int32_t>& streaming_context_type) {
+              log_count++;
+              last_group_size = group_size;
+              last_group_metric_id = group_metric_id;
+              last_connection_duration_nanos = connection_duration_nanos;
+              last_device_connecting_offset_nanos = device_connecting_offset_nanos;
+              last_device_connected_offset_nanos = device_connected_offset_nanos;
+              last_device_connection_duration_nanos = device_connection_duration_nanos;
+              last_device_connection_status = device_connection_status;
+              last_device_disconnection_status = device_disconnection_status;
+              last_device_address = device_address;
+              last_streaming_offset_nanos = streaming_offset_nanos;
+              last_streaming_duration_nanos = streaming_duration_nanos;
+              last_streaming_context_type = streaming_context_type;
+            };
+
+    test::mock::main_shim_metrics_api::LogMetricLeAudioBroadcastSessionReported.body =
+            [](int64_t duration_nanos) { last_broadcast_duration_nanos = duration_nanos; };
   }
 
   void TearDown() override { collector = nullptr; }

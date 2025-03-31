@@ -32,6 +32,7 @@
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/metric_id_api.h>
 
 #include <cstdint>
 #include <cstdlib>
@@ -98,7 +99,6 @@
 #include "hardware/bt_vc.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
-#include "main/shim/metric_id_api.h"
 #include "os/parameter_provider.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"

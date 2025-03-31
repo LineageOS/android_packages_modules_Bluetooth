@@ -16,11 +16,11 @@
 
 #include "mmc/metrics/mmc_rtt_logger.h"
 
+#include <bluetooth/metrics/os_metrics.h>
+
 #include <algorithm>
 #include <cmath>
 #include <string>
-
-#include "os/metrics.h"
 
 namespace mmc {
 

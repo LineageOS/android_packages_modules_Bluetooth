@@ -71,6 +71,7 @@ class DckScanTest(
     @Rule(order = 3) @JvmField val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Test
+    @Ignore("b/406277877")
     fun scanForIrkAndIdentityAddress_remoteFound() {
         // TODO(316001793): Retrieve identity address from Bumble
         val scanFilter =

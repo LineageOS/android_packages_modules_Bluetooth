@@ -23,6 +23,7 @@
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <hardware/bt_sdp.h>
 
@@ -32,7 +33,6 @@
 #include "bta/sdp/bta_sdp_int.h"
 #include "btif/include/btif_profile_storage.h"
 #include "btif/include/btif_sock_sdp.h"
-#include "os/metrics.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/sdp_api.h"
 #include "stack/include/sdpdefs.h"

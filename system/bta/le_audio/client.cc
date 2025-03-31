@@ -569,12 +569,12 @@ public:
       return;
     }
 
-    if (IsDirectionAvailableForCurrentConfiguration(
-                group, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
+    if (group->IsDirectionAvailableForConfiguration(
+                configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
       reconfiguration_local_directions_ |= bluetooth::le_audio::types::kLeAudioDirectionSource;
     }
-    if (IsDirectionAvailableForCurrentConfiguration(
-                group, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
+    if (group->IsDirectionAvailableForConfiguration(
+                configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
       reconfiguration_local_directions_ |= bluetooth::le_audio::types::kLeAudioDirectionSink;
     }
 
@@ -1368,8 +1368,10 @@ public:
       if (configuration_context_type_ == LeAudioContextType::CONVERSATIONAL) {
         log::info("Call is ended, speed up reconfiguration for media");
         // Preemptively remove conversational context for reconfiguration speed up
-        in_call_metadata_context_types_.sink.unset(LeAudioContextType::CONVERSATIONAL);
-        in_call_metadata_context_types_.source.unset(LeAudioContextType::CONVERSATIONAL);
+        in_call_metadata_context_types_.sink.unset_all(LeAudioContextType::CONVERSATIONAL |
+                                                       LeAudioContextType::RINGTONE);
+        in_call_metadata_context_types_.source.unset_all(LeAudioContextType::CONVERSATIONAL |
+                                                         LeAudioContextType::RINGTONE);
         if (in_call_metadata_context_types_.sink.none() &&
             in_call_metadata_context_types_.source.none()) {
           log::debug("No metadata, set default Media");
@@ -4661,7 +4663,8 @@ public:
             /* Stream is not started. Try to do it.*/
             if (OnAudioResume(group, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
               audio_sender_state_ = AudioState::READY_TO_START;
-              if (IsReconfigurationTimeoutRunning(active_group_id_)) {
+              if (!com::android::bluetooth::flags::leaudio_fix_stop_reconfiguration_timeout() &&
+                  IsReconfigurationTimeoutRunning(active_group_id_)) {
                 StopReconfigurationTimeout(active_group_id_,
                                            bluetooth::le_audio::types::kLeAudioDirectionSource);
               }
@@ -4671,8 +4674,9 @@ public:
             break;
           case AudioState::READY_TO_START:
             audio_sender_state_ = AudioState::READY_TO_START;
-            if (!IsDirectionAvailableForCurrentConfiguration(
-                        group, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
+            if (!group->IsDirectionAvailableForConfiguration(
+                        configuration_context_type_,
+                        bluetooth::le_audio::types::kLeAudioDirectionSink)) {
               log::warn(
                       "sink is not configured. \n audio_receiver_state: {} "
                       "\naudio_sender_state: {} \n isPendingConfiguration: {} \n "
@@ -4689,8 +4693,9 @@ public:
              * here, otherwise it'll be called on group streaming state callback
              */
             if (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
-              if (IsDirectionAvailableForCurrentConfiguration(
-                          group, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
+              if (group->IsDirectionAvailableForConfiguration(
+                          configuration_context_type_,
+                          bluetooth::le_audio::types::kLeAudioDirectionSink)) {
                 StartSendingAudio(active_group_id_);
               } else {
                 log::warn(
@@ -4722,8 +4727,9 @@ public:
           case AudioState::READY_TO_RELEASE:
             /* If the other direction is streaming we can start sending audio */
             if (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
-              if (IsDirectionAvailableForCurrentConfiguration(
-                          group, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
+              if (group->IsDirectionAvailableForConfiguration(
+                          configuration_context_type_,
+                          bluetooth::le_audio::types::kLeAudioDirectionSink)) {
                 StopSuspendTimeout();
                 StartSendingAudio(active_group_id_);
               } else {
@@ -4747,6 +4753,11 @@ public:
               CancelStreamingRequest();
             }
             break;
+        }
+        if (com::android::bluetooth::flags::leaudio_fix_stop_reconfiguration_timeout() &&
+            IsReconfigurationTimeoutRunning(active_group_id_)) {
+          StopReconfigurationTimeout(active_group_id_,
+                                     bluetooth::le_audio::types::kLeAudioDirectionSource);
         }
         break;
       case AudioState::READY_TO_START:
@@ -4828,25 +4839,6 @@ public:
                                             kLogAfSuspendConfirm + "LocalSink",
                                             "r_state: " + ToString(audio_receiver_state_) +
                                                     "s_state: " + ToString(audio_sender_state_));
-  }
-
-  inline bool IsDirectionAvailableForCurrentConfiguration(const LeAudioDeviceGroup* group,
-                                                          uint8_t remote_direction) const {
-    auto current_config =
-            group->IsUsingPreferredAudioSetConfiguration(configuration_context_type_)
-                    ? group->GetCachedPreferredConfiguration(configuration_context_type_)
-                    : group->GetCachedConfiguration(configuration_context_type_);
-    log::debug("configuration_context_type_ = {}, group_id: {}, remote_direction: {}",
-               ToString(configuration_context_type_), group->group_id_,
-               remote_direction == bluetooth::le_audio::types::kLeAudioDirectionSink ? "Sink"
-                                                                                     : "Source");
-    if (current_config) {
-      log::debug("name = {}, size {}", current_config->name,
-                 current_config->confs.get(remote_direction).size());
-      return current_config->confs.get(remote_direction).size() != 0;
-    }
-    log::debug("no cached configuration");
-    return false;
   }
 
   void notifyAudioLocalSink(UnicastMonitorModeStatus status) {
@@ -4951,7 +4943,8 @@ public:
           case AudioState::IDLE:
             if (OnAudioResume(group, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
               audio_receiver_state_ = AudioState::READY_TO_START;
-              if (IsReconfigurationTimeoutRunning(active_group_id_)) {
+              if (!com::android::bluetooth::flags::leaudio_fix_stop_reconfiguration_timeout() &&
+                  IsReconfigurationTimeoutRunning(active_group_id_)) {
                 StopReconfigurationTimeout(active_group_id_,
                                            bluetooth::le_audio::types::kLeAudioDirectionSink);
               }
@@ -4961,8 +4954,9 @@ public:
             break;
           case AudioState::READY_TO_START:
             audio_receiver_state_ = AudioState::READY_TO_START;
-            if (!IsDirectionAvailableForCurrentConfiguration(
-                        group, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
+            if (!group->IsDirectionAvailableForConfiguration(
+                        configuration_context_type_,
+                        bluetooth::le_audio::types::kLeAudioDirectionSource)) {
               log::warn(
                       "source is not configured. \n audio_receiver_state: {} "
                       "\naudio_sender_state: {} \n isPendingConfiguration: {} \n "
@@ -4979,8 +4973,9 @@ public:
              * here, otherwise it'll be called on group streaming state callback
              */
             if (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
-              if (IsDirectionAvailableForCurrentConfiguration(
-                          group, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
+              if (group->IsDirectionAvailableForConfiguration(
+                          configuration_context_type_,
+                          bluetooth::le_audio::types::kLeAudioDirectionSource)) {
                 StartReceivingAudio(active_group_id_);
               } else {
                 log::warn(
@@ -5013,8 +5008,9 @@ public:
             /* If the other direction is streaming we can start receiving audio
              */
             if (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
-              if (IsDirectionAvailableForCurrentConfiguration(
-                          group, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
+              if (group->IsDirectionAvailableForConfiguration(
+                          configuration_context_type_,
+                          bluetooth::le_audio::types::kLeAudioDirectionSource)) {
                 StopSuspendTimeout();
                 StartReceivingAudio(active_group_id_);
               } else {
@@ -5038,6 +5034,11 @@ public:
               CancelStreamingRequest();
             }
             break;
+        }
+        if (com::android::bluetooth::flags::leaudio_fix_stop_reconfiguration_timeout() &&
+            IsReconfigurationTimeoutRunning(active_group_id_)) {
+          StopReconfigurationTimeout(active_group_id_,
+                                     bluetooth::le_audio::types::kLeAudioDirectionSink);
         }
         break;
       case AudioState::READY_TO_START:
@@ -5451,7 +5452,8 @@ public:
             (((audio_receiver_state_ == AudioState::RELEASING) ||
               (audio_sender_state_ == AudioState::RELEASING)) &&
              group->IsPendingConfiguration() &&
-             IsDirectionAvailableForCurrentConfiguration(group, remote_other_direction)) ||
+             group->IsDirectionAvailableForConfiguration(configuration_context_type_,
+                                                         remote_other_direction)) ||
             IsReconfigurationTimeoutRunning(active_group_id_, local_direction);
 
     auto is_releasing_for_reconfiguration_other_direction =
@@ -5724,8 +5726,8 @@ public:
         (config_context_candids & ~no_reconfigure_contexts).none() &&
         (configuration_context_type_ != LeAudioContextType::UNINITIALIZED) &&
         (configuration_context_type_ != LeAudioContextType::UNSPECIFIED) &&
-        IsDirectionAvailableForCurrentConfiguration(
-                group, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
+        group->IsDirectionAvailableForConfiguration(
+                configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
       log::info(
               "There is no need to reconfigure for the sonification events, "
               "staying with the existing configuration context of {}",
@@ -5740,8 +5742,9 @@ public:
      */
     if (remote_direction == bluetooth::le_audio::types::kLeAudioDirectionSource) {
       const auto has_audio_source_configured =
-              IsDirectionAvailableForCurrentConfiguration(
-                      group, bluetooth::le_audio::types::kLeAudioDirectionSource) &&
+              group->IsDirectionAvailableForConfiguration(
+                      configuration_context_type_,
+                      bluetooth::le_audio::types::kLeAudioDirectionSource) &&
               (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
       if (has_audio_source_configured) {
         log::info(

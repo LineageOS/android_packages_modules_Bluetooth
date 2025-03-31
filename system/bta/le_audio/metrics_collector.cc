@@ -17,6 +17,7 @@
 #include "metrics_collector.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 
 #include <chrono>
 #include <cstdint>
@@ -27,7 +28,6 @@
 
 #include "hardware/bt_le_audio.h"
 #include "le_audio_types.h"
-#include "os/metrics.h"
 #include "types/raw_address.h"
 
 namespace bluetooth::le_audio {

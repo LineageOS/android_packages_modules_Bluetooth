@@ -107,9 +107,9 @@ static_library("btif") {
   deps = [
     "//bt/flags:bluetooth_flags_c_lib",
     "//bt/sysprop:libcom.android.sysprop.bluetooth",
-    "//bt/system:libbt-platform-protos-lite",
     "//bt/system/bta/aics:aics",
     "//bt/system/common",
+    "//bt/system/metrics",
     "//bt/system/profile/avrcp:profile_avrcp",
   ]
 

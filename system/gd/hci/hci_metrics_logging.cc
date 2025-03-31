@@ -16,12 +16,12 @@
 #include "hci/hci_metrics_logging.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
 
 #include "common/audit_log.h"
 #include "common/strings.h"
-#include "metrics/bluetooth_event.h"
-#include "os/metrics.h"
 #include "storage/device.h"
 
 namespace bluetooth {

@@ -1,0 +1,170 @@
+package {
+    // See: http://go/android-license-faq
+    // A large-scale-change added 'default_applicable_licenses' to import
+    // all of the 'license_kinds' from "system_bt_license"
+    // to get the below license kinds:
+    //   SPDX-license-identifier-Apache-2.0
+    //   SPDX-license-identifier-BSD
+    default_applicable_licenses: ["system_bt_license"],
+}
+
+genrule {
+    name: "statslog_bt.h",
+    tools: ["stats-log-api-gen"],
+    cmd: "$(location stats-log-api-gen) --header $(genDir)/statslog_bt.h --module bluetooth" +
+        " --namespace bluetooth",
+    out: ["statslog_bt.h"],
+    visibility: ["//visibility:private"],
+}
+
+genrule {
+    name: "statslog_bt.cpp",
+    tools: ["stats-log-api-gen"],
+    cmd: "$(location stats-log-api-gen) --cpp $(genDir)/statslog_bt.cpp --module bluetooth" +
+        " --namespace bluetooth --importHeader statslog_bt.h",
+    out: ["statslog_bt.cpp"],
+    visibility: ["//visibility:private"],
+}
+
+cc_library {
+    name: "libstatslog_bt",
+    defaults: ["bluetooth_cflags"],
+    generated_sources: ["statslog_bt.cpp"],
+    generated_headers: ["statslog_bt.h"],
+    export_generated_headers: ["statslog_bt.h"],
+    apex_available: ["com.android.bt"],
+    min_sdk_version: "30",
+    shared_libs: [
+        "libstatssocket",
+    ],
+    visibility: ["//visibility:private"],
+}
+
+cc_library {
+    name: "libbluetooth_metrics",
+    host_supported: true,
+    apex_available: ["com.android.bt"],
+    min_sdk_version: "Tiramisu",
+    defaults: [
+        "bluetooth_cflags",
+    ],
+    export_include_dirs: [
+        "include",
+    ],
+    // Export generated atom definitions from framework/proto_logging.
+    // This is to avoid having to link the library everywhere the header files
+    // are used.
+    export_static_lib_headers: [
+        "libbt-platform-protos-lite",
+    ],
+    include_dirs: [
+        "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/gd",
+        "packages/modules/Bluetooth/system/include",
+    ],
+    srcs: [
+        "src/bluetooth_event.cc",
+        "src/metric_id_api.cc",
+        "src/metric_id_manager.cc",
+    ],
+    static_libs: [
+        "libbluetooth-types",
+        "libbluetooth_hci_pdl",
+        "libbluetooth_log",
+        "libbt-platform-protos-lite",
+        "libchrome",
+    ],
+    shared_libs: [
+        "libbase",
+        "liblog",
+    ],
+    target: {
+        host: {
+            srcs: [
+                "src/host/metrics.cc",
+            ],
+        },
+        android: {
+            srcs: [
+                "src/android/metrics.cc",
+            ],
+            whole_static_libs: [
+                "libexpresslog",
+                "libstatslog_bt",
+                "libstatslog_express",
+                "libtextclassifier_hash_static",
+            ],
+            shared_libs: [
+                "libstatssocket",
+            ],
+        },
+    },
+}
+
+cc_library {
+    name: "libbluetooth_metrics_mock",
+    host_supported: true,
+    defaults: [
+        "bluetooth_cflags",
+    ],
+    export_include_dirs: [
+        "include",
+        "mock",
+    ],
+    cflags: [
+        "-Wno-unused-parameter",
+    ],
+    // Export generated atom definitions from framework/proto_logging.
+    // This is to avoid having to link the library everywhere the header files
+    // are used.
+    export_static_lib_headers: [
+        "libbt-platform-protos-lite",
+    ],
+    include_dirs: [
+        "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/gd",
+        "packages/modules/Bluetooth/system/include",
+    ],
+    srcs: [
+        ":TestCommonMockFunctions",
+        "mock/mock_main_shim_metric_id_api.cc",
+        "mock/mock_main_shim_metrics_api.cc",
+        "src/bluetooth_event.cc",
+        "src/metric_id_manager.cc",
+    ],
+    static_libs: [
+        "libbluetooth-types",
+        "libbluetooth_hci_pdl",
+        "libbluetooth_log",
+        "libbt-platform-protos-lite",
+        "libchrome",
+    ],
+    shared_libs: [
+        "libbase",
+        "liblog",
+    ],
+}
+
+cc_test {
+    name: "libbluetooth_metrics_test",
+    include_dirs: [
+        "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/gd",
+        "packages/modules/Bluetooth/system/metrics/src",
+    ],
+    srcs: [
+        "src/metric_id_manager.cc",
+        "test/metric_id_manager_unittest.cc",
+    ],
+    shared_libs: [
+        "libbase",
+        "liblog",
+    ],
+    static_libs: [
+        "libbluetooth_hci_pdl",
+        "libbluetooth_log",
+        "libchrome",
+        "libgmock",
+        "libgtest",
+    ],
+}

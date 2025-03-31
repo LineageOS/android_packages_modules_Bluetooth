@@ -17,6 +17,7 @@
 #include "le_audio_health_status.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <stdio.h>
 
@@ -30,7 +31,6 @@
 #include "device_groups.h"
 #include "devices.h"
 #include "hardware/bt_le_audio.h"
-#include "os/metrics.h"
 #include "types/raw_address.h"
 
 using bluetooth::common::ToString;

@@ -34,6 +34,7 @@
 #define LOG_TAG "btm_acl"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -50,7 +51,6 @@
 #include "main/shim/dumpsys.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
-#include "os/metrics.h"
 #include "os/parameter_provider.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
