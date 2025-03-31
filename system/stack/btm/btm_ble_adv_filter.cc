@@ -322,7 +322,7 @@ void BTM_BleAdvFilterParamSetup(tBTM_BLE_SCAN_COND_OP action, tBTM_BLE_PF_FILT_I
   uint8_t param[len], *p;
 
   if (!is_filtering_supported()) {
-    cb.Run(0, BTM_BLE_PF_ENABLE, tBTM_STATUS::BTM_MODE_UNSUPPORTED);
+    cb.Run(0, action, tBTM_STATUS::BTM_MODE_UNSUPPORTED);
     return;
   }
 
