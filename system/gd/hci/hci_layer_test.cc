@@ -16,6 +16,7 @@
 
 #include "hci/hci_layer.h"
 
+#include <com_android_bluetooth_flags.h>
 #include <gtest/gtest.h>
 
 #include <list>
@@ -27,6 +28,7 @@
 #include "os/thread.h"
 #include "packet/bit_inserter.h"
 #include "packet/raw_builder.h"
+#include "test/mock/mock_main_shim_entry.h"
 
 using bluetooth::os::Thread;
 using bluetooth::packet::BitInserter;
@@ -209,6 +211,12 @@ public:
     }
     hal = new hal::TestHciHal();
 
+    bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(
+            com::android::bluetooth::flags::same_handler_for_all_modules()
+                    ? fake_registry_.GetTestHandler()
+                    : new os::Handler(&fake_registry_.GetTestThread()));
+    bluetooth::hci::testing::mock_storage_->Start();
+
     fake_registry_.InjectTestModule(&hal::HciHal::Factory, hal);
     fake_registry_.Start<DependsOnHci>(&fake_registry_.GetTestThread(),
                                        fake_registry_.GetTestHandler());
@@ -229,7 +237,12 @@ public:
             GetPacketBytes(ResetCompleteBuilder::Create(num_packets, error_code)));
   }
 
-  void TearDown() override { fake_registry_.StopAll(); }
+  void TearDown() override {
+    delete bluetooth::hci::testing::mock_storage_;
+    bluetooth::hci::testing::mock_storage_ = nullptr;
+
+    fake_registry_.StopAll();
+  }
 
   std::vector<uint8_t> GetPacketBytes(std::unique_ptr<packet::BasePacketBuilder> packet) {
     std::vector<uint8_t> bytes;
