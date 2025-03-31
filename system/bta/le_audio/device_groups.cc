@@ -841,6 +841,21 @@ uint16_t LeAudioDeviceGroup::GetRemoteDelay(uint8_t direction) const {
   return remote_delay_ms;
 }
 
+BidirectionalPair<bool> LeAudioDeviceGroup::GetDirectionSupport(
+        types::LeAudioContextType ctx_type) const {
+  BidirectionalPair<bool> remote_directions = {true, true};
+
+  // Do not put any requirements on the Source if Sink only scenario is used
+  // Note: With the RINGTONE we should already prepare for a call.
+  if ((types::kLeAudioContextAllRemoteSinkOnly.test(ctx_type) &&
+       (ctx_type != types::LeAudioContextType::RINGTONE)) ||
+      ctx_type == types::LeAudioContextType::UNSPECIFIED) {
+    log::debug("Skipping the remote source requirements.");
+    remote_directions.source = false;
+  }
+  return remote_directions;
+}
+
 CodecManager::UnicastConfigurationRequirements
 LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextType ctx_type) const {
   auto new_req = CodecManager::UnicastConfigurationRequirements{
@@ -856,6 +871,7 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
   for (auto const& weak_dev_ptr : leAudioDevices_) {
     auto device = weak_dev_ptr.lock();
     BidirectionalPair<bool> has_location = {false, false};
+    BidirectionalPair<bool> has_direction = GetDirectionSupport(ctx_type);
 
     for (auto remote_direction : {types::kLeAudioDirectionSink, types::kLeAudioDirectionSource}) {
       if (!device->audio_locations_.get(remote_direction)) {
@@ -864,13 +880,9 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
         continue;
       }
 
-      // Do not put any requirements on the Source if Sink only scenario is used
-      // Note: With the RINGTONE we should already prepare for a call.
-      if ((remote_direction == types::kLeAudioDirectionSource) &&
-          ((types::kLeAudioContextAllRemoteSinkOnly.test(ctx_type) &&
-            (ctx_type != types::LeAudioContextType::RINGTONE)) ||
-           ctx_type == types::LeAudioContextType::UNSPECIFIED)) {
-        log::debug("Skipping the remote source requirements.");
+      if (!has_direction.get(remote_direction)) {
+        log::info("Skipping {} direction",
+                  remote_direction == types::kLeAudioDirectionSource ? "Decoding" : "Encoding");
         continue;
       }
 
