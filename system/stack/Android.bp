@@ -753,6 +753,8 @@ cc_test {
         "libflags_rust_cpp_bridge",
         "libfmq",
         "libg722codec",
+        "libgmock",
+        "libgtest",
         "liblc3",
         "libopus",
         "libosi",

@@ -187,6 +187,7 @@ cc_test {
         "libflagtest",
         "libfmq",
         "libgmock",
+        "libgtest",
         "libosi",
     ],
     header_libs: ["libbluetooth_headers"],
@@ -307,6 +308,7 @@ cc_test {
         "libchrome",
         "libevent",
         "libgmock",
+        "libgtest",
         "server_configurable_flags",
     ],
     cflags: [
@@ -344,6 +346,7 @@ cc_test {
         "libbt-bta",
         "libcutils",
         "libgmock",
+        "libgtest",
         "server_configurable_flags",
     ],
     header_libs: ["libbluetooth_headers"],
