@@ -2803,7 +2803,7 @@ protected:
 
   NiceMock<MockCsisClient> mock_csis_client_module_;
   NiceMock<MockDeviceGroups> mock_groups_module_;
-  bluetooth::groups::DeviceGroupsCallbacks* group_callbacks_;
+  bluetooth::groups::DeviceGroupsCallbacks* group_callbacks_ = nullptr;
   NiceMock<MockLeAudioGroupStateMachine> mock_state_machine_;
 
   NiceMock<MockFunction<void()>> mock_storage_load;
@@ -2812,31 +2812,31 @@ protected:
   NiceMock<bluetooth::manager::MockBtmInterface> mock_btm_interface_;
   NiceMock<gatt::MockBtaGattInterface> mock_gatt_interface_;
   NiceMock<gatt::MockBtaGattQueue> mock_gatt_queue_;
-  tBTA_GATTC_CBACK* gatt_callback;
+  tBTA_GATTC_CBACK* gatt_callback = nullptr;
   const uint8_t gatt_if = 0xfe;
   uint16_t global_conn_id = 1;
-  bluetooth::le_audio::LeAudioGroupStateMachine::Callbacks* state_machine_callbacks_;
+  bluetooth::le_audio::LeAudioGroupStateMachine::Callbacks* state_machine_callbacks_ = nullptr;
   std::map<int, LeAudioDeviceGroup*> streaming_groups;
   bool stay_at_qos_config_in_start_stream = false;
   bool stay_at_releasing_stop_stream = false;
 
   bool attach_to_stream_scheduled = false;
 
-  bluetooth::hci::IsoManager* iso_manager_;
-  MockIsoManager* mock_iso_manager_;
+  bluetooth::hci::IsoManager* iso_manager_ = nullptr;
+  MockIsoManager* mock_iso_manager_ = nullptr;
   bluetooth::hci::iso_manager::CigCallbacks* cig_callbacks_ = nullptr;
   uint16_t iso_con_counter_ = 1;
 
-  bluetooth::le_audio::CodecManager* codec_manager_;
-  MockCodecManager* mock_codec_manager_;
+  bluetooth::le_audio::CodecManager* codec_manager_ = nullptr;
+  MockCodecManager* mock_codec_manager_ = nullptr;
 
   uint16_t available_snk_context_types_ = 0xffff;
   uint16_t available_src_context_types_ = 0xffff;
   uint16_t supported_snk_context_types_ = 0xffff;
   uint16_t supported_src_context_types_ = 0xffff;
 
-  bool empty_source_pack_;
-  bool empty_sink_pack_;
+  bool empty_source_pack_ = false;
+  bool empty_sink_pack_ = false;
   bool no_source_ases_ = false;
 
   NiceMock<bluetooth::storage::MockBtifStorageInterface> mock_btif_storage_;
