@@ -59,16 +59,6 @@ flag {
 }
 
 flag {
-    name: "guard_bonded_device_properties"
-    namespace: "bluetooth"
-    description: "Don't update device properties for bonded devices from the device discovery results"
-    bug: "376928594"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "upgrade_temp_bonding_on_auth_req"
     namespace: "bluetooth"
     description: "Upgrade security If it is on temp bonding & authentication is requirement"
