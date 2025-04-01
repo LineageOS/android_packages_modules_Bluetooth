@@ -30,6 +30,7 @@ import android.bluetooth.BluetoothCodecType;
 import android.bluetooth.BluetoothDevice;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.lang.annotation.Native;
@@ -40,12 +41,15 @@ import java.util.List;
 public class A2dpNativeInterface {
     private static final String TAG = A2dpNativeInterface.class.getSimpleName();
 
+    private final AdapterService mAdapterService;
     @Native private final A2dpNativeCallback mNativeCallback;
 
     private BluetoothCodecType[] mSupportedCodecTypes;
 
     @VisibleForTesting
-    A2dpNativeInterface(@NonNull A2dpNativeCallback nativeCallback) {
+    A2dpNativeInterface(
+            @NonNull AdapterService adapterService, @NonNull A2dpNativeCallback nativeCallback) {
+        mAdapterService = requireNonNull(adapterService);
         mNativeCallback = requireNonNull(nativeCallback);
     }
 
@@ -128,11 +132,11 @@ public class A2dpNativeInterface {
         return setCodecConfigPreferenceNative(getByteAddress(device), codecConfigArray);
     }
 
-    private static byte[] getByteAddress(BluetoothDevice device) {
+    private byte[] getByteAddress(BluetoothDevice device) {
         if (device == null) {
             return Utils.getBytesFromAddress("00:00:00:00:00:00");
         }
-        return Utils.getByteBrEdrAddress(device);
+        return Utils.getByteBrEdrAddress(mAdapterService, device);
     }
 
     private native void initNative(
