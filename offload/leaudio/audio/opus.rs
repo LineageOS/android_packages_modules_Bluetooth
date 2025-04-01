@@ -121,7 +121,7 @@ impl OpusEncoder {
         // SAFETY: The encoder state `st` points to a valid instance, as required by this
         //         function; The first argument of the variable argument list is interpreted
         //         as int32_t, as defined by the `OPUS_SET_COMPLEXITY()` macro.
-        let result = unsafe { opus_encoder_ctl(st, SET_COMPLEXITY_REQUEST, value as i32) };
+        let result = unsafe { opus_encoder_ctl(st, SET_COMPLEXITY_REQUEST, value) };
         assert_eq!(result, 0, "Failed to set complexity to {}, with error: {}", value, result);
     }
 }
