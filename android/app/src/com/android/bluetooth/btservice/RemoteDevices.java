@@ -1350,6 +1350,8 @@ public class RemoteDevices {
 
         deviceProperties.setIsConsolidated(true);
         deviceProperties.setDeviceType(BluetoothDevice.DEVICE_TYPE_DUAL);
+        // Dual mode devices have public identity address type
+        deviceProperties.setIdentityAddressType(BluetoothDevice.ADDRESS_TYPE_PUBLIC);
         deviceProperties.setIdentityAddress(Utils.getAddressStringFromByte(secondaryAddress));
         mDualDevicesMap.put(
                 deviceProperties.getIdentityAddress(), Utils.getAddressStringFromByte(mainAddress));
