@@ -388,7 +388,6 @@ public class PairingTest {
      * <p>Expectation: Pairing gets cancelled instead of getting timed out
      */
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_PREVENT_DUPLICATE_UUID_INTENT})
     public void testCancelBondLe_WithGattServiceDiscovery() {
         IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED)
@@ -439,7 +438,6 @@ public class PairingTest {
      * <p>Expectation: Pairing succeeds
      */
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_PREVENT_DUPLICATE_UUID_INTENT})
     public void testBondLe_WithGattServiceDiscovery() {
         IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED)
