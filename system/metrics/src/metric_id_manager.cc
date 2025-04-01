@@ -104,8 +104,8 @@ bool MetricIdManager::Close() {
 }
 
 MetricIdManager& MetricIdManager::GetInstance() {
-  static MetricIdManager metric_id_allocator;
-  return metric_id_allocator;
+  static auto* metric_id_allocator = new MetricIdManager();
+  return *metric_id_allocator;
 }
 
 bool MetricIdManager::IsEmpty() const {
