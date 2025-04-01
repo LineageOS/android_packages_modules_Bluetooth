@@ -303,7 +303,7 @@ protected:
               const std::string& btsnoop_mode, bool qualcomm_debug_log_enabled,
               const std::chrono::milliseconds snooz_log_life_time,
               const std::chrono::milliseconds snooz_log_delete_alarm_interval,
-              bool snoop_log_persists);
+              bool snoop_log_persists, int port = SnoopLoggerSocket::kDefaultPort);
 
   void CloseCurrentSnoopLogFile();
   void OpenNextSnoopLogFile();
@@ -358,6 +358,7 @@ private:
   SnoopLoggerSocketInterface* socket_;
   SyscallWrapperImpl syscall_if;
   bool snoop_log_persists = false;
+  int port_ = SnoopLoggerSocket::kDefaultPort;
 
   friend class SnoopLoggerTest;
 };
