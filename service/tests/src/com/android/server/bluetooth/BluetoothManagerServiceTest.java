@@ -665,14 +665,41 @@ public class BluetoothManagerServiceTest {
 
     @Test
     @EnableFlags(Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP)
+    @DisableFlags(Flags.FLAG_FACTORY_RESET_AT_BLUETOOTH_START)
     public void factoryReset_whileBtOn_clearAndRestart() throws Exception {
         mManagerService.enable("factoryReset_whileBtOn_clearAndRestart");
         IBluetoothCallback btCallback = transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(STATE_ON);
 
         mManagerService.factoryReset(0);
-
         verify(mAdapterBinder).factoryReset();
+
+        transition_onToOff(btCallback);
+        transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(STATE_ON);
+    }
+
+    @Test
+    @EnableFlags({
+        Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP,
+        Flags.FLAG_FACTORY_RESET_AT_BLUETOOTH_START
+    })
+    public void factoryReset_whileBtOn_restartWithProperty() throws Exception {
+        mManagerService.enable("factoryReset_whileBtOn_restartWithProperty");
+        IBluetoothCallback btCallback = transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(STATE_ON);
+
+        MockitoSession mockingSession =
+                ExtendedMockito.mockitoSession()
+                        .mockStatic(BluetoothProperties.class)
+                        .startMocking();
+        try {
+            mManagerService.factoryReset(0);
+            ExtendedMockito.verify(() -> BluetoothProperties.factory_reset(true));
+        } finally {
+            mockingSession.finishMocking();
+        }
+
         transition_onToOff(btCallback);
         transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(STATE_ON);

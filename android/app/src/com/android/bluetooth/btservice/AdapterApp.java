@@ -20,6 +20,7 @@ import android.app.Application;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.flags.Flags;
 
 public class AdapterApp extends Application {
     private static final String TAG = Utils.TAG_PREFIX_BLUETOOTH + AdapterApp.class.getSimpleName();
@@ -28,6 +29,9 @@ public class AdapterApp extends Application {
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "onCreate");
+        if (Flags.factoryResetAtBluetoothStart()) {
+            return;
+        }
         try {
             DataMigration.run(this);
         } catch (Exception e) {
