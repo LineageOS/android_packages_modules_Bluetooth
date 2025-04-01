@@ -308,3 +308,14 @@ flag {
     }
 }
 
+
+flag {
+    name: "dsa_use_codec_extensibility"
+    namespace: "bluetooth"
+    description: "Use the codec extensibility API for passing DSA parameters"
+    bug: "406747076"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
