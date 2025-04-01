@@ -75,6 +75,7 @@
 #include "stack/include/main_thread.h"
 #include "stack/include/rnr_interface.h"
 #include "stack/include/smp_api.h"
+#include "stack/include/smp_status.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
@@ -657,7 +658,8 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
     btm_ble_init_pseudo_addr(p_dev_rec, bd_addr);
     p_dev_rec->sec_rec.sec_flags &= ~BTM_SEC_LE_MASK;
 
-    if (SMP_Pair(bd_addr, addr_type) == SMP_STARTED) {
+    tSMP_STATUS smp_status = SMP_Pair(bd_addr, addr_type);
+    if (smp_status == SMP_STARTED) {
       btm_sec_cb.pairing_flags |= BTM_PAIR_FLAGS_LE_ACTIVE;
       p_dev_rec->sec_rec.le_link = tSECURITY_STATE::AUTHENTICATING;
       btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
@@ -665,6 +667,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
     }
 
     btm_sec_cb.pairing_flags = 0;
+    log::error("SMP_Pair: failed, status:{}", smp_status);
     return tBTM_STATUS::BTM_NO_RESOURCES;
   }
 
