@@ -41,6 +41,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
@@ -247,7 +248,7 @@ public class BluetoothManagerServiceTest {
 
         mLooper = new TestLooper();
 
-        mManagerService = new BluetoothManagerService(mContext, mLooper.getLooper());
+        mManagerService = new BluetoothManagerService(mContext, mLooper.getLooper(), "default");
         mManagerService.initialize(mUserHandle);
 
         mManagerService.registerAdapter(mManagerCallback);
@@ -395,7 +396,7 @@ public class BluetoothManagerServiceTest {
         acceptBluetoothBinding();
 
         IBluetoothCallback btCallback = captureBluetoothCallback();
-        mInOrder.verify(mAdapterBinder).offToBleOn(anyBoolean(), any());
+        mInOrder.verify(mAdapterBinder).offToBleOn(anyBoolean(), anyString(), any());
         verifyBleStateIntentSent(STATE_OFF, STATE_BLE_TURNING_ON);
         mInOrder.verify(mManagerCallback).onBluetoothServiceUp(any());
 
@@ -535,7 +536,7 @@ public class BluetoothManagerServiceTest {
                 acceptBluetoothBinding();
 
         IBluetoothCallback btCallback = captureBluetoothCallback();
-        mInOrder.verify(mAdapterBinder).offToBleOn(anyBoolean(), any());
+        mInOrder.verify(mAdapterBinder).offToBleOn(anyBoolean(), anyString(), any());
         btCallback.onBluetoothStateChange(STATE_OFF, STATE_BLE_TURNING_ON);
         syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
         assertThat(mManagerService.getState()).isEqualTo(STATE_BLE_TURNING_ON);

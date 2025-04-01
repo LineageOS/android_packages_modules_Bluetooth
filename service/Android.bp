@@ -44,6 +44,7 @@ java_library {
         "src/AdapterState.kt",
         "src/AutoOnFeature.kt",
         "src/BleScanSettingListener.kt",
+        "src/BluetoothHciInstance.kt",
         "src/BluetoothService.kt",
         "src/Log.kt",
         "src/RadioModeListener.kt",

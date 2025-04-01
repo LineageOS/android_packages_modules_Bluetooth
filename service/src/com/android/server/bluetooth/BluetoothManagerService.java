@@ -183,6 +183,7 @@ class BluetoothManagerService {
     private final UserManager mUserManager;
 
     private final boolean mIsHearingAidProfileSupported;
+    private final String mHciInstanceName;
 
     private String mAddress;
     private String mName;
@@ -595,10 +596,12 @@ class BluetoothManagerService {
             new Histogram(
                     "bluetooth.value_shutdown_latency", new Histogram.UniformOptions(50, 0, 3000));
 
-    BluetoothManagerService(@NonNull Context context, @NonNull Looper looper) {
+    BluetoothManagerService(
+            @NonNull Context context, @NonNull Looper looper, @NonNull String hciInstanceName) {
         mContext = requireNonNull(context, "Context cannot be null");
         mContentResolver = requireNonNull(mContext.getContentResolver(), "Resolver cannot be null");
         mLooper = requireNonNull(looper, "Looper cannot be null");
+        mHciInstanceName = requireNonNull(hciInstanceName, "Hci instance name cannot be null");
 
         mUserManager =
                 requireNonNull(
@@ -668,8 +671,14 @@ class BluetoothManagerService {
                 BluetoothServerProxy.getInstance()
                         .settingsSecureGetString(
                                 mContentResolver, Settings.Secure.BLUETOOTH_ADDRESS);
-
-        Log.d(TAG, "Local adapter: Name=" + mName + ", Address=" + logAddress(mAddress));
+        Log.d(
+                TAG,
+                "Local adapter: Name="
+                        + mName
+                        + ", Address="
+                        + logAddress(mAddress)
+                        + " HciInstanceName="
+                        + mHciInstanceName);
 
         if (isBluetoothPersistedStateOn()) {
             Log.i(TAG, "Startup: Bluetooth persisted state is ON.");
@@ -1455,7 +1464,7 @@ class BluetoothManagerService {
                         Log.e(TAG, "Unable to register BluetoothCallback", e);
                     }
 
-                    offToBleOn();
+                    offToBleOn(mHciInstanceName);
                     sendBluetoothServiceUpCallback();
 
                     if (!Flags.systemServerRemoveExtraThreadJump() && !mEnable) {
@@ -1894,14 +1903,14 @@ class BluetoothManagerService {
         }
     }
 
-    private void offToBleOn() {
+    private void offToBleOn(String hciInstanceName) {
         if (!mState.oneOf(STATE_OFF)) {
             Log.e(TAG, "offToBleOn: Impossible transition from " + mState);
             return;
         }
-        Log.d(TAG, "offToBleOn: Sending request");
+        Log.d(TAG, "offToBleOn: Sending request hciInstanceName " + hciInstanceName);
         try {
-            mAdapter.offToBleOn(mQuietEnable, mContext.getAttributionSource());
+            mAdapter.offToBleOn(mQuietEnable, hciInstanceName, mContext.getAttributionSource());
         } catch (RemoteException e) {
             Log.e(TAG, "Unable to call offToBleOn()", e);
         }

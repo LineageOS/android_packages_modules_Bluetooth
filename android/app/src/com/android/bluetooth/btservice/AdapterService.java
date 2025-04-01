@@ -294,7 +294,7 @@ public class AdapterService extends Service {
 
     private boolean mNativeAvailable;
     private boolean mCleaningUp;
-    private boolean mQuietmode = false;
+    private boolean mQuietMode = false;
     private final Map<String, CallerInfo> mBondAttemptCallerInfo = new HashMap<>();
 
     private BatteryStatsManager mBatteryStatsManager;
@@ -614,8 +614,8 @@ public class AdapterService extends Service {
     }
 
     @SuppressLint("AndroidFrameworkRequiresPermission")
-    private void init() {
-        Log.d(TAG, "init()");
+    private void init(String hciInstanceName) {
+        Log.d(TAG, "init() instance = " + hciInstanceName);
 
         factoryResetIfNeeded();
         if (Flags.factoryResetAtBluetoothStart()) {
@@ -669,7 +669,8 @@ public class AdapterService extends Service {
                 mUserManager.isGuestUser(),
                 isCommonCriteriaMode,
                 configCompareResult,
-                isAtvDevice);
+                isAtvDevice,
+                hciInstanceName);
         mNativeAvailable = true;
         // Load the name and address
         mNativeInterface.getAdapterProperty(AbstractionLayer.BT_PROPERTY_BDADDR);
@@ -2612,18 +2613,30 @@ public class AdapterService extends Service {
         return BluetoothAdapter.STATE_OFF;
     }
 
-    public synchronized void offToBleOn(boolean quietMode) {
+    /**
+     * Initialize AdapterService with necessary configuration parameters and progress AdapterService
+     * state from OFF to BLE ON.
+     *
+     * @param quietMode Enables or disables quiet mode
+     * @param hciInstanceName The hci instance name used to bind to the hardware
+     */
+    public synchronized void offToBleOn(boolean quietMode, String hciInstanceName) {
         // Enforce the user restriction for disallowing Bluetooth if it was set.
         if (mUserManager.hasUserRestrictionForUser(
                 UserManager.DISALLOW_BLUETOOTH, UserHandle.SYSTEM)) {
             Log.d(TAG, "offToBleOn() called when Bluetooth was disallowed");
             return;
         }
+        mQuietMode = quietMode;
         // The call to init must be done on the main thread
-        mHandler.post(() -> init());
+        mHandler.post(() -> init(hciInstanceName));
+        Log.i(
+                TAG,
+                "offToBleOn() - Enable called with quiet mode status =  "
+                        + mQuietMode
+                        + " hci_instance_name = "
+                        + hciInstanceName);
 
-        Log.i(TAG, "offToBleOn() - Enable called with quiet mode status =  " + quietMode);
-        mQuietmode = quietMode;
         mAdapterStateMachine.sendMessage(AdapterState.BLE_TURN_ON);
     }
 
@@ -2919,8 +2932,8 @@ public class AdapterService extends Service {
     }
 
     public boolean isQuietModeEnabled() {
-        Log.d(TAG, "isQuietModeEnabled() - Enabled = " + mQuietmode);
-        return mQuietmode;
+        Log.d(TAG, "isQuietModeEnabled() - Enabled = " + mQuietMode);
+        return mQuietMode;
     }
 
     public void updateUuids() {

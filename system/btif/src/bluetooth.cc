@@ -403,11 +403,11 @@ int GetAdapterIndex() { return 0; }  // Unsupported outside of FLOSS
 #endif  // TARGET_FLOSS
 
 static int init(bt_callbacks_t* callbacks, bool start_restricted, bool is_common_criteria_mode,
-                int config_compare_result, bool is_atv) {
+                int config_compare_result, bool is_atv, const char* hci_instance_name) {
   log::info(
           "start restricted = {} ; common criteria mode = {}, config compare "
-          "result = {}",
-          start_restricted, is_common_criteria_mode, config_compare_result);
+          "result = {} instance_name = {}",
+          start_restricted, is_common_criteria_mode, config_compare_result, hci_instance_name);
 
   if (interface_ready()) {
     return BT_STATUS_DONE;
@@ -425,6 +425,7 @@ static int init(bt_callbacks_t* callbacks, bool start_restricted, bool is_common
   } else {
     bluetooth::os::ParameterProvider::SetCommonCriteriaConfigCompareResult(CONFIG_COMPARE_ALL_PASS);
   }
+  bluetooth::os::ParameterProvider::SetHciInstanceName(hci_instance_name);
 
   is_local_device_atv = is_atv;
 

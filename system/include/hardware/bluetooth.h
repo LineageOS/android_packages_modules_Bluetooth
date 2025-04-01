@@ -710,7 +710,7 @@ typedef struct {
    * the local device is an Android TV
    */
   int (*init)(bt_callbacks_t* callbacks, bool guest_mode, bool is_common_criteria_mode,
-              int config_compare_result, bool is_atv);
+              int config_compare_result, bool is_atv, const char* hci_instance_name);
 
   /** Enable Bluetooth. */
   int (*enable)();
