@@ -1485,6 +1485,7 @@ protected:
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com::android::bluetooth::flags::provider_->reset_flags();
     com::android::bluetooth::flags::provider_->leaudio_fix_stop_reconfiguration_timeout(true);
+    com::android::bluetooth::flags::provider_->leaudio_use_aggressive_params(true);
 
     init_message_loop_thread();
     reset_mock_function_count_map();
@@ -10804,7 +10805,7 @@ TEST_F(UnicastTest, SwitchBetweenMicrophoneAndSoundEffectScenario) {
   UpdateLocalSinkMetadata(AUDIO_SOURCE_MIC);
   LocalAudioSinkResume();
 
-  ASSERT_EQ(0, get_func_call_count("alarm_set_on_mloop"));
+  ASSERT_EQ(1, get_func_call_count("alarm_set_on_mloop"));
   SyncOnMainLoop();
 
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
@@ -10821,8 +10822,8 @@ TEST_F(UnicastTest, SwitchBetweenMicrophoneAndSoundEffectScenario) {
   SyncOnMainLoop();
 
   log::info("Expect VBC and Suspend timeouts to be started");
-  ASSERT_EQ(2, get_func_call_count("alarm_set_on_mloop"));
-  ASSERT_EQ(0, get_func_call_count("alarm_cancel"));
+  ASSERT_EQ(3, get_func_call_count("alarm_set_on_mloop"));
+  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
 
   log::info("Resume local source with touch tone - expect suspend timeout to be canceled");
 
@@ -10831,7 +10832,7 @@ TEST_F(UnicastTest, SwitchBetweenMicrophoneAndSoundEffectScenario) {
   SyncOnMainLoop();
 
   log::info("Expect VBC and Suspend timeouts to be started");
-  ASSERT_EQ(2, get_func_call_count("alarm_set_on_mloop"));
+  ASSERT_EQ(3, get_func_call_count("alarm_set_on_mloop"));
 
   auto group = streaming_groups.at(group_id);
   group->PrintDebugState();
@@ -10910,8 +10911,8 @@ TEST_F(UnicastTest, SwitchBetweenSoundEffectAndMicrophoneScenario) {
   TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920, 60);
 
   /* We expect Reconfiguration timer to be started and canceled. */
-  ASSERT_EQ(1, get_func_call_count("alarm_set_on_mloop"));
-  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+  ASSERT_EQ(2, get_func_call_count("alarm_set_on_mloop"));
+  ASSERT_EQ(2, get_func_call_count("alarm_cancel"));
 }
 
 /* When a certain context is unavailable and not supported we should stream
