@@ -17,6 +17,7 @@
 #include "hci/acl_manager.h"
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -117,7 +118,10 @@ protected:
     fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
-    bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(new os::Handler(&thread_));
+    bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(
+            com::android::bluetooth::flags::same_handler_for_all_modules()
+                    ? client_handler_
+                    : new os::Handler(&thread_));
     bluetooth::hci::testing::mock_storage_->Start();
     fake_registry_.Start<AclManager>(&thread_, handler_);
     acl_manager_ =
@@ -271,12 +275,9 @@ protected:
     // Invalid mutex exception is raised if the connection
     // is cleared after the AclConnectionInterface is deleted
     // through fake_registry_.
-    connections_.clear();
-    le_connections_.clear();
     connection_.reset();
     fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
-    fake_registry_.StopAll();
+    AclManagerTest::TearDown();
   }
 
   uint16_t handle_;
@@ -409,12 +410,9 @@ protected:
     // Invalid mutex exception is raised if the connection
     // is cleared after the AclConnectionInterface is deleted
     // through fake_registry_.
-    connections_.clear();
-    le_connections_.clear();
     connection_.reset();
     fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
-    fake_registry_.StopAll();
+    AclManagerTest::TearDown();
   }
 
   uint16_t handle_ = 0x123;
@@ -1145,7 +1143,10 @@ protected:
     fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
-    bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(new os::Handler(&thread_));
+    bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(
+            com::android::bluetooth::flags::same_handler_for_all_modules()
+                    ? client_handler_
+                    : new os::Handler(&thread_));
     bluetooth::hci::testing::mock_storage_->Start();
     fake_registry_.Start<AclManager>(&thread_, handler_);
     acl_manager_ =

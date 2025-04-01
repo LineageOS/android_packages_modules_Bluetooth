@@ -280,3 +280,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "gatt_reuse_discovering_client"
+    namespace: "bluetooth"
+    description: "Reuse discovering GATT client on service change indication"
+    bug: "407060739"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

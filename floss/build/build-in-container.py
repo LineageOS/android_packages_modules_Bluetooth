@@ -7,34 +7,45 @@ import sys
 import time
 
 SRC_MOUNT = "/root/src"
+PROTO_LOGGING_MOUNT = "/root/proto_logging"
 STAGING_MOUNT = "/root/.floss"
 
 
 class FlossContainerRunner:
     """Runs Floss build inside container."""
 
-    # Commands to run for build
-    BUILD_COMMANDS = [
-        # First run bootstrap to get latest code + create symlinks
-        [f'{SRC_MOUNT}/build.py', '--run-bootstrap', '--clone-timeout=1200'],
+    @property
+    def build_commands(self):
+        """Commands to run for build"""
 
-        # Clean up any previous artifacts inside the volume
-        [f'{SRC_MOUNT}/build.py', '--target', 'clean'],
+        bootstrap_cmd = [f'{SRC_MOUNT}/build.py', '--run-bootstrap', '--clone-timeout=1200']
+        if self.proto_logging_dir:
+            bootstrap_cmd.append(f'--proto-logging-dir={PROTO_LOGGING_MOUNT}')
 
-        # Run normal code builder
-        [f'{SRC_MOUNT}/build.py', '--target', 'all'],
+        return [
+            # First run bootstrap to get latest code + create symlinks
+            bootstrap_cmd,
 
-        # Run tests
-        [f'{SRC_MOUNT}/build.py', '--target', 'test'],
-    ]
+            # Clean up any previous artifacts inside the volume
+            [f'{SRC_MOUNT}/build.py', '--target', 'clean'],
 
-    def __init__(self, workdir, rootdir, image_tag, volume_name, container_name, staging_dir,
-                 use_docker, use_pseudo_tty):
+            # Run normal code builder
+            [f'{SRC_MOUNT}/build.py', '--target', 'all'],
+
+            # Run tests
+            [f'{SRC_MOUNT}/build.py', '--target', 'test'],
+        ]
+
+    def __init__(self, workdir, rootdir, proto_logging_dir, image_tag, volume_name, container_name,
+                 staging_dir, use_docker, use_pseudo_tty):
         """ Constructor.
 
         Args:
             workdir: Current working directory (should be the script path).
             rootdir: Root directory for Bluetooth.
+            proto_logging_dir: Root directory for proto_logging. Build Floss
+                               with this if it's non-empty, otherwise the AOSP
+                               clone is used.
             image_tag: Tag for container image used for building.
             volume_name: Volume name used for storing artifacts.
             container_name: Name for running container instance.
@@ -44,6 +55,7 @@ class FlossContainerRunner:
         """
         self.workdir = workdir
         self.rootdir = rootdir
+        self.proto_logging_dir = proto_logging_dir
         self.image_tag = image_tag
         self.container_binary = 'docker' if use_docker else 'podman'
         self.env = os.environ.copy()
@@ -99,6 +111,14 @@ class FlossContainerRunner:
         # Stop any previously started container.
         self.stop_container(ignore_error=True)
 
+        args = [
+            self.container_binary,
+            'run',
+            '--name',
+            self.container_name,
+            '-d',
+        ]
+
         # Create volume and create mount string
         if self.staging_dir:
             mount_output_volume = 'type=bind,src={},dst={}'.format(self.staging_dir, STAGING_MOUNT)
@@ -107,17 +127,21 @@ class FlossContainerRunner:
             self._create_volume_if_needed()
             mount_output_volume = 'type=volume,src={},dst={}'.format(self.volume_name,
                                                                      STAGING_MOUNT)
+        args += ['--mount', mount_output_volume]
 
         # Mount the source directory
         mount_src_dir = 'type=bind,src={},dst={}'.format(self.rootdir, SRC_MOUNT)
+        args += ['--mount', mount_src_dir]
+
+        if self.proto_logging_dir:
+            mount_proto_logging_dir = 'type=bind,src={},dst={}'.format(
+                self.proto_logging_dir, PROTO_LOGGING_MOUNT)
+            args += ['--mount', mount_proto_logging_dir]
 
         # Run the container image. It will run `tail` indefinitely so the container
         # doesn't close and we can run `<container_binary> exec` on it.
-        self.run_command(self.container_binary + ' run', [
-            self.container_binary, 'run', '--name', self.container_name, '--mount',
-            mount_output_volume, '--mount', mount_src_dir, '-d', self.image_tag, 'tail', '-f',
-            '/dev/null'
-        ])
+        self.run_command(self.container_binary + ' run',
+                         args + [self.image_tag, 'tail', '-f', '/dev/null'])
 
     def stop_container(self, ignore_error=False):
         """Stops the container for build."""
@@ -135,7 +159,7 @@ class FlossContainerRunner:
 
         try:
             # Run all commands
-            for i, cmd in enumerate(self.BUILD_COMMANDS):
+            for i, cmd in enumerate(self.build_commands):
                 self.run_command(
                     self.container_binary + ' exec #{}'.format(i),
                     [self.container_binary, 'exec', self.container_exec_flags, self.container_name
@@ -150,7 +174,7 @@ class FlossContainerRunner:
             self.container_binary, 'exec', self.container_exec_flags, self.container_name
         ]
         print('Normally, build would run the following commands: \n')
-        for cmd in self.BUILD_COMMANDS:
+        for cmd in self.build_commands:
             print(' '.join(container_exec + cmd))
 
     def check_container_runnable(self):
@@ -189,6 +213,11 @@ if __name__ == "__main__":
         '--staging-dir',
         default=None,
         help='Staging directory to use instead of volume. Build artifacts will be written here.')
+    parser.add_argument('--proto-logging-dir',
+                        help=('Mount the given path into the container as the source of '
+                              'proto_logging, otherwise the AOSP proto_logging clone is used.'),
+                        default='',
+                        type=str)
     parser.add_argument('--container-name',
                         default='floss-container-runner',
                         help='What to name the started container.')
@@ -207,10 +236,14 @@ if __name__ == "__main__":
     workdir = os.path.dirname(os.path.abspath(sys.argv[0]))
     rootdir = os.path.abspath(os.path.join(workdir, '../..'))
 
+    proto_logging_dir = ''
+    if args.proto_logging_dir:
+        proto_logging_dir = os.path.abspath(args.proto_logging_dir)
+
     # Determine staging directory absolute path
     staging = os.path.abspath(args.staging_dir) if args.staging_dir else None
 
-    fdr = FlossContainerRunner(workdir, rootdir, args.image_tag, args.volume_tag,
+    fdr = FlossContainerRunner(workdir, rootdir, proto_logging_dir, args.image_tag, args.volume_tag,
                                args.container_name, staging, args.use_docker, not args.no_tty)
 
     # Make sure container is runnable before continuing

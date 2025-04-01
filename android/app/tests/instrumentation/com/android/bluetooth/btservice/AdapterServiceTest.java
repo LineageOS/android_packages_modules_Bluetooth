@@ -55,6 +55,7 @@ import android.os.RemoteException;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.permission.PermissionManager;
+import android.platform.test.annotations.RequiresFlagsDisabled;
 import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
@@ -490,6 +491,7 @@ public class AdapterServiceTest {
 
     @Test
     @RequiresFlagsEnabled(Flags.FLAG_GATT_CLEAR_CACHE_ON_FACTORY_RESET)
+    @RequiresFlagsDisabled(Flags.FLAG_FACTORY_RESET_AT_BLUETOOTH_START)
     public void testClearStorage() throws Exception {
         // clearStorage should remove all files under /data/misc/bluetooth/ && /data/misc/bluedroid/
         final Path testCachePath = Paths.get("/data/misc/bluetooth/gatt_cache_a475b9a23d72");

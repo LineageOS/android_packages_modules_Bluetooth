@@ -2405,7 +2405,7 @@ protected:
           handle++;
         }
 
-        if (source_audio_allocation.has_value()) {
+        if (source_audio_allocation.has_value() && !no_source_ases_) {
           ascs->source_ase_char[i] = handle;
           handle += 2;
           ascs->source_ase_ccc[i] = handle;
@@ -2836,6 +2836,7 @@ protected:
 
   bool empty_source_pack_;
   bool empty_sink_pack_;
+  bool no_source_ases_;
 
   NiceMock<bluetooth::storage::MockBtifStorageInterface> mock_btif_storage_;
   NiceMock<bluetooth::testing::stack::l2cap::Mock> mock_stack_l2cap_interface_;
@@ -5448,6 +5449,43 @@ TEST_F(UnicastTest, ChangeAvailableContextTypeWhenInCodecConfigured) {
   auto source_available_context = types::kLeAudioContextAllRemoteSource;
 
   InjectAvailableContextTypes(test_address0, 1, sink_available_context, source_available_context);
+
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+}
+
+TEST_F(UnicastTest, HandleRemoteDeviceWithoutSourceAses) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  int group_id = bluetooth::groups::kGroupUnknown;
+
+  /**
+   * Missconfigured remote device contains Source PACS,
+   * Source Context types but there is no Source ASE. Native should notify properly
+   * about the supported directions.
+   */
+
+  no_source_ases_ = true;
+  default_channel_cnt = 1;
+
+  SetSampleDatabaseEarbudsValid(
+          1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+          codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt, default_channel_cnt, 0x0004,
+          /* source sample freq 16khz */ false /*add_csis*/, true /*add_cas*/, true /*add_pacs*/,
+          default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/, 0 /*rank*/);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::CONNECTED, test_address0))
+          .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
+          .WillOnce(DoAll(SaveArg<1>(&group_id)));
+
+  uint8_t expected_direction = bluetooth::le_audio::types::kLeAudioDirectionSink;
+  std::optional<std::bitset<32>> expected_src_location = std::nullopt;
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnAudioConf(expected_direction, _, _, expected_src_location, _));
+
+  ConnectLeAudio(test_address0);
+  ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
 
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
@@ -9034,16 +9072,12 @@ TEST_F(UnicastTest, TwoEarbudsStreamingContextSwitchReconfigure_SpeedUpReconfigF
   Mock::VerifyAndClearExpectations(&mock_state_machine_);
   Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
 
-  log::info("Switch back to media");
-
   ccids = {.sink = {gmcs_ccid}, .source = {}};
   types::BidirectionalPair<types::AudioContexts> contexts = {
           .sink = types::AudioContexts(types::LeAudioContextType::MEDIA),
           .source = types::AudioContexts()};
-  EXPECT_CALL(mock_state_machine_,
-              ConfigureStream(_, bluetooth::le_audio::types::LeAudioContextType::MEDIA, contexts,
-                              ccids, _))
-          .Times(0);
+  log::info("Switch back to media");
+  EXPECT_CALL(mock_state_machine_, ConfigureStream(_, _, _, _, _)).Times(0);
   EXPECT_CALL(
           mock_state_machine_,
           StartStream(_, bluetooth::le_audio::types::LeAudioContextType::MEDIA, contexts, ccids))
@@ -10169,14 +10203,7 @@ TEST_F(UnicastTest, StartStreamToUnsupportedContextTypeUnspecifiedNotAvailable) 
   LeAudioClient::Get()->GroupSetActive(group_id);
   SyncOnMainLoop();
 
-  BidirectionalPair<AudioContexts> contexts = {
-          .sink = types::AudioContexts(types::LeAudioContextType::UNSPECIFIED),
-          .source = types::AudioContexts()};
-
-  EXPECT_CALL(
-          mock_state_machine_,
-          StartStream(_, bluetooth::le_audio::types::LeAudioContextType::SOUNDEFFECTS, contexts, _))
-          .Times(0);
+  EXPECT_CALL(mock_state_machine_, StartStream(_, _, _, _)).Times(0);
 
   StartStreaming(AUDIO_USAGE_ASSISTANCE_SONIFICATION, AUDIO_CONTENT_TYPE_SONIFICATION, group_id,
                  AUDIO_SOURCE_INVALID, false, false);
@@ -11476,11 +11503,7 @@ TEST_F(UnicastTest, StartNotAvailableSupportedContextType) {
   // Since the initial config is UNSPECIFIED, then even for sonification events
   // we should reconfigure to less generic EMERGENCYALARM scenario
   EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
-  types::BidirectionalPair<types::AudioContexts> metadata = {.sink = types::AudioContexts(),
-                                                             .source = types::AudioContexts()};
-  EXPECT_CALL(mock_state_machine_,
-              StartStream(_, types::LeAudioContextType::EMERGENCYALARM, metadata, _))
-          .Times(0);
+  EXPECT_CALL(mock_state_machine_, StartStream(_, _, _, _)).Times(0);
 
   LeAudioClient::Get()->GroupSetActive(group_id);
   SyncOnMainLoop();
@@ -11532,11 +11555,7 @@ TEST_F(UnicastTest, StartNotAvailableUnsupportedContextTypeUnspecifiedUnavail) {
   // not on the list of supported contexts and UNSPECIFIED should not be
   // in the metadata as it is unavailable.
   EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
-  types::BidirectionalPair<types::AudioContexts> metadata = {.sink = types::AudioContexts(),
-                                                             .source = types::AudioContexts()};
-  EXPECT_CALL(mock_state_machine_,
-              StartStream(_, types::LeAudioContextType::EMERGENCYALARM, metadata, _))
-          .Times(0);
+  EXPECT_CALL(mock_state_machine_, StartStream(_, _, _, _)).Times(0);
 
   LeAudioClient::Get()->GroupSetActive(group_id);
   SyncOnMainLoop();
@@ -12127,8 +12146,7 @@ TEST_F(UnicastTest, DisconnectAclBeforeGettingReadResponses) {
   /* for Target announcements AutoConnect is always there, until
    * device is removed
    */
-  EXPECT_CALL(mock_btif_storage_, AddLeaudioAutoconnect(test_address1, false)).Times(0);
-  EXPECT_CALL(mock_btif_storage_, AddLeaudioAutoconnect(test_address0, false)).Times(0);
+  EXPECT_CALL(mock_btif_storage_, AddLeaudioAutoconnect(_, _)).Times(0);
 
   // Verify grouping information
   std::vector<RawAddress> devs = LeAudioClient::Get()->GetGroupDevices(group_id);
@@ -13132,8 +13150,7 @@ TEST_F(UnicastTestHandoverMode, SetAllowedContextMask) {
   ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
 
   EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
-  EXPECT_CALL(mock_state_machine_, StartStream(_, types::LeAudioContextType::SOUNDEFFECTS, _, _))
-          .Times(0);
+  EXPECT_CALL(mock_state_machine_, StartStream(_, _, _, _)).Times(0);
 
   LeAudioClient::Get()->GroupSetActive(group_id);
   SyncOnMainLoop();
@@ -13179,11 +13196,7 @@ TEST_F(UnicastTest, NoContextvalidateStreamingRequest) {
   ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
 
   EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
-  types::BidirectionalPair<types::AudioContexts> metadata = {.sink = types::AudioContexts(),
-                                                             .source = types::AudioContexts()};
-  EXPECT_CALL(mock_state_machine_,
-              StartStream(_, types::LeAudioContextType::SOUNDEFFECTS, metadata, _))
-          .Times(0);
+  EXPECT_CALL(mock_state_machine_, StartStream(_, _, _, _)).Times(0);
 
   LeAudioClient::Get()->GroupSetActive(group_id);
 

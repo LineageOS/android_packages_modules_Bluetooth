@@ -38,7 +38,12 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
 
     @VisibleForTesting
     final BluetoothCommand[] mBluetoothCommands = {
-        new Enable(), new EnableBle(), new Disable(), new DisableBle(), new WaitForAdapterState(),
+        new Enable(),
+        new EnableBle(),
+        new Disable(),
+        new DisableBle(),
+        new WaitForAdapterState(),
+        new FactoryReset(),
     };
 
     @VisibleForTesting
@@ -89,6 +94,26 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         public void onHelp(PrintWriter pw) {
             pw.println("  " + getName());
             pw.println("    Call enableBle to activate ble only mode on this device.");
+        }
+    }
+
+    @VisibleForTesting
+    class FactoryReset extends BluetoothCommand {
+        FactoryReset() {
+            super(true, "factoryReset");
+        }
+
+        @Override
+        public int exec(String cmd) throws RemoteException {
+            return mManagerService.getBinder().factoryReset(AttributionSource.myAttributionSource())
+                    ? 0
+                    : -1;
+        }
+
+        @Override
+        public void onHelp(PrintWriter pw) {
+            pw.println("  " + getName());
+            pw.println("    Perform a factory reset of Bluetooth settings.");
         }
     }
 
@@ -230,7 +255,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
                                     + uid
                                     + " does not have access to "
                                     + cmd
-                                    + " bluetooth command");
+                                    + " bluetooth command. Use a Root shell");
                 }
             }
             try {
