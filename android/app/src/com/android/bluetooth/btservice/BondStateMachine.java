@@ -652,10 +652,6 @@ final class BondStateMachine extends StateMachine {
     }
 
     void sspRequestCallback(byte[] address, int pairingVariant, int passkey) {
-        BluetoothDevice bdDevice = mRemoteDevices.getDevice(address);
-        if (bdDevice == null) {
-            mRemoteDevices.addDeviceProperties(address);
-        }
         infoLog(
                 "sspRequestCallback: "
                         + Utils.getRedactedAddressStringFromByte(address)
