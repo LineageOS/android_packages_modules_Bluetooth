@@ -3020,7 +3020,7 @@ public class BassClientService extends ProfileService {
     }
 
     private void checkIfBroadcastIsSuspendedBySourceRemovalAndClearData(
-            BluetoothDevice device, BassClientStateMachine stateMachine) {
+            BluetoothDevice device, BassClientStateMachine stateMachine, int broadcastId) {
         if (!mPausedBroadcastSinks.contains(device)) {
             return;
         }
@@ -3029,13 +3029,16 @@ public class BassClientService extends ProfileService {
             return;
         }
         if (entry.keySet().size() >= stateMachine.getMaximumSourceCapacity()) {
-            for (Integer broadcastId : entry.keySet()) {
-                // Found broadcastId which is paused by host but not synced
+            for (Integer cachedBroadcastId : entry.keySet()) {
+                // Find broadcastId which is no synced and different from current
                 if (!getAllSources(device).stream()
-                                .anyMatch(rs -> (rs.getBroadcastId() == broadcastId))
-                        && isSuspendedByHostPauseReason(broadcastId)) {
-                    stopBroadcastMonitoring(broadcastId, /* hostInitiated */ false);
-                    removeSinkMetadata(device, broadcastId);
+                                .anyMatch(rs -> (rs.getBroadcastId() == cachedBroadcastId))
+                        && ((!leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal()
+                                        && isSuspendedByHostPauseReason(cachedBroadcastId))
+                                || (leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal()
+                                        && (broadcastId != cachedBroadcastId)))) {
+                    stopBroadcastMonitoring(cachedBroadcastId, /* hostInitiated */ false);
+                    removeSinkMetadata(device, cachedBroadcastId);
                     return;
                 }
             }
@@ -3233,7 +3236,8 @@ public class BassClientService extends ProfileService {
             // Even if there is a room for broadcast, it could happen that all broadcasts were
             // suspended via removing source. In that case, we have to found such broadcast and
             // remove it from metadata.
-            checkIfBroadcastIsSuspendedBySourceRemovalAndClearData(device, stateMachine);
+            checkIfBroadcastIsSuspendedBySourceRemovalAndClearData(
+                    device, stateMachine, sourceMetadata.getBroadcastId());
 
             /* Store metadata for sink device */
             storeSinkMetadata(device, sourceMetadata.getBroadcastId(), sourceMetadata);
