@@ -1047,10 +1047,6 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
      * @param device is the remote device whose services have been discovered
      */
     void onRemoveBondRequest(BluetoothDevice device) {
-        if (!Flags.preventServiceConnectionsOnRemoveBond()) {
-            return;
-        }
-
         Log.d(TAG, "onRemoveBondRequest(" + device + "): Disabling all profiles");
         // Don't allow any profiles to connect to the device.
         for (int profileId = BluetoothProfile.HEADSET;
