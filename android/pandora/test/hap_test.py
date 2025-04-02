@@ -20,7 +20,7 @@ from bumble.profiles.hap import DynamicPresets, HearingAccessService, HearingAid
 
 from pandora_experimental.os_grpc_aio import Os as OsAio
 from pandora_experimental.gatt_grpc_aio import GATT
-from pandora_experimental.hap_grpc_aio import HAP
+from pandora_experimental.hap_grpc_aio import HAP  # type: ignore
 from pandora_experimental.hap_pb2 import PresetRecord as grpcPresetRecord  # type: ignore
 from pandora._utils import AioStream
 from pandora.security_pb2 import LE_LEVEL3
@@ -43,7 +43,7 @@ unavailable_preset = PresetRecord(
                           PresetRecord.Property.IsAvailable.IS_UNAVAILABLE))
 
 
-def toBumblePreset(grpc_preset: grpcPresetRecord) -> PresetRecord:
+def toBumblePreset(grpc_preset: grpcPresetRecord) -> PresetRecord:  # type: ignore
     return PresetRecord(
         grpc_preset.index,
         grpc_preset.name,  # type: ignore
@@ -65,12 +65,14 @@ class HapTest(base_test.BaseTestClass):
     devices: PandoraDevices
     dut: PandoraDevice
     ref_left: BumblePandoraDevice
+    ref_right: BumblePandoraDevice
     hap_grpc: HAP
-    has: HearingAccessService
+    has_left: HearingAccessService
+    has_right: HearingAccessService
 
     def setup_class(self):
         self.devices = PandoraDevices(self)
-        dut, ref_left, *_ = self.devices
+        dut, ref_left, ref_right, *_ = self.devices  # type: ignore
 
         if isinstance(dut, BumblePandoraDevice):
             raise signals.TestAbortClass('DUT Bumble does not support HAP')
@@ -78,28 +80,21 @@ class HapTest(base_test.BaseTestClass):
         if not isinstance(ref_left, BumblePandoraDevice):
             raise signals.TestAbortClass('Test require Bumble as reference device(s)')
         self.ref_left = ref_left
+        if not isinstance(ref_right, BumblePandoraDevice):
+            raise signals.TestAbortClass('Test require Bumble as reference device(s)')
+        self.ref_right = ref_right
 
     def teardown_class(self):
         self.devices.stop_all()
 
     @asynchronous
     async def setup_test(self) -> None:
-        await asyncio.gather(self.dut.reset(), self.ref_left.reset())
+        await asyncio.gather(self.dut.reset(), self.ref_left.reset(), self.ref_right.reset())
         self.logcat = OsAio(channel=self.dut.aio.channel)
         await self.logcat.Log(f'{self.current_test_info.name}: setup_test')
         self.hap_grpc = HAP(channel=self.dut.aio.channel)
-        device_features = HearingAidFeatures(
-            HearingAidType.MONAURAL_HEARING_AID,
-            PresetSynchronizationSupport.PRESET_SYNCHRONIZATION_IS_NOT_SUPPORTED,
-            IndependentPresets.IDENTICAL_PRESET_RECORD,
-            DynamicPresets.PRESET_RECORDS_DOES_NOT_CHANGE,
-            WritablePresetsSupport.WRITABLE_PRESET_RECORDS_SUPPORTED)
-        self.has = HearingAccessService(
-            self.ref_left.device, device_features,
-            [foo_preset, bar_preset, longname_preset, unavailable_preset])
         self.dut_gatt = GATT(channel=self.dut.aio.channel)
 
-        self.ref_left.device.add_service(self.has)  # type: ignore
         await self.logcat.Log(f'{self.current_test_info.name}: completed setup_test')
 
     @asynchronous
@@ -144,8 +139,8 @@ class HapTest(base_test.BaseTestClass):
         advertisement.cancel()
         return dut_ref, ref_dut
 
-    async def setupHapConnection(self):
-        advertisement = await self.advertise_hap(self.ref_left)
+    async def setupHapConnection(self, ref: BumblePandoraDevice):
+        advertisement = await self.advertise_hap(ref)
         scan_response = await self.dut_scan_for_hap()
         dut_connection_to_ref, ref_connection_to_dut = await self.dut_connect_to_ref(
             advertisement, scan_response)
@@ -154,7 +149,7 @@ class HapTest(base_test.BaseTestClass):
 
         (secure, wait_security) = await asyncio.gather(
             self.dut.aio.security.Secure(connection=dut_connection_to_ref, le=LE_LEVEL3),
-            self.ref_left.aio.security.WaitSecurity(connection=ref_connection_to_dut, le=LE_LEVEL3),
+            ref.aio.security.WaitSecurity(connection=ref_connection_to_dut, le=LE_LEVEL3),
         )
 
         assert secure.result_variant() == 'success'  # type: ignore
@@ -163,90 +158,169 @@ class HapTest(base_test.BaseTestClass):
         await self.hap_grpc.WaitPeripheral(connection=dut_connection_to_ref)  # type: ignore
         advertisement.cancel()
 
-        return dut_connection_to_ref
+        return dut_connection_to_ref, ref_connection_to_dut
 
-    async def assertIdenticalPreset(self, dut_connection_to_ref: Connection) -> None:
+    async def assertIdenticalPreset(self, dut_connection_to_ref: Connection,
+                                    has: HearingAccessService) -> None:
         remote_preset = toBumblePresetList(
-            (await self.hap_grpc.GetAllPresetRecords(connection=dut_connection_to_ref
-                                                    )).preset_record_list)
-        assert remote_preset == get_server_preset_sorted(self.has)
+            (await
+             self.hap_grpc.GetAllPresets(connection=dut_connection_to_ref)).preset_record_list)
+        assert remote_preset == get_server_preset_sorted(has)
 
     async def verify_no_crash(self, dut_connection_to_ref: Connection) -> None:
         ''' Periodically check that there is no android crash '''
         for __i__ in range(10):
             await asyncio.sleep(.3)
-            await self.assertIdenticalPreset(dut_connection_to_ref)
+            await self.assertIdenticalPreset(dut_connection_to_ref, self.has_left)
+
+    async def setup_monaural(self) -> tuple[Connection, Connection]:
+        device_features = HearingAidFeatures(
+            HearingAidType.MONAURAL_HEARING_AID,
+            PresetSynchronizationSupport.PRESET_SYNCHRONIZATION_IS_NOT_SUPPORTED,
+            IndependentPresets.IDENTICAL_PRESET_RECORD, DynamicPresets.PRESET_RECORDS_MAY_CHANGE,
+            WritablePresetsSupport.WRITABLE_PRESET_RECORDS_SUPPORTED)
+        self.has_left = HearingAccessService(
+            self.ref_left.device, device_features,
+            [foo_preset, bar_preset, longname_preset, unavailable_preset])
+        self.ref_left.device.add_service(self.has_left)  # type: ignore
+
+        return await self.setupHapConnection(self.ref_left)
+
+    async def setup_binaural(
+            self) -> tuple[tuple[Connection, Connection], tuple[Connection, Connection]]:
+        device_features = HearingAidFeatures(
+            HearingAidType.BINAURAL_HEARING_AID,
+            PresetSynchronizationSupport.PRESET_SYNCHRONIZATION_IS_NOT_SUPPORTED,
+            IndependentPresets.IDENTICAL_PRESET_RECORD, DynamicPresets.PRESET_RECORDS_MAY_CHANGE,
+            WritablePresetsSupport.WRITABLE_PRESET_RECORDS_SUPPORTED)
+        self.has_left = HearingAccessService(
+            self.ref_left.device, device_features,
+            [foo_preset, bar_preset, longname_preset, unavailable_preset])
+        self.ref_left.device.add_service(self.has_left)  # type: ignore
+
+        self.has_right = HearingAccessService(
+            self.ref_right.device, device_features,
+            [foo_preset, bar_preset, longname_preset, unavailable_preset])
+        self.ref_right.device.add_service(self.has_right)  # type: ignore
+
+        return (await self.setupHapConnection(self.ref_left), await
+                self.setupHapConnection(self.ref_right))
 
     @asynchronous
     async def test_get_features(self) -> None:
-        dut_connection_to_ref = await self.setupHapConnection()
+        (dut_connection_to_ref, _) = await self.setup_monaural()
 
         features = hap.HearingAidFeatures_from_bytes(
             (await self.hap_grpc.GetFeatures(connection=dut_connection_to_ref)).features)
-        assert features == self.has.server_features  # type: ignore
+        assert features == self.has_left.server_features  # type: ignore
 
     @asynchronous
     async def test_get_preset(self) -> None:
-        dut_connection_to_ref = await self.setupHapConnection()
+        (dut_connection_to_ref, _) = await self.setup_monaural()
 
-        await self.assertIdenticalPreset(dut_connection_to_ref)
+        await self.assertIdenticalPreset(dut_connection_to_ref, self.has_left)
 
     @asynchronous
     async def test_preset__remove_preset__verify_dut_is_updated(self) -> None:
-        dut_connection_to_ref = await self.setupHapConnection()
+        (dut_connection_to_ref, _) = await self.setup_monaural()
 
-        await self.assertIdenticalPreset(dut_connection_to_ref)
+        await self.assertIdenticalPreset(dut_connection_to_ref, self.has_left)
 
         await self.logcat.Log("Remove preset in server")
-        await self.has.delete_preset(unavailable_preset.index)
+        await self.has_left.delete_preset(unavailable_preset.index)
         await asyncio.sleep(1)  # wait event
 
-        await self.assertIdenticalPreset(dut_connection_to_ref)
+        await self.assertIdenticalPreset(dut_connection_to_ref, self.has_left)
 
     @asynchronous
     async def test__add_preset__verify_dut_is_updated(self) -> None:
-        dut_connection_to_ref = await self.setupHapConnection()
+        (dut_connection_to_ref, _) = await self.setup_monaural()
 
-        await self.assertIdenticalPreset(dut_connection_to_ref)
+        await self.assertIdenticalPreset(dut_connection_to_ref, self.has_left)
 
         added_preset = PresetRecord(bar_preset.index + 3, "added_preset")
-        self.has.preset_records[added_preset.index] = added_preset
+        self.has_left.preset_records[added_preset.index] = added_preset
 
         await self.logcat.Log("Preset added in server. Notify now")
-        await self.has.generic_update(
+        await self.has_left.generic_update(
             PresetChangedOperation(PresetChangedOperation.ChangeId.GENERIC_UPDATE,
                                    PresetChangedOperation.Generic(bar_preset.index, added_preset)))
         await asyncio.sleep(1)  # wait event
 
-        await self.assertIdenticalPreset(dut_connection_to_ref)
+        await self.assertIdenticalPreset(dut_connection_to_ref, self.has_left)
 
     @asynchronous
     async def test__set_non_existing_preset_as_active__verify_no_crash_and_no_update(self) -> None:
         non_existing_preset_index = 79
-        assert non_existing_preset_index not in self.has.preset_records.keys()  # type: ignore
-        dut_connection_to_ref = await self.setupHapConnection()
+        (dut_connection_to_ref, _) = await self.setup_monaural()
+        assert non_existing_preset_index not in self.has_left.preset_records.keys()  # type: ignore
         assert foo_preset == toBumblePreset(  # type: ignore
-            (await
-             self.hap_grpc.GetActivePresetRecord(connection=dut_connection_to_ref)).preset_record)
+            (await self.hap_grpc.GetActivePreset(connection=dut_connection_to_ref)).preset_record)
 
         await self.logcat.Log("Notify active update to non existing index")
         # bypass the set_active_preset checks by sending an invalid index on purpose
-        self.has.active_preset_index = non_existing_preset_index
-        await self.has.notify_active_preset()
+        self.has_left.active_preset_index = non_existing_preset_index
+        await self.has_left.notify_active_preset()
 
         await self.verify_no_crash(dut_connection_to_ref)
         assert foo_preset == toBumblePreset(
-            (await
-             self.hap_grpc.GetActivePresetRecord(connection=dut_connection_to_ref)).preset_record)
+            (await self.hap_grpc.GetActivePreset(connection=dut_connection_to_ref)).preset_record)
 
     @asynchronous
     async def test__set_non_existing_preset_as_available__verify_no_crash_and_no_update(
             self) -> None:
         non_existing_preset_index = 79
-        assert non_existing_preset_index not in self.has.preset_records.keys()
-        dut_connection_to_ref = await self.setupHapConnection()
+        (dut_connection_to_ref, _) = await self.setup_monaural()
+        assert non_existing_preset_index not in self.has_left.preset_records.keys()
 
         await self.logcat.Log("Notify available preset to non existing index")
-        await self.has.generic_update(PresetChangedOperationAvailable(non_existing_preset_index))
+        await self.has_left.generic_update(
+            PresetChangedOperationAvailable(non_existing_preset_index))
 
         await self.verify_no_crash(dut_connection_to_ref)
+
+    @asynchronous
+    async def test_set_active_preset(self) -> None:
+        (dut_connection_to_ref, _) = await self.setup_monaural()
+
+        await self.hap_grpc.SetActivePreset(connection=dut_connection_to_ref,
+                                            index=bar_preset.index)
+        await asyncio.sleep(1)  # TODO wait event
+        assert (await self.hap_grpc.GetActivePreset(connection=dut_connection_to_ref
+                                                   )).preset_record.index == bar_preset.index
+        await self.hap_grpc.SetActivePreset(connection=dut_connection_to_ref,
+                                            index=foo_preset.index)
+        await asyncio.sleep(1)  # TODO wait event
+        assert (await self.hap_grpc.GetActivePreset(connection=dut_connection_to_ref
+                                                   )).preset_record.index == foo_preset.index
+
+    @asynchronous
+    async def test__set_active_binaural__when_disconnecting(self) -> None:
+        ((dut_connection_to_ref_left, ref_left_connection_to_dut),
+         (dut_connection_to_ref_right, ref_right_connection_to_dut)) = await self.setup_binaural()
+        await self.assertIdenticalPreset(dut_connection_to_ref_left, self.has_left)
+
+        # preliminary check to be sure we are setting a new & different preset
+        active_preset = (await self.hap_grpc.GetActivePreset(connection=dut_connection_to_ref_left
+                                                            )).preset_record
+        assert active_preset.index == foo_preset.index
+
+        await self.hap_grpc.SetActivePreset(connection=dut_connection_to_ref_left,
+                                            index=bar_preset.index)
+        await self.dut.aio.host.Disconnect(connection=dut_connection_to_ref_left)
+        await asyncio.gather(self.ref_left.reset())
+
+    @asynchronous
+    async def test__set_active_monaural__when_disconnecting(self) -> None:
+        (dut_connection_to_ref, ref_connection_to_dut) = await self.setup_monaural()
+        await self.assertIdenticalPreset(dut_connection_to_ref, self.has_left)
+
+        # preliminary check to be sure we are setting a new & different preset
+        active_preset: grpcPresetRecord = (await self.hap_grpc.GetActivePreset(
+            connection=dut_connection_to_ref)).preset_record
+        assert active_preset.index == foo_preset.index
+
+        await asyncio.gather(
+            self.hap_grpc.SetActivePreset(connection=dut_connection_to_ref, index=bar_preset.index),
+            self.ref_left.aio.host.Disconnect(connection=ref_connection_to_dut))
+        await asyncio.sleep(3)  # TODO wait event

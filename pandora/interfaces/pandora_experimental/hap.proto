@@ -18,25 +18,15 @@ option java_outer_classname = "HapProto";
 import "google/protobuf/empty.proto";
 
 service HAP {
-  // get the Hearing aid features
   rpc GetFeatures(GetFeaturesRequest) returns (GetFeaturesResponse);
-  // Set active preset by index
   rpc SetActivePreset(SetActivePresetRequest) returns (google.protobuf.Empty);
-  // Get active preset record
-  rpc GetActivePresetRecord(GetActivePresetRecordRequest) returns (GetActivePresetRecordResponse);
-  // Set next preset
+  rpc GetActivePreset(GetActivePresetRequest) returns (GetActivePresetResponse);
   rpc SetNextPreset(SetNextPresetRequest) returns (google.protobuf.Empty);
-  // Set next preset
   rpc SetPreviousPreset(SetPreviousPresetRequest) returns (google.protobuf.Empty);
-  // Set preset name
   rpc WritePresetName(WritePresetNameRequest) returns (google.protobuf.Empty);
-  // Get preset record
-  rpc GetPresetRecord(GetPresetRecordRequest) returns (GetPresetRecordResponse);
-  // Get all preset
-  rpc GetAllPresetRecords(GetAllPresetRecordsRequest) returns (GetAllPresetRecordsResponse);
-  // Wait for Preset Changed event
+  rpc GetPreset(GetPresetRequest) returns (GetPresetResponse);
+  rpc GetAllPresets(GetAllPresetsRequest) returns (GetAllPresetsResponse);
   rpc WaitPresetChanged(google.protobuf.Empty) returns (WaitPresetChangedResponse);
-  // Wait for HAP device to be connected.
   rpc WaitPeripheral(WaitPeripheralRequest) returns (google.protobuf.Empty);
 }
 
@@ -48,91 +38,60 @@ message GetFeaturesResponse{
     int32 features = 1;
 }
 
-// Request of the `SetActivePreset` method.
 message SetActivePresetRequest {
-    // Connection crafted by grpc server
     Connection connection = 1;
-    // Preset index
     uint32 index = 2;
 }
 
-message GetActivePresetRecordRequest {
-    // Connection crafted by grpc server
+message GetActivePresetRequest {
     Connection connection = 1;
 }
 
-message GetActivePresetRecordResponse {
-    // Received Preset Record
+message GetActivePresetResponse {
     PresetRecord preset_record = 1;
 }
 
-// Request of the `SetNextPreset` method.
 message SetNextPresetRequest {
-    // Connection crafted by grpc server
     Connection connection = 1;
 }
 
-// Request of the `SetPreviousPreset` method.
 message SetPreviousPresetRequest {
-    // Connection crafted by grpc server
     Connection connection = 1;
 }
 
-// Request of the `GetPresetRecord` method.
-message GetPresetRecordRequest {
-    // Connection crafted by grpc server
+message GetPresetRequest {
     Connection connection = 1;
-    // Preset index
     uint32 index = 2;
 }
 
-// Preset Record format
 message PresetRecord {
-  // Preset index
   uint32 index = 1;
-  // Preset name
   string name = 2;
-  // Flag marking preset as writable
   bool isWritable = 3;
-  // Flag marking preset as available
   bool isAvailable = 4;
 }
 
-// Response of the `GetPresetRecord` method.
-message GetPresetRecordResponse {
-  // Received Preset Record
+message GetPresetResponse {
     PresetRecord preset_record = 1;
 }
 
-// Request of the `GetAllPresetRecords` method.
-message GetAllPresetRecordsRequest {
-    // Connection crafted by grpc server
+message GetAllPresetsRequest {
     Connection connection = 1;
 }
 
-// Response of the `GetAllPresetRecords` method.
-message GetAllPresetRecordsResponse {
-    // List of received Preset Records
+message GetAllPresetsResponse {
     repeated PresetRecord preset_record_list = 1;
 }
 
-// Request of the `WritePresetName` method.
 message WritePresetNameRequest {
-  // Connection crafted by grpc server
   Connection connection = 1;
-  // Preset index
   uint32 index = 2;
-  // Preset name to be set
   string name = 3;
 }
 
-// Response of the `WaitPresetChangedResponse` method.
 message WaitPresetChangedResponse {
-  // Connection crafted by grpc server
   Connection connection = 1;
-  // List of current Preset Records
   repeated PresetRecord preset_record_list = 2;
-  // Reason why the presets were changed
   uint32 reason = 3;
 }
 
