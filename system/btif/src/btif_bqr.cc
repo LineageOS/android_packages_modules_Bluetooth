@@ -779,25 +779,7 @@ static void AddLinkQualityEventToQueue(uint8_t length, const uint8_t* p_link_qua
           p_bqr_event->bqr_link_quality_event_.no_rx_count,
           p_bqr_event->bqr_link_quality_event_.nak_count);
 
-  os::LogMetricBluetoothQualityReport(
-          p_bqr_event->bqr_link_quality_event_.quality_report_id,
-          p_bqr_event->bqr_link_quality_event_.packet_types,
-          p_bqr_event->bqr_link_quality_event_.connection_handle,
-          p_bqr_event->bqr_link_quality_event_.connection_role,
-          p_bqr_event->bqr_link_quality_event_.tx_power_level,
-          p_bqr_event->bqr_link_quality_event_.rssi, p_bqr_event->bqr_link_quality_event_.snr,
-          p_bqr_event->bqr_link_quality_event_.unused_afh_channel_count,
-          p_bqr_event->bqr_link_quality_event_.afh_select_unideal_channel_count,
-          p_bqr_event->bqr_link_quality_event_.lsto,
-          p_bqr_event->bqr_link_quality_event_.connection_piconet_clock,
-          p_bqr_event->bqr_link_quality_event_.retransmission_count,
-          p_bqr_event->bqr_link_quality_event_.no_rx_count,
-          p_bqr_event->bqr_link_quality_event_.nak_count,
-          p_bqr_event->bqr_link_quality_event_.last_tx_ack_timestamp,
-          p_bqr_event->bqr_link_quality_event_.flow_off_count,
-          p_bqr_event->bqr_link_quality_event_.last_flow_on_timestamp,
-          p_bqr_event->bqr_link_quality_event_.buffer_overflow_bytes,
-          p_bqr_event->bqr_link_quality_event_.buffer_underflow_bytes);
+  os::LogMetricBluetoothQualityReport(p_bqr_event->bqr_link_quality_event_);
 
   BluetoothQualityReportInterface* bqrItf = getBluetoothQualityReportInterface();
 
