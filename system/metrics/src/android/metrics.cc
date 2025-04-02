@@ -561,14 +561,20 @@ void LogMetricLeAudioBroadcastSessionReported(int64_t duration_nanos) {
   }
 }
 
-void LogMetricBluetoothQualityReport(const bqr::BqrLinkQualityEvent& event) {
-  int ret = stats_write(
-          BLUETOOTH_QUALITY_REPORT_REPORTED, event.quality_report_id, event.packet_types,
-          event.connection_handle, event.connection_role, event.tx_power_level, event.rssi,
-          event.snr, event.unused_afh_channel_count, event.afh_select_unideal_channel_count,
-          event.lsto, event.connection_piconet_clock, event.retransmission_count, event.no_rx_count,
-          event.nak_count, event.last_tx_ack_timestamp, event.flow_off_count,
-          event.last_flow_on_timestamp, event.buffer_overflow_bytes, event.buffer_underflow_bytes);
+void LogMetricBluetoothQualityReport(
+        uint8_t quality_report_id, uint8_t packet_types, uint16_t connection_handle,
+        uint8_t connection_role, int8_t tx_power_level, int8_t rssi, uint8_t snr,
+        uint8_t unused_afh_channel_count, uint8_t afh_select_unideal_channel_count, uint16_t lsto,
+        uint32_t connection_piconet_clock, uint32_t retransmission_count, uint32_t no_rx_count,
+        uint32_t nak_count, uint32_t last_tx_ack_timestamp, uint32_t flow_off_count,
+        uint32_t last_flow_on_timestamp, uint32_t buffer_overflow_bytes,
+        uint32_t buffer_underflow_bytes) {
+  int ret = stats_write(BLUETOOTH_QUALITY_REPORT_REPORTED, quality_report_id, packet_types,
+                        connection_handle, connection_role, tx_power_level, rssi, snr,
+                        unused_afh_channel_count, afh_select_unideal_channel_count, lsto,
+                        connection_piconet_clock, retransmission_count, no_rx_count, nak_count,
+                        last_tx_ack_timestamp, flow_off_count, last_flow_on_timestamp,
+                        buffer_overflow_bytes, buffer_underflow_bytes);
   if (ret < 0) {
     log::warn("failed to log BQR event to statsd, error {}", ret);
   }
