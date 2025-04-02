@@ -22,6 +22,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.media.AudioDeviceAttributes;
 import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
@@ -29,6 +30,7 @@ import android.media.AudioManager;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothEventLogger;
+import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.internal.annotations.VisibleForTesting;
@@ -64,6 +66,7 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
     @VisibleForTesting static final int AVRCP_MAX_VOL = 127;
     private static final int STREAM_MUSIC = AudioManager.STREAM_MUSIC;
     private static final int VOLUME_CHANGE_LOGGER_SIZE = 30;
+    private final int mSafeMediaVolume;
     private final int mDeviceMaxVolume;
     private final int mNewDeviceVolume;
     private final BluetoothEventLogger mVolumeEventLogger =
@@ -179,6 +182,8 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         mAudioManager = audioManager;
         mNativeInterface = nativeInterface;
         mDeviceMaxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        mSafeMediaVolume = getSafeMediaVolume(adapterService, mDeviceMaxVolume);
+
         mNewDeviceVolume = mDeviceMaxVolume / 2;
 
         mAudioManager.registerAudioDeviceCallback(this, null);
@@ -204,26 +209,34 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         volumeMapEditor.apply();
     }
 
+    private static int getSafeMediaVolume(AdapterService adapterService, int deviceMaxVolume) {
+        try {
+            return adapterService.getResources().getInteger(R.integer.config_safe_media_volume);
+        } catch (Resources.NotFoundException resourceNotFound) {
+            return deviceMaxVolume;
+        }
+    }
+
     /**
      * Stores system volume (0 - {@code mDeviceMaxVolume}) for device in {@code mVolumeMap} and
      * writes the map in the {@link SharedPreferences}.
      */
-    synchronized void storeVolumeForDevice(@NonNull BluetoothDevice device, int storeVolume) {
+    synchronized void storeVolumeForDevice(@NonNull BluetoothDevice device, int newVolume) {
+        String logHeader = "storeVolumeForDevice(" + device + ", " + newVolume + "): ";
+
         if (mAdapterService.getBondState(device) != BluetoothDevice.BOND_BONDED) {
             return;
         }
-        SharedPreferences.Editor pref = getVolumeMap().edit();
-        mVolumeEventLogger.logd(
-                TAG,
-                "storeVolume: Storing stream volume level for device "
-                        + device
-                        + " : "
-                        + storeVolume);
-        mVolumeMap.put(device, storeVolume);
-        pref.putInt(device.getAddress(), storeVolume);
+
+        if (newVolume > mSafeMediaVolume) {
+            newVolume = mSafeMediaVolume;
+            Log.w(TAG, logHeader + "Saved volume overrode to safe volume" + newVolume);
+        }
+        mVolumeMap.put(device, newVolume);
+        mVolumeEventLogger.logd(TAG, logHeader + "Final volume stored is " + newVolume);
         // Always use apply() since it is asynchronous, otherwise the call can hang waiting for
         // storage to be written.
-        pref.apply();
+        getVolumeMap().edit().putInt(device.getAddress(), newVolume).apply();
     }
 
     /**
