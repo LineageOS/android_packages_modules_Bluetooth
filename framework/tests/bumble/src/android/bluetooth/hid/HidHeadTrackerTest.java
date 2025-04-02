@@ -146,6 +146,7 @@ public class HidHeadTrackerTest {
         mHidBlockingStub = mBumble.hidBlocking();
 
         mInOrder = inOrder(mReceiver);
+        mBumbleDevice = mBumble.getRemoteDevice();
         mHost = new Host(mTargetContext);
         // Get profile proxies
         mHidService = connectToProfile(BluetoothHidHost.class, BluetoothProfile.HID_HOST);
@@ -167,8 +168,7 @@ public class HidHeadTrackerTest {
     public void tearDown() throws Exception {
         Log.d(TAG, "start tearDown");
         mTargetContext.unregisterReceiver(mReceiver);
-        if ((mBumbleDevice != null)
-                && mBumbleDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
+        if (mBumbleDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
             mHost.removeBondAndVerify(mBumbleDevice);
         }
         mHost.close();
@@ -347,17 +347,8 @@ public class HidHeadTrackerTest {
         verifyIntentReceived(
                 hasAction(BluetoothDevice.ACTION_FOUND),
                 hasExtra(BluetoothDevice.EXTRA_NAME, Utils.BUMBLE_DEVICE_NAME),
-                new CustomTypeSafeMatcher<Intent>("retrieve BluetoothDevice") {
-                    @Override
-                    public boolean matchesSafely(Intent intent) {
-                        mBumbleDevice =
-                                intent.getParcelableExtra(
-                                        BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
-                        return true;
-                    }
-                });
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
         assertThat(mAdapter.cancelDiscovery()).isTrue();
-        assertThat(mBumbleDevice).isNotNull();
         // Create Bond
         mHost.createBondAndVerify(mBumbleDevice);
     }
