@@ -172,7 +172,6 @@ public class HidHeadTrackerTest {
             mHost.removeBondAndVerify(mBumbleDevice);
         }
         mHost.close();
-        mBumbleDevice = null;
     }
 
     /**
