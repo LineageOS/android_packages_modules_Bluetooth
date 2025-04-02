@@ -127,8 +127,8 @@ cc_library {
     ],
     srcs: [
         ":TestCommonMockFunctions",
+        "mock/metrics_mock.cc",
         "mock/mock_main_shim_metric_id_api.cc",
-        "mock/mock_main_shim_metrics_api.cc",
         "src/bluetooth_event.cc",
         "src/metric_id_manager.cc",
     ],
@@ -138,6 +138,8 @@ cc_library {
         "libbluetooth_log",
         "libbt-platform-protos-lite",
         "libchrome",
+        "libgmock",
+        "libgtest",
     ],
     shared_libs: [
         "libbase",
