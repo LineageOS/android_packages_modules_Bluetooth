@@ -300,11 +300,16 @@ public class RemoteDevices {
     }
 
     @VisibleForTesting
-    DeviceProperties addDeviceProperties(byte[] address) {
+    DeviceProperties addDeviceProperties(byte[] address, int addressType) {
         synchronized (mDevices) {
             String key = Utils.getAddressStringFromByte(address);
             if (mDevices.containsKey(key)) {
-                debugLog("Properties for device " + key + " are already added");
+                debugLog(
+                        "Properties for device "
+                                + BluetoothUtils.toAnonymizedAddress(key)
+                                + "["
+                                + addressTypeToString(addressType)
+                                + "] are already added");
                 return mDevices.get(key);
             }
 
@@ -338,6 +343,11 @@ public class RemoteDevices {
             }
             return prop;
         }
+    }
+
+    @VisibleForTesting
+    DeviceProperties addDeviceProperties(byte[] address) {
+        return addDeviceProperties(address, BluetoothDevice.ADDRESS_TYPE_PUBLIC);
     }
 
     class DeviceProperties {
@@ -1075,7 +1085,8 @@ public class RemoteDevices {
         return set.isEmpty();
     }
 
-    void devicePropertyChangedCallback(byte[] address, int[] types, byte[][] values) {
+    void devicePropertyChangedCallback(
+            byte[] address, int addressType, int[] types, byte[][] values) {
         Intent intent;
         byte[] val;
         int type;
@@ -1083,10 +1094,13 @@ public class RemoteDevices {
         DeviceProperties deviceProperties;
         if (bdDevice == null) {
             debugLog("Added new device property, device=" + bdDevice);
-            deviceProperties = addDeviceProperties(address);
+            deviceProperties = addDeviceProperties(address, addressType);
             bdDevice = getDevice(address);
         } else {
             deviceProperties = getDeviceProperties(bdDevice);
+            if (bdDevice.getAddressType() != addressType) {
+                warnLog("Address type mismatch for " + bdDevice + ", new type: " + addressType);
+            }
         }
 
         if (types.length <= 0) {
