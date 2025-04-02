@@ -1071,7 +1071,6 @@ cc_test {
         ":TestCommonMockFunctions",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockStackBtm",
         ":TestMockStackBtmInterface",
         ":TestMockStackBtmIso",
         ":TestMockStackGatt",
@@ -1088,6 +1087,7 @@ cc_test {
         "test/common/bta_gatt_api_mock.cc",
         "test/common/bta_gatt_queue_mock.cc",
         "test/common/btif_storage_mock.cc",
+        "test/common/btm_api_mock.cc",
         "test/common/mock_device_groups.cc",
     ],
     shared_libs: [
