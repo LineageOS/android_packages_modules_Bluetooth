@@ -84,6 +84,8 @@ cc_defaults {
         "libevent",
         "libflags_rust_cpp_bridge",
         "libg722codec",
+        "libgmock",
+        "libgtest",
         "libhidlbase",
         "libjsoncpp",
         "liblc3",

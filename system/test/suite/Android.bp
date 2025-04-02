@@ -86,6 +86,7 @@ cc_defaults {
         "libflatbuffers-cpp",
         "libg722codec",
         "libgmock",
+        "libgtest",
         "liblc3",
         "libopus",
         "libosi",
@@ -123,6 +124,7 @@ cc_test {
         "libchrome",
         "libevent",
         "libflags_rust_cpp_bridge",
+        "libgmock",
         "libprotobuf-cpp-lite",
     ],
     aidl: {
