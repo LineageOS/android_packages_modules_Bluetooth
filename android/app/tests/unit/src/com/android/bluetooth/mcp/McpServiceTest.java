@@ -26,10 +26,11 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
-import android.content.Context;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
+
+import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.After;
 import org.junit.Before;
@@ -45,13 +46,13 @@ public class McpServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private MediaControlProfile mMediaControlProfile;
-    @Mock private Context mContext;
+    @Mock private AdapterService mAdapterService;
 
     private McpService mMcpService;
 
     @Before
-    public void setUp() throws Exception {
-        mMcpService = new McpService(mContext, mMediaControlProfile);
+    public void setUp() {
+        mMcpService = new McpService(mAdapterService, mMediaControlProfile);
         mMcpService.setAvailable(true);
     }
 

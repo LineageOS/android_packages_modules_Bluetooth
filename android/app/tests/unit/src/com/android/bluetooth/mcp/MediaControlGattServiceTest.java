@@ -36,11 +36,9 @@ import android.platform.test.flag.junit.SetFlagsRule;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.le_audio.LeAudioService;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -86,21 +84,15 @@ public class MediaControlGattServiceTest {
             Looper.prepare();
         }
 
-        TestUtils.setAdapterService(mAdapterService);
 
         doReturn(true).when(mGattServer).addService(any(BluetoothGattService.class));
         doReturn(new BluetoothDevice[0]).when(mAdapterService).getBondedDevices();
         doReturn(BluetoothDevice.ACCESS_ALLOWED).when(mMcpService).getDeviceAuthorization(any());
 
-        mMediaControlGattService = new MediaControlGattService(mMcpService, mCallback, TEST_CCID);
+        mMediaControlGattService =
+                new MediaControlGattService(mAdapterService, mMcpService, mCallback, TEST_CCID);
         mMediaControlGattService.setBluetoothGattServerForTesting(mGattServer);
-        mMediaControlGattService.setServiceManagerForTesting(mMcpService);
         mMediaControlGattService.setLeAudioServiceForTesting(mLeAudioService);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     private void prepareConnectedDevice() {

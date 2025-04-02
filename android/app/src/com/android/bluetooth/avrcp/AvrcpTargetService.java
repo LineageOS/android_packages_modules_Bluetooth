@@ -122,7 +122,7 @@ public class AvrcpTargetService extends ProfileService {
         mAudioManager = requireNonNull(audioManager);
         mNativeInterface = requireNonNull(nativeInterface);
 
-        mMediaPlayerList = new MediaPlayerList(looper, adapterService);
+        mMediaPlayerList = new MediaPlayerList(adapterService, looper);
 
         IntentFilter userFilter = new IntentFilter();
         userFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
