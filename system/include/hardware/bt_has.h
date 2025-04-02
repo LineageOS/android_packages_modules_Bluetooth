@@ -136,6 +136,9 @@ public:
   /** Get preset name by the index */
   virtual void GetPresetInfo(const RawAddress& addr, uint8_t preset_index) = 0;
 
+  /** Get all preset name */
+  virtual void GetAllPresetInfo(const RawAddress& addr) = 0;
+
   /** Set preset name by the index */
   virtual void SetPresetName(std::variant<RawAddress, int> addr_or_group_id, uint8_t preset_index,
                              std::string name) = 0;
