@@ -156,17 +156,6 @@ void LogMetricHfpPacketLossStats(const hci::Address& address, int num_decoded_fr
                                  double packet_loss_ratio, uint16_t codec_id);
 
 /**
- * Log Mmc transcode round-trip time statistics
- *
- * @param maximum_rtt maximum round-trip time in this session
- * @param mean_rtt the average of round-trip time in this session
- * @param num_requests the number of transcoding requests in the session
- * @param codec_type codec type used in this session
- */
-void LogMetricMmcTranscodeRttStats(int maximum_rtt, double mean_rtt, int num_requests,
-                                   int codec_type);
-
-/**
  * Log read RSSI result
  *
  * @param address device associated with this event

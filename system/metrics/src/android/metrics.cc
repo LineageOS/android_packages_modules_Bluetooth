@@ -229,9 +229,6 @@ void LogMetricA2dpSessionMetricsEvent(const hci::Address& address, int64_t audio
 void LogMetricHfpPacketLossStats(const Address& /* address */, int /* num_decoded_frames */,
                                  double /* packet_loss_ratio */, uint16_t /* codec_type */) {}
 
-void LogMetricMmcTranscodeRttStats(int /*maximum_rtt*/, double /*mean_rtt*/, int /*num_requests*/,
-                                   int /*codec_type*/) {}
-
 void LogMetricReadRssiResult(const Address& address, uint16_t handle, uint32_t cmd_status,
                              int8_t rssi) {
   int metric_id = 0;
