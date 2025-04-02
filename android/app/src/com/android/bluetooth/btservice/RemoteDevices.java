@@ -914,7 +914,7 @@ public class RemoteDevices {
         // Send uuids within the stack before the broadcast is sent out
         ParcelUuid[] uuids = prop == null ? null : prop.getUuids();
 
-        if (!Flags.preventDuplicateUuidIntent() || success) {
+        if (success) {
             mAdapterService.sendUuidsInternal(device, uuids);
         }
 
@@ -928,15 +928,13 @@ public class RemoteDevices {
         MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_SENT_UUID, 1);
 
         // Remove the outstanding UUID request
-        if (Flags.preventDuplicateUuidIntent()) {
-            // Handler.removeMessages() compares the object pointer so we cannot use the device
-            // directly. So we have to extract original BluetoothDevice object from mSdpTracker.
-            int index = mSdpTracker.indexOf(device);
-            if (index >= 0) {
-                BluetoothDevice originalDevice = mSdpTracker.get(index);
-                if (originalDevice != null) {
-                    mHandler.removeMessages(MESSAGE_UUID_INTENT, originalDevice);
-                }
+        // Handler.removeMessages() compares the object pointer so we cannot use the device
+        // directly. So we have to extract original BluetoothDevice object from mSdpTracker.
+        int index = mSdpTracker.indexOf(device);
+        if (index >= 0) {
+            BluetoothDevice originalDevice = mSdpTracker.get(index);
+            if (originalDevice != null) {
+                mHandler.removeMessages(MESSAGE_UUID_INTENT, originalDevice);
             }
         }
         mSdpTracker.remove(device);
