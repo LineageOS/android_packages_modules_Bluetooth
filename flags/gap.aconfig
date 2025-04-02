@@ -290,3 +290,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "preload_gatt_database"
+    namespace: "bluetooth"
+    description: "Add API to allow apps to preload GATT databases to allow skipping service discovery on initial connection."
+    bug: "407051373"
+}
