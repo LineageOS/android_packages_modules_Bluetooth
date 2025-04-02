@@ -30,16 +30,6 @@ flag {
 }
 
 flag {
-    name: "remove_pending_hid_connection"
-    namespace: "bluetooth"
-    description: "Remove the pending BTA HH connection instance when the device is removed"
-    bug: "377705101"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "hogp_reconnection"
     namespace: "bluetooth"
     description: "Allow reconnection from HOGP device irrespective of disconnection reason"

@@ -978,7 +978,7 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
 
           /* remove from known device list in BTA */
           bta_hh_clean_up_kdev(p_cb);
-        } else if (com::android::bluetooth::flags::remove_pending_hid_connection()) {
+        } else {
           log::warn("Failed to remove device {}", dev_info.link_spec);
           bta_hh_clean_up_kdev(p_cb);
         }
