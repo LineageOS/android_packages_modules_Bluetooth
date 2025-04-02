@@ -167,6 +167,7 @@
     "TSPC_AVCTP_3_5": true,
     "TSPC_AVCTP_3_6": true,
     "TSPC_AVCTP_3_7": true,
+    "TSPC_HAP_17_1": false,
     "TSPC_HFP_0b_3": true,
     "TSPC_HFP_0d_1": true,
     "TSPC_HFP_1_2": true,
@@ -345,6 +346,7 @@
     "GAP": {},
     "GATT": {},
     "GAVDP": {},
+    "HAP": {},
     "HCI": {},
     "HFP": {
       "TSPX_phone_number": "42",
