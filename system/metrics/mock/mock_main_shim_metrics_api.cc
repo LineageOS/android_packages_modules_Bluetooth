@@ -48,7 +48,6 @@ struct LogMetricA2dpAudioOverrunEvent LogMetricA2dpAudioOverrunEvent;
 struct LogMetricA2dpPlaybackEvent LogMetricA2dpPlaybackEvent;
 struct LogMetricA2dpSessionMetricsEvent LogMetricA2dpSessionMetricsEvent;
 struct LogMetricHfpPacketLossStats LogMetricHfpPacketLossStats;
-struct LogMetricMmcTranscodeRttStats LogMetricMmcTranscodeRttStats;
 struct LogMetricReadRssiResult LogMetricReadRssiResult;
 struct LogMetricReadFailedContactCounterResult LogMetricReadFailedContactCounterResult;
 struct LogMetricReadTxPowerLevelResult LogMetricReadTxPowerLevelResult;
@@ -116,12 +115,6 @@ void bluetooth::os::LogMetricHfpPacketLossStats(const Address& raw_address, int 
   inc_func_call_count(__func__);
   test::mock::main_shim_metrics_api::LogMetricHfpPacketLossStats(raw_address, num_decoded_frames,
                                                                  packet_loss_ratio, codec_type);
-}
-void bluetooth::os::LogMetricMmcTranscodeRttStats(int maximum_rtt, double mean_rtt,
-                                                  int num_requests, int codec_type) {
-  inc_func_call_count(__func__);
-  test::mock::main_shim_metrics_api::LogMetricMmcTranscodeRttStats(maximum_rtt, mean_rtt,
-                                                                   num_requests, codec_type);
 }
 void bluetooth::os::LogMetricReadRssiResult(const Address& raw_address, uint16_t handle,
                                             uint32_t cmd_status, int8_t rssi) {

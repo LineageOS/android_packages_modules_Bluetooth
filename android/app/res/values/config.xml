@@ -141,9 +141,9 @@
     <!-- Package that is responsible for user interaction on pairing request,
          success or cancel.
          Receives:
-          - BluetootDevice.ACTION_PAIRING_CANCEL on bond failure
-          - BluetoothDevice.ACTION_PAIRING_REUQEST on pin request
-          - BluetootDevice.ACTION_BOND_STATE_CHANGED on pairing request and success
+          - BluetoothDevice.ACTION_PAIRING_CANCEL on bond failure
+          - BluetoothDevice.ACTION_PAIRING_REQUEST on pin request
+          - BluetoothDevice.ACTION_BOND_STATE_CHANGED on pairing request and success
           - BluetoothDevice.ACTION_CONNECTION_ACCESS_REQUEST on access requests
           - BluetoothDevice.ACTION_CONNECTION_ACCESS_CANCEL to cancel access requests -->
     <string name="pairing_ui_package">com.android.settings</string>
@@ -179,4 +179,7 @@
     <string name="config_apmLearnMoreLink" translatable="false">
             https://support.google.com/pixelphone/answer/12639358
     </string>
+
+    <!-- Max remote volume that can be saved between reconnection -->
+    <integer name="config_safe_media_volume" translatable="false">15</integer>
 </resources>

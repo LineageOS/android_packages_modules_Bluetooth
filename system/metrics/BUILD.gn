@@ -37,6 +37,6 @@ static_library("metrics") {
   if (target_os == "chromeos") {
     sources += [ "src/chromeos/metrics.cc" ]
   } else {
-    sources += [ "src/linux/metrics.cc" ]
+    sources += [ "src/host/metrics.cc" ]
   }
 }

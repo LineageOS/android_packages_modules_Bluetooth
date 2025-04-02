@@ -675,9 +675,6 @@ static tBTM_STATUS bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda
   }
 
   DEV_CLASS dev_class = get_btm_client_interface().security.BTM_SecReadDevClass(bda);
-  if (!com::android::bluetooth::flags::read_le_appearance()) {
-    dev_class = kDevClassEmpty;
-  }
 
   switch (event) {
     case BTM_LE_IO_REQ_EVT:

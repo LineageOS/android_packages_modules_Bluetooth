@@ -85,7 +85,8 @@ static void adapter_properties(bt_status_t status, int num_properties,
             bt_status_text(status), num_properties, std::format_ptr(properties));
 }
 
-static void remote_device_properties(bt_status_t status, RawAddress* bd_addr, int num_properties,
+static void remote_device_properties(bt_status_t status, RawAddress* bd_addr,
+                                     uint8_t /* address_type */, int num_properties,
                                      ::bt_property_t* properties) {
   log::assert_that(bd_addr != nullptr, "assert failed: bd_addr != nullptr");
   const size_t num_callbacks = interface_api_callback_map_.size();

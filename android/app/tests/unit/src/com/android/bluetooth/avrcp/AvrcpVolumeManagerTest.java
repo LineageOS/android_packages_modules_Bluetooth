@@ -32,6 +32,7 @@ import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+import android.content.res.Resources;
 import android.media.AudioManager;
 
 import androidx.test.filters.SmallTest;
@@ -54,6 +55,7 @@ public class AvrcpVolumeManagerTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Rule public TestName testName = new TestName();
 
+    @Mock private Resources mResources;
     @Mock private AvrcpNativeInterface mNativeInterface;
     @Mock private AdapterService mAdapterService;
     @Mock AudioManager mAudioManager;
@@ -70,6 +72,8 @@ public class AvrcpVolumeManagerTest {
                 .when(mAudioManager)
                 .getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         Context ctx = InstrumentationRegistry.getInstrumentation().getContext();
+        doReturn(mResources).when(mAdapterService).getResources();
+        doReturn(8).when(mResources).getInteger(anyInt());
         doReturn(
                         ctx.getSharedPreferences(
                                 testName.getMethodName() + "TmpPref", Context.MODE_PRIVATE))

@@ -92,7 +92,7 @@ struct AudioConfig {
  */
 struct IsoStream {
   uint16_t handle;
-  uint16_t channel_allocation;
+  uint32_t channel_allocation;
 };
 
 /**

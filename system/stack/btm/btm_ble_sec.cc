@@ -111,8 +111,7 @@ void BTM_SecAddBleDevice(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
     }
 
     uint32_t cod = 0;
-    if (com::android::bluetooth::flags::read_le_appearance() &&
-        btif_storage_get_cod(bd_addr, &cod)) {
+    if (btif_storage_get_cod(bd_addr, &cod)) {
       DEV_CLASS dev_class = {};
       dev_class[2] = (uint8_t)cod;
       dev_class[1] = (uint8_t)(cod >> 8);
@@ -1640,9 +1639,8 @@ void btm_ble_connection_established(const RawAddress& bda) {
     btm_ble_read_remote_name(bda, nullptr);
   }
 
-  if (com::android::bluetooth::flags::read_le_appearance() && p_dev_rec != nullptr &&
-      (com::android::bluetooth::flags::le_appearance_after_ctkd() ||
-       !p_dev_rec->sec_rec.is_le_link_key_known())) {
+  if (p_dev_rec != nullptr && (com::android::bluetooth::flags::le_appearance_after_ctkd() ||
+                               !p_dev_rec->sec_rec.is_le_link_key_known())) {
     // Unknown device
     if (p_dev_rec->dev_class == kDevClassEmpty || p_dev_rec->dev_class == kDevClassUnclassified) {
       // Class of device not known, read appearance characteristic ...

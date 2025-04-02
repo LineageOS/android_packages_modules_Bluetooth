@@ -1485,6 +1485,7 @@ protected:
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com::android::bluetooth::flags::provider_->reset_flags();
     com::android::bluetooth::flags::provider_->leaudio_fix_stop_reconfiguration_timeout(true);
+    com::android::bluetooth::flags::provider_->leaudio_use_aggressive_params(true);
 
     init_message_loop_thread();
     reset_mock_function_count_map();
@@ -2405,7 +2406,7 @@ protected:
           handle++;
         }
 
-        if (source_audio_allocation.has_value() && !no_source_ases_) {
+        if (source_audio_allocation.has_value()) {
           ascs->source_ase_char[i] = handle;
           handle += 2;
           ascs->source_ase_ccc[i] = handle;
@@ -2836,7 +2837,6 @@ protected:
 
   bool empty_source_pack_;
   bool empty_sink_pack_;
-  bool no_source_ases_;
 
   NiceMock<bluetooth::storage::MockBtifStorageInterface> mock_btif_storage_;
   NiceMock<bluetooth::testing::stack::l2cap::Mock> mock_stack_l2cap_interface_;
@@ -5449,43 +5449,6 @@ TEST_F(UnicastTest, ChangeAvailableContextTypeWhenInCodecConfigured) {
   auto source_available_context = types::kLeAudioContextAllRemoteSource;
 
   InjectAvailableContextTypes(test_address0, 1, sink_available_context, source_available_context);
-
-  SyncOnMainLoop();
-  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
-}
-
-TEST_F(UnicastTest, HandleRemoteDeviceWithoutSourceAses) {
-  const RawAddress test_address0 = GetTestAddress(0);
-  int group_id = bluetooth::groups::kGroupUnknown;
-
-  /**
-   * Missconfigured remote device contains Source PACS,
-   * Source Context types but there is no Source ASE. Native should notify properly
-   * about the supported directions.
-   */
-
-  no_source_ases_ = true;
-  default_channel_cnt = 1;
-
-  SetSampleDatabaseEarbudsValid(
-          1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
-          codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt, default_channel_cnt, 0x0004,
-          /* source sample freq 16khz */ false /*add_csis*/, true /*add_cas*/, true /*add_pacs*/,
-          default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/, 0 /*rank*/);
-  EXPECT_CALL(mock_audio_hal_client_callbacks_,
-              OnConnectionState(ConnectionState::CONNECTED, test_address0))
-          .Times(1);
-  EXPECT_CALL(mock_audio_hal_client_callbacks_,
-              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
-          .WillOnce(DoAll(SaveArg<1>(&group_id)));
-
-  uint8_t expected_direction = bluetooth::le_audio::types::kLeAudioDirectionSink;
-  std::optional<std::bitset<32>> expected_src_location = std::nullopt;
-  EXPECT_CALL(mock_audio_hal_client_callbacks_,
-              OnAudioConf(expected_direction, _, _, expected_src_location, _));
-
-  ConnectLeAudio(test_address0);
-  ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
 
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
@@ -10842,7 +10805,7 @@ TEST_F(UnicastTest, SwitchBetweenMicrophoneAndSoundEffectScenario) {
   UpdateLocalSinkMetadata(AUDIO_SOURCE_MIC);
   LocalAudioSinkResume();
 
-  ASSERT_EQ(0, get_func_call_count("alarm_set_on_mloop"));
+  ASSERT_EQ(1, get_func_call_count("alarm_set_on_mloop"));
   SyncOnMainLoop();
 
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
@@ -10859,8 +10822,8 @@ TEST_F(UnicastTest, SwitchBetweenMicrophoneAndSoundEffectScenario) {
   SyncOnMainLoop();
 
   log::info("Expect VBC and Suspend timeouts to be started");
-  ASSERT_EQ(2, get_func_call_count("alarm_set_on_mloop"));
-  ASSERT_EQ(0, get_func_call_count("alarm_cancel"));
+  ASSERT_EQ(3, get_func_call_count("alarm_set_on_mloop"));
+  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
 
   log::info("Resume local source with touch tone - expect suspend timeout to be canceled");
 
@@ -10869,7 +10832,7 @@ TEST_F(UnicastTest, SwitchBetweenMicrophoneAndSoundEffectScenario) {
   SyncOnMainLoop();
 
   log::info("Expect VBC and Suspend timeouts to be started");
-  ASSERT_EQ(2, get_func_call_count("alarm_set_on_mloop"));
+  ASSERT_EQ(3, get_func_call_count("alarm_set_on_mloop"));
 
   auto group = streaming_groups.at(group_id);
   group->PrintDebugState();
@@ -10948,8 +10911,8 @@ TEST_F(UnicastTest, SwitchBetweenSoundEffectAndMicrophoneScenario) {
   TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920, 60);
 
   /* We expect Reconfiguration timer to be started and canceled. */
-  ASSERT_EQ(1, get_func_call_count("alarm_set_on_mloop"));
-  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+  ASSERT_EQ(2, get_func_call_count("alarm_set_on_mloop"));
+  ASSERT_EQ(2, get_func_call_count("alarm_cancel"));
 }
 
 /* When a certain context is unavailable and not supported we should stream

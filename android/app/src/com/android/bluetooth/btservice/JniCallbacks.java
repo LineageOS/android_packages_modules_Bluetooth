@@ -51,8 +51,8 @@ class JniCallbacks {
         mBondStateMachine.sspRequestCallback(address, pairingVariant, passkey);
     }
 
-    void devicePropertyChangedCallback(byte[] address, int[] types, byte[][] val) {
-        mRemoteDevices.devicePropertyChangedCallback(address, types, val);
+    void devicePropertyChangedCallback(byte[] address, int addressType, int[] types, byte[][] val) {
+        mRemoteDevices.devicePropertyChangedCallback(address, addressType, types, val);
     }
 
     void deviceFoundCallback(byte[] address) {

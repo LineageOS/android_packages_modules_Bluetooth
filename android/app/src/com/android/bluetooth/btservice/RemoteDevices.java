@@ -300,11 +300,16 @@ public class RemoteDevices {
     }
 
     @VisibleForTesting
-    DeviceProperties addDeviceProperties(byte[] address) {
+    DeviceProperties addDeviceProperties(byte[] address, int addressType) {
         synchronized (mDevices) {
             String key = Utils.getAddressStringFromByte(address);
             if (mDevices.containsKey(key)) {
-                debugLog("Properties for device " + key + " are already added");
+                debugLog(
+                        "Properties for device "
+                                + BluetoothUtils.toAnonymizedAddress(key)
+                                + "["
+                                + addressTypeToString(addressType)
+                                + "] are already added");
                 return mDevices.get(key);
             }
 
@@ -338,6 +343,11 @@ public class RemoteDevices {
             }
             return prop;
         }
+    }
+
+    @VisibleForTesting
+    DeviceProperties addDeviceProperties(byte[] address) {
+        return addDeviceProperties(address, BluetoothDevice.ADDRESS_TYPE_PUBLIC);
     }
 
     class DeviceProperties {
@@ -914,7 +924,7 @@ public class RemoteDevices {
         // Send uuids within the stack before the broadcast is sent out
         ParcelUuid[] uuids = prop == null ? null : prop.getUuids();
 
-        if (!Flags.preventDuplicateUuidIntent() || success) {
+        if (success) {
             mAdapterService.sendUuidsInternal(device, uuids);
         }
 
@@ -928,15 +938,13 @@ public class RemoteDevices {
         MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_SENT_UUID, 1);
 
         // Remove the outstanding UUID request
-        if (Flags.preventDuplicateUuidIntent()) {
-            // Handler.removeMessages() compares the object pointer so we cannot use the device
-            // directly. So we have to extract original BluetoothDevice object from mSdpTracker.
-            int index = mSdpTracker.indexOf(device);
-            if (index >= 0) {
-                BluetoothDevice originalDevice = mSdpTracker.get(index);
-                if (originalDevice != null) {
-                    mHandler.removeMessages(MESSAGE_UUID_INTENT, originalDevice);
-                }
+        // Handler.removeMessages() compares the object pointer so we cannot use the device
+        // directly. So we have to extract original BluetoothDevice object from mSdpTracker.
+        int index = mSdpTracker.indexOf(device);
+        if (index >= 0) {
+            BluetoothDevice originalDevice = mSdpTracker.get(index);
+            if (originalDevice != null) {
+                mHandler.removeMessages(MESSAGE_UUID_INTENT, originalDevice);
             }
         }
         mSdpTracker.remove(device);
@@ -1077,7 +1085,8 @@ public class RemoteDevices {
         return set.isEmpty();
     }
 
-    void devicePropertyChangedCallback(byte[] address, int[] types, byte[][] values) {
+    void devicePropertyChangedCallback(
+            byte[] address, int addressType, int[] types, byte[][] values) {
         Intent intent;
         byte[] val;
         int type;
@@ -1085,10 +1094,13 @@ public class RemoteDevices {
         DeviceProperties deviceProperties;
         if (bdDevice == null) {
             debugLog("Added new device property, device=" + bdDevice);
-            deviceProperties = addDeviceProperties(address);
+            deviceProperties = addDeviceProperties(address, addressType);
             bdDevice = getDevice(address);
         } else {
             deviceProperties = getDeviceProperties(bdDevice);
+            if (bdDevice.getAddressType() != addressType) {
+                warnLog("Address type mismatch for " + bdDevice + ", new type: " + addressType);
+            }
         }
 
         if (types.length <= 0) {

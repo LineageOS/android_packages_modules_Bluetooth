@@ -140,5 +140,23 @@ void LogMetricScoLinkRemoved(hci::Address address);
  */
 void LogMetricScoCodec(hci::Address address, uint16_t codec);
 
+/**
+ * Logs when IBluetoothAudioPort#startStream() is called when opening a SCO
+ * @param address
+ */
+void LogMetricHfpStartStream(hci::Address address);
+
+/**
+ * Logs when IBluetoothAudioPort#stopStream() is called when closing a SCO
+ * @param address
+ */
+void LogMetricHfpSuspendStream(hci::Address address);
+
+/**
+ * Logs when IBluetoothAudioProvider#streamStarted() is called to indicate SCO has opened
+ * @param address
+ */
+void LogMetricHfpStreamStarted(hci::Address address);
+
 }  // namespace metrics
 }  // namespace bluetooth

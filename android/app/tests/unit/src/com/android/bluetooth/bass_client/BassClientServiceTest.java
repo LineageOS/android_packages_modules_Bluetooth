@@ -4912,10 +4912,10 @@ public class BassClientServiceTest {
                 .periodicAdvertisingManagerUnregisterSync(any(), any());
     }
 
-    private void sinkUnintentionalWithoutScanning() {
+    private void bigMonitoringWithoutScanning() {
         prepareSynchronizedPairAndStopSearching();
 
-        // Bis and PA unsynced, SINK_UNINTENTIONAL
+        // Bis and PA unsynced, BIG_MONITORING
         injectRemoteSourceStateChanged(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         mInOrderMethodProxy
@@ -4926,10 +4926,10 @@ public class BassClientServiceTest {
         checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
     }
 
-    private void sinkUnintentionalDuringScanning() {
+    private void bigMonitoringDuringScanning() {
         prepareSynchronizedPair();
 
-        // Bis and PA unsynced, SINK_UNINTENTIONAL
+        // Bis and PA unsynced, BIG_MONITORING
         injectRemoteSourceStateChanged(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
@@ -4940,7 +4940,6 @@ public class BassClientServiceTest {
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
         }
-        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE); // In case of add source to inactive
         onPeriodicAdvertisingReport();
         onBigInfoAdvertisingReport();
         verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata1);
@@ -4951,7 +4950,13 @@ public class BassClientServiceTest {
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
         }
-        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE); // In case of add source to inactive
+        // In case of add source to inactive
+        if (!mBassClientService.getActiveSyncedSources().contains(TEST_SYNC_HANDLE)) {
+            mBassClientService.addSelectSourceRequest(TEST_BROADCAST_ID, /* hasPriority */ true);
+            clearInvocations(mMethodProxy);
+            onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        }
+
         onPeriodicAdvertisingReport();
         onBigInfoAdvertisingReport();
         for (BassClientStateMachine sm : mStateMachines.values()) {
@@ -4964,7 +4969,15 @@ public class BassClientServiceTest {
             clearInvocations(sm);
         }
         mBassClientService.resumeReceiversSourceSynchronization();
-        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE); // In case of add source to inactive
+        if (!mBassClientService.getActiveSyncedSources().contains(TEST_SYNC_HANDLE)) {
+            mInOrderMethodProxy
+                    .verify(mMethodProxy)
+                    .periodicAdvertisingManagerRegisterSync(
+                            any(), any(), anyInt(), anyInt(), any(), any());
+            onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+            onPeriodicAdvertisingReport();
+            onBigInfoAdvertisingReport();
+        }
         verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata1);
     }
 
@@ -4973,44 +4986,47 @@ public class BassClientServiceTest {
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
         }
-        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE); // In case of add source to inactive
         mBassClientService.resumeReceiversSourceSynchronization();
         for (BassClientStateMachine sm : mStateMachines.values()) {
             verify(sm, never()).sendMessage(any());
         }
+        mInOrderMethodProxy
+                .verify(mMethodProxy, never())
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
     }
 
-    private void verifyStopBigMonitoringWithUnsync() {
+    private void verifyStopBroadcastMonitoringWithUnsync() {
         checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
-        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerUnregisterSync(any(), any());
     }
 
-    private void verifyStopBigMonitoringWithoutUnsync() {
+    private void verifyStopBroadcastMonitoringWithoutUnsync() {
         checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
-        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
         mInOrderMethodProxy
                 .verify(mMethodProxy, never())
                 .periodicAdvertisingManagerUnregisterSync(any(), any());
     }
 
     private void resyncAndVerifyWithUnsync() {
-        // Resync, verify stopBigMonitoring with broadcast unsync
+        // Resync, verify stopBroadcastMonitoring with broadcast unsync
         injectRemoteSourceStateChanged(
                 mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
-        verifyStopBigMonitoringWithUnsync();
+        verifyStopBroadcastMonitoringWithUnsync();
     }
 
     private void resyncAndVerifyWithoutUnsync() {
-        // Resync, verify stopBigMonitoring without broadcast unsync
+        // Resync, verify stopBroadcastMonitoring without broadcast unsync
         injectRemoteSourceStateChanged(
                 mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
-        verifyStopBigMonitoringWithoutUnsync();
+        verifyStopBroadcastMonitoringWithoutUnsync();
     }
 
-    private void checkNoSinkPause() {
+    private void checkNotAllowBroadcastMonitoring() {
         injectRemoteSourceStateChanged(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         mInOrderMethodProxy
@@ -5018,48 +5034,48 @@ public class BassClientServiceTest {
                 .periodicAdvertisingManagerRegisterSync(
                         any(), any(), anyInt(), anyInt(), any(), any());
         checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
-        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
     }
 
-    private void checkSinkPause() {
+    private void checkAllowBroadcastMonitoring() {
         injectRemoteSourceStateChanged(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
     }
 
     @Test
-    public void sinkUnintentional_resync_withoutScanning() {
-        sinkUnintentionalWithoutScanning();
+    public void bigMonitoring_resync_withoutScanning() {
+        bigMonitoringWithoutScanning();
 
         checkResumeSynchronizationByBig();
         resyncAndVerifyWithUnsync();
     }
 
     @Test
-    public void sinkUnintentional_resync_duringScanning() {
-        sinkUnintentionalDuringScanning();
+    public void bigMonitoring_resync_duringScanning() {
+        bigMonitoringDuringScanning();
 
         checkResumeSynchronizationByBig();
         resyncAndVerifyWithoutUnsync();
     }
 
     @Test
-    public void sinkUnintentional_resyncByRemote_withoutScanning() {
-        sinkUnintentionalWithoutScanning();
+    public void bigMonitoring_resyncByRemote_withoutScanning() {
+        bigMonitoringWithoutScanning();
 
         resyncAndVerifyWithUnsync();
     }
 
     @Test
-    public void sinkUnintentional_resyncByRemote_duringScanning() {
-        sinkUnintentionalDuringScanning();
+    public void bigMonitoring_resyncByRemote_duringScanning() {
+        bigMonitoringDuringScanning();
 
         resyncAndVerifyWithoutUnsync();
     }
 
     @Test
-    public void sinkUnintentional_addNewSource() {
-        sinkUnintentionalDuringScanning();
+    public void bigMonitoring_addNewSource() {
+        bigMonitoringDuringScanning();
 
         // Scan and sync second broadcast
         onScanResult(mSourceDevice2, TEST_BROADCAST_ID_2);
@@ -5069,7 +5085,7 @@ public class BassClientServiceTest {
                         any(), any(), anyInt(), anyInt(), any(), any());
         onSyncEstablished(mSourceDevice2, TEST_SYNC_HANDLE_2);
 
-        // Add second source, HOST_INTENTIONAL
+        // Add second source, SUSPENDED_BY_HOST
         BluetoothLeBroadcastMetadata.Builder builder =
                 new BluetoothLeBroadcastMetadata.Builder()
                         .setEncrypted(false)
@@ -5083,136 +5099,138 @@ public class BassClientServiceTest {
         builder.addSubgroup(createBroadcastSubgroup());
         BluetoothLeBroadcastMetadata meta2 = builder.build();
         mBassClientService.addSource(mCurrentDevice, meta2, /* isGroupOp */ true);
-        verifyStopBigMonitoringWithoutUnsync();
+        verifyStopBroadcastMonitoringWithoutUnsync();
 
         // BIG for first broadcast not cause resume synchronization
         checkNoResumeSynchronizationByBig();
     }
 
     @Test
-    public void sinkUnintentional_addSameSource() {
-        sinkUnintentionalDuringScanning();
+    public void bigMonitoring_addSameSource() {
+        bigMonitoringDuringScanning();
 
-        // Verify add source clear the SINK_UNINTENTIONAL
+        // Verify add source clear the BIG_MONITORING
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
-        checkSinkPause();
+        checkAllowBroadcastMonitoring();
     }
 
     @Test
-    public void sinkUnintentional_removeSource_withoutScanning() {
-        sinkUnintentionalWithoutScanning();
+    public void bigMonitoring_removeSource_withoutScanning() {
+        bigMonitoringWithoutScanning();
 
-        // Remove source, HOST_INTENTIONAL
+        // Remove source, SUSPENDED_BY_HOST
         mBassClientService.removeSource(mCurrentDevice, TEST_SOURCE_ID);
-        verifyStopBigMonitoringWithUnsync();
+        verifyStopBroadcastMonitoringWithUnsync();
         verifyRemoveMessageAndInjectSourceRemoval();
         checkNoResumeSynchronizationByBig();
     }
 
     @Test
-    public void sinkUnintentional_removeSource_duringScanning() {
-        sinkUnintentionalDuringScanning();
+    public void bigMonitoring_removeSource_duringScanning() {
+        bigMonitoringDuringScanning();
 
-        // Remove source, HOST_INTENTIONAL
+        // Remove source, SUSPENDED_BY_HOST
         mBassClientService.removeSource(mCurrentDevice, TEST_SOURCE_ID);
-        verifyStopBigMonitoringWithoutUnsync();
+        verifyStopBroadcastMonitoringWithoutUnsync();
         verifyRemoveMessageAndInjectSourceRemoval();
         checkNoResumeSynchronizationByBig();
     }
 
     @Test
-    public void sinkUnintentional_stopReceivers_withoutScanning() {
-        sinkUnintentionalWithoutScanning();
+    public void bigMonitoring_stopReceivers_withoutScanning() {
+        bigMonitoringWithoutScanning();
 
-        // Stop receivers, HOST_INTENTIONAL
+        // Stop receivers, SUSPENDED_BY_HOST
         mBassClientService.stopReceiversSourceSynchronization(TEST_BROADCAST_ID);
-        verifyStopBigMonitoringWithUnsync();
+        verifyStopBroadcastMonitoringWithUnsync();
         verifyRemoveMessageAndInjectSourceRemoval();
         checkNoResumeSynchronizationByBig();
         checkNoResumeSynchronizationByHost();
     }
 
     @Test
-    public void sinkUnintentional_stopReceivers_duringScanning() {
-        sinkUnintentionalDuringScanning();
+    public void bigMonitoring_stopReceivers_duringScanning() {
+        bigMonitoringDuringScanning();
 
-        // Stop receivers, HOST_INTENTIONAL
+        // Stop receivers, SUSPENDED_BY_HOST
         mBassClientService.stopReceiversSourceSynchronization(TEST_BROADCAST_ID);
-        verifyStopBigMonitoringWithoutUnsync();
+        verifyStopBroadcastMonitoringWithoutUnsync();
         verifyRemoveMessageAndInjectSourceRemoval();
         checkNoResumeSynchronizationByBig();
         checkNoResumeSynchronizationByHost();
     }
 
     @Test
-    public void sinkUnintentional_suspendReceivers_withoutScanning() {
-        sinkUnintentionalWithoutScanning();
+    public void bigMonitoring_suspendReceivers_withoutScanning() {
+        bigMonitoringWithoutScanning();
 
-        // Suspend receivers, HOST_INTENTIONAL
+        // Suspend receivers, SUSPENDED_BY_HOST
         mBassClientService.suspendReceiversSourceSynchronization(TEST_BROADCAST_ID);
-        verifyStopBigMonitoringWithUnsync();
+        verifyStopBroadcastMonitoringWithUnsync();
         verifyModifyMessageAndInjectSourceModfified();
         checkNoResumeSynchronizationByBig();
         checkResumeSynchronizationByHost();
     }
 
     @Test
-    public void sinkUnintentional_suspendReceivers_duringScanning() {
-        sinkUnintentionalDuringScanning();
+    public void bigMonitoring_suspendReceivers_duringScanning() {
+        bigMonitoringDuringScanning();
 
-        // Suspend receivers, HOST_INTENTIONAL
+        // Suspend receivers, SUSPENDED_BY_HOST
         mBassClientService.suspendReceiversSourceSynchronization(TEST_BROADCAST_ID);
-        verifyStopBigMonitoringWithoutUnsync();
+        verifyStopBroadcastMonitoringWithoutUnsync();
         verifyModifyMessageAndInjectSourceModfified();
         checkNoResumeSynchronizationByBig();
         checkResumeSynchronizationByHost();
     }
 
     @Test
-    public void sinkUnintentional_suspendAllReceivers_withoutScanning() {
-        sinkUnintentionalWithoutScanning();
+    public void bigMonitoring_suspendAllReceivers_withoutScanning() {
+        bigMonitoringWithoutScanning();
 
-        // Suspend all receivers, HOST_INTENTIONAL
+        // Suspend all receivers, SUSPENDED_BY_HOST
         mBassClientService.suspendAllReceiversSourceSynchronization();
-        verifyStopBigMonitoringWithUnsync();
+        verifyStopBroadcastMonitoringWithUnsync();
         verifyModifyMessageAndInjectSourceModfified();
         checkNoResumeSynchronizationByBig();
         checkResumeSynchronizationByHost();
     }
 
     @Test
-    public void sinkUnintentional_suspendAllReceivers_duringScanning() {
-        sinkUnintentionalDuringScanning();
+    public void bigMonitoring_suspendAllReceivers_duringScanning() {
+        bigMonitoringDuringScanning();
 
-        // Suspend all receivers, HOST_INTENTIONAL
+        // Suspend all receivers, SUSPENDED_BY_HOST
         mBassClientService.suspendAllReceiversSourceSynchronization();
-        verifyStopBigMonitoringWithoutUnsync();
+        verifyStopBroadcastMonitoringWithoutUnsync();
         verifyModifyMessageAndInjectSourceModfified();
         checkNoResumeSynchronizationByBig();
         checkResumeSynchronizationByHost();
     }
 
     @Test
-    public void sinkUnintentional_publicStopBigMonitoring_withoutScanning() {
-        sinkUnintentionalWithoutScanning();
+    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_REMOVE_SINK_METADATA_ON_SWITCH_TO_LOCAL)
+    public void bigMonitoring_publicStopBroadcastMonitoring_withoutScanning() {
+        bigMonitoringWithoutScanning();
 
-        mBassClientService.stopBigMonitoring();
-        verifyStopBigMonitoringWithUnsync();
+        mBassClientService.stopBroadcastMonitoring();
+        verifyStopBroadcastMonitoringWithUnsync();
         checkNoResumeSynchronizationByBig();
     }
 
     @Test
-    public void sinkUnintentional_publicStopBigMonitoring_duringScanning() {
-        sinkUnintentionalDuringScanning();
+    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_REMOVE_SINK_METADATA_ON_SWITCH_TO_LOCAL)
+    public void bigMonitoring_publicStopBroadcastMonitoring_duringScanning() {
+        bigMonitoringDuringScanning();
 
-        mBassClientService.stopBigMonitoring();
-        verifyStopBigMonitoringWithoutUnsync();
+        mBassClientService.stopBroadcastMonitoring();
+        verifyStopBroadcastMonitoringWithoutUnsync();
         checkNoResumeSynchronizationByBig();
     }
 
     @Test
-    public void sinkUnintentional_unsync_withoutScanning() {
-        sinkUnintentionalWithoutScanning();
+    public void bigMonitoring_unsync_withoutScanning() {
+        bigMonitoringWithoutScanning();
 
         // Unsync not all sinks not cause stop monitoring
         for (BassClientStateMachine sm : mStateMachines.values()) {
@@ -5244,13 +5262,13 @@ public class BassClientServiceTest {
                         (long) 0x00000000);
             }
         }
-        verifyStopBigMonitoringWithUnsync();
+        verifyStopBroadcastMonitoringWithUnsync();
         checkNoResumeSynchronizationByBig();
     }
 
     @Test
-    public void sinkUnintentional_unsync_duringScanning() {
-        sinkUnintentionalDuringScanning();
+    public void bigMonitoring_unsync_duringScanning() {
+        bigMonitoringDuringScanning();
 
         // Unsync not all sinks not cause stop monitoring
         for (BassClientStateMachine sm : mStateMachines.values()) {
@@ -5282,13 +5300,13 @@ public class BassClientServiceTest {
                         (long) 0x00000000);
             }
         }
-        verifyStopBigMonitoringWithoutUnsync();
+        verifyStopBroadcastMonitoringWithoutUnsync();
         checkNoResumeSynchronizationByBig();
     }
 
     @Test
-    public void sinkUnintentional_disconnect_withoutScanning() {
-        sinkUnintentionalWithoutScanning();
+    public void bigMonitoring_disconnect_withoutScanning() {
+        bigMonitoringWithoutScanning();
 
         // Disconnect not all sinks not cause stop monitoring
         doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
@@ -5302,13 +5320,13 @@ public class BassClientServiceTest {
         doReturn(false).when(mStateMachines.get(mCurrentDevice1)).isConnected();
         mBassClientService.connectionStateChanged(
                 mCurrentDevice1, STATE_CONNECTED, STATE_DISCONNECTED);
-        verifyStopBigMonitoringWithUnsync();
+        verifyStopBroadcastMonitoringWithUnsync();
         checkNoResumeSynchronizationByBig();
     }
 
     @Test
-    public void sinkUnintentional_disconnect_duringScanning() {
-        sinkUnintentionalDuringScanning();
+    public void bigMonitoring_disconnect_duringScanning() {
+        bigMonitoringDuringScanning();
 
         // Disconnect not all sinks not cause stop monitoring
         doReturn(STATE_DISCONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
@@ -5322,18 +5340,18 @@ public class BassClientServiceTest {
         doReturn(false).when(mStateMachines.get(mCurrentDevice1)).isConnected();
         mBassClientService.connectionStateChanged(
                 mCurrentDevice1, STATE_CONNECTED, STATE_DISCONNECTED);
-        verifyStopBigMonitoringWithoutUnsync();
+        verifyStopBroadcastMonitoringWithoutUnsync();
         checkNoResumeSynchronizationByBig();
     }
 
     @Test
-    public void sinkUnintentional_syncLost_withoutScanning_outOfRange() {
-        sinkUnintentionalWithoutScanning();
+    public void bigMonitoring_syncLost_withoutScanning_outOfRange() {
+        bigMonitoringWithoutScanning();
 
-        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
 
         onSyncLost();
-        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
@@ -5345,8 +5363,7 @@ public class BassClientServiceTest {
                 .periodicAdvertisingManagerRegisterSync(
                         any(), any(), anyInt(), anyInt(), any(), any());
 
-        checkAndDispatchTimeout(
-                TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkAndDispatchTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerUnregisterSync(any(), any());
@@ -5355,13 +5372,13 @@ public class BassClientServiceTest {
     }
 
     @Test
-    public void sinkUnintentional_syncLost_duringScanning_outOfRange() {
-        sinkUnintentionalDuringScanning();
+    public void bigMonitoring_syncLost_duringScanning_outOfRange() {
+        bigMonitoringDuringScanning();
 
-        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
 
         onSyncLost();
-        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
@@ -5375,8 +5392,7 @@ public class BassClientServiceTest {
                 .periodicAdvertisingManagerRegisterSync(
                         any(), any(), anyInt(), anyInt(), any(), any());
 
-        checkAndDispatchTimeout(
-                TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkAndDispatchTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
         mInOrderMethodProxy
                 .verify(mMethodProxy, never())
                 .periodicAdvertisingManagerUnregisterSync(any(), any());
@@ -5385,8 +5401,8 @@ public class BassClientServiceTest {
     }
 
     @Test
-    public void sinkUnintentional_bigMonitorTimeout_withoutScanning() {
-        sinkUnintentionalWithoutScanning();
+    public void bigMonitoring_bigMonitorTimeout_withoutScanning() {
+        bigMonitoringWithoutScanning();
 
         checkAndDispatchTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
         mInOrderMethodProxy
@@ -5397,8 +5413,8 @@ public class BassClientServiceTest {
     }
 
     @Test
-    public void sinkUnintentional_bigMonitorTimeout_duringScanning() {
-        sinkUnintentionalDuringScanning();
+    public void bigMonitoring_bigMonitorTimeout_duringScanning() {
+        bigMonitoringDuringScanning();
 
         checkAndDispatchTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
         mInOrderMethodProxy
@@ -5410,31 +5426,36 @@ public class BassClientServiceTest {
 
     @Test
     @EnableFlags(Flags.FLAG_LEAUDIO_MONITOR_UNICAST_SOURCE_WHEN_MANAGED_BY_BROADCAST_DELEGATOR)
-    public void sinkUnintentional_handleUnicastSourceStreamStatusChange_withoutScanning() {
-        sinkUnintentionalWithoutScanning();
+    public void bigMonitoring_handleUnicastSourceStreamStatusChange_withoutScanning() {
+        bigMonitoringWithoutScanning();
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 0 /* STATUS_LOCAL_STREAM_REQUESTED */);
-        verifyStopBigMonitoringWithUnsync();
-        checkNoResumeSynchronizationByBig();
+        verifyStopBroadcastMonitoringWithUnsync();
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 2 /* STATUS_LOCAL_STREAM_SUSPENDED */);
+        mInOrderMethodProxy
+                .verify(mMethodProxy)
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        onPeriodicAdvertisingReport();
+        onBigInfoAdvertisingReport();
         verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata1);
     }
 
     @Test
     @EnableFlags(Flags.FLAG_LEAUDIO_MONITOR_UNICAST_SOURCE_WHEN_MANAGED_BY_BROADCAST_DELEGATOR)
-    public void sinkUnintentional_handleUnicastSourceStreamStatusChange_duringScanning() {
-        sinkUnintentionalDuringScanning();
+    public void bigMonitoring_handleUnicastSourceStreamStatusChange_duringScanning() {
+        bigMonitoringDuringScanning();
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 0 /* STATUS_LOCAL_STREAM_REQUESTED */);
-        verifyStopBigMonitoringWithoutUnsync();
+        verifyStopBroadcastMonitoringWithoutUnsync();
         checkNoResumeSynchronizationByBig();
 
         /* Unicast finished streaming */
@@ -5444,31 +5465,36 @@ public class BassClientServiceTest {
     }
 
     @Test
-    public void sinkUnintentional_handleUnicastSourceStreamStatusChangeNoContext_withoutScanning() {
-        sinkUnintentionalWithoutScanning();
+    public void bigMonitoring_handleUnicastSourceStreamStatusChangeNoContext_withoutScanning() {
+        bigMonitoringWithoutScanning();
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
-        verifyStopBigMonitoringWithUnsync();
+        verifyStopBroadcastMonitoringWithUnsync();
         verifyModifyMessageAndInjectSourceModfified();
-        checkNoResumeSynchronizationByBig();
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 2 /* STATUS_LOCAL_STREAM_SUSPENDED */);
+        mInOrderMethodProxy
+                .verify(mMethodProxy)
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        onPeriodicAdvertisingReport();
+        onBigInfoAdvertisingReport();
         verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata1);
     }
 
     @Test
-    public void sinkUnintentional_handleUnicastSourceStreamStatusChangeNoContext_duringScanning() {
-        sinkUnintentionalDuringScanning();
+    public void bigMonitoring_handleUnicastSourceStreamStatusChangeNoContext_duringScanning() {
+        bigMonitoringDuringScanning();
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
-        verifyStopBigMonitoringWithoutUnsync();
+        verifyStopBroadcastMonitoringWithoutUnsync();
         verifyModifyMessageAndInjectSourceModfified();
         checkNoResumeSynchronizationByBig();
 
@@ -5480,8 +5506,8 @@ public class BassClientServiceTest {
 
     @Test
     @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
-    public void sinkUnintentional_autoSyncToBroadcast_onStopSearching() {
-        sinkUnintentionalDuringScanning();
+    public void bigMonitoring_autoSyncToBroadcast_onStopSearching() {
+        bigMonitoringDuringScanning();
 
         // Verify that start searching cause sync when broadcaster synced to sinks
         mBassClientService.stopSearchingForSources();
@@ -5496,8 +5522,8 @@ public class BassClientServiceTest {
 
     @Test
     @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
-    public void sinkUnintentional_remainEstablishedSync_onStopSearching() {
-        sinkUnintentionalDuringScanning();
+    public void bigMonitoring_remainEstablishedSync_onStopSearching() {
+        bigMonitoringDuringScanning();
 
         // Scan and sync to another broadcaster
         onScanResult(mSourceDevice2, TEST_BROADCAST_ID_2);
@@ -5535,9 +5561,9 @@ public class BassClientServiceTest {
                                 BassConstants.PENDING_SYNC_HANDLE))
                 .isEqualTo(TEST_BROADCAST_ID + 2);
 
-        // Verify that stop searching remain the unintentional sync
+        // Verify that stop searching remain the monitored broadcast sync
         mBassClientService.stopSearchingForSources();
-        // Unintentional sync remain, another sync was removed, pending was canceled
+        // Monitored broadcast sync remain, another sync was removed, pending was canceled
         assertThat(mBassClientService.getActiveSyncedSources().size()).isEqualTo(1);
         assertThat(mBassClientService.getActiveSyncedSources()).containsExactly(TEST_SYNC_HANDLE);
         assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE))
@@ -5713,7 +5739,7 @@ public class BassClientServiceTest {
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
 
         // Add source force syncing to broadcaster
-        // Not finished to not add UNINTENTIONAL_PAUSE or to not unsync
+        // Not finished to not add BIG_MONITORING or to not unsync
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
         mInOrderMethodProxy
                 .verify(mMethodProxy)
@@ -5746,7 +5772,7 @@ public class BassClientServiceTest {
         // Sync lost without triggering timeout to keep cache
         onSyncLost();
 
-        // Finish adding source without PA and BIS to detect UNINTENTIONAL_PAUSE which will sync
+        // Finish adding source without PA and BIS to detect BIG_MONITORING which will sync
         // again. This will confirm that cache is available
         prepareRemoteSourceState(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
@@ -5945,7 +5971,7 @@ public class BassClientServiceTest {
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
 
         // Add source force syncing to broadcaster
-        // Not finished to not add UNINTENTIONAL_PAUSE or to not unsync
+        // Not finished to not add BIG_MONITORING or to not unsync
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
         mInOrderMethodProxy
                 .verify(mMethodProxy)
@@ -5980,7 +6006,7 @@ public class BassClientServiceTest {
         // Sync lost without triggering timeout to keep cache
         onSyncLost();
 
-        // Finish adding source without PA and BIS to detect UNINTENTIONAL_PAUSE which will sync
+        // Finish adding source without PA and BIS to detect BIG_MONITORING which will sync
         // again. This will confirm that cache is available
         prepareRemoteSourceState(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
@@ -6004,7 +6030,7 @@ public class BassClientServiceTest {
 
     @Test
     @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
-    public void hostIntentional_SyncAndRemainCache_onStartSearching() {
+    public void suspendedByHost_SyncAndRemainCache_onStartSearching() {
         prepareSynchronizedPair();
 
         // Scan and sync to another broadcaster
@@ -6025,7 +6051,7 @@ public class BassClientServiceTest {
         assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE_2))
                 .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
 
-        // Suspend all receivers, HOST_INTENTIONAL
+        // Suspend all receivers, SUSPENDED_BY_HOST
         mBassClientService.suspendAllReceiversSourceSynchronization();
         verifyModifyMessageAndInjectSourceModfified();
 
@@ -6091,124 +6117,130 @@ public class BassClientServiceTest {
     }
 
     @Test
-    public void hostIntentional_addSameSource() {
+    public void suspendedByHost_addSameSource() {
         prepareSynchronizedPair();
 
-        // Remove source, HOST_INTENTIONAL
+        // Remove source, SUSPENDED_BY_HOST
         mBassClientService.removeSource(mCurrentDevice, TEST_SOURCE_ID);
-        checkNoSinkPause();
+        checkNotAllowBroadcastMonitoring();
         verifyRemoveMessageAndInjectSourceRemoval();
 
-        // Verify add source clear the HOST_INTENTIONAL
+        // Verify add source clear the SUSPENDED_BY_HOST
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
         verifyAddSourceForGroup(mBroadcastMetadata1);
-        checkSinkPause();
+        checkAllowBroadcastMonitoring();
     }
 
     @Test
-    public void hostIntentional_removeSource_withoutScanning() {
+    public void suspendedByHost_removeSource_withoutScanning() {
         prepareSynchronizedPairAndStopSearching();
 
-        // Remove source, HOST_INTENTIONAL
+        // Remove source, SUSPENDED_BY_HOST
         mBassClientService.removeSource(mCurrentDevice, TEST_SOURCE_ID);
-        checkNoSinkPause();
+        checkNotAllowBroadcastMonitoring();
         verifyRemoveMessageAndInjectSourceRemoval();
     }
 
     @Test
-    public void hostIntentional_removeSource_duringScanning() {
+    public void suspendedByHost_removeSource_duringScanning() {
         prepareSynchronizedPair();
 
-        // Remove source, HOST_INTENTIONAL
+        // Remove source, SUSPENDED_BY_HOST
         mBassClientService.removeSource(mCurrentDevice, TEST_SOURCE_ID);
-        checkNoSinkPause();
+        checkNotAllowBroadcastMonitoring();
         verifyRemoveMessageAndInjectSourceRemoval();
     }
 
     @Test
-    public void hostIntentional_stopReceivers_withoutScanning() {
+    public void suspendedByHost_stopReceivers_withoutScanning() {
         prepareSynchronizedPairAndStopSearching();
 
-        // Stop receivers, HOST_INTENTIONAL
+        // Stop receivers, SUSPENDED_BY_HOST
         mBassClientService.stopReceiversSourceSynchronization(TEST_BROADCAST_ID);
-        checkNoSinkPause();
+        checkNotAllowBroadcastMonitoring();
         verifyRemoveMessageAndInjectSourceRemoval();
     }
 
     @Test
-    public void hostIntentional_stopReceivers_duringScanning() {
+    public void suspendedByHost_stopReceivers_duringScanning() {
         prepareSynchronizedPair();
 
-        // Stop receivers, HOST_INTENTIONAL
+        // Stop receivers, SUSPENDED_BY_HOST
         mBassClientService.stopReceiversSourceSynchronization(TEST_BROADCAST_ID);
-        checkNoSinkPause();
+        checkNotAllowBroadcastMonitoring();
         verifyRemoveMessageAndInjectSourceRemoval();
     }
 
     @Test
-    public void hostIntentional_suspendReceivers_withoutScanning() {
+    public void suspendedByHost_suspendReceivers_withoutScanning() {
         prepareSynchronizedPairAndStopSearching();
 
-        // Suspend receivers, HOST_INTENTIONAL
+        // Suspend receivers, SUSPENDED_BY_HOST
         mBassClientService.suspendReceiversSourceSynchronization(TEST_BROADCAST_ID);
-        checkNoSinkPause();
+        checkNotAllowBroadcastMonitoring();
         checkResumeSynchronizationByHost();
     }
 
     @Test
-    public void hostIntentional_suspendReceivers_duringScanning() {
+    public void suspendedByHost_suspendReceivers_duringScanning() {
         prepareSynchronizedPair();
 
-        // Suspend receivers, HOST_INTENTIONAL
+        // Suspend receivers, SUSPENDED_BY_HOST
         mBassClientService.suspendReceiversSourceSynchronization(TEST_BROADCAST_ID);
-        checkNoSinkPause();
+        checkNotAllowBroadcastMonitoring();
         checkResumeSynchronizationByHost();
     }
 
     @Test
-    public void hostIntentional_suspendAllReceivers_withoutScanning() {
+    public void suspendedByHost_suspendAllReceivers_withoutScanning() {
         prepareSynchronizedPairAndStopSearching();
 
-        // Suspend all receivers, HOST_INTENTIONAL
+        // Suspend all receivers, SUSPENDED_BY_HOST
         mBassClientService.suspendAllReceiversSourceSynchronization();
-        checkNoSinkPause();
+        checkNotAllowBroadcastMonitoring();
         checkResumeSynchronizationByHost();
     }
 
     @Test
-    public void hostIntentional_suspendAllReceivers_duringScanning() {
+    public void suspendedByHost_suspendAllReceivers_duringScanning() {
         prepareSynchronizedPair();
 
-        // Suspend all receivers, HOST_INTENTIONAL
+        // Suspend all receivers, SUSPENDED_BY_HOST
         mBassClientService.suspendAllReceiversSourceSynchronization();
-        checkNoSinkPause();
+        checkNotAllowBroadcastMonitoring();
         checkResumeSynchronizationByHost();
     }
 
     @Test
-    public void hostIntentional_handleUnicastSourceStreamStatusChange_withoutScanning() {
+    public void suspendedByHost_handleUnicastSourceStreamStatusChange_withoutScanning() {
         prepareSynchronizedPairAndStopSearching();
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 0 /* STATUS_LOCAL_STREAM_REQUESTED */);
-        checkNoSinkPause();
+        checkNotAllowBroadcastMonitoring();
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 2 /* STATUS_LOCAL_STREAM_SUSPENDED */);
-        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE); // In case of add source to inactive
+        mInOrderMethodProxy
+                .verify(mMethodProxy)
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        onPeriodicAdvertisingReport();
+        onBigInfoAdvertisingReport();
         verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata1);
     }
 
     @Test
-    public void hostIntentional_handleUnicastSourceStreamStatusChange_duringScanning() {
+    public void suspendedByHost_handleUnicastSourceStreamStatusChange_duringScanning() {
         prepareSynchronizedPair();
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 0 /* STATUS_LOCAL_STREAM_REQUESTED */);
-        checkNoSinkPause();
+        checkNotAllowBroadcastMonitoring();
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
@@ -6218,13 +6250,13 @@ public class BassClientServiceTest {
 
     @Test
     @EnableFlags(Flags.FLAG_LEAUDIO_MONITOR_UNICAST_SOURCE_WHEN_MANAGED_BY_BROADCAST_DELEGATOR)
-    public void hostIntentional_handleUnicastSourceStreamStatusChange_beforeResumeCompleted() {
+    public void suspendedByHost_handleUnicastSourceStreamStatusChange_beforeResumeCompleted() {
         prepareSynchronizedPairAndStopSearching();
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 0 /* STATUS_LOCAL_STREAM_REQUESTED */);
-        checkNoSinkPause();
+        checkNotAllowBroadcastMonitoring();
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
@@ -6245,35 +6277,43 @@ public class BassClientServiceTest {
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
                         any(), any(), anyInt(), anyInt(), any(), any());
-        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE); // In case of add source to inactive
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        onPeriodicAdvertisingReport();
+        onBigInfoAdvertisingReport();
         verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata1);
     }
 
     @Test
-    public void hostIntentional_handleUnicastSourceStreamStatusChangeNoContext_withoutScanning() {
+    public void suspendedByHost_handleUnicastSourceStreamStatusChangeNoContext_withoutScanning() {
         prepareSynchronizedPairAndStopSearching();
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
-        checkNoSinkPause();
+        checkNotAllowBroadcastMonitoring();
         verifyModifyMessageAndInjectSourceModfified();
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 2 /* STATUS_LOCAL_STREAM_SUSPENDED */);
+        mInOrderMethodProxy
+                .verify(mMethodProxy)
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        onPeriodicAdvertisingReport();
+        onBigInfoAdvertisingReport();
         verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata1);
     }
 
     @Test
-    public void hostIntentional_handleUnicastSourceStreamStatusChangeNoContext_duringScanning() {
+    public void suspendedByHost_handleUnicastSourceStreamStatusChangeNoContext_duringScanning() {
         prepareSynchronizedPair();
 
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
-        checkNoSinkPause();
+        checkNotAllowBroadcastMonitoring();
         verifyModifyMessageAndInjectSourceModfified();
 
         /* Unicast finished streaming */
@@ -6286,7 +6326,7 @@ public class BassClientServiceTest {
     public void outOfRange_syncEstablishedFailed_stopMonitoringAfterTimeout() {
         prepareSynchronizedPairAndStopSearching();
 
-        // Bis and PA unsynced, SINK_UNINTENTIONAL
+        // Bis and PA unsynced, BIG_MONITORING
         injectRemoteSourceStateChanged(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         mInOrderMethodProxy
@@ -6294,10 +6334,10 @@ public class BassClientServiceTest {
                 .periodicAdvertisingManagerRegisterSync(
                         any(), any(), anyInt(), anyInt(), any(), any());
         checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
-        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
 
         onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
-        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
@@ -6309,8 +6349,7 @@ public class BassClientServiceTest {
                 .periodicAdvertisingManagerRegisterSync(
                         any(), any(), anyInt(), anyInt(), any(), any());
 
-        checkAndDispatchTimeout(
-                TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkAndDispatchTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerUnregisterSync(any(), any());
@@ -6320,7 +6359,7 @@ public class BassClientServiceTest {
     public void outOfRange_syncEstablishedFailed_clearTimeout() {
         prepareSynchronizedPairAndStopSearching();
 
-        // Bis and PA unsynced, SINK_UNINTENTIONAL
+        // Bis and PA unsynced, BIG_MONITORING
         injectRemoteSourceStateChanged(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         mInOrderMethodProxy
@@ -6328,10 +6367,10 @@ public class BassClientServiceTest {
                 .periodicAdvertisingManagerRegisterSync(
                         any(), any(), anyInt(), anyInt(), any(), any());
         checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
-        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
 
         onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
-        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
@@ -6344,14 +6383,14 @@ public class BassClientServiceTest {
                         any(), any(), anyInt(), anyInt(), any(), any());
 
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
-        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
     }
 
     @Test
     public void outOfRange_syncEstablishedFailed_restartSearching() {
         prepareSynchronizedPairAndStopSearching();
 
-        // Bis and PA unsynced, SINK_UNINTENTIONAL
+        // Bis and PA unsynced, BIG_MONITORING
         injectRemoteSourceStateChanged(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         mInOrderMethodProxy
@@ -6359,33 +6398,33 @@ public class BassClientServiceTest {
                 .periodicAdvertisingManagerRegisterSync(
                         any(), any(), anyInt(), anyInt(), any(), any());
         checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
-        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
 
         // Start OOR monitoring
         onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
-        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
                         any(), any(), anyInt(), anyInt(), any(), any());
 
-        // Starting a search should not clear the cache for SINK_UNINTENTIONAL, which allows
+        // Starting a search should not clear the cache for BIG_MONITORING, which allows
         // register sync again if available or synchronization attempts after stopping the search
         startSearchingForSources();
         checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
         onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
 
-        // During a search, unintentionally paused broadcasts are monitored via onScanResult
+        // During a search, monitored broadcasts are monitored via onScanResult
         // Test below does not guarantee that the cache is preserved; this will be checked later
         onScanResult(mSourceDevice, TEST_BROADCAST_ID);
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
                         any(), any(), anyInt(), anyInt(), any(), any());
-        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
         onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
 
-        // After a search is stopped, start syncing in a loop for unintentionally paused broadcasts
+        // After a search is stopped, start syncing in a loop for monitored broadcasts
         mBassClientService.stopSearchingForSources();
         mInOrderMethodProxy
                 .verify(mMethodProxy)
@@ -6394,7 +6433,7 @@ public class BassClientServiceTest {
 
         // Still OOR
         onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
-        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
@@ -6416,7 +6455,7 @@ public class BassClientServiceTest {
     public void outOfRange_syncEstablishedFailed_allowSyncAnotherBroadcaster() {
         prepareSynchronizedPairAndStopSearching();
 
-        // Bis and PA unsynced, SINK_UNINTENTIONAL
+        // Bis and PA unsynced, BIG_MONITORING
         injectRemoteSourceStateChanged(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
         mInOrderMethodProxy
@@ -6424,17 +6463,17 @@ public class BassClientServiceTest {
                 .periodicAdvertisingManagerRegisterSync(
                         any(), any(), anyInt(), anyInt(), any(), any());
         checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
-        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
 
         // Start OOR monitoring
         onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
-        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BROADCAST_MONITOR_TIMEOUT);
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
                         any(), any(), anyInt(), anyInt(), any(), any());
 
-        // Starting a search should not clear the cache for SINK_UNINTENTIONAL, which allows
+        // Starting a search should not clear the cache for BIG_MONITORING, which allows
         // register sync again if available or synchronization attempts after stopping the search
         startSearchingForSources();
         checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
@@ -6763,7 +6802,7 @@ public class BassClientServiceTest {
     public void InitiatePaSyncTransfer_concurrentWithResume() {
         prepareSynchronizedPairAndStopSearching();
 
-        // Cache sinks for resume and set HOST_INTENTIONAL pause
+        // Cache sinks for resume and set SUSPENDED_BY_HOST pause
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 0 /* STATUS_LOCAL_STREAM_REQUESTED */);
         injectRemoteSourceStateChanged(
@@ -6790,7 +6829,7 @@ public class BassClientServiceTest {
     public void resumeSourceSynchronization_omitWhenPaSyncedOrRequested() {
         prepareSynchronizedPair();
 
-        // Cache sinks for resume and set HOST_INTENTIONAL pause
+        // Cache sinks for resume and set SUSPENDED_BY_HOST pause
         // Try resume while sync info requested
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 0 /* STATUS_LOCAL_STREAM_REQUESTED */);
@@ -6800,7 +6839,7 @@ public class BassClientServiceTest {
                 false);
         checkNoResumeSynchronizationByHost();
 
-        // Cache sinks for resume and set HOST_INTENTIONAL pause
+        // Cache sinks for resume and set SUSPENDED_BY_HOST pause
         // Try resume while pa synced
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 0 /* STATUS_LOCAL_STREAM_REQUESTED */);
@@ -6808,7 +6847,7 @@ public class BassClientServiceTest {
                 mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
         checkNoResumeSynchronizationByHost();
 
-        // Cache sinks for resume and set HOST_INTENTIONAL pause
+        // Cache sinks for resume and set SUSPENDED_BY_HOST pause
         // Try resume while pa unsynced
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 0 /* STATUS_LOCAL_STREAM_REQUESTED */);
@@ -6821,12 +6860,12 @@ public class BassClientServiceTest {
     public void removeSource_duringSuspend() {
         prepareSynchronizedPair();
 
-        // Suspend receivers, HOST_INTENTIONAL
+        // Suspend receivers, SUSPENDED_BY_HOST
         mBassClientService.suspendReceiversSourceSynchronization(TEST_BROADCAST_ID);
 
-        // Remove source, HOST_INTENTIONAL
+        // Remove source, SUSPENDED_BY_HOST
         mBassClientService.removeSource(mCurrentDevice, TEST_SOURCE_ID);
-        checkNoSinkPause();
+        checkNotAllowBroadcastMonitoring();
         verifyRemoveMessageAndInjectSourceRemoval();
 
         checkNoResumeSynchronizationByHost();
@@ -6836,12 +6875,12 @@ public class BassClientServiceTest {
     public void stopReceivers_duringSuspend() {
         prepareSynchronizedPair();
 
-        // Suspend receivers, HOST_INTENTIONAL
+        // Suspend receivers, SUSPENDED_BY_HOST
         mBassClientService.suspendReceiversSourceSynchronization(TEST_BROADCAST_ID);
 
-        // Remove source, HOST_INTENTIONAL
+        // Remove source, SUSPENDED_BY_HOST
         mBassClientService.stopReceiversSourceSynchronization(TEST_BROADCAST_ID);
-        checkNoSinkPause();
+        checkNotAllowBroadcastMonitoring();
         verifyRemoveMessageAndInjectSourceRemoval();
 
         checkNoResumeSynchronizationByHost();
@@ -6861,9 +6900,12 @@ public class BassClientServiceTest {
             clearInvocations(sm);
         }
 
-        // Cache and resume ended with source add failed, should remove metadata
-        mBassClientService.cacheSuspendingSources(TEST_BROADCAST_ID);
-        mBassClientService.resumeReceiversSourceSynchronization();
+        // Add source to try sync again ended with source add failed, should remove metadata
+        mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
+        mInOrderMethodProxy
+                .verify(mMethodProxy)
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
         onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
         TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
         verify(mCallback).onSourceLost(eq(TEST_BROADCAST_ID));
@@ -7376,6 +7418,118 @@ public class BassClientServiceTest {
                         any(), any(), anyInt(), anyInt(), any(), any());
 
         mBassClientService.resumeReceiversSourceSynchronization();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_ALLOW_MONITORING_ON_RESUME)
+    public void broadcastMonitoringOnResume_ResumeByBig() {
+        prepareSynchronizedPairAndStopSearching();
+
+        // Handover to unicast
+        mBassClientService.cacheSuspendingSources(TEST_BROADCAST_ID);
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
+
+        // Resmue
+        mBassClientService.resumeReceiversSourceSynchronization();
+        mInOrderMethodProxy
+                .verify(mMethodProxy)
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
+
+        // Sync
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        checkResumeSynchronizationByBig();
+        resyncAndVerifyWithUnsync();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_ALLOW_MONITORING_ON_RESUME)
+    public void broadcastMonitoringOnResume_outOfRange() {
+        prepareSynchronizedPairAndStopSearching();
+
+        // Handover to unicast
+        mBassClientService.cacheSuspendingSources(TEST_BROADCAST_ID);
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
+
+        // Resume
+        mBassClientService.resumeReceiversSourceSynchronization();
+        mInOrderMethodProxy
+                .verify(mMethodProxy)
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
+
+        // Out of range or other sync failed
+        onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
+        mInOrderMethodProxy
+                .verify(mMethodProxy)
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
+
+        // Sync
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
+        checkResumeSynchronizationByBig();
+        resyncAndVerifyWithUnsync();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_ALLOW_MONITORING_ON_RESUME)
+    public void broadcastMonitoringOnResume_failedSyncOnPastRequest() {
+        prepareSynchronizedPairAndStopSearching();
+
+        // Handover to unicast
+        mBassClientService.cacheSuspendingSources(TEST_BROADCAST_ID);
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
+
+        // Resume
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1,
+                BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCINFO_REQUEST,
+                false);
+        mBassClientService.syncRequestForPast(mCurrentDevice, TEST_BROADCAST_ID, TEST_SOURCE_ID);
+        mBassClientService.syncRequestForPast(
+                mCurrentDevice1, TEST_BROADCAST_ID, TEST_SOURCE_ID + 1);
+        mInOrderMethodProxy
+                .verify(mMethodProxy)
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
+        mBassClientService.resumeReceiversSourceSynchronization();
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
+
+        // Out of range or other sync failed
+        onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+        mInOrderMethodProxy
+                .verify(mMethodProxy)
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
+
+        // Sync
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
+        checkResumeSynchronizationByBig();
+        resyncAndVerifyWithUnsync();
     }
 
     private void verifyConnectionStateIntent(BluetoothDevice device, int newState, int prevState) {

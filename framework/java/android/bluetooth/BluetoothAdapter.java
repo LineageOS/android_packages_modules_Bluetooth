@@ -809,9 +809,6 @@ public final class BluetoothAdapter {
      */
     @SystemApi public static final String AUDIO_MODE_DUPLEX = "audio_mode_duplex";
 
-    /** @hide */
-    public static final String BLUETOOTH_MANAGER_SERVICE = "bluetooth_manager";
-
     private final IBinder mToken = new Binder(DESCRIPTOR);
 
     /**

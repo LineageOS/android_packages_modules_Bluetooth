@@ -216,7 +216,6 @@ public class ServiceDiscoveryTest {
      * Expectation: A single ACTION_UUID intent is received The ACTION_UUID intent is not empty
      */
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_PREVENT_DUPLICATE_UUID_INTENT})
     public void testServiceDiscoveryBredr_SingleIntent() {
         // Setup intent filters
         registerIntentActions(
@@ -269,7 +268,6 @@ public class ServiceDiscoveryTest {
      * Expectation: A single ACTION_UUID intent is received The ACTION_UUID intent is not empty
      */
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_PREVENT_DUPLICATE_UUID_INTENT})
     public void testServiceDiscoveryLe_SingleIntent() {
         // Setup intent filters
         registerIntentActions(
