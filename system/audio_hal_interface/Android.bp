@@ -29,7 +29,9 @@ cc_library_static {
     ],
     static_libs: [
         "bluetooth_flags_c_lib",
+        "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_metrics",
         "libbt-common",
         "libosi",
     ],
@@ -229,6 +231,7 @@ cc_defaults {
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_log",
+        "libbluetooth_metrics_mock",
         "libbt-common", // needed for MessageLoopThread
         "libbt-jni-thread",
         "libbt-sbc-decoder",
@@ -367,6 +370,7 @@ cc_test {
         "packages/modules/Bluetooth/system/bta",
     ],
     srcs: [
+        ":TestMockBtaAg",
         "hfp_client_interface.cc",
         "hfp_client_interface_unittest.cc",
     ],

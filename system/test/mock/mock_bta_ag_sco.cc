@@ -72,7 +72,7 @@ namespace mock {
 namespace bta_ag_sco {
 
 const RawAddress& bta_ag_get_active_device::return_value = RawAddress::kEmpty;
-bool bta_ag_get_sco_offload_enabled::return_value = false;
+bool bta_ag_get_sco_offload_enabled::return_value = true;
 bool bta_ag_is_sco_managed_by_audio::return_value = false;
 bool bta_ag_sco_is_active_device::return_value = false;
 bool bta_ag_sco_is_open::return_value = false;
