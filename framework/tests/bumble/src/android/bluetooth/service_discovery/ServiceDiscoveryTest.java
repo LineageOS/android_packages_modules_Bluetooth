@@ -27,9 +27,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.PandoraDevice;
 import android.bluetooth.Utils;
 import android.bluetooth.test_utils.EnableBluetoothRule;
@@ -38,7 +36,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.ParcelUuid;
-import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.platform.test.flag.junit.CheckFlagsRule;
 import android.platform.test.flag.junit.DeviceFlagsValueProvider;
 import android.util.Log;
@@ -46,7 +43,6 @@ import android.util.Log;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
-import com.android.bluetooth.flags.Flags;
 import com.android.compatibility.common.util.AdoptShellPermissionsRule;
 
 import org.hamcrest.Matcher;
@@ -67,8 +63,6 @@ import pandora.HostProto.AdvertiseRequest;
 import pandora.HostProto.OwnAddressType;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 
 @RunWith(AndroidJUnit4.class)
 public class ServiceDiscoveryTest {
@@ -93,9 +87,6 @@ public class ServiceDiscoveryTest {
             ParcelUuid.fromString("0000180F-0000-1000-8000-00805F9B34FB");
     private final Context mTargetContext =
             InstrumentationRegistry.getInstrumentation().getTargetContext();
-    private final BluetoothAdapter mAdapter =
-            mTargetContext.getSystemService(BluetoothManager.class).getAdapter();
-    private final Map<String, Integer> mActionRegistrationCounts = new HashMap<>();
 
     private InOrder mInOrder;
     private BluetoothDevice mBumbleDevice;

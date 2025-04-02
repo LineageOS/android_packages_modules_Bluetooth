@@ -67,8 +67,6 @@ import pandora.HostProto.OwnAddressType;
 import pandora.HostProto.SetDiscoverabilityModeRequest;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 
 @RunWith(AndroidJUnit4.class)
 public class LeAudioServiceDiscoveryTest {
@@ -98,7 +96,6 @@ public class LeAudioServiceDiscoveryTest {
             InstrumentationRegistry.getInstrumentation().getTargetContext();
     private final BluetoothAdapter mAdapter =
             mTargetContext.getSystemService(BluetoothManager.class).getAdapter();
-    private final Map<String, Integer> mActionRegistrationCounts = new HashMap<>();
 
     private InOrder mInOrder;
     private BluetoothDevice mBumbleDevice;

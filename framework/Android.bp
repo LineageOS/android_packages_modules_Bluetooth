@@ -136,6 +136,7 @@ java_sdk_library {
 // defaults for tests that need to build against framework-bluetooths's @hide APIs
 java_defaults {
     name: "framework-bluetooth-tests-defaults",
+    defaults: ["bluetooth_errorprone_rules"],
     sdk_version: "core_platform",
     libs: [
         // order matters: classes in framework-bluetooth are resolved before framework, meaning

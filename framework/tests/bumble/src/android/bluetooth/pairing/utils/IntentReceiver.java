@@ -33,7 +33,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
 
-import com.google.common.collect.Iterators;
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
 import org.mockito.InOrder;
@@ -43,8 +42,8 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.hamcrest.MockitoHamcrest;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.Iterator;
 
@@ -331,12 +330,10 @@ public class IntentReceiver {
      * Helper function to get the actions from the IntentFilter
      *
      * @param intentFilter IntentFilter instance
-     *
-     * This is a helper function to get the actions from the IntentFilter,
-     *  and return as a String.
+     *     <p>This is a helper function to get the actions from the IntentFilter, and return as a
+     *     String.
      */
-    private String getActionsFromIntentFilter(
-        IntentFilter intentFilter) {
+    private static String getActionsFromIntentFilter(IntentFilter intentFilter) {
         Iterator<String> iterator = intentFilter.actionsIterator();
         StringBuilder allIntentActions = new StringBuilder();
         while (iterator.hasNext()) {
@@ -374,5 +371,4 @@ public class IntentReceiver {
         // calls all required setup functions based on the new builder
         setup();
     }
-
 }

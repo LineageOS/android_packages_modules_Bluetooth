@@ -100,40 +100,41 @@ public class OobPairingTest {
     public final EnableBluetoothRule enableBluetoothRule = new EnableBluetoothRule(false, true);
 
     private TestUtil mUtil;
-     /**
-     * IntentListener for the received intents
-     * Note: This is added as a default listener for all the IntentReceiver
-     *  instances created in this test class. Please add your own listener if
-     *  required as per the test requirement.
+
+    /**
+     * IntentListener for the received intents Note: This is added as a default listener for all the
+     * IntentReceiver instances created in this test class. Please add your own listener if required
+     * as per the test requirement.
      */
-    private IntentReceiver.IntentListener intentListener = new IntentReceiver.IntentListener() {
-        @Override
-        public void onReceive(Intent intent) {
-            String action = intent.getAction();
-            if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
-                BluetoothDevice device =
-                        intent.getParcelableExtra(
-                                BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
-                int bondState =
-                        intent.getIntExtra(
-                                BluetoothDevice.EXTRA_BOND_STATE, BluetoothAdapter.ERROR);
-                int prevBondState =
-                        intent.getIntExtra(
-                                BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE,
-                                BluetoothAdapter.ERROR);
-                Log.i(
-                        TAG,
-                        "onReceive(): device "
-                                + device
-                                + " bond state changed from "
-                                + prevBondState
-                                + " to "
-                                + bondState);
-            } else {
-                Log.i(TAG, "onReceive(): unknown intent action " + action);
-            }
-        }
-    };
+    private final IntentReceiver.IntentListener mIntentListener =
+            new IntentReceiver.IntentListener() {
+                @Override
+                public void onReceive(Intent intent) {
+                    String action = intent.getAction();
+                    if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
+                        BluetoothDevice device =
+                                intent.getParcelableExtra(
+                                        BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
+                        int bondState =
+                                intent.getIntExtra(
+                                        BluetoothDevice.EXTRA_BOND_STATE, BluetoothAdapter.ERROR);
+                        int prevBondState =
+                                intent.getIntExtra(
+                                        BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE,
+                                        BluetoothAdapter.ERROR);
+                        Log.i(
+                                TAG,
+                                "onReceive(): device "
+                                        + device
+                                        + " bond state changed from "
+                                        + prevBondState
+                                        + " to "
+                                        + bondState);
+                    } else {
+                        Log.i(TAG, "onReceive(): unknown intent action " + action);
+                    }
+                }
+            };
 
     private final OobDataCallback mGenerateOobDataCallback =
             new OobDataCallback() {
@@ -213,7 +214,7 @@ public class OobPairingTest {
     public void createBondWithRemoteOob() throws Exception {
         IntentReceiver intentReceiver =
                 new IntentReceiver.Builder(mContext, BluetoothDevice.ACTION_BOND_STATE_CHANGED)
-                        .setIntentListener(intentListener)
+                        .setIntentListener(mIntentListener)
                         .setIntentTimeout(INTENT_TIMEOUT)
                         .build();
 
@@ -249,7 +250,7 @@ public class OobPairingTest {
     public void createBondWithRemoteAndLocalOob() throws Exception {
         IntentReceiver intentReceiver =
                 new IntentReceiver.Builder(mContext, BluetoothDevice.ACTION_BOND_STATE_CHANGED)
-                        .setIntentListener(intentListener)
+                        .setIntentListener(mIntentListener)
                         .setIntentTimeout(INTENT_TIMEOUT)
                         .build();
 
@@ -282,7 +283,7 @@ public class OobPairingTest {
     public void createBondByRemoteDeviceWithLocalOob() throws Exception {
         IntentReceiver intentReceiver =
                 new IntentReceiver.Builder(mContext, BluetoothDevice.ACTION_BOND_STATE_CHANGED)
-                        .setIntentListener(intentListener)
+                        .setIntentListener(mIntentListener)
                         .setIntentTimeout(INTENT_TIMEOUT)
                         .build();
 
@@ -399,7 +400,7 @@ public class OobPairingTest {
         return p256;
     }
 
-    private String getReveseAddressString(byte[] address) {
+    private static String getReveseAddressString(byte[] address) {
         return String.format(
                 "%02X:%02X:%02X:%02X:%02X:%02X",
                 address[5], address[4], address[3], address[2], address[1], address[0]);
