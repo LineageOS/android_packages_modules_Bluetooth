@@ -333,9 +333,7 @@
   },
   "ixit": {
     "default": {},
-    "4.0HCI": {},
     "A2DP": {},
-    "ATT": {},
     "AVCTP": {},
     "AVDTP": {},
     "AVRCP": {
@@ -347,7 +345,6 @@
     "GATT": {},
     "GAVDP": {},
     "HAP": {},
-    "HCI": {},
     "HFP": {
       "TSPX_phone_number": "42",
       "TSPX_second_phone_number": "43"
@@ -355,7 +352,6 @@
     "HID": {},
     "HOGP": {},
     "HSP": {},
-    "IOP": {},
     "L2CAP": {
       "TSPX_spsm": "0080",
       "TSPX_psm_authentication_required": "0080",
@@ -371,7 +367,6 @@
       "TSPX_security_enabled": "FALSE"
     },
     "SAP": {},
-    "SCPP": {},
     "SDP": {},
     "SM": {},
     "SPP": {},
