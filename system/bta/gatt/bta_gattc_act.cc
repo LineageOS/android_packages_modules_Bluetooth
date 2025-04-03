@@ -703,6 +703,11 @@ static void bta_gattc_set_discover_st(tBTA_GATTC_SERV* p_srcb) {
     if (p_clcb->p_srcb != p_srcb) {
       continue;
     }
+    if (com::android::bluetooth::flags::gatt_reuse_discovering_client() &&
+        p_clcb->state == BTA_GATTC_DISCOVER_ST) {
+      /* do not reset state if already discovering */
+      break;
+    }
     p_clcb->status = GATT_SUCCESS;
     p_clcb->state = BTA_GATTC_DISCOVER_ST;
     p_clcb->request_during_discovery = BTA_GATTC_DISCOVER_REQ_NONE;
@@ -1460,12 +1465,24 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
   /* service change indication all received, do discovery update */
   if (++p_srcb->update_count == bta_gattc_num_reg_app()) {
     /* not an opened connection; or connection busy */
+    /**
+     * if com::android::bluetooth::flags::gatt_reuse_discovering_client() is true,
+     * iterate through all clcbs in order to find and reuse a discovering client.
+     * If a discovering client is not found, an available clcb will be used to start
+     * discovery.
+     */
     /* search for first available clcb and start discovery */
     if (p_clcb == NULL || (p_clcb && p_clcb->p_q_cmd != NULL)) {
       for (auto& p_clcb_i : bta_gattc_cb.clcb_set) {
         if (p_clcb_i->in_use && p_clcb_i->p_srcb == p_srcb && p_clcb_i->p_q_cmd == NULL) {
           p_clcb = p_clcb_i.get();
-          break;
+          if (com::android::bluetooth::flags::gatt_reuse_discovering_client()) {
+            if (p_clcb_i->disc_active) {
+              break;
+            }
+          } else {
+            break;
+          }
         }
       }
     }
