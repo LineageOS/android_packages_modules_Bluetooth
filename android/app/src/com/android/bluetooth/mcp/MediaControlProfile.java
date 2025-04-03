@@ -24,7 +24,6 @@ import android.bluetooth.BluetoothAvrcp;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeAudio;
 import android.bluetooth.BluetoothUuid;
-import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.media.session.PlaybackState;
@@ -66,12 +65,8 @@ import java.util.stream.Stream;
 public class MediaControlProfile implements MediaControlServiceCallbacks {
     private static final String TAG = MediaControlProfile.class.getSimpleName();
 
-    private static final int LOG_NB_EVENTS = 100;
-
-    private final BluetoothEventLogger mEventLogger =
-            new BluetoothEventLogger(LOG_NB_EVENTS, TAG + " event log");
-    private final Context mContext;
-    private final McpService mMcpService;
+    private final BluetoothEventLogger mEventLogger = new BluetoothEventLogger(100, TAG);
+    private final AdapterService mAdapterService;
     private final Map<String, MediaControlGattServiceInterface> mServiceMap = new HashMap<>();
 
     // Media players data
@@ -273,16 +268,16 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
         if (mPendingStateRequest.isEmpty()) mPendingStateRequest = null;
     }
 
-    public MediaControlProfile(@NonNull McpService mcpService) {
-        this(mcpService, new MediaPlayerList(Looper.myLooper(), mcpService));
+    public MediaControlProfile(@NonNull AdapterService adapterService) {
+        this(adapterService, new MediaPlayerList(adapterService, Looper.myLooper()));
     }
 
-    public MediaControlProfile(@NonNull McpService mcpService, MediaPlayerList mediaPlayerList) {
+    @VisibleForTesting
+    MediaControlProfile(
+            @NonNull AdapterService adapterService, @NonNull MediaPlayerList mediaPlayerList) {
         Log.v(TAG, "Creating Generic Media Control Service");
 
-        mMcpService = requireNonNull(mcpService);
-        mContext = mcpService;
-
+        mAdapterService = requireNonNull(adapterService);
         mMediaPlayerList = requireNonNull(mediaPlayerList);
     }
 
@@ -748,7 +743,7 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
 
         String player_name = player.getPackageName();
         try {
-            PackageManager pm = mContext.getApplicationContext().getPackageManager();
+            PackageManager pm = mAdapterService.getApplicationContext().getPackageManager();
             ApplicationInfo info = pm.getApplicationInfo(player.getPackageName(), 0);
             player_name = info.loadLabel(pm).toString();
         } catch (PackageManager.NameNotFoundException e) {
@@ -757,11 +752,13 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
         return player_name;
     }
 
-    public void init() {
+    public void init(@NonNull McpService mcpService) {
+        requireNonNull(mcpService);
+
         mCurrentData = new MediaData(null, null, null);
         mMediaPlayerList.init(new ListCallback());
 
-        String appToken = mContext.getPackageName();
+        String appToken = mAdapterService.getPackageName();
         synchronized (mServiceMap) {
             if (mServiceMap.get(appToken) != null) {
                 Log.w(TAG, "Was already registered: " + appToken);
@@ -779,9 +776,6 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
                 return;
             }
 
-            // Only the bluetooth app is allowed to create generic media control service
-            boolean isGenericMcs = appToken.equals(mContext.getPackageName());
-
             mEventLogger.logd(
                     TAG,
                     "Register MediaControlGattService instance ccid= "
@@ -789,11 +783,9 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
                             + ", features= "
                             + ServiceFeature.featuresToString(SUPPORTED_FEATURES));
 
-            MediaControlGattService svc = new MediaControlGattService(mMcpService, this, ccid);
-            svc.init(
-                    isGenericMcs
-                            ? BluetoothUuid.GENERIC_MEDIA_CONTROL.getUuid()
-                            : BluetoothUuid.MEDIA_CONTROL.getUuid());
+            MediaControlGattService svc =
+                    new MediaControlGattService(mAdapterService, mcpService, this, ccid);
+            svc.init(BluetoothUuid.GENERIC_MEDIA_CONTROL.getUuid());
             mServiceMap.put(appToken, svc);
         }
     }
@@ -805,7 +797,7 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
     public void cleanup() {
         mMediaPlayerList.cleanup();
 
-        unregisterServiceInstance(mContext.getPackageName());
+        unregisterServiceInstance(mAdapterService.getPackageName());
 
         // Shut down each registered service
         for (MediaControlGattServiceInterface svc : mServiceMap.values()) {
@@ -902,8 +894,7 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
         // TODO: Support multiple MCS instances
         if (isGenericMediaService(ccid)) {
             byte[] gmcs_cccd =
-                    AdapterService.getAdapterService()
-                            .getMetadata(device, BluetoothDevice.METADATA_GMCS_CCCD);
+                    mAdapterService.getMetadata(device, BluetoothDevice.METADATA_GMCS_CCCD);
             if ((gmcs_cccd != null) && (gmcs_cccd.length != 0)) {
                 return Arrays.asList(Utils.byteArrayToUuid(gmcs_cccd));
             }
@@ -917,8 +908,7 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
         if (!isGenericMediaService(ccid)) {
             return;
         }
-        AdapterService adapterService = AdapterService.getAdapterService();
-        byte[] gmcs_cccd = adapterService.getMetadata(device, BluetoothDevice.METADATA_GMCS_CCCD);
+        byte[] gmcs_cccd = mAdapterService.getMetadata(device, BluetoothDevice.METADATA_GMCS_CCCD);
         List<ParcelUuid> uuidList;
 
         if ((gmcs_cccd == null) || (gmcs_cccd.length == 0)) {
@@ -941,7 +931,7 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
         if (!updateDb) {
             return;
         }
-        if (!adapterService.setMetadata(
+        if (!mAdapterService.setMetadata(
                 device,
                 BluetoothDevice.METADATA_GMCS_CCCD,
                 Utils.uuidsToByteArray(uuidList.toArray(new ParcelUuid[0])))) {

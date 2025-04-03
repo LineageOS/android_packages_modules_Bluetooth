@@ -111,8 +111,8 @@ public class MediaPlayerListTest {
         // into the tests
         mMediaPlayerList =
                 new MediaPlayerList(
-                        Looper.myLooper(),
-                        InstrumentationRegistry.getInstrumentation().getTargetContext());
+                        InstrumentationRegistry.getInstrumentation().getTargetContext(),
+                        Looper.myLooper());
         mMediaPlayerList.init(mMediaUpdateCallback);
         mMediaPlayerList.setActivePlayer(mMediaPlayerList.addMediaPlayer(mMockController));
 

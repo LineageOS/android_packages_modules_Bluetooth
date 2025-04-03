@@ -83,12 +83,12 @@ public class HeadsetNativeInterface {
         return mAdapterService.getDeviceFromByte(address);
     }
 
-    private static byte[] getByteAddress(BluetoothDevice device) {
+    private byte[] getByteAddress(BluetoothDevice device) {
         if (device == null) {
             // Set bt_stack's active device to default if java layer set active device to null
             return Utils.getBytesFromAddress("00:00:00:00:00:00");
         }
-        return Utils.getByteBrEdrAddress(device);
+        return Utils.getByteBrEdrAddress(mAdapterService, device);
     }
 
     void onConnectionStateChanged(int state, byte[] address) {

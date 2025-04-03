@@ -122,7 +122,7 @@ public class HidDeviceNativeInterface {
      * @return the result of the native call
      */
     public boolean connect(BluetoothDevice device) {
-        return connectNative(Utils.getByteBrEdrAddress(device));
+        return connectNative(Utils.getByteBrEdrAddress(mAdapterService, device));
     }
 
     /**

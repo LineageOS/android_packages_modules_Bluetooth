@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.audio_util;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.NonNull;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -83,9 +85,10 @@ public class MediaPlayerList {
 
     private final Context mContext;
     private final Looper mLooper; // Thread all media player callbacks and timeouts happen on
+    private final AudioManager mAudioManager;
+
     private MediaSessionManager mMediaSessionManager;
     private MediaData mCurrMediaData = null;
-    private final AudioManager mAudioManager;
 
     private final BluetoothEventLogger mActivePlayerLogger =
             new BluetoothEventLogger(ACTIVE_PLAYER_LOGGER_SIZE, ACTIVE_PLAYER_LOGGER_TITLE);
@@ -132,11 +135,11 @@ public class MediaPlayerList {
         void onActivePlayerChanged(MediaPlayerWrapper player);
     }
 
-    public MediaPlayerList(Looper looper, Context context) {
+    public MediaPlayerList(@NonNull Context context, @NonNull Looper looper) {
         Log.v(TAG, "Creating MediaPlayerList");
 
-        mLooper = looper;
-        mContext = context;
+        mLooper = requireNonNull(looper);
+        mContext = requireNonNull(context);
 
         // Register for intents where available players might have changed
         IntentFilter pkgFilter = new IntentFilter();
@@ -146,14 +149,14 @@ public class MediaPlayerList {
         pkgFilter.addAction(Intent.ACTION_PACKAGE_ADDED);
         pkgFilter.addAction(Intent.ACTION_PACKAGE_CHANGED);
         pkgFilter.addDataScheme(PACKAGE_SCHEME);
-        context.registerReceiver(mPackageChangedBroadcastReceiver, pkgFilter);
+        mContext.registerReceiver(mPackageChangedBroadcastReceiver, pkgFilter);
 
-        mAudioManager = context.getSystemService(AudioManager.class);
+        mAudioManager = mContext.getSystemService(AudioManager.class);
         mAudioManager.registerAudioPlaybackCallback(mAudioPlaybackCallback, new Handler(mLooper));
 
-        mMediaSessionManager = context.getSystemService(MediaSessionManager.class);
+        mMediaSessionManager = mContext.getSystemService(MediaSessionManager.class);
         mMediaSessionManager.addOnActiveSessionsChangedListener(
-                mActiveSessionsChangedListener, null, new Handler(looper));
+                mActiveSessionsChangedListener, null, new Handler(mLooper));
         mMediaSessionManager.addOnMediaKeyEventSessionChangedListener(
                 mContext.getMainExecutor(), mMediaKeyEventSessionChangedListener);
     }
