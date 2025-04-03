@@ -358,11 +358,16 @@ fun BluetoothDevice.toConnection(transport: Int): Connection {
     return Connection.newBuilder().setCookie(cookie).build()
 }
 
-/** Creates Audio track instance and returns the reference. */
+/**
+ * Creates Audio track instance and returns the reference.
+ *
+ * @param audioUsage the audio usage to set for the AudioTrack. Defaults to USAGE_MEDIA.
+ */
 fun buildAudioTrack(
     sampleRate: Int = 44100,
     channelConfig: Int = AudioFormat.CHANNEL_OUT_STEREO,
     audioFormat: Int = AudioFormat.ENCODING_PCM_16BIT,
+    audioUsage: Int = AudioAttributes.USAGE_MEDIA,
 ): AudioTrack? {
     val minBufferSize = AudioTrack.getMinBufferSize(sampleRate, channelConfig, audioFormat)
     if (minBufferSize == AudioTrack.ERROR_BAD_VALUE || minBufferSize == AudioTrack.ERROR) {
@@ -374,7 +379,7 @@ fun buildAudioTrack(
     return AudioTrack.Builder()
         .setAudioAttributes(
             AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setUsage(audioUsage)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .build()
         )
