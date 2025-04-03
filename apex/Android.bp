@@ -16,39 +16,6 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-linker_config {
-    name: "btservices-linker-config",
-    src: "linker.config.json",
-    installable: false,
-}
-
-// Legacy Bluetooth apex prior to Baklava
-// This is kept for soong purposes but this apex doesn't do anything anymore
-// TODO b/383863941 delete
-apex {
-    enabled: false,
-    name: "com.android.btservices",
-    defaults: ["t-launched-apex-module"],
-    manifest: "apex_manifest.json",
-
-    key: "com.android.btservices.key",
-    certificate: ":com.android.btservices.certificate",
-    updatable: true,
-    compressible: false,
-    visibility: ["//packages/modules/common/build"],
-}
-
-apex_key {
-    name: "com.android.btservices.key",
-    public_key: "com.android.btservices.avbpubkey",
-    private_key: "com.android.btservices.pem",
-}
-
-android_app_certificate {
-    name: "com.android.btservices.certificate",
-    certificate: "com.android.btservices",
-}
-
 // Mainline bluetooth apex module.
 apex {
     name: "com.android.bt",
