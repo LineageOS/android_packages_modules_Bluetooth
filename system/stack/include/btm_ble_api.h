@@ -227,6 +227,21 @@ bool BTM_ReadConnectedTransportAddress(RawAddress* remote_bda, tBT_TRANSPORT tra
 
 /*******************************************************************************
  *
+ * Function         BTM_GetConnectedTransportAddress
+ *
+ *
+ * Description      This function gets the pseudo and identity address of the
+ *                  remote device
+ *
+ * Parameter        remote_bda: remote device address
+ *
+ * Return           pseudo and identity address pair of the remote device
+ *
+ ******************************************************************************/
+std::pair<RawAddress, RawAddress> BTM_GetConnectedTransportAddress(RawAddress remote_bda);
+
+/*******************************************************************************
+ *
  * Function         BTM_BleReceiverTest
  *
  * Description      This function is called to start the LE Receiver test

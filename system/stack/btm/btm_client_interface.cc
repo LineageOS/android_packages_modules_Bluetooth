@@ -40,6 +40,7 @@ struct btm_client_interface_t btm_client_interface = {
                 {
                         .BTM_IsAclConnectionUp = ::BTM_IsAclConnectionUp,
                         .BTM_ReadConnectedTransportAddress = ::BTM_ReadConnectedTransportAddress,
+                        .BTM_GetConnectedTransportAddress = ::BTM_GetConnectedTransportAddress,
                         .BTM_ReadRemoteFeatures = ::BTM_ReadRemoteFeatures,
                         .BTM_ReadDevInfo = ::BTM_ReadDevInfo,
                         .BTM_GetMaxPacketSize = ::BTM_GetMaxPacketSize,
