@@ -41,7 +41,6 @@ import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
-import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelUuid;
@@ -143,24 +142,23 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                     | Request.SupportedOpcodes.NEXT_TRACK
                     | Request.SupportedOpcodes.PREVIOUS_TRACK;
 
-    private final int mCcid;
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
     private final Map<String, Map<UUID, Short>> mCccDescriptorValues = new HashMap<>();
+    private final Map<Integer, BluetoothGattCharacteristic> mCharacteristics = new HashMap<>();
+    private final Map<BluetoothDevice, List<GattOpContext>> mPendingGattOperations =
+            new HashMap<>();
+
+    private final int mCcid;
+    private final AdapterService mAdapterService;
+    private final McpService mMcpService;
+    private final BluetoothEventLogger mEventLogger;
+
     private long mFeatures;
-    private final Context mContext;
     private MediaControlServiceCallbacks mCallbacks;
     private BluetoothGattServerProxy mBluetoothGattServer;
     private BluetoothGattService mGattService = null;
-    private final Handler mHandler = new Handler(Looper.getMainLooper());
-    private final Map<Integer, BluetoothGattCharacteristic> mCharacteristics = new HashMap<>();
     private MediaState mCurrentMediaState = MediaState.INACTIVE;
-    private final Map<BluetoothDevice, List<GattOpContext>> mPendingGattOperations =
-            new HashMap<>();
-    private McpService mMcpService;
     private LeAudioService mLeAudioService;
-    private final AdapterService mAdapterService;
-
-    private static final int LOG_NB_EVENTS = 200;
-    private final BluetoothEventLogger mEventLogger;
 
     private static String mcsUuidToString(UUID uuid) {
         if (uuid.equals(UUID_PLAYER_NAME)) {
@@ -1216,23 +1214,19 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     }
 
     protected MediaControlGattService(
-            McpService mcpService, @NonNull MediaControlServiceCallbacks callbacks, int ccid) {
-        mContext = mcpService;
-        mCallbacks = callbacks;
+            AdapterService adapterService,
+            McpService mcpService,
+            @NonNull MediaControlServiceCallbacks callbacks,
+            int ccid) {
+        mAdapterService = requireNonNull(adapterService);
+        mMcpService = requireNonNull(mcpService);
+        mCallbacks = requireNonNull(callbacks);
         mCcid = ccid;
 
-        mMcpService = mcpService;
-        mAdapterService =
-                requireNonNull(
-                        AdapterService.getAdapterService(),
-                        "AdapterService shouldn't be null when creating MediaControlCattService");
-
         mAdapterService.registerBluetoothStateCallback(
-                mContext.getMainExecutor(), mBluetoothStateChangeCallback);
+                mAdapterService.getMainExecutor(), mBluetoothStateChangeCallback);
 
-        mEventLogger =
-                new BluetoothEventLogger(
-                        LOG_NB_EVENTS, TAG + " instance (CCID= " + ccid + ") event log");
+        mEventLogger = new BluetoothEventLogger(200, TAG + " instance (CCID=" + ccid + "): ");
     }
 
     protected boolean init(UUID scvUuid) {
@@ -1366,11 +1360,6 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     }
 
     @VisibleForTesting
-    protected void setServiceManagerForTesting(McpService manager) {
-        mMcpService = manager;
-    }
-
-    @VisibleForTesting
     void setBluetoothGattServerForTesting(BluetoothGattServerProxy proxy) {
         mBluetoothGattServer = proxy;
     }
@@ -1385,8 +1374,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         mEventLogger.logd(TAG, "initGattService: uuid= " + serviceUuid);
 
         if (mBluetoothGattServer == null) {
-            BluetoothManager manager = mContext.getSystemService(BluetoothManager.class);
-            BluetoothGattServer server = manager.openGattServer(mContext, mServerCallback);
+            BluetoothManager manager = mAdapterService.getSystemService(BluetoothManager.class);
+            BluetoothGattServer server = manager.openGattServer(mAdapterService, mServerCallback);
             if (server == null) {
                 Log.e(TAG, "Failed to start BluetoothGattServer for MCP");
                 // TODO: This now effectively makes MCP unusable, but fixes tests

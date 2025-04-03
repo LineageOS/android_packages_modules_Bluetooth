@@ -7532,6 +7532,38 @@ public class BassClientServiceTest {
         resyncAndVerifyWithUnsync();
     }
 
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_ALLOW_MONITORING_ON_RESUME)
+    public void broadcastMonitoringOnResume_stopSourceReceivers() {
+        prepareSynchronizedPairAndStopSearching();
+
+        // Handover to unicast
+        mBassClientService.cacheSuspendingSources(TEST_BROADCAST_ID);
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
+
+        // injectSourceRemoval
+        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
+        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice1), TEST_SOURCE_ID + 1);
+
+        // Resume set BIG_MONITORING
+        mBassClientService.resumeReceiversSourceSynchronization();
+        mInOrderMethodProxy
+                .verify(mMethodProxy)
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
+
+        // Check if monitoring is stopped when timer fires with broadcast suspended by remove
+        checkAndDispatchTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+        // Sync should be stopped
+        mInOrderMethodProxy
+                .verify(mMethodProxy)
+                .periodicAdvertisingManagerUnregisterSync(any(), any());
+        checkNoResumeSynchronizationByBig();
+    }
+
     private void verifyConnectionStateIntent(BluetoothDevice device, int newState, int prevState) {
         verifyIntentSent(
                 hasAction(BluetoothLeBroadcastAssistant.ACTION_CONNECTION_STATE_CHANGED),

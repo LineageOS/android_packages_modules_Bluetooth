@@ -42,6 +42,7 @@ public:
   virtual void NextActivePreset(std::variant<RawAddress, int> addr_or_group_id) = 0;
   virtual void PreviousActivePreset(std::variant<RawAddress, int> addr_or_group_id) = 0;
   virtual void GetPresetInfo(const RawAddress& addr, uint8_t preset_index) = 0;
+  virtual void GetAllPresetInfo(const RawAddress& addr) = 0;
   virtual void SetPresetName(std::variant<RawAddress, int> addr_or_group_id, uint8_t preset_index,
                              std::string name) = 0;
 };

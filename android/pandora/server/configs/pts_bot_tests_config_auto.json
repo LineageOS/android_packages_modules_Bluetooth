@@ -167,6 +167,7 @@
     "TSPC_AVCTP_3_5": true,
     "TSPC_AVCTP_3_6": true,
     "TSPC_AVCTP_3_7": true,
+    "TSPC_HAP_17_1": false,
     "TSPC_HFP_0b_3": true,
     "TSPC_HFP_0d_1": true,
     "TSPC_HFP_1_2": true,
@@ -332,9 +333,7 @@
   },
   "ixit": {
     "default": {},
-    "4.0HCI": {},
     "A2DP": {},
-    "ATT": {},
     "AVCTP": {},
     "AVDTP": {},
     "AVRCP": {
@@ -345,7 +344,7 @@
     "GAP": {},
     "GATT": {},
     "GAVDP": {},
-    "HCI": {},
+    "HAP": {},
     "HFP": {
       "TSPX_phone_number": "42",
       "TSPX_second_phone_number": "43"
@@ -353,7 +352,6 @@
     "HID": {},
     "HOGP": {},
     "HSP": {},
-    "IOP": {},
     "L2CAP": {
       "TSPX_spsm": "0080",
       "TSPX_psm_authentication_required": "0080",
@@ -369,12 +367,12 @@
       "TSPX_security_enabled": "FALSE"
     },
     "SAP": {},
-    "SCPP": {},
     "SDP": {},
     "SM": {},
     "SPP": {},
     "VCP": {}
   },
+  "flags": [],
   "system_properties": [
     {
       "system_properties": {

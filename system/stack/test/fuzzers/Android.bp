@@ -64,6 +64,8 @@ cc_defaults {
         "libexpresslog",
         "libflags_rust_cpp_bridge",
         "libg722codec",
+        "libgmock",
+        "libgtest",
         "liblc3",
         "libopus",
         "libosi",

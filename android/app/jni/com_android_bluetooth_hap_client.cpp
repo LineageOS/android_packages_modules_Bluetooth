@@ -521,6 +521,24 @@ static void getPresetInfoNative(JNIEnv* env, jobject /* object */, jbyteArray ad
   env->ReleaseByteArrayElements(address, addr, 0);
 }
 
+static void getAllPresetInfoNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
+  std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
+  if (!sHasClientInterface) {
+    log::error("Failed to get the Bluetooth HAP Interface");
+    return;
+  }
+
+  jbyte* addr = env->GetByteArrayElements(address, nullptr);
+  if (!addr) {
+    jniThrowIOException(env, EINVAL);
+    return;
+  }
+
+  RawAddress* tmpraw = reinterpret_cast<RawAddress*>(addr);
+  sHasClientInterface->GetAllPresetInfo(*tmpraw);
+  env->ReleaseByteArrayElements(address, addr, 0);
+}
+
 static void setPresetNameNative(JNIEnv* env, jobject /* object */, jbyteArray address,
                                 jint preset_index, jstring name) {
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
@@ -583,6 +601,7 @@ int register_com_android_bluetooth_hap_client(JNIEnv* env) {
           {"groupPreviousActivePresetNative", "(I)V",
            reinterpret_cast<void*>(groupPreviousActivePresetNative)},
           {"getPresetInfoNative", "([BI)V", reinterpret_cast<void*>(getPresetInfoNative)},
+          {"getAllPresetInfoNative", "([B)V", reinterpret_cast<void*>(getAllPresetInfoNative)},
           {"setPresetNameNative", "([BILjava/lang/String;)V",
            reinterpret_cast<void*>(setPresetNameNative)},
           {"groupSetPresetNameNative", "(IILjava/lang/String;)V",
