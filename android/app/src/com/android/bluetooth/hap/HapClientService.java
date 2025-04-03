@@ -594,9 +594,7 @@ public class HapClientService extends ProfileService {
         if (presetIndex == BluetoothHapClient.PRESET_INDEX_UNAVAILABLE) return defaultValue;
 
         if (Utils.isPtsTestMode()) {
-            /* We want native to be called for PTS testing even we have all
-             * the data in the cache here
-             */
+            // Force sending over the air command. Returned result is not affected.
             mNativeInterface.getPresetInfo(device, presetIndex);
         }
         List<BluetoothHapPresetInfo> current_presets = mPresetsMap.get(device);
@@ -612,6 +610,10 @@ public class HapClientService extends ProfileService {
     }
 
     List<BluetoothHapPresetInfo> getAllPresetInfo(BluetoothDevice device) {
+        if (Utils.isPtsTestMode()) {
+            // Force sending over the air command. Returned result is not affected.
+            mNativeInterface.getAllPresetInfo(device);
+        }
         if (mPresetsMap.containsKey(device)) {
             return mPresetsMap.get(device);
         }
