@@ -16,6 +16,7 @@ sysprop_library {
         "hardware.sysprop",
         "hci.sysprop",
         "hfp.sysprop",
+        "le_audio.sysprop",
     ],
     property_owner: "Platform",
     api_packages: ["android.sysprop"],
