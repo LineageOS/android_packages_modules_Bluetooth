@@ -19,6 +19,7 @@ package com.android.bluetooth.btservice.storage;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+import static android.bluetooth.BluetoothProfile.HEADSET;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
@@ -45,6 +46,8 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.platform.test.annotations.DisableFlags;
+import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.room.Room;
@@ -53,7 +56,6 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
@@ -67,6 +69,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.stubbing.Answer;
 
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
+import platform.test.runner.parameterized.Parameters;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -75,11 +80,27 @@ import java.util.concurrent.TimeUnit;
 
 /** Test cases for {@link DatabaseManager}. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
+@RunWith(ParameterizedAndroidJunit4.class)
 public final class DatabaseManagerTest {
+    @Rule public final SetFlagsRule mSetFlagsRule;
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Rule
+    public MigrationTestHelper testHelper =
+            new MigrationTestHelper(
+                    InstrumentationRegistry.getInstrumentation(),
+                    MetadataDatabase.class.getCanonicalName(),
+                    new FrameworkSQLiteOpenHelperFactory());
+
     @Mock private AdapterService mAdapterService;
+
+    private static final String LOCAL_STORAGE = "LocalStorage";
+    private static final String TEST_STRING = "Test String";
+    private static final String DB_NAME = "test_db";
+    private static final int A2DP_SUPPORT_OP_CODEC_TEST = 0;
+    private static final int A2DP_ENABLED_OP_CODEC_TEST = 1;
+    private static final int MAX_META_ID = 16;
+    private static final byte[] TEST_BYTE_ARRAY = "TEST_VALUE".getBytes();
 
     private final BluetoothDevice mDevice = getTestDevice(54);
     private final BluetoothDevice mDevice2 = getTestDevice(55);
@@ -90,27 +111,17 @@ public final class DatabaseManagerTest {
     private MetadataDatabase mDatabase;
     private DatabaseManager mDatabaseManager;
 
-    private static final String LOCAL_STORAGE = "LocalStorage";
-    private static final String TEST_STRING = "Test String";
-    private static final String DB_NAME = "test_db";
-    private static final int A2DP_SUPPORT_OP_CODEC_TEST = 0;
-    private static final int A2DP_ENABLED_OP_CODEC_TEST = 1;
-    private static final int MAX_META_ID = 16;
-    private static final byte[] TEST_BYTE_ARRAY = "TEST_VALUE".getBytes();
+    @Parameters(name = "{0}")
+    public static List<FlagsParameterization> getParams() {
+        return FlagsParameterization.allCombinationsOf(Flags.FLAG_FACTORY_RESET_AT_BLUETOOTH_START);
+    }
 
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
-
-    @Rule
-    public MigrationTestHelper testHelper =
-            new MigrationTestHelper(
-                    InstrumentationRegistry.getInstrumentation(),
-                    MetadataDatabase.class.getCanonicalName(),
-                    new FrameworkSQLiteOpenHelperFactory());
+    public DatabaseManagerTest(FlagsParameterization flags) {
+        mSetFlagsRule = new SetFlagsRule(flags);
+    }
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.setAdapterService(mAdapterService);
-
         // Create a memory database for DatabaseManager instead of use a real database.
         mDatabase =
                 Room.inMemoryDatabaseBuilder(
@@ -135,7 +146,6 @@ public final class DatabaseManagerTest {
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.clearAdapterService(mAdapterService);
         mDatabase.deleteAll();
         mDatabaseManager.cleanup();
     }
@@ -161,35 +171,95 @@ public final class DatabaseManagerTest {
             assertThat(mDatabaseManager.getCustomMeta(mDevice, id)).isNull();
         }
 
+        if (Flags.factoryResetAtBluetoothStart()) {
+            return;
+        }
+
         mDatabaseManager.factoryReset();
         mDatabaseManager.mMetadataCache.clear();
         // Wait for clear database
         TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
     }
 
+    private boolean setConnectionPolicy(int newConnectionPolicy) {
+        return mDatabaseManager.setProfileConnectionPolicy(mDevice, HEADSET, newConnectionPolicy);
+    }
+
+    private int getConnectionPolicy() {
+        return mDatabaseManager.getProfileConnectionPolicy(mDevice, HEADSET);
+    }
+
     @Test
-    public void testSetGetProfileConnectionPolicy() {
-        int badConnectionPolicy = -100;
+    public void setInvalidPolicy_onNewDevice_canNotSet() {
+        assertThat(setConnectionPolicy(-100)).isFalse();
+        assertThat(getConnectionPolicy()).isEqualTo(CONNECTION_POLICY_UNKNOWN);
+        TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
 
-        // Cases of device not in database
-        testSetGetProfileConnectionPolicyCase(
-                false, CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_UNKNOWN, true);
-        testSetGetProfileConnectionPolicyCase(
-                false, CONNECTION_POLICY_FORBIDDEN, CONNECTION_POLICY_FORBIDDEN, true);
-        testSetGetProfileConnectionPolicyCase(
-                false, CONNECTION_POLICY_ALLOWED, CONNECTION_POLICY_ALLOWED, true);
-        testSetGetProfileConnectionPolicyCase(
-                false, badConnectionPolicy, CONNECTION_POLICY_UNKNOWN, false);
+        assertThat(mDatabase.load()).isEmpty(); // No device entry in the database
+    }
 
-        // Cases of device already in database
-        testSetGetProfileConnectionPolicyCase(
-                true, CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_UNKNOWN, true);
-        testSetGetProfileConnectionPolicyCase(
-                true, CONNECTION_POLICY_FORBIDDEN, CONNECTION_POLICY_FORBIDDEN, true);
-        testSetGetProfileConnectionPolicyCase(
-                true, CONNECTION_POLICY_ALLOWED, CONNECTION_POLICY_ALLOWED, true);
-        testSetGetProfileConnectionPolicyCase(
-                true, badConnectionPolicy, CONNECTION_POLICY_UNKNOWN, false);
+    @Test
+    public void setUnknownPolicy_onNewDevice_canSet() {
+        assertThat(setConnectionPolicy(CONNECTION_POLICY_UNKNOWN)).isTrue();
+        assertThat(getConnectionPolicy()).isEqualTo(CONNECTION_POLICY_UNKNOWN);
+        TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
+
+        assertThat(mDatabase.load()).isEmpty(); // No device entry in the database
+    }
+
+    @Test
+    public void setValidPolicy_onNewDevice_canSet() {
+        for (int policy : List.of(CONNECTION_POLICY_FORBIDDEN, CONNECTION_POLICY_ALLOWED)) {
+            assertThat(setConnectionPolicy(policy)).isTrue();
+            assertThat(getConnectionPolicy()).isEqualTo(policy);
+            TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
+
+            assertThat(mDatabase.load()).hasSize(1);
+
+            // Check whether the device is in database
+            restartDatabaseManagerHelper();
+            assertThat(getConnectionPolicy()).isEqualTo(policy);
+        }
+    }
+
+    @Test
+    public void setInvalidPolicy_onKnownDevice_canNotSet() {
+        Metadata data = new Metadata(mDevice.getAddress());
+        mDatabaseManager.mMetadataCache.put(mDevice.getAddress(), data);
+        mDatabase.insert(data);
+
+        assertThat(setConnectionPolicy(-100)).isFalse();
+        assertThat(getConnectionPolicy()).isEqualTo(CONNECTION_POLICY_UNKNOWN);
+        TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
+
+        assertThat(mDatabase.load()).hasSize(1);
+
+        // Check whether the device is in database
+        restartDatabaseManagerHelper();
+        assertThat(getConnectionPolicy()).isEqualTo(CONNECTION_POLICY_UNKNOWN);
+    }
+
+    @Test
+    public void setValidPolicy_onKnownDevice_canSet() {
+        Metadata data = new Metadata(mDevice.getAddress());
+        mDatabaseManager.mMetadataCache.put(mDevice.getAddress(), data);
+        mDatabase.insert(data);
+
+        for (int policy :
+                List.of(
+                        CONNECTION_POLICY_UNKNOWN,
+                        CONNECTION_POLICY_FORBIDDEN,
+                        CONNECTION_POLICY_ALLOWED)) {
+            assertThat(setConnectionPolicy(policy)).isTrue();
+            assertThat(getConnectionPolicy()).isEqualTo(policy);
+            TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
+
+            assertThat(mDatabase.load()).hasSize(1);
+
+            // Check whether the device is in database
+            restartDatabaseManagerHelper();
+            assertThat(getConnectionPolicy()).isEqualTo(policy);
+        }
     }
 
     @Test
@@ -320,6 +390,10 @@ public final class DatabaseManagerTest {
         Metadata checkData = list.get(0);
         assertThat(checkData.getAddress()).isEqualTo(mDevice.getAddress());
 
+        if (Flags.factoryResetAtBluetoothStart()) {
+            return;
+        }
+
         mDatabaseManager.factoryReset();
         mDatabaseManager.mMetadataCache.clear();
         // Wait for clear database
@@ -369,6 +443,10 @@ public final class DatabaseManagerTest {
         assertThat(checkData1.getAddress()).isEqualTo(mDevice5.getAddress());
         Metadata checkData2 = list.get(1);
         assertThat(checkData2.getAddress()).isEqualTo(mDevice4.getAddress());
+
+        if (Flags.factoryResetAtBluetoothStart()) {
+            return;
+        }
 
         mDatabaseManager.factoryReset();
         mDatabaseManager.mMetadataCache.clear();
@@ -493,8 +571,8 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE)
     public void testSetConnectionHeadset() {
-        mSetFlagsRule.disableFlags(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE);
         // Verify pre-conditions to ensure a fresh test
         assertThat(mDatabaseManager.mMetadataCache).isEmpty();
         assertThat(mDevice).isNotNull();
@@ -538,6 +616,10 @@ public final class DatabaseManagerTest {
                 .containsExactly(mDevice2, mDevice)
                 .inOrder();
 
+        if (Flags.factoryResetAtBluetoothStart()) {
+            return;
+        }
+
         mDatabaseManager.factoryReset();
         mDatabaseManager.mMetadataCache.clear();
         // Wait for clear database
@@ -545,8 +627,8 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE)
     public void testSetConnection() {
-        mSetFlagsRule.disableFlags(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE);
         // Verify pre-conditions to ensure a fresh test
         assertThat(mDatabaseManager.mMetadataCache).isEmpty();
         assertThat(mDevice).isNotNull();
@@ -701,6 +783,10 @@ public final class DatabaseManagerTest {
         assertThat(mostRecentlyConnectedDevicesOrdered)
                 .containsExactly(mDevice3, mDevice, mDevice2)
                 .inOrder();
+
+        if (Flags.factoryResetAtBluetoothStart()) {
+            return;
+        }
 
         mDatabaseManager.factoryReset();
         mDatabaseManager.mMetadataCache.clear();
@@ -1677,49 +1763,6 @@ public final class DatabaseManagerTest {
         TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
     }
 
-    void testSetGetProfileConnectionPolicyCase(
-            boolean stored,
-            int connectionPolicy,
-            int expectedConnectionPolicy,
-            boolean expectedSetResult) {
-        if (stored) {
-            Metadata data = new Metadata(mDevice.getAddress());
-            mDatabaseManager.mMetadataCache.put(mDevice.getAddress(), data);
-            mDatabase.insert(data);
-        }
-        assertThat(
-                        mDatabaseManager.setProfileConnectionPolicy(
-                                mDevice, BluetoothProfile.HEADSET, connectionPolicy))
-                .isEqualTo(expectedSetResult);
-        assertThat(mDatabaseManager.getProfileConnectionPolicy(mDevice, BluetoothProfile.HEADSET))
-                .isEqualTo(expectedConnectionPolicy);
-        // Wait for database update
-        TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
-
-        List<Metadata> list = mDatabase.load();
-
-        // Check number of metadata in the database
-        if (!stored) {
-            if (connectionPolicy != CONNECTION_POLICY_FORBIDDEN
-                    && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
-                // Database won't be updated
-                assertThat(list).isEmpty();
-                return;
-            }
-        }
-        assertThat(list).hasSize(1);
-
-        // Check whether the device is in database
-        restartDatabaseManagerHelper();
-        assertThat(mDatabaseManager.getProfileConnectionPolicy(mDevice, BluetoothProfile.HEADSET))
-                .isEqualTo(expectedConnectionPolicy);
-
-        mDatabaseManager.factoryReset();
-        mDatabaseManager.mMetadataCache.clear();
-        // Wait for clear database
-        TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
-    }
-
     void testSetGetA2dpOptionalCodecsCase(int test, boolean stored, int value, int expectedValue) {
         if (stored) {
             Metadata data = new Metadata(mDevice.getAddress());
@@ -1758,6 +1801,10 @@ public final class DatabaseManagerTest {
                     .isEqualTo(expectedValue);
         }
 
+        if (Flags.factoryResetAtBluetoothStart()) {
+            return;
+        }
+
         mDatabaseManager.factoryReset();
         mDatabaseManager.mMetadataCache.clear();
         // Wait for clear database
@@ -1792,6 +1839,10 @@ public final class DatabaseManagerTest {
         restartDatabaseManagerHelper();
         assertThat(mDatabaseManager.getCustomMeta(mDevice, key)).isEqualTo(value);
 
+        if (Flags.factoryResetAtBluetoothStart()) {
+            return;
+        }
+
         mDatabaseManager.factoryReset();
         mDatabaseManager.mMetadataCache.clear();
         // Wait for clear database
@@ -1823,6 +1874,10 @@ public final class DatabaseManagerTest {
         // Check whether the value is saved in database
         restartDatabaseManagerHelper();
         assertThat(mDatabaseManager.getAudioPolicyMetadata(mDevice)).isEqualTo(policy);
+
+        if (Flags.factoryResetAtBluetoothStart()) {
+            return;
+        }
 
         mDatabaseManager.factoryReset();
         mDatabaseManager.mMetadataCache.clear();
@@ -1888,6 +1943,10 @@ public final class DatabaseManagerTest {
         assertThat(testDevice2Preferences.getInt(BluetoothAdapter.AUDIO_MODE_OUTPUT_ONLY))
                 .isEqualTo(0);
         assertThat(testDevice2Preferences.getInt(BluetoothAdapter.AUDIO_MODE_DUPLEX)).isEqualTo(0);
+
+        if (Flags.factoryResetAtBluetoothStart()) {
+            return;
+        }
 
         mDatabaseManager.factoryReset();
         mDatabaseManager.mMetadataCache.clear();
