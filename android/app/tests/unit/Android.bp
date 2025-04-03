@@ -19,6 +19,7 @@ java_defaults {
 
     static_libs: [
         "PlatformProperties",
+        "TestParameterInjector",
         "androidx.media_media",
         "androidx.room_room-migration",
         "androidx.room_room-runtime",
