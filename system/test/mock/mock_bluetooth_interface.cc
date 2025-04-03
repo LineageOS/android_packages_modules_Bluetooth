@@ -74,15 +74,9 @@ static void shut_down_stack_async(ProfileStopCallback /* stopProfiles */) {}
 
 static void clean_up_stack(ProfileStopCallback /* stopProfiles */) {}
 
-static void start_up_rust_module_async(std::promise<void> /* promise */) {}
-
-static void shut_down_rust_module_async() {}
-
 static bool get_stack_is_running() { return true; }
 
-static const stack_manager_t interface = {
-        init_stack,          start_up_stack_async,       shut_down_stack_async,
-        clean_up_stack,      start_up_rust_module_async, shut_down_rust_module_async,
-        get_stack_is_running};
+static const stack_manager_t interface = {init_stack, start_up_stack_async, shut_down_stack_async,
+                                          clean_up_stack, get_stack_is_running};
 
 const stack_manager_t* stack_manager_get_interface() { return &interface; }

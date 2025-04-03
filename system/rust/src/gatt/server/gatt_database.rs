@@ -485,24 +485,6 @@ impl Clone for AttDatabaseImpl {
     }
 }
 
-impl AttDatabaseImpl {
-    /// When the bearer owning this AttDatabase is invalidated,
-    /// we must notify the listeners tied to our GattDatabase.
-    ///
-    /// Note: AttDatabases referring to the backing GattDatabase
-    /// may still exist after bearer invalidation, but the bearer will
-    /// no longer exist (so packets can no longer be sent/received).
-    pub fn on_bearer_dropped(&self) {
-        self.gatt_db.with(|db| {
-            db.map(|db| {
-                for listener in db.listeners.borrow().iter() {
-                    listener.on_le_disconnect(self.tcb_idx)
-                }
-            })
-        });
-    }
-}
-
 #[cfg(test)]
 mod test {
     use tokio::join;

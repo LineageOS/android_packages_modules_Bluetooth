@@ -19,7 +19,8 @@ impl ConnectionId {
     }
 
     /// Extract the ServerId from a ConnectionId (lower 8 bits)
-    pub fn get_server_id(&self) -> ServerId {
+    // NOTE: Currently unused.
+    pub fn _get_server_id(&self) -> ServerId {
         ServerId((self.0 & (u8::MAX as u16)) as u8)
     }
 }
@@ -46,9 +47,9 @@ pub struct AttHandle(pub u16);
 
 impl AttHandle {
     /// The (only) reserved AttHandle
-    pub const RESERVED: Self = AttHandle(0);
+    pub const _RESERVED: Self = AttHandle(0);
     /// The smallest valid AttHandle
-    pub const MIN: Self = AttHandle(1);
+    pub const _MIN: Self = AttHandle(1);
     /// The largest valid AttHandle
-    pub const MAX: Self = AttHandle(0xFFFF);
+    pub const _MAX: Self = AttHandle(0xFFFF);
 }

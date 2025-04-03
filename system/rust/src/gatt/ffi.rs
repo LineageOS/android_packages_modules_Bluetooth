@@ -1,29 +1,35 @@
 //! FFI interfaces for the GATT module. Some structs are exported so that
 //! core::init can instantiate and pass them into the main loop.
 
-use pdl_runtime::{EncodeError, Packet};
-use std::iter::Peekable;
-
-use anyhow::{bail, Result};
-use cxx::UniquePtr;
-pub use inner::*;
-use log::{error, info, trace, warn};
-use tokio::task::spawn_local;
-
 use crate::packets::att::{self, AttErrorCode};
-use crate::{do_in_rust_thread, RustModuleRunner};
 
-use super::callbacks::{GattWriteRequestType, GattWriteType, TransactionDecision};
+use super::arbiter::RegisteredArbiter;
+use super::callbacks::{CallbackTransactionManager, GattCallbacks, GattCallbacksImpl};
 use super::channel::AttTransport;
 use super::ids::{AdvertiserId, AttHandle, ConnectionId, ServerId, TransactionId, TransportIndex};
 use super::server::gatt_database::{
     AttPermissions, GattCharacteristicWithHandle, GattDescriptorWithHandle, GattServiceWithHandle,
 };
-use super::server::IndicationError;
-use super::GattCallbacks;
+use super::server::isolation_manager::IsolationManager;
+use super::server::GattModule;
+
+use pdl_runtime::{EncodeError, Packet};
+use std::iter::Peekable;
+use std::rc::Rc;
+use std::sync::{Arc, Mutex};
+
+use anyhow::{bail, Result};
+use cxx::UniquePtr;
+use log::{error, info, trace, warn};
+use tokio::runtime::Builder;
+use tokio::sync::mpsc;
+use tokio::task::{spawn_local, LocalSet};
+
+pub use inner::*;
 
 #[cxx::bridge]
 #[allow(clippy::needless_lifetimes)]
+#[allow(clippy::needless_maybe_sized)]
 #[allow(clippy::too_many_arguments)]
 #[allow(missing_docs)]
 #[allow(unsafe_op_in_unsafe_fn)]
@@ -123,116 +129,84 @@ mod inner {
 
     #[namespace = "bluetooth::shim::arbiter"]
     unsafe extern "C++" {
+        type AclArbiter = crate::gatt::arbiter::ffi::AclArbiter;
+
         /// Send an outgoing packet on the specified tcb_idx
         fn SendPacketToPeer(tcb_idx: u8, packet: Vec<u8>);
     }
 
     #[namespace = "bluetooth::gatt"]
     extern "Rust" {
+        include!("stack/arbiter/acl_arbiter.h");
+
+        type PrivateGattServerManager;
+
+        #[cxx_name = "NewPrivateGattServerManager"]
+        fn new_private_gatt_server_manager(
+            gatt_server_callbacks: UniquePtr<GattServerCallbacks>,
+            acl_arbiter: &'static AclArbiter,
+        ) -> Box<PrivateGattServerManager>;
+
         // service management
-        fn open_server(server_id: u8);
-        fn close_server(server_id: u8);
-        fn add_service(server_id: u8, service_records: Vec<GattRecord>);
-        fn remove_service(server_id: u8, service_handle: u16);
+        #[cxx_name = "OpenServer"]
+        fn open_server(self: &PrivateGattServerManager, server_id: u8);
+
+        #[cxx_name = "CloseServer"]
+        fn close_server(self: &PrivateGattServerManager, server_id: u8);
+
+        #[cxx_name = "AddService"]
+        fn add_service(
+            self: &PrivateGattServerManager,
+            server_id: u8,
+            service_records: Vec<GattRecord>,
+        );
+
+        #[cxx_name = "RemoveService"]
+        fn remove_service(self: &PrivateGattServerManager, server_id: u8, service_handle: u16);
 
         // att operations
-        fn send_response(server_id: u8, conn_id: u16, trans_id: u32, status: u8, value: &[u8]);
-        fn send_indication(_server_id: u8, handle: u16, conn_id: u16, value: &[u8]);
+        #[cxx_name = "SendResponse"]
+        fn send_response(
+            self: &PrivateGattServerManager,
+            server_id: u8,
+            conn_id: u16,
+            trans_id: u32,
+            status: u8,
+            value: &[u8],
+        );
+
+        #[cxx_name = "SendIndication"]
+        fn send_indication(
+            self: &PrivateGattServerManager,
+            _server_id: u8,
+            handle: u16,
+            conn_id: u16,
+            value: &[u8],
+        );
 
         // connection
-        fn is_connection_isolated(conn_id: u16) -> bool;
+        #[cxx_name = "IsConnectionIsolated"]
+        fn is_connection_isolated(self: &PrivateGattServerManager, conn_id: u16) -> bool;
 
         // arbitration
-        fn associate_server_with_advertiser(server_id: u8, advertiser_id: u8);
-        fn clear_advertiser(advertiser_id: u8);
+        #[cxx_name = "AssociateServerWithAdvertiser"]
+        fn associate_server_with_advertiser(
+            self: &PrivateGattServerManager,
+            server_id: u8,
+            advertiser_id: u8,
+        );
+
+        #[cxx_name = "ClearAdvertiser"]
+        fn clear_advertiser(self: &PrivateGattServerManager, advertiser_id: u8);
     }
 }
 
-/// Implementation of GattCallbacks wrapping the corresponding C++ methods
-pub struct GattCallbacksImpl(pub UniquePtr<GattServerCallbacks>);
-
-impl GattCallbacks for GattCallbacksImpl {
-    fn on_server_read(
-        &self,
-        conn_id: ConnectionId,
-        trans_id: TransactionId,
-        handle: AttHandle,
-        attr_type: AttributeBackingType,
-        offset: u32,
-    ) {
-        trace!("on_server_read ({conn_id:?}, {trans_id:?}, {handle:?}, {attr_type:?}, {offset:?}");
-        self.0.as_ref().unwrap().on_server_read(
-            conn_id.0,
-            trans_id.0,
-            handle.0,
-            attr_type,
-            offset,
-            offset != 0,
-        );
-    }
-
-    fn on_server_write(
-        &self,
-        conn_id: ConnectionId,
-        trans_id: TransactionId,
-        handle: AttHandle,
-        attr_type: AttributeBackingType,
-        write_type: GattWriteType,
-        value: &[u8],
-    ) {
-        trace!(
-            "on_server_write ({conn_id:?}, {trans_id:?}, {handle:?}, {attr_type:?}, {write_type:?}"
-        );
-        self.0.as_ref().unwrap().on_server_write(
-            conn_id.0,
-            trans_id.0,
-            handle.0,
-            attr_type,
-            match write_type {
-                GattWriteType::Request(GattWriteRequestType::Prepare { offset }) => offset,
-                _ => 0,
-            },
-            matches!(write_type, GattWriteType::Request { .. }),
-            matches!(write_type, GattWriteType::Request(GattWriteRequestType::Prepare { .. })),
-            value,
-        );
-    }
-
-    fn on_indication_sent_confirmation(
-        &self,
-        conn_id: ConnectionId,
-        result: Result<(), IndicationError>,
-    ) {
-        trace!("on_indication_sent_confirmation ({conn_id:?}, {result:?}");
-        self.0.as_ref().unwrap().on_indication_sent_confirmation(
-            conn_id.0,
-            match result {
-                Ok(()) => 0, // GATT_SUCCESS
-                _ => 133,    // GATT_ERROR
-            },
-        )
-    }
-
-    fn on_execute(
-        &self,
-        conn_id: ConnectionId,
-        trans_id: TransactionId,
-        decision: TransactionDecision,
-    ) {
-        trace!("on_execute ({conn_id:?}, {trans_id:?}, {decision:?}");
-        self.0.as_ref().unwrap().on_execute(
-            conn_id.0,
-            trans_id.0,
-            match decision {
-                TransactionDecision::Execute => true,
-                TransactionDecision::Cancel => false,
-            },
-        )
-    }
-}
+// SAFETY: Safe because it is just a wrapper (implemented in C++) around a reference to the C++
+// callbacks, and it is safe to call any of the callbacks from any thread.
+unsafe impl Send for GattServerCallbacks {}
 
 /// Implementation of AttTransport wrapping the corresponding C++ method
-pub struct AttTransportImpl();
+struct AttTransportImpl();
 
 impl AttTransport for AttTransportImpl {
     fn send_packet(&self, tcb_idx: TransportIndex, packet: att::Att) -> Result<(), EncodeError> {
@@ -241,31 +215,259 @@ impl AttTransport for AttTransportImpl {
     }
 }
 
-fn open_server(server_id: u8) {
-    let server_id = ServerId(server_id);
+/// The ModuleViews lets us access all publicly accessible Rust modules from
+/// Java / C++ while the stack is running. If a module should not be exposed
+/// outside of Rust GD, there is no need to include it here.
+pub struct ModuleViews<'a> {
+    /// Lets us call out into C++
+    pub gatt_outgoing_callbacks: Rc<dyn GattCallbacks>,
+    /// Receives synchronous callbacks from JNI
+    pub gatt_incoming_callbacks: Rc<CallbackTransactionManager>,
+    /// Proxies calls into GATT server
+    pub gatt_module: &'a mut GattModule,
+}
 
-    do_in_rust_thread(move |modules| {
-        if false {
-            // Enable to always use private GATT for debugging
+type BoxedMainThreadCallback = Box<dyn for<'a> FnOnce(&'a mut ModuleViews) + Send + 'static>;
+
+/// Handler is used to handle requests that require access ModuleViews.  It is clonable.
+#[derive(Clone)]
+pub(super) struct Handler(mpsc::UnboundedSender<Option<BoxedMainThreadCallback>>);
+
+impl Handler {
+    /// Posts `f` to be executed on a thread with exclusive acecss to a `ModuleViews` instance.
+    pub fn handle<F>(&self, f: F)
+    where
+        F: for<'a> FnOnce(&'a mut ModuleViews) + Send + 'static,
+    {
+        self.0.send(Some(Box::new(f))).unwrap();
+    }
+}
+
+/// PrivateGattServerManager is the top-level object that manages private Gatt servers.
+pub struct PrivateGattServerManager {
+    handler: Handler,
+    thread: Option<std::thread::JoinHandle<()>>,
+    arbiter: RegisteredArbiter,
+}
+
+/// This is the main entry point.  `callbacks` holds the necessary callbacks that are used to notify
+/// users of various events.  `acl_arbiter` is used to register our arbiter which allows us to
+/// intercept incoming data and connections.
+pub fn new_private_gatt_server_manager(
+    callbacks: UniquePtr<GattServerCallbacks>,
+    acl_arbiter: &'static AclArbiter,
+) -> Box<PrivateGattServerManager> {
+    crate::utils::init_logging();
+
+    let (tx, rx) = mpsc::unbounded_channel();
+    let handler = Handler(tx);
+    let arbiter = RegisteredArbiter::new(acl_arbiter, handler.clone());
+    let isolation_manager = Arc::clone(arbiter.isolation_manager());
+    let thread = std::thread::spawn(move || {
+        PrivateGattServerManager::run(Rc::new(GattCallbacksImpl(callbacks)), rx, isolation_manager)
+    });
+    Box::new(PrivateGattServerManager { handler, thread: Some(thread), arbiter })
+}
+
+impl PrivateGattServerManager {
+    /// Runs a thread that allows operations to gain exclusive access to an instance of
+    /// `ModuleViews`.
+    fn run(
+        gatt_callbacks: Rc<GattCallbacksImpl>,
+        mut rx: mpsc::UnboundedReceiver<Option<BoxedMainThreadCallback>>,
+        isolation_manager: Arc<Mutex<IsolationManager>>,
+    ) {
+        let rt = Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("failed to start tokio runtime");
+        let local = LocalSet::new();
+
+        // Now enter the runtime
+        local.block_on(&rt, async move {
+            // Then follow the pure-Rust modules
+            let gatt_incoming_callbacks =
+                Rc::new(CallbackTransactionManager::new(gatt_callbacks.clone()));
+            let gatt_module = &mut GattModule::new(Rc::new(AttTransportImpl()), isolation_manager);
+
+            // All modules that are visible from incoming JNI / top-level interfaces should
+            // be exposed here
+            let mut modules = ModuleViews {
+                gatt_outgoing_callbacks: gatt_callbacks,
+                gatt_incoming_callbacks,
+                gatt_module,
+            };
+
+            // This is the core event loop that serializes incoming requests.
+            info!("starting event loop");
+            while let Some(Some(f)) = rx.recv().await {
+                f(&mut modules);
+            }
+        });
+
+        info!("PrivateGattServerManager thread stopped");
+    }
+
+    pub fn open_server(&self, server_id: u8) {
+        let server_id = ServerId(server_id);
+
+        self.handler.handle(move |modules| {
+            if false {
+                // Enable to always use private GATT for debugging
+                modules
+                    .gatt_module
+                    .get_isolation_manager()
+                    .associate_server_with_advertiser(server_id, AdvertiserId(0))
+            }
+            if let Err(err) = modules.gatt_module.open_gatt_server(server_id) {
+                error!("{err:?}")
+            }
+        })
+    }
+
+    pub fn close_server(&self, server_id: u8) {
+        let server_id = ServerId(server_id);
+
+        self.handler.handle(move |modules| {
+            if let Err(err) = modules.gatt_module.close_gatt_server(server_id) {
+                error!("{err:?}")
+            }
+        })
+    }
+
+    pub fn add_service(&self, server_id: u8, service_records: Vec<GattRecord>) {
+        // marshal into the form expected by GattModule
+        let server_id = ServerId(server_id);
+
+        match records_to_service(&service_records) {
+            Ok(service) => {
+                let handle = service.handle;
+                self.handler.handle(move |modules| {
+                    let ok = modules.gatt_module.register_gatt_service(
+                        server_id,
+                        service.clone(),
+                        modules.gatt_incoming_callbacks.get_datastore(server_id),
+                    );
+                    match ok {
+                        Ok(_) => info!(
+                            "successfully registered service for server {server_id:?} with handle \
+                             {handle:?} (service={service:?})"
+                        ),
+                        Err(err) => error!(
+                            "failed to register GATT service for server {server_id:?} with error: \
+                             {err},  (service={service:?})"
+                        ),
+                    }
+                });
+            }
+            Err(err) => {
+                error!("failed to register service for server {server_id:?}, err: {err:?}")
+            }
+        }
+    }
+
+    pub fn remove_service(&self, server_id: u8, service_handle: u16) {
+        let server_id = ServerId(server_id);
+        let service_handle = AttHandle(service_handle);
+        self.handler.handle(move |modules| {
+            let ok = modules.gatt_module.unregister_gatt_service(server_id, service_handle);
+            match ok {
+                Ok(_) => info!(
+                    "successfully removed service {service_handle:?} for server {server_id:?}"
+                ),
+                Err(err) => error!(
+                    "failed to remove GATT service {service_handle:?} for server {server_id:?} \
+                     with error: {err}"
+                ),
+            }
+        })
+    }
+
+    pub fn send_response(
+        &self,
+        _server_id: u8,
+        conn_id: u16,
+        trans_id: u32,
+        status: u8,
+        value: &[u8],
+    ) {
+        // TODO(aryarahul): fixup error codes to allow app-specific values (i.e. don't
+        // make it an enum in PDL)
+        let value = if status == 0 {
+            Ok(value.to_vec())
+        } else {
+            Err(AttErrorCode::try_from(status).unwrap_or(AttErrorCode::UnlikelyError))
+        };
+
+        trace!("send_response {conn_id:?}, {trans_id:?}, {:?}", value.as_ref().err());
+
+        self.handler.handle(move |modules| {
+            match modules.gatt_incoming_callbacks.send_response(
+                ConnectionId(conn_id),
+                TransactionId(trans_id),
+                value,
+            ) {
+                Ok(()) => { /* no-op */ }
+                Err(err) => warn!("{err:?}"),
+            }
+        })
+    }
+
+    pub fn send_indication(&self, _server_id: u8, handle: u16, conn_id: u16, value: &[u8]) {
+        let handle = AttHandle(handle);
+        let conn_id = ConnectionId(conn_id);
+        let value = value.to_vec();
+
+        trace!("send_indication {handle:?}, {conn_id:?}");
+
+        self.handler.handle(move |modules| {
+            let Some(bearer) = modules.gatt_module.get_bearer(conn_id.get_tcb_idx()) else {
+                error!("connection {conn_id:?} does not exist");
+                return;
+            };
+            let pending_indication = bearer.send_indication(handle, value);
+            let gatt_outgoing_callbacks = modules.gatt_outgoing_callbacks.clone();
+            spawn_local(async move {
+                gatt_outgoing_callbacks
+                    .on_indication_sent_confirmation(conn_id, pending_indication.await);
+            });
+        })
+    }
+
+    pub fn associate_server_with_advertiser(&self, server_id: u8, advertiser_id: u8) {
+        let server_id = ServerId(server_id);
+        let advertiser_id = AdvertiserId(advertiser_id);
+        self.handler.handle(move |modules| {
             modules
                 .gatt_module
                 .get_isolation_manager()
-                .associate_server_with_advertiser(server_id, AdvertiserId(0))
-        }
-        if let Err(err) = modules.gatt_module.open_gatt_server(server_id) {
-            error!("{err:?}")
-        }
-    })
+                .associate_server_with_advertiser(server_id, advertiser_id);
+        })
+    }
+
+    pub fn clear_advertiser(&self, advertiser_id: u8) {
+        let advertiser_id = AdvertiserId(advertiser_id);
+
+        self.handler.handle(move |modules| {
+            modules.gatt_module.get_isolation_manager().clear_advertiser(advertiser_id);
+        })
+    }
+
+    fn is_connection_isolated(&self, conn_id: u16) -> bool {
+        self.arbiter.with_arbiter(|arbiter| {
+            arbiter.is_connection_isolated(ConnectionId(conn_id).get_tcb_idx())
+        })
+    }
 }
 
-fn close_server(server_id: u8) {
-    let server_id = ServerId(server_id);
-
-    do_in_rust_thread(move |modules| {
-        if let Err(err) = modules.gatt_module.close_gatt_server(server_id) {
-            error!("{err:?}")
+impl Drop for PrivateGattServerManager {
+    fn drop(&mut self) {
+        if let Some(thread) = self.thread.take() {
+            // This should make the thread terminate.
+            self.handler.0.send(None).unwrap();
+            let _ = thread.join();
         }
-    })
+    }
 }
 
 fn consume_descriptors<'a>(
@@ -298,7 +500,9 @@ fn records_to_service(service_records: &[GattRecord]) -> Result<GattServiceWithH
         match record.record_type {
             GattRecordType::PrimaryService => {
                 if service_handle_uuid.is_some() {
-                    bail!("got service registration but with duplicate primary service! {service_records:?}".to_string());
+                    bail!("got service registration but with duplicate primary service! \
+                           {service_records:?}"
+                        .to_string());
                 }
                 service_handle_uuid = Some((record.attribute_handle, record.uuid));
             }
@@ -326,120 +530,6 @@ fn records_to_service(service_records: &[GattRecord]) -> Result<GattServiceWithH
     };
 
     Ok(GattServiceWithHandle { handle: AttHandle(handle), type_: uuid, characteristics })
-}
-
-fn add_service(server_id: u8, service_records: Vec<GattRecord>) {
-    // marshal into the form expected by GattModule
-    let server_id = ServerId(server_id);
-
-    match records_to_service(&service_records) {
-        Ok(service) => {
-            let handle = service.handle;
-            do_in_rust_thread(move |modules| {
-                let ok = modules.gatt_module.register_gatt_service(
-                    server_id,
-                    service.clone(),
-                    modules.gatt_incoming_callbacks.get_datastore(server_id),
-                );
-                match ok {
-                    Ok(_) => info!(
-                        "successfully registered service for server {server_id:?} with handle {handle:?} (service={service:?})"
-                    ),
-                    Err(err) => error!(
-                        "failed to register GATT service for server {server_id:?} with error: {err},  (service={service:?})"
-                    ),
-                }
-            });
-        }
-        Err(err) => {
-            error!("failed to register service for server {server_id:?}, err: {err:?}")
-        }
-    }
-}
-
-fn remove_service(server_id: u8, service_handle: u16) {
-    let server_id = ServerId(server_id);
-    let service_handle = AttHandle(service_handle);
-    do_in_rust_thread(move |modules| {
-        let ok = modules.gatt_module.unregister_gatt_service(server_id, service_handle);
-        match ok {
-            Ok(_) => info!(
-                "successfully removed service {service_handle:?} for server {server_id:?}"
-            ),
-            Err(err) => error!(
-                "failed to remove GATT service {service_handle:?} for server {server_id:?} with error: {err}"
-            ),
-        }
-    })
-}
-
-fn is_connection_isolated(conn_id: u16) -> bool {
-    RustModuleRunner::isolation_manager().map_or(false, |im| {
-        im.lock().unwrap().is_connection_isolated(ConnectionId(conn_id).get_tcb_idx())
-    })
-}
-
-fn send_response(_server_id: u8, conn_id: u16, trans_id: u32, status: u8, value: &[u8]) {
-    // TODO(aryarahul): fixup error codes to allow app-specific values (i.e. don't
-    // make it an enum in PDL)
-    let value = if status == 0 {
-        Ok(value.to_vec())
-    } else {
-        Err(AttErrorCode::try_from(status).unwrap_or(AttErrorCode::UnlikelyError))
-    };
-
-    trace!("send_response {conn_id:?}, {trans_id:?}, {:?}", value.as_ref().err());
-
-    do_in_rust_thread(move |modules| {
-        match modules.gatt_incoming_callbacks.send_response(
-            ConnectionId(conn_id),
-            TransactionId(trans_id),
-            value,
-        ) {
-            Ok(()) => { /* no-op */ }
-            Err(err) => warn!("{err:?}"),
-        }
-    })
-}
-
-fn send_indication(_server_id: u8, handle: u16, conn_id: u16, value: &[u8]) {
-    let handle = AttHandle(handle);
-    let conn_id = ConnectionId(conn_id);
-    let value = value.to_vec();
-
-    trace!("send_indication {handle:?}, {conn_id:?}");
-
-    do_in_rust_thread(move |modules| {
-        let Some(bearer) = modules.gatt_module.get_bearer(conn_id.get_tcb_idx()) else {
-            error!("connection {conn_id:?} does not exist");
-            return;
-        };
-        let pending_indication = bearer.send_indication(handle, value);
-        let gatt_outgoing_callbacks = modules.gatt_outgoing_callbacks.clone();
-        spawn_local(async move {
-            gatt_outgoing_callbacks
-                .on_indication_sent_confirmation(conn_id, pending_indication.await);
-        });
-    })
-}
-
-fn associate_server_with_advertiser(server_id: u8, advertiser_id: u8) {
-    let server_id = ServerId(server_id);
-    let advertiser_id = AdvertiserId(advertiser_id);
-    do_in_rust_thread(move |modules| {
-        modules
-            .gatt_module
-            .get_isolation_manager()
-            .associate_server_with_advertiser(server_id, advertiser_id);
-    })
-}
-
-fn clear_advertiser(advertiser_id: u8) {
-    let advertiser_id = AdvertiserId(advertiser_id);
-
-    do_in_rust_thread(move |modules| {
-        modules.gatt_module.get_isolation_manager().clear_advertiser(advertiser_id);
-    })
 }
 
 #[cfg(test)]

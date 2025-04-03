@@ -8,14 +8,11 @@ use log::{trace, warn};
 use tokio::sync::oneshot;
 use tokio::time::timeout;
 
+use crate::gatt::callbacks::{GattCallbacks, TransactionDecision};
 use crate::gatt::ids::{AttHandle, ConnectionId, ServerId, TransactionId, TransportIndex};
-use crate::gatt::GattCallbacks;
 use crate::packets::att::AttErrorCode;
 
-use super::{
-    AttributeBackingType, GattWriteRequestType, GattWriteType, RawGattDatastore,
-    TransactionDecision,
-};
+use super::{AttributeBackingType, GattWriteRequestType, GattWriteType, RawGattDatastore};
 
 struct PendingTransaction {
     response: oneshot::Sender<Result<Vec<u8>, AttErrorCode>>,

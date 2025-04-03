@@ -4,16 +4,15 @@
 
 mod callback_transaction_manager;
 
-pub use callback_transaction_manager::{CallbackResponseError, CallbackTransactionManager};
-
-use async_trait::async_trait;
-use log::warn;
-
-use crate::packets::att::AttErrorCode;
-
 use super::ffi::AttributeBackingType;
 use super::ids::{AttHandle, ConnectionId, TransactionId, TransportIndex};
 use super::server::IndicationError;
+use crate::gatt::ffi::GattServerCallbacks;
+use crate::packets::att::AttErrorCode;
+use async_trait::async_trait;
+pub use callback_transaction_manager::CallbackTransactionManager;
+use cxx::UniquePtr;
+use log::{trace, warn};
 
 /// These callbacks are expected to be made available to the GattModule from
 /// JNI.
@@ -70,6 +69,7 @@ pub enum GattWriteType {
 
 /// The types of write requests (that need responses)
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[allow(dead_code)]
 pub enum GattWriteRequestType {
     /// Atomic (WRITE_REQ)
     Request,
@@ -82,6 +82,7 @@ pub enum GattWriteRequestType {
 
 /// Whether to commit or cancel a transaction
 #[derive(Clone, Copy, Debug)]
+#[allow(dead_code)]
 pub enum TransactionDecision {
     /// Commit all pending writes
     Execute,
@@ -123,6 +124,7 @@ pub trait RawGattDatastore {
     );
 
     /// Execute or cancel any prepared writes
+    #[allow(dead_code)]
     async fn execute(
         &self,
         tcb_idx: TransportIndex,
@@ -202,6 +204,89 @@ impl<T: GattDatastore + ?Sized> RawGattDatastore for T {
     async fn execute(&self, _: TransportIndex, _: TransactionDecision) -> Result<(), AttErrorCode> {
         // we never do prepared writes, so who cares
         Ok(())
+    }
+}
+
+/// Implementation of GattCallbacks wrapping the corresponding C++ methods
+pub struct GattCallbacksImpl(pub UniquePtr<GattServerCallbacks>);
+
+impl GattCallbacks for GattCallbacksImpl {
+    fn on_server_read(
+        &self,
+        conn_id: ConnectionId,
+        trans_id: TransactionId,
+        handle: AttHandle,
+        attr_type: AttributeBackingType,
+        offset: u32,
+    ) {
+        trace!("on_server_read ({conn_id:?}, {trans_id:?}, {handle:?}, {attr_type:?}, {offset:?}");
+        self.0.as_ref().unwrap().on_server_read(
+            conn_id.0,
+            trans_id.0,
+            handle.0,
+            attr_type,
+            offset,
+            offset != 0,
+        );
+    }
+
+    fn on_server_write(
+        &self,
+        conn_id: ConnectionId,
+        trans_id: TransactionId,
+        handle: AttHandle,
+        attr_type: AttributeBackingType,
+        write_type: GattWriteType,
+        value: &[u8],
+    ) {
+        trace!(
+            "on_server_write ({conn_id:?}, {trans_id:?}, {handle:?}, {attr_type:?}, {write_type:?}"
+        );
+        self.0.as_ref().unwrap().on_server_write(
+            conn_id.0,
+            trans_id.0,
+            handle.0,
+            attr_type,
+            match write_type {
+                GattWriteType::Request(GattWriteRequestType::Prepare { offset }) => offset,
+                _ => 0,
+            },
+            matches!(write_type, GattWriteType::Request { .. }),
+            matches!(write_type, GattWriteType::Request(GattWriteRequestType::Prepare { .. })),
+            value,
+        );
+    }
+
+    fn on_indication_sent_confirmation(
+        &self,
+        conn_id: ConnectionId,
+        result: Result<(), IndicationError>,
+    ) {
+        trace!("on_indication_sent_confirmation ({conn_id:?}, {result:?}");
+        self.0.as_ref().unwrap().on_indication_sent_confirmation(
+            conn_id.0,
+            match result {
+                Ok(()) => 0, // GATT_SUCCESS
+                _ => 133,    // GATT_ERROR
+            },
+        )
+    }
+
+    fn on_execute(
+        &self,
+        conn_id: ConnectionId,
+        trans_id: TransactionId,
+        decision: TransactionDecision,
+    ) {
+        trace!("on_execute ({conn_id:?}, {trans_id:?}, {decision:?}");
+        self.0.as_ref().unwrap().on_execute(
+            conn_id.0,
+            trans_id.0,
+            match decision {
+                TransactionDecision::Execute => true,
+                TransactionDecision::Cancel => false,
+            },
+        )
     }
 }
 
