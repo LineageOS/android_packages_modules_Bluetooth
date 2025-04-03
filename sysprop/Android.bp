@@ -19,7 +19,7 @@ sysprop_library {
     property_owner: "Platform",
     api_packages: ["android.sysprop"],
     cpp: {
-        min_sdk_version: "Tiramisu",
+        min_sdk_version: "36",
     },
     apex_available: ["com.android.bt"],
 }
@@ -32,5 +32,5 @@ cc_library_static {
     export_static_lib_headers: ["libcom.android.sysprop.bluetooth"],
     visibility: ["//packages/modules/Bluetooth/system:__subpackages__"],
     apex_available: ["com.android.bt"],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
 }

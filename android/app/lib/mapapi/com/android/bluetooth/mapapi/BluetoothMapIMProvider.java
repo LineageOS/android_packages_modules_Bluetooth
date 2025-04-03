@@ -39,8 +39,6 @@ import java.util.Set;
 public abstract class BluetoothMapIMProvider extends ContentProvider {
     private static final String TAG = BluetoothMapIMProvider.class.getSimpleName();
 
-    private static final boolean D = true;
-
     private static final int MATCH_ACCOUNT = 1;
     private static final int MATCH_MESSAGE = 3;
     private static final int MATCH_CONVERSATION = 4;
@@ -79,9 +77,7 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
             throw new SecurityException(
                     "Provider must be protected by " + android.Manifest.permission.BLUETOOTH_MAP);
         }
-        if (D) {
-            Log.d(TAG, "attachInfo() mAuthority = " + mAuthority);
-        }
+        Log.d(TAG, "attachInfo() mAuthority=" + mAuthority);
 
         mResolver = context.getContentResolver();
         super.attachInfo(context, info);
@@ -106,9 +102,7 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
             newUri = BluetoothMapContract.buildAccountUriWithId(mAuthority, accountId);
         }
 
-        if (D) {
-            Log.d(TAG, "onAccountChanged() accountId = " + accountId + " URI: " + newUri);
-        }
+        Log.d(TAG, "onAccountChanged(" + accountId + "): newUri=" + newUri);
         mResolver.notifyChange(newUri, null);
     }
 
@@ -138,16 +132,7 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
                                 mAuthority, accountId, messageId);
             }
         }
-        if (D) {
-            Log.d(
-                    TAG,
-                    "onMessageChanged() accountId = "
-                            + accountId
-                            + " messageId = "
-                            + messageId
-                            + " URI: "
-                            + newUri);
-        }
+        Log.d(TAG, "onMessageChanged(" + accountId + ", " + messageId + "): newUri=" + newUri);
         mResolver.notifyChange(newUri, null);
     }
 
@@ -177,16 +162,7 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
                                 mAuthority, accountId, contactId);
             }
         }
-        if (D) {
-            Log.d(
-                    TAG,
-                    "onContactChanged() accountId = "
-                            + accountId
-                            + " contactId = "
-                            + contactId
-                            + " URI: "
-                            + newUri);
-        }
+        Log.d(TAG, "onContactChanged(" + accountId + ", " + contactId + "): newUri=" + newUri);
         mResolver.notifyChange(newUri, null);
     }
 
@@ -206,9 +182,7 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
      */
     @Override
     public int delete(Uri uri, String where, String[] selectionArgs) {
-        if (D) {
-            Log.d(TAG, "delete(): uri=" + uri.toString());
-        }
+        Log.d(TAG, "delete(): uri=" + uri.toString());
         int result = 0;
 
         String table = uri.getPathSegments().get(1);
@@ -231,9 +205,7 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
             if (table.equals(BluetoothMapContract.TABLE_MESSAGE)) {
                 return deleteMessage(accountId, messageId);
             } else {
-                if (D) {
-                    Log.w(TAG, "Unknown table name: " + table);
-                }
+                Log.w(TAG, "Unknown table name: " + table);
                 return result;
             }
         } finally {
@@ -280,9 +252,7 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
         try {
             if (table.equals(BluetoothMapContract.TABLE_MESSAGE)) {
                 id = insertMessage(accountId, values);
-                if (D) {
-                    Log.i(TAG, "insert() ID: " + id);
-                }
+                Log.i(TAG, "insert() ID: " + id);
                 return Uri.parse(uri.toString() + "/" + id);
             } else {
                 Log.w(TAG, "Unknown table name: " + table);
@@ -336,9 +306,7 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
         final long callingId = Binder.clearCallingIdentity();
         try {
             String accountId = null;
-            if (D) {
-                Log.w(TAG, "query(): uri =" + mAuthority + " uri=" + uri.toString());
-            }
+            Log.w(TAG, "query(): uri =" + mAuthority + " uri=" + uri.toString());
 
             switch (mMatcher.match(uri)) {
                 case MATCH_ACCOUNT:
@@ -524,14 +492,12 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
         }
 
         final long callingId = Binder.clearCallingIdentity();
-        if (D) {
-            Log.w(
-                    TAG,
-                    "update(): uri="
-                            + uri.toString()
-                            + " - getLastPathSegment() = "
-                            + uri.getLastPathSegment());
-        }
+        Log.w(
+                TAG,
+                "update(): uri="
+                        + uri.toString()
+                        + " - getLastPathSegment() = "
+                        + uri.getLastPathSegment());
         try {
             if (table.equals(BluetoothMapContract.TABLE_ACCOUNT)) {
                 String accountId = values.getAsString(BluetoothMapContract.AccountColumns._ID);
@@ -564,9 +530,7 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
             } else if (table.equals(BluetoothMapContract.TABLE_CONVOCONTACT)) {
                 return 0; // We do not support changing contacts
             } else {
-                if (D) {
-                    Log.w(TAG, "Unknown table name: " + table);
-                }
+                Log.w(TAG, "Unknown table name: " + table);
                 return 0;
             }
         } finally {
@@ -641,16 +605,14 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
     @Override
     public Bundle call(String method, String arg, Bundle extras) {
         final long callingId = Binder.clearCallingIdentity();
-        if (D) {
-            Log.w(
-                    TAG,
-                    "call(): method="
-                            + method
-                            + " arg="
-                            + arg
-                            + "ThreadId: "
-                            + Thread.currentThread().getId());
-        }
+        Log.w(
+                TAG,
+                "call(): method="
+                        + method
+                        + " arg="
+                        + arg
+                        + "ThreadId: "
+                        + Thread.currentThread().getId());
         int ret = -1;
         try {
             if (method.equals(BluetoothMapContract.METHOD_UPDATE_FOLDER)) {

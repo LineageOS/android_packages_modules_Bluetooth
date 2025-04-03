@@ -47,14 +47,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
 import android.util.Patterns;
 import android.widget.Toast;
-
-import androidx.annotation.RequiresApi;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
@@ -345,7 +342,6 @@ public class BluetoothOppLauncherActivity extends Activity {
      * @param uri A uri with a <tt>content</tt> scheme.
      * @return true if both the sender and Bluetooth have permissions, false otherwise.
      */
-    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     private boolean checkCallerAndSelfContentUriPermission(Uri uri) {
         boolean hasPermission = false;
         try {

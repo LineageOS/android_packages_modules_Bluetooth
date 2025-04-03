@@ -79,7 +79,7 @@ cc_library_static {
     cflags: [
         "-DLIB_OSI_INTERNAL",
     ],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     apex_available: ["com.android.bt"],
     header_libs: ["libbluetooth_headers"],
     static_libs: [

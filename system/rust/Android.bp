@@ -9,7 +9,7 @@ package {
 
 rust_defaults {
     name: "libbluetooth_core_rs_defaults",
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     dylib: {
         enabled: false,
     },
@@ -151,7 +151,7 @@ cc_library_static {
     host_supported: true,
     generated_sources: ["libbluetooth_core_rs_bridge_codegen"],
     apex_available: ["com.android.bt"],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     // Bug: 286537287 this library gets linked with Rust objects but cross-language LTO
     // isn't supported yet.
     lto: {

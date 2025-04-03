@@ -21,10 +21,9 @@ import android.bluetooth.BluetoothAdapter
 import android.content.ContentResolver
 import android.content.Context
 import android.content.res.Resources
+import android.os.IpcDataCache
 import android.os.Looper
 import android.os.UserHandle
-import android.platform.test.flag.junit.FlagsParameterization
-import android.platform.test.flag.junit.SetFlagsRule
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import com.android.server.bluetooth.BluetoothAdapterState
@@ -48,23 +47,20 @@ import com.google.common.truth.Truth.assertThat
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TestTimeSource
 import kotlin.time.TimeSource
+import org.junit.AfterClass
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
 import org.junit.runner.RunWith
-import org.robolectric.ParameterizedRobolectricTestRunner
-import org.robolectric.ParameterizedRobolectricTestRunner.Parameters
+import org.robolectric.RobolectricTestRunner
 import org.robolectric.shadows.ShadowToast
 
-@RunWith(ParameterizedRobolectricTestRunner::class)
+@RunWith(RobolectricTestRunner::class)
 @kotlin.time.ExperimentalTime
-class ModeListenerTest(flags: FlagsParameterization) {
+class ModeListenerTest() {
     companion object {
-        @JvmStatic
-        @Parameters(name = "{0}")
-        fun getParams() = FlagsParameterization.allCombinationsOf()
-
         internal fun setupAirplaneModeToOn(
             resolver: ContentResolver,
             looper: Looper,
@@ -96,14 +92,21 @@ class ModeListenerTest(flags: FlagsParameterization) {
             disableSensitive(resolver, looper, Settings.Global.AIRPLANE_MODE_RADIOS)
             disableMode(resolver, looper, Settings.Global.AIRPLANE_MODE_ON)
         }
+
+        @BeforeClass
+        @JvmStatic
+        fun beforeClass() {
+            IpcDataCache.setTestMode(true)
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun afterClass() {
+            IpcDataCache.setTestMode(false)
+        }
     }
 
     @get:Rule val testName = TestName()
-    @get:Rule val setFlagsRule = SetFlagsRule()
-
-    init {
-        setFlagsRule.setFlagsParameterization(flags)
-    }
 
     private val looper: Looper = Looper.getMainLooper()
     private val state = BluetoothAdapterState()

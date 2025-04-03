@@ -16,6 +16,7 @@ aidl_library {
 // other java component doesn't know how to depend on an aidl_library
 java_library {
     name: "bluetooth_constants_java",
+    defaults: ["bluetooth_lint_rules"],
     srcs: [
         "bluetooth/constants/AudioInputType.aidl",
         "bluetooth/constants/aics/AudioInputStatus.aidl",
@@ -23,7 +24,7 @@ java_library {
         "bluetooth/constants/aics/Mute.aidl",
     ],
     apex_available: ["com.android.bt"],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     sdk_version: "module_current",
     visibility: ["//packages/modules/Bluetooth:__subpackages__"],
 }

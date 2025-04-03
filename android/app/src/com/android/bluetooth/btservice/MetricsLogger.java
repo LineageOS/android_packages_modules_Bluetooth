@@ -72,13 +72,10 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Build;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.util.Log;
 import android.util.proto.ProtoOutputStream;
-
-import androidx.annotation.RequiresApi;
 
 import com.android.bluetooth.BluetoothMetricsProto.BluetoothRemoteDeviceInformation;
 import com.android.bluetooth.BluetoothStatsLog;
@@ -369,8 +366,7 @@ public class MetricsLogger {
                             if (state == BluetoothProfile.STATE_CONNECTED) {
                                 updateHearingDeviceActiveTime(
                                         device,
-                                        HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO
-                                );
+                                        HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO);
                             }
                             break;
                         default:
@@ -624,7 +620,6 @@ public class MetricsLogger {
         return Collections.unmodifiableList(wordBreakdownList);
     }
 
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     protected void uploadRestrictedBluetoothDeviceName(List<String> wordBreakdownList) {
         for (String word : wordBreakdownList) {
             BtRestrictedStatsLog.write(RESTRICTED_BLUETOOTH_DEVICE_NAME_REPORTED, word);

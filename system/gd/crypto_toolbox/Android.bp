@@ -13,7 +13,7 @@ cc_library {
     defaults: ["fluoride_defaults"],
     host_supported: true,
     apex_available: ["com.android.bt"],
-    min_sdk_version: "29",
+    min_sdk_version: "36",
     include_dirs: [
         "packages/modules/Bluetooth/system/gd",
     ],
