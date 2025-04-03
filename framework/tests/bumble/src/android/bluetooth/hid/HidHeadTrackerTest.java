@@ -92,8 +92,6 @@ import pandora.HostProto.OwnAddressType;
 import pandora.HostProto.SetDiscoverabilityModeRequest;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 
 @RunWith(AndroidJUnit4.class)
 public class HidHeadTrackerTest {
@@ -116,7 +114,6 @@ public class HidHeadTrackerTest {
 
     private static final Duration BOND_INTENT_TIMEOUT = Duration.ofSeconds(10);
     private static final Duration INTENT_TIMEOUT = Duration.ofSeconds(10);
-    private static final Duration DISCOVERY_TIMEOUT = Duration.ofSeconds(2);
     private static final ParcelUuid HEADTRACKER_UUID =
             ParcelUuid.fromString("109b862f-50e3-45cc-8ea1-ac62de4846d1");
     private static final ParcelUuid HEADTRACKER_VERSION_CHARACTERISTIC_UUID =
@@ -130,7 +127,6 @@ public class HidHeadTrackerTest {
             InstrumentationRegistry.getInstrumentation().getTargetContext();
     private final BluetoothAdapter mAdapter =
             mTargetContext.getSystemService(BluetoothManager.class).getAdapter();
-    private final Map<String, Integer> mActionRegistrationCounts = new HashMap<>();
 
     private HIDGrpc.HIDBlockingStub mHidBlockingStub;
     private InOrder mInOrder;
@@ -149,9 +145,9 @@ public class HidHeadTrackerTest {
         mBumbleDevice = mBumble.getRemoteDevice();
         mHost = new Host(mTargetContext);
         // Get profile proxies
-        mHidService = connectToProfile(BluetoothHidHost.class, BluetoothProfile.HID_HOST);
-        mA2dpService = connectToProfile(BluetoothA2dp.class, BluetoothProfile.A2DP);
-        mHfpService = connectToProfile(BluetoothHeadset.class, BluetoothProfile.HEADSET);
+        mHidService = (BluetoothHidHost) connectToProfile(BluetoothProfile.HID_HOST);
+        mA2dpService = (BluetoothA2dp) connectToProfile(BluetoothProfile.A2DP);
+        mHfpService = (BluetoothHeadset) connectToProfile(BluetoothProfile.HEADSET);
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
@@ -434,12 +430,12 @@ public class HidHeadTrackerTest {
                 hasExtra(BluetoothProfile.EXTRA_STATE, state));
     }
 
-    private <T> T connectToProfile(Class<T> serviceClass, int profile) {
+    private BluetoothProfile connectToProfile(int profile) {
         mAdapter.getProfileProxy(mTargetContext, mServiceListener, profile);
         ArgumentCaptor<BluetoothProfile> proxyCaptor =
                 ArgumentCaptor.forClass(BluetoothProfile.class);
         verify(mServiceListener, timeout(INTENT_TIMEOUT.toMillis()))
                 .onServiceConnected(eq(profile), proxyCaptor.capture());
-        return (T) proxyCaptor.getValue();
+        return proxyCaptor.getValue();
     }
 }

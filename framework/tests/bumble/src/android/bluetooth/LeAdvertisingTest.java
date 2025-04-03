@@ -92,7 +92,7 @@ public class LeAdvertisingTest {
         }
     }
 
-    private CompletableFuture<Pair<String, Integer>> startAdvertising() {
+    private static CompletableFuture<Pair<String, Integer>> startAdvertising() {
         CompletableFuture<Pair<String, Integer>> future =
                 new CompletableFuture<Pair<String, Integer>>();
 

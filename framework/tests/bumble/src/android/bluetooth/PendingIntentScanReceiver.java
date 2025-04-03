@@ -60,7 +60,6 @@ public class PendingIntentScanReceiver extends BroadcastReceiver {
      *
      * @param context The context to associate the PendingIntent with.
      * @param requestCode The request code to uniquely identify this PendingIntent with.
-     * @return
      */
     public static PendingIntent newBroadcastPendingIntent(Context context, int requestCode) {
         return PendingIntent.getBroadcast(
