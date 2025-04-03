@@ -515,10 +515,6 @@ public class BassClientStateMachineTest {
         StringBuilder sb = new StringBuilder();
         mBassClientStateMachine.dump(sb);
 
-        // log() shouldn't crash
-        String msg = "test-log-message";
-        mBassClientStateMachine.log(msg);
-
         // messageWhatToString() shouldn't crash
         for (int i = CONNECT; i <= CONNECT_TIMEOUT + 1; ++i) {
             mBassClientStateMachine.messageWhatToString(i);
