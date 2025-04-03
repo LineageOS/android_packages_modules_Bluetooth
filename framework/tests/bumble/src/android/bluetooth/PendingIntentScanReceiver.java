@@ -92,7 +92,7 @@ public class PendingIntentScanReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         Log.d(TAG, "onReceive() intent: " + intent);
 
-        if (intent.getAction() != ACTION_SCAN_RESULT) {
+        if (!ACTION_SCAN_RESULT.equals(intent.getAction())) {
             throw new RuntimeException();
         }
 
