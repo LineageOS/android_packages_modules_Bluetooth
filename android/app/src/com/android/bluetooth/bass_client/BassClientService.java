@@ -3602,6 +3602,13 @@ public class BassClientService extends ProfileService {
     private void stopSourceReceivers(int broadcastId) {
         Log.d(TAG, "stopSourceReceivers broadcastId: " + broadcastId);
 
+        if (leaudioBroadcastAllowMonitoringOnResume()) {
+            for (BluetoothDevice sink : mPausedBroadcastSinks) {
+                removeSinkMetadata(sink, broadcastId);
+            }
+            stopBroadcastMonitoring(broadcastId, /* hostInitiated */ false);
+        }
+
         List<Pair<BluetoothLeBroadcastReceiveState, BluetoothDevice>> sourcesToRemove =
                 getReceiveStateDevicePairs(broadcastId);
 
