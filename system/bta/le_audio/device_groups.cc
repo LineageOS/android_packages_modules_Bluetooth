@@ -32,6 +32,7 @@
 #include <utility>
 #include <vector>
 
+#include "audio_context_type_manager.h"
 #include "audio_hal_client/audio_hal_client.h"
 #include "bta/include/bta_gatt_api.h"
 #include "bta/le_audio/gmap_server.h"
@@ -843,17 +844,33 @@ uint16_t LeAudioDeviceGroup::GetRemoteDelay(uint8_t direction) const {
 
 BidirectionalPair<bool> LeAudioDeviceGroup::GetDirectionSupport(
         types::LeAudioContextType ctx_type) const {
-  BidirectionalPair<bool> remote_directions = {true, true};
-
-  // Do not put any requirements on the Source if Sink only scenario is used
-  // Note: With the RINGTONE we should already prepare for a call.
-  if ((types::kLeAudioContextAllRemoteSinkOnly.test(ctx_type) &&
-       (ctx_type != types::LeAudioContextType::RINGTONE)) ||
-      ctx_type == types::LeAudioContextType::UNSPECIFIED) {
-    log::debug("Skipping the remote source requirements.");
-    remote_directions.source = false;
+  if (!com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+    BidirectionalPair<bool> remote_directions = {true, true};
+    // Remove the Source support if Sink only scenario is used
+    // Note: With the RINGTONE we should already prepare for a call.
+    if ((types::kLeAudioContextAllRemoteSinkOnly.test(ctx_type) &&
+         (ctx_type != types::LeAudioContextType::RINGTONE)) ||
+        ctx_type == types::LeAudioContextType::UNSPECIFIED) {
+      log::debug("Remote source not supported for {}", common::ToString(ctx_type));
+      remote_directions.source = false;
+    }
+    return remote_directions;
   }
-  return remote_directions;
+
+  auto audio_context_type_manager = AudioContextTypeManager::Get();
+  if (audio_context_type_manager == nullptr) {
+    log::warn("audio_context_type_manager is nullptr");
+    return {false, false};
+  }
+
+  if (audio_context_type_manager->IsAnyMetadataSet()) {
+    auto config = audio_context_type_manager->GetAudioContextsForTheGroup(this);
+    auto remote_contexts = config.second;
+    return {.sink = remote_contexts.sink.test_any(ctx_type | LeAudioContextType::UNSPECIFIED),
+            .source = remote_contexts.source.test_any(ctx_type | LeAudioContextType::UNSPECIFIED)};
+  }
+
+  return audio_context_type_manager->GetDirectionsForGivenContext(ctx_type, this);
 }
 
 CodecManager::UnicastConfigurationRequirements
@@ -892,17 +909,19 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
         continue;
       }
 
-      if (ctx_type == types::LeAudioContextType::VOICEASSISTANTS ||
-          ctx_type == types::LeAudioContextType::GAME) {
-        // For GAME and VOICE ASSISTANT, ignore direction if it is not supported only on a single
-        // direction.
-        auto group_contexts = GetSupportedContexts(types::kLeAudioDirectionBoth);
-        if (group_contexts.test(ctx_type)) {
-          auto direction_contexs = device->GetSupportedContexts(remote_direction);
-          if (!direction_contexs.test(ctx_type)) {
-            log::warn("Device {} has no {} context support", device->address_,
-                      common::ToString(ctx_type));
-            continue;
+      if (!com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+        if (ctx_type == types::LeAudioContextType::VOICEASSISTANTS ||
+            ctx_type == types::LeAudioContextType::GAME) {
+          // For GAME and VOICE ASSISTANT, ignore direction if it is not supported only on a single
+          // direction.
+          auto group_contexts = GetSupportedContexts(types::kLeAudioDirectionBoth);
+          if (group_contexts.test(ctx_type)) {
+            auto direction_contexs = device->GetSupportedContexts(remote_direction);
+            if (!direction_contexs.test(ctx_type)) {
+              log::warn("Device {} has no {} context support", device->address_,
+                        common::ToString(ctx_type));
+              continue;
+            }
           }
         }
       }
@@ -1077,6 +1096,12 @@ void LeAudioDeviceGroup::InvalidateCachedConfigurations(void) {
   log::info("Group id: {}", group_id_);
   context_to_configuration_cache_map_.clear();
   context_to_preferred_configuration_cache_map_.clear();
+}
+
+void LeAudioDeviceGroup::InvalidateCachedConfigurations(LeAudioContextType context_type) {
+  log::info("Group id: {} context_type: {}", group_id_, common::ToString(context_type));
+  context_to_configuration_cache_map_.erase(context_type);
+  context_to_preferred_configuration_cache_map_.erase(context_type);
 }
 
 types::BidirectionalPair<AudioContexts> LeAudioDeviceGroup::GetLatestAvailableContexts() const {
