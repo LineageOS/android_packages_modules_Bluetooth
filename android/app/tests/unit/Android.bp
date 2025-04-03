@@ -21,6 +21,7 @@ android_test {
     ],
 
     static_libs: [
+        "TestParameterInjector",
         "androidx.test.ext.truth",
         "androidx.test.rules",
         "mockito-target",

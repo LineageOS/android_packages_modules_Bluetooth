@@ -37,7 +37,8 @@ import android.provider.OpenableColumns;
 import android.test.mock.MockContentProvider;
 import android.test.mock.MockContext;
 
-import androidx.test.runner.AndroidJUnit4;
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -45,7 +46,7 @@ import org.junit.runner.RunWith;
 
 import java.io.FileInputStream;
 
-@RunWith(AndroidJUnit4.class)
+@RunWith(TestParameterInjector.class)
 public class BluetoothOppSendFileInfoTest {
     public static final String PROVIDER_NAME_MEDIA = "media";
     TestContext mContext;
@@ -68,10 +69,11 @@ public class BluetoothOppSendFileInfoTest {
     }
 
     @Test
-    public void generateFileInfo_withContentUriForOtherUser_returnsSendFileInfoError()
-            throws Exception {
+    public void generateFileInfo_withContentUriForOtherUser_returnsSendFileInfoError(
+            @TestParameter boolean encodedAt) throws Exception {
         String type = "image/jpeg";
-        Uri uri = buildContentUriWithEncodedAuthority((myUserId() + 1) + "@" + PROVIDER_NAME_MEDIA);
+        String authoritySuffix = encodedAt ? "%40media" : "@media";
+        Uri uri = buildContentUriWithEncodedAuthority((myUserId() + 1) + authoritySuffix);
         doReturn(type).when(mContentProvider).getType(any());
         long fileLength = 1000;
         String fileName = "pic.jpg";
@@ -115,10 +117,11 @@ public class BluetoothOppSendFileInfoTest {
     }
 
     @Test
-    public void generateFileInfo_withContentUriForSameUser_returnsInfoWithCorrectLength()
-            throws Exception {
+    public void generateFileInfo_withContentUriForSameUser_returnsInfoWithCorrectLength(
+            @TestParameter boolean encodedAt) throws Exception {
         String type = "image/jpeg";
-        Uri uri = buildContentUriWithEncodedAuthority(myUserId() + "@" + PROVIDER_NAME_MEDIA);
+        String authoritySuffix = encodedAt ? "%40media" : "@media";
+        Uri uri = buildContentUriWithEncodedAuthority(myUserId() + authoritySuffix);
         doReturn(type).when(mContentProvider).getType(any());
         long fileLength = 1000;
         String fileName = "pic.jpg";
