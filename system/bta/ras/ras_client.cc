@@ -37,6 +37,8 @@
 #include "gd/hci/controller_interface.h"
 #include "main/shim/entry.h"
 #include "osi/include/alarm.h"
+#include "stack/btm/btm_dev.h"
+#include "stack/btm/security_device_record.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_ble_addr.h"
 #include "stack/include/gap_api.h"
@@ -67,6 +69,7 @@ class RasClientImpl : public bluetooth::ras::RasClient {
   static constexpr uint16_t kCachedDataSize = 10;
   static constexpr uint16_t kInvalidGattHandle = 0x0000;
   static constexpr uint16_t kFirstSegmentRangingDataTimeoutMs = 5000;
+  static constexpr uint16_t kLowPowerFirstSegmentRangingDataTimeoutMs = 10000;
   static constexpr uint16_t kFollowingSegmentTimeoutMs = 1000;
   static constexpr uint16_t kRangingDataReadyTimeoutMs = 5000;
   static constexpr uint16_t kInvalidConnInterval = 0;  // valid value is from 0x0006 to 0x0C0
@@ -808,7 +811,12 @@ public:
                                    RasDisconnectReason::SERVER_NOT_AVAILABLE);
         return;
       }
-      SetTimeOutAlarm(tracker, kFirstSegmentRangingDataTimeoutMs, TimeoutType::FIRST_SEGMENT);
+      uint16_t first_segment_timeout_ms = kFirstSegmentRangingDataTimeoutMs;
+      tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(tracker->address_);
+      if (p_dev_rec && (p_dev_rec->conn_params.peripheral_latency >= 2)) {
+        first_segment_timeout_ms = kLowPowerFirstSegmentRangingDataTimeoutMs;
+      }
+      SetTimeOutAlarm(tracker, first_segment_timeout_ms, TimeoutType::FIRST_SEGMENT);
     } else {
       log::info("Subscribe On-demand Ranging Data");
       tracker->ranging_type_ = RangingType::ON_DEMAND;
