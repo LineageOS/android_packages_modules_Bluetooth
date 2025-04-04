@@ -73,6 +73,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.stream.IntStream;
@@ -1001,6 +1002,58 @@ class BassClientStateMachine extends StateMachine {
         return recvState;
     }
 
+    private void updateMetadataWithReceiveStateIfBisSyncStateChanged(
+            BluetoothLeBroadcastReceiveState recvState) {
+        int sourceId = recvState.getSourceId();
+        BluetoothLeBroadcastMetadata metadata = getCurrentBroadcastMetadata(sourceId);
+        if (metadata == null) {
+            return;
+        }
+
+        if (metadata.getBroadcastId() != recvState.getBroadcastId()
+                || metadata.getSubgroups().size() != recvState.getNumSubgroups()) {
+            Log.e(
+                    TAG,
+                    "updateMetadataWithReceiveStateIfBisSyncStateChanged: Metadata not match"
+                            + " receive state");
+            return;
+        }
+
+        BluetoothLeBroadcastMetadata.Builder newMetadataBuilder =
+                new BluetoothLeBroadcastMetadata.Builder(metadata);
+        newMetadataBuilder.clearSubgroup();
+
+        for (int i = 0; i < recvState.getNumSubgroups(); i++) {
+            Long bisSyncState = recvState.getBisSyncState().get(i);
+            BluetoothLeBroadcastSubgroup currentMetadataSubgroup = metadata.getSubgroups().get(i);
+            BluetoothLeBroadcastSubgroup.Builder newSubgroupBuilder =
+                    new BluetoothLeBroadcastSubgroup.Builder(currentMetadataSubgroup);
+            newSubgroupBuilder.clearChannel();
+
+            for (BluetoothLeBroadcastChannel channel : currentMetadataSubgroup.getChannels()) {
+                BluetoothLeBroadcastChannel channelToAdd = channel;
+                if (!channel.isSelected()
+                        && (bisSyncState & (1L << (channel.getChannelIndex() - 1))) != 0) {
+                    // Only set selected flag to true if the bit is 1 AND if it's not already
+                    // true.
+                    Log.d(
+                            TAG,
+                            "updateMetadataWithReceiveStateIfBisSyncStateChanged: Updating"
+                                    + " channel as selected, id: "
+                                    + channel.getChannelIndex());
+                    channelToAdd =
+                            new BluetoothLeBroadcastChannel.Builder(channel)
+                                    .setSelected(true)
+                                    .build();
+                }
+                newSubgroupBuilder.addChannel(channelToAdd);
+            }
+            newMetadataBuilder.addSubgroup(newSubgroupBuilder.build());
+        }
+
+        setCurrentBroadcastMetadata(sourceId, newMetadataBuilder.build());
+    }
+
     private void processBroadcastReceiverState(
             byte[] receiverState, BluetoothGattCharacteristic characteristic) {
         Log.d(
@@ -1071,6 +1124,11 @@ class BassClientStateMachine extends StateMachine {
                 Message message = obtainMessage(REMOVE_BCAST_SOURCE);
                 message.arg1 = sourceId;
                 sendMessage(message);
+            }
+
+            if (!Objects.equals(prevRecvState.getBisSyncState(), recvState.getBisSyncState())) {
+                // Update metadata channel state if BIS sync state changed
+                updateMetadataWithReceiveStateIfBisSyncStateChanged(recvState);
             }
         } else if (isSourcePresent(prevRecvState) && isSourceAbsent(recvState)) {
             BluetoothDevice removedDevice = prevRecvState.getSourceDevice();

@@ -2591,10 +2591,9 @@ public class BassClientStateMachineTest {
         mBassClientStateMachine.mBroadcastScanControlPoint = scanControlPoint;
 
         BluetoothLeBroadcastMetadata metadata = createBroadcastMetadata();
-        mBassClientStateMachine.mPendingMetadata = metadata;
-
         // Verify pausing broadcast stream with updated metadata
         BluetoothLeBroadcastMetadata updatedMetadataPaused = getMetadataToPauseStream(metadata);
+        mBassClientStateMachine.mPendingMetadata = updatedMetadataPaused;
         byte[] valueBisPaused = convertMetadataToUpdateSourceByteArray(updatedMetadataPaused);
 
         sendMessageAndVerifyTransition(
@@ -2613,6 +2612,37 @@ public class BassClientStateMachineTest {
                 BassClientStateMachine.Connected.class);
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
         Mockito.clearInvocations(scanControlPoint);
+
+        generateBroadcastReceiveStatesAndVerify(
+                mSourceTestDevice,
+                TEST_SOURCE_ID,
+                BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED,
+                BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING,
+                0L);
+        // After modifying source with no channels selected, verify metadata is updated to
+        // updatedMetadataPaused
+        assertThat(mBassClientStateMachine.getCurrentBroadcastMetadata(TEST_SOURCE_ID))
+                .isEqualTo(updatedMetadataPaused);
+
+        generateBroadcastReceiveStatesAndVerify(
+                mSourceTestDevice,
+                TEST_SOURCE_ID,
+                BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED,
+                BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING,
+                1L << (TEST_CHANNEL_INDEX - 1));
+        // After BIS synced, verify channels are selected as the original metadata
+        assertThat(mBassClientStateMachine.getCurrentBroadcastMetadata(TEST_SOURCE_ID))
+                .isEqualTo(metadata);
+
+        generateBroadcastReceiveStatesAndVerify(
+                mSourceTestDevice,
+                TEST_SOURCE_ID,
+                BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED,
+                BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING,
+                0L);
+        // After BIS unsynced, verify channels are still selected as the original metadata
+        assertThat(mBassClientStateMachine.getCurrentBroadcastMetadata(TEST_SOURCE_ID))
+                .isEqualTo(metadata);
 
         // Verify resuming broadcast stream with the original metadata
         byte[] valueBisResumed = convertMetadataToUpdateSourceByteArray(metadata);
@@ -2781,36 +2811,25 @@ public class BassClientStateMachineTest {
     }
 
     private static BluetoothLeBroadcastMetadata getMetadataToPauseStream(
-            BluetoothLeBroadcastMetadata metadata) {
-        BluetoothLeBroadcastMetadata.Builder metadataToUpdateBuilder =
-                new BluetoothLeBroadcastMetadata.Builder(metadata);
+            BluetoothLeBroadcastMetadata original) {
+        BluetoothLeBroadcastMetadata.Builder metaDataBuilder =
+                new BluetoothLeBroadcastMetadata.Builder(original);
+        metaDataBuilder.clearSubgroup();
 
-        List<BluetoothLeBroadcastSubgroup> updatedSubgroups = new ArrayList<>();
-        for (BluetoothLeBroadcastSubgroup subgroup : metadata.getSubgroups()) {
-            BluetoothLeBroadcastSubgroup.Builder subgroupBuilder =
+        for (BluetoothLeBroadcastSubgroup subgroup : original.getSubgroups()) {
+            BluetoothLeBroadcastSubgroup.Builder subGroupBuilder =
                     new BluetoothLeBroadcastSubgroup.Builder(subgroup);
+            subGroupBuilder.clearChannel();
 
-            List<BluetoothLeBroadcastChannel> updatedChannels = new ArrayList<>();
             for (BluetoothLeBroadcastChannel channel : subgroup.getChannels()) {
-                BluetoothLeBroadcastChannel updatedChannel =
-                        new BluetoothLeBroadcastChannel.Builder(channel).setSelected(false).build();
-                updatedChannels.add(updatedChannel);
+                BluetoothLeBroadcastChannel.Builder channelBuilder =
+                        new BluetoothLeBroadcastChannel.Builder(channel).setSelected(false);
+                subGroupBuilder.addChannel(channelBuilder.build());
             }
-
-            subgroupBuilder.clearChannel();
-            for (BluetoothLeBroadcastChannel channel : updatedChannels) {
-                subgroupBuilder.addChannel(channel);
-            }
-
-            updatedSubgroups.add(subgroupBuilder.build());
+            metaDataBuilder.addSubgroup(subGroupBuilder.build());
         }
 
-        metadataToUpdateBuilder.clearSubgroup();
-        for (BluetoothLeBroadcastSubgroup subgroup : updatedSubgroups) {
-            metadataToUpdateBuilder.addSubgroup(subgroup);
-        }
-
-        return metadataToUpdateBuilder.build();
+        return metaDataBuilder.build();
     }
 
     private void prepareInitialReceiveStateForGatt() {
