@@ -2539,13 +2539,19 @@ public class BassClientStateMachineTest {
         BluetoothLeBroadcastMetadata metadata = createBroadcastMetadata();
         mBassClientStateMachine.mPendingMetadata = metadata;
 
-        sendMessageAndVerifyTransition(
-                mBassClientStateMachine.obtainMessage(
-                        UPDATE_BCAST_SOURCE,
-                        TEST_SOURCE_ID,
-                        BassConstants.PA_SYNC_DO_NOT_SYNC,
-                        metadata),
-                BassClientStateMachine.ConnectedProcessing.class);
+        if (Flags.leaudioBisSyncControl()) {
+            sendMessageAndVerifyTransition(
+                    mBassClientStateMachine.obtainMessage(REMOVE_BCAST_SOURCE, TEST_SOURCE_ID),
+                    BassClientStateMachine.ConnectedProcessing.class);
+        } else {
+            sendMessageAndVerifyTransition(
+                    mBassClientStateMachine.obtainMessage(
+                            UPDATE_BCAST_SOURCE,
+                            TEST_SOURCE_ID,
+                            BassConstants.PA_SYNC_DO_NOT_SYNC,
+                            metadata),
+                    BassClientStateMachine.ConnectedProcessing.class);
+        }
         assertThat(mBassClientStateMachine.mPendingOperation).isEqualTo(UPDATE_BCAST_SOURCE);
         assertThat(mBassClientStateMachine.mPendingSourceId).isEqualTo(TEST_SOURCE_ID);
 
@@ -2596,13 +2602,24 @@ public class BassClientStateMachineTest {
         mBassClientStateMachine.mPendingMetadata = updatedMetadataPaused;
         byte[] valueBisPaused = convertMetadataToUpdateSourceByteArray(updatedMetadataPaused);
 
-        sendMessageAndVerifyTransition(
-                mBassClientStateMachine.obtainMessage(
-                        UPDATE_BCAST_SOURCE,
-                        TEST_SOURCE_ID,
-                        BassConstants.INVALID_PA_SYNC_VALUE,
-                        updatedMetadataPaused),
-                BassClientStateMachine.ConnectedProcessing.class);
+        if (Flags.leaudioBisSyncControl()) {
+            sendMessageAndVerifyTransition(
+                    mBassClientStateMachine.obtainMessage(
+                            UPDATE_BCAST_SOURCE,
+                            TEST_SOURCE_ID,
+                            BassConstants.FLAG_SYNC_PA
+                                    | BassConstants.FLAG_SYNC_DO_NOT_USE_NO_PREFERENCE,
+                            updatedMetadataPaused),
+                    BassClientStateMachine.ConnectedProcessing.class);
+        } else {
+            sendMessageAndVerifyTransition(
+                    mBassClientStateMachine.obtainMessage(
+                            UPDATE_BCAST_SOURCE,
+                            TEST_SOURCE_ID,
+                            BassConstants.INVALID_PA_SYNC_VALUE,
+                            updatedMetadataPaused),
+                    BassClientStateMachine.ConnectedProcessing.class);
+        }
         assertThat(mBassClientStateMachine.mPendingOperation).isEqualTo(UPDATE_BCAST_SOURCE);
         assertThat(mBassClientStateMachine.mPendingSourceId).isEqualTo(TEST_SOURCE_ID);
         verify(scanControlPoint).setValue(eq(valueBisPaused));
