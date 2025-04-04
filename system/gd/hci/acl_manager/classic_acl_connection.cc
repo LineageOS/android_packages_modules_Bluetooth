@@ -106,18 +106,18 @@ public:
     SAVE_OR_CALL(OnReadAutomaticFlushTimeoutComplete, flush_timeout)
   }
   void OnReadTransmitPowerLevelComplete(uint8_t transmit_power_level) override {
-    bluetooth::os::LogMetricReadTxPowerLevelResult(address_, connection_handle_,
-                                                   static_cast<uint8_t>(ErrorCode::SUCCESS),
-                                                   transmit_power_level);
+    bluetooth::metrics::LogMetricReadTxPowerLevelResult(address_, connection_handle_,
+                                                        static_cast<uint8_t>(ErrorCode::SUCCESS),
+                                                        transmit_power_level);
     SAVE_OR_CALL(OnReadTransmitPowerLevelComplete, transmit_power_level)
   }
   void OnReadLinkSupervisionTimeoutComplete(uint16_t link_supervision_timeout) override {
     SAVE_OR_CALL(OnReadLinkSupervisionTimeoutComplete, link_supervision_timeout)
   }
   void OnReadFailedContactCounterComplete(uint16_t failed_contact_counter) override {
-    bluetooth::os::LogMetricReadFailedContactCounterResult(address_, connection_handle_,
-                                                           static_cast<uint8_t>(ErrorCode::SUCCESS),
-                                                           failed_contact_counter);
+    bluetooth::metrics::LogMetricReadFailedContactCounterResult(
+            address_, connection_handle_, static_cast<uint8_t>(ErrorCode::SUCCESS),
+            failed_contact_counter);
     SAVE_OR_CALL(OnReadFailedContactCounterComplete, failed_contact_counter);
   }
   void OnReadLinkQualityComplete(uint8_t link_quality) override {
@@ -128,8 +128,8 @@ public:
     SAVE_OR_CALL(OnReadAfhChannelMapComplete, afh_mode, afh_channel_map)
   }
   void OnReadRssiComplete(uint8_t rssi) override {
-    bluetooth::os::LogMetricReadRssiResult(address_, connection_handle_,
-                                           static_cast<uint8_t>(ErrorCode::SUCCESS), rssi);
+    bluetooth::metrics::LogMetricReadRssiResult(address_, connection_handle_,
+                                                static_cast<uint8_t>(ErrorCode::SUCCESS), rssi);
     SAVE_OR_CALL(OnReadRssiComplete, rssi);
   }
   void OnReadClockComplete(uint32_t clock, uint16_t accuracy) override {
@@ -144,8 +144,9 @@ public:
   void OnReadRemoteVersionInformationComplete(hci::ErrorCode hci_status, uint8_t lmp_version,
                                               uint16_t manufacturer_name,
                                               uint16_t sub_version) override {
-    bluetooth::os::LogMetricRemoteVersionInfo(connection_handle_, static_cast<uint8_t>(hci_status),
-                                              lmp_version, manufacturer_name, sub_version);
+    bluetooth::metrics::LogMetricRemoteVersionInfo(connection_handle_,
+                                                   static_cast<uint8_t>(hci_status), lmp_version,
+                                                   manufacturer_name, sub_version);
     SAVE_OR_CALL(OnReadRemoteVersionInformationComplete, hci_status, lmp_version, manufacturer_name,
                  sub_version);
   }

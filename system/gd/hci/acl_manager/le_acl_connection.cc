@@ -74,8 +74,9 @@ public:
 
   void OnReadRemoteVersionInformationComplete(hci::ErrorCode hci_status, uint8_t lmp_version,
                                               uint16_t manufacturer_name, uint16_t sub_version) {
-    bluetooth::os::LogMetricRemoteVersionInfo(connection_handle_, static_cast<uint8_t>(hci_status),
-                                              lmp_version, manufacturer_name, sub_version);
+    bluetooth::metrics::LogMetricRemoteVersionInfo(connection_handle_,
+                                                   static_cast<uint8_t>(hci_status), lmp_version,
+                                                   manufacturer_name, sub_version);
     SAVE_OR_CALL(OnReadRemoteVersionInformationComplete, hci_status, lmp_version, manufacturer_name,
                  sub_version);
   }

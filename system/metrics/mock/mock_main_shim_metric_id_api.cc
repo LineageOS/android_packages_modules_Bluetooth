@@ -25,7 +25,7 @@
 #include "types/raw_address.h"
 
 namespace bluetooth {
-namespace shim {
+namespace metrics {
 
 bool InitMetricIdAllocator(const std::unordered_map<RawAddress, int>& /* paired_device_map */,
                            CallbackLegacy /* save_id_callback */,
@@ -57,5 +57,5 @@ void ForgetDeviceFromMetricIdAllocator(const RawAddress& /* raw_address */) {
   inc_func_call_count(__func__);
 }
 
-}  // namespace shim
+}  // namespace metrics
 }  // namespace bluetooth

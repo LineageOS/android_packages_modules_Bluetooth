@@ -421,7 +421,7 @@ public:
   static constexpr bool kRemoveConnectionAfterwards = true;
   void on_classic_disconnect(uint16_t handle, ErrorCode reason) {
     bool event_also_routes_to_other_receivers = connections.crash_on_unknown_handle_;
-    bluetooth::os::LogMetricBluetoothDisconnectionReasonReported(
+    bluetooth::metrics::LogMetricBluetoothDisconnectionReasonReported(
             static_cast<uint32_t>(reason), connections.get_address(handle), handle);
     connections.crash_on_unknown_handle_ = false;
     connections.execute(
@@ -635,8 +635,8 @@ public:
       log::error("handle:{} status:{}", handle, ErrorCodeText(status));
       return;
     }
-    bluetooth::os::LogMetricBluetoothRemoteSupportedFeatures(connections.get_address(handle), 0,
-                                                             view.GetLmpFeatures(), handle);
+    bluetooth::metrics::LogMetricBluetoothRemoteSupportedFeatures(connections.get_address(handle),
+                                                                  0, view.GetLmpFeatures(), handle);
     connections.execute(handle, [=](ConnectionManagementCallbacks* callbacks) {
       callbacks->OnReadRemoteSupportedFeaturesComplete(view.GetLmpFeatures());
     });
@@ -651,9 +651,9 @@ public:
       log::error("handle:{} status:{}", handle, ErrorCodeText(status));
       return;
     }
-    bluetooth::os::LogMetricBluetoothRemoteSupportedFeatures(connections.get_address(handle),
-                                                             view.GetPageNumber(),
-                                                             view.GetExtendedLmpFeatures(), handle);
+    bluetooth::metrics::LogMetricBluetoothRemoteSupportedFeatures(
+            connections.get_address(handle), view.GetPageNumber(), view.GetExtendedLmpFeatures(),
+            handle);
     connections.execute(handle, [=](ConnectionManagementCallbacks* callbacks) {
       callbacks->OnReadRemoteExtendedFeaturesComplete(
               view.GetPageNumber(), view.GetMaximumPageNumber(), view.GetExtendedLmpFeatures());

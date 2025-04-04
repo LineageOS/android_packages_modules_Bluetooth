@@ -19,7 +19,7 @@
 #include <bluetooth/metrics/os_metrics.h>
 #include <gmock/gmock.h>
 
-namespace bluetooth::os {
+namespace bluetooth::metrics {
 
 // Current mock instances backing the metrics API.
 static std::shared_ptr<MockMetrics> metricsInstance;
@@ -221,7 +221,7 @@ void CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum key, int64_t
   }
 }
 
-void LogMetricBluetoothLEConnection(os::LEConnectionSessionOptions session_options) {
+void LogMetricBluetoothLEConnection(LEConnectionSessionOptions session_options) {
   if (metricsInstance) {
     metricsInstance->LogMetricBluetoothLEConnection(session_options);
   }
@@ -281,4 +281,4 @@ void LogMetricBluetoothQualityReport(const bqr::BqrLinkQualityEvent& event) {
   }
 }
 
-}  // namespace bluetooth::os
+}  // namespace bluetooth::metrics

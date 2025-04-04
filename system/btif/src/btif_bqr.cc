@@ -779,7 +779,7 @@ static void AddLinkQualityEventToQueue(uint8_t length, const uint8_t* p_link_qua
           p_bqr_event->bqr_link_quality_event_.no_rx_count,
           p_bqr_event->bqr_link_quality_event_.nak_count);
 
-  os::LogMetricBluetoothQualityReport(p_bqr_event->bqr_link_quality_event_);
+  metrics::LogMetricBluetoothQualityReport(p_bqr_event->bqr_link_quality_event_);
 
   BluetoothQualityReportInterface* bqrItf = getBluetoothQualityReportInterface();
 

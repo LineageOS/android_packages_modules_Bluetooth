@@ -46,9 +46,9 @@ void bta_collect_rfc_metrics_after_sdp_fail(tBTA_JV_STATUS sdp_status, RawAddres
   RfcommPortEvent last_event = RfcommPortEvent::PORT_EVENT_UNKNOWN;
   int open_duration_ms = 0;
 
-  os::LogMetricRfcommConnectionAtClose(addr, close_reason, toSecurity(security), last_event,
-                                       state_prior, open_duration_ms, app_uid, toStatus(sdp_status),
-                                       is_server, sdp_initiated, sdp_duration_ms);
+  metrics::LogMetricRfcommConnectionAtClose(
+          addr, close_reason, toSecurity(security), last_event, state_prior, open_duration_ms,
+          app_uid, toStatus(sdp_status), is_server, sdp_initiated, sdp_duration_ms);
 }
 
 void bta_collect_rfc_metrics_after_port_fail(tPORT_RESULT port_result, bool sdp_initiated,
@@ -65,9 +65,9 @@ void bta_collect_rfc_metrics_after_port_fail(tPORT_RESULT port_result, bool sdp_
   RfcommPortEvent last_event = RfcommPortEvent::PORT_EVENT_UNKNOWN;
   int open_duration_ms = 0;
 
-  os::LogMetricRfcommConnectionAtClose(addr, toPortResult(port_result), toSecurity(security),
-                                       last_event, state_prior, open_duration_ms, app_uid,
-                                       reported_status, is_server, sdp_initiated, sdp_duration_ms);
+  metrics::LogMetricRfcommConnectionAtClose(
+          addr, toPortResult(port_result), toSecurity(security), last_event, state_prior,
+          open_duration_ms, app_uid, reported_status, is_server, sdp_initiated, sdp_duration_ms);
 }
 
 static BtaStatus toStatus(tBTA_JV_STATUS status) {

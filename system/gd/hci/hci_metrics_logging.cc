@@ -73,7 +73,7 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
 
   // init parameters to log
   Address address = Address::kEmpty;
-  uint32_t connection_handle = bluetooth::os::kUnknownConnectionHandle;
+  uint32_t connection_handle = bluetooth::metrics::kUnknownConnectionHandle;
   uint16_t reason = static_cast<uint16_t>(ErrorCode::UNKNOWN_HCI_COMMAND);
   static uint16_t kUnknownBleEvt = android::bluetooth::hci::BLE_EVT_UNKNOWN;
   uint16_t event_code = android::bluetooth::hci::EVT_UNKNOWN;
@@ -248,7 +248,7 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
     default:
       return;
   }
-  os::LogMetricLinkLayerConnectionEvent(
+  metrics::LogMetricLinkLayerConnectionEvent(
           address, connection_handle, direction, link_type, static_cast<uint32_t>(op_code),
           static_cast<uint16_t>(event_code), kUnknownBleEvt, status, static_cast<uint16_t>(reason));
 }
@@ -261,7 +261,7 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
 
   // init parameters to log
   Address address = Address::kEmpty;
-  uint32_t connection_handle = bluetooth::os::kUnknownConnectionHandle;
+  uint32_t connection_handle = bluetooth::metrics::kUnknownConnectionHandle;
   uint16_t reason = static_cast<uint16_t>(ErrorCode::UNKNOWN_HCI_COMMAND);
   static uint16_t kUnknownBleEvt = android::bluetooth::hci::BLE_EVT_UNKNOWN;
   uint16_t event_code = android::bluetooth::hci::EVT_COMMAND_STATUS;
@@ -448,7 +448,7 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
     default:
       return;
   }
-  os::LogMetricLinkLayerConnectionEvent(
+  metrics::LogMetricLinkLayerConnectionEvent(
           address, connection_handle, direction, link_type, static_cast<uint32_t>(op_code),
           static_cast<uint16_t>(event_code), kUnknownBleEvt, static_cast<uint16_t>(status),
           static_cast<uint16_t>(reason));
@@ -463,7 +463,7 @@ void log_link_layer_connection_command_complete(EventView event_view,
 
   // init parameters to log
   Address address = Address::kEmpty;
-  uint32_t connection_handle = bluetooth::os::kUnknownConnectionHandle;
+  uint32_t connection_handle = bluetooth::metrics::kUnknownConnectionHandle;
   ErrorCode status = ErrorCode::UNKNOWN_HCI_COMMAND;
   ErrorCode reason = ErrorCode::UNKNOWN_HCI_COMMAND;
   static uint16_t kUnknownBleEvt = android::bluetooth::hci::BLE_EVT_UNKNOWN;
@@ -534,7 +534,7 @@ void log_link_layer_connection_command_complete(EventView event_view,
     default:
       return;
   }
-  os::LogMetricLinkLayerConnectionEvent(
+  metrics::LogMetricLinkLayerConnectionEvent(
           address, connection_handle, direction, link_type, static_cast<uint32_t>(op_code),
           static_cast<uint16_t>(event_code), kUnknownBleEvt, static_cast<uint16_t>(status),
           static_cast<uint16_t>(reason));
@@ -544,7 +544,7 @@ void log_link_layer_connection_other_hci_event(EventView packet,
                                                storage::StorageModule* storage_module) {
   EventCode event_code = packet.GetEventCode();
   Address address = Address::kEmpty;
-  uint32_t connection_handle = bluetooth::os::kUnknownConnectionHandle;
+  uint32_t connection_handle = bluetooth::metrics::kUnknownConnectionHandle;
   android::bluetooth::DirectionEnum direction = android::bluetooth::DIRECTION_UNKNOWN;
   uint16_t link_type = android::bluetooth::LINK_TYPE_UNKNOWN;
   ErrorCode status = ErrorCode::UNKNOWN_HCI_COMMAND;
@@ -610,7 +610,7 @@ void log_link_layer_connection_other_hci_event(EventView packet,
     default:
       return;
   }
-  os::LogMetricLinkLayerConnectionEvent(
+  metrics::LogMetricLinkLayerConnectionEvent(
           address, connection_handle, direction, link_type, static_cast<uint32_t>(cmd),
           static_cast<uint16_t>(event_code), android::bluetooth::hci::BLE_EVT_UNKNOWN,
           static_cast<uint16_t>(status), static_cast<uint16_t>(reason));
@@ -654,7 +654,7 @@ void log_link_layer_connection_event_le_meta(LeMetaEventView le_meta_event_view)
     return;
   }
 
-  os::LogMetricLinkLayerConnectionEvent(
+  metrics::LogMetricLinkLayerConnectionEvent(
           address, connection_handle, direction, link_type, static_cast<uint32_t>(cmd),
           static_cast<uint16_t>(event_code), static_cast<uint16_t>(leEvt),
           static_cast<uint16_t>(status), static_cast<uint16_t>(reason));
@@ -672,7 +672,7 @@ void log_classic_pairing_other_hci_event(EventView packet) {
   uint32_t cmd = android::bluetooth::hci::CMD_UNKNOWN;
   ErrorCode status = ErrorCode::UNKNOWN_HCI_COMMAND;
   ErrorCode reason = ErrorCode::UNKNOWN_HCI_COMMAND;
-  uint32_t connection_handle = bluetooth::os::kUnknownConnectionHandle;
+  uint32_t connection_handle = bluetooth::metrics::kUnknownConnectionHandle;
   int64_t value = 0;
 
   switch (event_code) {
@@ -790,9 +790,9 @@ void log_classic_pairing_other_hci_event(EventView packet) {
     default:
       return;
   }
-  os::LogMetricClassicPairingEvent(address, connection_handle, static_cast<uint32_t>(cmd),
-                                   static_cast<uint16_t>(event_code), static_cast<uint16_t>(status),
-                                   static_cast<uint16_t>(reason), value);
+  metrics::LogMetricClassicPairingEvent(
+          address, connection_handle, static_cast<uint32_t>(cmd), static_cast<uint16_t>(event_code),
+          static_cast<uint16_t>(status), static_cast<uint16_t>(reason), value);
 }
 
 void log_classic_pairing_command_status(std::unique_ptr<CommandView>& command_view,
@@ -804,7 +804,7 @@ void log_classic_pairing_command_status(std::unique_ptr<CommandView>& command_vi
   // init parameters
   Address address = Address::kEmpty;
   ErrorCode reason = ErrorCode::UNKNOWN_HCI_COMMAND;
-  uint32_t connection_handle = bluetooth::os::kUnknownConnectionHandle;
+  uint32_t connection_handle = bluetooth::metrics::kUnknownConnectionHandle;
   int64_t value = 0;
   uint16_t event_code = android::bluetooth::hci::EVT_COMMAND_STATUS;
 
@@ -970,9 +970,10 @@ void log_classic_pairing_command_status(std::unique_ptr<CommandView>& command_vi
     default:
       return;
   }
-  os::LogMetricClassicPairingEvent(address, connection_handle, static_cast<uint32_t>(op_code),
-                                   static_cast<uint16_t>(event_code), static_cast<uint16_t>(status),
-                                   static_cast<uint16_t>(reason), value);
+  metrics::LogMetricClassicPairingEvent(address, connection_handle, static_cast<uint32_t>(op_code),
+                                        static_cast<uint16_t>(event_code),
+                                        static_cast<uint16_t>(status),
+                                        static_cast<uint16_t>(reason), value);
 }
 
 void log_classic_pairing_command_complete(EventView event_view,
@@ -987,7 +988,7 @@ void log_classic_pairing_command_complete(EventView event_view,
   Address address = Address::kEmpty;
   ErrorCode status = ErrorCode::UNKNOWN_HCI_COMMAND;
   ErrorCode reason = ErrorCode::UNKNOWN_HCI_COMMAND;
-  uint32_t connection_handle = bluetooth::os::kUnknownConnectionHandle;
+  uint32_t connection_handle = bluetooth::metrics::kUnknownConnectionHandle;
   int64_t value = 0;
   EventCode event_code = EventCode::COMMAND_COMPLETE;
 
@@ -1222,9 +1223,10 @@ void log_classic_pairing_command_complete(EventView event_view,
     default:
       return;
   }
-  os::LogMetricClassicPairingEvent(address, connection_handle, static_cast<uint32_t>(op_code),
-                                   static_cast<uint16_t>(event_code), static_cast<uint16_t>(status),
-                                   static_cast<uint16_t>(reason), value);
+  metrics::LogMetricClassicPairingEvent(address, connection_handle, static_cast<uint32_t>(op_code),
+                                        static_cast<uint16_t>(event_code),
+                                        static_cast<uint16_t>(status),
+                                        static_cast<uint16_t>(reason), value);
 }
 
 void log_remote_device_information(const Address& address,
@@ -1241,7 +1243,7 @@ void log_remote_device_information(const Address& address,
   sdp_di_vendor_id_source
           << "N:SDP::DIP::"
           << common::ToHexString(device.GetSdpDiVendorIdSource().value_or(0)).c_str();
-  os::LogMetricManufacturerInfo(
+  metrics::LogMetricManufacturerInfo(
           address, address_type, android::bluetooth::DeviceInfoSrcEnum::DEVICE_INFO_INTERNAL,
           sdp_di_vendor_id_source.str(),
           common::ToHexString(device.GetSdpDiManufacturer().value_or(0)).c_str(),
@@ -1249,7 +1251,7 @@ void log_remote_device_information(const Address& address,
           common::ToHexString(device.GetSdpDiHardwareVersion().value_or(0)).c_str(), "");
 
   // log RemoteVersionInfo
-  os::LogMetricRemoteVersionInfo(
+  metrics::LogMetricRemoteVersionInfo(
           connection_handle, static_cast<uint16_t>(status), device.GetLmpVersion().value_or(-1),
           device.GetManufacturerCode().value_or(-1), device.GetLmpSubVersion().value_or(-1));
 }

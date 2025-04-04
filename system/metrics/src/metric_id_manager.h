@@ -26,8 +26,7 @@
 #include "common/lru_cache.h"
 #include "hci/address.h"
 
-namespace bluetooth {
-namespace common {
+namespace bluetooth::metrics {
 
 class MetricIdManager {
 public:
@@ -115,8 +114,8 @@ public:
 private:
   mutable std::mutex id_allocator_mutex_;
 
-  LruCache<hci::Address, int> paired_device_cache_;
-  LruCache<hci::Address, int> temporary_device_cache_;
+  common::LruCache<hci::Address, int> paired_device_cache_;
+  common::LruCache<hci::Address, int> temporary_device_cache_;
   std::unordered_set<int> id_set_;
 
   int next_id_{kMinId};
@@ -131,5 +130,4 @@ private:
   MetricIdManager& operator=(MetricIdManager const&) = delete;
 };
 
-}  // namespace common
-}  // namespace bluetooth
+}  // namespace bluetooth::metrics
