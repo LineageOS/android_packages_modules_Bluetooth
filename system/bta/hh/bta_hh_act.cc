@@ -456,31 +456,33 @@ void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
  *
  ******************************************************************************/
 static void bta_hh_bredr_conn(tBTA_HH_DEV_CB* p_cb) {
-  /* If previously virtually cabled device */
-  if (p_cb->app_id) {
-    tBTA_HH_DATA bta_hh_data = {};
-    bta_hh_data.status = BTA_HH_OK;
-
-    log::verbose("skip SDP for known devices");
-
-    if (p_cb->hid_handle == BTA_HH_INVALID_HANDLE) {
-      uint8_t hdl;
-      if (HID_HostAddDev(p_cb->link_spec.addrt.bda, p_cb->attr_mask, &hdl) == HID_SUCCESS) {
-        /* update device CB with newly register device handle */
-        bta_hh_add_device_to_list(p_cb, hdl, p_cb->attr_mask, nullptr, p_cb->sub_class,
-                                  p_cb->dscp_info.ssr_max_latency, p_cb->dscp_info.ssr_min_tout,
-                                  p_cb->app_id);
-        /* update cb_index[] map */
-        bta_hh_cb.cb_index[hdl] = p_cb->index;
-      } else {
-        bta_hh_data.status = BTA_HH_ERR_NO_RES;
-      }
-    }
-
-    bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &bta_hh_data);
-  } else { /* First time connection, start SDP */
+  if (p_cb->app_id == 0) {
+    log::debug("Starting SDP for new device {}", p_cb->link_spec);
     bta_hh_start_sdp(p_cb);
+    return;
   }
+
+  tBTA_HH_DATA bta_hh_data = {.status = BTA_HH_OK};
+  if (p_cb->hid_handle != BTA_HH_INVALID_HANDLE) {
+    log::warn("Already connected to {}, handle: {}", p_cb->link_spec, p_cb->hid_handle);
+    bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &bta_hh_data);
+    return;
+  }
+
+  log::verbose("Reconnecting to {} app_id: {}", p_cb->link_spec, p_cb->app_id);
+  uint8_t hdl;
+  if (HID_HostAddDev(p_cb->link_spec.addrt.bda, p_cb->attr_mask, &hdl) == HID_SUCCESS) {
+    /* Update device CB with newly register device handle */
+    bta_hh_add_device_to_list(p_cb, hdl, p_cb->attr_mask, nullptr, p_cb->sub_class,
+                              p_cb->dscp_info.ssr_max_latency, p_cb->dscp_info.ssr_min_tout,
+                              p_cb->app_id);
+    bta_hh_cb.cb_index[hdl] = p_cb->index;
+  } else {
+    bta_hh_data.status = BTA_HH_ERR_NO_RES;
+    log::warn("Failed to initiated connection to {}", p_cb->link_spec);
+  }
+
+  bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &bta_hh_data);
 }
 
 /*******************************************************************************
