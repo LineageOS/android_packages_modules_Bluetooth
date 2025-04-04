@@ -58,6 +58,7 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data);
 static void l2c_csm_open(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data);
 static void l2c_csm_w4_l2cap_disconnect_rsp(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data);
 static void l2c_csm_w4_l2ca_disconnect_rsp(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data);
+static void l2c_csm_indicate_connection_open(tL2C_CCB* p_ccb);
 
 static std::string l2c_csm_get_event_name(const tL2CEVT& event);
 
@@ -126,6 +127,40 @@ static void l2c_ccb_pts_delay_config_timeout(void* data) {
   l2c_csm_send_config_req(p_ccb);
 }
 #endif
+
+static void connection_rsp_tx_packet_complete(void* p_data, uint16_t num_sent) {
+  tL2C_CCB* p_ccb = (tL2C_CCB*)p_data;
+  log::debug("sent_not_acked_for_connection_rsp: {}, num_sent: {}",
+             p_ccb->sent_not_acked_for_connection_rsp, num_sent);
+  if (p_ccb->sent_not_acked_for_connection_rsp > num_sent) {
+    p_ccb->sent_not_acked_for_connection_rsp -= num_sent;
+  } else {
+    p_ccb->sent_not_acked_for_connection_rsp = 0;
+    p_ccb->tx_packet_complete_cb = nullptr;
+    log::info(
+            "Connection response was received from controller. Calling Connect_Ind_Cb(), CID: "
+            "0x{:04x}",
+            p_ccb->local_cid);
+    l2c_csm_indicate_connection_open(p_ccb);
+  }
+}
+
+static void register_connection_rsp_tx_packet_complete_callback(tL2C_CCB* p_ccb) {
+  if (p_ccb->tx_packet_complete_cb) {
+    log::error("Packet complete callback is already registered LCB CID: 0x{:04x}",
+               p_ccb->local_cid);
+    return;
+  }
+  uint16_t link_xmit_pending_q_len = (p_ccb->p_lcb->link_xmit_data_q != nullptr)
+                                             ? list_length(p_ccb->p_lcb->link_xmit_data_q)
+                                             : 0;
+  p_ccb->sent_not_acked_for_connection_rsp = p_ccb->p_lcb->sent_not_acked + link_xmit_pending_q_len;
+  p_ccb->tx_packet_complete_cb = connection_rsp_tx_packet_complete;
+  log::debug(
+          "sent_not_acked: {}, link_xmit_pending_q_len: {}, sent_not_acked_for_connection_rsp: {}",
+          p_ccb->p_lcb->sent_not_acked, link_xmit_pending_q_len,
+          p_ccb->sent_not_acked_for_connection_rsp);
+}
 
 static uint8_t get_fcs_option(void) {
 #if (L2CAP_CONFORMANCE_TESTING == TRUE)
@@ -602,9 +637,23 @@ static void l2c_csm_term_w4_sec_comp(tL2C_CCB* p_ccb, tL2CEVT event, void* p_dat
                     p_ccb->peer_conn_cfg.mtu, p_ccb->remote_id);
           } else {
             /* Handle BLE CoC */
-            log::debug("Calling Connect_Ind_Cb(), CID: 0x{:04x}", p_ccb->local_cid);
             l2c_csm_send_connect_rsp(p_ccb);
-            l2c_csm_indicate_connection_open(p_ccb);
+            /* Initial zero local credits imply offloaded channel where offload stack sends L2CAP
+             * credits to remote device after the connection indication. Offloaded channel is the
+             * only path to set the initial local credit as zero.
+             * TODO(b/409316441): Propagate offload flag from btif to stack. */
+            bool is_offload = (p_ccb->local_conn_cfg.credits == 0);
+            /* Check the offloaded channel to delay connection indication until connection response
+             * is sent to remote device. */
+            if (com::android::bluetooth::flags::delay_offload_le_coc_connection_ind() &&
+                is_offload) {
+              log::debug("Delaying Connect_Ind_Cb() for offloaded channel, CID: 0x{:04x}",
+                         p_ccb->local_cid);
+              register_connection_rsp_tx_packet_complete_callback(p_ccb);
+            } else {
+              log::debug("Calling Connect_Ind_Cb(), CID: 0x{:04x}", p_ccb->local_cid);
+              l2c_csm_indicate_connection_open(p_ccb);
+            }
           }
         }
       } else {
