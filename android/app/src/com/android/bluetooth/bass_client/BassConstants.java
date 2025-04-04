@@ -86,5 +86,5 @@ public class BassConstants {
     public static final long BIS_SYNC_NO_PREFERENCE = 0xFFFFFFFFL;
 
     public static final int FLAG_SYNC_PA = 1 << 0;
-    public static final int FLAG_SYNC_DO_NOT_USE_NO_PREFERENCE = 1 << 1;
+    public static final int FLAG_SYNC_BIS_CHANNEL_PREFERENCE = 1 << 1;
 }
