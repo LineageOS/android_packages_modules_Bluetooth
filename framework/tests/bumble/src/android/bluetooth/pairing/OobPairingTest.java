@@ -334,7 +334,7 @@ public class OobPairingTest {
      */
     private void testStep_initiatePairingFromRemote() {
         ByteString deviceAddr;
-        StreamObserverSpliterator<ScanningResponse> scanningResponseObserver =
+        StreamObserverSpliterator<ScanRequest, ScanningResponse> scanningResponseObserver =
                 new StreamObserverSpliterator<>();
         Deadline deadline = Deadline.after(TIMEOUT_ADVERTISING_MS, TimeUnit.MILLISECONDS);
         mBumble.host()
@@ -365,7 +365,7 @@ public class OobPairingTest {
                                         .setRandom(deviceAddr)
                                         .build());
         // Start pairing from Bumble
-        StreamObserverSpliterator<SecureResponse> responseObserver =
+        StreamObserverSpliterator<SecureRequest, SecureResponse> responseObserver =
                 new StreamObserverSpliterator<>();
         mBumble.security()
                 .secure(

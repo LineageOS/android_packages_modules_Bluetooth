@@ -23,7 +23,6 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothA2dp;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -96,9 +95,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -136,7 +135,7 @@ public class PairingTest {
     public final EnableBluetoothRule mEnableBluetoothRule =
             new EnableBluetoothRule(false /* enableTestMode */, true /* toggleBluetooth */);
 
-    private final StreamObserverSpliterator<PairingEvent> mPairingEventStreamObserver =
+    private final StreamObserverSpliterator<Void, PairingEvent> mPairingEventStreamObserver =
             new StreamObserverSpliterator<>();
     @Mock private BluetoothProfile.ServiceListener mProfileServiceListener;
 
@@ -411,7 +410,7 @@ public class PairingTest {
                 .build();
 
         // Outgoing GATT service discovery and incoming LE pairing in parallel
-        StreamObserverSpliterator<SecureResponse> responseObserver =
+        StreamObserverSpliterator<SecureRequest, SecureResponse> responseObserver =
                 helper_OutgoingGattServiceDiscoveryWithIncomingLePairing(intentReceiver);
 
         // Cancel pairing from Android
@@ -461,7 +460,7 @@ public class PairingTest {
                 .build();
 
         // Outgoing GATT service discovery and incoming LE pairing in parallel
-        StreamObserverSpliterator<SecureResponse> responseObserver =
+        StreamObserverSpliterator<SecureRequest, SecureResponse> responseObserver =
                 helper_OutgoingGattServiceDiscoveryWithIncomingLePairing(intentReceiver);
 
         // Approve pairing from Android
@@ -945,7 +944,7 @@ public class PairingTest {
                 .setConnectable(true)
                 .setOwnAddressType(OwnAddressType.PUBLIC);
 
-        StreamObserverSpliterator<AdvertiseResponse> responseObserver =
+        StreamObserverSpliterator<SecureRequest, AdvertiseResponse> responseObserver =
                 new StreamObserverSpliterator<>();
         mBumble.host().advertise(advRequestBuilder.build(), responseObserver);
 
@@ -1059,9 +1058,9 @@ public class PairingTest {
     }
 
     /* Starts outgoing GATT service discovery and incoming LE pairing in parallel */
-    private StreamObserverSpliterator<SecureResponse>
+    private StreamObserverSpliterator<SecureRequest, SecureResponse>
             helper_OutgoingGattServiceDiscoveryWithIncomingLePairing(
-                IntentReceiver parentIntentReceiver) {
+                    IntentReceiver parentIntentReceiver) {
         // Register new actions specific to this helper function
         IntentReceiver intentReceiver =
             IntentReceiver.update(
@@ -1110,7 +1109,7 @@ public class PairingTest {
                     BluetoothDevice.TRANSPORT_LE));
 
         // Start pairing from Bumble
-        StreamObserverSpliterator<SecureResponse> responseObserver =
+        StreamObserverSpliterator<SecureRequest, SecureResponse> responseObserver =
                 new StreamObserverSpliterator<>();
         mBumble.security()
                 .secure(
@@ -1312,7 +1311,7 @@ public class PairingTest {
         ConnectLEResponse leConn = testStep_CreateLeConnection(intentReceiver);
 
         // Start pairing from Bumble
-        StreamObserverSpliterator<SecureResponse> responseObserver =
+        StreamObserverSpliterator<SecureRequest, SecureResponse> responseObserver =
                 new StreamObserverSpliterator<>();
         mBumble.security()
                 .secure(
@@ -1383,7 +1382,7 @@ public class PairingTest {
                         new IntentReceiver.Builder(
                                 sTargetContext, BluetoothDevice.ACTION_ACL_CONNECTED));
         ByteString deviceAddr;
-        StreamObserverSpliterator<ScanningResponse> scanningResponseObserver =
+        StreamObserverSpliterator<ScanRequest, ScanningResponse> scanningResponseObserver =
                 new StreamObserverSpliterator<>();
         Deadline deadline = Deadline.after(TIMEOUT_ADVERTISING_MS, TimeUnit.MILLISECONDS);
         mBumble.host()
