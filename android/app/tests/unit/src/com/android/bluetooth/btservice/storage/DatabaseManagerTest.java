@@ -830,7 +830,7 @@ public final class DatabaseManagerTest {
         Cursor cursor = db.query("SELECT * FROM metadata");
 
         // pbap_client_priority should not in version 100
-        assertHasColumn(cursor, "pbap_client_priority", false);
+        assertColumnMissing(cursor, "pbap_client_priority");
 
         // Migrate database from 100 to 101
         db.close();
@@ -840,7 +840,7 @@ public final class DatabaseManagerTest {
         cursor = db.query("SELECT * FROM metadata");
 
         // Check whether pbap_client_priority exists in version 101
-        assertHasColumn(cursor, "pbap_client_priority", true);
+        assertHasColumn(cursor, "pbap_client_priority");
     }
 
     @Test
@@ -854,16 +854,16 @@ public final class DatabaseManagerTest {
         assertThat(db.insert("metadata", SQLiteDatabase.CONFLICT_IGNORE, device)).isNotEqualTo(-1);
 
         // Check the metadata names on version 101
-        assertHasColumn(cursor, "is_unthethered_headset", true);
-        assertHasColumn(cursor, "unthethered_left_icon", true);
-        assertHasColumn(cursor, "unthethered_right_icon", true);
-        assertHasColumn(cursor, "unthethered_case_icon", true);
-        assertHasColumn(cursor, "unthethered_left_battery", true);
-        assertHasColumn(cursor, "unthethered_right_battery", true);
-        assertHasColumn(cursor, "unthethered_case_battery", true);
-        assertHasColumn(cursor, "unthethered_left_charging", true);
-        assertHasColumn(cursor, "unthethered_right_charging", true);
-        assertHasColumn(cursor, "unthethered_case_charging", true);
+        assertHasColumn(cursor, "is_unthethered_headset");
+        assertHasColumn(cursor, "unthethered_left_icon");
+        assertHasColumn(cursor, "unthethered_right_icon");
+        assertHasColumn(cursor, "unthethered_case_icon");
+        assertHasColumn(cursor, "unthethered_left_battery");
+        assertHasColumn(cursor, "unthethered_right_battery");
+        assertHasColumn(cursor, "unthethered_case_battery");
+        assertHasColumn(cursor, "unthethered_left_charging");
+        assertHasColumn(cursor, "unthethered_right_charging");
+        assertHasColumn(cursor, "unthethered_case_charging");
 
         // Migrate database from 101 to 102
         db.close();
@@ -873,27 +873,27 @@ public final class DatabaseManagerTest {
         cursor = db.query("SELECT * FROM metadata");
 
         // metadata names should be changed on version 102
-        assertHasColumn(cursor, "is_unthethered_headset", false);
-        assertHasColumn(cursor, "unthethered_left_icon", false);
-        assertHasColumn(cursor, "unthethered_right_icon", false);
-        assertHasColumn(cursor, "unthethered_case_icon", false);
-        assertHasColumn(cursor, "unthethered_left_battery", false);
-        assertHasColumn(cursor, "unthethered_right_battery", false);
-        assertHasColumn(cursor, "unthethered_case_battery", false);
-        assertHasColumn(cursor, "unthethered_left_charging", false);
-        assertHasColumn(cursor, "unthethered_right_charging", false);
-        assertHasColumn(cursor, "unthethered_case_charging", false);
+        assertColumnMissing(cursor, "is_unthethered_headset");
+        assertColumnMissing(cursor, "unthethered_left_icon");
+        assertColumnMissing(cursor, "unthethered_right_icon");
+        assertColumnMissing(cursor, "unthethered_case_icon");
+        assertColumnMissing(cursor, "unthethered_left_battery");
+        assertColumnMissing(cursor, "unthethered_right_battery");
+        assertColumnMissing(cursor, "unthethered_case_battery");
+        assertColumnMissing(cursor, "unthethered_left_charging");
+        assertColumnMissing(cursor, "unthethered_right_charging");
+        assertColumnMissing(cursor, "unthethered_case_charging");
 
-        assertHasColumn(cursor, "is_untethered_headset", true);
-        assertHasColumn(cursor, "untethered_left_icon", true);
-        assertHasColumn(cursor, "untethered_right_icon", true);
-        assertHasColumn(cursor, "untethered_case_icon", true);
-        assertHasColumn(cursor, "untethered_left_battery", true);
-        assertHasColumn(cursor, "untethered_right_battery", true);
-        assertHasColumn(cursor, "untethered_case_battery", true);
-        assertHasColumn(cursor, "untethered_left_charging", true);
-        assertHasColumn(cursor, "untethered_right_charging", true);
-        assertHasColumn(cursor, "untethered_case_charging", true);
+        assertHasColumn(cursor, "is_untethered_headset");
+        assertHasColumn(cursor, "untethered_left_icon");
+        assertHasColumn(cursor, "untethered_right_icon");
+        assertHasColumn(cursor, "untethered_case_icon");
+        assertHasColumn(cursor, "untethered_left_battery");
+        assertHasColumn(cursor, "untethered_right_battery");
+        assertHasColumn(cursor, "untethered_case_battery");
+        assertHasColumn(cursor, "untethered_left_charging");
+        assertHasColumn(cursor, "untethered_right_charging");
+        assertHasColumn(cursor, "untethered_case_charging");
 
         while (cursor.moveToNext()) {
             // Check whether metadata data type are blob
@@ -945,18 +945,18 @@ public final class DatabaseManagerTest {
         assertThat(db.insert("metadata", SQLiteDatabase.CONFLICT_IGNORE, device)).isNotEqualTo(-1);
 
         // Check the metadata names on version 102
-        assertHasColumn(cursor, "a2dp_priority", true);
-        assertHasColumn(cursor, "a2dp_sink_priority", true);
-        assertHasColumn(cursor, "hfp_priority", true);
-        assertHasColumn(cursor, "hfp_client_priority", true);
-        assertHasColumn(cursor, "hid_host_priority", true);
-        assertHasColumn(cursor, "pan_priority", true);
-        assertHasColumn(cursor, "pbap_priority", true);
-        assertHasColumn(cursor, "pbap_client_priority", true);
-        assertHasColumn(cursor, "map_priority", true);
-        assertHasColumn(cursor, "sap_priority", true);
-        assertHasColumn(cursor, "hearing_aid_priority", true);
-        assertHasColumn(cursor, "map_client_priority", true);
+        assertHasColumn(cursor, "a2dp_priority");
+        assertHasColumn(cursor, "a2dp_sink_priority");
+        assertHasColumn(cursor, "hfp_priority");
+        assertHasColumn(cursor, "hfp_client_priority");
+        assertHasColumn(cursor, "hid_host_priority");
+        assertHasColumn(cursor, "pan_priority");
+        assertHasColumn(cursor, "pbap_priority");
+        assertHasColumn(cursor, "pbap_client_priority");
+        assertHasColumn(cursor, "map_priority");
+        assertHasColumn(cursor, "sap_priority");
+        assertHasColumn(cursor, "hearing_aid_priority");
+        assertHasColumn(cursor, "map_client_priority");
 
         // Migrate database from 102 to 103
         db.close();
@@ -966,31 +966,31 @@ public final class DatabaseManagerTest {
         cursor = db.query("SELECT * FROM metadata");
 
         // metadata names should be changed on version 103
-        assertHasColumn(cursor, "a2dp_priority", false);
-        assertHasColumn(cursor, "a2dp_sink_priority", false);
-        assertHasColumn(cursor, "hfp_priority", false);
-        assertHasColumn(cursor, "hfp_client_priority", false);
-        assertHasColumn(cursor, "hid_host_priority", false);
-        assertHasColumn(cursor, "pan_priority", false);
-        assertHasColumn(cursor, "pbap_priority", false);
-        assertHasColumn(cursor, "pbap_client_priority", false);
-        assertHasColumn(cursor, "map_priority", false);
-        assertHasColumn(cursor, "sap_priority", false);
-        assertHasColumn(cursor, "hearing_aid_priority", false);
-        assertHasColumn(cursor, "map_client_priority", false);
+        assertColumnMissing(cursor, "a2dp_priority");
+        assertColumnMissing(cursor, "a2dp_sink_priority");
+        assertColumnMissing(cursor, "hfp_priority");
+        assertColumnMissing(cursor, "hfp_client_priority");
+        assertColumnMissing(cursor, "hid_host_priority");
+        assertColumnMissing(cursor, "pan_priority");
+        assertColumnMissing(cursor, "pbap_priority");
+        assertColumnMissing(cursor, "pbap_client_priority");
+        assertColumnMissing(cursor, "map_priority");
+        assertColumnMissing(cursor, "sap_priority");
+        assertColumnMissing(cursor, "hearing_aid_priority");
+        assertColumnMissing(cursor, "map_client_priority");
 
-        assertHasColumn(cursor, "a2dp_connection_policy", true);
-        assertHasColumn(cursor, "a2dp_sink_connection_policy", true);
-        assertHasColumn(cursor, "hfp_connection_policy", true);
-        assertHasColumn(cursor, "hfp_client_connection_policy", true);
-        assertHasColumn(cursor, "hid_host_connection_policy", true);
-        assertHasColumn(cursor, "pan_connection_policy", true);
-        assertHasColumn(cursor, "pbap_connection_policy", true);
-        assertHasColumn(cursor, "pbap_client_connection_policy", true);
-        assertHasColumn(cursor, "map_connection_policy", true);
-        assertHasColumn(cursor, "sap_connection_policy", true);
-        assertHasColumn(cursor, "hearing_aid_connection_policy", true);
-        assertHasColumn(cursor, "map_client_connection_policy", true);
+        assertHasColumn(cursor, "a2dp_connection_policy");
+        assertHasColumn(cursor, "a2dp_sink_connection_policy");
+        assertHasColumn(cursor, "hfp_connection_policy");
+        assertHasColumn(cursor, "hfp_client_connection_policy");
+        assertHasColumn(cursor, "hid_host_connection_policy");
+        assertHasColumn(cursor, "pan_connection_policy");
+        assertHasColumn(cursor, "pbap_connection_policy");
+        assertHasColumn(cursor, "pbap_client_connection_policy");
+        assertHasColumn(cursor, "map_connection_policy");
+        assertHasColumn(cursor, "sap_connection_policy");
+        assertHasColumn(cursor, "hearing_aid_connection_policy");
+        assertHasColumn(cursor, "map_client_connection_policy");
 
         while (cursor.moveToNext()) {
             // Check PRIORITY_AUTO_CONNECT (1000) was replaced with CONNECTION_POLICY_ALLOWED (100)
@@ -1061,8 +1061,8 @@ public final class DatabaseManagerTest {
                         DB_NAME, 104, true, MetadataDatabase.MIGRATION_103_104);
         Cursor cursor = db.query("SELECT * FROM metadata");
 
-        assertHasColumn(cursor, "last_active_time", true);
-        assertHasColumn(cursor, "is_active_a2dp_device", true);
+        assertHasColumn(cursor, "last_active_time");
+        assertHasColumn(cursor, "is_active_a2dp_device");
 
         while (cursor.moveToNext()) {
             // Check the two new columns were added with their default values
@@ -1087,13 +1087,13 @@ public final class DatabaseManagerTest {
                         DB_NAME, 105, true, MetadataDatabase.MIGRATION_104_105);
         Cursor cursor = db.query("SELECT * FROM metadata");
 
-        assertHasColumn(cursor, "device_type", true);
-        assertHasColumn(cursor, "main_battery", true);
-        assertHasColumn(cursor, "main_charging", true);
-        assertHasColumn(cursor, "main_low_battery_threshold", true);
-        assertHasColumn(cursor, "untethered_right_low_battery_threshold", true);
-        assertHasColumn(cursor, "untethered_left_low_battery_threshold", true);
-        assertHasColumn(cursor, "untethered_case_low_battery_threshold", true);
+        assertHasColumn(cursor, "device_type");
+        assertHasColumn(cursor, "main_battery");
+        assertHasColumn(cursor, "main_charging");
+        assertHasColumn(cursor, "main_low_battery_threshold");
+        assertHasColumn(cursor, "untethered_right_low_battery_threshold");
+        assertHasColumn(cursor, "untethered_left_low_battery_threshold");
+        assertHasColumn(cursor, "untethered_case_low_battery_threshold");
 
         while (cursor.moveToNext()) {
             // Check the old column have the original value
@@ -1126,7 +1126,7 @@ public final class DatabaseManagerTest {
                         DB_NAME, 106, true, MetadataDatabase.MIGRATION_105_106);
         Cursor cursor = db.query("SELECT * FROM metadata");
 
-        assertHasColumn(cursor, "le_audio_connection_policy", true);
+        assertHasColumn(cursor, "le_audio_connection_policy");
 
         while (cursor.moveToNext()) {
             // Check the new columns was added with default value
@@ -1150,7 +1150,7 @@ public final class DatabaseManagerTest {
                         DB_NAME, 107, true, MetadataDatabase.MIGRATION_106_107);
         Cursor cursor = db.query("SELECT * FROM metadata");
 
-        assertHasColumn(cursor, "volume_control_connection_policy", true);
+        assertHasColumn(cursor, "volume_control_connection_policy");
 
         while (cursor.moveToNext()) {
             // Check the new columns was added with default value
@@ -1174,7 +1174,7 @@ public final class DatabaseManagerTest {
                         DB_NAME, 108, true, MetadataDatabase.MIGRATION_107_108);
         Cursor cursor = db.query("SELECT * FROM metadata");
 
-        assertHasColumn(cursor, "csip_set_coordinator_connection_policy", true);
+        assertHasColumn(cursor, "csip_set_coordinator_connection_policy");
 
         while (cursor.moveToNext()) {
             // Check the new columns was added with default value
@@ -1198,7 +1198,7 @@ public final class DatabaseManagerTest {
                         DB_NAME, 109, true, MetadataDatabase.MIGRATION_108_109);
         Cursor cursor = db.query("SELECT * FROM metadata");
 
-        assertHasColumn(cursor, "le_call_control_connection_policy", true);
+        assertHasColumn(cursor, "le_call_control_connection_policy");
 
         while (cursor.moveToNext()) {
             // Check the new columns was added with default value
@@ -1222,7 +1222,7 @@ public final class DatabaseManagerTest {
                         DB_NAME, 110, true, MetadataDatabase.MIGRATION_109_110);
         Cursor cursor = db.query("SELECT * FROM metadata");
 
-        assertHasColumn(cursor, "hap_client_connection_policy", true);
+        assertHasColumn(cursor, "hap_client_connection_policy");
 
         while (cursor.moveToNext()) {
             // Check the new columns was added with default value
@@ -1246,7 +1246,7 @@ public final class DatabaseManagerTest {
                         DB_NAME, 111, true, MetadataDatabase.MIGRATION_110_111);
         Cursor cursor = db.query("SELECT * FROM metadata");
 
-        assertHasColumn(cursor, "bass_client_connection_policy", true);
+        assertHasColumn(cursor, "bass_client_connection_policy");
 
         while (cursor.moveToNext()) {
             // Check the new columns was added with default value
@@ -1270,7 +1270,7 @@ public final class DatabaseManagerTest {
                         DB_NAME, 112, true, MetadataDatabase.MIGRATION_111_112);
         Cursor cursor = db.query("SELECT * FROM metadata");
 
-        assertHasColumn(cursor, "battery_connection_policy", true);
+        assertHasColumn(cursor, "battery_connection_policy");
 
         while (cursor.moveToNext()) {
             // Check the new columns was added with default value
@@ -1294,8 +1294,8 @@ public final class DatabaseManagerTest {
                         DB_NAME, 113, true, MetadataDatabase.MIGRATION_112_113);
         Cursor cursor = db.query("SELECT * FROM metadata");
 
-        assertHasColumn(cursor, "spatial_audio", true);
-        assertHasColumn(cursor, "fastpair_customized", true);
+        assertHasColumn(cursor, "spatial_audio");
+        assertHasColumn(cursor, "fastpair_customized");
 
         while (cursor.moveToNext()) {
             // Check the new columns was added with default value
@@ -1320,7 +1320,7 @@ public final class DatabaseManagerTest {
                         DB_NAME, 114, true, MetadataDatabase.MIGRATION_113_114);
         Cursor cursor = db.query("SELECT * FROM metadata");
 
-        assertHasColumn(cursor, "le_audio", true);
+        assertHasColumn(cursor, "le_audio");
 
         while (cursor.moveToNext()) {
             // Check the new columns was added with default value
@@ -1344,9 +1344,9 @@ public final class DatabaseManagerTest {
                         DB_NAME, 115, true, MetadataDatabase.MIGRATION_114_115);
         Cursor cursor = db.query("SELECT * FROM metadata");
 
-        assertHasColumn(cursor, "call_establish_audio_policy", true);
-        assertHasColumn(cursor, "connecting_time_audio_policy", true);
-        assertHasColumn(cursor, "in_band_ringtone_audio_policy", true);
+        assertHasColumn(cursor, "call_establish_audio_policy");
+        assertHasColumn(cursor, "connecting_time_audio_policy");
+        assertHasColumn(cursor, "in_band_ringtone_audio_policy");
 
         while (cursor.moveToNext()) {
             // Check the new columns was added with default value
@@ -1372,8 +1372,8 @@ public final class DatabaseManagerTest {
                         DB_NAME, 116, true, MetadataDatabase.MIGRATION_115_116);
         Cursor cursor = db.query("SELECT * FROM metadata");
 
-        assertHasColumn(cursor, "preferred_output_only_profile", true);
-        assertHasColumn(cursor, "preferred_duplex_profile", true);
+        assertHasColumn(cursor, "preferred_output_only_profile");
+        assertHasColumn(cursor, "preferred_duplex_profile");
 
         while (cursor.moveToNext()) {
             // Check the new columns was added with default value
@@ -1398,8 +1398,8 @@ public final class DatabaseManagerTest {
                         DB_NAME, 117, true, MetadataDatabase.MIGRATION_116_117);
         Cursor cursor = db.query("SELECT * FROM metadata");
 
-        assertHasColumn(cursor, "gmcs_cccd", true);
-        assertHasColumn(cursor, "gtbs_cccd", true);
+        assertHasColumn(cursor, "gmcs_cccd");
+        assertHasColumn(cursor, "gtbs_cccd");
 
         while (cursor.moveToNext()) {
             // Check the new columns was added with default value
@@ -1424,7 +1424,7 @@ public final class DatabaseManagerTest {
                         DB_NAME, 118, true, MetadataDatabase.MIGRATION_117_118);
         Cursor cursor = db.query("SELECT * FROM metadata");
 
-        assertHasColumn(cursor, "isActiveHfpDevice", true);
+        assertHasColumn(cursor, "isActiveHfpDevice");
 
         while (cursor.moveToNext()) {
             // Check the new columns was added with default value
@@ -1448,7 +1448,7 @@ public final class DatabaseManagerTest {
                         DB_NAME, 119, true, MetadataDatabase.MIGRATION_118_119);
         Cursor cursor = db.query("SELECT * FROM metadata");
 
-        assertHasColumn(cursor, "exclusive_manager", true);
+        assertHasColumn(cursor, "exclusive_manager");
 
         while (cursor.moveToNext()) {
             // Check the new column was added with default value
@@ -1472,7 +1472,7 @@ public final class DatabaseManagerTest {
                         DB_NAME, 120, true, MetadataDatabase.MIGRATION_119_120);
         Cursor cursor = db.query("SELECT * FROM metadata");
 
-        assertHasColumn(cursor, "active_audio_device_policy", true);
+        assertHasColumn(cursor, "active_audio_device_policy");
 
         while (cursor.moveToNext()) {
             // Check the new columns was added with default value
@@ -1496,7 +1496,7 @@ public final class DatabaseManagerTest {
                         DB_NAME, 121, true, MetadataDatabase.MIGRATION_120_121);
         Cursor cursor = db.query("SELECT * FROM metadata");
 
-        assertHasColumn(cursor, "is_preferred_microphone_for_calls", true);
+        assertHasColumn(cursor, "is_preferred_microphone_for_calls");
 
         while (cursor.moveToNext()) {
             // Check the new columns was added with default value
@@ -1519,11 +1519,44 @@ public final class DatabaseManagerTest {
                 testHelper.runMigrationsAndValidate(
                         DB_NAME, 122, true, MetadataDatabase.MIGRATION_121_122);
         Cursor cursor = db.query("SELECT * FROM metadata");
-        assertHasColumn(cursor, "key_missing_count", true);
+        assertHasColumn(cursor, "key_missing_count");
         while (cursor.moveToNext()) {
             // Check the new columns was added with default value
             assertColumnIntData(cursor, "key_missing_count", 0);
         }
+    }
+
+    @Test
+    public void testDatabaseMigration_122_123() throws IOException {
+        SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 122);
+
+        // insert a device to the database
+        ContentValues device = contentValuesDevice_122();
+        assertThat(db.insert("metadata", SQLiteDatabase.CONFLICT_IGNORE, device)).isNotEqualTo(-1);
+
+        db.close();
+        db =
+                testHelper.runMigrationsAndValidate(
+                        DB_NAME, 123, true, MetadataDatabase.MIGRATION_122_123);
+        Cursor cursor = db.query("SELECT * FROM metadata");
+        // migrated should not be in version 123
+        assertColumnMissing(cursor, "migrated");
+    }
+
+    @Test
+    public void testDatabaseRollbackMigration_123_122() throws IOException {
+        SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 123);
+
+        // insert a device to the database
+        ContentValues device = contentValuesDevice_123();
+        assertThat(db.insert("metadata", SQLiteDatabase.CONFLICT_IGNORE, device)).isNotEqualTo(-1);
+
+        db.close();
+        db =
+                testHelper.runMigrationsAndValidate(
+                        DB_NAME, 122, true, MetadataDatabase.ROLLBACK_MIGRATION_123_122);
+        Cursor cursor = db.query("SELECT * FROM metadata");
+        assertHasColumn(cursor, "migrated");
     }
 
     private ContentValues createContentValuesDeviceCommon() {
@@ -1716,13 +1749,24 @@ public final class DatabaseManagerTest {
         return device;
     }
 
-    /** Helper function to check whether the database has the expected column */
-    void assertHasColumn(Cursor cursor, String columnName, boolean hasColumn) {
-        if (hasColumn) {
-            assertThat(cursor.getColumnIndex(columnName)).isNotEqualTo(-1);
-        } else {
-            assertThat(cursor.getColumnIndex(columnName)).isEqualTo(-1);
-        }
+    private ContentValues contentValuesDevice_122() {
+        ContentValues device = contentValuesDevice_121();
+        device.put("key_missing_count", 0);
+        return device;
+    }
+
+    private ContentValues contentValuesDevice_123() {
+        ContentValues device = contentValuesDevice_122();
+        device.remove("migrated");
+        return device;
+    }
+
+    void assertHasColumn(Cursor cursor, String columnName) {
+        assertThat(cursor.getColumnIndex(columnName)).isNotEqualTo(-1);
+    }
+
+    void assertColumnMissing(Cursor cursor, String columnName) {
+        assertThat(cursor.getColumnIndex(columnName)).isEqualTo(-1);
     }
 
     /** Helper function to check whether the database has the expected value */
@@ -1748,7 +1792,6 @@ public final class DatabaseManagerTest {
 
     void restartDatabaseManagerHelper() {
         Metadata data = new Metadata(LOCAL_STORAGE);
-        data.migrated = true;
         mDatabase.insert(data);
 
         mDatabaseManager.cleanup();
