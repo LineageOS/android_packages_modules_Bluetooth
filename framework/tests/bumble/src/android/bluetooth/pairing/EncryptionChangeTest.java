@@ -92,7 +92,7 @@ public class EncryptionChangeTest {
     public final EnableBluetoothRule mEnableBluetoothRule =
             new EnableBluetoothRule(false /* enableTestMode */, true /* toggleBluetooth */);
 
-    private final StreamObserverSpliterator<PairingEvent> mPairingEventStreamObserver =
+    private final StreamObserverSpliterator<Void, PairingEvent> mPairingEventStreamObserver =
             new StreamObserverSpliterator<>();
     @Mock private BluetoothProfile.ServiceListener mProfileServiceListener;
 

@@ -120,7 +120,7 @@ public class PairingTest {
     public final EnableBluetoothRule mEnableBluetoothRule =
             new EnableBluetoothRule(false /* enableTestMode */, true /* toggleBluetooth */);
 
-    private final StreamObserverSpliterator<PairingEvent> mPairingEventStreamObserver =
+    private final StreamObserverSpliterator<Void, PairingEvent> mPairingEventStreamObserver =
             new StreamObserverSpliterator<>();
     @Mock private BluetoothProfile.ServiceListener mProfileServiceListener;
 
@@ -395,7 +395,7 @@ public class PairingTest {
                 .build();
 
         // Outgoing GATT service discovery and incoming LE pairing in parallel
-        StreamObserverSpliterator<SecureResponse> responseObserver =
+        StreamObserverSpliterator<SecureRequest, SecureResponse> responseObserver =
                 helper_OutgoingGattServiceDiscoveryWithIncomingLePairing(intentReceiver);
 
         // Cancel pairing from Android
@@ -445,7 +445,7 @@ public class PairingTest {
                 .build();
 
         // Outgoing GATT service discovery and incoming LE pairing in parallel
-        StreamObserverSpliterator<SecureResponse> responseObserver =
+        StreamObserverSpliterator<SecureRequest, SecureResponse> responseObserver =
                 helper_OutgoingGattServiceDiscoveryWithIncomingLePairing(intentReceiver);
 
         // Approve pairing from Android
@@ -873,7 +873,7 @@ public class PairingTest {
                 .setConnectable(true)
                 .setOwnAddressType(OwnAddressType.PUBLIC);
 
-        StreamObserverSpliterator<AdvertiseResponse> responseObserver =
+        StreamObserverSpliterator<SecureRequest, AdvertiseResponse> responseObserver =
                 new StreamObserverSpliterator<>();
         mBumble.host().advertise(advRequestBuilder.build(), responseObserver);
 
@@ -987,9 +987,9 @@ public class PairingTest {
     }
 
     /* Starts outgoing GATT service discovery and incoming LE pairing in parallel */
-    private StreamObserverSpliterator<SecureResponse>
+    private StreamObserverSpliterator<SecureRequest, SecureResponse>
             helper_OutgoingGattServiceDiscoveryWithIncomingLePairing(
-                IntentReceiver parentIntentReceiver) {
+                    IntentReceiver parentIntentReceiver) {
         // Register new actions specific to this helper function
         IntentReceiver intentReceiver =
             IntentReceiver.update(
@@ -1038,7 +1038,7 @@ public class PairingTest {
                     BluetoothDevice.TRANSPORT_LE));
 
         // Start pairing from Bumble
-        StreamObserverSpliterator<SecureResponse> responseObserver =
+        StreamObserverSpliterator<SecureRequest, SecureResponse> responseObserver =
                 new StreamObserverSpliterator<>();
         mBumble.security()
                 .secure(

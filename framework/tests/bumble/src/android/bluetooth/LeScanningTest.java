@@ -531,7 +531,7 @@ public class LeScanningTest {
     private void advertiseWithBumble(AdvertiseRequest.Builder requestBuilder, boolean isLegacy) {
         requestBuilder.setLegacy(isLegacy);
         // Collect and ignore responses.
-        StreamObserverSpliterator<AdvertiseResponse> responseObserver =
+        StreamObserverSpliterator<AdvertiseRequest, AdvertiseResponse> responseObserver =
                 new StreamObserverSpliterator<>();
         mBumble.host().advertise(requestBuilder.build(), responseObserver);
     }

@@ -562,7 +562,7 @@ public class GattClientTest {
                         .setOwnAddressType(OwnAddressType.RANDOM)
                         .build();
 
-        StreamObserverSpliterator<AdvertiseResponse> responseObserver =
+        StreamObserverSpliterator<AdvertiseRequest, AdvertiseResponse> responseObserver =
                 new StreamObserverSpliterator<>();
 
         mBumble.host().advertise(request, responseObserver);
