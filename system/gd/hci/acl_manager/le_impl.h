@@ -687,9 +687,20 @@ public:
       if (le_acceptlist_callbacks_ != nullptr) {
         le_acceptlist_callbacks_->OnLeConnectSuccess(connection->GetRemoteAddress());
       }
-      le_client_handler_->Post(common::BindOnce(
-              &LeConnectionCallbacks::OnLeConnectSuccess, common::Unretained(le_client_callbacks_),
-              connection->GetRemoteAddress(), std::move(connection)));
+      if (!com::android::bluetooth::flags::remove_hop_from_le_adv_set_term()) {
+        le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectSuccess,
+                                                  common::Unretained(le_client_callbacks_),
+                                                  connection->GetRemoteAddress(),
+                                                  std::move(connection)));
+        return;
+      }
+
+      // Remove one hop from the handling of LE Advertising Set Terminated event.
+      // Serialize the OnLeConnectSuccess call as these are on the same thread and handler.
+      // This is added to handle the LTK and LE Advertising Set Terminated events in the same
+      // order in cases where LTK comes very close to LE Advertising Set Terminated event.
+      le_client_callbacks_->OnLeConnectSuccess(connection->GetRemoteAddress(),
+                                                std::move(connection));
     }
   }
 
