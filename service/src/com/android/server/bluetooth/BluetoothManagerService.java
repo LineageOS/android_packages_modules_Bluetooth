@@ -190,6 +190,7 @@ class BluetoothManagerService {
     private String mName;
     private AdapterBinder mAdapter;
     private Context mCurrentUserContext;
+    private UserHandle mCurrentUser;
 
     // used inside handler thread
     private boolean mQuietEnable = false;
@@ -1163,6 +1164,7 @@ class BluetoothManagerService {
 
     @VisibleForTesting
     void initialize(UserHandle userHandle) {
+        mCurrentUser = userHandle;
         mCurrentUserContext =
                 requireNonNull(
                         mContext.createContextAsUser(userHandle, 0),
@@ -1524,6 +1526,7 @@ class BluetoothManagerService {
 
                     AutoOnFeature.pause();
 
+                    mCurrentUser = userTo;
                     mCurrentUserContext = mContext.createContextAsUser(userTo, 0);
 
                     /* disable and enable BT when detect a user switch */
@@ -1744,8 +1747,26 @@ class BluetoothManagerService {
 
     private void handleEnable() {
         if (mAdapter == null && !isBinding()) {
+            if (Flags.waitStackRoleBeforeStarting()) {
+                RolePermissionListener.registerForUser(
+                        mLooper, mCurrentUserContext, mCurrentUser, this::onRoleGranted);
+                return;
+            }
             bindToAdapter();
         }
+    }
+
+    private Unit onRoleGranted() {
+        if (!(mEnableExternal || isBleAppPresent())) {
+            Log.w(TAG, "onRoleGranted: external=" + mEnableExternal + " ble=" + isBleAppPresent());
+        } else if (mAdapter != null) {
+            Log.w(TAG, "onRoleGranted: Adapter already created");
+        } else if (isBinding()) {
+            Log.w(TAG, "onRoleGranted: Binding in progress");
+        } else {
+            bindToAdapter();
+        }
+        return Unit.INSTANCE;
     }
 
     private void handleEnableDelayed() {

@@ -68,7 +68,7 @@ public fun initialize(
     modeCallback: (m: Boolean) -> Unit,
     notificationCallback: (state: String) -> Unit,
     mediaCallback: () -> Boolean,
-    userCallback: () -> Context,
+    getUser: () -> Context,
     timeSource: TimeSource,
 ) {
 
@@ -79,7 +79,7 @@ public fun initialize(
     Settings.Global.putInt(
         systemResolver,
         APM_ENHANCEMENT,
-        Settings.Global.getInt(systemResolver, APM_ENHANCEMENT, DEFAULT_APM_ENHANCEMENT_STATE)
+        Settings.Global.getInt(systemResolver, APM_ENHANCEMENT, DEFAULT_APM_ENHANCEMENT_STATE),
     )
 
     val airplaneModeAtBoot =
@@ -100,7 +100,7 @@ public fun initialize(
                         newMode,
                         isBluetoothOn,
                         notificationCallback,
-                        userCallback,
+                        getUser,
                         isMediaConnected,
                     )
 
@@ -108,7 +108,7 @@ public fun initialize(
                     newMode,
                     isBluetoothOn,
                     notificationCallback,
-                    userCallback,
+                    getUser,
                     isMediaConnected,
                     timeSource.markNow(),
                 )
@@ -126,7 +126,7 @@ public fun initialize(
 
                 Log.i(TAG, "Trigger callback. $description")
                 modeCallback(isOnOverrode)
-            }
+            },
         )
 
     isOn = airplaneModeAtBoot
@@ -136,7 +136,7 @@ public fun initialize(
             airplaneModeAtBoot,
             null, // Do not provide a Bluetooth on / off as we want to evaluate override
             null, // Do not provide a notification callback as we want to keep the boot silent
-            userCallback,
+            getUser,
             false,
         )
 
@@ -145,7 +145,7 @@ public fun initialize(
         airplaneModeAtBoot,
         false,
         notificationCallback,
-        userCallback,
+        getUser,
         false,
         timeSource.markNow(),
     )
