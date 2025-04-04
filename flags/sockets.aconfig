@@ -102,3 +102,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "make_socket_read_behavior_consistent"
+    namespace: "bluetooth"
+    description: "Ensure both RFCOMM & LECOC sockets return value is consistent on EOF"
+    bug: "408461997"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
