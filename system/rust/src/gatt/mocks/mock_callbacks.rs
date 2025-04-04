@@ -1,8 +1,5 @@
 //! Mocked implementation of GattCallbacks for use in test
 
-// NOTE: This module is currently unused.
-#![allow(dead_code)]
-
 use crate::gatt::callbacks::{GattCallbacks, GattWriteType, TransactionDecision};
 use crate::gatt::ffi::AttributeBackingType;
 use crate::gatt::ids::{AttHandle, ConnectionId, TransactionId};
@@ -10,8 +7,7 @@ use crate::gatt::server::IndicationError;
 use tokio::sync::mpsc::{self, unbounded_channel, UnboundedReceiver};
 
 /// Routes calls to GattCallbacks into a channel of MockCallbackEvents
-/* pub */
-struct MockCallbacks(mpsc::UnboundedSender<MockCallbackEvents>);
+pub struct MockCallbacks(mpsc::UnboundedSender<MockCallbackEvents>);
 
 impl MockCallbacks {
     /// Constructor. Returns self and the RX side of the associated channel.
@@ -37,8 +33,10 @@ pub enum MockCallbackEvents {
         Vec<u8>,
     ),
     /// GattCallbacks#on_indication_sent_confirmation invoked
+    #[allow(dead_code)]
     OnIndicationSentConfirmation(ConnectionId, Result<(), IndicationError>),
     /// GattCallbacks#on_execute invoked
+    #[allow(dead_code)]
     OnExecute(ConnectionId, TransactionId, TransactionDecision),
 }
 
