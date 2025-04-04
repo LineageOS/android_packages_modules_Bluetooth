@@ -554,3 +554,14 @@ tHID_STATUS HID_HostCloseDev(uint8_t dev_handle) {
   hh_cb.devices[dev_handle].conn_tries = HID_HOST_MAX_CONN_RETRY + 1;
   return hidh_conn_disconnect(dev_handle);
 }
+
+/*******************************************************************************
+ *
+ * Function         HID_HostDump
+ *
+ * Description      Dump HID host control block
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void HID_HostDump(int fd) { hidh_dump(fd); }

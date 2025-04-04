@@ -40,6 +40,7 @@
 #include "internal_include/bt_target.h"
 #include "l2cap_types.h"
 #include "l2cdefs.h"
+#include "main/shim/dumpsys.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
@@ -977,3 +978,23 @@ static void hidh_conn_retry(uint8_t dhandle) {
   hidh_try_repage(dhandle);
 #endif
 }
+
+#define DUMPSYS_TAG "BR/EDR HID host"
+void hidh_dump(int fd) {
+  LOG_DUMPSYS_TITLE(fd, DUMPSYS_TAG);
+  LOG_DUMPSYS(fd, "Registered:%s, SDP busy:%s", hh_cb.reg_flag ? "true" : "false",
+              hh_cb.sdp_busy ? "true" : "false");
+  for (int i = 0; i < HID_HOST_MAX_DEVICES; i++) {
+    auto& dev = hh_cb.devices[i];
+    if (dev.in_use) {
+      LOG_DUMPSYS(fd,
+                  "Device:%s, handle:%d, state:%s, conn_state:%s, conn_flags:0x%02x, "
+                  "control_cid:0x%04x, intr_cid:0x%04x",
+                  dev.addr.ToRedactedStringForLogging().c_str(), i,
+                  dev.state == HID_DEV_CONNECTED ? "CONNECTED" : "NOT_CONNECTED",
+                  dev.conn.state_text(dev.conn.conn_state).c_str(), dev.conn.conn_flags,
+                  dev.conn.ctrl_cid, dev.conn.intr_cid);
+    }
+  }
+}
+#undef DUMPSYS_TAG

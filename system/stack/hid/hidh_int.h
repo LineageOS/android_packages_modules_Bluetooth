@@ -69,6 +69,7 @@ tHID_STATUS hidh_conn_reg(void);
 void hidh_conn_dereg(void);
 tHID_STATUS hidh_conn_disconnect(uint8_t dhandle);
 tHID_STATUS hidh_conn_initiate(uint8_t dhandle);
+void hidh_dump(int fd);
 
 /******************************************************************************
  * Main Control Block
