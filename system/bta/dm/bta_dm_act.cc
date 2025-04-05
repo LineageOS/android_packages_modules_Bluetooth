@@ -90,6 +90,7 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, tBTA_SYS_ID id, uint8_t
                             const RawAddress& peer_addr);
 static void bta_dm_adjust_roles(bool delay_role_switch);
 static void bta_dm_ctrl_features_rd_cmpl_cback(tHCI_STATUS result);
+static tBTA_DM_CONNECTION_INFO bta_dm_get_conn_info(const RawAddress& target);
 
 static const char kPropertySniffOffloadEnabled[] = "persist.bluetooth.sniff_offload.enabled";
 
@@ -484,31 +485,17 @@ void bta_dm_process_remove_device(const RawAddress& bd_addr) {
 
 /** Removes device, disconnects ACL link if required */
 void bta_dm_remove_device(const RawAddress& target) {
+  tBTA_DM_CONNECTION_INFO conn_info;
   if (bta_dm_removal_pending(target)) {
     log::warn("{} already getting removed", target);
     return;
   }
 
-  // Find all aliases and connection status on all transports
-  RawAddress pseudo_addr = target;
-  RawAddress identity_addr = target;
-  bool le_connected = get_btm_client_interface().peer.BTM_ReadConnectedTransportAddress(
-          &pseudo_addr, BT_TRANSPORT_LE);
-  if (pseudo_addr.IsEmpty()) {
-    pseudo_addr = target;
-  }
-
-  bool bredr_connected = get_btm_client_interface().peer.BTM_ReadConnectedTransportAddress(
-          &identity_addr, BT_TRANSPORT_BR_EDR);
-  /* If connection not found with identity address, check with pseudo address if different */
-  if (!bredr_connected && identity_addr != pseudo_addr) {
-    identity_addr = pseudo_addr;
-    bredr_connected = get_btm_client_interface().peer.BTM_ReadConnectedTransportAddress(
-            &identity_addr, BT_TRANSPORT_BR_EDR);
-  }
-  if (identity_addr.IsEmpty()) {
-    identity_addr = target;
-  }
+  conn_info = bta_dm_get_conn_info(target);
+  const RawAddress& pseudo_addr = conn_info.pseudo_addr;
+  const RawAddress& identity_addr = conn_info.identity_addr;
+  bool& le_connected = conn_info.le_connected;
+  bool& bredr_connected = conn_info.bredr_connected;
 
   // Remove from LE allowlist
   if (!GATT_CancelConnect(0, pseudo_addr, false)) {
@@ -545,8 +532,7 @@ void bta_dm_remove_device(const RawAddress& target) {
 
   if (le_connected || bredr_connected) {
     // Wait for all transports to be disconnected
-    tBTA_DM_REMOVE_PENDING node = {pseudo_addr, identity_addr, le_connected, bredr_connected};
-    bta_dm_cb.pending_removals.push_back(node);
+    bta_dm_cb.pending_removals.push_back(conn_info);
     log::info(
             "Waiting for disconnection over LE:{}, BR/EDR:{} for pseudo address: {}, identity "
             "address: {}",
@@ -1377,6 +1363,118 @@ tBTA_DM_PEER_DEVICE* find_connected_device(const RawAddress& bd_addr,
     }
   }
   return nullptr;
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_dm_dev_connected
+ *
+ * Description      This function checks if the device is connected by the
+ *                  given transport.
+ *
+ * Returns          true if Peer device found, false otherwise.
+ *
+ ******************************************************************************/
+static bool bta_dm_dev_connected(const RawAddress& bd_addr,
+                                 tBT_TRANSPORT transport) {
+  for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
+    if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr == bd_addr &&
+        bta_dm_cb.device_list.peer_device[i].transport == transport &&
+        bta_dm_cb.device_list.peer_device[i].is_connected()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_dm_get_conn_info_
+ *
+ * Description      This function retrieves the connection information.
+ *
+ * Returns          connection information
+ *
+ ******************************************************************************/
+// Remove when le_disconnect_notification_handling is shipped
+static tBTA_DM_CONNECTION_INFO bta_dm_get_conn_info_(const RawAddress& target) {
+  // Find all aliases and connection status on all transports
+  RawAddress pseudo_addr = target;
+  RawAddress identity_addr = target;
+  bool le_connected = false;
+  bool bredr_connected = false;
+  tBTA_DM_CONNECTION_INFO conn_info;
+
+  le_connected = get_btm_client_interface().peer.BTM_ReadConnectedTransportAddress(
+          &pseudo_addr, BT_TRANSPORT_LE);
+  if (pseudo_addr.IsEmpty()) {
+    pseudo_addr = target;
+  }
+
+  bredr_connected = get_btm_client_interface().peer.BTM_ReadConnectedTransportAddress(
+          &identity_addr, BT_TRANSPORT_BR_EDR);
+  /* If connection not found with identity address, check with pseudo address if different */
+  if (!bredr_connected && identity_addr != pseudo_addr) {
+    identity_addr = pseudo_addr;
+    bredr_connected = get_btm_client_interface().peer.BTM_ReadConnectedTransportAddress(
+            &identity_addr, BT_TRANSPORT_BR_EDR);
+  }
+  if (identity_addr.IsEmpty()) {
+    identity_addr = target;
+  }
+  conn_info = {pseudo_addr, identity_addr, le_connected, bredr_connected};
+  return conn_info;
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_dm_get_conn_info
+ *
+ * Description      This function retrieves the connection information.
+ *
+ * Returns          connection information
+ *
+ ******************************************************************************/
+static tBTA_DM_CONNECTION_INFO bta_dm_get_conn_info(const RawAddress& target) {
+  // Find all aliases and connection status on all transports
+  RawAddress pseudo_addr = target;
+  RawAddress identity_addr = target;
+  bool le_connected = false;
+  bool bredr_connected = false;
+  tBTA_DM_CONNECTION_INFO conn_info;
+
+  if (!com::android::bluetooth::flags::le_disconnect_notification_handling()) {
+    return bta_dm_get_conn_info_(target);
+  }
+
+  // Get identity and pseudo address
+  std::pair<RawAddress, RawAddress> pseudo_identity_addr_pair =
+          get_btm_client_interface().peer.BTM_GetConnectedTransportAddress(target);
+  pseudo_addr = pseudo_identity_addr_pair.first;
+  identity_addr = pseudo_identity_addr_pair.second;
+  if (identity_addr.IsEmpty()) {
+    identity_addr = target;
+  }
+  if (pseudo_addr.IsEmpty()) {
+    pseudo_addr = target;
+  }
+
+  // Check if LE is connected with pseudo address
+  le_connected = bta_dm_dev_connected(pseudo_addr, BT_TRANSPORT_LE);
+  /* If connection not found with pseudo address, check with identity address if different */
+  if (!le_connected && pseudo_addr != identity_addr) {
+    le_connected = bta_dm_dev_connected(identity_addr, BT_TRANSPORT_LE);
+  }
+
+  // Check if BR/EDR is connected with identity address
+  bredr_connected = bta_dm_dev_connected(identity_addr, BT_TRANSPORT_BR_EDR);
+  /* If connection not found with identity address, check with pseudo address if different */
+  if (!bredr_connected && identity_addr != pseudo_addr) {
+    bredr_connected = bta_dm_dev_connected(pseudo_addr, BT_TRANSPORT_BR_EDR);
+  }
+
+  conn_info = {pseudo_addr, identity_addr, le_connected, bredr_connected};
+  return conn_info;
 }
 
 bool bta_dm_check_if_only_hd_connected(const RawAddress& peer_addr) {

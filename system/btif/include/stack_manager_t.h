@@ -34,8 +34,6 @@ typedef struct {
                                ProfileStopCallback);
   void (*shut_down_stack_async)(ProfileStopCallback);
   void (*clean_up_stack)(ProfileStopCallback);
-  void (*start_up_rust_module_async)(std::promise<void> promise);
-  void (*shut_down_rust_module_async)();
 
   bool (*get_stack_is_running)(void);
 } stack_manager_t;

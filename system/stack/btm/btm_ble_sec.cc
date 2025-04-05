@@ -572,6 +572,39 @@ bool BTM_ReadConnectedTransportAddress(RawAddress* remote_bda, tBT_TRANSPORT tra
   return false;
 }
 
+/*******************************************************************************
+ *
+ * Function         BTM_GetConnectedTransportAddress
+ *
+ * Description      This function gets the pseudo and identity address of the
+ *                  remote device
+ *
+ * Parameter        remote_bda: remote device address
+ *
+ * Return           pseudo and identity address pair of the remote device
+ *
+ ******************************************************************************/
+std::pair<RawAddress, RawAddress> BTM_GetConnectedTransportAddress(RawAddress remote_bda) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(remote_bda);
+  std::pair<RawAddress, RawAddress> pseudo_identity_addr_pair;
+
+  /* if no device can be located, return */
+  if (p_dev_rec == nullptr) {
+    return pseudo_identity_addr_pair;
+  }
+
+  // Get pseudo address
+  pseudo_identity_addr_pair.first = p_dev_rec->ble.pseudo_addr;
+
+  // Get the identity address
+  if (get_btm_client_interface().peer.BTM_IsAclConnectionUp(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR)
+     || (p_dev_rec->device_type & BT_DEVICE_TYPE_BREDR)) {
+      pseudo_identity_addr_pair.second = p_dev_rec->bd_addr;
+  }
+
+  return pseudo_identity_addr_pair;
+}
+
 tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr, uint16_t tx_pdu_length,
                                  bool is_privileged_client) {
   if (!bluetooth::shim::GetController()->SupportsBleDataPacketLengthExtension()) {

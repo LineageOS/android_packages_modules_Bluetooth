@@ -84,4 +84,7 @@ public class BassConstants {
     // BIS_Sync parameter value in BASS operations
     public static final long BIS_SYNC_DO_NOT_SYNC_TO_BIS = 0x00000000L;
     public static final long BIS_SYNC_NO_PREFERENCE = 0xFFFFFFFFL;
+
+    public static final int FLAG_SYNC_PA = 1 << 0;
+    public static final int FLAG_SYNC_DO_NOT_USE_NO_PREFERENCE = 1 << 1;
 }

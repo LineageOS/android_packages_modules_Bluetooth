@@ -39,7 +39,7 @@ enum class AttributeBackingType {
 
 class GattServerCallbacks {
 public:
-  GattServerCallbacks(const btgatt_server_callbacks_t& callbacks) : callbacks(callbacks) {}
+  GattServerCallbacks(const btgatt_server_callbacks_t& callbacks) : callbacks_(callbacks) {}
 
   void OnServerRead(uint16_t conn_id, uint32_t trans_id, uint16_t attr_handle,
                     AttributeBackingType attr_type, uint32_t offset, bool is_long) const;
@@ -53,7 +53,7 @@ public:
   void OnExecute(uint16_t conn_id, uint32_t trans_id, bool execute) const;
 
 private:
-  const btgatt_server_callbacks_t& callbacks;
+  const btgatt_server_callbacks_t& callbacks_;
 };
 
 struct Arbiter;

@@ -23,7 +23,7 @@ rust_defaults {
     edition: "2021",
     features: [
         "lc3",
-        // "opus",
+        "opus",
     ],
     rustlibs: [
         "android.hardware.bluetooth.offload.leaudio-rust",
@@ -34,6 +34,7 @@ rust_defaults {
     static_libs: [
         "libclang_rt.ubsan_minimal",
         "liblc3",
+        "libopus-experimental",
     ],
 }
 
