@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "prevent_duplicate_uuid_intent"
-    namespace: "bluetooth"
-    description: "Avoid sending duplicate service UUID intent when fetchUuidsWithSdp() API is called"
-    bug: "361182196"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "separate_service_storage"
     namespace: "bluetooth"
     description: "Store LE and Classic services separately"

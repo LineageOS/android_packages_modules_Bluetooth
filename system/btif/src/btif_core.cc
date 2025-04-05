@@ -63,8 +63,8 @@
 #include "stack/include/btm_ble_api.h"
 #include "stack/include/btm_client_interface.h"
 #include "storage/config_keys.h"
+#include "types/ble_address_with_type.h"
 #include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using base::PlatformThread;
 using bluetooth::Uuid;
@@ -345,7 +345,7 @@ static bt_status_t btif_in_get_adapter_properties(void) {
 }
 
 static bt_status_t btif_in_get_remote_device_properties(RawAddress* bd_addr) {
-  bt_property_t remote_properties[9];
+  bt_property_t remote_properties[10];
   uint32_t num_props = 0;
 
   bt_bdname_t name, alias;
@@ -386,8 +386,14 @@ static bt_status_t btif_in_get_remote_device_properties(RawAddress* bd_addr) {
     num_props++;
   }
 
+  tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
+  BTIF_STORAGE_FILL_PROPERTY(&remote_properties[num_props], BT_PROPERTY_REMOTE_ADDR_TYPE,
+                             sizeof(addr_type), &addr_type);
+  btif_storage_get_remote_device_property(bd_addr, &remote_properties[num_props]);
+  num_props++;
+
   GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
-          BT_STATUS_SUCCESS, *bd_addr, num_props, remote_properties);
+          BT_STATUS_SUCCESS, *bd_addr, (uint8_t)addr_type, num_props, remote_properties);
 
   return BT_STATUS_SUCCESS;
 }
@@ -401,10 +407,12 @@ static void btif_core_storage_adapter_write(bt_property_t* prop) {
 void btif_adapter_properties_evt(bt_status_t status, uint32_t num_props, bt_property_t* p_props) {
   GetInterfaceToProfiles()->events->invoke_adapter_properties_cb(status, num_props, p_props);
 }
-void btif_remote_properties_evt(bt_status_t status, RawAddress* remote_addr, uint32_t num_props,
+
+void btif_remote_properties_evt(bt_status_t status, RawAddress* remote_addr,
+                                tBLE_ADDR_TYPE addr_type, uint32_t num_props,
                                 bt_property_t* p_props) {
-  GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(status, *remote_addr,
-                                                                       num_props, p_props);
+  GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
+          status, *remote_addr, addr_type, num_props, p_props);
 }
 
 /*******************************************************************************
@@ -617,8 +625,13 @@ void btif_get_remote_device_property(RawAddress remote_addr, bt_property_type_t 
   prop.len = sizeof(buf);
 
   bt_status_t status = btif_storage_get_remote_device_property(&remote_addr, &prop);
-  GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(status, remote_addr, 1,
-                                                                       &prop);
+
+  tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
+  bt_property_t addr_type_prop = {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type};
+  btif_storage_get_remote_device_property(&remote_addr, &addr_type_prop);
+
+  GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(status, remote_addr,
+                                                                       addr_type, 1, &prop);
 }
 
 /*******************************************************************************

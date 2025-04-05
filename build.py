@@ -660,17 +660,21 @@ GIT_TIMEOUT_SEC = 600
 
 class Bootstrap():
 
-    def __init__(self, base_dir, bt_dir, partial_staging, clone_timeout):
+    def __init__(self, base_dir, bt_dir, proto_logging_dir, partial_staging, clone_timeout):
         """ Construct bootstrapper.
 
         Args:
             base_dir: Where to stage everything.
             bt_dir: Where bluetooth source is kept (will be symlinked)
+            proto_logging_dir: Root directory for proto_logging. Build Floss
+                               with this if it's non-empty, otherwise the AOSP
+                               clone is used.
             partial_staging: Whether to do a partial clone for staging.
             clone_timeout: Timeout for clone operations.
         """
         self.base_dir = os.path.abspath(base_dir)
         self.bt_dir = os.path.abspath(bt_dir)
+        self.proto_logging_dir = proto_logging_dir
         self.partial_staging = partial_staging
         self.clone_timeout = clone_timeout
 
@@ -679,6 +683,8 @@ class Bootstrap():
 
         if not os.path.isdir(self.bt_dir):
             raise Exception('{} is not a valid directory'.format(self.bt_dir))
+        if not os.path.isdir(self.proto_logging_dir):
+            raise Exception('{} is not a valid directory'.format(self.proto_logging_dir))
 
         self.git_dir = os.path.join(self.base_dir, 'repos')
         self.staging_dir = os.path.join(self.base_dir, 'staging')
@@ -777,8 +783,8 @@ class Bootstrap():
             (os.path.join(self.git_dir, 'platform2', '.gn'), os.path.join(self.staging_dir, '.gn')),
             (os.path.join(self.bt_dir), os.path.join(self.staging_dir, 'bt')),
             (os.path.join(self.git_dir, 'rust_crates'), os.path.join(self.external_dir, 'rust')),
-            (os.path.join(self.git_dir,
-                          'proto_logging'), os.path.join(self.external_dir, 'proto_logging')),
+            (self.proto_logging_dir if self.proto_logging_dir else os.path.join(
+                self.git_dir, 'proto_logging'), os.path.join(self.external_dir, 'proto_logging')),
         ]
 
         # Create symlinks
@@ -989,6 +995,12 @@ if __name__ == '__main__':
                         help='Timeout for repository cloning during bootstrap.',
                         default=GIT_TIMEOUT_SEC,
                         type=int)
+    parser.add_argument('--proto-logging-dir',
+                        help=('Bootstrap creates the proto_logging symlink '
+                              'to the given path rather than the default '
+                              'AOSP clone.'),
+                        default='',
+                        type=str)
     args = parser.parse_args()
 
     # Make sure we get absolute path + expanded path for bootstrap directory
@@ -1000,8 +1012,8 @@ if __name__ == '__main__':
         raise Exception("Only x86_64 machines are currently supported by this build script.")
 
     if args.run_bootstrap:
-        bootstrap = Bootstrap(args.bootstrap_dir, os.path.dirname(__file__), args.partial_staging,
-                              args.clone_timeout)
+        bootstrap = Bootstrap(args.bootstrap_dir, os.path.dirname(__file__), args.proto_logging_dir,
+                              args.partial_staging, args.clone_timeout)
         bootstrap.bootstrap()
     elif args.print_env:
         build = HostBuild(args)

@@ -32,9 +32,6 @@ using testing::Test;
 
 using bluetooth::audio::hfp::HfpClientInterface;
 
-// Mock
-bool bta_ag_get_sco_offload_enabled() { return true; }
-
 bool sink_client_read_called = false;
 bool source_client_write_called = false;
 

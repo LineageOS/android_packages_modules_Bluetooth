@@ -24,6 +24,7 @@
  *
  ******************************************************************************/
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <array>
@@ -39,7 +40,6 @@
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
-#include "os/metrics.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
 #include "stack/include/avrc_api.h"

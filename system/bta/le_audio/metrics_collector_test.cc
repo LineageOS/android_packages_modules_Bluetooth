@@ -16,6 +16,7 @@
 
 #include "metrics_collector.h"
 
+#include <bluetooth/metrics/os_metrics.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <unistd.h>
@@ -23,7 +24,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "os/metrics.h"
+#include "metrics/mock/metrics_mock.h"
 #include "types/raw_address.h"
 
 using testing::_;
@@ -31,7 +32,10 @@ using testing::AnyNumber;
 using testing::AtLeast;
 using testing::AtMost;
 using testing::DoAll;
+using testing::ElementsAre;
+using testing::Gt;
 using testing::Invoke;
+using testing::IsEmpty;
 using testing::Mock;
 using testing::MockFunction;
 using testing::NotNull;
@@ -40,57 +44,6 @@ using testing::SaveArg;
 using testing::SetArgPointee;
 using testing::Test;
 using testing::WithArg;
-
-int log_count = 0;
-int32_t last_group_size;
-int32_t last_group_metric_id;
-int64_t last_connection_duration_nanos;
-int64_t last_broadcast_duration_nanos;
-std::vector<int64_t> last_device_connecting_offset_nanos;
-std::vector<int64_t> last_device_connected_offset_nanos;
-std::vector<int64_t> last_device_connection_duration_nanos;
-std::vector<int32_t> last_device_connection_status;
-std::vector<int32_t> last_device_disconnection_status;
-std::vector<RawAddress> last_device_address;
-std::vector<int64_t> last_streaming_offset_nanos;
-std::vector<int64_t> last_streaming_duration_nanos;
-std::vector<int32_t> last_streaming_context_type;
-
-namespace bluetooth {
-namespace os {
-
-void LogMetricLeAudioConnectionSessionReported(
-        int32_t group_size, int32_t group_metric_id, int64_t connection_duration_nanos,
-        const std::vector<int64_t>& device_connecting_offset_nanos,
-        const std::vector<int64_t>& device_connected_offset_nanos,
-        const std::vector<int64_t>& device_connection_duration_nanos,
-        const std::vector<int32_t>& device_connection_status,
-        const std::vector<int32_t>& device_disconnection_status,
-        const std::vector<RawAddress>& device_address,
-        const std::vector<int64_t>& streaming_offset_nanos,
-        const std::vector<int64_t>& streaming_duration_nanos,
-        const std::vector<int32_t>& streaming_context_type) {
-  log_count++;
-  last_group_size = group_size;
-  last_group_metric_id = group_metric_id;
-  last_connection_duration_nanos = connection_duration_nanos;
-  last_device_connecting_offset_nanos = device_connecting_offset_nanos;
-  last_device_connected_offset_nanos = device_connected_offset_nanos;
-  last_device_connection_duration_nanos = device_connection_duration_nanos;
-  last_device_connection_status = device_connection_status;
-  last_device_disconnection_status = device_disconnection_status;
-  last_device_address = device_address;
-  last_streaming_offset_nanos = streaming_offset_nanos;
-  last_streaming_duration_nanos = streaming_duration_nanos;
-  last_streaming_context_type = streaming_context_type;
-}
-
-void LogMetricLeAudioBroadcastSessionReported(int64_t duration_nanos) {
-  last_broadcast_duration_nanos = duration_nanos;
-}
-
-}  // namespace os
-}  // namespace bluetooth
 
 namespace bluetooth::le_audio {
 
@@ -109,47 +62,45 @@ public:
 class MetricsCollectorTest : public Test {
 protected:
   std::unique_ptr<MetricsCollector> collector;
+  std::shared_ptr<os::MockMetrics> metrics;
 
   void SetUp() override {
     collector = std::make_unique<MockMetricsCollector>();
-
-    log_count = 0;
-    last_group_size = 0;
-    last_group_metric_id = 0;
-    last_broadcast_duration_nanos = 0;
-    last_connection_duration_nanos = 0;
-    last_device_connecting_offset_nanos = {};
-    last_device_connected_offset_nanos = {};
-    last_device_connection_duration_nanos = {};
-    last_device_connection_status = {};
-    last_device_disconnection_status = {};
-    last_device_address = {};
-    last_streaming_offset_nanos = {};
-    last_streaming_duration_nanos = {};
-    last_streaming_context_type = {};
+    metrics = std::make_shared<bluetooth::os::MockMetrics>();
+    os::MockMetrics::SetInstance(metrics);
   }
 
-  void TearDown() override { collector = nullptr; }
+  void TearDown() override {
+    os::MockMetrics::SetInstance(nullptr);
+    metrics = nullptr;
+    collector = nullptr;
+  }
 };
 
-TEST_F(MetricsCollectorTest, Initialize) { ASSERT_EQ(log_count, 0); }
+TEST_F(MetricsCollectorTest, Initialize) {}
 
 TEST_F(MetricsCollectorTest, ConnectionFailed) {
+  EXPECT_CALL(*metrics, LogMetricLeAudioConnectionSessionReported(
+                                _, group_id1, _, _, _, _, ElementsAre(ConnectionStatus::FAILED),
+                                ElementsAre(_), ElementsAre(device1), _, _, _))
+          .Times(1);
+
   collector->OnConnectionStateChanged(group_id1, device1,
                                       bluetooth::le_audio::ConnectionState::CONNECTING,
                                       ConnectionStatus::UNKNOWN);
   collector->OnConnectionStateChanged(group_id1, device1,
                                       bluetooth::le_audio::ConnectionState::CONNECTED,
                                       ConnectionStatus::FAILED);
-
-  ASSERT_EQ(log_count, 1);
-  ASSERT_EQ(last_group_metric_id, group_id1);
-  ASSERT_EQ(last_device_connecting_offset_nanos.size(), 1UL);
-  ASSERT_EQ(last_device_connection_status.size(), 1UL);
-  ASSERT_EQ(last_device_connection_status.back(), ConnectionStatus::FAILED);
 }
 
 TEST_F(MetricsCollectorTest, ConnectingConnectedDisconnected) {
+  EXPECT_CALL(*metrics, LogMetricLeAudioConnectionSessionReported(
+                                _, group_id1, _, ElementsAre(_), ElementsAre(_), ElementsAre(_),
+                                ElementsAre(ConnectionStatus::SUCCESS),
+                                ElementsAre(ConnectionStatus::SUCCESS), ElementsAre(device1),
+                                IsEmpty(), IsEmpty(), IsEmpty()))
+          .Times(1);
+
   collector->OnConnectionStateChanged(group_id1, device1,
                                       bluetooth::le_audio::ConnectionState::CONNECTING,
                                       ConnectionStatus::UNKNOWN);
@@ -159,40 +110,15 @@ TEST_F(MetricsCollectorTest, ConnectingConnectedDisconnected) {
   collector->OnConnectionStateChanged(group_id1, device1,
                                       bluetooth::le_audio::ConnectionState::DISCONNECTED,
                                       ConnectionStatus::SUCCESS);
-
-  ASSERT_EQ(log_count, 1);
-  ASSERT_EQ(last_group_metric_id, group_id1);
-  ASSERT_EQ(last_device_connecting_offset_nanos.size(), 1UL);
-  ASSERT_EQ(last_device_connection_status.size(), 1UL);
-  ASSERT_EQ(last_device_disconnection_status.size(), 1UL);
-  ASSERT_EQ(last_device_connecting_offset_nanos.size(), 1UL);
-  ASSERT_EQ(last_device_connected_offset_nanos.size(), 1UL);
-  ASSERT_EQ(last_device_connection_duration_nanos.size(), 1UL);
-  ASSERT_EQ(last_device_connection_status.back(), ConnectionStatus::SUCCESS);
-  ASSERT_EQ(last_device_disconnection_status.back(), ConnectionStatus::SUCCESS);
 }
 
 TEST_F(MetricsCollectorTest, SingleDeviceTwoConnections) {
-  collector->OnConnectionStateChanged(group_id1, device1,
-                                      bluetooth::le_audio::ConnectionState::CONNECTING,
-                                      ConnectionStatus::UNKNOWN);
-  collector->OnConnectionStateChanged(group_id1, device1,
-                                      bluetooth::le_audio::ConnectionState::CONNECTED,
-                                      ConnectionStatus::SUCCESS);
-  collector->OnConnectionStateChanged(group_id1, device1,
-                                      bluetooth::le_audio::ConnectionState::DISCONNECTED,
-                                      ConnectionStatus::SUCCESS);
-
-  ASSERT_EQ(log_count, 1);
-  ASSERT_EQ(last_group_metric_id, group_id1);
-  ASSERT_EQ(last_device_connecting_offset_nanos.size(), 1UL);
-  ASSERT_EQ(last_device_connection_status.size(), 1UL);
-  ASSERT_EQ(last_device_disconnection_status.size(), 1UL);
-  ASSERT_EQ(last_device_connecting_offset_nanos.size(), 1UL);
-  ASSERT_EQ(last_device_connected_offset_nanos.size(), 1UL);
-  ASSERT_EQ(last_device_connection_duration_nanos.size(), 1UL);
-  ASSERT_EQ(last_device_connection_status.back(), ConnectionStatus::SUCCESS);
-  ASSERT_EQ(last_device_disconnection_status.back(), ConnectionStatus::SUCCESS);
+  EXPECT_CALL(*metrics, LogMetricLeAudioConnectionSessionReported(
+                                _, group_id1, _, ElementsAre(_), ElementsAre(_), ElementsAre(_),
+                                ElementsAre(ConnectionStatus::SUCCESS),
+                                ElementsAre(ConnectionStatus::SUCCESS), ElementsAre(device1),
+                                IsEmpty(), IsEmpty(), IsEmpty()))
+          .Times(2);
 
   collector->OnConnectionStateChanged(group_id1, device1,
                                       bluetooth::le_audio::ConnectionState::CONNECTING,
@@ -203,20 +129,26 @@ TEST_F(MetricsCollectorTest, SingleDeviceTwoConnections) {
   collector->OnConnectionStateChanged(group_id1, device1,
                                       bluetooth::le_audio::ConnectionState::DISCONNECTED,
                                       ConnectionStatus::SUCCESS);
-
-  ASSERT_EQ(log_count, 2);
-  ASSERT_EQ(last_group_metric_id, group_id1);
-  ASSERT_EQ(last_device_connecting_offset_nanos.size(), 1UL);
-  ASSERT_EQ(last_device_connection_status.size(), 1UL);
-  ASSERT_EQ(last_device_disconnection_status.size(), 1UL);
-  ASSERT_EQ(last_device_connecting_offset_nanos.size(), 1UL);
-  ASSERT_EQ(last_device_connected_offset_nanos.size(), 1UL);
-  ASSERT_EQ(last_device_connection_duration_nanos.size(), 1UL);
-  ASSERT_EQ(last_device_connection_status.back(), ConnectionStatus::SUCCESS);
-  ASSERT_EQ(last_device_disconnection_status.back(), ConnectionStatus::SUCCESS);
+  collector->OnConnectionStateChanged(group_id1, device1,
+                                      bluetooth::le_audio::ConnectionState::CONNECTING,
+                                      ConnectionStatus::UNKNOWN);
+  collector->OnConnectionStateChanged(group_id1, device1,
+                                      bluetooth::le_audio::ConnectionState::CONNECTED,
+                                      ConnectionStatus::SUCCESS);
+  collector->OnConnectionStateChanged(group_id1, device1,
+                                      bluetooth::le_audio::ConnectionState::DISCONNECTED,
+                                      ConnectionStatus::SUCCESS);
 }
 
 TEST_F(MetricsCollectorTest, StereoGroupBasicTest) {
+  EXPECT_CALL(*metrics,
+              LogMetricLeAudioConnectionSessionReported(
+                      _, group_id2, _, ElementsAre(_, _), ElementsAre(_, _), ElementsAre(_, _),
+                      ElementsAre(ConnectionStatus::SUCCESS, ConnectionStatus::SUCCESS),
+                      ElementsAre(ConnectionStatus::SUCCESS, ConnectionStatus::SUCCESS),
+                      ElementsAre(device2, device3), IsEmpty(), IsEmpty(), IsEmpty()))
+          .Times(1);
+
   collector->OnConnectionStateChanged(group_id2, device2,
                                       bluetooth::le_audio::ConnectionState::CONNECTING,
                                       ConnectionStatus::UNKNOWN);
@@ -232,18 +164,20 @@ TEST_F(MetricsCollectorTest, StereoGroupBasicTest) {
   collector->OnConnectionStateChanged(group_id2, device2,
                                       bluetooth::le_audio::ConnectionState::DISCONNECTED,
                                       ConnectionStatus::SUCCESS);
-
-  ASSERT_EQ(log_count, 1);
-  ASSERT_EQ(last_group_metric_id, group_id2);
-  ASSERT_EQ(last_device_connecting_offset_nanos.size(), 2UL);
-  ASSERT_EQ(last_device_connection_status.size(), 2UL);
-  ASSERT_EQ(last_device_disconnection_status.size(), 2UL);
-  ASSERT_EQ(last_device_connecting_offset_nanos.size(), 2UL);
-  ASSERT_EQ(last_device_connected_offset_nanos.size(), 2UL);
-  ASSERT_EQ(last_device_connection_duration_nanos.size(), 2UL);
 }
 
 TEST_F(MetricsCollectorTest, StereoGroupMultiReconnections) {
+  EXPECT_CALL(
+          *metrics,
+          LogMetricLeAudioConnectionSessionReported(
+                  _, group_id2, _, ElementsAre(_, _, _), ElementsAre(_, _, _), ElementsAre(_, _, _),
+                  ElementsAre(ConnectionStatus::SUCCESS, ConnectionStatus::SUCCESS,
+                              ConnectionStatus::SUCCESS),
+                  ElementsAre(ConnectionStatus::SUCCESS, ConnectionStatus::SUCCESS,
+                              ConnectionStatus::SUCCESS),
+                  ElementsAre(device2, device3, device3), IsEmpty(), IsEmpty(), IsEmpty()))
+          .Times(1);
+
   collector->OnConnectionStateChanged(group_id2, device2,
                                       bluetooth::le_audio::ConnectionState::CONNECTING,
                                       ConnectionStatus::UNKNOWN);
@@ -265,18 +199,17 @@ TEST_F(MetricsCollectorTest, StereoGroupMultiReconnections) {
   collector->OnConnectionStateChanged(group_id2, device2,
                                       bluetooth::le_audio::ConnectionState::DISCONNECTED,
                                       ConnectionStatus::SUCCESS);
-
-  ASSERT_EQ(log_count, 1);
-  ASSERT_EQ(last_group_metric_id, group_id2);
-  ASSERT_EQ(last_device_connecting_offset_nanos.size(), 3UL);
-  ASSERT_EQ(last_device_connection_status.size(), 3UL);
-  ASSERT_EQ(last_device_disconnection_status.size(), 3UL);
-  ASSERT_EQ(last_device_connecting_offset_nanos.size(), 3UL);
-  ASSERT_EQ(last_device_connected_offset_nanos.size(), 3UL);
-  ASSERT_EQ(last_device_connection_duration_nanos.size(), 3UL);
 }
 
 TEST_F(MetricsCollectorTest, MixGroups) {
+  EXPECT_CALL(*metrics,
+              LogMetricLeAudioConnectionSessionReported(
+                      _, group_id2, _, ElementsAre(_, _), ElementsAre(_, _), ElementsAre(_, _),
+                      ElementsAre(ConnectionStatus::SUCCESS, ConnectionStatus::SUCCESS),
+                      ElementsAre(ConnectionStatus::SUCCESS, ConnectionStatus::SUCCESS),
+                      ElementsAre(device2, device3), IsEmpty(), IsEmpty(), IsEmpty()))
+          .Times(1);
+
   collector->OnConnectionStateChanged(group_id1, device1,
                                       bluetooth::le_audio::ConnectionState::CONNECTING,
                                       ConnectionStatus::UNKNOWN);
@@ -299,30 +232,23 @@ TEST_F(MetricsCollectorTest, MixGroups) {
                                       bluetooth::le_audio::ConnectionState::DISCONNECTED,
                                       ConnectionStatus::SUCCESS);
 
-  ASSERT_EQ(log_count, 1);
-  ASSERT_EQ(last_group_metric_id, group_id2);
-  ASSERT_EQ(last_device_connecting_offset_nanos.size(), 2UL);
-  ASSERT_EQ(last_device_connection_status.size(), 2UL);
-  ASSERT_EQ(last_device_disconnection_status.size(), 2UL);
-  ASSERT_EQ(last_device_connecting_offset_nanos.size(), 2UL);
-  ASSERT_EQ(last_device_connected_offset_nanos.size(), 2UL);
-  ASSERT_EQ(last_device_connection_duration_nanos.size(), 2UL);
+  EXPECT_CALL(*metrics, LogMetricLeAudioConnectionSessionReported(
+                                _, group_id1, _, ElementsAre(_), ElementsAre(_), ElementsAre(_),
+                                ElementsAre(ConnectionStatus::SUCCESS),
+                                ElementsAre(ConnectionStatus::SUCCESS), ElementsAre(device1),
+                                IsEmpty(), IsEmpty(), IsEmpty()))
+          .Times(1);
 
   collector->OnConnectionStateChanged(group_id1, device1,
                                       bluetooth::le_audio::ConnectionState::DISCONNECTED,
                                       ConnectionStatus::SUCCESS);
-
-  ASSERT_EQ(log_count, 2);
-  ASSERT_EQ(last_group_metric_id, group_id1);
-  ASSERT_EQ(last_device_connecting_offset_nanos.size(), 1UL);
-  ASSERT_EQ(last_device_connection_status.size(), 1UL);
-  ASSERT_EQ(last_device_disconnection_status.size(), 1UL);
-  ASSERT_EQ(last_device_connecting_offset_nanos.size(), 1UL);
-  ASSERT_EQ(last_device_connected_offset_nanos.size(), 1UL);
-  ASSERT_EQ(last_device_connection_duration_nanos.size(), 1UL);
 }
 
 TEST_F(MetricsCollectorTest, GroupSizeUpdated) {
+  EXPECT_CALL(*metrics,
+              LogMetricLeAudioConnectionSessionReported(2, group_id1, _, _, _, _, _, _, _, _, _, _))
+          .Times(1);
+
   collector->OnGroupSizeUpdate(group_id2, 1);
   collector->OnGroupSizeUpdate(group_id1, 2);
   collector->OnConnectionStateChanged(group_id1, device1,
@@ -334,13 +260,16 @@ TEST_F(MetricsCollectorTest, GroupSizeUpdated) {
   collector->OnConnectionStateChanged(group_id1, device1,
                                       bluetooth::le_audio::ConnectionState::DISCONNECTED,
                                       ConnectionStatus::SUCCESS);
-
-  ASSERT_EQ(log_count, 1);
-  ASSERT_EQ(last_group_metric_id, group_id1);
-  ASSERT_EQ(last_group_size, 2);
 }
 
 TEST_F(MetricsCollectorTest, StreamingSessions) {
+  EXPECT_CALL(*metrics,
+              LogMetricLeAudioConnectionSessionReported(
+                      _, group_id1, _, _, _, _, _, _, _, ElementsAre(_, _), ElementsAre(_, _),
+                      ElementsAre(static_cast<int32_t>(LeAudioMetricsContextType::MEDIA),
+                                  static_cast<int32_t>(LeAudioMetricsContextType::COMMUNICATION))))
+          .Times(1);
+
   collector->OnConnectionStateChanged(group_id1, device1,
                                       bluetooth::le_audio::ConnectionState::CONNECTING,
                                       ConnectionStatus::UNKNOWN);
@@ -355,31 +284,16 @@ TEST_F(MetricsCollectorTest, StreamingSessions) {
   collector->OnConnectionStateChanged(group_id1, device1,
                                       bluetooth::le_audio::ConnectionState::DISCONNECTED,
                                       ConnectionStatus::SUCCESS);
-
-  ASSERT_EQ(log_count, 1);
-  ASSERT_EQ(last_group_metric_id, group_id1);
-  ASSERT_EQ(last_streaming_offset_nanos.size(), 2UL);
-  ASSERT_EQ(last_streaming_duration_nanos.size(), 2UL);
-  ASSERT_EQ(last_streaming_context_type.size(), 2UL);
-
-  ASSERT_GT(last_streaming_offset_nanos[0], 0L);
-  ASSERT_GT(last_streaming_offset_nanos[1], 0L);
-  ASSERT_GT(last_streaming_duration_nanos[0], 0L);
-  ASSERT_GT(last_streaming_duration_nanos[1], 0L);
-  ASSERT_EQ(last_streaming_context_type[0], static_cast<int32_t>(LeAudioMetricsContextType::MEDIA));
-  ASSERT_EQ(last_streaming_context_type[1],
-            static_cast<int32_t>(LeAudioMetricsContextType::COMMUNICATION));
 }
 
 TEST_F(MetricsCollectorTest, BroadastSessions) {
-  last_broadcast_duration_nanos = 0;
+  EXPECT_CALL(*metrics, LogMetricLeAudioBroadcastSessionReported(Gt(0))).Times(1);
   collector->OnBroadcastStateChanged(true);
   collector->OnBroadcastStateChanged(false);
-  ASSERT_GT(last_broadcast_duration_nanos, 0);
-  last_broadcast_duration_nanos = 0;
+
+  EXPECT_CALL(*metrics, LogMetricLeAudioBroadcastSessionReported(Gt(0))).Times(1);
   collector->OnBroadcastStateChanged(true);
   collector->OnBroadcastStateChanged(false);
-  ASSERT_GT(last_broadcast_duration_nanos, 0);
 }
 
 }  // namespace bluetooth::le_audio

@@ -16,9 +16,12 @@
 
 package com.android.server.bluetooth;
 
+import static android.Manifest.permission.BLUETOOTH_CONNECT;
+import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.SuppressLint;
+import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothAdapter;
 import android.content.AttributionSource;
 import android.os.Binder;
@@ -30,7 +33,6 @@ import com.android.modules.utils.BasicShellCommandHandler;
 
 import java.io.PrintWriter;
 
-@SuppressLint("AndroidFrameworkRequiresPermission")
 class BluetoothShellCommand extends BasicShellCommandHandler {
     private static final String TAG = BluetoothShellCommand.class.getSimpleName();
 
@@ -38,7 +40,12 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
 
     @VisibleForTesting
     final BluetoothCommand[] mBluetoothCommands = {
-        new Enable(), new EnableBle(), new Disable(), new DisableBle(), new WaitForAdapterState(),
+        new Enable(),
+        new EnableBle(),
+        new Disable(),
+        new DisableBle(),
+        new WaitForAdapterState(),
+        new FactoryReset(),
     };
 
     @VisibleForTesting
@@ -75,6 +82,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         }
 
         @Override
+        @RequiresPermission(BLUETOOTH_CONNECT)
         public int exec(String cmd) throws RemoteException {
             return mManagerService
                             .getBinder()
@@ -93,12 +101,34 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
     }
 
     @VisibleForTesting
+    class FactoryReset extends BluetoothCommand {
+        FactoryReset() {
+            super(true, "factoryReset");
+        }
+
+        @Override
+        @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
+        public int exec(String cmd) throws RemoteException {
+            return mManagerService.getBinder().factoryReset(AttributionSource.myAttributionSource())
+                    ? 0
+                    : -1;
+        }
+
+        @Override
+        public void onHelp(PrintWriter pw) {
+            pw.println("  " + getName());
+            pw.println("    Perform a factory reset of Bluetooth settings.");
+        }
+    }
+
+    @VisibleForTesting
     class DisableBle extends BluetoothCommand {
         DisableBle() {
             super(true, "disableBle");
         }
 
         @Override
+        @RequiresPermission(BLUETOOTH_CONNECT)
         public int exec(String cmd) throws RemoteException {
             return mManagerService
                             .getBinder()
@@ -123,6 +153,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         }
 
         @Override
+        @RequiresPermission(BLUETOOTH_CONNECT)
         public int exec(String cmd) throws RemoteException {
             return mManagerService.getBinder().enable(AttributionSource.myAttributionSource())
                     ? 0
@@ -143,6 +174,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         }
 
         @Override
+        @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
         public int exec(String cmd) throws RemoteException {
             return mManagerService
                             .getBinder()
@@ -230,7 +262,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
                                     + uid
                                     + " does not have access to "
                                     + cmd
-                                    + " bluetooth command");
+                                    + " bluetooth command. Use a Root shell");
                 }
             }
             try {

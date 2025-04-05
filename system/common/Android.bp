@@ -43,7 +43,6 @@ cc_library_static {
         "libbluetooth_crypto_toolbox",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
-        "libbt-platform-protos-lite",
     ],
 }
 
@@ -88,7 +87,6 @@ cc_test {
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbt-common",
-        "libbt-platform-protos-lite",
         "libchrome",
         "libevent",
         "libgmock",

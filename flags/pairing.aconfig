@@ -32,16 +32,6 @@ flag {
 }
 
 flag {
-    name: "read_le_appearance"
-    namespace: "bluetooth"
-    description: "Read GATT Appearance characteristic on new LE connections"
-    bug: "362367900"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "clear_pairing_state_when_no_devrec"
     namespace: "bluetooth"
     description: "Clear pairing state on early bond failure due to connection timeout and devrec is not created"

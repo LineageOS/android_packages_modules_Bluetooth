@@ -334,8 +334,8 @@ public class HeadsetClientNativeInterface {
         return mAdapterService.getDeviceFromByte(address);
     }
 
-    private static byte[] getByteAddress(BluetoothDevice device) {
-        return Utils.getByteBrEdrAddress(device);
+    private byte[] getByteAddress(BluetoothDevice device) {
+        return Utils.getByteBrEdrAddress(mAdapterService, device);
     }
 
     // Callbacks from the native back into the java framework. All callbacks are routed via the

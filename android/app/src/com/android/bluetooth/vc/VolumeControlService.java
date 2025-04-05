@@ -187,6 +187,7 @@ public class VolumeControlService extends ProfileService {
         mGroupMuteCache.clear();
         mDeviceVolumeCache.clear();
         mDeviceMuteCache.clear();
+        setIgnoreSetVolumeFromAfFlag(false);
 
         synchronized (mCallbacks) {
             mCallbacks.kill();
@@ -585,7 +586,7 @@ public class VolumeControlService extends ProfileService {
 
         if (mIgnoreSetVolumeFromAF) {
             Log.d(TAG, "setGroupVolume ignored (from AF) because persisted/cached volume was used");
-            mIgnoreSetVolumeFromAF = false;
+            setIgnoreSetVolumeFromAfFlag(false);
             return;
         }
 
@@ -965,6 +966,11 @@ public class VolumeControlService extends ProfileService {
         return (int) Math.round((double) streamVolume * LE_AUDIO_MAX_VOL / streamMaxVolume);
     }
 
+    void setIgnoreSetVolumeFromAfFlag(boolean value) {
+        Log.d(TAG, "Set mIgnoreSetVolumeFromAF: " + value);
+        mIgnoreSetVolumeFromAF = value;
+    }
+
     synchronized void handleVolumeControlChanged(
             BluetoothDevice device,
             int groupId,
@@ -1000,7 +1006,7 @@ public class VolumeControlService extends ProfileService {
                 Log.i(TAG, "Setting device: " + device + " volume: " + volume + " to the system");
                 if (vcpDeviceVolumeApiImprovements()) {
                     // Ignore volume from AF because persisted volume was used
-                    mIgnoreSetVolumeFromAF = true;
+                    setIgnoreSetVolumeFromAfFlag(true);
                 }
                 updateGroupCacheAndAudioSystem(groupId, volume, mute, false);
                 return;
@@ -1026,7 +1032,13 @@ public class VolumeControlService extends ProfileService {
                     }
                     if (getConnectedDevices(groupId).size() == 1) {
                         // Ignore volume from AF because cached volume was used
-                        mIgnoreSetVolumeFromAF = true;
+                        setIgnoreSetVolumeFromAfFlag(true);
+                    }
+                } else {
+                    Log.i(TAG, "Waiting for volume from AF to set to the device: " + device);
+                    if (getConnectedDevices(groupId).size() == 1) {
+                        // Clear ignore flag as volume from AF is needed
+                        setIgnoreSetVolumeFromAfFlag(false);
                     }
                 }
             } else {

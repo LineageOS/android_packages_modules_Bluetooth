@@ -89,6 +89,8 @@ tSMP_STATUS SMP_Pair(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type) {
   if (p_cb->state != SMP_STATE_IDLE || p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD ||
       p_cb->smp_over_br) {
     /* pending security on going, reject this one */
+    log::warn("SMP is busy, state={}, flag=0x{:x}, smp_over_br: {}", p_cb->state, p_cb->flags,
+              p_cb->smp_over_br);
     return SMP_IMPL_BUSY;
   } else {
     p_cb->flags = SMP_PAIR_FLAGS_WE_STARTED_DD;
@@ -135,6 +137,8 @@ tSMP_STATUS SMP_BR_PairWith(const RawAddress& bd_addr) {
   if (p_cb->state != SMP_STATE_IDLE || p_cb->smp_over_br ||
       p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD) {
     /* pending security on going, reject this one */
+    log::warn("SMP is busy, state={}, flag=0x{:x}, smp_over_br: {}", p_cb->state, p_cb->flags,
+              p_cb->smp_over_br);
     return SMP_IMPL_BUSY;
   }
 

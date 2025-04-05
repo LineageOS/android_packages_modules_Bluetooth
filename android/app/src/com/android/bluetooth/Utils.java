@@ -302,13 +302,6 @@ public final class Utils {
     }
 
     /**
-     * @see #getByteBrEdrAddress(AdapterService, BluetoothDevice)
-     */
-    public static byte[] getByteBrEdrAddress(BluetoothDevice device) {
-        return getByteBrEdrAddress(AdapterService.getAdapterService(), device);
-    }
-
-    /**
      * Returns the correct device address to be used for connections over BR/EDR transport.
      *
      * @param service the provided AdapterService

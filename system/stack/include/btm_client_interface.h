@@ -49,6 +49,8 @@ struct btm_client_interface_t {
     [[nodiscard]] bool (*BTM_IsAclConnectionUp)(const RawAddress& bd_addr, tBT_TRANSPORT transport);
     [[nodiscard]] bool (*BTM_ReadConnectedTransportAddress)(RawAddress* bd_addr,
                                                             tBT_TRANSPORT transport);
+    [[nodiscard]] std::pair<RawAddress, RawAddress> (*BTM_GetConnectedTransportAddress)
+                                                              (RawAddress bd_addr);
     [[nodiscard]] uint8_t* (*BTM_ReadRemoteFeatures)(const RawAddress&);
     void (*BTM_ReadDevInfo)(const RawAddress& bd_addr, tBT_DEVICE_TYPE* p_dev_type,
                             tBLE_ADDR_TYPE* p_addr_type);

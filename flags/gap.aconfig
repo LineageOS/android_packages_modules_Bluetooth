@@ -280,3 +280,20 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "gatt_reuse_discovering_client"
+    namespace: "bluetooth"
+    description: "Reuse discovering GATT client on service change indication"
+    bug: "407060739"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "preload_gatt_database"
+    namespace: "bluetooth"
+    description: "Add API to allow apps to preload GATT databases to allow skipping service discovery on initial connection."
+    bug: "407051373"
+}

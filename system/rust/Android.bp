@@ -52,7 +52,6 @@ rust_defaults {
                 "libbinder_ndk",
                 "libcutils",
                 "libhidlbase",
-                "libstatslog_bt",
                 "libutils",
             ],
             rustlibs: [
@@ -125,7 +124,6 @@ cc_library_static {
         "-Wno-missing-prototypes",
     ],
     srcs: [
-        "src/core/ffi/module.cc",
         "src/gatt/ffi/gatt_shim.cc",
     ],
     include_dirs: [
@@ -166,7 +164,7 @@ cc_library_static {
 /// libbluetooth_core_rs and depends on libbluetooth_core. libbluetooth
 /// depends on libbluetooth_core_rs.
 /// i.e.
-/// libbluetooth -> {libbluetooth_core_rs, libbluetooth_core_rs_bridge} -> libbluetooth_core
+/// libbluetooth -> {libbluetooth_core_rs, libbluetooth_core_rs_bridge} -> libbluetooth-core
 ///
 /// Thus, FFI can be either:
 ///  * Rust to GD

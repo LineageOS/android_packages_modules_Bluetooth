@@ -32,9 +32,9 @@ EventCallbacks mock_event_callbacks = {
         .invoke_adapter_state_changed_cb = [](bt_state_t /* state */) {},
         .invoke_adapter_properties_cb = [](bt_status_t /* status */, int /* num_properties */,
                                            bt_property_t* /* properties */) {},
-        .invoke_remote_device_properties_cb = [](bt_status_t /* status */, RawAddress /* bd_addr */,
-                                                 int /* num_properties */,
-                                                 bt_property_t* /* properties */) {},
+        .invoke_remote_device_properties_cb =
+                [](bt_status_t /* status */, RawAddress /* bd_addr */, uint8_t /* address_type */,
+                   int /* num_properties */, bt_property_t* /* properties */) {},
         .invoke_device_found_cb = [](int /* num_properties */, bt_property_t* /* properties */) {},
         .invoke_discovery_state_changed_cb = [](bt_discovery_state_t /* state */) {},
         .invoke_pin_request_cb = [](RawAddress /* bd_addr */, bt_bdname_t /* bd_name */,

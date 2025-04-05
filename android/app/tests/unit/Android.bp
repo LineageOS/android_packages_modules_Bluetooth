@@ -4,9 +4,7 @@ package {
 
 android_test {
     name: "BluetoothJavaUnitTests",
-    defaults: [
-        "bluetooth_errorprone_rules",
-    ],
+    defaults: ["bluetooth_errorprone_rules"],
 
     sdk_version: "module_current",
     min_sdk_version: "Tiramisu",

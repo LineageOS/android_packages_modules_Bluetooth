@@ -905,7 +905,7 @@ public:
       return;
     }
 
-    log::debug("preset idx: {}", preset_index);
+    log::debug("{}: preset idx: {}", address, preset_index);
 
     /* Due to mandatory control point notifications or indications, preset
      * details are always up to date. However we have to be able to do the
@@ -927,6 +927,20 @@ public:
     } else {
       CpPresetIndexOperation(HasCtpOp(address, PresetCtpOpcode::READ_PRESETS, preset_index));
     }
+  }
+
+  void GetAllPresetInfo(const RawAddress& address) override {
+    auto device = std::find_if(devices_.begin(), devices_.end(), HasDevice::MatchAddress(address));
+    if (device == devices_.end()) {
+      log::warn("Device not connected to profile{}", address);
+      return;
+    }
+
+    log::debug("{}", address);
+
+    CpReadAllPresetsOperation(HasCtpOp(device->addr, PresetCtpOpcode::READ_PRESETS,
+                                       bluetooth::le_audio::has::kStartPresetIndex,
+                                       bluetooth::le_audio::has::kMaxNumOfPresets));
   }
 
   void SetPresetName(std::variant<RawAddress, int> addr_or_group_id, uint8_t preset_index,

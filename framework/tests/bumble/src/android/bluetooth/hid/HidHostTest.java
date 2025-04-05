@@ -100,14 +100,11 @@ public class HidHostTest {
     private static final Duration INTENT_TIMEOUT = Duration.ofSeconds(10);
     private BluetoothDevice mDevice;
     private BluetoothHidHost mHidService;
-    private BluetoothHeadset mHfpService;
-    private BluetoothA2dp mA2dpService;
     private final Context mContext =
             InstrumentationRegistry.getInstrumentation().getTargetContext();
     private final BluetoothAdapter mAdapter =
             mContext.getSystemService(BluetoothManager.class).getAdapter();
     private HIDGrpc.HIDBlockingStub mHidBlockingStub;
-    private byte mReportId;
     private static final int KEYBD_RPT_ID = 1;
     private static final int KEYBD_RPT_SIZE = 9;
     private static final int MOUSE_RPT_ID = 2;
@@ -779,12 +776,6 @@ public class HidHostTest {
     @SafeVarargs
     private void verifyIntentReceived(Matcher<Intent>... matchers) {
         mInOrder.verify(mReceiver, timeout(INTENT_TIMEOUT.toMillis()))
-                .onReceive(any(Context.class), MockitoHamcrest.argThat(AllOf.allOf(matchers)));
-    }
-
-    @SafeVarargs
-    private void verifyIntentReceivedAtLeast(int atLeast, Matcher<Intent>... matchers) {
-        mInOrder.verify(mReceiver, timeout(INTENT_TIMEOUT.toMillis()).atLeast(atLeast))
                 .onReceive(any(Context.class), MockitoHamcrest.argThat(AllOf.allOf(matchers)));
     }
 

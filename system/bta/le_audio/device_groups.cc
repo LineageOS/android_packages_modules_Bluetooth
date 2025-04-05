@@ -32,6 +32,7 @@
 #include <utility>
 #include <vector>
 
+#include "audio_context_type_manager.h"
 #include "audio_hal_client/audio_hal_client.h"
 #include "bta/include/bta_gatt_api.h"
 #include "bta/le_audio/gmap_server.h"
@@ -379,6 +380,23 @@ bool LeAudioDeviceGroup::IsGroupReadyToSuspendStream(void) const {
   });
 
   return iter == leAudioDevices_.end();
+}
+
+bool LeAudioDeviceGroup::IsDirectionAvailableForConfiguration(
+        LeAudioContextType configuration_context_type, uint8_t remote_direction) const {
+  auto current_config = IsUsingPreferredAudioSetConfiguration(configuration_context_type)
+                                ? GetCachedPreferredConfiguration(configuration_context_type)
+                                : GetCachedConfiguration(configuration_context_type);
+  log::debug("configuration_context_type_ = {}, group_id: {}, remote_direction: {}",
+             common::ToString(configuration_context_type), group_id_,
+             remote_direction == types::kLeAudioDirectionSink ? "Sink" : "Source");
+  if (current_config) {
+    log::debug("name: {}, size: {}", current_config->name,
+               current_config->confs.get(remote_direction).size());
+    return current_config->confs.get(remote_direction).size() != 0;
+  }
+  log::debug("no cached configuration");
+  return false;
 }
 
 bool LeAudioDeviceGroup::HaveAnyActiveDeviceInStreamingState() const {
@@ -824,6 +842,37 @@ uint16_t LeAudioDeviceGroup::GetRemoteDelay(uint8_t direction) const {
   return remote_delay_ms;
 }
 
+BidirectionalPair<bool> LeAudioDeviceGroup::GetDirectionSupport(
+        types::LeAudioContextType ctx_type) const {
+  if (!com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+    BidirectionalPair<bool> remote_directions = {true, true};
+    // Remove the Source support if Sink only scenario is used
+    // Note: With the RINGTONE we should already prepare for a call.
+    if ((types::kLeAudioContextAllRemoteSinkOnly.test(ctx_type) &&
+         (ctx_type != types::LeAudioContextType::RINGTONE)) ||
+        ctx_type == types::LeAudioContextType::UNSPECIFIED) {
+      log::debug("Remote source not supported for {}", common::ToString(ctx_type));
+      remote_directions.source = false;
+    }
+    return remote_directions;
+  }
+
+  auto audio_context_type_manager = AudioContextTypeManager::Get();
+  if (audio_context_type_manager == nullptr) {
+    log::warn("audio_context_type_manager is nullptr");
+    return {false, false};
+  }
+
+  if (audio_context_type_manager->IsAnyMetadataSet()) {
+    auto config = audio_context_type_manager->GetAudioContextsForTheGroup(this);
+    auto remote_contexts = config.second;
+    return {.sink = remote_contexts.sink.test_any(ctx_type | LeAudioContextType::UNSPECIFIED),
+            .source = remote_contexts.source.test_any(ctx_type | LeAudioContextType::UNSPECIFIED)};
+  }
+
+  return audio_context_type_manager->GetDirectionsForGivenContext(ctx_type, this);
+}
+
 CodecManager::UnicastConfigurationRequirements
 LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextType ctx_type) const {
   auto new_req = CodecManager::UnicastConfigurationRequirements{
@@ -839,52 +888,52 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
   for (auto const& weak_dev_ptr : leAudioDevices_) {
     auto device = weak_dev_ptr.lock();
     BidirectionalPair<bool> has_location = {false, false};
+    BidirectionalPair<bool> has_direction = GetDirectionSupport(ctx_type);
 
-    for (auto direction : {types::kLeAudioDirectionSink, types::kLeAudioDirectionSource}) {
-      if (!device->audio_locations_.get(direction)) {
+    for (auto remote_direction : {types::kLeAudioDirectionSink, types::kLeAudioDirectionSource}) {
+      if (!device->audio_locations_.get(remote_direction)) {
         log::debug("Device {} has no audio allocation for direction: {}", device->address_,
-                   (int)direction);
+                   (int)remote_direction);
         continue;
       }
 
-      // Do not put any requirements on the Source if Sink only scenario is used
-      // Note: With the RINGTONE we should already prepare for a call.
-      if ((direction == types::kLeAudioDirectionSource) &&
-          ((types::kLeAudioContextAllRemoteSinkOnly.test(ctx_type) &&
-            (ctx_type != types::LeAudioContextType::RINGTONE)) ||
-           ctx_type == types::LeAudioContextType::UNSPECIFIED)) {
-        log::debug("Skipping the remote source requirements.");
+      if (!has_direction.get(remote_direction)) {
+        log::info("Skipping {} direction",
+                  remote_direction == types::kLeAudioDirectionSource ? "Decoding" : "Encoding");
         continue;
       }
 
-      if (device->GetAseCount(direction) == 0) {
-        log::warn("Device {} has no ASEs for direction: {}", device->address_, (int)direction);
+      if (device->GetAseCount(remote_direction) == 0) {
+        log::warn("Device {} has no ASEs for direction: {}", device->address_,
+                  (int)remote_direction);
         continue;
       }
 
-      if (ctx_type == types::LeAudioContextType::VOICEASSISTANTS ||
-          ctx_type == types::LeAudioContextType::GAME) {
-        // For GAME and VOICE ASSISTANT, ignore direction if it is not supported only on a single
-        // direction.
-        auto group_contexts = GetSupportedContexts(types::kLeAudioDirectionBoth);
-        if (group_contexts.test(ctx_type)) {
-          auto direction_contexs = device->GetSupportedContexts(direction);
-          if (!direction_contexs.test(ctx_type)) {
-            log::warn("Device {} has no {} context support", device->address_,
-                      common::ToString(ctx_type));
-            continue;
+      if (!com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+        if (ctx_type == types::LeAudioContextType::VOICEASSISTANTS ||
+            ctx_type == types::LeAudioContextType::GAME) {
+          // For GAME and VOICE ASSISTANT, ignore direction if it is not supported only on a single
+          // direction.
+          auto group_contexts = GetSupportedContexts(types::kLeAudioDirectionBoth);
+          if (group_contexts.test(ctx_type)) {
+            auto direction_contexs = device->GetSupportedContexts(remote_direction);
+            if (!direction_contexs.test(ctx_type)) {
+              log::warn("Device {} has no {} context support", device->address_,
+                        common::ToString(ctx_type));
+              continue;
+            }
           }
         }
       }
 
-      auto const& dev_locations = device->audio_locations_.get(direction);
+      auto const& dev_locations = device->audio_locations_.get(remote_direction);
       if (dev_locations == std::nullopt) {
         log::warn("Device {} has no specified locations for direction: {}", device->address_,
-                  (int)direction);
+                  (int)remote_direction);
       }
 
-      has_location.get(direction) = true;
-      auto& direction_req = (direction == types::kLeAudioDirectionSink)
+      has_location.get(remote_direction) = true;
+      auto& direction_req = (remote_direction == types::kLeAudioDirectionSink)
                                     ? new_req.sink_requirements
                                     : new_req.source_requirements;
       if (!direction_req) {
@@ -899,23 +948,23 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
       CodecManager::UnicastConfigurationRequirements::DeviceDirectionRequirements config_req;
       config_req.params.Add(codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
                             (uint32_t)locations);
-      if (preferred_config_.get(direction) &&
-          preferred_config_.get(direction)->codec_priority != -1) {
+      if (preferred_config_.get(remote_direction) &&
+          preferred_config_.get(remote_direction)->codec_priority != -1) {
         config_req.params.Add(
                 codec_spec_conf::kLeAudioLtvTypeSamplingFreq,
                 UINT8_TO_VEC_UINT8(codec_spec_conf::SingleSamplingFreqCapability2Config(
-                        preferred_config_.get(direction)->sample_rate)));
+                        preferred_config_.get(remote_direction)->sample_rate)));
         config_req.params.Add(
                 codec_spec_conf::kLeAudioLtvTypeFrameDuration,
                 UINT8_TO_VEC_UINT8(codec_spec_conf::SingleFrameDurationCapability2Config(
-                        preferred_config_.get(direction)->frame_duration)));
+                        preferred_config_.get(remote_direction)->frame_duration)));
         config_req.params.Add(
                 codec_spec_conf::kLeAudioLtvTypeOctetsPerCodecFrame,
-                UINT16_TO_VEC_UINT8(preferred_config_.get(direction)->octets_per_frame));
+                UINT16_TO_VEC_UINT8(preferred_config_.get(remote_direction)->octets_per_frame));
       }
       config_req.target_latency = utils::GetTargetLatencyForAudioContext(ctx_type);
       log::warn("Device {} pushes requirement, location: {}, direction: {}", device->address_,
-                (int)locations, (int)direction);
+                (int)locations, (int)remote_direction);
       direction_req->push_back(std::move(config_req));
     }
 
@@ -1047,6 +1096,12 @@ void LeAudioDeviceGroup::InvalidateCachedConfigurations(void) {
   log::info("Group id: {}", group_id_);
   context_to_configuration_cache_map_.clear();
   context_to_preferred_configuration_cache_map_.clear();
+}
+
+void LeAudioDeviceGroup::InvalidateCachedConfigurations(LeAudioContextType context_type) {
+  log::info("Group id: {} context_type: {}", group_id_, common::ToString(context_type));
+  context_to_configuration_cache_map_.erase(context_type);
+  context_to_preferred_configuration_cache_map_.erase(context_type);
 }
 
 types::BidirectionalPair<AudioContexts> LeAudioDeviceGroup::GetLatestAvailableContexts() const {

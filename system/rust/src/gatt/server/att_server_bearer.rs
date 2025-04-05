@@ -33,6 +33,7 @@ enum AttRequestState<T: AttDatabase> {
 #[derive(Debug)]
 pub enum SendError {
     /// The packet failed to serialize
+    #[allow(dead_code)]
     SerializeError(EncodeError),
     /// The connection no longer exists
     ConnectionDropped,

@@ -26,8 +26,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
 public class StreamObserverSpliterator<T> implements Spliterator<T>, StreamObserver<T> {
-    private BlockingQueue<Object> mQueue = new LinkedBlockingQueue<>();
     private static final Object COMPLETED_INDICATOR = new Object();
+
+    private final BlockingQueue<Object> mQueue = new LinkedBlockingQueue<>();
 
     /**
      * Creates and returns an iterator over the elements contained in the internal blocking queue.

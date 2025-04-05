@@ -20,5 +20,5 @@ source_set("libmmc_metrics") {
     "//bt/system/log:log_defaults",
   ]
   sources = [ "mmc_rtt_logger.cc" ]
-  deps = [ "//bt/system:libbt-platform-protos-lite" ]
+  deps = [ "//bt/system/metrics" ]
 }

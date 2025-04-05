@@ -72,6 +72,8 @@ struct PendingPeriodicSyncRequest {
   os::Alarm sync_timeout_alarm;
 };
 
+// NOTE: This class is not thread-safe. All use of its API (except for `SetScanningCallback`) *must*
+// be done on the same thread as the one that `handler` uses (passed to `Init`).
 class PeriodicSyncManager {
 public:
   explicit PeriodicSyncManager(ScanningCallback* callbacks)
@@ -85,9 +87,17 @@ public:
     handler_ = handler;
   }
 
-  void SetScanningCallback(ScanningCallback* callbacks) { callbacks_ = callbacks; }
+  // This is the *only* method that we allow to be called from a different thread. We allow this
+  // when a module is being stopped at which point the handler should have been stopped.
+  void SetScanningCallback(ScanningCallback* callbacks) {
+    log::assert_that(handler_->IsCleared() || handler_->thread().IsSameThread(), "Wrong thread");
+
+    callbacks_ = callbacks;
+  }
 
   void StartSync(const PeriodicSyncStates& request, uint16_t skip, uint16_t sync_timeout) {
+    log::assert_that(handler_->thread().IsSameThread(), "Wrong thread");
+
     if (periodic_syncs_.size() >= kMaxSyncTransactions) {
       int status = static_cast<int>(ErrorCode::CONNECTION_REJECTED_LIMITED_RESOURCES);
       callbacks_->OnPeriodicSyncStarted(request.request_id, status, 0, request.advertiser_sid,
@@ -95,8 +105,8 @@ public:
       return;
     }
     auto address_type = request.address_with_type.GetAddressType();
-    log::assert_that((address_type == AddressType::PUBLIC_DEVICE_ADDRESS ||
-                      address_type == AddressType::RANDOM_DEVICE_ADDRESS),
+    log::assert_that(address_type == AddressType::PUBLIC_DEVICE_ADDRESS ||
+                             address_type == AddressType::RANDOM_DEVICE_ADDRESS,
                      "Invalid address type {}", AddressTypeText(address_type));
     periodic_syncs_.emplace_back(request);
     log::debug("address = {}, sid = {}", request.address_with_type, request.advertiser_sid);
@@ -106,6 +116,8 @@ public:
   }
 
   void StopSync(uint16_t handle) {
+    log::assert_that(handler_->thread().IsSameThread(), "Wrong thread");
+
     log::debug("[PSync]: handle = {}", handle);
     auto periodic_sync = GetEstablishedSyncFromHandle(handle);
     if (periodic_sync == periodic_syncs_.end()) {
@@ -122,6 +134,8 @@ public:
   }
 
   void CancelCreateSync(uint8_t adv_sid, Address address) {
+    log::assert_that(handler_->thread().IsSameThread(), "Wrong thread");
+
     log::debug("[PSync]");
     auto periodic_sync = GetSyncFromAddressAndSid(address, adv_sid);
     if (periodic_sync == periodic_syncs_.end()) {
@@ -165,6 +179,8 @@ public:
 
   void SyncSetInfo(const Address& address, uint16_t service_data, uint8_t adv_handle, int pa_source,
                    uint16_t connection_handle) {
+    log::assert_that(handler_->thread().IsSameThread(), "Wrong thread");
+
     if (periodic_sync_transfers_.size() >= kMaxSyncTransactions) {
       int status = static_cast<int>(ErrorCode::CONNECTION_REJECTED_LIMITED_RESOURCES);
       callbacks_->OnPeriodicSyncTransferred(pa_source, status, address);
@@ -184,6 +200,8 @@ public:
 
   void SyncTxParameters(const Address& /* address */, uint8_t mode, uint16_t skip, uint16_t timeout,
                         int reg_id) {
+    log::assert_that(handler_->thread().IsSameThread(), "Wrong thread");
+
     log::debug("[PAST]: mode={}, skip={}, timeout={}", mode, skip, timeout);
     auto sync_cte_type = static_cast<CteType>(
             static_cast<uint8_t>(PeriodicSyncCteType::AVOID_AOA_CONSTANT_TONE_EXTENSION) |
@@ -203,6 +221,8 @@ public:
 
   template <class View>
   void HandlePeriodicAdvertisingCreateSyncStatus(CommandStatusView view) {
+    log::assert_that(handler_->thread().IsSameThread(), "Wrong thread");
+
     log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view = View::Create(view);
     log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
@@ -235,6 +255,8 @@ public:
 
   template <class View>
   void HandlePeriodicAdvertisingCreateSyncCancelStatus(CommandCompleteView view) {
+    log::assert_that(handler_->thread().IsSameThread(), "Wrong thread");
+
     log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view = View::Create(view);
     log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
@@ -256,6 +278,8 @@ public:
   template <class View>
   void HandlePeriodicAdvertisingSyncTransferComplete(uint16_t connection_handle,
                                                      CommandCompleteView view) {
+    log::assert_that(handler_->thread().IsSameThread(), "Wrong thread");
+
     log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view = View::Create(view);
     log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
@@ -283,6 +307,8 @@ public:
 
   void HandleLePeriodicAdvertisingSyncEstablished(
           LePeriodicAdvertisingSyncEstablishedView event_view) {
+    log::assert_that(handler_->thread().IsSameThread(), "Wrong thread");
+
     log::assert_that(event_view.IsValid(), "assert failed: event_view.IsValid()");
     log::debug(
             "[PSync]: status={}, sync_handle={}, address={}, s_id={}, address_type={}, adv_phy={}, "
@@ -350,6 +376,8 @@ public:
   }
 
   void HandleLePeriodicAdvertisingReport(LePeriodicAdvertisingReportView event_view) {
+    log::assert_that(handler_->thread().IsSameThread(), "Wrong thread");
+
     log::assert_that(event_view.IsValid(), "assert failed: event_view.IsValid()");
     log::debug(
             "[PSync]: sync_handle = {}, tx_power = {}, rssi = {},cte_type = {}, data_status = {}, "
@@ -381,6 +409,8 @@ public:
   }
 
   void HandleLePeriodicAdvertisingSyncLost(LePeriodicAdvertisingSyncLostView event_view) {
+    log::assert_that(handler_->thread().IsSameThread(), "Wrong thread");
+
     log::assert_that(event_view.IsValid(), "assert failed: event_view.IsValid()");
     uint16_t sync_handle = event_view.GetSyncHandle();
     log::debug("[PSync]: sync_handle = {}", sync_handle);
@@ -398,6 +428,8 @@ public:
 
   void HandleLePeriodicAdvertisingSyncTransferReceived(
           LePeriodicAdvertisingSyncTransferReceivedView event_view) {
+    log::assert_that(handler_->thread().IsSameThread(), "Wrong thread");
+
     log::assert_that(event_view.IsValid(), "assert failed: event_view.IsValid()");
     uint8_t status = (uint8_t)event_view.GetStatus();
     uint8_t advertiser_phy = (uint8_t)event_view.GetAdvertiserPhy();
@@ -423,6 +455,8 @@ public:
   }
 
   void OnStartSyncTimeout() {
+    log::assert_that(handler_->thread().IsSameThread(), "Wrong thread");
+
     if (pending_sync_requests_.empty()) {
       log::error("pending_sync_requests_ empty");
       return;
@@ -448,6 +482,8 @@ public:
   }
 
   void HandleLeBigInfoAdvertisingReport(LeBigInfoAdvertisingReportView event_view) {
+    log::assert_that(handler_->thread().IsSameThread(), "Wrong thread");
+
     log::assert_that(event_view.IsValid(), "assert failed: event_view.IsValid()");
     log::debug(
             "[PAST]:sync_handle {}, num_bises = {}, nse = {},iso_interval = {}, bn = {}, pto = {}, "

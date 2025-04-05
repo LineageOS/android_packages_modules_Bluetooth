@@ -308,3 +308,23 @@ flag {
     }
 }
 
+
+flag {
+    name: "dsa_use_codec_extensibility"
+    namespace: "bluetooth"
+    description: "Use the codec extensibility API for passing DSA parameters"
+    bug: "406747076"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_bis_sync_control"
+    namespace: "bluetooth"
+    description: "Allow to control BIS sync state from BASS service level"
+    bug: "407928525"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

@@ -92,6 +92,10 @@ class HearingAaccessClientServiceInterfaceImpl : public HasClientInterface,
             Bind(&HasClient::GetPresetInfo, Unretained(HasClient::Get()), addr, preset_index));
   }
 
+  void GetAllPresetInfo(const RawAddress& addr) override {
+    do_in_main_thread(Bind(&HasClient::GetAllPresetInfo, Unretained(HasClient::Get()), addr));
+  }
+
   void SetPresetName(std::variant<RawAddress, int> addr_or_group_id, uint8_t preset_index,
                      std::string preset_name) override {
     do_in_main_thread(Bind(&HasClient::SetPresetName, Unretained(HasClient::Get()),

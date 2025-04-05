@@ -313,12 +313,17 @@ class BluetoothManagerService {
             return false;
         }
 
-        Log.d(TAG, "factoryReset: Now performing service reset & restart");
-        try {
-            mAdapter.factoryReset();
-        } catch (RemoteException e) {
-            mHandler.postDelayed(() -> factoryReset(count + 1), 1_000);
-            return false;
+        if (Flags.factoryResetAtBluetoothStart()) {
+            Log.d(TAG, "factoryReset: Will perform service restart after setting reset property");
+            BluetoothProperties.factory_reset(true);
+        } else {
+            Log.d(TAG, "factoryReset: Now performing service reset & restart");
+            try {
+                mAdapter.factoryReset();
+            } catch (RemoteException e) {
+                mHandler.postDelayed(() -> factoryReset(count + 1), 1_000);
+                return false;
+            }
         }
 
         clearBleApps();

@@ -21,7 +21,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-private const val SYSTEM_SERVER_TAG = "BluetoothSystemServer"
+private const val TAG = "BluetoothSystemServer"
 
 object Log {
 
@@ -30,23 +30,29 @@ object Log {
     // 2 or 3 parameters. We do not want to change the behavior in this class, just add a common
     // TAG to all the Bluetooth System Server logs.
 
-    @JvmStatic fun v(subtag: String, msg: String) = Log.v(SYSTEM_SERVER_TAG, "${subtag}: ${msg}")
+    @JvmStatic fun v(subtag: String, msg: String) = Log.v(TAG, "$subtag: $msg")
 
-    @JvmStatic fun d(subtag: String, msg: String) = Log.d(SYSTEM_SERVER_TAG, "${subtag}: ${msg}")
+    @JvmStatic fun v(msg: String) = Log.v(TAG, msg)
 
-    @JvmStatic fun i(subtag: String, msg: String) = Log.i(SYSTEM_SERVER_TAG, "${subtag}: ${msg}")
+    @JvmStatic fun d(subtag: String, msg: String) = Log.d(TAG, "$subtag: $msg")
 
-    @JvmStatic fun w(subtag: String, msg: String) = Log.w(SYSTEM_SERVER_TAG, "${subtag}: ${msg}")
+    @JvmStatic fun d(msg: String) = Log.d(TAG, msg)
 
-    @JvmStatic
-    fun w(subtag: String, msg: String, tr: Throwable) =
-        Log.w(SYSTEM_SERVER_TAG, "${subtag}: ${msg}", tr)
+    @JvmStatic fun i(subtag: String, msg: String) = Log.i(TAG, "$subtag: $msg")
 
-    @JvmStatic fun e(subtag: String, msg: String) = Log.e(SYSTEM_SERVER_TAG, "${subtag}: ${msg}")
+    @JvmStatic fun i(msg: String) = Log.i(TAG, msg)
 
-    @JvmStatic
-    fun e(subtag: String, msg: String, tr: Throwable) =
-        Log.e(SYSTEM_SERVER_TAG, "${subtag}: ${msg}", tr)
+    @JvmStatic fun w(subtag: String, msg: String) = Log.w(TAG, "$subtag: $msg")
+
+    @JvmStatic fun w(msg: String) = Log.w(TAG, msg)
+
+    @JvmStatic fun w(subtag: String, msg: String, tr: Throwable) = Log.w(TAG, "$subtag: $msg", tr)
+
+    @JvmStatic fun e(subtag: String, msg: String) = Log.e(TAG, "$subtag: $msg")
+
+    @JvmStatic fun e(msg: String) = Log.e(TAG, msg)
+
+    @JvmStatic fun e(subtag: String, msg: String, tr: Throwable) = Log.e(TAG, "$subtag: $msg", tr)
 
     @JvmStatic
     fun timeToStringWithZone(timestamp: Long) =

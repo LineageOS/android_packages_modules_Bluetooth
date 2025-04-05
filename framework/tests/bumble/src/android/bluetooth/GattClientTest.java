@@ -603,7 +603,7 @@ public class GattClientTest {
         return null;
     }
 
-    private void disconnectAndWaitDisconnection(
+    private static void disconnectAndWaitDisconnection(
             BluetoothGatt gatt, BluetoothGattCallback callback) {
         final int state = STATE_DISCONNECTED;
         gatt.disconnect();

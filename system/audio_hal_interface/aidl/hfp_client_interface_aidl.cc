@@ -18,6 +18,7 @@
 #include "hfp_client_interface_aidl.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <map>
@@ -36,6 +37,8 @@ namespace bluetooth {
 namespace audio {
 namespace aidl {
 namespace hfp {
+
+using namespace metrics;
 
 std::map<bt_status_t, BluetoothAudioCtrlAck> status_to_ack_map = {
         {BT_STATUS_SUCCESS, BluetoothAudioCtrlAck::SUCCESS_FINISHED},
@@ -71,7 +74,7 @@ static std::string command_to_text(tHFP_CTRL_CMD cmd) {
   }
 }
 
-static tBTA_AG_SCB* get_hfp_active_device_callback() {
+static tBTA_AG_SCB* get_hfp_active_device_control_block() {
   const RawAddress& addr = bta_ag_get_active_device();
   if (addr.IsEmpty()) {
     log::error("No active device found");
@@ -106,18 +109,19 @@ HfpTransport::HfpTransport() {
 }
 
 BluetoothAudioCtrlAck HfpTransport::StartRequest() {
+  auto cb = get_hfp_active_device_control_block();
+  if (cb == nullptr) {
+    return BluetoothAudioCtrlAck::FAILURE;
+  }
+
   if (hfp_pending_cmd_ == HFP_CTRL_CMD_START) {
     log::info("HFP_CTRL_CMD_START in progress");
     is_stream_active = true;
+    LogMetricHfpStartStream(cb->peer_addr);
     return BluetoothAudioCtrlAck::PENDING;
   } else if (hfp_pending_cmd_ != HFP_CTRL_CMD_NONE) {
     log::warn("busy in pending_cmd={}, {}", hfp_pending_cmd_, command_to_text(hfp_pending_cmd_));
     return BluetoothAudioCtrlAck::FAILURE_BUSY;
-  }
-
-  auto cb = get_hfp_active_device_callback();
-  if (cb == nullptr) {
-    return BluetoothAudioCtrlAck::FAILURE;
   }
 
   if (bta_ag_sco_is_open(cb)) {
@@ -151,6 +155,7 @@ BluetoothAudioCtrlAck HfpTransport::StartRequest() {
     return ctrl_ack->second;
   }
   is_stream_active = true;
+  LogMetricHfpStartStream(cb->peer_addr);
   return BluetoothAudioCtrlAck::PENDING;
 }
 
@@ -203,6 +208,7 @@ BluetoothAudioCtrlAck HfpTransport::SuspendRequest() {
   // because disconnect audio request can come when audio is disconnected
   hfp_pending_cmd_ = HFP_CTRL_CMD_NONE;
   if (status == BT_STATUS_SUCCESS) {
+    LogMetricHfpSuspendStream(addr);
     return BluetoothAudioCtrlAck::SUCCESS_FINISHED;
   } else {
     return BluetoothAudioCtrlAck::FAILURE;

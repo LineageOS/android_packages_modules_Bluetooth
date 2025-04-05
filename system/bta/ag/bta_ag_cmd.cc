@@ -19,6 +19,7 @@
 #define LOG_TAG "bta_ag_cmd"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
 #include <com_android_bluetooth_flags.h>
 #include <string.h>
 
@@ -37,7 +38,6 @@
 #include "bta_sys.h"
 #include "btm_api_types.h"
 #include "hardware/bt_hf.h"
-#include "metrics/bluetooth_event.h"
 #include "osi/include/alarm.h"
 
 #ifdef __ANDROID__
@@ -45,11 +45,12 @@
 #include "os/system_properties.h"
 #endif
 
+#include <bluetooth/metrics/os_metrics.h>
+
 #include "bta/include/bta_hfp_api.h"
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/helpers.h"
-#include "os/metrics.h"
 #include "osi/include/compat.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/port_api.h"

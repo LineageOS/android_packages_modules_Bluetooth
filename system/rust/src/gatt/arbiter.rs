@@ -5,12 +5,11 @@ use super::ids::{AdvertiserId, TransportIndex};
 use super::mtu::MtuEvent;
 use super::opcode_types::{classify_opcode, OperationType};
 use super::server::isolation_manager::IsolationManager;
-use crate::do_in_rust_thread;
+use crate::gatt::ffi::Handler;
 use crate::packets::att;
 use ffi::InterceptAction;
 use log::{error, trace};
 use pdl_runtime::Packet;
-use std::fmt;
 use std::ops::Deref;
 use std::pin::Pin;
 use std::sync::{Arc, Mutex};
@@ -73,6 +72,7 @@ pub mod ffi {
 /// primary stack or by the Rust stack.
 pub struct Arbiter {
     isolation_manager: Arc<Mutex<IsolationManager>>,
+    handler: Handler,
 }
 
 /// RegisteredArbiter registers `arbiter` and ensures it is unregistered when dropped.
@@ -84,22 +84,13 @@ pub struct RegisteredArbiter {
     arbiter: Pin<Box<Arbiter>>,
 }
 
-impl fmt::Debug for RegisteredArbiter {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("RegisteredArbiter").finish()
-    }
-}
-
-// SAFETY: `ffi::ArbiterShim` contains pointers to the C++ `AclArbiter` and the Rust `Arbiter`.
-// Once created, the only thing it does is unregister the Rust `Arbiter` from the `AclArbiter` which
-// can be done from any thread.
-unsafe impl Send for RegisteredArbiter {}
-
 impl RegisteredArbiter {
     /// Returns a new Arbiter.
-    pub fn new(acl_arbiter: &'static ffi::AclArbiter) -> Self {
-        let arbiter =
-            Box::pin(Arbiter { isolation_manager: Arc::new(Mutex::new(IsolationManager::new())) });
+    pub fn new(acl_arbiter: &'static ffi::AclArbiter, handler: Handler) -> Self {
+        let arbiter = Box::pin(Arbiter {
+            isolation_manager: Arc::new(Mutex::new(IsolationManager::new())),
+            handler,
+        });
         // SAFETY: Safe because `arbiter` is pinned, the shim will unregister the arbiter when
         // dropped, and because we drop the shim before we drop the arbiter.
         let shim = unsafe { ffi::register_arbiter(acl_arbiter, &*arbiter) };
@@ -156,7 +147,7 @@ impl Arbiter {
         let advertiser = AdvertiserId(advertiser);
         let is_isolated = self.with_arbiter(|arbiter| arbiter.is_advertiser_isolated(advertiser));
         if is_isolated {
-            do_in_rust_thread(move |modules| {
+            self.handler.handle(move |modules| {
                 if let Err(err) = modules.gatt_module.on_le_connect(tcb_idx, Some(advertiser)) {
                     error!("{err:?}")
                 }
@@ -169,7 +160,7 @@ impl Arbiter {
         let tcb_idx = TransportIndex(tcb_idx);
         let was_isolated = self.with_arbiter(|arbiter| arbiter.is_connection_isolated(tcb_idx));
         if was_isolated {
-            do_in_rust_thread(move |modules| {
+            self.handler.handle(move |modules| {
                 if let Err(err) = modules.gatt_module.on_le_disconnect(tcb_idx) {
                     error!("{err:?}")
                 }
@@ -183,7 +174,7 @@ impl Arbiter {
         if let Some(att) =
             self.with_arbiter(|arbiter| try_parse_att_server_packet(arbiter, tcb_idx, &packet))
         {
-            do_in_rust_thread(move |modules| {
+            self.handler.handle(move |modules| {
                 trace!("pushing packet to GATT");
                 if let Some(bearer) = modules.gatt_module.get_bearer(tcb_idx) {
                     bearer.handle_packet(att)
@@ -214,7 +205,7 @@ impl Arbiter {
 
     fn on_mtu_event(&self, tcb_idx: TransportIndex, event: MtuEvent) {
         if self.with_arbiter(|arbiter| arbiter.is_connection_isolated(tcb_idx)) {
-            do_in_rust_thread(move |modules| {
+            self.handler.handle(move |modules| {
                 let Some(bearer) = modules.gatt_module.get_bearer(tcb_idx) else {
                     error!("Bearer for {tcb_idx:?} not found");
                     return;

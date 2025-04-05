@@ -529,7 +529,8 @@ typedef void (*adapter_properties_callback)(bt_status_t status, int num_properti
  * multiple properties - num_properties shall be 1
  */
 typedef void (*remote_device_properties_callback)(bt_status_t status, RawAddress* bd_addr,
-                                                  int num_properties, bt_property_t* properties);
+                                                  uint8_t address_type, int num_properties,
+                                                  bt_property_t* properties);
 
 /** New device discovered callback */
 /** If EIR data is not present, then BD_NAME and RSSI shall be NULL and -1
@@ -721,12 +722,6 @@ typedef struct {
 
   /** Closes the interface. */
   void (*cleanup)(void);
-
-  /** Start Rust Module */
-  void (*start_rust_module)(void);
-
-  /** Stop Rust Module */
-  void (*stop_rust_module)(void);
 
   /** Get all Bluetooth Adapter properties at init */
   int (*get_adapter_properties)(void);

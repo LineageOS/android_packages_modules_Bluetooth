@@ -2040,6 +2040,7 @@ class HeadsetStateMachine extends StateMachine {
                             : AudioManager.STREAM_BLUETOOTH_SCO;
             int currentVol = mSystemInterface.getAudioManager().getStreamVolume(volStream);
             if (volume != currentVol) {
+                log("Setting stream volume " + volume);
                 mSystemInterface.getAudioManager().setStreamVolume(volStream, volume, flag);
             }
         } else if (volumeType == HeadsetHalConstants.VOLUME_TYPE_MIC) {

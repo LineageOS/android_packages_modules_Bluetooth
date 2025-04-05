@@ -58,7 +58,7 @@ pub struct CAudioConfig {
 #[derive(Clone, Copy)]
 pub struct CIsoStream {
     pub handle: u16,
-    pub channel_allocation: u16,
+    pub channel_allocation: u32,
 }
 
 /// C Callbacks called from Rust, match the C struct `swoff_lea_callbacks`.

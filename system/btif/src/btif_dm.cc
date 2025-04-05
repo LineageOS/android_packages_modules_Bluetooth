@@ -32,6 +32,9 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
+#include <bluetooth/metrics/metric_id_api.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_csis.h>
@@ -71,10 +74,7 @@
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/le_advertising_manager.h"
-#include "main/shim/metric_id_api.h"
 #include "main_thread.h"
-#include "metrics/bluetooth_event.h"
-#include "os/metrics.h"
 #include "os/system_properties.h"
 #include "osi/include/properties.h"
 #include "osi/include/stack_power_telemetry.h"
@@ -99,8 +99,8 @@
 #include "stack/include/smp_api.h"
 #include "stack/include/srvc_api.h"  // tDIS_VALUE
 #include "storage/config_keys.h"
+#include "types/ble_address_with_type.h"
 #include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 #ifdef __ANDROID__
 #include <android/sysprop/BluetoothProperties.sysprop.h>
@@ -678,10 +678,6 @@ void btif_update_remote_properties(const RawAddress& bdaddr, BD_NAME bd_name, DE
     cod = COD_UNCLASSIFIED;
   }
 
-  if (old_cod != cod) {
-    log::info("{} CoD: 0x{:06x} -> 0x{:06x}", bdaddr, old_cod, cod);
-  }
-
   properties.push_back(bt_property_t{BT_PROPERTY_CLASS_OF_DEVICE, sizeof(cod), &cod});
 
   status = btif_storage_set_remote_device_property(&bdaddr, &properties.back());
@@ -702,8 +698,17 @@ void btif_update_remote_properties(const RawAddress& bdaddr, BD_NAME bd_name, DE
   status = btif_storage_set_remote_device_property(&bdaddr, &properties.back());
   ASSERTC(status == BT_STATUS_SUCCESS, "failed to save remote device type", status);
 
+  tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
+  bt_property_t addr_type_prop = {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type};
+  btif_storage_get_remote_device_property(&bdaddr, &addr_type_prop);
+  properties.push_back(addr_type_prop);
+
+  if (old_cod != cod) {
+    log::info("{}[{}] CoD: 0x{:06x} -> 0x{:06x}", bdaddr, AddressTypeText(addr_type), old_cod, cod);
+  }
+
   GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
-          status, bdaddr, properties.size(), properties.data());
+          status, bdaddr, addr_type, properties.size(), properties.data());
 }
 
 /* If device is LE Audio capable, we prefer LE connection first, this speeds
@@ -1201,8 +1206,8 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
       prop.val = &uuid;
       prop.len = Uuid::kNumBytes128;
 
-      GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(BT_STATUS_SUCCESS,
-                                                                           bd_addr, 1, &prop);
+      GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
+              BT_STATUS_SUCCESS, bd_addr, p_auth_cmpl->addr_type, 1, &prop);
     } else {
       /* If bonded due to cross-key, save the static address too*/
       if (is_crosskey) {
@@ -1331,25 +1336,30 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
 
     case BTA_DM_INQ_RES_EVT: {
       RawAddress& bdaddr = p_search_data->inq_res.bd_addr;
+      tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
+      if ((p_search_data->inq_res.device_type & BT_DEVICE_TYPE_BLE) != 0) {
+        addr_type = p_search_data->inq_res.ble_addr_type;
+      }
 
       // Do not update device properties of already bonded devices.
       if (com::android::bluetooth::flags::guard_bonded_device_properties() &&
           btm_sec_is_a_bonded_dev(bdaddr)) {
-        log::debug("Ignore device properties from discovery results for the bonded device: {}",
-                   bdaddr);
+        log::debug("Ignore device properties from discovery results for the bonded device: {}[{}]",
+                   bdaddr, AddressTypeText(addr_type));
 
         bool restrict_report =
                 osi_property_get_bool("bluetooth.restrict_discovered_device.enabled", false);
         if (restrict_report && p_search_data->inq_res.device_type == BT_DEVICE_TYPE_BLE &&
             !(p_search_data->inq_res.ble_evt_type & BTM_BLE_CONNECTABLE_MASK)) {
-          log::debug("Ble device {} is not connectable", bdaddr);
+          log::debug("Ble device {}[{}] is not connectable", bdaddr, AddressTypeText(addr_type));
           break;
         }
 
         bt_property_t bt_property[] = {
                 {BT_PROPERTY_BDADDR, sizeof(bdaddr), &bdaddr},
                 {BT_PROPERTY_REMOTE_RSSI, sizeof(p_search_data->inq_res.rssi),
-                 &(p_search_data->inq_res.rssi)}};
+                 &(p_search_data->inq_res.rssi)},
+                {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type}};
         GetInterfaceToProfiles()->events->invoke_device_found_cb(ARRAY_SIZE(bt_property),
                                                                  bt_property);
         break;
@@ -1366,7 +1376,8 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
                 check_eir_remote_name(p_search_data, NULL, NULL);
       }
 
-      log::verbose("addr:{} device_type=0x{:x}", bdaddr, p_search_data->inq_res.device_type);
+      log::verbose("addr:{}[{}] device_type=0x{:x}", bdaddr, AddressTypeText(addr_type),
+                   p_search_data->inq_res.device_type);
       bdname.name[0] = 0;
 
       if (!check_eir_remote_name(p_search_data, bdname.name, &remote_name_len)) {
@@ -1378,7 +1389,8 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
         if (!get_btm_client_interface().eir.BTM_GetEirUuidList(
                     p_search_data->inq_res.p_eir, p_search_data->inq_res.eir_len, Uuid::kNumBytes16,
                     &num_uuids, uuid_list, max_num_uuid)) {
-          log::debug("Unable to find service uuids in EIR peer:{}", bdaddr);
+          log::debug("Unable to find service uuids in EIR peer:{}[{}]", bdaddr,
+                     AddressTypeText(addr_type));
         }
       }
 
@@ -1386,10 +1398,11 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
         std::vector<bt_property_t> bt_properties;
         uint32_t dev_type;
         bt_status_t status;
-        tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
 
         /* RawAddress */
         bt_properties.push_back(bt_property_t{BT_PROPERTY_BDADDR, sizeof(bdaddr), &bdaddr});
+        bt_properties.push_back(
+                bt_property_t{BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type});
 
         /* BD_NAME */
         /* Don't send BDNAME if it is empty */
@@ -1413,7 +1426,8 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
           }
 
           if (old_cod != cod) {
-            log::info("{} CoD: 0x{:06x} -> 0x{:06x}", bdaddr, old_cod, cod);
+            log::info("{}[{}] CoD: 0x{:06x} -> 0x{:06x}", bdaddr, AddressTypeText(addr_type),
+                      old_cod, cod);
           }
           bt_properties.push_back(bt_property_t{BT_PROPERTY_CLASS_OF_DEVICE, sizeof(cod), &cod});
         }
@@ -1438,9 +1452,6 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
           dev_type = (bt_device_type_t)p_search_data->inq_res.device_type;
         }
 
-        if (p_search_data->inq_res.device_type == BT_DEVICE_TYPE_BLE) {
-          addr_type = p_search_data->inq_res.ble_addr_type;
-        }
         bt_properties.push_back(
                 bt_property_t{BT_PROPERTY_TYPE_OF_DEVICE, sizeof(dev_type), &dev_type});
         /* RSSI */
@@ -1487,7 +1498,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
             auto triple = eir_uuids_cache.try_emplace(bdaddr, std::set<Uuid>{});
             uuid_iter = std::get<0>(triple);
           }
-          log::info("EIR UUIDs for {}", bdaddr);
+          log::info("EIR UUIDs for {}[{}]", bdaddr, AddressTypeText(addr_type));
           for (int i = 0; i < num_uuids; ++i) {
             Uuid uuid = Uuid::From16Bit(p_uuid16[i]);
             log::info("{}", uuid.ToString());
@@ -1524,7 +1535,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
                 osi_property_get_bool("bluetooth.restrict_discovered_device.enabled", false);
         if (restrict_report && p_search_data->inq_res.device_type == BT_DEVICE_TYPE_BLE &&
             !(p_search_data->inq_res.ble_evt_type & BTM_BLE_CONNECTABLE_MASK)) {
-          log::debug("Ble device {} is not connectable", bdaddr);
+          log::debug("Ble device {}[{}] is not connectable", bdaddr, AddressTypeText(addr_type));
           break;
         }
 
@@ -1747,9 +1758,13 @@ static void btif_on_service_discovery_results(RawAddress bd_addr,
       return;
     }
 
+    tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
+    bt_property_t addr_type_prop = {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type};
+    btif_storage_get_remote_device_property(&bd_addr, &addr_type_prop);
+
     /* Send the event to the BTIF */
     GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
-            BT_STATUS_SUCCESS, bd_addr, ARRAY_SIZE(uuid_props), uuid_props);
+            BT_STATUS_SUCCESS, bd_addr, addr_type, ARRAY_SIZE(uuid_props), uuid_props);
   }
 }
 
@@ -1860,10 +1875,14 @@ static void btif_on_gatt_results(RawAddress bd_addr, std::vector<bluetooth::Uuid
     }
   }
 
+  tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
+  bt_property_t addr_type_prop = {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type};
+  btif_storage_get_remote_device_property(&bd_addr, &addr_type_prop);
+
   if (!com::android::bluetooth::flags::separate_service_storage()) {
     /* Send the event to the BTIF */
-    GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(BT_STATUS_SUCCESS, bd_addr,
-                                                                         prop.size(), prop.data());
+    GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
+            BT_STATUS_SUCCESS, bd_addr, addr_type, prop.size(), prop.data());
     return;
   }
 
@@ -1887,8 +1906,8 @@ static void btif_on_gatt_results(RawAddress bd_addr, std::vector<bluetooth::Uuid
                                (void*)bredr_property_value.data()});
 
   /* Send the event to the BTIF */
-  GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(BT_STATUS_SUCCESS, bd_addr,
-                                                                       prop.size(), prop.data());
+  GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
+          BT_STATUS_SUCCESS, bd_addr, addr_type, prop.size(), prop.data());
 }
 
 static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status, const BD_NAME bd_name,
@@ -1913,9 +1932,15 @@ static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status, co
   const bt_status_t status = btif_storage_set_remote_device_property(&bd_addr, properties.data());
   log::assert_that(status == BT_STATUS_SUCCESS, "Failed to save remote device property status:{}",
                    bt_status_text(status));
+
+  tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
+  bt_property_t addr_type_prop = {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type};
+  btif_storage_get_remote_device_property(&bd_addr, &addr_type_prop);
+  properties.push_back(addr_type_prop);
+
   GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
-          status, bd_addr, properties.size(), properties.data());
-  log::info("Callback for read name event addr:{} name:{}", bd_addr,
+          status, bd_addr, addr_type, properties.size(), properties.data());
+  log::info("Callback for read name event addr:{}[{}] name:{}", bd_addr, AddressTypeText(addr_type),
             reinterpret_cast<char const*>(bd_name));
 
   if (!during_device_search) {
@@ -1958,9 +1983,13 @@ static void btif_on_did_received(RawAddress bd_addr, uint8_t vendor_id_src, uint
   bt_status_t ret = btif_storage_set_remote_device_property(&bd_addr, &prop_did);
   ASSERTC(ret == BT_STATUS_SUCCESS, "storing remote services failed", ret);
 
+  tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
+  bt_property_t addr_type_prop = {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type};
+  btif_storage_get_remote_device_property(&bd_addr, &addr_type_prop);
+
   /* Send the event to the BTIF */
   GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(BT_STATUS_SUCCESS, bd_addr,
-                                                                       1, &prop_did);
+                                                                       addr_type, 1, &prop_did);
 }
 
 void BTIF_dm_report_inquiry_status_change(tBTM_INQUIRY_STATE status) {
@@ -3378,8 +3407,13 @@ static void read_dis_cback(const RawAddress& bd_addr, tDIS_VALUE* p_dis_value) {
     log::info("Device {}, model name: {}", bd_addr, (char*)prop.val);
 
     btif_storage_set_remote_device_property(&bd_addr, &prop);
+
+    tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
+    bt_property_t addr_type_prop = {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type};
+    btif_storage_get_remote_device_property(&bd_addr, &addr_type_prop);
+
     GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(BT_STATUS_SUCCESS, bd_addr,
-                                                                         1, &prop);
+                                                                         addr_type, 1, &prop);
   }
 }
 

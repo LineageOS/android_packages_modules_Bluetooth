@@ -19,7 +19,8 @@ impl ConnectionId {
     }
 
     /// Extract the ServerId from a ConnectionId (lower 8 bits)
-    pub fn get_server_id(&self) -> ServerId {
+    // NOTE: Currently unused.
+    pub fn _get_server_id(&self) -> ServerId {
         ServerId((self.0 & (u8::MAX as u16)) as u8)
     }
 }
@@ -44,6 +45,7 @@ pub struct AdvertiserId(pub u8);
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct AttHandle(pub u16);
 
+#[allow(dead_code)]
 impl AttHandle {
     /// The (only) reserved AttHandle
     pub const RESERVED: Self = AttHandle(0);

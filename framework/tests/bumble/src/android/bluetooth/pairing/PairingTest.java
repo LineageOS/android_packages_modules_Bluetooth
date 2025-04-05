@@ -23,6 +23,7 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothA2dp;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -31,8 +32,8 @@ import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothHidHost;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothSocket;
+import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.PandoraDevice;
 import android.bluetooth.StreamObserverSpliterator;
 import android.bluetooth.Utils;
@@ -42,10 +43,10 @@ import android.bluetooth.test_utils.BlockingBluetoothAdapter;
 import android.bluetooth.test_utils.EnableBluetoothRule;
 import android.content.Context;
 import android.os.ParcelUuid;
-import android.util.Log;
 import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.platform.test.flag.junit.CheckFlagsRule;
 import android.platform.test.flag.junit.DeviceFlagsValueProvider;
+import android.util.Log;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 
@@ -78,14 +79,14 @@ import pandora.SecurityProto.PairingEventAnswer;
 import pandora.SecurityProto.SecureRequest;
 import pandora.SecurityProto.SecureResponse;
 
+import java.io.IOException;
 import java.time.Duration;
-import java.util.Set;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 @RunWith(TestParameterInjector.class)
 public class PairingTest {
@@ -388,7 +389,6 @@ public class PairingTest {
      * <p>Expectation: Pairing gets cancelled instead of getting timed out
      */
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_PREVENT_DUPLICATE_UUID_INTENT})
     public void testCancelBondLe_WithGattServiceDiscovery() {
         IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED)
@@ -439,7 +439,6 @@ public class PairingTest {
      * <p>Expectation: Pairing succeeds
      */
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_PREVENT_DUPLICATE_UUID_INTENT})
     public void testBondLe_WithGattServiceDiscovery() {
         IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED)
@@ -834,6 +833,7 @@ public class PairingTest {
      * <p>Expectation: LE connection should be created and LE Pairing should succeed.
      */
     @Test
+    @SuppressLint("FutureReturnValueIgnored") // TODO: b/408051415 - remove exception
     public void testCreateLeSocket_BondLe() throws Exception {
         IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
                 BluetoothDevice.ACTION_ACL_CONNECTED,
@@ -981,7 +981,7 @@ public class PairingTest {
         intentReceiver.close();
     }
 
-    private void testStep_restartBt() {
+    private static void testStep_restartBt() {
         assertThat(BlockingBluetoothAdapter.disable(true)).isTrue();
         assertThat(BlockingBluetoothAdapter.enable()).isTrue();
     }

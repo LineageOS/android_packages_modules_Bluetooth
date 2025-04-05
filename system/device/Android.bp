@@ -97,7 +97,6 @@ cc_test {
     static_libs: [
         "libbluetooth-types",
         "libbluetooth_log",
-        "libbt-platform-protos-lite",
         "libbtcore",
         "libbtdevice",
         "libchrome",

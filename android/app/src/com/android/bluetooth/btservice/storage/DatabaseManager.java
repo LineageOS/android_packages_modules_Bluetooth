@@ -32,18 +32,12 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothStatusCodes;
-import android.content.BroadcastReceiver;
-import android.content.ContentResolver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-import android.provider.Settings;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothEventLogger;
@@ -58,7 +52,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -78,32 +71,12 @@ public class DatabaseManager {
     private static final int MSG_CLEAR_DATABASE = 100;
     private static final String LOCAL_STORAGE = "LocalStorage";
 
-    private static final String LEGACY_HEADSET_PRIORITY_PREFIX = "bluetooth_headset_priority_";
-    private static final String LEGACY_A2DP_SINK_PRIORITY_PREFIX = "bluetooth_a2dp_sink_priority_";
-    private static final String LEGACY_A2DP_SRC_PRIORITY_PREFIX = "bluetooth_a2dp_src_priority_";
-    private static final String LEGACY_A2DP_SUPPORTS_OPTIONAL_CODECS_PREFIX =
-            "bluetooth_a2dp_supports_optional_codecs_";
-    private static final String LEGACY_A2DP_OPTIONAL_CODECS_ENABLED_PREFIX =
-            "bluetooth_a2dp_optional_codecs_enabled_";
-    private static final String LEGACY_INPUT_DEVICE_PRIORITY_PREFIX =
-            "bluetooth_input_device_priority_";
-    private static final String LEGACY_MAP_PRIORITY_PREFIX = "bluetooth_map_priority_";
-    private static final String LEGACY_MAP_CLIENT_PRIORITY_PREFIX =
-            "bluetooth_map_client_priority_";
-    private static final String LEGACY_PBAP_CLIENT_PRIORITY_PREFIX =
-            "bluetooth_pbap_client_priority_";
-    private static final String LEGACY_SAP_PRIORITY_PREFIX = "bluetooth_sap_priority_";
-    private static final String LEGACY_PAN_PRIORITY_PREFIX = "bluetooth_pan_priority_";
-    private static final String LEGACY_HEARING_AID_PRIORITY_PREFIX =
-            "bluetooth_hearing_aid_priority_";
-
     private final BluetoothAdapter mAdapter;
     private final AdapterService mAdapterService;
     private HandlerThread mHandlerThread = null;
     private Handler mHandler = null;
     private final Object mDatabaseLock = new Object();
     private @GuardedBy("mDatabaseLock") MetadataDatabase mDatabase = null;
-    private boolean mMigratedFromSettingsGlobal = false;
 
     @VisibleForTesting final Map<String, Metadata> mMetadataCache = new HashMap<>();
     private final Semaphore mSemaphore = new Semaphore(1);
@@ -168,32 +141,6 @@ public class DatabaseManager {
             }
         }
     }
-
-    private final BroadcastReceiver mReceiver =
-            new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    String action = intent.getAction();
-                    if (action == null) {
-                        Log.e(TAG, "Received intent with null action");
-                        return;
-                    }
-                    switch (action) {
-                        case BluetoothAdapter.ACTION_STATE_CHANGED:
-                            {
-                                int state =
-                                        intent.getIntExtra(
-                                                BluetoothAdapter.EXTRA_STATE,
-                                                BluetoothAdapter.STATE_OFF);
-                                if (!mMigratedFromSettingsGlobal
-                                        && state == BluetoothAdapter.STATE_TURNING_ON) {
-                                    migrateSettingsGlobal();
-                                }
-                                break;
-                            }
-                    }
-                }
-            };
 
     /** Process a change in the bonding state for a device */
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
@@ -1167,11 +1114,6 @@ public class DatabaseManager {
         mHandlerThread.start();
         mHandler = new DatabaseHandler(mHandlerThread.getLooper());
 
-        IntentFilter filter = new IntentFilter();
-        filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
-        filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
-        mAdapterService.registerReceiver(mReceiver, filter);
-
         loadDatabase();
     }
 
@@ -1182,6 +1124,9 @@ public class DatabaseManager {
 
     /** Clear all persistence data in database */
     public void factoryReset() {
+        if (Flags.factoryResetAtBluetoothStart()) {
+            throw new IllegalStateException("flag factoryResetAtBluetoothStart is enabled");
+        }
         Log.w(TAG, "factoryReset");
         mHandler.sendEmptyMessage(MSG_CLEAR_DATABASE);
     }
@@ -1195,7 +1140,6 @@ public class DatabaseManager {
             }
         }
         removeUnusedMetadata();
-        mAdapterService.unregisterReceiver(mReceiver);
         if (mHandlerThread != null) {
             mHandlerThread.quit();
             mHandlerThread = null;
@@ -1256,12 +1200,6 @@ public class DatabaseManager {
             // Unlock the main thread.
             mSemaphore.release();
 
-            if (!isMigrated(list)) {
-                // Wait for data migrate from Settings Global
-                mMigratedFromSettingsGlobal = false;
-                return;
-            }
-            mMigratedFromSettingsGlobal = true;
             for (Metadata data : list) {
                 String address = data.getAddress();
                 Log.v(TAG, "cacheMetadata: found device " + data.getAnonymizedAddress());
@@ -1269,191 +1207,6 @@ public class DatabaseManager {
             }
             Log.i(TAG, "cacheMetadata: Database is ready");
         }
-    }
-
-    boolean isMigrated(List<Metadata> list) {
-        for (Metadata data : list) {
-            String address = data.getAddress();
-            if (address.equals(LOCAL_STORAGE) && data.migrated) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    void migrateSettingsGlobal() {
-        Log.i(TAG, "migrateSettingGlobal");
-
-        BluetoothDevice[] bondedDevices = mAdapterService.getBondedDevices();
-        ContentResolver contentResolver = mAdapterService.getContentResolver();
-
-        for (BluetoothDevice device : bondedDevices) {
-            int a2dpConnectionPolicy =
-                    Settings.Global.getInt(
-                            contentResolver,
-                            getLegacyA2dpSinkPriorityKey(device.getAddress()),
-                            CONNECTION_POLICY_UNKNOWN);
-            int a2dpSinkConnectionPolicy =
-                    Settings.Global.getInt(
-                            contentResolver,
-                            getLegacyA2dpSrcPriorityKey(device.getAddress()),
-                            CONNECTION_POLICY_UNKNOWN);
-            int hearingaidConnectionPolicy =
-                    Settings.Global.getInt(
-                            contentResolver,
-                            getLegacyHearingAidPriorityKey(device.getAddress()),
-                            CONNECTION_POLICY_UNKNOWN);
-            int headsetConnectionPolicy =
-                    Settings.Global.getInt(
-                            contentResolver,
-                            getLegacyHeadsetPriorityKey(device.getAddress()),
-                            CONNECTION_POLICY_UNKNOWN);
-            int headsetClientConnectionPolicy =
-                    Settings.Global.getInt(
-                            contentResolver,
-                            getLegacyHeadsetPriorityKey(device.getAddress()),
-                            CONNECTION_POLICY_UNKNOWN);
-            int hidHostConnectionPolicy =
-                    Settings.Global.getInt(
-                            contentResolver,
-                            getLegacyHidHostPriorityKey(device.getAddress()),
-                            CONNECTION_POLICY_UNKNOWN);
-            int mapConnectionPolicy =
-                    Settings.Global.getInt(
-                            contentResolver,
-                            getLegacyMapPriorityKey(device.getAddress()),
-                            CONNECTION_POLICY_UNKNOWN);
-            int mapClientConnectionPolicy =
-                    Settings.Global.getInt(
-                            contentResolver,
-                            getLegacyMapClientPriorityKey(device.getAddress()),
-                            CONNECTION_POLICY_UNKNOWN);
-            int panConnectionPolicy =
-                    Settings.Global.getInt(
-                            contentResolver,
-                            getLegacyPanPriorityKey(device.getAddress()),
-                            CONNECTION_POLICY_UNKNOWN);
-            int pbapConnectionPolicy =
-                    Settings.Global.getInt(
-                            contentResolver,
-                            getLegacyPbapClientPriorityKey(device.getAddress()),
-                            CONNECTION_POLICY_UNKNOWN);
-            int pbapClientConnectionPolicy =
-                    Settings.Global.getInt(
-                            contentResolver,
-                            getLegacyPbapClientPriorityKey(device.getAddress()),
-                            CONNECTION_POLICY_UNKNOWN);
-            int sapConnectionPolicy =
-                    Settings.Global.getInt(
-                            contentResolver,
-                            getLegacySapPriorityKey(device.getAddress()),
-                            CONNECTION_POLICY_UNKNOWN);
-            int a2dpSupportsOptionalCodec =
-                    Settings.Global.getInt(
-                            contentResolver,
-                            getLegacyA2dpSupportsOptionalCodecsKey(device.getAddress()),
-                            BluetoothA2dp.OPTIONAL_CODECS_SUPPORT_UNKNOWN);
-            int a2dpOptionalCodecEnabled =
-                    Settings.Global.getInt(
-                            contentResolver,
-                            getLegacyA2dpOptionalCodecsEnabledKey(device.getAddress()),
-                            BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN);
-
-            String address = device.getAddress();
-            Metadata data = new Metadata(address);
-            data.setProfileConnectionPolicy(BluetoothProfile.A2DP, a2dpConnectionPolicy);
-            data.setProfileConnectionPolicy(BluetoothProfile.A2DP_SINK, a2dpSinkConnectionPolicy);
-            data.setProfileConnectionPolicy(BluetoothProfile.HEADSET, headsetConnectionPolicy);
-            data.setProfileConnectionPolicy(
-                    BluetoothProfile.HEADSET_CLIENT, headsetClientConnectionPolicy);
-            data.setProfileConnectionPolicy(BluetoothProfile.HID_HOST, hidHostConnectionPolicy);
-            data.setProfileConnectionPolicy(BluetoothProfile.PAN, panConnectionPolicy);
-            data.setProfileConnectionPolicy(BluetoothProfile.PBAP, pbapConnectionPolicy);
-            data.setProfileConnectionPolicy(
-                    BluetoothProfile.PBAP_CLIENT, pbapClientConnectionPolicy);
-            data.setProfileConnectionPolicy(BluetoothProfile.MAP, mapConnectionPolicy);
-            data.setProfileConnectionPolicy(BluetoothProfile.MAP_CLIENT, mapClientConnectionPolicy);
-            data.setProfileConnectionPolicy(BluetoothProfile.SAP, sapConnectionPolicy);
-            data.setProfileConnectionPolicy(
-                    BluetoothProfile.HEARING_AID, hearingaidConnectionPolicy);
-            data.setProfileConnectionPolicy(BluetoothProfile.LE_AUDIO, CONNECTION_POLICY_UNKNOWN);
-            data.a2dpSupportsOptionalCodecs = a2dpSupportsOptionalCodec;
-            data.a2dpOptionalCodecsEnabled = a2dpOptionalCodecEnabled;
-            mMetadataCache.put(address, data);
-            updateDatabase(data);
-        }
-
-        // Mark database migrated from Settings Global
-        Metadata localData = new Metadata(LOCAL_STORAGE);
-        localData.migrated = true;
-        mMetadataCache.put(LOCAL_STORAGE, localData);
-        updateDatabase(localData);
-
-        // Reload database after migration is completed
-        loadDatabase();
-    }
-
-    /** Get the key that retrieves a bluetooth headset's priority. */
-    private static String getLegacyHeadsetPriorityKey(String address) {
-        return LEGACY_HEADSET_PRIORITY_PREFIX + address.toUpperCase(Locale.ROOT);
-    }
-
-    /** Get the key that retrieves a bluetooth a2dp sink's priority. */
-    private static String getLegacyA2dpSinkPriorityKey(String address) {
-        return LEGACY_A2DP_SINK_PRIORITY_PREFIX + address.toUpperCase(Locale.ROOT);
-    }
-
-    /** Get the key that retrieves a bluetooth a2dp src's priority. */
-    private static String getLegacyA2dpSrcPriorityKey(String address) {
-        return LEGACY_A2DP_SRC_PRIORITY_PREFIX + address.toUpperCase(Locale.ROOT);
-    }
-
-    /** Get the key that retrieves a bluetooth a2dp device's ability to support optional codecs. */
-    private static String getLegacyA2dpSupportsOptionalCodecsKey(String address) {
-        return LEGACY_A2DP_SUPPORTS_OPTIONAL_CODECS_PREFIX + address.toUpperCase(Locale.ROOT);
-    }
-
-    /**
-     * Get the key that retrieves whether a bluetooth a2dp device should have optional codecs
-     * enabled.
-     */
-    private static String getLegacyA2dpOptionalCodecsEnabledKey(String address) {
-        return LEGACY_A2DP_OPTIONAL_CODECS_ENABLED_PREFIX + address.toUpperCase(Locale.ROOT);
-    }
-
-    /** Get the key that retrieves a bluetooth Input Device's priority. */
-    private static String getLegacyHidHostPriorityKey(String address) {
-        return LEGACY_INPUT_DEVICE_PRIORITY_PREFIX + address.toUpperCase(Locale.ROOT);
-    }
-
-    /** Get the key that retrieves a bluetooth pan client priority. */
-    private static String getLegacyPanPriorityKey(String address) {
-        return LEGACY_PAN_PRIORITY_PREFIX + address.toUpperCase(Locale.ROOT);
-    }
-
-    /** Get the key that retrieves a bluetooth hearing aid priority. */
-    private static String getLegacyHearingAidPriorityKey(String address) {
-        return LEGACY_HEARING_AID_PRIORITY_PREFIX + address.toUpperCase(Locale.ROOT);
-    }
-
-    /** Get the key that retrieves a bluetooth map priority. */
-    private static String getLegacyMapPriorityKey(String address) {
-        return LEGACY_MAP_PRIORITY_PREFIX + address.toUpperCase(Locale.ROOT);
-    }
-
-    /** Get the key that retrieves a bluetooth map client priority. */
-    private static String getLegacyMapClientPriorityKey(String address) {
-        return LEGACY_MAP_CLIENT_PRIORITY_PREFIX + address.toUpperCase(Locale.ROOT);
-    }
-
-    /** Get the key that retrieves a bluetooth pbap client priority. */
-    private static String getLegacyPbapClientPriorityKey(String address) {
-        return LEGACY_PBAP_CLIENT_PRIORITY_PREFIX + address.toUpperCase(Locale.ROOT);
-    }
-
-    /** Get the key that retrieves a bluetooth sap priority. */
-    private static String getLegacySapPriorityKey(String address) {
-        return LEGACY_SAP_PRIORITY_PREFIX + address.toUpperCase(Locale.ROOT);
     }
 
     private void loadDatabase() {

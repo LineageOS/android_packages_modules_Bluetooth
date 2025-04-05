@@ -111,8 +111,7 @@ void BTM_SecAddBleDevice(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
     }
 
     uint32_t cod = 0;
-    if (com::android::bluetooth::flags::read_le_appearance() &&
-        btif_storage_get_cod(bd_addr, &cod)) {
+    if (btif_storage_get_cod(bd_addr, &cod)) {
       DEV_CLASS dev_class = {};
       dev_class[2] = (uint8_t)cod;
       dev_class[1] = (uint8_t)(cod >> 8);
@@ -571,6 +570,39 @@ bool BTM_ReadConnectedTransportAddress(RawAddress* remote_bda, tBT_TRANSPORT tra
   }
 
   return false;
+}
+
+/*******************************************************************************
+ *
+ * Function         BTM_GetConnectedTransportAddress
+ *
+ * Description      This function gets the pseudo and identity address of the
+ *                  remote device
+ *
+ * Parameter        remote_bda: remote device address
+ *
+ * Return           pseudo and identity address pair of the remote device
+ *
+ ******************************************************************************/
+std::pair<RawAddress, RawAddress> BTM_GetConnectedTransportAddress(RawAddress remote_bda) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(remote_bda);
+  std::pair<RawAddress, RawAddress> pseudo_identity_addr_pair;
+
+  /* if no device can be located, return */
+  if (p_dev_rec == nullptr) {
+    return pseudo_identity_addr_pair;
+  }
+
+  // Get pseudo address
+  pseudo_identity_addr_pair.first = p_dev_rec->ble.pseudo_addr;
+
+  // Get the identity address
+  if (get_btm_client_interface().peer.BTM_IsAclConnectionUp(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR)
+     || (p_dev_rec->device_type & BT_DEVICE_TYPE_BREDR)) {
+      pseudo_identity_addr_pair.second = p_dev_rec->bd_addr;
+  }
+
+  return pseudo_identity_addr_pair;
 }
 
 tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr, uint16_t tx_pdu_length,
@@ -1640,9 +1672,8 @@ void btm_ble_connection_established(const RawAddress& bda) {
     btm_ble_read_remote_name(bda, nullptr);
   }
 
-  if (com::android::bluetooth::flags::read_le_appearance() && p_dev_rec != nullptr &&
-      (com::android::bluetooth::flags::le_appearance_after_ctkd() ||
-       !p_dev_rec->sec_rec.is_le_link_key_known())) {
+  if (p_dev_rec != nullptr && (com::android::bluetooth::flags::le_appearance_after_ctkd() ||
+                               !p_dev_rec->sec_rec.is_le_link_key_known())) {
     // Unknown device
     if (p_dev_rec->dev_class == kDevClassEmpty || p_dev_rec->dev_class == kDevClassUnclassified) {
       // Class of device not known, read appearance characteristic ...

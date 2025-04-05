@@ -22,6 +22,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/a2dp/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
@@ -62,7 +63,6 @@
 #include "hardware/bluetooth.h"
 #include "hardware/bt_av.h"
 #include "include/hardware/bt_rc.h"
-#include "os/metrics.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
@@ -2297,12 +2297,13 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event, void* p_data)
         }
 
         // Invoke the started handler only when initiator.
-        if (!com::android::bluetooth::flags::a2dp_ignore_started_when_responder() ||
-            peer_.CheckFlags(BtifAvPeer::kFlagPendingStart)) {
-          if (btif_a2dp_on_started(peer_.PeerAddress(), &p_av->start, A2dpType::kSource)) {
-            // Only clear pending flag after acknowledgement
-            peer_.ClearFlags(BtifAvPeer::kFlagPendingStart);
-          }
+        log::info("Peer should suspend: {}", should_suspend);
+
+        if ((!com::android::bluetooth::flags::a2dp_ignore_started_when_responder() ||
+             !should_suspend) &&
+            btif_a2dp_on_started(peer_.PeerAddress(), &p_av->start, A2dpType::kSource)) {
+          // Only clear pending flag after acknowledgement
+          peer_.ClearFlags(BtifAvPeer::kFlagPendingStart);
         }
       }
 

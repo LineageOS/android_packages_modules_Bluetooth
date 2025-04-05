@@ -166,7 +166,6 @@ static_library("bta") {
   deps = [
     "//bt/flags:bluetooth_flags_c_lib",
     "//bt/sysprop:libcom.android.sysprop.bluetooth",
-    "//bt/system:libbt-platform-protos-lite",
     "//bt/system/audio:libbt-audio-asrc",
     "//bt/system/bta:LeAudioSetConfigsSchema_bfbs",
     "//bt/system/bta:LeAudioSetScenariosSchema_bfbs",
@@ -175,6 +174,7 @@ static_library("bta") {
     "//bt/system/bta:install_audio_set_scenarios_bfbs",
     "//bt/system/bta:install_audio_set_scenarios_json",
     "//bt/system/bta/aics:aics",
+    "//bt/system/metrics",
   ]
 
   libs = [ "lc3" ]

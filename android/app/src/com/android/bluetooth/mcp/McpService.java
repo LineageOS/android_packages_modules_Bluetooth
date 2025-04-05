@@ -19,13 +19,15 @@ package com.android.bluetooth.mcp;
 
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.BluetoothDevice;
-import android.content.Context;
 import android.os.ParcelUuid;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.internal.annotations.VisibleForTesting;
@@ -43,22 +45,18 @@ public class McpService extends ProfileService {
     private final MediaControlProfile mGmcs;
     private final Map<BluetoothDevice, Integer> mDeviceAuthorizations = new HashMap<>();
 
-    public McpService(Context ctx) {
-        this(ctx, null);
+    public McpService(AdapterService adapterService) {
+        this(adapterService, new MediaControlProfile(adapterService));
     }
 
     @VisibleForTesting
-    McpService(Context ctx, MediaControlProfile mediaControlProfile) {
-        super(ctx);
-        if (mediaControlProfile == null) {
-            mGmcs = new MediaControlProfile(this);
-        } else {
-            mGmcs = mediaControlProfile;
-        }
+    McpService(AdapterService adapterService, MediaControlProfile mediaControlProfile) {
+        super(requireNonNull(adapterService));
+        mGmcs = requireNonNull(mediaControlProfile);
 
         setMcpService(this); // Mark service as started
 
-        mGmcs.init();
+        mGmcs.init(this);
     }
 
     public static boolean isEnabled() {

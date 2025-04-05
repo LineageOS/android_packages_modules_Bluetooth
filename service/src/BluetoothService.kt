@@ -16,14 +16,16 @@
 
 package com.android.server.bluetooth
 
-import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.content.res.Resources
 import android.os.HandlerThread
 import android.os.UserManager
 import android.provider.Settings
+import com.android.bluetooth.flags.Flags
 import com.android.server.SystemService
 import com.android.server.SystemService.TargetUser
+
+val SERVICE_NAME = "bluetooth_manager" // See BluetoothServiceManager.BLUETOOTH_MANAGER_SERVICE
 
 class BluetoothService(context: Context) : SystemService(context) {
     private val mHandlerThread: HandlerThread
@@ -38,25 +40,37 @@ class BluetoothService(context: Context) : SystemService(context) {
 
     private fun initialize(user: TargetUser) {
         if (!mInitialized) {
+            Log.i("initialize($user)")
             mBluetoothManagerService.handleOnBootPhase(user.userHandle)
             mInitialized = true
         }
     }
 
-    override fun onStart() {}
+    override fun onStart() {
+        if (!Flags.publishBinderOnStart()) {
+            return
+        }
+        publishBinderService(SERVICE_NAME, mBluetoothManagerService.getBinder())
+    }
 
     override fun onBootPhase(phase: Int) {
+        if (Flags.publishBinderOnStart()) {
+            return
+        }
         if (phase == SystemService.PHASE_SYSTEM_SERVICES_READY) {
-            publishBinderService(
-                BluetoothAdapter.BLUETOOTH_MANAGER_SERVICE,
-                mBluetoothManagerService.getBinder(),
-            )
+            publishBinderService(SERVICE_NAME, mBluetoothManagerService.getBinder())
         }
     }
 
     private fun shouldInitializeBluetooth(): Boolean {
+        // HSUM can be simulated on phone with:
+        // adb shell cmd user set-system-user-mode-emulation headless
+        // and it can be restored with:
+        // adb shell cmd user set-system-user-mode-emulation default
+
         // Not HSUM, we can initialize Bluetooth on system user
         if (!UserManager.isHeadlessSystemUserMode()) {
+            Log.i("shouldInitializeBluetooth() -> true: Not HSUM")
             return true
         }
 
@@ -73,22 +87,26 @@ class BluetoothService(context: Context) : SystemService(context) {
                         0,
                     ) == 1
             ) {
+                Log.i("shouldInitializeBluetooth() -> true: HSUM provisioned")
                 return true
             }
         } catch (_e: Resources.NotFoundException) {
             // Config not found, assuming it's 0 so no need to initialize Bluetooth
         }
 
+        Log.i("shouldInitializeBluetooth() -> false: HSUM")
         return false
     }
 
     override fun onUserStarting(user: TargetUser) {
+        Log.d("onUserStarting($user)")
         if (shouldInitializeBluetooth()) {
             initialize(user)
         }
     }
 
     override fun onUserSwitching(_from: TargetUser?, to: TargetUser) {
+        Log.d("onUserSwitching($to)")
         if (!mInitialized) {
             initialize(to)
         } else {

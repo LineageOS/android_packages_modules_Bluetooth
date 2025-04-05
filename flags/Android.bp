@@ -35,6 +35,7 @@ aconfig_declarations {
         "leaudio.aconfig",
         "mapclient.aconfig",
         "metric.aconfig",
+        "native.aconfig",
         "opp.aconfig",
         "pairing.aconfig",
         "pbapclient.aconfig",

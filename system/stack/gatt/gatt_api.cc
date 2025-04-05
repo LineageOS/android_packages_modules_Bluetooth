@@ -27,6 +27,8 @@
 
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <string>
@@ -34,8 +36,6 @@
 #include "internal_include/bt_target.h"
 #include "internal_include/stack_config.h"
 #include "main/shim/helpers.h"
-#include "metrics/bluetooth_event.h"
-#include "os/metrics.h"
 #include "os/system_properties.h"
 #include "osi/include/allocator.h"
 #include "stack/arbiter/acl_arbiter.h"
