@@ -1616,8 +1616,7 @@ class BassClientStateMachine extends StateMachine {
         return bisSync;
     }
 
-    private static byte[] convertMetadataToAddSourceByteArray(
-            BluetoothLeBroadcastMetadata metaData) {
+    private byte[] convertMetadataToAddSourceByteArray(BluetoothLeBroadcastMetadata metaData) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         BluetoothDevice advSource = metaData.getSourceDevice();
 
@@ -1641,11 +1640,11 @@ class BassClientStateMachine extends StateMachine {
         stream.write((metaData.getBroadcastId() & 0x0000000000FF0000) >>> 16);
 
         // PA_Sync
-        if (BassUtils.isPastConfigEnabled()) {
-            stream.write((byte) BassConstants.PA_SYNC_PAST_AVAILABLE);
-        } else {
-            stream.write((byte) BassConstants.PA_SYNC_PAST_NOT_AVAILABLE);
-        }
+        stream.write(
+                (byte)
+                        (mDefPAS
+                                ? BassConstants.PA_SYNC_PAST_AVAILABLE
+                                : BassConstants.PA_SYNC_PAST_NOT_AVAILABLE));
 
         // PA_Interval
         stream.write((metaData.getPaSyncInterval() & 0x00000000000000FF));
@@ -1768,7 +1767,7 @@ class BassClientStateMachine extends StateMachine {
             int sourceId,
             BluetoothLeBroadcastMetadata metadata,
             boolean paSync,
-            boolean doNotUseNoPreference) {
+            boolean hasChannelPreference) {
         BluetoothLeBroadcastReceiveState existingState =
                 getBroadcastReceiveStateForSourceId(sourceId);
 
@@ -1810,12 +1809,17 @@ class BassClientStateMachine extends StateMachine {
         // BIS_Sync
         for (int i = 0; i < numSubgroups; i++) {
             long bisSync = BassConstants.BIS_SYNC_DO_NOT_SYNC_TO_BIS;
+            long currentBisIndexValue = BassConstants.BIS_SYNC_NO_PREFERENCE;
+
+            if (i < existingState.getBisSyncState().size()) {
+                currentBisIndexValue = existingState.getBisSyncState().get(i);
+            }
 
             if (metadata != null) {
                 BluetoothLeBroadcastSubgroup subgroup = metadata.getSubgroups().get(i);
                 List<BluetoothLeBroadcastChannel> channels = subgroup.getChannels();
 
-                if (doNotUseNoPreference || subgroup.hasChannelPreference()) {
+                if (hasChannelPreference || subgroup.hasChannelPreference()) {
                     for (BluetoothLeBroadcastChannel channel : channels) {
                         bisSync |=
                                 channel.isSelected() ? (1L << (channel.getChannelIndex() - 1)) : 0L;
@@ -1823,7 +1827,19 @@ class BassClientStateMachine extends StateMachine {
                 } else {
                     bisSync = BassConstants.BIS_SYNC_NO_PREFERENCE;
                 }
+            } else {
+                if (paSync) {
+                    // Keep using BIS index from remote receive state
+                    bisSync = currentBisIndexValue;
+                }
             }
+
+            Log.d(
+                    TAG,
+                    "UPDATE_BCAST_SOURCE: bisSync from: "
+                            + currentBisIndexValue
+                            + " to: "
+                            + bisSync);
 
             for (int j = 0; j < UPDATE_SOURCE_BIS_SYNC_LENGTH; j++) {
                 res[offset++] = (byte) ((bisSync >>> (j * 8)) & 0xFF);
@@ -1942,7 +1958,7 @@ class BassClientStateMachine extends StateMachine {
         private void handleSourceSynchronizationChange(
                 int sourceId,
                 boolean paSync,
-                boolean doNotUseNoPreference,
+                boolean hasChannelPreference,
                 BluetoothLeBroadcastMetadata metadata,
                 boolean setPendingRemove) {
             Log.d(
@@ -1951,8 +1967,8 @@ class BassClientStateMachine extends StateMachine {
                             + sourceId
                             + ", paSync: "
                             + paSync
-                            + ", doNotUseNoPreference: "
-                            + doNotUseNoPreference
+                            + ", hasChannelPreference: "
+                            + hasChannelPreference
                             + ", setPendingRemove: "
                             + setPendingRemove
                             + ", metadata: "
@@ -1960,7 +1976,7 @@ class BassClientStateMachine extends StateMachine {
             // Convert the source from either metadata or remote receive state
             byte[] updateSourceInfo =
                     convertToUpdateSourceByteArray(
-                            sourceId, metadata, paSync, doNotUseNoPreference);
+                            sourceId, metadata, paSync, hasChannelPreference);
             if (updateSourceInfo == null) {
                 Log.e(TAG, "update source: source Info is NULL");
                 return;
@@ -2105,7 +2121,9 @@ class BassClientStateMachine extends StateMachine {
                     // Remove the source first
                     BluetoothLeBroadcastMetadata metaDataToUpdate =
                             getCurrentBroadcastMetadata(sourceIdToRemove);
-                    if (metaDataToUpdate != null && isSyncedToTheSource(sourceIdToRemove)) {
+                    if (!leaudioBisSyncControl()
+                            && metaDataToUpdate != null
+                            && isSyncedToTheSource(sourceIdToRemove)) {
                         Log.d(TAG, "SWITCH_BCAST_SOURCE force source to lost PA sync");
                         Message msg = obtainMessage(UPDATE_BCAST_SOURCE);
                         msg.arg1 = sourceIdToRemove;
@@ -2166,14 +2184,14 @@ class BassClientStateMachine extends StateMachine {
                 case UPDATE_BCAST_SOURCE:
                     if (leaudioBisSyncControl()) {
                         boolean paSync = (message.arg2 & BassConstants.FLAG_SYNC_PA) != 0;
-                        boolean doNotUseNoPreference =
-                                (message.arg2 & BassConstants.FLAG_SYNC_DO_NOT_USE_NO_PREFERENCE)
+                        boolean hasChannelPreference =
+                                (message.arg2 & BassConstants.FLAG_SYNC_BIS_CHANNEL_PREFERENCE)
                                         != 0;
 
                         handleSourceSynchronizationChange(
                                 message.arg1,
                                 paSync,
-                                doNotUseNoPreference,
+                                hasChannelPreference,
                                 (BluetoothLeBroadcastMetadata) message.obj,
                                 false /* setPendingRemove */);
                     } else {
@@ -2265,7 +2283,7 @@ class BassClientStateMachine extends StateMachine {
                             handleSourceSynchronizationChange(
                                     sourceId,
                                     false, /* paSync */
-                                    false, /* doNotUseNoPreference */
+                                    false, /* hasChannelPreference */
                                     null, /* metadata */
                                     true /* setPendingRemove*/);
                             break;

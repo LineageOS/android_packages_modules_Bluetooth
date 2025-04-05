@@ -3,4 +3,10 @@
 <suppressions>
     <!-- Let google-java-format handle the ImportOrder. -->
     <suppress files=".*" checks="ImportOrder" />
+
+    <!-- Let google-java-format handle the indentation. -->
+    <suppress files=".*" checks="Indentation" />
+
+    <!-- Let google-java-format handle the line length. -->
+    <suppress files=".*" checks="LineLength" />
 </suppressions>

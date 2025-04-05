@@ -16,9 +16,12 @@
 
 package com.android.server.bluetooth;
 
+import static android.Manifest.permission.BLUETOOTH_CONNECT;
+import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.SuppressLint;
+import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothAdapter;
 import android.content.AttributionSource;
 import android.os.Binder;
@@ -30,7 +33,6 @@ import com.android.modules.utils.BasicShellCommandHandler;
 
 import java.io.PrintWriter;
 
-@SuppressLint("AndroidFrameworkRequiresPermission")
 class BluetoothShellCommand extends BasicShellCommandHandler {
     private static final String TAG = BluetoothShellCommand.class.getSimpleName();
 
@@ -80,6 +82,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         }
 
         @Override
+        @RequiresPermission(BLUETOOTH_CONNECT)
         public int exec(String cmd) throws RemoteException {
             return mManagerService
                             .getBinder()
@@ -104,6 +107,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         }
 
         @Override
+        @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
         public int exec(String cmd) throws RemoteException {
             return mManagerService.getBinder().factoryReset(AttributionSource.myAttributionSource())
                     ? 0
@@ -124,6 +128,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         }
 
         @Override
+        @RequiresPermission(BLUETOOTH_CONNECT)
         public int exec(String cmd) throws RemoteException {
             return mManagerService
                             .getBinder()
@@ -148,6 +153,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         }
 
         @Override
+        @RequiresPermission(BLUETOOTH_CONNECT)
         public int exec(String cmd) throws RemoteException {
             return mManagerService.getBinder().enable(AttributionSource.myAttributionSource())
                     ? 0
@@ -168,6 +174,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         }
 
         @Override
+        @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
         public int exec(String cmd) throws RemoteException {
             return mManagerService
                             .getBinder()

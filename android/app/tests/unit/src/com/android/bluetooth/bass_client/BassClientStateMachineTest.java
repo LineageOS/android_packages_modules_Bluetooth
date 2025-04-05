@@ -2608,7 +2608,7 @@ public class BassClientStateMachineTest {
                             UPDATE_BCAST_SOURCE,
                             TEST_SOURCE_ID,
                             BassConstants.FLAG_SYNC_PA
-                                    | BassConstants.FLAG_SYNC_DO_NOT_USE_NO_PREFERENCE,
+                                    | BassConstants.FLAG_SYNC_BIS_CHANNEL_PREFERENCE,
                             updatedMetadataPaused),
                     BassClientStateMachine.ConnectedProcessing.class);
         } else {
