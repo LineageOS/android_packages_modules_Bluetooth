@@ -325,10 +325,11 @@ public:
   std::string ToString() const {
     return std::format(
             "{} {:6s} cod:{} remote_info:{:<14s} sm4:0x{:02x} SecureConn:{:c} "
-            "name:\"{}\" sec_prop:{}",
+            "name:\"{}\" sec_prop:{}, in_resolving_list: {}",
             bd_addr, DeviceTypeText(device_type), dev_class_text(dev_class),
             remote_version_info.ToString(), sm4, remote_supports_secure_connections ? 'T' : 'F',
-            reinterpret_cast<char const*>(sec_bd_name), sec_rec.ToString());
+            reinterpret_cast<char const*>(sec_bd_name), sec_rec.ToString(),
+            (ble.in_controller_list & BTM_RESOLVING_LIST_BIT) ? 'T' : 'F');
   }
 
 public:
