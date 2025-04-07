@@ -130,17 +130,6 @@ class Hap(val context: Context) : HAPImplBase(), Closeable {
         scope.cancel()
     }
 
-    companion object {
-        private fun toProtoPresetRecord(presetInfo: BluetoothHapPresetInfo): PresetRecord {
-            return PresetRecord.newBuilder()
-                .setIndex(presetInfo.getIndex())
-                .setName(presetInfo.getName())
-                .setIsWritable(presetInfo.isWritable())
-                .setIsAvailable(presetInfo.isAvailable())
-                .build()
-        }
-    }
-
     override fun getFeatures(
         request: GetFeaturesRequest,
         responseObserver: StreamObserver<GetFeaturesResponse>,
@@ -310,6 +299,17 @@ class Hap(val context: Context) : HAPImplBase(), Closeable {
             }
 
             Empty.getDefaultInstance()
+        }
+    }
+
+    companion object {
+        private fun toProtoPresetRecord(presetInfo: BluetoothHapPresetInfo): PresetRecord {
+            return PresetRecord.newBuilder()
+                .setIndex(presetInfo.getIndex())
+                .setName(presetInfo.getName())
+                .setIsWritable(presetInfo.isWritable())
+                .setIsAvailable(presetInfo.isAvailable())
+                .build()
         }
     }
 }

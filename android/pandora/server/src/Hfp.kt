@@ -60,10 +60,6 @@ class Hfp(val context: Context) : HFPImplBase(), Closeable {
 
     private val bluetoothHfp = getProfileProxy<BluetoothHeadset>(context, BluetoothProfile.HEADSET)
 
-    companion object {
-        @SuppressLint("StaticFieldLeak") private lateinit var inCallService: InCallService
-    }
-
     init {
 
         val intentFilter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
@@ -231,5 +227,9 @@ class Hfp(val context: Context) : HFPImplBase(), Closeable {
             context.contentResolver.delete(CallLog.Calls.CONTENT_URI, null, null)
             ClearCallHistoryResponse.getDefaultInstance()
         }
+    }
+
+    companion object {
+        @SuppressLint("StaticFieldLeak") private lateinit var inCallService: InCallService
     }
 }

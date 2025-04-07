@@ -79,7 +79,7 @@ public fun initialize(
     Settings.Global.putInt(
         systemResolver,
         APM_ENHANCEMENT,
-        Settings.Global.getInt(systemResolver, APM_ENHANCEMENT, DEFAULT_APM_ENHANCEMENT_STATE)
+        Settings.Global.getInt(systemResolver, APM_ENHANCEMENT, DEFAULT_APM_ENHANCEMENT_STATE),
     )
 
     val airplaneModeAtBoot =
@@ -126,7 +126,7 @@ public fun initialize(
 
                 Log.i(TAG, "Trigger callback. $description")
                 modeCallback(isOnOverrode)
-            }
+            },
         )
 
     isOn = airplaneModeAtBoot
@@ -247,39 +247,6 @@ private class AirplaneMetricSession(
     private val isMediaProfileConnectedBeforeApmToggle: Boolean,
     private val sessionStartTime: TimeMark,
 ) {
-    companion object {
-        private var session: AirplaneMetricSession? = null
-
-        fun handleModeChange(
-            isAirplaneModeOn: Boolean,
-            isBluetoothOn: Boolean,
-            sendAirplaneModeNotification: (state: String) -> Unit,
-            getUser: () -> Context,
-            isMediaProfileConnected: Boolean,
-            startTime: TimeMark,
-        ) {
-            if (isAirplaneModeOn) {
-                session =
-                    AirplaneMetricSession(
-                        isBluetoothOn,
-                        sendAirplaneModeNotification,
-                        isMediaProfileConnected,
-                        startTime,
-                    )
-            } else {
-                session?.let { it.terminate(getUser, isBluetoothOn) }
-                session = null
-            }
-        }
-
-        fun notifyUserToggledBluetooth(
-            resolver: ContentResolver,
-            userContext: Context,
-            isBluetoothOn: Boolean,
-        ) {
-            session?.let { it.notifyUserToggledBluetooth(resolver, userContext, isBluetoothOn) }
-        }
-    }
 
     private val isBluetoothOnAfterApmToggle = !isOnOverrode
     private var userToggledBluetoothDuringApm = false
@@ -322,6 +289,40 @@ private class AirplaneMetricSession(
             userToggledBluetoothDuringApmWithinMinute,
             isMediaProfileConnectedBeforeApmToggle,
         )
+    }
+
+    companion object {
+        private var session: AirplaneMetricSession? = null
+
+        fun handleModeChange(
+            isAirplaneModeOn: Boolean,
+            isBluetoothOn: Boolean,
+            sendAirplaneModeNotification: (state: String) -> Unit,
+            getUser: () -> Context,
+            isMediaProfileConnected: Boolean,
+            startTime: TimeMark,
+        ) {
+            if (isAirplaneModeOn) {
+                session =
+                    AirplaneMetricSession(
+                        isBluetoothOn,
+                        sendAirplaneModeNotification,
+                        isMediaProfileConnected,
+                        startTime,
+                    )
+            } else {
+                session?.let { it.terminate(getUser, isBluetoothOn) }
+                session = null
+            }
+        }
+
+        fun notifyUserToggledBluetooth(
+            resolver: ContentResolver,
+            userContext: Context,
+            isBluetoothOn: Boolean,
+        ) {
+            session?.let { it.notifyUserToggledBluetooth(resolver, userContext, isBluetoothOn) }
+        }
     }
 }
 

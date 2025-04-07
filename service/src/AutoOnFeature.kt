@@ -199,6 +199,27 @@ private constructor(
         timer = null
     }
 
+    /** Save timer to storage and stop it */
+    internal fun pause() {
+        Log.i(TAG, "[${this}]: Pausing timer")
+        context.unregisterReceiver(receiver)
+        alarmManager.cancel(this)
+        handler.removeCallbacksAndMessages(null)
+    }
+
+    /** Stop timer and reset storage */
+    @VisibleForTesting
+    internal fun cancel() {
+        Log.i(TAG, "[${this}]: Cancelling timer")
+        context.unregisterReceiver(receiver)
+        alarmManager.cancel(this)
+        handler.removeCallbacksAndMessages(null)
+        resetStorage(context.contentResolver)
+    }
+
+    override fun toString() =
+        "Timer was scheduled at ${now} and should expire at ${target}. (sleep for ${timeToSleep})."
+
     companion object {
         @VisibleForTesting internal val STORAGE_KEY = "bluetooth_internal_automatic_turn_on_timer"
 
@@ -240,27 +261,6 @@ private constructor(
         private fun nextTimeout(now: LocalDateTime) =
             LocalDateTime.of(now.toLocalDate(), LocalTime.of(5, 0)).plusDays(1)
     }
-
-    /** Save timer to storage and stop it */
-    internal fun pause() {
-        Log.i(TAG, "[${this}]: Pausing timer")
-        context.unregisterReceiver(receiver)
-        alarmManager.cancel(this)
-        handler.removeCallbacksAndMessages(null)
-    }
-
-    /** Stop timer and reset storage */
-    @VisibleForTesting
-    internal fun cancel() {
-        Log.i(TAG, "[${this}]: Cancelling timer")
-        context.unregisterReceiver(receiver)
-        alarmManager.cancel(this)
-        handler.removeCallbacksAndMessages(null)
-        resetStorage(context.contentResolver)
-    }
-
-    override fun toString() =
-        "Timer was scheduled at ${now} and should expire at ${target}. (sleep for ${timeToSleep})."
 }
 
 @VisibleForTesting internal val USER_SETTINGS_KEY = "bluetooth_automatic_turn_on"

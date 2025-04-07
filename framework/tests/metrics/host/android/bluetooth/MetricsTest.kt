@@ -33,12 +33,6 @@ import org.junit.runner.RunWith
 @RunWith(DeviceJUnit4ClassRunner::class)
 class MetricsTest : BaseHostJUnit4Test() {
 
-    companion object {
-        private const val TAG = "BluetoothMetricsTests"
-        private const val TEST_APP_PKG_NAME = "android.bluetooth"
-        private const val TEST_APP_CLASS_NAME = ".BluetoothMetricsHelperTest"
-    }
-
     @Before
     fun setUp() {
         ConfigUtils.removeConfig(getDevice())
@@ -50,7 +44,7 @@ class MetricsTest : BaseHostJUnit4Test() {
         val data =
             uploadAtomConfigAndTriggerTest(
                 "testBluetoothDisableEnable",
-                intArrayOf(AtomsProto.Atom.BLUETOOTH_ENABLED_STATE_CHANGED_FIELD_NUMBER)
+                intArrayOf(AtomsProto.Atom.BLUETOOTH_ENABLED_STATE_CHANGED_FIELD_NUMBER),
             )
         // First atom might be the setup one.
         val offset =
@@ -75,12 +69,18 @@ class MetricsTest : BaseHostJUnit4Test() {
 
     private fun uploadAtomConfigAndTriggerTest(
         testName: String,
-        atoms: IntArray
+        atoms: IntArray,
     ): List<StatsLog.EventMetricData> {
         ConfigUtils.uploadConfigForPushedAtoms(device, TEST_APP_PKG_NAME, atoms)
 
         DeviceUtils.runDeviceTests(device, TEST_APP_PKG_NAME, TEST_APP_CLASS_NAME, testName)
 
         return ReportUtils.getEventMetricDataList(device)
+    }
+
+    companion object {
+        private const val TAG = "BluetoothMetricsTests"
+        private const val TEST_APP_PKG_NAME = "android.bluetooth"
+        private const val TEST_APP_CLASS_NAME = ".BluetoothMetricsHelperTest"
     }
 }
