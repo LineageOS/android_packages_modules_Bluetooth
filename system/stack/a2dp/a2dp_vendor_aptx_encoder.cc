@@ -322,6 +322,7 @@ void a2dp_vendor_aptx_send_frames(uint64_t /* timestamp_us */) {
   bytes_read = a2dp_aptx_encoder_cb.read_callback((uint8_t*)read_buffer16, expected_read_bytes);
   a2dp_aptx_encoder_cb.stats.media_read_total_actual_read_bytes += bytes_read;
   if (bytes_read < expected_read_bytes) {
+    // TODO(b/409124193): remove this logic after cleaning a2dp_fmq_read_exact
     log::warn("underflow at PCM reading: read {} bytes instead of {}", bytes_read,
               expected_read_bytes);
     a2dp_aptx_encoder_cb.stats.media_read_total_dropped_packets++;
