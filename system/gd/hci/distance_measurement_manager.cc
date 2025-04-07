@@ -1886,7 +1886,7 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
             uint8_t num_tone_data = num_antenna_paths + 1;
             uint8_t data_len = 7 + (4 * num_tone_data);
             if (procedure_data->contains_sounding_sequence_local_) {
-              data_len += 3;  // 3 bytes for packet_pct1, packet_pct2
+              data_len += 6;  // 3 bytes for each packet_pct1, packet_pct2
             }
             remaining_data_size = std::distance(parse_index, segment_data.end());
             if (remaining_data_size < data_len) {
