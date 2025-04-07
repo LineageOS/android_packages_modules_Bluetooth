@@ -4215,10 +4215,10 @@ public final class BluetoothAdapter {
                 return false;
             }
 
-            @SuppressLint("AndroidFrameworkBluetoothPermission")
             ScanCallback scanCallback =
                     new ScanCallback() {
                         @Override
+                        @RequiresNoPermission // Callback to app
                         public void onScanResult(int callbackType, ScanResult result) {
                             if (callbackType != ScanSettings.CALLBACK_TYPE_ALL_MATCHES) {
                                 // Should not happen.

@@ -18,7 +18,7 @@ package android.bluetooth;
 
 import static android.view.WindowManager.LayoutParams.SYSTEM_FLAG_HIDE_NON_SYSTEM_OVERLAY_WINDOWS;
 
-import android.annotation.SuppressLint;
+import android.annotation.RequiresNoPermission;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -37,7 +37,6 @@ import com.android.internal.annotations.VisibleForTesting;
  * @see #mAlert
  * @see #setupAlert()
  */
-@SuppressLint("AndroidFrameworkBluetoothPermission")
 public abstract class AlertActivity extends Activity
         implements DialogInterface.OnDismissListener, DialogInterface.OnCancelListener {
 
@@ -60,6 +59,7 @@ public abstract class AlertActivity extends Activity
     }
 
     @Override
+    @RequiresNoPermission
     public void onDismiss(DialogInterface dialog) {
         if (!isFinishing()) {
             finish();
@@ -67,6 +67,7 @@ public abstract class AlertActivity extends Activity
     }
 
     @Override
+    @RequiresNoPermission
     public void onCancel(DialogInterface dialog) {
         if (!isFinishing()) {
             finish();
@@ -74,6 +75,7 @@ public abstract class AlertActivity extends Activity
     }
 
     @Override
+    @RequiresNoPermission
     public boolean dispatchPopulateAccessibilityEvent(AccessibilityEvent event) {
         return dispatchPopulateAccessibilityEvent(this, event);
     }
@@ -123,6 +125,7 @@ public abstract class AlertActivity extends Activity
     }
 
     @VisibleForTesting
+    @RequiresNoPermission
     public Button getButton(int identifier) {
         return mAlert.getButton(identifier);
     }

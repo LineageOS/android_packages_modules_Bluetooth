@@ -20,6 +20,7 @@ import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import static android.bluetooth.BluetoothUtils.executeFromBinder;
 import static android.bluetooth.BluetoothUtils.logRemoteException;
 
 import android.annotation.IntDef;
@@ -32,6 +33,7 @@ import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
 import android.bluetooth.annotations.RequiresLegacyBluetoothPermission;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.AttributionSource;
+import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -220,773 +222,727 @@ public final class BluetoothGatt implements BluetoothProfile {
     /*package*/ static final int AUTHENTICATION_MITM = 2;
 
     /** Bluetooth GATT callbacks. Overrides the default BluetoothGattCallback implementation. */
-    @SuppressLint("AndroidFrameworkBluetoothPermission")
-    private final IBluetoothGattCallback mBluetoothGattCallback =
-            new IBluetoothGattCallback.Stub() {
-                /**
-                 * Application interface registered - app is ready to go
-                 *
-                 * @hide
-                 */
-                @Override
-                @SuppressLint("AndroidFrameworkRequiresPermission")
-                public void onClientRegistered(int status, int clientIf) {
-                    Log.d(
-                            TAG,
-                            "onClientRegistered() -"
-                                    + (" status=" + status)
-                                    + (" clientIf=" + clientIf));
-                    mClientIf = clientIf;
-                    synchronized (mStateLock) {
-                        if (mConnState == CONN_STATE_CLOSED) {
-                            Log.d(
-                                    TAG,
-                                    "Client registration completed after closed,"
-                                            + " unregistering");
-                            unregisterApp();
-                            if (Flags.unregisterGattClientDisconnected()) {
-                                mCallback = null;
+    private final IBluetoothGattCallback mBluetoothGattCallback = new GattCallback();
+
+    private class GattCallback extends IBluetoothGattCallback.Stub {
+        /**
+         * Queue the runnable on a {@link Handler} provided by the user, or execute the runnable
+         * immediately if no Handler was provided.
+         */
+        private void runOrQueueCallback(final Runnable cb) {
+            if (mHandler != null) {
+                executeFromBinder(mHandler::post, cb);
+                return;
+            }
+            final long identity = Binder.clearCallingIdentity();
+            try {
+                cb.run();
+            } catch (Exception ex) {
+                Log.w(TAG, "Unhandled exception in callback", ex);
+            } finally {
+                Binder.restoreCallingIdentity(identity);
+            }
+        }
+
+        /**
+         * Application interface registered - app is ready to go
+         *
+         * @hide
+         */
+        @Override
+        @SuppressLint("AndroidFrameworkRequiresPermission")
+        @RequiresNoPermission // Callback to app
+        public void onClientRegistered(int status, int clientIf) {
+            Log.d(TAG, "onClientRegistered() - status=" + status + " clientIf=" + clientIf);
+            mClientIf = clientIf;
+            synchronized (mStateLock) {
+                if (mConnState == CONN_STATE_CLOSED) {
+                    Log.d(TAG, "Client registration completed after closed," + " unregistering");
+                    unregisterApp();
+                    if (Flags.unregisterGattClientDisconnected()) {
+                        mCallback = null;
+                    }
+                    return;
+                }
+                if (VDBG) {
+                    if (mConnState != CONN_STATE_CONNECTING) {
+                        Log.e(TAG, "Bad connection state: " + mConnState);
+                    }
+                }
+            }
+            if (status != GATT_SUCCESS) {
+                runOrQueueCallback(
+                        () -> {
+                            final BluetoothGattCallback callback = mCallback;
+                            if (callback != null) {
+                                callback.onConnectionStateChange(
+                                        BluetoothGatt.this, GATT_FAILURE, STATE_DISCONNECTED);
                             }
-                            return;
-                        }
-                        if (VDBG) {
-                            if (mConnState != CONN_STATE_CONNECTING) {
-                                Log.e(TAG, "Bad connection state: " + mConnState);
-                            }
-                        }
-                    }
-                    if (status != GATT_SUCCESS) {
-                        runOrQueueCallback(
-                                new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        final BluetoothGattCallback callback = mCallback;
-                                        if (callback != null) {
-                                            callback.onConnectionStateChange(
-                                                    BluetoothGatt.this,
-                                                    GATT_FAILURE,
-                                                    STATE_DISCONNECTED);
-                                        }
-                                    }
-                                });
+                        });
 
-                        synchronized (mStateLock) {
-                            mConnState = CONN_STATE_IDLE;
+                synchronized (mStateLock) {
+                    mConnState = CONN_STATE_IDLE;
+                }
+                return;
+            }
+            try {
+                // autoConnect is inverse of "isDirect"
+                mService.clientConnect(
+                        clientIf,
+                        mDevice.getAddress(),
+                        mDevice.getAddressType(),
+                        !mAutoConnect,
+                        mTransport,
+                        mOpportunistic,
+                        mPhy,
+                        mAttributionSource);
+            } catch (RemoteException e) {
+                Log.e(TAG, "", e);
+            }
+        }
+
+        /**
+         * Phy update callback
+         *
+         * @hide
+         */
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onPhyUpdate(String address, int txPhy, int rxPhy, int status) {
+            Log.d(
+                    TAG,
+                    "onPhyUpdate() -"
+                            + (" status=" + status)
+                            + (" address=" + BluetoothUtils.toAnonymizedAddress(address))
+                            + (" txPhy=" + txPhy)
+                            + (" rxPhy=" + rxPhy));
+            if (!address.equals(mDevice.getAddress())) {
+                return;
+            }
+
+            runOrQueueCallback(
+                    () -> {
+                        final BluetoothGattCallback callback = mCallback;
+                        if (callback != null) {
+                            callback.onPhyUpdate(BluetoothGatt.this, txPhy, rxPhy, status);
                         }
-                        return;
-                    }
-                    try {
-                        // autoConnect is inverse of "isDirect"
-                        mService.clientConnect(
-                                clientIf,
-                                mDevice.getAddress(),
-                                mDevice.getAddressType(),
-                                !mAutoConnect,
-                                mTransport,
-                                mOpportunistic,
-                                mPhy,
-                                mAttributionSource);
-                    } catch (RemoteException e) {
-                        Log.e(TAG, "", e);
+                    });
+        }
+
+        /**
+         * Phy read callback
+         *
+         * @hide
+         */
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onPhyRead(String address, int txPhy, int rxPhy, int status) {
+            Log.d(
+                    TAG,
+                    "onPhyRead() -"
+                            + (" status=" + status)
+                            + (" address=" + BluetoothUtils.toAnonymizedAddress(address))
+                            + (" txPhy=" + txPhy)
+                            + (" rxPhy=" + rxPhy));
+            if (!address.equals(mDevice.getAddress())) {
+                return;
+            }
+
+            runOrQueueCallback(
+                    () -> {
+                        final BluetoothGattCallback callback = mCallback;
+                        if (callback != null) {
+                            callback.onPhyRead(BluetoothGatt.this, txPhy, rxPhy, status);
+                        }
+                    });
+        }
+
+        /**
+         * Client connection state changed
+         *
+         * @hide
+         */
+        @Override
+        @RequiresBluetoothConnectPermission
+        @RequiresPermission(BLUETOOTH_CONNECT)
+        public void onClientConnectionState(
+                int status, int clientIf, boolean connected, String address) {
+            Log.d(
+                    TAG,
+                    "onClientConnectionState() -"
+                            + (" status=" + status)
+                            + (" clientIf=" + clientIf)
+                            + (" connected=" + connected)
+                            + (" device=" + BluetoothUtils.toAnonymizedAddress(address)));
+            if (!address.equals(mDevice.getAddress())) {
+                return;
+            }
+            int profileState = connected ? STATE_CONNECTED : STATE_DISCONNECTED;
+
+            if (Flags.unregisterGattClientDisconnected() && !connected && !mAutoConnect) {
+                unregisterApp();
+            }
+
+            runOrQueueCallback(
+                    () -> {
+                        final BluetoothGattCallback callback = mCallback;
+                        if (callback != null) {
+                            callback.onConnectionStateChange(
+                                    BluetoothGatt.this, status, profileState);
+                        }
+                    });
+
+            synchronized (mStateLock) {
+                if (connected) {
+                    mConnState = CONN_STATE_CONNECTED;
+                } else {
+                    mConnState = CONN_STATE_IDLE;
+                }
+            }
+
+            synchronized (mDeviceBusyLock) {
+                mDeviceBusy = false;
+            }
+        }
+
+        /**
+         * Remote search has been completed. The internal object structure should now reflect the
+         * state of the remote device database. Let the application know that we are done at this
+         * point.
+         *
+         * @hide
+         */
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onSearchComplete(
+                String address, List<BluetoothGattService> services, int status) {
+            Log.d(
+                    TAG,
+                    "onSearchComplete() = address="
+                            + BluetoothUtils.toAnonymizedAddress(address)
+                            + " status="
+                            + status);
+            if (!address.equals(mDevice.getAddress())) {
+                return;
+            }
+
+            for (BluetoothGattService s : services) {
+                // services we receive don't have device set properly.
+                s.setDevice(mDevice);
+            }
+
+            if (Flags.fixBluetoothGattGettingDuplicateServices()) {
+                mServices.clear();
+            }
+
+            mServices.addAll(services);
+
+            // Fix references to included services, as they doesn't point to right objects.
+            for (BluetoothGattService fixedService : mServices) {
+                ArrayList<BluetoothGattService> includedServices =
+                        new ArrayList(fixedService.getIncludedServices());
+                fixedService.getIncludedServices().clear();
+
+                for (BluetoothGattService brokenRef : includedServices) {
+                    BluetoothGattService includedService =
+                            getService(mDevice, brokenRef.getUuid(), brokenRef.getInstanceId());
+                    if (includedService != null) {
+                        fixedService.addIncludedService(includedService);
+                    } else {
+                        Log.e(TAG, "Broken GATT database: can't find included service.");
                     }
                 }
+            }
 
-                /**
-                 * Phy update callback
-                 *
-                 * @hide
-                 */
-                @Override
-                public void onPhyUpdate(String address, int txPhy, int rxPhy, int status) {
-                    Log.d(
-                            TAG,
-                            "onPhyUpdate() -"
-                                    + (" status=" + status)
-                                    + (" address=" + BluetoothUtils.toAnonymizedAddress(address))
-                                    + (" txPhy=" + txPhy)
-                                    + (" rxPhy=" + rxPhy));
-                    if (!address.equals(mDevice.getAddress())) {
-                        return;
-                    }
-
-                    runOrQueueCallback(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    final BluetoothGattCallback callback = mCallback;
-                                    if (callback != null) {
-                                        callback.onPhyUpdate(
-                                                BluetoothGatt.this, txPhy, rxPhy, status);
-                                    }
-                                }
-                            });
-                }
-
-                /**
-                 * Phy read callback
-                 *
-                 * @hide
-                 */
-                @Override
-                public void onPhyRead(String address, int txPhy, int rxPhy, int status) {
-                    Log.d(
-                            TAG,
-                            "onPhyRead() -"
-                                    + (" status=" + status)
-                                    + (" address=" + BluetoothUtils.toAnonymizedAddress(address))
-                                    + (" txPhy=" + txPhy)
-                                    + (" rxPhy=" + rxPhy));
-                    if (!address.equals(mDevice.getAddress())) {
-                        return;
-                    }
-
-                    runOrQueueCallback(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    final BluetoothGattCallback callback = mCallback;
-                                    if (callback != null) {
-                                        callback.onPhyRead(
-                                                BluetoothGatt.this, txPhy, rxPhy, status);
-                                    }
-                                }
-                            });
-                }
-
-                /**
-                 * Client connection state changed
-                 *
-                 * @hide
-                 */
-                @Override
-                @RequiresBluetoothConnectPermission
-                @RequiresPermission(BLUETOOTH_CONNECT)
-                public void onClientConnectionState(
-                        int status, int clientIf, boolean connected, String address) {
-                    Log.d(
-                            TAG,
-                            "onClientConnectionState() -"
-                                    + (" status=" + status)
-                                    + (" clientIf=" + clientIf)
-                                    + (" connected=" + connected)
-                                    + (" device=" + BluetoothUtils.toAnonymizedAddress(address)));
-                    if (!address.equals(mDevice.getAddress())) {
-                        return;
-                    }
-                    int profileState = connected ? STATE_CONNECTED : STATE_DISCONNECTED;
-
-                    if (Flags.unregisterGattClientDisconnected() && !connected && !mAutoConnect) {
-                        unregisterApp();
-                    }
-
-                    runOrQueueCallback(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    final BluetoothGattCallback callback = mCallback;
-                                    if (callback != null) {
-                                        callback.onConnectionStateChange(
-                                                BluetoothGatt.this, status, profileState);
-                                    }
-                                }
-                            });
-
-                    synchronized (mStateLock) {
-                        if (connected) {
-                            mConnState = CONN_STATE_CONNECTED;
-                        } else {
-                            mConnState = CONN_STATE_IDLE;
+            runOrQueueCallback(
+                    () -> {
+                        final BluetoothGattCallback callback = mCallback;
+                        if (callback != null) {
+                            callback.onServicesDiscovered(BluetoothGatt.this, status);
                         }
-                    }
+                    });
+        }
 
-                    synchronized (mDeviceBusyLock) {
-                        mDeviceBusy = false;
-                    }
+        /**
+         * Remote characteristic has been read. Updates the internal value.
+         *
+         * @hide
+         */
+        @Override
+        @SuppressLint("AndroidFrameworkRequiresPermission")
+        @RequiresNoPermission // Callback to app
+        public void onCharacteristicRead(String address, int status, int handle, byte[] value) {
+            if (VDBG) {
+                Log.d(
+                        TAG,
+                        "onCharacteristicRead() -"
+                                + (" Device=" + BluetoothUtils.toAnonymizedAddress(address))
+                                + (" handle=" + handle)
+                                + (" Status=" + status));
+            }
+
+            if (!address.equals(mDevice.getAddress())) {
+                return;
+            }
+
+            synchronized (mDeviceBusyLock) {
+                mDeviceBusy = false;
+            }
+
+            int clientIf = mClientIf;
+            if ((status == GATT_INSUFFICIENT_AUTHENTICATION
+                            || status == GATT_INSUFFICIENT_ENCRYPTION)
+                    && (mAuthRetryState != AUTH_RETRY_STATE_MITM)
+                    && (clientIf > 0)) {
+                try {
+                    final int authReq =
+                            (mAuthRetryState == AUTH_RETRY_STATE_IDLE)
+                                    ? AUTHENTICATION_NO_MITM
+                                    : AUTHENTICATION_MITM;
+                    mService.readCharacteristic(
+                            clientIf, address, handle, authReq, mAttributionSource);
+                    mAuthRetryState++;
+                    return;
+                } catch (RemoteException e) {
+                    Log.e(TAG, "", e);
                 }
+            }
 
-                /**
-                 * Remote search has been completed. The internal object structure should now
-                 * reflect the state of the remote device database. Let the application know that we
-                 * are done at this point.
-                 *
-                 * @hide
-                 */
-                @Override
-                public void onSearchComplete(
-                        String address, List<BluetoothGattService> services, int status) {
-                    Log.d(
-                            TAG,
-                            "onSearchComplete() = address="
-                                    + BluetoothUtils.toAnonymizedAddress(address)
-                                    + " status="
-                                    + status);
-                    if (!address.equals(mDevice.getAddress())) {
-                        return;
-                    }
+            mAuthRetryState = AUTH_RETRY_STATE_IDLE;
 
-                    for (BluetoothGattService s : services) {
-                        // services we receive don't have device set properly.
-                        s.setDevice(mDevice);
-                    }
+            BluetoothGattCharacteristic characteristic = getCharacteristicById(mDevice, handle);
+            if (characteristic == null) {
+                Log.w(TAG, "onCharacteristicRead() failed to find characteristic!");
+                return;
+            }
 
-                    if (Flags.fixBluetoothGattGettingDuplicateServices()) {
-                        mServices.clear();
-                    }
-
-                    mServices.addAll(services);
-
-                    // Fix references to included services, as they doesn't point to right objects.
-                    for (BluetoothGattService fixedService : mServices) {
-                        ArrayList<BluetoothGattService> includedServices =
-                                new ArrayList(fixedService.getIncludedServices());
-                        fixedService.getIncludedServices().clear();
-
-                        for (BluetoothGattService brokenRef : includedServices) {
-                            BluetoothGattService includedService =
-                                    getService(
-                                            mDevice,
-                                            brokenRef.getUuid(),
-                                            brokenRef.getInstanceId());
-                            if (includedService != null) {
-                                fixedService.addIncludedService(includedService);
-                            } else {
-                                Log.e(TAG, "Broken GATT database: can't find included service.");
-                            }
+            runOrQueueCallback(
+                    () -> {
+                        final BluetoothGattCallback callback = mCallback;
+                        if (callback != null) {
+                            if (status == 0) characteristic.setValue(value);
+                            callback.onCharacteristicRead(
+                                    BluetoothGatt.this, characteristic, value, status);
                         }
-                    }
+                    });
+        }
 
-                    runOrQueueCallback(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    final BluetoothGattCallback callback = mCallback;
-                                    if (callback != null) {
-                                        callback.onServicesDiscovered(BluetoothGatt.this, status);
-                                    }
-                                }
-                            });
-                }
+        /**
+         * Characteristic has been written to the remote device. Let the app know how we did...
+         *
+         * @hide
+         */
+        @Override
+        @SuppressLint("AndroidFrameworkRequiresPermission")
+        @RequiresNoPermission // Callback to app
+        public void onCharacteristicWrite(String address, int status, int handle, byte[] value) {
+            if (VDBG) {
+                Log.d(
+                        TAG,
+                        "onCharacteristicWrite() -"
+                                + (" Device=" + BluetoothUtils.toAnonymizedAddress(address))
+                                + (" handle=" + handle)
+                                + (" Status=" + status));
+            }
 
-                /**
-                 * Remote characteristic has been read. Updates the internal value.
-                 *
-                 * @hide
-                 */
-                @Override
-                @SuppressLint("AndroidFrameworkRequiresPermission")
-                public void onCharacteristicRead(
-                        String address, int status, int handle, byte[] value) {
-                    if (VDBG) {
-                        Log.d(
-                                TAG,
-                                "onCharacteristicRead() -"
-                                        + (" Device=" + BluetoothUtils.toAnonymizedAddress(address))
-                                        + (" handle=" + handle)
-                                        + (" Status=" + status));
-                    }
+            if (!address.equals(mDevice.getAddress())) {
+                return;
+            }
 
-                    if (!address.equals(mDevice.getAddress())) {
-                        return;
-                    }
+            synchronized (mDeviceBusyLock) {
+                mDeviceBusy = false;
+            }
 
-                    synchronized (mDeviceBusyLock) {
-                        mDeviceBusy = false;
-                    }
+            BluetoothGattCharacteristic characteristic = getCharacteristicById(mDevice, handle);
+            if (characteristic == null) return;
 
+            if ((status == GATT_INSUFFICIENT_AUTHENTICATION
+                            || status == GATT_INSUFFICIENT_ENCRYPTION)
+                    && (mAuthRetryState != AUTH_RETRY_STATE_MITM)) {
+                try {
+                    final int authReq =
+                            (mAuthRetryState == AUTH_RETRY_STATE_IDLE)
+                                    ? AUTHENTICATION_NO_MITM
+                                    : AUTHENTICATION_MITM;
+                    int requestStatus = BluetoothStatusCodes.ERROR_UNKNOWN;
                     int clientIf = mClientIf;
-                    if ((status == GATT_INSUFFICIENT_AUTHENTICATION
-                                    || status == GATT_INSUFFICIENT_ENCRYPTION)
-                            && (mAuthRetryState != AUTH_RETRY_STATE_MITM)
-                            && (clientIf > 0)) {
+                    for (int i = 0; (i < WRITE_CHARACTERISTIC_MAX_RETRIES) && (clientIf > 0); i++) {
+                        requestStatus =
+                                mService.writeCharacteristic(
+                                        clientIf,
+                                        address,
+                                        handle,
+                                        characteristic.getWriteType(),
+                                        authReq,
+                                        value,
+                                        mAttributionSource);
+                        if (requestStatus != BluetoothStatusCodes.ERROR_GATT_WRITE_REQUEST_BUSY) {
+                            break;
+                        }
                         try {
-                            final int authReq =
-                                    (mAuthRetryState == AUTH_RETRY_STATE_IDLE)
-                                            ? AUTHENTICATION_NO_MITM
-                                            : AUTHENTICATION_MITM;
-                            mService.readCharacteristic(
-                                    clientIf, address, handle, authReq, mAttributionSource);
-                            mAuthRetryState++;
-                            return;
-                        } catch (RemoteException e) {
+                            Thread.sleep(WRITE_CHARACTERISTIC_TIME_TO_WAIT);
+                        } catch (InterruptedException e) {
                             Log.e(TAG, "", e);
                         }
                     }
-
-                    mAuthRetryState = AUTH_RETRY_STATE_IDLE;
-
-                    BluetoothGattCharacteristic characteristic =
-                            getCharacteristicById(mDevice, handle);
-                    if (characteristic == null) {
-                        Log.w(TAG, "onCharacteristicRead() failed to find characteristic!");
-                        return;
-                    }
-
-                    runOrQueueCallback(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    final BluetoothGattCallback callback = mCallback;
-                                    if (callback != null) {
-                                        if (status == 0) characteristic.setValue(value);
-                                        callback.onCharacteristicRead(
-                                                BluetoothGatt.this, characteristic, value, status);
-                                    }
-                                }
-                            });
+                    mAuthRetryState++;
+                    return;
+                } catch (RemoteException e) {
+                    Log.e(TAG, "", e);
                 }
+            }
 
-                /**
-                 * Characteristic has been written to the remote device. Let the app know how we
-                 * did...
-                 *
-                 * @hide
-                 */
-                @Override
-                @SuppressLint("AndroidFrameworkRequiresPermission")
-                public void onCharacteristicWrite(
-                        String address, int status, int handle, byte[] value) {
-                    if (VDBG) {
-                        Log.d(
-                                TAG,
-                                "onCharacteristicWrite() -"
-                                        + (" Device=" + BluetoothUtils.toAnonymizedAddress(address))
-                                        + (" handle=" + handle)
-                                        + (" Status=" + status));
-                    }
-
-                    if (!address.equals(mDevice.getAddress())) {
-                        return;
-                    }
-
-                    synchronized (mDeviceBusyLock) {
-                        mDeviceBusy = false;
-                    }
-
-                    BluetoothGattCharacteristic characteristic =
-                            getCharacteristicById(mDevice, handle);
-                    if (characteristic == null) return;
-
-                    if ((status == GATT_INSUFFICIENT_AUTHENTICATION
-                                    || status == GATT_INSUFFICIENT_ENCRYPTION)
-                            && (mAuthRetryState != AUTH_RETRY_STATE_MITM)) {
-                        try {
-                            final int authReq =
-                                    (mAuthRetryState == AUTH_RETRY_STATE_IDLE)
-                                            ? AUTHENTICATION_NO_MITM
-                                            : AUTHENTICATION_MITM;
-                            int requestStatus = BluetoothStatusCodes.ERROR_UNKNOWN;
-                            int clientIf = mClientIf;
-                            for (int i = 0;
-                                    (i < WRITE_CHARACTERISTIC_MAX_RETRIES) && (clientIf > 0);
-                                    i++) {
-                                requestStatus =
-                                        mService.writeCharacteristic(
-                                                clientIf,
-                                                address,
-                                                handle,
-                                                characteristic.getWriteType(),
-                                                authReq,
-                                                value,
-                                                mAttributionSource);
-                                if (requestStatus
-                                        != BluetoothStatusCodes.ERROR_GATT_WRITE_REQUEST_BUSY) {
-                                    break;
-                                }
-                                try {
-                                    Thread.sleep(WRITE_CHARACTERISTIC_TIME_TO_WAIT);
-                                } catch (InterruptedException e) {
-                                    Log.e(TAG, "", e);
-                                }
-                            }
-                            mAuthRetryState++;
-                            return;
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "", e);
+            mAuthRetryState = AUTH_RETRY_STATE_IDLE;
+            runOrQueueCallback(
+                    () -> {
+                        final BluetoothGattCallback callback = mCallback;
+                        if (callback != null) {
+                            callback.onCharacteristicWrite(
+                                    BluetoothGatt.this, characteristic, status);
                         }
-                    }
+                    });
+        }
 
-                    mAuthRetryState = AUTH_RETRY_STATE_IDLE;
-                    runOrQueueCallback(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    final BluetoothGattCallback callback = mCallback;
-                                    if (callback != null) {
-                                        callback.onCharacteristicWrite(
-                                                BluetoothGatt.this, characteristic, status);
-                                    }
-                                }
-                            });
-                }
+        /**
+         * Remote characteristic has been updated. Updates the internal value.
+         *
+         * @hide
+         */
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onNotify(String address, int handle, byte[] value) {
+            if (VDBG) {
+                Log.d(
+                        TAG,
+                        "onNotify() - address="
+                                + BluetoothUtils.toAnonymizedAddress(address)
+                                + " handle="
+                                + handle);
+            }
+            if (!address.equals(mDevice.getAddress())) {
+                return;
+            }
 
-                /**
-                 * Remote characteristic has been updated. Updates the internal value.
-                 *
-                 * @hide
-                 */
-                @Override
-                public void onNotify(String address, int handle, byte[] value) {
-                    if (VDBG) {
-                        Log.d(
-                                TAG,
-                                "onNotify() - address="
-                                        + BluetoothUtils.toAnonymizedAddress(address)
-                                        + " handle="
-                                        + handle);
-                    }
-                    if (!address.equals(mDevice.getAddress())) {
-                        return;
-                    }
+            BluetoothGattCharacteristic characteristic = getCharacteristicById(mDevice, handle);
+            if (characteristic == null) return;
 
-                    BluetoothGattCharacteristic characteristic =
-                            getCharacteristicById(mDevice, handle);
-                    if (characteristic == null) return;
-
-                    runOrQueueCallback(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    final BluetoothGattCallback callback = mCallback;
-                                    if (callback != null) {
-                                        characteristic.setValue(value);
-                                        callback.onCharacteristicChanged(
-                                                BluetoothGatt.this, characteristic, value);
-                                    }
-                                }
-                            });
-                }
-
-                /**
-                 * Descriptor has been read.
-                 *
-                 * @hide
-                 */
-                @Override
-                @SuppressLint("AndroidFrameworkRequiresPermission")
-                public void onDescriptorRead(String address, int status, int handle, byte[] value) {
-                    if (VDBG) {
-                        Log.d(
-                                TAG,
-                                "onDescriptorRead() - address="
-                                        + BluetoothUtils.toAnonymizedAddress(address)
-                                        + " handle="
-                                        + handle);
-                    }
-
-                    if (!address.equals(mDevice.getAddress())) {
-                        return;
-                    }
-
-                    synchronized (mDeviceBusyLock) {
-                        mDeviceBusy = false;
-                    }
-
-                    BluetoothGattDescriptor descriptor = getDescriptorById(mDevice, handle);
-                    if (descriptor == null) return;
-
-                    int clientIf = mClientIf;
-                    if ((status == GATT_INSUFFICIENT_AUTHENTICATION
-                                    || status == GATT_INSUFFICIENT_ENCRYPTION)
-                            && (mAuthRetryState != AUTH_RETRY_STATE_MITM)
-                            && (clientIf > 0)) {
-                        try {
-                            final int authReq =
-                                    (mAuthRetryState == AUTH_RETRY_STATE_IDLE)
-                                            ? AUTHENTICATION_NO_MITM
-                                            : AUTHENTICATION_MITM;
-                            mService.readDescriptor(
-                                    clientIf, address, handle, authReq, mAttributionSource);
-                            mAuthRetryState++;
-                            return;
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "", e);
+            runOrQueueCallback(
+                    () -> {
+                        final BluetoothGattCallback callback = mCallback;
+                        if (callback != null) {
+                            characteristic.setValue(value);
+                            callback.onCharacteristicChanged(
+                                    BluetoothGatt.this, characteristic, value);
                         }
-                    }
+                    });
+        }
 
-                    mAuthRetryState = AUTH_RETRY_STATE_IDLE;
+        /**
+         * Descriptor has been read.
+         *
+         * @hide
+         */
+        @Override
+        @SuppressLint("AndroidFrameworkRequiresPermission")
+        @RequiresNoPermission // Callback to app
+        public void onDescriptorRead(String address, int status, int handle, byte[] value) {
+            if (VDBG) {
+                Log.d(
+                        TAG,
+                        "onDescriptorRead() - address="
+                                + BluetoothUtils.toAnonymizedAddress(address)
+                                + " handle="
+                                + handle);
+            }
 
-                    runOrQueueCallback(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    final BluetoothGattCallback callback = mCallback;
-                                    if (callback != null) {
-                                        if (status == 0) descriptor.setValue(value);
-                                        callback.onDescriptorRead(
-                                                BluetoothGatt.this, descriptor, status, value);
-                                    }
-                                }
-                            });
+            if (!address.equals(mDevice.getAddress())) {
+                return;
+            }
+
+            synchronized (mDeviceBusyLock) {
+                mDeviceBusy = false;
+            }
+
+            BluetoothGattDescriptor descriptor = getDescriptorById(mDevice, handle);
+            if (descriptor == null) return;
+
+            int clientIf = mClientIf;
+            if ((status == GATT_INSUFFICIENT_AUTHENTICATION
+                            || status == GATT_INSUFFICIENT_ENCRYPTION)
+                    && (mAuthRetryState != AUTH_RETRY_STATE_MITM)
+                    && (clientIf > 0)) {
+                try {
+                    final int authReq =
+                            (mAuthRetryState == AUTH_RETRY_STATE_IDLE)
+                                    ? AUTHENTICATION_NO_MITM
+                                    : AUTHENTICATION_MITM;
+                    mService.readDescriptor(clientIf, address, handle, authReq, mAttributionSource);
+                    mAuthRetryState++;
+                    return;
+                } catch (RemoteException e) {
+                    Log.e(TAG, "", e);
                 }
+            }
 
-                /**
-                 * Descriptor write operation complete.
-                 *
-                 * @hide
-                 */
-                @Override
-                @SuppressLint("AndroidFrameworkRequiresPermission")
-                public void onDescriptorWrite(
-                        String address, int status, int handle, byte[] value) {
-                    if (VDBG) {
-                        Log.d(
-                                TAG,
-                                "onDescriptorWrite() - address="
-                                        + BluetoothUtils.toAnonymizedAddress(address)
-                                        + " handle="
-                                        + handle);
-                    }
+            mAuthRetryState = AUTH_RETRY_STATE_IDLE;
 
-                    if (!address.equals(mDevice.getAddress())) {
-                        return;
-                    }
-
-                    synchronized (mDeviceBusyLock) {
-                        mDeviceBusy = false;
-                    }
-
-                    BluetoothGattDescriptor descriptor = getDescriptorById(mDevice, handle);
-                    if (descriptor == null) return;
-
-                    int clientIf = mClientIf;
-                    if ((status == GATT_INSUFFICIENT_AUTHENTICATION
-                                    || status == GATT_INSUFFICIENT_ENCRYPTION)
-                            && (mAuthRetryState != AUTH_RETRY_STATE_MITM)
-                            && (clientIf > 0)) {
-                        try {
-                            final int authReq =
-                                    (mAuthRetryState == AUTH_RETRY_STATE_IDLE)
-                                            ? AUTHENTICATION_NO_MITM
-                                            : AUTHENTICATION_MITM;
-                            mService.writeDescriptor(
-                                    clientIf, address, handle, authReq, value, mAttributionSource);
-                            mAuthRetryState++;
-                            return;
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "", e);
+            runOrQueueCallback(
+                    () -> {
+                        final BluetoothGattCallback callback = mCallback;
+                        if (callback != null) {
+                            if (status == 0) descriptor.setValue(value);
+                            callback.onDescriptorRead(
+                                    BluetoothGatt.this, descriptor, status, value);
                         }
-                    }
+                    });
+        }
 
-                    mAuthRetryState = AUTH_RETRY_STATE_IDLE;
+        /**
+         * Descriptor write operation complete.
+         *
+         * @hide
+         */
+        @Override
+        @SuppressLint("AndroidFrameworkRequiresPermission")
+        @RequiresNoPermission // Callback to app
+        public void onDescriptorWrite(String address, int status, int handle, byte[] value) {
+            if (VDBG) {
+                Log.d(
+                        TAG,
+                        "onDescriptorWrite() - address="
+                                + BluetoothUtils.toAnonymizedAddress(address)
+                                + " handle="
+                                + handle);
+            }
 
-                    runOrQueueCallback(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    final BluetoothGattCallback callback = mCallback;
-                                    if (callback != null) {
-                                        callback.onDescriptorWrite(
-                                                BluetoothGatt.this, descriptor, status);
-                                    }
-                                }
-                            });
+            if (!address.equals(mDevice.getAddress())) {
+                return;
+            }
+
+            synchronized (mDeviceBusyLock) {
+                mDeviceBusy = false;
+            }
+
+            BluetoothGattDescriptor descriptor = getDescriptorById(mDevice, handle);
+            if (descriptor == null) return;
+
+            int clientIf = mClientIf;
+            if ((status == GATT_INSUFFICIENT_AUTHENTICATION
+                            || status == GATT_INSUFFICIENT_ENCRYPTION)
+                    && (mAuthRetryState != AUTH_RETRY_STATE_MITM)
+                    && (clientIf > 0)) {
+                try {
+                    final int authReq =
+                            (mAuthRetryState == AUTH_RETRY_STATE_IDLE)
+                                    ? AUTHENTICATION_NO_MITM
+                                    : AUTHENTICATION_MITM;
+                    mService.writeDescriptor(
+                            clientIf, address, handle, authReq, value, mAttributionSource);
+                    mAuthRetryState++;
+                    return;
+                } catch (RemoteException e) {
+                    Log.e(TAG, "", e);
                 }
+            }
 
-                /**
-                 * Prepared write transaction completed (or aborted)
-                 *
-                 * @hide
-                 */
-                @Override
-                public void onExecuteWrite(String address, int status) {
-                    if (VDBG) {
-                        Log.d(
-                                TAG,
-                                "onExecuteWrite() - address="
-                                        + BluetoothUtils.toAnonymizedAddress(address)
-                                        + " status="
-                                        + status);
-                    }
-                    if (!address.equals(mDevice.getAddress())) {
-                        return;
-                    }
+            mAuthRetryState = AUTH_RETRY_STATE_IDLE;
 
-                    synchronized (mDeviceBusyLock) {
-                        mDeviceBusy = false;
-                    }
+            runOrQueueCallback(
+                    () -> {
+                        final BluetoothGattCallback callback = mCallback;
+                        if (callback != null) {
+                            callback.onDescriptorWrite(BluetoothGatt.this, descriptor, status);
+                        }
+                    });
+        }
 
-                    runOrQueueCallback(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    final BluetoothGattCallback callback = mCallback;
-                                    if (callback != null) {
-                                        callback.onReliableWriteCompleted(
-                                                BluetoothGatt.this, status);
-                                    }
-                                }
-                            });
-                }
+        /**
+         * Prepared write transaction completed (or aborted)
+         *
+         * @hide
+         */
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onExecuteWrite(String address, int status) {
+            if (VDBG) {
+                Log.d(
+                        TAG,
+                        "onExecuteWrite() - address="
+                                + BluetoothUtils.toAnonymizedAddress(address)
+                                + " status="
+                                + status);
+            }
+            if (!address.equals(mDevice.getAddress())) {
+                return;
+            }
 
-                /**
-                 * Remote device RSSI has been read
-                 *
-                 * @hide
-                 */
-                @Override
-                public void onReadRemoteRssi(String address, int rssi, int status) {
-                    if (VDBG) {
-                        Log.d(
-                                TAG,
-                                "onReadRemoteRssi() -"
-                                        + (" Device=" + BluetoothUtils.toAnonymizedAddress(address))
-                                        + (" rssi=" + rssi)
-                                        + (" status=" + status));
-                    }
-                    if (!address.equals(mDevice.getAddress())) {
-                        return;
-                    }
-                    runOrQueueCallback(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    final BluetoothGattCallback callback = mCallback;
-                                    if (callback != null) {
-                                        callback.onReadRemoteRssi(BluetoothGatt.this, rssi, status);
-                                    }
-                                }
-                            });
-                }
+            synchronized (mDeviceBusyLock) {
+                mDeviceBusy = false;
+            }
 
-                /**
-                 * Callback invoked when the MTU for a given connection changes
-                 *
-                 * @hide
-                 */
-                @Override
-                public void onConfigureMTU(String address, int mtu, int status) {
-                    Log.d(
-                            TAG,
-                            "onConfigureMTU() -"
-                                    + (" Device=" + BluetoothUtils.toAnonymizedAddress(address))
-                                    + (" mtu=" + mtu)
-                                    + (" status=" + status));
-                    if (!address.equals(mDevice.getAddress())) {
-                        return;
-                    }
+            runOrQueueCallback(
+                    () -> {
+                        final BluetoothGattCallback callback = mCallback;
+                        if (callback != null) {
+                            callback.onReliableWriteCompleted(BluetoothGatt.this, status);
+                        }
+                    });
+        }
 
-                    runOrQueueCallback(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    final BluetoothGattCallback callback = mCallback;
-                                    if (callback != null) {
-                                        callback.onMtuChanged(BluetoothGatt.this, mtu, status);
-                                    }
-                                }
-                            });
-                }
+        /**
+         * Remote device RSSI has been read
+         *
+         * @hide
+         */
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onReadRemoteRssi(String address, int rssi, int status) {
+            if (VDBG) {
+                Log.d(
+                        TAG,
+                        "onReadRemoteRssi() -"
+                                + (" Device=" + BluetoothUtils.toAnonymizedAddress(address))
+                                + (" rssi=" + rssi)
+                                + (" status=" + status));
+            }
+            if (!address.equals(mDevice.getAddress())) {
+                return;
+            }
+            runOrQueueCallback(
+                    () -> {
+                        final BluetoothGattCallback callback = mCallback;
+                        if (callback != null) {
+                            callback.onReadRemoteRssi(BluetoothGatt.this, rssi, status);
+                        }
+                    });
+        }
 
-                /**
-                 * Callback invoked when the given connection is updated
-                 *
-                 * @hide
-                 */
-                @Override
-                public void onConnectionUpdated(
-                        String address, int interval, int latency, int timeout, int status) {
-                    Log.d(
-                            TAG,
-                            "onConnectionUpdated() -"
-                                    + (" Device=" + BluetoothUtils.toAnonymizedAddress(address))
-                                    + (" interval=" + interval)
-                                    + (" latency=" + latency)
-                                    + (" timeout=" + timeout)
-                                    + (" status=" + status));
-                    if (!address.equals(mDevice.getAddress())) {
-                        return;
-                    }
+        /**
+         * Callback invoked when the MTU for a given connection changes
+         *
+         * @hide
+         */
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onConfigureMTU(String address, int mtu, int status) {
+            Log.d(
+                    TAG,
+                    "onConfigureMTU() -"
+                            + (" Device=" + BluetoothUtils.toAnonymizedAddress(address))
+                            + (" mtu=" + mtu)
+                            + (" status=" + status));
+            if (!address.equals(mDevice.getAddress())) {
+                return;
+            }
 
-                    runOrQueueCallback(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    final BluetoothGattCallback callback = mCallback;
-                                    if (callback != null) {
-                                        callback.onConnectionUpdated(
-                                                BluetoothGatt.this,
-                                                interval,
-                                                latency,
-                                                timeout,
-                                                status);
-                                    }
-                                }
-                            });
-                }
+            runOrQueueCallback(
+                    () -> {
+                        final BluetoothGattCallback callback = mCallback;
+                        if (callback != null) {
+                            callback.onMtuChanged(BluetoothGatt.this, mtu, status);
+                        }
+                    });
+        }
 
-                /**
-                 * Callback invoked when service changed event is received
-                 *
-                 * @hide
-                 */
-                @Override
-                public void onServiceChanged(String address) {
-                    Log.d(
-                            TAG,
-                            "onServiceChanged() - Device="
-                                    + BluetoothUtils.toAnonymizedAddress(address));
+        /**
+         * Callback invoked when the given connection is updated
+         *
+         * @hide
+         */
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onConnectionUpdated(
+                String address, int interval, int latency, int timeout, int status) {
+            Log.d(
+                    TAG,
+                    "onConnectionUpdated() -"
+                            + (" Device=" + BluetoothUtils.toAnonymizedAddress(address))
+                            + (" interval=" + interval)
+                            + (" latency=" + latency)
+                            + (" timeout=" + timeout)
+                            + (" status=" + status));
+            if (!address.equals(mDevice.getAddress())) {
+                return;
+            }
 
-                    if (!address.equals(mDevice.getAddress())) {
-                        return;
-                    }
+            runOrQueueCallback(
+                    () -> {
+                        final BluetoothGattCallback callback = mCallback;
+                        if (callback != null) {
+                            callback.onConnectionUpdated(
+                                    BluetoothGatt.this, interval, latency, timeout, status);
+                        }
+                    });
+        }
 
-                    runOrQueueCallback(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    final BluetoothGattCallback callback = mCallback;
-                                    if (callback != null) {
-                                        callback.onServiceChanged(BluetoothGatt.this);
-                                    }
-                                }
-                            });
-                }
+        /**
+         * Callback invoked when service changed event is received
+         *
+         * @hide
+         */
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onServiceChanged(String address) {
+            Log.d(
+                    TAG,
+                    "onServiceChanged() - Device=" + BluetoothUtils.toAnonymizedAddress(address));
 
-                /**
-                 * Callback invoked when the given connection's subrate is changed
-                 *
-                 * @hide
-                 */
-                @Override
-                public void onSubrateChange(
-                        String address,
-                        int subrateFactor,
-                        int latency,
-                        int contNum,
-                        int timeout,
-                        int status) {
-                    Log.d(
-                            TAG,
-                            "onSubrateChange() - "
-                                    + (" Device=" + BluetoothUtils.toAnonymizedAddress(address))
-                                    + (" subrateFactor=" + subrateFactor)
-                                    + (" latency=" + latency)
-                                    + (" contNum=" + contNum)
-                                    + (" timeout=" + timeout)
-                                    + (" status=" + status));
+            if (!address.equals(mDevice.getAddress())) {
+                return;
+            }
 
-                    if (!address.equals(mDevice.getAddress())) {
-                        return;
-                    }
+            runOrQueueCallback(
+                    () -> {
+                        final BluetoothGattCallback callback = mCallback;
+                        if (callback != null) {
+                            callback.onServiceChanged(BluetoothGatt.this);
+                        }
+                    });
+        }
 
-                    runOrQueueCallback(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    final BluetoothGattCallback callback = mCallback;
-                                    if (callback != null) {
-                                        callback.onSubrateChange(
-                                                BluetoothGatt.this,
-                                                subrateFactor,
-                                                latency,
-                                                contNum,
-                                                timeout,
-                                                status);
-                                    }
-                                }
-                            });
-                }
-            };
+        /**
+         * Callback invoked when the given connection's subrate is changed
+         *
+         * @hide
+         */
+        @Override
+        @RequiresNoPermission // Callback to app
+        public void onSubrateChange(
+                String address,
+                int subrateFactor,
+                int latency,
+                int contNum,
+                int timeout,
+                int status) {
+            Log.d(
+                    TAG,
+                    "onSubrateChange() - "
+                            + (" Device=" + BluetoothUtils.toAnonymizedAddress(address))
+                            + (" subrateFactor=" + subrateFactor)
+                            + (" latency=" + latency)
+                            + (" contNum=" + contNum)
+                            + (" timeout=" + timeout)
+                            + (" status=" + status));
+
+            if (!address.equals(mDevice.getAddress())) {
+                return;
+            }
+
+            runOrQueueCallback(
+                    () -> {
+                        final BluetoothGattCallback callback = mCallback;
+                        if (callback != null) {
+                            callback.onSubrateChange(
+                                    BluetoothGatt.this,
+                                    subrateFactor,
+                                    latency,
+                                    contNum,
+                                    timeout,
+                                    status);
+                        }
+                    });
+        }
+    }
 
     /* package */ BluetoothGatt(
             IBluetoothGatt iGatt,
@@ -1093,22 +1049,6 @@ public final class BluetoothGatt implements BluetoothProfile {
             }
         }
         return null;
-    }
-
-    /**
-     * Queue the runnable on a {@link Handler} provided by the user, or execute the runnable
-     * immediately if no Handler was provided.
-     */
-    private void runOrQueueCallback(final Runnable cb) {
-        if (mHandler == null) {
-            try {
-                cb.run();
-            } catch (Exception ex) {
-                Log.w(TAG, "Unhandled exception in callback", ex);
-            }
-        } else {
-            mHandler.post(cb);
-        }
     }
 
     /**

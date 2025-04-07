@@ -168,7 +168,6 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
                 @NonNull BluetoothDevice device, @IntRange(from = 0, to = 255) int volume) {}
     }
 
-    @SuppressLint("AndroidFrameworkBluetoothPermission")
     private final IBluetoothVolumeControlCallback mCallback =
             new VolumeControlNotifyCallback(mCallbackExecutorMap);
 

@@ -24,7 +24,6 @@ import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
-import android.annotation.SuppressLint;
 import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
 import android.bluetooth.annotations.RequiresLegacyBluetoothPermission;
 import android.content.AttributionSource;
@@ -70,7 +69,6 @@ public final class BluetoothGattServer implements BluetoothProfile {
     private static final int GATT_MAX_ATTR_LEN = 512;
 
     /** Bluetooth GATT interface callbacks */
-    @SuppressLint("AndroidFrameworkBluetoothPermission")
     private final IBluetoothGattServerCallback mBluetoothGattServerCallback =
             new IBluetoothGattServerCallback.Stub() {
                 /**
@@ -79,6 +77,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onServerRegistered(int status, int serverIf) {
                     Log.d(TAG, "onServerRegistered() - status=" + status + " serverIf=" + serverIf);
                     synchronized (mServerIfLock) {
@@ -98,6 +97,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onServerConnectionState(
                         int status, int serverIf, boolean connected, String address) {
                     Log.d(
@@ -126,6 +126,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onServiceAdded(int status, BluetoothGattService service) {
                     Log.d(
                             TAG,
@@ -175,6 +176,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onCharacteristicReadRequest(
                         String address, int transId, int offset, boolean isLong, int handle) {
                     if (VDBG) Log.d(TAG, "onCharacteristicReadRequest() - handle=" + handle);
@@ -200,6 +202,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onDescriptorReadRequest(
                         String address, int transId, int offset, boolean isLong, int handle) {
                     if (VDBG) Log.d(TAG, "onCharacteristicReadRequest() - handle=" + handle);
@@ -224,6 +227,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onCharacteristicWriteRequest(
                         String address,
                         int transId,
@@ -256,6 +260,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onDescriptorWriteRequest(
                         String address,
                         int transId,
@@ -288,6 +293,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onExecuteWrite(String address, int transId, boolean execWrite) {
                     Log.d(
                             TAG,
@@ -315,6 +321,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onNotificationSent(String address, int status) {
                     if (VDBG) {
                         Log.d(
@@ -342,6 +349,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onMtuChanged(String address, int mtu) {
                     Log.d(
                             TAG,
@@ -367,6 +375,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onPhyUpdate(String address, int txPhy, int rxPhy, int status) {
                     Log.d(
                             TAG,
@@ -394,6 +403,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onPhyRead(String address, int txPhy, int rxPhy, int status) {
                     Log.d(
                             TAG,
@@ -421,6 +431,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onConnectionUpdated(
                         String address, int interval, int latency, int timeout, int status) {
                     Log.d(
@@ -452,6 +463,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onSubrateChange(
                         String address,
                         int subrateFactor,
