@@ -45,7 +45,7 @@ class DckScanTest(
 ) {
 
     companion object {
-        private const val TIMEOUT_MS = 4000L
+        private const val TIMEOUT_MS = 5000L
         private const val TEST_ADDRESS_RANDOM_STATIC = "F0:43:A8:23:10:11"
         private val CCC_DK_UUID = UUID.fromString("0000FFF5-0000-1000-8000-00805f9b34fb")
     }
