@@ -230,14 +230,6 @@ public:
               (override));
 };
 
-class MockLeAcceptlistCallbacks : public LeAcceptlistCallbacks {
-public:
-  MOCK_METHOD(void, OnLeConnectSuccess, (AddressWithType address), (override));
-  MOCK_METHOD(void, OnLeConnectFail, (AddressWithType address, ErrorCode reason), (override));
-  MOCK_METHOD(void, OnLeDisconnection, (AddressWithType address), (override));
-  MOCK_METHOD(void, OnResolvingListChange, (), (override));
-};
-
 class LeImplTest : public ::testing::Test {
 protected:
   void SetUp() override {
@@ -1423,116 +1415,6 @@ TEST_P(LeImplTestParameterizedByDiscoverability, ConnectionCompleteAsDiscoverabl
 
 INSTANTIATE_TEST_SUITE_P(LeImplTestParameterizedByDiscoverability,
                          LeImplTestParameterizedByDiscoverability, ::testing::Values(false, true));
-
-TEST_F(LeImplTest, ConnectionCompleteAcceptlistCallback) {
-  // arrange
-  MockLeAcceptlistCallbacks callbacks;
-  le_impl_->handle_register_le_acceptlist_callbacks(&callbacks);
-  set_random_device_address_policy();
-
-  // expect
-  AddressWithType remote_address;
-  EXPECT_CALL(callbacks, OnLeConnectSuccess(_)).WillOnce([&](AddressWithType addr) {
-    remote_address = addr;
-  });
-
-  // act
-  auto command = LeEnhancedConnectionCompleteBuilder::Create(
-          ErrorCode::SUCCESS, kHciHandle, Role::PERIPHERAL, AddressType::PUBLIC_DEVICE_ADDRESS,
-          remote_address_, local_rpa_, remote_rpa_, 0x0024, 0x0000, 0x0011, ClockAccuracy::PPM_30);
-  auto bytes = Serialize<LeEnhancedConnectionCompleteBuilder>(std::move(command));
-  auto view = CreateLeEventView<hci::LeEnhancedConnectionCompleteView>(bytes);
-  ASSERT_TRUE(view.IsValid());
-  le_impl_->on_le_event(view);
-  sync_handler();
-
-  // assert
-  ASSERT_EQ(remote_public_address_with_type_, remote_address);
-}
-
-TEST_F(LeImplTest, ResolvingListCallback) {
-  // arrange
-  MockLeAcceptlistCallbacks callbacks;
-  le_impl_->handle_register_le_acceptlist_callbacks(&callbacks);
-
-  // expect
-  AddressWithType remote_address;
-  EXPECT_CALL(callbacks, OnResolvingListChange()).Times(1);
-
-  // act
-  le_impl_->add_device_to_resolving_list(remote_public_address_with_type_,
-                                         kPeerIdentityResolvingKey, kLocalIdentityResolvingKey);
-
-  // assert
-  Mock::VerifyAndClearExpectations(&callbacks);
-}
-
-TEST_F(LeImplTest, ConnectionFailedAcceptlistCallback) {
-  // arrange
-  MockLeAcceptlistCallbacks callbacks;
-  le_impl_->handle_register_le_acceptlist_callbacks(&callbacks);
-  set_random_device_address_policy();
-
-  // expect
-  AddressWithType remote_address;
-  ErrorCode reason;
-  EXPECT_CALL(callbacks, OnLeConnectFail(_, _))
-          .WillOnce([&](AddressWithType addr, ErrorCode error) {
-            remote_address = addr;
-            reason = error;
-          });
-
-  // act
-  auto command = LeEnhancedConnectionCompleteBuilder::Create(
-          ErrorCode::CONTROLLER_BUSY, kHciHandle, Role::PERIPHERAL,
-          AddressType::PUBLIC_DEVICE_ADDRESS, remote_address_, local_rpa_, remote_rpa_, 0x0024,
-          0x0000, 0x0011, ClockAccuracy::PPM_30);
-  auto bytes = Serialize<LeEnhancedConnectionCompleteBuilder>(std::move(command));
-  auto view = CreateLeEventView<hci::LeEnhancedConnectionCompleteView>(bytes);
-  ASSERT_TRUE(view.IsValid());
-  le_impl_->on_le_event(view);
-  sync_handler();
-
-  // assert
-  EXPECT_EQ(remote_address, remote_public_address_with_type_);
-  EXPECT_EQ(reason, ErrorCode::CONTROLLER_BUSY);
-}
-
-TEST_F(LeImplTest, DisconnectionAcceptlistCallback) {
-  // expect
-  MockLeAcceptlistCallbacks callbacks;
-  AddressWithType remote_address;
-  EXPECT_CALL(callbacks, OnLeDisconnection(_)).WillOnce([&](AddressWithType addr) {
-    remote_address = addr;
-  });
-  // we need to capture the LeAclConnection so it is not immediately dropped => disconnected
-  std::unique_ptr<LeAclConnection> connection;
-  EXPECT_CALL(mock_le_connection_callbacks_, OnLeConnectSuccess(_, _))
-          .WillOnce([&](AddressWithType, std::unique_ptr<LeAclConnection> conn) {
-            connection = std::move(conn);
-            connection->RegisterCallbacks(&connection_management_callbacks_, handler_);
-          });
-
-  // arrange: an active connection to a peer
-  le_impl_->handle_register_le_acceptlist_callbacks(&callbacks);
-  set_random_device_address_policy();
-  auto command = LeEnhancedConnectionCompleteBuilder::Create(
-          ErrorCode::SUCCESS, kHciHandle, Role::PERIPHERAL, AddressType::PUBLIC_DEVICE_ADDRESS,
-          remote_address_, local_rpa_, remote_rpa_, 0x0024, 0x0000, 0x0011, ClockAccuracy::PPM_30);
-  auto bytes = Serialize<LeEnhancedConnectionCompleteBuilder>(std::move(command));
-  auto view = CreateLeEventView<hci::LeEnhancedConnectionCompleteView>(bytes);
-  ASSERT_TRUE(view.IsValid());
-  le_impl_->on_le_event(view);
-  sync_handler();
-
-  // act
-  le_impl_->on_le_disconnect(kHciHandle, ErrorCode::REMOTE_USER_TERMINATED_CONNECTION);
-  sync_handler();
-
-  // assert
-  EXPECT_EQ(remote_public_address_with_type_, remote_address);
-  Mock::VerifyAndClearExpectations(&callbacks);
-}
 
 TEST_F(LeImplTest, direct_connection_after_background_connection) {
   set_random_device_address_policy();

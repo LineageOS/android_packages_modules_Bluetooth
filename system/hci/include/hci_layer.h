@@ -61,3 +61,5 @@ typedef struct hci_t {
 } hci_t;
 
 const hci_t* hci_layer_get_interface();
+
+bool hci_is_root_inflammation_event_received();

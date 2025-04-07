@@ -31,7 +31,6 @@
 #include "common/byte_array.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager/classic_impl.h"
-#include "hci/acl_manager/le_acceptlist_callbacks.h"
 #include "hci/acl_manager/le_acl_connection.h"
 #include "hci/acl_manager/le_impl.h"
 #include "hci/acl_manager/round_robin_scheduler.h"
@@ -57,7 +56,6 @@ using acl_manager::ClassicAclConnection;
 using acl_manager::ConnectionCallbacks;
 
 using acl_manager::le_impl;
-using acl_manager::LeAcceptlistCallbacks;
 using acl_manager::LeAclConnection;
 using acl_manager::LeConnectionCallbacks;
 
@@ -229,24 +227,11 @@ void AclManager::RegisterLeCallbacks(LeConnectionCallbacks* callbacks, os::Handl
          common::Unretained(handler));
 }
 
-void AclManager::RegisterLeAcceptlistCallbacks(LeAcceptlistCallbacks* callbacks) {
-  log::assert_that(callbacks != nullptr, "assert failed: callbacks != nullptr");
-  CallOn(pimpl_->le_impl_, &le_impl::handle_register_le_acceptlist_callbacks,
-         common::Unretained(callbacks));
-}
-
 void AclManager::UnregisterLeCallbacks(LeConnectionCallbacks* callbacks,
                                        std::promise<void> promise) {
   log::assert_that(callbacks != nullptr, "assert failed: callbacks != nullptr");
   CallOn(pimpl_->le_impl_, &le_impl::handle_unregister_le_callbacks, common::Unretained(callbacks),
          std::move(promise));
-}
-
-void AclManager::UnregisterLeAcceptlistCallbacks(LeAcceptlistCallbacks* callbacks,
-                                                 std::promise<void> promise) {
-  log::assert_that(callbacks != nullptr, "assert failed: callbacks != nullptr");
-  CallOn(pimpl_->le_impl_, &le_impl::handle_unregister_le_acceptlist_callbacks,
-         common::Unretained(callbacks), std::move(promise));
 }
 
 void AclManager::CreateConnection(Address address) {

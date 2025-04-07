@@ -251,3 +251,49 @@ java_defaults {
         ],
     },
 }
+
+java_defaults {
+    name: "bluetooth_lint_rules",
+    lint: {
+        error_checks: [
+            "Autofill",
+            "DefaultLocale",
+            "DuplicateDefinition",
+            // "ExportedContentProvider", // TODO: b/289445022 - enable this check
+            // "ExportedReceiver", // TODO: b/289445022 - enable this check
+            // "ExportedService", // TODO: b/289445022 - enable this check
+            "ExtraText",
+            "ExtraTranslation",
+            "GestureBackNavigation",
+            "GuardedLogInvocation",
+            "HandlerLeak",
+            "InflateParams",
+            // "InvalidPermission", // TODO: b/289445022 - enable this check
+            "LabelFor",
+            "MissingClass",
+            // "MissingVersion", // TODO: b/289445022 - enable this check
+            "MonochromeLauncherIcon",
+            "NewApi",
+            "ObsoleteSdkInt",
+            // "QueryAllPackagesPermission", // TODO: b/289445022 - enable this check
+            "Recycle",
+            "RtlHardcoded",
+            "RtlSymmetry",
+            "ScrollViewSize",
+            "SetTextI18n",
+            "SimpleDateFormat",
+            "StaticFieldLeak",
+            "StringFormatCount",
+            "StringFormatInvalid",
+            "TextFields",
+            "TypographyEllipsis",
+            "UseSparseArrays",
+            "UseValueOf",
+            "VectorPath",
+            "VisibleForTests",
+            "Wakelock",
+            "WakelockTimeout",
+        ],
+        extra_check_modules: ["BluetoothLintChecker"],
+    },
+}

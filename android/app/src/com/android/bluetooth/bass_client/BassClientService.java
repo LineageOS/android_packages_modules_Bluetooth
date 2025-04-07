@@ -419,7 +419,7 @@ public class BassClientService extends ProfileService {
                                             break;
                                     }
                                     Handler handler = getOrCreateHandler(broadcastId);
-                                    if (!hasAnyMessagesOrCallbacks(handler)) {
+                                    if (!handler.hasMessagesOrCallbacks()) {
                                         mHandlers.remove(broadcastId);
                                     }
                                 }
@@ -443,7 +443,7 @@ public class BassClientService extends ProfileService {
             }
             Handler handler = getOrCreateHandler(broadcastId);
             handler.removeMessages(msg);
-            if (!hasAnyMessagesOrCallbacks(handler)) {
+            if (!handler.hasMessagesOrCallbacks()) {
                 mHandlers.remove(broadcastId);
             }
         }
@@ -461,7 +461,7 @@ public class BassClientService extends ProfileService {
                 Map.Entry<Integer, Handler> entry = iterator.next();
                 Handler handler = entry.getValue();
                 handler.removeMessages(msg);
-                if (!hasAnyMessagesOrCallbacks(handler)) {
+                if (!handler.hasMessagesOrCallbacks()) {
                     iterator.remove();
                 }
             }
@@ -473,17 +473,6 @@ public class BassClientService extends ProfileService {
             }
             Handler handler = getOrCreateHandler(broadcastId);
             return handler.hasMessages(msg);
-        }
-
-        @SuppressLint("NewApi") // Api is protected by flag check and the lint is wrong
-        private static boolean hasAnyMessagesOrCallbacks(Handler handler) {
-            if (android.os.Flags.mainlineVcnPlatformApi()) {
-                return handler.hasMessagesOrCallbacks();
-            } else {
-                return handler.hasMessages(MESSAGE_SYNC_LOST_TIMEOUT)
-                        || handler.hasMessages(MESSAGE_OOR_MONITOR_TIMEOUT)
-                        || handler.hasMessages(MESSAGE_BIG_MONITOR_TIMEOUT);
-            }
         }
     }
 

@@ -26,7 +26,7 @@ cc_library_static {
     ],
     apex_available: ["com.android.bt"],
     host_supported: true,
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
 }
 
 cc_library_static {
@@ -240,7 +240,7 @@ cc_library_static {
     ],
     apex_available: ["com.android.bt"],
     host_supported: true,
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
 }
 
 filegroup {
@@ -804,6 +804,7 @@ cc_test {
     ],
     srcs: [
         ":TestCommonMockFunctions",
+        ":TestMockHci",
         ":TestMockMainShim",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
@@ -1870,6 +1871,7 @@ cc_test {
         ":TestCommonMockFunctions",
         ":TestMockBta",
         ":TestMockBtif",
+        ":TestMockHci",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
         ":TestMockStackAcl",
@@ -1945,6 +1947,7 @@ cc_test {
         ":TestCommonStackConfig",
         ":TestMockBta",
         ":TestMockBtif",
+        ":TestMockHci",
         ":TestMockMainShim",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
@@ -2044,6 +2047,7 @@ cc_test {
         ":TestCommonStackConfig",
         ":TestMockBta",
         ":TestMockBtif",
+        ":TestMockHci",
         ":TestMockJni",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
@@ -2141,6 +2145,7 @@ cc_test {
         ":TestMockBta",
         ":TestMockBtif",
         ":TestMockDevice",
+        ":TestMockHci",
         ":TestMockLegacyHciInterface",
         ":TestMockMainShim",
         ":TestMockMainShim",

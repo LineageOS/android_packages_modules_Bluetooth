@@ -31,7 +31,6 @@
 #include "common/le_conn_params.h"
 #include "hci/acl_manager/assembler.h"
 #include "hci/acl_manager/classic_impl.h"
-#include "hci/acl_manager/le_acceptlist_callbacks.h"
 #include "hci/acl_manager/le_acl_connection.h"
 #include "hci/acl_manager/le_connection_callbacks.h"
 #include "hci/acl_manager/le_connection_management_callbacks.h"
@@ -339,9 +338,6 @@ public:
     le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectFail,
                                               common::Unretained(le_client_callbacks_), address,
                                               status));
-    if (le_acceptlist_callbacks_ != nullptr) {
-      le_acceptlist_callbacks_->OnLeConnectFail(address, status);
-    }
   }
 
   void set_connectability_state(ConnectabilityState state) {
@@ -540,9 +536,6 @@ public:
       le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectSuccess,
                                                 common::Unretained(le_client_callbacks_),
                                                 remote_address, std::move(connection)));
-      if (le_acceptlist_callbacks_ != nullptr) {
-        le_acceptlist_callbacks_->OnLeConnectSuccess(remote_address);
-      }
     }
   }
 
@@ -577,9 +570,6 @@ public:
               callbacks->OnDisconnection(reason);
             },
             kRemoveConnectionAfterwards);
-    if (le_acceptlist_callbacks_ != nullptr) {
-      le_acceptlist_callbacks_->OnLeDisconnection(remote_address);
-    }
     connections.crash_on_unknown_handle_ = event_also_routes_to_other_receivers;
 
     if (background_connections_.count(remote_address) == 1) {
@@ -684,9 +674,6 @@ public:
             conn_handle, DataAsPeripheral{adv_set_address, adv_set_id, is_discoverable});
 
     if (connection != nullptr) {
-      if (le_acceptlist_callbacks_ != nullptr) {
-        le_acceptlist_callbacks_->OnLeConnectSuccess(connection->GetRemoteAddress());
-      }
       if (!com::android::bluetooth::flags::remove_hop_from_le_adv_set_term()) {
         le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectSuccess,
                                                   common::Unretained(le_client_callbacks_),
@@ -785,19 +772,15 @@ public:
     le_address_manager_->AddDeviceToResolvingList(address_with_type.ToPeerAddressType(),
                                                   address_with_type.GetAddress(), peer_irk,
                                                   local_irk);
-    if (le_acceptlist_callbacks_ != nullptr) {
-      le_acceptlist_callbacks_->OnResolvingListChange();
-    }
   }
 
   void remove_device_from_resolving_list(AddressWithType address_with_type) {
     register_with_address_manager();
     le_address_manager_->RemoveDeviceFromResolvingList(address_with_type.ToPeerAddressType(),
                                                        address_with_type.GetAddress());
-    if (le_acceptlist_callbacks_ != nullptr) {
-      le_acceptlist_callbacks_->OnResolvingListChange();
-    }
   }
+
+  void clear_resolving_list() { le_address_manager_->ClearResolvingList(); }
 
   void update_connectability_state_after_armed(const ErrorCode& status) {
     switch (connectability_state_) {
@@ -1156,8 +1139,6 @@ public:
     remove_device_from_accept_list(address_with_type);
   }
 
-  void clear_resolving_list() { le_address_manager_->ClearResolvingList(); }
-
   void set_privacy_policy_for_initiator_address(LeAddressManager::AddressPolicy address_policy,
                                                 AddressWithType fixed_address, Octet16 rotation_irk,
                                                 std::chrono::milliseconds minimum_rotation_time,
@@ -1187,26 +1168,12 @@ public:
     le_client_handler_ = handler;
   }
 
-  void handle_register_le_acceptlist_callbacks(LeAcceptlistCallbacks* callbacks) {
-    log::assert_that(le_acceptlist_callbacks_ == nullptr,
-                     "assert failed: le_acceptlist_callbacks_ == nullptr");
-    le_acceptlist_callbacks_ = callbacks;
-  }
-
   void handle_unregister_le_callbacks(LeConnectionCallbacks* callbacks,
                                       std::promise<void> promise) {
     log::assert_that(le_client_callbacks_ == callbacks,
                      "Registered le callback entity is different then unregister request");
     le_client_callbacks_ = nullptr;
     le_client_handler_ = nullptr;
-    promise.set_value();
-  }
-
-  void handle_unregister_le_acceptlist_callbacks(LeAcceptlistCallbacks* callbacks,
-                                                 std::promise<void> promise) {
-    log::assert_that(le_acceptlist_callbacks_ == callbacks,
-                     "Registered le callback entity is different then unregister request");
-    le_acceptlist_callbacks_ = nullptr;
     promise.set_value();
   }
 
@@ -1321,7 +1288,6 @@ public:
   classic_impl* classic_impl_ = nullptr;
   LeConnectionCallbacks* le_client_callbacks_ = nullptr;
   os::Handler* le_client_handler_ = nullptr;
-  LeAcceptlistCallbacks* le_acceptlist_callbacks_ = nullptr;
   std::unordered_set<AddressWithType> connecting_le_{};
   bool arm_on_resume_{};
   bool arm_on_disarm_{};
