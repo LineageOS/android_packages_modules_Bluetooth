@@ -1553,12 +1553,12 @@ public class LeAudioService extends ProfileService {
     }
 
     /**
-     * Check if broadcast is active or ready to be re-activated
+     * Check if broadcast is active or ready to be activated
      *
-     * @return true if there is active broadcast or ready to be re-activated, false otherwise
+     * @return true if there is active broadcast or ready to be activated, false otherwise
      */
     public boolean isBroadcastStarted() {
-        return isBroadcastActive() || isBroadcastReadyToBeReActivated();
+        return isBroadcastActive() || isBroadcastReadyToBeActivated();
     }
 
     /**
@@ -2941,10 +2941,16 @@ public class LeAudioService extends ProfileService {
         }
     }
 
-    private boolean isBroadcastReadyToBeReActivated() {
+    private boolean isBroadcastReadyToBeActivated() {
         return areAllGroupsInNotGettingActiveState()
                 && (!mCreateBroadcastQueue.isEmpty()
                         || mBroadcastIdDeactivatedForUnicastTransition.isPresent())
+                && isBroadcastAllowedToBeActivateInCurrentAudioMode();
+    }
+
+    private boolean isBroadcastReadyToBeReActivated() {
+        return areAllGroupsInNotGettingActiveState()
+                && mBroadcastIdDeactivatedForUnicastTransition.isPresent()
                 && isBroadcastAllowedToBeActivateInCurrentAudioMode();
     }
 
@@ -2972,7 +2978,7 @@ public class LeAudioService extends ProfileService {
              */
             boolean leaveConnectedInputDevice = false;
             Integer newDirections = AUDIO_DIRECTION_NONE;
-            if (isBroadcastReadyToBeReActivated()) {
+            if (isBroadcastReadyToBeActivated()) {
                 if (!leaudioUseAudioRecordingListener()) {
                     leaveConnectedInputDevice = true;
                     newDirections |= AUDIO_DIRECTION_INPUT_BIT;
@@ -3037,7 +3043,7 @@ public class LeAudioService extends ProfileService {
             pauseBroadcast(broadcastId.get());
         } else if (status == LeAudioStackEvent.STATUS_LOCAL_STREAM_SUSPENDED) {
             /* Deactivate unicast device if there is some and broadcast is ready to be activated */
-            if (!areAllGroupsInNotActiveState() && isBroadcastReadyToBeReActivated()) {
+            if (!areAllGroupsInNotActiveState() && isBroadcastReadyToBeActivated()) {
                 removeActiveDevice(true);
             }
         }
@@ -3198,8 +3204,6 @@ public class LeAudioService extends ProfileService {
              *
              * Note: In-band ringtone is disabled if any device in the group removes "Ringtone"
              *  from its available context types.
-             *
-             * Note: Sort out need of isBroadcastReadyToBeReActivated() check in b/395823561
              */
             boolean isRingtoneEnabled =
                     ringtoneContextAvailable
@@ -3212,8 +3216,8 @@ public class LeAudioService extends ProfileService {
                             + (", ringtone supported: " + ringtoneContextAvailable)
                             + (", is fallback Unicast group during broadcast: "
                                     + isFallbackUnicastGroupDuringBroadcast(groupId))
-                            + (", isBroadcastReadyToBeReActivated: "
-                                    + isBroadcastReadyToBeReActivated())
+                            + (", isBroadcastReadyToBeActivated: "
+                                    + isBroadcastReadyToBeActivated())
                             + (", state change: "
                                     + groupDescriptor.mInbandRingtoneEnabled
                                     + " -> "
