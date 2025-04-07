@@ -313,7 +313,7 @@ constexpr uint16_t kLeAudioVendorCompanyIdUndefined = 0x00;
 constexpr uint16_t kLeAudioVendorCodecIdUndefined = 0x00;
 
 constexpr uint16_t kLeAudioVendorCompanyIdGoogle = 0x00E0;
-constexpr uint16_t kLeAudioVendorCodecIdHeadtracking = 0x0001;
+constexpr uint16_t kLeAudioVendorCodecIdHeadtracking = 0x0002;
 
 /* Metadata types from Assigned Numbers */
 constexpr uint8_t kLeAudioMetadataTypePreferredAudioContext = 0x01;
