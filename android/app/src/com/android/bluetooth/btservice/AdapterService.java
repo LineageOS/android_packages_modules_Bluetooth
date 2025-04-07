@@ -4324,7 +4324,7 @@ public class AdapterService extends Service {
                 mWakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, lockName);
             }
 
-            if (!mWakeLock.isHeld()) {
+            if (!mWakeLock.isHeld() || Flags.refCountedNativeWakelock()) {
                 mWakeLock.acquire();
             }
         }
@@ -4342,7 +4342,7 @@ public class AdapterService extends Service {
                 return false;
             }
 
-            if (mWakeLock.isHeld()) {
+            if (mWakeLock.isHeld() || Flags.refCountedNativeWakelock()) {
                 mWakeLock.release();
             }
         }
