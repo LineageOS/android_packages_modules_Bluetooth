@@ -7,16 +7,15 @@ use crate::topstack::get_dispatchers;
 use crate::utils::{LTCheckedPtr, LTCheckedPtrMut};
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::cast::{FromPrimitive, ToPrimitive};
-use std::cmp;
 use std::convert::TryFrom;
 use std::fmt::{Debug, Display, Formatter, Result};
 use std::hash::{Hash, Hasher};
-use std::mem;
 use std::os::fd::RawFd;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
 use std::sync::{Arc, Mutex};
 use std::vec::Vec;
+use std::{cmp, mem};
 use topshim_macros::{cb_variant, gen_cxx_extern_trivial};
 
 #[derive(Clone, Debug, FromPrimitive, ToPrimitive, PartialEq, PartialOrd)]
@@ -1035,7 +1034,7 @@ pub type OobData = bindings::bt_oob_data_s;
 pub enum BaseCallbacks {
     AdapterState(BtState),
     AdapterProperties(BtStatus, i32, Vec<BluetoothProperty>),
-    RemoteDeviceProperties(BtStatus, RawAddress, i32, Vec<BluetoothProperty>),
+    RemoteDeviceProperties(BtStatus, RawAddress, u8, i32, Vec<BluetoothProperty>),
     DeviceFound(i32, Vec<BluetoothProperty>),
     DiscoveryState(BtDiscoveryState),
     PinRequest(RawAddress, String, u32, bool),
@@ -1078,9 +1077,9 @@ u32 -> BtStatus, i32, *mut bindings::bt_property_t, {
     let _2 = ptr_to_vec(_2, _1 as usize);
 });
 cb_variant!(BaseCb, remote_device_properties_cb -> BaseCallbacks::RemoteDeviceProperties,
-u32 -> BtStatus, *mut RawAddress -> RawAddress, i32, *mut bindings::bt_property_t, {
+u32 -> BtStatus, *mut RawAddress -> RawAddress, u8, i32, *mut bindings::bt_property_t, {
     let _1 = unsafe { *(_1 as *const RawAddress) };
-    let _3 = ptr_to_vec(_3, _2 as usize);
+    let _4 = ptr_to_vec(_4, _3 as usize);
 });
 cb_variant!(BaseCb, device_found_cb -> BaseCallbacks::DeviceFound,
 i32, *mut bindings::bt_property_t, {
