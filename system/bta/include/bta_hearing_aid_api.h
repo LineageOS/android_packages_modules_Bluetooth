@@ -106,14 +106,13 @@ typedef enum {
 
 struct HearingDevice {
   RawAddress address;
-  /* This is true only during first connection to profile, until we store the
-   * device */
-  bool first_connection;
+  /* Indicates that storage is stale and needs to be updated */
+  bool stale_storage = false;
   bool service_changed_rcvd;
 
   /* we are making active attempt to connect to this device, 'direct connect'.
    */
-  bool connecting_actively;
+  bool connecting_actively = false;
 
   bool switch_to_background_connection_after_failure;
 
@@ -134,12 +133,12 @@ struct HearingDevice {
 
   tCONN_ID conn_id;
   uint16_t gap_handle;
-  uint16_t audio_control_point_handle;
-  uint16_t audio_status_handle;
-  uint16_t audio_status_ccc_handle;
-  uint16_t service_changed_ccc_handle;
-  uint16_t volume_handle;
-  uint16_t read_psm_handle;
+  uint16_t audio_control_point_handle = 0;
+  uint16_t audio_status_handle = 0;
+  uint16_t audio_status_ccc_handle = 0;
+  uint16_t service_changed_ccc_handle = 0;
+  uint16_t volume_handle = 0;
+  uint16_t read_psm_handle = 0;
 
   uint8_t capabilities;
   uint64_t hi_sync_id;
@@ -166,26 +165,15 @@ struct HearingDevice {
 
   int phy_update_retry_remain;
 
-  HearingDevice(const RawAddress& address, uint8_t capabilities, uint16_t codecs,
-                uint16_t audio_control_point_handle, uint16_t audio_status_handle,
-                uint16_t audio_status_ccc_handle, uint16_t service_changed_ccc_handle,
-                uint16_t volume_handle, uint16_t read_psm_handle, uint64_t hiSyncId,
+  HearingDevice(const RawAddress& address, uint8_t capabilities, uint16_t codecs, uint64_t hiSyncId,
                 uint16_t render_delay, uint16_t preparation_delay)
       : address(address),
-        first_connection(false),
         service_changed_rcvd(false),
-        connecting_actively(false),
         switch_to_background_connection_after_failure(false),
         connection_update_status(NONE),
         accepting_audio(false),
         conn_id(0),
         gap_handle(GAP_INVALID_HANDLE),
-        audio_control_point_handle(audio_control_point_handle),
-        audio_status_handle(audio_status_handle),
-        audio_status_ccc_handle(audio_status_ccc_handle),
-        service_changed_ccc_handle(service_changed_ccc_handle),
-        volume_handle(volume_handle),
-        read_psm_handle(read_psm_handle),
         capabilities(capabilities),
         hi_sync_id(hiSyncId),
         render_delay(render_delay),
@@ -197,20 +185,15 @@ struct HearingDevice {
         gap_opened(false),
         phy_update_retry_remain(kPhyUpdateRetryLimit) {}
 
-  HearingDevice(const RawAddress& address, bool first_connection)
+  HearingDevice(const RawAddress& address)
       : address(address),
-        first_connection(first_connection),
         service_changed_rcvd(false),
-        connecting_actively(first_connection),
+        connecting_actively(true),
         switch_to_background_connection_after_failure(false),
         connection_update_status(NONE),
         accepting_audio(false),
         conn_id(0),
         gap_handle(GAP_INVALID_HANDLE),
-        audio_status_handle(0),
-        audio_status_ccc_handle(0),
-        service_changed_ccc_handle(0),
-        read_psm_handle(0),
         capabilities(0),
         hi_sync_id(0),
         render_delay(0),
@@ -222,7 +205,7 @@ struct HearingDevice {
         gap_opened(false),
         phy_update_retry_remain(kPhyUpdateRetryLimit) {}
 
-  HearingDevice() : HearingDevice(RawAddress::kEmpty, false) {}
+  HearingDevice() : HearingDevice(RawAddress::kEmpty) {}
 
   /* return true if this device represents left Hearing Aid. Returned value is
    * valid only after capabilities are discovered */
