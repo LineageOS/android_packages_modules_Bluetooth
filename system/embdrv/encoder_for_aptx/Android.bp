@@ -41,7 +41,7 @@ cc_library_static {
     tidy: true,
     tidy_checks: tidy_errors,
     tidy_checks_as_errors: tidy_errors,
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     apex_available: ["com.android.bt"],
     visibility: [
         "//packages/modules/Bluetooth:__subpackages__",

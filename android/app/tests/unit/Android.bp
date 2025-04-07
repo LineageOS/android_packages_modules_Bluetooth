@@ -6,8 +6,11 @@ android_test {
     name: "BluetoothJavaUnitTests",
     defaults: ["bluetooth_errorprone_rules"],
 
+    lint: {
+        test: true,
+    },
     sdk_version: "module_current",
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     target_sdk_version: "current",
     libs: [
         "android.test.base.stubs",

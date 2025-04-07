@@ -33,7 +33,7 @@ cc_library {
     generated_headers: ["statslog_bt.h"],
     export_generated_headers: ["statslog_bt.h"],
     apex_available: ["com.android.bt"],
-    min_sdk_version: "30",
+    min_sdk_version: "36",
     shared_libs: [
         "libstatssocket",
     ],
@@ -44,7 +44,7 @@ cc_library {
     name: "libbluetooth_metrics",
     host_supported: true,
     apex_available: ["com.android.bt"],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     defaults: [
         "bluetooth_cflags",
     ],

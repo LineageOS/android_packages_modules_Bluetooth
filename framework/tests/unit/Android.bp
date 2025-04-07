@@ -4,9 +4,10 @@ package {
 
 android_test {
     name: "FrameworkBluetoothTests",
+    defaults: ["bluetooth_lint_rules"],
 
     sdk_version: "module_current",
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     target_sdk_version: "current",
 
     // Include all test java files.

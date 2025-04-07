@@ -19,7 +19,7 @@ cc_library_static {
         "packet_builder.cc",
     ],
     apex_available: ["com.android.bt"],
-    min_sdk_version: "30",
+    min_sdk_version: "36",
     shared_libs: [
         "libbase",
     ],

@@ -34,7 +34,6 @@ import android.database.Cursor;
 import android.media.session.MediaController;
 import android.media.session.MediaSessionManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.Handler;
@@ -44,8 +43,6 @@ import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.provider.Telephony;
 import android.util.Log;
-
-import androidx.annotation.RequiresApi;
 
 import com.android.bluetooth.bass_client.BassClientPeriodicAdvertisingManager;
 import com.android.internal.annotations.VisibleForTesting;
@@ -301,7 +298,6 @@ public class BluetoothMethodProxy {
     }
 
     /** Proxies {@link ComponentCaller#checkContentUriPermission(Uri, int)}. } */
-    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     public int componentCallerCheckContentUriPermission(
             ComponentCaller caller, Uri uri, int modeFlags) {
         return caller.checkContentUriPermission(uri, modeFlags);

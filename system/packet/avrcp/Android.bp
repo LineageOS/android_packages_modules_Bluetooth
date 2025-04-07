@@ -49,5 +49,5 @@ cc_library_static {
         "libchrome",
     ],
     apex_available: ["com.android.bt"],
-    min_sdk_version: "30",
+    min_sdk_version: "36",
 }

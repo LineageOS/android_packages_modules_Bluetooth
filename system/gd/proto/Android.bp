@@ -17,6 +17,6 @@ java_library_static {
         "bluetooth/metrics/bluetooth.proto",
     ],
     apex_available: ["com.android.bt"],
-    min_sdk_version: "30",
+    min_sdk_version: "36",
     sdk_version: "current",
 }

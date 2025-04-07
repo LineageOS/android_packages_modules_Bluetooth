@@ -34,7 +34,7 @@ cc_library_static {
     },
     host_supported: true,
     apex_available: ["com.android.bt"],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
 }
 
 cc_library_headers {
@@ -46,5 +46,5 @@ cc_library_headers {
         "//apex_available:platform",
         "com.android.bt",
     ],
-    min_sdk_version: "30",
+    min_sdk_version: "36",
 }

@@ -5,7 +5,7 @@ cc_library_headers {
     vendor_available: true, // remove when https://r.android.com/3302734 is merged
     visibility: ["//packages/modules/Bluetooth:__subpackages__"],
     apex_available: ["com.android.bt"],
-    min_sdk_version: "33",
+    min_sdk_version: "36",
 }
 
 cc_library {
@@ -28,5 +28,5 @@ cc_library {
     host_supported: true,
     visibility: ["//packages/modules/Bluetooth:__subpackages__"],
     apex_available: ["com.android.bt"],
-    min_sdk_version: "33",
+    min_sdk_version: "36",
 }
