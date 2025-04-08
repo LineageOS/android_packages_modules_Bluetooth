@@ -43,6 +43,7 @@
 #include "bta_gatt_queue.h"
 #include "bta_has_api.h"
 #include "bta_le_audio_uuids.h"
+#include "btif/include/btif_profile_storage.h"
 #include "btm_ble_api_types.h"
 #include "btm_sec.h"
 #include "btm_sec_api_types.h"
@@ -57,6 +58,7 @@
 #include "has_types.h"
 #include "osi/include/alarm.h"
 #include "osi/include/properties.h"
+#include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_types.h"
 #include "types/bluetooth/uuid.h"
 #include "types/bt_transport.h"
@@ -84,21 +86,6 @@ using bluetooth::le_audio::has::kUuidHearingAidPresetControlPoint;
 using bluetooth::le_audio::has::PresetCtpChangeId;
 using bluetooth::le_audio::has::PresetCtpOpcode;
 using namespace bluetooth;
-
-void btif_storage_add_leaudio_has_device(const RawAddress& address,
-                                         std::vector<uint8_t> presets_bin, uint8_t features,
-                                         uint8_t active_preset);
-bool btif_storage_get_leaudio_has_presets(const RawAddress& address,
-                                          std::vector<uint8_t>& presets_bin,
-                                          uint8_t& active_preset);
-void btif_storage_set_leaudio_has_presets(const RawAddress& address,
-                                          std::vector<uint8_t> presets_bin);
-bool btif_storage_get_leaudio_has_features(const RawAddress& address, uint8_t& features);
-void btif_storage_set_leaudio_has_features(const RawAddress& address, uint8_t features);
-void btif_storage_set_leaudio_has_active_preset(const RawAddress& address, uint8_t active_preset);
-void btif_storage_remove_leaudio_has(const RawAddress& address);
-
-bool gatt_profile_get_eatt_support(const RawAddress& remote_bda);
 
 namespace {
 class HasClientImpl;

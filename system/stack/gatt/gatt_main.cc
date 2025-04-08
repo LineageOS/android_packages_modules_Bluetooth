@@ -77,7 +77,7 @@ static void gatt_l2cif_data_ind_cback(uint16_t l2cap_cid, BT_HDR* p_msg);
 static void gatt_send_conn_cback(tGATT_TCB* p_tcb);
 static void gatt_l2cif_congest_cback(uint16_t cid, bool congested);
 static void gatt_on_l2cap_error(uint16_t lcid, uint16_t result);
-bool check_cached_model_name(const RawAddress& bd_addr);
+static bool check_cached_model_name(const RawAddress& bd_addr);
 static void read_dis_cback(const RawAddress& bd_addr, tDIS_VALUE* p_dis_value);
 
 static const tL2CAP_APPL_INFO dyn_info = {gatt_l2cif_connect_ind_cback,
@@ -571,7 +571,7 @@ static void gatt_le_connect_cback(uint16_t /* chan */, const RawAddress& bd_addr
   }
 }
 
-bool check_cached_model_name(const RawAddress& bd_addr) {
+static bool check_cached_model_name(const RawAddress& bd_addr) {
   bt_property_t prop;
   bt_bdname_t model_name;
   BTIF_STORAGE_FILL_PROPERTY(&prop, BT_PROPERTY_REMOTE_MODEL_NUM, sizeof(model_name), &model_name);

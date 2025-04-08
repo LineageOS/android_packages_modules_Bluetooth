@@ -23,8 +23,6 @@
 #include "hci/acl_manager/le_connection_management_callbacks.h"
 #include "hci/event_checkers.h"
 
-using bluetooth::hci::Address;
-
 namespace bluetooth {
 namespace hci {
 namespace acl_manager {

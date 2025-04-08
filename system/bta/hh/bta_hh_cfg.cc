@@ -23,6 +23,7 @@
  *
  ******************************************************************************/
 
+#include "bta/hh/bta_hh_int.h"
 #include "bta/include/bta_hh_api.h"
 #include "internal_include/bt_target.h"
 
@@ -35,7 +36,7 @@
 #endif
 
 /* The type of devices supported by BTA HH and corresponding application ID */
-tBTA_HH_SPT_TOD p_devt_list[BTA_HH_MAX_DEVT_SPT] = {
+static tBTA_HH_SPT_TOD p_devt_list[BTA_HH_MAX_DEVT_SPT] = {
         {BTA_HH_DEVT_MIC, BTA_HH_APP_ID_MI},
         {BTA_HH_DEVT_KBD, BTA_HH_APP_ID_KB},
         {BTA_HH_DEVT_KBD | BTA_HH_DEVT_MIC, BTA_HH_APP_ID_KB},
@@ -46,7 +47,7 @@ tBTA_HH_SPT_TOD p_devt_list[BTA_HH_MAX_DEVT_SPT] = {
         {BTA_HH_DEVT_GPD, BTA_HH_APP_ID_GPAD},
         {BTA_HH_DEVT_UNKNOWN, BTA_HH_APP_ID_3DSG}};
 
-const tBTA_HH_CFG bta_hh_cfg = {
+static const tBTA_HH_CFG bta_hh_cfg = {
         BTA_HH_MAX_DEVT_SPT, /* number of supported type of devices */
         p_devt_list,         /* ToD & AppID list */
         BTA_HH_DISC_BUF_SIZE /* HH SDP discovery database size */

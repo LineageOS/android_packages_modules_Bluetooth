@@ -58,8 +58,7 @@ const std::unordered_set<std::string_view> kClassicPropertyNames = {
         "LinkKey", "SdpDiMaufacturer", "SdpDiModel", "SdpDiHardwareVersion", "SdpDiVendorSource"};
 
 const std::string ConfigCache::kDefaultSectionName = "Global";
-
-std::string kEncryptedStr = "encrypted";
+static const std::string kEncryptedStr = "encrypted";
 
 ConfigCache::ConfigCache(size_t temp_device_capacity,
                          std::unordered_set<std::string_view> persistent_property_names)

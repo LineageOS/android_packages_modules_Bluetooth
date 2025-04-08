@@ -63,6 +63,7 @@
 #include "btif_sdp.h"
 #include "btif_storage.h"
 #include "btif_util.h"
+#include "btif_iot_config.h"
 #include "common/lru_cache.h"
 #include "common/strings.h"
 #include "device/include/interop.h"
@@ -286,11 +287,6 @@ static void btif_stats_add_bond_event(const RawAddress& bd_addr, bt_bond_functio
 
 static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status, const BD_NAME bd_name,
                               bool during_device_search);
-
-/******************************************************************************
- *  Externs
- *****************************************************************************/
-void btif_iot_update_remote_info(tBTA_DM_AUTH_CMPL* p_auth_cmpl, bool is_ble, bool is_ssp);
 
 /******************************************************************************
  *  Functions

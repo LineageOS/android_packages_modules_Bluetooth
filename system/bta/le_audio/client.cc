@@ -147,7 +147,6 @@ using bluetooth::le_audio::types::AudioLocations;
 using bluetooth::le_audio::types::BidirectionalPair;
 using bluetooth::le_audio::types::DataPathState;
 using bluetooth::le_audio::types::hdl_pair;
-using bluetooth::le_audio::types::hdl_pair_wrapper;
 using bluetooth::le_audio::types::kLeAudioContextAllRemoteSource;
 using bluetooth::le_audio::types::kLeAudioContextAllTypesArray;
 using bluetooth::le_audio::types::LeAudioContextType;

@@ -219,7 +219,7 @@ typedef enum {
   PERIODIC_SYNC_LOST,
 } tBTM_BLE_PERIODIC_SYNC_STATE;
 
-struct alarm_t* sync_timeout_alarm;
+static struct alarm_t* sync_timeout_alarm;
 typedef struct {
   uint8_t sid;
   RawAddress remote_bda;
@@ -263,8 +263,7 @@ typedef struct {
   tBTM_BLE_PERIODIC_SYNC p_sync[MAX_SYNC_TRANSACTION];
   tBTM_BLE_PERIODIC_SYNC_TRANSFER sync_transfer[MAX_SYNC_TRANSACTION];
 } tBTM_BLE_PA_SYNC_TX_CB;
-tBTM_BLE_PA_SYNC_TX_CB btm_ble_pa_sync_cb;
-StartSyncCb sync_rcvd_cb;
+static tBTM_BLE_PA_SYNC_TX_CB btm_ble_pa_sync_cb;
 static bool syncRcvdCbRegistered = false;
 static int btm_ble_get_psync_index(uint8_t adv_sid, RawAddress addr);
 static void btm_ble_start_sync_timeout(void* data);
@@ -458,7 +457,7 @@ const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX] = {
         }};
 
 /* check LE combo state supported */
-inline bool BTM_LE_STATES_SUPPORTED(const uint64_t x, uint8_t bit_num) {
+static bool BTM_LE_STATES_SUPPORTED(const uint64_t x, uint8_t bit_num) {
   uint64_t mask = 1 << bit_num;
   return (x)&mask;
 }

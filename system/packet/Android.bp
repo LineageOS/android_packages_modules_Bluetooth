@@ -9,7 +9,10 @@ package {
 
 cc_library_static {
     name: "lib-bt-packets",
-    defaults: ["bluetooth_cflags"],
+    defaults: [
+        "bluetooth_cflags",
+        "bluetooth_tidy",
+    ],
     host_supported: true,
     export_include_dirs: [
         "./",

@@ -39,7 +39,7 @@ const static metrics::ClockTimePoint kInvalidTimePoint{};
 
 MetricsCollector* MetricsCollector::instance = nullptr;
 
-inline int64_t get_timedelta_nanos(const metrics::ClockTimePoint& t1,
+static int64_t get_timedelta_nanos(const metrics::ClockTimePoint& t1,
                                    const metrics::ClockTimePoint& t2) {
   if (t1 == kInvalidTimePoint || t2 == kInvalidTimePoint) {
     return -1;
@@ -64,7 +64,7 @@ const static std::unordered_map<LeAudioContextType, LeAudioMetricsContextType> k
         {LeAudioContextType::RFU, LeAudioMetricsContextType::RFU},
 };
 
-inline int32_t to_atom_context_type(const LeAudioContextType stack_type) {
+static int32_t to_atom_context_type(const LeAudioContextType stack_type) {
   auto it = kContextTypeTable.find(stack_type);
   if (it != kContextTypeTable.end()) {
     return static_cast<int32_t>(it->second);

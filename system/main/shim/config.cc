@@ -25,9 +25,6 @@
 #include "main/shim/entry.h"
 #include "storage/storage_module.h"
 
-using ::bluetooth::shim::GetStorage;
-using ::bluetooth::storage::ConfigCacheHelper;
-
 namespace bluetooth {
 namespace shim {
 

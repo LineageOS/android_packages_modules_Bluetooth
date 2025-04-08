@@ -49,13 +49,10 @@ namespace le_audio {
 
 namespace {
 
-using ::android::hardware::bluetooth::audio::V2_1::PcmParameters;
 using AudioConfiguration_2_1 = ::android::hardware::bluetooth::audio::V2_1::AudioConfiguration;
 using AudioConfigurationAIDL = ::aidl::android::hardware::bluetooth::audio::AudioConfiguration;
-using ::aidl::android::hardware::bluetooth::audio::AudioContext;
 using ::aidl::android::hardware::bluetooth::audio::IBluetoothAudioProvider;
 using ::aidl::android::hardware::bluetooth::audio::LatencyMode;
-using ::aidl::android::hardware::bluetooth::audio::LeAudioCodecConfiguration;
 using ::aidl::android::hardware::bluetooth::audio::SessionType;
 
 using ::bluetooth::le_audio::CodecManager;

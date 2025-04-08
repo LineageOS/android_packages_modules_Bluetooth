@@ -71,7 +71,7 @@ static tGATT_CBACK bta_gatts_cback = {
         .p_subrate_chg_cb = bta_gatts_subrate_chg_cback,
 };
 
-tGATT_APPL_INFO bta_gatts_nv_cback = {bta_gatts_nv_save_cback, bta_gatts_nv_srv_chg_cback};
+static tGATT_APPL_INFO bta_gatts_nv_cback = {bta_gatts_nv_save_cback, bta_gatts_nv_srv_chg_cback};
 
 /*******************************************************************************
  *

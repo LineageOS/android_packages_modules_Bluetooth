@@ -762,7 +762,7 @@ struct tSEARCH_STATE_HISTORY {
   }
 };
 
-bluetooth::common::TimestampedCircularBuffer<tSEARCH_STATE_HISTORY> search_state_history_(
+static bluetooth::common::TimestampedCircularBuffer<tSEARCH_STATE_HISTORY> search_state_history_(
         kSearchStateHistorySize);
 
 /*******************************************************************************

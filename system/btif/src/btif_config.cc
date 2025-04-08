@@ -48,7 +48,6 @@
 #define TIME_STRING_LENGTH sizeof("YYYY-MM-DD HH:MM:SS")
 #define DISABLED "disabled"
 
-using bluetooth::bluetooth_keystore::BluetoothKeystoreInterface;
 using bluetooth::common::AddressObfuscator;
 using namespace bluetooth;
 

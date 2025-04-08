@@ -44,7 +44,7 @@ std::string EpochMillisToString(uint64_t time_ms) {
 }
 }  // namespace
 
-gatt_interface_t default_gatt_interface = {
+static gatt_interface_t default_gatt_interface = {
         .BTA_GATTC_CancelOpen =
                 [](tGATT_IF client_if, const RawAddress& remote_bda, bool is_direct) {
                   gatt_history_.Push(std::format("{:<32s} bd_addr:{} client_if:{} is_direct:{:c}",
@@ -100,7 +100,7 @@ gatt_interface_t default_gatt_interface = {
                 },
 };
 
-gatt_interface_t* gatt_interface = &default_gatt_interface;
+static gatt_interface_t* gatt_interface = &default_gatt_interface;
 
 gatt_interface_t& get_gatt_interface() { return *gatt_interface; }
 

@@ -51,9 +51,8 @@ using namespace bluetooth;
 /*
  * Local function definitions
  */
-uint32_t port_rfc_send_tx_data(tPORT* p_port);
-void port_rfc_closed(tPORT* p_port, uint8_t res);
-void port_get_credits(tPORT* p_port, uint8_t k);
+static uint32_t port_rfc_send_tx_data(tPORT* p_port);
+static void port_get_credits(tPORT* p_port, uint8_t k);
 
 /*******************************************************************************
  *
@@ -978,7 +977,7 @@ void PORT_FlowInd(tRFC_MCB* p_mcb, uint8_t dlci, bool enable_data) {
  * Description      This function is when forward data can be sent to the peer
  *
  ******************************************************************************/
-uint32_t port_rfc_send_tx_data(tPORT* p_port) {
+static uint32_t port_rfc_send_tx_data(tPORT* p_port) {
   uint32_t events = 0;
   BT_HDR* p_buf;
 
@@ -1119,7 +1118,7 @@ void port_rfc_closed(tPORT* p_port, uint8_t res) {
  *                  should be less then 255
  *
  ******************************************************************************/
-void port_get_credits(tPORT* p_port, uint8_t k) {
+static void port_get_credits(tPORT* p_port, uint8_t k) {
   p_port->credit_tx = k;
   if (p_port->credit_tx == 0) {
     p_port->tx.peer_fc = true;

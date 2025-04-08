@@ -41,7 +41,7 @@ using bluetooth::le_audio::LeAudioRecommendationActionCb;
 
 namespace bluetooth::le_audio {
 class LeAudioHealthStatusImpl;
-LeAudioHealthStatusImpl* instance;
+static LeAudioHealthStatusImpl* instance;
 
 class LeAudioHealthStatusImpl : public LeAudioHealthStatus {
 public:
