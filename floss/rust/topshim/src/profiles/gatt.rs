@@ -1220,6 +1220,7 @@ impl GattClient {
         opportunistic: bool,
         initiating_phys: i32,
         preferred_mtu: i32,
+        prefer_relax_mode: bool,
     ) -> BtStatus {
         BtStatus::from(ccall!(
             self,
@@ -1231,7 +1232,8 @@ impl GattClient {
             transport,
             opportunistic,
             initiating_phys,
-            preferred_mtu
+            preferred_mtu,
+            prefer_relax_mode
         ))
     }
 

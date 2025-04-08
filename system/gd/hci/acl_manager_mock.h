@@ -72,7 +72,7 @@ public:
   MOCK_METHOD(void, RegisterLeCallbacks, (LeConnectionCallbacks * callbacks, os::Handler* handler),
               (override));
   MOCK_METHOD(void, CreateConnection, (Address address), (override));
-  MOCK_METHOD(void, CreateLeConnection, (AddressWithType address_with_type, bool is_direct),
+  MOCK_METHOD(void, CreateLeConnection, (AddressWithType address_with_type, bool is_direct, bool prefer_relax_mode),
               (override));
   MOCK_METHOD(void, CancelConnect, (Address address), (override));
   MOCK_METHOD(void, CancelLeConnect, (AddressWithType address_with_type), (override));

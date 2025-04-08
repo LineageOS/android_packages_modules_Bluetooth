@@ -111,6 +111,7 @@ typedef struct {
   bool opportunistic;
   tBT_DEVICE_TYPE remote_addr_type;
   uint16_t preferred_mtu;
+  bool prefer_relax_mode;
 } tBTA_GATTC_API_OPEN;
 
 typedef struct {

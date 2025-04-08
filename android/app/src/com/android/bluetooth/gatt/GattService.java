@@ -127,6 +127,9 @@ public class GattService extends ProfileService {
                     "com.google.android.apps.adm",
                     "");
 
+    private static final Set<String> GATT_CLIENTS_PREFER_RELAX_MODE =
+            new HashSet<>(Arrays.asList("activeunlock_primary", "channelsoundingtestapp"));
+
     @VisibleForTesting static final int GATT_CLIENT_LIMIT_PER_APP = 32;
 
     @Nullable public final ScanController mScanController;
@@ -1090,6 +1093,14 @@ public class GattService extends ProfileService {
         int preferredMtu = 0;
 
         String packageName = source.getPackageName();
+        boolean preferRelaxMode = false;
+        String tag = getLastAttributionTag(source);
+        if (tag != null
+                && GATT_CLIENTS_PREFER_RELAX_MODE.stream()
+                        .anyMatch(suffix -> tag.endsWith(suffix))) {
+            preferRelaxMode = true;
+        }
+        Log.d(TAG, "clientConnect tag: " + tag + ", preferRelaxMode:" + preferRelaxMode);
         if (packageName != null) {
             mAdapterService.addAssociatedPackage(device, packageName);
 
@@ -1132,7 +1143,8 @@ public class GattService extends ProfileService {
                 transport,
                 opportunistic,
                 phy,
-                preferredMtu);
+                preferredMtu,
+                preferRelaxMode);
     }
 
     @RequiresPermission(BLUETOOTH_CONNECT)
