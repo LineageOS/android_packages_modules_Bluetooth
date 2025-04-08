@@ -540,7 +540,7 @@ SnoopLogger::SnoopLogger(os::Handler* handler, std::string snoop_log_path,
                          bool qualcomm_debug_log_enabled,
                          const std::chrono::milliseconds snooz_log_life_time,
                          const std::chrono::milliseconds snooz_log_delete_alarm_interval,
-                         bool snoop_log_persists)
+                         bool snoop_log_persists, int port)
     : Module(handler),
       btsnoop_mode_(btsnoop_mode),
       snoop_log_path_(std::move(snoop_log_path)),
@@ -550,7 +550,8 @@ SnoopLogger::SnoopLogger(os::Handler* handler, std::string snoop_log_path,
       qualcomm_debug_log_enabled_(qualcomm_debug_log_enabled),
       snooz_log_life_time_(snooz_log_life_time),
       snooz_log_delete_alarm_interval_(snooz_log_delete_alarm_interval),
-      snoop_log_persists(snoop_log_persists) {
+      snoop_log_persists(snoop_log_persists),
+      port_(port) {
   if (btsnoop_mode_ == kBtSnoopLogModeFiltered) {
     log::info("Snoop Logs filtered mode enabled");
     EnableFilters();
@@ -1348,7 +1349,8 @@ void SnoopLogger::Start() {
     if (is_debug_build()) {
       // Cf b/375056207: The implementation must pass a security review
       // in order to enable the snoop logger socket in user builds.
-      auto snoop_logger_socket = std::make_unique<SnoopLoggerSocket>(&syscall_if);
+      auto snoop_logger_socket = std::make_unique<SnoopLoggerSocket>(
+              &syscall_if, SnoopLoggerSocket::kLocalHost, port_);
       snoop_logger_socket_thread_ =
               std::make_unique<SnoopLoggerSocketThread>(std::move(snoop_logger_socket));
       auto thread_started_future = snoop_logger_socket_thread_->Start();

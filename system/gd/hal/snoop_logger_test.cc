@@ -159,7 +159,7 @@ protected:
   std::unique_ptr<SnoopLogger> NewSnoopLogger(size_t max_packets_per_file,
                                               const std::string& btsnoop_mode,
                                               bool qualcomm_debug_log_enabled,
-                                              bool snoop_log_persists) {
+                                              bool snoop_log_persists, int port = 0) {
     os::Handler* handler = com::android::bluetooth::flags::provider_->same_handler_for_all_modules()
                                    ? shared_handler_
                                    : new os::Handler(thread_);
@@ -167,7 +167,7 @@ protected:
     return std::unique_ptr<SnoopLogger>(new SnoopLogger(
             handler, temp_snoop_log_.string(), temp_snooz_log_.string(), max_packets_per_file,
             SnoopLogger::GetMaxPacketsPerBuffer(), btsnoop_mode, qualcomm_debug_log_enabled, 20ms,
-            5ms, snoop_log_persists));
+            5ms, snoop_log_persists, port));
   }
 
   void DeleteSnoopLogFiles() {
@@ -1136,7 +1136,15 @@ TEST_P(SnoopLoggerTest, profiles_filtered_pbap_fullfilter_test) {
 static constexpr int INVALID_FD = -1;
 
 TEST_P(SnoopLoggerTest, socket_disabled_connect_fail_test) {
-  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, true, false);
+  int port;
+  {
+    // Temporarily run a new logger so that we can grab an unused port.
+    auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, true, false);
+    snoop_logger->Start();
+    port = snoop_logger->GetSocketThread()->GetSocket()->port();
+  }
+
+  auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, true, false, port);
   snoop_logger->Start();
 
   // // Create a TCP socket file descriptor
@@ -1145,8 +1153,8 @@ TEST_P(SnoopLoggerTest, socket_disabled_connect_fail_test) {
 
   struct sockaddr_in addr;
   addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = htonl(SnoopLoggerSocket::DEFAULT_LOCALHOST_);
-  addr.sin_port = htons(SnoopLoggerSocket::DEFAULT_LISTEN_PORT_);
+  addr.sin_addr.s_addr = htonl(SnoopLoggerSocket::kLocalHost);
+  addr.sin_port = htons(port);
 
   int ret;
 
@@ -1169,8 +1177,8 @@ TEST_P(SnoopLoggerTest, default_socket_enabled_capture_recv_test) {
 
   struct sockaddr_in addr;
   addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = htonl(SnoopLoggerSocket::DEFAULT_LOCALHOST_);
-  addr.sin_port = htons(SnoopLoggerSocket::DEFAULT_LISTEN_PORT_);
+  addr.sin_addr.s_addr = htonl(SnoopLoggerSocket::kLocalHost);
+  addr.sin_port = htons(snoop_logger->GetSocketThread()->GetSocket()->port());
 
   // Connect to snoop logger socket
   RUN_NO_INTR(ret = connect(socket_fd, (struct sockaddr*)&addr, sizeof(addr)));
@@ -1209,8 +1217,8 @@ TEST_P(SnoopLoggerTest, custom_socket_register_enabled_capture_recv_test) {
 
   int new_port = 8873;
   SyscallWrapperImpl syscall_if;
-  auto sls = std::make_unique<SnoopLoggerSocket>(&syscall_if, SnoopLoggerSocket::DEFAULT_LOCALHOST_,
-                                                 new_port);
+  auto sls =
+          std::make_unique<SnoopLoggerSocket>(&syscall_if, SnoopLoggerSocket::kLocalHost, new_port);
   SnoopLoggerSocketThread slsThread(std::move(sls));
   auto thread_start_future = slsThread.Start();
   thread_start_future.wait();
@@ -1224,7 +1232,7 @@ TEST_P(SnoopLoggerTest, custom_socket_register_enabled_capture_recv_test) {
 
   struct sockaddr_in addr;
   addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = htonl(SnoopLoggerSocket::DEFAULT_LOCALHOST_);
+  addr.sin_addr.s_addr = htonl(SnoopLoggerSocket::kLocalHost);
   addr.sin_port = htons(new_port);
 
   int ret = 0;
@@ -1355,8 +1363,8 @@ TEST_P(SnoopLoggerTest, custom_socket_profiles_filtered_hfp_hf_test) {
 
   int new_port = 8873;
   SyscallWrapperImpl syscall_if;
-  auto sls = std::make_unique<SnoopLoggerSocket>(&syscall_if, SnoopLoggerSocket::DEFAULT_LOCALHOST_,
-                                                 new_port);
+  auto sls =
+          std::make_unique<SnoopLoggerSocket>(&syscall_if, SnoopLoggerSocket::kLocalHost, new_port);
   SnoopLoggerSocketThread slsThread(std::move(sls));
   auto thread_start_future = slsThread.Start();
   thread_start_future.wait();
@@ -1373,7 +1381,7 @@ TEST_P(SnoopLoggerTest, custom_socket_profiles_filtered_hfp_hf_test) {
 
   struct sockaddr_in addr;
   addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = htonl(SnoopLoggerSocket::DEFAULT_LOCALHOST_);
+  addr.sin_addr.s_addr = htonl(SnoopLoggerSocket::kLocalHost);
   addr.sin_port = htons(new_port);
 
   int ret = 0;

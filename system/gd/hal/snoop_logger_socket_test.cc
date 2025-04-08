@@ -27,16 +27,22 @@
 #include "hal/syscall_wrapper_impl.h"
 #include "hal/syscall_wrapper_mock.h"
 
-namespace testing {
+namespace bluetooth {
+namespace {
 
-using bluetooth::hal::SnoopLoggerCommon;
-using bluetooth::hal::SnoopLoggerSocket;
-using bluetooth::hal::SyscallWrapperImpl;
-using bluetooth::hal::SyscallWrapperMock;
+using ::bluetooth::hal::SnoopLoggerCommon;
+using ::bluetooth::hal::SnoopLoggerSocket;
+using ::bluetooth::hal::SyscallWrapperImpl;
+using ::bluetooth::hal::SyscallWrapperMock;
+using ::testing::_;
+using ::testing::AtLeast;
+using ::testing::Eq;
+using ::testing::Invoke;
+using ::testing::Return;
 
 static constexpr int INVALID_FD = -1;
 
-class SnoopLoggerSocketModuleTest : public Test {
+class SnoopLoggerSocketModuleTest : public testing::Test {
 protected:
   SnoopLoggerSocketModuleTest() : sls(&mock) {}
 
@@ -71,7 +77,7 @@ protected:
   const int listen_fd = 66;
   const int write_fd = 99;
 
-  StrictMock<SyscallWrapperMock> mock;
+  testing::StrictMock<SyscallWrapperMock> mock;
   SnoopLoggerSocket sls;
 };
 
@@ -346,7 +352,7 @@ TEST_F(SnoopLoggerSocketModuleTest, test_InitializeCommunications_fail_on_Create
 
   EXPECT_CALL(mock, Pipe2(_, _));
   EXPECT_CALL(mock, Socket);
-  EXPECT_CALL(mock, GetErrno);
+  EXPECT_CALL(mock, GetErrno).Times(AtLeast(1));
 
   EXPECT_CALL(mock, Close(Eq(listen_fd)));
   EXPECT_CALL(mock, Close(Eq(write_fd)));
@@ -511,4 +517,5 @@ TEST_F(SnoopLoggerSocketModuleTest, test_NotifySocketListener_success) {
   ASSERT_EQ(sls.NotifySocketListener(), 0);
 }
 
-}  // namespace testing
+}  // namespace
+}  // namespace bluetooth

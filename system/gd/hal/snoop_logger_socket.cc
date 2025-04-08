@@ -225,6 +225,18 @@ int SnoopLoggerSocket::CreateSocket() {
     return INVALID_FD;
   }
 
+  if (socket_port_ == 0) {
+    socklen_t addr_len = sizeof(addr);
+    if (getsockname(socket_fd, (struct sockaddr*)&addr, &addr_len) == 0) {
+      socket_port_ = ntohs(addr.sin_port);
+      log::info("Listening on port {}", socket_port_);
+    } else {
+      log::error("unable to get local port: {}", strerror(syscall_if_->GetErrno()));
+      SafeCloseSocket(socket_fd);
+      return INVALID_FD;
+    }
+  }
+
   // Mark this socket as a socket that will accept connections.
   ret = syscall_if_->Listen(socket_fd, INCOMING_SOCKET_CONNECTIONS_QUEUE_SIZE_);
   if (ret < 0) {
