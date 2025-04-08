@@ -3480,8 +3480,10 @@ void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status, uint8_t 
     }
   }
 
-  if (status == HCI_ERR_CONNECTION_TOUT) {
-    smp_cancel_start_encryption_attempt();
+  if (status == HCI_ERR_CONNECTION_TOUT &&
+      (!com::android::bluetooth::flags::unrelated_device_smp_cancellation() ||
+       BTM_IsBleConnection(handle))) {
+    smp_cancel_start_encryption_attempt(acl_address_from_handle(handle));
     return;
   }
 

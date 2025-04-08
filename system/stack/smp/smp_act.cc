@@ -256,7 +256,8 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   if (!p_cb->cb_evt && p_cb->discard_sec_req) {
     p_cb->discard_sec_req = false;
-    smp_sm_event(p_cb, SMP_DISCARD_SEC_REQ_EVT, NULL);
+    tSMP_INT_DATA data = {.p_bda = p_cb->pairing_bda};
+    smp_sm_event(p_cb, SMP_DISCARD_SEC_REQ_EVT, &data);
   }
 }
 
@@ -1201,7 +1202,21 @@ void smp_start_enc(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Function     smp_proc_discard
  * Description   processing for discard security request
  ******************************************************************************/
-void smp_proc_discard(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
+void smp_proc_discard(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+  if (com::android::bluetooth::flags::unrelated_device_smp_cancellation()) {
+    if (p_data == nullptr) {
+      log::warn("Invalid data for discard request");
+      return;
+    }
+
+    RawAddress bda = p_data->p_bda;
+    if (bda != RawAddress::kEmpty && bda != p_cb->pairing_bda) {
+      log::warn("Discard requested for wrong device {} while pairing with {}", bda,
+                p_cb->pairing_bda);
+      return;
+    }
+  }
+
   log::verbose("addr:{}", p_cb->pairing_bda);
   if (!(p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD)) {
     smp_reset_control_value(p_cb);
@@ -2093,9 +2108,10 @@ void smp_link_encrypted(const RawAddress& bda, uint8_t encr_enable) {
   }
 }
 
-void smp_cancel_start_encryption_attempt() {
+void smp_cancel_start_encryption_attempt(const RawAddress& bda) {
   log::error("Encryption request cancelled");
-  smp_sm_event(&smp_cb, SMP_DISCARD_SEC_REQ_EVT, NULL);
+  tSMP_INT_DATA data = {.p_bda = bda};
+  smp_sm_event(&smp_cb, SMP_DISCARD_SEC_REQ_EVT, &data);
 }
 
 /*******************************************************************************
