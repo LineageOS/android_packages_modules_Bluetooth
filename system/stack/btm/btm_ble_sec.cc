@@ -1692,6 +1692,10 @@ void btm_ble_connection_established(const RawAddress& bda) {
 
 static bool btm_ble_complete_evt_ignore(const tBTM_SEC_DEV_REC* p_dev_rec,
                                         const tBTM_LE_EVT_DATA* p_data) {
+  if (!com::android::bluetooth::flags::bonded_device_smp_failure_handling()) {
+    return false;
+  }
+
   // Peripheral role: Encryption request results in SMP Security request. SMP may generate a
   // SMP_COMPLT_EVT failure event cases like below:
   // 1) Some central devices don't handle cross-over between encryption and SMP security request
