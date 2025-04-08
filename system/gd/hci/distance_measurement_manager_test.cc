@@ -44,6 +44,7 @@ using bluetooth::packet::BitInserter;
 using testing::_;
 using testing::AtLeast;
 using testing::Return;
+using testing::WithParamInterface;
 
 namespace {
 static constexpr auto kTimeout = std::chrono::seconds(1);
@@ -126,7 +127,7 @@ struct CsConfigCompleteEvent {
   uint8_t main_mode_repetition = 0;   // 0x00 to 0x03
   uint8_t mode_0_steps = 1;           // 0x01 to 0x03
   CsRole cs_role = CsRole::INITIATOR;
-  CsRttType rtt_type = CsRttType::RTT_AA_ONLY;
+  CsRttType rtt_type = CsRttType::RTT_WITH_32_BIT_SOUNDING_SEQUENCE;
   CsSyncPhy sync_phy = CsSyncPhy::LE_2M_PHY;
   std::array<uint8_t, 10> channel_map = GetChannelMap("1FFFFFFFFFFFFC7FFFFC");
   uint8_t channel_map_repetition = 1;  // 0x01 to 0xFF
@@ -183,6 +184,9 @@ struct StartMeasurementParameters {
   Role resp_hci_role = Role::PERIPHERAL;
   uint16_t interval = 200;  // 200ms
   DistanceMeasurementMethod method = DistanceMeasurementMethod::METHOD_CS;
+  // used to override the CsConfigCompleteEvent
+  CsMainModeType main_mode_type = CsMainModeType::MODE_2;
+  CsRttType rtt_type = CsRttType::RTT_AA_ONLY;
 };
 
 struct CsModule {
@@ -377,6 +381,57 @@ struct CsModule {
     return mode2_data;
   }
 
+  static std::vector<uint8_t> GetMode1Data(CsRole cs_role, CsRttType rtt_type) {
+    uint8_t packet_quality = 0;  // no error
+    uint8_t packet_rssi = 0;     // -127 to +20 dBm
+    uint8_t packet_antenna = 1;  // 0x01 to 0x04
+    CsPacketNadm nadm = CsPacketNadm::ATTACK_IS_EXTREMELY_UNLIKELY;
+    uint16_t toa_tod_initiator = 10;  // x*0.5 nanos
+    uint16_t tod_toa_reflector = 10;  // x*0.5 nanos
+    LeCsToneData packet_pct1(/*i_sample=*/0x0A, /*q_sample=*/0x1A);
+    LeCsToneData packet_pct2(/*i_sample=*/0x0B, /*q_sample=*/0x1B);
+    bool has_packet_pct = false;
+    if (rtt_type == CsRttType::RTT_WITH_32_BIT_SOUNDING_SEQUENCE ||
+        rtt_type == CsRttType::RTT_WITH_96_BIT_SOUNDING_SEQUENCE) {
+      has_packet_pct = true;
+    }
+    if (cs_role == CsRole::INITIATOR) {
+      if (has_packet_pct) {
+        return GetCsStepData<LeCsMode1InitatorDataWithPacketPct>(LeCsMode1InitatorDataWithPacketPct(
+                packet_quality, nadm, packet_rssi, toa_tod_initiator, packet_antenna, packet_pct1,
+                packet_pct2));
+      } else {
+        return GetCsStepData<LeCsMode1InitatorData>(LeCsMode1InitatorData(
+                packet_quality, nadm, packet_rssi, toa_tod_initiator, packet_antenna));
+      }
+    } else {
+      if (has_packet_pct) {
+        return GetCsStepData<LeCsMode1ReflectorDataWithPacketPct>(
+                LeCsMode1ReflectorDataWithPacketPct(packet_quality, nadm, packet_rssi,
+                                                    tod_toa_reflector, packet_antenna, packet_pct1,
+                                                    packet_pct2));
+      } else {
+        return GetCsStepData<LeCsMode1ReflectorData>(LeCsMode1ReflectorData(
+                packet_quality, nadm, packet_rssi, tod_toa_reflector, packet_antenna));
+      }
+    }
+  }
+
+  static std::vector<uint8_t> GetMode3Data(uint8_t num_antenna_path,
+                                           uint8_t antenna_permutation_index, CsRole cs_role,
+                                           CsRttType rtt_type) {
+    std::vector<uint8_t> mode3_data;
+    std::vector<uint8_t> mode1_data = GetMode1Data(cs_role, rtt_type);
+    std::vector<uint8_t> mode2_data = GetMode2Data(num_antenna_path, antenna_permutation_index);
+
+    mode3_data.insert(mode3_data.end(), std::make_move_iterator(mode1_data.begin()),
+                      std::make_move_iterator(mode1_data.end()));
+    mode3_data.insert(mode3_data.end(), std::make_move_iterator(mode2_data.begin()),
+                      std::make_move_iterator(mode2_data.end()));
+
+    return mode3_data;
+  }
+
   static std::vector<LeCsResultDataStructure> GetSubeventMode2Data(CsRole role) {
     std::vector<LeCsResultDataStructure> results;
     uint8_t channel = 1;
@@ -386,6 +441,29 @@ struct CsModule {
             /*num_antenna_path=*/2, /*antenna_permutation_index=*/0);
     results.emplace_back(2, channel++, mode2_data);
     results.emplace_back(2, channel++, mode2_data);
+    return results;
+  }
+
+  static std::vector<LeCsResultDataStructure> GetSubeventMode1Data(
+          CsRole role, CsRttType rtt_type = CsRttType::RTT_AA_ONLY) {
+    std::vector<LeCsResultDataStructure> results;
+    uint8_t channel = 1;
+    results.emplace_back(0, channel++, GetMode0Data(role));
+    std::vector<uint8_t> mode1_data = GetMode1Data(role, rtt_type);
+    results.emplace_back(/*mode=*/1, channel++, mode1_data);
+    results.emplace_back(/*mode=*/1, channel++, mode1_data);
+    return results;
+  }
+
+  static std::vector<LeCsResultDataStructure> GetSubeventMode3Data(
+          CsRole role, CsRttType rtt_type = CsRttType::RTT_AA_ONLY) {
+    std::vector<LeCsResultDataStructure> results;
+    uint8_t channel = 1;
+    results.emplace_back(0, channel++, GetMode0Data(role));
+    std::vector<uint8_t> mode3_data = GetMode3Data(
+            /*num_antenna_path=*/2, /*antenna_permutation_index=*/0, role, rtt_type);
+    results.emplace_back(/*mode=*/3, channel++, mode3_data);
+    results.emplace_back(/*mode=*/3, channel++, mode3_data);
     return results;
   }
 
@@ -439,6 +517,8 @@ struct CsModule {
     StartMeasurementTillReadRemoteCaps(params);
 
     CsConfigCompleteEvent cs_config_complete_event;
+    cs_config_complete_event.main_mode_type = params.main_mode_type;
+    cs_config_complete_event.rtt_type = params.rtt_type;
     test_hci_layer_->GetCommand(OpCode::LE_CS_CREATE_CONFIG);
     test_hci_layer_->IncomingEvent(LeCsCreateConfigStatusBuilder::Create(
             /*status=*/ErrorCode::SUCCESS,
@@ -488,6 +568,7 @@ struct CsModule {
   }
 
   void RespondTillProcedureEnableComplete(const StartMeasurementParameters& params) {
+    ReceivedReadLocalCapabilitiesComplete();
     // ras server connect
     dm_manager_->HandleRasServerConnected(params.requester_addr, params.connection_handle,
                                           params.resp_hci_role);
@@ -502,6 +583,8 @@ struct CsModule {
             params.connection_handle));
     // CS config
     CsConfigCompleteEvent cs_config_complete_event;
+    cs_config_complete_event.main_mode_type = params.main_mode_type;
+    cs_config_complete_event.rtt_type = params.rtt_type;
     cs_config_complete_event.cs_role = CsRole::REFLECTOR;
     test_hci_layer_->IncomingLeMetaEvent(
             GetConfigCompleteEvent(params.connection_handle, cs_config_complete_event));
@@ -833,6 +916,7 @@ TEST_F(DistanceMeasurementManagerTest, complete_mode2_procedure) {
           params.connection_handle, procedure_counter, req_subevent_result_2));
   cs_requester_.sync_client_handler();
   // construct responder data
+  log::info("start responder");
   CsModule cs_responder;
   cs_responder.Start();
   cs_responder.RespondTillProcedureEnableComplete(params);
@@ -859,13 +943,137 @@ TEST_F(DistanceMeasurementManagerTest, complete_mode2_procedure) {
   EXPECT_CALL(
           *cs_requester_.mock_ranging_hal_,
           WriteProcedureData(params.connection_handle, CsRole::INITIATOR, _, procedure_counter));
-  log::info("dbg - segment data size : {}", static_cast<int>(segment_data_1.size()));
   cs_requester_.dm_manager_->HandleRemoteData(params.responder_addr, params.connection_handle,
                                               segment_data_1);
 
   cs_requester_.sync_client_handler();
   cs_responder.Stop();
 }
+
+struct RttTypeParams {
+  CsRttType rtt_type;
+};
+
+class DistanceMeasurementManagerRttTest : public DistanceMeasurementManagerTest,
+                                          public WithParamInterface<RttTypeParams> {};
+
+TEST_P(DistanceMeasurementManagerRttTest, complete_mode1_procedure) {
+  auto req_session_future = cs_requester_.GetDmSessionFuture();
+  StartMeasurementParameters params;
+  params.main_mode_type = CsMainModeType::MODE_1;
+  params.rtt_type = GetParam().rtt_type;
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+  uint16_t procedure_counter = 0;
+
+  CsSubeventResultEvent req_subevent_result_1;
+  req_subevent_result_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  req_subevent_result_1.result_data_structures =
+          CsModule::GetSubeventMode1Data(CsRole::INITIATOR, GetParam().rtt_type);
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, req_subevent_result_1));
+  CsSubeventResultEvent req_subevent_result_2;
+  req_subevent_result_2.result_data_structures =
+          CsModule::GetSubeventMode1Data(CsRole::INITIATOR, GetParam().rtt_type);
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, req_subevent_result_2));
+  cs_requester_.sync_client_handler();
+  // construct responder data
+  CsModule cs_responder;
+  cs_responder.Start();
+  cs_responder.RespondTillProcedureEnableComplete(params);
+  cs_responder.dm_manager_->HandleMtuChanged(params.connection_handle, 517);
+  std::vector<uint8_t> segment_data_1;
+  EXPECT_CALL(cs_responder.mock_dm_callbacks_,
+              OnRasFragmentReady(params.requester_addr, procedure_counter, /*is_last=*/true, _))
+          .WillOnce([&segment_data_1](Address /*address*/, uint16_t /*procedure_counter*/,
+                                      bool /*is_last*/, std::vector<uint8_t> raw_data) {
+            segment_data_1 = std::move(raw_data);
+          });
+  CsSubeventResultEvent resp_subevent_result_1;
+  resp_subevent_result_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  resp_subevent_result_1.result_data_structures =
+          CsModule::GetSubeventMode1Data(CsRole::REFLECTOR, GetParam().rtt_type);
+  cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, resp_subevent_result_1));
+  CsSubeventResultEvent resp_subevent_result_2;
+  resp_subevent_result_2.result_data_structures =
+          CsModule::GetSubeventMode1Data(CsRole::REFLECTOR, GetParam().rtt_type);
+  cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, resp_subevent_result_2));
+  cs_responder.sync_client_handler();
+
+  // send responder data
+  EXPECT_CALL(
+          *cs_requester_.mock_ranging_hal_,
+          WriteProcedureData(params.connection_handle, CsRole::INITIATOR, _, procedure_counter));
+  cs_requester_.dm_manager_->HandleRemoteData(params.responder_addr, params.connection_handle,
+                                              segment_data_1);
+
+  cs_requester_.sync_client_handler();
+  cs_responder.Stop();
+}
+
+TEST_P(DistanceMeasurementManagerRttTest, complete_mode3_procedure) {
+  auto req_session_future = cs_requester_.GetDmSessionFuture();
+  StartMeasurementParameters params;
+  params.main_mode_type = CsMainModeType::MODE_3;
+  params.rtt_type = GetParam().rtt_type;
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+  uint16_t procedure_counter = 0;
+
+  CsSubeventResultEvent req_subevent_result_1;
+  req_subevent_result_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  req_subevent_result_1.result_data_structures =
+          CsModule::GetSubeventMode3Data(CsRole::INITIATOR, GetParam().rtt_type);
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, req_subevent_result_1));
+  CsSubeventResultEvent req_subevent_result_2;
+  req_subevent_result_2.result_data_structures =
+          CsModule::GetSubeventMode3Data(CsRole::INITIATOR, GetParam().rtt_type);
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, req_subevent_result_2));
+  cs_requester_.sync_client_handler();
+  // construct responder data
+  CsModule cs_responder;
+  cs_responder.Start();
+  cs_responder.RespondTillProcedureEnableComplete(params);
+  cs_responder.dm_manager_->HandleMtuChanged(params.connection_handle, 517);
+  std::vector<uint8_t> segment_data_1;
+  EXPECT_CALL(cs_responder.mock_dm_callbacks_,
+              OnRasFragmentReady(params.requester_addr, procedure_counter, /*is_last=*/true, _))
+          .WillOnce([&segment_data_1](Address /*address*/, uint16_t /*procedure_counter*/,
+                                      bool /*is_last*/, std::vector<uint8_t> raw_data) {
+            segment_data_1 = std::move(raw_data);
+          });
+  CsSubeventResultEvent resp_subevent_result_1;
+  resp_subevent_result_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  resp_subevent_result_1.result_data_structures =
+          CsModule::GetSubeventMode3Data(CsRole::REFLECTOR, GetParam().rtt_type);
+  cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, resp_subevent_result_1));
+  CsSubeventResultEvent resp_subevent_result_2;
+  resp_subevent_result_2.result_data_structures =
+          CsModule::GetSubeventMode3Data(CsRole::REFLECTOR, GetParam().rtt_type);
+  cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, resp_subevent_result_2));
+  cs_responder.sync_client_handler();
+
+  // send responder data
+  EXPECT_CALL(
+          *cs_requester_.mock_ranging_hal_,
+          WriteProcedureData(params.connection_handle, CsRole::INITIATOR, _, procedure_counter));
+  cs_requester_.dm_manager_->HandleRemoteData(params.responder_addr, params.connection_handle,
+                                              segment_data_1);
+
+  cs_requester_.sync_client_handler();
+  cs_responder.Stop();
+}
+
+INSTANTIATE_TEST_SUITE_P(complete_mode1_mode3_procedure, DistanceMeasurementManagerRttTest,
+                         ::testing::Values(CsRttType::RTT_WITH_32_BIT_SOUNDING_SEQUENCE,
+                                           CsRttType::RTT_WITH_96_BIT_SOUNDING_SEQUENCE,
+                                           CsRttType::RTT_AA_ONLY,
+                                           CsRttType::RTT_WITH_32_BIT_RANDOM_SEQUENCE));
 
 }  // namespace
 }  // namespace hci

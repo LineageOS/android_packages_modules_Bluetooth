@@ -256,6 +256,8 @@ struct tL2CAP_SEC_DATA {
   void* p_ref_data;
 };
 
+typedef void(tL2C_TX_PACKET_COMPLETE_CB)(void*, uint16_t);
+
 struct tL2C_LCB;
 
 /* Define a channel control block (CCB). There may be many channel control
@@ -324,6 +326,11 @@ struct tL2C_CCB {
   bool out_cfg_fcr_present;       // true if cfg response should include fcr options
 
   bool is_flushable; /* true if channel is flushable */
+
+  uint16_t sent_not_acked_for_connection_rsp; /* Num packets sent but not acked when sending
+                                                 connection response */
+  tL2C_TX_PACKET_COMPLETE_CB* tx_packet_complete_cb{
+          nullptr}; /* Transmit packet complete callback */
 
   uint16_t fixed_chnl_idle_tout; /* Idle timeout to use for the fixed channel */
   uint16_t tx_data_len;
@@ -765,6 +772,7 @@ void l2cu_process_fixed_chnl_resp(tL2C_LCB* p_lcb);
 bool l2cu_is_ccb_active(tL2C_CCB* p_ccb);
 void l2cu_set_lcb_handle(tL2C_LCB& p_lcb, uint16_t handle);
 tL2CAP_CONN le_result_to_l2c_conn(tL2CAP_LE_RESULT_CODE result);
+void l2cu_update_outstanding_packets_lcb(tL2C_LCB* p_lcb, uint16_t num_sent);
 
 /* Functions provided for Broadcom Aware
  ***************************************
@@ -813,7 +821,6 @@ void l2cu_set_info_rsp_mask(uint32_t mask);
  ***********************************
  */
 void l2c_csm_execute(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data);
-
 void l2c_enqueue_peer_data(tL2C_CCB* p_ccb, BT_HDR* p_buf);
 
 /* Functions provided by l2c_fcr.cc

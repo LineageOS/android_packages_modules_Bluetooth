@@ -16,6 +16,7 @@
 
 #include "hci/acl_manager.h"
 
+#include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -33,6 +34,7 @@
 #include "hci/hci_layer_fake.h"
 #include "os/thread.h"
 #include "packet/raw_builder.h"
+#include "test/mock/mock_main_shim_entry.h"
 
 using namespace std::chrono_literals;
 
@@ -155,10 +157,17 @@ protected:
     fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
+    bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(
+            com::android::bluetooth::flags::same_handler_for_all_modules()
+                    ? client_handler_
+                    : new os::Handler(&thread_));
+    bluetooth::hci::testing::mock_storage_->Start();
     fake_registry_.Start<AclManager>(&thread_, fake_registry_.GetTestHandler());
   }
 
   void TearDown() override {
+    delete bluetooth::hci::testing::mock_storage_;
+    bluetooth::hci::testing::mock_storage_ = nullptr;
     fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
     fake_registry_.StopAll();
   }

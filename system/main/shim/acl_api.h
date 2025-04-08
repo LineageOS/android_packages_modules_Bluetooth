@@ -44,10 +44,6 @@ void ACL_ReadPeerConnectionAddress(uint16_t handle, RawAddress& conn_addr,
 
 std::optional<uint8_t> ACL_GetAdvertisingSetConnectedTo(const RawAddress& addr);
 
-void ACL_AddToAddressResolution(const tBLE_BD_ADDR& legacy_address_with_type,
-                                const Octet16& peer_irk, const Octet16& local_irk);
-void ACL_RemoveFromAddressResolution(const tBLE_BD_ADDR& legacy_address_with_type);
-void ACL_ClearAddressResolution();
 void ACL_ClearFilterAcceptList();
 void ACL_SendConnectionParameterUpdateRequest(uint16_t handle, uint16_t conn_int_min,
                                               uint16_t conn_int_max, uint16_t conn_latency,

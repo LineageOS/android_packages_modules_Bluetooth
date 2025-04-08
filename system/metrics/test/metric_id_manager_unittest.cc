@@ -22,11 +22,12 @@
 
 #include <thread>
 
-namespace testing {
+namespace bluetooth {
+namespace {
 
 using bluetooth::common::MetricIdManager;
 
-static bluetooth::hci::Address kthAddress(uint32_t k) {
+bluetooth::hci::Address kthAddress(uint32_t k) {
   uint8_t array[6] = {0, 0, 0, 0, 0, 0};
   for (int i = 5; i >= 2; i--) {
     array[i] = k % 256;
@@ -36,7 +37,7 @@ static bluetooth::hci::Address kthAddress(uint32_t k) {
   return addr;
 }
 
-static std::unordered_map<bluetooth::hci::Address, int> generateAddresses(const uint32_t num) {
+std::unordered_map<bluetooth::hci::Address, int> generateAddresses(const uint32_t num) {
   // generate first num of mac address -> id pairs
   // input may is always valid 256^6 = 2^48 > 2^32
   std::unordered_map<bluetooth::hci::Address, int> device_map;
@@ -47,7 +48,7 @@ static std::unordered_map<bluetooth::hci::Address, int> generateAddresses(const 
 }
 
 TEST(BluetoothMetricIdManagerTest, MetricIdManagerInitCloseTest) {
-  auto& manager = MetricIdManager::GetInstance();
+  MetricIdManager manager;
   std::unordered_map<bluetooth::hci::Address, int> paired_device_map;
   MetricIdManager::Callback callback = [](const bluetooth::hci::Address&, const int) {
     return true;
@@ -58,7 +59,7 @@ TEST(BluetoothMetricIdManagerTest, MetricIdManagerInitCloseTest) {
 }
 
 TEST(BluetoothMetricIdManagerTest, MetricIdManagerNotCloseTest) {
-  auto& manager = MetricIdManager::GetInstance();
+  MetricIdManager manager;
   std::unordered_map<bluetooth::hci::Address, int> paired_device_map;
   MetricIdManager::Callback callback = [](const bluetooth::hci::Address&, const int) {
     return true;
@@ -71,7 +72,7 @@ TEST(BluetoothMetricIdManagerTest, MetricIdManagerNotCloseTest) {
 }
 
 TEST(BluetoothMetricIdManagerTest, MetricIdManagerScanDeviceFromEmptyTest) {
-  auto& manager = MetricIdManager::GetInstance();
+  MetricIdManager manager;
   std::unordered_map<bluetooth::hci::Address, int> paired_device_map;
   MetricIdManager::Callback callback = [](const bluetooth::hci::Address&, const int) {
     return true;
@@ -86,7 +87,7 @@ TEST(BluetoothMetricIdManagerTest, MetricIdManagerScanDeviceFromEmptyTest) {
 }
 
 TEST(BluetoothMetricIdManagerTest, MetricIdManagerScanDeviceFromFilledTest) {
-  auto& manager = MetricIdManager::GetInstance();
+  MetricIdManager manager;
   std::unordered_map<bluetooth::hci::Address, int> paired_device_map;
   MetricIdManager::Callback callback = [](const bluetooth::hci::Address&, const int) {
     return true;
@@ -105,7 +106,7 @@ TEST(BluetoothMetricIdManagerTest, MetricIdManagerScanDeviceFromFilledTest) {
 }
 
 TEST(BluetoothMetricIdManagerTest, MetricIdManagerAllocateExistingTest) {
-  auto& manager = MetricIdManager::GetInstance();
+  MetricIdManager manager;
   std::unordered_map<bluetooth::hci::Address, int> paired_device_map =
           generateAddresses(MetricIdManager::kMaxNumPairedDevicesInMemory);
 
@@ -125,7 +126,7 @@ TEST(BluetoothMetricIdManagerTest, MetricIdManagerAllocateExistingTest) {
 }
 
 TEST(BluetoothMetricIdManagerTest, MetricIdManagerMainTest1) {
-  auto& manager = MetricIdManager::GetInstance();
+  MetricIdManager manager;
   std::unordered_map<bluetooth::hci::Address, int> paired_device_map;
   int placeholder = 22;
   int* pointer = &placeholder;
@@ -173,7 +174,7 @@ TEST(BluetoothMetricIdManagerTest, MetricIdManagerMainTest1) {
 }
 
 TEST(BluetoothMetricIdManagerTest, MetricIdManagerFullPairedMap) {
-  auto& manager = MetricIdManager::GetInstance();
+  MetricIdManager manager;
   // preset a full map
   std::unordered_map<bluetooth::hci::Address, int> paired_device_map =
           generateAddresses(MetricIdManager::kMaxNumPairedDevicesInMemory);
@@ -310,7 +311,7 @@ TEST(BluetoothMetricIdManagerTest, MetricIdManagerFullPairedMap) {
 }
 
 TEST(BluetoothMetricIdManagerTest, MetricIdManagerFullScannedMap) {
-  auto& manager = MetricIdManager::GetInstance();
+  MetricIdManager manager;
   std::unordered_map<bluetooth::hci::Address, int> paired_device_map;
   int placeholder = 22;
   int* pointer = &placeholder;
@@ -364,7 +365,7 @@ TEST(BluetoothMetricIdManagerTest, MetricIdManagerFullScannedMap) {
 
 TEST(BluetoothMetricIdManagerTest, MetricIdManagerMultiThreadPressureTest) {
   std::unordered_map<bluetooth::hci::Address, int> paired_device_map;
-  auto& manager = MetricIdManager::GetInstance();
+  MetricIdManager manager;
   int placeholder = 22;
   int* pointer = &placeholder;
   MetricIdManager::Callback save_callback = [pointer](const bluetooth::hci::Address&, const int) {
@@ -381,8 +382,7 @@ TEST(BluetoothMetricIdManagerTest, MetricIdManagerMultiThreadPressureTest) {
   std::vector<std::thread> workers;
   for (int key = 0; key < static_cast<int>(MetricIdManager::kMaxNumUnpairedDevicesInMemory);
        key++) {
-    workers.push_back(std::thread([key]() {
-      auto& manager = MetricIdManager::GetInstance();
+    workers.push_back(std::thread([key, &manager]() {
       bluetooth::hci::Address fake_mac_address = kthAddress(key);
       manager.AllocateId(fake_mac_address);
       ASSERT_TRUE(manager.SaveDevice(fake_mac_address));
@@ -398,7 +398,7 @@ TEST(BluetoothMetricIdManagerTest, MetricIdManagerMultiThreadPressureTest) {
 
 TEST(BluetoothMetricIdManagerTest, MetricIdManagerWrapAroundTest1) {
   std::unordered_map<bluetooth::hci::Address, int> paired_device_map;
-  auto& manager = MetricIdManager::GetInstance();
+  MetricIdManager manager;
   MetricIdManager::Callback callback = [](const bluetooth::hci::Address&, const int) {
     return true;
   };
@@ -428,7 +428,7 @@ TEST(BluetoothMetricIdManagerTest, MetricIdManagerWrapAroundTest1) {
 
 TEST(BluetoothMetricIdManagerTest, MetricIdManagerWrapAroundTest2) {
   std::unordered_map<bluetooth::hci::Address, int> paired_device_map;
-  auto& manager = MetricIdManager::GetInstance();
+  MetricIdManager manager;
   MetricIdManager::Callback callback = [](const bluetooth::hci::Address&, const int) {
     return true;
   };
@@ -447,4 +447,5 @@ TEST(BluetoothMetricIdManagerTest, MetricIdManagerWrapAroundTest2) {
   ASSERT_TRUE(manager.Close());
 }
 
-}  // namespace testing
+}  // namespace
+}  // namespace bluetooth

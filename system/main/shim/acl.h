@@ -38,8 +38,7 @@ namespace shim {
 class Acl : public hci::acl_manager::ConnectionCallbacks,
             public hci::acl_manager::LeConnectionCallbacks {
 public:
-  Acl(os::Handler* handler, const acl_interface_t& acl_interface,
-      uint8_t max_address_resolution_size);
+  Acl(os::Handler* handler, const acl_interface_t& acl_interface);
 
   Acl(const Acl&) = delete;
   Acl& operator=(const Acl&) = delete;
@@ -72,13 +71,6 @@ public:
   void UpdateConnectionParameters(uint16_t handle, uint16_t conn_int_min, uint16_t conn_int_max,
                                   uint16_t conn_latency, uint16_t conn_timeout, uint16_t min_ce_len,
                                   uint16_t max_ce_len);
-
-  // Address Resolution List
-  void AddToAddressResolution(const hci::AddressWithType& address_with_type,
-                              const std::array<uint8_t, 16>& peer_irk,
-                              const std::array<uint8_t, 16>& local_irk);
-  void RemoveFromAddressResolution(const hci::AddressWithType& address_with_type);
-  void ClearAddressResolution();
 
   void LeSubrateRequest(uint16_t hci_handle, uint16_t subrate_min, uint16_t subrate_max,
                         uint16_t max_latency, uint16_t cont_num, uint16_t sup_tout);

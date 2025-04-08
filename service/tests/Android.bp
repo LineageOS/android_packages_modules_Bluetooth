@@ -20,18 +20,18 @@ package {
 android_test {
     name: "ServiceBluetoothTests",
     defaults: ["service-bluetooth-buildflags"],
+
     lint: {
         test: true,
     },
-    srcs: [
-        "src/**/*.java",
-        "src/**/*.kt",
-    ],
+
+    srcs: ["src/**/*.java"],
 
     static_libs: [
         "androidx.test.espresso.intents",
         "androidx.test.rules",
         "flag-junit",
+        "framework-bluetooth-pre-jarjar",
         "frameworks-base-testutils",
         "kotlinx_coroutines_test",
         "libprotobuf-java-nano",
@@ -50,7 +50,6 @@ android_test {
         "android.test.base.stubs.system",
         "android.test.mock.stubs.system",
         "android.test.runner.stubs.system",
-        "framework-bluetooth-pre-jarjar",
         "service-bluetooth.change-ids",
     ],
     jni_libs: [

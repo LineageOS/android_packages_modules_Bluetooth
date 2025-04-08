@@ -39,6 +39,8 @@ public:
   static const int kMinId;
   static const int kMaxId;
 
+  // NOTE: This is only exposed for tests. Use `GetInstance` otherwise.
+  MetricIdManager();
   ~MetricIdManager();
 
   /**
@@ -109,10 +111,6 @@ public:
    * @return true if delete successfully
    */
   static bool IsValidId(const int id);
-
-protected:
-  // Singleton
-  MetricIdManager();
 
 private:
   mutable std::mutex id_allocator_mutex_;

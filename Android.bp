@@ -172,6 +172,7 @@ java_defaults {
             "-Xep:NarrowingCompoundAssignment:ERROR",
             "-Xep:NonApiType:ERROR",
             "-Xep:NonAtomicVolatileUpdate:ERROR",
+            "-Xep:NonCanonicalStaticMemberImport:ERROR",
             "-Xep:NonCanonicalType:ERROR",
             "-Xep:NotJavadoc:ERROR",
             "-Xep:NullOptional:ERROR",

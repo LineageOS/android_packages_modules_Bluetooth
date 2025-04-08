@@ -48,9 +48,9 @@ std::future<bool> SnoopLoggerSocketThread::Start() {
   log::debug("");
   std::promise<bool> thread_started;
   auto future = thread_started.get_future();
+  stop_thread_ = false;
   listen_thread_ = std::make_unique<std::thread>(&SnoopLoggerSocketThread::Run, this,
                                                  std::move(thread_started));
-  stop_thread_ = false;
   return future;
 }
 

@@ -198,6 +198,7 @@ public:
   SnoopLogger(os::Handler* handler);
   ~SnoopLogger() {
     if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+      alarm_.reset();
       GetHandler()->Clear();
       GetHandler()->WaitUntilStopped(std::chrono::milliseconds(2000));
       delete GetHandler();
@@ -282,6 +283,9 @@ public:
 
   SnoopLoggerSocketThread const* GetSocketThread() { return snoop_logger_socket_thread_.get(); }
 
+  // Some tests require access to the handler.
+  using Module::GetHandler;
+
 protected:
   // Packet type length
   static const size_t PACKET_TYPE_LENGTH;
@@ -299,7 +303,7 @@ protected:
               const std::string& btsnoop_mode, bool qualcomm_debug_log_enabled,
               const std::chrono::milliseconds snooz_log_life_time,
               const std::chrono::milliseconds snooz_log_delete_alarm_interval,
-              bool snoop_log_persists);
+              bool snoop_log_persists, int port = SnoopLoggerSocket::kDefaultPort);
 
   void CloseCurrentSnoopLogFile();
   void OpenNextSnoopLogFile();
@@ -354,6 +358,7 @@ private:
   SnoopLoggerSocketInterface* socket_;
   SyscallWrapperImpl syscall_if;
   bool snoop_log_persists = false;
+  int port_ = SnoopLoggerSocket::kDefaultPort;
 
   friend class SnoopLoggerTest;
 };
