@@ -362,20 +362,6 @@ public class CompanionManager {
     /**
      * Method to check whether it is a companion device
      *
-     * @param address the address of the device
-     * @return true if the address is a companion device, otherwise false
-     */
-    public boolean isCompanionDevice(String address) {
-        try {
-            return isCompanionDevice(mAdapter.getRemoteDevice(address));
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
-    }
-
-    /**
-     * Method to check whether it is a companion device
-     *
      * @param device the Bluetooth device
      * @return true if the device is a companion device, otherwise false
      */
@@ -403,7 +389,7 @@ public class CompanionManager {
     /**
      * Gets the GATT connection parameters of the device
      *
-     * @param address the address of the Bluetooth device
+     * @param device the Bluetooth device
      * @param type type of the parameter, can be GATT_CONN_INTERVAL_MIN, GATT_CONN_INTERVAL_MAX or
      *     GATT_CONN_LATENCY
      * @param priority the priority of the connection, can be
@@ -411,8 +397,8 @@ public class CompanionManager {
      *     BluetoothGatt.CONNECTION_PRIORITY_BALANCED
      * @return the connection parameter in integer
      */
-    public int getGattConnParameters(String address, int type, int priority) {
-        int companionType = isCompanionDevice(address) ? mCompanionType : COMPANION_TYPE_NONE;
+    public int getGattConnParameters(BluetoothDevice device, int type, int priority) {
+        int companionType = isCompanionDevice(device) ? mCompanionType : COMPANION_TYPE_NONE;
         int parameter;
         switch (companionType) {
             case COMPANION_TYPE_PRIMARY:
