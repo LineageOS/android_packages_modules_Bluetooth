@@ -386,57 +386,48 @@ static void bta_hh_start_sdp(tBTA_HH_DEV_CB* p_cb) {
  ******************************************************************************/
 void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   log::assert_that(p_data != nullptr, "assert failed: p_data != nullptr");
-
-  tBTA_HH_CONN conn_dat;
   tBTA_HH_STATUS status = p_data->status;
-
-  log::verbose("status 0x{:2X}", p_data->status);
-
-  /* initialize call back data */
-  memset((void*)&conn_dat, 0, sizeof(tBTA_HH_CONN));
-  conn_dat.handle = p_cb->hid_handle;
-  conn_dat.link_spec = p_cb->link_spec;
 
   /* if SDP compl success */
   if (status == BTA_HH_OK) {
     /* not incoming connection doing SDP, initiate a HID connection */
     if (!p_cb->incoming_conn) {
-      tHID_STATUS ret;
-
       /* open HID connection */
-      ret = HID_HostOpenDev(p_cb->hid_handle);
-      log::verbose("HID_HostOpenDev returned={}", ret);
+      tHID_STATUS ret = HID_HostOpenDev(p_cb->hid_handle);
       if (ret == HID_SUCCESS || ret == HID_ERR_ALREADY_CONN) {
+        log::verbose("HID_HostOpenDev returned={}", hid_status_text(ret));
         status = BTA_HH_OK;
       } else if (ret == HID_ERR_CONN_IN_PROCESS) {
-        /* Connection already in progress, return from here, SDP
-         * will be performed after connection is completed.
-         */
-        log::verbose("connection already in progress");
+        /* Connection already in progress, return from here, SDP will be performed after connection
+         * is completed */
+        log::debug("connection already in progress for {}", p_cb->link_spec);
         return;
       } else {
-        log::verbose("HID_HostOpenDev failed: Status 0x{:2X}", ret);
+        log::warn("HID_HostOpenDev failed: Status {}", hid_status_text(ret));
         /* open fail, remove device from management device list */
         HID_HostRemoveDev(p_cb->hid_handle);
         status = BTA_HH_ERR;
       }
-    } else /* incoming connection SDP finish */
-    {
+    } else { // incoming connection SDP finished
       bta_hh_sm_execute(p_cb, BTA_HH_OPEN_CMPL_EVT, NULL);
     }
+  } else {
+    log::warn("{} status {}", p_cb->link_spec, bta_hh_status_text(p_data->status));
   }
 
   if (status != BTA_HH_OK) {
-    /* Check if this was incoming connection request  from an unknown device
-     * and connection failed due to missing HID Device SDP UUID
-     * In above condition, disconnect the link as well as remove the
-     * device from list of HID devices
-     */
-    if ((status == BTA_HH_ERR_SDP) && (p_cb->incoming_conn) && (p_cb->app_id == 0)) {
-      log::error("SDP failed for  incoming conn hndl:{}", p_cb->incoming_hid_handle);
+    log::warn("SDP failed for {} status:{} incoming:{}, conn hndl:{}, app_id:{}", p_cb->link_spec,
+              bta_hh_status_text(status), p_cb->incoming_conn, p_cb->incoming_hid_handle,
+              p_cb->app_id);
+    /* Check if this was incoming connection request from an unknown device and connection failed
+     * due to missing HID Device SDP UUID. In such condition, disconnect the link as well as remove
+     * the device from list of HID devices */
+    if (status == BTA_HH_ERR_SDP && p_cb->incoming_conn && p_cb->app_id == 0) {
       HID_HostRemoveDev(p_cb->incoming_hid_handle);
     }
-    conn_dat.status = status;
+
+    tBTA_HH_CONN conn_dat = {
+            .link_spec = p_cb->link_spec, .status = status, .handle = p_cb->hid_handle};
     (*bta_hh_cb.p_cback)(BTA_HH_OPEN_EVT, (tBTA_HH*)&conn_dat);
 
     /* move state machine W4_CONN ->IDLE */
@@ -451,7 +442,6 @@ void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   }
   p_cb->incoming_conn = false;
   p_cb->incoming_hid_handle = BTA_HH_INVALID_HANDLE;
-  return;
 }
 
 /*******************************************************************************
@@ -466,31 +456,33 @@ void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
  *
  ******************************************************************************/
 static void bta_hh_bredr_conn(tBTA_HH_DEV_CB* p_cb) {
-  /* If previously virtually cabled device */
-  if (p_cb->app_id) {
-    tBTA_HH_DATA bta_hh_data = {};
-    bta_hh_data.status = BTA_HH_OK;
-
-    log::verbose("skip SDP for known devices");
-
-    if (p_cb->hid_handle == BTA_HH_INVALID_HANDLE) {
-      uint8_t hdl;
-      if (HID_HostAddDev(p_cb->link_spec.addrt.bda, p_cb->attr_mask, &hdl) == HID_SUCCESS) {
-        /* update device CB with newly register device handle */
-        bta_hh_add_device_to_list(p_cb, hdl, p_cb->attr_mask, nullptr, p_cb->sub_class,
-                                  p_cb->dscp_info.ssr_max_latency, p_cb->dscp_info.ssr_min_tout,
-                                  p_cb->app_id);
-        /* update cb_index[] map */
-        bta_hh_cb.cb_index[hdl] = p_cb->index;
-      } else {
-        bta_hh_data.status = BTA_HH_ERR_NO_RES;
-      }
-    }
-
-    bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &bta_hh_data);
-  } else { /* First time connection, start SDP */
+  if (p_cb->app_id == 0) {
+    log::debug("Starting SDP for new device {}", p_cb->link_spec);
     bta_hh_start_sdp(p_cb);
+    return;
   }
+
+  tBTA_HH_DATA bta_hh_data = {.status = BTA_HH_OK};
+  if (p_cb->hid_handle != BTA_HH_INVALID_HANDLE) {
+    log::warn("Already connected to {}, handle: {}", p_cb->link_spec, p_cb->hid_handle);
+    bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &bta_hh_data);
+    return;
+  }
+
+  log::verbose("Reconnecting to {} app_id: {}", p_cb->link_spec, p_cb->app_id);
+  uint8_t hdl;
+  if (HID_HostAddDev(p_cb->link_spec.addrt.bda, p_cb->attr_mask, &hdl) == HID_SUCCESS) {
+    /* Update device CB with newly register device handle */
+    bta_hh_add_device_to_list(p_cb, hdl, p_cb->attr_mask, nullptr, p_cb->sub_class,
+                              p_cb->dscp_info.ssr_max_latency, p_cb->dscp_info.ssr_min_tout,
+                              p_cb->app_id);
+    bta_hh_cb.cb_index[hdl] = p_cb->index;
+  } else {
+    bta_hh_data.status = BTA_HH_ERR_NO_RES;
+    log::warn("Failed to initiated connection to {}", p_cb->link_spec);
+  }
+
+  bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &bta_hh_data);
 }
 
 /*******************************************************************************

@@ -40,6 +40,7 @@
 #include "internal_include/bt_target.h"
 #include "l2cap_types.h"
 #include "l2cdefs.h"
+#include "main/shim/dumpsys.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
@@ -297,11 +298,14 @@ static void hidh_on_l2cap_error(uint16_t l2cap_cid, uint16_t result) {
     return;
   }
 
+  log::warn("device:{} reason:{} retries:{}", hh_cb.devices[dhandle].addr,
+            hci_reason_code_text(to_hci_reason_code(result)), hh_cb.devices[dhandle].conn_tries);
+
   hidh_conn_disconnect(dhandle);
 
   if (result != static_cast<uint16_t>(tL2CAP_CFG_RESULT::L2CAP_CFG_FAILED_NO_REASON)) {
 #if (HID_HOST_MAX_CONN_RETRY > 0)
-    if ((hh_cb.devices[dhandle].conn_tries <= HID_HOST_MAX_CONN_RETRY) &&
+    if (hh_cb.devices[dhandle].conn_tries <= HID_HOST_MAX_CONN_RETRY &&
         (result == HCI_ERR_CONNECTION_TOUT || result == HCI_ERR_UNSPECIFIED ||
          result == HCI_ERR_PAGE_TIMEOUT)) {
       hidh_conn_retry(dhandle);
@@ -890,6 +894,8 @@ tHID_STATUS hidh_conn_initiate(uint8_t dhandle) {
   tHID_HOST_DEV_CTB* p_dev = &hh_cb.devices[dhandle];
 
   if (p_dev->conn.conn_state != HID_CONN_STATE_UNUSED) {
+    log::warn("HID-Host Connection already in progress {} state:{}", p_dev->addr,
+              p_dev->conn.state_text(p_dev->conn.conn_state));
     bluetooth::os::CountCounterMetrics(
             android::bluetooth::CodePathCounterKeyEnum::HIDH_ERR_CONN_IN_PROCESS, 1);
     return HID_ERR_CONN_IN_PROCESS;
@@ -907,7 +913,7 @@ tHID_STATUS hidh_conn_initiate(uint8_t dhandle) {
   p_dev->conn.ctrl_cid = stack::l2cap::get_interface().L2CA_ConnectReqWithSecurity(
           HID_PSM_CONTROL, p_dev->addr, BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT);
   if (p_dev->conn.ctrl_cid == 0) {
-    log::warn("HID-Host Originate failed");
+    log::warn("Control channel L2CAP connection failed {}", p_dev->addr);
     hh_cb.callback(dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE, HID_ERR_L2CAP_FAILED,
                    NULL);
     bluetooth::os::CountCounterMetrics(
@@ -972,3 +978,23 @@ static void hidh_conn_retry(uint8_t dhandle) {
   hidh_try_repage(dhandle);
 #endif
 }
+
+#define DUMPSYS_TAG "BR/EDR HID host"
+void hidh_dump(int fd) {
+  LOG_DUMPSYS_TITLE(fd, DUMPSYS_TAG);
+  LOG_DUMPSYS(fd, "Registered:%s, SDP busy:%s", hh_cb.reg_flag ? "true" : "false",
+              hh_cb.sdp_busy ? "true" : "false");
+  for (int i = 0; i < HID_HOST_MAX_DEVICES; i++) {
+    auto& dev = hh_cb.devices[i];
+    if (dev.in_use) {
+      LOG_DUMPSYS(fd,
+                  "Device:%s, handle:%d, state:%s, conn_state:%s, conn_flags:0x%02x, "
+                  "control_cid:0x%04x, intr_cid:0x%04x",
+                  dev.addr.ToRedactedStringForLogging().c_str(), i,
+                  dev.state == HID_DEV_CONNECTED ? "CONNECTED" : "NOT_CONNECTED",
+                  dev.conn.state_text(dev.conn.conn_state).c_str(), dev.conn.conn_flags,
+                  dev.conn.ctrl_cid, dev.conn.intr_cid);
+    }
+  }
+}
+#undef DUMPSYS_TAG

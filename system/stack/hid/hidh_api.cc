@@ -456,16 +456,19 @@ tHID_STATUS HID_HostRemoveDev(uint8_t dev_handle) {
  ******************************************************************************/
 tHID_STATUS HID_HostOpenDev(uint8_t dev_handle) {
   if (!hh_cb.reg_flag) {
+    log::error("Not registered");
     return HID_ERR_NOT_REGISTERED;
   }
 
-  if ((dev_handle >= HID_HOST_MAX_DEVICES) || (!hh_cb.devices[dev_handle].in_use)) {
+  if (dev_handle >= HID_HOST_MAX_DEVICES || !hh_cb.devices[dev_handle].in_use) {
+    log::error("Handle {} cannot be used", dev_handle);
     bluetooth::os::CountCounterMetrics(
             android::bluetooth::CodePathCounterKeyEnum::HIDH_ERR_INVALID_PARAM_AT_HOST_OPEN_DEV, 1);
     return HID_ERR_INVALID_PARAM;
   }
 
   if (hh_cb.devices[dev_handle].state != HID_DEV_NO_CONN) {
+    log::warn("{} already connected, handle: {}", hh_cb.devices[dev_handle].addr, dev_handle);
     bluetooth::os::CountCounterMetrics(
             android::bluetooth::CodePathCounterKeyEnum::HIDH_ERR_ALREADY_CONN, 1);
     return HID_ERR_ALREADY_CONN;
@@ -551,3 +554,14 @@ tHID_STATUS HID_HostCloseDev(uint8_t dev_handle) {
   hh_cb.devices[dev_handle].conn_tries = HID_HOST_MAX_CONN_RETRY + 1;
   return hidh_conn_disconnect(dev_handle);
 }
+
+/*******************************************************************************
+ *
+ * Function         HID_HostDump
+ *
+ * Description      Dump HID host control block
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void HID_HostDump(int fd) { hidh_dump(fd); }
