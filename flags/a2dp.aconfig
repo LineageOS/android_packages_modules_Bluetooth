@@ -98,3 +98,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "a2dp_fmq_read_exact"
+    namespace: "bluetooth"
+    description: "Modify BluetoothAudioClientInterface::ReadAudioData to return the exact number bytes requested"
+    bug: "409124193"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
