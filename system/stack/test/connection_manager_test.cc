@@ -61,9 +61,14 @@ public:
 
 std::unique_ptr<MockConnTimeout> localConnTimeoutMock;
 
+static bool call_connection_complete_in_callback = false;
+
 namespace connection_manager {
 void on_connection_timed_out(uint8_t app_id, const RawAddress& address) {
   localConnTimeoutMock->OnConnectionTimedOut(app_id, address);
+  if (call_connection_complete_in_callback) {
+    on_connection_complete(address);
+  }
 }
 }  // namespace connection_manager
 
@@ -71,6 +76,7 @@ namespace connection_manager {
 class BleConnectionManager : public testing::Test {
   void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
+    call_connection_complete_in_callback = false;
     localConnTimeoutMock = std::make_unique<MockConnTimeout>();
     /* extern */ test::mock_acl_manager_ =
             std::make_unique<bluetooth::hci::testing::MockAclManager>();
@@ -288,6 +294,39 @@ TEST_F(BleConnectionManager, test_direct_and_background_connect) {
   EXPECT_TRUE(background_connect_remove(CLIENT1, address1));
 
   Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
+}
+
+TEST_F(BleConnectionManager, test_direct_and_background_connect__direct_timeouts) {
+  call_connection_complete_in_callback = true;
+
+  EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(address1_hci, true)).Times(1);
+  EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(_)).Times(0);
+  EXPECT_CALL(*AlarmMock::Get(), AlarmNew(_)).Times(1);
+  alarm_callback_t alarm_callback = nullptr;
+  void* alarm_data = nullptr;
+
+  EXPECT_CALL(*AlarmMock::Get(), AlarmSetOnMloop(_, _, _, _))
+          .Times(1)
+          .WillOnce(DoAll(SaveArg<2>(&alarm_callback), SaveArg<3>(&alarm_data)));
+  // add device as both direct and background connection
+  EXPECT_TRUE(direct_connect_add(CLIENT1, address1));
+  EXPECT_TRUE(background_connect_add(CLIENT1, address1));
+
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
+
+  EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(_)).Times(0);
+  EXPECT_CALL(*localConnTimeoutMock, OnConnectionTimedOut(CLIENT1, address1)).Times(1);
+  EXPECT_CALL(*AlarmMock::Get(), AlarmFree(_)).Times(1);
+  EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(address1_hci, false)).Times(1);
+
+  // simulate timeout on direct connect
+  alarm_callback(alarm_data);
+
+  std::set<tAPP_ID> apps = get_apps_connecting_to(address1);
+  EXPECT_EQ(apps.size(), 1UL);
+  EXPECT_EQ(apps.count(CLIENT1), 1UL);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
+  Mock::VerifyAndClearExpectations(localConnTimeoutMock.get());
 }
 
 TEST_F(BleConnectionManager, test_target_announement_connect) {
