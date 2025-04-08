@@ -27,9 +27,9 @@ import static com.android.bluetooth.opp.BluetoothOppTransferActivity.DIALOG_SEND
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.eq;
 
 import android.content.Context;
 import android.content.Intent;
