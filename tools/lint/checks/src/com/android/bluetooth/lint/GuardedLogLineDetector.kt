@@ -72,56 +72,7 @@ class GuardedLogLineDetector : Detector(), SourceCodeScanner {
     enum class LogEnforcementType {
         NONE,
         VARIABLE,
-        IS_LOGGABLE
-    }
-
-    companion object {
-        const val GUARDED_LOG_INVOCATION_ERROR =
-            "Do not guard log invocations with if blocks using log enforcement variables or" +
-                " isLoggable(). The Log framework does this check for you. Remove the surrounding if" +
-                " block and call to log completely unguarded"
-
-        val ISSUE =
-            Issue.create(
-                id = "GuardedLogInvocation",
-                briefDescription =
-                    "Do not guard log invocations with if blocks using log enforcement variables",
-                explanation =
-                    "The BT stack defines a process default log level, which allows the Android" +
-                        " Log framework (For Java, Kotlin, _and_ Native) to properly enforce log" +
-                        " levels for us. Using our own variables for enforcement causes inconsistency" +
-                        " in log output and double checks against the log level each time we log." +
-                        " Please delete this variable and use the Log functions unguarded in your" +
-                        " code.",
-                category = Category.CORRECTNESS,
-                severity = Severity.ERROR,
-                implementation =
-                    Implementation(GuardedLogLineDetector::class.java, Scope.JAVA_FILE_SCOPE),
-                androidSpecific = true,
-            )
-
-        val WARNING =
-            Issue.create(
-                id = "GuardedLogInvocation",
-                briefDescription =
-                    "Guarding log invocations with calls to Log#isLoggable() should be used" +
-                        " rarely, if ever. Please reconsider what you're logging and/or if it needs" +
-                        "to be guarded in the first place.",
-                explanation =
-                    "The BT stack defines a process default log level, which allows the Android" +
-                        " Log framework (For Java, Kotlin, _and_ Native) to properly enforce log" +
-                        " levels for us. Using Log#isLoggable() calls to guard invocations is at the" +
-                        " very least redunant. It's also typically used in patterns where non-log" +
-                        " code is guarded, like string builders and loops. In rare cases, we've " +
-                        " even seen abuse of log level checking to hide different logic/behavior, or " +
-                        " forms of debug, like writing to disk. Please reconsider what you're logging" +
-                        " and if it should be guarded be Log#isLoggable().",
-                category = Category.CORRECTNESS,
-                severity = Severity.WARNING,
-                implementation =
-                    Implementation(GuardedLogLineDetector::class.java, Scope.JAVA_FILE_SCOPE),
-                androidSpecific = true,
-            )
+        IS_LOGGABLE,
     }
 
     override fun getApplicableUastTypes(): List<Class<out UElement>> {
@@ -290,5 +241,54 @@ class GuardedLogLineDetector : Detector(), SourceCodeScanner {
         val nameUpper = name.uppercase()
         return nameUpper in LOG_ENFORCEMENT_VARS ||
             LOG_ENFORCEMENT_VAR_ENDINGS.any { nameUpper.endsWith(it) }
+    }
+
+    companion object {
+        const val GUARDED_LOG_INVOCATION_ERROR =
+            "Do not guard log invocations with if blocks using log enforcement variables or" +
+                " isLoggable(). The Log framework does this check for you. Remove the surrounding if" +
+                " block and call to log completely unguarded"
+
+        val ISSUE =
+            Issue.create(
+                id = "GuardedLogInvocation",
+                briefDescription =
+                    "Do not guard log invocations with if blocks using log enforcement variables",
+                explanation =
+                    "The BT stack defines a process default log level, which allows the Android" +
+                        " Log framework (For Java, Kotlin, _and_ Native) to properly enforce log" +
+                        " levels for us. Using our own variables for enforcement causes inconsistency" +
+                        " in log output and double checks against the log level each time we log." +
+                        " Please delete this variable and use the Log functions unguarded in your" +
+                        " code.",
+                category = Category.CORRECTNESS,
+                severity = Severity.ERROR,
+                implementation =
+                    Implementation(GuardedLogLineDetector::class.java, Scope.JAVA_FILE_SCOPE),
+                androidSpecific = true,
+            )
+
+        val WARNING =
+            Issue.create(
+                id = "GuardedLogInvocation",
+                briefDescription =
+                    "Guarding log invocations with calls to Log#isLoggable() should be used" +
+                        " rarely, if ever. Please reconsider what you're logging and/or if it needs" +
+                        "to be guarded in the first place.",
+                explanation =
+                    "The BT stack defines a process default log level, which allows the Android" +
+                        " Log framework (For Java, Kotlin, _and_ Native) to properly enforce log" +
+                        " levels for us. Using Log#isLoggable() calls to guard invocations is at the" +
+                        " very least redunant. It's also typically used in patterns where non-log" +
+                        " code is guarded, like string builders and loops. In rare cases, we've " +
+                        " even seen abuse of log level checking to hide different logic/behavior, or " +
+                        " forms of debug, like writing to disk. Please reconsider what you're logging" +
+                        " and if it should be guarded be Log#isLoggable().",
+                category = Category.CORRECTNESS,
+                severity = Severity.WARNING,
+                implementation =
+                    Implementation(GuardedLogLineDetector::class.java, Scope.JAVA_FILE_SCOPE),
+                androidSpecific = true,
+            )
     }
 }
