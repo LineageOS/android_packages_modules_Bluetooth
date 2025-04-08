@@ -84,9 +84,11 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @RunWith(TestParameterInjector.class)
 public class PairingTest {
@@ -833,7 +835,6 @@ public class PairingTest {
      * <p>Expectation: LE connection should be created and LE Pairing should succeed.
      */
     @Test
-    @SuppressLint("FutureReturnValueIgnored") // TODO: b/408051415 - remove exception
     public void testCreateLeSocket_BondLe() throws Exception {
         IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
                 BluetoothDevice.ACTION_ACL_CONNECTED,
@@ -849,17 +850,19 @@ public class PairingTest {
         BluetoothSocket bluetoothSocket = mBumbleDevice.createL2capChannel(TEST_PSM);
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(() -> {
+        Future<?> futureSocketConnection = executor.submit(() -> {
             try {
                 bluetoothSocket.connect();
             } catch (IOException e) {
                 Log.e(TAG, "Exception during socket connection: " + e);
             }
         });
+        try {
+            futureSocketConnection.get(2, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            Log.e(TAG, "Socket connection timed out: " + e);
+        }
         executor.shutdown();
-
-        // Wait for LE L2CAP socket connection above to be called and reach BT stack
-        Thread.sleep(2000);
 
         mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_LE);
 
