@@ -24,6 +24,39 @@ pub async fn handle_read_request<T: AttDatabase>(
     }
 }
 
+pub async fn handle_read_blob_request<T: AttDatabase>(
+    request: att::AttReadBlobRequest,
+    mtu: usize,
+    db: &T,
+) -> Result<att::Att, EncodeError> {
+    let handle = request.attribute_handle.into();
+
+    match db.read_attribute(handle).await {
+        Ok(data) => {
+            let offset = request.offset as usize;
+            if offset > data.len() {
+                return att::AttErrorResponse {
+                    opcode_in_error: att::AttOpcode::ReadBlobRequest,
+                    handle_in_error: handle.into(),
+                    error_code: att::AttErrorCode::InvalidOffset,
+                }
+                .try_into();
+            }
+
+            att::AttReadBlobResponse {
+                value: data[offset..std::cmp::min(offset + mtu - 1, data.len())].into(),
+            }
+            .try_into()
+        }
+        Err(error_code) => att::AttErrorResponse {
+            opcode_in_error: att::AttOpcode::ReadBlobRequest,
+            handle_in_error: handle.into(),
+            error_code,
+        }
+        .try_into(),
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

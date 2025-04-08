@@ -9,7 +9,7 @@ use super::transactions::find_by_type_value::handle_find_by_type_value_request;
 use super::transactions::find_information_request::handle_find_information_request;
 use super::transactions::read_by_group_type_request::handle_read_by_group_type_request;
 use super::transactions::read_by_type_request::handle_read_by_type_request;
-use super::transactions::read_request::handle_read_request;
+use super::transactions::read_request::{handle_read_blob_request, handle_read_request};
 use super::transactions::write_request::handle_write_request;
 
 /// This struct handles all requests needing ACKs. Only ONE should exist per
@@ -73,6 +73,9 @@ impl<Db: AttDatabase> AttRequestHandler<Db> {
             att::AttOpcode::ReadRequest => {
                 Ok(handle_read_request(packet.try_into()?, mtu, &self.db).await?)
             }
+            att::AttOpcode::ReadBlobRequest => {
+                Ok(handle_read_blob_request(packet.try_into()?, mtu, &self.db).await?)
+            }
             att::AttOpcode::ReadByGroupTypeRequest => {
                 Ok(handle_read_by_group_type_request(packet.try_into()?, mtu, &snapshotted_db)
                     .await?)
@@ -128,6 +131,112 @@ mod test {
 
         // assert
         assert_eq!(Ok(response), att::AttReadResponse { value: vec![1, 2, 3] }.try_into());
+    }
+
+    #[test]
+    fn test_read_blob_request() {
+        // arrange
+        let data: Vec<u8> = (0..255).collect();
+        let db = TestAttDatabase::new(vec![(
+            AttAttribute {
+                handle: AttHandle(3),
+                type_: Uuid::new(0x1234),
+                permissions: AttPermissions::READABLE,
+            },
+            data.clone(),
+        )]);
+        let mut handler = AttRequestHandler { db };
+        const MTU: usize = 31;
+
+        // Returns the expected part of `data` for the `offset`.
+        let get_expected_value =
+            |offset| &data[offset..std::cmp::min(offset + MTU - 1, data.len())];
+
+        for offset in [0, 13, 50, 250, 255] {
+            let att_view = att::AttReadBlobRequest {
+                attribute_handle: AttHandle(3).into(),
+                offset: offset as u16,
+            }
+            .try_into()
+            .unwrap();
+
+            // act
+            let response = tokio_test::block_on(handler.process_packet(att_view, MTU));
+
+            // assert
+            assert_eq!(
+                Ok(response),
+                att::AttReadBlobResponse { value: get_expected_value(offset).into() }.try_into()
+            );
+        }
+    }
+
+    #[test]
+    fn test_read_blob_request_with_bad_offset() {
+        // arrange
+        let data: Vec<u8> = (0..255).collect();
+        let db = TestAttDatabase::new(vec![(
+            AttAttribute {
+                handle: AttHandle(3),
+                type_: Uuid::new(0x1234),
+                permissions: AttPermissions::READABLE,
+            },
+            data.clone(),
+        )]);
+        let mut handler = AttRequestHandler { db };
+
+        let att_view =
+            att::AttReadBlobRequest { attribute_handle: AttHandle(3).into(), offset: 256 }
+                .try_into()
+                .unwrap();
+
+        // act
+        let response = tokio_test::block_on(handler.process_packet(att_view, 31));
+
+        // assert
+        assert_eq!(
+            Ok(response),
+            att::AttErrorResponse {
+                opcode_in_error: att::AttOpcode::ReadBlobRequest,
+                handle_in_error: AttHandle(3).into(),
+                error_code: AttErrorCode::InvalidOffset
+            }
+            .try_into()
+        );
+    }
+
+    #[test]
+    fn test_read_blob_request_with_invalid_handle() {
+        // arrange
+        let data: Vec<u8> = (0..255).collect();
+        let db = TestAttDatabase::new(vec![(
+            AttAttribute {
+                handle: AttHandle(3),
+                type_: Uuid::new(0x1234),
+                permissions: AttPermissions::READABLE,
+            },
+            data.clone(),
+        )]);
+        let mut handler = AttRequestHandler { db };
+
+        let att_view =
+            att::AttReadBlobRequest { attribute_handle: AttHandle(4).into(), offset: 256 }
+                .try_into()
+                .unwrap();
+
+        // act
+        let response = tokio_test::block_on(handler.process_packet(att_view, 31));
+
+        // assert
+        assert_eq!(
+            Ok(response),
+            att::AttErrorResponse {
+                opcode_in_error: att::AttOpcode::ReadBlobRequest,
+                handle_in_error: AttHandle(4).into(),
+                error_code: AttErrorCode::InvalidHandle
+            }
+            .try_into()
+        );
     }
 
     #[test]
