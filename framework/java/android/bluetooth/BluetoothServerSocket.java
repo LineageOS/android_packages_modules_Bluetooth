@@ -17,7 +17,7 @@
 package android.bluetooth;
 
 import android.annotation.NonNull;
-import android.annotation.SuppressLint;
+import android.annotation.RequiresNoPermission;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.os.ParcelUuid;
 import android.util.Log;
@@ -69,7 +69,6 @@ import java.io.IOException;
  *
  * @see BluetoothSocket
  */
-@SuppressLint("AndroidFrameworkBluetoothPermission")
 public final class BluetoothServerSocket implements Closeable {
     private static final String TAG = BluetoothServerSocket.class.getSimpleName();
 
@@ -217,6 +216,7 @@ public final class BluetoothServerSocket implements Closeable {
      * @return a connected {@link BluetoothSocket}
      * @throws IOException on error, for example this call was aborted, or timeout
      */
+    @RequiresNoPermission // Permission is checked when creating the socket
     public BluetoothSocket accept() throws IOException {
         return accept(-1);
     }
@@ -233,6 +233,7 @@ public final class BluetoothServerSocket implements Closeable {
      * @return a connected {@link BluetoothSocket}
      * @throws IOException on error, for example this call was aborted, or timeout
      */
+    @RequiresNoPermission // Permission is checked when creating the socket
     public BluetoothSocket accept(int timeout) throws IOException {
         long socketConnectionTime = System.currentTimeMillis();
         BluetoothSocket acceptedSocket = null;
@@ -286,6 +287,7 @@ public final class BluetoothServerSocket implements Closeable {
      *
      * @hide
      */
+    @RequiresNoPermission // Permission is checked when creating the socket
     public int getChannel() {
         return mChannel;
     }
@@ -299,6 +301,7 @@ public final class BluetoothServerSocket implements Closeable {
      *
      * @return the assigned PSM or LE_PSM value depending on transport
      */
+    @RequiresNoPermission // Permission is checked when creating the socket
     public int getPsm() {
         return mChannel;
     }
