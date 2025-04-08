@@ -142,16 +142,6 @@ flag {
 }
 
 flag {
-    name: "bonded_device_smp_failure_handling"
-    namespace: "bluetooth"
-    description: "Don't remove bond on SMP failure for bonded devices in peripheral role"
-    bug: "385181815"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "peripheral_auth_req"
     namespace: "bluetooth"
     description: "Use appropriate authentication requirements for SMP security request in peripheral role"
