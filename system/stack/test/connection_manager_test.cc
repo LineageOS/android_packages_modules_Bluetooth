@@ -7,6 +7,7 @@
 #include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <log/log.h>
 
 #include <memory>
 
@@ -69,6 +70,7 @@ void on_connection_timed_out(uint8_t app_id, const RawAddress& address) {
 namespace connection_manager {
 class BleConnectionManager : public testing::Test {
   void SetUp() override {
+    __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     localConnTimeoutMock = std::make_unique<MockConnTimeout>();
     /* extern */ test::mock_acl_manager_ =
             std::make_unique<bluetooth::hci::testing::MockAclManager>();
