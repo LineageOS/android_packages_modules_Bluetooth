@@ -16,18 +16,14 @@
 
 package com.android.bluetooth.pbap;
 
-import static android.provider.ContactsContract.Data.CONTACT_ID;
-import static android.provider.ContactsContract.Data.DATA1;
-import static android.provider.ContactsContract.Data.MIMETYPE;
-
 import static com.android.bluetooth.TestUtils.MockitoRule;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
@@ -190,7 +186,8 @@ public class BluetoothPbapUtilsTest {
 
     @Test
     public void fetchAndSetContacts_whenIsLoadTrue_returnsContactsSetSize() {
-        MatrixCursor cursor = new MatrixCursor(new String[] {CONTACT_ID, MIMETYPE, DATA1});
+        MatrixCursor cursor =
+                new MatrixCursor(new String[] {Data.CONTACT_ID, Data.MIMETYPE, Data.DATA1});
         cursor.addRow(new Object[] {"id1", Phone.CONTENT_ITEM_TYPE, "01234567"});
         cursor.addRow(new Object[] {"id1", Email.CONTENT_ITEM_TYPE, "android@android.com"});
         cursor.addRow(new Object[] {"id1", StructuredPostal.CONTENT_ITEM_TYPE, "01234"});
@@ -217,7 +214,8 @@ public class BluetoothPbapUtilsTest {
 
     @Test
     public void fetchAndSetContacts_whenIsLoadFalse_returnsContactsSetSize() {
-        MatrixCursor cursor = new MatrixCursor(new String[] {CONTACT_ID, MIMETYPE, DATA1});
+        MatrixCursor cursor =
+                new MatrixCursor(new String[] {Data.CONTACT_ID, Data.MIMETYPE, Data.DATA1});
         cursor.addRow(new Object[] {"id1", Phone.CONTENT_ITEM_TYPE, "01234567"});
         cursor.addRow(new Object[] {"id1", Email.CONTENT_ITEM_TYPE, "android@android.com"});
         cursor.addRow(new Object[] {"id1", StructuredPostal.CONTENT_ITEM_TYPE, "01234"});
@@ -273,7 +271,8 @@ public class BluetoothPbapUtilsTest {
                 .when(mProxy)
                 .contentResolverQuery(any(), eq(Contacts.CONTENT_URI), any(), any(), any(), any());
 
-        MatrixCursor dataCursor = new MatrixCursor(new String[] {CONTACT_ID, MIMETYPE, DATA1});
+        MatrixCursor dataCursor =
+                new MatrixCursor(new String[] {Data.CONTACT_ID, Data.MIMETYPE, Data.DATA1});
         dataCursor.addRow(new Object[] {"id1", Phone.CONTENT_ITEM_TYPE, "01234567"});
         dataCursor.addRow(new Object[] {"id1", Email.CONTENT_ITEM_TYPE, "android@android.com"});
         dataCursor.addRow(new Object[] {"id1", StructuredPostal.CONTENT_ITEM_TYPE, "01234"});
@@ -304,7 +303,8 @@ public class BluetoothPbapUtilsTest {
                 .when(mProxy)
                 .contentResolverQuery(any(), eq(Contacts.CONTENT_URI), any(), any(), any(), any());
 
-        MatrixCursor dataCursor = new MatrixCursor(new String[] {CONTACT_ID, MIMETYPE, DATA1});
+        MatrixCursor dataCursor =
+                new MatrixCursor(new String[] {Data.CONTACT_ID, Data.MIMETYPE, Data.DATA1});
         doReturn(dataCursor)
                 .when(mProxy)
                 .contentResolverQuery(any(), eq(Data.CONTENT_URI), any(), any(), any(), any());
@@ -336,7 +336,8 @@ public class BluetoothPbapUtilsTest {
                 .when(mProxy)
                 .contentResolverQuery(any(), eq(Contacts.CONTENT_URI), any(), any(), any(), any());
 
-        MatrixCursor dataCursor = new MatrixCursor(new String[] {CONTACT_ID, MIMETYPE, DATA1});
+        MatrixCursor dataCursor =
+                new MatrixCursor(new String[] {Data.CONTACT_ID, Data.MIMETYPE, Data.DATA1});
         dataCursor.addRow(new Object[] {"id1", Phone.CONTENT_ITEM_TYPE, "01234567"});
         dataCursor.addRow(new Object[] {"id1", Email.CONTENT_ITEM_TYPE, "android@android.com"});
         dataCursor.addRow(new Object[] {"id1", StructuredPostal.CONTENT_ITEM_TYPE, "01234"});
