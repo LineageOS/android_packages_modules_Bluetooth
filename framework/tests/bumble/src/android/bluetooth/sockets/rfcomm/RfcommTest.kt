@@ -14,34 +14,25 @@
  * limitations under the License.
  */
 
-package android.bluetooth.sockets.rfcomm
+package android.bluetooth
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothA2dp
+import android.app.compat.CompatChanges
 import android.bluetooth.BluetoothAdapter.ACTION_STATE_CHANGED
 import android.bluetooth.BluetoothAdapter.EXTRA_STATE
 import android.bluetooth.BluetoothAdapter.STATE_OFF
 import android.bluetooth.BluetoothAdapter.nameForState
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothDevice.ACTION_PAIRING_REQUEST
 import android.bluetooth.BluetoothDevice.EXTRA_DEVICE
-import android.bluetooth.BluetoothHeadset
-import android.bluetooth.BluetoothHidHost
-import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
-import android.bluetooth.BluetoothServerSocket
-import android.bluetooth.BluetoothSocket
-import android.bluetooth.BluetoothSocketSettings
-import android.bluetooth.Host
-import android.bluetooth.PandoraDevice
-import android.bluetooth.adapter
-import android.bluetooth.setupIntentLogger
+import android.bluetooth.BluetoothSocket.MAKE_SOCKET_READ_BEHAVIOR_CONSISTENT
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import android.platform.test.annotations.RequiresFlagsEnabled
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.provider.Settings
@@ -65,6 +56,7 @@ import org.hamcrest.Matcher
 import org.hamcrest.core.AllOf.allOf
 import org.junit.After
 import org.junit.Assert.assertThrows
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
@@ -823,6 +815,49 @@ class RfcommTest {
 
             // Verify that Rfcomm Socket is disconnected
             assertThrows(IOException::class.java) { socketOs.write(data) }
+        }
+    }
+
+    /**
+     * Test Steps: Test Steps:
+     * - Create an insecure socket
+     * - Connect to the socket
+     * - Verify that devices are connected
+     * - Let Server thread wait on read()
+     * - Disconnect the socket from remote side (Bumble)
+     * - read() should return -1 on socket disconnection (reaching EOF)
+     */
+    @Test
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.make_socket_read_behavior_consistent")
+    // @EnableFlags("com.android.bluetooth.flags.make_socket_read_behavior_consistent")
+    fun clientReadDataAfterRfcommConnectionDisconnected_afterChange() {
+        assumeTrue(CompatChanges.isChangeEnabled(MAKE_SOCKET_READ_BEHAVIOR_CONSISTENT))
+        assumeTrue(Build.VERSION.SDK_INT >= 37)
+
+        updateSecurityConfig()
+        startServer { serverId ->
+            val (insecureSocket, connection) = createConnectAcceptSocket(isSecure = false, serverId)
+            val inputStream = insecureSocket.inputStream
+            val readThread = Thread {
+                val ret = inputStream.read()
+                Log.d(
+                    TAG,
+                    "clientReadDataAfterRfcommConnectionDisconnected: isConnected() : " +
+                        insecureSocket!!.isConnected(),
+                )
+                assertThat(ret).isEqualTo(-1)
+                assertThat(insecureSocket!!.isConnected()).isFalse()
+            }
+            readThread.start()
+            Thread.sleep(1000 * 2)
+            Log.d(TAG, "clientReadDataAfterRfcommConnectionDisconnected: disconnect after 2 secs")
+
+            val disconnectRequest =
+                RfcommProto.DisconnectionRequest.newBuilder().setConnection(connection).build()
+            bumble.rfcommBlocking().disconnect(disconnectRequest)
+
+            inputStream.close()
+            insecureSocket?.close()
         }
     }
 
