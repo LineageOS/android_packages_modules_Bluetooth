@@ -16,6 +16,8 @@
  *
  ******************************************************************************/
 
+#include <base/files/file_util.h>
+#include <base/strings/string_util.h>
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
 #include <metrics/structured_events.h>
@@ -63,7 +65,7 @@ void LogMetricA2dpAudioOverrunEvent(const Address& address, uint64_t encoding_in
   std::string boot_id;
   std::string addr_string;
 
-  if (!metrics::GetBootId(&boot_id)) {
+  if (!GetBootId(&boot_id)) {
     return;
   }
 
@@ -87,7 +89,7 @@ void LogMetricHfpPacketLossStats(const Address& address, int num_decoded_frames,
   std::string boot_id;
   std::string addr_string;
 
-  if (!metrics::GetBootId(&boot_id)) {
+  if (!GetBootId(&boot_id)) {
     return;
   }
 
@@ -149,7 +151,7 @@ void LogMetricA2dpSessionMetricsEvent(const hci::Address& address, int64_t audio
   std::string boot_id;
   std::string addr_string;
 
-  if (!metrics::GetBootId(&boot_id)) {
+  if (!GetBootId(&boot_id)) {
     return;
   }
 
