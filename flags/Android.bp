@@ -48,6 +48,7 @@ aconfig_declarations {
         "service_discovery.aconfig",
         "sockets.aconfig",
         "system_service.aconfig",
+        "threading.aconfig",
         "vcp.aconfig",
         "vsc.aconfig",
     ],
