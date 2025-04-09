@@ -13,7 +13,10 @@ android_test {
     // Include all test java files.
     srcs: ["src/**/*.java"],
     jacoco: {
-        include_filter: ["android.bluetooth.*"],
+        include_filter: [
+            "android.bluetooth.**",
+            "com.android.bluetooth.**",
+        ],
         exclude_filter: [],
     },
     libs: [
