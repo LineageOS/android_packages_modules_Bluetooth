@@ -139,6 +139,8 @@ public class HeadsetService extends ProfileService {
     private int mMaxHeadsetConnections = 1;
     private BluetoothDevice mExposedActiveDevice;
     private BluetoothDevice mActiveDevice;
+    // Device waiting for audio framework to start SCO
+    BluetoothDevice mPendingScoConnection;
     private boolean mAudioRouteAllowed = true;
     // Indicates whether SCO audio needs to be forced to open regardless ANY OTHER restrictions
     private boolean mForceScoAudio;
@@ -251,6 +253,7 @@ public class HeadsetService extends ProfileService {
             if (mActiveDevice != null) {
                 mExposedActiveDevice = null;
                 mActiveDevice = null;
+                mPendingScoConnection = null;
                 broadcastActiveDevice(null);
             }
             mInbandRingingRuntimeDisable = false;
@@ -834,42 +837,47 @@ public class HeadsetService extends ProfileService {
             }
         }
 
+
         if (mSystemInterface.isScoManagedByAudioEnabled()) {
-            BluetoothDevice voiceRecognitionDevice = device;
-            // when isScoManagedByAudio is on, tell AudioManager to connect SCO
-            AudioManager am = mSystemInterface.getAudioManager();
-            Optional<AudioDeviceInfo> audioDeviceInfo =
-                    am.getAvailableCommunicationDevices().stream()
-                            .filter(
-                                    x ->
-                                            x.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
-                                                    && x.getAddress()
-                                                            .equals(
-                                                                    voiceRecognitionDevice
-                                                                            .getAddress()))
-                            .findFirst();
-            if (audioDeviceInfo.isPresent()) {
-                BluetoothDevice finalDevice = device;
-                mHandler.post(
-                        () -> {
-                            am.setCommunicationDevice(audioDeviceInfo.get());
-                            logScoSessionMetric(
-                                    finalDevice,
-                                    BluetoothStatsLog
-                                            .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__SCO_VOICE_RECOGNITION_INITIATED_START,
-                                    Binder.getCallingUid());
-                            Log.i(TAG, "Audio Manager will initiate the SCO for Voice Recognition");
-                        });
+            if (startScoViaAudioManager(device)) {
+                logScoSessionMetric(
+                        device,
+                        BluetoothStatsLog
+                                .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__SCO_VOICE_RECOGNITION_INITIATED_START,
+                        Binder.getCallingUid());
             } else {
-                Log.w(
-                        TAG,
-                        "Cannot find audioDeviceInfo that matches device="
-                                + voiceRecognitionDevice
-                                + " to create the SCO");
                 return false;
             }
         }
         enableSwbCodec(HeadsetHalConstants.BTHF_SWB_CODEC_VENDOR_APTX, true, device);
+        return true;
+    }
+
+    boolean startScoViaAudioManager(BluetoothDevice device) {
+        // when isScoManagedByAudio is on, tell AudioManager to connect SCO
+        AudioManager am = mSystemInterface.getAudioManager();
+        Optional<AudioDeviceInfo> audioDeviceInfo =
+                am.getAvailableCommunicationDevices().stream()
+                        .filter(
+                                x ->
+                                        x.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
+                                                && x.getAddress().equals(device.getAddress()))
+                        .findFirst();
+        if (audioDeviceInfo.isEmpty()) {
+            Log.w(
+                    TAG,
+                    "Cannot find audioDeviceInfo that matches device="
+                            + device
+                            + " to create the SCO");
+            return false;
+        }
+
+        mHandler.post(
+                () -> {
+                    am.setCommunicationDevice(audioDeviceInfo.get());
+
+                    Log.i(TAG, "Audio Manager will initiate the SCO");
+                });
         return true;
     }
 
@@ -2126,7 +2134,7 @@ public class HeadsetService extends ProfileService {
     }
 
     /* Notifications of audio device connection/disconnection events. */
-    private class AudioManagerAudioDeviceCallback extends AudioDeviceCallback {
+    class AudioManagerAudioDeviceCallback extends AudioDeviceCallback {
         @Override
         public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
             if (mSystemInterface.getAudioManager() == null || mAdapterService == null) {
@@ -2176,6 +2184,13 @@ public class HeadsetService extends ProfileService {
 
                     mExposedActiveDevice = device;
                     broadcastActiveDevice(device);
+
+                    if (mPendingScoConnection != null
+                            && mPendingScoConnection.equals(mExposedActiveDevice)) {
+                        Log.d(TAG, "Starting pending sco connection for " + mPendingScoConnection);
+                        startScoViaAudioManager(mPendingScoConnection);
+                        mPendingScoConnection = null;
+                    }
                     return;
                 }
             }
@@ -2200,6 +2215,10 @@ public class HeadsetService extends ProfileService {
                     }
 
                     mExposedActiveDevice = null;
+
+                    if (address.equals(mPendingScoConnection.getAddress())) {
+                        mPendingScoConnection = null;
+                    }
 
                     Log.d(
                             TAG,
@@ -2416,6 +2435,29 @@ public class HeadsetService extends ProfileService {
     boolean isAptXSwbPmEnabled() {
         logD("isAptXSwbPmEnabled: " + mIsAptXSwbPmEnabled);
         return mIsAptXSwbPmEnabled;
+    }
+
+    @VisibleForTesting
+    void processAtBcc(BluetoothDevice device) {
+        synchronized (mStateMachines) {
+            if (!device.equals(mActiveDevice)) {
+                // Reject AT+BCC from non active device
+                Log.e(
+                        TAG,
+                        "rejecting AT+BCC from "
+                                + device
+                                + " as it does not match active device "
+                                + mActiveDevice);
+                return;
+            }
+            if (!device.equals(mExposedActiveDevice)) {
+                Log.i(TAG, "Active device doesn't match current device, defer SCO start");
+                mPendingScoConnection = device;
+            } else {
+                Log.i(TAG, "processAtBcc for device " + device);
+                startScoViaAudioManager(device);
+            }
+        }
     }
 
     private static void logD(String message) {

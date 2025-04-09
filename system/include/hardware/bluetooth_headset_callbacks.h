@@ -200,6 +200,13 @@ public:
                              RawAddress* bd_addr) = 0;
 
   /**
+   * Callback for BCC.
+   *
+   * @param bd_addr remote device address
+   */
+  virtual void AtBccCallback(RawAddress* bd_addr) = 0;
+
+  /**
    * Callback for DebugDump.
    *
    * @param active whether the SCO is active

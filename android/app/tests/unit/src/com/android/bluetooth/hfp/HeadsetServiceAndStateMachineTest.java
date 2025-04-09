@@ -46,6 +46,8 @@ import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUuid;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioDeviceCallback;
+import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.ParcelUuid;
@@ -61,6 +63,7 @@ import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.TestLooper;
+import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
@@ -125,6 +128,7 @@ public class HeadsetServiceAndStateMachineTest {
     @Mock private HeadsetPhoneState mPhoneState;
     @Mock private RemoteDevices mRemoteDevices;
     @Mock private SystemProperties.MockableSystemProperties mProperties;
+    @Mock private AudioDeviceInfo mAudioDeviceInfo;
 
     private static final int MAX_HEADSET_CONNECTIONS = 5;
     private static final ParcelUuid[] FAKE_HEADSET_UUID = {BluetoothUuid.HFP};
@@ -1781,6 +1785,143 @@ public class HeadsetServiceAndStateMachineTest {
         verify(mNativeInterface).phoneStateChange(device, headsetCallState);
     }
 
+    /*
+     * Test when AT+BCC is received but audio framework has not updated the active device - HF
+     * starts audio connection.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
+    public void testHfStartsAudioConnection_scoManagedByAudio() {
+        ArgumentCaptor<AudioDeviceCallback> callback =
+                ArgumentCaptor.forClass(AudioDeviceCallback.class);
+        when(mSystemInterface.getAudioManager()).thenReturn(mAudioManager);
+
+        BluetoothDevice device = getTestDevice(0);
+        assertThat(device).isNotNull();
+        connectTestDevice(device);
+        verify(mAudioManager).registerAudioDeviceCallback(callback.capture(), any());
+
+        mHeadsetService.setActiveDevice(device);
+        mTestLooper.dispatchAll();
+        assertThat(mHeadsetService.setActiveDevice(device)).isTrue();
+        mTestLooper.dispatchAll();
+
+        // State Machine is asked to process AT+BCC callback but the active device is not updated
+        // yet
+        HeadsetStackEvent atBccEvent =
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_BCC,
+                        HeadsetHalConstants.CONNECTION_STATE_CONNECTED,
+                        device);
+        mHeadsetService.messageFromNative(atBccEvent);
+        mTestLooper.dispatchAll();
+        assertThat(mHeadsetService.mPendingScoConnection).isEqualTo(device);
+
+        // trigger audio callback
+        AudioDeviceCallback callbackVal = callback.getValue();
+        when(mAudioDeviceInfo.getType()).thenReturn(AudioDeviceInfo.TYPE_BLUETOOTH_SCO);
+        when(mAudioDeviceInfo.getAddress()).thenReturn(device.getAddress());
+        when(mAdapterService.getDeviceFromByte(Utils.getBytesFromAddress(device.getAddress())))
+                .thenReturn(device);
+        when(mAudioManager.getAvailableCommunicationDevices())
+                .thenReturn(List.of(mAudioDeviceInfo));
+        callbackVal.onAudioDevicesAdded(new AudioDeviceInfo[] {mAudioDeviceInfo});
+        mTestLooper.dispatchAll();
+
+        verify(mAudioManager).setCommunicationDevice(mAudioDeviceInfo);
+    }
+
+    /*
+     * Test when AT+BCC is received but audio framework has not updated the active device - HF
+     * starts audio connection but device is disconnected before starting SCO.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
+    public void testHfStartsAudioConnection_deviceDisconnected() {
+        ArgumentCaptor<AudioDeviceCallback> callback =
+                ArgumentCaptor.forClass(AudioDeviceCallback.class);
+        when(mSystemInterface.getAudioManager()).thenReturn(mAudioManager);
+
+        BluetoothDevice device = getTestDevice(0);
+        assertThat(device).isNotNull();
+        connectTestDevice(device);
+        verify(mAudioManager).registerAudioDeviceCallback(callback.capture(), any());
+
+        mHeadsetService.setActiveDevice(device);
+        mTestLooper.dispatchAll();
+        assertThat(mHeadsetService.setActiveDevice(device)).isTrue();
+        mTestLooper.dispatchAll();
+
+        // State Machine is asked to process AT+BCC callback but the active device is not updated
+        // yet
+        HeadsetStackEvent atBccEvent =
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_BCC,
+                        HeadsetHalConstants.CONNECTION_STATE_CONNECTED,
+                        device);
+        mHeadsetService.messageFromNative(atBccEvent);
+        mTestLooper.dispatchAll();
+        assertThat(mHeadsetService.mPendingScoConnection).isEqualTo(device);
+
+        // Now disconnect the device
+        HeadsetStackEvent connectingEvent =
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED,
+                        HeadsetHalConstants.CONNECTION_STATE_DISCONNECTED,
+                        device);
+        mHeadsetService.messageFromNative(connectingEvent);
+        mTestLooper.dispatchAll();
+
+        verifyConnectionStateIntent(device, STATE_DISCONNECTED, STATE_CONNECTED);
+
+        assertThat(mHeadsetService.mPendingScoConnection).isEqualTo(null);
+        verify(mAudioManager, times(0)).setCommunicationDevice(mAudioDeviceInfo);
+    }
+
+    /*
+     * Test when AT+BCC is received but audio framework has not updated the active device - HF
+     * starts audio connection but device has SCO started by other means.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
+    public void testHfStartsAudioConnection_scoStartedByOtherMeans() {
+        ArgumentCaptor<AudioDeviceCallback> callback =
+                ArgumentCaptor.forClass(AudioDeviceCallback.class);
+        when(mSystemInterface.getAudioManager()).thenReturn(mAudioManager);
+
+        BluetoothDevice device = getTestDevice(0);
+        assertThat(device).isNotNull();
+        connectTestDevice(device);
+        verify(mAudioManager).registerAudioDeviceCallback(callback.capture(), any());
+
+        mHeadsetService.setActiveDevice(device);
+        mTestLooper.dispatchAll();
+        assertThat(mHeadsetService.setActiveDevice(device)).isTrue();
+        mTestLooper.dispatchAll();
+
+        // State Machine is asked to process AT+BCC callback but the active device is not updated
+        // yet
+        HeadsetStackEvent atBccEvent =
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_BCC,
+                        HeadsetHalConstants.CONNECTION_STATE_CONNECTED,
+                        device);
+        mHeadsetService.messageFromNative(atBccEvent);
+        mTestLooper.dispatchAll();
+        assertThat(mHeadsetService.mPendingScoConnection).isEqualTo(device);
+
+        // Transition to AUDIO_STATE_CONNECTED as if SCO is connected
+        doReturn(true).when(mSystemInterface).isInCall();
+        mHeadsetService.messageFromNative(
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED,
+                        HeadsetHalConstants.AUDIO_STATE_CONNECTED,
+                        device));
+        mTestLooper.dispatchAll();
+
+        assertThat(mHeadsetService.mPendingScoConnection).isEqualTo(null);
+    }
+
     private void connectTestDevice(BluetoothDevice device) {
         doReturn(CONNECTION_POLICY_UNKNOWN)
                 .when(mDatabaseManager)
@@ -1857,7 +1998,7 @@ public class HeadsetServiceAndStateMachineTest {
                 hasExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState));
     }
 
-    /**
+    /*
      * Verify the series of invocations after {@link
      * BluetoothHeadset#startScoUsingVirtualVoiceCall()}
      *
