@@ -693,7 +693,10 @@ public:
 
   // TODO
   // The Encryption Key Size should be specific to an ACL connection.
-  uint8_t GetEncryptionKeySize() const { return min_encryption_key_size_; }
+  uint8_t GetEncryptionKeySize() const { return 16; }
+  void SetMinEncryptionKeySize(uint8_t min_encryption_key_size) {
+    min_encryption_key_size_ = min_encryption_key_size;
+  }
 
   bool GetScoFlowControlEnable() const { return sco_flow_control_enable_; }
 

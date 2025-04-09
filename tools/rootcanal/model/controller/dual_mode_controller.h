@@ -337,6 +337,9 @@ public:
   // 7.3.95
   void ReadLocalOobExtendedData(CommandView command);
 
+  // 7.3.102
+  void SetMinEncryptionKeySize(CommandView command);
+
   // Informational Parameters Commands
   // Bluetooth Core Specification Version 4.2 Volume 2 Part E 7.4
 

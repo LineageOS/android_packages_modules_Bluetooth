@@ -917,6 +917,18 @@ void DualModeController::ReadLocalOobExtendedData(CommandView command) {
   link_layer_controller_.ReadLocalOobExtendedData();
 }
 
+void DualModeController::SetMinEncryptionKeySize(CommandView command) {
+  auto command_view = bluetooth::hci::SetMinEncryptionKeySizeView::Create(command);
+  CHECK_PACKET_VIEW(command_view);
+
+  DEBUG(id_, "<< Set Min Encryption Key Size");
+  DEBUG(id_, "   min_encryption_key_size={}", command_view.GetMinEncryptionKeySize());
+
+  link_layer_controller_.SetMinEncryptionKeySize(command_view.GetMinEncryptionKeySize());
+  send_event_(bluetooth::hci::SetMinEncryptionKeySizeCompleteBuilder::Create(kNumCommandPackets,
+                                                                             ErrorCode::SUCCESS));
+}
+
 void DualModeController::WriteSimplePairingMode(CommandView command) {
   auto command_view = bluetooth::hci::WriteSimplePairingModeView::Create(command);
   CHECK_PACKET_VIEW(command_view);
@@ -3965,8 +3977,7 @@ const std::unordered_map<OpCode, DualModeController::CommandHandler>
                 //{OpCode::SET_ECOSYSTEM_BASE_INTERVAL,
                 //&DualModeController::SetEcosystemBaseInterval},
                 //{OpCode::CONFIGURE_DATA_PATH, &DualModeController::ConfigureDataPath},
-                //{OpCode::SET_MIN_ENCRYPTION_KEY_SIZE,
-                //&DualModeController::SetMinEncryptionKeySize},
+                {OpCode::SET_MIN_ENCRYPTION_KEY_SIZE, &DualModeController::SetMinEncryptionKeySize},
 
                 // INFORMATIONAL_PARAMETERS
                 {OpCode::READ_LOCAL_VERSION_INFORMATION,
