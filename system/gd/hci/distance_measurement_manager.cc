@@ -117,7 +117,6 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
       for (uint8_t i = 0; i < num_antenna_paths; i++) {
         ranging_header_.antenna_paths_mask_ |= (1 << i);
       }
-      ranging_header_.pct_format_ = PctFormat::IQ;
       procedure_data_v2_.local_selected_tx_power_ = selected_tx_power;
     }
     // Procedure counter
