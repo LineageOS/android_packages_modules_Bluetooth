@@ -89,7 +89,7 @@ public class VolumeControlStackEvent {
             case EVENT_TYPE_VOLUME_STATE_CHANGED:
                 return "{group_id:" + value + "}";
             case EVENT_TYPE_DEVICE_AVAILABLE:
-                return "{num_ext_outputs:" + value + "}";
+                return "{group_id:" + value + "}";
             case EVENT_TYPE_EXT_AUDIO_OUT_VOL_OFFSET_CHANGED:
             case EVENT_TYPE_EXT_AUDIO_OUT_LOCATION_CHANGED:
             case EVENT_TYPE_EXT_AUDIO_OUT_DESCRIPTION_CHANGED:
@@ -105,7 +105,7 @@ public class VolumeControlStackEvent {
             case EVENT_TYPE_VOLUME_STATE_CHANGED:
                 return "{volume:" + value + "}";
             case EVENT_TYPE_DEVICE_AVAILABLE:
-                return "{num_ext_inputs:" + value + "}";
+                return "{num_ext_outputs:" + value + "}";
             default:
                 break;
         }
@@ -116,6 +116,8 @@ public class VolumeControlStackEvent {
         switch (type) {
             case EVENT_TYPE_VOLUME_STATE_CHANGED:
                 return "{flags:" + value + "}";
+            case EVENT_TYPE_DEVICE_AVAILABLE:
+                return "{num_ext_inputs:" + value + "}";
             default:
                 break;
         }

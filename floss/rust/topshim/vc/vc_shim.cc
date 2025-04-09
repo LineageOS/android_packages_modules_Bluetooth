@@ -112,9 +112,10 @@ public:
     topshim::rust::internal::group_volume_state_cb(group_id, volume, mute, is_autonomous);
   }
 
-  void OnDeviceAvailable(const RawAddress& address, uint8_t num_offset,
+  void OnDeviceAvailable(const RawAddress& address, int group_id, uint8_t num_offset,
                          uint8_t num_inputs) override {
-    log::info("address={}, num_offset={} num_inputs={}", address, num_offset, num_inputs);
+    log::info("address={},  group_id={}, num_offset={}, num_inputs={}", address, group_id,
+              num_offset, num_inputs);
     topshim::rust::internal::device_available_cb(address, num_offset);
   }
 

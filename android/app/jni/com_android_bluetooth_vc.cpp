@@ -130,7 +130,7 @@ public:
                                  (jboolean)mute, group_id, (jboolean)isAutonomous);
   }
 
-  void OnDeviceAvailable(const RawAddress& bd_addr, uint8_t num_offsets,
+  void OnDeviceAvailable(const RawAddress& bd_addr, int group_id, uint8_t num_offsets,
                          uint8_t num_inputs) override {
     log::info("");
 
@@ -149,8 +149,8 @@ public:
 
     sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
                                      reinterpret_cast<const jbyte*>(&bd_addr));
-    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onDeviceAvailable, (jint)num_offsets,
-                                 (jint)num_inputs, addr.get());
+    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onDeviceAvailable, (jint)group_id,
+                                 (jint)num_offsets, (jint)num_inputs, addr.get());
   }
 
   void OnExtAudioOutVolumeOffsetChanged(const RawAddress& bd_addr, uint8_t ext_output_id,
@@ -973,7 +973,7 @@ int register_com_android_bluetooth_vc(JNIEnv* env) {
           {"onConnectionStateChanged", "(I[B)V", &method_onConnectionStateChanged},
           {"onVolumeStateChanged", "(IZI[BZ)V", &method_onVolumeStateChanged},
           {"onGroupVolumeStateChanged", "(IZIZ)V", &method_onGroupVolumeStateChanged},
-          {"onDeviceAvailable", "(II[B)V", &method_onDeviceAvailable},
+          {"onDeviceAvailable", "(III[B)V", &method_onDeviceAvailable},
           {"onExtAudioOutVolumeOffsetChanged", "(II[B)V", &method_onExtAudioOutVolumeOffsetChanged},
           {"onExtAudioOutLocationChanged", "(II[B)V", &method_onExtAudioOutLocationChanged},
           {"onExtAudioOutDescriptionChanged", "(ILjava/lang/String;[B)V",

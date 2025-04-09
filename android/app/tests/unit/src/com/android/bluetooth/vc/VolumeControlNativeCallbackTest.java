@@ -110,10 +110,11 @@ public class VolumeControlNativeCallbackTest {
 
     @Test
     public void onDeviceAvailable() {
+        int groupId = 1;
         int numOfExternalOutputs = 3;
         int numOfExternalInputs = 0;
 
-        mNativeCallback.onDeviceAvailable(numOfExternalOutputs, numOfExternalInputs, null);
+        mNativeCallback.onDeviceAvailable(groupId, numOfExternalOutputs, numOfExternalInputs, null);
         verify(mService).messageFromNative(mEvent.capture());
         VolumeControlStackEvent event = mEvent.getValue();
 
