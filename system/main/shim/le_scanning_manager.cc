@@ -310,6 +310,8 @@ void BleScannerInterfaceImpl::SetScanParameters(uint8_t scan_type, int scanner_i
                                                 int scan_window_coded, int scan_phy) {
   log::info("in shim layer, scannerId1m={}, scannerIdCoded={}", scanner_id_1m, scanner_id_coded);
   bool validated = true;
+  // clear out any scan_phy bits that aren't valid
+  scan_phy = scan_phy & (k1mPhyMask | kCodedPhyMask);
   if ((scan_phy & k1mPhyMask) != 0) {
     validated =
             BTM_BLE_ISVALID_PARAM(scan_interval_1m, BTM_BLE_SCAN_INT_MIN,
