@@ -44,10 +44,9 @@ import com.android.bluetooth.DeviceWorkArounds;
 import com.android.bluetooth.SignedLongLong;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
+import com.android.bluetooth.map.BluetoothMapContract.ConversationColumns;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 import com.android.bluetooth.map.BluetoothMapbMessageMime.MimePart;
-import com.android.bluetooth.mapapi.BluetoothMapContract;
-import com.android.bluetooth.mapapi.BluetoothMapContract.ConversationColumns;
 import com.android.internal.annotations.VisibleForTesting;
 
 import com.google.android.mms.pdu.CharacterSets;
