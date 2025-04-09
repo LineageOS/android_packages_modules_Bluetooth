@@ -73,13 +73,11 @@ struct formatter<android::bluetooth::CodePathCounterKeyEnum>
     : enum_formatter<android::bluetooth::CodePathCounterKeyEnum> {};
 }  // namespace std
 
-namespace bluetooth {
-namespace os {
+namespace bluetooth::metrics {
 
-using bluetooth::common::MetricIdManager;
-using bluetooth::hci::Address;
-using bluetooth::hci::ErrorCode;
-using bluetooth::hci::EventCode;
+using hci::Address;
+using hci::ErrorCode;
+using hci::EventCode;
 
 /**
  * nullptr and size 0 represent missing value for obfuscated_id
@@ -454,7 +452,7 @@ void CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum key, int64_t
   }
 }
 
-void LogMetricBluetoothLEConnection(os::LEConnectionSessionOptions session_options) {
+void LogMetricBluetoothLEConnection(LEConnectionSessionOptions session_options) {
   int metric_id = 0;
   if (!session_options.remote_address.IsEmpty()) {
     metric_id = MetricIdManager::GetInstance().AllocateId(session_options.remote_address);
@@ -574,5 +572,4 @@ void LogMetricBluetoothQualityReport(const bqr::BqrLinkQualityEvent& event) {
   }
 }
 
-}  // namespace os
-}  // namespace bluetooth
+}  // namespace bluetooth::metrics

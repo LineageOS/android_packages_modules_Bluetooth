@@ -22,10 +22,8 @@
 
 #include <thread>
 
-namespace bluetooth {
+namespace bluetooth::metrics {
 namespace {
-
-using bluetooth::common::MetricIdManager;
 
 bluetooth::hci::Address kthAddress(uint32_t k) {
   uint8_t array[6] = {0, 0, 0, 0, 0, 0};
@@ -448,4 +446,4 @@ TEST(BluetoothMetricIdManagerTest, MetricIdManagerWrapAroundTest2) {
 }
 
 }  // namespace
-}  // namespace bluetooth
+}  // namespace bluetooth::metrics

@@ -27,8 +27,7 @@
 #include <optional>
 #include <thread>
 
-namespace bluetooth {
-namespace common {
+namespace bluetooth::metrics {
 
 using hci::Address;
 
@@ -192,5 +191,4 @@ void MetricIdManager::ForgetDevicePostprocess(const Address& mac_address, const 
   forget_device_callback_(mac_address, id);
 }
 
-}  // namespace common
-}  // namespace bluetooth
+}  // namespace bluetooth::metrics

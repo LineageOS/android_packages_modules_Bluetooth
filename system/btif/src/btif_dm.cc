@@ -584,11 +584,11 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
           state, pairing_cb.state, pairing_cb.sdp_attempts);
 
   if (state == BT_BOND_STATE_NONE) {
-    bluetooth::shim::ForgetDeviceFromMetricIdAllocator(bd_addr);
+    bluetooth::metrics::ForgetDeviceFromMetricIdAllocator(bd_addr);
     btif_config_remove_device(bd_addr.ToString());
   } else if (state == BT_BOND_STATE_BONDED) {
-    bluetooth::shim::AllocateIdFromMetricIdAllocator(bd_addr);
-    if (!bluetooth::shim::SaveDeviceOnMetricIdAllocator(bd_addr)) {
+    bluetooth::metrics::AllocateIdFromMetricIdAllocator(bd_addr);
+    if (!bluetooth::metrics::SaveDeviceOnMetricIdAllocator(bd_addr)) {
       log::error("Fail to save metric id for device:{}", bd_addr);
     }
   }

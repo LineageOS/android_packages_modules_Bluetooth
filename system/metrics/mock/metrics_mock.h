@@ -19,7 +19,7 @@
 #include <bluetooth/metrics/os_metrics.h>
 #include <gmock/gmock.h>
 
-namespace bluetooth::os {
+namespace bluetooth::metrics {
 
 class MockMetrics {
 public:
@@ -65,7 +65,7 @@ public:
   MOCK_METHOD(void, LogMetricBluetoothRemoteSupportedFeatures,
               (const hci::Address&, uint32_t, uint64_t, uint32_t));
   MOCK_METHOD(void, CountCounterMetrics, (android::bluetooth::CodePathCounterKeyEnum, int64_t));
-  MOCK_METHOD(void, LogMetricBluetoothLEConnection, (os::LEConnectionSessionOptions));
+  MOCK_METHOD(void, LogMetricBluetoothLEConnection, (LEConnectionSessionOptions));
   MOCK_METHOD(void, LogMetricBluetoothEvent,
               (const hci::Address&, android::bluetooth::EventType, android::bluetooth::State));
   MOCK_METHOD(void, LogMetricRfcommConnectionAtClose,
@@ -84,4 +84,4 @@ public:
   MOCK_METHOD(void, LogMetricBluetoothQualityReport, (const bqr::BqrLinkQualityEvent&));
 };
 
-}  // namespace bluetooth::os
+}  // namespace bluetooth::metrics

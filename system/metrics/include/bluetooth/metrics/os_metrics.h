@@ -29,8 +29,7 @@
 #include "hci/address.h"
 #include "types/raw_address.h"
 
-namespace bluetooth {
-namespace os {
+namespace bluetooth::metrics {
 
 /**
  * Unknown connection handle for metrics purpose
@@ -308,7 +307,7 @@ using android::bluetooth::le::LeAclConnectionState;
 using android::bluetooth::le::LeConnectionOriginType;
 using android::bluetooth::le::LeConnectionState;
 using android::bluetooth::le::LeConnectionType;
-// Adding options
+
 struct LEConnectionSessionOptions {
   // Contains the state of the LE-ACL Connection
   LeAclConnectionState acl_connection_state = LeAclConnectionState::LE_ACL_UNSPECIFIED;
@@ -333,7 +332,7 @@ struct LEConnectionSessionOptions {
 };
 
 // Upload LE Session
-void LogMetricBluetoothLEConnection(os::LEConnectionSessionOptions session_options);
+void LogMetricBluetoothLEConnection(LEConnectionSessionOptions session_options);
 
 /**
  * Logs a Bluetooth Event
@@ -385,5 +384,4 @@ void LogMetricLeAudioBroadcastSessionReported(int64_t duration_nanos);
 
 void LogMetricBluetoothQualityReport(const bqr::BqrLinkQualityEvent& event);
 
-}  // namespace os
-}  // namespace bluetooth
+}  // namespace bluetooth::metrics

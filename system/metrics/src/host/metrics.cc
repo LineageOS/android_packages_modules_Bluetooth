@@ -18,8 +18,7 @@
 
 #include <bluetooth/metrics/os_metrics.h>
 
-namespace bluetooth {
-namespace os {
+namespace bluetooth::metrics {
 
 using bluetooth::hci::Address;
 
@@ -118,7 +117,7 @@ void LogMetricBluetoothRemoteSupportedFeatures(const Address& /* address */, uin
 void CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum /* key */,
                          int64_t /* count */) {}
 
-void LogMetricBluetoothLEConnection(os::LEConnectionSessionOptions /* session_options */) {}
+void LogMetricBluetoothLEConnection(LEConnectionSessionOptions /* session_options */) {}
 
 void LogMetricBluetoothEvent(const Address& /* address */,
                              android::bluetooth::EventType /* event type */,
@@ -149,5 +148,4 @@ void LogMetricLeAudioBroadcastSessionReported(int64_t /*duration_nanos*/) {}
 
 void LogMetricBluetoothQualityReport(const bqr::BqrLinkQualityEvent& /*event*/) {}
 
-}  // namespace os
-}  // namespace bluetooth
+}  // namespace bluetooth::metrics

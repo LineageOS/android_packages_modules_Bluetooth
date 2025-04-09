@@ -25,8 +25,7 @@
 #include "stack/include/hci_error_code.h"
 #include "types/raw_address.h"
 
-namespace bluetooth {
-namespace metrics {
+namespace bluetooth::metrics {
 
 android::bluetooth::State MapErrorCodeToState(hci::ErrorCode reason);
 
@@ -158,5 +157,4 @@ void LogMetricHfpSuspendStream(hci::Address address);
  */
 void LogMetricHfpStreamStarted(hci::Address address);
 
-}  // namespace metrics
-}  // namespace bluetooth
+}  // namespace bluetooth::metrics

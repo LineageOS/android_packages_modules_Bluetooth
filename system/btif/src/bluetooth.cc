@@ -1090,7 +1090,7 @@ static std::string obfuscate_address(const RawAddress& address) {
 }
 
 static int get_metric_id(const RawAddress& address) {
-  return bluetooth::shim::AllocateIdFromMetricIdAllocator(address);
+  return bluetooth::metrics::AllocateIdFromMetricIdAllocator(address);
 }
 
 static int set_dynamic_audio_buffer_size(int codec, int size) {

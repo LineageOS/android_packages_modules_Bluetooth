@@ -21,9 +21,10 @@
 
 #include "types/raw_address.h"
 
-namespace bluetooth {
-namespace shim {
+namespace bluetooth::metrics {
+
 using CallbackLegacy = std::function<bool(const RawAddress& address, const int id)>;
+
 /**
  * Initialize the allocator
  *
@@ -86,5 +87,4 @@ void ForgetDeviceFromMetricIdAllocator(const RawAddress& raw_address);
  */
 bool IsValidIdFromMetricIdAllocator(const int id);
 
-}  // namespace shim
-}  // namespace bluetooth
+}  // namespace bluetooth::metrics
