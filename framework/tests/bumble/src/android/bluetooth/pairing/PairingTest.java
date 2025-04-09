@@ -680,7 +680,6 @@ public class PairingTest {
      * <p>Expectation: Devices must remain bonded
      */
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_BONDED_DEVICE_SMP_FAILURE_HANDLING})
     public void testBondLePeripheral_WhenEncryptionFail() {
         IntentReceiver intentReceiver =
                 new IntentReceiver.Builder(sTargetContext, BluetoothDevice.ACTION_ACL_DISCONNECTED)
