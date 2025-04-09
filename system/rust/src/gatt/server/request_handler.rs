@@ -2,6 +2,7 @@ use log::warn;
 use pdl_runtime::{DecodeError, EncodeError};
 
 use crate::gatt::ids::AttHandle;
+use crate::gatt::opcode_types::AttRequest;
 use crate::packets::att::{self, AttErrorCode};
 
 use super::att_database::AttDatabase;
@@ -45,10 +46,10 @@ impl<Db: AttDatabase> AttRequestHandler<Db> {
         Self { db }
     }
 
-    // Runs a task to process an incoming packet. Takes an exclusive reference to
-    // ensure that only one request is outstanding at a time (notifications +
-    // commands should take a different path)
-    pub async fn process_packet(&mut self, packet: att::Att, mtu: usize) -> att::Att {
+    // Runs a task to process an incoming *request* packet. There should be only one instance of
+    // AttRequestHandler per client to ensure that only one request is outstanding at a time
+    // (notifications + commands should take a different path).
+    pub async fn process_packet(&mut self, packet: AttRequest, mtu: usize) -> att::Att {
         match self.try_parse_and_process_packet(&packet, mtu).await {
             Ok(result) => result,
             Err(_) => {
@@ -67,10 +68,11 @@ impl<Db: AttDatabase> AttRequestHandler<Db> {
 
     async fn try_parse_and_process_packet(
         &mut self,
-        packet: &att::Att,
+        packet: &AttRequest,
         mtu: usize,
     ) -> Result<att::Att, ProcessingError> {
         let snapshotted_db = self.db.snapshot();
+        let packet = &**packet;
         match packet.opcode {
             att::AttOpcode::ReadRequest => {
                 Ok(handle_read_request(packet.try_into()?, mtu, &self.db).await?)
@@ -130,7 +132,7 @@ mod test {
         )]);
         let mut handler = AttRequestHandler { db };
         let att_view =
-            att::AttReadRequest { attribute_handle: AttHandle(3).into() }.try_into().unwrap();
+            AttRequest::new(att::AttReadRequest { attribute_handle: AttHandle(3).into() }).unwrap();
 
         // act
         let response = tokio_test::block_on(handler.process_packet(att_view, 31));
@@ -159,11 +161,10 @@ mod test {
             |offset| &data[offset..std::cmp::min(offset + MTU - 1, data.len())];
 
         for offset in [0, 13, 50, 250, 255] {
-            let att_view = att::AttReadBlobRequest {
+            let att_view = AttRequest::new(att::AttReadBlobRequest {
                 attribute_handle: AttHandle(3).into(),
                 offset: offset as u16,
-            }
-            .try_into()
+            })
             .unwrap();
 
             // act
@@ -191,10 +192,11 @@ mod test {
         )]);
         let mut handler = AttRequestHandler { db };
 
-        let att_view =
-            att::AttReadBlobRequest { attribute_handle: AttHandle(3).into(), offset: 256 }
-                .try_into()
-                .unwrap();
+        let att_view = AttRequest::new(att::AttReadBlobRequest {
+            attribute_handle: AttHandle(3).into(),
+            offset: 256,
+        })
+        .unwrap();
 
         // act
         let response = tokio_test::block_on(handler.process_packet(att_view, 31));
@@ -225,10 +227,11 @@ mod test {
         )]);
         let mut handler = AttRequestHandler { db };
 
-        let att_view =
-            att::AttReadBlobRequest { attribute_handle: AttHandle(4).into(), offset: 256 }
-                .try_into()
-                .unwrap();
+        let att_view = AttRequest::new(att::AttReadBlobRequest {
+            attribute_handle: AttHandle(4).into(),
+            offset: 256,
+        })
+        .unwrap();
 
         // act
         let response = tokio_test::block_on(handler.process_packet(att_view, 31));
@@ -268,10 +271,9 @@ mod test {
         ]);
         let mut handler = AttRequestHandler { db };
 
-        let att_view = att::AttReadMultipleVariableRequest {
+        let att_view = AttRequest::new(att::AttReadMultipleVariableRequest {
             attribute_handles: [AttHandle(3).into(), AttHandle(4).into()].into(),
-        }
-        .try_into()
+        })
         .unwrap();
 
         // act
@@ -323,11 +325,10 @@ mod test {
         ]);
         let mut handler = AttRequestHandler { db };
 
-        let att_view = att::AttReadMultipleVariableRequest {
+        let att_view = AttRequest::new(att::AttReadMultipleVariableRequest {
             attribute_handles: [AttHandle(3).into(), AttHandle(4).into(), AttHandle(5).into()]
                 .into(),
-        }
-        .try_into()
+        })
         .unwrap();
 
         // act
@@ -388,11 +389,10 @@ mod test {
         ]);
         let mut handler = AttRequestHandler { db };
 
-        let att_view = att::AttReadMultipleVariableRequest {
+        let att_view = AttRequest::new(att::AttReadMultipleVariableRequest {
             attribute_handles: [AttHandle(3).into(), AttHandle(4).into(), AttHandle(5).into()]
                 .into(),
-        }
-        .try_into()
+        })
         .unwrap();
 
         // act
@@ -427,10 +427,10 @@ mod test {
         )]);
         let mut handler = AttRequestHandler { db };
 
-        let att_view =
-            att::AttReadMultipleVariableRequest { attribute_handles: [AttHandle(3).into()].into() }
-                .try_into()
-                .unwrap();
+        let att_view = AttRequest::new(att::AttReadMultipleVariableRequest {
+            attribute_handles: [AttHandle(3).into()].into(),
+        })
+        .unwrap();
 
         // act
         let response = tokio_test::block_on(handler.process_packet(att_view, 31));
@@ -460,10 +460,9 @@ mod test {
         )]);
         let mut handler = AttRequestHandler { db };
 
-        let att_view = att::AttReadMultipleVariableRequest {
+        let att_view = AttRequest::new(att::AttReadMultipleVariableRequest {
             attribute_handles: [AttHandle(3).into(), AttHandle(5).into()].into(),
-        }
-        .try_into()
+        })
         .unwrap();
 
         // act
@@ -504,10 +503,9 @@ mod test {
         ]);
         let mut handler = AttRequestHandler { db };
 
-        let att_view = att::AttReadMultipleVariableRequest {
+        let att_view = AttRequest::new(att::AttReadMultipleVariableRequest {
             attribute_handles: [AttHandle(3).into(), AttHandle(4).into()].into(),
-        }
-        .try_into()
+        })
         .unwrap();
 
         // act
@@ -528,16 +526,29 @@ mod test {
     #[test]
     fn test_unsupported_request() {
         // arrange
-        let db = TestAttDatabase::new(vec![(
-            AttAttribute {
-                handle: AttHandle(3),
-                type_: Uuid::new(0x1234),
-                permissions: AttPermissions::READABLE,
-            },
-            vec![1, 2, 3],
-        )]);
+        let db = TestAttDatabase::new(vec![
+            (
+                AttAttribute {
+                    handle: AttHandle(3),
+                    type_: Uuid::new(0x1234),
+                    permissions: AttPermissions::READABLE,
+                },
+                vec![1, 2, 3],
+            ),
+            (
+                AttAttribute {
+                    handle: AttHandle(4),
+                    type_: Uuid::new(0x5678),
+                    permissions: AttPermissions::READABLE,
+                },
+                vec![1, 2, 3],
+            ),
+        ]);
         let mut handler = AttRequestHandler { db };
-        let att_view = att::AttWriteResponse {}.try_into().unwrap();
+        let att_view = AttRequest::new(att::AttReadMultipleRequest {
+            attribute_handles: vec![AttHandle(3).into(), AttHandle(4).into()],
+        })
+        .unwrap();
 
         // act
         let response = tokio_test::block_on(handler.process_packet(att_view, 31));
@@ -546,7 +557,7 @@ mod test {
         assert_eq!(
             Ok(response),
             att::AttErrorResponse {
-                opcode_in_error: att::AttOpcode::WriteResponse,
+                opcode_in_error: att::AttOpcode::ReadMultipleRequest,
                 handle_in_error: AttHandle(0).into(),
                 error_code: AttErrorCode::RequestNotSupported
             }

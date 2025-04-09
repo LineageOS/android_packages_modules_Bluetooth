@@ -14,7 +14,7 @@ use crate::core::shared_box::{WeakBox, WeakBoxRef};
 use crate::core::shared_mutex::SharedMutex;
 use crate::gatt::ids::AttHandle;
 use crate::gatt::mtu::{AttMtu, MtuEvent};
-use crate::gatt::opcode_types::{classify_opcode, OperationType};
+use crate::gatt::opcode_types::{AttRequest, AttType};
 use crate::packets::att::{self, AttErrorCode};
 use crate::utils::owned_handle::OwnedHandle;
 
@@ -85,15 +85,11 @@ impl<T: AttDatabase + Clone + 'static> WeakBoxRef<'_, AttServerBearer<T>> {
     /// Handle an incoming packet, and send outgoing packets as appropriate
     /// using the owned ATT channel.
     pub fn handle_packet(&self, packet: att::Att) {
-        match classify_opcode(packet.opcode) {
-            OperationType::Command => {
-                self.command_handler.process_packet(packet);
-            }
-            OperationType::Request => {
-                self.handle_request(packet);
-            }
-            OperationType::Confirmation => self.pending_confirmation.on_confirmation(),
-            OperationType::Response | OperationType::Notification | OperationType::Indication => {
+        match packet.into() {
+            AttType::Command(packet) => self.command_handler.process_packet(packet),
+            AttType::Request(packet) => self.handle_request(packet),
+            AttType::Confirmation(_) => self.pending_confirmation.on_confirmation(),
+            AttType::Response(_) | AttType::Notification(_) | AttType::Indication(_) => {
                 unreachable!("the arbiter should not let us receive these packet types")
             }
         }
@@ -140,7 +136,7 @@ impl<T: AttDatabase + Clone + 'static> WeakBoxRef<'_, AttServerBearer<T>> {
         self.mtu.handle_event(mtu_event)
     }
 
-    fn handle_request(&self, packet: att::Att) {
+    fn handle_request(&self, packet: AttRequest) {
         let curr_request = self.curr_request.replace(AttRequestState::Replacing);
         self.curr_request.replace(match curr_request {
             AttRequestState::Idle(mut request_handler) => {
