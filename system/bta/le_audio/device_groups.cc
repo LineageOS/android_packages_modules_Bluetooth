@@ -997,19 +997,27 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
     }
   }
 
-  if ((ctx_type == ::bluetooth::le_audio::types::LeAudioContextType::GAME) &&
-      GmapClient::IsGmapClientEnabled() && GmapServer::IsGmapServerEnabled() && remote_has_gmap) {
-    // Allow asymmetric configurations for the low latency GAME scenarios
-    new_req.flags = CodecManager::Flags(CodecManager::Flags::ALLOW_ASYMMETRIC |
-                                        CodecManager::Flags::LOW_LATENCY);
-    log::debug(
-            "GMAP is enabled. Set asymmetric flag for the GAME audio context configuration "
-            "requests.");
-  } else {
-    log::debug(
-            "GMAP is disabled, remote_has_gmap: {}, gmap_client_enabled: {}, gmap_server_enabled: "
-            "{}",
-            remote_has_gmap, GmapClient::IsGmapClientEnabled(), GmapServer::IsGmapServerEnabled());
+  switch (ctx_type) {
+    case ::bluetooth::le_audio::types::LeAudioContextType::GAME:
+      if (GmapClient::IsGmapClientEnabled() && GmapServer::IsGmapServerEnabled() &&
+          remote_has_gmap) {
+        // Allow asymmetric configurations for the low latency GAME scenarios
+        new_req.flags = CodecManager::Flags(new_req.flags | CodecManager::Flags::ALLOW_ASYMMETRIC |
+                                            CodecManager::Flags::LOW_LATENCY);
+        log::debug(
+                "GMAP is enabled. Set asymmetric flag for the GAME audio context configuration "
+                "requests.");
+      } else {
+        log::debug(
+                "GMAP is disabled, remote_has_gmap: {}, gmap_client_enabled: {}, "
+                "gmap_server_enabled: "
+                "{}",
+                remote_has_gmap, GmapClient::IsGmapClientEnabled(),
+                GmapServer::IsGmapServerEnabled());
+      }
+      break;
+    default:
+      break;
   }
 
   return new_req;
