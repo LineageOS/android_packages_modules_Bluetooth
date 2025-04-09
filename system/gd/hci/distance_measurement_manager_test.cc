@@ -341,6 +341,15 @@ struct CsModule {
             subevent_result.result_data_structures);
   }
 
+  static std::unique_ptr<LeCsSubeventResultContinueBuilder> GetSubeventResultContinueEvent(
+          uint16_t connection_handle, CsSubeventResultEvent subevent_result) {
+    return LeCsSubeventResultContinueBuilder::Create(
+            connection_handle, subevent_result.config_id, subevent_result.procedure_done_status,
+            subevent_result.subevent_done_status, subevent_result.procedure_abort_reason,
+            subevent_result.subevent_abort_reason, subevent_result.num_antenna_paths,
+            subevent_result.result_data_structures);
+  }
+
   template <typename T>
   static std::vector<uint8_t> GetCsStepData(const T& step_data) {
     static_assert(std::is_base_of<bluetooth::packet::PacketStruct<true>, T>::value,
@@ -436,6 +445,17 @@ struct CsModule {
     std::vector<LeCsResultDataStructure> results;
     uint8_t channel = 1;
     results.emplace_back(0, channel++, GetMode0Data(role));
+    // antenna_permutation_index is A1A2
+    std::vector<uint8_t> mode2_data = GetMode2Data(
+            /*num_antenna_path=*/2, /*antenna_permutation_index=*/0);
+    results.emplace_back(2, channel++, mode2_data);
+    results.emplace_back(2, channel++, mode2_data);
+    return results;
+  }
+
+  static std::vector<LeCsResultDataStructure> GetSubeventContinueMode2Data() {
+    std::vector<LeCsResultDataStructure> results;
+    uint8_t channel = 10;
     // antenna_permutation_index is A1A2
     std::vector<uint8_t> mode2_data = GetMode2Data(
             /*num_antenna_path=*/2, /*antenna_permutation_index=*/0);
@@ -907,9 +927,16 @@ TEST_F(DistanceMeasurementManagerTest, complete_mode2_procedure) {
 
   CsSubeventResultEvent req_subevent_result_1;
   req_subevent_result_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  req_subevent_result_1.subevent_done_status = CsSubeventDoneStatus::PARTIAL_RESULTS;
   req_subevent_result_1.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::INITIATOR);
   cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
           params.connection_handle, procedure_counter, req_subevent_result_1));
+  req_subevent_result_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  req_subevent_result_1.subevent_done_status = CsSubeventDoneStatus::ALL_RESULTS_COMPLETE;
+  req_subevent_result_1.result_data_structures = CsModule::GetSubeventContinueMode2Data();
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultContinueEvent(
+          params.connection_handle, req_subevent_result_1));
+
   CsSubeventResultEvent req_subevent_result_2;
   req_subevent_result_2.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::INITIATOR);
   cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
