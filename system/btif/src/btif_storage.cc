@@ -255,16 +255,7 @@ static bool cfg2prop(const RawAddress* remote_bd_addr, bt_property_t* prop) {
         ret = btif_config_get_str(BTIF_STORAGE_SECTION_ADAPTER, BTIF_STORAGE_KEY_NAME,
                                   reinterpret_cast<char*>(prop->val), &len);
       }
-      if (com::android::bluetooth::flags::empty_names_are_invalid()) {
-        if (ret && len > 1 && len <= prop->len) {  // empty names have a len of 1
-          prop->len = len - 1;
-        } else {
-          prop->len = 0;
-          ret = false;
-        }
-        break;
-      }
-      if (ret && len && len <= prop->len) {
+      if (ret && len > 1 && len <= prop->len) {  // empty names have a len of 1
         prop->len = len - 1;
       } else {
         prop->len = 0;

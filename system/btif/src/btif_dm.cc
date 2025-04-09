@@ -3862,7 +3862,7 @@ void btif_dm_on_disable() {
  ******************************************************************************/
 void btif_dm_read_energy_info() { BTA_DmBleGetEnergyInfo(bta_energy_info_cb); }
 
-static const char* btif_get_default_local_name_new() {
+static const char* btif_get_default_local_name() {
   using bluetooth::common::StringTrim;
   static std::string default_name = "";
 
@@ -3887,30 +3887,6 @@ static const char* btif_get_default_local_name_new() {
   }
 
   return default_name.c_str();
-}
-
-static const char* btif_get_default_local_name() {
-  if (com::android::bluetooth::flags::empty_names_are_invalid()) {
-    return btif_get_default_local_name_new();
-  }
-  static char btif_default_local_name[DEFAULT_LOCAL_NAME_MAX + 1] = {'\0'};
-
-  if (btif_default_local_name[0] == '\0') {
-    int max_len = sizeof(btif_default_local_name) - 1;
-
-    char prop_name[PROPERTY_VALUE_MAX];
-    osi_property_get(PROPERTY_DEFAULT_DEVICE_NAME, prop_name, "");
-    strncpy(btif_default_local_name, prop_name, max_len);
-
-    // If no value was placed in the btif_default_local_name then use model name
-    if (btif_default_local_name[0] == '\0') {
-      char prop_model[PROPERTY_VALUE_MAX];
-      osi_property_get(PROPERTY_PRODUCT_MODEL, prop_model, "");
-      strncpy(btif_default_local_name, prop_model, max_len);
-    }
-    btif_default_local_name[max_len] = '\0';
-  }
-  return btif_default_local_name;
 }
 
 static void btif_stats_add_bond_event(const RawAddress& bd_addr, bt_bond_function_t function,
