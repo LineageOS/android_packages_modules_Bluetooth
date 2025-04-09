@@ -32,7 +32,6 @@ import static com.android.bluetooth.flags.Flags.leaudioBroadcastApiManagePrimary
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal;
 import static com.android.bluetooth.flags.Flags.leaudioMonitorUnicastSourceWhenManagedByBroadcastDelegator;
 import static com.android.bluetooth.flags.Flags.leaudioUseAudioRecordingListener;
-import static com.android.modules.utils.build.SdkLevel.isAtLeastU;
 
 import static java.util.Objects.requireNonNull;
 
@@ -2396,15 +2395,9 @@ public class LeAudioService extends ProfileService {
                             + (", suppressNoisyIntent: " + suppressNoisyIntent)
                             + (", hasFallbackDevice: " + hasFallbackDevice));
 
-            final BluetoothProfileConnectionInfo connectionInfo;
-            if (isAtLeastU()) {
-                connectionInfo =
-                        BluetoothProfileConnectionInfo.createLeAudioOutputInfo(
-                                suppressNoisyIntent, volume);
-            } else {
-                connectionInfo =
-                        BluetoothProfileConnectionInfo.createLeAudioInfo(suppressNoisyIntent, true);
-            }
+            final BluetoothProfileConnectionInfo connectionInfo =
+                    BluetoothProfileConnectionInfo.createLeAudioOutputInfo(
+                            suppressNoisyIntent, volume);
             mAudioManager.handleBluetoothActiveDeviceChanged(
                     mActiveAudioOutDevice, previousActiveOutDevice, connectionInfo);
         }
@@ -3331,13 +3324,8 @@ public class LeAudioService extends ProfileService {
         if (mActiveAudioOutDevice != null && outputCodecOrFreqChanged) {
             int volume = getAudioDeviceGroupVolume(groupId);
 
-            final BluetoothProfileConnectionInfo connectionInfo;
-            if (isAtLeastU()) {
-                connectionInfo =
-                        BluetoothProfileConnectionInfo.createLeAudioOutputInfo(true, volume);
-            } else {
-                connectionInfo = BluetoothProfileConnectionInfo.createLeAudioInfo(true, true);
-            }
+            final BluetoothProfileConnectionInfo connectionInfo =
+                    BluetoothProfileConnectionInfo.createLeAudioOutputInfo(true, volume);
 
             mAudioManager.handleBluetoothActiveDeviceChanged(
                     mActiveAudioOutDevice, mActiveAudioOutDevice, connectionInfo);
@@ -5580,15 +5568,9 @@ public class LeAudioService extends ProfileService {
                             + " and suppressNoisyIntent="
                             + suppressNoisyIntent);
 
-            final BluetoothProfileConnectionInfo connectionInfo;
-            if (isAtLeastU()) {
-                connectionInfo =
-                        BluetoothProfileConnectionInfo.createLeAudioOutputInfo(
-                                suppressNoisyIntent, volume);
-            } else {
-                connectionInfo =
-                        BluetoothProfileConnectionInfo.createLeAudioInfo(suppressNoisyIntent, true);
-            }
+            final BluetoothProfileConnectionInfo connectionInfo =
+                    BluetoothProfileConnectionInfo.createLeAudioOutputInfo(
+                            suppressNoisyIntent, volume);
 
             mAudioManager.handleBluetoothActiveDeviceChanged(
                     mActiveAudioOutDevice, mActiveAudioOutDevice, connectionInfo);

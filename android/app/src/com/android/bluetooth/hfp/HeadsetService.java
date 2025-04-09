@@ -25,8 +25,6 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.media.audio.Flags.deprecateStreamBtSco;
 
-import static com.android.modules.utils.build.SdkLevel.isAtLeastU;
-
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.NonNull;
@@ -1749,9 +1747,7 @@ public class HeadsetService extends ProfileService {
                             && isCallIdleBefore
                             && !Utils.isScoManagedByAudioEnabled()) {
                         mSystemInterface.getAudioManager().setA2dpSuspended(true);
-                        if (isAtLeastU()) {
-                            mSystemInterface.getAudioManager().setLeAudioSuspended(true);
-                        }
+                        mSystemInterface.getAudioManager().setLeAudioSuspended(true);
                     }
                 });
         doForEachConnectedStateMachine(
@@ -1768,9 +1764,7 @@ public class HeadsetService extends ProfileService {
                             && !Utils.isScoManagedByAudioEnabled()) {
                         // Resume A2DP when call ended and SCO is not connected
                         mSystemInterface.getAudioManager().setA2dpSuspended(false);
-                        if (isAtLeastU()) {
-                            mSystemInterface.getAudioManager().setLeAudioSuspended(false);
-                        }
+                        mSystemInterface.getAudioManager().setLeAudioSuspended(false);
                     }
                 });
         if (callState == HeadsetHalConstants.CALL_STATE_IDLE) {
@@ -2100,9 +2094,7 @@ public class HeadsetService extends ProfileService {
                 // Unsuspend A2DP when SCO connection is gone and call state is idle
                 if (mSystemInterface.isCallIdle() && !Utils.isScoManagedByAudioEnabled()) {
                     mSystemInterface.getAudioManager().setA2dpSuspended(false);
-                    if (isAtLeastU()) {
-                        mSystemInterface.getAudioManager().setLeAudioSuspended(false);
-                    }
+                    mSystemInterface.getAudioManager().setLeAudioSuspended(false);
                 }
             }
         }
