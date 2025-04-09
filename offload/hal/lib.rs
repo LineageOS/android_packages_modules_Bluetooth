@@ -13,10 +13,52 @@
 // limitations under the License.
 
 //! HCI HAL Binder implementation with proxy integration
-//! The Binder HAL interface is replicated as C Interface in `ffi` module
 
-mod ffi;
 mod service;
 
-pub use ffi::{CCallbacks, CInterface};
-pub use service::HciHalProxy;
+pub use service::{HciProxy, HciProxyCallbacks};
+
+#[allow(missing_docs)]
+pub trait HciHal: Send + Sync {
+    fn initialize(&self, client: HciProxyCallbacks);
+    fn send_command(&self, data: &[u8]);
+    fn send_acl(&self, data: &[u8]);
+    fn send_iso(&self, data: &[u8]);
+    fn send_sco(&self, data: &[u8]);
+    fn close(&self);
+    fn client_died(&self);
+}
+
+#[allow(missing_docs)]
+#[derive(Debug, PartialEq)]
+pub enum HciHalStatus {
+    Success,
+    AlreadyInitialized,
+    UnableToOpenInterface,
+    HardwareInitializationError,
+    Unknown,
+}
+
+/// C Interface for C/C++ HAl implementation
+mod ffi;
+
+use android_hardware_bluetooth::aidl::android::hardware::bluetooth::IBluetoothHci::{
+    BnBluetoothHci, BpBluetoothHci, IBluetoothHci,
+};
+use bluetooth_offload_leaudio_hci::LeAudioModuleBuilder;
+use ffi::{CInterface, Ffi};
+
+/// Entry-point for C/C++ implementation
+/// Add the binder service, and use HAL C/C++ backend defined as CInterface.
+#[no_mangle]
+pub extern "C" fn __add_bluetooth_hci_service(cintf: CInterface) {
+    binder::add_service(
+        &format!("{}/default", BpBluetoothHci::get_descriptor()),
+        BnBluetoothHci::new_binder(
+            HciProxy::new(vec![Box::new(LeAudioModuleBuilder {})], Ffi::new(cintf)),
+            binder::BinderFeatures::default(),
+        )
+        .as_binder(),
+    )
+    .expect("Failed to register service");
+}
