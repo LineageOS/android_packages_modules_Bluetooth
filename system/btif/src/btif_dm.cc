@@ -2667,7 +2667,7 @@ void btif_dm_cancel_bond(const RawAddress bd_addr) {
  * Returns          none
  *
  ******************************************************************************/
-
+// TODO: Remove when simpler_hid_connection_policy is released
 void btif_dm_hh_open_failed(RawAddress* bdaddr) {
   if (pairing_cb.state == BT_BOND_STATE_BONDING && *bdaddr == pairing_cb.bd_addr) {
     bond_state_changed(BT_STATUS_RMT_DEV_DOWN, *bdaddr, BT_BOND_STATE_NONE);
