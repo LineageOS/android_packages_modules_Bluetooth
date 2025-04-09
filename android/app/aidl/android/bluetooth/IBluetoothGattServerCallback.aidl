@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattService;
 
 /**
@@ -25,26 +26,26 @@ import android.bluetooth.BluetoothGattService;
 oneway interface IBluetoothGattServerCallback {
     void onServerRegistered(in int status, in int serverIf);
     void onServerConnectionState(in int status, in int serverIf,
-                                 in boolean connected, in String address);
+                                 in boolean connected, in BluetoothDevice device);
     void onServiceAdded(in int status, in BluetoothGattService service);
-    void onCharacteristicReadRequest(in String address, in int transId, in int offset,
+    void onCharacteristicReadRequest(in BluetoothDevice device, in int transId, in int offset,
                                      in boolean isLong, in int handle);
-    void onDescriptorReadRequest(in String address, in int transId,
+    void onDescriptorReadRequest(in BluetoothDevice device, in int transId,
                                      in int offset, in boolean isLong,
                                      in int handle);
-    void onCharacteristicWriteRequest(in String address, in int transId, in int offset,
+    void onCharacteristicWriteRequest(in BluetoothDevice device, in int transId, in int offset,
                                      in int length, in boolean isPrep, in boolean needRsp,
                                      in int handle, in byte[] value);
-    void onDescriptorWriteRequest(in String address, in int transId, in int offset,
+    void onDescriptorWriteRequest(in BluetoothDevice device, in int transId, in int offset,
                                      in int length, in boolean isPrep, in boolean needRsp,
                                      in int handle, in byte[] value);
-    void onExecuteWrite(in String address, in int transId, in boolean execWrite);
-    void onNotificationSent(in String address, in int status);
-    void onMtuChanged(in String address, in int mtu);
-    void onPhyUpdate(in String address, in int txPhy, in int rxPhy, in int status);
-    void onPhyRead(in String address, in int txPhy, in int rxPhy, in int status);
-    void onConnectionUpdated(in String address, in int interval, in int latency,
+    void onExecuteWrite(in BluetoothDevice device, in int transId, in boolean execWrite);
+    void onNotificationSent(in BluetoothDevice device, in int status);
+    void onMtuChanged(in BluetoothDevice device, in int mtu);
+    void onPhyUpdate(in BluetoothDevice device, in int txPhy, in int rxPhy, in int status);
+    void onPhyRead(in BluetoothDevice device, in int txPhy, in int rxPhy, in int status);
+    void onConnectionUpdated(in BluetoothDevice device, in int interval, in int latency,
                              in int timeout, in int status);
-    void onSubrateChange(in String address, in int subrateFactor, in int latency,
+    void onSubrateChange(in BluetoothDevice device, in int subrateFactor, in int latency,
                          in int contNum, in int timeout, in int status);
 }

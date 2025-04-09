@@ -36,46 +36,46 @@ interface IBluetoothGatt {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     void unregisterClient(in int clientIf, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void clientConnect(in int clientIf, in String address, in int addressType, in boolean isDirect, in int transport, in boolean opportunistic, in int phy, in AttributionSource attributionSource);
+    void clientConnect(in int clientIf, in BluetoothDevice device, in int addressType, in boolean isDirect, in int transport, in boolean opportunistic, in int phy, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void clientDisconnect(in int clientIf, in String address, in AttributionSource attributionSource);
+    void clientDisconnect(in int clientIf, in BluetoothDevice device, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void clientSetPreferredPhy(in int clientIf, in String address, in int txPhy, in int rxPhy, in int phyOptions, in AttributionSource attributionSource);
+    void clientSetPreferredPhy(in int clientIf, in BluetoothDevice device, in int txPhy, in int rxPhy, in int phyOptions, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void clientReadPhy(in int clientIf, in String address, in AttributionSource attributionSources);
+    void clientReadPhy(in int clientIf, in BluetoothDevice device, in AttributionSource attributionSources);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void refreshDevice(in int clientIf, in String address, in AttributionSource attributionSource);
+    void refreshDevice(in int clientIf, in BluetoothDevice device, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void discoverServices(in int clientIf, in String address, in AttributionSource attributionSource);
+    void discoverServices(in int clientIf, in BluetoothDevice device, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void discoverServiceByUuid(in int clientIf, in String address, in ParcelUuid uuid, in AttributionSource attributionSource);
+    void discoverServiceByUuid(in int clientIf, in BluetoothDevice device, in ParcelUuid uuid, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void readCharacteristic(in int clientIf, in String address, in int handle, in int authReq, in AttributionSource attributionSource);
+    void readCharacteristic(in int clientIf, in BluetoothDevice device, in int handle, in int authReq, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void readUsingCharacteristicUuid(in int clientIf, in String address, in ParcelUuid uuid,
+    void readUsingCharacteristicUuid(in int clientIf, in BluetoothDevice device, in ParcelUuid uuid,
                            in int startHandle, in int endHandle, in int authReq, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    int writeCharacteristic(in int clientIf, in String address, in int handle,
+    int writeCharacteristic(in int clientIf, in BluetoothDevice device, in int handle,
                             in int writeType, in int authReq, in byte[] value, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void readDescriptor(in int clientIf, in String address, in int handle, in int authReq, in AttributionSource attributionSource);
+    void readDescriptor(in int clientIf, in BluetoothDevice device, in int handle, in int authReq, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    int writeDescriptor(in int clientIf, in String address, in int handle,
+    int writeDescriptor(in int clientIf, in BluetoothDevice device, in int handle,
                             in int authReq, in byte[] value, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void registerForNotification(in int clientIf, in String address, in int handle, in boolean enable, in AttributionSource attributionSource);
+    void registerForNotification(in int clientIf, in BluetoothDevice device, in int handle, in boolean enable, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void beginReliableWrite(in int clientIf, in String address, in AttributionSource attributionSource);
+    void beginReliableWrite(in int clientIf, in BluetoothDevice device, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void endReliableWrite(in int clientIf, in String address, in boolean execute, in AttributionSource attributionSource);
+    void endReliableWrite(in int clientIf, in BluetoothDevice device, in boolean execute, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void readRemoteRssi(in int clientIf, in String address, in AttributionSource attributionSource);
+    void readRemoteRssi(in int clientIf, in BluetoothDevice device, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void configureMTU(in int clientIf, in String address, in int mtu, in AttributionSource attributionSource);
+    void configureMTU(in int clientIf, in BluetoothDevice device, in int mtu, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void connectionParameterUpdate(in int clientIf, in String address, in int connectionPriority, in AttributionSource attributionSource);
+    void connectionParameterUpdate(in int clientIf, in BluetoothDevice device, in int connectionPriority, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void leConnectionUpdate(int clientIf, String address, int minInterval,
+    void leConnectionUpdate(int clientIf, in BluetoothDevice device, int minInterval,
                             int maxInterval, int peripheralLatency, int supervisionTimeout,
                             int minConnectionEventLen, int maxConnectionEventLen, in AttributionSource attributionSource);
 
@@ -84,13 +84,13 @@ interface IBluetoothGatt {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     void unregisterServer(in int serverIf, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void serverConnect(in int serverIf, in String address, in int addressType, in boolean isDirect, in int transport, in AttributionSource attributionSource);
+    void serverConnect(in int serverIf, in BluetoothDevice device, in int addressType, in boolean isDirect, in int transport, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void serverDisconnect(in int serverIf, in String address, in AttributionSource attributionSource);
+    void serverDisconnect(in int serverIf, in BluetoothDevice device, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void serverSetPreferredPhy(in int clientIf, in String address, in int txPhy, in int rxPhy, in int phyOptions, in AttributionSource attributionSource);
+    void serverSetPreferredPhy(in int clientIf, in BluetoothDevice device, in int txPhy, in int rxPhy, in int phyOptions, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void serverReadPhy(in int clientIf, in String address, in AttributionSource attributionSource);
+    void serverReadPhy(in int clientIf, in BluetoothDevice device, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     void addService(in int serverIf, in BluetoothGattService service, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
@@ -98,10 +98,10 @@ interface IBluetoothGatt {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     void clearServices(in int serverIf, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    void sendResponse(in int serverIf, in String address, in int requestId,
+    void sendResponse(in int serverIf, in BluetoothDevice device, in int requestId,
                             in int status, in int offset, in byte[] value, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    int sendNotification(in int serverIf, in String address, in int handle,
+    int sendNotification(in int serverIf, in BluetoothDevice device, in int handle,
                             in boolean confirm, in byte[] value, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     void disconnectAll(in AttributionSource attributionSource);

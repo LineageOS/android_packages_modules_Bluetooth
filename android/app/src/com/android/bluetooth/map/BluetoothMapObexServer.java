@@ -37,7 +37,6 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.SignedLongLong;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
-import com.android.bluetooth.mapapi.BluetoothMapContract;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.HeaderSet;
 import com.android.obex.Operation;

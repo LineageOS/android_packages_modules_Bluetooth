@@ -43,13 +43,6 @@ class DckScanTest(
     private @TestParameter val isRemoteAdvertisingWithUuid: Boolean,
     private @TestParameter val isGattConnected: Boolean,
 ) {
-
-    companion object {
-        private const val TIMEOUT_MS = 5000L
-        private const val TEST_ADDRESS_RANDOM_STATIC = "F0:43:A8:23:10:11"
-        private val CCC_DK_UUID = UUID.fromString("0000FFF5-0000-1000-8000-00805f9b34fb")
-    }
-
     // TODO(315852141): Include variations for LE only vs. Dual mode Bumble when supported
     // TODO(315852141): Include variations for two advertisements at the same time
     // TODO(303502437): Include variations for other callback types when supported in rootcanal
@@ -127,5 +120,11 @@ class DckScanTest(
             .isEqualTo(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
         assertThat((result as LeScanResult.Success).scanResult.device.address)
             .isEqualTo(Utils.BUMBLE_RANDOM_ADDRESS)
+    }
+
+    companion object {
+        private const val TIMEOUT_MS = 5000L
+        private const val TEST_ADDRESS_RANDOM_STATIC = "F0:43:A8:23:10:11"
+        private val CCC_DK_UUID = UUID.fromString("0000FFF5-0000-1000-8000-00805f9b34fb")
     }
 }

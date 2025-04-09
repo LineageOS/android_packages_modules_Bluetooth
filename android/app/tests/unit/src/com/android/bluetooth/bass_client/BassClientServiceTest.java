@@ -6833,7 +6833,7 @@ public class BassClientServiceTest {
     }
 
     @Test
-    public void resumeSourceSynchronization_omitWhenPaSyncedRequested() {
+    public void resumeSourceSynchronization_omitWhenPaRequestedOrBisSynced() {
         prepareSynchronizedPair();
 
         // Cache sinks for resume and set SUSPENDED_BY_HOST pause
@@ -6843,30 +6843,12 @@ public class BassClientServiceTest {
         injectRemoteSourceStateChanged(
                 mBroadcastMetadata1,
                 BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCINFO_REQUEST,
-                /* isBisSynced */ true);
+                /* isBisSynced */ false);
         checkNoResumeSynchronizationByHost();
 
-        // Cache sinks for resume and set SUSPENDED_BY_HOST pause
-        // Try resume while pa unsynced
-        mBassClientService.handleUnicastSourceStreamStatusChange(
-                0 /* STATUS_LOCAL_STREAM_REQUESTED */);
+        // Try resume while BIS synced
         injectRemoteSourceStateChanged(
-                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
-        checkResumeSynchronizationByHost();
-    }
-
-    @Test
-    public void resumeSourceSynchronization_omitWhenBisAlreadySynced() {
-        prepareSynchronizedPair();
-
-        // Cache sinks for resume and set SUSPENDED_BY_HOST pause
-        // Try resume while sync info requested
-        mBassClientService.handleUnicastSourceStreamStatusChange(
-                0 /* STATUS_LOCAL_STREAM_REQUESTED */);
-        injectRemoteSourceStateChanged(
-                mBroadcastMetadata1,
-                BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCINFO_REQUEST,
-                false);
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ true);
         checkNoResumeSynchronizationByHost();
 
         // Cache sinks for resume and set SUSPENDED_BY_HOST pause

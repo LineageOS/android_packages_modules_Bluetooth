@@ -55,7 +55,7 @@
 #endif
 
 #include "audio_hal_interface/a2dp_encoding.h"
-#include "bta/av/bta_av_int.h"
+#include "bta/include/bta_av_api.h"
 #include "osi/include/properties.h"
 #include "stack/include/bt_hdr.h"
 

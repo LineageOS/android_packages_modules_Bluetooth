@@ -60,19 +60,6 @@ import org.robolectric.Shadows.shadowOf
 @RunWith(RobolectricTestRunner::class)
 @kotlinx.coroutines.ExperimentalCoroutinesApi
 class AutoOnFeatureTest {
-    companion object {
-        @BeforeClass
-        @JvmStatic
-        fun beforeClass() {
-            IpcDataCache.setTestMode(true)
-        }
-
-        @AfterClass
-        @JvmStatic
-        fun afterClass() {
-            IpcDataCache.setTestMode(false)
-        }
-    }
 
     @get:Rule val testName = TestName()
     @get:Rule val expect = Expect.create()
@@ -487,5 +474,19 @@ class AutoOnFeatureTest {
         expect.that(timer).isNotNull()
         expect.that(callback_count).isEqualTo(0)
         expectStorageTime()
+    }
+
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun beforeClass() {
+            IpcDataCache.setTestMode(true)
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun afterClass() {
+            IpcDataCache.setTestMode(false)
+        }
     }
 }

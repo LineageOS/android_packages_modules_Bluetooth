@@ -388,8 +388,8 @@ struct CsModule {
     CsPacketNadm nadm = CsPacketNadm::ATTACK_IS_EXTREMELY_UNLIKELY;
     uint16_t toa_tod_initiator = 10;  // x*0.5 nanos
     uint16_t tod_toa_reflector = 10;  // x*0.5 nanos
-    LeCsToneData packet_pct1(/*i_sample=*/0x0A, /*q_sample=*/0x1A);
-    LeCsToneData packet_pct2(/*i_sample=*/0x0B, /*q_sample=*/0x1B);
+    LeCsPacketPct packet_pct1(/*i_sample=*/0x0A, /*q_sample=*/0x1A);
+    LeCsPacketPct packet_pct2(/*i_sample=*/0x0B, /*q_sample=*/0x1B);
     bool has_packet_pct = false;
     if (rtt_type == CsRttType::RTT_WITH_32_BIT_SOUNDING_SEQUENCE ||
         rtt_type == CsRttType::RTT_WITH_96_BIT_SOUNDING_SEQUENCE) {

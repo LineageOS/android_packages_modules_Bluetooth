@@ -17,7 +17,7 @@
 source_set("libcodec_server_a2dp_aac") {
   configs += [
     "//bt/system:target_defaults",
-    "//bt/system/stack/mmc:target_defaults",
+    "//bt/floss/mmc:target_defaults",
     "//bt/system/log:log_defaults",
   ]
   include_dirs = [
@@ -26,7 +26,7 @@ source_set("libcodec_server_a2dp_aac") {
     "//bt/system/stack",
     "//bt/system/stack/include",
   ]
-  deps = [ "//bt/system/stack/mmc/proto:mmc_config_proto" ]
+  deps = [ "//bt/floss/mmc/proto:mmc_config_proto" ]
   sources = [ "a2dp_aac_mmc_encoder.cc" ]
   libs = [
     # Following are for AAC using FFmpeg
@@ -37,7 +37,7 @@ source_set("libcodec_server_a2dp_aac") {
 
 source_set("libcodec_server_hfp_lc3") {
   configs += [
-    "//bt/system/stack/mmc:target_defaults",
+    "//bt/floss/mmc:target_defaults",
     "//bt/system/log:log_defaults",
   ]
   include_dirs = [
@@ -49,8 +49,8 @@ source_set("libcodec_server_hfp_lc3") {
   libs = [ "lc3" ]
 
   deps = [
+    "//bt/floss/mmc/proto:mmc_config_proto",
     "//bt/system/osi",
-    "//bt/system/stack/mmc/proto:mmc_config_proto",
   ]
   sources = [
     "hfp_lc3_mmc_decoder.cc",

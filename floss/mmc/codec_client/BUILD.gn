@@ -14,11 +14,17 @@
 #  limitations under the License.
 #
 
-source_set("libmmc_metrics") {
+source_set("libcodec_client") {
   configs += [
-    "//bt/system/stack/mmc:target_defaults",
+    "//bt/floss/mmc:target_defaults",
     "//bt/system/log:log_defaults",
   ]
-  sources = [ "mmc_rtt_logger.cc" ]
-  deps = [ "//bt/system/metrics" ]
+
+  sources = [ "codec_client.cc" ]
+
+  deps = [
+    "//bt/floss/mmc/metrics:libmmc_metrics",
+    "//bt/floss/mmc/proto:mmc_config_proto",
+    "//bt/floss/mmc/proto:mmc_service_proto",
+  ]
 }

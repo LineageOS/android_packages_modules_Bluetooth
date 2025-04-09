@@ -61,7 +61,6 @@ android_test {
         "libstaticjvmtiagent",
     ],
 
-    jarjar_rules: ":bluetooth-jarjar-rules",
     asset_dirs: ["src/com/android/bluetooth/btservice/storage/schemas"],
 
     // Include all test java and kotlin files.
@@ -70,7 +69,10 @@ android_test {
         "src/**/*.kt",
     ],
     jacoco: {
-        include_filter: ["com.android.bluetooth.*"],
+        include_filter: [
+            "android.bluetooth.**",
+            "com.android.bluetooth.**",
+        ],
         exclude_filter: [],
     },
 

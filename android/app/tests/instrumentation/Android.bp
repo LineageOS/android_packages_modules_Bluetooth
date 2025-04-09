@@ -59,7 +59,10 @@ java_defaults {
         ":bluetooth_test_looper",
     ],
     jacoco: {
-        include_filter: ["android.bluetooth.*"],
+        include_filter: [
+            "android.bluetooth.**",
+            "com.android.bluetooth.**",
+        ],
         exclude_filter: [],
     },
 

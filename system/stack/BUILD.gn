@@ -31,6 +31,7 @@ source_set("nonstandard_codecs") {
     ]
 
     include_dirs = [
+      "//bt/floss",
       "//bt/system",
       "//bt/system/bta/include",
       "//bt/system/btif/include",
@@ -40,7 +41,7 @@ source_set("nonstandard_codecs") {
       "//bt/system/utils/include",
     ]
 
-    deps = [ "//bt/system/stack/mmc" ]
+    deps = [ "//bt/floss/mmc" ]
 
     configs += [
       "//bt/system:target_defaults",
@@ -201,6 +202,7 @@ source_set("stack") {
     "sdp",
     "smp",
     "srvc",
+    "//bt/floss",
     "//bt/system/",
     "//bt/system/bta/include",
     "//bt/system/bta/sys",
@@ -216,11 +218,11 @@ source_set("stack") {
 
   deps = [
     ":nonstandard_codecs",
+    "//bt/floss/mmc",
     "//bt/floss/rust/topshim:cxxlibheader",
     "//bt/sysprop:libcom.android.sysprop.bluetooth",
     "//bt/system/gd/crypto_toolbox:crypto_toolbox",
     "//bt/system/metrics",
-    "//bt/system/stack/mmc",
     "//bt/system/types",
   ]
 

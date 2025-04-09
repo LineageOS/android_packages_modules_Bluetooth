@@ -50,7 +50,6 @@ import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.SignedLongLong;
 import com.android.bluetooth.map.BluetoothMapContent.FilterInfo;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
-import com.android.bluetooth.mapapi.BluetoothMapContract;
 
 import com.google.android.mms.pdu.PduHeaders;
 

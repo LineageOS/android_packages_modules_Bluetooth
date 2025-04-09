@@ -115,6 +115,33 @@ namespace bluetooth {
 namespace audio {
 namespace a2dp {
 
+std::string ahal_codec_configuration::ToString() const {
+  std::string codec_specific_elements_str;
+  for (size_t i = 0; i < AVDT_CODEC_SIZE; ++i) {
+    codec_specific_elements_str +=
+            std::format("0x{:02x}", static_cast<int>(codec_specific_information_elements[i]));
+    if (i < AVDT_CODEC_SIZE - 1) {
+      codec_specific_elements_str += ", ";
+      if ((i + 1) % 8 == 0) {
+        codec_specific_elements_str += "\n    ";
+      }
+    }
+  }
+
+  return std::format(
+          "ahal_codec_configuration: {{\n"
+          "  codec_config: {{ {} }}\n"
+          "  peer_mtu: {}\n"
+          "  preferred_encoding_interval_us: {}\n"
+          "  codec_bitrate: {}\n"
+          "  codec_specific_information_elements: [\n"
+          "    {}\n"
+          "  ]\n"
+          "}}",
+          codec_config.ToString(), peer_mtu, preferred_encoding_interval_us, codec_bitrate,
+          codec_specific_elements_str);
+}
+
 // Invoked by audio server to set audio config (PCM for now)
 bool SetAudioConfig(AudioConfig config) {
   btav_a2dp_codec_config_t codec_config;
@@ -257,8 +284,7 @@ void cleanup() {
 }
 
 // Set up the codec into BluetoothAudio HAL
-bool setup_codec(A2dpCodecConfig* /*a2dp_config*/, uint16_t /*peer_mtu*/,
-                 int /*preferred_encoding_interval_us*/) {
+bool setup_codec(const ahal_codec_configuration& /* config */) {
   // TODO: setup codec
   return true;
 }

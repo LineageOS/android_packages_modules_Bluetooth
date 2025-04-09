@@ -41,10 +41,6 @@ class ScanBinder(
     private val scanController: ScanController,
 ) : IBluetoothScan.Stub() {
 
-    companion object {
-        private val TAG = ScanBinder::class.java.simpleName
-    }
-
     @Volatile private var isAvailable = true
 
     fun cleanup() {
@@ -214,5 +210,9 @@ class ScanBinder(
                 }
             }
         }
+    }
+
+    companion object {
+        private val TAG = ScanBinder::class.java.simpleName
     }
 }

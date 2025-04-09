@@ -16,6 +16,9 @@
 
 package com.android.bluetooth.gatt;
 
+import static com.android.bluetooth.TestUtils.getTestDevice;
+
+import android.bluetooth.BluetoothDevice;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
@@ -34,16 +37,17 @@ public class CallbackInfoTest {
 
     @Rule public Expect expect = Expect.create();
 
+    private final BluetoothDevice mDevice = getTestDevice(59);
+
     @Test
     public void callbackInfo_default() {
-        String address = "TestAddress";
         int status = 0;
         int handle = 1;
         ByteString value = ByteString.copyFrom("Test Value Byte Array".getBytes());
 
-        CallbackInfo callbackInfo = new CallbackInfo(address, status, handle, value);
+        CallbackInfo callbackInfo = new CallbackInfo(mDevice, status, handle, value);
 
-        expect.that(callbackInfo.address()).isEqualTo(address);
+        expect.that(callbackInfo.device()).isEqualTo(mDevice);
         expect.that(callbackInfo.status()).isEqualTo(status);
         expect.that(callbackInfo.handle()).isEqualTo(handle);
         expect.that(callbackInfo.value()).isEqualTo(value);
@@ -51,12 +55,11 @@ public class CallbackInfoTest {
 
     @Test
     public void callbackInfo_nullValue() {
-        String address = "TestAddress";
         int status = 0;
 
-        CallbackInfo callbackInfo = new CallbackInfo(address, status);
+        CallbackInfo callbackInfo = new CallbackInfo(mDevice, status);
 
-        expect.that(callbackInfo.address()).isEqualTo(address);
+        expect.that(callbackInfo.device()).isEqualTo(mDevice);
         expect.that(callbackInfo.status()).isEqualTo(status);
         expect.that(callbackInfo.value()).isNull();
         expect.that(callbackInfo.valueByteArray()).isNull();
