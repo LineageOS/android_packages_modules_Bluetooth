@@ -25,8 +25,6 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static android.media.audio.Flags.deprecateStreamBtSco;
 
-import static com.android.modules.utils.build.SdkLevel.isAtLeastU;
-
 import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothAdapter;
@@ -1364,9 +1362,7 @@ class HeadsetStateMachine extends StateMachine {
                         break;
                     }
                     mSystemInterface.getAudioManager().setA2dpSuspended(true);
-                    if (isAtLeastU()) {
-                        mSystemInterface.getAudioManager().setLeAudioSuspended(true);
-                    }
+                    mSystemInterface.getAudioManager().setLeAudioSuspended(true);
 
                     if (mHeadsetService.isAptXSwbEnabled()
                             && mHeadsetService.isAptXSwbPmEnabled()) {
@@ -1384,9 +1380,7 @@ class HeadsetStateMachine extends StateMachine {
 
                     if (!mNativeInterface.connectAudio(mDevice)) {
                         mSystemInterface.getAudioManager().setA2dpSuspended(false);
-                        if (isAtLeastU()) {
-                            mSystemInterface.getAudioManager().setLeAudioSuspended(false);
-                        }
+                        mSystemInterface.getAudioManager().setLeAudioSuspended(false);
                         stateLogE("Failed to connect SCO audio for " + mDevice);
                         // No state change involved, fire broadcast immediately
                         broadcastAudioState(

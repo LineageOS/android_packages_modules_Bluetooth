@@ -16,7 +16,6 @@
 
 package android.bluetooth.cts;
 
-import static com.android.modules.utils.build.SdkLevel.isAtLeastV;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -95,12 +94,10 @@ public class TestUtils extends android.bluetooth.test_utils.TestUtils {
                 return BluetoothProperties.isProfileBapUnicastClientEnabled().orElse(false);
             }
             case BluetoothProfile.LE_AUDIO_BROADCAST -> {
-                return isAtLeastV()
-                        && BluetoothProperties.isProfileBapBroadcastSourceEnabled().orElse(false);
+                return BluetoothProperties.isProfileBapBroadcastSourceEnabled().orElse(false);
             }
             case BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT -> {
-                return isAtLeastV()
-                        && BluetoothProperties.isProfileBapBroadcastAssistEnabled().orElse(false);
+                return BluetoothProperties.isProfileBapBroadcastAssistEnabled().orElse(false);
             }
                 // Hidden profile
                 // case BluetoothProfile.LE_CALL_CONTROL:

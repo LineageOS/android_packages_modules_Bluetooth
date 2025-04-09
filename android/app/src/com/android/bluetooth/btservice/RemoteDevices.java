@@ -23,8 +23,6 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringConsumer;
 
-import static com.android.modules.utils.build.SdkLevel.isAtLeastV;
-
 import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.NonNull;
@@ -61,7 +59,6 @@ import com.android.bluetooth.bas.BatteryService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetHalConstants;
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.modules.utils.build.SdkLevel;
 
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
@@ -1129,10 +1126,8 @@ public class RemoteDevices {
                         deviceProperties.setName(newName);
                         List<String> wordBreakdownList =
                                 MetricsLogger.getInstance().getWordBreakdownList(newName);
-                        if (SdkLevel.isAtLeastU()) {
-                            MetricsLogger.getInstance()
-                                    .uploadRestrictedBluetoothDeviceName(wordBreakdownList);
-                        }
+                        MetricsLogger.getInstance()
+                                .uploadRestrictedBluetoothDeviceName(wordBreakdownList);
                         intent = new Intent(BluetoothDevice.ACTION_NAME_CHANGED);
                         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, bdDevice);
                         intent.putExtra(BluetoothDevice.EXTRA_NAME, deviceProperties.getName());
@@ -1674,8 +1669,7 @@ public class RemoteDevices {
                 return;
             }
 
-            if (isAtLeastV()
-                    && Flags.keyMissingAsOrderedBroadcast()
+            if (Flags.keyMissingAsOrderedBroadcast()
                     && android.os.Flags.orderedBroadcastMultiplePermissions()) {
                 mAdapterService.sendOrderedBroadcastMultiplePermissions(
                         intent,

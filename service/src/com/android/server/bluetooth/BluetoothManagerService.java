@@ -38,8 +38,6 @@ import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_SYSTEM
 import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_USER_SWITCH;
 import static android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED;
 
-import static com.android.modules.utils.build.SdkLevel.isAtLeastV;
-
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.NonNull;
@@ -1935,7 +1933,7 @@ class BluetoothManagerService {
 
         // Notify all proxy objects first of adapter state change
         if (newState == STATE_ON) {
-            if (isAtLeastV() && mDeviceConfigAllowAutoOn) {
+            if (mDeviceConfigAllowAutoOn) {
                 AutoOnFeature.notifyBluetoothOn(mCurrentUserContext);
             }
             sendBluetoothOnCallback();

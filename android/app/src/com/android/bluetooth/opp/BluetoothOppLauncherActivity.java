@@ -60,7 +60,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.modules.utils.build.SdkLevel;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -129,7 +128,7 @@ public class BluetoothOppLauncherActivity extends Activity {
                 // try send this TEXT out; Currently in Browser, share one link goes to this case;
                 if (stream != null && type != null) {
                     Log.v(TAG, "Get ACTION_SEND intent: Uri = " + stream + "; mimetype = " + type);
-                    if (Flags.oppCheckContentUriPermissions() && SdkLevel.isAtLeastV()) {
+                    if (Flags.oppCheckContentUriPermissions()) {
                         if (!checkCallerAndSelfContentUriPermission(stream)) {
                             finish();
                             return;
@@ -204,7 +203,7 @@ public class BluetoothOppLauncherActivity extends Activity {
                                     + uris
                                     + "\n Type= "
                                     + mimeType);
-                    if (Flags.oppCheckContentUriPermissions() && SdkLevel.isAtLeastV()) {
+                    if (Flags.oppCheckContentUriPermissions()) {
                         permittedUris =
                                 uris.stream()
                                         .filter(this::checkCallerAndSelfContentUriPermission)

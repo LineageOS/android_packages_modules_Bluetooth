@@ -41,7 +41,6 @@ import static android.text.format.DateUtils.SECOND_IN_MILLIS;
 import static com.android.bluetooth.Utils.getBytesFromAddress;
 import static com.android.bluetooth.Utils.isDualModeAudioEnabled;
 import static com.android.bluetooth.Utils.isPackageNameAccurate;
-import static com.android.modules.utils.build.SdkLevel.isAtLeastV;
 
 import static java.util.Objects.requireNonNull;
 
@@ -717,7 +716,7 @@ public class AdapterService extends Service {
 
         mBluetoothSocketManagerBinder = new BluetoothSocketManagerBinder(this);
 
-        if (Flags.adapterSuspendMgmt() && isAtLeastV()) {
+        if (Flags.adapterSuspendMgmt()) {
             mAdapterSuspend =
                     new AdapterSuspend(
                             mNativeInterface, mLooper, getSystemService(DeviceStateManager.class));
@@ -1495,7 +1494,7 @@ public class AdapterService extends Service {
         }
 
         if (mAdapterSuspend != null) {
-            if (Flags.adapterSuspendMgmt() && isAtLeastV()) {
+            if (Flags.adapterSuspendMgmt()) {
                 mAdapterSuspend.cleanup();
             }
             mAdapterSuspend = null;

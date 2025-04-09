@@ -18,25 +18,22 @@ package com.android.bluetooth;
 
 import static org.junit.Assert.assertTrue;
 
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.os.MessageQueue;
 import android.os.SystemClock;
 import android.os.TestLooperManager;
 import android.util.Log;
+
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.modules.utils.HandlerExecutor;
 
 import com.google.common.util.concurrent.Uninterruptibles;
 
-import androidx.test.platform.app.InstrumentationRegistry;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.Executor;
@@ -61,19 +58,8 @@ public class TestLooper {
 
     private static final Constructor<Looper> LOOPER_CONSTRUCTOR;
     private static final Field THREAD_LOCAL_LOOPER_FIELD;
-    private static final Field MESSAGE_QUEUE_MESSAGES_FIELD;
-    private static final Field MESSAGE_NEXT_FIELD;
-    private static final Field MESSAGE_WHEN_FIELD;
-    private static final Method MESSAGE_MARK_IN_USE_METHOD;
 
     private AutoDispatchThread mAutoDispatchThread;
-
-    /**
-     * Baklava introduces new {@link TestLooperManager} APIs that we can use instead of reflection.
-     */
-    private static boolean isAtLeastBaklava() {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA;
-    }
 
     static {
         try {
@@ -81,22 +67,6 @@ public class TestLooper {
             LOOPER_CONSTRUCTOR.setAccessible(true);
             THREAD_LOCAL_LOOPER_FIELD = Looper.class.getDeclaredField("sThreadLocal");
             THREAD_LOCAL_LOOPER_FIELD.setAccessible(true);
-
-            if (isAtLeastBaklava()) {
-                MESSAGE_QUEUE_MESSAGES_FIELD = null;
-                MESSAGE_NEXT_FIELD = null;
-                MESSAGE_WHEN_FIELD = null;
-                MESSAGE_MARK_IN_USE_METHOD = null;
-            } else {
-                MESSAGE_QUEUE_MESSAGES_FIELD = MessageQueue.class.getDeclaredField("mMessages");
-                MESSAGE_QUEUE_MESSAGES_FIELD.setAccessible(true);
-                MESSAGE_NEXT_FIELD = Message.class.getDeclaredField("next");
-                MESSAGE_NEXT_FIELD.setAccessible(true);
-                MESSAGE_WHEN_FIELD = Message.class.getDeclaredField("when");
-                MESSAGE_WHEN_FIELD.setAccessible(true);
-                MESSAGE_MARK_IN_USE_METHOD = Message.class.getDeclaredMethod("markInUse");
-                MESSAGE_MARK_IN_USE_METHOD.setAccessible(true);
-            }
         } catch (NoSuchFieldException | NoSuchMethodException e) {
             throw new RuntimeException("Failed to initialize TestLooper", e);
         }
@@ -131,12 +101,8 @@ public class TestLooper {
             throw new RuntimeException("Reflection error constructing or accessing looper", e);
         }
 
-        if (isAtLeastBaklava()) {
-            mTestLooperManager =
+        mTestLooperManager =
                 InstrumentationRegistry.getInstrumentation().acquireLooperManager(mLooper);
-        } else {
-            mTestLooperManager = null;
-        }
 
         mClock = clock;
     }
@@ -149,25 +115,7 @@ public class TestLooper {
         return new HandlerExecutor(new Handler(getLooper()));
     }
 
-    private Message getMessageLinkedListLegacy() {
-        try {
-            MessageQueue queue = mLooper.getQueue();
-            return (Message) MESSAGE_QUEUE_MESSAGES_FIELD.get(queue);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Access failed in TestLooper: get - MessageQueue.mMessages",
-                e);
-        }
-    }
-
     public void moveTimeForward(long milliSeconds) {
-        if (isAtLeastBaklava()) {
-            moveTimeForwardBaklava(milliSeconds);
-        } else {
-            moveTimeForwardLegacy(milliSeconds);
-        }
-    }
-
-    private void moveTimeForwardBaklava(long milliSeconds) {
         // Drain all Messages from the queue.
         Queue<Message> messages = new ArrayDeque<>();
         while (true) {
@@ -201,104 +149,24 @@ public class TestLooper {
         }
     }
 
-    private void moveTimeForwardLegacy(long milliSeconds) {
-        try {
-            Message msg = getMessageLinkedListLegacy();
-            while (msg != null) {
-                long updatedWhen = msg.getWhen() - milliSeconds;
-                if (updatedWhen < 0) {
-                    updatedWhen = 0;
-                }
-                MESSAGE_WHEN_FIELD.set(msg, updatedWhen);
-                msg = (Message) MESSAGE_NEXT_FIELD.get(msg);
-            }
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Access failed in TestLooper: set - Message.when", e);
-        }
-    }
-
     private long currentTime() {
         return mClock.uptimeMillis();
-    }
-
-    private Message messageQueueNextLegacy() {
-        try {
-            long now = currentTime();
-
-            Message prevMsg = null;
-            Message msg = getMessageLinkedListLegacy();
-            if (msg != null && msg.getTarget() == null) {
-                // Stalled by a barrier. Find the next asynchronous message in
-                // the queue.
-                do {
-                    prevMsg = msg;
-                    msg = (Message) MESSAGE_NEXT_FIELD.get(msg);
-                } while (msg != null && !msg.isAsynchronous());
-            }
-            if (msg != null) {
-                if (now >= msg.getWhen()) {
-                    // Got a message.
-                    if (prevMsg != null) {
-                        MESSAGE_NEXT_FIELD.set(prevMsg, MESSAGE_NEXT_FIELD.get(msg));
-                    } else {
-                        MESSAGE_QUEUE_MESSAGES_FIELD.set(mLooper.getQueue(),
-                                MESSAGE_NEXT_FIELD.get(msg));
-                    }
-                    MESSAGE_NEXT_FIELD.set(msg, null);
-                    MESSAGE_MARK_IN_USE_METHOD.invoke(msg);
-                    return msg;
-                }
-            }
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException("Access failed in TestLooper", e);
-        }
-
-        return null;
     }
 
     /**
      * @return true if there are pending messages in the message queue
      */
     public boolean isIdle() {
-        if (isAtLeastBaklava()) {
-            return isIdleBaklava();
-        } else {
-            return isIdleLegacy();
-        }
-    }
-
-    private boolean isIdleBaklava() {
         Long when = mTestLooperManager.peekWhen();
         return when != null && currentTime() >= when;
-    }
-
-    private synchronized boolean isIdleLegacy() {
-        Message messageList = getMessageLinkedListLegacy();
-        return messageList != null && currentTime() >= messageList.getWhen();
     }
 
     /**
      * @return the next message in the Looper's message queue or null if there is none
      */
     public Message nextMessage() {
-        if (isAtLeastBaklava()) {
-            return nextMessageBaklava();
-        } else {
-            return nextMessageLegacy();
-        }
-    }
-
-    private Message nextMessageBaklava() {
         if (isIdle()) {
             return mTestLooperManager.poll();
-        } else {
-            return null;
-        }
-    }
-
-    private synchronized Message nextMessageLegacy() {
-        if (isIdle()) {
-            return messageQueueNextLegacy();
         } else {
             return null;
         }
@@ -309,25 +177,8 @@ public class TestLooper {
      * Asserts that there is a message in the queue
      */
     public void dispatchNext() {
-        if (isAtLeastBaklava()) {
-            dispatchNextBaklava();
-        } else {
-            dispatchNextLegacy();
-        }
-    }
-
-    private void dispatchNextBaklava() {
         assertTrue(isIdle());
         Message msg = mTestLooperManager.poll();
-        if (msg == null) {
-            return;
-        }
-        msg.getTarget().dispatchMessage(msg);
-    }
-
-    private synchronized void dispatchNextLegacy() {
-        assertTrue(isIdle());
-        Message msg = messageQueueNextLegacy();
         if (msg == null) {
             return;
         }
