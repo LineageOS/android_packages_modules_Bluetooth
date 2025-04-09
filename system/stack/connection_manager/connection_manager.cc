@@ -472,11 +472,12 @@ void reset(bool after_reset) {
 
 static void wl_direct_connect_timeout_cb(uint8_t app_id, const RawAddress& address) {
   log::debug("app_id={}, address={}", static_cast<int>(app_id), address);
-  on_connection_timed_out(app_id, address);
-
-  // TODO: this would free the timer, from within the timer callback, which is
-  // bad.
+  /* Clear internal direct connect state and make sure device is back on accept
+   * list if needed */
   direct_connect_remove(app_id, address, true);
+
+  // Notify others about timeout
+  on_connection_timed_out(app_id, address);
 }
 
 static void find_in_device_record(const RawAddress& bd_addr, tBLE_BD_ADDR* address_with_type) {
@@ -569,7 +570,8 @@ static void schedule_direct_connect_add(uint8_t app_id, const RawAddress& addres
 }
 
 bool direct_connect_remove(uint8_t app_id, const RawAddress& address, bool connection_timeout) {
-  log::debug("app_id={}, address={}", static_cast<int>(app_id), address);
+  log::debug("app_id={}, address={}, connection_timeout={}", static_cast<int>(app_id), address,
+             connection_timeout);
   auto it = bgconn_dev.find(address);
   if (it == bgconn_dev.end()) {
     log::warn("unable to find entry to remove: {}", address);
@@ -589,6 +591,7 @@ bool direct_connect_remove(uint8_t app_id, const RawAddress& address, bool conne
   it->second.doing_direct_conn.erase(app_it);
 
   if (is_anyone_interested_to_use_accept_list(it)) {
+    log::debug("There is somebody interested in accept list for {}", address);
     if (connection_timeout) {
       /* In such case we need to add device back to allow list because, when connection timeout
        * out, the lower layer removes device from the allow list.
@@ -597,6 +600,8 @@ bool direct_connect_remove(uint8_t app_id, const RawAddress& address, bool conne
     }
     return true;
   }
+
+  log::debug("Nobody interested to use accept list for {}", address);
 
   // no more apps interested - remove from acceptlist
   ACL_IgnoreLeConnectionFrom(BTM_Sec_GetAddressWithType(address));
