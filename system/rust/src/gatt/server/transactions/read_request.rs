@@ -1,15 +1,15 @@
-use crate::gatt::server::att_database::AttDatabase;
+use crate::gatt::server::att_client::WeakAttClient;
 use crate::packets::att;
 use pdl_runtime::EncodeError;
 
-pub async fn handle_read_request<T: AttDatabase>(
+pub async fn handle_read_request(
     request: att::AttReadRequest,
     mtu: usize,
-    db: &T,
+    client: &WeakAttClient,
 ) -> Result<att::Att, EncodeError> {
     let handle = request.attribute_handle.into();
 
-    match db.read_attribute(handle).await {
+    match client.read_attribute(handle).await {
         Ok(mut data) => {
             // as per 5.3 3F 3.4.4.4 ATT_READ_RSP, we truncate to MTU - 1
             data.truncate(mtu - 1);
@@ -24,14 +24,14 @@ pub async fn handle_read_request<T: AttDatabase>(
     }
 }
 
-pub async fn handle_read_blob_request<T: AttDatabase>(
+pub async fn handle_read_blob_request(
     request: att::AttReadBlobRequest,
     mtu: usize,
-    db: &T,
+    client: &WeakAttClient,
 ) -> Result<att::Att, EncodeError> {
     let handle = request.attribute_handle.into();
 
-    match db.read_attribute(handle).await {
+    match client.read_attribute(handle).await {
         Ok(data) => {
             let offset = request.offset as usize;
             if offset > data.len() {
@@ -57,10 +57,10 @@ pub async fn handle_read_blob_request<T: AttDatabase>(
     }
 }
 
-pub async fn handle_read_multiple_variable_request<T: AttDatabase>(
+pub async fn handle_read_multiple_variable_request(
     request: att::AttReadMultipleVariableRequest,
     mtu: usize,
-    db: &T,
+    client: &WeakAttClient,
 ) -> Result<att::Att, EncodeError> {
     if request.attribute_handles.len() < 2 {
         return att::AttErrorResponse {
@@ -75,7 +75,7 @@ pub async fn handle_read_multiple_variable_request<T: AttDatabase>(
     };
     let mut space = mtu - 1; // -1 for op code.
     for handle in request.attribute_handles {
-        match db.read_attribute(handle.clone().into()).await {
+        match client.read_attribute(handle.clone().into()).await {
             Ok(data) => {
                 if space >= 2 {
                     let amount = std::cmp::min(data.len(), space - 2);
@@ -111,14 +111,19 @@ pub async fn handle_read_multiple_variable_request<T: AttDatabase>(
 mod test {
     use super::*;
 
+    use crate::core::shared_box::SharedBox;
     use crate::core::uuid::Uuid;
-    use crate::gatt::ids::AttHandle;
+    use crate::gatt::ids::{AttHandle, TransportIndex};
+    use crate::gatt::server::att_client::AttClient;
     use crate::gatt::server::att_database::{AttAttribute, AttPermissions};
-    use crate::gatt::server::test::test_att_db::TestAttDatabase;
+    use crate::gatt::server::gatt_database::GattDatabase;
+    use crate::gatt::server::test::test_att_db::new_test_database;
     use crate::packets::att;
 
-    fn make_db_with_handle_and_value(handle: u16, value: Vec<u8>) -> TestAttDatabase {
-        TestAttDatabase::new(vec![(
+    const TCB_IDX: TransportIndex = TransportIndex(1);
+
+    fn make_db_with_handle_and_value(handle: u16, value: Vec<u8>) -> SharedBox<GattDatabase> {
+        new_test_database(vec![(
             AttAttribute {
                 handle: AttHandle(handle),
                 type_: Uuid::new(0x1234),
@@ -131,17 +136,18 @@ mod test {
     fn do_read_request_with_handle_and_mtu(
         handle: u16,
         mtu: usize,
-        db: &TestAttDatabase,
+        client: &WeakAttClient,
     ) -> Result<att::Att, EncodeError> {
         let att_view = att::AttReadRequest { attribute_handle: AttHandle(handle).into() };
-        tokio_test::block_on(handle_read_request(att_view, mtu, db))
+        tokio_test::block_on(handle_read_request(att_view, mtu, client))
     }
 
     #[test]
     fn test_simple_read() {
         let db = make_db_with_handle_and_value(3, vec![4, 5]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
-        let response = do_read_request_with_handle_and_mtu(3, 31, &db);
+        let response = do_read_request_with_handle_and_mtu(3, 31, &client.downgrade());
 
         assert_eq!(response, att::AttReadResponse { value: vec![4, 5] }.try_into());
     }
@@ -149,9 +155,10 @@ mod test {
     #[test]
     fn test_truncated_read() {
         let db = make_db_with_handle_and_value(3, vec![4, 5]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act
-        let response = do_read_request_with_handle_and_mtu(3, 2, &db);
+        let response = do_read_request_with_handle_and_mtu(3, 2, &client.downgrade());
 
         // assert
         assert_eq!(response, att::AttReadResponse { value: vec![4] }.try_into());
@@ -160,9 +167,10 @@ mod test {
     #[test]
     fn test_missed_read() {
         let db = make_db_with_handle_and_value(3, vec![4, 5]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act
-        let response = do_read_request_with_handle_and_mtu(4, 31, &db);
+        let response = do_read_request_with_handle_and_mtu(4, 31, &client.downgrade());
 
         // assert
         assert_eq!(
@@ -176,8 +184,8 @@ mod test {
         );
     }
 
-    fn make_db_with_unreadable_handle(handle: u16) -> TestAttDatabase {
-        TestAttDatabase::new(vec![(
+    fn make_db_with_unreadable_handle(handle: u16) -> SharedBox<GattDatabase> {
+        new_test_database(vec![(
             AttAttribute {
                 handle: AttHandle(handle),
                 type_: Uuid::new(0x1234),
@@ -190,9 +198,10 @@ mod test {
     #[test]
     fn test_not_readable() {
         let db = make_db_with_unreadable_handle(3);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act
-        let response = do_read_request_with_handle_and_mtu(3, 31, &db);
+        let response = do_read_request_with_handle_and_mtu(3, 31, &client.downgrade());
 
         // assert
         assert_eq!(

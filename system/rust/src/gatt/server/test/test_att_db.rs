@@ -1,84 +1,91 @@
-use crate::gatt::ids::AttHandle;
-use crate::gatt::server::att_database::{AttAttribute, AttDatabase, StableAttDatabase};
+use crate::core::shared_box::SharedBox;
+use crate::gatt::callbacks::{GattWriteRequestType, TransactionDecision};
+use crate::gatt::ffi::AttributeBackingType;
+use crate::gatt::ids::{AttHandle, TransportIndex};
+use crate::gatt::server::att_database::AttAttribute;
+use crate::gatt::server::gatt_database::GattDatabase;
+use crate::gatt::server::RawGattDatastore;
 use crate::packets::att::AttErrorCode;
 
 use async_trait::async_trait;
-use log::{info, warn};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::rc::Rc;
 
-#[derive(Clone, Debug)]
-pub struct TestAttDatabase {
-    attributes: Rc<BTreeMap<AttHandle, TestAttributeWithData>>,
+struct TestDatastore {
+    values: BTreeMap<AttHandle, RefCell<Vec<u8>>>,
 }
 
-#[derive(Debug)]
-struct TestAttributeWithData {
-    attribute: AttAttribute,
-    data: RefCell<Vec<u8>>,
-}
-
-impl TestAttDatabase {
-    pub fn new(attributes: Vec<(AttAttribute, Vec<u8>)>) -> Self {
-        Self {
-            attributes: Rc::new(
-                attributes
-                    .into_iter()
-                    .map(|(attribute, data)| {
-                        (attribute.handle, TestAttributeWithData { attribute, data: data.into() })
-                    })
-                    .collect(),
-            ),
-        }
-    }
-}
-
-#[async_trait(?Send)]
-impl AttDatabase for TestAttDatabase {
-    async fn read_attribute(&self, handle: AttHandle) -> Result<Vec<u8>, AttErrorCode> {
-        info!("reading {handle:?}");
-        match self.attributes.get(&handle) {
-            Some(TestAttributeWithData { attribute: AttAttribute { permissions, .. }, .. })
-                if !permissions.readable() =>
-            {
-                Err(AttErrorCode::ReadNotPermitted)
-            }
-            Some(TestAttributeWithData { data, .. }) => Ok(data.borrow().clone()),
-            None => Err(AttErrorCode::InvalidHandle),
-        }
-    }
-    async fn write_attribute(&self, handle: AttHandle, data: &[u8]) -> Result<(), AttErrorCode> {
-        match self.attributes.get(&handle) {
-            Some(TestAttributeWithData { attribute: AttAttribute { permissions, .. }, .. })
-                if !permissions.writable_with_response() =>
-            {
-                Err(AttErrorCode::WriteNotPermitted)
-            }
-            Some(TestAttributeWithData { data: data_cell, .. }) => {
-                data_cell.replace(data.to_vec());
+impl TestDatastore {
+    fn write_impl(&self, handle: AttHandle, data: &[u8]) -> Result<(), AttErrorCode> {
+        match self.values.get(&handle) {
+            Some(value) => {
+                *value.borrow_mut() = data.into();
                 Ok(())
             }
             None => Err(AttErrorCode::InvalidHandle),
         }
     }
-    fn write_no_response_attribute(&self, handle: AttHandle, data: &[u8]) {
-        match self.attributes.get(&handle) {
-            Some(TestAttributeWithData {
-                attribute: AttAttribute { permissions, .. },
-                data: data_cell,
-            }) if !permissions.writable_with_response() => {
-                data_cell.replace(data.to_vec());
-            }
-            _ => {
-                warn!("rejecting write command to {handle:?}")
-            }
+}
+
+#[async_trait(?Send)]
+impl RawGattDatastore for TestDatastore {
+    async fn read(
+        &self,
+        _tcb_idx: TransportIndex,
+        handle: AttHandle,
+        offset: u32,
+        attr_type: AttributeBackingType,
+    ) -> Result<Vec<u8>, AttErrorCode> {
+        assert_eq!(offset, 0);
+        assert_eq!(attr_type, AttributeBackingType::Characteristic);
+        match self.values.get(&handle) {
+            Some(value) => Ok(value.borrow().clone()),
+            None => Err(AttErrorCode::InvalidHandle),
         }
     }
-    fn list_attributes(&self) -> Vec<AttAttribute> {
-        self.attributes.values().map(|attr| attr.attribute).collect()
+
+    async fn write(
+        &self,
+        _tcb_idx: TransportIndex,
+        handle: AttHandle,
+        attr_type: AttributeBackingType,
+        write_type: GattWriteRequestType,
+        data: &[u8],
+    ) -> Result<(), AttErrorCode> {
+        assert_eq!(attr_type, AttributeBackingType::Characteristic);
+        assert_eq!(write_type, GattWriteRequestType::Request);
+        self.write_impl(handle, data)
+    }
+
+    fn write_no_response(
+        &self,
+        _tcb_idx: TransportIndex,
+        handle: AttHandle,
+        attr_type: AttributeBackingType,
+        data: &[u8],
+    ) {
+        assert_eq!(attr_type, AttributeBackingType::Characteristic);
+        let _ = self.write_impl(handle, data);
+    }
+
+    async fn execute(&self, _: TransportIndex, _: TransactionDecision) -> Result<(), AttErrorCode> {
+        unreachable!();
     }
 }
 
-// We guarantee that the contents of a TestAttDatabase will remain stable
-impl StableAttDatabase for TestAttDatabase {}
+/// Creates a new test database with the specified characteristics.
+pub fn new_test_database(
+    mut characteristics: Vec<(AttAttribute, Vec<u8>)>,
+) -> SharedBox<GattDatabase> {
+    let datastore = Rc::new(TestDatastore {
+        values: characteristics
+            .iter_mut()
+            .map(|(a, data)| (a.handle, RefCell::new(std::mem::take(data))))
+            .collect(),
+    });
+    SharedBox::new(GattDatabase::with_characteristics(
+        characteristics.into_iter().map(|(a, _)| a),
+        datastore,
+    ))
+}

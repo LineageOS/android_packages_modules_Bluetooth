@@ -2,7 +2,8 @@
 //! length, used in READ_BY_TYPE_REQ and READ_BY_GROUP_TYPE_REQ
 
 use crate::core::uuid::Uuid;
-use crate::gatt::server::att_database::{AttAttribute, StableAttDatabase};
+use crate::gatt::server::att_client::WeakAttClient;
+use crate::gatt::server::att_database::AttAttribute;
 use crate::packets::att::AttErrorCode;
 
 /// An attribute and the value
@@ -23,18 +24,18 @@ pub struct AttributeWithValue {
 /// Attributes are truncated to the attr_size limit before size comparison.
 /// If an error occurs while reading, do not output further attributes.
 pub async fn filter_read_attributes_by_size_type(
-    db: &impl StableAttDatabase,
-    attrs: impl Iterator<Item = AttAttribute>,
+    client: &WeakAttClient,
+    attrs: impl IntoIterator<Item = &AttAttribute>,
     target: Uuid,
     size_limit: usize,
 ) -> Result<impl Iterator<Item = AttributeWithValue>, AttErrorCode> {
-    let target_attrs = attrs.filter(|attr| attr.type_ == target);
+    let target_attrs = attrs.into_iter().filter(|attr| attr.type_ == target);
 
     let mut out = vec![];
     let mut curr_elem_size = None;
 
     for attr @ AttAttribute { handle, .. } in target_attrs {
-        match db.read_attribute(handle).await {
+        match client.read_attribute(*handle).await {
             Ok(mut value) => {
                 value.truncate(size_limit);
                 let value_size = value.len();
@@ -47,7 +48,7 @@ pub async fn filter_read_attributes_by_size_type(
                     curr_elem_size = Some(value_size)
                 }
 
-                out.push(AttributeWithValue { attr, value });
+                out.push(AttributeWithValue { attr: *attr, value });
             }
             Err(err) => {
                 if out.is_empty() {
@@ -66,18 +67,20 @@ mod test {
     use super::*;
 
     use crate::core::uuid::Uuid;
-    use crate::gatt::ids::AttHandle;
-    use crate::gatt::server::att_database::{AttAttribute, AttDatabase, StableAttDatabase};
+    use crate::gatt::ids::{AttHandle, TransportIndex};
+    use crate::gatt::server::att_client::AttClient;
+    use crate::gatt::server::att_database::AttAttribute;
     use crate::gatt::server::gatt_database::AttPermissions;
-    use crate::gatt::server::test::test_att_db::TestAttDatabase;
+    use crate::gatt::server::test::test_att_db::new_test_database;
 
     const UUID: Uuid = Uuid::new(1234);
     const ANOTHER_UUID: Uuid = Uuid::new(2345);
+    const TCB_IDX: TransportIndex = TransportIndex(1);
 
     #[test]
     fn test_single_matching_attr() {
         // arrange
-        let db = TestAttDatabase::new(vec![(
+        let db = new_test_database(vec![(
             AttAttribute {
                 handle: AttHandle(3),
                 type_: UUID,
@@ -85,21 +88,26 @@ mod test {
             },
             vec![4, 5],
         )]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act
-        let response = tokio_test::block_on(filter_read_attributes_by_size_type(
-            &db,
-            db.list_attributes().into_iter(),
-            UUID,
-            31,
-        ))
-        .unwrap();
+        let response: Vec<_> = tokio_test::block_on(async {
+            filter_read_attributes_by_size_type(
+                &client.downgrade(),
+                &client.list_attributes(),
+                UUID,
+                31,
+            )
+            .await
+            .unwrap()
+            .collect()
+        });
 
         // assert
         assert_eq!(
-            response.collect::<Vec<_>>(),
+            response,
             vec![AttributeWithValue {
-                attr: db.find_attribute(AttHandle(3)).unwrap(),
+                attr: db.get(AttHandle(3)).map(|a| a.attribute).unwrap(),
                 value: vec![4, 5],
             }]
         )
@@ -108,7 +116,7 @@ mod test {
     #[test]
     fn test_skip_mismatching_attrs() {
         // arrange
-        let db = TestAttDatabase::new(vec![
+        let db = new_test_database(vec![
             (
                 AttAttribute {
                     handle: AttHandle(3),
@@ -134,26 +142,31 @@ mod test {
                 vec![6, 7],
             ),
         ]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act
-        let response = tokio_test::block_on(filter_read_attributes_by_size_type(
-            &db,
-            db.list_attributes().into_iter(),
-            UUID,
-            31,
-        ))
-        .unwrap();
+        let response: Vec<_> = tokio_test::block_on(async {
+            filter_read_attributes_by_size_type(
+                &client.downgrade(),
+                &client.list_attributes(),
+                UUID,
+                31,
+            )
+            .await
+            .unwrap()
+            .collect()
+        });
 
         // assert
         assert_eq!(
-            response.collect::<Vec<_>>(),
+            response,
             vec![
                 AttributeWithValue {
-                    attr: db.find_attribute(AttHandle(3)).unwrap(),
+                    attr: db.get(AttHandle(3)).map(|a| a.attribute).unwrap(),
                     value: vec![4, 5],
                 },
                 AttributeWithValue {
-                    attr: db.find_attribute(AttHandle(6)).unwrap(),
+                    attr: db.get(AttHandle(6)).map(|a| a.attribute).unwrap(),
                     value: vec![6, 7],
                 }
             ]
@@ -163,7 +176,7 @@ mod test {
     #[test]
     fn test_stop_once_length_changes() {
         // arrange
-        let db = TestAttDatabase::new(vec![
+        let db = new_test_database(vec![
             (
                 AttAttribute {
                     handle: AttHandle(3),
@@ -182,28 +195,33 @@ mod test {
             ),
             (
                 AttAttribute {
-                    handle: AttHandle(6),
+                    handle: AttHandle(7),
                     type_: UUID,
                     permissions: AttPermissions::READABLE,
                 },
                 vec![6, 7],
             ),
         ]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act
-        let response = tokio_test::block_on(filter_read_attributes_by_size_type(
-            &db,
-            db.list_attributes().into_iter(),
-            UUID,
-            31,
-        ))
-        .unwrap();
+        let response: Vec<_> = tokio_test::block_on(async {
+            filter_read_attributes_by_size_type(
+                &client.downgrade(),
+                &client.list_attributes(),
+                UUID,
+                31,
+            )
+            .await
+            .unwrap()
+            .collect()
+        });
 
         // assert
         assert_eq!(
-            response.collect::<Vec<_>>(),
+            response,
             vec![AttributeWithValue {
-                attr: db.find_attribute(AttHandle(3)).unwrap(),
+                attr: db.get(AttHandle(3)).map(|a| a.attribute).unwrap(),
                 value: vec![4, 5],
             },]
         );
@@ -212,7 +230,7 @@ mod test {
     #[test]
     fn test_truncate_to_mtu() {
         // arrange: attr with data of length 3
-        let db = TestAttDatabase::new(vec![(
+        let db = new_test_database(vec![(
             AttAttribute {
                 handle: AttHandle(3),
                 type_: UUID,
@@ -220,21 +238,26 @@ mod test {
             },
             vec![4, 5, 6],
         )]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act: read the attribute with max_size = 2
-        let response = tokio_test::block_on(filter_read_attributes_by_size_type(
-            &db,
-            db.list_attributes().into_iter(),
-            UUID,
-            2,
-        ))
-        .unwrap();
+        let response: Vec<_> = tokio_test::block_on(async {
+            filter_read_attributes_by_size_type(
+                &client.downgrade(),
+                &client.list_attributes(),
+                UUID,
+                2,
+            )
+            .await
+            .unwrap()
+            .collect()
+        });
 
         // assert: the length of the read attribute is 2
         assert_eq!(
-            response.collect::<Vec<_>>(),
+            response,
             vec![AttributeWithValue {
-                attr: db.find_attribute(AttHandle(3)).unwrap(),
+                attr: db.get(AttHandle(3)).map(|a| a.attribute).unwrap(),
                 value: vec![4, 5],
             },]
         );
@@ -243,25 +266,30 @@ mod test {
     #[test]
     fn test_no_results() {
         // arrange: an empty database
-        let db = TestAttDatabase::new(vec![]);
+        let db = new_test_database(vec![]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act
-        let response = tokio_test::block_on(filter_read_attributes_by_size_type(
-            &db,
-            db.list_attributes().into_iter(),
-            UUID,
-            31,
-        ))
-        .unwrap();
+        let response: Vec<_> = tokio_test::block_on(async {
+            filter_read_attributes_by_size_type(
+                &client.downgrade(),
+                &client.list_attributes(),
+                UUID,
+                31,
+            )
+            .await
+            .unwrap()
+            .collect()
+        });
 
         // assert: no results
-        assert_eq!(response.count(), 0)
+        assert!(response.is_empty())
     }
 
     #[test]
     fn test_read_failure_on_first_attr() {
         // arrange: put a non-readable attribute in the db with the right type
-        let db = TestAttDatabase::new(vec![(
+        let db = new_test_database(vec![(
             AttAttribute {
                 handle: AttHandle(3),
                 type_: UUID,
@@ -269,11 +297,15 @@ mod test {
             },
             vec![4, 5, 6],
         )]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
+
+        let weak_client = client.downgrade();
+        let attrs = client.list_attributes();
 
         // act
         let response = tokio_test::block_on(filter_read_attributes_by_size_type(
-            &db,
-            db.list_attributes().into_iter(),
+            &weak_client,
+            &attrs,
             UUID,
             31,
         ));
@@ -286,7 +318,7 @@ mod test {
     fn test_read_failure_on_subsequent_attr() {
         // arrange: put a non-readable attribute in the db with the right
         // type
-        let db = TestAttDatabase::new(vec![
+        let db = new_test_database(vec![
             (
                 AttAttribute {
                     handle: AttHandle(3),
@@ -312,22 +344,27 @@ mod test {
                 vec![8, 9, 10],
             ),
         ]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act
-        let response = tokio_test::block_on(filter_read_attributes_by_size_type(
-            &db,
-            db.list_attributes().into_iter(),
-            UUID,
-            31,
-        ))
-        .unwrap();
+        let response: Vec<_> = tokio_test::block_on(async {
+            filter_read_attributes_by_size_type(
+                &client.downgrade(),
+                &client.list_attributes(),
+                UUID,
+                31,
+            )
+            .await
+            .unwrap()
+            .collect()
+        });
 
         // assert: we reply with the first attribute, but not the second or third
         // (since we stop on the first failure)
         assert_eq!(
-            response.collect::<Vec<_>>(),
+            response,
             vec![AttributeWithValue {
-                attr: db.find_attribute(AttHandle(3)).unwrap(),
+                attr: db.get(AttHandle(3)).map(|a| a.attribute).unwrap(),
                 value: vec![4, 5, 6],
             },]
         );
@@ -337,7 +374,7 @@ mod test {
     fn test_skip_unreadable_mismatching_attr() {
         // arrange: put a non-readable attribute in the db with the wrong type
         // between two attributes of interest
-        let db = TestAttDatabase::new(vec![
+        let db = new_test_database(vec![
             (
                 AttAttribute {
                     handle: AttHandle(3),
@@ -363,26 +400,31 @@ mod test {
                 vec![6, 7, 8],
             ),
         ]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act
-        let response = tokio_test::block_on(filter_read_attributes_by_size_type(
-            &db,
-            db.list_attributes().into_iter(),
-            UUID,
-            31,
-        ))
-        .unwrap();
+        let response: Vec<_> = tokio_test::block_on(async {
+            filter_read_attributes_by_size_type(
+                &client.downgrade(),
+                &client.list_attributes(),
+                UUID,
+                31,
+            )
+            .await
+            .unwrap()
+            .collect()
+        });
 
         // assert: we reply with the first and third attributes, but not the second
         assert_eq!(
-            response.collect::<Vec<_>>(),
+            response,
             vec![
                 AttributeWithValue {
-                    attr: db.find_attribute(AttHandle(3)).unwrap(),
+                    attr: db.get(AttHandle(3)).map(|a| a.attribute).unwrap(),
                     value: vec![4, 5, 6],
                 },
                 AttributeWithValue {
-                    attr: db.find_attribute(AttHandle(5)).unwrap(),
+                    attr: db.get(AttHandle(5)).map(|a| a.attribute).unwrap(),
                     value: vec![6, 7, 8],
                 }
             ]
