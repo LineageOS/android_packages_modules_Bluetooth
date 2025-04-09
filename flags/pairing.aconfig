@@ -12,16 +12,6 @@ flag {
 }
 
 flag {
-    name: "remove_dup_pairing_response_in_oob_pairing"
-    namespace: "bluetooth"
-    description: "Avoid sending duplicate pairing response when device is in peripheral role & OOB pairing mode chosen"
-    bug: "351948689"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "donot_queue_dup_rnr"
     namespace: "bluetooth"
     description: "Avoid queueing second RNR as part of ssp process"
