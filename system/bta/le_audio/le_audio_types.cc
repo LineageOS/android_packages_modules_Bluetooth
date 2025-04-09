@@ -775,4 +775,26 @@ std::ostream& operator<<(std::ostream& os, const LeAudioMetadata& config) {
 }
 
 }  // namespace types
+
+std::ostream& operator<<(std::ostream& os, const DsaMode& mode) {
+  switch (mode) {
+    case DsaMode::DISABLED:
+      os << "DISABLED";
+      break;
+    case DsaMode::ACL:
+      os << "ACL";
+      break;
+    case DsaMode::ISO_SW:
+      os << "ISO_SW";
+      break;
+    case DsaMode::ISO_HW:
+      os << "ISO_HW";
+      break;
+    default:
+      os << "INVALID";
+      break;
+  }
+  return os;
+}
+
 }  // namespace bluetooth::le_audio

@@ -57,6 +57,7 @@ namespace bluetooth::le_audio {
 
 enum class DsaMode { DISABLED = 0, ACL, ISO_SW, ISO_HW };
 typedef std::vector<DsaMode> DsaModes;
+std::ostream& operator<<(std::ostream& os, const DsaMode& mode);
 
 namespace uuid {
 /* CAP service
@@ -1289,6 +1290,20 @@ struct AudioSetConfiguration {
 
   bool operator==(const AudioSetConfiguration& other) const {
     return (packing == other.packing) && (confs == other.confs);
+  }
+
+  bool hasDsaBackChannel() const {
+    return std::count_if(confs.source.begin(), confs.source.end(),
+                         [](const AseConfiguration& ase_cfg) {
+                           return ase_cfg.codec.id == types::kLeAudioCodecHeadtracking;
+                         }) > 0;
+  }
+
+  size_t countNonDsaBackChannels() const {
+    return std::count_if(confs.source.begin(), confs.source.end(),
+                         [](const AseConfiguration& ase_cfg) {
+                           return ase_cfg.codec.id != types::kLeAudioCodecHeadtracking;
+                         });
   }
 };
 
