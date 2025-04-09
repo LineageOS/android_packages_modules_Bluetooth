@@ -275,7 +275,6 @@ struct ProcedureDataV2 {
   hci::ProcedureAbortReason remote_procedure_abort_reason_;
   uint8_t local_selected_tx_power_;
   uint8_t remote_selected_tx_power_;
-  // TODO(b/378942784): assign the sequence
   int procedure_sequence_;
 };
 
