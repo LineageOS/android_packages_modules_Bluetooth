@@ -2,7 +2,7 @@
 
 use std::ops::RangeInclusive;
 
-use crate::core::shared_box::{WeakBox, WeakBoxRef};
+use crate::core::shared_box::{SharedBox, WeakBox};
 use crate::gatt::ids::{AttHandle, TransportIndex};
 use crate::gatt::server::att_server_bearer::AttServerBearer;
 use crate::gatt::server::gatt_database::{AttDatabaseImpl, GattDatabaseCallbacks};
@@ -35,7 +35,7 @@ impl GattDatabaseCallbacks for MockCallbacks {
     fn on_le_connect(
         &self,
         tcb_idx: TransportIndex,
-        bearer: WeakBoxRef<AttServerBearer<AttDatabaseImpl>>,
+        bearer: &SharedBox<AttServerBearer<AttDatabaseImpl>>,
     ) {
         self.0.send(MockCallbackEvents::OnLeConnect(tcb_idx, bearer.downgrade())).ok().unwrap();
     }

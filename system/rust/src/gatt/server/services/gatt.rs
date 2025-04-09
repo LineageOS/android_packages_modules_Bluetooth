@@ -11,7 +11,7 @@ use async_trait::async_trait;
 use log::{error, warn};
 use tokio::task::spawn_local;
 
-use crate::core::shared_box::{WeakBox, WeakBoxRef};
+use crate::core::shared_box::{SharedBox, WeakBox};
 use crate::core::uuid::Uuid;
 use crate::gatt::callbacks::GattDatastore;
 use crate::gatt::ffi::AttributeBackingType;
@@ -103,7 +103,7 @@ impl GattDatabaseCallbacks for GattService {
     fn on_le_connect(
         &self,
         tcb_idx: TransportIndex,
-        bearer: WeakBoxRef<AttServerBearer<AttDatabaseImpl>>,
+        bearer: &SharedBox<AttServerBearer<AttDatabaseImpl>>,
     ) {
         // TODO(aryarahul): registered_for_service_change may not be false for bonded devices
         self.clients.borrow_mut().insert(
@@ -204,7 +204,7 @@ mod test {
             tx.send(packet).unwrap();
             Ok(())
         }));
-        gatt_database.on_bearer_ready(tcb_idx, bearer.as_ref());
+        gatt_database.on_bearer_ready(tcb_idx, &bearer);
         (att_database, bearer, rx)
     }
 
