@@ -16,6 +16,7 @@
 
 package android.bluetooth.le;
 
+import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -168,17 +169,16 @@ public final class PeriodicAdvertisingReport implements Parcelable {
                 + '}';
     }
 
-    public static final @android.annotation.NonNull Parcelable.Creator<PeriodicAdvertisingReport>
-            CREATOR =
-                    new Creator<PeriodicAdvertisingReport>() {
-                        @Override
-                        public PeriodicAdvertisingReport createFromParcel(Parcel source) {
-                            return new PeriodicAdvertisingReport(source);
-                        }
+    public static final @NonNull Parcelable.Creator<PeriodicAdvertisingReport> CREATOR =
+            new Creator<PeriodicAdvertisingReport>() {
+                @Override
+                public PeriodicAdvertisingReport createFromParcel(Parcel source) {
+                    return new PeriodicAdvertisingReport(source);
+                }
 
-                        @Override
-                        public PeriodicAdvertisingReport[] newArray(int size) {
-                            return new PeriodicAdvertisingReport[size];
-                        }
-                    };
+                @Override
+                public PeriodicAdvertisingReport[] newArray(int size) {
+                    return new PeriodicAdvertisingReport[size];
+                }
+            };
 }
