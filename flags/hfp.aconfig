@@ -132,3 +132,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "qc_send_error_at_bcc_ibr_disabled"
+    namespace: "bluetooth"
+    description: "QC patch to send an error when HF sends AT+BCC when IBR is disabled"
+    bug: "409845355"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
