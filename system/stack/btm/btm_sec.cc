@@ -109,9 +109,9 @@ static void btm_sec_pairing_timeout(void* data);
 static tBTM_STATUS btm_sec_dd_create_conn(tBTM_SEC_DEV_REC* p_dev_rec);
 
 static void btm_sec_check_pending_reqs(void);
-static bool btm_sec_queue_mx_request(const RawAddress& bd_addr, uint16_t psm, bool is_orig,
-                                     uint16_t security_required, tBTM_SEC_CALLBACK* p_callback,
-                                     void* p_ref_data);
+static bool btm_sec_queue_service_access_request(const RawAddress& bd_addr, uint16_t psm,
+                                                 bool is_orig, uint16_t security_required,
+                                                 tBTM_SEC_CALLBACK* p_callback, void* p_ref_data);
 static void btm_sec_bond_cancel_complete(void);
 static void btm_send_link_key_notif(tBTM_SEC_DEV_REC* p_dev_rec);
 static bool btm_sec_check_prefetch_pin(tBTM_SEC_DEV_REC* p_dev_rec);
@@ -1660,18 +1660,15 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm, bo
 
 /*******************************************************************************
  *
- * Function         btm_sec_mx_access_request
+ * Function         btm_sec_service_access_request
  *
  * Description      This function is called by all Multiplexing Protocols during
  *                  establishing connection to or from peer device to grant
  *                  permission to establish application connection.
  *
  * Parameters:      bd_addr       - Address of the peer device
- *                  psm           - L2CAP PSM
  *                  is_originator - true if protocol above L2CAP originates
  *                                  connection
- *                  mx_proto_id   - protocol ID of the multiplexer
- *                  mx_chan_id    - multiplexer channel to reach application
  *                  p_callback    - Pointer to callback function called if
  *                                  this function returns PENDING after required
  *                                  procedures are completed
@@ -1686,9 +1683,9 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm, bo
  *                  completed.
  *
  ******************************************************************************/
-tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, bool is_originator,
-                                      uint16_t security_required, tBTM_SEC_CALLBACK* p_callback,
-                                      void* p_ref_data) {
+tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool is_originator,
+                                           uint16_t security_required,
+                                           tBTM_SEC_CALLBACK* p_callback, void* p_ref_data) {
   tBTM_SEC_DEV_REC* p_dev_rec;
   tBTM_STATUS rc;
   tBT_TRANSPORT transport = BT_TRANSPORT_AUTO; /* should check PSM range in LE connection oriented
@@ -1753,8 +1750,8 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, bool is_origina
       rc = tBTM_STATUS::BTM_CMD_STARTED;
     }
     if (rc == tBTM_STATUS::BTM_CMD_STARTED) {
-      btm_sec_queue_mx_request(bd_addr, BT_PSM_RFCOMM, is_originator, security_required, p_callback,
-                               p_ref_data);
+      btm_sec_queue_service_access_request(bd_addr, BT_PSM_RFCOMM, is_originator, security_required,
+                                           p_callback, p_ref_data);
       if (com::android::bluetooth::flags::separate_encryption_queue()) {
         return tBTM_STATUS::BTM_CMD_STORED;
       }
@@ -1988,8 +1985,9 @@ static void btm_sec_check_pending_reqs_(void) {
         if (p_e->psm != 0) {
           log::verbose("PSM:0x{:04x} Is_Orig:{}", p_e->psm, p_e->is_orig);
 
-          btm_sec_mx_access_request(p_e->bd_addr, p_e->is_orig, p_e->rfcomm_security_requirement,
-                                    p_e->p_callback, p_e->p_ref_data);
+          btm_sec_service_access_request(p_e->bd_addr, p_e->is_orig,
+                                         p_e->rfcomm_security_requirement, p_e->p_callback,
+                                         p_e->p_ref_data);
         } else {
           BTM_SetEncryption(p_e->bd_addr, p_e->transport, p_e->p_callback, p_e->p_ref_data,
                             p_e->sec_act);
@@ -2029,8 +2027,8 @@ static void btm_sec_check_pending_reqs(void) {
       return true;
     }
 
-    if (btm_sec_mx_access_request(req.bd_addr, req.is_orig, req.rfcomm_security_requirement,
-                                  req.callback, req.ref) != tBTM_STATUS::BTM_CMD_STORED) {
+    if (btm_sec_service_access_request(req.bd_addr, req.is_orig, req.rfcomm_security_requirement,
+                                       req.callback, req.ref) != tBTM_STATUS::BTM_CMD_STORED) {
       log::debug("Service access request concluded or started for {} psm:0x{:04x} is_orig:{}",
                  req.bd_addr, req.psm, req.is_orig);
       return true;
@@ -4939,15 +4937,15 @@ void btm_sec_cr_loc_oob_data_cback_event(const RawAddress& address,
 
 /*******************************************************************************
  *
- * Function         btm_sec_queue_mx_request
+ * Function         btm_sec_queue_service_access_request
  *
  * Description      Return state description for tracing
  *
  ******************************************************************************/
 // Todo(b/405594028): Remove when separate_encryption_queue is released
-static bool btm_sec_queue_mx_request_(const RawAddress& bd_addr, uint16_t psm, bool is_orig,
-                                      uint16_t security_required, tBTM_SEC_CALLBACK* p_callback,
-                                      void* p_ref_data) {
+static bool btm_sec_queue_service_access_request_(const RawAddress& bd_addr, uint16_t psm,
+                                                  bool is_orig, uint16_t security_required,
+                                                  tBTM_SEC_CALLBACK* p_callback, void* p_ref_data) {
   tBTM_SEC_QUEUE_ENTRY* p_e = (tBTM_SEC_QUEUE_ENTRY*)osi_malloc(sizeof(tBTM_SEC_QUEUE_ENTRY));
 
   p_e->psm = psm;
@@ -4967,11 +4965,12 @@ static bool btm_sec_queue_mx_request_(const RawAddress& bd_addr, uint16_t psm, b
   return true;
 }
 
-static bool btm_sec_queue_mx_request(const RawAddress& bd_addr, uint16_t psm, bool is_orig,
-                                     uint16_t security_required, tBTM_SEC_CALLBACK* callback,
-                                     void* ref) {
+static bool btm_sec_queue_service_access_request(const RawAddress& bd_addr, uint16_t psm,
+                                                 bool is_orig, uint16_t security_required,
+                                                 tBTM_SEC_CALLBACK* callback, void* ref) {
   if (!com::android::bluetooth::flags::separate_encryption_queue()) {
-    return btm_sec_queue_mx_request_(bd_addr, psm, is_orig, security_required, callback, ref);
+    return btm_sec_queue_service_access_request_(bd_addr, psm, is_orig, security_required, callback,
+                                                 ref);
   }
 
   if (callback == nullptr) {

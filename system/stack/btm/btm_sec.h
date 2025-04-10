@@ -356,18 +356,16 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(const RawAddress& bd_addr,
 
 /*******************************************************************************
  *
- * Function         btm_sec_mx_access_request
+ * Function         btm_sec_service_access_request
  *
  * Description      This function is called by all Multiplexing Protocols
- * during establishing connection to or from peer device to grant permission
- * to establish application connection.
+ *                  during establishing connection to or from peer device to
+ *                  grant permission to establish application connection.
  *
  * Parameters:      bd_addr       - Address of the peer device
  *                  psm           - L2CAP PSM
  *                  is_originator - true if protocol above L2CAP originates
  *                                  connection
- *                  mx_proto_id   - protocol ID of the multiplexer
- *                  mx_chan_id    - multiplexer channel to reach application
  *                  p_callback    - Pointer to callback function called if
  *                                  this function returns PENDING after required
  *                                  procedures are completed
@@ -382,9 +380,9 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(const RawAddress& bd_addr,
  *                  completed.
  *
  ******************************************************************************/
-tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, bool is_originator,
-                                      uint16_t security_requirement, tBTM_SEC_CALLBACK* p_callback,
-                                      void* p_ref_data);
+tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool is_originator,
+                                           uint16_t security_requirement,
+                                           tBTM_SEC_CALLBACK* p_callback, void* p_ref_data);
 
 /*******************************************************************************
  *
