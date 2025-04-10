@@ -78,7 +78,7 @@ static uint8_t bta_jv_sdp_raw_data[BTA_JV_SDP_RAW_DATA_SIZE];
 static tSDP_DISCOVERY_DB bta_jv_sdp_db_data[BTA_JV_SDP_DB_SIZE / sizeof(tSDP_DISCOVERY_DB)];
 
 /* JV configuration structure */
-struct tBTA_JV_CFG {
+static struct tBTA_JV_CFG {
   uint16_t sdp_raw_size;       /* The size of p_sdp_raw_data */
   uint16_t sdp_db_size;        /* The size of p_sdp_db */
   uint8_t* p_sdp_raw_data;     /* The data buffer to keep raw data */
@@ -91,7 +91,7 @@ struct tBTA_JV_CFG {
         bta_jv_sdp_db_data                 /* The data buffer to keep SDP database */
 };
 
-tBTA_JV_CFG* p_bta_jv_cfg = &bta_jv_cfg;
+static tBTA_JV_CFG* p_bta_jv_cfg = &bta_jv_cfg;
 
 /*******************************************************************************
  *
@@ -802,7 +802,7 @@ static void bta_jv_start_discovery_cback(uint32_t rfcomm_slot_id, const RawAddre
     log::warn("Received unexpected service discovery callback bd_addr:{} result:{}", bd_addr,
               sdp_result_text(result), bta_jv_cb.sdp_cb.sdp_active);
   }
-  if (bta_jv_cb.sdp_cb.bd_addr != bta_jv_cb.sdp_cb.bd_addr) {
+  if (bta_jv_cb.sdp_cb.bd_addr != bd_addr) {
     log::warn(
             "Received incorrect service discovery callback expected_bd_addr:{} "
             "actual_bd_addr:{} result:{}",

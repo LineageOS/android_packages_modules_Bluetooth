@@ -28,12 +28,10 @@ namespace le_audio {
 
 using ::android::hardware::bluetooth::audio::V2_0::BitsPerSample;
 using ::android::hardware::bluetooth::audio::V2_0::ChannelMode;
-using ::android::hardware::bluetooth::audio::V2_0::CodecType;
 using ::bluetooth::audio::hidl::SampleRate_2_1;
 using ::bluetooth::audio::hidl::SessionType;
 using ::bluetooth::audio::hidl::SessionType_2_1;
 
-using ::bluetooth::audio::le_audio::LeAudioClientInterface;
 using ::bluetooth::audio::le_audio::StartRequestState;
 using ::bluetooth::le_audio::DsaMode;
 

@@ -48,6 +48,7 @@
 #include "bta/include/bta_gatt_api.h"
 #include "bta/include/bta_gatt_queue.h"
 #include "bta/include/bta_hearing_aid_api.h"
+#include "btif/include/btif_profile_storage.h"
 #include "btm_api_types.h"
 #include "btm_ble_api_types.h"
 #include "btm_iso_api.h"
@@ -93,11 +94,6 @@ constexpr uint16_t MAX_CE_LEN_20MS_CI = 0x000C;
 constexpr uint16_t CE_LEN_20MS_CI_ISO_RUNNING = 0x0000;
 constexpr uint16_t CONNECTION_INTERVAL_10MS_PARAM = 0x0008;
 constexpr uint16_t CONNECTION_INTERVAL_20MS_PARAM = 0x0010;
-
-void btif_storage_add_hearing_aid(const HearingDevice& dev_info);
-bool btif_storage_get_hearing_aid_prop(const RawAddress& address, uint8_t* capabilities,
-                                       uint64_t* hi_sync_id, uint16_t* render_delay,
-                                       uint16_t* preparation_delay, uint16_t* codecs);
 
 constexpr uint8_t CODEC_G722_16KHZ = 0x01;
 constexpr uint8_t CODEC_G722_24KHZ = 0x02;
@@ -154,7 +150,7 @@ inline BT_HDR* malloc_l2cap_buf(uint16_t len) {
   return msg;
 }
 
-inline uint8_t* get_l2cap_sdu_start_ptr(BT_HDR* msg) {
+static uint8_t* get_l2cap_sdu_start_ptr(BT_HDR* msg) {
   return (uint8_t*)(msg) + BT_HDR_SIZE + L2CAP_MIN_OFFSET;
 }
 

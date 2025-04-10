@@ -30,7 +30,7 @@ using namespace bluetooth;
 
 extern tBTM_CB btm_cb;
 
-tBTM_BLE_ENERGY_INFO_CB ble_energy_info_cb;
+static tBTM_BLE_ENERGY_INFO_CB ble_energy_info_cb;
 
 /*******************************************************************************
  *

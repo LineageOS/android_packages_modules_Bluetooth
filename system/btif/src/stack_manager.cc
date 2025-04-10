@@ -224,7 +224,7 @@ const struct module_lookup module_table[] = {
         {NULL, NULL},
 };
 
-inline const module_t* get_local_module(const char* name) {
+static const module_t* get_local_module(const char* name) {
   size_t len = strlen(name);
 
   for (const struct module_lookup* l = module_table; l->module; l++) {
