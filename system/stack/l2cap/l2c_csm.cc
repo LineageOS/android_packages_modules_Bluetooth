@@ -348,8 +348,7 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
         l2cu_release_ccb(p_ccb);
         (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(
                 local_cid, static_cast<uint16_t>(tL2CAP_CONN::L2CAP_CONN_ACL_CONNECTION_FAILED));
-        bluetooth::metrics::CountCounterMetrics(
-                android::bluetooth::CodePathCounterKeyEnum::L2CAP_CONNECT_CONFIRM_NEG, 1);
+        bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::L2CAP_CONNECT_CONFIRM_NEG);
       }
       break;
 
@@ -383,9 +382,8 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
           l2cu_release_ccb(p_ccb);
           (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(
                   local_cid, static_cast<uint16_t>(tL2CAP_CONN::L2CAP_CONN_OTHER_ERROR));
-          bluetooth::metrics::CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum::
-                                                          L2CAP_NO_COMPATIBLE_CHANNEL_AT_CSM_CLOSED,
-                                                  1);
+          bluetooth::metrics::Counter(
+                  bluetooth::metrics::CounterKey::L2CAP_NO_COMPATIBLE_CHANNEL_AT_CSM_CLOSED);
         } else {
           l2cu_send_peer_connect_req(p_ccb);
           alarm_set_on_mloop(p_ccb->l2c_ccb_timer, L2CAP_CHNL_CONNECT_TIMEOUT_MS,
@@ -399,8 +397,7 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
       (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(
               local_cid,
               static_cast<uint16_t>(tL2CAP_CONN::L2CAP_CONN_CLIENT_SECURITY_CLEARANCE_FAILED));
-      bluetooth::metrics::CountCounterMetrics(
-              android::bluetooth::CodePathCounterKeyEnum::L2CAP_SECURITY_NEG_AT_CSM_CLOSED, 1);
+      bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::L2CAP_SECURITY_NEG_AT_CSM_CLOSED);
       break;
 
     case L2CEVT_L2CAP_CREDIT_BASED_CONNECT_REQ: /* Peer connect request */
@@ -457,8 +454,7 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
       l2cu_release_ccb(p_ccb);
       (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(
               local_cid, static_cast<uint16_t>(tL2CAP_CONN::L2CAP_CONN_OTHER_ERROR));
-      bluetooth::metrics::CountCounterMetrics(
-              android::bluetooth::CodePathCounterKeyEnum::L2CAP_TIMEOUT_AT_CSM_CLOSED, 1);
+      bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::L2CAP_TIMEOUT_AT_CSM_CLOSED);
       break;
 
     case L2CEVT_L2CAP_DATA:      /* Peer data packet rcvd    */
@@ -528,9 +524,8 @@ static void l2c_csm_orig_w4_sec_comp(tL2C_CCB* p_ccb, tL2CEVT event, void* p_dat
             l2cu_release_ccb(p_ccb);
             (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(
                     local_cid, static_cast<uint16_t>(tL2CAP_CONN::L2CAP_CONN_OTHER_ERROR));
-            bluetooth::metrics::CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum::
-                                                            L2CAP_NO_COMPATIBLE_CHANNEL_AT_W4_SEC,
-                                                    1);
+            bluetooth::metrics::Counter(
+                    bluetooth::metrics::CounterKey::L2CAP_NO_COMPATIBLE_CHANNEL_AT_W4_SEC);
           } else {
             alarm_set_on_mloop(p_ccb->l2c_ccb_timer, L2CAP_CHNL_CONNECT_TIMEOUT_MS,
                                l2c_ccb_timer_timeout, p_ccb);
@@ -552,8 +547,7 @@ static void l2c_csm_orig_w4_sec_comp(tL2C_CCB* p_ccb, tL2CEVT event, void* p_dat
       (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(
               local_cid,
               static_cast<uint16_t>(tL2CAP_CONN::L2CAP_CONN_CLIENT_SECURITY_CLEARANCE_FAILED));
-      bluetooth::metrics::CountCounterMetrics(
-              android::bluetooth::CodePathCounterKeyEnum::L2CAP_SECURITY_NEG_AT_W4_SEC, 1);
+      bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::L2CAP_SECURITY_NEG_AT_W4_SEC);
       break;
 
     case L2CEVT_L2CA_DATA_WRITE: /* Upper layer data to send */
@@ -809,8 +803,8 @@ static void l2c_csm_w4_l2cap_connect_rsp(tL2C_CCB* p_ccb, tL2CEVT event, void* p
     case L2CEVT_L2CAP_CREDIT_BASED_CONNECT_RSP_NEG:
       log::debug("Calling pL2CA_Error_Cb(),cid {}, result 0x{:04x}", local_cid, p_ci->l2cap_result);
       (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(local_cid, static_cast<uint16_t>(p_ci->l2cap_result));
-      bluetooth::metrics::CountCounterMetrics(
-              android::bluetooth::CodePathCounterKeyEnum::L2CAP_CREDIT_BASED_CONNECT_RSP_NEG, 1);
+      bluetooth::metrics::Counter(
+              bluetooth::metrics::CounterKey::L2CAP_CREDIT_BASED_CONNECT_RSP_NEG);
 
       l2cu_release_ccb(p_ccb);
       break;
@@ -825,8 +819,7 @@ static void l2c_csm_w4_l2cap_connect_rsp(tL2C_CCB* p_ccb, tL2CEVT event, void* p
         (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(
                 local_cid, static_cast<uint16_t>(tL2CAP_CONN::L2CAP_CONN_OTHER_ERROR));
       }
-      bluetooth::metrics::CountCounterMetrics(
-              android::bluetooth::CodePathCounterKeyEnum::L2CAP_CONNECT_RSP_NEG, 1);
+      bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::L2CAP_CONNECT_RSP_NEG);
       break;
 
     case L2CEVT_TIMEOUT:
@@ -839,8 +832,7 @@ static void l2c_csm_w4_l2cap_connect_rsp(tL2C_CCB* p_ccb, tL2CEVT event, void* p
           log::warn("lcid= 0x{:x}", cid);
           (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(
                   p_ccb->local_cid, static_cast<uint16_t>(tL2CAP_CONN::L2CAP_CONN_TIMEOUT));
-          bluetooth::metrics::CountCounterMetrics(
-                  android::bluetooth::CodePathCounterKeyEnum::L2CAP_TIMEOUT_AT_CONNECT_RSP, 1);
+          bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::L2CAP_TIMEOUT_AT_CONNECT_RSP);
           l2cu_release_ccb(temp_p_ccb);
         }
         p_lcb->pending_ecoc_conn_cnt = 0;
@@ -851,9 +843,8 @@ static void l2c_csm_w4_l2cap_connect_rsp(tL2C_CCB* p_ccb, tL2CEVT event, void* p
         l2cu_release_ccb(p_ccb);
         (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(
                 local_cid, static_cast<uint16_t>(tL2CAP_CONN::L2CAP_CONN_OTHER_ERROR));
-        bluetooth::metrics::CountCounterMetrics(
-                android::bluetooth::CodePathCounterKeyEnum::L2CAP_CONN_OTHER_ERROR_AT_CONNECT_RSP,
-                1);
+        bluetooth::metrics::Counter(
+                bluetooth::metrics::CounterKey::L2CAP_CONN_OTHER_ERROR_AT_CONNECT_RSP);
       }
       break;
 
@@ -884,9 +875,8 @@ static void l2c_csm_w4_l2cap_connect_rsp(tL2C_CCB* p_ccb, tL2CEVT event, void* p
         l2cu_release_ccb(p_ccb);
         (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(
                 local_cid, static_cast<uint16_t>(tL2CAP_CONN::L2CAP_CONN_OTHER_ERROR));
-        bluetooth::metrics::CountCounterMetrics(
-                android::bluetooth::CodePathCounterKeyEnum::L2CAP_INFO_NO_COMPATIBLE_CHANNEL_AT_RSP,
-                1);
+        bluetooth::metrics::Counter(
+                bluetooth::metrics::CounterKey::L2CAP_INFO_NO_COMPATIBLE_CHANNEL_AT_RSP);
       } else {
         /* We have feature info, so now send peer connect request */
         alarm_set_on_mloop(p_ccb->l2c_ccb_timer, L2CAP_CHNL_CONNECT_TIMEOUT_MS,
@@ -1108,8 +1098,7 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
               (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(
                       p_ccb->local_cid,
                       static_cast<uint16_t>(tL2CAP_CFG_RESULT::L2CAP_CFG_FAILED_NO_REASON));
-              bluetooth::metrics::CountCounterMetrics(
-                      android::bluetooth::CodePathCounterKeyEnum::L2CAP_CONFIG_REQ_FAILURE, 1);
+              bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::L2CAP_CONFIG_REQ_FAILURE);
             }
           }
         }
@@ -1213,8 +1202,7 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
           (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(
                   p_ccb->local_cid,
                   static_cast<uint16_t>(tL2CAP_CFG_RESULT::L2CAP_CFG_FAILED_NO_REASON));
-          bluetooth::metrics::CountCounterMetrics(
-                  android::bluetooth::CodePathCounterKeyEnum::L2CAP_CONFIG_RSP_NEG, 1);
+          bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::L2CAP_CONFIG_RSP_NEG);
         }
       }
       break;

@@ -78,6 +78,12 @@ void ForgetDeviceFromMetricIdAllocator(const RawAddress& address) {
   }
 }
 
+void Counter(CounterKey key, int64_t count) {
+  if (metricsInstance) {
+    metricsInstance->Counter(key, count);
+  }
+}
+
 void LogMetricLinkLayerConnectionEvent(const hci::Address& address, uint32_t connection_handle,
                                        android::bluetooth::DirectionEnum direction,
                                        uint16_t link_type, uint32_t hci_cmd, uint16_t hci_event,
@@ -262,12 +268,6 @@ void LogMetricBluetoothRemoteSupportedFeatures(const hci::Address& address, uint
   if (metricsInstance) {
     metricsInstance->LogMetricBluetoothRemoteSupportedFeatures(address, page, features,
                                                                connection_handle);
-  }
-}
-
-void CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum key, int64_t count) {
-  if (metricsInstance) {
-    metricsInstance->CountCounterMetrics(key, count);
   }
 }
 

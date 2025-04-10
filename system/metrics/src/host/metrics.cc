@@ -22,6 +22,8 @@ namespace bluetooth::metrics {
 
 using bluetooth::hci::Address;
 
+void Counter(CounterKey /* key */, int64_t /* count */) {}
+
 void LogMetricClassicPairingEvent(const Address& /* address */, uint16_t /* handle */,
                                   uint32_t /* hci_cmd */, uint16_t /* hci_event */,
                                   uint16_t /* cmd_status */, uint16_t /* reason_code */,
@@ -113,9 +115,6 @@ void LogMetricBluetoothDisconnectionReasonReported(uint32_t /* reason */,
 void LogMetricBluetoothRemoteSupportedFeatures(const Address& /* address */, uint32_t /* page */,
                                                uint64_t /* features */,
                                                uint32_t /* connection_handle */) {}
-
-void CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum /* key */,
-                         int64_t /* count */) {}
 
 void LogMetricBluetoothLEConnection(LEConnectionSessionOptions /* session_options */) {}
 

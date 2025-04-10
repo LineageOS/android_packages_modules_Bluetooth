@@ -31,10 +31,13 @@
 
 namespace bluetooth::metrics {
 
-/**
- * Unknown connection handle for metrics purpose
- */
-static const uint32_t kUnknownConnectionHandle = 0xFFFF;
+using CounterKey = android::bluetooth::CodePathCounterKeyEnum;
+
+/** Unknown connection handle for metrics purpose. */
+constexpr uint32_t kUnknownConnectionHandle = 0xFFFF;
+
+/** Simple counter metric. */
+void Counter(CounterKey key, int64_t count = 1);
 
 /**
  * Log link layer connection event
@@ -300,8 +303,6 @@ void LogMetricBluetoothDisconnectionReasonReported(uint32_t reason, const hci::A
 
 void LogMetricBluetoothRemoteSupportedFeatures(const hci::Address& address, uint32_t page,
                                                uint64_t features, uint32_t connection_handle);
-
-void CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum key, int64_t count);
 
 using android::bluetooth::le::LeAclConnectionState;
 using android::bluetooth::le::LeConnectionOriginType;

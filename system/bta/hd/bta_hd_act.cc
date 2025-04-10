@@ -184,8 +184,7 @@ void bta_hd_register_act(tBTA_HD_DATA* p_data) {
     log::error("Descriptor is too long or malformed");
     ret.reg_status.status = BTA_HD_ERROR;
     (*bta_hd_cb.p_cback)(BTA_HD_REGISTER_APP_EVT, &ret);
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::HIDD_REGISTER_DESCRIPTOR_MALFORMED, 1);
+    bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::HIDD_REGISTER_DESCRIPTOR_MALFORMED);
     return;
   }
 
