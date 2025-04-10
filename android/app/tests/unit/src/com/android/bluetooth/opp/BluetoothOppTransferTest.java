@@ -24,6 +24,7 @@ import static com.android.bluetooth.opp.BluetoothOppTransfer.TRANSPORT_ERROR;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -32,8 +33,10 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.app.NotificationManager;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothUuid;
@@ -52,7 +55,9 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothObexTransport;
+import com.android.bluetooth.TestUtils;
 import com.android.obex.ObexTransport;
+import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.After;
 import org.junit.Before;
@@ -70,6 +75,7 @@ public class BluetoothOppTransferTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Rule public final SetFlagsRule mSetFlagRule = new SetFlagsRule();
 
+    @Mock private AdapterService mAdapterService;
     @Mock BluetoothOppObexSession mSession;
     @Mock BluetoothMethodProxy mCallProxy;
     @Mock Context mContext;
@@ -82,6 +88,14 @@ public class BluetoothOppTransferTest {
     @Before
     public void setUp() throws Exception {
         mockGetSystemService(mContext, Context.NOTIFICATION_SERVICE, NotificationManager.class);
+
+        TestUtils.setAdapterService(mAdapterService);
+        when(mAdapterService.getRemoteDevice(anyString()))
+                .thenAnswer(
+                        invocation -> {
+                            String address = invocation.getArgument(0);
+                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+                        });
 
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
         doReturn(0)
@@ -122,8 +136,9 @@ public class BluetoothOppTransferTest {
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         BluetoothMethodProxy.setInstanceForTesting(null);
+        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test

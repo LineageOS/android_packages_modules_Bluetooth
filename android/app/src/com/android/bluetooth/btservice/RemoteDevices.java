@@ -281,12 +281,14 @@ public class RemoteDevices {
         return deviceProp.getBluetoothClass();
     }
 
-    BluetoothDevice getDevice(byte[] address) {
-        String addressString = Utils.getAddressStringFromByte(address);
-        String deviceAddress = mDualDevicesMap.get(addressString);
+    BluetoothDevice getDevice(String address) {
+        if (address == null) {
+            return null;
+        }
+        String deviceAddress = mDualDevicesMap.get(address);
         // If the device is not in the dual map, use its original address
         if (deviceAddress == null || mDevices.get(deviceAddress) == null) {
-            deviceAddress = addressString;
+            deviceAddress = address;
         }
 
         DeviceProperties prop = mDevices.get(deviceAddress);
@@ -294,6 +296,11 @@ public class RemoteDevices {
             return prop.getDevice();
         }
         return null;
+    }
+
+    BluetoothDevice getDevice(byte[] address) {
+        String addressString = Utils.getAddressStringFromByte(address);
+        return getDevice(addressString);
     }
 
     @VisibleForTesting

@@ -27,6 +27,7 @@ import android.os.IInterface;
 import android.os.RemoteException;
 import android.util.Log;
 
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.gatt.GattServiceConfig;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -327,7 +328,8 @@ public class PeriodicScanManager {
             mSyncTransfers.remove(entry);
             IPeriodicAdvertisingCallback callback = entry.getValue().callback;
             try {
-                callback.onSyncTransferred(mAdapter.getRemoteDevice(bda), status);
+                callback.onSyncTransferred(
+                        AdapterService.getAdapterService().getRemoteDevice(bda), status);
             } catch (RemoteException e) {
                 throw new IllegalArgumentException("Can't find callback for sync transfer");
             }

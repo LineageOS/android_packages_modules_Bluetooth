@@ -330,13 +330,13 @@ public class HfpClientConnectionService extends ConnectionService {
     // --------------------------------------------------------------------------------------------//
 
     private BluetoothDevice getDevice(PhoneAccountHandle handle) {
-        BluetoothAdapter adapter = getSystemService(BluetoothManager.class).getAdapter();
+        AdapterService adapterService = AdapterService.getAdapterService();
         PhoneAccount account = mTelecomManager.getPhoneAccount(handle);
         if (account == null) {
             return null;
         }
         String btAddr = account.getAddress().getSchemeSpecificPart();
-        return adapter.getRemoteDevice(btAddr);
+        return adapterService.getRemoteDevice(btAddr);
     }
 
     // Block management functions

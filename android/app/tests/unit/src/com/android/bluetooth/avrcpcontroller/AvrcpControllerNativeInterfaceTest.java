@@ -16,15 +16,27 @@
 
 package com.android.bluetooth.avrcpcontroller;
 
+import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
+import android.bluetooth.BluetoothAdapter;
 import android.support.v4.media.session.PlaybackStateCompat;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.TestUtils;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
 /** Test cases for {@link AvrcpControllerNativeInterface}. */
 @MediumTest
@@ -32,6 +44,24 @@ import org.junit.runner.RunWith;
 public class AvrcpControllerNativeInterfaceTest {
     private static final String REMOTE_DEVICE_ADDRESS = "00:00:00:00:00:00";
     private static final byte[] REMOTE_DEVICE_ADDRESS_AS_ARRAY = new byte[] {0, 0, 0, 0, 0, 0};
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Mock private AdapterService mAdapterService;
+
+    @Before
+    public void setUp() {
+        TestUtils.setAdapterService(mAdapterService);
+        when(mAdapterService.getRemoteDevice(anyString()))
+                .thenAnswer(
+                        invocation -> {
+                            String address = invocation.getArgument(0);
+                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+                        });
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        TestUtils.clearAdapterService(mAdapterService);
+    }
 
     @Test
     public void createFromNativeMediaItem() {

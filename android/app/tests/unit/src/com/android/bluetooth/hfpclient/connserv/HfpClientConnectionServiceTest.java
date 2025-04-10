@@ -26,12 +26,14 @@ import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.ComponentName;
@@ -86,6 +88,12 @@ public class HfpClientConnectionServiceTest {
         Context targetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
 
         TestUtils.setAdapterService(mAdapterService);
+        when(mAdapterService.getRemoteDevice(anyString()))
+                .thenAnswer(
+                        invocation -> {
+                            String address = invocation.getArgument(0);
+                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+                        });
 
         // Set a mocked HeadsetClientService for testing so we can insure the right functions were
         // called through the service interface
