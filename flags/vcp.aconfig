@@ -9,16 +9,6 @@ flag {
 }
 
 flag {
-    name: "vcp_device_volume_api_improvements"
-    namespace: "bluetooth"
-    description: "Refactor Device Volume API for generic usage"
-    bug: "381507732"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "vcp_allow_set_same_volume_if_pending"
     namespace: "bluetooth"
     description: "Allow to set the same volume during already pending operation"
