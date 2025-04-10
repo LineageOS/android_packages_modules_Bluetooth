@@ -118,7 +118,7 @@ constexpr char kBtmLogTag[] = "A2DP";
 /* Time to wait for open from SNK when signaling is initiated from SNK. */
 /* If not, we abort and try to initiate the connection as SRC. */
 #ifndef BTA_AV_ACCEPT_OPEN_TIMEOUT_MS
-#define BTA_AV_ACCEPT_OPEN_TIMEOUT_MS (2 * 1000) /* 2 seconds */
+#define BTA_AV_ACCEPT_OPEN_TIMEOUT_MS (10 * 1000) /* 10 seconds */
 #endif
 
 static void bta_av_accept_open_timer_cback(void* data);
