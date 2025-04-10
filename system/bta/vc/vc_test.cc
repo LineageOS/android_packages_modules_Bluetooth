@@ -1718,8 +1718,6 @@ TEST_F(VolumeControlValueSetTest, test_set_volume) {
 }
 
 TEST_F(VolumeControlValueSetTest, test_set_volume_to_previous_during_pending) {
-  com::android::bluetooth::flags::provider_->vcp_allow_set_same_volume_if_pending(true);
-
   // In this test we simulate notification coming later and operations will be queued
   ON_CALL(gatt_queue, WriteCharacteristic(conn_id, 0x0024, _, GATT_WRITE, _, _))
           .WillByDefault([](uint16_t conn_id, uint16_t handle, std::vector<uint8_t> value,
@@ -1762,8 +1760,6 @@ TEST_F(VolumeControlValueSetTest, test_set_volume_to_previous_during_pending) {
 }
 
 TEST_F(VolumeControlValueSetTest, test_set_volume_to_same_during_other_pending) {
-  com::android::bluetooth::flags::provider_->vcp_allow_set_same_volume_if_pending(true);
-
   // In this test we simulate notification coming later and operations will be queued but some will
   // be removed from the queue
   ON_CALL(gatt_queue, WriteCharacteristic(conn_id, 0x0024, _, GATT_WRITE, _, _))
@@ -1815,8 +1811,6 @@ TEST_F(VolumeControlValueSetTest, test_set_volume_to_same_during_other_pending) 
 }
 
 TEST_F(VolumeControlValueSetTest, test_set_volume_to_same_pending) {
-  com::android::bluetooth::flags::provider_->vcp_allow_set_same_volume_if_pending(true);
-
   // In this test we simulate notification coming later and operations will be queued but some will
   // be removed from the queue
   ON_CALL(gatt_queue, WriteCharacteristic(conn_id, 0x0024, _, GATT_WRITE, _, _))
@@ -1862,8 +1856,6 @@ TEST_F(VolumeControlValueSetTest, test_set_volume_to_same_pending) {
 }
 
 TEST_F(VolumeControlValueSetTest, test_unmute_to_previous_during_pending) {
-  com::android::bluetooth::flags::provider_->vcp_allow_set_same_volume_if_pending(true);
-
   // In this test we simulate notification coming later and operations will be queued
   ON_CALL(gatt_queue, WriteCharacteristic(conn_id, 0x0024, _, GATT_WRITE, _, _))
           .WillByDefault([](uint16_t conn_id, uint16_t handle, std::vector<uint8_t> value,
@@ -1909,8 +1901,6 @@ TEST_F(VolumeControlValueSetTest, test_unmute_to_previous_during_pending) {
 }
 
 TEST_F(VolumeControlValueSetTest, test_mute_to_previous_during_pending) {
-  com::android::bluetooth::flags::provider_->vcp_allow_set_same_volume_if_pending(true);
-
   // In this test we simulate notification coming later and operations will be queued
   ON_CALL(gatt_queue, WriteCharacteristic(conn_id, 0x0024, _, GATT_WRITE, _, _))
           .WillByDefault([](uint16_t conn_id, uint16_t handle, std::vector<uint8_t> value,
@@ -1962,8 +1952,6 @@ TEST_F(VolumeControlValueSetTest, test_mute_to_previous_during_pending) {
 }
 
 TEST_F(VolumeControlValueSetTest, test_unmute_to_same_during_other_pending) {
-  com::android::bluetooth::flags::provider_->vcp_allow_set_same_volume_if_pending(true);
-
   // In this test we simulate notification coming later and operations will be queued but some will
   // be removed from the queue
   ON_CALL(gatt_queue, WriteCharacteristic(conn_id, 0x0024, _, GATT_WRITE, _, _))
@@ -2008,8 +1996,6 @@ TEST_F(VolumeControlValueSetTest, test_unmute_to_same_during_other_pending) {
 }
 
 TEST_F(VolumeControlValueSetTest, test_mute_to_same_during_other_pending) {
-  com::android::bluetooth::flags::provider_->vcp_allow_set_same_volume_if_pending(true);
-
   // In this test we simulate notification coming later and operations will be queued but some will
   // be removed from the queue
   ON_CALL(gatt_queue, WriteCharacteristic(conn_id, 0x0024, _, GATT_WRITE, _, _))
@@ -2060,8 +2046,6 @@ TEST_F(VolumeControlValueSetTest, test_mute_to_same_during_other_pending) {
 }
 
 TEST_F(VolumeControlValueSetTest, test_remove_pending_mute_operation) {
-  com::android::bluetooth::flags::provider_->vcp_allow_set_same_volume_if_pending(true);
-
   // In this test we simulate notification coming later and operations will be queued but some will
   // be removed from the queue
   ON_CALL(gatt_queue, WriteCharacteristic(conn_id, 0x0024, _, GATT_WRITE, _, _))
