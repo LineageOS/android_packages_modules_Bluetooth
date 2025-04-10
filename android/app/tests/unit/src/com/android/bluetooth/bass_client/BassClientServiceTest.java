@@ -5464,23 +5464,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
-    public void bigMonitoring_autoSyncToBroadcast_onStopSearching() {
-        bigMonitoringDuringScanning();
-
-        // Verify that start searching cause sync when broadcaster synced to sinks
-        mBassClientService.stopSearchingForSources();
-        mInOrderMethodProxy
-                .verify(mMethodProxy)
-                .periodicAdvertisingManagerUnregisterSync(any(), any());
-        mInOrderMethodProxy
-                .verify(mMethodProxy)
-                .periodicAdvertisingManagerRegisterSync(
-                        any(), any(), anyInt(), anyInt(), any(), any());
-    }
-
-    @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
     public void bigMonitoring_remainEstablishedSync_onStopSearching() {
         bigMonitoringDuringScanning();
 
@@ -5548,7 +5531,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
     public void waitingForPast_remainPendingSync_onStopSearching() {
         prepareSynchronizedPair();
 
@@ -5611,7 +5593,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
     public void pendingSourceToAdd_remainPendingSync_onStopSearching() {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
@@ -5673,7 +5654,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
     public void alreadySynced_remainSyncAndCache_onStartSearching() {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
@@ -5753,7 +5733,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
     public void alreadySyncedWithSinks_syncAndRemainCache_onStartSearching() {
         prepareSynchronizedPair();
 
@@ -5826,7 +5805,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
     public void waitingForPast_remainPendingSyncAndCache_onStartSearching() {
         prepareSynchronizedPair();
 
@@ -5905,7 +5883,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
     public void pendingSourcesToAdd_remainPendingSyncAndCache_onStartSearching() {
         prepareConnectedDeviceGroup();
         prepareSyncToSourceAndVerify();
@@ -5987,7 +5964,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
     public void suspendedByHost_SyncAndRemainCache_onStartSearching() {
         prepareSynchronizedPair();
 
