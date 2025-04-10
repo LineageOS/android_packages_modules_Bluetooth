@@ -1,3 +1,4 @@
+use crate::gatt::callbacks::TransactionDecision;
 use crate::gatt::server::att_client::WeakAttClient;
 use crate::packets::att;
 use pdl_runtime::EncodeError;
@@ -12,6 +13,44 @@ pub async fn handle_write_request(
         Ok(()) => att::AttWriteResponse {}.try_into(),
         Err(error_code) => att::AttErrorResponse {
             opcode_in_error: att::AttOpcode::WriteRequest,
+            handle_in_error: handle.into(),
+            error_code,
+        }
+        .try_into(),
+    }
+}
+
+pub async fn handle_prepare_write_request(
+    request: att::AttPrepareWriteRequest,
+    client: &WeakAttClient,
+) -> Result<att::Att, EncodeError> {
+    let att::AttPrepareWriteRequest { handle, offset, value } = request;
+    match client.prepare_write_attribute(handle.clone().into(), offset as u32, &value).await {
+        Ok(()) => att::AttPrepareWriteResponse { handle, offset, value }.try_into(),
+        Err(error_code) => att::AttErrorResponse {
+            opcode_in_error: att::AttOpcode::PrepareWriteRequest,
+            handle_in_error: handle,
+            error_code,
+        }
+        .try_into(),
+    }
+}
+
+pub async fn handle_execute_write_request(
+    request: att::AttExecuteWriteRequest,
+    client: &WeakAttClient,
+) -> Result<att::Att, EncodeError> {
+    match client
+        .execute(if request.commit & 1 == 1 {
+            TransactionDecision::Execute
+        } else {
+            TransactionDecision::Cancel
+        })
+        .await
+    {
+        Ok(()) => att::AttExecuteWriteResponse {}.try_into(),
+        Err((handle, error_code)) => att::AttErrorResponse {
+            opcode_in_error: att::AttOpcode::ExecuteWriteRequest,
             handle_in_error: handle.into(),
             error_code,
         }
