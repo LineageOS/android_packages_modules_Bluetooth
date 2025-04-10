@@ -16,69 +16,75 @@
 
 package android.bluetooth.pairing;
 
-import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
-import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
-
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.timeout;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.PandoraDevice;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.Utils;
 import android.bluetooth.StreamObserverSpliterator;
+import com.android.bluetooth.flags.Flags;
+import android.platform.test.annotations.RequiresFlagsEnabled;
+import android.platform.test.flag.junit.CheckFlagsRule;
+import android.platform.test.flag.junit.DeviceFlagsValueProvider;
+
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.platform.test.annotations.RequiresFlagsEnabled;
-import android.platform.test.flag.junit.CheckFlagsRule;
-import android.platform.test.flag.junit.DeviceFlagsValueProvider;
 import android.util.Log;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
-import com.android.bluetooth.flags.Flags;
 import com.android.compatibility.common.util.AdoptShellPermissionsRule;
 
 import io.grpc.stub.StreamObserver;
 
 import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
 import org.hamcrest.core.AllOf;
+import org.mockito.MockitoAnnotations;
+import org.mockito.InOrder;
+import org.mockito.hamcrest.MockitoHamcrest;
+import org.mockito.Mock;
+import org.mockito.stubbing.Answer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InOrder;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.hamcrest.MockitoHamcrest;
-import org.mockito.stubbing.Answer;
 
 import pandora.HostProto;
+import pandora.HostProto.DiscoverabilityMode;
+import pandora.HostProto.SetDiscoverabilityModeRequest;
+import pandora.HostProto.ConnectabilityMode;
+import pandora.HostProto.SetConnectabilityModeRequest;
 import pandora.HostProto.AdvertiseRequest;
 import pandora.HostProto.AdvertiseResponse;
-import pandora.HostProto.ConnectabilityMode;
-import pandora.HostProto.DiscoverabilityMode;
 import pandora.HostProto.OwnAddressType;
-import pandora.HostProto.SetConnectabilityModeRequest;
-import pandora.HostProto.SetDiscoverabilityModeRequest;
 import pandora.SecurityProto.PairingEvent;
 import pandora.SecurityProto.PairingEventAnswer;
 
-import java.time.Duration;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletableFuture;
+import java.util.Set;
 
 /** Test cases for {@link PairingWithDiscoveryTest}. */
 @RunWith(AndroidJUnit4.class)
@@ -94,7 +100,7 @@ public class PairingWithDiscoveryTest {
     private final BluetoothAdapter mAdapter = mManager.getAdapter();
 
     private final Map<String, Integer> mActionRegistrationCounts = new HashMap<>();
-    private final StreamObserverSpliterator<Void, PairingEvent> mPairingEventStreamObserver =
+    private final StreamObserverSpliterator<PairingEvent> mPairingEventStreamObserver =
             new StreamObserverSpliterator<>();
 
     @Rule(order = 0)
@@ -225,7 +231,7 @@ public class PairingWithDiscoveryTest {
         dataTypeBuilder.setLeDiscoverabilityModeValue(LE_GENERAL_DISCOVERABLE);
         requestBuilder.setData(dataTypeBuilder.build());
 
-        StreamObserverSpliterator<AdvertiseRequest, AdvertiseResponse> responseObserver =
+        StreamObserverSpliterator<AdvertiseResponse> responseObserver =
                 new StreamObserverSpliterator<>();
         mBumble.host().advertise(requestBuilder.build(), responseObserver);
 

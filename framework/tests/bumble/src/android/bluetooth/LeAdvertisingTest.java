@@ -64,10 +64,6 @@ public class LeAdvertisingTest {
 
         Log.i(TAG, "scan response: " + response);
         assertThat(response).isNotNull();
-
-        response = scanWithBumble(addressPair);
-        Log.i(TAG, "second scan response: " + response);
-        assertThat(response).isNotNull();
     }
 
     private ScanningResponse scanWithBumble(Pair<String, Integer> addressPair) {
@@ -75,7 +71,7 @@ public class LeAdvertisingTest {
         String address = addressPair.first;
         int addressType = addressPair.second;
 
-        StreamObserverSpliterator<ScanRequest, ScanningResponse> responseObserver =
+        StreamObserverSpliterator<ScanningResponse> responseObserver =
                 new StreamObserverSpliterator<>();
         Deadline deadline = Deadline.after(TIMEOUT_ADVERTISING_MS, TimeUnit.MILLISECONDS);
         mBumble.host()
@@ -91,7 +87,6 @@ public class LeAdvertisingTest {
                                     : scanningResponse.getRandom());
 
             if (addr.equals(address)) {
-                responseObserver.cancel("Cancelling scan request");
                 return scanningResponse;
             }
         }

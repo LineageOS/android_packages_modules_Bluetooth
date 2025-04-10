@@ -16,8 +16,7 @@
 
 package android.bluetooth;
 
-import io.grpc.stub.ClientCallStreamObserver;
-import io.grpc.stub.ClientResponseObserver;
+import io.grpc.stub.StreamObserver;
 
 import java.util.Iterator;
 import java.util.Spliterator;
@@ -26,13 +25,10 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
-public class StreamObserverSpliterator<ReqT, RespT>
-        implements Spliterator<RespT>, ClientResponseObserver<ReqT, RespT> {
+public class StreamObserverSpliterator<T> implements Spliterator<T>, StreamObserver<T> {
     private static final Object COMPLETED_INDICATOR = new Object();
 
     private final BlockingQueue<Object> mQueue = new LinkedBlockingQueue<>();
-
-    private ClientCallStreamObserver<ReqT> mRequestStream;
 
     /**
      * Creates and returns an iterator over the elements contained in the internal blocking queue.
@@ -47,23 +43,8 @@ public class StreamObserverSpliterator<ReqT, RespT>
      *
      * @return an iterator over the elements contained in the internal blocking queue
      */
-    public Iterator<RespT> iterator() {
+    public Iterator<T> iterator() {
         return Spliterators.iterator(this);
-    }
-
-    /** Cancels the ongoing call. See {@link ClientCallStreamObserver#cancel(String, Throwable)}. */
-    public void cancel(String message) {
-        if (mRequestStream != null) {
-            mRequestStream.cancel(message, null);
-        } else {
-            throw new UnsupportedOperationException(
-                    "Canceling operation is not supported when request type is missing!");
-        }
-    }
-
-    @Override
-    public void beforeStart(ClientCallStreamObserver<ReqT> requestStream) {
-        mRequestStream = requestStream;
     }
 
     @Override
@@ -77,7 +58,7 @@ public class StreamObserverSpliterator<ReqT, RespT>
     }
 
     @Override
-    public boolean tryAdvance(Consumer<? super RespT> action) {
+    public boolean tryAdvance(Consumer<? super T> action) {
         try {
             Object item = mQueue.take();
             if (item == COMPLETED_INDICATOR) {
@@ -86,7 +67,7 @@ public class StreamObserverSpliterator<ReqT, RespT>
             if (item instanceof Throwable) {
                 throw new RuntimeException((Throwable) item);
             }
-            action.accept((RespT) item);
+            action.accept((T) item);
             return true;
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -94,12 +75,12 @@ public class StreamObserverSpliterator<ReqT, RespT>
     }
 
     @Override
-    public Spliterator<RespT> trySplit() {
+    public Spliterator<T> trySplit() {
         return null;
     }
 
     @Override
-    public void onNext(RespT value) {
+    public void onNext(T value) {
         mQueue.add(value);
     }
 
