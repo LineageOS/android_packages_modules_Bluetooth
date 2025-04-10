@@ -236,8 +236,8 @@ public class BleOnStateTest {
                         .setOwnAddressType(HostProto.OwnAddressType.RANDOM)
                         .build();
 
-        StreamObserverSpliterator<HostProto.AdvertiseRequest, HostProto.AdvertiseResponse>
-                responseObserver = new StreamObserverSpliterator<>();
+        StreamObserverSpliterator<HostProto.AdvertiseResponse> responseObserver =
+                new StreamObserverSpliterator<>();
 
         mBumble.host().advertise(request, responseObserver);
     }
@@ -259,8 +259,8 @@ public class BleOnStateTest {
             HostProto.AdvertiseRequest.Builder requestBuilder, boolean isLegacy) {
         requestBuilder.setLegacy(isLegacy);
         // Collect and ignore responses.
-        StreamObserverSpliterator<HostProto.AdvertiseRequest, HostProto.AdvertiseResponse>
-                responseObserver = new StreamObserverSpliterator<>();
+        StreamObserverSpliterator<HostProto.AdvertiseResponse> responseObserver =
+                new StreamObserverSpliterator<>();
         mBumble.host().advertise(requestBuilder.build(), responseObserver);
     }
 
