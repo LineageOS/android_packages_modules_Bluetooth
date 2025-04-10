@@ -245,6 +245,11 @@ public:
               incoming_packet_callback_ == nullptr && callback != nullptr,
               "assert failed: incoming_packet_callback_ == nullptr && callback != nullptr");
       incoming_packet_callback_ = callback;
+
+      // If the HCI socket was not connected on start, inform HCI Layer to prevent future requests.
+      if (sock_fd_ == INVALID_FD) {
+        incoming_packet_callback_->controllerNeedsReset();
+      }
     }
     log::info("after");
   }
@@ -313,8 +318,8 @@ protected:
 
     // We don't want to crash when the chipset is broken.
     if (sock_fd_ == INVALID_FD) {
-      log::error("Failed to connect to HCI socket. Aborting HAL initialization process.");
-      incoming_packet_callback_->controllerNeedsReset();
+      log::error(
+              "Failed to connect to HCI socket. HAL initialization process will be aborted later.");
       return;
     }
 

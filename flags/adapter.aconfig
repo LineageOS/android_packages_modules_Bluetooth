@@ -29,16 +29,6 @@ flag {
 }
 
 flag {
-    name: "empty_names_are_invalid"
-    namespace: "bluetooth"
-    description: "Make sure the names used in the stack are valid"
-    bug: "395178934"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "remove_legacy_management_thread"
     namespace: "bluetooth"
     description: "Remove non-necessary management_thread"

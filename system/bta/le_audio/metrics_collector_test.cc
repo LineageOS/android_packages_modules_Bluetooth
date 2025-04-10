@@ -62,16 +62,16 @@ public:
 class MetricsCollectorTest : public Test {
 protected:
   std::unique_ptr<MetricsCollector> collector;
-  std::shared_ptr<os::MockMetrics> metrics;
+  std::shared_ptr<::bluetooth::metrics::MockMetrics> metrics;
 
   void SetUp() override {
     collector = std::make_unique<MockMetricsCollector>();
-    metrics = std::make_shared<bluetooth::os::MockMetrics>();
-    os::MockMetrics::SetInstance(metrics);
+    metrics = std::make_shared<::bluetooth::metrics::MockMetrics>();
+    ::bluetooth::metrics::MockMetrics::SetInstance(metrics);
   }
 
   void TearDown() override {
-    os::MockMetrics::SetInstance(nullptr);
+    ::bluetooth::metrics::MockMetrics::SetInstance(nullptr);
     metrics = nullptr;
     collector = nullptr;
   }

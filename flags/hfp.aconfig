@@ -122,3 +122,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "qc_prioritize_lc3_codec"
+    namespace: "bluetooth"
+    description: "QC patch to prioritize lc3 codec over aptx"
+    bug: "409604300"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

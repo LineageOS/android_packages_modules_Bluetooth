@@ -79,7 +79,7 @@ void btif_sock_connection_logger(const RawAddress& address, int port, int type, 
   }
 
   clock_gettime(CLOCK_REALTIME, &connection_logger[index].timestamp);
-  bluetooth::os::LogMetricSocketConnectionState(
+  bluetooth::metrics::LogMetricSocketConnectionState(
           address, port, type, toConnectionStateEnum(state), tx_bytes, rx_bytes, uid, server_port,
           toSocketRoleEnum(role), getConnectionDuration(connection_start_time_ms),
           toSocketErrorEnum(error_code), data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD);

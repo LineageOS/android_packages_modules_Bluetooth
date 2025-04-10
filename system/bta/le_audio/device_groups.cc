@@ -1016,6 +1016,14 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
                 GmapServer::IsGmapServerEnabled());
       }
       break;
+    case ::bluetooth::le_audio::types::LeAudioContextType::MEDIA:
+      if (com::android::bluetooth::flags::dsa_use_codec_extensibility() &&
+          (dsa_.mode == DsaMode::ISO_SW || dsa_.mode == DsaMode::ISO_HW)) {
+        log::debug("Setting the DSA flag for mode: {}", common::ToString(dsa_.mode));
+        // Set the DSA flags
+        new_req.flags = CodecManager::Flags(new_req.flags | CodecManager::Flags::SPATIAL_AUDIO);
+      }
+      break;
     default:
       break;
   }
@@ -1922,7 +1930,21 @@ bool LeAudioDeviceGroup::ConfigureAses(
     auto direction_str = (direction == types::kLeAudioDirectionSink ? "Sink" : "Source");
     log::debug("{}: Looking for requirements: {}", direction_str, audio_set_conf->name);
 
-    if (audio_set_conf->confs.get(direction).empty()) {
+    // Skip this direction if we have no configurations for it
+    auto should_skip = audio_set_conf->confs.get(direction).empty();
+
+    // Even if we have configurations for this direction, we might still want to skip
+    // configuring these ASEs if the only configurations on this direction are the vendor specific
+    // spatial audio channel (DSA) configurations - for these, we want to create the CISes, but no
+    // ASES will be configured.
+    if (!should_skip && direction == types::kLeAudioDirectionSource) {
+      if (audio_set_conf->countNonDsaBackChannels() == 0) {
+        log::debug("Skip configuring DSA data channel ASEs for group {}", group_id_);
+        should_skip = true;
+      }
+    }
+
+    if (should_skip) {
       log::warn("No {} configuration available.", direction_str);
       continue;
     }
@@ -2435,6 +2457,12 @@ void LeAudioDeviceGroup::Dump(std::stringstream& stream, int active_group_id) co
   stream << "    ■ Group id: " << group_id_ << ", " << (is_enabled_ ? "Enabled" : "Disabled")
          << ", " << (is_active ? "Active\n" : "Inactive\n") << "      Current state: " << GetState()
          << ",\ttarget state: " << GetTargetState() << ",\tcig state: " << cig.GetState() << "\n"
+         << std::format("      DSA mode: {}{}, is_active: {}\n", common::ToString(dsa_.mode),
+                        (dsa_.mode == DsaMode::DISABLED) ? ""
+                        : com::android::bluetooth::flags::dsa_use_codec_extensibility()
+                                ? " (codec extensibility)"
+                                : " (static)",
+                        dsa_.active)
          << "      Group supported contexts: " << GetSupportedContexts() << "\n"
          << "      Group available contexts: " << GetAvailableContexts() << "\n"
          << "      Group user allowed contexts: " << GetAllowedContextMask() << "\n"

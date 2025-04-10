@@ -150,7 +150,6 @@ TEST_F(SnoopLoggerSocketThreadModuleTest, socket_connect_disconnect_test) {
   sls.Stop();
 
   ASSERT_FALSE(sls.ThreadIsRunning());
-  close(socket_fd);
 }
 
 TEST_F(SnoopLoggerSocketThreadModuleTest, socket_send_no_start_test) {

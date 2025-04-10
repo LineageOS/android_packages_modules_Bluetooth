@@ -67,7 +67,7 @@ void SnoopLoggerSocket::Write(int& client_socket, const void* data, size_t lengt
   }
 
   ssize_t ret;
-  RUN_NO_INTR(ret = syscall_if_->Send(client_socket, data, length, MSG_DONTWAIT));
+  RUN_NO_INTR(ret = syscall_if_->Send(client_socket, data, length, MSG_DONTWAIT | MSG_NOSIGNAL));
 
   if (ret == -1 && syscall_if_->GetErrno() == ECONNRESET) {
     SafeCloseSocket(client_socket);

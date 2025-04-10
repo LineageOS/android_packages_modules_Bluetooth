@@ -413,8 +413,9 @@ protected:
 
     ON_CALL(*mock_iso_manager_, SetupIsoDataPath)
             .WillByDefault([this](uint16_t conn_handle,
-                                  bluetooth::hci::iso_manager::iso_data_path_params /*p*/) {
+                                  bluetooth::hci::iso_manager::iso_data_path_params p) {
               log::debug("SetupIsoDataPath");
+              last_datapath_params_ = p;
 
               ASSERT_NE(conn_handle, kInvalidCisConnHandle);
 
@@ -622,8 +623,30 @@ protected:
                                                }),
                                 configs.end());
                       }
+                      auto config = provider(requirements, &configs);
 
-                      return provider(requirements, &configs);
+                      // Inject the DSA channel configuration for the remote source direction
+                      if (requirements.flags & CodecManager::Flags::SPATIAL_AUDIO) {
+                        config->confs.source = config->confs.sink;
+                        for (auto& el : config->confs.source) {
+                          el.codec.id = types::kLeAudioCodecHeadtracking;
+                          el.qos.max_transport_latency = 0xFF;
+                          el.qos.sduIntervalUs = 0xFF;
+                          el.qos.maxSdu = 0xFF;
+                          el.qos.retransmission_number = 2;
+                          el.qos.target_latency = 0xA;
+
+                          el.data_path_configuration.dataPathId =
+                                  bluetooth::hci::iso_manager::kIsoDataPathHci;
+                          el.data_path_configuration.isoDataPathConfig.codecId =
+                                  types::kLeAudioCodecHeadtracking;
+                          el.data_path_configuration.isoDataPathConfig.isTransparent = false;
+                          el.data_path_configuration.isoDataPathConfig.controllerDelayUs = 0;
+                        }
+                        config->name += "-Headtracking";
+                      }
+
+                      return config;
                     }));
   }
 
@@ -1699,6 +1722,7 @@ protected:
 
   bluetooth::hci::IsoManager* iso_manager_;
   bluetooth::hci::iso_manager::cig_create_params last_cig_params_;
+  bluetooth::hci::iso_manager::iso_data_path_params last_datapath_params_;
   MockIsoManager* mock_iso_manager_;
   bluetooth::le_audio::CodecManager* codec_manager_;
   MockCodecManager* mock_codec_manager_;
@@ -10338,6 +10362,113 @@ TEST_F(StateMachineTest, testDoNotCodecConfigureDeviceWithoutContextsAvailable) 
 
   // check if group is streaming
   ASSERT_EQ(group->GetState(), types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
+}
+
+TEST_F(StateMachineTest, testStreamMultipleDsa) {
+  const auto context_type = kContextTypeMedia;
+  const auto leaudio_group_id = 4;
+  const auto num_devices = 2;
+
+  // Enable flags
+  com::android::bluetooth::flags::provider_->dsa_use_codec_extensibility(true);
+
+  // Prepare multiple connected devices in a group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type, num_devices);
+  ASSERT_EQ(group->Size(), num_devices);
+
+  // Set the DSA mode and force refreshing the MEDIA scenario config
+  group->InvalidateCachedConfigurations(context_type);
+  group->dsa_.mode = DsaMode::ISO_SW;
+
+  PrepareConfigureCodecHandler(group);
+  PrepareConfigureQosHandler(group);
+  PrepareEnableHandler(group);
+
+  EXPECT_CALL(*mock_iso_manager_, CreateCig(_, _)).Times(1);
+  EXPECT_CALL(*mock_iso_manager_, EstablishCis(_)).Times(AtLeast(1));
+  // Called 4 times: 2 devices x 2 directions
+  EXPECT_CALL(*mock_iso_manager_, SetupIsoDataPath(_, _)).Times(4);
+  EXPECT_CALL(*mock_iso_manager_, RemoveIsoDataPath(_, _)).Times(0);
+  EXPECT_CALL(*mock_iso_manager_, DisconnectCis(_, _)).Times(0);
+  EXPECT_CALL(*mock_iso_manager_, RemoveCig(_, _)).Times(0);
+
+  // Warning: Google specific metadata is similar to LTV format but the length field does not count
+  // the type octet!
+  auto const dsa_vendor_metadata = std::vector<uint8_t>{
+          0x01,  // Length: 1 (see the Warning above!)
+          0x01,  // Type: Headtracking codec supported transport parameter
+          types::kLeAudioMetadataHeadtrackerTransportLeAcl |
+                  types::kLeAudioMetadataHeadtrackerTransportLeIso,  // Value: Headtracking
+                                                                     // supported transports bitmask
+  };
+  auto dsa_pac = types::acs_ac_record{
+          .codec_id = types::kLeAudioCodecHeadtracking,
+  };
+  dsa_pac.metadata.Add(types::kLeAudioMetadataTypeVendorSpecific,
+                       types::kLeAudioVendorCompanyIdGoogle, dsa_vendor_metadata);
+
+  auto* leAudioDevice = group->GetFirstDevice();
+  auto expected_devices_written = 0;
+  while (leAudioDevice) {
+    EXPECT_CALL(gatt_queue,
+                WriteCharacteristic(leAudioDevice->conn_id_, leAudioDevice->ctp_hdls_.val_hdl, _,
+                                    GATT_WRITE_NO_RSP, _, _))
+            .Times(AtLeast(3));
+    expected_devices_written++;
+    ASSERT_NE(leAudioDevice->snk_pacs_.size(), 0lu);
+
+    // Apply the DSA pac record
+    if (leAudioDevice->snk_pacs_.size()) {
+      auto& dest_pac_hdl_value_tuple = std::get<1>(*leAudioDevice->snk_pacs_.rbegin());
+      auto new_pac_hdl_value_tuple = dest_pac_hdl_value_tuple;
+      new_pac_hdl_value_tuple.push_back(dsa_pac);
+      leAudioDevice->RegisterPACs(&dest_pac_hdl_value_tuple, &new_pac_hdl_value_tuple);
+    }
+    if (leAudioDevice->src_pacs_.size()) {
+      auto& dest_pac_hdl_value_tuple = std::get<1>(*leAudioDevice->src_pacs_.rbegin());
+      auto new_pac_hdl_value_tuple = dest_pac_hdl_value_tuple;
+      new_pac_hdl_value_tuple.push_back(dsa_pac);
+      leAudioDevice->RegisterPACs(&dest_pac_hdl_value_tuple, &new_pac_hdl_value_tuple);
+    }
+    leAudioDevice = group->GetNextDevice(leAudioDevice);
+  }
+  ASSERT_EQ(expected_devices_written, num_devices);
+
+  InjectInitialIdleNotification(group);
+
+  // Validate GroupStreamStatus
+  EXPECT_CALL(mock_callbacks_,
+              StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::STREAMING));
+
+  // Start the configuration and stream Media content
+  ASSERT_TRUE(LeAudioGroupStateMachine::Get()->StartStream(
+          group, context_type,
+          {.sink = types::AudioContexts(context_type),
+           .source = types::AudioContexts(context_type)}));
+
+  // Check if group has transitioned to a proper state
+  ASSERT_EQ(group->GetState(), types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
+  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+
+  // Check if the config has DSA channel configuration
+  auto group_config = group->GetActiveConfiguration();
+  ASSERT_NE(group_config, nullptr);
+  ASSERT_TRUE(group_config->hasDsaBackChannel());
+
+  // Verify that the CIG has proper parameters for the back channel
+  ASSERT_NE(last_cig_params_.sdu_itv_stom, 0lu);
+  ASSERT_NE(last_cig_params_.max_trans_lat_stom, 0lu);
+  for (auto const& cfg : last_cig_params_.cis_cfgs) {
+    ASSERT_NE(cfg.max_sdu_size_stom, 0lu);
+    ASSERT_NE(cfg.rtn_stom, 0lu);
+  }
+
+  // Verify data path
+  ASSERT_EQ(last_datapath_params_.data_path_dir,
+            bluetooth::hci::iso_manager::kIsoDataPathDirectionOut);
+  ASSERT_EQ(last_datapath_params_.codec_id_format, types::kLeAudioCodingFormatVendorSpecific);
+  ASSERT_EQ(last_datapath_params_.codec_id_company, types::kLeAudioVendorCompanyIdGoogle);
+  ASSERT_EQ(last_datapath_params_.codec_id_vendor, types::kLeAudioVendorCodecIdHeadtracking);
 }
 
 }  // namespace internal

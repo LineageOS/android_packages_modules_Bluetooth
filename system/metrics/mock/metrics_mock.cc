@@ -19,13 +19,63 @@
 #include <bluetooth/metrics/os_metrics.h>
 #include <gmock/gmock.h>
 
-namespace bluetooth::os {
+namespace bluetooth::metrics {
 
 // Current mock instances backing the metrics API.
 static std::shared_ptr<MockMetrics> metricsInstance;
 
 void MockMetrics::SetInstance(std::shared_ptr<MockMetrics> instance) {
   metricsInstance = std::move(instance);
+}
+
+bool InitMetricIdAllocator(const std::unordered_map<RawAddress, int>& paired_device_map,
+                           CallbackLegacy save_id_callback, CallbackLegacy forget_device_callback) {
+  if (metricsInstance) {
+    return metricsInstance->InitMetricIdAllocator(paired_device_map, save_id_callback,
+                                                  forget_device_callback);
+  }
+  return true;
+}
+
+bool CloseMetricIdAllocator() {
+  if (metricsInstance) {
+    return metricsInstance->CloseMetricIdAllocator();
+  }
+  return true;
+}
+
+bool IsEmptyMetricIdAllocator() {
+  if (metricsInstance) {
+    return metricsInstance->IsEmptyMetricIdAllocator();
+  }
+  return false;
+}
+
+bool IsValidIdFromMetricIdAllocator(int id) {
+  if (metricsInstance) {
+    return metricsInstance->IsValidIdFromMetricIdAllocator(id);
+  }
+  return false;
+}
+
+bool SaveDeviceOnMetricIdAllocator(const RawAddress& address) {
+  if (metricsInstance) {
+    return metricsInstance->SaveDeviceOnMetricIdAllocator(address);
+  }
+  return false;
+}
+
+int AllocateIdFromMetricIdAllocator(const RawAddress& address) {
+  if (metricsInstance) {
+    return metricsInstance->AllocateIdFromMetricIdAllocator(address);
+  }
+  return 0;
+}
+
+void ForgetDeviceFromMetricIdAllocator(const RawAddress& address) {
+  if (metricsInstance) {
+    return metricsInstance->ForgetDeviceFromMetricIdAllocator(address);
+  }
 }
 
 void LogMetricLinkLayerConnectionEvent(const hci::Address& address, uint32_t connection_handle,
@@ -221,7 +271,7 @@ void CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum key, int64_t
   }
 }
 
-void LogMetricBluetoothLEConnection(os::LEConnectionSessionOptions session_options) {
+void LogMetricBluetoothLEConnection(LEConnectionSessionOptions session_options) {
   if (metricsInstance) {
     metricsInstance->LogMetricBluetoothLEConnection(session_options);
   }
@@ -281,4 +331,4 @@ void LogMetricBluetoothQualityReport(const bqr::BqrLinkQualityEvent& event) {
   }
 }
 
-}  // namespace bluetooth::os
+}  // namespace bluetooth::metrics

@@ -47,6 +47,10 @@ SnoopLoggerSocketThread::~SnoopLoggerSocketThread() { Stop(); }
 std::future<bool> SnoopLoggerSocketThread::Start() {
   log::debug("");
   std::promise<bool> thread_started;
+  if (listen_thread_) {
+    thread_started.set_value(true);
+    return thread_started.get_future();
+  }
   auto future = thread_started.get_future();
   stop_thread_ = false;
   listen_thread_ = std::make_unique<std::thread>(&SnoopLoggerSocketThread::Run, this,
@@ -63,6 +67,7 @@ void SnoopLoggerSocketThread::Stop() {
   if (listen_thread_ && listen_thread_->joinable()) {
     listen_thread_->join();
     listen_thread_.reset();
+    socket_->Cleanup();
   }
 }
 
@@ -87,7 +92,12 @@ void SnoopLoggerSocketThread::Run(std::promise<bool> thread_started) {
   while (!stop_thread_ && socket_->ProcessIncomingRequest()) {
   }
 
-  socket_->Cleanup();
+  // We don't call `socket_->Cleanup()` here because it's possible for that to lead to SIGPIPE: in
+  // `Stop` it sets `stop_thread_` to true, and then calls `socket_->NotifySocketListener()`. Within
+  // that small window, we might have checked `stop_thread_` above, and if we were to call
+  // `socket_->Cleanup` here, that would then mean that `socket_->NotifySocketListener()` could
+  // result in SIGPIPE, which, by default will terminate the process.
+
   listen_thread_running_ = false;
 }
 

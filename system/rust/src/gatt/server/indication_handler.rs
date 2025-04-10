@@ -6,9 +6,9 @@ use tokio::sync::mpsc::{self};
 use tokio::time::timeout;
 
 use crate::gatt::ids::AttHandle;
-use crate::packets::att;
+use crate::gatt::server::att_client::WeakAttClient;
+use crate::packets::att::{self, AttErrorCode};
 
-use super::att_database::{AttDatabase, StableAttDatabase};
 use super::att_server_bearer::SendError;
 
 #[derive(Debug)]
@@ -34,15 +34,21 @@ pub enum IndicationError {
     ConnectionDroppedWhileWaitingForConfirmation,
 }
 
-pub struct IndicationHandler<T> {
-    db: T,
+impl From<AttErrorCode> for IndicationError {
+    fn from(_value: AttErrorCode) -> Self {
+        IndicationError::AttributeNotFound
+    }
+}
+
+pub struct IndicationHandler {
+    client: WeakAttClient,
     pending_confirmation: mpsc::Receiver<()>,
 }
 
-impl<T: AttDatabase> IndicationHandler<T> {
-    pub fn new(db: T) -> (Self, ConfirmationWatcher) {
+impl IndicationHandler {
+    pub fn new(client: WeakAttClient) -> (Self, ConfirmationWatcher) {
         let (tx, rx) = mpsc::channel(1);
-        (Self { db, pending_confirmation: rx }, ConfirmationWatcher(tx))
+        (Self { client, pending_confirmation: rx }, ConfirmationWatcher(tx))
     }
 
     pub async fn send(
@@ -50,7 +56,6 @@ impl<T: AttDatabase> IndicationHandler<T> {
         handle: AttHandle,
         data: &[u8],
         mtu: usize,
-        send_packet: impl FnOnce(att::Att) -> Result<(), SendError>,
     ) -> Result<(), IndicationError> {
         let data_size = data.len();
         // As per Core Spec 5.3 Vol 3F 3.4.7.2, the indicated value must be at most
@@ -59,27 +64,26 @@ impl<T: AttDatabase> IndicationHandler<T> {
             return Err(IndicationError::DataExceedsMtu { mtu: mtu - 3 });
         }
 
-        if !self
-            .db
-            .snapshot()
-            .find_attribute(handle)
-            .ok_or(IndicationError::AttributeNotFound)?
-            .permissions
-            .indicate()
-        {
-            warn!("cannot send indication for {handle:?} since it does not support indications");
-            return Err(IndicationError::IndicationsNotSupported);
-        }
+        self.client.with_attribute(handle, |client, attr| {
+            if !attr.attribute.permissions.indicate() {
+                warn!(
+                    "cannot send indication for {handle:?} since it does not support indications"
+                );
+                return Err(IndicationError::IndicationsNotSupported);
+            }
 
-        // flushing any confirmations that arrived before we sent the next indication
-        let _ = self.pending_confirmation.try_recv();
+            // flushing any confirmations that arrived before we sent the next indication
+            let _ = self.pending_confirmation.try_recv();
 
-        send_packet(
-            att::AttHandleValueIndication { handle: handle.into(), value: data.to_vec() }
-                .try_into()
-                .unwrap(),
-        )
-        .map_err(IndicationError::SendError)?;
+            client
+                .bearer()
+                .send_packet(
+                    att::AttHandleValueIndication { handle: handle.into(), value: data.to_vec() }
+                        .try_into()
+                        .unwrap(),
+                )
+                .map_err(|e| IndicationError::SendError(SendError::SerializeError(e)))
+        })?;
 
         match timeout(Duration::from_secs(30), self.pending_confirmation.recv()).await {
             Ok(Some(())) => Ok(()),
@@ -116,26 +120,33 @@ impl ConfirmationWatcher {
 #[cfg(test)]
 mod test {
     use crate::packets::att;
-    use tokio::sync::oneshot;
     use tokio::task::spawn_local;
     use tokio::time::Instant;
 
+    use crate::core::shared_box::SharedBox;
     use crate::core::uuid::Uuid;
+    use crate::gatt::ids::TransportIndex;
+    use crate::gatt::server::att_client::AttClient;
     use crate::gatt::server::att_database::AttAttribute;
-    use crate::gatt::server::gatt_database::AttPermissions;
-    use crate::gatt::server::test::test_att_db::TestAttDatabase;
+    use crate::gatt::server::gatt_database::{AttPermissions, GattDatabase};
+    use crate::gatt::server::test::test_att_db::new_test_database;
     use crate::utils::task::block_on_locally;
 
     use super::*;
 
-    const HANDLE: AttHandle = AttHandle(1);
-    const NONEXISTENT_HANDLE: AttHandle = AttHandle(2);
-    const NON_INDICATE_HANDLE: AttHandle = AttHandle(3);
+    const HANDLE: AttHandle = AttHandle(3);
+    const NONEXISTENT_HANDLE: AttHandle = AttHandle(4);
+    const NON_INDICATE_HANDLE: AttHandle = AttHandle(6);
     const MTU: usize = 32;
     const DATA: [u8; 3] = [1, 2, 3];
+    const TCB_IDX: TransportIndex = TransportIndex(1);
 
-    fn get_att_database() -> TestAttDatabase {
-        TestAttDatabase::new(vec![
+    fn set_up() -> (
+        SharedBox<GattDatabase>,
+        SharedBox<AttClient>,
+        tokio::sync::mpsc::UnboundedReceiver<att::Att>,
+    ) {
+        let db = new_test_database(vec![
             (
                 AttAttribute {
                     handle: HANDLE,
@@ -152,29 +163,24 @@ mod test {
                 },
                 vec![],
             ),
-        ])
+        ]);
+        let (client, rx) = AttClient::new_test_client(TCB_IDX, &db);
+        (db, client, rx)
     }
 
     #[test]
     fn test_indication_sent() {
         block_on_locally(async move {
             // arrange
+            let (_db, client, mut rx) = set_up();
             let (mut indication_handler, _confirmation_watcher) =
-                IndicationHandler::new(get_att_database());
-            let (tx, rx) = oneshot::channel();
+                IndicationHandler::new(client.downgrade());
 
             // act: send an indication
-            spawn_local(async move {
-                indication_handler
-                    .send(HANDLE, &DATA, MTU, move |packet| {
-                        tx.send(packet).unwrap();
-                        Ok(())
-                    })
-                    .await
-            });
+            spawn_local(async move { indication_handler.send(HANDLE, &DATA, MTU).await });
 
             // assert: that an AttHandleValueIndication was sent on the channel
-            let indication = rx.await.unwrap();
+            let indication = rx.recv().await.unwrap();
             assert_eq!(
                 Ok(indication),
                 att::AttHandleValueIndication { handle: HANDLE.into(), value: DATA.to_vec() }
@@ -187,13 +193,12 @@ mod test {
     fn test_invalid_handle() {
         block_on_locally(async move {
             // arrange
+            let (_db, client, _rx) = set_up();
             let (mut indication_handler, _confirmation_watcher) =
-                IndicationHandler::new(get_att_database());
+                IndicationHandler::new(client.downgrade());
 
             // act: send an indication on a nonexistent handle
-            let ret = indication_handler
-                .send(NONEXISTENT_HANDLE, &DATA, MTU, move |_| unreachable!())
-                .await;
+            let ret = indication_handler.send(NONEXISTENT_HANDLE, &DATA, MTU).await;
 
             // assert: that we failed with IndicationError::AttributeNotFound
             assert!(matches!(ret, Err(IndicationError::AttributeNotFound)));
@@ -204,13 +209,12 @@ mod test {
     fn test_unsupported_permission() {
         block_on_locally(async move {
             // arrange
+            let (_db, client, _rx) = set_up();
             let (mut indication_handler, _confirmation_watcher) =
-                IndicationHandler::new(get_att_database());
+                IndicationHandler::new(client.downgrade());
 
             // act: send an indication on an attribute that does not support indications
-            let ret = indication_handler
-                .send(NON_INDICATE_HANDLE, &DATA, MTU, move |_| unreachable!())
-                .await;
+            let ret = indication_handler.send(NON_INDICATE_HANDLE, &DATA, MTU).await;
 
             // assert: that we failed with IndicationError::IndicationsNotSupported
             assert!(matches!(ret, Err(IndicationError::IndicationsNotSupported)));
@@ -221,21 +225,15 @@ mod test {
     fn test_confirmation_handled() {
         block_on_locally(async move {
             // arrange
+            let (_db, client, mut rx) = set_up();
             let (mut indication_handler, confirmation_watcher) =
-                IndicationHandler::new(get_att_database());
-            let (tx, rx) = oneshot::channel();
+                IndicationHandler::new(client.downgrade());
 
             // act: send an indication
-            let pending_result = spawn_local(async move {
-                indication_handler
-                    .send(HANDLE, &DATA, MTU, move |packet| {
-                        tx.send(packet).unwrap();
-                        Ok(())
-                    })
-                    .await
-            });
+            let pending_result =
+                spawn_local(async move { indication_handler.send(HANDLE, &DATA, MTU).await });
             // when the indication is sent, send a confirmation in response
-            rx.await.unwrap();
+            rx.recv().await.unwrap();
             confirmation_watcher.on_confirmation();
 
             // assert: the indication was successfully sent
@@ -247,22 +245,16 @@ mod test {
     fn test_unblock_on_disconnect() {
         block_on_locally(async move {
             // arrange
+            let (_db, client, mut rx) = set_up();
             let (mut indication_handler, confirmation_watcher) =
-                IndicationHandler::new(get_att_database());
-            let (tx, rx) = oneshot::channel();
+                IndicationHandler::new(client.downgrade());
 
             // act: send an indication
-            let pending_result = spawn_local(async move {
-                indication_handler
-                    .send(HANDLE, &DATA, MTU, move |packet| {
-                        tx.send(packet).unwrap();
-                        Ok(())
-                    })
-                    .await
-            });
+            let pending_result =
+                spawn_local(async move { indication_handler.send(HANDLE, &DATA, MTU).await });
             // when the indication is sent, drop the confirmation watcher (as would happen
             // upon a disconnection)
-            rx.await.unwrap();
+            rx.recv().await.unwrap();
             drop(confirmation_watcher);
 
             // assert: we get the appropriate error
@@ -277,24 +269,18 @@ mod test {
     fn test_spurious_confirmations() {
         block_on_locally(async move {
             // arrange: send a few confirmations in advance
+            let (_db, client, mut rx) = set_up();
             let (mut indication_handler, confirmation_watcher) =
-                IndicationHandler::new(get_att_database());
-            let (tx, rx) = oneshot::channel();
+                IndicationHandler::new(client.downgrade());
             confirmation_watcher.on_confirmation();
             confirmation_watcher.on_confirmation();
 
             // act: send an indication
-            let pending_result = spawn_local(async move {
-                indication_handler
-                    .send(HANDLE, &DATA, MTU, move |packet| {
-                        tx.send(packet).unwrap();
-                        Ok(())
-                    })
-                    .await
-            });
+            let pending_result =
+                spawn_local(async move { indication_handler.send(HANDLE, &DATA, MTU).await });
             // when the indication is sent, drop the confirmation watcher (so we won't block
             // forever)
-            rx.await.unwrap();
+            rx.recv().await.unwrap();
             drop(confirmation_watcher);
 
             // assert: we get the appropriate error, rather than an Ok(())
@@ -311,24 +297,18 @@ mod test {
     fn test_indication_timeout() {
         block_on_locally(async move {
             // arrange: send a few confirmations in advance
+            let (_db, client, mut rx) = set_up();
             let (mut indication_handler, confirmation_watcher) =
-                IndicationHandler::new(get_att_database());
-            let (tx, rx) = oneshot::channel();
+                IndicationHandler::new(client.downgrade());
             confirmation_watcher.on_confirmation();
             confirmation_watcher.on_confirmation();
 
             // act: send an indication
             let time_sent = Instant::now();
-            let pending_result = spawn_local(async move {
-                indication_handler
-                    .send(HANDLE, &DATA, MTU, move |packet| {
-                        tx.send(packet).unwrap();
-                        Ok(())
-                    })
-                    .await
-            });
+            let pending_result =
+                spawn_local(async move { indication_handler.send(HANDLE, &DATA, MTU).await });
             // after it is sent, wait for the timer to fire
-            rx.await.unwrap();
+            rx.recv().await.unwrap();
 
             // assert: we get the appropriate error
             assert!(matches!(
@@ -348,11 +328,12 @@ mod test {
     fn test_mtu_exceeds() {
         block_on_locally(async move {
             // arrange
+            let (_db, client, _rx) = set_up();
             let (mut indication_handler, _confirmation_watcher) =
-                IndicationHandler::new(get_att_database());
+                IndicationHandler::new(client.downgrade());
 
             // act: send an indication with an ATT_MTU of 4 and data length of 3
-            let res = indication_handler.send(HANDLE, &DATA, 4, move |_| unreachable!()).await;
+            let res = indication_handler.send(HANDLE, &DATA, 4).await;
 
             // assert: that we got the expected error, indicating the max data size (not the
             // ATT_MTU, but ATT_MTU-3)

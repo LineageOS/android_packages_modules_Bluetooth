@@ -66,11 +66,15 @@ protected:
 class TestAclManager : public testing::MockAclManager {
 public:
   void AddDeviceToRelaxedConnectionIntervalList(const Address /*address*/) override {}
+  Address HACK_GetLeAddress(uint16_t /*connection_handle*/) override { return target_address_; }
 
 protected:
   void Start() override {}
   void Stop() override {}
   void ListDependencies(ModuleList* /* list */) const override {}
+
+public:
+  Address target_address_;
 };
 
 struct CsReadCapabilitiesCompleteEvent {
@@ -341,6 +345,15 @@ struct CsModule {
             subevent_result.result_data_structures);
   }
 
+  static std::unique_ptr<LeCsSubeventResultContinueBuilder> GetSubeventResultContinueEvent(
+          uint16_t connection_handle, CsSubeventResultEvent subevent_result) {
+    return LeCsSubeventResultContinueBuilder::Create(
+            connection_handle, subevent_result.config_id, subevent_result.procedure_done_status,
+            subevent_result.subevent_done_status, subevent_result.procedure_abort_reason,
+            subevent_result.subevent_abort_reason, subevent_result.num_antenna_paths,
+            subevent_result.result_data_structures);
+  }
+
   template <typename T>
   static std::vector<uint8_t> GetCsStepData(const T& step_data) {
     static_assert(std::is_base_of<bluetooth::packet::PacketStruct<true>, T>::value,
@@ -436,6 +449,17 @@ struct CsModule {
     std::vector<LeCsResultDataStructure> results;
     uint8_t channel = 1;
     results.emplace_back(0, channel++, GetMode0Data(role));
+    // antenna_permutation_index is A1A2
+    std::vector<uint8_t> mode2_data = GetMode2Data(
+            /*num_antenna_path=*/2, /*antenna_permutation_index=*/0);
+    results.emplace_back(2, channel++, mode2_data);
+    results.emplace_back(2, channel++, mode2_data);
+    return results;
+  }
+
+  static std::vector<LeCsResultDataStructure> GetSubeventContinueMode2Data() {
+    std::vector<LeCsResultDataStructure> results;
+    uint8_t channel = 10;
     // antenna_permutation_index is A1A2
     std::vector<uint8_t> mode2_data = GetMode2Data(
             /*num_antenna_path=*/2, /*antenna_permutation_index=*/0);
@@ -907,9 +931,16 @@ TEST_F(DistanceMeasurementManagerTest, complete_mode2_procedure) {
 
   CsSubeventResultEvent req_subevent_result_1;
   req_subevent_result_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  req_subevent_result_1.subevent_done_status = CsSubeventDoneStatus::PARTIAL_RESULTS;
   req_subevent_result_1.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::INITIATOR);
   cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
           params.connection_handle, procedure_counter, req_subevent_result_1));
+  req_subevent_result_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  req_subevent_result_1.subevent_done_status = CsSubeventDoneStatus::ALL_RESULTS_COMPLETE;
+  req_subevent_result_1.result_data_structures = CsModule::GetSubeventContinueMode2Data();
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultContinueEvent(
+          params.connection_handle, req_subevent_result_1));
+
   CsSubeventResultEvent req_subevent_result_2;
   req_subevent_result_2.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::INITIATOR);
   cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
@@ -1074,6 +1105,47 @@ INSTANTIATE_TEST_SUITE_P(complete_mode1_mode3_procedure, DistanceMeasurementMana
                                            CsRttType::RTT_WITH_96_BIT_SOUNDING_SEQUENCE,
                                            CsRttType::RTT_AA_ONLY,
                                            CsRttType::RTT_WITH_32_BIT_RANDOM_SEQUENCE));
+
+TEST_F(DistanceMeasurementManagerTest, get_rssi_result_success) {
+  cs_requester_.ReceivedReadLocalCapabilitiesComplete();
+
+  StartMeasurementParameters params;
+  params.method = DistanceMeasurementMethod::METHOD_RSSI;
+  cs_requester_.StartMeasurement(params);
+
+  uint8_t transmit_power_level = 20;
+  cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_READ_REMOTE_TRANSMIT_POWER_LEVEL);
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(LeTransmitPowerReportingBuilder::Create(
+          ErrorCode::SUCCESS, params.connection_handle, ReportingReason::READ_COMMAND_COMPLETE,
+          /*phy=*/1, transmit_power_level, /*transmit_power_level_flag=*/0, /*delta*/ 0));
+
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+              OnDistanceMeasurementStarted(params.responder_addr,
+                                           DistanceMeasurementMethod::METHOD_RSSI));
+  cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_SET_TRANSMIT_POWER_REPORTING_ENABLE);
+  cs_requester_.test_hci_layer_->IncomingEvent(
+          LeSetTransmitPowerReportingEnableCompleteBuilder::Create(
+                  /*num_hci_command_packets=*/128, ErrorCode::SUCCESS, params.connection_handle));
+
+  cs_requester_.sync_client_handler();
+  uint8_t rssi = 10;  // dBm
+  cs_requester_.mock_acl_manager_->target_address_ = params.responder_addr;
+  auto future = cs_requester_.fake_timer_advance(params.interval);
+  future.wait_for(kTimeout);
+
+  cs_requester_.test_hci_layer_->GetCommand(OpCode::READ_RSSI);
+  int8_t rssi_drop_off_at_1m = 41;
+  double pow_value = (transmit_power_level - rssi - rssi_drop_off_at_1m) / 20.0;
+  double distance = pow(10.0, pow_value);
+  EXPECT_CALL(
+          cs_requester_.mock_dm_callbacks_,
+          OnDistanceMeasurementResult(params.responder_addr, distance * 100, distance * 100, _, _,
+                                      _, _, _, _, _, _, _, DistanceMeasurementMethod::METHOD_RSSI));
+  cs_requester_.test_hci_layer_->IncomingEvent(ReadRssiCompleteBuilder::Create(
+          /*num_hci_command_packets=*/128, ErrorCode::SUCCESS, params.connection_handle, rssi));
+  fake_timerfd_reset();
+  cs_requester_.sync_client_handler();
+}
 
 }  // namespace
 }  // namespace hci

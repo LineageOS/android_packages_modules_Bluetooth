@@ -338,7 +338,7 @@ private:
           return;
       }
     }
-    bluetooth::os::CountCounterMetrics(key, 1);
+    bluetooth::metrics::CountCounterMetrics(key, 1);
   }
 
   void log_counter_metrics_for_group(LeAudioHealthGroupStatType type, bool in_allowlist) {
@@ -381,7 +381,7 @@ private:
           return;
       }
     }
-    bluetooth::os::CountCounterMetrics(key, 1);
+    bluetooth::metrics::CountCounterMetrics(key, 1);
   }
 };
 }  // namespace bluetooth::le_audio

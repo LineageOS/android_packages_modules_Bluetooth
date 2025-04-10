@@ -16,15 +16,27 @@
 
 #pragma once
 
+#include <bluetooth/metrics/metric_id_api.h>
 #include <bluetooth/metrics/os_metrics.h>
 #include <gmock/gmock.h>
 
-namespace bluetooth::os {
+namespace bluetooth::metrics {
 
 class MockMetrics {
 public:
   static void SetInstance(std::shared_ptr<MockMetrics> instance);
 
+  // Methods from metric_id_api.h
+  MOCK_METHOD(bool, InitMetricIdAllocator,
+              ((const std::unordered_map<RawAddress, int>&), CallbackLegacy, CallbackLegacy));
+  MOCK_METHOD(bool, CloseMetricIdAllocator, ());
+  MOCK_METHOD(bool, IsEmptyMetricIdAllocator, ());
+  MOCK_METHOD(int, AllocateIdFromMetricIdAllocator, (const RawAddress&));
+  MOCK_METHOD(bool, SaveDeviceOnMetricIdAllocator, (const RawAddress&));
+  MOCK_METHOD(void, ForgetDeviceFromMetricIdAllocator, (const RawAddress&));
+  MOCK_METHOD(bool, IsValidIdFromMetricIdAllocator, (int));
+
+  // Methods from os_metrics.h
   MOCK_METHOD(void, LogMetricLinkLayerConnectionEvent,
               (const hci::Address&, uint32_t, android::bluetooth::DirectionEnum, uint16_t, uint32_t,
                uint16_t, uint16_t, uint16_t, uint16_t));
@@ -65,7 +77,7 @@ public:
   MOCK_METHOD(void, LogMetricBluetoothRemoteSupportedFeatures,
               (const hci::Address&, uint32_t, uint64_t, uint32_t));
   MOCK_METHOD(void, CountCounterMetrics, (android::bluetooth::CodePathCounterKeyEnum, int64_t));
-  MOCK_METHOD(void, LogMetricBluetoothLEConnection, (os::LEConnectionSessionOptions));
+  MOCK_METHOD(void, LogMetricBluetoothLEConnection, (LEConnectionSessionOptions));
   MOCK_METHOD(void, LogMetricBluetoothEvent,
               (const hci::Address&, android::bluetooth::EventType, android::bluetooth::State));
   MOCK_METHOD(void, LogMetricRfcommConnectionAtClose,
@@ -84,4 +96,4 @@ public:
   MOCK_METHOD(void, LogMetricBluetoothQualityReport, (const bqr::BqrLinkQualityEvent&));
 };
 
-}  // namespace bluetooth::os
+}  // namespace bluetooth::metrics

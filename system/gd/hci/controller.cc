@@ -344,7 +344,7 @@ struct Controller::impl {
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
 
     local_version_information_ = complete_view.GetLocalVersionInformation();
-    bluetooth::os::LogMetricBluetoothLocalVersions(
+    bluetooth::metrics::LogMetricBluetoothLocalVersions(
             local_version_information_.manufacturer_name_,
             static_cast<uint8_t>(local_version_information_.lmp_version_),
             local_version_information_.lmp_subversion_,
@@ -375,8 +375,8 @@ struct Controller::impl {
       extended_lmp_features_array_.back() &=
               ~static_cast<uint64_t>(LMPFeaturesPage0Bits::NON_FLUSHABLE_PACKET_BOUNDARY_FLAG);
     }
-    bluetooth::os::LogMetricBluetoothLocalSupportedFeatures(page_number,
-                                                            complete_view.GetExtendedLmpFeatures());
+    bluetooth::metrics::LogMetricBluetoothLocalSupportedFeatures(
+            page_number, complete_view.GetExtendedLmpFeatures());
     // Query all extended features
     if (page_number < complete_view.GetMaximumPageNumber()) {
       page_number++;

@@ -20,11 +20,10 @@
 #include "metric_id_manager.h"
 #include "types/raw_address.h"
 
-using bluetooth::common::MetricIdManager;
-using bluetooth::hci::Address;
+namespace bluetooth::metrics {
 
-namespace bluetooth {
-namespace shim {
+using hci::Address;
+
 using CallbackGd = std::function<bool(const Address& address, const int id)>;
 
 bool InitMetricIdAllocator(const std::unordered_map<RawAddress, int>& paired_device_map,
@@ -65,5 +64,5 @@ void ForgetDeviceFromMetricIdAllocator(const RawAddress& address) {
 bool IsValidIdFromMetricIdAllocator(const int id) {
   return MetricIdManager::GetInstance().IsValidId(id);
 }
-}  // namespace shim
-}  // namespace bluetooth
+
+}  // namespace bluetooth::metrics

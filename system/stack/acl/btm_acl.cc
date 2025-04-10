@@ -785,10 +785,10 @@ static void btm_process_remote_version_complete(uint8_t status, uint16_t handle,
     p_acl_cb->remote_version_info.valid = true;
     BTM_update_version_info(p_acl_cb->RemoteAddress(), p_acl_cb->remote_version_info);
 
-    bluetooth::os::LogMetricRemoteVersionInfo(handle, status, lmp_version, manufacturer,
-                                              lmp_subversion);
+    bluetooth::metrics::LogMetricRemoteVersionInfo(handle, status, lmp_version, manufacturer,
+                                                   lmp_subversion);
   } else {
-    bluetooth::os::LogMetricRemoteVersionInfo(handle, status, 0, 0, 0);
+    bluetooth::metrics::LogMetricRemoteVersionInfo(handle, status, 0, 0, 0);
   }
 }
 
