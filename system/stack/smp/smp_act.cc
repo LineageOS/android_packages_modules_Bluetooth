@@ -1550,9 +1550,6 @@ void smp_process_io_response(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
       switch (p_cb->loc_oob_flag) {
         case SMP_OOB_NONE:
           log::info("SMP_MODEL_SEC_CONN_OOB with SMP_OOB_NONE");
-          if (!com::android::bluetooth::flags::remove_dup_pairing_response_in_oob_pairing()) {
-            smp_send_pair_rsp(p_cb, NULL);
-          }
           break;
         case SMP_OOB_PRESENT:
           log::info("SMP_MODEL_SEC_CONN_OOB with SMP_OOB_PRESENT");
