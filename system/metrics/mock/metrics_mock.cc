@@ -28,6 +28,56 @@ void MockMetrics::SetInstance(std::shared_ptr<MockMetrics> instance) {
   metricsInstance = std::move(instance);
 }
 
+bool InitMetricIdAllocator(const std::unordered_map<RawAddress, int>& paired_device_map,
+                           CallbackLegacy save_id_callback, CallbackLegacy forget_device_callback) {
+  if (metricsInstance) {
+    return metricsInstance->InitMetricIdAllocator(paired_device_map, save_id_callback,
+                                                  forget_device_callback);
+  }
+  return true;
+}
+
+bool CloseMetricIdAllocator() {
+  if (metricsInstance) {
+    return metricsInstance->CloseMetricIdAllocator();
+  }
+  return true;
+}
+
+bool IsEmptyMetricIdAllocator() {
+  if (metricsInstance) {
+    return metricsInstance->IsEmptyMetricIdAllocator();
+  }
+  return false;
+}
+
+bool IsValidIdFromMetricIdAllocator(int id) {
+  if (metricsInstance) {
+    return metricsInstance->IsValidIdFromMetricIdAllocator(id);
+  }
+  return false;
+}
+
+bool SaveDeviceOnMetricIdAllocator(const RawAddress& address) {
+  if (metricsInstance) {
+    return metricsInstance->SaveDeviceOnMetricIdAllocator(address);
+  }
+  return false;
+}
+
+int AllocateIdFromMetricIdAllocator(const RawAddress& address) {
+  if (metricsInstance) {
+    return metricsInstance->AllocateIdFromMetricIdAllocator(address);
+  }
+  return 0;
+}
+
+void ForgetDeviceFromMetricIdAllocator(const RawAddress& address) {
+  if (metricsInstance) {
+    return metricsInstance->ForgetDeviceFromMetricIdAllocator(address);
+  }
+}
+
 void LogMetricLinkLayerConnectionEvent(const hci::Address& address, uint32_t connection_handle,
                                        android::bluetooth::DirectionEnum direction,
                                        uint16_t link_type, uint32_t hci_cmd, uint16_t hci_event,
