@@ -33,11 +33,18 @@ struct LeAudioCodecConfiguration {
   static constexpr uint8_t kChannelNumberMono = bluetooth::audio::le_audio::kChannelNumberMono;
   static constexpr uint8_t kChannelNumberStereo = bluetooth::audio::le_audio::kChannelNumberStereo;
 
+  static constexpr uint32_t kSampleRate384000 = bluetooth::audio::le_audio::kSampleRate384000;
+  static constexpr uint32_t kSampleRate192000 = bluetooth::audio::le_audio::kSampleRate192000;
+  static constexpr uint32_t kSampleRate176400 = bluetooth::audio::le_audio::kSampleRate176400;
+  static constexpr uint32_t kSampleRate96000 = bluetooth::audio::le_audio::kSampleRate96000;
+  static constexpr uint32_t kSampleRate88200 = bluetooth::audio::le_audio::kSampleRate88200;
   static constexpr uint32_t kSampleRate48000 = bluetooth::audio::le_audio::kSampleRate48000;
   static constexpr uint32_t kSampleRate44100 = bluetooth::audio::le_audio::kSampleRate44100;
   static constexpr uint32_t kSampleRate32000 = bluetooth::audio::le_audio::kSampleRate32000;
   static constexpr uint32_t kSampleRate24000 = bluetooth::audio::le_audio::kSampleRate24000;
+  static constexpr uint32_t kSampleRate22050 = bluetooth::audio::le_audio::kSampleRate22050;
   static constexpr uint32_t kSampleRate16000 = bluetooth::audio::le_audio::kSampleRate16000;
+  static constexpr uint32_t kSampleRate11025 = bluetooth::audio::le_audio::kSampleRate11025;
   static constexpr uint32_t kSampleRate8000 = bluetooth::audio::le_audio::kSampleRate8000;
 
   static constexpr uint8_t kBitsPerSample16 = bluetooth::audio::le_audio::kBitsPerSample16;

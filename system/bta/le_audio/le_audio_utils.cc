@@ -181,8 +181,12 @@ bluetooth::le_audio::btle_audio_sample_rate_index_t translateToBtLeAudioCodecCon
   switch (sample_rate) {
     case LeAudioCodecConfiguration::kSampleRate8000:
       return LE_AUDIO_SAMPLE_RATE_INDEX_8000HZ;
+    case LeAudioCodecConfiguration::kSampleRate11025:
+      return LE_AUDIO_SAMPLE_RATE_INDEX_11025HZ;
     case LeAudioCodecConfiguration::kSampleRate16000:
       return LE_AUDIO_SAMPLE_RATE_INDEX_16000HZ;
+    case LeAudioCodecConfiguration::kSampleRate22050:
+      return LE_AUDIO_SAMPLE_RATE_INDEX_22050HZ;
     case LeAudioCodecConfiguration::kSampleRate24000:
       return LE_AUDIO_SAMPLE_RATE_INDEX_24000HZ;
     case LeAudioCodecConfiguration::kSampleRate32000:
@@ -191,6 +195,16 @@ bluetooth::le_audio::btle_audio_sample_rate_index_t translateToBtLeAudioCodecCon
       return LE_AUDIO_SAMPLE_RATE_INDEX_44100HZ;
     case LeAudioCodecConfiguration::kSampleRate48000:
       return LE_AUDIO_SAMPLE_RATE_INDEX_48000HZ;
+    case LeAudioCodecConfiguration::kSampleRate88200:
+      return LE_AUDIO_SAMPLE_RATE_INDEX_88200HZ;
+    case LeAudioCodecConfiguration::kSampleRate96000:
+      return LE_AUDIO_SAMPLE_RATE_INDEX_96000HZ;
+    case LeAudioCodecConfiguration::kSampleRate176400:
+      return LE_AUDIO_SAMPLE_RATE_INDEX_176400HZ;
+    case LeAudioCodecConfiguration::kSampleRate192000:
+      return LE_AUDIO_SAMPLE_RATE_INDEX_192000HZ;
+    case LeAudioCodecConfiguration::kSampleRate384000:
+      return LE_AUDIO_SAMPLE_RATE_INDEX_384000HZ;
   }
 
   return LE_AUDIO_SAMPLE_RATE_INDEX_NONE;

@@ -149,21 +149,41 @@ std::ostream& operator<<(std::ostream& os, const CodecConfigSetting& config) {
 /* Helper map for matching various frequency notations */
 const std::map<uint8_t, uint32_t> LeAudioCoreCodecConfig::sampling_freq_map = {
         {codec_spec_conf::kLeAudioSamplingFreq8000Hz, LeAudioCodecConfiguration::kSampleRate8000},
+        {codec_spec_conf::kLeAudioSamplingFreq11025Hz, LeAudioCodecConfiguration::kSampleRate11025},
         {codec_spec_conf::kLeAudioSamplingFreq16000Hz, LeAudioCodecConfiguration::kSampleRate16000},
+        {codec_spec_conf::kLeAudioSamplingFreq22050Hz, LeAudioCodecConfiguration::kSampleRate22050},
         {codec_spec_conf::kLeAudioSamplingFreq24000Hz, LeAudioCodecConfiguration::kSampleRate24000},
         {codec_spec_conf::kLeAudioSamplingFreq32000Hz, LeAudioCodecConfiguration::kSampleRate32000},
         {codec_spec_conf::kLeAudioSamplingFreq44100Hz, LeAudioCodecConfiguration::kSampleRate44100},
-        {codec_spec_conf::kLeAudioSamplingFreq48000Hz,
-         LeAudioCodecConfiguration::kSampleRate48000}};
+        {codec_spec_conf::kLeAudioSamplingFreq48000Hz, LeAudioCodecConfiguration::kSampleRate48000},
+        {codec_spec_conf::kLeAudioSamplingFreq88200Hz, LeAudioCodecConfiguration::kSampleRate88200},
+        {codec_spec_conf::kLeAudioSamplingFreq96000Hz, LeAudioCodecConfiguration::kSampleRate96000},
+        {codec_spec_conf::kLeAudioSamplingFreq176400Hz,
+         LeAudioCodecConfiguration::kSampleRate176400},
+        {codec_spec_conf::kLeAudioSamplingFreq192000Hz,
+         LeAudioCodecConfiguration::kSampleRate192000},
+        {codec_spec_conf::kLeAudioSamplingFreq384000Hz,
+         LeAudioCodecConfiguration::kSampleRate384000},
+};
 
 /* Helper map for matching various frequency notations */
 const std::map<uint32_t, uint8_t> LeAudioCoreCodecConfig::sample_rate_map = {
         {LeAudioCodecConfiguration::kSampleRate8000, codec_spec_conf::kLeAudioSamplingFreq8000Hz},
+        {LeAudioCodecConfiguration::kSampleRate11025, codec_spec_conf::kLeAudioSamplingFreq11025Hz},
         {LeAudioCodecConfiguration::kSampleRate16000, codec_spec_conf::kLeAudioSamplingFreq16000Hz},
+        {LeAudioCodecConfiguration::kSampleRate22050, codec_spec_conf::kLeAudioSamplingFreq22050Hz},
         {LeAudioCodecConfiguration::kSampleRate24000, codec_spec_conf::kLeAudioSamplingFreq24000Hz},
         {LeAudioCodecConfiguration::kSampleRate32000, codec_spec_conf::kLeAudioSamplingFreq32000Hz},
         {LeAudioCodecConfiguration::kSampleRate44100, codec_spec_conf::kLeAudioSamplingFreq44100Hz},
         {LeAudioCodecConfiguration::kSampleRate48000, codec_spec_conf::kLeAudioSamplingFreq48000Hz},
+        {LeAudioCodecConfiguration::kSampleRate88200, codec_spec_conf::kLeAudioSamplingFreq88200Hz},
+        {LeAudioCodecConfiguration::kSampleRate96000, codec_spec_conf::kLeAudioSamplingFreq96000Hz},
+        {LeAudioCodecConfiguration::kSampleRate176400,
+         codec_spec_conf::kLeAudioSamplingFreq176400Hz},
+        {LeAudioCodecConfiguration::kSampleRate192000,
+         codec_spec_conf::kLeAudioSamplingFreq192000Hz},
+        {LeAudioCodecConfiguration::kSampleRate384000,
+         codec_spec_conf::kLeAudioSamplingFreq384000Hz},
 };
 
 /* Helper map for matching various frame durations notations */
