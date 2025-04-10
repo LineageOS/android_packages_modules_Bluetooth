@@ -155,7 +155,8 @@ inline std::string contentTypeToString(audio_content_type_t content_type) {
 
 /* Helpers to get btle_audio_codec_config_t for Java */
 bluetooth::le_audio::btle_audio_codec_index_t translateLeAudioCodecIdToCodecType(
-        const types::LeAudioCodecId& codecId);
+        const types::LeAudioCodecId& codecId,
+        std::optional<uint32_t> sampling_frequency_hz = std::nullopt);
 types::LeAudioCodecId translateCodecTypeToLeAudioCodecId(btle_audio_codec_index_t codecIndex);
 
 bluetooth::le_audio::btle_audio_sample_rate_index_t translateToBtLeAudioCodecConfigSampleRate(

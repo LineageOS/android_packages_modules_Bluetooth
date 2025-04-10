@@ -150,10 +150,17 @@ AudioContexts GetAudioContextsFromSinkMetadata(
 }
 
 bluetooth::le_audio::btle_audio_codec_index_t translateLeAudioCodecIdToCodecType(
-        const types::LeAudioCodecId& codecId) {
+        const types::LeAudioCodecId& codecId, std::optional<uint32_t> sampling_frequency_hz) {
   if (codecId == types::LeAudioCodecIdLc3) {
     return bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_LC3;
   } else if (codecId == types::LeAudioCodecIdOpus) {
+    if (!com::android::bluetooth::flags::leaudio_add_opus_hi_res_codec_type()) {
+      return bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS;
+    }
+    if (sampling_frequency_hz.has_value() &&
+        sampling_frequency_hz.value() > LeAudioCodecConfiguration::kSampleRate48000) {
+      return bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES;
+    }
     return bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS;
   }
 
@@ -167,6 +174,11 @@ types::LeAudioCodecId translateCodecTypeToLeAudioCodecId(btle_audio_codec_index_
       return types::LeAudioCodecIdLc3;
     case bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS:
       return types::LeAudioCodecIdOpus;
+    case bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES:
+      if (com::android::bluetooth::flags::leaudio_add_opus_hi_res_codec_type()) {
+        return types::LeAudioCodecIdOpus;
+      }
+      [[fallthrough]];
     default:
       break;
   }
@@ -255,7 +267,8 @@ void fillStreamParamsToBtLeAudioCodecConfig(
 
   auto config = confs.at(0).codec;
 
-  out_config.codec_type = translateLeAudioCodecIdToCodecType(config.id);
+  out_config.codec_type =
+          translateLeAudioCodecIdToCodecType(config.id, config.GetSamplingFrequencyHz());
   if (out_config.codec_type == bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_INVALID) {
     log::error("Invalid codec identifier: {}", common::ToString(config.id));
     return;
@@ -306,7 +319,9 @@ static void fillRemotePacsCapabilitiesToBtLeAudioCodecConfig(
       }
       if (!capa.HasSupportedAudioChannelCounts()) {
         bluetooth::le_audio::btle_audio_codec_config_t config = {
-                .codec_type = utils::translateLeAudioCodecIdToCodecType(record.codec_id),
+                .codec_type = utils::translateLeAudioCodecIdToCodecType(
+                        record.codec_id,
+                        types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
                 .sample_rate = utils::translateToBtLeAudioCodecConfigSampleRate(
                         types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
                 .bits_per_sample = utils::translateToBtLeAudioCodecConfigBitPerSample(16),
@@ -322,7 +337,9 @@ static void fillRemotePacsCapabilitiesToBtLeAudioCodecConfig(
           }
 
           bluetooth::le_audio::btle_audio_codec_config_t config = {
-                  .codec_type = utils::translateLeAudioCodecIdToCodecType(record.codec_id),
+                  .codec_type = utils::translateLeAudioCodecIdToCodecType(
+                          record.codec_id,
+                          types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
                   .sample_rate = utils::translateToBtLeAudioCodecConfigSampleRate(
                           types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
                   .bits_per_sample = utils::translateToBtLeAudioCodecConfigBitPerSample(16),
