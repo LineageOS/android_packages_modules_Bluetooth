@@ -670,7 +670,6 @@ public class BassClientService extends ProfileService {
 
     BaseData getBase(int syncHandleMap) {
         BaseData base = mSyncHandleToBaseDataMap.get(syncHandleMap);
-        Log.d(TAG, "getBase returns " + base);
         return base;
     }
 
@@ -2541,20 +2540,18 @@ public class BassClientService extends ProfileService {
     private BluetoothLeBroadcastMetadata getBroadcastMetadataFromBaseData(
             BaseData baseData, BluetoothDevice device, int syncHandle, boolean encrypted) {
         BluetoothLeBroadcastMetadata.Builder metaData = new BluetoothLeBroadcastMetadata.Builder();
-        int index = 0;
-        for (BaseData.BaseInformation baseLevel2 : baseData.levelTwo()) {
+        for (BaseData.BaseSubgroup baseSubgroup : baseData.base().mSubgroups) {
             BluetoothLeBroadcastSubgroup.Builder subGroup =
                     new BluetoothLeBroadcastSubgroup.Builder();
-            for (int j = 0; j < baseLevel2.mNumSubGroups; j++) {
-                BaseData.BaseInformation baseLevel3 = baseData.levelThree().get(index++);
+            for (BaseData.BaseBis bis : baseSubgroup.mBises) {
                 BluetoothLeBroadcastChannel.Builder channel =
                         new BluetoothLeBroadcastChannel.Builder();
-                channel.setChannelIndex(baseLevel3.mIndex);
+                channel.setChannelIndex(bis.mIndex);
                 channel.setSelected(false);
                 try {
                     channel.setCodecMetadata(
                             BluetoothLeAudioCodecConfigMetadata.fromRawBytes(
-                                    baseLevel3.mCodecConfigInfo));
+                                    bis.mCodecSpecificConfiguration));
                 } catch (IllegalArgumentException e) {
                     Log.w(TAG, "Invalid metadata, adding empty data. Error: " + e);
                     channel.setCodecMetadata(
@@ -2562,18 +2559,11 @@ public class BassClientService extends ProfileService {
                 }
                 subGroup.addChannel(channel.build());
             }
-            byte[] arrayCodecId = baseLevel2.mCodecId;
-            long codeId =
-                    ((long) (arrayCodecId[4] & 0xff)) << 32
-                            | (arrayCodecId[3] & 0xff) << 24
-                            | (arrayCodecId[2] & 0xff) << 16
-                            | (arrayCodecId[1] & 0xff) << 8
-                            | (arrayCodecId[0] & 0xff);
-            subGroup.setCodecId(codeId);
+            subGroup.setCodecId(baseSubgroup.mCodecId);
             try {
                 subGroup.setCodecSpecificConfig(
                         BluetoothLeAudioCodecConfigMetadata.fromRawBytes(
-                                baseLevel2.mCodecConfigInfo));
+                                baseSubgroup.mCodecSpecificConfiguration));
             } catch (IllegalArgumentException e) {
                 Log.w(TAG, "Invalid config, adding empty one. Error: " + e);
                 subGroup.setCodecSpecificConfig(
@@ -2582,7 +2572,7 @@ public class BassClientService extends ProfileService {
 
             try {
                 subGroup.setContentMetadata(
-                        BluetoothLeAudioContentMetadata.fromRawBytes(baseLevel2.mMetaData));
+                        BluetoothLeAudioContentMetadata.fromRawBytes(baseSubgroup.mMetadata));
             } catch (IllegalArgumentException e) {
                 Log.w(TAG, "Invalid metadata, adding empty one. Error: " + e);
                 subGroup.setContentMetadata(
@@ -2592,13 +2582,7 @@ public class BassClientService extends ProfileService {
             metaData.addSubgroup(subGroup.build());
         }
         metaData.setSourceDevice(device, device.getAddressType());
-        byte[] arrayPresentationDelay = baseData.levelOne().mPresentationDelay;
-        int presentationDelay =
-                (int)
-                        ((arrayPresentationDelay[2] & 0xff) << 16
-                                | (arrayPresentationDelay[1] & 0xff) << 8
-                                | (arrayPresentationDelay[0] & 0xff));
-        metaData.setPresentationDelayMicros(presentationDelay);
+        metaData.setPresentationDelayMicros(baseData.base().mPresentationDelay);
         PeriodicAdvertisementResult result =
                 getPeriodicAdvertisementResult(device, getBroadcastIdForSyncHandle(syncHandle));
         if (result != null) {
