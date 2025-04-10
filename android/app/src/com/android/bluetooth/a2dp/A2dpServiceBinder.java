@@ -311,6 +311,7 @@ class A2dpServiceBinder extends IBluetoothA2dp.Stub implements IProfileServiceBi
             return BluetoothA2dp.DYNAMIC_BUFFER_SUPPORT_NONE;
         }
 
+        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         return service.getDynamicBufferSupport();
     }
 
@@ -321,6 +322,7 @@ class A2dpServiceBinder extends IBluetoothA2dp.Stub implements IProfileServiceBi
             return null;
         }
 
+        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         return service.getBufferConstraints();
     }
 
@@ -331,6 +333,7 @@ class A2dpServiceBinder extends IBluetoothA2dp.Stub implements IProfileServiceBi
             return false;
         }
 
+        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         return service.setBufferLengthMillis(codec, value);
     }
 }
