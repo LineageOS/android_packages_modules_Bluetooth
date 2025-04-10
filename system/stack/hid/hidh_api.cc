@@ -69,8 +69,7 @@ static void hidh_search_callback(const RawAddress& bd_addr, tSDP_RESULT sdp_resu
 tHID_STATUS HID_HostGetSDPRecord(const RawAddress& addr, tSDP_DISCOVERY_DB* p_db, uint32_t db_len,
                                  tHID_HOST_SDP_CALLBACK* sdp_cback) {
   if (hh_cb.sdp_busy) {
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::HIDH_ERR_SDP_BUSY, 1);
+    bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::HIDH_ERR_SDP_BUSY);
     return HID_ERR_SDP_BUSY;
   }
 
@@ -88,8 +87,7 @@ tHID_STATUS HID_HostGetSDPRecord(const RawAddress& addr, tSDP_DISCOVERY_DB* p_db
     return HID_SUCCESS;
   } else {
     log::warn("Unable to start SDP service search request peer:{}", addr);
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::HIDH_ERR_NO_RESOURCES_SDP, 1);
+    bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::HIDH_ERR_NO_RESOURCES_SDP);
     return HID_ERR_NO_RESOURCES;
   }
 }
@@ -291,14 +289,13 @@ tHID_STATUS HID_HostRegister(tHID_HOST_DEV_CALLBACK* dev_cback) {
   tHID_STATUS st;
 
   if (hh_cb.reg_flag) {
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::HIDH_ERR_ALREADY_REGISTERED, 1);
+    bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::HIDH_ERR_ALREADY_REGISTERED);
     return HID_ERR_ALREADY_REGISTERED;
   }
 
   if (dev_cback == NULL) {
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::HIDH_ERR_INVALID_PARAM_AT_HOST_REGISTER, 1);
+    bluetooth::metrics::Counter(
+            bluetooth::metrics::CounterKey::HIDH_ERR_INVALID_PARAM_AT_HOST_REGISTER);
     return HID_ERR_INVALID_PARAM;
   }
 
@@ -395,8 +392,7 @@ tHID_STATUS HID_HostAddDev(const RawAddress& addr, uint16_t attr_mask, uint8_t* 
   }
 
   if (i == HID_HOST_MAX_DEVICES) {
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::HIDH_ERR_NO_RESOURCES_ADD_DEVICE, 1);
+    bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::HIDH_ERR_NO_RESOURCES_ADD_DEVICE);
     return HID_ERR_NO_RESOURCES;
   }
 
@@ -430,9 +426,8 @@ tHID_STATUS HID_HostRemoveDev(uint8_t dev_handle) {
   }
 
   if ((dev_handle >= HID_HOST_MAX_DEVICES) || (!hh_cb.devices[dev_handle].in_use)) {
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::HIDH_ERR_INVALID_PARAM_AT_HOST_REMOVE_DEV,
-            1);
+    bluetooth::metrics::Counter(
+            bluetooth::metrics::CounterKey::HIDH_ERR_INVALID_PARAM_AT_HOST_REMOVE_DEV);
     return HID_ERR_INVALID_PARAM;
   }
 
@@ -462,15 +457,14 @@ tHID_STATUS HID_HostOpenDev(uint8_t dev_handle) {
 
   if (dev_handle >= HID_HOST_MAX_DEVICES || !hh_cb.devices[dev_handle].in_use) {
     log::error("Handle {} cannot be used", dev_handle);
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::HIDH_ERR_INVALID_PARAM_AT_HOST_OPEN_DEV, 1);
+    bluetooth::metrics::Counter(
+            bluetooth::metrics::CounterKey::HIDH_ERR_INVALID_PARAM_AT_HOST_OPEN_DEV);
     return HID_ERR_INVALID_PARAM;
   }
 
   if (hh_cb.devices[dev_handle].state != HID_DEV_NO_CONN) {
     log::warn("{} already connected, handle: {}", hh_cb.devices[dev_handle].addr, dev_handle);
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::HIDH_ERR_ALREADY_CONN, 1);
+    bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::HIDH_ERR_ALREADY_CONN);
     return HID_ERR_ALREADY_CONN;
   }
 
@@ -501,15 +495,13 @@ tHID_STATUS HID_HostWriteDev(uint8_t dev_handle, uint8_t t_type, uint8_t param, 
 
   if ((dev_handle >= HID_HOST_MAX_DEVICES) || (!hh_cb.devices[dev_handle].in_use)) {
     log::error("HID_ERR_INVALID_PARAM");
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::HIDH_ERR_INVALID_PARAM_AT_HOST_WRITE_DEV,
-            1);
+    bluetooth::metrics::Counter(
+            bluetooth::metrics::CounterKey::HIDH_ERR_INVALID_PARAM_AT_HOST_WRITE_DEV);
     status = HID_ERR_INVALID_PARAM;
   } else if (hh_cb.devices[dev_handle].state != HID_DEV_CONNECTED) {
     log::error("HID_ERR_NO_CONNECTION dev_handle {}", dev_handle);
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::HIDH_ERR_NO_CONNECTION_AT_HOST_WRITE_DEV,
-            1);
+    bluetooth::metrics::Counter(
+            bluetooth::metrics::CounterKey::HIDH_ERR_NO_CONNECTION_AT_HOST_WRITE_DEV);
     status = HID_ERR_NO_CONNECTION;
   }
 
@@ -537,16 +529,14 @@ tHID_STATUS HID_HostCloseDev(uint8_t dev_handle) {
   }
 
   if ((dev_handle >= HID_HOST_MAX_DEVICES) || (!hh_cb.devices[dev_handle].in_use)) {
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::HIDH_ERR_INVALID_PARAM_AT_HOST_CLOSE_DEV,
-            1);
+    bluetooth::metrics::Counter(
+            bluetooth::metrics::CounterKey::HIDH_ERR_INVALID_PARAM_AT_HOST_CLOSE_DEV);
     return HID_ERR_INVALID_PARAM;
   }
 
   if (hh_cb.devices[dev_handle].state != HID_DEV_CONNECTED) {
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::HIDH_ERR_NO_CONNECTION_AT_HOST_CLOSE_DEV,
-            1);
+    bluetooth::metrics::Counter(
+            bluetooth::metrics::CounterKey::HIDH_ERR_NO_CONNECTION_AT_HOST_CLOSE_DEV);
     return HID_ERR_NO_CONNECTION;
   }
 

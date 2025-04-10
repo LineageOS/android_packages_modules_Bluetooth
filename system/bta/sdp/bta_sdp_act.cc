@@ -599,8 +599,7 @@ static void bta_sdp_search_cback(Uuid uuid, const RawAddress& /* bd_addr */, tSD
   tBTA_SDP bta_sdp;
   bta_sdp.sdp_search_comp = evt_data;
   bta_sdp_cb.p_dm_cback(BTA_SDP_SEARCH_COMP_EVT, &bta_sdp, (void*)&uuid);
-  bluetooth::metrics::CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum::SDP_SUCCESS,
-                                          1);
+  bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::SDP_SUCCESS);
 }
 
 /*******************************************************************************
@@ -676,8 +675,7 @@ void bta_sdp_search(const RawAddress bd_addr, const bluetooth::Uuid uuid) {
       tBTA_SDP bta_sdp;
       bta_sdp.sdp_search_comp = result;
       bta_sdp_cb.p_dm_cback(BTA_SDP_SEARCH_COMP_EVT, &bta_sdp, NULL);
-      bluetooth::metrics::CountCounterMetrics(
-              android::bluetooth::CodePathCounterKeyEnum::SDP_FAILURE, 1);
+      bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::SDP_FAILURE);
     }
   }
   /*
