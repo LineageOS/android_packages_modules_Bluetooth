@@ -2012,15 +2012,14 @@ static void btif_add_local_irk_to_resolving_list() {
    * Set all-zero set to resolving list to make controller generate RPA for
    * un-direct (broadcast) advertising RPA */
   if (bluetooth::shim::GetController()->IsRpaGenerationSupported()) {
-    log::info("Support RPA offload, set all-zero set in resolving list");
     const Octet16 all_zero_peer_irk = {0};
 
     if (com::android::bluetooth::flags::non_zero_local_irk() &&
         ble_local_key_cb.id_keys.irk == all_zero_peer_irk) {
-      log::warn("Local IRK is all-zero");
+      log::debug("Local IRK is all-zero, wait for it be generated");
       return;
     }
-    log::info("");
+    log::info("RPA offload is supported, add local IRK to resolving list");
     bluetooth::shim::GetAclManager()->AddDeviceToResolvingList(
             {bluetooth::hci::Address::kEmpty, bluetooth::hci::AddressType::PUBLIC_DEVICE_ADDRESS},
             all_zero_peer_irk, ble_local_key_cb.id_keys.irk);
@@ -2069,9 +2068,7 @@ void BTIF_dm_enable() {
   pairing_cb = {};
   pairing_cb.bond_type = BOND_TYPE_PERSISTENT;
 
-  if (!com::android::bluetooth::flags::non_zero_local_irk()) {
-    btif_add_local_irk_to_resolving_list();
-  }
+  btif_add_local_irk_to_resolving_list();
 
   // Enable address consolidation.
   btif_storage_load_le_devices();
@@ -3542,10 +3539,6 @@ void btif_dm_load_ble_local_keys(void) {
        BT_STATUS_SUCCESS)) {
     ble_local_key_cb.is_id_keys_rcvd = true;
     log::verbose("BLE ID keys loaded");
-  }
-
-  if (com::android::bluetooth::flags::non_zero_local_irk()) {
-    btif_add_local_irk_to_resolving_list();
   }
 }
 void btif_dm_get_ble_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK* p_key_mask, Octet16* p_er,
