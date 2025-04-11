@@ -261,35 +261,34 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
     }
 
     /** {@link Parcelable.Creator} interface implementation. */
-    public static final @android.annotation.NonNull Parcelable.Creator<BluetoothLeAudioCodecConfig>
-            CREATOR =
-                    new Parcelable.Creator<BluetoothLeAudioCodecConfig>() {
-                        public BluetoothLeAudioCodecConfig createFromParcel(Parcel in) {
-                            int codecType = in.readInt();
-                            int codecPriority = in.readInt();
-                            int sampleRate = in.readInt();
-                            int bitsPerSample = in.readInt();
-                            int channelCount = in.readInt();
-                            int frameDuration = in.readInt();
-                            int octetsPerFrame = in.readInt();
-                            int minOctetsPerFrame = in.readInt();
-                            int maxOctetsPerFrame = in.readInt();
-                            return new BluetoothLeAudioCodecConfig(
-                                    codecType,
-                                    codecPriority,
-                                    sampleRate,
-                                    bitsPerSample,
-                                    channelCount,
-                                    frameDuration,
-                                    octetsPerFrame,
-                                    minOctetsPerFrame,
-                                    maxOctetsPerFrame);
-                        }
+    public static final @NonNull Parcelable.Creator<BluetoothLeAudioCodecConfig> CREATOR =
+            new Parcelable.Creator<BluetoothLeAudioCodecConfig>() {
+                public BluetoothLeAudioCodecConfig createFromParcel(Parcel in) {
+                    int codecType = in.readInt();
+                    int codecPriority = in.readInt();
+                    int sampleRate = in.readInt();
+                    int bitsPerSample = in.readInt();
+                    int channelCount = in.readInt();
+                    int frameDuration = in.readInt();
+                    int octetsPerFrame = in.readInt();
+                    int minOctetsPerFrame = in.readInt();
+                    int maxOctetsPerFrame = in.readInt();
+                    return new BluetoothLeAudioCodecConfig(
+                            codecType,
+                            codecPriority,
+                            sampleRate,
+                            bitsPerSample,
+                            channelCount,
+                            frameDuration,
+                            octetsPerFrame,
+                            minOctetsPerFrame,
+                            maxOctetsPerFrame);
+                }
 
-                        public BluetoothLeAudioCodecConfig[] newArray(int size) {
-                            return new BluetoothLeAudioCodecConfig[size];
-                        }
-                    };
+                public BluetoothLeAudioCodecConfig[] newArray(int size) {
+                    return new BluetoothLeAudioCodecConfig[size];
+                }
+            };
 
     @Override
     public void writeToParcel(@NonNull Parcel out, int flags) {

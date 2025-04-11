@@ -239,17 +239,16 @@ public final class BluetoothLeAudioCodecStatus implements Parcelable {
     }
 
     /** {@link Parcelable.Creator} interface implementation. */
-    public static final @android.annotation.NonNull Parcelable.Creator<BluetoothLeAudioCodecStatus>
-            CREATOR =
-                    new Parcelable.Creator<BluetoothLeAudioCodecStatus>() {
-                        public BluetoothLeAudioCodecStatus createFromParcel(Parcel in) {
-                            return new BluetoothLeAudioCodecStatus(in);
-                        }
+    public static final @NonNull Parcelable.Creator<BluetoothLeAudioCodecStatus> CREATOR =
+            new Parcelable.Creator<BluetoothLeAudioCodecStatus>() {
+                public BluetoothLeAudioCodecStatus createFromParcel(Parcel in) {
+                    return new BluetoothLeAudioCodecStatus(in);
+                }
 
-                        public BluetoothLeAudioCodecStatus[] newArray(int size) {
-                            return new BluetoothLeAudioCodecStatus[size];
-                        }
-                    };
+                public BluetoothLeAudioCodecStatus[] newArray(int size) {
+                    return new BluetoothLeAudioCodecStatus[size];
+                }
+            };
 
     /**
      * Flattens the object to a parcel.
