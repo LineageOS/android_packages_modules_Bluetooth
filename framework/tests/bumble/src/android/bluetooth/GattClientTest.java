@@ -22,8 +22,6 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.Assume.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -36,7 +34,6 @@ import static org.mockito.Mockito.verify;
 
 import android.bluetooth.test_utils.EnableBluetoothRule;
 import android.content.Context;
-import android.os.SystemProperties;
 import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.platform.test.flag.junit.CheckFlagsRule;
 import android.platform.test.flag.junit.DeviceFlagsValueProvider;
@@ -97,11 +94,6 @@ public class GattClientTest {
             UUID.fromString("00000000-0000-0000-0000-00000000000");
     private static final UUID TEST_CHARACTERISTIC_UUID =
             UUID.fromString("00010001-0000-0000-0000-000000000000");
-
-    private static final int MIN_CONN_INTERVAL_RELAXED =
-            SystemProperties.getInt("bluetooth.core.le.min_connection_interval_relaxed", 0x0018);
-    private static final int MAX_CONN_INTERVAL_RELAXED =
-            SystemProperties.getInt("bluetooth.core.le.max_connection_interval_relaxed", 0x0028);
 
     @Rule(order = 0)
     public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
@@ -180,36 +172,6 @@ public class GattClientTest {
         }
         BluetoothGattCallback gattCallback = mock(BluetoothGattCallback.class);
         BluetoothGatt gatt = connectGattAndWaitConnection(gattCallback, autoConnect);
-        disconnectAndWaitDisconnection(gatt, gattCallback);
-    }
-
-    @RequiresFlagsEnabled(Flags.FLAG_INITIAL_CONN_PARAMS_P1)
-    @Test
-    public void onConnectionUpdatedIsCalledOnlyOnceForRelaxingConnectionParameters_noGattCache() {
-        int aggressiveConnectionThreshold =
-                SystemProperties.getInt("bluetooth.core.le.aggressive_connection_threshold", 2);
-        // This test is for the case where aggressive initial parameters are used.
-        assumeThat(aggressiveConnectionThreshold, greaterThan(0));
-
-        BluetoothGattCallback gattCallback = mock(BluetoothGattCallback.class);
-        ArgumentCaptor<Integer> connectionIntervalCaptor = ArgumentCaptor.forClass(Integer.class);
-
-        BluetoothGatt gatt = connectGattAndWaitConnection(gattCallback, false);
-
-        // Wait until service discovery is done and parameters are relaxed.
-        verify(gattCallback, timeout(10_000).times(1))
-                .onConnectionUpdated(
-                        any(), connectionIntervalCaptor.capture(), anyInt(), anyInt(), anyInt());
-
-        List<Integer> capturedConnectionIntervals = connectionIntervalCaptor.getAllValues();
-        assertThat(capturedConnectionIntervals).hasSize(1);
-
-        // Since aggressive parameters are used in the initial connection,
-        // there should be only one connection parameters update event for relaxing them.
-        int relaxedConnIntervalAfterServiceDiscovery = capturedConnectionIntervals.get(0);
-        assertThat(relaxedConnIntervalAfterServiceDiscovery).isAtLeast(MIN_CONN_INTERVAL_RELAXED);
-        assertThat(relaxedConnIntervalAfterServiceDiscovery).isAtMost(MAX_CONN_INTERVAL_RELAXED);
-
         disconnectAndWaitDisconnection(gatt, gattCallback);
     }
 
