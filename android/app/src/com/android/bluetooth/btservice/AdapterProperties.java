@@ -502,7 +502,7 @@ class AdapterProperties {
             byte[] addrByte = Utils.getByteAddress(device);
             DeviceProperties prop = mRemoteDevices.getDeviceProperties(device);
             if (prop == null) {
-                prop = mRemoteDevices.addDeviceProperties(addrByte);
+                prop = mRemoteDevices.addDeviceProperties(addrByte, device.getAddressType());
             }
             device = prop.getDevice();
             prop.setBondState(state);
