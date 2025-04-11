@@ -234,7 +234,7 @@ static void bta_dm_remname_cback(const tBTM_REMOTE_DEV_NAME* p_remote_name) {
 
   log::info(
           "Remote name request complete peer:{} btm_status:{} hci_status:{} "
-          "name[0]:{:c} length:{}",
+          "name[0]:0x{:x} length:{}",
           p_remote_name->bd_addr, btm_status_text(p_remote_name->btm_status),
           hci_error_code_text(p_remote_name->hci_status), p_remote_name->remote_bd_name[0],
           strnlen((const char*)p_remote_name->remote_bd_name, BD_NAME_LEN));
