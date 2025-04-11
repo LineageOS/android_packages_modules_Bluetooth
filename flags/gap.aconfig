@@ -2,13 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "encrypted_advertising_data"
-    namespace: "bluetooth"
-    description: "Enable support for the decryption of Encrypted Advertising Data"
-    bug: "308855997"
-}
-
-flag {
     name: "only_start_scan_during_ble_on"
     namespace: "bluetooth"
     description: "Instead of starting scan and gatt in ble_on, only start scan"
