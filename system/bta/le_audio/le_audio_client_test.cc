@@ -1888,7 +1888,7 @@ protected:
                          uint8_t rank, bool connect_through_csis = false, bool new_device = true) {
     SetSampleDatabaseEarbudsValid(conn_id, addr, sink_audio_allocation, source_audio_allocation,
                                   default_channel_cnt, default_channel_cnt,
-                                  0x0034, /* source sample freq 16/24k/32hz */
+                                  0x02B4, /* sample freq 16/24/32/48/96khz */
                                   true,   /*add_csis*/
                                   true,   /*add_cas*/
                                   true,   /*add_pacs*/
@@ -15135,6 +15135,231 @@ TEST_F(UnicastTestLockConnParamsForStreaming, UnlockConnParamsForStreaming_TwoEa
   // Resume
   StartStreaming(AUDIO_USAGE_VOICE_COMMUNICATION, AUDIO_CONTENT_TYPE_SPEECH, group_id);
   SyncOnMainLoop();
+}
+
+static std::vector<types::AseConfiguration> GetVendorAseConfigurationsForRequirements(
+        const bluetooth::le_audio::CodecManager::UnicastConfigurationRequirements& requirements,
+        const types::CodecConfigSetting& codec, uint8_t direction) {
+  std::vector<types::AseConfiguration> ase_confs;
+
+  auto const& required_pacs = (direction == types::kLeAudioDirectionSink)
+                                      ? requirements.sink_pacs
+                                      : requirements.source_pacs;
+  auto direction_requirements = (direction == types::kLeAudioDirectionSink)
+                                        ? requirements.sink_requirements
+                                        : requirements.source_requirements;
+
+  if (!direction_requirements || direction_requirements->size() == 0) {
+    return ase_confs;
+  }
+
+  if (std::count_if(required_pacs->begin(), required_pacs->end(),
+                    [](auto const& pac) { return pac.codec_spec_caps_raw.empty(); })) {
+    return ase_confs;
+  }
+
+  if (!required_pacs.has_value() || (required_pacs->size() == 0)) {
+    return ase_confs;
+  }
+
+  types::AseConfiguration endpoint_cfg(codec,
+                                       {.target_latency = types::kTargetLatencyLower,
+                                        .retransmission_number = 3,
+                                        .max_transport_latency = types::kMaxTransportLatencyMin});
+
+  // Finding the max channel count
+  uint32_t target_max_channel_counts_per_ase_bitmap = 0b1;  // bit 0 - one channel
+  for (auto const& pac : *required_pacs) {
+    auto caps = pac.codec_spec_caps.GetAsCoreCodecCapabilities();
+    if (caps.HasSupportedAudioChannelCounts()) {
+      auto new_counts = caps.supported_audio_channel_counts.value();
+      if (new_counts > target_max_channel_counts_per_ase_bitmap) {
+        target_max_channel_counts_per_ase_bitmap = new_counts;
+      }
+    }
+  }
+
+  uint8_t target_max_channel_counts_per_ase = 0;
+  while (target_max_channel_counts_per_ase_bitmap) {
+    ++target_max_channel_counts_per_ase;
+    target_max_channel_counts_per_ase_bitmap = target_max_channel_counts_per_ase_bitmap >> 1;
+  }
+
+  // For sink we always put a requirement here, but for source there are
+  // some conditions
+  auto sourceAsesNeeded =
+          (!types::kLeAudioContextAllRemoteSinkOnly.test(requirements.audio_context_type) ||
+           (requirements.audio_context_type == LeAudioContextType::RINGTONE)) &&
+          (requirements.audio_context_type != types::LeAudioContextType::UNSPECIFIED);
+  if ((direction == types::kLeAudioDirectionSink) || sourceAsesNeeded) {
+    // Create ASE configurations with the proper audio channel allocation
+    uint8_t count = 0;
+    uint32_t allocations = 0;
+    for (auto const& req : *direction_requirements) {
+      auto req_allocations = VEC_UINT8_TO_UINT32(
+              req.params.At(codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation));
+
+      // Create the list of requested audio allocations
+      std::list<uint32_t> split_allocations;
+      uint8_t bit_pos = 0;
+      while (req_allocations) {
+        if (req_allocations & 0b1) {
+          split_allocations.push_back(1 << bit_pos);
+        }
+        req_allocations = req_allocations >> 1;
+        bit_pos++;
+      }
+
+      if (split_allocations.empty()) {
+        // Add a single ASE mono configuration
+        endpoint_cfg.codec.params.Add(codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
+                                      (uint32_t)codec_spec_conf::kLeAudioLocationMonoAudio);
+        ase_confs.push_back(endpoint_cfg);
+        continue;
+      }
+
+      // Pick a number of allocations from the list (depending on supported
+      // channel counts per ASE) and create an ASE configuration.
+      while (split_allocations.size()) {
+        auto num_of_allocations_per_ase =
+                std::min(target_max_channel_counts_per_ase, (uint8_t)split_allocations.size());
+        // Note: This is very important to set for the unit test
+        // Configuration provider
+        endpoint_cfg.codec.channel_count_per_iso_stream = num_of_allocations_per_ase;
+
+        // Consume the `num_of_allocations_per_ase` amount of allocations for
+        // this particular ASE
+        uint32_t ase_allocations = 0;
+        while (num_of_allocations_per_ase) {
+          ase_allocations |= split_allocations.front();
+          split_allocations.pop_front();
+          --num_of_allocations_per_ase;
+        }
+        endpoint_cfg.codec.params.Add(codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
+                                      ase_allocations);
+
+        // Add the ASE configuration
+        ase_confs.push_back(endpoint_cfg);
+      }
+    }
+  }
+
+  return ase_confs;
+}
+
+TEST_F(UnicastTest, RequestConfigurationOpusHiRes) {
+  com::android::bluetooth::flags::provider_->leaudio_set_codec_config_preference(true);
+
+  auto const test_audio_context = LeAudioContextType::MEDIA;
+  int group_id = 2;
+  TestSetupRemoteDevices(group_id);
+
+  // Mock the Opus config provider
+  auto opus_codec_params = types::CodecConfigSetting({
+          .id = types::LeAudioCodecId({
+                  .coding_format = types::kLeAudioCodingFormatVendorSpecific,
+                  .vendor_company_id = types::kLeAudioVendorCompanyIdGoogle,
+                  .vendor_codec_id = types::kLeAudioVendorCodecIdOpus,
+          }),
+          // Be it a Hi-Rez version
+          .params = types::LeAudioLtvMap({
+                  {codec_spec_conf::kLeAudioLtvTypeSamplingFreq,
+                   UINT8_TO_VEC_UINT8(codec_spec_conf::kLeAudioSamplingFreq96000Hz)},
+          }),
+          // Some opaque vendor data
+          .vendor_params = std::vector<uint8_t>({0x01, 0xC0, 0xDE, 0xF0, 0x0D}),
+          .channel_count_per_iso_stream = 1,
+  });
+  types::AudioSetConfiguration opus_cfg = {
+          .name = "Injected Opus Sink 96kHz",
+          .packing = bluetooth::hci::kIsoCigPackingSequential,
+          .confs = {.sink = {}, .source = {}},
+  };
+
+  std::optional<types::AudioSetConfiguration> config_capture = std::nullopt;
+  std::optional<CodecManager::UnicastConfigurationRequirements> requirements_capture = std::nullopt;
+  ON_CALL(*mock_codec_manager_, GetCodecConfig)
+          .WillByDefault(
+                  Invoke([&](const CodecManager::UnicastConfigurationRequirements& requirements,
+                             CodecManager::UnicastConfigurationProvider provider) {
+                    // Skip the provider for now - simulate the AIDL config source
+                    (void)provider;
+
+                    // Inject the Opus configuration here
+                    opus_cfg.confs.sink = GetVendorAseConfigurationsForRequirements(
+                            requirements, opus_codec_params, types::kLeAudioDirectionSink);
+                    opus_cfg.confs.source = GetVendorAseConfigurationsForRequirements(
+                            requirements, opus_codec_params, types::kLeAudioDirectionSource);
+
+                    // Capture the requirements and the config only for the context we are testing
+                    // here
+                    if (requirements.audio_context_type == test_audio_context) {
+                      // opus_cfg.confs.sink = GetVendorAseConfigurationsForRequirements(
+                      //         requirements, opus_codec_params, types::kLeAudioDirectionSink);
+                      requirements_capture = requirements;
+                      config_capture = opus_cfg;
+                    }
+                    return std::make_unique<types::AudioSetConfiguration>(opus_cfg);
+                  }));
+
+  // Capture the codec priority call to the HAL
+  std::optional<std::pair<::bluetooth::le_audio::types::LeAudioCodecId, int32_t>>
+          requested_hal_codec_priority = std::nullopt;
+  ON_CALL(*mock_le_audio_sink_hal_client_, SetCodecPriority(_, _))
+          .WillByDefault([&requested_hal_codec_priority](
+                                 const ::bluetooth::le_audio::types::LeAudioCodecId& codecId,
+                                 int32_t priority) {
+            requested_hal_codec_priority = std::make_pair(codecId, priority);
+          });
+
+  constexpr int32_t kOpusCodecPrio = 999;
+  btle_audio_codec_config_t opus_preference = {
+          .codec_type = LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES,
+          .sample_rate = LE_AUDIO_SAMPLE_RATE_INDEX_96000HZ,
+          .codec_priority = kOpusCodecPrio,
+  };
+
+  // Expect the Audio Framework to be notified of using the Opus Hi-Rez as an output config
+  btle_audio_codec_config_t opus_preference_capture_out;
+  EXPECT_CALL(mock_audio_hal_client_callbacks_, OnAudioGroupCurrentCodecConf(group_id, _, _))
+          .WillOnce([&](int /*group_id*/, le_audio::btle_audio_codec_config_t input_codec_conf,
+                        le_audio::btle_audio_codec_config_t output_codec_conf) {
+            (void)input_codec_conf;
+            opus_preference_capture_out = output_codec_conf;
+          });
+
+  bool set_before_media = true;
+  bool set_while_media = false;
+  bool is_using_set_before_media_codec_during_media = true;
+  bool is_using_set_while_media_codec_during_media = false;
+  bool is_reconfig = false;
+
+  // Set preference for Opus Hi-rez
+  TestSetCodecPreference(&opus_preference, nullptr, test_audio_context, group_id, set_before_media,
+                         set_while_media, is_using_set_before_media_codec_during_media,
+                         is_using_set_while_media_codec_during_media, is_reconfig);
+  SyncOnMainLoop();
+  ASSERT_TRUE(config_capture.has_value());
+
+  // Verify the HAL got the proper codec priority set
+  ASSERT_TRUE(requested_hal_codec_priority.has_value());
+  ASSERT_EQ(requested_hal_codec_priority->first, types::LeAudioCodecIdOpus);
+  ASSERT_EQ(requested_hal_codec_priority->second, kOpusCodecPrio);
+
+  // Verify the requirement for 96kHz were set
+  int requested_sampling_frequency = 0;
+  ASSERT_TRUE(requirements_capture.has_value());
+  ASSERT_EQ(requirements_capture->audio_context_type, test_audio_context);
+  ASSERT_TRUE(requirements_capture->sink_requirements.has_value());
+  for (auto const& req : requirements_capture->sink_requirements.value()) {
+    auto codec_params = req.params.GetAsCoreCodecConfig();
+    requested_sampling_frequency = codec_params.GetSamplingFrequencyHz();
+  }
+  ASSERT_EQ(requested_sampling_frequency, 96000);
+
+  // Verify the Audio Framework configuration was updated to Opus Hi-Rez
+  ASSERT_EQ(opus_preference_capture_out.codec_type, opus_preference.codec_type);
+  ASSERT_EQ(opus_preference_capture_out.sample_rate, opus_preference.sample_rate);
 }
 
 class UnicastDsaTest : public UnicastTest,

@@ -955,17 +955,25 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
                             (uint32_t)locations);
       if (preferred_config_.get(remote_direction) &&
           preferred_config_.get(remote_direction)->codec_priority != -1) {
-        config_req.params.Add(
-                codec_spec_conf::kLeAudioLtvTypeSamplingFreq,
-                UINT8_TO_VEC_UINT8(codec_spec_conf::SingleSamplingFreqCapability2Config(
-                        preferred_config_.get(remote_direction)->sample_rate)));
-        config_req.params.Add(
-                codec_spec_conf::kLeAudioLtvTypeFrameDuration,
-                UINT8_TO_VEC_UINT8(codec_spec_conf::SingleFrameDurationCapability2Config(
-                        preferred_config_.get(remote_direction)->frame_duration)));
-        config_req.params.Add(
-                codec_spec_conf::kLeAudioLtvTypeOctetsPerCodecFrame,
-                UINT16_TO_VEC_UINT8(preferred_config_.get(remote_direction)->octets_per_frame));
+        if (preferred_config_.get(remote_direction)->sample_rate !=
+            LE_AUDIO_SAMPLE_RATE_INDEX_NONE) {
+          config_req.params.Add(
+                  codec_spec_conf::kLeAudioLtvTypeSamplingFreq,
+                  UINT8_TO_VEC_UINT8(codec_spec_conf::SingleSamplingFreqCapability2Config(
+                          preferred_config_.get(remote_direction)->sample_rate)));
+        }
+        if (preferred_config_.get(remote_direction)->frame_duration !=
+            LE_AUDIO_FRAME_DURATION_INDEX_NONE) {
+          config_req.params.Add(
+                  codec_spec_conf::kLeAudioLtvTypeFrameDuration,
+                  UINT8_TO_VEC_UINT8(codec_spec_conf::SingleFrameDurationCapability2Config(
+                          preferred_config_.get(remote_direction)->frame_duration)));
+        }
+        if (preferred_config_.get(remote_direction)->octets_per_frame != 0) {
+          config_req.params.Add(
+                  codec_spec_conf::kLeAudioLtvTypeOctetsPerCodecFrame,
+                  UINT16_TO_VEC_UINT8(preferred_config_.get(remote_direction)->octets_per_frame));
+        }
       }
       config_req.target_latency = utils::GetTargetLatencyForAudioContext(ctx_type);
       log::warn("Device {} pushes requirement, location: {}, direction: {}", device->address_,
