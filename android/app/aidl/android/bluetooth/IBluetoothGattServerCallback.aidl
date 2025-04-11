@@ -24,8 +24,8 @@ import android.bluetooth.BluetoothGattService;
  * @hide
  */
 oneway interface IBluetoothGattServerCallback {
-    void onServerRegistered(in int status, in int serverIf);
-    void onServerConnectionState(in int status, in int serverIf,
+    void onServerRegistered(in int status);
+    void onServerConnectionState(in int status,
                                  in boolean connected, in BluetoothDevice device);
     void onServiceAdded(in int status, in BluetoothGattService service);
     void onCharacteristicReadRequest(in BluetoothDevice device, in int transId, in int offset,

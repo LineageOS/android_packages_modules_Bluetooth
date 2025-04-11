@@ -261,6 +261,17 @@ public class ContextMap<C> {
         return appIds;
     }
 
+    /** Get all registered application callbacks. */
+    public List<C> getAllAppsCallbackId() {
+        List<C> appIds = new ArrayList();
+        synchronized (mAppsLock) {
+            for (App entry : mApps) {
+                appIds.add(entry.callback);
+            }
+        }
+        return appIds;
+    }
+
     /** Add a new connection for a given application ID. */
     void addConnection(int id, int connId, BluetoothDevice device) {
         synchronized (mConnectionsLock) {
@@ -302,6 +313,16 @@ public class ContextMap<C> {
         App app = getAppByPredicate(entry -> entry.id == id);
         if (app == null) {
             Log.e(TAG, "Context not found for ID " + id);
+        }
+        return app;
+    }
+
+    /** Get an application context by its callback object. */
+    public App getByCallbackId(C callbackId) {
+        IBinder binder = ((IInterface) callbackId).asBinder();
+        App app = getAppByPredicate(entry -> ((IInterface) entry.callback).asBinder() == binder);
+        if (app == null) {
+            Log.e(TAG, "Context not found for callbackID " + callbackId);
         }
         return app;
     }
