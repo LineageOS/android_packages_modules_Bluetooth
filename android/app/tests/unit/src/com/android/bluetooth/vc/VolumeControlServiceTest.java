@@ -78,6 +78,8 @@ import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
 
+import com.google.common.truth.Expect;
+
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
 import org.junit.After;
@@ -100,6 +102,7 @@ import java.util.stream.IntStream;
 @RunWith(AndroidJUnit4.class)
 public class VolumeControlServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule public Expect expect = Expect.create();
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private AdapterService mAdapterService;
@@ -323,7 +326,7 @@ public class VolumeControlServiceTest {
     }
 
     @Test
-    public void unBondDevice_whenConnecting_keepStateMachine() {
+    public void unbondDevice_whenConnecting_keepStateMachine() {
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTING, STATE_DISCONNECTED);
         assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_CONNECTING);
         assertThat(mService.getDevices()).contains(mDevice);
@@ -335,7 +338,7 @@ public class VolumeControlServiceTest {
     }
 
     @Test
-    public void unBondDevice_whenConnected_keepStateMachine() {
+    public void unbondDevice_whenConnected_keepStateMachine() {
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTING, STATE_DISCONNECTED);
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_CONNECTING);
         assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_CONNECTED);
@@ -348,7 +351,7 @@ public class VolumeControlServiceTest {
     }
 
     @Test
-    public void unBondDevice_whenDisconnecting_keepStateMachine() {
+    public void unbondDevice_whenDisconnecting_keepStateMachine() {
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTING, STATE_DISCONNECTED);
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_CONNECTING);
         generateConnectionMessageFromNative(mDevice, STATE_DISCONNECTING, STATE_CONNECTED);
@@ -362,7 +365,7 @@ public class VolumeControlServiceTest {
     }
 
     @Test
-    public void unBondDevice_whenDisconnected_removeStateMachine() {
+    public void unbondDevice_whenDisconnected_removeStateMachine() {
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTING, STATE_DISCONNECTED);
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_CONNECTING);
         generateConnectionMessageFromNative(mDevice, STATE_DISCONNECTING, STATE_CONNECTED);
@@ -376,6 +379,65 @@ public class VolumeControlServiceTest {
     }
 
     @Test
+    public void unbondDevice_whenDisconnected_removeDeviceData() {
+        int groupId = 1;
+        int groupVolume = 6;
+
+        // Both devices are in the same group
+        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(groupId);
+        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(groupId);
+        when(mCsipService.getGroupDevicesOrdered(groupId))
+                .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+
+        // Connect and disconnect first device
+        generateConnectionMessageFromNative(mDevice, STATE_CONNECTING, STATE_DISCONNECTED);
+        generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_CONNECTING);
+        generateConnectionMessageFromNative(mDevice, STATE_DISCONNECTING, STATE_CONNECTED);
+        generateConnectionMessageFromNative(mDevice, STATE_DISCONNECTED, STATE_DISCONNECTING);
+        assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_DISCONNECTED);
+        assertThat(mService.getDevices()).contains(mDevice);
+
+        // Connect and disconnect second device
+        generateConnectionMessageFromNative(mDeviceTwo, STATE_CONNECTING, STATE_DISCONNECTED);
+        generateConnectionMessageFromNative(mDeviceTwo, STATE_CONNECTED, STATE_CONNECTING);
+        generateConnectionMessageFromNative(mDeviceTwo, STATE_DISCONNECTING, STATE_CONNECTED);
+        generateConnectionMessageFromNative(mDeviceTwo, STATE_DISCONNECTED, STATE_DISCONNECTING);
+        assertThat(mService.getConnectionState(mDeviceTwo)).isEqualTo(STATE_DISCONNECTED);
+        assertThat(mService.getDevices()).contains(mDeviceTwo);
+
+        // Set group volume, check devices volume and group volume
+        mService.setGroupVolume(groupId, groupVolume);
+        assertThat(mService.getDeviceVolume(mDevice)).isEqualTo(groupVolume);
+        assertThat(mService.getDeviceVolume(mDeviceTwo)).isEqualTo(groupVolume);
+        assertThat(mService.getGroupVolume(TEST_GROUP_ID)).isEqualTo(groupVolume);
+
+        // Unbond first device, group and second device volume should remain
+        doReturn(BOND_NONE).when(mAdapterService).getBondState(mDevice);
+        mService.bondStateChanged(mDevice, BOND_NONE);
+        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(CSIS_GROUP_ID_INVALID);
+        when(mCsipService.getGroupDevicesOrdered(groupId)).thenReturn(Arrays.asList(mDeviceTwo));
+        expect.that(mService.getDevices()).doesNotContain(mDevice);
+        expect.that(mService.getDevices()).contains(mDeviceTwo);
+        expect.that(mService.getDeviceVolume(mDevice)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        expect.that(mService.getDeviceVolume(mDeviceTwo)).isEqualTo(groupVolume);
+        expect.that(mService.getGroupVolume(TEST_GROUP_ID)).isEqualTo(groupVolume);
+
+        // Unbond second device, both devices and group data should be removed
+        doReturn(BOND_NONE).when(mAdapterService).getBondState(mDeviceTwo);
+        mService.bondStateChanged(mDeviceTwo, BOND_NONE);
+        mLooper.dispatchAll();
+        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP))
+                .thenReturn(CSIS_GROUP_ID_INVALID);
+        when(mCsipService.getGroupDevicesOrdered(groupId)).thenReturn(Arrays.asList());
+        expect.that(mService.getDevices()).doesNotContain(mDevice);
+        expect.that(mService.getDevices()).doesNotContain(mDeviceTwo);
+        expect.that(mService.getDeviceVolume(mDevice)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        expect.that(mService.getDeviceVolume(mDeviceTwo)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        expect.that(mService.getGroupVolume(TEST_GROUP_ID))
+                .isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+    }
+
+    @Test
     public void disconnect_whenBonded_keepStateMachine() {
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTING, STATE_DISCONNECTED);
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_CONNECTING);
@@ -386,7 +448,7 @@ public class VolumeControlServiceTest {
     }
 
     @Test
-    public void disconnect_whenUnBonded_removeStateMachine() {
+    public void disconnect_whenUnbonded_removeStateMachine() {
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTING, STATE_DISCONNECTED);
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_CONNECTING);
         generateConnectionMessageFromNative(mDevice, STATE_DISCONNECTING, STATE_CONNECTED);
@@ -400,6 +462,62 @@ public class VolumeControlServiceTest {
 
         assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_DISCONNECTED);
         assertThat(mService.getDevices()).doesNotContain(mDevice);
+    }
+
+    @Test
+    public void disconnect_whenUnbonded_removeDeviceData() {
+        int groupId = 1;
+        int groupVolume = 6;
+
+        // Both devices are in the same group
+        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(groupId);
+        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(groupId);
+        when(mCsipService.getGroupDevicesOrdered(groupId))
+                .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+
+        // Connect and go to disconnecting on first device
+        generateConnectionMessageFromNative(mDevice, STATE_CONNECTING, STATE_DISCONNECTED);
+        generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_CONNECTING);
+        generateConnectionMessageFromNative(mDevice, STATE_DISCONNECTING, STATE_CONNECTED);
+
+        // Connect and go to disconnecting on second device
+        generateConnectionMessageFromNative(mDeviceTwo, STATE_CONNECTING, STATE_DISCONNECTED);
+        generateConnectionMessageFromNative(mDeviceTwo, STATE_CONNECTED, STATE_CONNECTING);
+        generateConnectionMessageFromNative(mDeviceTwo, STATE_DISCONNECTING, STATE_CONNECTED);
+
+        // Set group volume, check devices volume and group volume
+        mService.setGroupVolume(groupId, groupVolume);
+        assertThat(mService.getDeviceVolume(mDevice)).isEqualTo(groupVolume);
+        assertThat(mService.getDeviceVolume(mDeviceTwo)).isEqualTo(groupVolume);
+        assertThat(mService.getGroupVolume(TEST_GROUP_ID)).isEqualTo(groupVolume);
+
+        // Unbond both devices, data should remain
+        doReturn(BOND_NONE).when(mAdapterService).getBondState(mDevice);
+        mService.bondStateChanged(mDevice, BOND_NONE);
+        doReturn(BOND_NONE).when(mAdapterService).getBondState(mDeviceTwo);
+        mService.bondStateChanged(mDeviceTwo, BOND_NONE);
+        assertThat(mService.getDevices()).contains(mDevice);
+        assertThat(mService.getDevices()).contains(mDeviceTwo);
+        assertThat(mService.getDeviceVolume(mDevice)).isEqualTo(groupVolume);
+        assertThat(mService.getDeviceVolume(mDeviceTwo)).isEqualTo(groupVolume);
+        assertThat(mService.getGroupVolume(TEST_GROUP_ID)).isEqualTo(groupVolume);
+
+        // Disconnect first device, group and second device volume should remain
+        generateConnectionMessageFromNative(mDevice, STATE_DISCONNECTED, STATE_DISCONNECTING);
+        expect.that(mService.getDevices()).doesNotContain(mDevice);
+        expect.that(mService.getDevices()).contains(mDeviceTwo);
+        expect.that(mService.getDeviceVolume(mDevice)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        expect.that(mService.getDeviceVolume(mDeviceTwo)).isEqualTo(groupVolume);
+        expect.that(mService.getGroupVolume(TEST_GROUP_ID)).isEqualTo(groupVolume);
+
+        // Disconnect second device, both devices and group data should be removed
+        generateConnectionMessageFromNative(mDeviceTwo, STATE_DISCONNECTED, STATE_DISCONNECTING);
+        expect.that(mService.getDevices()).doesNotContain(mDevice);
+        expect.that(mService.getDevices()).doesNotContain(mDeviceTwo);
+        expect.that(mService.getDeviceVolume(mDevice)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        expect.that(mService.getDeviceVolume(mDeviceTwo)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
+        expect.that(mService.getGroupVolume(TEST_GROUP_ID))
+                .isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
     }
 
     int getLeAudioVolume(int index, int minIndex, int maxIndex, int streamType) {
