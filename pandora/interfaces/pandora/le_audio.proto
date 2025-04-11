@@ -16,6 +16,12 @@ service LeAudio {
   rpc LeAudioStart(LeAudioStartRequest) returns (google.protobuf.Empty);
   // Stop an opened stream.
   rpc LeAudioStop(LeAudioStopRequest) returns (google.protobuf.Empty);
+  // Stop an opened recorder.
+  rpc LeAudioStopRecorder(LeAudioStopRecorderRequest) returns (google.protobuf.Empty);
+  // Capture audio
+  rpc LeAudioCaptureAudio(LeAudioCaptureAudioRequest) returns (stream LeAudioCaptureAudioResponse);
+  // Prepare recorder
+  rpc LeAudioPrepareRecorder(LeAudioPrepareRecorderRequest) returns (google.protobuf.Empty);
 }
 
 enum AudioUsage {
@@ -47,6 +53,7 @@ message OpenRequest {
 message LeAudioStartRequest {
   Connection connection = 1;
   AudioUsage audioUsage = 2;
+  string metadataTag = 3;
 }
 
 // Request of the `PlaybackAudio` method.
@@ -60,5 +67,25 @@ message LeAudioPlaybackAudioResponse {}
 
 // Request of the `LeAudioStop` method.
 message LeAudioStopRequest {
+  Connection connection = 1;
+}
+
+// Request of the `LeAudioCaptureAudio` method.
+message LeAudioCaptureAudioRequest {
+  Connection connection = 1;
+}
+
+// Response of the `LeAudioCaptureAudio` method.
+message LeAudioCaptureAudioResponse {
+  bytes data = 1;
+}
+
+// Request of the `LeAudioPrepareRecorder` method.
+message LeAudioPrepareRecorderRequest {
+  Connection connection = 1;
+}
+
+// Request of the `LeAudioStopRecorder` method.
+message LeAudioStopRecorderRequest {
   Connection connection = 1;
 }
