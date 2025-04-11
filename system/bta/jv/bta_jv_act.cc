@@ -1970,8 +1970,15 @@ void bta_jv_rfcomm_write(uint32_t handle, uint32_t req_id, tBTA_JV_RFC_CB* p_cb,
 
   bta_jv_pm_conn_busy(p_pcb->p_pm_cb);
 
-  if (!evt_data.cong && PORT_WriteDataCO(p_pcb->port_handle, &evt_data.len) == PORT_SUCCESS) {
-    evt_data.status = tBTA_JV_STATUS::SUCCESS;
+  if (!evt_data.cong) {
+    int write_status = PORT_WriteDataCO(p_pcb->port_handle, &evt_data.len);
+    if (write_status == PORT_SUCCESS) {
+      evt_data.status = tBTA_JV_STATUS::SUCCESS;
+    } else {
+      log::warn("write failed with result:{}", static_cast<tPORT_RESULT>(write_status));
+    }
+  } else {
+    log::debug("write failed due to congestion");
   }
 
   // Update congestion flag
