@@ -293,6 +293,7 @@ cc_defaults {
     host_supported: true,
     defaults: [
         "bluetooth_cflags",
+        "bluetooth_tidy",
     ],
     cflags: [
         "-Wno-missing-prototypes",

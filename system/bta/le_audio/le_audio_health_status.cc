@@ -41,7 +41,7 @@ using bluetooth::le_audio::LeAudioRecommendationActionCb;
 
 namespace bluetooth::le_audio {
 class LeAudioHealthStatusImpl;
-LeAudioHealthStatusImpl* instance;
+static LeAudioHealthStatusImpl* instance;
 
 class LeAudioHealthStatusImpl : public LeAudioHealthStatus {
 public:
@@ -298,20 +298,19 @@ private:
 
   void log_counter_metrics_for_device(LeAudioHealthDeviceStatType type, bool in_allowlist) {
     log::debug("in_allowlist: {}, type: {}", in_allowlist, ToString(type));
-    android::bluetooth::CodePathCounterKeyEnum key;
+    bluetooth::metrics::CounterKey key;
     if (in_allowlist) {
       switch (type) {
         case LeAudioHealthDeviceStatType::VALID_DB:
         case LeAudioHealthDeviceStatType::VALID_CSIS:
-          key = android::bluetooth::CodePathCounterKeyEnum::
-                  LE_AUDIO_ALLOWLIST_DEVICE_HEALTH_STATUS_GOOD;
+          key = bluetooth::metrics::CounterKey::LE_AUDIO_ALLOWLIST_DEVICE_HEALTH_STATUS_GOOD;
           break;
         case LeAudioHealthDeviceStatType::INVALID_DB:
-          key = android::bluetooth::CodePathCounterKeyEnum::
+          key = bluetooth::metrics::CounterKey::
                   LE_AUDIO_ALLOWLIST_DEVICE_HEALTH_STATUS_BAD_INVALID_DB;
           break;
         case LeAudioHealthDeviceStatType::INVALID_CSIS:
-          key = android::bluetooth::CodePathCounterKeyEnum::
+          key = bluetooth::metrics::CounterKey::
                   LE_AUDIO_ALLOWLIST_DEVICE_HEALTH_STATUS_BAD_INVALID_CSIS;
           break;
         default:
@@ -322,15 +321,14 @@ private:
       switch (type) {
         case LeAudioHealthDeviceStatType::VALID_DB:
         case LeAudioHealthDeviceStatType::VALID_CSIS:
-          key = android::bluetooth::CodePathCounterKeyEnum::
-                  LE_AUDIO_NONALLOWLIST_DEVICE_HEALTH_STATUS_GOOD;
+          key = bluetooth::metrics::CounterKey::LE_AUDIO_NONALLOWLIST_DEVICE_HEALTH_STATUS_GOOD;
           break;
         case LeAudioHealthDeviceStatType::INVALID_DB:
-          key = android::bluetooth::CodePathCounterKeyEnum::
+          key = bluetooth::metrics::CounterKey::
                   LE_AUDIO_NONALLOWLIST_DEVICE_HEALTH_STATUS_BAD_INVALID_DB;
           break;
         case LeAudioHealthDeviceStatType::INVALID_CSIS:
-          key = android::bluetooth::CodePathCounterKeyEnum::
+          key = bluetooth::metrics::CounterKey::
                   LE_AUDIO_NONALLOWLIST_DEVICE_HEALTH_STATUS_BAD_INVALID_CSIS;
           break;
         default:
@@ -338,24 +336,23 @@ private:
           return;
       }
     }
-    bluetooth::metrics::CountCounterMetrics(key, 1);
+    bluetooth::metrics::Counter(key);
   }
 
   void log_counter_metrics_for_group(LeAudioHealthGroupStatType type, bool in_allowlist) {
     log::debug("in_allowlist: {}, type: {}", in_allowlist, ToString(type));
-    android::bluetooth::CodePathCounterKeyEnum key;
+    bluetooth::metrics::CounterKey key;
     if (in_allowlist) {
       switch (type) {
         case LeAudioHealthGroupStatType::STREAM_CREATE_SUCCESS:
-          key = android::bluetooth::CodePathCounterKeyEnum::
-                  LE_AUDIO_ALLOWLIST_GROUP_HEALTH_STATUS_GOOD;
+          key = bluetooth::metrics::CounterKey::LE_AUDIO_ALLOWLIST_GROUP_HEALTH_STATUS_GOOD;
           break;
         case LeAudioHealthGroupStatType::STREAM_CREATE_CIS_FAILED:
-          key = android::bluetooth::CodePathCounterKeyEnum::
+          key = bluetooth::metrics::CounterKey::
                   LE_AUDIO_ALLOWLIST_GROUP_HEALTH_STATUS_BAD_ONCE_CIS_FAILED;
           break;
         case LeAudioHealthGroupStatType::STREAM_CREATE_SIGNALING_FAILED:
-          key = android::bluetooth::CodePathCounterKeyEnum::
+          key = bluetooth::metrics::CounterKey::
                   LE_AUDIO_ALLOWLIST_GROUP_HEALTH_STATUS_BAD_ONCE_SIGNALING_FAILED;
           break;
         default:
@@ -365,15 +362,14 @@ private:
     } else {
       switch (type) {
         case LeAudioHealthGroupStatType::STREAM_CREATE_SUCCESS:
-          key = android::bluetooth::CodePathCounterKeyEnum::
-                  LE_AUDIO_NONALLOWLIST_GROUP_HEALTH_STATUS_GOOD;
+          key = bluetooth::metrics::CounterKey::LE_AUDIO_NONALLOWLIST_GROUP_HEALTH_STATUS_GOOD;
           break;
         case LeAudioHealthGroupStatType::STREAM_CREATE_CIS_FAILED:
-          key = android::bluetooth::CodePathCounterKeyEnum::
+          key = bluetooth::metrics::CounterKey::
                   LE_AUDIO_NONALLOWLIST_GROUP_HEALTH_STATUS_BAD_ONCE_CIS_FAILED;
           break;
         case LeAudioHealthGroupStatType::STREAM_CREATE_SIGNALING_FAILED:
-          key = android::bluetooth::CodePathCounterKeyEnum::
+          key = bluetooth::metrics::CounterKey::
                   LE_AUDIO_NONALLOWLIST_GROUP_HEALTH_STATUS_BAD_ONCE_SIGNALING_FAILED;
           break;
         default:
@@ -381,7 +377,7 @@ private:
           return;
       }
     }
-    bluetooth::metrics::CountCounterMetrics(key, 1);
+    bluetooth::metrics::Counter(key);
   }
 };
 }  // namespace bluetooth::le_audio

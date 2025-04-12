@@ -920,7 +920,7 @@ static void on_rfc_close(tBTA_JV_RFCOMM_CLOSE* /* p_close */, uint32_t id) {
 
 static void on_rfc_write_done(tBTA_JV_RFCOMM_WRITE* p, uint32_t id) {
   if (p->status != tBTA_JV_STATUS::SUCCESS) {
-    log::error("error writing to RFCOMM socket, req_id:{}.", p->req_id);
+    log::error("error writing to RFCOMM socket, slot_id:{}.", p->req_id);
     return;
   }
 

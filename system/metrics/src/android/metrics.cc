@@ -69,8 +69,8 @@ template <>
 struct formatter<android::bluetooth::SocketErrorEnum>
     : enum_formatter<android::bluetooth::SocketErrorEnum> {};
 template <>
-struct formatter<android::bluetooth::CodePathCounterKeyEnum>
-    : enum_formatter<android::bluetooth::CodePathCounterKeyEnum> {};
+struct formatter<bluetooth::metrics::CounterKey> : enum_formatter<bluetooth::metrics::CounterKey> {
+};
 }  // namespace std
 
 namespace bluetooth::metrics {
@@ -83,6 +83,13 @@ using hci::EventCode;
  * nullptr and size 0 represent missing value for obfuscated_id
  */
 static const BytesField byteField(nullptr, 0);
+
+void Counter(CounterKey key, int64_t count) {
+  int ret = stats_write(BLUETOOTH_CODE_PATH_COUNTER, key, count);
+  if (ret < 0) {
+    log::warn("Failed counter metrics for {}, count {}, error {}", key, count, ret);
+  }
+}
 
 void LogMetricLinkLayerConnectionEvent(const Address& address, uint32_t connection_handle,
                                        android::bluetooth::DirectionEnum direction,
@@ -442,13 +449,6 @@ void LogMetricBluetoothRemoteSupportedFeatures(const Address& address, uint32_t 
             "{}, "
             "connection_handle {}, error {}",
             metric_id, page, features, connection_handle, ret);
-  }
-}
-
-void CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum key, int64_t count) {
-  int ret = stats_write(BLUETOOTH_CODE_PATH_COUNTER, key, count);
-  if (ret < 0) {
-    log::warn("Failed counter metrics for {}, count {}, error {}", key, count, ret);
   }
 }
 

@@ -51,9 +51,8 @@ using namespace bluetooth;
 /*
  * Local function definitions
  */
-uint32_t port_rfc_send_tx_data(tPORT* p_port);
-void port_rfc_closed(tPORT* p_port, uint8_t res);
-void port_get_credits(tPORT* p_port, uint8_t k);
+static uint32_t port_rfc_send_tx_data(tPORT* p_port);
+static void port_get_credits(tPORT* p_port, uint8_t k);
 
 /*******************************************************************************
  *
@@ -186,8 +185,7 @@ void port_start_close(tPORT* p_port) {
      * clear tPort */
     if (p_port->p_mgmt_callback) {
       p_port->p_mgmt_callback(PORT_CLOSED, p_port->handle);
-      bluetooth::metrics::CountCounterMetrics(
-              android::bluetooth::CodePathCounterKeyEnum::RFCOMM_PORT_START_CLOSE, 1);
+      bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::RFCOMM_PORT_START_CLOSE);
     }
 
     port_release_port(p_port);
@@ -231,8 +229,7 @@ void PORT_StartCnf(tRFC_MCB* p_mcb, uint16_t result) {
 
         if (p_port->p_mgmt_callback) {
           p_port->p_mgmt_callback(PORT_START_FAILED, p_port->handle);
-          bluetooth::metrics::CountCounterMetrics(
-                  android::bluetooth::CodePathCounterKeyEnum::RFCOMM_PORT_START_CNF_FAILED, 1);
+          bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::RFCOMM_PORT_START_CNF_FAILED);
         }
         port_release_port(p_port);
       }
@@ -458,14 +455,12 @@ void PORT_DlcEstablishInd(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu) {
     if (p_port->rfc_cfg_info.data_path != BTSOCK_DATA_PATH_HARDWARE_OFFLOAD &&
         p_port->p_mgmt_callback) {
       p_port->p_mgmt_callback(PORT_SUCCESS, p_port->handle);
-      bluetooth::metrics::CountCounterMetrics(
-              android::bluetooth::CodePathCounterKeyEnum::RFCOMM_CONNECTION_SUCCESS_IND, 1);
+      bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::RFCOMM_CONNECTION_SUCCESS_IND);
     }
   } else {
     if (p_port->p_mgmt_callback) {
       p_port->p_mgmt_callback(PORT_SUCCESS, p_port->handle);
-      bluetooth::metrics::CountCounterMetrics(
-              android::bluetooth::CodePathCounterKeyEnum::RFCOMM_CONNECTION_SUCCESS_IND, 1);
+      bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::RFCOMM_CONNECTION_SUCCESS_IND);
     }
   }
 
@@ -494,8 +489,7 @@ void PORT_DlcEstablishCnf(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu, uint16_t 
   if (result != RFCOMM_SUCCESS) {
     log::warn("Unable to establish configuration dlci:{} result:{}", dlci, result);
     port_rfc_closed(p_port, PORT_START_FAILED);
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::RFCOMM_PORT_START_FAILED, 1);
+    bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::RFCOMM_PORT_START_FAILED);
     return;
   }
 
@@ -515,14 +509,12 @@ void PORT_DlcEstablishCnf(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu, uint16_t 
     if (p_port->rfc_cfg_info.data_path != BTSOCK_DATA_PATH_HARDWARE_OFFLOAD &&
         p_port->p_mgmt_callback) {
       p_port->p_mgmt_callback(PORT_SUCCESS, p_port->handle);
-      bluetooth::metrics::CountCounterMetrics(
-              android::bluetooth::CodePathCounterKeyEnum::RFCOMM_CONNECTION_SUCCESS_CNF, 1);
+      bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::RFCOMM_CONNECTION_SUCCESS_CNF);
     }
   } else {
     if (p_port->p_mgmt_callback) {
       p_port->p_mgmt_callback(PORT_SUCCESS, p_port->handle);
-      bluetooth::metrics::CountCounterMetrics(
-              android::bluetooth::CodePathCounterKeyEnum::RFCOMM_CONNECTION_SUCCESS_CNF, 1);
+      bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::RFCOMM_CONNECTION_SUCCESS_CNF);
     }
   }
 
@@ -592,8 +584,7 @@ void PORT_PortNegCnf(tRFC_MCB* p_mcb, uint8_t dlci, PortSettings* /* p_settings 
     RFCOMM_DlcReleaseReq(p_mcb, p_port->dlci);
 
     port_rfc_closed(p_port, PORT_PORT_NEG_FAILED);
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::RFCOMM_PORT_NEG_FAILED, 1);
+    bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::RFCOMM_PORT_NEG_FAILED);
     return;
   }
 
@@ -664,8 +655,7 @@ void PORT_ControlInd(tRFC_MCB* p_mcb, uint8_t dlci, tPORT_CTRL* p_pars) {
     if (p_port->rfc_cfg_info.data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
       if (p_port->port_ctrl == PORT_CTRL_SETUP_COMPLETED && p_port->p_mgmt_callback) {
         p_port->p_mgmt_callback(PORT_SUCCESS, p_port->handle);
-        bluetooth::metrics::CountCounterMetrics(
-                android::bluetooth::CodePathCounterKeyEnum::RFCOMM_CONNECTION_SUCCESS_IND, 1);
+        bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::RFCOMM_CONNECTION_SUCCESS_IND);
       }
     }
   }
@@ -711,8 +701,7 @@ void PORT_ControlCnf(tRFC_MCB* p_mcb, uint8_t dlci, tPORT_CTRL* /* p_pars */) {
     if (p_port->rfc_cfg_info.data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
       if (p_port->port_ctrl == PORT_CTRL_SETUP_COMPLETED && p_port->p_mgmt_callback) {
         p_port->p_mgmt_callback(PORT_SUCCESS, p_port->handle);
-        bluetooth::metrics::CountCounterMetrics(
-                android::bluetooth::CodePathCounterKeyEnum::RFCOMM_CONNECTION_SUCCESS_CNF, 1);
+        bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::RFCOMM_CONNECTION_SUCCESS_CNF);
       }
     }
   }
@@ -770,8 +759,7 @@ void PORT_DlcReleaseInd(tRFC_MCB* p_mcb, uint8_t dlci) {
     return;
   }
   port_rfc_closed(p_port, PORT_CLOSED);
-  bluetooth::metrics::CountCounterMetrics(
-          android::bluetooth::CodePathCounterKeyEnum::RFCOMM_PORT_CLOSED, 1);
+  bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::RFCOMM_PORT_CLOSED);
 }
 
 /*******************************************************************************
@@ -792,8 +780,8 @@ void PORT_CloseInd(tRFC_MCB* p_mcb) {
   for (i = 0; i < MAX_RFC_PORTS; i++, p_port++) {
     if (p_port->rfc.p_mcb == p_mcb) {
       port_rfc_closed(p_port, PORT_PEER_CONNECTION_FAILED);
-      bluetooth::metrics::CountCounterMetrics(
-              android::bluetooth::CodePathCounterKeyEnum::RFCOMM_PORT_PEER_CONNECTION_FAILED, 1);
+      bluetooth::metrics::Counter(
+              bluetooth::metrics::CounterKey::RFCOMM_PORT_PEER_CONNECTION_FAILED);
     }
   }
   rfc_release_multiplexer_channel(p_mcb);
@@ -817,8 +805,7 @@ void PORT_TimeOutCloseMux(tRFC_MCB* p_mcb) {
   for (i = 0; i < MAX_RFC_PORTS; i++, p_port++) {
     if (p_port->rfc.p_mcb == p_mcb) {
       port_rfc_closed(p_port, PORT_PEER_TIMEOUT);
-      bluetooth::metrics::CountCounterMetrics(
-              android::bluetooth::CodePathCounterKeyEnum::RFCOMM_PORT_PEER_TIMEOUT, 1);
+      bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::RFCOMM_PORT_PEER_TIMEOUT);
     }
   }
 }
@@ -978,7 +965,7 @@ void PORT_FlowInd(tRFC_MCB* p_mcb, uint8_t dlci, bool enable_data) {
  * Description      This function is when forward data can be sent to the peer
  *
  ******************************************************************************/
-uint32_t port_rfc_send_tx_data(tPORT* p_port) {
+static uint32_t port_rfc_send_tx_data(tPORT* p_port) {
   uint32_t events = 0;
   BT_HDR* p_buf;
 
@@ -1119,7 +1106,7 @@ void port_rfc_closed(tPORT* p_port, uint8_t res) {
  *                  should be less then 255
  *
  ******************************************************************************/
-void port_get_credits(tPORT* p_port, uint8_t k) {
+static void port_get_credits(tPORT* p_port, uint8_t k) {
   p_port->credit_tx = k;
   if (p_port->credit_tx == 0) {
     p_port->tx.peer_fc = true;

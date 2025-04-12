@@ -468,8 +468,8 @@ static void btif_hh_incoming_connection_timeout(void* data) {
                handle);
   }
   log::warn("Reject unexpected incoming HID Connection, device: {}", conn.link_spec);
-  bluetooth::metrics::CountCounterMetrics(
-          android::bluetooth::CodePathCounterKeyEnum::HIDH_COUNT_INCOMING_CONNECTION_REJECTED, 1);
+  bluetooth::metrics::Counter(
+          bluetooth::metrics::CounterKey::HIDH_COUNT_INCOMING_CONNECTION_REJECTED);
 
   btif_hh_device_t* p_dev = btif_hh_find_dev_by_link_spec(conn.link_spec);
   if (p_dev != nullptr) {
@@ -538,8 +538,8 @@ static bool hh_add_device(const tAclLinkSpec& link_spec, tBTA_HH_ATTR_MASK attr_
   }
 
   log::error("Out of space to add device");
-  bluetooth::metrics::CountCounterMetrics(
-          android::bluetooth::CodePathCounterKeyEnum::HIDH_COUNT_MAX_ADDED_DEVICE_LIMIT_REACHED, 1);
+  bluetooth::metrics::Counter(
+          bluetooth::metrics::CounterKey::HIDH_COUNT_MAX_ADDED_DEVICE_LIMIT_REACHED);
   return false;
 }
 
@@ -688,8 +688,8 @@ static void hh_open_handler_(tBTA_HH_CONN& conn) {
 
     log::warn("Reject Incoming HID Connection, device: {}, state: {}", conn.link_spec,
               bthh_connection_state_text(dev_status));
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::HIDH_COUNT_INCOMING_CONNECTION_REJECTED, 1);
+    bluetooth::metrics::Counter(
+            bluetooth::metrics::CounterKey::HIDH_COUNT_INCOMING_CONNECTION_REJECTED);
 
     if (p_dev != nullptr) {
       p_dev->dev_status = BTHH_CONN_STATE_DISCONNECTED;
@@ -757,8 +757,8 @@ static void hh_open_handler(tBTA_HH_CONN& conn) {
     }
 
     log::warn("Reject Incoming HID Connection, device: {}", conn.link_spec);
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::HIDH_COUNT_INCOMING_CONNECTION_REJECTED, 1);
+    bluetooth::metrics::Counter(
+            bluetooth::metrics::CounterKey::HIDH_COUNT_INCOMING_CONNECTION_REJECTED);
     BTA_HhClose(conn.handle);
     return;
   }
@@ -1009,10 +1009,8 @@ static void hh_vc_unplug_handler(tBTA_HH_CBDATA& dev_status) {
   BTHH_STATE_UPDATE(p_dev->link_spec, p_dev->dev_status);
 
   if (!p_dev->local_vup) {
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::
-                    HIDH_COUNT_VIRTUAL_UNPLUG_REQUESTED_BY_REMOTE_DEVICE,
-            1);
+    bluetooth::metrics::Counter(
+            bluetooth::metrics::CounterKey::HIDH_COUNT_VIRTUAL_UNPLUG_REQUESTED_BY_REMOTE_DEVICE);
   }
 
   // Remove the HID device
@@ -1315,10 +1313,8 @@ bt_status_t btif_hh_connect(const tAclLinkSpec& link_spec) {
   if (!p_dev && btif_hh_cb.device_num >= BTIF_HH_MAX_HID) {
     // No space for more HID device now.
     log::warn("Error, exceeded the maximum supported HID device number {}", BTIF_HH_MAX_HID);
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::
-                    HIDH_COUNT_CONNECT_REQ_WHEN_MAX_DEVICE_LIMIT_REACHED,
-            1);
+    bluetooth::metrics::Counter(
+            bluetooth::metrics::CounterKey::HIDH_COUNT_CONNECT_REQ_WHEN_MAX_DEVICE_LIMIT_REACHED);
     return BT_STATUS_NOMEM;
   }
 
@@ -2163,8 +2159,7 @@ static bt_status_t get_report(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
     return BT_STATUS_DEVICE_NOT_FOUND;
   } else if (((int)reportType) <= BTA_HH_RPTT_RESRV || ((int)reportType) > BTA_HH_RPTT_FEATURE) {
     log::error("report type={} not supported", reportType);
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::HIDH_COUNT_WRONG_REPORT_TYPE, 1);
+    bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::HIDH_COUNT_WRONG_REPORT_TYPE);
     return BT_STATUS_UNSUPPORTED;
   } else {
     BTA_HhGetReport(p_dev->dev_handle, reportType, reportId, bufferSize);
@@ -2235,8 +2230,7 @@ static bt_status_t set_report(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
     return BT_STATUS_DEVICE_NOT_FOUND;
   } else if (((int)reportType) <= BTA_HH_RPTT_RESRV || ((int)reportType) > BTA_HH_RPTT_FEATURE) {
     log::error("report type={} not supported", reportType);
-    bluetooth::metrics::CountCounterMetrics(
-            android::bluetooth::CodePathCounterKeyEnum::HIDH_COUNT_WRONG_REPORT_TYPE, 1);
+    bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::HIDH_COUNT_WRONG_REPORT_TYPE);
     return BT_STATUS_UNSUPPORTED;
   } else {
     int hex_bytes_filled;

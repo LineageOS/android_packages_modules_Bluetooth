@@ -17,7 +17,6 @@
 package com.android.bluetooth.a2dp;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
-import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
@@ -30,7 +29,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.NonNull;
-import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothA2dp;
 import android.bluetooth.BluetoothA2dp.OptionalCodecsPreferenceStatus;
 import android.bluetooth.BluetoothA2dp.OptionalCodecsSupportStatus;
@@ -850,10 +848,7 @@ public class A2dpService extends ProfileService {
      *     BluetoothA2dp#DYNAMIC_BUFFER_SUPPORT_A2DP_OFFLOAD}, {@link
      *     BluetoothA2dp#DYNAMIC_BUFFER_SUPPORT_A2DP_SOFTWARE_ENCODING}.
      */
-    @RequiresPermission(BLUETOOTH_PRIVILEGED)
     public int getDynamicBufferSupport() {
-        enforceCallingOrSelfPermission(
-                BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
         return mAdapterService.getDynamicBufferSupport();
     }
 
@@ -862,10 +857,7 @@ public class A2dpService extends ProfileService {
      *
      * @return BufferConstraints
      */
-    @RequiresPermission(BLUETOOTH_PRIVILEGED)
     public BufferConstraints getBufferConstraints() {
-        enforceCallingOrSelfPermission(
-                BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
         return mAdapterService.getBufferConstraints();
     }
 
@@ -876,10 +868,7 @@ public class A2dpService extends ProfileService {
      * @param value buffer millis
      * @return true if the settings is successful, false otherwise
      */
-    @RequiresPermission(BLUETOOTH_PRIVILEGED)
     public boolean setBufferLengthMillis(int codec, int value) {
-        enforceCallingOrSelfPermission(
-                BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
         return mAdapterService.setBufferLengthMillis(codec, value);
     }
 

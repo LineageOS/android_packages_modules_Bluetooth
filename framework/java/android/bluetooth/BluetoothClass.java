@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.SystemApi;
 import android.compat.annotation.UnsupportedAppUsage;
@@ -86,7 +87,7 @@ public final class BluetoothClass implements Parcelable {
         return 0;
     }
 
-    public static final @android.annotation.NonNull Parcelable.Creator<BluetoothClass> CREATOR =
+    public static final @NonNull Parcelable.Creator<BluetoothClass> CREATOR =
             new Parcelable.Creator<BluetoothClass>() {
                 public BluetoothClass createFromParcel(Parcel in) {
                     return new BluetoothClass(in.readInt());

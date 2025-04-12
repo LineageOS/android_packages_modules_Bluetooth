@@ -32,8 +32,6 @@
 
 using namespace bluetooth;
 using namespace bluetooth::hci;
-using android::bluetooth::hci::CMD_UNKNOWN;
-using android::bluetooth::hci::STATUS_UNKNOWN;
 
 namespace bluetooth::stack::btm {
 namespace {

@@ -579,7 +579,7 @@ struct AudioSetConfigurationProvider::impl {
 };
 
 static std::unique_ptr<AudioSetConfigurationProvider> config_provider;
-std::mutex instance_mutex;
+static std::mutex instance_mutex;
 
 AudioSetConfigurationProvider::AudioSetConfigurationProvider()
     : pimpl_(std::make_unique<AudioSetConfigurationProvider::impl>(*this)) {}

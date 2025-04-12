@@ -47,21 +47,17 @@ namespace hci {
 constexpr uint16_t kQualcommDebugHandle = 0xedc;
 constexpr uint16_t kSamsungDebugHandle = 0xeef;
 
-using acl_manager::AclConnection;
 using common::Bind;
 using common::BindOnce;
 
 using acl_manager::classic_impl;
-using acl_manager::ClassicAclConnection;
 using acl_manager::ConnectionCallbacks;
 
 using acl_manager::le_impl;
-using acl_manager::LeAclConnection;
 using acl_manager::LeConnectionCallbacks;
 
-using acl_manager::RoundRobinScheduler;
-
 using acl_manager::AclScheduler;
+using acl_manager::RoundRobinScheduler;
 
 struct AclManager::impl {
   explicit impl(const AclManager& acl_manager) : acl_manager_(acl_manager) {}

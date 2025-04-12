@@ -66,9 +66,7 @@
 #include "types/ble_address_with_type.h"
 #include "types/bluetooth/uuid.h"
 
-using base::PlatformThread;
 using bluetooth::Uuid;
-using bluetooth::common::MessageLoopThread;
 using namespace bluetooth;
 
 /*******************************************************************************

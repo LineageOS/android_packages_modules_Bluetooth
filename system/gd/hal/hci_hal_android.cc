@@ -32,7 +32,7 @@
 namespace bluetooth::hal {
 
 template <class VecType>
-std::string GetTimerText(const char* func_name, VecType vec) {
+static std::string GetTimerText(const char* func_name, VecType vec) {
   return common::StringFormat(
           "%s: len %zu, 1st 5 bytes '%s'", func_name, vec.size(),
           common::ToHexString(vec.begin(), std::min(vec.end(), vec.begin() + 5)).c_str());

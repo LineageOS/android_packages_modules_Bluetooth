@@ -1088,7 +1088,7 @@ static bool flush_incoming_que_on_wr_signal_l(l2cap_socket* sock) {
   return false;
 }
 
-inline BT_HDR* malloc_l2cap_buf(uint16_t len) {
+static BT_HDR* malloc_l2cap_buf(uint16_t len) {
   // We need FCS only for L2CAP_FCR_ERTM_MODE, but it's just 2 bytes so it's ok
   BT_HDR* msg = (BT_HDR*)osi_malloc(BT_HDR_SIZE + L2CAP_MIN_OFFSET + len + L2CAP_FCS_LENGTH);
   msg->offset = L2CAP_MIN_OFFSET;
@@ -1096,7 +1096,7 @@ inline BT_HDR* malloc_l2cap_buf(uint16_t len) {
   return msg;
 }
 
-inline uint8_t* get_l2cap_sdu_start_ptr(BT_HDR* msg) {
+static uint8_t* get_l2cap_sdu_start_ptr(BT_HDR* msg) {
   return (uint8_t*)(msg) + BT_HDR_SIZE + msg->offset;
 }
 

@@ -61,6 +61,8 @@ public:
 
   void GenMembers(std::ostream& s) const;
 
+  Size HeaderAndFooterSizeIfStatic() const;
+
   void GenSize(std::ostream& s) const;
 
   void GenSerialize(std::ostream& s) const;

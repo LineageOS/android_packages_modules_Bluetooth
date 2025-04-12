@@ -101,7 +101,7 @@ static void btm_route_sco_data(bluetooth::hci::ScoView valid_packet);
 static bool btm_sco_removed(uint16_t hci_handle, tHCI_REASON reason);
 
 namespace cpp {
-bluetooth::common::BidiQueueEnd<bluetooth::hci::ScoBuilder, bluetooth::hci::ScoView>*
+static bluetooth::common::BidiQueueEnd<bluetooth::hci::ScoBuilder, bluetooth::hci::ScoView>*
         hci_sco_queue_end = nullptr;
 static bluetooth::os::EnqueueBuffer<bluetooth::hci::ScoBuilder>* pending_sco_data = nullptr;
 

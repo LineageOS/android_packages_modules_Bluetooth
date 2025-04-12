@@ -59,9 +59,9 @@ using bluetooth::eatt::EattExtension;
 /*******************************************************************************
  *                      G L O B A L      G A T T       D A T A                 *
  ******************************************************************************/
-void gatt_send_prepare_write(tGATT_TCB& tcb, tGATT_CLCB* p_clcb);
+static void gatt_send_prepare_write(tGATT_TCB& tcb, tGATT_CLCB* p_clcb);
 
-uint8_t disc_type_to_att_opcode[GATT_DISC_MAX] = {
+static uint8_t disc_type_to_att_opcode[GATT_DISC_MAX] = {
         0,
         GATT_REQ_READ_BY_GRP_TYPE, /*  GATT_DISC_SRVC_ALL = 1, */
         GATT_REQ_FIND_TYPE_VALUE,  /*  GATT_DISC_SRVC_BY_UUID,  */
@@ -70,7 +70,7 @@ uint8_t disc_type_to_att_opcode[GATT_DISC_MAX] = {
         GATT_REQ_FIND_INFO         /*  GATT_DISC_CHAR_DSCPT,    */
 };
 
-uint16_t disc_type_to_uuid[GATT_DISC_MAX] = {
+static uint16_t disc_type_to_uuid[GATT_DISC_MAX] = {
         0,                         /* reserved */
         GATT_UUID_PRI_SERVICE,     /* <service> DISC_SRVC_ALL */
         GATT_UUID_PRI_SERVICE,     /* <service> for DISC_SERVC_BY_UUID */
@@ -337,7 +337,7 @@ static bool gatt_check_write_long_terminate(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
 }
 
 /** Send prepare write */
-void gatt_send_prepare_write(tGATT_TCB& tcb, tGATT_CLCB* p_clcb) {
+static void gatt_send_prepare_write(tGATT_TCB& tcb, tGATT_CLCB* p_clcb) {
   tGATT_VALUE* p_attr = (tGATT_VALUE*)p_clcb->p_attr_buf;
   uint8_t type = p_clcb->op_subtype;
 

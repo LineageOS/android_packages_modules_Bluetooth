@@ -1100,9 +1100,7 @@ void smp_proc_srk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   smp_update_key_mask(p_cb, SMP_SEC_KEY_TYPE_CSRK, true);
 
-  if (com::android::bluetooth::flags::save_peer_csrk_after_ltk_gen()) {
-    smp_key_distribution_by_transport(p_cb, NULL);
-  }
+  smp_key_distribution_by_transport(p_cb, NULL);
 
   /* save CSRK to security record */
   tBTM_LE_KEY_VALUE le_key = {
@@ -1120,10 +1118,6 @@ void smp_proc_srk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND)) {
     btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PCSRK, &le_key, true);
-  }
-
-  if (!com::android::bluetooth::flags::save_peer_csrk_after_ltk_gen()) {
-    smp_key_distribution_by_transport(p_cb, NULL);
   }
 }
 
@@ -1550,9 +1544,6 @@ void smp_process_io_response(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
       switch (p_cb->loc_oob_flag) {
         case SMP_OOB_NONE:
           log::info("SMP_MODEL_SEC_CONN_OOB with SMP_OOB_NONE");
-          if (!com::android::bluetooth::flags::remove_dup_pairing_response_in_oob_pairing()) {
-            smp_send_pair_rsp(p_cb, NULL);
-          }
           break;
         case SMP_OOB_PRESENT:
           log::info("SMP_MODEL_SEC_CONN_OOB with SMP_OOB_PRESENT");

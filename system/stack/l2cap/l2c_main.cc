@@ -44,7 +44,6 @@
 #include "stack/l2cap/l2c_int.h"
 
 using namespace bluetooth;
-bool is_l2c_cleanup_inprogress;
 
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
@@ -55,6 +54,7 @@ static void process_l2cap_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len);
 /*               G L O B A L      L 2 C A P       D A T A                     */
 /******************************************************************************/
 tL2C_CB l2cb;
+static bool is_l2c_cleanup_inprogress;
 
 /*******************************************************************************
  *

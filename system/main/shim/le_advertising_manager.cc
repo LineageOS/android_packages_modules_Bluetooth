@@ -426,9 +426,8 @@ private:
   std::map<uint8_t, std::set<int>> native_reg_id_map;
 };
 
-BleAdvertiserInterfaceImpl* bt_le_advertiser_instance = nullptr;
-
 ::BleAdvertiserInterface* bluetooth::shim::get_ble_advertiser_instance() {
+  static BleAdvertiserInterfaceImpl* bt_le_advertiser_instance = nullptr;
   if (bt_le_advertiser_instance == nullptr) {
     bt_le_advertiser_instance = new BleAdvertiserInterfaceImpl();
   }

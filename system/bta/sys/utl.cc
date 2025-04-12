@@ -46,7 +46,7 @@
 int16_t utl_str2int(const char* p_s) {
   int32_t val = 0;
 
-  for (; *p_s == ' ' && *p_s != 0; p_s++)
+  for (; *p_s == ' '; p_s++)
     ;
 
   if (*p_s == 0) {

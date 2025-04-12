@@ -29,15 +29,14 @@
 #include "main/shim/config.h"
 #include "os/parameter_provider.h"
 
-using base::Bind;
-using base::Unretained;
 using bluetooth::bluetooth_keystore::BluetoothKeystoreCallbacks;
 using bluetooth::bluetooth_keystore::BluetoothKeystoreInterface;
 
 namespace bluetooth {
 namespace bluetooth_keystore {
+
 class BluetoothKeystoreInterfaceImpl;
-std::unique_ptr<BluetoothKeystoreInterface> bluetoothKeystoreInstance;
+static std::unique_ptr<BluetoothKeystoreInterface> bluetoothKeystoreInstance;
 const int CONFIG_COMPARE_ALL_PASS = 0b11;
 
 class BluetoothKeystoreInterfaceImpl
