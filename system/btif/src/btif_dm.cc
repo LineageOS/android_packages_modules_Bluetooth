@@ -172,6 +172,7 @@ struct btif_dm_pairing_cb_t {
   bool is_le_nc; /* LE Numeric comparison */
   btif_dm_ble_cb_t ble;
   uint8_t fail_reason;
+  bool is_ctkd;
 
   enum ServiceDiscoveryState { NOT_STARTED, SCHEDULED, FINISHED };
 
@@ -1114,6 +1115,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
   tBLE_ADDR_TYPE addr_type = p_auth_cmpl->addr_type;
 
   pairing_cb.fail_reason = p_auth_cmpl->fail_reason;
+  pairing_cb.is_ctkd = (pairing_cb.is_ctkd || p_auth_cmpl->is_ctkd);
   log::info("device={}, bond state={}, success={}, key_present={}", bd_addr, pairing_cb.state,
             p_auth_cmpl->success, p_auth_cmpl->key_present);
 
@@ -3428,6 +3430,7 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
   bt_bond_state_t state = BT_BOND_STATE_NONE;
 
   RawAddress bd_addr = p_auth_cmpl->bd_addr;
+  pairing_cb.is_ctkd = (pairing_cb.is_ctkd || p_auth_cmpl->is_ctkd);
 
   /* Clear OOB data */
   memset(&oob_cb, 0, sizeof(oob_cb));
@@ -3476,6 +3479,7 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
     /* Map the HCI fail reason  to  bt status  */
     // TODO This is not a proper use of the type
     uint8_t fail_reason = static_cast<uint8_t>(p_auth_cmpl->fail_reason);
+    bool is_ble_keys_removed = false;
     log::error("LE authentication for {} failed with reason {}", bd_addr, p_auth_cmpl->fail_reason);
     switch (fail_reason) {
       case BTA_DM_AUTH_SMP_PAIR_AUTH_FAIL:
@@ -3483,6 +3487,7 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
       case BTA_DM_AUTH_SMP_UNKNOWN_ERR:
         btif_dm_remove_ble_bonding_keys();
         status = BT_STATUS_AUTH_FAILURE;
+        is_ble_keys_removed = true;
         break;
 
       case BTA_DM_AUTH_SMP_CONN_TOUT: {
@@ -3494,6 +3499,7 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
                     during_bonding, p_auth_cmpl->is_ctkd);
           btif_dm_remove_ble_bonding_keys();
           status = BT_STATUS_AUTH_FAILURE;
+          is_ble_keys_removed = true;
         } else {
           log::warn("Bonded device addr={}, timed out - will not remove the keys", bd_addr);
           // Don't send state change to upper layers - otherwise Java think we
@@ -3508,7 +3514,12 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
       default:
         btif_dm_remove_ble_bonding_keys();
         status = BT_STATUS_UNHANDLED;
+        is_ble_keys_removed = true;
         break;
+    }
+    if (is_ble_keys_removed && pairing_cb.is_ctkd) {
+      log::info("Removing device info for both transports");
+      BTA_DmRemoveDevice(bd_addr);
     }
   }
   if (state == BT_BOND_STATE_BONDED && !pairing_cb.static_bdaddr.IsEmpty() &&
