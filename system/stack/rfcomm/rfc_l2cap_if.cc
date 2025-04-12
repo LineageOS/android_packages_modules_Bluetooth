@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -84,37 +85,70 @@ void rfcomm_l2cap_if_init(void) {
  * Function         RFCOMM_ConnectInd
  *
  * Description      This is a callback function called by L2CAP when
- *                  L2CA_ConnectInd received.  Allocate multiplexer control
+ *                  L2CA_ConnectInd received. Allocate multiplexer control
  *                  block and dispatch the event to it.
  *
  ******************************************************************************/
 void RFCOMM_ConnectInd(const RawAddress& bd_addr, uint16_t lcid, uint16_t /* psm */, uint8_t id) {
   tRFC_MCB* p_mcb = rfc_alloc_multiplexer_channel(bd_addr, false);
+  if (!com::android::bluetooth::flags::rfcomm_fix_mux_collision_handling()) {
+    if (p_mcb != nullptr && p_mcb->is_initiator && p_mcb->state == RFC_MX_STATE_WAIT_CONN_CNF) {
+      p_mcb->pending_lcid = lcid;
 
-  if (p_mcb != nullptr && p_mcb->is_initiator && p_mcb->state == RFC_MX_STATE_WAIT_CONN_CNF) {
-    p_mcb->pending_lcid = lcid;
+      /* wait random timeout (2 - 12) to resolve collision */
+      /* if peer gives up then local device rejects incoming connection and
+       * continues as initiator */
+      /* if timeout, local device disconnects outgoing connection and continues
+       * as acceptor */
+      log::verbose(
+              "RFCOMM_ConnectInd start timer for collision, initiator's "
+              "LCID(0x{:x}), acceptor's LCID(0x{:x})",
+              p_mcb->lcid, p_mcb->pending_lcid);
 
-    /* wait random timeout (2 - 12) to resolve collision */
-    /* if peer gives up then local device rejects incoming connection and
-     * continues as initiator */
-    /* if timeout, local device disconnects outgoing connection and continues
-     * as acceptor */
-    log::verbose(
-            "RFCOMM_ConnectInd start timer for collision, initiator's "
-            "LCID(0x{:x}), acceptor's LCID(0x{:x})",
-            p_mcb->lcid, p_mcb->pending_lcid);
+      rfc_timer_start(p_mcb, (uint16_t)(bluetooth::common::time_get_os_boottime_ms() % 10 + 2));
+      return;
+    }
+    if (p_mcb != nullptr && p_mcb->is_initiator && p_mcb->state != RFC_MX_STATE_IDLE) {
+      /* we cannot accept connection request from peer at this state */
+      /* don't update lcid */
+      p_mcb = nullptr;
+    } else {
+      /* store mcb even if null */
+      rfc_save_lcid_mcb(p_mcb, lcid);
+    }
 
-    rfc_timer_start(p_mcb, (uint16_t)(bluetooth::common::time_get_os_boottime_ms() % 10 + 2));
+    if (p_mcb == nullptr) {
+      if (!stack::l2cap::get_interface().L2CA_DisconnectReq(lcid)) {
+        log::warn("Unable to disconnect L2CAP cid:{}", lcid);
+      }
+      return;
+    }
+    p_mcb->lcid = lcid;
+
+    rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_CONN_IND, &id);
     return;
   }
+
   if (p_mcb != nullptr && p_mcb->is_initiator && p_mcb->state != RFC_MX_STATE_IDLE) {
-    /* we cannot accept connection request from peer at this state */
-    /* don't update lcid */
-    p_mcb = nullptr;
-  } else {
-    /* store mcb even if null */
-    rfc_save_lcid_mcb(p_mcb, lcid);
+    /* Collision: We received a ConnectInd from L2CAP after sending our own L2CAP connection req.
+     *
+     * The outgoing connection is cached and the incoming connection is processed.  If the
+     * current state is RFC_MX_STATE_WAIT_CONN_CNF, the collision event will effectively
+     * reset the state machine.
+     */
+    log::info(
+            "RFCOMM MUX Collision - accepting incoming connection. incoming lcid:{0:x}, cached "
+            "lcid:{0:x}",
+            lcid, p_mcb->lcid);
+    p_mcb->collision_outgoing_lcid = p_mcb->lcid;
+    /* note: mcb will be stored if appropriate in COLLISION event */
+    p_mcb->lcid = lcid;
+    rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_COLLISION, &id);
+    return;
   }
+
+  /* store mcb even if p_mcb is null*/
+  rfc_save_lcid_mcb(p_mcb, lcid);
 
   if (p_mcb == nullptr) {
     if (!stack::l2cap::get_interface().L2CA_DisconnectReq(lcid)) {
@@ -123,7 +157,6 @@ void RFCOMM_ConnectInd(const RawAddress& bd_addr, uint16_t lcid, uint16_t /* psm
     return;
   }
   p_mcb->lcid = lcid;
-
   rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_CONN_IND, &id);
 }
 
@@ -132,13 +165,35 @@ void RFCOMM_ConnectInd(const RawAddress& bd_addr, uint16_t lcid, uint16_t /* psm
  * Function         RFCOMM_ConnectCnf
  *
  * Description      This is a callback function called by L2CAP when
- *                  L2CA_ConnectCnf received.  Save L2CAP handle and dispatch
+ *                  L2CA_ConnectCnf received. Save L2CAP handle and dispatch
  *                  event to the FSM.
  *
  ******************************************************************************/
 void RFCOMM_ConnectCnf(uint16_t lcid, tL2CAP_CONN result) {
   tRFC_MCB* p_mcb = rfc_find_lcid_mcb(lcid);
 
+  if (com::android::bluetooth::flags::rfcomm_fix_mux_collision_handling() && p_mcb == nullptr) {
+    /* Check if we cached corresponding lcid for collision */
+    for (auto& [cid, mcb] : rfc_lcid_mcb) {
+      if (mcb == nullptr || mcb->collision_outgoing_lcid != lcid) {
+        continue;
+      }
+      if (result != tL2CAP_CONN::L2CAP_CONN_OK) {
+        /* We cached the corresponding lcid but its connection failed. */
+        /* We can remove from cache */
+        mcb->collision_outgoing_lcid = 0;
+      } else {
+        /* we started accepting incoming connection and outgoing connection went through */
+        log::warn(
+                "Collision case: outgoing connection went through, "
+                "will retry if incoming connection fails");
+        mcb->collision_outgoing_conn_cnf = true;
+      }
+      return;
+    }
+    log::error("MCB for LCID 0x{:x} not found", lcid);
+    return;
+  }
   if (p_mcb == nullptr) {
     log::error("RFCOMM_ConnectCnf LCID:0x{:x}", lcid);
     return;
@@ -174,7 +229,7 @@ void RFCOMM_ConnectCnf(uint16_t lcid, tL2CAP_CONN result) {
  * Function         RFCOMM_ConfigInd
  *
  * Description      This is a callback function called by L2CAP when
- *                  L2CA_ConfigInd received.  Save parameters in the control
+ *                  L2CA_ConfigInd received. Save parameters in the control
  *                  block and dispatch event to the FSM.
  *
  ******************************************************************************/
@@ -187,12 +242,24 @@ void RFCOMM_ConfigInd(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
   tRFC_MCB* p_mcb = rfc_find_lcid_mcb(lcid);
 
   if (p_mcb == nullptr) {
-    log::error("RFCOMM_ConfigInd LCID:0x{:x}", lcid);
+    if (!com::android::bluetooth::flags::rfcomm_fix_mux_collision_handling()) {
+      log::error("RFCOMM_ConfigInd LCID:0x{:x}", lcid);
+      for (auto& [cid, mcb] : rfc_lcid_mcb) {
+        if (mcb != nullptr && mcb->pending_lcid == lcid) {
+          tL2CAP_CFG_INFO l2cap_cfg_info(*p_cfg);
+          mcb->pending_configure_complete = true;
+          mcb->pending_cfg_info = l2cap_cfg_info;
+          return;
+        }
+      }
+      return;
+    }
+    log::error("LCID 0x{:x} not found", lcid);
     for (auto& [cid, mcb] : rfc_lcid_mcb) {
-      if (mcb != nullptr && mcb->pending_lcid == lcid) {
+      if (mcb != nullptr && mcb->collision_outgoing_lcid == lcid) {
         tL2CAP_CFG_INFO l2cap_cfg_info(*p_cfg);
-        mcb->pending_configure_complete = true;
-        mcb->pending_cfg_info = l2cap_cfg_info;
+        mcb->collision_outgoing_cfg_complete = true;
+        mcb->collision_cfg_info = l2cap_cfg_info;
         return;
       }
     }
@@ -207,7 +274,7 @@ void RFCOMM_ConfigInd(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
  * Function         RFCOMM_ConfigCnf
  *
  * Description      This is a callback function called by L2CAP when
- *                  L2CA_ConfigCnf received.  Save L2CAP handle and dispatch
+ *                  L2CA_ConfigCnf received. Save L2CAP handle and dispatch
  *                  event to the FSM.
  *
  ******************************************************************************/
@@ -229,13 +296,28 @@ void RFCOMM_ConfigCnf(uint16_t lcid, uint16_t /* initiator */, tL2CAP_CFG_INFO* 
  * Function         RFCOMM_DisconnectInd
  *
  * Description      This is a callback function called by L2CAP when
- *                  L2CA_DisconnectInd received.  Dispatch event to the FSM.
+ *                  L2CA_DisconnectInd received. Dispatch event to the FSM.
  *
  ******************************************************************************/
 void RFCOMM_DisconnectInd(uint16_t lcid, bool is_conf_needed) {
   log::verbose("lcid:0x{:x}, is_conf_needed:{}", lcid, is_conf_needed);
   tRFC_MCB* p_mcb = rfc_find_lcid_mcb(lcid);
   if (p_mcb == nullptr) {
+    if (!com::android::bluetooth::flags::rfcomm_fix_mux_collision_handling()) {
+      log::warn("no mcb for lcid 0x{:x}", lcid);
+      return;
+    }
+
+    /* DisconnectInd called for cached lcid */
+    for (auto& [cid, mcb] : rfc_lcid_mcb) {
+      if (mcb != nullptr && mcb->collision_outgoing_lcid == lcid) {
+        mcb->collision_outgoing_lcid = 0;
+        mcb->collision_outgoing_conn_cnf = false;
+        mcb->collision_outgoing_cfg_complete = false;
+        mcb->collision_cfg_info = {};
+        return;
+      }
+    }
     log::warn("no mcb for lcid 0x{:x}", lcid);
     return;
   }
@@ -247,7 +329,7 @@ void RFCOMM_DisconnectInd(uint16_t lcid, bool is_conf_needed) {
  * Function         RFCOMM_BufDataInd
  *
  * Description      This is a callback function called by L2CAP when
- *                  data RFCOMM frame is received.  Parse the frames, check
+ *                  data RFCOMM frame is received. Parse the frames, check
  *                  the checksum and dispatch event to multiplexer or port
  *                  state machine depending on the frame destination.
  *
