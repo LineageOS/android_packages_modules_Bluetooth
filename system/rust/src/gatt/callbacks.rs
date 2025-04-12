@@ -81,7 +81,7 @@ pub enum GattWriteRequestType {
 }
 
 /// Whether to commit or cancel a transaction
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[allow(dead_code)]
 pub enum TransactionDecision {
     /// Commit all pending writes
@@ -124,7 +124,6 @@ pub trait RawGattDatastore {
     );
 
     /// Execute or cancel any prepared writes
-    #[allow(dead_code)]
     async fn execute(
         &self,
         tcb_idx: TransportIndex,

@@ -1,0 +1,12 @@
+package: "com.android.bluetooth.flags"
+container: "com.android.bt"
+
+flag {
+    name: "battery_service_unified_thread"
+    namespace: "bluetooth"
+    description: "Fix race with Bluetooth lifecycle"
+    bug: "409334857"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

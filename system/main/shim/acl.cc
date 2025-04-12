@@ -203,50 +203,6 @@ std::string EpochMillisToString(long long time_ms) {
   return std::format("{}.{:03}", s, time_ms % MillisPerSecond);
 }
 
-class ShadowAddressResolutionList {
-public:
-  explicit ShadowAddressResolutionList(uint8_t max_address_resolution_size)
-      : max_address_resolution_size_(max_address_resolution_size) {}
-
-  bool Add(const hci::AddressWithType& address_with_type) {
-    if (address_resolution_set_.size() == max_address_resolution_size_) {
-      log::error("Address Resolution is full size:{}", address_resolution_set_.size());
-      return false;
-    }
-    if (!address_resolution_set_.insert(address_with_type).second) {
-      log::warn("Attempted to add duplicate le address to address_resolution:{}",
-                address_with_type);
-    }
-    return true;
-  }
-
-  bool Remove(const hci::AddressWithType& address_with_type) {
-    auto iter = address_resolution_set_.find(address_with_type);
-    if (iter == address_resolution_set_.end()) {
-      log::warn("Unknown device being removed from address_resolution:{}", address_with_type);
-      return false;
-    }
-    address_resolution_set_.erase(iter);
-    return true;
-  }
-
-  std::unordered_set<hci::AddressWithType> GetCopy() const { return address_resolution_set_; }
-
-  bool IsFull() const {
-    return address_resolution_set_.size() == static_cast<size_t>(max_address_resolution_size_);
-  }
-
-  size_t Size() const { return address_resolution_set_.size(); }
-
-  void Clear() { address_resolution_set_.clear(); }
-
-  uint8_t GetMaxSize() const { return max_address_resolution_size_; }
-
-private:
-  uint8_t max_address_resolution_size_{0};
-  std::unordered_set<hci::AddressWithType> address_resolution_set_;
-};
-
 struct ConnectionDescriptor {
   CreationTime creation_time_;
   TeardownTime teardown_time_;
@@ -814,8 +770,7 @@ private:
 };
 
 struct shim::Acl::impl {
-  impl(uint8_t max_address_resolution_size)
-      : shadow_address_resolution_list_(ShadowAddressResolutionList(max_address_resolution_size)) {}
+  impl() {}
 
   std::map<HciHandle, std::unique_ptr<ClassicShimAclConnection>> handle_to_classic_connection_map_;
   std::map<HciHandle, std::unique_ptr<LeShimAclConnection>> handle_to_le_connection_map_;
@@ -825,8 +780,6 @@ struct shim::Acl::impl {
 
   FixedQueue<std::unique_ptr<ConnectionDescriptor>> connection_history_ =
           FixedQueue<std::unique_ptr<ConnectionDescriptor>>(kConnectionHistorySize);
-
-  ShadowAddressResolutionList shadow_address_resolution_list_;
 
   struct timed_wakelock wakeup_wakelock_;
   bool system_suspend_ = false;
@@ -1092,33 +1045,6 @@ struct shim::Acl::impl {
 
   void clear_acceptlist() { GetAclManager()->ClearFilterAcceptList(); }
 
-  void AddToAddressResolution(const hci::AddressWithType& address_with_type,
-                              const std::array<uint8_t, 16>& peer_irk,
-                              const std::array<uint8_t, 16>& local_irk) {
-    if (shadow_address_resolution_list_.IsFull()) {
-      log::warn("Le Address Resolution list is full size:{}",
-                shadow_address_resolution_list_.Size());
-      return;
-    }
-    // TODO This should really be added upon successful completion
-    shadow_address_resolution_list_.Add(address_with_type);
-    GetAclManager()->AddDeviceToResolvingList(address_with_type, peer_irk, local_irk);
-  }
-
-  void RemoveFromAddressResolution(const hci::AddressWithType& address_with_type) {
-    // TODO This should really be removed upon successful removal
-    if (!shadow_address_resolution_list_.Remove(address_with_type)) {
-      log::warn("Unable to remove from Le Address Resolution list device:{}", address_with_type);
-    }
-    GetAclManager()->RemoveDeviceFromResolvingList(address_with_type);
-  }
-
-  void ClearResolvingList() {
-    GetAclManager()->ClearResolvingList();
-    // TODO This should really be cleared after successful clear status
-    shadow_address_resolution_list_.Clear();
-  }
-
   void SetSystemSuspendState(bool suspended) { GetAclManager()->SetSystemSuspendState(suspended); }
 
   void DumpConnectionHistory() const {
@@ -1145,16 +1071,6 @@ struct shim::Acl::impl {
       for (const auto& item : le_acl_disconnect_reason_.GetSortedHighToLow()) {
         LOG_DUMPSYS(fd, "  %s:%zu", item.item.c_str(), item.count);
       }
-    }
-
-    auto address_resolution_list = shadow_address_resolution_list_.GetCopy();
-    LOG_DUMPSYS(fd,
-                "Shadow le address resolution list  size:%-3zu "
-                "controller_max_size:%hhu",
-                address_resolution_list.size(), shadow_address_resolution_list_.GetMaxSize());
-    unsigned cnt = 0;
-    for (auto& entry : address_resolution_list) {
-      LOG_DUMPSYS(fd, "  %03u %s", ++cnt, entry.ToRedactedStringForLogging().c_str());
     }
   }
 #undef DUMPSYS_TAG
@@ -1258,12 +1174,11 @@ void shim::Acl::Dump(int fd) const {
   DumpsysAcl(fd);
 }
 
-shim::Acl::Acl(os::Handler* handler, const acl_interface_t& acl_interface,
-               uint8_t max_address_resolution_size)
+shim::Acl::Acl(os::Handler* handler, const acl_interface_t& acl_interface)
     : handler_(handler), acl_interface_(acl_interface) {
   log::assert_that(handler_ != nullptr, "assert failed: handler_ != nullptr");
   ValidateAclInterface(acl_interface_);
-  pimpl_ = std::make_unique<Acl::impl>(max_address_resolution_size);
+  pimpl_ = std::make_unique<Acl::impl>();
   GetAclManager()->RegisterCallbacks(this, handler_);
   GetAclManager()->RegisterLeCallbacks(this, handler_);
   GetController()->RegisterCompletedMonitorAclPacketsCallback(
@@ -1640,21 +1555,6 @@ void shim::Acl::FinalShutdown() {
 
 void shim::Acl::ClearFilterAcceptList() {
   handler_->CallOn(pimpl_.get(), &Acl::impl::clear_acceptlist);
-}
-
-void shim::Acl::AddToAddressResolution(const hci::AddressWithType& address_with_type,
-                                       const std::array<uint8_t, 16>& peer_irk,
-                                       const std::array<uint8_t, 16>& local_irk) {
-  handler_->CallOn(pimpl_.get(), &Acl::impl::AddToAddressResolution, address_with_type, peer_irk,
-                   local_irk);
-}
-
-void shim::Acl::RemoveFromAddressResolution(const hci::AddressWithType& address_with_type) {
-  handler_->CallOn(pimpl_.get(), &Acl::impl::RemoveFromAddressResolution, address_with_type);
-}
-
-void shim::Acl::ClearAddressResolution() {
-  handler_->CallOn(pimpl_.get(), &Acl::impl::ClearResolvingList);
 }
 
 void shim::Acl::SetSystemSuspendState(bool suspended) {

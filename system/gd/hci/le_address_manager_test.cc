@@ -110,10 +110,10 @@ public:
     handler_ = new Handler(thread_);
     hci_layer_ = new HciLayerFake();
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
-    controller_ = new TestController;
+    controller_ = std::make_unique<TestController>();
     le_address_manager_ = new LeAddressManager(
             common::Bind(&LeAddressManagerTest::enqueue_command, common::Unretained(this)),
-            handler_, address, 0x3F, 0x3F, controller_);
+            handler_, address, 0x3F, 0x3F, controller_.get());
     AllocateClients(1);
   }
 
@@ -150,7 +150,7 @@ public:
   Thread* thread_;
   Handler* handler_;
   HciLayerFake* hci_layer_ = nullptr;
-  TestController* controller_ = nullptr;
+  std::unique_ptr<TestController> controller_;
   LeAddressManager* le_address_manager_;
   std::vector<std::unique_ptr<RotatorClient>> clients;
 };
@@ -230,11 +230,11 @@ public:
     handler_ = new Handler(thread_);
     hci_layer_ = new HciLayerFake();
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
-    controller_ = new TestController;
+    controller_ = std::make_unique<TestController>();
     le_address_manager_ = new LeAddressManager(
             common::Bind(&LeAddressManagerWithSingleClientTest::enqueue_command,
                          common::Unretained(this)),
-            handler_, address, 0x3F, 0x3F, controller_);
+            handler_, address, 0x3F, 0x3F, controller_.get());
     AllocateClients(1);
 
     Octet16 irk = {0xec, 0x02, 0x34, 0xa3, 0x57, 0xc8, 0xad, 0x05,

@@ -147,7 +147,6 @@ using bluetooth::le_audio::types::AudioLocations;
 using bluetooth::le_audio::types::BidirectionalPair;
 using bluetooth::le_audio::types::DataPathState;
 using bluetooth::le_audio::types::hdl_pair;
-using bluetooth::le_audio::types::hdl_pair_wrapper;
 using bluetooth::le_audio::types::kLeAudioContextAllRemoteSource;
 using bluetooth::le_audio::types::kLeAudioContextAllTypesArray;
 using bluetooth::le_audio::types::LeAudioContextType;
@@ -4512,7 +4511,8 @@ public:
       return AudioReconfigurationResult::RECONFIGURATION_NOT_POSSIBLE;
     }
 
-    if (group->IsGroupConfiguredTo(*audio_set_conf) && !DsaReconfigureNeeded(group, context_type)) {
+    auto const dsa_reconfigure_needed = DsaReconfigureNeeded(group, context_type);
+    if (group->IsGroupConfiguredTo(*audio_set_conf) && !dsa_reconfigure_needed) {
       // Assign the new configuration context as it represennts the current
       // use case even when it eventually ends up being the exact same
       // codec and qos configuration.
@@ -4525,6 +4525,11 @@ public:
 
     log::info("Session reconfiguration needed group: {} for context type: {}", group->group_id_,
               ToHexString(context_type));
+    if (com::android::bluetooth::flags::dsa_use_codec_extensibility() && dsa_reconfigure_needed) {
+      log::debug("Invalidate current {} configuration for DSA mode change",
+                 common::ToString(context_type));
+      group->InvalidateCachedConfigurations(context_type);
+    }
 
     configuration_context_type_ = context_type;
 
@@ -5886,16 +5891,28 @@ public:
         com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
       /* Check if directional configuration has changed. E.g. for GAME we might switch from uni
        * direction to bidirection */
-      bool remote_sink_enabled = group->IsDirectionAvailableForConfiguration(
+      bool const has_sink_ase_config = group->IsDirectionAvailableForConfiguration(
               configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSink);
-      bool remote_source_enabled = group->IsDirectionAvailableForConfiguration(
+      bool const has_source_ase_config = group->IsDirectionAvailableForConfiguration(
               configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSource);
 
-      if ((remote_contexts.sink.any() && !remote_sink_enabled) ||
-          (remote_contexts.source.any() && !remote_source_enabled) ||
-          (remote_contexts.sink.none() && remote_sink_enabled) ||
-          (remote_contexts.source.none() && remote_source_enabled)) {
-        is_configuration_changed = true;
+      /* Check if for any direction, the configuration list mismatches the latest metadata on that
+       * direction */
+      auto const is_missing_sink_ase_config = remote_contexts.sink.any() && !has_sink_ase_config;
+      auto const is_missing_source_ase_config =
+              remote_contexts.source.any() && !has_source_ase_config;
+
+      auto const is_missing_sink_ase_context = remote_contexts.sink.none() && has_sink_ase_config;
+      auto const is_missing_source_ase_context =
+              remote_contexts.source.none() && has_source_ase_config;
+
+      is_configuration_changed = is_missing_sink_ase_config || is_missing_source_ase_config ||
+                                 is_missing_sink_ase_context || is_missing_source_ase_context;
+
+      // Clear DSA configuration cache when DSA mode has changed
+      auto clear_dsa_config_cache = com::android::bluetooth::flags::dsa_use_codec_extensibility() &&
+                                    is_dsa_reconfig_needed;
+      if (is_configuration_changed || clear_dsa_config_cache) {
         group->InvalidateCachedConfigurations(configuration_context_type_);
       }
     }

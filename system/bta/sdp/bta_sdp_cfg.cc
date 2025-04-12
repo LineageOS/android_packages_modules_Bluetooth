@@ -21,6 +21,7 @@
  ******************************************************************************/
 
 #include "bta/include/bta_sdp_api.h"
+#include "bta/sdp/bta_sdp_int.h"
 #include "internal_include/bt_target.h"
 #include "stack/include/sdp_api.h"
 
@@ -31,7 +32,7 @@
 static tSDP_DISCOVERY_DB bta_sdp_db_data[BTA_SDP_DB_SIZE / sizeof(tSDP_DISCOVERY_DB)];
 
 /* SDP configuration structure */
-const tBTA_SDP_CFG bta_sdp_cfg = {
+static const tBTA_SDP_CFG bta_sdp_cfg = {
         (BTA_SDP_DB_SIZE / sizeof(tSDP_DISCOVERY_DB)) * sizeof(tSDP_DISCOVERY_DB),
         bta_sdp_db_data /* The data buffer to keep SDP database */
 };

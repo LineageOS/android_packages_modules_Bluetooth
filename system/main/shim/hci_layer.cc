@@ -112,7 +112,7 @@ static bool register_subevent_code(bluetooth::hci::SubeventCode subevent_code) {
 }  // namespace
 
 namespace cpp {
-bluetooth::common::BidiQueueEnd<bluetooth::hci::IsoBuilder, bluetooth::hci::IsoView>*
+static bluetooth::common::BidiQueueEnd<bluetooth::hci::IsoBuilder, bluetooth::hci::IsoView>*
         hci_iso_queue_end = nullptr;
 static bluetooth::os::EnqueueBuffer<bluetooth::hci::IsoBuilder>* pending_iso_data = nullptr;
 
@@ -321,10 +321,6 @@ static void on_shutting_down() {
 }
 
 }  // namespace cpp
-
-using bluetooth::common::Bind;
-using bluetooth::common::BindOnce;
-using bluetooth::common::Unretained;
 
 static void set_data_cb(base::Callback<void(BT_HDR*)> send_data_cb) {
   send_data_upwards = std::move(send_data_cb);

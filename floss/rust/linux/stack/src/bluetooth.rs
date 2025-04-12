@@ -1520,6 +1520,7 @@ pub(crate) trait BtifBluetoothCallbacks {
         &mut self,
         status: BtStatus,
         addr: RawAddress,
+        addr_type: u8,
         num_properties: i32,
         properties: Vec<BluetoothProperty>,
     ) {
@@ -2015,6 +2016,7 @@ impl BtifBluetoothCallbacks for Bluetooth {
         &mut self,
         _status: BtStatus,
         addr: RawAddress,
+        _addr_type: u8,
         _num_properties: i32,
         properties: Vec<BluetoothProperty>,
     ) {

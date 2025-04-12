@@ -48,6 +48,7 @@ aconfig_declarations {
         "service_discovery.aconfig",
         "sockets.aconfig",
         "system_service.aconfig",
+        "threading.aconfig",
         "vcp.aconfig",
         "vsc.aconfig",
     ],
@@ -62,14 +63,14 @@ java_aconfig_library {
     apex_available: ["com.android.bt"],
     libs: ["framework-configinfrastructure.stubs.module_lib"],
     sdk_version: "module_current",
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
 }
 
 java_aconfig_library {
     name: "bluetooth_exported_flags_java_lib",
     aconfig_declarations: "bluetooth_aconfig_flags",
     defaults: ["framework-minus-apex-aconfig-java-defaults"],
-    min_sdk_version: "VanillaIceCream",
+    min_sdk_version: "36",
     mode: "exported",
     visibility: [
         "//cts/tests/tests/bluetooth:__subpackages__",
@@ -84,7 +85,7 @@ cc_aconfig_library {
     host_supported: true,
     visibility: ["//packages/modules/Bluetooth:__subpackages__"],
     apex_available: ["com.android.bt"],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
 }
 
 cc_aconfig_library {
@@ -93,7 +94,7 @@ cc_aconfig_library {
     mode: "test",
     host_supported: true,
     visibility: ["//packages/modules/Bluetooth/system:__subpackages__"],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
 }
 
 rust_aconfig_library {
@@ -102,6 +103,6 @@ rust_aconfig_library {
     crate_name: "bluetooth_aconfig_flags_rust",
     aconfig_declarations: "bluetooth_aconfig_flags",
     apex_available: ["com.android.bt"],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     visibility: ["//packages/modules/Bluetooth/system:__subpackages__"],
 }

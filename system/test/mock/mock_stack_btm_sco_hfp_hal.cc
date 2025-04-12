@@ -37,9 +37,7 @@ namespace stack_btm_sco_hfp_hal {
 
 // Function state capture and return values, if needed
 struct enable_offload enable_offload;
-struct get_codec_capabilities get_codec_capabilities;
 struct get_offload_enabled get_offload_enabled;
-struct get_offload_supported get_offload_supported;
 struct get_packet_size get_packet_size;
 struct get_wbs_supported get_wbs_supported;
 struct get_swb_supported get_swb_supported;
@@ -59,9 +57,7 @@ namespace mock {
 namespace stack_btm_sco_hfp_hal {
 
 bool enable_offload::return_value = false;
-hfp_hal_interface::bt_codecs get_codec_capabilities::return_value = {};
 bool get_offload_enabled::return_value = false;
-bool get_offload_supported::return_value = false;
 size_t get_packet_size::return_value = 0;
 bool get_wbs_supported::return_value = false;
 bool get_swb_supported::return_value = false;
@@ -78,17 +74,9 @@ bool enable_offload(bool enable) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_sco_hfp_hal::enable_offload(enable);
 }
-bt_codecs get_codec_capabilities(uint64_t codecs) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_btm_sco_hfp_hal::get_codec_capabilities(codecs);
-}
 bool get_offload_enabled() {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_sco_hfp_hal::get_offload_enabled();
-}
-bool get_offload_supported() {
-  inc_func_call_count(__func__);
-  return test::mock::stack_btm_sco_hfp_hal::get_offload_supported();
 }
 size_t get_packet_size(int codec) {
   inc_func_call_count(__func__);

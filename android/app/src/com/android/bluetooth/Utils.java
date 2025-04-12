@@ -35,8 +35,6 @@ import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED;
 import static android.permission.PermissionManager.PERMISSION_HARD_DENIED;
 
-import static com.android.modules.utils.build.SdkLevel.isAtLeastV;
-
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.NonNull;
@@ -175,10 +173,6 @@ public final class Utils {
     public static boolean isScoManagedByAudioEnabled() {
         if (Flags.isScoManagedByAudio()) {
             Log.d(TAG, "isScoManagedByAudioEnabled state is: " + isScoManagedByAudioEnabled);
-            if (isScoManagedByAudioEnabled && !isAtLeastV()) {
-                Log.e(TAG, "isScoManagedByAudio should not be enabled before Android V");
-                return false;
-            }
             return isScoManagedByAudioEnabled;
         }
         return false;

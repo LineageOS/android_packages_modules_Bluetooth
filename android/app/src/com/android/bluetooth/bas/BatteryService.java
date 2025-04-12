@@ -37,6 +37,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -57,6 +58,7 @@ public class BatteryService extends ProfileService {
     private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final HandlerThread mStateMachinesThread;
+    private final Looper mStateMachinesLooper;
     private final Handler mHandler;
 
     @GuardedBy("mStateMachines")
@@ -73,8 +75,14 @@ public class BatteryService extends ProfileService {
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new Handler(requireNonNull(looper));
 
-        mStateMachinesThread = new HandlerThread("BatteryService.StateMachines");
-        mStateMachinesThread.start();
+        if (Flags.batteryServiceUnifiedThread()) {
+            mStateMachinesThread = null;
+            mStateMachinesLooper = looper;
+        } else {
+            mStateMachinesThread = new HandlerThread("BatteryService.StateMachines");
+            mStateMachinesThread.start();
+            mStateMachinesLooper = mStateMachinesThread.getLooper();
+        }
         setBatteryService(this);
     }
 
@@ -102,11 +110,13 @@ public class BatteryService extends ProfileService {
             mStateMachines.clear();
         }
 
-        try {
-            mStateMachinesThread.quitSafely();
-            mStateMachinesThread.join(SM_THREAD_JOIN_TIMEOUT_MS);
-        } catch (InterruptedException e) {
-            // Do not rethrow as we are shutting down anyway
+        if (!Flags.batteryServiceUnifiedThread()) {
+            try {
+                mStateMachinesThread.quitSafely();
+                mStateMachinesThread.join(SM_THREAD_JOIN_TIMEOUT_MS);
+            } catch (InterruptedException e) {
+                // Do not rethrow as we are shutting down anyway
+            }
         }
 
         mHandler.removeCallbacksAndMessages(null);
@@ -351,7 +361,7 @@ public class BatteryService extends ProfileService {
             }
 
             Log.d(TAG, "Creating a new state machine for " + device);
-            sm = new BatteryStateMachine(this, device, mStateMachinesThread.getLooper());
+            sm = new BatteryStateMachine(this, device, mStateMachinesLooper);
             mStateMachines.put(device, sm);
             return sm;
         }

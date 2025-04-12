@@ -84,9 +84,9 @@ static const char* INTEROP_STATIC_FILE_PATH = kStaticConfigFileConfigFile.c_str(
 
 static list_t* interop_list = NULL;
 
-bool interop_is_initialized = false;
+static bool interop_is_initialized = false;
 // protects operations on |interop_list|
-pthread_mutex_t interop_list_lock;
+static pthread_mutex_t interop_list_lock;
 
 // protects operations on |config|
 static pthread_mutex_t file_lock;

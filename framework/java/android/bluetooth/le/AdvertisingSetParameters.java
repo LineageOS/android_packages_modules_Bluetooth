@@ -356,19 +356,18 @@ public final class AdvertisingSetParameters implements Parcelable {
         dest.writeInt(mPeerAddressType);
     }
 
-    public static final @android.annotation.NonNull Parcelable.Creator<AdvertisingSetParameters>
-            CREATOR =
-                    new Creator<AdvertisingSetParameters>() {
-                        @Override
-                        public AdvertisingSetParameters[] newArray(int size) {
-                            return new AdvertisingSetParameters[size];
-                        }
+    public static final @NonNull Parcelable.Creator<AdvertisingSetParameters> CREATOR =
+            new Creator<AdvertisingSetParameters>() {
+                @Override
+                public AdvertisingSetParameters[] newArray(int size) {
+                    return new AdvertisingSetParameters[size];
+                }
 
-                        @Override
-                        public AdvertisingSetParameters createFromParcel(Parcel in) {
-                            return new AdvertisingSetParameters(in);
-                        }
-                    };
+                @Override
+                public AdvertisingSetParameters createFromParcel(Parcel in) {
+                    return new AdvertisingSetParameters(in);
+                }
+            };
 
     /** Builder class for {@link AdvertisingSetParameters}. */
     public static final class Builder {

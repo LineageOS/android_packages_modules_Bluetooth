@@ -909,7 +909,7 @@ static void on_rfc_close(tBTA_JV_RFCOMM_CLOSE* /* p_close */, uint32_t id) {
     log::warn("RFCOMM slot with id {} not found.", id);
     return;
   }
-  bluetooth::os::LogMetricSocketConnectionState(
+  bluetooth::metrics::LogMetricSocketConnectionState(
           slot->addr, slot->id, BTSOCK_RFCOMM,
           android::bluetooth::SOCKET_CONNECTION_STATE_DISCONNECTING, 0, 0, slot->app_uid, slot->scn,
           slot->f.server ? android::bluetooth::SOCKET_ROLE_LISTEN
@@ -920,7 +920,7 @@ static void on_rfc_close(tBTA_JV_RFCOMM_CLOSE* /* p_close */, uint32_t id) {
 
 static void on_rfc_write_done(tBTA_JV_RFCOMM_WRITE* p, uint32_t id) {
   if (p->status != tBTA_JV_STATUS::SUCCESS) {
-    log::error("error writing to RFCOMM socket, req_id:{}.", p->req_id);
+    log::error("error writing to RFCOMM socket, slot_id:{}.", p->req_id);
     return;
   }
 

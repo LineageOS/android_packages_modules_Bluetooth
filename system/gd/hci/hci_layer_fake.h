@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-#include <future>
+#include <android-base/thread_annotations.h>
+
+#include <condition_variable>
 #include <list>
 #include <map>
 #include <memory>
@@ -44,11 +46,11 @@ public:
                       common::ContextualOnceCallback<void(CommandStatusOrCompleteView)>
                               on_status_or_complete) override;
 
-  CommandView GetCommand();
+  CommandView GetCommand() LOCKS_EXCLUDED(mutex_);
 
-  CommandView GetCommand(OpCode op_code);
+  CommandView GetCommand(OpCode op_code) LOCKS_EXCLUDED(mutex_);
 
-  void AssertNoQueuedCommand();
+  void AssertNoQueuedCommand() LOCKS_EXCLUDED(mutex_);
 
   void RegisterEventHandler(EventCode event_code,
                             common::ContextualCallback<void(EventView)> event_handler) override;
@@ -67,21 +69,23 @@ public:
 
   void UnregisterVendorSpecificEventHandler(VseSubeventCode subevent_code) override;
 
-  void IncomingEvent(std::unique_ptr<EventBuilder> event_builder);
+  void IncomingEvent(std::unique_ptr<EventBuilder> event_builder) LOCKS_EXCLUDED(mutex_);
 
-  void IncomingLeMetaEvent(std::unique_ptr<LeMetaEventBuilder> event_builder);
+  void IncomingLeMetaEvent(std::unique_ptr<LeMetaEventBuilder> event_builder)
+          LOCKS_EXCLUDED(mutex_);
 
-  void CommandCompleteCallback(EventView event);
+  void CommandCompleteCallback(EventView event) LOCKS_EXCLUDED(mutex_);
 
-  void CommandStatusCallback(EventView event);
+  void CommandStatusCallback(EventView event) LOCKS_EXCLUDED(mutex_);
 
-  void IncomingAclData(uint16_t handle);
+  void IncomingAclData(uint16_t handle) LOCKS_EXCLUDED(mutex_);
 
-  void IncomingAclData(uint16_t handle, std::unique_ptr<AclBuilder> acl_builder);
+  void IncomingAclData(uint16_t handle, std::unique_ptr<AclBuilder> acl_builder)
+          LOCKS_EXCLUDED(mutex_);
 
-  void AssertNoOutgoingAclData();
+  void AssertNoOutgoingAclData() LOCKS_EXCLUDED(mutex_);
 
-  packet::PacketView<packet::kLittleEndian> OutgoingAclData();
+  packet::PacketView<packet::kLittleEndian> OutgoingAclData() LOCKS_EXCLUDED(mutex_);
 
   common::BidiQueueEnd<AclBuilder, AclView>* GetAclQueueEnd() override;
 
@@ -93,37 +97,30 @@ protected:
   void Stop() override;
 
 private:
-  void InitEmptyCommand();
+  void InitEmptyCommand() LOCKS_EXCLUDED(mutex_);
   void do_disconnect(uint16_t handle, ErrorCode reason);
 
-  // Handler-only state. Mutexes are not needed when accessing these fields.
-  std::list<common::ContextualOnceCallback<void(CommandCompleteView)>> command_complete_callbacks;
-  std::list<common::ContextualOnceCallback<void(CommandStatusView)>> command_status_callbacks;
-  std::map<EventCode, common::ContextualCallback<void(EventView)>> registered_events_;
-  std::map<SubeventCode, common::ContextualCallback<void(LeMetaEventView)>> registered_le_events_;
+  std::list<common::ContextualOnceCallback<void(CommandCompleteView)>> command_complete_callbacks_
+          GUARDED_BY(mutex_);
+  std::list<common::ContextualOnceCallback<void(CommandStatusView)>> command_status_callbacks_
+          GUARDED_BY(mutex_);
+  std::map<EventCode, common::ContextualCallback<void(EventView)>> registered_events_
+          GUARDED_BY(mutex_);
+  std::map<SubeventCode, common::ContextualCallback<void(LeMetaEventView)>> registered_le_events_
+          GUARDED_BY(mutex_);
   std::map<VseSubeventCode, common::ContextualCallback<void(VendorSpecificEventView)>>
-          registered_vs_events_;
+          registered_vs_events_ GUARDED_BY(mutex_);
 
-  // thread-safe
-  common::BidiQueue<AclView, AclBuilder> acl_queue_{3 /* TODO: Set queue depth */};
+  common::BidiQueue<AclView, AclBuilder> acl_queue_ GUARDED_BY(mutex_){
+          3 /* TODO: Set queue depth */};
 
-  // Most operations must acquire this mutex before manipulating shared state. The ONLY exception
-  // is blocking on a promise, IF your thread is the only one mutating it. Note that SETTING a
-  // promise REQUIRES a lock, since another thread may replace the promise while you are doing so.
-  mutable std::mutex mutex_{};
+  mutable std::mutex mutex_;
+  std::condition_variable_any condition_;  // Used to notify when new commands are enqueued.
 
   // Shared state between the test and stack threads
-  std::queue<std::unique_ptr<CommandBuilder>> command_queue_;
+  std::queue<std::unique_ptr<CommandBuilder>> command_queue_ GUARDED_BY(mutex_);
 
-  // We start with Consumed=Set, Command=Unset.
-  // When a command is enqueued, we set Command=set
-  // When a command is popped, we block until Command=Set, then (if the queue is now empty) we
-  // reset Command=Unset and set Consumed=Set. This way we emulate a blocking queue.
-  std::promise<void> command_promise_{};  // Set when at least one command is in the queue
-  std::future<void> command_future_ =
-          command_promise_.get_future();  // GetCommand() blocks until this is fulfilled
-
-  CommandView empty_command_view_ = CommandView::Create(
+  CommandView empty_command_view_ GUARDED_BY(mutex_) = CommandView::Create(
           PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>()));
 };
 

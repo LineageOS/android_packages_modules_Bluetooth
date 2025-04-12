@@ -739,8 +739,8 @@ struct tDISCOVERY_STATE_HISTORY {
   }
 };
 
-bluetooth::common::TimestampedCircularBuffer<tDISCOVERY_STATE_HISTORY> discovery_state_history_(
-        50 /*history size*/);
+static bluetooth::common::TimestampedCircularBuffer<tDISCOVERY_STATE_HISTORY>
+        discovery_state_history_(50 /*history size*/);
 
 static void bta_dm_disc_sm_execute(tBTA_DM_DISC_EVT event, std::unique_ptr<tBTA_DM_MSG> msg) {
   log::info("state:{}, event:{}[0x{:x}]", bta_dm_state_text(bta_dm_discovery_get_state()),

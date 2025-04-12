@@ -129,7 +129,7 @@ public:
 
 class TestAclManager : public AclManager {
 public:
-  LeAddressManager* GetLeAddressManager() override { return test_le_address_manager_; }
+  LeAddressManager* GetLeAddressManager() override { return test_le_address_manager_.get(); }
 
   void SetAddressPolicy(LeAddressManager::AddressPolicy address_policy) {
     test_le_address_manager_->SetAddressPolicy(address_policy);
@@ -137,20 +137,21 @@ public:
 
 protected:
   void Start() override {
-    thread_ = new os::Thread("thread", os::Thread::Priority::NORMAL);
-    handler_ = new os::Handler(thread_);
+    thread_ = std::make_unique<os::Thread>("thread", os::Thread::Priority::NORMAL);
+    handler_ = std::make_unique<os::Handler>(thread_.get());
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
-    test_controller_ = new TestController;
-    test_le_address_manager_ = new TestLeAddressManager(
-            common::Bind(&TestAclManager::enqueue_command, common::Unretained(this)), handler_,
-            address, 0x3F, 0x3F, test_controller_);
+    test_controller_ = std::make_unique<TestController>();
+    test_le_address_manager_ = std::make_unique<TestLeAddressManager>(
+            common::Bind(&TestAclManager::enqueue_command, common::Unretained(this)),
+            handler_.get(), address, 0x3F, 0x3F, test_controller_.get());
   }
 
   void Stop() override {
-    delete test_le_address_manager_;
+    test_le_address_manager_.reset();
+    test_controller_.reset();
     handler_->Clear();
-    delete handler_;
-    delete thread_;
+    handler_.reset();
+    thread_.reset();
   }
 
   void ListDependencies(ModuleList* /* list */) const {}
@@ -159,10 +160,10 @@ protected:
 
   void enqueue_command(std::unique_ptr<CommandBuilder> /* command_packet */){};
 
-  os::Thread* thread_;
-  os::Handler* handler_;
-  TestController* test_controller_ = nullptr;
-  TestLeAddressManager* test_le_address_manager_;
+  std::unique_ptr<os::Thread> thread_;
+  std::unique_ptr<os::Handler> handler_;
+  std::unique_ptr<TestController> test_controller_;
+  std::unique_ptr<TestLeAddressManager> test_le_address_manager_;
 };
 
 class LeAdvertisingManagerTest : public ::testing::Test {

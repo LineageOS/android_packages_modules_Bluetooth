@@ -54,7 +54,7 @@ public:
 };
 
 class LeAudioLogHistoryImpl;
-LeAudioLogHistoryImpl* instance;
+static LeAudioLogHistoryImpl* instance;
 
 constexpr size_t kMaxLogHistoryTagLength = 14;
 constexpr size_t kMaxLogHistoryMsgLength = 44;

@@ -32,7 +32,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Assume.assumeTrue
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,7 +41,7 @@ import org.junit.runner.RunWith
 class DckScanTest(
     private @TestParameter val isBluetoothToggled: Boolean,
     private @TestParameter val isRemoteAdvertisingWithUuid: Boolean,
-    private @TestParameter val isGattConnected: Boolean
+    private @TestParameter val isGattConnected: Boolean,
 ) {
     // TODO(315852141): Include variations for LE only vs. Dual mode Bumble when supported
     // TODO(315852141): Include variations for two advertisements at the same time
@@ -65,13 +64,12 @@ class DckScanTest(
             bumble,
             isBluetoothToggled = isBluetoothToggled,
             isRemoteAdvertisingWithUuid = isRemoteAdvertisingWithUuid,
-            isGattConnected = isGattConnected
+            isGattConnected = isGattConnected,
         )
 
     @Rule(order = 3) @JvmField val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Test
-    @Ignore("b/406277877")
     fun scanForIrkAndIdentityAddress_remoteFound() {
         // TODO(316001793): Retrieve identity address from Bumble
         val scanFilter =
@@ -79,7 +77,7 @@ class DckScanTest(
                 .setDeviceAddress(
                     TEST_ADDRESS_RANDOM_STATIC,
                     BluetoothDevice.ADDRESS_TYPE_RANDOM,
-                    Utils.BUMBLE_IRK
+                    Utils.BUMBLE_IRK,
                 )
                 .build()
         val scanSettings =
@@ -101,7 +99,6 @@ class DckScanTest(
     }
 
     @Test
-    @Ignore("b/404159990")
     fun scanForUuid_remoteFound() {
         // Assume isRemoteAdvertisingWithUuid is true to skip tests in which
         // device is not advertising with UUID
@@ -126,7 +123,7 @@ class DckScanTest(
     }
 
     companion object {
-        private const val TIMEOUT_MS = 3000L
+        private const val TIMEOUT_MS = 5000L
         private const val TEST_ADDRESS_RANDOM_STATIC = "F0:43:A8:23:10:11"
         private val CCC_DK_UUID = UUID.fromString("0000FFF5-0000-1000-8000-00805f9b34fb")
     }

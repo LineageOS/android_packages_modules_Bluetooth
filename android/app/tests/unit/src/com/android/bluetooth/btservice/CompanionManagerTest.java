@@ -17,6 +17,7 @@
 package com.android.bluetooth.btservice;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -45,23 +46,22 @@ import org.mockito.Mock;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class CompanionManagerTest {
-
-    private static final String TEST_DEVICE = "11:22:33:44:55:66";
-
-    private Context mTargetContext;
-    private CompanionManager mCompanionManager;
-
-    private HandlerThread mHandlerThread;
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
     @Mock SharedPreferences mSharedPreferences;
     @Mock SharedPreferences.Editor mEditor;
 
+    private final BluetoothDevice mDevice = getTestDevice(123);
+
+    private final Context mTargetContext =
+            InstrumentationRegistry.getInstrumentation().getTargetContext();
+
+    private CompanionManager mCompanionManager;
+    private HandlerThread mHandlerThread;
+
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         // Prepare the TestUtils
         TestUtils.setAdapterService(mAdapterService);
         // Start handler thread for this test
@@ -90,7 +90,7 @@ public class CompanionManagerTest {
 
     @Test
     public void testLoadCompanionInfo_hasCompanionDeviceKey() {
-        loadCompanionInfoHelper(TEST_DEVICE, CompanionManager.COMPANION_TYPE_PRIMARY);
+        loadCompanionInfoHelper(CompanionManager.COMPANION_TYPE_PRIMARY);
     }
 
     @Test
@@ -105,37 +105,37 @@ public class CompanionManagerTest {
 
     @Test
     public void testIsCompanionDevice() {
-        loadCompanionInfoHelper(TEST_DEVICE, CompanionManager.COMPANION_TYPE_NONE);
-        assertThat(mCompanionManager.isCompanionDevice(TEST_DEVICE)).isTrue();
+        loadCompanionInfoHelper(CompanionManager.COMPANION_TYPE_NONE);
+        assertThat(mCompanionManager.isCompanionDevice(mDevice)).isTrue();
 
-        loadCompanionInfoHelper(TEST_DEVICE, CompanionManager.COMPANION_TYPE_PRIMARY);
-        assertThat(mCompanionManager.isCompanionDevice(TEST_DEVICE)).isTrue();
+        loadCompanionInfoHelper(CompanionManager.COMPANION_TYPE_PRIMARY);
+        assertThat(mCompanionManager.isCompanionDevice(mDevice)).isTrue();
 
-        loadCompanionInfoHelper(TEST_DEVICE, CompanionManager.COMPANION_TYPE_SECONDARY);
-        assertThat(mCompanionManager.isCompanionDevice(TEST_DEVICE)).isTrue();
+        loadCompanionInfoHelper(CompanionManager.COMPANION_TYPE_SECONDARY);
+        assertThat(mCompanionManager.isCompanionDevice(mDevice)).isTrue();
     }
 
     @Test
     public void testGetGattConnParameterPrimary() {
-        loadCompanionInfoHelper(TEST_DEVICE, CompanionManager.COMPANION_TYPE_PRIMARY);
+        loadCompanionInfoHelper(CompanionManager.COMPANION_TYPE_PRIMARY);
         checkReasonableConnParameterHelper(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
         checkReasonableConnParameterHelper(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
         checkReasonableConnParameterHelper(BluetoothGatt.CONNECTION_PRIORITY_LOW_POWER);
 
-        loadCompanionInfoHelper(TEST_DEVICE, CompanionManager.COMPANION_TYPE_SECONDARY);
+        loadCompanionInfoHelper(CompanionManager.COMPANION_TYPE_SECONDARY);
         checkReasonableConnParameterHelper(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
         checkReasonableConnParameterHelper(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
         checkReasonableConnParameterHelper(BluetoothGatt.CONNECTION_PRIORITY_LOW_POWER);
 
-        loadCompanionInfoHelper(TEST_DEVICE, CompanionManager.COMPANION_TYPE_NONE);
+        loadCompanionInfoHelper(CompanionManager.COMPANION_TYPE_NONE);
         checkReasonableConnParameterHelper(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
         checkReasonableConnParameterHelper(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
         checkReasonableConnParameterHelper(BluetoothGatt.CONNECTION_PRIORITY_LOW_POWER);
         checkReasonableConnParameterHelper(BluetoothGatt.CONNECTION_PRIORITY_DCK);
     }
 
-    private void loadCompanionInfoHelper(String address, int companionType) {
-        doReturn(address)
+    private void loadCompanionInfoHelper(int companionType) {
+        doReturn(mDevice.getAddress())
                 .when(mSharedPreferences)
                 .getString(eq(CompanionManager.COMPANION_DEVICE_KEY), anyString());
         doReturn(companionType)
@@ -153,13 +153,13 @@ public class CompanionManagerTest {
 
         int min =
                 mCompanionManager.getGattConnParameters(
-                        TEST_DEVICE, CompanionManager.GATT_CONN_INTERVAL_MIN, priority);
+                        mDevice, CompanionManager.GATT_CONN_INTERVAL_MIN, priority);
         int max =
                 mCompanionManager.getGattConnParameters(
-                        TEST_DEVICE, CompanionManager.GATT_CONN_INTERVAL_MAX, priority);
+                        mDevice, CompanionManager.GATT_CONN_INTERVAL_MAX, priority);
         int latency =
                 mCompanionManager.getGattConnParameters(
-                        TEST_DEVICE, CompanionManager.GATT_CONN_LATENCY, priority);
+                        mDevice, CompanionManager.GATT_CONN_LATENCY, priority);
 
         assertThat(max).isAtLeast(min);
         assertThat(max).isAtLeast(minInterval);

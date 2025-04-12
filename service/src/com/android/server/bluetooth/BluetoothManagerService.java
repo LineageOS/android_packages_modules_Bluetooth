@@ -38,8 +38,6 @@ import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_SYSTEM
 import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_USER_SWITCH;
 import static android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED;
 
-import static com.android.modules.utils.build.SdkLevel.isAtLeastV;
-
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.NonNull;
@@ -62,7 +60,6 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Binder;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -78,8 +75,6 @@ import android.os.UserHandle;
 import android.os.UserManager;
 import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
-
-import androidx.annotation.RequiresApi;
 
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
@@ -1938,7 +1933,7 @@ class BluetoothManagerService {
 
         // Notify all proxy objects first of adapter state change
         if (newState == STATE_ON) {
-            if (isAtLeastV() && mDeviceConfigAllowAutoOn) {
+            if (mDeviceConfigAllowAutoOn) {
                 AutoOnFeature.notifyBluetoothOn(mCurrentUserContext);
             }
             sendBluetoothOnCallback();
@@ -2349,7 +2344,6 @@ class BluetoothManagerService {
         return postAndWait(() -> AutoOnFeature.isUserEnabled(mCurrentUserContext));
     }
 
-    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     void setAutoOnEnabled(boolean status) {
         if (!mDeviceConfigAllowAutoOn) {
             throw new IllegalStateException("AutoOnFeature is not supported in current config");

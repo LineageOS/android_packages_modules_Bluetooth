@@ -276,12 +276,10 @@ class AdapterServiceBinder extends IBluetooth.Stub {
             return false;
         }
 
-        if (Flags.emptyNamesAreInvalid()) {
-            requireNonNull(name);
-            name = name.trim();
-            if (name.isEmpty()) {
-                throw new IllegalArgumentException("Empty names are not valid");
-            }
+        requireNonNull(name);
+        name = name.trim();
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException("Empty names are not valid");
         }
 
         Log.d(TAG, "AdapterServiceBinder.setName(" + name + ")");

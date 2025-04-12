@@ -21,10 +21,9 @@ import android.bluetooth.BluetoothAdapter
 import android.content.ContentResolver
 import android.content.Context
 import android.content.res.Resources
+import android.os.IpcDataCache
 import android.os.Looper
 import android.os.UserHandle
-import android.platform.test.flag.junit.FlagsParameterization
-import android.platform.test.flag.junit.SetFlagsRule
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import com.android.server.bluetooth.BluetoothAdapterState
@@ -48,62 +47,21 @@ import com.google.common.truth.Truth.assertThat
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TestTimeSource
 import kotlin.time.TimeSource
+import org.junit.AfterClass
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
 import org.junit.runner.RunWith
-import org.robolectric.ParameterizedRobolectricTestRunner
-import org.robolectric.ParameterizedRobolectricTestRunner.Parameters
+import org.robolectric.RobolectricTestRunner
 import org.robolectric.shadows.ShadowToast
 
-@RunWith(ParameterizedRobolectricTestRunner::class)
+@RunWith(RobolectricTestRunner::class)
 @kotlin.time.ExperimentalTime
-class ModeListenerTest(flags: FlagsParameterization) {
-    companion object {
-        @JvmStatic
-        @Parameters(name = "{0}")
-        fun getParams() = FlagsParameterization.allCombinationsOf()
-
-        internal fun setupAirplaneModeToOn(
-            resolver: ContentResolver,
-            looper: Looper,
-            user: () -> Context,
-            enableEnhancedMode: Boolean,
-        ) {
-            enableSensitive(resolver, looper, Settings.Global.AIRPLANE_MODE_RADIOS)
-            enableMode(resolver, looper, Settings.Global.AIRPLANE_MODE_ON)
-            val mode: (m: Boolean) -> Unit = { _: Boolean -> }
-            val notif: (m: String) -> Unit = { _: String -> }
-            val media: () -> Boolean = { -> false }
-            if (enableEnhancedMode) {
-                Settings.Secure.putInt(resolver, APM_USER_TOGGLED_BLUETOOTH, 1)
-            }
-
-            initialize(
-                looper,
-                resolver,
-                BluetoothAdapterState(),
-                mode,
-                notif,
-                media,
-                user,
-                TimeSource.Monotonic,
-            )
-        }
-
-        internal fun setupAirplaneModeToOff(resolver: ContentResolver, looper: Looper) {
-            disableSensitive(resolver, looper, Settings.Global.AIRPLANE_MODE_RADIOS)
-            disableMode(resolver, looper, Settings.Global.AIRPLANE_MODE_ON)
-        }
-    }
+class ModeListenerTest() {
 
     @get:Rule val testName = TestName()
-    @get:Rule val setFlagsRule = SetFlagsRule()
-
-    init {
-        setFlagsRule.setFlagsParameterization(flags)
-    }
 
     private val looper: Looper = Looper.getMainLooper()
     private val state = BluetoothAdapterState()
@@ -596,5 +554,51 @@ class ModeListenerTest(flags: FlagsParameterization) {
         initializeAirplane()
 
         assertThat(Settings.Global.getInt(resolver, APM_ENHANCEMENT, 0)).isEqualTo(settingValue)
+    }
+
+    companion object {
+        internal fun setupAirplaneModeToOn(
+            resolver: ContentResolver,
+            looper: Looper,
+            user: () -> Context,
+            enableEnhancedMode: Boolean,
+        ) {
+            enableSensitive(resolver, looper, Settings.Global.AIRPLANE_MODE_RADIOS)
+            enableMode(resolver, looper, Settings.Global.AIRPLANE_MODE_ON)
+            val mode: (m: Boolean) -> Unit = { _: Boolean -> }
+            val notif: (m: String) -> Unit = { _: String -> }
+            val media: () -> Boolean = { -> false }
+            if (enableEnhancedMode) {
+                Settings.Secure.putInt(resolver, APM_USER_TOGGLED_BLUETOOTH, 1)
+            }
+
+            initialize(
+                looper,
+                resolver,
+                BluetoothAdapterState(),
+                mode,
+                notif,
+                media,
+                user,
+                TimeSource.Monotonic,
+            )
+        }
+
+        internal fun setupAirplaneModeToOff(resolver: ContentResolver, looper: Looper) {
+            disableSensitive(resolver, looper, Settings.Global.AIRPLANE_MODE_RADIOS)
+            disableMode(resolver, looper, Settings.Global.AIRPLANE_MODE_ON)
+        }
+
+        @BeforeClass
+        @JvmStatic
+        fun beforeClass() {
+            IpcDataCache.setTestMode(true)
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun afterClass() {
+            IpcDataCache.setTestMode(false)
+        }
     }
 }

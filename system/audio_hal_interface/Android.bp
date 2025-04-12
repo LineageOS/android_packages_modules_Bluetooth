@@ -79,7 +79,7 @@ cc_library_static {
     },
     host_supported: true,
     apex_available: ["com.android.bt"],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     header_libs: ["libbluetooth_headers"],
 }
 
@@ -213,7 +213,6 @@ cc_defaults {
         "libbinder_ndk",
         "libcrypto",
         "libfmq",
-        "libstatslog",
         "libz",
         "server_configurable_flags",
     ],
@@ -298,7 +297,6 @@ cc_test {
         "libcutils",
         "libfmq",
         "liblog",
-        "libstatslog",
         "libutils",
         "server_configurable_flags",
     ],

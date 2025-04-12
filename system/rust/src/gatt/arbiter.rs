@@ -3,7 +3,7 @@
 
 use super::ids::{AdvertiserId, TransportIndex};
 use super::mtu::MtuEvent;
-use super::opcode_types::{classify_opcode, OperationType};
+use super::opcode_types::OperationType;
 use super::server::isolation_manager::IsolationManager;
 use crate::gatt::ffi::Handler;
 use crate::packets::att;
@@ -123,7 +123,7 @@ fn try_parse_att_server_packet(
         return None;
     }
 
-    match classify_opcode(att.opcode) {
+    match att.opcode.operation_type() {
         OperationType::Command | OperationType::Request | OperationType::Confirmation => Some(att),
         _ => None,
     }

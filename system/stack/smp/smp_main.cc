@@ -93,8 +93,8 @@ const char* const smp_event_name[] = {"PAIRING_REQ_EVT",
                                       "SIRK_DEVICE_VALID_EVT",
                                       "OUT_OF_RANGE_EVT"};
 
-const char* smp_get_event_name(tSMP_EVENT event);
-const char* smp_get_state_name(tSMP_STATE state);
+static const char* smp_get_event_name(tSMP_EVENT event);
+static const char* smp_get_state_name(tSMP_STATE state);
 
 #define SMP_SM_IGNORE 0
 #define SMP_NUM_ACTIONS 2
@@ -1011,7 +1011,7 @@ bool smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event, tSMP_INT_DATA* p_data) {
  * Function     smp_get_state_name
  * Returns      The smp state name.
  ******************************************************************************/
-const char* smp_get_state_name(tSMP_STATE state) {
+static const char* smp_get_state_name(tSMP_STATE state) {
   const char* p_str = smp_state_name[SMP_STATE_MAX];
 
   if (state < SMP_STATE_MAX) {
@@ -1024,7 +1024,7 @@ const char* smp_get_state_name(tSMP_STATE state) {
  * Function     smp_get_event_name
  * Returns      The smp event name.
  ******************************************************************************/
-const char* smp_get_event_name(tSMP_EVENT event) {
+static const char* smp_get_event_name(tSMP_EVENT event) {
   const char* p_str = smp_event_name[SMP_MAX_EVT];
 
   if (event <= SMP_MAX_EVT) {

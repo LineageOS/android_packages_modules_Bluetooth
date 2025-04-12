@@ -66,7 +66,7 @@ static uint16_t LmpLlMessageTraceCounter = 0;
 static uint16_t BtSchedulingTraceCounter = 0;
 
 class BluetoothQualityReportInterfaceImpl;
-std::unique_ptr<BluetoothQualityReportInterface> bluetoothQualityReportInstance;
+static std::unique_ptr<BluetoothQualityReportInterface> bluetoothQualityReportInstance;
 
 namespace {
 static std::recursive_mutex life_cycle_guard_;
@@ -411,8 +411,8 @@ static std::string PacketTypeToString(uint8_t packet_type) {
   }
 }
 
-void register_vse();
-void unregister_vse();
+static void register_vse();
+static void unregister_vse();
 
 static void ConfigureBqr(const BqrConfiguration& bqr_config);
 
@@ -779,7 +779,7 @@ static void AddLinkQualityEventToQueue(uint8_t length, const uint8_t* p_link_qua
           p_bqr_event->bqr_link_quality_event_.no_rx_count,
           p_bqr_event->bqr_link_quality_event_.nak_count);
 
-  os::LogMetricBluetoothQualityReport(p_bqr_event->bqr_link_quality_event_);
+  metrics::LogMetricBluetoothQualityReport(p_bqr_event->bqr_link_quality_event_);
 
   BluetoothQualityReportInterface* bqrItf = getBluetoothQualityReportInterface();
 
@@ -1085,12 +1085,12 @@ static void vendor_specific_event_callback(
   }
 }
 
-void register_vse() {
+static void register_vse() {
   bluetooth::shim::GetHciLayer()->RegisterVendorSpecificEventHandler(
           hci::VseSubeventCode::BQR_EVENT, to_bind_->Bind(vendor_specific_event_callback));
 }
 
-void unregister_vse() {
+static void unregister_vse() {
   bluetooth::shim::GetHciLayer()->UnregisterVendorSpecificEventHandler(
           hci::VseSubeventCode::BQR_EVENT);
 }

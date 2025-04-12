@@ -34,6 +34,7 @@ rust_ffi {
         "include",
     ],
     visibility: [
+        "//device/google/cuttlefish/guest/hals/bluetooth",
         "//hardware/interfaces/bluetooth:__subpackages__",
         "//vendor:__subpackages__",
     ],

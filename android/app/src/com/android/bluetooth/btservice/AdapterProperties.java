@@ -56,7 +56,6 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.flags.Flags;
-import com.android.modules.utils.build.SdkLevel;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -503,7 +502,7 @@ class AdapterProperties {
             byte[] addrByte = Utils.getByteAddress(device);
             DeviceProperties prop = mRemoteDevices.getDeviceProperties(device);
             if (prop == null) {
-                prop = mRemoteDevices.addDeviceProperties(addrByte);
+                prop = mRemoteDevices.addDeviceProperties(addrByte, device.getAddressType());
             }
             device = prop.getDevice();
             prop.setBondState(state);
@@ -1072,10 +1071,8 @@ class AdapterProperties {
      */
     private static @NonNull Bundle getBroadcastOptionsForDiscoveryFinished() {
         final BroadcastOptions options = Utils.getTempBroadcastOptions();
-        if (SdkLevel.isAtLeastU()) {
-            options.setDeliveryGroupPolicy(BroadcastOptions.DELIVERY_GROUP_POLICY_MOST_RECENT);
-            options.setDeferralPolicy(BroadcastOptions.DEFERRAL_POLICY_UNTIL_ACTIVE);
-        }
+        options.setDeliveryGroupPolicy(BroadcastOptions.DELIVERY_GROUP_POLICY_MOST_RECENT);
+        options.setDeferralPolicy(BroadcastOptions.DEFERRAL_POLICY_UNTIL_ACTIVE);
         return options.toBundle();
     }
 

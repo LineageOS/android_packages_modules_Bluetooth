@@ -21,6 +21,7 @@ import android.app.Application
 import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.content.Intent
+import android.os.IpcDataCache
 import android.os.Looper
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
@@ -46,7 +47,9 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import kotlin.test.assertFailsWith
 import org.junit.After
+import org.junit.AfterClass
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -57,6 +60,7 @@ import org.robolectric.Shadows.shadowOf
 @RunWith(RobolectricTestRunner::class)
 @kotlinx.coroutines.ExperimentalCoroutinesApi
 class AutoOnFeatureTest {
+
     @get:Rule val testName = TestName()
     @get:Rule val expect = Expect.create()
 
@@ -470,5 +474,19 @@ class AutoOnFeatureTest {
         expect.that(timer).isNotNull()
         expect.that(callback_count).isEqualTo(0)
         expectStorageTime()
+    }
+
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun beforeClass() {
+            IpcDataCache.setTestMode(true)
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun afterClass() {
+            IpcDataCache.setTestMode(false)
+        }
     }
 }

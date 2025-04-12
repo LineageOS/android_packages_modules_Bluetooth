@@ -356,8 +356,7 @@ void bluetooth::stack::rnr::Impl::btm_process_remote_name(const RawAddress* bda,
   ::btm_process_remote_name(bda, bdn, evt_len, hci_status);
 }
 
-bluetooth::stack::rnr::Impl default_interface;
-
-bluetooth::stack::rnr::Interface* interface_ = &default_interface;
+static bluetooth::stack::rnr::Impl default_interface;
+static bluetooth::stack::rnr::Interface* interface_ = &default_interface;
 
 bluetooth::stack::rnr::Interface& get_stack_rnr_interface() { return *interface_; }

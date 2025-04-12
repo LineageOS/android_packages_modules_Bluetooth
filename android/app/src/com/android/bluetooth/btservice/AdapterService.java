@@ -25,6 +25,7 @@ import static android.bluetooth.BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERA
 import static android.bluetooth.BluetoothAdapter.SCAN_MODE_NONE;
 import static android.bluetooth.BluetoothAdapter.nameForState;
 import static android.bluetooth.BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
+import static android.bluetooth.BluetoothDevice.BOND_BONDED;
 import static android.bluetooth.BluetoothDevice.BOND_NONE;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
@@ -41,7 +42,6 @@ import static android.text.format.DateUtils.SECOND_IN_MILLIS;
 import static com.android.bluetooth.Utils.getBytesFromAddress;
 import static com.android.bluetooth.Utils.isDualModeAudioEnabled;
 import static com.android.bluetooth.Utils.isPackageNameAccurate;
-import static com.android.modules.utils.build.SdkLevel.isAtLeastV;
 
 import static java.util.Objects.requireNonNull;
 
@@ -717,7 +717,7 @@ public class AdapterService extends Service {
 
         mBluetoothSocketManagerBinder = new BluetoothSocketManagerBinder(this);
 
-        if (Flags.adapterSuspendMgmt() && isAtLeastV()) {
+        if (Flags.adapterSuspendMgmt()) {
             mAdapterSuspend =
                     new AdapterSuspend(
                             mNativeInterface, mLooper, getSystemService(DeviceStateManager.class));
@@ -1495,7 +1495,7 @@ public class AdapterService extends Service {
         }
 
         if (mAdapterSuspend != null) {
-            if (Flags.adapterSuspendMgmt() && isAtLeastV()) {
+            if (Flags.adapterSuspendMgmt()) {
                 mAdapterSuspend.cleanup();
             }
             mAdapterSuspend = null;
@@ -4281,7 +4281,8 @@ public class AdapterService extends Service {
         }
         mDatabaseManager.handleBondStateChanged(device, fromState, toState);
 
-        if (toState == BOND_NONE) {
+        if (toState == BOND_NONE
+                || (Flags.rebokePermissionOnUnbond() && fromState == BOND_BONDED)) {
             // Remove the permissions for unbonded devices
             setMessageAccessPermission(device, BluetoothDevice.ACCESS_UNKNOWN);
             setPhonebookAccessPermission(device, BluetoothDevice.ACCESS_UNKNOWN);
@@ -4324,7 +4325,7 @@ public class AdapterService extends Service {
                 mWakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, lockName);
             }
 
-            if (!mWakeLock.isHeld()) {
+            if (!mWakeLock.isHeld() || Flags.refCountedNativeWakelock()) {
                 mWakeLock.acquire();
             }
         }
@@ -4342,7 +4343,7 @@ public class AdapterService extends Service {
                 return false;
             }
 
-            if (mWakeLock.isHeld()) {
+            if (mWakeLock.isHeld() || Flags.refCountedNativeWakelock()) {
                 mWakeLock.release();
             }
         }

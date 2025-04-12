@@ -47,6 +47,7 @@ import android.bluetooth.BluetoothHidHost;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.PandoraDevice;
+import android.bluetooth.Utils;
 import android.bluetooth.VirtualOnly;
 import android.bluetooth.cts.EnableBluetoothRule;
 import android.content.BroadcastReceiver;
@@ -62,6 +63,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.compatibility.common.util.AdoptShellPermissionsRule;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 
 import org.hamcrest.Matcher;
@@ -84,6 +86,7 @@ import pandora.HidProto.HidServiceType;
 import pandora.HidProto.ProtocolModeEvent;
 import pandora.HidProto.ReportEvent;
 import pandora.HidProto.ServiceRequest;
+import pandora.SecurityProto.DeleteBondRequest;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -294,6 +297,7 @@ public class HidHostTest {
                 ServiceRequest.newBuilder()
                         .setServiceType(HidServiceType.SERVICE_TYPE_HID)
                         .build());
+
         mDevice = mBumble.getRemoteDevice();
         // Remove bond if the device is already bonded
         if (mDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
@@ -477,6 +481,14 @@ public class HidHostTest {
                 hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice),
                 hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE));
+
+        // Remove the bond on the Bumble device as well.
+        // Not doing so will cause authentication failures because of the
+        // incorrect link key.
+        ByteString localAddress =
+                ByteString.copyFrom(Utils.addressBytesFromString(mAdapter.getAddress()));
+        mBumble.securityStorageBlocking()
+                .deleteBond(DeleteBondRequest.newBuilder().setPublic(localAddress).build());
 
         reconnectionFromRemoteAndVerifyDisconnectedState();
     }

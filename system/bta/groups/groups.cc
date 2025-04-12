@@ -45,8 +45,8 @@ namespace bluetooth {
 namespace groups {
 
 class DeviceGroupsImpl;
-DeviceGroupsImpl* instance;
-std::mutex instance_mutex;
+static DeviceGroupsImpl* instance;
+static std::mutex instance_mutex;
 static constexpr int kMaxGroupId = 0xEF;
 
 class DeviceGroup {

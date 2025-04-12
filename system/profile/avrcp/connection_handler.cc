@@ -52,7 +52,7 @@ ConnectionHandler* ConnectionHandler::instance_ = nullptr;
 // ConnectionHandler::CleanUp take the lock and calls
 // ConnectionHandler::AcceptorControlCB with AVRC_CLOSE_IND_EVT
 // which also takes the lock, so use a recursive_mutex.
-std::recursive_mutex device_map_lock;
+static std::recursive_mutex device_map_lock;
 
 ConnectionHandler* ConnectionHandler::Get() {
   log::assert_that(instance_ != nullptr, "assert failed: instance_ != nullptr");

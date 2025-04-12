@@ -95,6 +95,11 @@ bluetooth_tidy_checks = [
     "-*",
     "misc-*",
 
+    // Checks for unused and missing includes.
+    // Should be enabled as an alternative to IWYU, but currently generates
+    // too many warnings.
+    "-misc-include-cleaner",
+
     // This check implements detection of local variables which could be declared
     // as const but are not.
     "-misc-const-correctness",
@@ -172,6 +177,7 @@ java_defaults {
             "-Xep:NarrowingCompoundAssignment:ERROR",
             "-Xep:NonApiType:ERROR",
             "-Xep:NonAtomicVolatileUpdate:ERROR",
+            "-Xep:NonCanonicalStaticMemberImport:ERROR",
             "-Xep:NonCanonicalType:ERROR",
             "-Xep:NotJavadoc:ERROR",
             "-Xep:NullOptional:ERROR",
@@ -249,5 +255,51 @@ java_defaults {
             // Does not look pertinent in our situation
             "-Xep:AndroidFrameworkEfficientXml:OFF",
         ],
+    },
+}
+
+java_defaults {
+    name: "bluetooth_lint_rules",
+    lint: {
+        error_checks: [
+            "Autofill",
+            "DefaultLocale",
+            "DuplicateDefinition",
+            // "ExportedContentProvider", // TODO: b/289445022 - enable this check
+            // "ExportedReceiver", // TODO: b/289445022 - enable this check
+            // "ExportedService", // TODO: b/289445022 - enable this check
+            "ExtraText",
+            "ExtraTranslation",
+            "GestureBackNavigation",
+            "GuardedLogInvocation",
+            "HandlerLeak",
+            "InflateParams",
+            // "InvalidPermission", // TODO: b/289445022 - enable this check
+            "LabelFor",
+            "MissingClass",
+            // "MissingVersion", // TODO: b/289445022 - enable this check
+            "MonochromeLauncherIcon",
+            "NewApi",
+            "ObsoleteSdkInt",
+            // "QueryAllPackagesPermission", // TODO: b/289445022 - enable this check
+            "Recycle",
+            "RtlHardcoded",
+            "RtlSymmetry",
+            "ScrollViewSize",
+            "SetTextI18n",
+            "SimpleDateFormat",
+            "StaticFieldLeak",
+            "StringFormatCount",
+            "StringFormatInvalid",
+            "TextFields",
+            "TypographyEllipsis",
+            "UseSparseArrays",
+            "UseValueOf",
+            "VectorPath",
+            "VisibleForTests",
+            "Wakelock",
+            "WakelockTimeout",
+        ],
+        extra_check_modules: ["BluetoothLintChecker"],
     },
 }

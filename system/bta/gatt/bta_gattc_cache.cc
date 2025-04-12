@@ -53,7 +53,6 @@ using namespace bluetooth;
 
 using bluetooth::Uuid;
 using gatt::Characteristic;
-using gatt::Database;
 using gatt::DatabaseBuilder;
 using gatt::Descriptor;
 using gatt::IncludedService;

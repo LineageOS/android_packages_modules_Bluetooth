@@ -51,7 +51,9 @@ Alarm::Alarm(Handler* handler, bool isWakeAlarm) : handler_(handler) {
 }
 
 Alarm::~Alarm() {
-  handler_->thread_->GetReactor()->Unregister(token_);
+  auto reactor = handler_->thread_->GetReactor();
+  reactor->Unregister(token_);
+  reactor->WaitForUnregisteredReactable(std::chrono::milliseconds(1000));
 
   int close_status;
   RUN_NO_INTR(close_status = TIMERFD_CLOSE(fd_));

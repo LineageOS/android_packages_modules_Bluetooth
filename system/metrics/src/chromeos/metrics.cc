@@ -16,16 +16,15 @@
  *
  ******************************************************************************/
 
+#include <base/files/file_util.h>
+#include <base/strings/string_util.h>
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
 #include <metrics/structured_events.h>
 
-namespace bluetooth {
-namespace os {
+namespace bluetooth::metrics {
 
 namespace {
-
-// The path to the kernel's boot_id.
 const char kBootIdPath[] = "/proc/sys/kernel/random/boot_id";
 
 static bool GetBootId(std::string* boot_id) {
@@ -35,10 +34,11 @@ static bool GetBootId(std::string* boot_id) {
   base::TrimWhitespaceASCII(*boot_id, base::TRIM_TRAILING, boot_id);
   return true;
 }
-
 }  // namespace
 
-using bluetooth::hci::Address;
+using hci::Address;
+
+void Counter(CounterKey key, int64_t count) {}
 
 void LogMetricClassicPairingEvent(const Address& address, uint16_t handle, uint32_t hci_cmd,
                                   uint16_t hci_event, uint16_t cmd_status, uint16_t reason_code,
@@ -63,7 +63,7 @@ void LogMetricA2dpAudioOverrunEvent(const Address& address, uint64_t encoding_in
   std::string boot_id;
   std::string addr_string;
 
-  if (!metrics::GetBootId(&boot_id)) {
+  if (!GetBootId(&boot_id)) {
     return;
   }
 
@@ -87,7 +87,7 @@ void LogMetricHfpPacketLossStats(const Address& address, int num_decoded_frames,
   std::string boot_id;
   std::string addr_string;
 
-  if (!metrics::GetBootId(&boot_id)) {
+  if (!GetBootId(&boot_id)) {
     return;
   }
 
@@ -149,7 +149,7 @@ void LogMetricA2dpSessionMetricsEvent(const hci::Address& address, int64_t audio
   std::string boot_id;
   std::string addr_string;
 
-  if (!metrics::GetBootId(&boot_id)) {
+  if (!GetBootId(&boot_id)) {
     return;
   }
 
@@ -192,9 +192,7 @@ void LogMetricBluetoothDisconnectionReasonReported(uint32_t reason, const Addres
 void LogMetricBluetoothRemoteSupportedFeatures(const Address& address, uint32_t page,
                                                uint64_t features, uint32_t connection_handle) {}
 
-void CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum key, int64_t count) {}
-
-void LogMetricBluetoothLEConnection(os::LEConnectionSessionOptions /* session_options */) {}
+void LogMetricBluetoothLEConnection(LEConnectionSessionOptions /* session_options */) {}
 
 void LogMetricBluetoothEvent(const Address& address, android::bluetooth::EventType event_type,
                              android::bluetooth::State state) {}
@@ -224,5 +222,4 @@ void LogMetricLeAudioBroadcastSessionReported(int64_t /*duration_nanos*/) {}
 
 void LogMetricBluetoothQualityReport(const bqr::BqrLinkQualityEvent& /*event*/) {}
 
-}  // namespace os
-}  // namespace bluetooth
+}  // namespace bluetooth::metrics

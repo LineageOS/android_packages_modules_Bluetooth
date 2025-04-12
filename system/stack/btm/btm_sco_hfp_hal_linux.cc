@@ -26,7 +26,6 @@
 #include "osi/include/properties.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/hcimsgs.h"
-#include "stack/include/sdpdefs.h"
 
 extern int GetAdapterIndex();
 
@@ -86,10 +85,6 @@ struct mgmt_rp_get_codec_capabilities {
 void cache_codec_capabilities(struct mgmt_rp_get_codec_capabilities* rp) {
   const uint8_t kCodecMsbc = 0x5;
 
-  // TODO(b/323087725): Query the codec capabilities and fill in c.inner.data.
-  // The capabilities are not used currently so it's safe to keep this for a
-  // while.
-
   // CVSD is mandatory in HFP.
   cached_codecs.push_back({
           .inner = {.codec = codec::CVSD},
@@ -115,9 +110,8 @@ void cache_codec_capabilities(struct mgmt_rp_get_codec_capabilities* rp) {
   }
 
   for (const auto& c : cached_codecs) {
-    bluetooth::log::info("Caching HFP codec {}, data path {}, data len {}, pkt_size {}",
-                         (uint64_t)c.inner.codec, c.inner.data_path, c.inner.data.size(),
-                         c.pkt_size);
+    bluetooth::log::info("Caching HFP codec {}, data path {}, pkt_size {}", (uint64_t)c.inner.codec,
+                         c.inner.data_path, c.pkt_size);
   }
 }
 
@@ -200,7 +194,7 @@ int mgmt_get_codec_capabilities(int fd, uint16_t hci) {
         if (ret < 0) {
           bluetooth::log::debug("Failed to read mgmt socket: {}", -errno);
           return -errno;
-        } else if (ret == 0) { // unlikely to happen, just a safeguard.
+        } else if (ret == 0) {  // unlikely to happen, just a safeguard.
           bluetooth::log::debug("Failed to read mgmt socket: EOF");
           return -1;
         }
@@ -338,22 +332,6 @@ bool get_swb_supported() {
          osi_property_get_bool("bluetooth.hfp.swb.supported", true);  // TODO: add SWB for desktop
 #endif
 }
-
-// Checks the supported codecs
-bt_codecs get_codec_capabilities(uint64_t codecs) {
-  bt_codecs codec_list = {.offload_capable = offload_supported};
-
-  for (auto c : cached_codecs) {
-    if (c.inner.codec & codecs) {
-      codec_list.codecs.push_back(c.inner);
-    }
-  }
-
-  return codec_list;
-}
-
-// Check if hardware offload is supported
-bool get_offload_supported() { return offload_supported; }
 
 // Check if hardware offload is enabled
 bool get_offload_enabled() { return offload_supported && offload_enabled; }

@@ -34,6 +34,7 @@
 #include "main/shim/dumpsys.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/hidh_api.h"
 
 using namespace bluetooth;
 
@@ -439,5 +440,6 @@ void bta_hh_dump(int fd) {
                   bta_hh_state_code(dev.state), dev.sub_class);
     }
   }
+  HID_HostDump(fd);
 }
 #undef DUMPSYS_TAG

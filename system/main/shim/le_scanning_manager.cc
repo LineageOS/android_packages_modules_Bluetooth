@@ -36,10 +36,12 @@
 #include "main/shim/le_scanning_manager.h"
 #include "main/shim/shim.h"
 #include "main_thread.h"
+#include "stack/acl/acl.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/advertise_data_parser.h"
 #include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/bt_dev_class.h"
+#include "stack/include/btm_ble_addr.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_status.h"
@@ -310,6 +312,8 @@ void BleScannerInterfaceImpl::SetScanParameters(uint8_t scan_type, int scanner_i
                                                 int scan_window_coded, int scan_phy) {
   log::info("in shim layer, scannerId1m={}, scannerIdCoded={}", scanner_id_1m, scanner_id_coded);
   bool validated = true;
+  // clear out any scan_phy bits that aren't valid
+  scan_phy = scan_phy & (k1mPhyMask | kCodedPhyMask);
   if ((scan_phy & k1mPhyMask) != 0) {
     validated =
             BTM_BLE_ISVALID_PARAM(scan_interval_1m, BTM_BLE_SCAN_INT_MIN,
@@ -372,14 +376,6 @@ void BleScannerInterfaceImpl::BatchscanReadReports(int client_if, int scan_mode)
   auto scanner_id = static_cast<bluetooth::hci::ScannerId>(client_if);
   bluetooth::shim::GetScanning()->BatchScanReadReport(scanner_id, batch_scan_mode);
 }
-
-bool btm_random_pseudo_to_identity_addr(RawAddress* random_pseudo,
-                                        tBLE_ADDR_TYPE* p_identity_addr_type);
-
-bool btm_identity_addr_to_random_pseudo(RawAddress* bd_addr, tBLE_ADDR_TYPE* p_addr_type,
-                                        bool refresh);
-
-extern tACL_CONN* btm_acl_for_bda(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 
 void BleScannerInterfaceImpl::StartSync(uint8_t sid, RawAddress address, uint16_t skip,
                                         uint16_t timeout, int reg_id) {
@@ -779,9 +775,8 @@ void BleScannerInterfaceImpl::AddressCache::init(void) {
   remote_bdaddr_cache_ordered_ = {};
 }
 
-BleScannerInterfaceImpl* bt_le_scanner_instance = nullptr;
-
 BleScannerInterface* bluetooth::shim::get_ble_scanner_instance() {
+  static BleScannerInterfaceImpl* bt_le_scanner_instance = nullptr;
   if (bt_le_scanner_instance == nullptr) {
     bt_le_scanner_instance = new BleScannerInterfaceImpl();
   }

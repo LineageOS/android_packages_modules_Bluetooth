@@ -683,7 +683,7 @@ class Bootstrap():
 
         if not os.path.isdir(self.bt_dir):
             raise Exception('{} is not a valid directory'.format(self.bt_dir))
-        if not os.path.isdir(self.proto_logging_dir):
+        if self.proto_logging_dir and not os.path.isdir(self.proto_logging_dir):
             raise Exception('{} is not a valid directory'.format(self.proto_logging_dir))
 
         self.git_dir = os.path.join(self.base_dir, 'repos')

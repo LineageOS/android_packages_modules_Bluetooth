@@ -616,7 +616,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         logger.info(f"response: {response}")
 
         # Wait for AVDTP Open from DUT
-        await asyncio.wait_for(avdtp_future, timeout=10.0)
+        await asyncio.wait_for(avdtp_future, timeout=20.0)
 
     @avatar.asynchronous
     async def test_avdt_signaling_channel_connection_collision_case1(self) -> None:

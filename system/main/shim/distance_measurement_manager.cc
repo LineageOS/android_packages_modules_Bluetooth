@@ -280,8 +280,6 @@ private:
   static constexpr uint16_t kIllegalConnectionHandle = 0xffff;
 };
 
-DistanceMeasurementInterfaceImpl* distance_measurement_instance = nullptr;
-
 void bluetooth::shim::init_distance_measurement_manager() {
   static_cast<DistanceMeasurementInterfaceImpl*>(
           bluetooth::shim::get_distance_measurement_instance())
@@ -289,6 +287,7 @@ void bluetooth::shim::init_distance_measurement_manager() {
 }
 
 DistanceMeasurementInterface* bluetooth::shim::get_distance_measurement_instance() {
+  static DistanceMeasurementInterfaceImpl* distance_measurement_instance = nullptr;
   if (distance_measurement_instance == nullptr) {
     distance_measurement_instance = new DistanceMeasurementInterfaceImpl();
   }

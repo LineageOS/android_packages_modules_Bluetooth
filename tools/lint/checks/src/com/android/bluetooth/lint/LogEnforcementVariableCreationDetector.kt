@@ -63,34 +63,6 @@ class LogEnforcementVariableCreationDetector : Detector(), SourceCodeScanner {
     private val LOG_ENFORCEMENT_VARS = listOf("DBG", "DEBUG", "VDBG", "VERBOSE", "D", "V")
     private val LOG_ENFORCEMENT_VAR_ENDINGS = listOf("DBG", "VDBG", "DEBUG", "VERBOSE")
 
-    companion object {
-        const val LOG_ENFORCEMENT_VARIABLE_USAGE_ERROR =
-            "Dont create log enforcement variables to enforce when a log should be made. The Log" +
-                " framework does this check for you. Remove this variable and update any log" +
-                " invocations to be unguarded."
-
-        val ISSUE =
-            Issue.create(
-                id = "LogEnforcementVariableCreation",
-                briefDescription = "Do not create log enforcement variables",
-                explanation =
-                    "The BT stack defines a process default log level, which allows the Android" +
-                        " Log framework (For Java, Kotlin, _and_ Native) to properly enforce log" +
-                        " levels for us. Using our own variables for enforcement causes inconsistency" +
-                        " in log output and double checks against the log level each time we log." +
-                        " Please delete this variable and use the Log functions unguarded in your" +
-                        " code.",
-                category = Category.CORRECTNESS,
-                severity = Severity.ERROR,
-                implementation =
-                    Implementation(
-                        LogEnforcementVariableCreationDetector::class.java,
-                        Scope.JAVA_FILE_SCOPE
-                    ),
-                androidSpecific = true,
-            )
-    }
-
     override fun getApplicableUastTypes(): List<Class<out UElement>> {
         return listOf(UClass::class.java)
     }
@@ -112,7 +84,7 @@ class LogEnforcementVariableCreationDetector : Detector(), SourceCodeScanner {
                                         .replace()
                                         .range(context.getLocation(field))
                                         .with("")
-                                        .build()
+                                        .build(),
                             )
                         }
                     }
@@ -227,5 +199,33 @@ class LogEnforcementVariableCreationDetector : Detector(), SourceCodeScanner {
             }
         }
         return false
+    }
+
+    companion object {
+        const val LOG_ENFORCEMENT_VARIABLE_USAGE_ERROR =
+            "Dont create log enforcement variables to enforce when a log should be made. The Log" +
+                " framework does this check for you. Remove this variable and update any log" +
+                " invocations to be unguarded."
+
+        val ISSUE =
+            Issue.create(
+                id = "LogEnforcementVariableCreation",
+                briefDescription = "Do not create log enforcement variables",
+                explanation =
+                    "The BT stack defines a process default log level, which allows the Android" +
+                        " Log framework (For Java, Kotlin, _and_ Native) to properly enforce log" +
+                        " levels for us. Using our own variables for enforcement causes inconsistency" +
+                        " in log output and double checks against the log level each time we log." +
+                        " Please delete this variable and use the Log functions unguarded in your" +
+                        " code.",
+                category = Category.CORRECTNESS,
+                severity = Severity.ERROR,
+                implementation =
+                    Implementation(
+                        LogEnforcementVariableCreationDetector::class.java,
+                        Scope.JAVA_FILE_SCOPE,
+                    ),
+                androidSpecific = true,
+            )
     }
 }

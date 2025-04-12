@@ -47,14 +47,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
 import android.util.Patterns;
 import android.widget.Toast;
-
-import androidx.annotation.RequiresApi;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
@@ -63,7 +60,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.modules.utils.build.SdkLevel;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -132,7 +128,7 @@ public class BluetoothOppLauncherActivity extends Activity {
                 // try send this TEXT out; Currently in Browser, share one link goes to this case;
                 if (stream != null && type != null) {
                     Log.v(TAG, "Get ACTION_SEND intent: Uri = " + stream + "; mimetype = " + type);
-                    if (Flags.oppCheckContentUriPermissions() && SdkLevel.isAtLeastV()) {
+                    if (Flags.oppCheckContentUriPermissions()) {
                         if (!checkCallerAndSelfContentUriPermission(stream)) {
                             finish();
                             return;
@@ -207,7 +203,7 @@ public class BluetoothOppLauncherActivity extends Activity {
                                     + uris
                                     + "\n Type= "
                                     + mimeType);
-                    if (Flags.oppCheckContentUriPermissions() && SdkLevel.isAtLeastV()) {
+                    if (Flags.oppCheckContentUriPermissions()) {
                         permittedUris =
                                 uris.stream()
                                         .filter(this::checkCallerAndSelfContentUriPermission)
@@ -345,7 +341,6 @@ public class BluetoothOppLauncherActivity extends Activity {
      * @param uri A uri with a <tt>content</tt> scheme.
      * @return true if both the sender and Bluetooth have permissions, false otherwise.
      */
-    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     private boolean checkCallerAndSelfContentUriPermission(Uri uri) {
         boolean hasPermission = false;
         try {

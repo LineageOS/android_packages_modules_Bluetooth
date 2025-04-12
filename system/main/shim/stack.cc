@@ -145,8 +145,7 @@ void Stack::StartEverything() {
     log::assert_that(GetInstance<hal::HciHal>() != nullptr,
                      "assert failed: GetInstance<storage::StorageModule>() != nullptr");
     if (IsStarted<hci::Controller>()) {
-      pimpl_->acl_ =
-              new Acl(stack_handler_, GetAclInterface(), GetController()->GetLeResolvingListSize());
+      pimpl_->acl_ = new Acl(stack_handler_, GetAclInterface());
     } else {
       log::error("Unable to create shim ACL layer as Controller has not started");
     }

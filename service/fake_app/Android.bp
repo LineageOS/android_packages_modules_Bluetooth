@@ -1,4 +1,4 @@
 android_app {
     name: "ServiceBluetoothFakeTestApp",
-    sdk_version: "34",
+    sdk_version: "36",
 }

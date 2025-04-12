@@ -24,17 +24,13 @@ import static java.util.Objects.requireNonNull;
 import android.annotation.NonNull;
 import android.hardware.devicestate.DeviceState;
 import android.hardware.devicestate.DeviceStateManager;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import androidx.annotation.RequiresApi;
-
 import com.android.bluetooth.Utils;
 import com.android.internal.annotations.VisibleForTesting;
 
-@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 public class AdapterSuspend {
     private static final String TAG =
             Utils.TAG_PREFIX_BLUETOOTH + AdapterSuspend.class.getSimpleName();

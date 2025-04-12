@@ -40,7 +40,7 @@ namespace hfp {
 
 using namespace metrics;
 
-std::map<bt_status_t, BluetoothAudioCtrlAck> status_to_ack_map = {
+static std::map<bt_status_t, BluetoothAudioCtrlAck> status_to_ack_map = {
         {BT_STATUS_SUCCESS, BluetoothAudioCtrlAck::SUCCESS_FINISHED},
         {BT_STATUS_DONE, BluetoothAudioCtrlAck::SUCCESS_FINISHED},
         {BT_STATUS_FAIL, BluetoothAudioCtrlAck::FAILURE},

@@ -40,10 +40,6 @@
 
 static const tBTA_SYS_REG bta_pan_reg = {bta_pan_hdl_event, BTA_PanDisable};
 
-std::string user_service_name; /* Service name for PANU role */
-std::string gn_service_name;   /* Service name for GN role */
-std::string nap_service_name;  /* Service name for NAP role */
-
 #ifndef PAN_SECURITY
 #define PAN_SECURITY \
   (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_IN_ENCRYPT | BTM_SEC_OUT_ENCRYPT)

@@ -117,7 +117,6 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
       for (uint8_t i = 0; i < num_antenna_paths; i++) {
         ranging_header_.antenna_paths_mask_ |= (1 << i);
       }
-      ranging_header_.pct_format_ = PctFormat::IQ;
       procedure_data_v2_.local_selected_tx_power_ = selected_tx_power;
     }
     // Procedure counter
@@ -1886,7 +1885,7 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
             uint8_t num_tone_data = num_antenna_paths + 1;
             uint8_t data_len = 7 + (4 * num_tone_data);
             if (procedure_data->contains_sounding_sequence_local_) {
-              data_len += 3;  // 3 bytes for packet_pct1, packet_pct2
+              data_len += 8;  // 4 bytes for each packet_pct1, packet_pct2
             }
             remaining_data_size = std::distance(parse_index, segment_data.end());
             if (remaining_data_size < data_len) {

@@ -626,7 +626,7 @@ public class DckL2capTest() : Closeable {
     ) {
         val sampleData = "cafe-baguette".toByteArray()
 
-        val receiveObserver = StreamObserverSpliterator<ReceiveResponse>()
+        val receiveObserver = StreamObserverSpliterator<ReceiveRequest, ReceiveResponse>()
         mBumble
             .l2cap()
             .receive(ReceiveRequest.newBuilder().setChannel(channel).build(), receiveObserver)

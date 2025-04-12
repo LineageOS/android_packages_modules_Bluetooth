@@ -1,6 +1,6 @@
 //! This module handles an individual connection on the ATT fixed channel.
 //! It handles ATT transactions and unacknowledged operations, backed by an
-//! AttDatabase (that may in turn be backed by an upper-layer protocol)
+//! database (that may in turn be backed by an upper-layer protocol)
 
 use pdl_runtime::EncodeError;
 use std::cell::Cell;
@@ -10,21 +10,21 @@ use anyhow::Result;
 use log::{error, trace, warn};
 use tokio::task::spawn_local;
 
-use crate::core::shared_box::{WeakBox, WeakBoxRef};
+use crate::core::shared_box::SharedBox;
 use crate::core::shared_mutex::SharedMutex;
 use crate::gatt::ids::AttHandle;
 use crate::gatt::mtu::{AttMtu, MtuEvent};
-use crate::gatt::opcode_types::{classify_opcode, OperationType};
+use crate::gatt::opcode_types::{AttRequest, AttType};
+use crate::gatt::server::att_client::WeakAttClient;
 use crate::packets::att::{self, AttErrorCode};
 use crate::utils::owned_handle::OwnedHandle;
 
-use super::att_database::AttDatabase;
 use super::command_handler::AttCommandHandler;
 use super::indication_handler::{ConfirmationWatcher, IndicationError, IndicationHandler};
 use super::request_handler::AttRequestHandler;
 
-enum AttRequestState<T: AttDatabase> {
-    Idle(AttRequestHandler<T>),
+enum AttRequestState {
+    Idle(AttRequestHandler),
     Pending { _task: OwnedHandle<()> },
     Replacing,
 }
@@ -42,58 +42,57 @@ pub enum SendError {
 /// This represents a single ATT bearer (currently, always the unenhanced fixed
 /// channel on LE) The AttRequestState ensures that only one transaction can
 /// take place at a time
-pub struct AttServerBearer<T: AttDatabase> {
+pub struct AttServerBearer {
     // general
     send_packet: Box<dyn Fn(att::Att) -> Result<(), EncodeError>>,
     mtu: AttMtu,
 
     // request state
-    curr_request: Cell<AttRequestState<T>>,
+    curr_request: Cell<AttRequestState>,
 
     // indication state
-    indication_handler: SharedMutex<IndicationHandler<T>>,
+    indication_handler: SharedMutex<IndicationHandler>,
     pending_confirmation: ConfirmationWatcher,
 
     // command handler (across all bearers)
-    command_handler: AttCommandHandler<T>,
+    command_handler: AttCommandHandler,
 }
 
-impl<T: AttDatabase + Clone + 'static> AttServerBearer<T> {
-    /// Constructor, wrapping an ATT channel (for outgoing packets) and an
-    /// AttDatabase
-    pub fn new(db: T, send_packet: impl Fn(att::Att) -> Result<(), EncodeError> + 'static) -> Self {
-        let (indication_handler, pending_confirmation) = IndicationHandler::new(db.clone());
+impl AttServerBearer {
+    /// Constructor, wrapping an ATT channel (for outgoing packets).
+    pub fn new(
+        client: WeakAttClient,
+        send_packet: impl Fn(att::Att) -> Result<(), EncodeError> + 'static,
+    ) -> Self {
+        let (indication_handler, pending_confirmation) = IndicationHandler::new(client.clone());
         Self {
             send_packet: Box::new(send_packet),
             mtu: AttMtu::new(),
 
-            curr_request: AttRequestState::Idle(AttRequestHandler::new(db.clone())).into(),
+            curr_request: AttRequestState::Idle(AttRequestHandler::new(client.clone())).into(),
 
             indication_handler: SharedMutex::new(indication_handler),
             pending_confirmation,
 
-            command_handler: AttCommandHandler::new(db),
+            command_handler: AttCommandHandler::new(client),
         }
     }
 
-    fn send_packet(&self, packet: att::Att) -> Result<(), EncodeError> {
+    /// Sends the specified packet on the bearer.
+    pub fn send_packet(&self, packet: att::Att) -> Result<(), EncodeError> {
         (self.send_packet)(packet)
     }
 }
 
-impl<T: AttDatabase + Clone + 'static> WeakBoxRef<'_, AttServerBearer<T>> {
+impl SharedBox<AttServerBearer> {
     /// Handle an incoming packet, and send outgoing packets as appropriate
     /// using the owned ATT channel.
     pub fn handle_packet(&self, packet: att::Att) {
-        match classify_opcode(packet.opcode) {
-            OperationType::Command => {
-                self.command_handler.process_packet(packet);
-            }
-            OperationType::Request => {
-                self.handle_request(packet);
-            }
-            OperationType::Confirmation => self.pending_confirmation.on_confirmation(),
-            OperationType::Response | OperationType::Notification | OperationType::Indication => {
+        match packet.into() {
+            AttType::Command(packet) => self.command_handler.process_packet(packet),
+            AttType::Request(packet) => self.handle_request(packet),
+            AttType::Confirmation(_) => self.pending_confirmation.on_confirmation(),
+            AttType::Response(_) | AttType::Notification(_) | AttType::Indication(_) => {
                 unreachable!("the arbiter should not let us receive these packet types")
             }
         }
@@ -111,7 +110,6 @@ impl<T: AttDatabase + Clone + 'static> WeakBoxRef<'_, AttServerBearer<T>> {
 
         let locked_indication_handler = self.indication_handler.lock();
         let pending_mtu = self.mtu.snapshot();
-        let this = self.downgrade();
 
         async move {
             // first wait until we are at the head of the queue and are ready to send
@@ -130,7 +128,7 @@ impl<T: AttDatabase + Clone + 'static> WeakBoxRef<'_, AttServerBearer<T>> {
                     IndicationError::SendError(SendError::ConnectionDropped)
                 })?;
             // finally, send, and wait for a response
-            indication_handler.send(handle, &data, mtu, |packet| this.try_send_packet(packet)).await
+            indication_handler.send(handle, &data, mtu).await
         }
     }
 
@@ -140,7 +138,7 @@ impl<T: AttDatabase + Clone + 'static> WeakBoxRef<'_, AttServerBearer<T>> {
         self.mtu.handle_event(mtu_event)
     }
 
-    fn handle_request(&self, packet: att::Att) {
+    fn handle_request(&self, packet: AttRequest) {
         let curr_request = self.curr_request.replace(AttRequestState::Replacing);
         self.curr_request.replace(match curr_request {
             AttRequestState::Idle(mut request_handler) => {
@@ -189,25 +187,12 @@ impl<T: AttDatabase + Clone + 'static> WeakBoxRef<'_, AttServerBearer<T>> {
     }
 }
 
-impl<T: AttDatabase + Clone + 'static> WeakBox<AttServerBearer<T>> {
-    fn try_send_packet(&self, packet: att::Att) -> Result<(), SendError> {
-        self.with(|this| {
-            this.ok_or_else(|| {
-                warn!("connection dropped before packet sent");
-                SendError::ConnectionDropped
-            })?
-            .send_packet(packet)
-            .map_err(SendError::SerializeError)
-        })
-    }
-}
-
 #[cfg(test)]
 mod test {
     use std::rc::Rc;
 
     use tokio::sync::mpsc::error::TryRecvError;
-    use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
+    use tokio::sync::mpsc::UnboundedReceiver;
 
     use super::*;
 
@@ -216,11 +201,12 @@ mod test {
     use crate::gatt::ffi::AttributeBackingType;
     use crate::gatt::ids::TransportIndex;
     use crate::gatt::mocks::mock_datastore::{MockDatastore, MockDatastoreEvents};
+    use crate::gatt::server::att_client::AttClient;
     use crate::gatt::server::att_database::{AttAttribute, AttPermissions};
     use crate::gatt::server::gatt_database::{
         GattCharacteristicWithHandle, GattDatabase, GattServiceWithHandle,
     };
-    use crate::gatt::server::test::test_att_db::TestAttDatabase;
+    use crate::gatt::server::test::test_att_db::new_test_database;
     use crate::packets::att;
     use crate::utils::task::{block_on_locally, try_await};
 
@@ -231,8 +217,8 @@ mod test {
     const TCB_IDX: TransportIndex = TransportIndex(1);
 
     fn open_connection(
-    ) -> (SharedBox<AttServerBearer<TestAttDatabase>>, UnboundedReceiver<att::Att>) {
-        let db = TestAttDatabase::new(vec![
+    ) -> (SharedBox<GattDatabase>, SharedBox<AttClient>, UnboundedReceiver<att::Att>) {
+        let db = new_test_database(vec![
             (
                 AttAttribute {
                     handle: VALID_HANDLE,
@@ -250,20 +236,16 @@ mod test {
                 vec![5, 6],
             ),
         ]);
-        let (tx, rx) = unbounded_channel();
-        let conn = AttServerBearer::new(db, move |packet| {
-            tx.send(packet).unwrap();
-            Ok(())
-        })
-        .into();
-        (conn, rx)
+        let (client, rx) = AttClient::new_test_client(TCB_IDX, &db);
+        (db, client, rx)
     }
 
     #[test]
     fn test_single_transaction() {
         block_on_locally(async {
-            let (conn, mut rx) = open_connection();
-            conn.as_ref().handle_packet(
+            let (_db, client, mut rx) = open_connection();
+            let conn = client.bearer();
+            conn.handle_packet(
                 att::AttReadRequest { attribute_handle: VALID_HANDLE.into() }.try_into().unwrap(),
             );
             assert_eq!(rx.recv().await.unwrap().opcode, att::AttOpcode::ReadResponse);
@@ -274,14 +256,15 @@ mod test {
     #[test]
     fn test_sequential_transactions() {
         block_on_locally(async {
-            let (conn, mut rx) = open_connection();
-            conn.as_ref().handle_packet(
+            let (_db, client, mut rx) = open_connection();
+            let conn = client.bearer();
+            conn.handle_packet(
                 att::AttReadRequest { attribute_handle: INVALID_HANDLE.into() }.try_into().unwrap(),
             );
             assert_eq!(rx.recv().await.unwrap().opcode, att::AttOpcode::ErrorResponse);
             assert_eq!(rx.try_recv(), Err(TryRecvError::Empty));
 
-            conn.as_ref().handle_packet(
+            conn.handle_packet(
                 att::AttReadRequest { attribute_handle: VALID_HANDLE.into() }.try_into().unwrap(),
             );
             assert_eq!(rx.recv().await.unwrap().opcode, att::AttOpcode::ReadResponse);
@@ -318,22 +301,18 @@ mod test {
             datastore,
         )
         .unwrap();
-        let (tx, mut rx) = unbounded_channel();
-        let send_packet = move |packet| {
-            tx.send(packet).unwrap();
-            Ok(())
-        };
-        let conn = SharedBox::new(AttServerBearer::new(db.get_att_database(TCB_IDX), send_packet));
+        let (client, mut rx) = AttClient::new_test_client(TCB_IDX, &db);
+        let conn = client.bearer();
         let data = [1, 2];
 
         // act: send two read requests before replying to either read
         // first request
         block_on_locally(async {
             let req1 = att::AttReadRequest { attribute_handle: VALID_HANDLE.into() };
-            conn.as_ref().handle_packet(req1.try_into().unwrap());
+            conn.handle_packet(req1.try_into().unwrap());
             // second request
             let req2 = att::AttReadRequest { attribute_handle: ANOTHER_VALID_HANDLE.into() };
-            conn.as_ref().handle_packet(req2.try_into().unwrap());
+            conn.handle_packet(req2.try_into().unwrap());
             // handle first reply
             let MockDatastoreEvents::Read(
                 TCB_IDX,
@@ -361,15 +340,15 @@ mod test {
     fn test_indication_confirmation() {
         block_on_locally(async {
             // arrange
-            let (conn, mut rx) = open_connection();
+            let (_db, client, mut rx) = open_connection();
+            let conn = client.bearer();
 
             // act: send an indication
-            let pending_send =
-                spawn_local(conn.as_ref().send_indication(VALID_HANDLE, vec![1, 2, 3]));
+            let pending_send = spawn_local(conn.send_indication(VALID_HANDLE, vec![1, 2, 3]));
             assert_eq!(rx.recv().await.unwrap().opcode, att::AttOpcode::HandleValueIndication);
             assert_eq!(rx.try_recv(), Err(TryRecvError::Empty));
             // and the confirmation
-            conn.as_ref().handle_packet(att::AttHandleValueConfirmation {}.try_into().unwrap());
+            conn.handle_packet(att::AttHandleValueConfirmation {}.try_into().unwrap());
 
             // assert: the indication was correctly sent
             assert!(matches!(pending_send.await.unwrap(), Ok(())));
@@ -380,22 +359,21 @@ mod test {
     fn test_sequential_indications() {
         block_on_locally(async {
             // arrange
-            let (conn, mut rx) = open_connection();
+            let (_db, client, mut rx) = open_connection();
+            let conn = client.bearer();
 
             // act: send the first indication
-            let pending_send1 =
-                spawn_local(conn.as_ref().send_indication(VALID_HANDLE, vec![1, 2, 3]));
+            let pending_send1 = spawn_local(conn.send_indication(VALID_HANDLE, vec![1, 2, 3]));
             // wait for/capture the outgoing packet
             let sent1 = rx.recv().await.unwrap();
             // send the response
-            conn.as_ref().handle_packet(att::AttHandleValueConfirmation {}.try_into().unwrap());
+            conn.handle_packet(att::AttHandleValueConfirmation {}.try_into().unwrap());
             // send the second indication
-            let pending_send2 =
-                spawn_local(conn.as_ref().send_indication(VALID_HANDLE, vec![1, 2, 3]));
+            let pending_send2 = spawn_local(conn.send_indication(VALID_HANDLE, vec![1, 2, 3]));
             // wait for/capture the outgoing packet
             let sent2 = rx.recv().await.unwrap();
             // and the response
-            conn.as_ref().handle_packet(att::AttHandleValueConfirmation {}.try_into().unwrap());
+            conn.handle_packet(att::AttHandleValueConfirmation {}.try_into().unwrap());
 
             // assert: exactly two indications were sent
             assert_eq!(sent1.opcode, att::AttOpcode::HandleValueIndication);
@@ -411,13 +389,13 @@ mod test {
     fn test_queued_indications_only_one_sent() {
         block_on_locally(async {
             // arrange
-            let (conn, mut rx) = open_connection();
+            let (_db, client, mut rx) = open_connection();
+            let conn = client.bearer();
 
             // act: send two indications simultaneously
-            let pending_send1 =
-                spawn_local(conn.as_ref().send_indication(VALID_HANDLE, vec![1, 2, 3]));
+            let pending_send1 = spawn_local(conn.send_indication(VALID_HANDLE, vec![1, 2, 3]));
             let pending_send2 =
-                spawn_local(conn.as_ref().send_indication(ANOTHER_VALID_HANDLE, vec![1, 2, 3]));
+                spawn_local(conn.send_indication(ANOTHER_VALID_HANDLE, vec![1, 2, 3]));
             // assert: only one was initially sent
             assert_eq!(rx.recv().await.unwrap().opcode, att::AttOpcode::HandleValueIndication);
             assert_eq!(rx.try_recv(), Err(TryRecvError::Empty));
@@ -431,17 +409,17 @@ mod test {
     fn test_queued_indications_dequeue_second() {
         block_on_locally(async {
             // arrange
-            let (conn, mut rx) = open_connection();
+            let (_db, client, mut rx) = open_connection();
+            let conn = client.bearer();
 
             // act: send two indications simultaneously
-            let pending_send1 =
-                spawn_local(conn.as_ref().send_indication(VALID_HANDLE, vec![1, 2, 3]));
+            let pending_send1 = spawn_local(conn.send_indication(VALID_HANDLE, vec![1, 2, 3]));
             let pending_send2 =
-                spawn_local(conn.as_ref().send_indication(ANOTHER_VALID_HANDLE, vec![1, 2, 3]));
+                spawn_local(conn.send_indication(ANOTHER_VALID_HANDLE, vec![1, 2, 3]));
             // wait for/capture the outgoing packet
             let sent1 = rx.recv().await.unwrap();
             // send response for the first one
-            conn.as_ref().handle_packet(att::AttHandleValueConfirmation {}.try_into().unwrap());
+            conn.handle_packet(att::AttHandleValueConfirmation {}.try_into().unwrap());
             // wait for/capture the outgoing packet
             let sent2 = rx.recv().await.unwrap();
 
@@ -460,21 +438,21 @@ mod test {
     fn test_queued_indications_complete_both() {
         block_on_locally(async {
             // arrange
-            let (conn, mut rx) = open_connection();
+            let (_db, client, mut rx) = open_connection();
+            let conn = client.bearer();
 
             // act: send two indications simultaneously
-            let pending_send1 =
-                spawn_local(conn.as_ref().send_indication(VALID_HANDLE, vec![1, 2, 3]));
+            let pending_send1 = spawn_local(conn.send_indication(VALID_HANDLE, vec![1, 2, 3]));
             let pending_send2 =
-                spawn_local(conn.as_ref().send_indication(ANOTHER_VALID_HANDLE, vec![1, 2, 3]));
+                spawn_local(conn.send_indication(ANOTHER_VALID_HANDLE, vec![1, 2, 3]));
             // wait for/capture the outgoing packet
             let sent1 = rx.recv().await.unwrap();
             // send response for the first one
-            conn.as_ref().handle_packet(att::AttHandleValueConfirmation {}.try_into().unwrap());
+            conn.handle_packet(att::AttHandleValueConfirmation {}.try_into().unwrap());
             // wait for/capture the outgoing packet
             let sent2 = rx.recv().await.unwrap();
             // and now the second
-            conn.as_ref().handle_packet(att::AttHandleValueConfirmation {}.try_into().unwrap());
+            conn.handle_packet(att::AttHandleValueConfirmation {}.try_into().unwrap());
 
             // assert: both futures have completed successfully
             assert!(matches!(pending_send1.await.unwrap(), Ok(())));
@@ -490,13 +468,13 @@ mod test {
     fn test_indication_connection_drop() {
         block_on_locally(async {
             // arrange: a pending indication
-            let (conn, mut rx) = open_connection();
-            let pending_send =
-                spawn_local(conn.as_ref().send_indication(VALID_HANDLE, vec![1, 2, 3]));
+            let (_db, client, mut rx) = open_connection();
+            let conn = client.bearer();
+            let pending_send = spawn_local(conn.send_indication(VALID_HANDLE, vec![1, 2, 3]));
 
             // act: drop the connection after the indication is sent
             rx.recv().await.unwrap();
-            drop(conn);
+            drop(client);
 
             // assert: the pending indication fails with the appropriate error
             assert!(matches!(
@@ -510,13 +488,14 @@ mod test {
     fn test_single_indication_pending_mtu() {
         block_on_locally(async {
             // arrange: pending MTU negotiation
-            let (conn, mut rx) = open_connection();
-            conn.as_ref().handle_mtu_event(MtuEvent::OutgoingRequest).unwrap();
+            let (_db, client, mut rx) = open_connection();
+            let conn = client.bearer();
+            conn.handle_mtu_event(MtuEvent::OutgoingRequest).unwrap();
 
             // act: try to send an indication with a large payload size
-            let _ = try_await(conn.as_ref().send_indication(VALID_HANDLE, (1..50).collect())).await;
+            let _ = try_await(conn.send_indication(VALID_HANDLE, (1..50).collect())).await;
             // then resolve the MTU negotiation with a large MTU
-            conn.as_ref().handle_mtu_event(MtuEvent::IncomingResponse(100)).unwrap();
+            conn.handle_mtu_event(MtuEvent::IncomingResponse(100)).unwrap();
 
             // assert: the indication was sent
             assert_eq!(rx.recv().await.unwrap().opcode, att::AttOpcode::HandleValueIndication);
@@ -527,16 +506,15 @@ mod test {
     fn test_single_indication_pending_mtu_fail() {
         block_on_locally(async {
             // arrange: pending MTU negotiation
-            let (conn, _) = open_connection();
-            conn.as_ref().handle_mtu_event(MtuEvent::OutgoingRequest).unwrap();
+            let (_db, client, _rx) = open_connection();
+            let conn = client.bearer();
+            conn.handle_mtu_event(MtuEvent::OutgoingRequest).unwrap();
 
             // act: try to send an indication with a large payload size
             let pending_mtu =
-                try_await(conn.as_ref().send_indication(VALID_HANDLE, (1..50).collect()))
-                    .await
-                    .unwrap_err();
+                try_await(conn.send_indication(VALID_HANDLE, (1..50).collect())).await.unwrap_err();
             // then resolve the MTU negotiation with a small MTU
-            conn.as_ref().handle_mtu_event(MtuEvent::IncomingResponse(32)).unwrap();
+            conn.handle_mtu_event(MtuEvent::IncomingResponse(32)).unwrap();
 
             // assert: the indication failed to send
             assert!(matches!(pending_mtu.await, Err(IndicationError::DataExceedsMtu { .. })));
@@ -547,11 +525,12 @@ mod test {
     fn test_server_transaction_pending_mtu() {
         block_on_locally(async {
             // arrange: pending MTU negotiation
-            let (conn, mut rx) = open_connection();
-            conn.as_ref().handle_mtu_event(MtuEvent::OutgoingRequest).unwrap();
+            let (_db, client, mut rx) = open_connection();
+            let conn = client.bearer();
+            conn.handle_mtu_event(MtuEvent::OutgoingRequest).unwrap();
 
             // act: send server packet
-            conn.as_ref().handle_packet(
+            conn.handle_packet(
                 att::AttReadRequest { attribute_handle: VALID_HANDLE.into() }.try_into().unwrap(),
             );
 
@@ -564,17 +543,18 @@ mod test {
     fn test_queued_indication_pending_mtu_uses_mtu_on_dequeue() {
         block_on_locally(async {
             // arrange: an outstanding indication
-            let (conn, mut rx) = open_connection();
-            let _ = try_await(conn.as_ref().send_indication(VALID_HANDLE, vec![1, 2, 3])).await;
+            let (_db, client, mut rx) = open_connection();
+            let conn = client.bearer();
+            let _ = try_await(conn.send_indication(VALID_HANDLE, vec![1, 2, 3])).await;
             rx.recv().await.unwrap(); // flush rx_queue
 
             // act: enqueue an indication with a large payload
-            let _ = try_await(conn.as_ref().send_indication(VALID_HANDLE, (1..50).collect())).await;
+            let _ = try_await(conn.send_indication(VALID_HANDLE, (1..50).collect())).await;
             // then perform MTU negotiation to upgrade to a large MTU
-            conn.as_ref().handle_mtu_event(MtuEvent::OutgoingRequest).unwrap();
-            conn.as_ref().handle_mtu_event(MtuEvent::IncomingResponse(512)).unwrap();
+            conn.handle_mtu_event(MtuEvent::OutgoingRequest).unwrap();
+            conn.handle_mtu_event(MtuEvent::IncomingResponse(512)).unwrap();
             // finally resolve the first indication, so the second indication can be sent
-            conn.as_ref().handle_packet(att::AttHandleValueConfirmation {}.try_into().unwrap());
+            conn.handle_packet(att::AttHandleValueConfirmation {}.try_into().unwrap());
 
             // assert: the second indication successfully sent (so it used the new MTU)
             assert_eq!(rx.recv().await.unwrap().opcode, att::AttOpcode::HandleValueIndication);

@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "rfcomm_always_disc_initiator_in_disc_wait_ua"
-    namespace: "bluetooth"
-    description: "Always be the DISC initiator in the DISC_WAIT_UA state to avoid unnecessary hang"
-    bug: "350839022"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "allow_free_last_scn"
     namespace: "bluetooth"
     description: "Allow SCN 30 to be freed"

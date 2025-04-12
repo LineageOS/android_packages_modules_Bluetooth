@@ -51,10 +51,8 @@ private:
 
   // Socket thread for listening to incoming connections.
   std::unique_ptr<std::thread> listen_thread_;
-  bool listen_thread_running_ = false;
+  std::atomic<bool> listen_thread_running_ = false;
 
-  std::condition_variable listen_thread_running_cv_;
-  std::mutex listen_thread_running_mutex_;
   std::atomic<bool> stop_thread_;
 };
 

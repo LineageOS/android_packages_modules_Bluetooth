@@ -12,16 +12,6 @@ flag {
 }
 
 flag {
-    name: "remove_dup_pairing_response_in_oob_pairing"
-    namespace: "bluetooth"
-    description: "Avoid sending duplicate pairing response when device is in peripheral role & OOB pairing mode chosen"
-    bug: "351948689"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "donot_queue_dup_rnr"
     namespace: "bluetooth"
     description: "Avoid queueing second RNR as part of ssp process"
@@ -46,16 +36,6 @@ flag {
     namespace: "bluetooth"
     description: "do not validate bond state from profiles for incoming connections as stack already ensures secure service access"
     bug: "353738134"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "save_peer_csrk_after_ltk_gen"
-    namespace: "bluetooth"
-    description: "save peer csrk after ltk generated so that right security level is marked as part of peer csrk"
-    bug: "365567905"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -116,16 +96,6 @@ flag {
     namespace: "bluetooth"
     description: "Device must be removed in main thread"
     bug: "381275933"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "bonded_device_smp_failure_handling"
-    namespace: "bluetooth"
-    description: "Don't remove bond on SMP failure for bonded devices in peripheral role"
-    bug: "385181815"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

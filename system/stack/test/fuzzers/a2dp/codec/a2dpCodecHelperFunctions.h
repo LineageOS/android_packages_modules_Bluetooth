@@ -132,7 +132,7 @@ std::shared_ptr<BT_HDR> getArbitraryBtHdr(FuzzedDataProvider* fdp) {
   return bt_hdr;
 }
 
-#include "bta/av/bta_av_int.h"
+#include "bta/include/bta_av_api.h"
 tBT_A2DP_OFFLOAD generateArbitrarytA2dpOffload(FuzzedDataProvider* fdp) {
   tBT_A2DP_OFFLOAD retval;
 

@@ -39,7 +39,7 @@ const static metrics::ClockTimePoint kInvalidTimePoint{};
 
 MetricsCollector* MetricsCollector::instance = nullptr;
 
-inline int64_t get_timedelta_nanos(const metrics::ClockTimePoint& t1,
+static int64_t get_timedelta_nanos(const metrics::ClockTimePoint& t1,
                                    const metrics::ClockTimePoint& t2) {
   if (t1 == kInvalidTimePoint || t2 == kInvalidTimePoint) {
     return -1;
@@ -64,7 +64,7 @@ const static std::unordered_map<LeAudioContextType, LeAudioMetricsContextType> k
         {LeAudioContextType::RFU, LeAudioMetricsContextType::RFU},
 };
 
-inline int32_t to_atom_context_type(const LeAudioContextType stack_type) {
+static int32_t to_atom_context_type(const LeAudioContextType stack_type) {
   auto it = kContextTypeTable.find(stack_type);
   if (it != kContextTypeTable.end()) {
     return static_cast<int32_t>(it->second);
@@ -199,7 +199,7 @@ public:
       device_address[i] = device_metric->address_;
     }
 
-    bluetooth::os::LogMetricLeAudioConnectionSessionReported(
+    bluetooth::metrics::LogMetricLeAudioConnectionSessionReported(
             group_size_, group_id_, connection_duration_nanos, device_connecting_offset_nanos,
             device_connected_offset_nanos, device_connection_duration_nanos,
             device_connection_statuses, device_disconnection_statuses, device_address,
@@ -278,7 +278,7 @@ void MetricsCollector::OnBroadcastStateChanged(bool started) {
     broadcast_beginning_timepoint_ = std::chrono::high_resolution_clock::now();
   } else {
     auto broadcast_ending_timepoint_ = std::chrono::high_resolution_clock::now();
-    bluetooth::os::LogMetricLeAudioBroadcastSessionReported(
+    bluetooth::metrics::LogMetricLeAudioBroadcastSessionReported(
             get_timedelta_nanos(broadcast_beginning_timepoint_, broadcast_ending_timepoint_));
     broadcast_beginning_timepoint_ = kInvalidTimePoint;
   }

@@ -159,7 +159,7 @@ record BaseData(
                 offset = pair2.second;
             }
         }
-        consolidateBaseOfLevelTwo(levelTwo, levelThree);
+        consolidateBaseOfLevels(levelTwo, levelThree);
         return new BaseData(levelOne, levelTwo, levelThree, numOfBISIndices);
     }
 
@@ -256,26 +256,16 @@ record BaseData(
         return new Pair<BaseInformation, Integer>(node, offset);
     }
 
-    static void consolidateBaseOfLevelTwo(
+    private static void consolidateBaseOfLevels(
             List<BaseInformation> levelTwo, List<BaseInformation> levelThree) {
-        int startIdx = 0;
-        int children = 0;
-        for (int i = 0; i < levelTwo.size(); i++) {
-            startIdx = startIdx + children;
-            children = children + levelTwo.get(i).mNumSubGroups;
-            consolidateBaseOfLevelThree(
-                    levelTwo, levelThree, i, startIdx, levelTwo.get(i).mNumSubGroups);
-        }
-    }
-
-    static void consolidateBaseOfLevelThree(
-            List<BaseInformation> levelTwo,
-            List<BaseInformation> levelThree,
-            int parentSubgroup,
-            int startIdx,
-            int numNodes) {
-        for (int i = startIdx; i < startIdx + numNodes || i < levelThree.size(); i++) {
-            levelThree.get(i).mSubGroupId = levelTwo.get(parentSubgroup).mSubGroupId;
+        int currentIdx = 0;
+        for (BaseInformation baseTwo : levelTwo) {
+            int endIdx = Math.min(currentIdx + baseTwo.mNumSubGroups, levelThree.size());
+            // Assign subgroupId to levelThree base
+            for (int i = currentIdx; i < endIdx; i++) {
+                levelThree.get(i).mSubGroupId = baseTwo.mSubGroupId;
+            }
+            currentIdx = endIdx;
         }
     }
 

@@ -17,6 +17,8 @@
 
 #include "metrics/metrics.h"
 
+#include <base/files/file_util.h>
+#include <base/strings/string_util.h>
 #include <bluetooth/log.h>
 #include <metrics/structured_events.h>
 
@@ -352,7 +354,7 @@ void LogMetricMmcTranscodeRttStats(int maximum_rtt, double mean_rtt, int num_req
                                    int codec_type) {
   std::string boot_id;
 
-  if (!metrics::GetBootId(&boot_id)) {
+  if (!GetBootId(&boot_id)) {
     return;
   }
 

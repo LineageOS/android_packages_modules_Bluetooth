@@ -28,7 +28,7 @@
 #include "a2dp_vendor_aptx_constants.h"
 #include "a2dp_vendor_aptx_hd_constants.h"
 #include "a2dp_vendor_ldac_constants.h"
-#include "bta/av/bta_av_int.h"
+#include "bta/include/bta_av_api.h"
 #include "client_interface_aidl.h"
 
 namespace bluetooth {
@@ -56,6 +56,8 @@ using ::aidl::android::hardware::bluetooth::audio::SbcAllocMethod;
 using ::aidl::android::hardware::bluetooth::audio::SbcCapabilities;
 using ::aidl::android::hardware::bluetooth::audio::SbcChannelMode;
 using ::aidl::android::hardware::bluetooth::audio::SbcConfiguration;
+
+using ::bluetooth::audio::a2dp::ahal_codec_configuration;
 
 namespace {
 
@@ -200,22 +202,20 @@ ChannelMode A2dpCodecToHalChannelMode(const btav_a2dp_codec_config_t& a2dp_codec
   }
 }
 
-bool A2dpSbcToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_config) {
-  btav_a2dp_codec_config_t current_codec = a2dp_config->getCodecConfig();
-  if (current_codec.codec_type != BTAV_A2DP_CODEC_INDEX_SOURCE_SBC &&
-      current_codec.codec_type != BTAV_A2DP_CODEC_INDEX_SINK_SBC) {
+bool A2dpSbcToHalConfig(const ahal_codec_configuration& config, CodecConfiguration* codec_config) {
+  if (config.codec_config.codec_type != BTAV_A2DP_CODEC_INDEX_SOURCE_SBC &&
+      config.codec_config.codec_type != BTAV_A2DP_CODEC_INDEX_SINK_SBC) {
     return false;
   }
-  tBT_A2DP_OFFLOAD a2dp_offload;
-  a2dp_config->getCodecSpecificConfig(&a2dp_offload);
   codec_config->codecType = CodecType::SBC;
   SbcConfiguration sbc_config = {};
-  sbc_config.sampleRateHz = A2dpCodecToHalSampleRate(current_codec);
+  sbc_config.sampleRateHz = A2dpCodecToHalSampleRate(config.codec_config);
   if (sbc_config.sampleRateHz <= 0) {
-    log::error("Unknown SBC sample_rate={}", current_codec.sample_rate);
+    log::error("Unknown SBC sample_rate={}", config.codec_config.sample_rate);
     return false;
   }
-  uint8_t channel_mode = a2dp_offload.codec_info[3] & A2DP_SBC_IE_CH_MD_MSK;
+  uint8_t channel_mode =
+          config.codec_specific_information_elements[A2DP_SBC_IE_CH_MD_IDX] & A2DP_SBC_IE_CH_MD_MSK;
   switch (channel_mode) {
     case A2DP_SBC_IE_CH_MD_JOINT:
       sbc_config.channelMode = SbcChannelMode::JOINT_STEREO;
@@ -234,7 +234,8 @@ bool A2dpSbcToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_
       sbc_config.channelMode = SbcChannelMode::UNKNOWN;
       return false;
   }
-  uint8_t block_length = a2dp_offload.codec_info[0] & A2DP_SBC_IE_BLOCKS_MSK;
+  uint8_t block_length = config.codec_specific_information_elements[A2DP_SBC_IE_BLOCKS_IDX] &
+                         A2DP_SBC_IE_BLOCKS_MSK;
   switch (block_length) {
     case A2DP_SBC_IE_BLOCKS_4:
       sbc_config.blockLength = 4;
@@ -252,7 +253,8 @@ bool A2dpSbcToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_
       log::error("Unknown SBC block_length={}", block_length);
       return false;
   }
-  uint8_t sub_bands = a2dp_offload.codec_info[0] & A2DP_SBC_IE_SUBBAND_MSK;
+  uint8_t sub_bands = config.codec_specific_information_elements[A2DP_SBC_IE_SUBBAND_IDX] &
+                      A2DP_SBC_IE_SUBBAND_MSK;
   switch (sub_bands) {
     case A2DP_SBC_IE_SUBBAND_4:
       sbc_config.numSubbands = 4;
@@ -264,7 +266,8 @@ bool A2dpSbcToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_
       log::error("Unknown SBC Subbands={}", sub_bands);
       return false;
   }
-  uint8_t alloc_method = a2dp_offload.codec_info[0] & A2DP_SBC_IE_ALLOC_MD_MSK;
+  uint8_t alloc_method = config.codec_specific_information_elements[A2DP_SBC_IE_ALLOC_MD_IDX] &
+                         A2DP_SBC_IE_ALLOC_MD_MSK;
   switch (alloc_method) {
     case A2DP_SBC_IE_ALLOC_MD_S:
       sbc_config.allocMethod = SbcAllocMethod::ALLOC_MD_S;
@@ -276,28 +279,25 @@ bool A2dpSbcToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_
       log::error("Unknown SBC alloc_method={}", alloc_method);
       return false;
   }
-  sbc_config.minBitpool = a2dp_offload.codec_info[1];
-  sbc_config.maxBitpool = a2dp_offload.codec_info[2];
-  sbc_config.bitsPerSample = A2dpCodecToHalBitsPerSample(current_codec);
+  sbc_config.minBitpool = config.codec_specific_information_elements[A2DP_SBC_IE_MIN_BITPOOL_IDX];
+  sbc_config.maxBitpool = config.codec_specific_information_elements[A2DP_SBC_IE_MAX_BITPOOL_IDX];
+  sbc_config.bitsPerSample = A2dpCodecToHalBitsPerSample(config.codec_config);
   if (sbc_config.bitsPerSample <= 0) {
-    log::error("Unknown SBC bits_per_sample={}", current_codec.bits_per_sample);
+    log::error("Unknown SBC bits_per_sample={}", config.codec_config.bits_per_sample);
     return false;
   }
   codec_config->config.set<CodecConfiguration::CodecSpecific::sbcConfig>(sbc_config);
   return true;
 }
 
-bool A2dpAacToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_config) {
-  btav_a2dp_codec_config_t current_codec = a2dp_config->getCodecConfig();
-  if (current_codec.codec_type != BTAV_A2DP_CODEC_INDEX_SOURCE_AAC &&
-      current_codec.codec_type != BTAV_A2DP_CODEC_INDEX_SINK_AAC) {
+bool A2dpAacToHalConfig(const ahal_codec_configuration& config, CodecConfiguration* codec_config) {
+  if (config.codec_config.codec_type != BTAV_A2DP_CODEC_INDEX_SOURCE_AAC &&
+      config.codec_config.codec_type != BTAV_A2DP_CODEC_INDEX_SINK_AAC) {
     return false;
   }
-  tBT_A2DP_OFFLOAD a2dp_offload;
-  a2dp_config->getCodecSpecificConfig(&a2dp_offload);
   codec_config->codecType = CodecType::AAC;
   AacConfiguration aac_config = {};
-  uint8_t object_type = a2dp_offload.codec_info[0];
+  uint8_t object_type = config.codec_specific_information_elements[A2DP_AAC_OBJECT_TYPE_IDX];
   switch (object_type) {
     case A2DP_AAC_OBJECT_TYPE_MPEG2_LC:
       aac_config.objectType = AacObjectType::MPEG2_LC;
@@ -315,17 +315,18 @@ bool A2dpAacToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_
       log::error("Unknown AAC object_type={}", object_type);
       return false;
   }
-  aac_config.sampleRateHz = A2dpCodecToHalSampleRate(current_codec);
+  aac_config.sampleRateHz = A2dpCodecToHalSampleRate(config.codec_config);
   if (aac_config.sampleRateHz <= 0) {
-    log::error("Unknown AAC sample_rate={}", current_codec.sample_rate);
+    log::error("Unknown AAC sample_rate={}", config.codec_config.sample_rate);
     return false;
   }
-  aac_config.channelMode = A2dpCodecToHalChannelMode(current_codec);
+  aac_config.channelMode = A2dpCodecToHalChannelMode(config.codec_config);
   if (aac_config.channelMode == ChannelMode::UNKNOWN) {
-    log::error("Unknown AAC channel_mode={}", current_codec.channel_mode);
+    log::error("Unknown AAC channel_mode={}", config.codec_config.channel_mode);
     return false;
   }
-  uint8_t vbr_enabled = a2dp_offload.codec_info[1] & A2DP_AAC_VARIABLE_BIT_RATE_MASK;
+  uint8_t vbr_enabled = config.codec_specific_information_elements[A2DP_AAC_VARIABLE_BIT_RATE_IDX] &
+                        A2DP_AAC_VARIABLE_BIT_RATE_MASK;
   switch (vbr_enabled) {
     case A2DP_AAC_VARIABLE_BIT_RATE_ENABLED:
       aac_config.variableBitRateEnabled = true;
@@ -337,63 +338,58 @@ bool A2dpAacToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_
       log::error("Unknown AAC VBR={}", vbr_enabled);
       return false;
   }
-  aac_config.bitsPerSample = A2dpCodecToHalBitsPerSample(current_codec);
+  aac_config.bitsPerSample = A2dpCodecToHalBitsPerSample(config.codec_config);
   if (aac_config.bitsPerSample <= 0) {
-    log::error("Unknown AAC bits_per_sample={}", current_codec.bits_per_sample);
+    log::error("Unknown AAC bits_per_sample={}", config.codec_config.bits_per_sample);
     return false;
   }
   codec_config->config.set<CodecConfiguration::CodecSpecific::aacConfig>(aac_config);
   return true;
 }
 
-bool A2dpAptxToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_config) {
-  btav_a2dp_codec_config_t current_codec = a2dp_config->getCodecConfig();
-  if (current_codec.codec_type != BTAV_A2DP_CODEC_INDEX_SOURCE_APTX &&
-      current_codec.codec_type != BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD) {
+bool A2dpAptxToHalConfig(const ahal_codec_configuration& config, CodecConfiguration* codec_config) {
+  if (config.codec_config.codec_type != BTAV_A2DP_CODEC_INDEX_SOURCE_APTX &&
+      config.codec_config.codec_type != BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD) {
     return false;
   }
-  tBT_A2DP_OFFLOAD a2dp_offload;
-  a2dp_config->getCodecSpecificConfig(&a2dp_offload);
-  if (current_codec.codec_type == BTAV_A2DP_CODEC_INDEX_SOURCE_APTX) {
+  if (config.codec_config.codec_type == BTAV_A2DP_CODEC_INDEX_SOURCE_APTX) {
     codec_config->codecType = CodecType::APTX;
   } else {
     codec_config->codecType = CodecType::APTX_HD;
   }
   AptxConfiguration aptx_config = {};
-  aptx_config.sampleRateHz = A2dpCodecToHalSampleRate(current_codec);
+  aptx_config.sampleRateHz = A2dpCodecToHalSampleRate(config.codec_config);
   if (aptx_config.sampleRateHz <= 0) {
-    log::error("Unknown aptX sample_rate={}", current_codec.sample_rate);
+    log::error("Unknown aptX sample_rate={}", config.codec_config.sample_rate);
     return false;
   }
-  aptx_config.channelMode = A2dpCodecToHalChannelMode(current_codec);
+  aptx_config.channelMode = A2dpCodecToHalChannelMode(config.codec_config);
   if (aptx_config.channelMode == ChannelMode::UNKNOWN) {
-    log::error("Unknown aptX channel_mode={}", current_codec.channel_mode);
+    log::error("Unknown aptX channel_mode={}", config.codec_config.channel_mode);
     return false;
   }
-  aptx_config.bitsPerSample = A2dpCodecToHalBitsPerSample(current_codec);
+  aptx_config.bitsPerSample = A2dpCodecToHalBitsPerSample(config.codec_config);
   if (aptx_config.bitsPerSample <= 0) {
-    log::error("Unknown aptX bits_per_sample={}", current_codec.bits_per_sample);
+    log::error("Unknown aptX bits_per_sample={}", config.codec_config.bits_per_sample);
     return false;
   }
   codec_config->config.set<CodecConfiguration::CodecSpecific::aptxConfig>(aptx_config);
   return true;
 }
 
-bool A2dpLdacToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_config) {
-  btav_a2dp_codec_config_t current_codec = a2dp_config->getCodecConfig();
-  if (current_codec.codec_type != BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC) {
+bool A2dpLdacToHalConfig(const ahal_codec_configuration& config, CodecConfiguration* codec_config) {
+  if (config.codec_config.codec_type != BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC) {
     return false;
   }
-  tBT_A2DP_OFFLOAD a2dp_offload;
-  a2dp_config->getCodecSpecificConfig(&a2dp_offload);
   codec_config->codecType = CodecType::LDAC;
   LdacConfiguration ldac_config = {};
-  ldac_config.sampleRateHz = A2dpCodecToHalSampleRate(current_codec);
+  ldac_config.sampleRateHz = A2dpCodecToHalSampleRate(config.codec_config);
   if (ldac_config.sampleRateHz <= 0) {
-    log::error("Unknown LDAC sample_rate={}", current_codec.sample_rate);
+    log::error("Unknown LDAC sample_rate={}", config.codec_config.sample_rate);
     return false;
   }
-  switch (a2dp_offload.codec_info[7]) {
+  int channel_mode = config.codec_specific_information_elements[A2DP_LDAC_CHANNEL_MODE_IDX];
+  switch (channel_mode) {
     case A2DP_LDAC_CHANNEL_MODE_STEREO:
       ldac_config.channelMode = LdacChannelMode::STEREO;
       break;
@@ -404,11 +400,28 @@ bool A2dpLdacToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp
       ldac_config.channelMode = LdacChannelMode::MONO;
       break;
     default:
-      log::error("Unknown LDAC channel_mode={}", a2dp_offload.codec_info[7]);
+      log::error("Unknown LDAC channel_mode={}", channel_mode);
       ldac_config.channelMode = LdacChannelMode::UNKNOWN;
       return false;
   }
-  switch (a2dp_offload.codec_info[6]) {
+  int ldac_quality = A2DP_LDAC_QUALITY_ABR_OFFLOAD;
+  if (config.codec_config.codec_specific_1 != 0) {
+    switch (config.codec_config.codec_specific_1 % 10) {
+      case 0:
+        ldac_quality = A2DP_LDAC_QUALITY_HIGH;
+        break;
+      case 1:
+        ldac_quality = A2DP_LDAC_QUALITY_MID;
+        break;
+      case 2:
+        ldac_quality = A2DP_LDAC_QUALITY_LOW;
+        break;
+      default:
+        ldac_quality = A2DP_LDAC_QUALITY_ABR_OFFLOAD;
+        break;
+    }
+  }
+  switch (ldac_quality) {
     case A2DP_LDAC_QUALITY_HIGH:
       ldac_config.qualityIndex = LdacQualityIndex::HIGH;
       break;
@@ -422,42 +435,39 @@ bool A2dpLdacToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp
       ldac_config.qualityIndex = LdacQualityIndex::ABR;
       break;
     default:
-      log::error("Unknown LDAC QualityIndex={}", a2dp_offload.codec_info[6]);
+      log::error("Unknown LDAC QualityIndex={}", ldac_quality);
       return false;
   }
-  ldac_config.bitsPerSample = A2dpCodecToHalBitsPerSample(current_codec);
+  ldac_config.bitsPerSample = A2dpCodecToHalBitsPerSample(config.codec_config);
   if (ldac_config.bitsPerSample <= 0) {
-    log::error("Unknown LDAC bits_per_sample={}", current_codec.bits_per_sample);
+    log::error("Unknown LDAC bits_per_sample={}", config.codec_config.bits_per_sample);
     return false;
   }
   codec_config->config.set<CodecConfiguration::CodecSpecific::ldacConfig>(ldac_config);
   return true;
 }
 
-bool A2dpOpusToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_config) {
-  btav_a2dp_codec_config_t current_codec = a2dp_config->getCodecConfig();
-  if (current_codec.codec_type != BTAV_A2DP_CODEC_INDEX_SOURCE_OPUS) {
+bool A2dpOpusToHalConfig(const ahal_codec_configuration& config, CodecConfiguration* codec_config) {
+  if (config.codec_config.codec_type != BTAV_A2DP_CODEC_INDEX_SOURCE_OPUS) {
     codec_config = {};
     return false;
   }
-  tBT_A2DP_OFFLOAD a2dp_offload;
-  a2dp_config->getCodecSpecificConfig(&a2dp_offload);
   codec_config->codecType = CodecType::OPUS;
   OpusConfiguration opus_config = {};
 
-  opus_config.pcmBitDepth = A2dpCodecToHalBitsPerSample(current_codec);
+  opus_config.pcmBitDepth = A2dpCodecToHalBitsPerSample(config.codec_config);
   if (opus_config.pcmBitDepth <= 0) {
-    log::error("Unknown Opus bits_per_sample={}", current_codec.bits_per_sample);
+    log::error("Unknown Opus bits_per_sample={}", config.codec_config.bits_per_sample);
     return false;
   }
-  opus_config.samplingFrequencyHz = A2dpCodecToHalSampleRate(current_codec);
+  opus_config.samplingFrequencyHz = A2dpCodecToHalSampleRate(config.codec_config);
   if (opus_config.samplingFrequencyHz <= 0) {
-    log::error("Unknown Opus sample_rate={}", current_codec.sample_rate);
+    log::error("Unknown Opus sample_rate={}", config.codec_config.sample_rate);
     return false;
   }
-  opus_config.channelMode = A2dpCodecToHalChannelMode(current_codec);
+  opus_config.channelMode = A2dpCodecToHalChannelMode(config.codec_config);
   if (opus_config.channelMode == ChannelMode::UNKNOWN) {
-    log::error("Unknown Opus channel_mode={}", current_codec.channel_mode);
+    log::error("Unknown Opus channel_mode={}", config.codec_config.channel_mode);
     return false;
   }
 

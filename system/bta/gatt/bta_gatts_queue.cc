@@ -25,7 +25,6 @@
 #include "bta_gatt_server_queue.h"
 
 using gatts_operation = BtaGattServerQueue::gatts_operation;
-using bluetooth::Uuid;
 using namespace bluetooth;
 
 constexpr uint8_t GATT_NOTIFY = 1;

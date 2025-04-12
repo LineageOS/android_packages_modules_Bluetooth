@@ -33,6 +33,7 @@
 #include <cstdint>
 #include <cstring>
 #include <future>
+#include <iomanip>
 #include <string>
 #include <utility>
 #include <vector>
@@ -644,9 +645,17 @@ static void btif_a2dp_source_setup_codec(const RawAddress& peer_address) {
           btif_a2dp_source_cb.encoder_interface->get_encoder_interval_ms();
 
   if (bluetooth::audio::a2dp::is_hal_enabled()) {
-    bluetooth::audio::a2dp::setup_codec(a2dp_codec_config,
-                                        btif_a2dp_get_peer_mtu(a2dp_codec_config),
-                                        bta_av_co_get_encoder_preferred_interval_us());
+    bluetooth::audio::a2dp::ahal_codec_configuration config = {
+            .peer_mtu = btif_a2dp_get_peer_mtu(a2dp_codec_config),
+            .preferred_encoding_interval_us = bta_av_co_get_encoder_preferred_interval_us(),
+            .codec_bitrate = a2dp_codec_config->getTrackBitRate(),
+            .codec_config = a2dp_codec_config->getCodecConfig(),
+    };
+    a2dp_codec_config->copyOutOtaCodecConfig(config.codec_specific_information_elements);
+
+    log::verbose("{}", config.ToString());
+
+    bluetooth::audio::a2dp::setup_codec(config);
   }
 }
 
@@ -930,9 +939,9 @@ static uint32_t btif_a2dp_source_read_callback(uint8_t* p_buf, uint32_t len) {
     btif_a2dp_source_cb.stats.media_read_total_underflow_count++;
     btif_a2dp_source_cb.stats.media_read_last_underflow_us =
             bluetooth::common::time_get_os_boottime_us();
-    bluetooth::os::LogMetricA2dpAudioUnderrunEvent(btif_av_source_active_peer(),
-                                                   btif_a2dp_source_cb.encoder_interval_ms,
-                                                   len - bytes_read);
+    bluetooth::metrics::LogMetricA2dpAudioUnderrunEvent(btif_av_source_active_peer(),
+                                                        btif_a2dp_source_cb.encoder_interval_ms,
+                                                        len - bytes_read);
   }
 
   return bytes_read;
@@ -984,7 +993,7 @@ static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n,
         osi_free(p_data);
       }
     }
-    bluetooth::os::LogMetricA2dpAudioOverrunEvent(
+    bluetooth::metrics::LogMetricA2dpAudioOverrunEvent(
             btif_av_source_active_peer(), btif_a2dp_source_cb.encoder_interval_ms, drop_n,
             num_dropped_encoded_frames, num_dropped_encoded_bytes);
 
@@ -1276,7 +1285,7 @@ static void btif_a2dp_source_update_metrics(void) {
   }
 
   if (metrics.audio_duration_ms != -1) {
-    bluetooth::os::LogMetricA2dpSessionMetricsEvent(
+    bluetooth::metrics::LogMetricA2dpSessionMetricsEvent(
             btif_av_source_active_peer(), metrics.audio_duration_ms, metrics.media_timer_min_ms,
             metrics.media_timer_max_ms, metrics.media_timer_avg_ms, metrics.total_scheduling_count,
             metrics.buffer_overruns_max_count, metrics.buffer_overruns_total,
@@ -1301,8 +1310,9 @@ static void btm_read_rssi_cb(void* data) {
     return;
   }
 
-  bluetooth::os::LogMetricReadRssiResult(result->rem_bda, bluetooth::os::kUnknownConnectionHandle,
-                                         result->hci_status, result->rssi);
+  bluetooth::metrics::LogMetricReadRssiResult(result->rem_bda,
+                                              bluetooth::metrics::kUnknownConnectionHandle,
+                                              result->hci_status, result->rssi);
 
   log::warn("device: {}, rssi: {}", result->rem_bda, result->rssi);
 }
@@ -1318,8 +1328,8 @@ static void btm_read_failed_contact_counter_cb(void* data) {
     log::error("unable to read Failed Contact Counter (status {})", result->status);
     return;
   }
-  bluetooth::os::LogMetricReadFailedContactCounterResult(
-          result->rem_bda, bluetooth::os::kUnknownConnectionHandle, result->hci_status,
+  bluetooth::metrics::LogMetricReadFailedContactCounterResult(
+          result->rem_bda, bluetooth::metrics::kUnknownConnectionHandle, result->hci_status,
           result->failed_contact_counter);
 
   log::warn("device: {}, Failed Contact Counter: {}", result->rem_bda,
@@ -1337,9 +1347,9 @@ static void btm_read_tx_power_cb(void* data) {
     log::error("unable to read Tx Power (status {})", result->status);
     return;
   }
-  bluetooth::os::LogMetricReadTxPowerLevelResult(result->rem_bda,
-                                                 bluetooth::os::kUnknownConnectionHandle,
-                                                 result->hci_status, result->tx_power);
+  bluetooth::metrics::LogMetricReadTxPowerLevelResult(result->rem_bda,
+                                                      bluetooth::metrics::kUnknownConnectionHandle,
+                                                      result->hci_status, result->tx_power);
 
   log::warn("device: {}, Tx Power: {}", result->rem_bda, result->tx_power);
 }

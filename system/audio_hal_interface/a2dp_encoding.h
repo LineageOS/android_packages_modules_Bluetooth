@@ -58,6 +58,16 @@ public:
   virtual Status SetLatencyMode(bool /*low_latency*/) const { return Status::FAILURE; }
 };
 
+struct ahal_codec_configuration {
+  uint16_t peer_mtu;
+  int preferred_encoding_interval_us;
+  int codec_bitrate;
+  uint8_t codec_specific_information_elements[AVDT_CODEC_SIZE];
+  btav_a2dp_codec_config_t codec_config;
+
+  std::string ToString() const;
+};
+
 bool update_codec_offloading_capabilities(
         const std::vector<btav_a2dp_codec_config_t>& framework_preference,
         bool supports_a2dp_hw_offload_v2);
@@ -76,8 +86,7 @@ bool init(bluetooth::common::MessageLoopThread* message_loop,
 void cleanup();
 
 // Set up the codec into BluetoothAudio HAL
-bool setup_codec(A2dpCodecConfig* a2dp_config, uint16_t peer_mtu,
-                 int preferred_encoding_interval_us);
+bool setup_codec(const ahal_codec_configuration& config);
 
 // Set low latency buffer mode allowed or disallowed
 void set_audio_low_latency_mode_allowed(bool allowed);

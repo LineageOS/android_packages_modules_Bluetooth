@@ -30,12 +30,10 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.provider.Settings
-import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import com.android.modules.expresslog.Counter
 import com.android.server.bluetooth.airplane.hasUserToggledApm as hasUserToggledApm
@@ -54,7 +52,7 @@ public fun resetAutoOnTimerForUser(
     looper: Looper,
     context: Context,
     state: BluetoothAdapterState,
-    callback_on: () -> Unit
+    callback_on: () -> Unit,
 ) {
     // Remove any previous timer
     timer?.cancel()
@@ -97,7 +95,6 @@ public fun pause() {
     timer = null
 }
 
-@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 public fun notifyBluetoothOn(context: Context) {
     timer?.cancel()
     timer = null
@@ -125,7 +122,6 @@ public fun isUserEnabled(context: Context): Boolean {
     return isFeatureEnabledForUser(context.contentResolver)
 }
 
-@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 public fun setUserEnabled(
     looper: Looper,
     context: Context,
@@ -154,7 +150,9 @@ public fun setUserEnabled(
 ////////////////////////////////////////// PRIVATE METHODS /////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-@VisibleForTesting internal var timer: Timer? = null
+@SuppressWarnings("StaticFieldLeak") // Instance is brought down when the alarm is fired.
+@VisibleForTesting
+internal var timer: Timer? = null
 
 @VisibleForTesting
 internal class Timer
@@ -165,7 +163,7 @@ private constructor(
     private val callback_on: () -> Unit,
     private val now: LocalDateTime,
     private val target: LocalDateTime,
-    private val timeToSleep: Duration
+    private val timeToSleep: Duration,
 ) : AlarmManager.OnAlarmListener {
     private val alarmManager: AlarmManager = context.getSystemService(AlarmManager::class.java)!!
 
@@ -178,7 +176,7 @@ private constructor(
             SystemClock.elapsedRealtime() + timeToSleep.inWholeMilliseconds,
             "Bluetooth AutoOnFeature",
             this,
-            handler
+            handler,
         )
         Log.i(TAG, "[${this}]: Scheduling next Bluetooth restart")
 
@@ -190,7 +188,7 @@ private constructor(
                 addAction(Intent.ACTION_TIME_CHANGED)
             },
             null,
-            handler
+            handler,
         )
     }
 
@@ -199,48 +197,6 @@ private constructor(
         callback_on()
         cancel()
         timer = null
-    }
-
-    companion object {
-        @VisibleForTesting internal val STORAGE_KEY = "bluetooth_internal_automatic_turn_on_timer"
-
-        private fun writeDateToStorage(date: LocalDateTime, resolver: ContentResolver): Boolean {
-            return Settings.Secure.putString(resolver, STORAGE_KEY, date.toString())
-        }
-
-        private fun getDateFromStorage(resolver: ContentResolver): LocalDateTime? {
-            val date = Settings.Secure.getString(resolver, STORAGE_KEY)
-            return date?.let { LocalDateTime.parse(it) }
-        }
-
-        fun resetStorage(resolver: ContentResolver) {
-            Settings.Secure.putString(resolver, STORAGE_KEY, null)
-        }
-
-        fun start(
-            looper: Looper,
-            context: Context,
-            receiver: BroadcastReceiver,
-            callback_on: () -> Unit
-        ): Timer? {
-            val now = LocalDateTime.now()
-            val target = getDateFromStorage(context.contentResolver) ?: nextTimeout(now)
-            val timeToSleep =
-                now.until(target, ChronoUnit.NANOS).toDuration(DurationUnit.NANOSECONDS)
-
-            if (timeToSleep.isNegative()) {
-                Log.i(TAG, "Starting now (${now}) as it was scheduled for ${target}")
-                callback_on()
-                resetStorage(context.contentResolver)
-                return null
-            }
-
-            return Timer(looper, context, receiver, callback_on, now, target, timeToSleep)
-        }
-
-        /** Return a LocalDateTime for tomorrow 5 am */
-        private fun nextTimeout(now: LocalDateTime) =
-            LocalDateTime.of(now.toLocalDate(), LocalTime.of(5, 0)).plusDays(1)
     }
 
     /** Save timer to storage and stop it */
@@ -263,6 +219,48 @@ private constructor(
 
     override fun toString() =
         "Timer was scheduled at ${now} and should expire at ${target}. (sleep for ${timeToSleep})."
+
+    companion object {
+        @VisibleForTesting internal val STORAGE_KEY = "bluetooth_internal_automatic_turn_on_timer"
+
+        private fun writeDateToStorage(date: LocalDateTime, resolver: ContentResolver): Boolean {
+            return Settings.Secure.putString(resolver, STORAGE_KEY, date.toString())
+        }
+
+        private fun getDateFromStorage(resolver: ContentResolver): LocalDateTime? {
+            val date = Settings.Secure.getString(resolver, STORAGE_KEY)
+            return date?.let { LocalDateTime.parse(it) }
+        }
+
+        fun resetStorage(resolver: ContentResolver) {
+            Settings.Secure.putString(resolver, STORAGE_KEY, null)
+        }
+
+        fun start(
+            looper: Looper,
+            context: Context,
+            receiver: BroadcastReceiver,
+            callback_on: () -> Unit,
+        ): Timer? {
+            val now = LocalDateTime.now()
+            val target = getDateFromStorage(context.contentResolver) ?: nextTimeout(now)
+            val timeToSleep =
+                now.until(target, ChronoUnit.NANOS).toDuration(DurationUnit.NANOSECONDS)
+
+            if (timeToSleep.isNegative()) {
+                Log.i(TAG, "Starting now (${now}) as it was scheduled for ${target}")
+                callback_on()
+                resetStorage(context.contentResolver)
+                return null
+            }
+
+            return Timer(looper, context, receiver, callback_on, now, target, timeToSleep)
+        }
+
+        /** Return a LocalDateTime for tomorrow 5 am */
+        private fun nextTimeout(now: LocalDateTime) =
+            LocalDateTime.of(now.toLocalDate(), LocalTime.of(5, 0)).plusDays(1)
+    }
 }
 
 @VisibleForTesting internal val USER_SETTINGS_KEY = "bluetooth_automatic_turn_on"
@@ -290,7 +288,6 @@ private fun isFeatureSupportedForUser(resolver: ContentResolver): Boolean {
  *
  * @return whether the auto on feature is enabled for this user
  */
-@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 private fun setFeatureEnabledForUserUnchecked(context: Context, status: Boolean): Boolean {
     val ret =
         Settings.Secure.putInt(context.contentResolver, USER_SETTINGS_KEY, if (status) 1 else 0)
@@ -300,7 +297,7 @@ private fun setFeatureEnabledForUserUnchecked(context: Context, status: Boolean)
                 .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY)
                 .putExtra(
                     EXTRA_AUTO_ON_STATE,
-                    if (status) AUTO_ON_STATE_ENABLED else AUTO_ON_STATE_DISABLED
+                    if (status) AUTO_ON_STATE_ENABLED else AUTO_ON_STATE_DISABLED,
                 ),
             android.Manifest.permission.BLUETOOTH_PRIVILEGED,
             BroadcastOptions.makeBasic()

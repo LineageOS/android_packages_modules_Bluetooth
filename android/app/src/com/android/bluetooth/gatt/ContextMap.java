@@ -19,6 +19,7 @@ package com.android.bluetooth.gatt;
 import static com.android.bluetooth.util.AttributionSourceUtil.getLastAttributionTag;
 
 import android.annotation.Nullable;
+import android.bluetooth.BluetoothDevice;
 import android.content.AttributionSource;
 import android.content.Context;
 import android.os.Binder;
@@ -58,16 +59,16 @@ public class ContextMap<C> {
             DateTimeFormatter.ofPattern("MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
     private static final int MAX_LAST_RECORDS = 5;
 
-    /** Connection class helps map connection IDs to device addresses. */
+    /** Connection class helps map connection IDs to devices. */
     public static class Connection {
         public int connId;
-        public String address;
+        public BluetoothDevice device;
         public int appId;
         public long startTime;
 
-        Connection(int connId, String address, int appId) {
+        Connection(int connId, BluetoothDevice device, int appId) {
             this.connId = connId;
-            this.address = address;
+            this.device = device;
             this.appId = appId;
             this.startTime = SystemClock.elapsedRealtime();
         }
@@ -261,11 +262,11 @@ public class ContextMap<C> {
     }
 
     /** Add a new connection for a given application ID. */
-    void addConnection(int id, int connId, String address) {
+    void addConnection(int id, int connId, BluetoothDevice device) {
         synchronized (mConnectionsLock) {
             App entry = getById(id);
             if (entry != null) {
-                mConnections.add(new Connection(connId, address, id));
+                mConnections.add(new Connection(connId, device, id));
             }
         }
     }
@@ -314,15 +315,15 @@ public class ContextMap<C> {
         return app;
     }
 
-    /** Get the device addresses for all connected devices */
-    Set<String> getConnectedDevices() {
-        Set<String> addresses = new HashSet<String>();
+    /** Get all connected devices */
+    Set<BluetoothDevice> getConnectedDevices() {
+        Set<BluetoothDevice> devices = new HashSet<>();
         synchronized (mConnectionsLock) {
             for (Connection connection : mConnections) {
-                addresses.add(connection.address);
+                devices.add(connection.device);
             }
         }
-        return addresses;
+        return devices;
     }
 
     /** Get an application context by a connection ID. */
@@ -342,15 +343,15 @@ public class ContextMap<C> {
         return null;
     }
 
-    /** Returns a connection ID for a given device address. */
-    Integer connIdByAddress(int id, String address) {
+    /** Returns a connection ID for a given device. */
+    Integer connIdByDevice(int id, BluetoothDevice device) {
         App entry = getById(id);
         if (entry == null) {
             return null;
         }
         synchronized (mConnectionsLock) {
             for (Connection connection : mConnections) {
-                if (connection.address.equalsIgnoreCase(address) && connection.appId == id) {
+                if (connection.device.equals(device) && connection.appId == id) {
                     return connection.connId;
                 }
             }
@@ -358,12 +359,12 @@ public class ContextMap<C> {
         return null;
     }
 
-    /** Returns the device address for a given connection ID. */
-    String addressByConnId(int connId) {
+    /** Returns the device for a given connection ID. */
+    BluetoothDevice deviceByConnId(int connId) {
         synchronized (mConnectionsLock) {
             for (Connection connection : mConnections) {
                 if (connection.connId == connId) {
-                    return connection.address;
+                    return connection.device;
                 }
             }
         }
@@ -405,11 +406,11 @@ public class ContextMap<C> {
     }
 
     /** Returns connect device map with addr and appid */
-    Map<Integer, String> getConnectedMap() {
-        Map<Integer, String> connectedMap = new HashMap<Integer, String>();
+    Map<Integer, BluetoothDevice> getConnectedMap() {
+        Map<Integer, BluetoothDevice> connectedMap = new HashMap<>();
         synchronized (mConnectionsLock) {
             for (Connection conn : mConnections) {
-                connectedMap.put(conn.appId, conn.address);
+                connectedMap.put(conn.appId, conn.device);
             }
         }
         return connectedMap;

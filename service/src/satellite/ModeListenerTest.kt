@@ -40,23 +40,6 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class ModeListenerTest {
-    companion object {
-        internal fun setupSatelliteModeToOn(
-            resolver: ContentResolver,
-            looper: Looper,
-            callback: (m: Boolean) -> Unit
-        ) {
-            enableSensitive(resolver, looper, SETTINGS_SATELLITE_MODE_RADIOS)
-            enableMode(resolver, looper, SETTINGS_SATELLITE_MODE_ENABLED)
-
-            initialize(looper, resolver, callback)
-        }
-
-        internal fun setupSatelliteModeToOff(resolver: ContentResolver, looper: Looper) {
-            disableSensitive(resolver, looper, SETTINGS_SATELLITE_MODE_RADIOS)
-            disableMode(resolver, looper, SETTINGS_SATELLITE_MODE_ENABLED)
-        }
-    }
 
     @get:Rule val testName = TestName()
 
@@ -215,5 +198,23 @@ class ModeListenerTest {
         assertThat(isOn).isFalse()
         // As opposed to the bare RadioModeListener, similar consecutive event are discarded
         assertThat(mode).isEmpty()
+    }
+
+    companion object {
+        internal fun setupSatelliteModeToOn(
+            resolver: ContentResolver,
+            looper: Looper,
+            callback: (m: Boolean) -> Unit,
+        ) {
+            enableSensitive(resolver, looper, SETTINGS_SATELLITE_MODE_RADIOS)
+            enableMode(resolver, looper, SETTINGS_SATELLITE_MODE_ENABLED)
+
+            initialize(looper, resolver, callback)
+        }
+
+        internal fun setupSatelliteModeToOff(resolver: ContentResolver, looper: Looper) {
+            disableSensitive(resolver, looper, SETTINGS_SATELLITE_MODE_RADIOS)
+            disableMode(resolver, looper, SETTINGS_SATELLITE_MODE_ENABLED)
+        }
     }
 }

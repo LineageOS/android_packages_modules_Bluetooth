@@ -9,7 +9,10 @@ package {
 
 cc_library_static {
     name: "lib-bt-packets",
-    defaults: ["bluetooth_cflags"],
+    defaults: [
+        "bluetooth_cflags",
+        "bluetooth_tidy",
+    ],
     host_supported: true,
     export_include_dirs: [
         "./",
@@ -21,7 +24,7 @@ cc_library_static {
         "libbluetooth_log",
     ],
     apex_available: ["com.android.bt"],
-    min_sdk_version: "30",
+    min_sdk_version: "36",
 }
 
 cc_test {

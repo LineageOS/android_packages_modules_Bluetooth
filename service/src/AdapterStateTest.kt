@@ -17,6 +17,7 @@
 package com.android.server.bluetooth.test
 
 import android.bluetooth.BluetoothAdapter.STATE_OFF
+import android.os.IpcDataCache
 import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
 import com.google.common.truth.Truth.assertThat
@@ -26,6 +27,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -42,8 +44,14 @@ class BluetoothAdapterStateTest {
 
     @Before
     fun setUp() {
+        IpcDataCache.setTestMode(true)
         Log.i("BluetoothAdapterStateTest", "\t--> setup of " + testName.getMethodName())
         mState = BluetoothAdapterState()
+    }
+
+    @After
+    fun tearDown() {
+        IpcDataCache.setTestMode(false)
     }
 
     @Test

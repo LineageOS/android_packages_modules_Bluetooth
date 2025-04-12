@@ -33,7 +33,7 @@ cc_library {
     generated_headers: ["statslog_bt.h"],
     export_generated_headers: ["statslog_bt.h"],
     apex_available: ["com.android.bt"],
-    min_sdk_version: "30",
+    min_sdk_version: "36",
     shared_libs: [
         "libstatssocket",
     ],
@@ -44,9 +44,10 @@ cc_library {
     name: "libbluetooth_metrics",
     host_supported: true,
     apex_available: ["com.android.bt"],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     defaults: [
         "bluetooth_cflags",
+        "bluetooth_tidy",
     ],
     export_include_dirs: [
         "include",
@@ -128,7 +129,6 @@ cc_library {
     srcs: [
         ":TestCommonMockFunctions",
         "mock/metrics_mock.cc",
-        "mock/mock_main_shim_metric_id_api.cc",
         "src/bluetooth_event.cc",
         "src/metric_id_manager.cc",
     ],

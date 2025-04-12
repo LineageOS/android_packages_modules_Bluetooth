@@ -167,7 +167,7 @@ public final class AdvertiseSettings implements Parcelable {
         dest.writeInt(mAdvertiseDiscoverable ? 1 : 0);
     }
 
-    public static final @android.annotation.NonNull Parcelable.Creator<AdvertiseSettings> CREATOR =
+    public static final @NonNull Parcelable.Creator<AdvertiseSettings> CREATOR =
             new Creator<AdvertiseSettings>() {
                 @Override
                 public AdvertiseSettings[] newArray(int size) {

@@ -446,7 +446,7 @@ class BassClientStateMachine extends StateMachine {
         }
         int state = recvState.getPaSyncState();
         if (state == BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCINFO_REQUEST) {
-            Log.d(TAG, "Initiate PAST procedure");
+            Log.i(TAG, "Initiate PAST procedure");
             int sourceId = recvState.getSourceId();
             if (mService.isLocalBroadcast(recvState)) {
                 int advHandle = recvState.getSourceAdvertisingSid();
@@ -1005,16 +1005,10 @@ class BassClientStateMachine extends StateMachine {
             BluetoothLeBroadcastReceiveState recvState) {
         int sourceId = recvState.getSourceId();
         BluetoothLeBroadcastMetadata metadata = getCurrentBroadcastMetadata(sourceId);
-        if (metadata == null) {
-            return;
-        }
 
-        if (metadata.getBroadcastId() != recvState.getBroadcastId()
+        if (metadata == null
+                || metadata.getBroadcastId() != recvState.getBroadcastId()
                 || metadata.getSubgroups().size() != recvState.getNumSubgroups()) {
-            Log.e(
-                    TAG,
-                    "updateMetadataWithReceiveStateIfBisSyncStateChanged: Metadata not match"
-                            + " receive state");
             return;
         }
 
@@ -1329,7 +1323,7 @@ class BassClientStateMachine extends StateMachine {
     private static final class PACallback extends PeriodicAdvertisingCallback {
         @Override
         public void onSyncTransferred(BluetoothDevice device, int status) {
-            Log.d(TAG, "onSyncTransferred: device=" + device + ", status =" + status);
+            Log.i(TAG, "onSyncTransferred: device=" + device + ", status =" + status);
         }
     }
 

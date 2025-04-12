@@ -1488,6 +1488,9 @@ protected:
     com::android::bluetooth::flags::provider_->leaudio_fix_stop_reconfiguration_timeout(true);
     com::android::bluetooth::flags::provider_->leaudio_use_aggressive_params(true);
 
+    // Enable flags
+    com::android::bluetooth::flags::provider_->dsa_use_codec_extensibility(true);
+
     init_message_loop_thread();
     reset_mock_function_count_map();
     hci::testing::mock_controller_ =
@@ -1908,8 +1911,10 @@ protected:
     ConnectLeAudio(addr);
   }
 
-  void UpdateLocalSourceMetadata(std::vector<struct playback_track_metadata> tracks,
-                                 bool reconfigure_existing_stream = false) {
+  void UpdateLocalSourceMetadata(
+          std::vector<struct playback_track_metadata> tracks,
+          bool reconfigure_existing_stream = false,
+          bluetooth::le_audio::DsaMode dsa = bluetooth::le_audio::DsaMode::DISABLED) {
     std::vector<playback_track_metadata_v7> tracks_vec;
     tracks_vec.reserve(tracks.size());
     for (const auto& track : tracks) {
@@ -1944,18 +1949,20 @@ protected:
     }
 
     ASSERT_NE(unicast_source_hal_cb_, nullptr);
-    unicast_source_hal_cb_->OnAudioMetadataUpdate(std::move(tracks_vec), DsaMode::DISABLED);
+    unicast_source_hal_cb_->OnAudioMetadataUpdate(std::move(tracks_vec), dsa);
   }
 
-  void UpdateLocalSourceMetadata(audio_usage_t usage, audio_content_type_t content_type,
-                                 bool reconfigure_existing_stream = false) {
+  void UpdateLocalSourceMetadata(
+          audio_usage_t usage, audio_content_type_t content_type,
+          bool reconfigure_existing_stream = false,
+          bluetooth::le_audio::DsaMode dsa = bluetooth::le_audio::DsaMode::DISABLED) {
     std::vector<struct playback_track_metadata> tracks = {
             {{AUDIO_USAGE_UNKNOWN, AUDIO_CONTENT_TYPE_UNKNOWN, 0},
              {AUDIO_USAGE_UNKNOWN, AUDIO_CONTENT_TYPE_UNKNOWN, 0}}};
 
     tracks[0].usage = usage;
     tracks[0].content_type = content_type;
-    UpdateLocalSourceMetadata(tracks, reconfigure_existing_stream);
+    UpdateLocalSourceMetadata(tracks, reconfigure_existing_stream, dsa);
   }
 
   void UpdateLocalSinkMetadata(
@@ -2835,6 +2842,16 @@ protected:
   uint16_t available_src_context_types_ = 0xffff;
   uint16_t supported_snk_context_types_ = 0xffff;
   uint16_t supported_src_context_types_ = 0xffff;
+  void SetTestRemoteAudioContexts(AudioContexts avail_snk,
+                                  std::optional<AudioContexts> avail_src = std::nullopt,
+                                  std::optional<AudioContexts> supp_snk = std::nullopt,
+                                  std::optional<AudioContexts> supp_src = std::nullopt) {
+    available_snk_context_types_ = avail_snk.value();
+    available_src_context_types_ = avail_src.value_or(avail_snk).value();
+    supported_snk_context_types_ = supp_snk.value_or(avail_snk).value();
+    supported_src_context_types_ =
+            supp_src.has_value() ? supp_src.value().value() : supported_snk_context_types_;
+  }
 
   bool empty_source_pack_ = false;
   bool empty_sink_pack_ = false;
@@ -13980,5 +13997,190 @@ TEST_F(UnicastTestLockConnParamsForStreaming, UnlockConnParamsForStreaming_TwoEa
   StartStreaming(AUDIO_USAGE_VOICE_COMMUNICATION, AUDIO_CONTENT_TYPE_SPEECH, group_id);
   SyncOnMainLoop();
 }
+
+class UnicastDsaTest : public UnicastTest,
+                       public ::testing::WithParamInterface<bluetooth::le_audio::DsaMode> {};
+
+TEST_P(UnicastDsaTest, RequestConfigurationDsaConfigure) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  int group_id = bluetooth::groups::kGroupUnknown;
+  // Get DSA mode from the test parameter
+  auto dsa_mode = GetParam();
+
+  /* Scenario
+   * 1. Start streaming MEDIA with the DSA flag
+   * 2. Make sure the requirements are set when requesting the configuration from BT Audio HAL
+   */
+
+  // Set just some basic audio contexts availability
+  SetTestRemoteAudioContexts(types::AudioContexts(types::LeAudioContextType::MEDIA));
+
+  default_channel_cnt = 1;
+  default_src_channel_cnt = 1;
+  SetSampleDatabaseEarbudsValid(
+          1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+          codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt, default_channel_cnt, 0x0004,
+          /* source sample freq 16khz */ false /*add_csis*/, true /*add_cas*/, true /*add_pacs*/,
+          default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/, 0 /*rank*/);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::CONNECTED, test_address0))
+          .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
+          .WillOnce(DoAll(SaveArg<1>(&group_id)));
+
+  std::optional<CodecManager::UnicastConfigurationRequirements> requirements_capture = std::nullopt;
+  ON_CALL(*mock_codec_manager_, GetCodecConfig)
+          .WillByDefault(Invoke([&requirements_capture](
+                                        const CodecManager::UnicastConfigurationRequirements&
+                                                requirements,
+                                        CodecManager::UnicastConfigurationProvider provider) {
+            requirements_capture = requirements;
+            auto filtered = *le_audio::AudioSetConfigurationProvider::Get()->GetConfigurations(
+                    requirements.audio_context_type);
+            // Filter out the dual bidir SWB configurations
+            if (!bluetooth::le_audio::CodecManager::GetInstance()->IsDualBiDirSwbSupported()) {
+              filtered.erase(std::remove_if(filtered.begin(), filtered.end(),
+                                            [](auto const& el) {
+                                              if (el->confs.source.empty()) {
+                                                return false;
+                                              }
+                                              return AudioSetConfigurationProvider::Get()
+                                                      ->CheckConfigurationIsDualBiDirSwb(*el);
+                                            }),
+                             filtered.end());
+            }
+            auto config = provider(requirements, &filtered);
+            if (config) {
+              // Inject the DSA channel configuration for the remote source direction
+              if (requirements.flags & CodecManager::Flags::SPATIAL_AUDIO) {
+                config->confs.source = config->confs.sink;
+                for (auto& el : config->confs.source) {
+                  el.codec.id = types::kLeAudioCodecHeadtracking;
+                }
+              }
+              config->name += "-Headtracking";
+            }
+
+            return config;
+          }));
+
+  log::info("Test: Connecting LeAudio to {}", test_address0);
+  ConnectLeAudio(test_address0);
+  ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
+
+  log::debug("Test: Call GroupSetActive");
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+
+  UpdateLocalSourceMetadata(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, false, dsa_mode);
+  LocalAudioSourceResume();
+  SyncOnMainLoop();
+
+  // Make sure the requirements have the DSA flag set
+  ASSERT_TRUE(requirements_capture.has_value());
+  ASSERT_EQ(CodecManager::Flags::SPATIAL_AUDIO,
+            requirements_capture->flags & CodecManager::Flags::SPATIAL_AUDIO);
+}
+
+TEST_P(UnicastDsaTest, RequestConfigurationDsaReconfigure) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  int group_id = bluetooth::groups::kGroupUnknown;
+  // Get DSA mode from the test parameter
+  auto dsa_mode = GetParam();
+
+  /* Scenario
+   * 1. Start streaming MEDIA without the DSA
+   * 2. Check if DSA flag is not set when requesting the configuration from BT Audio HAL
+   * 3. Update metadata with the same audio context but DSA flag enabled
+   * 4. Make sure the requirements are set when requesting the new configuration from BT Audio HAL
+   */
+
+  // Set just some basic audio contexts availability
+  SetTestRemoteAudioContexts(types::AudioContexts(types::LeAudioContextType::MEDIA));
+
+  default_channel_cnt = 1;
+  default_src_channel_cnt = 1;
+  SetSampleDatabaseEarbudsValid(
+          1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+          codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt, default_channel_cnt, 0x0004,
+          /* source sample freq 16khz */ false /*add_csis*/, true /*add_cas*/, true /*add_pacs*/,
+          default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/, 0 /*rank*/);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::CONNECTED, test_address0))
+          .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
+          .WillOnce(DoAll(SaveArg<1>(&group_id)));
+
+  std::optional<CodecManager::UnicastConfigurationRequirements> requirements_capture = std::nullopt;
+  ON_CALL(*mock_codec_manager_, GetCodecConfig)
+          .WillByDefault(Invoke([&requirements_capture](
+                                        const CodecManager::UnicastConfigurationRequirements&
+                                                requirements,
+                                        CodecManager::UnicastConfigurationProvider provider) {
+            requirements_capture = requirements;
+            auto filtered = *le_audio::AudioSetConfigurationProvider::Get()->GetConfigurations(
+                    requirements.audio_context_type);
+            // Filter out the dual bidir SWB configurations
+            if (!bluetooth::le_audio::CodecManager::GetInstance()->IsDualBiDirSwbSupported()) {
+              filtered.erase(std::remove_if(filtered.begin(), filtered.end(),
+                                            [](auto const& el) {
+                                              if (el->confs.source.empty()) {
+                                                return false;
+                                              }
+                                              return AudioSetConfigurationProvider::Get()
+                                                      ->CheckConfigurationIsDualBiDirSwb(*el);
+                                            }),
+                             filtered.end());
+            }
+            auto config = provider(requirements, &filtered);
+
+            if (config) {
+              // Inject the DSA channel configuration for the remote source direction
+              if (requirements.flags & CodecManager::Flags::SPATIAL_AUDIO) {
+                config->confs.source = config->confs.sink;
+                for (auto& el : config->confs.source) {
+                  el.codec.id = types::kLeAudioCodecHeadtracking;
+                }
+              }
+              config->name += "-Headtracking";
+            }
+
+            return config;
+          }));
+
+  log::info("Test: Connecting LeAudio to {}", test_address0);
+  ConnectLeAudio(test_address0);
+  ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
+
+  log::debug("Test: Call GroupSetActive");
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+
+  // First resume MEDIA content playback without the DSA enabled
+  UpdateLocalSourceMetadata(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, false /*reconfigure*/,
+                            bluetooth::le_audio::DsaMode::DISABLED);
+  LocalAudioSourceResume();
+  SyncOnMainLoop();
+
+  // Make sure the last configuration request requirements do not have the DSA flag set
+  ASSERT_TRUE(requirements_capture.has_value());
+  ASSERT_EQ(0, requirements_capture->flags & CodecManager::Flags::SPATIAL_AUDIO);
+
+  // Update the context with the DSA flag and expect reconfiguration
+  UpdateLocalSourceMetadata(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, true /*reconfigure*/,
+                            dsa_mode);
+  SyncOnMainLoop();
+
+  // Make sure the last configuration request requirements have the DSA flag set
+  ASSERT_TRUE(requirements_capture.has_value());
+  ASSERT_EQ(CodecManager::Flags::SPATIAL_AUDIO,
+            requirements_capture->flags & CodecManager::Flags::SPATIAL_AUDIO);
+}
+
+INSTANTIATE_TEST_CASE_P(Test, UnicastDsaTest,
+                        ::testing::Values(bluetooth::le_audio::DsaMode::ISO_SW,
+                                          bluetooth::le_audio::DsaMode::ISO_HW));
 
 }  // namespace bluetooth::le_audio

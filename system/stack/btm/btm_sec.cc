@@ -785,14 +785,15 @@ tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
   if ((transport == BT_TRANSPORT_LE && (dev_type & BT_DEVICE_TYPE_BLE) == 0) ||
       (transport == BT_TRANSPORT_BR_EDR && (dev_type & BT_DEVICE_TYPE_BREDR) == 0)) {
     log::warn("Requested transport and supported transport don't match");
-    bluetooth::os::LogMetricBluetoothEvent(bd_addr, android::bluetooth::EventType::TRANSPORT_MATCH,
-                                           android::bluetooth::State::FAIL);
+    bluetooth::metrics::LogMetricBluetoothEvent(bd_addr,
+                                                android::bluetooth::EventType::TRANSPORT_MATCH,
+                                                android::bluetooth::State::FAIL);
   }
 
-  bluetooth::os::LogMetricBluetoothEvent(bd_addr, android::bluetooth::EventType::TRANSPORT,
-                                         transport == BT_TRANSPORT_LE
-                                                 ? android::bluetooth::State::LE
-                                                 : android::bluetooth::State::CLASSIC);
+  bluetooth::metrics::LogMetricBluetoothEvent(bd_addr, android::bluetooth::EventType::TRANSPORT,
+                                              transport == BT_TRANSPORT_LE
+                                                      ? android::bluetooth::State::LE
+                                                      : android::bluetooth::State::CLASSIC);
 
   return btm_sec_bond_by_transport(bd_addr, addr_type, transport);
 }
@@ -1924,9 +1925,10 @@ static void btm_sec_bond_cancel_complete(void) {
 void btm_create_conn_cancel_complete(uint8_t status, const RawAddress bd_addr) {
   log::verbose("btm_create_conn_cancel_complete(): in State: {}  status:{}",
                tBTM_SEC_CB::btm_pair_state_descr(btm_sec_cb.pairing_state), status);
-  bluetooth::os::LogMetricLinkLayerConnectionEvent(
-          bd_addr, bluetooth::os::kUnknownConnectionHandle, android::bluetooth::DIRECTION_OUTGOING,
-          android::bluetooth::LINK_TYPE_ACL, android::bluetooth::hci::CMD_CREATE_CONNECTION_CANCEL,
+  bluetooth::metrics::LogMetricLinkLayerConnectionEvent(
+          bd_addr, bluetooth::metrics::kUnknownConnectionHandle,
+          android::bluetooth::DIRECTION_OUTGOING, android::bluetooth::LINK_TYPE_ACL,
+          android::bluetooth::hci::CMD_CREATE_CONNECTION_CANCEL,
           android::bluetooth::hci::EVT_COMMAND_COMPLETE, android::bluetooth::hci::BLE_EVT_UNKNOWN,
           status, android::bluetooth::hci::STATUS_UNKNOWN);
 
@@ -3480,8 +3482,10 @@ void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status, uint8_t 
     }
   }
 
-  if (status == HCI_ERR_CONNECTION_TOUT) {
-    smp_cancel_start_encryption_attempt();
+  if (status == HCI_ERR_CONNECTION_TOUT &&
+      (!com::android::bluetooth::flags::unrelated_device_smp_cancellation() ||
+       BTM_IsBleConnection(handle))) {
+    smp_cancel_start_encryption_attempt(acl_address_from_handle(handle));
     return;
   }
 

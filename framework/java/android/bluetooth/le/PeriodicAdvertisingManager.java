@@ -17,13 +17,14 @@
 package android.bluetooth.le;
 
 import static android.Manifest.permission.BLUETOOTH_SCAN;
+import static android.bluetooth.BluetoothUtils.executeFromBinder;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
-import android.annotation.SuppressLint;
 import android.bluetooth.Attributable;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -241,9 +242,6 @@ public final class PeriodicAdvertisingManager {
         handler = requireNonNullElseGet(handler, () -> new Handler(Looper.getMainLooper()));
 
         IPeriodicAdvertisingCallback wrapper = wrap(callback, handler);
-        if (wrapper == null) {
-            throw new IllegalArgumentException("callback was not properly registered");
-        }
 
         IBluetoothScan scan = mBluetoothAdapter.getBluetoothScan();
         try {
@@ -253,10 +251,10 @@ public final class PeriodicAdvertisingManager {
         }
     }
 
-    @SuppressLint("AndroidFrameworkBluetoothPermission")
     private IPeriodicAdvertisingCallback wrap(
             PeriodicAdvertisingCallback callback, Handler handler) {
         return new IPeriodicAdvertisingCallback.Stub() {
+            @RequiresNoPermission // Callback to app
             public void onSyncEstablished(
                     int syncHandle,
                     BluetoothDevice device,
@@ -265,7 +263,8 @@ public final class PeriodicAdvertisingManager {
                     int timeout,
                     int status) {
                 Attributable.setAttributionSource(device, mAttributionSource);
-                handler.post(
+                executeFromBinder(
+                        handler::post,
                         () -> {
                             callback.onSyncEstablished(
                                     syncHandle, device, advertisingSid, skip, timeout, status);
@@ -278,12 +277,16 @@ public final class PeriodicAdvertisingManager {
                         });
             }
 
+            @RequiresNoPermission // Callback to app
             public void onPeriodicAdvertisingReport(PeriodicAdvertisingReport report) {
-                handler.post(() -> callback.onPeriodicAdvertisingReport(report));
+                executeFromBinder(
+                        handler::post, () -> callback.onPeriodicAdvertisingReport(report));
             }
 
+            @RequiresNoPermission // Callback to app
             public void onSyncLost(int syncHandle) {
-                handler.post(
+                executeFromBinder(
+                        handler::post,
                         () -> {
                             callback.onSyncLost(syncHandle);
                             // App can still unregister the sync until notified it's lost.
@@ -292,12 +295,16 @@ public final class PeriodicAdvertisingManager {
                         });
             }
 
+            @RequiresNoPermission // Callback to app
             public void onSyncTransferred(BluetoothDevice device, int status) {
-                handler.post(() -> callback.onSyncTransferred(device, status));
+                executeFromBinder(handler::post, () -> callback.onSyncTransferred(device, status));
             }
 
+            @RequiresNoPermission // Callback to app
             public void onBigInfoAdvertisingReport(int syncHandle, boolean encrypted) {
-                handler.post(() -> callback.onBigInfoAdvertisingReport(syncHandle, encrypted));
+                executeFromBinder(
+                        handler::post,
+                        () -> callback.onBigInfoAdvertisingReport(syncHandle, encrypted));
             }
         };
     }

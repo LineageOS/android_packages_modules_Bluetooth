@@ -55,21 +55,6 @@ import pandora.HostProto.DisconnectRequest
 @RunWith(AndroidJUnit4::class)
 class BluetoothMetricsHelperTest {
 
-    companion object {
-        private const val TAG = "BluetoothMetricsHelperTest"
-
-        private lateinit var mChannel: ManagedChannel
-        private lateinit var mHostBlockingStub: HostGrpc.HostBlockingStub
-        private lateinit var mHostStub: HostGrpc.HostStub
-
-        @BeforeClass
-        fun setUpClass() {
-            InstrumentationRegistry.getInstrumentation()
-                .getUiAutomation()
-                .adoptShellPermissionIdentity()
-        }
-    }
-
     private val testDispatcher = UnconfinedTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val context = InstrumentationRegistry.getInstrumentation().getContext()
@@ -87,7 +72,7 @@ class BluetoothMetricsHelperTest {
                     )
                 }
             },
-            IntentFilter(BluetoothAdapter.ACTION_BLE_STATE_CHANGED)
+            IntentFilter(BluetoothAdapter.ACTION_BLE_STATE_CHANGED),
         )
     }
 
@@ -164,5 +149,20 @@ class BluetoothMetricsHelperTest {
         adapterState.first { it == BluetoothAdapter.STATE_OFF }
         bluetoothAdapter.enable()
         adapterState.first { it == BluetoothAdapter.STATE_ON }
+    }
+
+    companion object {
+        private const val TAG = "BluetoothMetricsHelperTest"
+
+        private lateinit var mChannel: ManagedChannel
+        private lateinit var mHostBlockingStub: HostGrpc.HostBlockingStub
+        private lateinit var mHostStub: HostGrpc.HostStub
+
+        @BeforeClass
+        fun setUpClass() {
+            InstrumentationRegistry.getInstrumentation()
+                .getUiAutomation()
+                .adoptShellPermissionIdentity()
+        }
     }
 }

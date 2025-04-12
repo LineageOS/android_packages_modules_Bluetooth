@@ -34,8 +34,6 @@
 extern tBTM_CB btm_cb;
 
 using namespace bluetooth;
-using base::Bind;
-using bluetooth::Uuid;
 
 #define BTM_BLE_ADV_FILT_META_HDR_LENGTH 3
 #define BTM_BLE_ADV_FILT_FEAT_SELN_LEN 13
@@ -53,8 +51,8 @@ using bluetooth::Uuid;
 
 #define BTM_BLE_PF_BIT_TO_MASK(x) (uint16_t)(1 << (x))
 
-tBTM_BLE_ADV_FILTER_CB btm_ble_adv_filt_cb;
-tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
+static tBTM_BLE_ADV_FILTER_CB btm_ble_adv_filt_cb;
+static tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
 
 static uint8_t btm_ble_cs_update_pf_counter(tBTM_BLE_SCAN_COND_OP action, uint8_t cond_type,
                                             tBLE_BD_ADDR* p_bd_addr, uint8_t num_available);

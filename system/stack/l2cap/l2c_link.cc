@@ -1021,7 +1021,7 @@ void l2c_packets_completed(uint16_t handle, uint16_t num_sent) {
   if (p_lcb == nullptr) {
     return;
   }
-  p_lcb->update_outstanding_packets(num_sent);
+  l2cu_update_outstanding_packets_lcb(p_lcb, num_sent);
 
   switch (p_lcb->transport) {
     case BT_TRANSPORT_BR_EDR:

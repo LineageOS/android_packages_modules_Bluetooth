@@ -133,11 +133,6 @@
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
-using bluetooth::csis::CsisClientInterface;
-using bluetooth::has::HasClientInterface;
-using bluetooth::le_audio::LeAudioBroadcasterInterface;
-using bluetooth::le_audio::LeAudioClientInterface;
-using bluetooth::vc::VolumeControlInterface;
 using namespace bluetooth;
 
 namespace {
@@ -1090,7 +1085,7 @@ static std::string obfuscate_address(const RawAddress& address) {
 }
 
 static int get_metric_id(const RawAddress& address) {
-  return bluetooth::shim::AllocateIdFromMetricIdAllocator(address);
+  return bluetooth::metrics::AllocateIdFromMetricIdAllocator(address);
 }
 
 static int set_dynamic_audio_buffer_size(int codec, int size) {

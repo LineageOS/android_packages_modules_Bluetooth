@@ -41,8 +41,7 @@ void DumpsysNeighbor(int /* fd */) { inc_func_call_count(__func__); }
 
 void shim::Acl::Dump(int /* fd */) const { inc_func_call_count(__func__); }
 
-shim::Acl::Acl(os::Handler* /* handler */, const acl_interface_t& acl_interface,
-               uint8_t /* max_address_resolution_size */)
+shim::Acl::Acl(os::Handler* /* handler */, const acl_interface_t& acl_interface)
     : acl_interface_(acl_interface) {
   inc_func_call_count(__func__);
 }
@@ -144,18 +143,6 @@ void shim::Acl::Shutdown() { inc_func_call_count(__func__); }
 void shim::Acl::FinalShutdown() { inc_func_call_count(__func__); }
 
 void shim::Acl::ClearFilterAcceptList() { inc_func_call_count(__func__); }
-
-void shim::Acl::AddToAddressResolution(const hci::AddressWithType& /* address_with_type */,
-                                       const std::array<uint8_t, 16>& /* peer_irk */,
-                                       const std::array<uint8_t, 16>& /* local_irk */) {
-  inc_func_call_count(__func__);
-}
-
-void shim::Acl::RemoveFromAddressResolution(const hci::AddressWithType& /* address_with_type */) {
-  inc_func_call_count(__func__);
-}
-
-void shim::Acl::ClearAddressResolution() { inc_func_call_count(__func__); }
 
 void shim::Acl::SetSystemSuspendState(bool /* suspended */) { inc_func_call_count(__func__); }
 

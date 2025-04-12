@@ -57,6 +57,7 @@ class DckTestRule(
     private val isRemoteAdvertisingWithUuid: Boolean = false,
     private val isGattConnected: Boolean = false,
 ) : TestRule {
+
     private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)!!
     private val bluetoothAdapter = bluetoothManager.adapter
     private val leScanner = bluetoothAdapter.bluetoothLeScanner
@@ -326,7 +327,7 @@ class DckTestRule(
     }
 
     companion object {
-        private const val TIMEOUT_MS = 3000L
+        private const val TIMEOUT_MS = 5000L
         private const val ACTION_DYNAMIC_RECEIVER_SCAN_RESULT =
             "android.bluetooth.test.ACTION_DYNAMIC_RECEIVER_SCAN_RESULT"
         // CCC DK Specification R3 1.2.0 r14 section 19.2.1.2 Bluetooth Le Pairing

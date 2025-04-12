@@ -6,8 +6,11 @@ android_test {
     name: "BluetoothJavaUnitTests",
     defaults: ["bluetooth_errorprone_rules"],
 
+    lint: {
+        test: true,
+    },
     sdk_version: "module_current",
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     target_sdk_version: "current",
     libs: [
         "android.test.base.stubs",
@@ -58,7 +61,6 @@ android_test {
         "libstaticjvmtiagent",
     ],
 
-    jarjar_rules: ":bluetooth-jarjar-rules",
     asset_dirs: ["src/com/android/bluetooth/btservice/storage/schemas"],
 
     // Include all test java and kotlin files.
@@ -67,7 +69,10 @@ android_test {
         "src/**/*.kt",
     ],
     jacoco: {
-        include_filter: ["com.android.bluetooth.*"],
+        include_filter: [
+            "android.bluetooth.**",
+            "com.android.bluetooth.**",
+        ],
         exclude_filter: [],
     },
 

@@ -122,3 +122,34 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "qc_prioritize_lc3_codec"
+    namespace: "bluetooth"
+    description: "QC patch to prioritize lc3 codec over aptx"
+    bug: "409604300"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "qc_send_error_at_bcc_ibr_disabled"
+    namespace: "bluetooth"
+    description: "QC patch to send an error when HF sends AT+BCC when IBR is disabled"
+    bug: "409845355"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "fix_hfp_rfcomm_collision_state_machine_error"
+    namespace: "bluetooth"
+    description: "fix hfp state machine error when both side initiate rfcomm connection"
+    bug: "409798631"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+

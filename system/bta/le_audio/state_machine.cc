@@ -969,21 +969,38 @@ public:
             .vendor_company_id = 0x0000,
             .vendor_codec_id = 0x0000};
     log::info("DSA mode used: {}", static_cast<int>(group->dsa_.mode));
-    switch (group->dsa_.mode) {
-      case DsaMode::ISO_HW:
-        data_path_id = bluetooth::hci::iso_manager::kIsoDataPathPlatformDefault;
-        if (!com::android::bluetooth::flags::dsa_hw_transparent_codec()) {
+
+    auto config = group->GetActiveConfiguration();
+    log::assert_that(config.get() != nullptr, "No valid active group configuration!");
+
+    if (config->hasDsaBackChannel()) {
+      auto const& cfg = config->confs.source.at(0);
+      data_path_id = cfg.data_path_configuration.dataPathId;
+      codec = cfg.data_path_configuration.isoDataPathConfig.codecId;
+
+      log::debug("Setting DSA data path parameters: data_path_id: {}, codec: {}", data_path_id,
+                 common::ToString(codec));
+
+    } else {
+      if (com::android::bluetooth::flags::dsa_use_codec_extensibility()) {
+        log::warn("Fallback to static DSA configuration for group: {}", group->group_id_);
+      }
+      switch (group->dsa_.mode) {
+        case DsaMode::ISO_HW:
+          data_path_id = bluetooth::hci::iso_manager::kIsoDataPathPlatformDefault;
+          if (!com::android::bluetooth::flags::dsa_hw_transparent_codec()) {
+            codec = bluetooth::le_audio::types::kLeAudioCodecHeadtracking;
+          }
+          break;
+        case DsaMode::ISO_SW:
+          data_path_id = bluetooth::hci::iso_manager::kIsoDataPathHci;
           codec = bluetooth::le_audio::types::kLeAudioCodecHeadtracking;
-        }
-        break;
-      case DsaMode::ISO_SW:
-        data_path_id = bluetooth::hci::iso_manager::kIsoDataPathHci;
-        codec = bluetooth::le_audio::types::kLeAudioCodecHeadtracking;
-        break;
-      default:
-        log::warn("Unexpected DsaMode: {}", static_cast<int>(group->dsa_.mode));
-        group->dsa_.active = false;
-        return;
+          break;
+        default:
+          log::warn("Unexpected DsaMode: {}", static_cast<int>(group->dsa_.mode));
+          group->dsa_.active = false;
+          return;
+      }
     }
 
     leAudioDevice->SetDsaDataPathState(DataPathState::CONFIGURING);
@@ -1543,18 +1560,41 @@ private:
 
                 group->dsa_.active = true;
 
-                param.sdu_itv_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerSduItv;
-                param.max_trans_lat_stom =
-                        bluetooth::le_audio::types::kLeAudioHeadtrackerMaxTransLat;
-                it->max_sdu_size_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerMaxSduSize;
+                auto config = group->GetActiveConfiguration();
+                log::assert_that(config.get() != nullptr, "No valid active group configuration!");
 
-                // Early draft of DSA 2.0 spec mentioned allocating 15 bytes for headtracker data
-                if (!group->DsaReducedSduSizeSupported()) {
-                  log::verbose("Device does not support reduced headtracker SDU");
-                  it->max_sdu_size_stom = 15;
+                if (config->hasDsaBackChannel()) {
+                  auto const& cfg = config->confs.source.at(0);
+
+                  param.sdu_itv_stom = cfg.qos.sduIntervalUs;
+                  param.max_trans_lat_stom = cfg.qos.max_transport_latency;
+                  it->max_sdu_size_stom = cfg.qos.maxSdu;
+                  it->rtn_stom = cfg.qos.retransmission_number;
+
+                  log::debug(
+                          "Applying DSA Cig parameters: sdu_itv_stom:{}, max_trans_lat_stom: {}, "
+                          "max_sdu_size_stom: {}, rtn_stom: {}",
+                          param.sdu_itv_stom, param.max_trans_lat_stom, it->max_sdu_size_stom,
+                          it->rtn_stom);
+
+                } else {
+                  if (com::android::bluetooth::flags::dsa_use_codec_extensibility()) {
+                    log::warn("Fallback to static DSA configuration for group: {}",
+                              group->group_id_);
+                  }
+                  param.sdu_itv_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerSduItv;
+                  param.max_trans_lat_stom =
+                          bluetooth::le_audio::types::kLeAudioHeadtrackerMaxTransLat;
+                  it->max_sdu_size_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerMaxSduSize;
+
+                  // Early draft of DSA 2.0 spec mentioned allocating 15 bytes for headtracker data
+                  if (!group->DsaReducedSduSizeSupported()) {
+                    log::verbose("Device does not support reduced headtracker SDU");
+                    it->max_sdu_size_stom = 15;
+                  }
+
+                  it->rtn_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerRtn;
                 }
-
-                it->rtn_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerRtn;
 
                 it++;
               }

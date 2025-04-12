@@ -67,7 +67,7 @@ void SnoopLoggerSocket::Write(int& client_socket, const void* data, size_t lengt
   }
 
   ssize_t ret;
-  RUN_NO_INTR(ret = syscall_if_->Send(client_socket, data, length, MSG_DONTWAIT));
+  RUN_NO_INTR(ret = syscall_if_->Send(client_socket, data, length, MSG_DONTWAIT | MSG_NOSIGNAL));
 
   if (ret == -1 && syscall_if_->GetErrno() == ECONNRESET) {
     SafeCloseSocket(client_socket);
@@ -223,6 +223,18 @@ int SnoopLoggerSocket::CreateSocket() {
     log::error("unable to bind snoop socket to address: {}", strerror(syscall_if_->GetErrno()));
     SafeCloseSocket(socket_fd);
     return INVALID_FD;
+  }
+
+  if (socket_port_ == 0) {
+    socklen_t addr_len = sizeof(addr);
+    if (getsockname(socket_fd, (struct sockaddr*)&addr, &addr_len) == 0) {
+      socket_port_ = ntohs(addr.sin_port);
+      log::info("Listening on port {}", socket_port_);
+    } else {
+      log::error("unable to get local port: {}", strerror(syscall_if_->GetErrno()));
+      SafeCloseSocket(socket_fd);
+      return INVALID_FD;
+    }
   }
 
   // Mark this socket as a socket that will accept connections.
