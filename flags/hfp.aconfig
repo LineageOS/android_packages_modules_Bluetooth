@@ -142,3 +142,14 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "fix_hfp_rfcomm_collision_state_machine_error"
+    namespace: "bluetooth"
+    description: "fix hfp state machine error when both side initiate rfcomm connection"
+    bug: "409798631"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
