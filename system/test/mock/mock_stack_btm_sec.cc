@@ -89,7 +89,7 @@ struct btm_sec_l2cap_access_req_by_requirement btm_sec_l2cap_access_req_by_requi
 struct btm_sec_link_key_notification btm_sec_link_key_notification;
 struct btm_sec_encryption_key_refresh_complete btm_sec_encryption_key_refresh_complete;
 struct btm_sec_link_key_request btm_sec_link_key_request;
-struct btm_sec_mx_access_request btm_sec_mx_access_request;
+struct btm_sec_service_access_request btm_sec_service_access_request;
 struct btm_sec_pin_code_request btm_sec_pin_code_request;
 struct btm_sec_rmt_host_support_feat_evt btm_sec_rmt_host_support_feat_evt;
 struct btm_sec_rmt_name_request_complete btm_sec_rmt_name_request_complete;
@@ -128,7 +128,7 @@ tBTM_STATUS btm_sec_disconnect::return_value = tBTM_STATUS::BTM_SUCCESS;
 bool btm_sec_is_a_bonded_dev::return_value = false;
 tBTM_STATUS btm_sec_l2cap_access_req::return_value = tBTM_STATUS::BTM_SUCCESS;
 tBTM_STATUS btm_sec_l2cap_access_req_by_requirement::return_value = tBTM_STATUS::BTM_SUCCESS;
-tBTM_STATUS btm_sec_mx_access_request::return_value = tBTM_STATUS::BTM_SUCCESS;
+tBTM_STATUS btm_sec_service_access_request::return_value = tBTM_STATUS::BTM_SUCCESS;
 
 }  // namespace stack_btm_sec
 }  // namespace mock
@@ -350,11 +350,11 @@ void btm_sec_link_key_request(const RawAddress bda) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::btm_sec_link_key_request(bda);
 }
-tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, bool is_originator,
-                                      uint16_t security_required, tBTM_SEC_CALLBACK* p_callback,
-                                      void* p_ref_data) {
+tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool is_originator,
+                                           uint16_t security_required,
+                                           tBTM_SEC_CALLBACK* p_callback, void* p_ref_data) {
   inc_func_call_count(__func__);
-  return test::mock::stack_btm_sec::btm_sec_mx_access_request(
+  return test::mock::stack_btm_sec::btm_sec_service_access_request(
           bd_addr, is_originator, security_required, p_callback, p_ref_data);
 }
 void btm_sec_pin_code_request(const RawAddress bda) {

@@ -300,7 +300,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_authenticated_tempora
   uint16_t sec_req = BTM_SEC_IN_AUTHENTICATE;
   tBTM_STATUS status = tBTM_STATUS::BTM_UNDEFINED;
 
-  status = btm_sec_mx_access_request(bd_addr, false, sec_req, NULL, NULL);
+  status = btm_sec_service_access_request(bd_addr, false, sec_req, NULL, NULL);
 
   ASSERT_EQ(status, tBTM_STATUS::BTM_FAILED_ON_SECURITY);
 }
@@ -326,7 +326,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_non_authenticated_tem
   uint16_t sec_req = BTM_SEC_IN_AUTHENTICATE;
   tBTM_STATUS status = tBTM_STATUS::BTM_UNDEFINED;
 
-  status = btm_sec_mx_access_request(bd_addr, false, sec_req, NULL, NULL);
+  status = btm_sec_service_access_request(bd_addr, false, sec_req, NULL, NULL);
 
   // We're testing the temp bonding security behavior here, so all we care about
   // is that it doesn't fail on security.
@@ -354,7 +354,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_authenticated_persist
   uint16_t sec_req = BTM_SEC_IN_AUTHENTICATE;
   tBTM_STATUS status = tBTM_STATUS::BTM_UNDEFINED;
 
-  status = btm_sec_mx_access_request(bd_addr, false, sec_req, NULL, NULL);
+  status = btm_sec_service_access_request(bd_addr, false, sec_req, NULL, NULL);
 
   // We're testing the temp bonding security behavior here, so all we care about
   // is that it doesn't fail on security.
@@ -386,7 +386,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_upgrade_needed) {
   // because BTM_SEC_IN_AUTHENTICATE is required but the security flags
   // do not contain BTM_SEC_AUTHENTICATED
 
-  status = btm_sec_mx_access_request(bd_addr, false, sec_req, NULL, NULL);
+  status = btm_sec_service_access_request(bd_addr, false, sec_req, NULL, NULL);
 
   // In this case we expect it to clear several security flags and return
   // BTM_CMD_STARTED.
@@ -417,7 +417,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_encryption_required) 
 
   // In this case we need to encrypt the link, so we will mark the link
   // encrypted and return BTM_CMD_STARTED.
-  status = btm_sec_mx_access_request(bd_addr, true, sec_req, NULL, NULL);
+  status = btm_sec_service_access_request(bd_addr, true, sec_req, NULL, NULL);
 
   ASSERT_EQ(status, tBTM_STATUS::BTM_CMD_STARTED);
   ASSERT_EQ(device_record->sec_rec.classic_link, tSECURITY_STATE::ENCRYPTING);
