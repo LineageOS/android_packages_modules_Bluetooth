@@ -5183,7 +5183,7 @@ static void btm_sec_check_pending_enc_req(tBTM_SEC_DEV_REC* p_dev_rec, tBT_TRANS
                 p_dev_rec->bd_addr, transport, req.sec_act);
       tBTM_STATUS res =
               BTM_SetEncryption(p_dev_rec->bd_addr, transport, req.callback, req.ref, req.sec_act);
-      if (res != tBTM_STATUS::BTM_SUCCESS || res != tBTM_STATUS::BTM_CMD_STARTED) {
+      if (res != tBTM_STATUS::BTM_SUCCESS && res != tBTM_STATUS::BTM_CMD_STARTED) {
         log::warn(
                 "Failed to retry encryption request: addr={}, transport={}, sec_act=0x{:x}, res={}",
                 p_dev_rec->bd_addr, transport, req.sec_act, btm_status_text(res));
