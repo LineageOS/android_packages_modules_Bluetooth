@@ -488,11 +488,6 @@ void AvrcpService::UnregisterBipServer() {
 
   const std::shared_ptr<AvrcpSdpService>& avrcp_sdp_service = AvrcpSdpService::Get();
   avrcp_sdp_service->DisableCovertArt(UUID_SERVCLASS_AV_REM_CTRL_TARGET, target_sdp_request_id_);
-  avrcp_interface_.RemoveRecord(sdp_record_handle);
-  uint16_t supported_features = GetSupportedFeatures(profile_version);
-  sdp_record_handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
-  avrcp_interface_.AddRecord(UUID_SERVCLASS_AV_REM_CTRL_TARGET, "AV Remote Control Target", NULL,
-                             supported_features, sdp_record_handle, true, profile_version, 0);
 }
 
 AvrcpService* AvrcpService::Get() {
