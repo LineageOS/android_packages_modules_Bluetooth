@@ -23,6 +23,8 @@ import android.media.browse.MediaBrowser.MediaItem;
 import android.media.session.MediaSession;
 import android.os.Bundle;
 
+import com.android.bluetooth.Utils;
+
 import java.util.Objects;
 
 public class Metadata implements Cloneable {
@@ -45,6 +47,8 @@ public class Metadata implements Cloneable {
     public static final String EMPTY_NUM_TRACKS = "1";
     public static final String EMPTY_GENRE = "";
     public static final String EMPTY_DURATION = "0";
+
+    private static final int MAX_ELEMENT_LEN = (512 - 45); // max len - (avctp + avrcp header)
 
     @Override
     public Metadata clone() {
@@ -175,16 +179,17 @@ public class Metadata implements Cloneable {
 
             // Then, replace with better data if available on the MediaMetadata
             if (data.containsKey(MediaMetadata.METADATA_KEY_MEDIA_ID)) {
-                mMetadata.mediaId = data.getString(MediaMetadata.METADATA_KEY_MEDIA_ID);
+                mMetadata.mediaId =
+                        getStringFromMetadata(data, MediaMetadata.METADATA_KEY_MEDIA_ID);
             }
             if (data.containsKey(MediaMetadata.METADATA_KEY_TITLE)) {
-                mMetadata.title = data.getString(MediaMetadata.METADATA_KEY_TITLE);
+                mMetadata.title = getStringFromMetadata(data, MediaMetadata.METADATA_KEY_TITLE);
             }
             if (data.containsKey(MediaMetadata.METADATA_KEY_ARTIST)) {
-                mMetadata.artist = data.getString(MediaMetadata.METADATA_KEY_ARTIST);
+                mMetadata.artist = getStringFromMetadata(data, MediaMetadata.METADATA_KEY_ARTIST);
             }
             if (data.containsKey(MediaMetadata.METADATA_KEY_ALBUM)) {
-                mMetadata.album = data.getString(MediaMetadata.METADATA_KEY_ALBUM);
+                mMetadata.album = getStringFromMetadata(data, MediaMetadata.METADATA_KEY_ALBUM);
             }
             if (data.containsKey(MediaMetadata.METADATA_KEY_TRACK_NUMBER)) {
                 mMetadata.trackNum = "" + data.getLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER);
@@ -193,7 +198,7 @@ public class Metadata implements Cloneable {
                 mMetadata.numTracks = "" + data.getLong(MediaMetadata.METADATA_KEY_NUM_TRACKS);
             }
             if (data.containsKey(MediaMetadata.METADATA_KEY_GENRE)) {
-                mMetadata.genre = data.getString(MediaMetadata.METADATA_KEY_GENRE);
+                mMetadata.genre = getStringFromMetadata(data, MediaMetadata.METADATA_KEY_GENRE);
             }
             if (data.containsKey(MediaMetadata.METADATA_KEY_DURATION)) {
                 mMetadata.duration = "" + data.getLong(MediaMetadata.METADATA_KEY_DURATION);
@@ -310,5 +315,13 @@ public class Metadata implements Cloneable {
         public Metadata build() {
             return mMetadata.clone();
         }
+    }
+
+    private static String getStringFromMetadata(MediaMetadata data, String key) {
+        String val = data.getString(key);
+        if (val == null) {
+            return "";
+        }
+        return Utils.truncateStringForUtf8Storage(val, MAX_ELEMENT_LEN);
     }
 }
