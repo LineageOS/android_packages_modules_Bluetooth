@@ -38,7 +38,6 @@
 #include "a2dp_codec_api.h"
 #include "a2dp_constants.h"
 #include "a2dp_sbc_constants.h"
-#include "audio_hal_interface/a2dp_encoding.h"
 #include "avdt_api.h"
 #include "avrc_api.h"
 #include "avrc_defs.h"
@@ -3197,7 +3196,7 @@ void bta_av_offload_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* /*p_data*/) {
   A2dpCodecConfig* codec_config = bta_av_get_a2dp_current_codec();
   log::assert_that(codec_config != nullptr, "assert failed: codec_config != nullptr");
 
-  if (::bluetooth::audio::a2dp::provider::supports_codec(codec_config->codecIndex())) {
+  if (codec_config->isHardwareProviderCodec()) {
     bta_av_vendor_offload_start_v2(p_scb, static_cast<A2dpCodecConfigExt*>(codec_config));
   } else {
     bta_av_offload_codec_builder(p_scb, &offload_start);

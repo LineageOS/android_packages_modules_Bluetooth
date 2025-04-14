@@ -1077,7 +1077,7 @@ const BtaAvCoSep* BtaAvCo::SelectSourceCodec(BtaAvCoPeer* p_peer) {
   // Query the preferred codec configuration for software codecs.
   A2dpCodecConfig* software_codec_config = nullptr;
   for (const auto& iter : p_peer->GetCodecs()->orderedSourceCodecs()) {
-    if (::bluetooth::audio::a2dp::provider::supports_codec(iter->codecIndex())) {
+    if (iter->isHardwareProviderCodec()) {
       continue;
     }
 
