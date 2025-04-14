@@ -65,7 +65,6 @@ protected:
 
 class TestAclManager : public testing::MockAclManager {
 public:
-  void AddDeviceToRelaxedConnectionIntervalList(const Address /*address*/) override {}
   Address HACK_GetLeAddress(uint16_t /*connection_handle*/) override { return target_address_; }
 
 protected:
