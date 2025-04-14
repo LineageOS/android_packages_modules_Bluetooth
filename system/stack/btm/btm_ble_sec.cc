@@ -1141,6 +1141,10 @@ tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr, tBTM_BLE_SEC_ACT s
   }
 
   switch (sec_act) {
+    if (p_rec->sec_rec.is_le_device_encrypted()) {
+      return tBTM_STATUS::BTM_SUCCESS;
+    }
+
     case BTM_BLE_SEC_ENCRYPT:
       if (link_role == HCI_ROLE_CENTRAL) {
         /* start link layer encryption using the security info stored */
@@ -1679,6 +1683,31 @@ static tBTM_STATUS btm_ble_sirk_verification_req(const RawAddress& bd_addr) {
   return res;
 }
 
+static bool btm_ble_complete_evt_ignore(const tBTM_SEC_DEV_REC* p_dev_rec,
+                                        const tSMP_EVT_DATA* p_data) {
+  // Encryption request in peripheral role results in SMP Security request. SMP may generate a
+  // SMP_COMPLT_EVT failure event cases like below:
+  // 1) Some central devices don't handle cross-over between encryption and SMP security request
+  // 2) Link may get disconnected after the SMP security request was sent.
+  if (p_data->cmplt.reason != SMP_SUCCESS && !p_dev_rec->role_central &&
+      btm_sec_cb.pairing_bda != p_dev_rec->bd_addr &&
+      btm_sec_cb.pairing_bda != p_dev_rec->ble.pseudo_addr &&
+      p_dev_rec->sec_rec.is_le_link_key_known() &&
+      p_dev_rec->sec_rec.ble_keys.key_type != BTM_LE_KEY_NONE) {
+    if (p_dev_rec->sec_rec.is_le_device_encrypted()) {
+      log::warn("Bonded device {} is already encrypted, ignoring SMP failure", p_dev_rec->bd_addr);
+      return true;
+    } else if (p_data->cmplt.reason == SMP_CONN_TOUT) {
+      log::warn("Bonded device {} disconnected while waiting for encryption, ignoring SMP failure",
+                p_dev_rec->bd_addr);
+      l2cu_start_post_bond_timer(p_dev_rec->ble_hci_handle);
+      return true;
+    }
+  }
+
+  return false;
+}
+
 /*****************************************************************************
  *  Function        btm_proc_smp_cback
  *
@@ -1735,6 +1764,10 @@ tBTM_STATUS btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr, tSMP_E
       break;
 
     case SMP_COMPLT_EVT:
+      if (btm_ble_complete_evt_ignore(p_dev_rec, p_data)) {
+        return tBTM_STATUS::BTM_SUCCESS;
+      }
+
       btm_ble_complete_evt(bd_addr, p_dev_rec, reinterpret_cast<tBTM_LE_EVT_DATA*>(p_data));
       break;
 
