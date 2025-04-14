@@ -23,6 +23,7 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.isValidDevice;
 
+import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -42,6 +43,8 @@ import android.os.IBinder;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
 import android.util.Log;
+
+import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -265,6 +268,25 @@ public final class BluetoothA2dp implements BluetoothProfile {
      * @hide
      */
     @SystemApi public static final int DYNAMIC_BUFFER_SUPPORT_A2DP_SOFTWARE_ENCODING = 2;
+
+    /**
+     * Used as an int extra field in {@link BluetoothA2dp#ACTION_CONNECTION_STATE_CHANGED} intents
+     * for connection failure reason. The value is one of
+     *
+     * <ul>
+     *   <li>{@link BluetoothStatusCodes#SUCCESS},
+     *   <li>{@link BluetoothStatusCodes#ERROR_UNKNOWN},
+     *   <li>{@link BluetoothStatusCodes#INSUFFICIENT_RESOURCES},
+     *   <li>{@link BluetoothStatusCodes#SDP_DISCOVERY_FAILED},
+     *   <li>{@link BluetoothStatusCodes#STREAM_CONNECTION_FAILED},
+     *   <li>{@link BluetoothStatusCodes#ROLE_SWITCH_FAILED},
+     *   <li>{@link BluetoothStatusCodes#AVDTP_DISCOVERY_FAILED}.
+     * </ul>
+     */
+    @FlaggedApi(Flags.FLAG_A2DP_DISCONNECT_REASON_API)
+    @SuppressLint("ActionValue")
+    public static final String EXTRA_DISCONNECTED_REASON =
+            "android.bluetooth.a2dp.extra.DISCONNECTED_REASON";
 
     private final BluetoothAdapter mAdapter;
     private final AttributionSource mAttributionSource;
