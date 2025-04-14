@@ -50,16 +50,6 @@ flag {
 }
 
 flag {
-    name: "disconnect_hid_channels_serially"
-    namespace: "bluetooth"
-    description: "Only disconnect control channel after interrupt channel disconnection is acked"
-    bug: "387937345"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "vup_for_pending_connection"
     namespace: "bluetooth"
     description: "Generate HID VUP for pending connections as well"
