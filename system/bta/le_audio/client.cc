@@ -444,7 +444,7 @@ public:
                     initCb),
             true);
 
-    DeviceGroups::Get()->Initialize(device_group_callbacks);
+    DeviceGroups::Initialize(device_group_callbacks);
   }
 
   /* Helper function for update source local and in_call context metadata (if in call) */
