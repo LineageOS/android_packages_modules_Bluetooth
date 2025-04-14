@@ -387,7 +387,10 @@ class HostBuild():
         if clang:
             # Make sure to mark the clang use flag as true
             self.use.set_flag('clang', True)
-            gn_args['external_cxxflags'] += ['-I/usr/include/']
+            gn_args['external_cxxflags'] += [
+                '-I/usr/include/',
+                '-Wno-vla-cxx-extension',
+            ]
 
         gn_args_args = list(to_gn_args_args(gn_args))
         use_args = ['%s=%s' % (k, str(v).lower()) for k, v in self.use.flags.items()]
