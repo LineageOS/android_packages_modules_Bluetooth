@@ -137,6 +137,9 @@ public:
   // Returns true if |codec_config| is empty, otherwise false.
   static bool isCodecConfigEmpty(const btav_a2dp_codec_config_t& codec_config);
 
+  // Checks whether the A2DP Codec Configuration is supported by Codec Extensibility.
+  virtual bool isHardwareProviderCodec() const { return false; }
+
 protected:
   // Sets the current priority of the codec to |codec_priority|.
   // If |codec_priority| is BTAV_A2DP_CODEC_PRIORITY_DEFAULT, the priority is

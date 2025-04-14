@@ -485,6 +485,7 @@ class MceStateMachine extends StateMachine {
         return SCHEME_MAILTO + "://" + email;
     }
 
+    @SuppressWarnings("EnumOrdinal")
     Bmessage.Type getDefaultMessageType() {
         synchronized (mLock) {
             if (Utils.isPtsTestMode()) {

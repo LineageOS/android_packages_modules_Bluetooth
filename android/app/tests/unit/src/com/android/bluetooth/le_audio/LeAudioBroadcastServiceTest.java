@@ -1651,6 +1651,64 @@ public class LeAudioBroadcastServiceTest {
                         eq(null), eq(mBroadcastDevice), any(BluetoothProfileConnectionInfo.class));
     }
 
+    @Test
+    public void testCreateBroadcastWhileAudioModeChange() {
+        /* Imitate setting device in call (without active unicast device) */
+        mService.handleAudioModeChange(AudioManager.MODE_IN_CALL);
+
+        int broadcastId = 243;
+        byte[] code = {0x00, 0x01, 0x00, 0x02};
+
+        synchronized (mService.mBroadcastCallbacks) {
+            mService.mBroadcastCallbacks.register(mCallbacks);
+        }
+
+        /* call create broadcast */
+        BluetoothLeAudioContentMetadata meta =
+                new BluetoothLeAudioContentMetadata.Builder()
+                        .setLanguage("pol")
+                        .setProgramInfo("Subgroup broadcast info")
+                        .build();
+
+        BluetoothLeBroadcastSettings settings = buildBroadcastSettingsFromMetadata(meta, code, 1);
+        mService.createBroadcast(settings);
+
+        /* Imitate setting device not in call */
+        mService.handleAudioModeChange(AudioManager.MODE_NORMAL);
+
+        /* Successfully created audio session notification */
+        LeAudioStackEvent stackEvent =
+                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_AUDIO_SESSION_CREATED);
+        stackEvent.valueBool1 = true;
+        mService.messageFromNative(stackEvent);
+
+        /* Check if broadcast is started automatically when created */
+        stackEvent = new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_CREATED);
+        stackEvent.valueInt1 = broadcastId;
+        stackEvent.valueBool1 = true;
+        mService.messageFromNative(stackEvent);
+
+        List<BluetoothLeBroadcastSubgroupSettings> settingsList = settings.getSubgroupSettings();
+        int[] expectedQualityArray =
+                settingsList.stream().mapToInt(setting -> setting.getPreferredQuality()).toArray();
+        byte[][] expectedDataArray =
+                settingsList.stream()
+                        .map(setting -> setting.getContentMetadata().getRawMetadata())
+                        .toArray(byte[][]::new);
+
+        verify(mLeAudioBroadcasterNativeInterface)
+                .createBroadcast(
+                        eq(true),
+                        eq(TEST_BROADCAST_NAME),
+                        eq(settings.getBroadcastCode()),
+                        eq(settings.getPublicBroadcastMetadata().getRawMetadata()),
+                        eq(expectedQualityArray),
+                        eq(expectedDataArray));
+
+        /* Verify if broadcast is auto-started on start */
+        verify(mLeAudioBroadcasterNativeInterface, times(1)).startBroadcast(eq(broadcastId));
+    }
+
     private static BluetoothLeBroadcastSettings buildBroadcastSettingsFromMetadata(
             BluetoothLeAudioContentMetadata contentMetadata,
             @Nullable byte[] broadcastCode,
