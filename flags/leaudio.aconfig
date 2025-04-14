@@ -338,3 +338,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_add_opus_hi_res_codec_type"
+    namespace: "bluetooth"
+    description: "Add OPUS codec type to LE Audio"
+    bug: "410516242"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
