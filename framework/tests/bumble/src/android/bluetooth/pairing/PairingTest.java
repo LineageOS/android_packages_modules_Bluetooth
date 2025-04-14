@@ -784,11 +784,14 @@ public class PairingTest {
      */
     @Test
     public void testRemoveBondLe_WhenDisconnected() {
-        IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
-                BluetoothDevice.ACTION_ACL_DISCONNECTED,
-                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
-                BluetoothHidHost.ACTION_CONNECTION_STATE_CHANGED)
-                .build();
+        IntentReceiver intentReceiver =
+                new IntentReceiver.Builder(
+                                sTargetContext,
+                                BluetoothDevice.ACTION_ACL_DISCONNECTED,
+                                BluetoothDevice.ACTION_ACL_CONNECTED,
+                                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                                BluetoothHidHost.ACTION_CONNECTION_STATE_CHANGED)
+                        .build();
 
         testStep_BondLe(intentReceiver, mBumbleDevice, OwnAddressType.PUBLIC);
         assertThat(sAdapter.getBondedDevices()).contains(mBumbleDevice);
@@ -820,8 +823,22 @@ public class PairingTest {
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
 
+        if (Flags.hogpReconnection()) {
+            intentReceiver.verifyReceivedOrdered(
+                    hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+                    hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
+                    hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
+        }
+
         // Remove bond
         assertThat(mBumbleDevice.removeBond()).isTrue();
+        if (Flags.hogpReconnection()) {
+            // Wait for ACL to get disconnected
+            intentReceiver.verifyReceivedOrdered(
+                    hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
+                    hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
+                    hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
+        }
         intentReceiver.verifyReceivedOrdered(
                 hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
