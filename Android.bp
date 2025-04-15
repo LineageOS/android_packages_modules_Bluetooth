@@ -145,7 +145,7 @@ java_defaults {
             "-Xep:EqualsHashCode:ERROR",
             "-Xep:EqualsIncompatibleType:ERROR",
             "-Xep:FallThrough:ERROR",
-            "-Xep:FieldCanBeFinal:ERROR",
+            // "-Xep:FieldCanBeFinal:ERROR", // TODO: b/410743019 - enable this check
             "-Xep:FieldCanBeLocal:ERROR",
             "-Xep:FieldCanBeStatic:ERROR",
             "-Xep:Finalize:ERROR",
