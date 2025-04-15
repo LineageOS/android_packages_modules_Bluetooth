@@ -22,6 +22,7 @@
 #include "stack/include/bt_psm_types.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_stack_l2cap_interface.h"
+#include "test/mock/mock_stack_l2cap_utils.h"
 
 using ::testing::_;
 using ::testing::Args;
@@ -39,6 +40,12 @@ protected:
   void SetUp() override {
     fake_osi_ = std::make_unique<::test::fake::FakeOsi>();
     bluetooth::testing::stack::l2cap::set_interface(&mock_stack_l2cap_interface_);
+    test::mock::stack_l2cap_utils::l2cu_find_lcb_by_bd_addr.body =
+            [](const RawAddress& /*bd_addr*/, tBT_TRANSPORT /* transport */) {
+              tL2C_LCB* l2c_lcb = (tL2C_LCB*)malloc(sizeof(tL2C_LCB));
+              l2c_lcb->peer_ext_fea |= L2CAP_EXTFEA_ENH_RETRANS;
+              return l2c_lcb;
+            };
   }
 
   void TearDown() override {}
@@ -114,6 +121,7 @@ TEST_F(StackAvctpTest, AVCT_CreateBrowse) {
           .control = 1,
   };
   ASSERT_EQ(AVCT_SUCCESS, AVCT_CreateConn(&handle, &cc, kRawAddress));
+
   ASSERT_EQ(AVCT_SUCCESS, AVCT_CreateBrowse(handle, AVCT_ROLE_INITIATOR));
 
   ASSERT_EQ(AVCT_SUCCESS, AVCT_RemoveBrowse(handle));
