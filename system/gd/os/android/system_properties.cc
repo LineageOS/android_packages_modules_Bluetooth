@@ -50,22 +50,6 @@ bool SetSystemProperty(const std::string& property, const std::string& value) {
   return true;
 }
 
-bool IsRootCanalEnabled() {
-  auto value = GetSystemProperty("ro.vendor.build.fingerprint");
-  if (value.has_value()) {
-    log::info("ro.vendor.build.fingerprint='{}', length={}", value->c_str(), value->length());
-  } else {
-    log::info("ro.vendor.build.fingerprint is not found");
-  }
-  // aosp_cf_x86_64_phone is just one platform that currently runs root canal
-  // When other platforms appears, or there is a better signal, add them here
-  if (value->find("generic/aosp_cf_x86_64_phone") == std::string::npos) {
-    log::info("Not on generic/aosp_cf_x86_64_phone and hence not root canal");
-    return false;
-  }
-  return true;
-}
-
 int GetAndroidVendorReleaseVersion() {
   auto value = GetSystemProperty("ro.vendor.build.version.release_or_codename");
   if (!value) {
