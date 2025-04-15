@@ -46,8 +46,8 @@
 #define A2DP_AAC_SAMPLING_FREQ_64000 (0x40 << 8)
 #define A2DP_AAC_SAMPLING_FREQ_88200 (0x20 << 8)
 #define A2DP_AAC_SAMPLING_FREQ_96000 (0x10 << 8)
-// [Octet 2], [Bits 2-3] Channel Mode
-#define A2DP_AAC_CHANNEL_MODE_MASK 0x0C
+// [Octet 2], [Bits 0-3] Channel Mode
+#define A2DP_AAC_CHANNEL_MODE_MASK 0x0F
 #define A2DP_AAC_CHANNEL_MODE_MONO 0x08
 #define A2DP_AAC_CHANNEL_MODE_STEREO 0x04
 // [Octet 2], [Bits 0-1] RFA

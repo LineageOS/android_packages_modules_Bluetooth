@@ -487,7 +487,7 @@
     "TSPC_A2DP_2_14": true,
     "TSPC_A2DP_2_15": true,
     "TSPC_A2DP_2_17": true,
-    "TSPC_A2DP_2a_3": true,
+    "TSPC_A2DP_2a_4": true,
     "TSPC_A2DP_2b_2": true,
     "TSPC_A2DP_3_1": true,
     "TSPC_A2DP_3_6": true,
@@ -536,7 +536,7 @@
     "TSPC_A2DP_5i_8": true,
     "TSPC_A2DP_5i_9": true,
     "TSPC_A2DP_5j_1": true,
-    "TSPC_A2DP_7a_3": true,
+    "TSPC_A2DP_7a_4": true,
     "TSPC_A2DP_7b_2": true,
     "TSPC_A2DP_8_2": true,
     "TSPC_A2DP_8_3": true,
@@ -2314,6 +2314,14 @@
     "VCP": {}
   },
   "flags": [
+    {
+      "flags": [
+        "a2dp_version_1_4"
+      ],
+      "tests": [
+        "A2DP"
+      ]
+    },
     {
       "flags": [
         "set_addressed_player",
