@@ -50,6 +50,7 @@
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_dev_class.h"
 #include "stack/include/btm_api_types.h"
@@ -62,8 +63,6 @@
 #include "stack/include/sco_hci_link_interface.h"
 #include "stack/include/sdpdefs.h"
 #include "types/raw_address.h"
-
-extern tBTM_CB btm_cb;
 
 /* Default to allow enhanced connections where supported. */
 constexpr bool kDefaultDisableEnhancedConnection = false;

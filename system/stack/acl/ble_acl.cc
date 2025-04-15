@@ -25,6 +25,7 @@
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/connection_manager/connection_manager.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/ble_acl_interface.h"
@@ -35,8 +36,6 @@
 #include "types/raw_address.h"
 
 using namespace bluetooth;
-
-extern tBTM_CB btm_cb;
 
 static bool acl_ble_common_connection(const tBLE_BD_ADDR& address_with_type, uint16_t handle,
                                       tHCI_ROLE role, bool is_in_security_db,

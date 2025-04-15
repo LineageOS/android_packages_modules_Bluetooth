@@ -36,6 +36,7 @@
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sco.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/bt_hdr.h"
@@ -51,8 +52,6 @@
 #include "types/raw_address.h"
 
 using namespace bluetooth;
-
-extern tBTM_CB btm_cb;
 
 static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf, tL2C_TX_COMPLETE_CB_INFO* p_cbi);
 static BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb, tL2C_TX_COMPLETE_CB_INFO* p_cbi);

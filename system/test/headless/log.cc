@@ -26,7 +26,5 @@
 
 std::chrono::system_clock::time_point _prev = std::chrono::system_clock::now();
 
-extern tBTM_CB btm_cb;
-
 bluetooth::common::TimestamperInMilliseconds timestamper_in_ms;
 uint64_t GetTimestampMs() { return timestamper_in_ms.GetTimestamp(); }

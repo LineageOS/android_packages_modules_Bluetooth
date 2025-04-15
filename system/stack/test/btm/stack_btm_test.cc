@@ -28,6 +28,7 @@
 #include "stack/btm/btm_sco.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_cb.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/btm_client_interface.h"
@@ -43,8 +44,6 @@ using ::testing::_;
 using ::testing::Each;
 using ::testing::Eq;
 using ::testing::Invoke;
-
-extern tBTM_CB btm_cb;
 
 tL2C_CB l2cb;
 

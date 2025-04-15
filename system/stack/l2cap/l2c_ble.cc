@@ -44,6 +44,7 @@
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_int_types.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/connection_manager/connection_manager.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_psm_types.h"
@@ -66,8 +67,6 @@ using namespace bluetooth;
 namespace {
 constexpr char kBtmLogTag[] = "L2CAP";
 }
-
-extern tBTM_CB btm_cb;
 
 void l2cble_start_conn_update(tL2C_LCB* p_lcb);
 
