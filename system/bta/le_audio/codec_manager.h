@@ -58,9 +58,9 @@ class CodecManager {
 public:
   enum Flags {
     NONE = 0x00,
-    LOW_LATENCY,
-    ALLOW_ASYMMETRIC,
-    SPATIAL_AUDIO,
+    LOW_LATENCY = 0x01,
+    ALLOW_ASYMMETRIC = 0x02,
+    SPATIAL_AUDIO = 0x04,
   };
 
   struct UnicastConfigurationRequirements {
