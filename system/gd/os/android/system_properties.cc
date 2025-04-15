@@ -50,42 +50,6 @@ bool SetSystemProperty(const std::string& property, const std::string& value) {
   return true;
 }
 
-int GetAndroidVendorReleaseVersion() {
-  auto value = GetSystemProperty("ro.vendor.build.version.release_or_codename");
-  if (!value) {
-    log::info("ro.vendor.build.version.release_or_codename does not exist");
-    return 0;
-  }
-  log::info("ro.vendor.build.version.release_or_codename='{}', length={}", value->c_str(),
-            value->length());
-  auto int_value = common::Int64FromString(*value);
-  if (int_value) {
-    return static_cast<int>(*int_value);
-  }
-  log::info("value '{}' cannot be parsed to int", value->c_str());
-  if (value->empty()) {
-    log::info("value '{}' is empty", value->c_str());
-    return 0;
-  }
-  if (value->length() > 1) {
-    log::info("value '{}' length is {}, which is > 1", value->c_str(), value->length());
-  }
-  char release_code = toupper(value->at(0));
-  switch (release_code) {
-    case 'S':
-      return 11;
-    case 'R':
-      return 10;
-    case 'P':
-      return 9;
-    case 'O':
-      return 8;
-    default:
-      // Treble not enabled before Android O
-      return 0;
-  }
-}
-
 bool ClearSystemPropertiesForHost() { return false; }
 
 }  // namespace os

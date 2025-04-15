@@ -55,9 +55,5 @@ bool SetSystemProperty(const std::string& property, const std::string& value);
 // Clear system properties for host only return true on success
 bool ClearSystemPropertiesForHost();
 
-// Get Android Vendor Image release version in numeric value (e.g. Android R is 11), return 0 if not
-// on Android or version not available
-int GetAndroidVendorReleaseVersion();
-
 }  // namespace os
 }  // namespace bluetooth

@@ -49,7 +49,5 @@ bool ClearSystemPropertiesForHost() {
   return true;
 }
 
-int GetAndroidVendorReleaseVersion() { return 0; }
-
 }  // namespace os
 }  // namespace bluetooth
