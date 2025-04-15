@@ -68,13 +68,6 @@ android_test {
         "src/**/*.java",
         "src/**/*.kt",
     ],
-    jacoco: {
-        include_filter: [
-            "android.bluetooth.**",
-            "com.android.bluetooth.**",
-        ],
-        exclude_filter: [],
-    },
 
     test_suites: [
         "automotive-general-tests",
