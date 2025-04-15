@@ -61,14 +61,13 @@
 #include "osi/include/properties.h"
 #include "stack/acl/acl.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/connection_manager/connection_manager.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/main_thread.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
-
-extern tBTM_CB btm_cb;
 
 using namespace bluetooth;
 using ::bluetooth::os::WakelockManager;

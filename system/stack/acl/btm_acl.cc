@@ -95,8 +95,6 @@
 using namespace bluetooth;
 using bluetooth::legacy::hci::GetInterface;
 
-extern tBTM_CB btm_cb;
-
 struct StackAclBtmAcl {
   tACL_CONN* acl_allocate_connection();
   tACL_CONN* acl_get_connection_from_handle(uint16_t handle);

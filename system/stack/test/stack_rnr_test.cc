@@ -20,6 +20,7 @@
 
 #include "hci/hci_layer_fake.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/test/btm/btm_test_fixtures.h"
 #include "test/fake/fake_looper.h"
