@@ -412,18 +412,12 @@ public class ScanManager {
     }
 
     void stopScan(int scannerId) {
+        ScanClient tmpClient = new ScanClient(scannerId);
         mScanController.enforceScanThread();
-        ScanClient client = getBatchScanClient(scannerId);
-        if (client == null) {
-            client = getRegularScanClient(scannerId);
-        }
-        if (client == null) {
-            client = getSuspendedScanClient(scannerId);
-        }
         if (Flags.scanControllerThread()) {
-            handleStopScan(client);
+            handleStopScan(tmpClient);
         } else {
-            sendMessage(MSG_STOP_BLE_SCAN, client);
+            sendMessage(MSG_STOP_BLE_SCAN, tmpClient);
         }
     }
 
@@ -696,8 +690,19 @@ public class ScanManager {
         return atLeastOneValidFilter;
     }
 
-    private void handleStopScan(ScanClient client) {
+    private void handleStopScan(ScanClient tmpClient) {
+        int scannerIdToStop = tmpClient.mScannerId;
+        ScanClient client = getBatchScanClient(scannerIdToStop);
         if (client == null) {
+            client = getRegularScanClient(scannerIdToStop);
+        }
+        if (client == null) {
+            client = getSuspendedScanClient(scannerIdToStop);
+        }
+        if (client == null) {
+            Log.d(
+                    TAG,
+                    "handling stopping scan, no client found for scannerId - " + scannerIdToStop);
             return;
         }
         Log.d(TAG, "handling stopping scan " + client);
