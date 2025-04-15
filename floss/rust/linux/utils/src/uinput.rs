@@ -1,10 +1,8 @@
 //! This library provides access to Linux uinput.
 
-use libc;
-use nix;
 use std::ffi::CString;
-use std::mem;
-use std::slice;
+use std::{mem, slice};
+use {libc, nix};
 
 // Supported AVRCP Keys
 const AVC_PLAY: u8 = 0x44;
@@ -164,7 +162,7 @@ impl UInputDev {
         return 0;
     }
 
-    #[allow(temporary_cstring_as_ptr)]
+    #[allow(dangling_pointers_from_temporaries)]
     fn init(&mut self, mut name: String, addr: String) -> Result<(), String> {
         // Truncate the device name if over the max size allowed.
         let new_len = Self::floor_char_boundary(&name, UINPUT_MAX_NAME_SIZE - UINPUT_SUFFIX_SIZE);
