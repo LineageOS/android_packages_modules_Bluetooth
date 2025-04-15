@@ -440,7 +440,7 @@ void avct_bcb_discard_msg(tAVCT_BCB* p_bcb, tAVCT_LCB_EVT* p_data) {
                  avct_ch_state_text(p_bcb->ch_state), p_bcb->allocated,
                  p_data->ul_msg.p_ccb->p_lcb->allocated);
     p_bcb->allocated = p_data->ul_msg.p_ccb->p_lcb->allocated;
-    avct_bcb_event(p_bcb, AVCT_LCB_UL_BIND_EVT, (tAVCT_LCB_EVT*)p_data->ul_msg.p_ccb);
+    avct_bcb_event(p_bcb, AVCT_LCB_UL_BIND_EVT, (tAVCT_LCB_EVT*)&(p_data->ul_msg.p_ccb));
   }
 }
 
