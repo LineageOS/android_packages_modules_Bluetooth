@@ -165,7 +165,14 @@ class A2DPProxy(ProfileProxy):
         to PTS, attempting to connect may trigger this action.
         """
 
-        if "SRC" in test:
+        if test in [
+                "A2DP/SNK/SYN/BV-01-C",
+        ]:
+            # Ignore the PTS start request for the tests listed above,
+            # initiating the stream is not in the TSPC requirements.
+            pass
+
+        elif "SRC" in test:
             self.a2dp.Start(source=self.source)
             self.audio.start()
         else:
@@ -516,14 +523,13 @@ class A2DPProxy(ProfileProxy):
 
         return "OK"
 
-    @assert_description
+    @match_description
     def TSC_A2DP_mmi_user_confirm_no_optional_attribute_support(self, **kwargs):
         """
-        Tester could not find the optional SDP attribute named 'Provider Name'.
-        Is this correct?
+        (Tester could not find the optional SDP attribute named 'Provider Name'. Is this correct?|Take
+         action if necessary to initiate a Delay Reporting command.)
         """
 
-        # TODO: Extract and verify attribute name from description
         return "OK"
 
     @assert_description
