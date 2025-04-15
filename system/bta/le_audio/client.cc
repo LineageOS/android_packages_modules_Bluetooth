@@ -6195,8 +6195,9 @@ public:
 
   void speed_start_setup(int group_id, LeAudioContextType context_type, int num_of_connected,
                          bool is_reconfig = false) {
-    log::verbose("is_started {} is_reconfig {} num_of_connected {}",
-                 speed_tracker_.IsStarted(group_id), is_reconfig, num_of_connected);
+    log::verbose("is_started {} is_reconfig {} num_of_connected {}, context: {}",
+                 speed_tracker_.IsStarted(group_id), is_reconfig, num_of_connected,
+                 ToString(context_type));
     if (!speed_tracker_.IsStarted(group_id)) {
       speed_tracker_.Init(group_id, context_type, num_of_connected);
     }
