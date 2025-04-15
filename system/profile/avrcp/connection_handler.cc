@@ -142,7 +142,7 @@ bool ConnectionHandler::ConnectDevice(const RawAddress& bdaddr) {
               "Failed to do SDP: status=0x{:x} features=0x{:x} supports "
               "controller: {}",
               status, features, features & BTA_AV_FEAT_RCCT);
-      instance_->connection_cb_.Run(std::shared_ptr<Device>());
+      return;
     }
 
     instance_->feature_map_[bdaddr] = features;
