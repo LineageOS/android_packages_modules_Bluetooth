@@ -1702,7 +1702,7 @@ public:
       auto group_id_to_close = active_group_id_;
       groupSetAndNotifyInactive();
       GroupStop(group_id_to_close);
-
+      audioContextTypeManager_->OverrideContextTypes({AudioContexts(), AudioContexts()});
       return;
     }
 
@@ -4568,7 +4568,11 @@ public:
       return false;
     }
 
-    return GroupStream(group, configuration_context_type_, remote_contexts);
+    auto configuration_context = configuration_context_type_;
+    if (com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+      configuration_context = config.first;
+    }
+    return GroupStream(group, configuration_context, remote_contexts);
   }
 
   void OnAudioSuspend() {
