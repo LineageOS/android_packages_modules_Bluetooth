@@ -11656,6 +11656,228 @@ TEST_F(UnicastTest, StartNotAvailableUnsupportedContextTypeUnspecifiedAvail) {
   TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920);
 }
 
+TEST_F(UnicastTest, NoMetadataBeforeResumeRemoteRemovesAvailableContext) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  int group_id = bluetooth::groups::kGroupUnknown;
+
+  /* Scenario:
+   * 1. No metadata before starting media
+   * 2. Update metadata with Sound Effect */
+  available_snk_context_types_ =
+          (types::LeAudioContextType::GAME | types::LeAudioContextType::UNSPECIFIED).value();
+  available_src_context_types_ = available_snk_context_types_;
+  supported_snk_context_types_ = available_snk_context_types_;
+  supported_src_context_types_ = available_src_context_types_;
+
+  SetSampleDatabaseEarbudsValid(1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+                                codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt,
+                                default_channel_cnt, 0x0004, false /*add_csis*/, true /*add_cas*/,
+                                true /*add_pacs*/, default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/,
+                                0 /*rank*/);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::CONNECTED, test_address0))
+          .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
+          .WillOnce(DoAll(SaveArg<1>(&group_id)));
+
+  ConnectLeAudio(test_address0);
+  ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
+
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
+  types::BidirectionalPair<types::AudioContexts> metadata = {
+          .sink = types::AudioContexts(types::LeAudioContextType::GAME),
+          .source = types::AudioContexts()};
+  EXPECT_CALL(mock_state_machine_, StartStream(_, types::LeAudioContextType::GAME, metadata, _))
+          .Times(1);
+
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+
+  /* Be default GAME is unidirectional */
+  StartStreaming(AUDIO_USAGE_GAME, AUDIO_CONTENT_TYPE_UNKNOWN, group_id);
+
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+
+  // Verify Data transfer on one audio source cis
+  uint8_t cis_count_out = 1;
+  uint8_t cis_count_in = 0;
+  TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920);
+}
+
+TEST_F(UnicastTest, MediaContextRemovedFromAvailableContextsAfterSoundEffectStarts) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  int group_id = bluetooth::groups::kGroupUnknown;
+  uint16_t conn_id = 1;
+
+  /* Scenario:
+   * 1. Local Source started with SoundEffect streaming
+   * 2. Remote accepted SoundEffect and removed MEDIA from available context types
+   * 3. Audio HAL updates metadata to MEDIA. SoundEffect is removed now.
+   *
+   * After step 3 it turns out we should not continue streaming as we do have context type
+   * which remote device does not accept. Stream shall be closed.
+   */
+  available_snk_context_types_ =
+          (types::LeAudioContextType::MEDIA | types::LeAudioContextType::SOUNDEFFECTS |
+           types::LeAudioContextType::UNSPECIFIED)
+                  .value();
+  available_src_context_types_ = available_snk_context_types_;
+  supported_snk_context_types_ = available_snk_context_types_;
+  supported_src_context_types_ = available_src_context_types_;
+
+  SetSampleDatabaseEarbudsValid(conn_id, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+                                codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt,
+                                default_channel_cnt, 0x0004, false /*add_csis*/, true /*add_cas*/,
+                                true /*add_pacs*/, default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/,
+                                0 /*rank*/);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::CONNECTED, test_address0))
+          .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
+          .WillOnce(DoAll(SaveArg<1>(&group_id)));
+
+  ConnectLeAudio(test_address0);
+  ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
+
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
+  types::BidirectionalPair<types::AudioContexts> metadata = {
+          .sink = types::AudioContexts(types::LeAudioContextType::SOUNDEFFECTS),
+          .source = types::AudioContexts()};
+  EXPECT_CALL(mock_state_machine_,
+              StartStream(_, types::LeAudioContextType::SOUNDEFFECTS, metadata, _))
+          .Times(1);
+
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+
+  log::debug("Start stream with SoundeEffect");
+  StartStreaming(AUDIO_USAGE_ASSISTANCE_SONIFICATION, AUDIO_CONTENT_TYPE_UNKNOWN, group_id);
+  SyncOnMainLoop();
+
+  log::debug("Remove MEDIA from available contexts");
+  auto new_contexts = AudioContexts(available_snk_context_types_);
+  new_contexts.unset(types::LeAudioContextType::MEDIA);
+  InjectAvailableContextTypes(test_address0, conn_id, new_contexts, new_contexts);
+
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+
+  // Verify Data transfer on one audio source cis
+  uint8_t cis_count_out = 1;
+  uint8_t cis_count_in = 0;
+  TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920);
+
+  log::debug("Inject Local Source Metadata only with media and expect reconfig");
+  EXPECT_CALL(mock_state_machine_, StartStream(_, _, _, _)).Times(0);
+  EXPECT_CALL(mock_state_machine_, StopStream(_)).Times(1);
+  UpdateLocalSourceMetadata(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, true);
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+}
+
+TEST_F(UnicastTest, MediaContextRemovedFromAvailableContextsAfterSoundEffectStarts_forSet) {
+  const RawAddress test_address_0 = GetTestAddress(0);
+  const RawAddress test_address_1 = GetTestAddress(1);
+  int group_id = 1;
+  uint16_t conn_id_0 = 1;
+  uint16_t conn_id_1 = 2;
+  uint8_t group_size = 2;
+
+  /* Scenario:
+   * 1. Local Source started with SoundEffect streaming
+   * 2. One buds disconnects
+   * 3. Second bud removes MEDIA from available context types
+   * 4. Audio HAL updates metadata to MEDIA. SoundEffect is removed now.
+   * 5. Android drops the stream.
+   * 6. Remote gives MEDA back
+   * 7. Android starts Media stream.
+   * 8. Second bud reconnects
+   *
+   * After step 8 second bud should be able to reconnect to the stream.
+   */
+  available_snk_context_types_ =
+          (types::LeAudioContextType::MEDIA | types::LeAudioContextType::SOUNDEFFECTS |
+           types::LeAudioContextType::UNSPECIFIED)
+                  .value();
+  available_src_context_types_ = available_snk_context_types_;
+  supported_snk_context_types_ = available_snk_context_types_;
+  supported_src_context_types_ = available_src_context_types_;
+
+  ConnectCsisDevice(test_address_0, conn_id_0, codec_spec_conf::kLeAudioLocationFrontLeft,
+                    codec_spec_conf::kLeAudioLocationFrontLeft, group_size, group_id, 1 /* rank*/);
+
+  ConnectCsisDevice(test_address_1, conn_id_1, codec_spec_conf::kLeAudioLocationFrontRight,
+                    codec_spec_conf::kLeAudioLocationFrontRight, group_size, group_id, 2 /* rank*/);
+
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
+  types::BidirectionalPair<types::AudioContexts> metadata = {
+          .sink = types::AudioContexts(types::LeAudioContextType::SOUNDEFFECTS),
+          .source = types::AudioContexts()};
+  EXPECT_CALL(mock_state_machine_,
+              StartStream(_, types::LeAudioContextType::SOUNDEFFECTS, metadata, _))
+          .Times(1);
+
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+
+  /* Remove default action on the autoconnect */
+  ON_CALL(mock_gatt_interface_, Open(_, _, _, _)).WillByDefault(Return());
+
+  log::debug("Disconnect second bud");
+  InjectDisconnectedEvent(conn_id_1, GATT_CONN_TERMINATE_PEER_USER);
+  SyncOnMainLoop();
+
+  log::debug("Start stream with Sound Effect");
+  StartStreaming(AUDIO_USAGE_ASSISTANCE_SONIFICATION, AUDIO_CONTENT_TYPE_UNKNOWN, group_id);
+  SyncOnMainLoop();
+
+  log::debug("Remove MEDIA from available contexts ");
+  auto new_contexts = AudioContexts(available_snk_context_types_);
+  new_contexts.unset(types::LeAudioContextType::MEDIA);
+  InjectAvailableContextTypes(test_address_0, conn_id_0, new_contexts, new_contexts);
+
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+
+  // Verify Data transfer on one audio source cis
+  uint8_t cis_count_out = 1;
+  uint8_t cis_count_in = 0;
+  TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920);
+
+  log::debug("Inject Local Source Metadata only with media and expect reconfig");
+  EXPECT_CALL(mock_state_machine_, StartStream(_, _, _, _)).Times(0);
+  EXPECT_CALL(mock_state_machine_, StopStream(_)).Times(1);
+  UpdateLocalSourceMetadata(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, true);
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+
+  log::debug("Add MEDIA from available contexts ");
+  new_contexts = AudioContexts(available_snk_context_types_);
+  InjectAvailableContextTypes(test_address_0, conn_id_0, new_contexts, new_contexts);
+
+  log::debug("Resume stream");
+  metadata.sink = types::AudioContexts(types::LeAudioContextType::MEDIA);
+  EXPECT_CALL(mock_state_machine_, StartStream(_, types::LeAudioContextType::MEDIA, metadata, _))
+          .Times(1);
+
+  LocalAudioSourceResume();
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+
+  log::debug("Reconnect second bud");
+  EXPECT_CALL(mock_state_machine_, AttachToStream(_, _, _)).Times(1);
+  InjectConnectedEvent(test_address_1, conn_id_1);
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+}
+
 TEST_F(UnicastTest, EmptyLocalSinkMetadataDuringLocalSourceStream) {
   const RawAddress test_address0 = GetTestAddress(0);
   int group_id = bluetooth::groups::kGroupUnknown;

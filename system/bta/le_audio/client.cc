@@ -5733,7 +5733,14 @@ public:
     LeAudioContextType new_config_context = config.first;
     BidirectionalPair<AudioContexts> remote_metadata = config.second;
     if (!remote_metadata.sink.any() && !remote_metadata.source.any()) {
-      log::warn("No valid metadata to update or reconfigure to.");
+      log::warn("No valid metadata to update or reconfigure to");
+      if (group->IsStreaming() && new_config_context > LeAudioContextType::UNSPECIFIED) {
+        log::warn(" Stop the stream to group_id: {} and reconfigure from {} ->  {}",
+                  group->group_id_, ToString(configuration_context_type_),
+                  ToString(new_config_context));
+        initReconfiguration(group, configuration_context_type_);
+        configuration_context_type_ = new_config_context;
+      }
       return false;
     }
 
@@ -6485,6 +6492,7 @@ public:
                       ToString(pre_configuration_context_type_),
                       ToString(configuration_context_type_));
               if ((configuration_context_type_ != pre_configuration_context_type_) &&
+                  (remote_contexts.sink.any() || remote_contexts.source.any()) &&
                   GroupStream(group, configuration_context_type_, remote_contexts)) {
                 /* If configuration succeed wait for new status. */
                 return;
