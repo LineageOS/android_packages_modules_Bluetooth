@@ -146,9 +146,6 @@ class A2dp(val context: Context) : A2DPImplBase(), Closeable {
 
     override fun start(request: StartRequest, responseObserver: StreamObserver<StartResponse>) {
         grpcUnary<StartResponse>(scope, responseObserver) {
-            if (audioTrack == null) {
-                audioTrack = buildAudioTrack()
-            }
             val device = bluetoothAdapter.getRemoteDevice(request.source.cookie.toString("UTF-8"))
             Log.i(TAG, "start: device=$device")
 
@@ -161,6 +158,7 @@ class A2dp(val context: Context) : A2DPImplBase(), Closeable {
             bluetoothA2dp.setActiveDevice(device)
 
             // Play an audio track.
+            audioTrack = buildAudioTrack()
             audioTrack!!.play()
 
             // If A2dp is not already playing, wait for it

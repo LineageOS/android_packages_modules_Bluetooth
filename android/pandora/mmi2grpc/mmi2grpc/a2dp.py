@@ -14,12 +14,14 @@
 """A2DP proxy module."""
 
 import time
+import threading
 from typing import Optional
 
 from grpc import RpcError
 from mmi2grpc._audio import AudioSignal
 from mmi2grpc._helpers import assert_description, match_description
 from mmi2grpc._proxy import ProfileProxy
+from mmi2grpc._rootcanal import Dongle
 from pandora.a2dp_grpc import A2DP
 from pandora.a2dp_pb2 import PlaybackAudioRequest, Sink, Source
 from pandora.host_grpc import Host
@@ -52,6 +54,9 @@ class A2DPProxy(ProfileProxy):
         self.audio = AudioSignal(lambda frames: self.a2dp.PlaybackAudio(map(convert_frame, frames)),
                                  AUDIO_SIGNAL_AMPLITUDE, AUDIO_SIGNAL_SAMPLING_RATE)
 
+        print("Selecting the INTEL_BE200 dongle")
+        self.rootcanal.select_pts_dongle(Dongle.INTEL_BE200)
+
     @assert_description
     def TSC_AVDTP_mmi_iut_accept_connect(self, test: str, pts_addr: bytes, **kwargs):
         """
@@ -66,7 +71,39 @@ class A2DPProxy(ProfileProxy):
         the IUT connects to PTS to establish pairing.
         """
 
-        if "A2DP/SRC/AVP" in test or "A2DP/SNK/AVP" in test:
+        # The PTS tool is not always initiating the connection before the
+        # interaction is started. To work around this we need to make the MMI
+        # asynchronous.
+
+        def wait_source():
+            self.connection = self.connection or self.host.WaitConnection(
+                address=pts_addr).connection
+            self.source = self.source or self.a2dp.WaitSource(connection=self.connection).source
+
+        if test in [
+                "A2DP/SRC/SET/BV-05-C",
+        ]:
+            # This MMI must be synchronous for the above listed tests.
+            wait_source()
+
+        elif test in [
+                "A2DP/SRC/CC/BV-09-C",
+                "A2DP/SRC/CC/BV-10-C",
+                "A2DP/SRC/SET/BV-02-C",
+                "A2DP/SRC/SET/BV-04-C",
+                "A2DP/SRC/SET/BV-06-C",
+                "AVDTP/SRC/ACP/SIG/SMG/BI-14-C",
+                "AVDTP/SRC/ACP/SIG/SMG/BI-26-C",
+                "AVDTP/SRC/ACP/SIG/SMG/BV-16-C",
+                "AVDTP/SRC/ACP/SIG/SMG/BV-18-C",
+                "AVDTP/SRC/ACP/SIG/SMG/BV-20-C",
+                "AVDTP/SRC/ACP/SIG/SMG/BV-22-C",
+                "AVDTP/SRC/ACP/SIG/SYN/BV-06-C",
+        ]:
+            # This MMI must be asynchronous for the above listed tests.
+            threading.Thread(target=wait_source).start()
+
+        elif "A2DP/SRC/AVP" in test or "A2DP/SNK/AVP" in test:
             # WaitSource is blocking and cannot be invoked in these tests
             # because Android will initiate the AVDTP connection after a
             # timeout if the remote device is inactive.
@@ -81,12 +118,15 @@ class A2DPProxy(ProfileProxy):
                     self.source = self.a2dp.WaitSource(connection=self.connection).source
             except RpcError:
                 pass
+
         else:
-            self.connection = self.host.WaitConnection(address=pts_addr).connection
+            self.connection = self.connection or self.host.WaitConnection(
+                address=pts_addr).connection
             try:
                 self.sink = self.a2dp.WaitSink(connection=self.connection).sink
             except RpcError:
                 pass
+
         return "OK"
 
     @assert_description
@@ -127,8 +167,10 @@ class A2DPProxy(ProfileProxy):
 
         if "SRC" in test:
             self.a2dp.Start(source=self.source)
+            self.audio.start()
         else:
             self.a2dp.Start(sink=self.sink)
+
         return "OK"
 
     @assert_description
@@ -140,7 +182,7 @@ class A2DPProxy(ProfileProxy):
         if "SRC" in test:
             self.a2dp.Suspend(source=self.source)
         else:
-            assert False
+            self.a2dp.Suspend(sink=self.sink)
         return "OK"
 
     @assert_description
@@ -169,7 +211,16 @@ class A2DPProxy(ProfileProxy):
         can be also be done by placing the IUT or PTS in an RF shielded box.
          """
 
+        assert self.connection, "Connection is not established"
+
         self.rootcanal.move_out_of_range()
+        self.host.WaitDisconnection(connection=self.connection)
+
+        self.connection = None
+        self.source = None
+        self.sink = None
+
+        self.rootcanal.move_in_range()
 
         return "OK"
 
@@ -192,6 +243,7 @@ class A2DPProxy(ProfileProxy):
             time.sleep(1)
         if test != "A2DP/SRC/SET/BV-03-I":  # Not initiating a2dp start again for this test case
             self.a2dp.Start(source=self.source)
+
         self.audio.start()
         return "OK"
 
@@ -403,7 +455,14 @@ class A2DPProxy(ProfileProxy):
         IUT is ready to accept Bluetooth connections again.
         """
 
-        self.rootcanal.move_in_range()
+        # The PTS tool is not always initiating the connection before the
+        # interaction is started. To work around this we need to make the MMI
+        # asynchronous.
+
+        def wait_connection():
+            self.connection = self.host.WaitConnection(address=pts_addr).connection
+
+        threading.Thread(target=wait_connection).start()
 
         return "OK"
 
@@ -655,4 +714,121 @@ class A2DPProxy(ProfileProxy):
         """
 
         # TODO
+        return "OK"
+
+    @assert_description
+    def _mmi_33(self, test: str, pts_addr: bytes, **kwargs):
+        """
+        Please make IUT general discoverable.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_A2DP_mmi_wait_delay_reporting(self, **kwargs):
+        """
+        Please wait while the tester periodically adjusts the delay reporting
+        during the stream ...
+
+        Note: This will take approximately 30 seconds.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_A2DP_mmi_sbc_playback_is_correct(self, test: str, **kwargs):
+        """
+        Take action if necessary to accept the Delay Reportl command from the
+        tester.
+        """
+
+        if test in [
+                "A2DP/SRC/SYN/BV-02-C",
+        ]:
+            # The PTS expects the host stack to start the stream for the above
+            # listed tests.
+            self.a2dp.Start(source=self.source)
+            self.audio.start()
+
+        return "OK"
+
+    @assert_description
+    def _mmi_20000(self, **kwargs):
+        """
+        Please prepare IUT into a connectable mode in BR/EDR.
+
+        Description:
+        Verify that the Implementation Under Test (IUT) can accept GATT connect
+        request from PTS.
+        """
+
+        # TODO This MMI has an inconsistent name and message?
+        return "OK"
+
+    @assert_description
+    def TSC_A2DP_mmi_user_delete_link_key(self, **kwargs):
+        """
+        Delete the link key with PTS on the Implementation Under Test (IUT), and
+        then click OK to continue.
+
+        Description: For end product, this can be
+        achieved by forgetting PTS from the IUT.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_A2DP_mmi_iopt_iut_able_to_pair(self, **kwargs):
+        """
+        Is the IUT capable of establishing connection to an unpaired device?
+        """
+
+        return "OK"
+
+    @assert_description
+    def _mmi_102(self, pts_addr: bytes, **kwargs):
+        """
+        Please send an HCI connect request to establish a basic rate connection
+        after the IUT discovers the Lower Tester over BR and LE.
+        """
+
+        self.connection = self.host.Connect(address=pts_addr).connection
+        return "OK"
+
+    @assert_description
+    def TSC_AVDTPEX_mmi_iut_initiate_open_with_reporting(self, **kwargs):
+        """
+        Action: Place the IUT in connectable mode.
+
+        Description : PTS requires
+        that the IUT be in connectable mode.The PTS will attempt to establish an
+        ACL connection.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVDTPEX_mmi_iut_reject_discover(self, **kwargs):
+        """
+        Please wait while the tester verifies that the IUT does not respond to
+        the invalid DISCOVER command sent by the tester.
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_AVDTPEX_mmi_user_verify_tester_discover_discarded(self, **kwargs):
+        """
+        Did the IUT successfully discard the invalid DISCOVER command sent by
+        the tester?
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_A2DP_mmi_user_verify_audio_video_in_sync(self, **kwargs):
+        """
+        Were the spoken numbers the same as the number shown on the screen?
+        """
+
         return "OK"

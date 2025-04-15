@@ -40,6 +40,8 @@ using hci::Address;
 
 void Counter(CounterKey key, int64_t count) {}
 
+void LogBluetoothEvent(const Address& address, EventType event_type, State state) {}
+
 void LogMetricClassicPairingEvent(const Address& address, uint16_t handle, uint32_t hci_cmd,
                                   uint16_t hci_event, uint16_t cmd_status, uint16_t reason_code,
                                   int64_t event_value) {}
@@ -193,9 +195,6 @@ void LogMetricBluetoothRemoteSupportedFeatures(const Address& address, uint32_t 
                                                uint64_t features, uint32_t connection_handle) {}
 
 void LogMetricBluetoothLEConnection(LEConnectionSessionOptions /* session_options */) {}
-
-void LogMetricBluetoothEvent(const Address& address, android::bluetooth::EventType event_type,
-                             android::bluetooth::State state) {}
 
 void LogMetricRfcommConnectionAtClose(
         const Address& /* raw_address */, android::bluetooth::rfcomm::PortResult /* close_reason */,
