@@ -619,7 +619,8 @@ public class ScanController {
     }
 
     // Check if a scan record matches a specific filters or original address
-    private static boolean matchesFilters(
+    @VisibleForTesting
+    static boolean matchesFilters(
             ScanClient client, ScanResult scanResult, String originalAddress) {
         if (Flags.rssiScanFilter()) {
             ScanSettings settings = client.mSettings;
@@ -636,9 +637,17 @@ public class ScanController {
             if (filter.matches(scanResult)) {
                 return true;
             }
-            if (originalAddress != null
-                    && originalAddress.equalsIgnoreCase(filter.getDeviceAddress())) {
-                return true;
+            if (Flags.originalAddressFilterMatch()) {
+                if (originalAddress != null
+                        && originalAddress.equalsIgnoreCase(filter.getDeviceAddress())
+                        && filter.matchesWithoutAddress(scanResult)) {
+                    return true;
+                }
+            } else {
+                if (originalAddress != null
+                        && originalAddress.equalsIgnoreCase(filter.getDeviceAddress())) {
+                    return true;
+                }
             }
         }
         return false;
