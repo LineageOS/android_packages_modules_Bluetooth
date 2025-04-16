@@ -418,16 +418,6 @@ private:
 }  // namespace
 
 namespace bluetooth::le_audio {
-void AudioContextTypeManager::Initialize(void) {
-  if (instance) {
-    log::error("Already initialized");
-    return;
-  }
-
-  log::info("");
-  instance = std::make_shared<AudioContextTypeManagerImpl>();
-}
-
 void AudioContextTypeManager::Cleanup() {
   std::scoped_lock<std::mutex> lock(instance_mutex);
   if (!instance) {
@@ -445,7 +435,10 @@ void AudioContextTypeManager::DebugDump(int fd) {
 }
 
 std::shared_ptr<AudioContextTypeManager> AudioContextTypeManager::Get() {
-  log::assert_that(instance != nullptr, "assert failed: instance != nullptr");
+  log::info("");
+  if (!instance) {
+    instance = std::make_shared<AudioContextTypeManagerImpl>();
+  }
   return instance;
 }
 }  // namespace bluetooth::le_audio
