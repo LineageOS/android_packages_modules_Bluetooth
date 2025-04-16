@@ -37,6 +37,7 @@
 #include "main/shim/helpers.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/bt_types.h"
@@ -44,8 +45,6 @@
 #include "types/raw_address.h"
 
 using namespace bluetooth;
-
-extern tBTM_CB btm_cb;
 
 /* RPA offload VSC specifics */
 #define HCI_VENDOR_BLE_RPA_VSC (0x0155 | HCI_GRP_VENDOR_SPECIFIC)

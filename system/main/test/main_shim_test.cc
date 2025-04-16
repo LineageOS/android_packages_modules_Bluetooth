@@ -58,6 +58,7 @@
 #include "packet/packet_view.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec_cb.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/hci_error_code.h"

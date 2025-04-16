@@ -37,6 +37,7 @@
 #include "hci/controller_interface.h"
 #include "main/shim/entry.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/btm_ble_privacy.h"
@@ -44,8 +45,6 @@
 #include "types/raw_address.h"
 
 using namespace bluetooth;
-
-extern tBTM_CB btm_cb;
 
 /*******************************************************************************
  *  Utility functions for Random address resolving

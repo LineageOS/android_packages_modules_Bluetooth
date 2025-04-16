@@ -420,7 +420,6 @@ public:
     LeAudioGroupStateMachine::Initialize(state_machine_callbacks);
     groupStateMachine_ = LeAudioGroupStateMachine::Get();
 
-    bluetooth::le_audio::AudioContextTypeManager::Initialize();
     audioContextTypeManager_ = bluetooth::le_audio::AudioContextTypeManager::Get();
 
     log::info("Reconnection mode: TARGETED_ANNOUNCEMENTS");
