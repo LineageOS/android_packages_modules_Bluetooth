@@ -153,3 +153,13 @@ flag {
     }
 }
 
+flag {
+    name: "qc_aptx_codec_negotiation"
+    namespace: "bluetooth"
+    description: "QC patch to not do codec negotiation with aptx"
+    bug: "410921017"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
