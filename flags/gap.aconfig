@@ -301,3 +301,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "continue_queued_command_after_discovery"
+    namespace: "bluetooth"
+    description: "Execute enqueued command exiting discovery state"
+    bug: "411021422"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
