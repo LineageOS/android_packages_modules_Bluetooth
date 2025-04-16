@@ -2488,6 +2488,7 @@ void btm_io_capabilities_req(RawAddress p) {
     if (!p_dev_rec->sec_rec.is_device_encrypted()) {
       log::warn("Incoming bond request, but {} is already bonded (notifying user)", p);
       bta_dm_remote_key_missing(p);
+      btsnd_hcic_io_cap_req_neg_reply(p, HCI_ERR_PAIRING_NOT_ALLOWED);
       btm_sec_disconnect(p_dev_rec->hci_handle, HCI_ERR_AUTH_FAILURE,
                          "btm_io_capabilities_req for bonded device");
       return;
