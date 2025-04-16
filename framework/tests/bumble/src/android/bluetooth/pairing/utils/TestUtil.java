@@ -29,11 +29,21 @@ import android.annotation.NonNull;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.Utils;
 import android.content.Context;
 
 import org.mockito.ArgumentCaptor;
 
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.Duration;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
 
 public class TestUtil {
     private static final String TAG = TestUtil.class.getSimpleName();
@@ -122,5 +132,118 @@ public class TestUtil {
         verify(mProfileServiceListener, timeout(BOND_INTENT_TIMEOUT.toMillis()))
                 .onServiceConnected(eq(profile), proxyCaptor.capture());
         return proxyCaptor.getValue();
+    }
+
+    /**
+     * Generate Resolvable Private Address with IRK
+     *
+     * @param irk irk to be used for generating RPA
+     * @return RPA address string
+     */
+    public static String generateRpa(byte[] irk) throws Exception {
+        if (irk != null) {
+            byte[] prand = generatePrand();
+            byte[] addressHash = generateAddressHash(irk, prand);
+            byte[] addressByte = new byte[6];
+            System.arraycopy(addressHash, 0, addressByte, 0, addressHash.length);
+            System.arraycopy(prand, 0, addressByte, addressHash.length, prand.length);
+            return Utils.addresStringFromBytes(addressByte);
+        } else {
+            return "";
+        }
+    }
+
+    /**
+     * Generates a random 3-byte PRAND, with the 2 most significant bits of the third byte set to
+     * 0b01. As per Bluetooth spec, Vol 6, Part E - Table 1.2.
+     *
+     * @return A 3-byte array representing the PRAND.
+     */
+    public static byte[] generatePrand() {
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] prandBytesFull = new byte[6];
+        byte[] prand = new byte[3];
+        secureRandom.nextBytes(prandBytesFull);
+        System.arraycopy(prandBytesFull, 0, prand, 0, 2);
+
+        // Apply the bitwise operation to the third byte
+        // prand_bytes[2] & 0b01111111: Clears the two most significant bits
+        // | 0b01000000: Sets the two most significant bits to 01 (decimal 64)
+        prand[2] = (byte) ((prandBytesFull[2] & 0x7F) | 0x40);
+
+        return prand;
+    }
+
+    /**
+     * As per Bluetooth spec Vol 3, Part H - 2.2.2 Random Address Hash function
+     *
+     * @param irk IRK
+     * @param prand random bytes
+     * @return Address hash byte array
+     */
+    public static byte[] generateAddressHash(byte[] irk, byte[] prand) throws Exception {
+        // Padding of 13 zero bytes
+        byte[] padding = new byte[13];
+
+        // Concatenate r and padding to form r_prime
+        byte[] r_prime = new byte[prand.length + padding.length];
+        System.arraycopy(prand, 0, r_prime, 0, prand.length);
+        System.arraycopy(padding, 0, r_prime, prand.length, padding.length);
+
+        byte[] eResult = encryptWithIrk(irk, r_prime);
+
+        // Extract the first 3 bytes from the result of 'encryptWithIrk'
+        byte[] hash = new byte[3];
+        System.arraycopy(eResult, 0, hash, 0, 3);
+
+        return hash;
+    }
+
+    /**
+     * AES-128 ECB, expecting byte-swapped inputs and producing a byte-swapped output. As per
+     * Bluetooth spec Vol 3, Part H - 2.2.1 Security function
+     *
+     * @param key IRK
+     * @param data Random data
+     * @return Byte Array of encrypted data
+     */
+    private static byte[] encryptWithIrk(byte[] key, byte[] data)
+            throws NoSuchPaddingException,
+                    NoSuchAlgorithmException,
+                    InvalidKeyException,
+                    BadPaddingException,
+                    IllegalBlockSizeException {
+        byte[] swappedKey = reverseByteArray(key);
+        byte[] swappedData = reverseByteArray(data);
+
+        // Initialize AES cipher in ECB mode
+        Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+        SecretKeySpec secretKey = new SecretKeySpec(swappedKey, "AES");
+
+        // ECB mode does not use an IV, so we don't need IvParameterSpec here.
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+
+        // Encrypt the byte-swapped data
+        byte[] encryptedData = cipher.doFinal(swappedData);
+
+        // Byte-swap the encrypted output
+        return reverseByteArray(encryptedData);
+    }
+
+    /**
+     * Helper method to reverse a byte array
+     *
+     * @param array input byte array
+     * @return reversed byte array
+     */
+    private static byte[] reverseByteArray(byte[] array) {
+        if (array == null) {
+            return null;
+        }
+        byte[] reversedArray = new byte[array.length];
+        for (int i = 0; i < array.length; i++) {
+            reversedArray[i] = array[array.length - 1 - i];
+        }
+        return reversedArray;
     }
 }

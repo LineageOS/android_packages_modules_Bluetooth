@@ -54,6 +54,12 @@ object Utils {
     }
 
     @JvmStatic
+    fun addresStringFromBytes(b: ByteArray): String {
+        val reversedBytes = b.reversedArray()
+        return reversedBytes.joinToString(separator = ":") { byte -> String.format("%02X", byte) }
+    }
+
+    @JvmStatic
     fun uuidFromString(uuidString: String): UUID? {
         val baseUuidPostfix = "-0000-1000-8000-00805F9B34FB"
         return when (uuidString.length) {
