@@ -6296,6 +6296,14 @@ public:
     speed_stop_reconfig(active_group_id_);
   }
 
+  bool isConfigurationChanged(LeAudioDeviceGroup* group) {
+    auto configured_context = group->GetConfigurationContextType();
+    log::debug(" group_id: {} configured_context: {}, configuration_context_type_: {}",
+               group->group_id_, bluetooth::common::ToString(configured_context),
+               bluetooth::common::ToString(configuration_context_type_));
+    return configured_context != configuration_context_type_;
+  }
+
   void OnStateMachineStatusReportCb(int group_id, GroupStreamStatus status) {
     /* When switching stream between two group, it is important to keep track if given status is for
      * active group or not in order to proper Audio HAL notifications.
@@ -6357,7 +6365,7 @@ public:
          * the group was in the ongoing reconfiguration. We should stop the
          * stream and reconfigure once again.
          */
-        if (group->GetConfigurationContextType() != configuration_context_type_) {
+        if (isConfigurationChanged(group)) {
           log::debug(
                   "The configuration {} is no longer valid. Stopping the stream to "
                   "reconfigure to {}",
