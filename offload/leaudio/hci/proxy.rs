@@ -71,6 +71,7 @@ enum StreamState {
     Disabled,
     Enabling,
     Enabled,
+    Flushing,
 }
 
 #[derive(Debug, Clone)]
@@ -304,7 +305,7 @@ impl Module for LeAudioModule {
                     if stream.state == StreamState::Enabled {
                         Service::stop_stream(ret.connection_handle);
                     }
-                    stream.state = StreamState::Disabled;
+                    stream.state = StreamState::Flushing;
                 }
 
                 _ => (),
@@ -383,7 +384,7 @@ impl Module for LeAudioModule {
                         arbiter.set_completed(handle, item.num_completed_packets.into());
 
                         if match state.stream.get(&handle) {
-                            Some(stream) => stream.state == StreamState::Enabled,
+                            Some(stream) => stream.state != StreamState::Disabled,
                             None => false,
                         } {
                             audio_event.handles.push(*item);
@@ -413,6 +414,17 @@ impl Module for LeAudioModule {
     fn out_iso(&self, data: &[u8]) {
         let state = self.state.lock().unwrap();
         let arbiter = state.arbiter.as_ref().unwrap();
-        arbiter.push_incoming(&IsoData::from_bytes(data).unwrap());
+
+        let iso_data = IsoData::from_bytes(data).unwrap();
+        let handle = iso_data.connection_handle;
+        if match state.stream.get(&handle) {
+            Some(stream) => stream.state != StreamState::Disabled,
+            None => false,
+        } {
+            log::error!("Incoming data on handle 0x{:03x} not allowed", handle);
+            return;
+        }
+
+        arbiter.push_incoming(&iso_data);
     }
 }
