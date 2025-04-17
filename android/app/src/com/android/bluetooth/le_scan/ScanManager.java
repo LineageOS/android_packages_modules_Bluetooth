@@ -1294,7 +1294,9 @@ public class ScanManager {
     }
 
     private void startBatchScan(ScanClient client) {
-        if (mFilterIndexStack.isEmpty() && isFilteringSupported()) {
+        if (mFilterIndexStack.isEmpty()
+                && isFilteringSupported()
+                && mClientFilterIndexMap.isEmpty()) {
             initFilterIndexStack();
         }
         configureScanFilters(client);
