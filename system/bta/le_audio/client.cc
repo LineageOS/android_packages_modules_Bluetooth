@@ -1094,44 +1094,6 @@ public:
     group_remove_node(group, address, true);
   }
 
-  AudioContexts ChooseMetadataContextType(AudioContexts metadata_context_type) {
-    /* This function takes already filtered contexts which we are plannig to use
-     * in the Enable or UpdateMetadata command.
-     * Note we are not changing stream configuration here, but just the list of
-     * the contexts in the Metadata which will be provide to remote side.
-     * Ideally, we should send all the bits we have, but not all headsets like
-     * it.
-     */
-    if (osi_property_get_bool(kAllowMultipleContextsInMetadata, true)) {
-      return metadata_context_type;
-    }
-
-    log::debug("Converting to single context type: {}", metadata_context_type.to_string());
-
-    /* Mini policy */
-    if (metadata_context_type.any()) {
-      LeAudioContextType context_priority_list[] = {
-              /* Highest priority first */
-              LeAudioContextType::CONVERSATIONAL, LeAudioContextType::RINGTONE,
-              LeAudioContextType::LIVE,           LeAudioContextType::VOICEASSISTANTS,
-              LeAudioContextType::GAME,           LeAudioContextType::MEDIA,
-              LeAudioContextType::EMERGENCYALARM, LeAudioContextType::ALERTS,
-              LeAudioContextType::INSTRUCTIONAL,  LeAudioContextType::NOTIFICATIONS,
-              LeAudioContextType::SOUNDEFFECTS,
-      };
-      for (auto ct : context_priority_list) {
-        if (metadata_context_type.test(ct)) {
-          log::debug("Converted to single context type: {}", ToString(ct));
-          return AudioContexts(ct);
-        }
-      }
-    }
-
-    /* Fallback to BAP mandated context type */
-    log::warn("Invalid/unknown context, using 'UNSPECIFIED'");
-    return AudioContexts(LeAudioContextType::UNSPECIFIED);
-  }
-
   /* Return true if stream is started */
   bool GroupStream(LeAudioDeviceGroup* group, LeAudioContextType configuration_context_type,
                    BidirectionalPair<AudioContexts> remote_contexts) {
@@ -5306,8 +5268,7 @@ public:
       return;
     }
 
-    UpdateSourceLocalMetadataContextTypes(
-            ChooseMetadataContextType(local_metadata_context_types_.source));
+    UpdateSourceLocalMetadataContextTypes(local_metadata_context_types_.source);
 
     ReconfigureOrUpdateRemote(group, bluetooth::le_audio::types::kLeAudioDirectionSink);
   }
@@ -5427,9 +5388,6 @@ public:
       }
     }
 
-    contexts_pair.sink = ChooseMetadataContextType(contexts_pair.sink);
-    contexts_pair.source = ChooseMetadataContextType(contexts_pair.source);
-
     log::debug("Aligned remote metadata audio context: sink={}, source={}",
                ToString(contexts_pair.sink), ToString(contexts_pair.source));
   }
@@ -5488,8 +5446,7 @@ public:
       return;
     }
 
-    UpdateSinkLocalMetadataContextTypes(
-            ChooseMetadataContextType(local_metadata_context_types_.sink));
+    UpdateSinkLocalMetadataContextTypes(local_metadata_context_types_.sink);
 
     /* Reconfigure or update only if the stream is already started
      * otherwise wait for the local sink to resume.
