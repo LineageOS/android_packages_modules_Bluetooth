@@ -109,7 +109,7 @@ public class AdvertiseManagerTest {
                 periodicData,
                 duration,
                 maxExtAdvEvents,
-                0,
+                null,
                 mCallback,
                 InstrumentationRegistry.getInstrumentation()
                         .getTargetContext()

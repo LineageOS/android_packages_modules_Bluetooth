@@ -88,18 +88,18 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
     }
 
     @Override
-    public void unregisterClient(int clientIf, AttributionSource source) {
+    public void unregisterClient(IBluetoothGattCallback callback, AttributionSource source) {
         GattService service = getService();
         if (service == null) {
             return;
         }
         service.unregisterClient(
-                clientIf, source, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
+                callback, source, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
     }
 
     @Override
     public void clientConnect(
-            int clientIf,
+            IBluetoothGattCallback callback,
             BluetoothDevice device,
             int addressType,
             boolean isDirect,
@@ -112,21 +112,22 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             return;
         }
         service.clientConnect(
-                clientIf, device, addressType, isDirect, transport, opportunistic, phy, source);
+                callback, device, addressType, isDirect, transport, opportunistic, phy, source);
     }
 
     @Override
-    public void clientDisconnect(int clientIf, BluetoothDevice device, AttributionSource source) {
+    public void clientDisconnect(
+            IBluetoothGattCallback callback, BluetoothDevice device, AttributionSource source) {
         GattService service = getService();
         if (service == null) {
             return;
         }
-        service.clientDisconnect(clientIf, device, source);
+        service.clientDisconnect(callback, device, source);
     }
 
     @Override
     public void clientSetPreferredPhy(
-            int clientIf,
+            IBluetoothGattCallback callback,
             BluetoothDevice device,
             int txPhy,
             int rxPhy,
@@ -136,49 +137,55 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         if (service == null) {
             return;
         }
-        service.clientSetPreferredPhy(clientIf, device, txPhy, rxPhy, phyOptions, source);
+        service.clientSetPreferredPhy(callback, device, txPhy, rxPhy, phyOptions, source);
     }
 
     @Override
-    public void clientReadPhy(int clientIf, BluetoothDevice device, AttributionSource source) {
+    public void clientReadPhy(
+            IBluetoothGattCallback callback, BluetoothDevice device, AttributionSource source) {
         GattService service = getService();
         if (service == null) {
             return;
         }
-        service.clientReadPhy(clientIf, device, source);
+        service.clientReadPhy(callback, device, source);
     }
 
     @Override
-    public void refreshDevice(int clientIf, BluetoothDevice device, AttributionSource source) {
+    public void refreshDevice(
+            IBluetoothGattCallback callback, BluetoothDevice device, AttributionSource source) {
         GattService service = getService();
         if (service == null) {
             return;
         }
-        service.refreshDevice(clientIf, device, source);
+        service.refreshDevice(callback, device, source);
     }
 
     @Override
-    public void discoverServices(int clientIf, BluetoothDevice device, AttributionSource source) {
+    public void discoverServices(
+            IBluetoothGattCallback callback, BluetoothDevice device, AttributionSource source) {
         GattService service = getService();
         if (service == null) {
             return;
         }
-        service.discoverServices(clientIf, device, source);
+        service.discoverServices(callback, device, source);
     }
 
     @Override
     public void discoverServiceByUuid(
-            int clientIf, BluetoothDevice device, ParcelUuid uuid, AttributionSource source) {
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
+            ParcelUuid uuid,
+            AttributionSource source) {
         GattService service = getService();
         if (service == null) {
             return;
         }
-        service.discoverServiceByUuid(clientIf, device, uuid.getUuid(), source);
+        service.discoverServiceByUuid(callback, device, uuid.getUuid(), source);
     }
 
     @Override
     public void readCharacteristic(
-            int clientIf,
+            IBluetoothGattCallback callback,
             BluetoothDevice device,
             int handle,
             int authReq,
@@ -187,12 +194,12 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         if (service == null) {
             return;
         }
-        service.readCharacteristic(clientIf, device, handle, authReq, source);
+        service.readCharacteristic(callback, device, handle, authReq, source);
     }
 
     @Override
     public void readUsingCharacteristicUuid(
-            int clientIf,
+            IBluetoothGattCallback callback,
             BluetoothDevice device,
             ParcelUuid uuid,
             int startHandle,
@@ -204,12 +211,12 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             return;
         }
         service.readUsingCharacteristicUuid(
-                clientIf, device, uuid.getUuid(), startHandle, endHandle, authReq, source);
+                callback, device, uuid.getUuid(), startHandle, endHandle, authReq, source);
     }
 
     @Override
     public int writeCharacteristic(
-            int clientIf,
+            IBluetoothGattCallback callback,
             BluetoothDevice device,
             int handle,
             int writeType,
@@ -221,12 +228,12 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
         }
         return service.writeCharacteristic(
-                clientIf, device, handle, writeType, authReq, value, source);
+                callback, device, handle, writeType, authReq, value, source);
     }
 
     @Override
     public void readDescriptor(
-            int clientIf,
+            IBluetoothGattCallback callback,
             BluetoothDevice device,
             int handle,
             int authReq,
@@ -235,12 +242,12 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         if (service == null) {
             return;
         }
-        service.readDescriptor(clientIf, device, handle, authReq, source);
+        service.readDescriptor(callback, device, handle, authReq, source);
     }
 
     @Override
     public int writeDescriptor(
-            int clientIf,
+            IBluetoothGattCallback callback,
             BluetoothDevice device,
             int handle,
             int authReq,
@@ -250,31 +257,34 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         if (service == null) {
             return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
         }
-        return service.writeDescriptor(clientIf, device, handle, authReq, value, source);
+        return service.writeDescriptor(callback, device, handle, authReq, value, source);
     }
 
     @Override
-    public void beginReliableWrite(int clientIf, BluetoothDevice device, AttributionSource source) {
+    public void beginReliableWrite(BluetoothDevice device, AttributionSource source) {
         GattService service = getService();
         if (service == null) {
             return;
         }
-        service.beginReliableWrite(clientIf, device, source);
+        service.beginReliableWrite(device, source);
     }
 
     @Override
     public void endReliableWrite(
-            int clientIf, BluetoothDevice device, boolean execute, AttributionSource source) {
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
+            boolean execute,
+            AttributionSource source) {
         GattService service = getService();
         if (service == null) {
             return;
         }
-        service.endReliableWrite(clientIf, device, execute, source);
+        service.endReliableWrite(callback, device, execute, source);
     }
 
     @Override
     public void registerForNotification(
-            int clientIf,
+            IBluetoothGattCallback callback,
             BluetoothDevice device,
             int handle,
             boolean enable,
@@ -283,31 +293,35 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         if (service == null) {
             return;
         }
-        service.registerForNotification(clientIf, device, handle, enable, source);
+        service.registerForNotification(callback, device, handle, enable, source);
     }
 
     @Override
-    public void readRemoteRssi(int clientIf, BluetoothDevice device, AttributionSource source) {
+    public void readRemoteRssi(
+            IBluetoothGattCallback callback, BluetoothDevice device, AttributionSource source) {
         GattService service = getService();
         if (service == null) {
             return;
         }
-        service.readRemoteRssi(clientIf, device, source);
+        service.readRemoteRssi(callback, device, source);
     }
 
     @Override
     public void configureMTU(
-            int clientIf, BluetoothDevice device, int mtu, AttributionSource source) {
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
+            int mtu,
+            AttributionSource source) {
         GattService service = getService();
         if (service == null) {
             return;
         }
-        service.configureMTU(clientIf, device, mtu, source);
+        service.configureMTU(callback, device, mtu, source);
     }
 
     @Override
     public void connectionParameterUpdate(
-            int clientIf,
+            IBluetoothGattCallback callback,
             BluetoothDevice device,
             int connectionPriority,
             AttributionSource source) {
@@ -315,12 +329,12 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         if (service == null) {
             return;
         }
-        service.connectionParameterUpdate(clientIf, device, connectionPriority, source);
+        service.connectionParameterUpdate(callback, device, connectionPriority, source);
     }
 
     @Override
     public void leConnectionUpdate(
-            int clientIf,
+            IBluetoothGattCallback callback,
             BluetoothDevice device,
             int minConnectionInterval,
             int maxConnectionInterval,
@@ -334,7 +348,7 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             return;
         }
         service.leConnectionUpdate(
-                clientIf,
+                callback,
                 device,
                 minConnectionInterval,
                 maxConnectionInterval,
@@ -347,7 +361,10 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
 
     @Override
     public int subrateModeRequest(
-            int clientIf, BluetoothDevice device, int subrateMode, AttributionSource source) {
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
+            int subrateMode,
+            AttributionSource source) {
         GattService service = getService();
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
@@ -372,7 +389,7 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             throw new IllegalArgumentException("Invalid device address: " + device.getAddress());
         }
 
-        return service.subrateModeRequest(clientIf, device, subrateMode);
+        return service.subrateModeRequest(callback, device, subrateMode);
     }
 
     @Override
@@ -389,17 +406,17 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
     }
 
     @Override
-    public void unregisterServer(int serverIf, AttributionSource source) {
+    public void unregisterServer(IBluetoothGattServerCallback callback, AttributionSource source) {
         GattService service = getService();
         if (service == null) {
             return;
         }
-        service.unregisterServer(serverIf, source);
+        service.unregisterServer(callback, source);
     }
 
     @Override
     public void serverConnect(
-            int serverIf,
+            IBluetoothGattServerCallback callback,
             BluetoothDevice device,
             int addressType,
             boolean isDirect,
@@ -409,21 +426,24 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         if (service == null) {
             return;
         }
-        service.serverConnect(serverIf, device, addressType, isDirect, transport, source);
+        service.serverConnect(callback, device, addressType, isDirect, transport, source);
     }
 
     @Override
-    public void serverDisconnect(int serverIf, BluetoothDevice device, AttributionSource source) {
+    public void serverDisconnect(
+            IBluetoothGattServerCallback callback,
+            BluetoothDevice device,
+            AttributionSource source) {
         GattService service = getService();
         if (service == null) {
             return;
         }
-        service.serverDisconnect(serverIf, device, source);
+        service.serverDisconnect(callback, device, source);
     }
 
     @Override
     public void serverSetPreferredPhy(
-            int serverIf,
+            IBluetoothGattServerCallback callback,
             BluetoothDevice device,
             int txPhy,
             int rxPhy,
@@ -433,48 +453,55 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         if (service == null) {
             return;
         }
-        service.serverSetPreferredPhy(serverIf, device, txPhy, rxPhy, phyOptions, source);
+        service.serverSetPreferredPhy(callback, device, txPhy, rxPhy, phyOptions, source);
     }
 
     @Override
-    public void serverReadPhy(int clientIf, BluetoothDevice device, AttributionSource source) {
+    public void serverReadPhy(
+            IBluetoothGattServerCallback callback,
+            BluetoothDevice device,
+            AttributionSource source) {
         GattService service = getService();
         if (service == null) {
             return;
         }
-        service.serverReadPhy(clientIf, device, source);
+        service.serverReadPhy(callback, device, source);
     }
 
     @Override
-    public void addService(int serverIf, BluetoothGattService svc, AttributionSource source) {
+    public void addService(
+            IBluetoothGattServerCallback callback,
+            BluetoothGattService svc,
+            AttributionSource source) {
         GattService service = getService();
         if (service == null) {
             return;
         }
-        service.addService(serverIf, svc, source);
+        service.addService(callback, svc, source);
     }
 
     @Override
-    public void removeService(int serverIf, int handle, AttributionSource source) {
+    public void removeService(
+            IBluetoothGattServerCallback callback, int handle, AttributionSource source) {
         GattService service = getService();
         if (service == null) {
             return;
         }
-        service.removeService(serverIf, handle, source);
+        service.removeService(callback, handle, source);
     }
 
     @Override
-    public void clearServices(int serverIf, AttributionSource source) {
+    public void clearServices(IBluetoothGattServerCallback callback, AttributionSource source) {
         GattService service = getService();
         if (service == null) {
             return;
         }
-        service.clearServices(serverIf, source);
+        service.clearServices(callback, source);
     }
 
     @Override
     public void sendResponse(
-            int serverIf,
+            IBluetoothGattServerCallback callback,
             BluetoothDevice device,
             int requestId,
             int status,
@@ -485,12 +512,12 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         if (service == null) {
             return;
         }
-        service.sendResponse(serverIf, device, requestId, status, offset, value, source);
+        service.sendResponse(callback, device, requestId, status, offset, value, source);
     }
 
     @Override
     public int sendNotification(
-            int serverIf,
+            IBluetoothGattServerCallback callback,
             BluetoothDevice device,
             int handle,
             boolean confirm,
@@ -500,7 +527,7 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         if (service == null) {
             return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
         }
-        return service.sendNotification(serverIf, device, handle, confirm, value, source);
+        return service.sendNotification(callback, device, handle, confirm, value, source);
     }
 
     @Override

@@ -20,6 +20,7 @@ import android.Manifest.permission.BLUETOOTH_ADVERTISE
 import android.Manifest.permission.BLUETOOTH_PRIVILEGED
 import android.annotation.RequiresPermission
 import android.bluetooth.IBluetoothAdvertise
+import android.bluetooth.IBluetoothGattServerCallback
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSetParameters
 import android.bluetooth.le.IAdvertisingSetCallback
@@ -57,13 +58,13 @@ class AdvertiseBinder(
         periodicData: AdvertiseData?,
         duration: Int,
         maxExtAdvEvents: Int,
-        serverIf: Int,
+        gattServerCallback: IBluetoothGattServerCallback?,
         callback: IAdvertisingSetCallback,
         source: AttributionSource,
     ) {
         if (
             parameters.ownAddressType != AdvertisingSetParameters.ADDRESS_TYPE_DEFAULT ||
-                serverIf != 0 ||
+                gattServerCallback != null ||
                 parameters.isDirected
         ) {
             context.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
@@ -79,7 +80,7 @@ class AdvertiseBinder(
                     periodicData,
                     duration,
                     maxExtAdvEvents,
-                    serverIf,
+                    gattServerCallback,
                     callback,
                     source,
                 )

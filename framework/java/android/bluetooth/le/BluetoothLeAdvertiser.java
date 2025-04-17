@@ -636,7 +636,7 @@ public final class BluetoothLeAdvertiser {
                     periodicData,
                     duration,
                     maxExtendedAdvertisingEvents,
-                    gattServer == null ? 0 : gattServer.getServerIf(),
+                    gattServer == null ? null : gattServer.getCallbackId(),
                     wrapped,
                     mAttributionSource);
         } catch (RemoteException e) {

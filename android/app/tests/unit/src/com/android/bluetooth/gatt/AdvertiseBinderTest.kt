@@ -17,6 +17,7 @@
 package com.android.bluetooth.gatt
 
 import android.bluetooth.BluetoothManager
+import android.bluetooth.IBluetoothGattServerCallback
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSetParameters
 import android.bluetooth.le.IAdvertisingSetCallback
@@ -76,7 +77,7 @@ class AdvertiseBinderTest {
         val periodicData = AdvertiseData.Builder().build()
         val duration = 1
         val maxExtAdvEvents = 2
-        val serverIf = 3
+        val serverCallback = mock(IBluetoothGattServerCallback::class.java)
         val callback = mock(IAdvertisingSetCallback::class.java)
 
         binder.startAdvertisingSet(
@@ -87,7 +88,7 @@ class AdvertiseBinderTest {
             periodicData,
             duration,
             maxExtAdvEvents,
-            serverIf,
+            serverCallback,
             callback,
             attributionSource,
         )
@@ -100,7 +101,7 @@ class AdvertiseBinderTest {
                 periodicData,
                 duration,
                 maxExtAdvEvents,
-                serverIf,
+                serverCallback,
                 callback,
                 attributionSource,
             )
