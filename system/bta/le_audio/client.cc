@@ -1676,9 +1676,19 @@ public:
     ReconfigureOrUpdateRemote(group, remote_direction);
 
     if (configuration_context_type_ != LeAudioContextType::CONVERSATIONAL) {
-      log::error("Something went wrong {} != {} ", ToString(configuration_context_type_),
-                 ToString(LeAudioContextType::CONVERSATIONAL));
-      return;
+      if (!com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+        log::error("Something went wrong {} != {} ", ToString(configuration_context_type_),
+                   ToString(LeAudioContextType::CONVERSATIONAL));
+        return;
+      }
+
+      if ((configuration_context_type_ == LeAudioContextType::GAME) && group->IsGmapEnabled()) {
+        log::debug("New group is being configured for bidirectional GMAP");
+      } else {
+        log::error("Something went wrong {} != {} ", ToString(configuration_context_type_),
+                   ToString(LeAudioContextType::CONVERSATIONAL));
+        return;
+      }
     }
 
     if (!ConfigureStream(group, true)) {

@@ -246,6 +246,13 @@ public:
   uint16_t GetDsaCisHandle(void);
   void SetDsaCisHandle(uint16_t cis_handle);
 
+  bool IsGmapEnabled() const {
+    if (!gmap_client_) {
+      return false;
+    }
+    return gmap_client_->IsGmapClientEnabled();
+  }
+
 private:
   types::BidirectionalPair<types::AudioContexts> avail_contexts_;
   types::BidirectionalPair<types::AudioContexts> supp_contexts_;
