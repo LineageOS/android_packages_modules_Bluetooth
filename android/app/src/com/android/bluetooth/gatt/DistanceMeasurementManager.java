@@ -35,8 +35,10 @@ import android.os.Looper;
 import android.os.RemoteException;
 import android.util.Log;
 
+import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -113,6 +115,18 @@ public class DistanceMeasurementManager {
         } else {
             mHasChannelSoundingFeature = true;
         }
+        postOnDistanceMeasurementThread(
+                () -> {
+                    int[] csTypes = {
+                        BluetoothStatsLog.CHANNEL_SOUNDING_TYPES_SUPPORTED__CS_TYPES__CS_UNSPECIFIED
+                    };
+                    if (mHasChannelSoundingFeature) {
+                        csTypes[0] =
+                                BluetoothStatsLog
+                                        .CHANNEL_SOUNDING_TYPES_SUPPORTED__CS_TYPES__CS_BT_CORE60;
+                    }
+                    MetricsLogger.getInstance().logChannelSoundingTypesSupported(csTypes);
+                });
     }
 
     void cleanup() {
@@ -663,7 +677,7 @@ public class DistanceMeasurementManager {
     }
 
     private void forceRunSyncOnDistanceMeasurementThread(Runnable r) {
-        if (!Flags.distanceMeasurementThread()) {
+        if (!Flags.distanceMeasurementThread() || Utils.isInstrumentationTestMode()) {
             r.run();
             return;
         }
