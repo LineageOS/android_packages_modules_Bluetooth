@@ -559,13 +559,11 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration, tBTM_INQ_RESULTS_CB* p_
               (btm_cb.ble_ctr_cb.inq_var.scan_type == BTM_BLE_SCAN_MODE_NONE)
                       ? BTM_BLE_SCAN_MODE_ACTI
                       : btm_cb.ble_ctr_cb.inq_var.scan_type;
-      btm_send_hci_set_scan_params(btm_cb.ble_ctr_cb.inq_var.scan_type, (uint16_t)ll_scan_interval,
-                                   (uint8_t)ll_scan_window, (uint16_t)scan_phy,
-                                   btm_cb.ble_ctr_cb.inq_var.scan_interval_coded,
-                                   btm_cb.ble_ctr_cb.inq_var.scan_window_coded,
-                                   btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type,
-                                   BTM_BLE_DEFAULT_SFP);
-
+      btm_send_hci_set_scan_params(
+              btm_cb.ble_ctr_cb.inq_var.scan_type, (uint16_t)ll_scan_interval,
+              (uint8_t)ll_scan_window, btm_cb.ble_ctr_cb.inq_var.scan_interval_coded,
+              btm_cb.ble_ctr_cb.inq_var.scan_window_coded, (uint16_t)scan_phy,
+              btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type, BTM_BLE_DEFAULT_SFP);
       btm_ble_start_scan();
     }
 
