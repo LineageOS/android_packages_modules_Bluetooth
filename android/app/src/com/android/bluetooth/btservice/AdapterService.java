@@ -4128,7 +4128,6 @@ public class AdapterService extends Service {
         return mGattService == null ? null : mGattService.getDistanceMeasurement();
     }
 
-    @RequiresPermission(BLUETOOTH_CONNECT)
     void unregAllGattClient(AttributionSource source) {
         if (mGattService != null) {
             mGattService.unregAll(source);
