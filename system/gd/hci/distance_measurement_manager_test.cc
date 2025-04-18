@@ -923,6 +923,81 @@ TEST_F(DistanceMeasurementManagerTest, schedule_next_cs_procedures) {
   cs_requester_.sync_client_handler();
 }
 
+TEST_F(DistanceMeasurementManagerTest, no_trailing_procedure_data) {
+  auto req_session_future = cs_requester_.GetDmSessionFuture();
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+  uint16_t procedure_counter = 10;
+
+  CsSubeventResultEvent req_subevent_result_1;
+  req_subevent_result_1.procedure_done_status = CsProcedureDoneStatus::ABORTED;
+  req_subevent_result_1.subevent_done_status = CsSubeventDoneStatus::ABORTED;
+  req_subevent_result_1.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::INITIATOR);
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, req_subevent_result_1));
+  CsSubeventResultEvent req_subevent_result_2;
+  req_subevent_result_2.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::INITIATOR);
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, req_subevent_result_2));
+  cs_requester_.sync_client_handler();
+  // construct responder data
+  CsModule cs_responder;
+  cs_responder.Start();
+  cs_responder.RespondTillProcedureEnableComplete(params);
+  cs_responder.dm_manager_->HandleMtuChanged(params.connection_handle, 517);
+
+  // use partial result to simulate a trailing counter
+  CsSubeventResultEvent resp_subevent_result_0;
+  resp_subevent_result_0.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  resp_subevent_result_0.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::REFLECTOR);
+  cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter + 1, resp_subevent_result_0));
+
+  CsSubeventResultEvent resp_subevent_result_1;
+  resp_subevent_result_1.procedure_done_status = CsProcedureDoneStatus::ABORTED;
+  resp_subevent_result_1.subevent_done_status = CsSubeventDoneStatus::ABORTED;
+  resp_subevent_result_1.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::REFLECTOR);
+
+  std::vector<uint8_t> segment_data_1;
+  EXPECT_CALL(cs_responder.mock_dm_callbacks_,
+              OnRasFragmentReady(params.requester_addr, procedure_counter, /*is_last=*/true, _))
+          .WillOnce([&segment_data_1](Address /*address*/, uint16_t /*procedure_counter*/,
+                                      bool /*is_last*/, std::vector<uint8_t> raw_data) {
+            segment_data_1 = std::move(raw_data);
+          });
+  cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, resp_subevent_result_1));
+  cs_responder.sync_client_handler();
+  cs_requester_.sync_client_handler();
+  // make sure the segment_header is correct
+  ras::SegmentationHeader segmentation_header;
+  PacketView<kLittleEndian> packet_bytes_view_1(
+          std::make_shared<std::vector<uint8_t>>(segment_data_1));
+  ras::SegmentationHeader::Parse(&segmentation_header, packet_bytes_view_1.begin());
+  ASSERT_EQ(segmentation_header.rolling_segment_counter_, 0);
+
+  std::vector<uint8_t> segment_data_2;
+  EXPECT_CALL(cs_responder.mock_dm_callbacks_,
+              OnRasFragmentReady(params.requester_addr, procedure_counter, /*is_last=*/true, _))
+          .WillOnce([&segment_data_2](Address /*address*/, uint16_t /*procedure_counter*/,
+                                      bool /*is_last*/, std::vector<uint8_t> raw_data) {
+            segment_data_2 = std::move(raw_data);
+          });
+  CsSubeventResultEvent resp_subevent_result_2;
+  resp_subevent_result_2.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::REFLECTOR);
+  cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, resp_subevent_result_2));
+  cs_responder.sync_client_handler();
+  // make sure the segment_header is correct
+  PacketView<kLittleEndian> packet_bytes_view_2(
+          std::make_shared<std::vector<uint8_t>>(segment_data_2));
+  ras::SegmentationHeader::Parse(&segmentation_header, packet_bytes_view_2.begin());
+  ASSERT_EQ(segmentation_header.rolling_segment_counter_, 0);
+
+  cs_requester_.sync_client_handler();
+  cs_responder.Stop();
+}
+
 TEST_F(DistanceMeasurementManagerTest, complete_mode2_procedure) {
   auto req_session_future = cs_requester_.GetDmSessionFuture();
   StartMeasurementParameters params;
