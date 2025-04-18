@@ -280,3 +280,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "bond_loss_transport_check"
+    namespace: "bluetooth"
+    description: "Bond loss should not be detected on transport not bonded"
+    bug: "411214547"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
