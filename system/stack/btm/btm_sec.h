@@ -326,6 +326,16 @@ uint8_t BTM_GetSecurityMode();
 
 /*******************************************************************************
  *
+ * Function         BTM_SecReportBondLoss
+ *
+ * Description      This function is called to report remote bond loss.
+ *
+ ******************************************************************************/
+tBTM_STATUS BTM_SecReportBondLoss(const RawAddress& bd_addr, tBT_TRANSPORT transport,
+                                  const std::string& reason);
+
+/*******************************************************************************
+ *
  * Function         btm_sec_l2cap_access_req
  *
  * Description      This function is called by the L2CAP to grant permission to
