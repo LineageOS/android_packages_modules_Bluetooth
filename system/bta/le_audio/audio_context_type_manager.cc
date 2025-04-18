@@ -193,7 +193,8 @@ public:
             ToString(context_type), ToString(remote_sink_only_context_types),
             ToString(remote_source_only_context_types), ToString(bidirectional_context));
 
-    if (bidirectional_context.test(context_type)) {
+    // For Android RINGTONE is already bidirectional use case.
+    if (bidirectional_context.test(context_type) || context_type == LeAudioContextType::RINGTONE) {
       remote_directions.sink = true;
       remote_directions.source = true;
       return remote_directions;
@@ -214,6 +215,14 @@ public:
             "is_gmap_and_recording: {}",
             ToString(context_type), remote_directions.sink, remote_directions.source,
             is_gmap_and_recording);
+
+    if (remote_directions.sink == false && remote_directions.source == false) {
+      log::warn(
+              "Context is not supported on the remote side. Fallback to UNSPECIFIED and for this "
+              "we enable only remote sink direction as for now.");
+      remote_directions.sink = true;
+    }
+
     return remote_directions;
   }
 
