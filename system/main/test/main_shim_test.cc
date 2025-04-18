@@ -597,7 +597,7 @@ TEST_F(MainShimTest, DISABLED_BleScannerInterfaceImpl_OnScanResult) {
 
 TEST_F(MainShimTest, DISABLED_LeShimAclConnection_local_disconnect) {
   auto acl = MakeAcl();
-  EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(_, _)).Times(1);
+  EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(_, _, _)).Times(1);
 
   hci::AddressWithType local_address(hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x6}},
                                      hci::AddressType::RANDOM_DEVICE_ADDRESS);

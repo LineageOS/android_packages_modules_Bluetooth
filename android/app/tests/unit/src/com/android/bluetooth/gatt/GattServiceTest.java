@@ -278,7 +278,8 @@ public class GattServiceTest {
                         transport,
                         opportunistic,
                         phy,
-                        0);
+                        0,
+                        false);
     }
 
     @Test
@@ -317,7 +318,8 @@ public class GattServiceTest {
                         transport,
                         opportunistic,
                         phy,
-                        0);
+                        0,
+                        false);
         mService.onConnectedFromNative(
                 CLIENT_IF, 0, BluetoothGatt.GATT_CONNECTION_TIMEOUT, mDevice);
         verify(mAdapterService).notifyGattClientConnectFailed(anyInt(), any());
@@ -359,7 +361,8 @@ public class GattServiceTest {
                         transport,
                         opportunistic,
                         phy,
-                        0);
+                        0,
+                        false);
         mService.onConnectedFromNative(CLIENT_IF, 15, BluetoothGatt.GATT_SUCCESS, mDevice);
         mService.clientDisconnect(mGattCallback, mDevice, mAttributionSource);
 
@@ -402,7 +405,8 @@ public class GattServiceTest {
                         transport,
                         opportunistic,
                         phy,
-                        0);
+                        0,
+                        false);
         mService.onConnectedFromNative(CLIENT_IF, 15, BluetoothGatt.GATT_SUCCESS, mDevice);
         mService.onDisconnectedFromNative(CLIENT_IF, 15, 1, mDevice);
 

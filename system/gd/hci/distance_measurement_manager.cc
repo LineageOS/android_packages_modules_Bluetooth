@@ -463,7 +463,6 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
     }
 
     if (!cs_requester_trackers_[connection_handle].setup_complete) {
-      acl_manager_->AddDeviceToRelaxedConnectionIntervalList(cs_remote_address);
       send_le_cs_read_remote_supported_capabilities(connection_handle);
       return;
     }

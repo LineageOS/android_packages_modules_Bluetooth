@@ -1328,13 +1328,13 @@ static void gattClientScanNative(JNIEnv* /* env */, jobject /* object */, jboole
 static void gattClientConnectNative(JNIEnv* env, jobject /* object */, jint clientif,
                                     jstring address, jint addressType, jboolean isDirect,
                                     jint transport, jboolean opportunistic, jint initiating_phys,
-                                    jint preferred_mtu) {
+                                    jint preferred_mtu, jboolean prefer_relax_mode) {
   if (!sGattIf) {
     return;
   }
 
   sGattIf->client->connect(clientif, str2addr(env, address), addressType, isDirect, transport,
-                           opportunistic, initiating_phys, preferred_mtu);
+                           opportunistic, initiating_phys, preferred_mtu, prefer_relax_mode);
 }
 
 static void gattClientDisconnectNative(JNIEnv* env, jobject /* object */, jint clientIf,
@@ -2937,7 +2937,7 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
           {"gattClientRegisterAppNative", "(JJLjava/lang/String;Z)V",
            (void*)gattClientRegisterAppNative},
           {"gattClientUnregisterAppNative", "(I)V", (void*)gattClientUnregisterAppNative},
-          {"gattClientConnectNative", "(ILjava/lang/String;IZIZII)V",
+          {"gattClientConnectNative", "(ILjava/lang/String;IZIZIIZ)V",
            (void*)gattClientConnectNative},
           {"gattClientDisconnectNative", "(ILjava/lang/String;I)V",
            (void*)gattClientDisconnectNative},

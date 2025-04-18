@@ -382,7 +382,7 @@ protected:
 
     Address remote_public_address = Address::FromString(kRemotePublicDeviceStringA).value();
     remote_with_type_ = AddressWithType(remote_public_address, AddressType::PUBLIC_DEVICE_ADDRESS);
-    acl_manager_->CreateLeConnection(remote_with_type_, true);
+    acl_manager_->CreateLeConnection(remote_with_type_, true, false);
     test_hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
     test_hci_layer_->IncomingEvent(
             LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));

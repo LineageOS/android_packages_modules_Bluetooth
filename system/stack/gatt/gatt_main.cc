@@ -236,7 +236,7 @@ static bool gatt_connect(const RawAddress& rem_bda, tBLE_ADDR_TYPE addr_type, tG
   }
 
   p_tcb->att_lcid = L2CAP_ATT_CID;
-  return connection_manager::direct_connect_add(gatt_if, rem_bda, addr_type);
+  return connection_manager::direct_connect_add(gatt_if, rem_bda, addr_type, false);
 }
 
 /*******************************************************************************
