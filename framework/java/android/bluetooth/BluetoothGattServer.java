@@ -59,7 +59,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
     private BluetoothGattServerCallback mCallback;
 
     private final Object mServerIfLock = new Object();
-    private int mServerIf;
+    private boolean mServerRegistered;
     private final int mTransport;
     private BluetoothGattService mPendingService;
     private final List<BluetoothGattService> mServices;
@@ -78,11 +78,11 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  */
                 @Override
                 @RequiresNoPermission // Callback to app
-                public void onServerRegistered(int status, int serverIf) {
-                    Log.d(TAG, "onServerRegistered() - status=" + status + " serverIf=" + serverIf);
+                public void onServerRegistered(int status) {
+                    Log.d(TAG, "onServerRegistered(" + status + ")");
                     synchronized (mServerIfLock) {
                         if (mCallback != null) {
-                            mServerIf = serverIf;
+                            mServerRegistered = true;
                             mServerIfLock.notify();
                         } else {
                             // registration timeout
@@ -99,13 +99,11 @@ public final class BluetoothGattServer implements BluetoothProfile {
                 @Override
                 @RequiresNoPermission // Callback to app
                 public void onServerConnectionState(
-                        int status, int serverIf, boolean connected, BluetoothDevice device) {
+                        int status, boolean connected, BluetoothDevice device) {
                     Log.d(
                             TAG,
                             "onServerConnectionState() - status="
                                     + status
-                                    + " serverIf="
-                                    + serverIf
                                     + " connected="
                                     + connected
                                     + " device="
@@ -498,19 +496,18 @@ public final class BluetoothGattServer implements BluetoothProfile {
         mAdapter = adapter;
         mAttributionSource = adapter.getAttributionSource();
         mCallback = null;
-        mServerIf = 0;
         mTransport = transport;
         mServices = new ArrayList<BluetoothGattService>();
     }
 
     /**
-     * Get the identifier of the BluetoothGattServer, or 0 if it is closed
+     * Get the identifier of the BluetoothGattServer
      *
      * @hide
      */
     @RequiresNoPermission
-    public int getServerIf() {
-        return mServerIf;
+    public IBluetoothGattServerCallback getCallbackId() {
+        return mBluetoothGattServerCallback;
     }
 
     /**
@@ -646,7 +643,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                 mCallback = null;
             }
 
-            if (mServerIf == 0) {
+            if (!mServerRegistered) {
                 mCallback = null;
                 return false;
             } else {
@@ -659,13 +656,13 @@ public final class BluetoothGattServer implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     private void unregisterCallback() {
-        Log.d(TAG, "unregisterCallback() - mServerIf=" + mServerIf);
-        if (mService == null || mServerIf == 0) return;
+        Log.d(TAG, "unregisterCallback()");
+        if (mService == null || !mServerRegistered) return;
 
         try {
             mCallback = null;
-            mService.unregisterServer(mServerIf, mAttributionSource);
-            mServerIf = 0;
+            mService.unregisterServer(mBluetoothGattServerCallback, mAttributionSource);
+            mServerRegistered = false;
         } catch (RemoteException e) {
             Log.e(TAG, "", e);
         }
@@ -709,12 +706,12 @@ public final class BluetoothGattServer implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean connect(BluetoothDevice device, boolean autoConnect) {
         Log.d(TAG, "connect() - device: " + device + ", auto: " + autoConnect);
-        if (mService == null || mServerIf == 0) return false;
+        if (mService == null || !mServerRegistered) return false;
 
         try {
             // autoConnect is inverse of "isDirect"
             mService.serverConnect(
-                    mServerIf,
+                    mBluetoothGattServerCallback,
                     device,
                     device.getAddressType(),
                     !autoConnect,
@@ -738,10 +735,10 @@ public final class BluetoothGattServer implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public void cancelConnection(BluetoothDevice device) {
         Log.d(TAG, "cancelConnection() - device: " + device);
-        if (mService == null || mServerIf == 0) return;
+        if (mService == null || !mServerRegistered) return;
 
         try {
-            mService.serverDisconnect(mServerIf, device, mAttributionSource);
+            mService.serverDisconnect(mBluetoothGattServerCallback, device, mAttributionSource);
         } catch (RemoteException e) {
             Log.e(TAG, "", e);
         }
@@ -771,7 +768,12 @@ public final class BluetoothGattServer implements BluetoothProfile {
     public void setPreferredPhy(BluetoothDevice device, int txPhy, int rxPhy, int phyOptions) {
         try {
             mService.serverSetPreferredPhy(
-                    mServerIf, device, txPhy, rxPhy, phyOptions, mAttributionSource);
+                    mBluetoothGattServerCallback,
+                    device,
+                    txPhy,
+                    rxPhy,
+                    phyOptions,
+                    mAttributionSource);
         } catch (RemoteException e) {
             Log.e(TAG, "", e);
         }
@@ -787,7 +789,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public void readPhy(BluetoothDevice device) {
         try {
-            mService.serverReadPhy(mServerIf, device, mAttributionSource);
+            mService.serverReadPhy(mBluetoothGattServerCallback, device, mAttributionSource);
         } catch (RemoteException e) {
             Log.e(TAG, "", e);
         }
@@ -818,11 +820,17 @@ public final class BluetoothGattServer implements BluetoothProfile {
     public boolean sendResponse(
             BluetoothDevice device, int requestId, int status, int offset, byte[] value) {
         if (VDBG) Log.d(TAG, "sendResponse() - device: " + device);
-        if (mService == null || mServerIf == 0) return false;
+        if (mService == null || !mServerRegistered) return false;
 
         try {
             mService.sendResponse(
-                    mServerIf, device, requestId, status, offset, value, mAttributionSource);
+                    mBluetoothGattServerCallback,
+                    device,
+                    requestId,
+                    status,
+                    offset,
+                    value,
+                    mAttributionSource);
         } catch (RemoteException e) {
             Log.e(TAG, "", e);
             return false;
@@ -896,7 +904,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
             boolean confirm,
             @NonNull byte[] value) {
         if (VDBG) Log.d(TAG, "notifyCharacteristicChanged() - device: " + device);
-        if (mService == null || mServerIf == 0) {
+        if (mService == null || !mServerRegistered) {
             return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
         }
 
@@ -920,7 +928,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
 
         try {
             return mService.sendNotification(
-                    mServerIf,
+                    mBluetoothGattServerCallback,
                     device,
                     characteristic.getInstanceId(),
                     confirm,
@@ -952,12 +960,12 @@ public final class BluetoothGattServer implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean addService(BluetoothGattService service) {
         Log.d(TAG, "addService() - service: " + service.getUuid());
-        if (mService == null || mServerIf == 0) return false;
+        if (mService == null || !mServerRegistered) return false;
 
         mPendingService = service;
 
         try {
-            mService.addService(mServerIf, service, mAttributionSource);
+            mService.addService(mBluetoothGattServerCallback, service, mAttributionSource);
         } catch (RemoteException e) {
             Log.e(TAG, "", e);
             return false;
@@ -977,14 +985,15 @@ public final class BluetoothGattServer implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean removeService(BluetoothGattService service) {
         Log.d(TAG, "removeService() - service: " + service.getUuid());
-        if (mService == null || mServerIf == 0) return false;
+        if (mService == null || !mServerRegistered) return false;
 
         BluetoothGattService intService =
                 getService(service.getUuid(), service.getInstanceId(), service.getType());
         if (intService == null) return false;
 
         try {
-            mService.removeService(mServerIf, service.getInstanceId(), mAttributionSource);
+            mService.removeService(
+                    mBluetoothGattServerCallback, service.getInstanceId(), mAttributionSource);
             mServices.remove(intService);
         } catch (RemoteException e) {
             Log.e(TAG, "", e);
@@ -1000,10 +1009,10 @@ public final class BluetoothGattServer implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public void clearServices() {
         Log.d(TAG, "clearServices()");
-        if (mService == null || mServerIf == 0) return;
+        if (mService == null || !mServerRegistered) return;
 
         try {
-            mService.clearServices(mServerIf, mAttributionSource);
+            mService.clearServices(mBluetoothGattServerCallback, mAttributionSource);
             mServices.clear();
         } catch (RemoteException e) {
             Log.e(TAG, "", e);

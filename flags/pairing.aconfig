@@ -260,3 +260,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "reset_collision_state_on_encryption"
+    namespace: "bluetooth"
+    description: "Reset encryption collision state if peer successfully encrypts the link before collision timer expires"
+    bug: "410105844"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

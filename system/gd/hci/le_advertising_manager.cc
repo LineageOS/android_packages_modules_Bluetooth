@@ -174,17 +174,9 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       num_instances_ += 1;
     } else {
       advertising_api_type_ = AdvertisingApiType::LEGACY;
-      int vendor_version = os::GetAndroidVendorReleaseVersion();
-      if (vendor_version != 0 && vendor_version <= 11 && os::IsRootCanalEnabled()) {
-        log::info(
-                "LeReadAdvertisingPhysicalChannelTxPower is not supported on Android R RootCanal, "
-                "default to 0");
-        le_physical_channel_tx_power_ = 0;
-      } else {
-        hci_layer_->EnqueueCommand(
-                LeReadAdvertisingPhysicalChannelTxPowerBuilder::Create(),
-                handler->BindOnceOn(this, &impl::on_read_advertising_physical_channel_tx_power));
-      }
+      hci_layer_->EnqueueCommand(
+              LeReadAdvertisingPhysicalChannelTxPowerBuilder::Create(),
+              handler->BindOnceOn(this, &impl::on_read_advertising_physical_channel_tx_power));
     }
     enabled_sets_ = std::vector<EnabledSet>(num_instances_);
     for (size_t i = 0; i < enabled_sets_.size(); i++) {
