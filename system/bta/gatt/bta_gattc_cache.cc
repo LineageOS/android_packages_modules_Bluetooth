@@ -296,7 +296,7 @@ static void bta_gattc_explore_srvc_finished(tCONN_ID conn_id, tBTA_GATTC_SERV* p
   bool success = bta_gattc_hash_write(hash, p_clcb->p_srcb->gatt_database);
 
   // If the device is trusted, link the addr file to hash file
-  if (success && btm_sec_is_a_bonded_dev(p_srvc_cb->server_bda)) {
+  if (success && BTM_IsBonded(p_srvc_cb->server_bda)) {
     log::debug("Linking db hash to address {}",
                p_clcb->p_srcb->server_bda.ToRedactedStringForLogging());
     bta_gattc_cache_link(p_clcb->p_srcb->server_bda, hash);
@@ -765,7 +765,7 @@ static void bta_gattc_read_db_hash_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATT
           found = true;
         }
         // If the device is trusted, link addr file to correct hash file
-        if (found && (btm_sec_is_a_bonded_dev(p_clcb->p_srcb->server_bda))) {
+        if (found && BTM_IsBonded(p_clcb->p_srcb->server_bda)) {
           bta_gattc_cache_link(p_clcb->p_srcb->server_bda, remote_hash);
         }
       }
@@ -773,7 +773,7 @@ static void bta_gattc_read_db_hash_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATT
   } else {
     // Only load cache for trusted device if no database hash on server side.
     // If is_svc_chg is true, do not read the existing cache.
-    bool is_a_bonded_dev = btm_sec_is_a_bonded_dev(p_clcb->p_srcb->server_bda);
+    bool is_a_bonded_dev = BTM_IsBonded(p_clcb->p_srcb->server_bda);
     if (!is_svc_chg && is_a_bonded_dev) {
       gatt::Database db = bta_gattc_cache_load(p_clcb->p_srcb->server_bda);
       if (!db.IsEmpty()) {
