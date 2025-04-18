@@ -316,7 +316,6 @@ public class BassClientService extends ProfileService {
             }
 
             Log.d(TAG, "Broadcast Source Found:" + result.getDevice());
-            sEventLogger.logd(TAG, "Broadcast Source Found: Broadcast ID: " + broadcastId);
 
             synchronized (mSearchScanCallbackLock) {
                 if (!mCachedBroadcasts.containsKey(broadcastId)) {
