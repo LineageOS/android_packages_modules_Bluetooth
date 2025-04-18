@@ -297,3 +297,13 @@ flag {
     description: "Add API to allow apps to preload GATT databases to allow skipping service discovery on initial connection."
     bug: "407051373"
 }
+
+flag {
+    name: "batch_scan_support_check"
+    namespace: "bluetooth"
+    description: "Add support check for batch scans when scan starts"
+    bug: "411519279"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
