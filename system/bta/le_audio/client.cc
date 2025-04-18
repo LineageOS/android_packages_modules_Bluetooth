@@ -4513,6 +4513,23 @@ public:
     return AudioReconfigurationResult::RECONFIGURATION_NEEDED;
   }
 
+  void handleInvalidContextTypeResumeRequest(LeAudioDeviceGroup* group) {
+    log::warn("Requested context type not available on the remote side");
+
+    /* When source monitor is enabled, that means that we don't want to notify healf module about
+     * this incident. This is because LeAudioService will already handle this case.
+     */
+    if (source_monitor_mode_) {
+      notifyAudioLocalSource(UnicastMonitorModeStatus::STREAMING_REQUESTED_NO_CONTEXT_VALIDATE);
+      return;
+    }
+
+    if (leAudioHealthStatus_) {
+      leAudioHealthStatus_->AddStatisticForGroup(
+              group, LeAudioHealthGroupStatType::STREAM_CONTEXT_NOT_AVAILABLE);
+    }
+  }
+
   /* Returns true if stream is started */
   bool OnAudioResume(LeAudioDeviceGroup* group, int local_direction) {
     auto remote_direction = (local_direction == bluetooth::le_audio::types::kLeAudioDirectionSink
@@ -4524,18 +4541,7 @@ public:
     ApplyRemoteMetadataAudioContextPolicy(group, remote_contexts, remote_direction);
 
     if (!remote_contexts.sink.any() && !remote_contexts.source.any()) {
-      log::warn("Requested context type not available on the remote side");
-
-      if (source_monitor_mode_) {
-        notifyAudioLocalSource(UnicastMonitorModeStatus::STREAMING_REQUESTED_NO_CONTEXT_VALIDATE);
-
-        return false;
-      }
-
-      if (leAudioHealthStatus_) {
-        leAudioHealthStatus_->AddStatisticForGroup(
-                group, LeAudioHealthGroupStatType::STREAM_CONTEXT_NOT_AVAILABLE);
-      }
+      handleInvalidContextTypeResumeRequest(group);
       return false;
     }
 
@@ -4640,6 +4646,9 @@ public:
                 configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
       log::error("invalid resume request for context type: {}",
                  ToHexString(configuration_context_type_));
+      if (com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+        handleInvalidContextTypeResumeRequest(group);
+      }
       CancelLocalAudioSourceStreamingRequest();
       return;
     }
@@ -4922,6 +4931,9 @@ public:
                 configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
       log::error("invalid resume request for context type: {}",
                  ToHexString(configuration_context_type_));
+      if (com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+        handleInvalidContextTypeResumeRequest(group);
+      }
       CancelLocalAudioSinkStreamingRequest();
       return;
     }
