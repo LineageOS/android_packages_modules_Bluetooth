@@ -1036,6 +1036,12 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
 bool LeAudioDeviceGroup::UpdateAudioSetConfigurationCache(LeAudioContextType ctx_type,
                                                           bool use_preference) const {
   auto requirements = GetAudioSetConfigurationRequirements(ctx_type);
+  if (com::android::bluetooth::flags::leaudio_use_context_type_manager() &&
+      !requirements.sink_pacs && !requirements.source_pacs) {
+    log::debug("No requirements for context type: {}", common::ToString(ctx_type));
+    return false;
+  }
+
   auto new_conf = CodecManager::GetInstance()->GetCodecConfig(
           requirements, std::bind(&LeAudioDeviceGroup::FindFirstSupportedConfiguration, this,
                                   std::placeholders::_1, std::placeholders::_2, use_preference));
