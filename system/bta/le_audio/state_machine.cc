@@ -133,6 +133,15 @@ using bluetooth::le_audio::types::DataPathState;
 using bluetooth::le_audio::types::LeAudioContextType;
 using bluetooth::le_audio::types::LeAudioLtvMap;
 
+using bluetooth::le_audio::client_parser::ascs::kCtpOpcodeCodecConfiguration;
+using bluetooth::le_audio::client_parser::ascs::kCtpOpcodeDisable;
+using bluetooth::le_audio::client_parser::ascs::kCtpOpcodeEnable;
+using bluetooth::le_audio::client_parser::ascs::kCtpOpcodeQosConfiguration;
+using bluetooth::le_audio::client_parser::ascs::kCtpOpcodeReceiverStartReady;
+using bluetooth::le_audio::client_parser::ascs::kCtpOpcodeReceiverStopReady;
+using bluetooth::le_audio::client_parser::ascs::kCtpOpcodeRelease;
+using bluetooth::le_audio::client_parser::ascs::kCtpOpcodeUpdateMetadata;
+
 namespace {
 
 using namespace bluetooth;
@@ -395,6 +404,55 @@ public:
     }
   }
 
+  void processReleaseCtpFailed(
+          LeAudioDevice* leAudioDevice,
+          const struct bluetooth::le_audio::client_parser::ascs::ctp_ase_entry& ase_entry) {
+    log::warn(
+            "Release failed for group_id: {},  {}, ase: {}, last_ase_ctp_command_sent: {:#x}, "
+            "error: {:#x}, reason: {:#x}, let watchdog to fire",
+            leAudioDevice->group_id_, leAudioDevice->address_, ase_entry.ase_id,
+            leAudioDevice->last_ase_ctp_command_sent, ase_entry.response_code, ase_entry.reason);
+  }
+
+  void processCommonCtpFailed(
+          uint8_t op, LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice,
+          const struct bluetooth::le_audio::client_parser::ascs::ctp_ase_entry& ase_entry) {
+    auto release_sent_to_remote = PrepareAndSendRelease(leAudioDevice);
+    auto active_devices = group->GetNumOfActiveDevices();
+
+    int releasing_devices = 0;
+    for (auto dev = group->GetFirstActiveDevice(); dev; dev = group->GetNextActiveDevice(dev)) {
+      if (dev->last_ase_ctp_command_sent ==
+          bluetooth::le_audio::client_parser::ascs::kCtpOpcodeRelease) {
+        releasing_devices++;
+      }
+    }
+
+    log::error(
+            "Releasing ASE due to control point error for {}, ase: {}, opcode: {:#x}, "
+            "last_ase_ctp_command_sent: {:#x}, error: "
+            "{:#x}, reason: {:#x}. release_sent_to_remote: {}, active_devices: {}, "
+            "releasing_devices: {}",
+            leAudioDevice->address_, ase_entry.ase_id, op, leAudioDevice->last_ase_ctp_command_sent,
+            ase_entry.response_code, ase_entry.reason, release_sent_to_remote, active_devices,
+            releasing_devices);
+
+    // If there is no active devices it means, the whole set got released
+    if (releasing_devices == 0 && active_devices == 0) {
+      /* No remote communication expected */
+      ClearGroup(group, true);
+      notifyLeAudioHealth(
+              group,
+              bluetooth::le_audio::LeAudioHealthGroupStatType::STREAM_CREATE_SIGNALING_FAILED);
+    } else if (active_devices != 0 && releasing_devices == active_devices) {
+      group->SetTargetState(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE);
+      state_machine_callbacks_->StatusReportCb(group->group_id_, GroupStreamStatus::RELEASING);
+      notifyLeAudioHealth(
+              group,
+              bluetooth::le_audio::LeAudioHealthGroupStatType::STREAM_CREATE_SIGNALING_FAILED);
+    }
+  }
+
   void ProcessGattCtpNotification(LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice,
                                   uint8_t* value, uint16_t len) {
     auto ntf = std::make_unique<struct bluetooth::le_audio::client_parser::ascs::ctp_ntf>();
@@ -435,53 +493,25 @@ public:
 
     for (auto& entry : ntf->entries) {
       // release ASEs on device which did not accept control point command
-      if (entry.response_code !=
+      if (entry.response_code ==
           bluetooth::le_audio::client_parser::ascs::kCtpResponseCodeSuccess) {
-        if (ntf->op == bluetooth::le_audio::client_parser::ascs::kCtpOpcodeRelease) {
-          log::warn(
-                  "Release failed for {}, ase: {}, last_ase_ctp_command_sent: {:#x}, error: {:#x}, "
-                  "reason: {:#x}, let "
-                  "watchdog to fire",
-                  leAudioDevice->address_, entry.ase_id, leAudioDevice->last_ase_ctp_command_sent,
-                  entry.response_code, entry.reason);
+        continue;
+      }
+
+      // Handle error cases
+      switch (ntf->op) {
+        case kCtpOpcodeRelease:
+          processReleaseCtpFailed(leAudioDevice, entry);
           return;
-        }
-
-        auto release_sent_to_remote = PrepareAndSendRelease(leAudioDevice);
-        auto active_devices = group->GetNumOfActiveDevices();
-
-        int releasing_devices = 0;
-        for (auto dev = group->GetFirstActiveDevice(); dev; dev = group->GetNextActiveDevice(dev)) {
-          if (dev->last_ase_ctp_command_sent ==
-              bluetooth::le_audio::client_parser::ascs::kCtpOpcodeRelease) {
-            releasing_devices++;
-          }
-        }
-
-        log::error(
-                "Releasing ASE due to control point error for {}, ase: {}, opcode: {:#x}, "
-                "last_ase_ctp_command_sent: {:#x}, error: "
-                "{:#x}, reason: {:#x}. release_sent_to_remote: {}, active_devices: {}, "
-                "releasing_devices: {}",
-                leAudioDevice->address_, entry.ase_id, ntf->op,
-                leAudioDevice->last_ase_ctp_command_sent, entry.response_code, entry.reason,
-                release_sent_to_remote, active_devices, releasing_devices);
-
-        // If there is no active devices it means, the whole set got released
-        if (releasing_devices == 0 && active_devices == 0) {
-          /* No remote communication expected */
-          ClearGroup(group, true);
-          notifyLeAudioHealth(
-                  group,
-                  bluetooth::le_audio::LeAudioHealthGroupStatType::STREAM_CREATE_SIGNALING_FAILED);
-        } else if (active_devices != 0 && releasing_devices == active_devices) {
-          group->SetTargetState(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE);
-          state_machine_callbacks_->StatusReportCb(group->group_id_, GroupStreamStatus::RELEASING);
-          notifyLeAudioHealth(
-                  group,
-                  bluetooth::le_audio::LeAudioHealthGroupStatType::STREAM_CREATE_SIGNALING_FAILED);
-        }
-        return;
+        case kCtpOpcodeCodecConfiguration:
+        case kCtpOpcodeDisable:
+        case kCtpOpcodeEnable:
+        case kCtpOpcodeReceiverStartReady:
+        case kCtpOpcodeReceiverStopReady:
+        case kCtpOpcodeUpdateMetadata:
+        case kCtpOpcodeQosConfiguration:
+          processCommonCtpFailed(ntf->op, group, leAudioDevice, entry);
+          return;
       }
     }
 

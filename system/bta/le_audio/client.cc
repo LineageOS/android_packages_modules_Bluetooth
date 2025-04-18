@@ -5743,7 +5743,14 @@ public:
     LeAudioContextType new_config_context = config.first;
     BidirectionalPair<AudioContexts> remote_metadata = config.second;
     if (!remote_metadata.sink.any() && !remote_metadata.source.any()) {
-      log::warn("No valid metadata to update or reconfigure to.");
+      log::warn("No valid metadata to update or reconfigure to");
+      if (group->IsStreaming() && new_config_context > LeAudioContextType::UNSPECIFIED) {
+        log::warn(" Stop the stream to group_id: {} and reconfigure from {} ->  {}",
+                  group->group_id_, ToString(configuration_context_type_),
+                  ToString(new_config_context));
+        initReconfiguration(group, configuration_context_type_);
+        configuration_context_type_ = new_config_context;
+      }
       return false;
     }
 
@@ -6205,8 +6212,9 @@ public:
 
   void speed_start_setup(int group_id, LeAudioContextType context_type, int num_of_connected,
                          bool is_reconfig = false) {
-    log::verbose("is_started {} is_reconfig {} num_of_connected {}",
-                 speed_tracker_.IsStarted(group_id), is_reconfig, num_of_connected);
+    log::verbose("is_started {} is_reconfig {} num_of_connected {}, context: {}",
+                 speed_tracker_.IsStarted(group_id), is_reconfig, num_of_connected,
+                 ToString(context_type));
     if (!speed_tracker_.IsStarted(group_id)) {
       speed_tracker_.Init(group_id, context_type, num_of_connected);
     }
@@ -6305,6 +6313,14 @@ public:
     speed_stop_reconfig(active_group_id_);
   }
 
+  bool isConfigurationChanged(LeAudioDeviceGroup* group) {
+    auto configured_context = group->GetConfigurationContextType();
+    log::debug(" group_id: {} configured_context: {}, configuration_context_type_: {}",
+               group->group_id_, bluetooth::common::ToString(configured_context),
+               bluetooth::common::ToString(configuration_context_type_));
+    return configured_context != configuration_context_type_;
+  }
+
   void OnStateMachineStatusReportCb(int group_id, GroupStreamStatus status) {
     /* When switching stream between two group, it is important to keep track if given status is for
      * active group or not in order to proper Audio HAL notifications.
@@ -6366,7 +6382,7 @@ public:
          * the group was in the ongoing reconfiguration. We should stop the
          * stream and reconfigure once again.
          */
-        if (group->GetConfigurationContextType() != configuration_context_type_) {
+        if (isConfigurationChanged(group)) {
           log::debug(
                   "The configuration {} is no longer valid. Stopping the stream to "
                   "reconfigure to {}",
@@ -6486,6 +6502,7 @@ public:
                       ToString(pre_configuration_context_type_),
                       ToString(configuration_context_type_));
               if ((configuration_context_type_ != pre_configuration_context_type_) &&
+                  (remote_contexts.sink.any() || remote_contexts.source.any()) &&
                   GroupStream(group, configuration_context_type_, remote_contexts)) {
                 /* If configuration succeed wait for new status. */
                 return;
