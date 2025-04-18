@@ -971,7 +971,7 @@ public class BassClientService extends ProfileService {
     private boolean isAnyConnectedDeviceSwitchingSource() {
         for (BluetoothDevice device : getConnectedDevices()) {
             synchronized (mStateMachines) {
-                BassClientStateMachine sm = getOrCreateStateMachine(device);
+                BassClientStateMachine sm = mStateMachines.get(device);
                 // Need to check both mPendingSourceToSwitch and mPendingMetadata
                 // to guard the whole source switching flow
                 if (sm != null
@@ -1173,7 +1173,7 @@ public class BassClientService extends ProfileService {
 
         if (mGroupManagedSources.containsKey(sink)
                 && mGroupManagedSources.get(sink).contains(sourceId)) {
-            BassClientStateMachine stateMachine = getOrCreateStateMachine(sink);
+            BassClientStateMachine stateMachine = mStateMachines.get(sink);
             if (stateMachine == null) {
                 Log.e(TAG, "Can't get state machine for device: " + sink);
                 return new Pair<BluetoothLeBroadcastMetadata, Map<BluetoothDevice, Integer>>(
@@ -1186,8 +1186,16 @@ public class BassClientService extends ProfileService {
                 int broadcastId = metadata.getBroadcastId();
 
                 for (BluetoothDevice device : getTargetDeviceList(sink, /* isGroupOp */ true)) {
-                    List<BluetoothLeBroadcastReceiveState> sources =
-                            getOrCreateStateMachine(device).getAllSources();
+                    BassClientStateMachine sm = mStateMachines.get(device);
+                    if (sm == null) {
+                        Log.w(
+                                TAG,
+                                "getGroupManagedDeviceSources: Failed to get state machine "
+                                        + "for device: "
+                                        + device);
+                        continue;
+                    }
+                    List<BluetoothLeBroadcastReceiveState> sources = sm.getAllSources();
 
                     // For each device, find the source ID having this broadcast ID
                     Optional<BluetoothLeBroadcastReceiveState> receiver =
@@ -1261,7 +1269,7 @@ public class BassClientService extends ProfileService {
     private boolean hasRoomForBroadcastSourceAddition(BluetoothDevice device) {
         BassClientStateMachine stateMachine = null;
         synchronized (mStateMachines) {
-            stateMachine = getOrCreateStateMachine(device);
+            stateMachine = mStateMachines.get(device);
         }
         if (stateMachine == null) {
             Log.d(TAG, "stateMachine is null");
@@ -1287,7 +1295,7 @@ public class BassClientService extends ProfileService {
         BassClientStateMachine stateMachine = null;
 
         synchronized (mStateMachines) {
-            stateMachine = getOrCreateStateMachine(device);
+            stateMachine = mStateMachines.get(device);
         }
         if (stateMachine == null) {
             Log.d(TAG, "stateMachine is null");
@@ -1441,7 +1449,7 @@ public class BassClientService extends ProfileService {
     private void informConnectedDeviceAboutScanOffloadStop() {
         for (BluetoothDevice device : getConnectedDevices()) {
             synchronized (mStateMachines) {
-                BassClientStateMachine stateMachine = getOrCreateStateMachine(device);
+                BassClientStateMachine stateMachine = mStateMachines.get(device);
                 if (stateMachine == null) {
                     Log.w(
                             TAG,
@@ -1457,12 +1465,7 @@ public class BassClientService extends ProfileService {
 
     private int validateParametersForSourceOperation(
             BassClientStateMachine stateMachine, BluetoothDevice device) {
-        if (stateMachine == null) {
-            Log.d(TAG, "validateParameters: stateMachine is null for device: " + device);
-            return BluetoothStatusCodes.ERROR_BAD_PARAMETERS;
-        }
-
-        if (getConnectionState(device) != STATE_CONNECTED) {
+        if ((stateMachine == null) || (getConnectionState(device) != STATE_CONNECTED)) {
             Log.d(TAG, "validateParameters: device is not connected, device: " + device);
             return BluetoothStatusCodes.ERROR_REMOTE_LINK_ERROR;
         }
@@ -1674,7 +1677,7 @@ public class BassClientService extends ProfileService {
             return false;
         }
         synchronized (mStateMachines) {
-            BassClientStateMachine stateMachine = getOrCreateStateMachine(device);
+            BassClientStateMachine stateMachine = mStateMachines.get(device);
             if (stateMachine == null) {
                 Log.e(TAG, "Can't get state machine for device: " + device);
                 return false;
@@ -1724,7 +1727,7 @@ public class BassClientService extends ProfileService {
      */
     public int getConnectionState(BluetoothDevice sink) {
         synchronized (mStateMachines) {
-            BassClientStateMachine sm = getOrCreateStateMachine(sink);
+            BassClientStateMachine sm = mStateMachines.get(sink);
             if (sm == null) {
                 Log.d(TAG, "getConnectionState returns STATE_DISC");
                 return STATE_DISCONNECTED;
@@ -1755,7 +1758,7 @@ public class BassClientService extends ProfileService {
                     continue;
                 }
                 int connectionState = STATE_DISCONNECTED;
-                BassClientStateMachine sm = getOrCreateStateMachine(device);
+                BassClientStateMachine sm = mStateMachines.get(device);
                 if (sm != null) {
                     connectionState = sm.getConnectionState();
                 }
@@ -2011,7 +2014,7 @@ public class BassClientService extends ProfileService {
 
             for (BluetoothDevice device : getConnectedDevices()) {
                 synchronized (mStateMachines) {
-                    BassClientStateMachine stateMachine = getOrCreateStateMachine(device);
+                    BassClientStateMachine stateMachine = mStateMachines.get(device);
                     if (stateMachine == null) {
                         Log.w(
                                 TAG,
@@ -2333,7 +2336,18 @@ public class BassClientService extends ProfileService {
                     if (broadcastId == broadcastIdForPast) {
                         int sourceId = entry.getValue().second;
                         synchronized (mStateMachines) {
-                            BassClientStateMachine sm = getOrCreateStateMachine(sinkDevice);
+                            BassClientStateMachine sm = mStateMachines.get(sinkDevice);
+                            if (sm == null) {
+                                iterator.remove();
+                                Log.w(
+                                        TAG,
+                                        "onSyncEstablished: failed to get state machine "
+                                                + "for device: "
+                                                + sinkDevice);
+
+                                continue;
+                            }
+
                             Message message =
                                     sm.obtainMessage(
                                             BassClientStateMachine.INITIATE_PA_SYNC_TRANSFER);
@@ -3131,7 +3145,7 @@ public class BassClientService extends ProfileService {
                 continue;
             }
 
-            BassClientStateMachine stateMachine = getOrCreateStateMachine(device);
+            BassClientStateMachine stateMachine = mStateMachines.get(device);
             int statusCode =
                     validateParametersForSourceOperation(stateMachine, device, sourceMetadata);
             if (statusCode != BluetoothStatusCodes.SUCCESS) {
@@ -3295,7 +3309,7 @@ public class BassClientService extends ProfileService {
                 continue;
             }
 
-            BassClientStateMachine stateMachine = getOrCreateStateMachine(device);
+            BassClientStateMachine stateMachine = mStateMachines.get(device);
             int statusCode =
                     validateParametersForSourceOperation(
                             stateMachine, device, updatedMetadata, deviceSourceId);
@@ -3375,7 +3389,7 @@ public class BassClientService extends ProfileService {
 
             mPausedBroadcastSinks.remove(device);
 
-            BassClientStateMachine stateMachine = getOrCreateStateMachine(device);
+            BassClientStateMachine stateMachine = mStateMachines.get(device);
             int statusCode =
                     validateParametersForSourceOperation(stateMachine, device, deviceSourceId);
             if (statusCode != BluetoothStatusCodes.SUCCESS) {
@@ -3468,7 +3482,7 @@ public class BassClientService extends ProfileService {
      */
     public List<BluetoothLeBroadcastReceiveState> getAllSources(BluetoothDevice sink) {
         synchronized (mStateMachines) {
-            BassClientStateMachine stateMachine = getOrCreateStateMachine(sink);
+            BassClientStateMachine stateMachine = mStateMachines.get(sink);
             if (stateMachine == null) {
                 Log.d(TAG, "stateMachine is null");
                 return Collections.emptyList();
@@ -3487,7 +3501,7 @@ public class BassClientService extends ProfileService {
      */
     int getMaximumSourceCapacity(BluetoothDevice sink) {
         Log.d(TAG, "getMaximumSourceCapacity: device = " + sink);
-        BassClientStateMachine stateMachine = getOrCreateStateMachine(sink);
+        BassClientStateMachine stateMachine = mStateMachines.get(sink);
         if (stateMachine == null) {
             Log.d(TAG, "stateMachine is null");
             return 0;
@@ -3508,7 +3522,7 @@ public class BassClientService extends ProfileService {
         }
 
         Log.d(TAG, "getSourceMetadata: device = " + sink + " with source id = " + sourceId);
-        BassClientStateMachine stateMachine = getOrCreateStateMachine(sink);
+        BassClientStateMachine stateMachine = mStateMachines.get(sink);
         if (stateMachine == null) {
             Log.d(TAG, "stateMachine is null");
             return null;
@@ -3574,7 +3588,7 @@ public class BassClientService extends ProfileService {
     private void cancelPendingSourceOperations(int broadcastId) {
         for (BluetoothDevice device : getConnectedDevices()) {
             synchronized (mStateMachines) {
-                BassClientStateMachine sm = getOrCreateStateMachine(device);
+                BassClientStateMachine sm = mStateMachines.get(device);
                 if (sm != null && sm.hasPendingSourceOperation(broadcastId)) {
                     Message message =
                             sm.obtainMessage(
@@ -3822,14 +3836,17 @@ public class BassClientService extends ProfileService {
                     Log.d(TAG, "handleBassStateReady: no metadata available");
                     continue;
                 }
+
                 for (BluetoothDevice groupDevice :
                         getTargetDeviceList(sink, /* isGroupOp */ true)) {
-                    if (groupDevice.equals(sink)) {
+                    BassClientStateMachine sm = mStateMachines.get(groupDevice);
+                    if (groupDevice.equals(sink) || sm == null) {
                         continue;
                     }
+
                     // Check peer device
                     Optional<BluetoothLeBroadcastReceiveState> receiver =
-                            getOrCreateStateMachine(groupDevice).getAllSources().stream()
+                            sm.getAllSources().stream()
                                     .filter(e -> e.getBroadcastId() == metadata.getBroadcastId())
                                     .findAny();
                     if (receiver.isPresent()
@@ -4073,8 +4090,26 @@ public class BassClientService extends ProfileService {
                 int broadcastId = metadata.getBroadcastId();
 
                 // For each device, find the source ID having this broadcast ID
-                BassClientStateMachine stateMachine = getOrCreateStateMachine(sink);
-                List<BluetoothLeBroadcastReceiveState> sources = stateMachine.getAllSources();
+                BassClientStateMachine sm = mStateMachines.get(sink);
+                if (sm == null) {
+                    // Remove it only if no monitoring in case that other sink needs it
+                    if (leaudioBroadcastAllowMonitoringOnResume()) {
+                        if (!isMonitoringOrResumingPauseReason(broadcastId)) {
+                            mPausedBroadcastIds.remove(broadcastId);
+                        }
+                    } else {
+                        mPausedBroadcastIds.remove(broadcastId);
+                    }
+
+                    Log.w(
+                            TAG,
+                            "resumeReceiversSourceSynchronization: Failed to get state machine"
+                                    + " for device: "
+                                    + sink);
+                    continue;
+                }
+
+                List<BluetoothLeBroadcastReceiveState> sources = sm.getAllSources();
                 Optional<BluetoothLeBroadcastReceiveState> receiveState =
                         sources.stream().filter(e -> e.getBroadcastId() == broadcastId).findAny();
 
@@ -4175,7 +4210,7 @@ public class BassClientService extends ProfileService {
 
     private void updateSourceToResumeBroadcast(
             BluetoothDevice sink, int sourceId, BluetoothLeBroadcastMetadata metadata) {
-        BassClientStateMachine stateMachine = getOrCreateStateMachine(sink);
+        BassClientStateMachine stateMachine = mStateMachines.get(sink);
         int statusCode =
                 validateParametersForSourceOperation(stateMachine, sink, metadata, sourceId);
         if (statusCode != BluetoothStatusCodes.SUCCESS) {
