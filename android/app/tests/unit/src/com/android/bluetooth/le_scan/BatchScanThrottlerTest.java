@@ -18,6 +18,8 @@ package com.android.bluetooth.le_scan;
 
 import static android.bluetooth.le.ScanSettings.SCAN_MODE_BALANCED;
 
+import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
+
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.le_scan.ScanController.DEFAULT_REPORT_DELAY_FLOOR;
 
@@ -25,10 +27,12 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanSettings;
+import android.content.Context;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.bluetooth.R;
 import com.android.bluetooth.TestUtils.FakeTimeProvider;
 
 import com.google.testing.junit.testparameterinjector.TestParameter;
@@ -52,6 +56,7 @@ public class BatchScanThrottlerTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    private final Context mContext = getInstrumentation().getTargetContext();
     private FakeTimeProvider mTimeProvider;
 
     @Before
@@ -63,12 +68,16 @@ public class BatchScanThrottlerTest {
         mTimeProvider.advanceTime(Duration.ofMillis(amountToAdvanceMillis));
     }
 
+    private int getIntResource(int resId) {
+        return mContext.getResources().getInteger(resId);
+    }
+
     @Test
     public void basicThrottling(
             @TestParameter boolean isFiltered, @TestParameter boolean isScreenOn) {
-        BatchScanThrottler throttler = new BatchScanThrottler(mTimeProvider, isScreenOn);
+        BatchScanThrottler throttler = new BatchScanThrottler(mContext, mTimeProvider, isScreenOn);
         if (!isScreenOn) {
-            advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_MS);
+            advanceTime(getIntResource(R.integer.batch_scan_screen_off_delay_ms));
         }
         Set<ScanClient> clients =
                 Collections.singleton(
@@ -77,7 +86,8 @@ public class BatchScanThrottlerTest {
                 getBackoffIntervals(
                         isScreenOn
                                 ? DEFAULT_REPORT_DELAY_FLOOR
-                                : BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_MS);
+                                : getIntResource(
+                                        R.integer.batch_scan_screen_off_minimum_delay_floor_ms));
         for (long x : backoffIntervals) {
             long expected = adjustExpectedInterval(x, isFiltered, isScreenOn);
             assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(expected);
@@ -92,20 +102,22 @@ public class BatchScanThrottlerTest {
 
     @Test
     public void screenOffDelayAndReset(@TestParameter boolean screenOnAtStart) {
-        BatchScanThrottler throttler = new BatchScanThrottler(mTimeProvider, screenOnAtStart);
+        BatchScanThrottler throttler =
+                new BatchScanThrottler(mContext, mTimeProvider, screenOnAtStart);
         if (screenOnAtStart) {
             throttler.onScreenOn(false);
         }
         Set<ScanClient> clients =
                 Collections.singleton(createBatchScanClient(DEFAULT_REPORT_DELAY_FLOOR, true));
         long[] backoffIntervals = getBackoffIntervals(DEFAULT_REPORT_DELAY_FLOOR);
-        advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_MS - 1);
+        advanceTime(getIntResource(R.integer.batch_scan_screen_off_delay_ms) - 1);
         for (long x : backoffIntervals) {
             assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x);
         }
 
         backoffIntervals =
-                getBackoffIntervals(BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_MS);
+                getBackoffIntervals(
+                        getIntResource(R.integer.batch_scan_screen_off_minimum_delay_floor_ms));
         advanceTime(1);
         for (long x : backoffIntervals) {
             assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x);
@@ -116,12 +128,13 @@ public class BatchScanThrottlerTest {
 
     @Test
     public void testScreenOnReset() {
-        BatchScanThrottler throttler = new BatchScanThrottler(mTimeProvider, false);
-        advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_MS);
+        BatchScanThrottler throttler = new BatchScanThrottler(mContext, mTimeProvider, false);
+        advanceTime(getIntResource(R.integer.batch_scan_screen_off_delay_ms));
         Set<ScanClient> clients =
                 Collections.singleton(createBatchScanClient(DEFAULT_REPORT_DELAY_FLOOR, true));
         long[] backoffIntervals =
-                getBackoffIntervals(BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_MS);
+                getBackoffIntervals(
+                        getIntResource(R.integer.batch_scan_screen_off_minimum_delay_floor_ms));
         for (long x : backoffIntervals) {
             assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x);
         }
@@ -137,11 +150,11 @@ public class BatchScanThrottlerTest {
 
     @Test
     public void resetBackoff_restartsToFirstStage(@TestParameter boolean isScreenOn) {
-        BatchScanThrottler throttler = new BatchScanThrottler(mTimeProvider, isScreenOn);
+        BatchScanThrottler throttler = new BatchScanThrottler(mContext, mTimeProvider, isScreenOn);
         if (!isScreenOn) {
             // Advance the time before we start the test to when the screen-off intervals should be
             // used
-            advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_MS);
+            advanceTime(getIntResource(R.integer.batch_scan_screen_off_delay_ms));
         }
         Set<ScanClient> clients =
                 Collections.singleton(createBatchScanClient(DEFAULT_REPORT_DELAY_FLOOR, true));
@@ -149,7 +162,8 @@ public class BatchScanThrottlerTest {
                 getBackoffIntervals(
                         isScreenOn
                                 ? DEFAULT_REPORT_DELAY_FLOOR
-                                : BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_MS);
+                                : getIntResource(
+                                        R.integer.batch_scan_screen_off_minimum_delay_floor_ms));
         for (long x : backoffIntervals) {
             assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x);
         }
@@ -164,15 +178,14 @@ public class BatchScanThrottlerTest {
                 .isEqualTo(backoffIntervals[backoffIntervals.length - 1]);
     }
 
-    private static long adjustExpectedInterval(
-            long interval, boolean isFiltered, boolean isScreenOn) {
+    private long adjustExpectedInterval(long interval, boolean isFiltered, boolean isScreenOn) {
         if (isFiltered) {
             return interval;
         }
         long threshold =
                 isScreenOn
-                        ? BatchScanThrottler.UNFILTERED_DELAY_FLOOR_MS
-                        : BatchScanThrottler.UNFILTERED_SCREEN_OFF_DELAY_FLOOR_MS;
+                        ? getIntResource(R.integer.batch_scan_unfiltered_delay_floor_ms)
+                        : getIntResource(R.integer.batch_scan_unfiltered_screen_off_delay_floor_ms);
         return Math.max(interval, threshold);
     }
 
