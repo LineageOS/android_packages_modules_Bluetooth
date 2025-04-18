@@ -802,7 +802,8 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
             packet = AvdtpSignalingPacket.parse(packet)
             print(f"Received AVDTP signal: {type(packet.signal).__name__}")
 
-            if isinstance(packet.signal, avdtp.SetConfigurationCommand):
+            if (isinstance(packet.signal, avdtp.SetConfigurationCommand) or
+                isinstance(packet.signal, avdtp.ReconfigureCommand)):
                 session.configuration = packet
 
             elif isinstance(packet.signal, avdtp.StartResponse):
@@ -831,7 +832,8 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
             packet = AvdtpSignalingPacket.parse(packet)
             print(f"Sent AVDTP signal: {type(packet.signal).__name__}")
 
-            if isinstance(packet.signal, avdtp.SetConfigurationCommand):
+            if (isinstance(packet.signal, avdtp.SetConfigurationCommand) or
+                isinstance(packet.signal, avdtp.ReconfigureCommand)):
                 session.configuration = packet
 
         elif (
