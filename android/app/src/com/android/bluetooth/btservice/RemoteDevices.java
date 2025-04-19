@@ -323,7 +323,6 @@ public class RemoteDevices {
                             ? mAdapter.getRemoteLeDevice(key, addressType)
                             : mAdapter.getRemoteDevice(key);
             prop.setDevice(device);
-            prop.setAddress(address);
 
             DeviceProperties pv = mDevices.put(key, prop);
 
@@ -364,7 +363,6 @@ public class RemoteDevices {
         private static final int BONDING_INITIATOR_LOCAL = 1;
         private static final int BONDING_INITIATOR_REMOTE = 2;
         private String mName;
-        private byte[] mAddress;
         private String mIdentityAddress;
         @AddressType private int mIdentityAddressType = BluetoothDevice.ADDRESS_TYPE_UNKNOWN;
         private boolean mIsConsolidated = false;
@@ -615,24 +613,6 @@ public class RemoteDevices {
         }
 
         /**
-         * @return the mAddress
-         */
-        byte[] getAddress() {
-            synchronized (mObject) {
-                return mAddress;
-            }
-        }
-
-        /**
-         * @param address the mAddress to set
-         */
-        void setAddress(byte[] address) {
-            synchronized (mObject) {
-                this.mAddress = address;
-            }
-        }
-
-        /**
          * @return the mDevice
          */
         BluetoothDevice getDevice() {
@@ -705,7 +685,7 @@ public class RemoteDevices {
                 mAdapterService
                         .getNative()
                         .setDeviceProperty(
-                                mAddress,
+                                Utils.getByteAddress(device),
                                 AbstractionLayer.BT_PROPERTY_REMOTE_FRIENDLY_NAME,
                                 mAlias.getBytes());
                 Intent intent = new Intent(BluetoothDevice.ACTION_ALIAS_CHANGED);
@@ -1155,7 +1135,6 @@ public class RemoteDevices {
                         debugLog("Remote device alias is: " + deviceProperties.getAlias());
                         break;
                     case AbstractionLayer.BT_PROPERTY_BDADDR:
-                        deviceProperties.setAddress(val);
                         debugLog(
                                 "Remote Address is:" + Utils.getRedactedAddressStringFromByte(val));
                         break;
