@@ -1392,7 +1392,7 @@ public class RemoteDevices {
             int status,
             byte[] address,
             int addressType,
-            int transportLinkType,
+            int transport,
             int newState,
             int hciReason,
             int handle) {
@@ -1407,11 +1407,10 @@ public class RemoteDevices {
                         () -> {
                             Log.w(
                                     TAG,
-                                    "aclStateChangeCallback: device is NULL"
-                                            + ("address="
-                                                    + Utils.getRedactedAddressStringFromByte(
-                                                            address))
-                                            + (" newState=" + newState));
+                                    "aclStateChangeCallback: Adding cache for unknown device "
+                                            + Utils.getRedactedAddressStringFromByte(address)
+                                            + " ("
+                                            + addressTypeToString(addressType));
                             return addDeviceProperties(address, addressType).getDevice();
                         });
 
@@ -1419,18 +1418,32 @@ public class RemoteDevices {
 
         int state = mAdapterService.getState();
 
+        infoLog(
+                "aclStateChangeCallback: "
+                        + transportToString(transport)
+                        + (newState == AbstractionLayer.BT_ACL_STATE_CONNECTED
+                                ? " Connected "
+                                : " Disconnected ")
+                        + device
+                        + "("
+                        + addressTypeToString(addressType)
+                        + ") reason: "
+                        + hciReason
+                        + " adapter state: "
+                        + BluetoothAdapter.nameForState(state));
+
         Intent intent = null;
         if (newState == AbstractionLayer.BT_ACL_STATE_CONNECTED) {
-            deviceProperties.setConnectionHandle(handle, transportLinkType);
+            deviceProperties.setConnectionHandle(handle, transport);
             if (state == BluetoothAdapter.STATE_ON || state == BluetoothAdapter.STATE_TURNING_ON) {
                 intent = new Intent(BluetoothDevice.ACTION_ACL_CONNECTED);
-                intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, transportLinkType);
+                intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, transport);
             } else if (state == BluetoothAdapter.STATE_BLE_ON
                     || state == BluetoothAdapter.STATE_BLE_TURNING_ON) {
                 intent = new Intent(BluetoothAdapter.ACTION_BLE_ACL_CONNECTED);
             }
             BatteryService batteryService = BatteryService.getBatteryService();
-            if (batteryService != null && transportLinkType == BluetoothDevice.TRANSPORT_LE) {
+            if (batteryService != null && transport == BluetoothDevice.TRANSPORT_LE) {
                 batteryService.connectIfPossible(device);
             }
             mAdapterService.updatePhonePolicyOnAclConnect(device);
@@ -1439,13 +1452,8 @@ public class RemoteDevices {
                     Utils.getLoggableAddress(device), /* success */
                     1, /* reason */
                     "");
-            debugLog(
-                    "aclStateChangeCallback: Adapter State: "
-                            + BluetoothAdapter.nameForState(state)
-                            + " Connected: "
-                            + device);
         } else {
-            deviceProperties.setConnectionHandle(BluetoothDevice.ERROR, transportLinkType);
+            deviceProperties.setConnectionHandle(BluetoothDevice.ERROR, transport);
             if (getBondState(device) == BluetoothDevice.BOND_BONDING) {
                 // Send PAIRING_CANCEL intent to dismiss any dialog requesting bonding.
                 sendPairingCancelIntent(device);
@@ -1458,9 +1466,9 @@ public class RemoteDevices {
                 }
             }
             if (state == BluetoothAdapter.STATE_ON || state == BluetoothAdapter.STATE_TURNING_OFF) {
-                mAdapterService.notifyAclDisconnected(device, transportLinkType);
+                mAdapterService.notifyAclDisconnected(device, transport);
                 intent = new Intent(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-                intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, transportLinkType);
+                intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, transport);
             } else if (state == BluetoothAdapter.STATE_BLE_ON
                     || state == BluetoothAdapter.STATE_BLE_TURNING_OFF) {
                 intent = new Intent(BluetoothAdapter.ACTION_BLE_ACL_DISCONNECTED);
@@ -1470,7 +1478,7 @@ public class RemoteDevices {
                 BatteryService batteryService = BatteryService.getBatteryService();
                 if (batteryService != null
                         && batteryService.getConnectionState(device) != STATE_DISCONNECTED
-                        && transportLinkType == BluetoothDevice.TRANSPORT_LE) {
+                        && transport == BluetoothDevice.TRANSPORT_LE) {
                     batteryService.disconnect(device);
                 }
                 resetBatteryLevel(device, /* isBas= */ true);
@@ -1487,15 +1495,6 @@ public class RemoteDevices {
                     Utils.getLoggableAddress(device),
                     BluetoothAdapter.BluetoothConnectionCallback.disconnectReasonToString(
                             AdapterService.hciToAndroidDisconnectReason(hciReason)));
-            debugLog(
-                    "aclStateChangeCallback: Adapter State: "
-                            + BluetoothAdapter.nameForState(state)
-                            + " Disconnected: "
-                            + device
-                            + " transportLinkType: "
-                            + transportLinkType
-                            + " hciReason: "
-                            + hciReason);
         }
 
         int connectionState =
@@ -1508,7 +1507,7 @@ public class RemoteDevices {
                 mAdapterService.obfuscateAddress(device),
                 connectionState,
                 metricId,
-                transportLinkType);
+                transport);
 
         BluetoothStatsLog.write(
                 BluetoothStatsLog.BLUETOOTH_CLASS_OF_DEVICE_REPORTED,
@@ -2153,6 +2152,17 @@ public class RemoteDevices {
 
     private static void warnLog(String msg) {
         Log.w(TAG, msg);
+    }
+
+    private static String transportToString(int transport) {
+        switch (transport) {
+            case BluetoothDevice.TRANSPORT_BREDR:
+                return "BREDR";
+            case BluetoothDevice.TRANSPORT_LE:
+                return "LE";
+            default:
+                return "Unknown transport (" + transport + ")";
+        }
     }
 
     private static String deviceTypeToString(int deviceType) {
