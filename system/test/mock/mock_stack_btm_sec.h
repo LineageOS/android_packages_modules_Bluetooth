@@ -562,17 +562,6 @@ struct btm_sec_encryption_change_evt {
 };
 extern struct btm_sec_encryption_change_evt btm_sec_encryption_change_evt;
 
-// Name: btm_sec_is_a_bonded_dev
-// Params: const RawAddress& bda
-// Return: bool
-struct btm_sec_is_a_bonded_dev {
-  static bool return_value;
-  std::function<bool(const RawAddress& bda)> body{
-          [](const RawAddress& /* bda */) { return return_value; }};
-  bool operator()(const RawAddress& bda) { return body(bda); }
-};
-extern struct btm_sec_is_a_bonded_dev btm_sec_is_a_bonded_dev;
-
 // Name: btm_sec_l2cap_access_req
 // Params: const RawAddress& bd_addr, uint16_t psm, bool is_originator,
 // tBTM_SEC_CALLBACK* p_callback, void* p_ref_data Return: tBTM_STATUS

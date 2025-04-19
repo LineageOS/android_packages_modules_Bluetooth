@@ -34,6 +34,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.app.ActivityManager;
 import android.bluetooth.BluetoothAdapter;
@@ -181,6 +182,13 @@ public class GattServiceTest {
         mService.mClientMap = mClientMap;
         mService.mReliableQueue = mReliableQueue;
         mService.mServerMap = mServerMap;
+
+        when(mAdapterService.getRemoteDevice(anyString()))
+                .thenAnswer(
+                        invocation -> {
+                            String address = invocation.getArgument(0);
+                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+                        });
     }
 
     @After
@@ -278,7 +286,8 @@ public class GattServiceTest {
                         transport,
                         opportunistic,
                         phy,
-                        0);
+                        0,
+                        false);
     }
 
     @Test
@@ -317,7 +326,8 @@ public class GattServiceTest {
                         transport,
                         opportunistic,
                         phy,
-                        0);
+                        0,
+                        false);
         mService.onConnectedFromNative(
                 CLIENT_IF, 0, BluetoothGatt.GATT_CONNECTION_TIMEOUT, mDevice);
         verify(mAdapterService).notifyGattClientConnectFailed(anyInt(), any());
@@ -359,7 +369,8 @@ public class GattServiceTest {
                         transport,
                         opportunistic,
                         phy,
-                        0);
+                        0,
+                        false);
         mService.onConnectedFromNative(CLIENT_IF, 15, BluetoothGatt.GATT_SUCCESS, mDevice);
         mService.clientDisconnect(mGattCallback, mDevice, mAttributionSource);
 
@@ -402,7 +413,8 @@ public class GattServiceTest {
                         transport,
                         opportunistic,
                         phy,
-                        0);
+                        0,
+                        false);
         mService.onConnectedFromNative(CLIENT_IF, 15, BluetoothGatt.GATT_SUCCESS, mDevice);
         mService.onDisconnectedFromNative(CLIENT_IF, 15, 1, mDevice);
 

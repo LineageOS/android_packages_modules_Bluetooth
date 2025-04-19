@@ -234,11 +234,13 @@ void AclManager::CreateConnection(Address address) {
   CallOn(pimpl_->classic_impl_, &classic_impl::create_connection, address);
 }
 
-void AclManager::CreateLeConnection(AddressWithType address_with_type, bool is_direct) {
+void AclManager::CreateLeConnection(AddressWithType address_with_type, bool is_direct,
+                                    bool prefer_relax_mode) {
   if (!is_direct) {
     CallOn(pimpl_->le_impl_, &le_impl::add_device_to_background_connection_list, address_with_type);
   }
-  CallOn(pimpl_->le_impl_, &le_impl::create_le_connection, address_with_type, true, is_direct);
+  CallOn(pimpl_->le_impl_, &le_impl::create_le_connection, address_with_type, true, is_direct,
+         prefer_relax_mode);
 }
 
 void AclManager::SetPrivacyPolicyForInitiatorAddress(
@@ -337,10 +339,6 @@ void AclManager::OnLeSuspendInitiatedDisconnect(uint16_t handle, ErrorCode reaso
 
 void AclManager::SetSystemSuspendState(bool suspended) {
   CallOn(pimpl_->le_impl_, &le_impl::set_system_suspend_state, suspended);
-}
-
-void AclManager::AddDeviceToRelaxedConnectionIntervalList(const Address address) {
-  CallOn(pimpl_->le_impl_, &le_impl::add_device_to_relaxed_connection_interval_list, address);
 }
 
 LeAddressManager* AclManager::GetLeAddressManager() {

@@ -435,15 +435,9 @@ static void le_address_associate_callback(RawAddress* main_bd_addr, RawAddress* 
                                secondary_addr.get(), (jint)identity_address_type);
 }
 
-static void acl_state_changed_callback(bt_status_t status, RawAddress* bd_addr,
-                                       bt_acl_state_t state, int transport_link_type,
-                                       bt_hci_error_code_t hci_reason,
+static void acl_state_changed_callback(bt_status_t status, tAclLinkSpec& link_spec,
+                                       bt_acl_state_t state, bt_hci_error_code_t hci_reason,
                                        bt_conn_direction_t /* direction */, uint16_t acl_handle) {
-  if (!bd_addr) {
-    log::error("Address is null");
-    return;
-  }
-
   std::shared_lock<std::shared_timed_mutex> lock(jniObjMutex);
   if (!sJniCallbacksObj) {
     log::error("JNI obj is null. Failed to call JNI callback");
@@ -462,11 +456,11 @@ static void acl_state_changed_callback(bt_status_t status, RawAddress* bd_addr,
     return;
   }
   sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
-                                   reinterpret_cast<jbyte*>(bd_addr));
+                                   reinterpret_cast<jbyte*>(&link_spec.addrt.bda));
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_aclStateChangeCallback, (jint)status,
-                               addr.get(), (jint)state, (jint)transport_link_type, (jint)hci_reason,
-                               (jint)acl_handle);
+                               addr.get(), (jint)link_spec.addrt.type, (jint)link_spec.transport,
+                               (jint)state, (jint)hci_reason, (jint)acl_handle);
 }
 
 static void discovery_state_changed_callback(bt_discovery_state_t state) {
@@ -2362,7 +2356,7 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
           {"bondStateChangeCallback", "(I[BII)V", &method_bondStateChangeCallback},
           {"addressConsolidateCallback", "([B[B)V", &method_addressConsolidateCallback},
           {"leAddressAssociateCallback", "([B[BI)V", &method_leAddressAssociateCallback},
-          {"aclStateChangeCallback", "(I[BIIII)V", &method_aclStateChangeCallback},
+          {"aclStateChangeCallback", "(I[BIIIII)V", &method_aclStateChangeCallback},
           {"linkQualityReportCallback", "(JIIIIII)V", &method_linkQualityReportCallback},
           {"switchBufferSizeCallback", "(Z)V", &method_switchBufferSizeCallback},
           {"switchCodecCallback", "(Z)V", &method_switchCodecCallback},

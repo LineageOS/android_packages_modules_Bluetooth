@@ -463,7 +463,6 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
     }
 
     if (!cs_requester_trackers_[connection_handle].setup_complete) {
-      acl_manager_->AddDeviceToRelaxedConnectionIntervalList(cs_remote_address);
       send_le_cs_read_remote_supported_capabilities(connection_handle);
       return;
     }
@@ -1524,7 +1523,7 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
       send_on_demand_data(live_tracker->address, procedure_data,
                           get_ras_raw_payload_size(connection_handle));
       // remove procedure data sent previously
-      if (procedure_done_status == CsProcedureDoneStatus::ALL_RESULTS_COMPLETE) {
+      if (procedure_done_status != CsProcedureDoneStatus::PARTIAL_RESULTS) {
         delete_consumed_procedure_data(live_tracker, live_tracker->procedure_counter);
       }
     }
@@ -2224,7 +2223,15 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
 
   static void delete_consumed_procedure_data(CsTracker* live_tracker, uint16_t current_counter) {
     std::vector<CsProcedureData>& data_list = live_tracker->procedure_data_list;
-    while (data_list.begin()->counter < current_counter) {
+    if (!live_tracker->local_start) {
+      // do this only for responder, as the procedure_counter for initiator could be rewind when it
+      // was waiting for the remote data; and the data should be cleared on stop.
+      while (data_list.size() > 0 && data_list.begin()->counter > current_counter) {
+        log::debug("remove the trailing procedures from the last session for safe.");
+        data_list.erase(data_list.begin());
+      }
+    }
+    while (data_list.size() > 0 && data_list.begin()->counter <= current_counter) {
       log::debug("Delete obsolete procedure data, counter:{}", data_list.begin()->counter);
       data_list.erase(data_list.begin());
     }

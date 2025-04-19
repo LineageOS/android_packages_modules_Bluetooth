@@ -270,3 +270,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "retain_address_type"
+    namespace: "bluetooth"
+    description: "Set correct address type in BluetoothDevice objects created by the Android Bluetooth"
+    bug: "407277344"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

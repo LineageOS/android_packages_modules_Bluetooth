@@ -281,12 +281,14 @@ public class RemoteDevices {
         return deviceProp.getBluetoothClass();
     }
 
-    BluetoothDevice getDevice(byte[] address) {
-        String addressString = Utils.getAddressStringFromByte(address);
-        String deviceAddress = mDualDevicesMap.get(addressString);
+    BluetoothDevice getDevice(String address) {
+        if (address == null) {
+            return null;
+        }
+        String deviceAddress = mDualDevicesMap.get(address);
         // If the device is not in the dual map, use its original address
         if (deviceAddress == null || mDevices.get(deviceAddress) == null) {
-            deviceAddress = addressString;
+            deviceAddress = address;
         }
 
         DeviceProperties prop = mDevices.get(deviceAddress);
@@ -294,6 +296,11 @@ public class RemoteDevices {
             return prop.getDevice();
         }
         return null;
+    }
+
+    BluetoothDevice getDevice(byte[] address) {
+        String addressString = Utils.getAddressStringFromByte(address);
+        return getDevice(addressString);
     }
 
     @VisibleForTesting
@@ -311,8 +318,11 @@ public class RemoteDevices {
             }
 
             DeviceProperties prop = new DeviceProperties();
-            prop.setDevice(mAdapter.getRemoteDevice(Utils.getAddressStringFromByte(address)));
-            prop.setAddress(address);
+            BluetoothDevice device =
+                    Flags.retainAddressType()
+                            ? mAdapter.getRemoteLeDevice(key, addressType)
+                            : mAdapter.getRemoteDevice(key);
+            prop.setDevice(device);
 
             DeviceProperties pv = mDevices.put(key, prop);
 
@@ -353,7 +363,6 @@ public class RemoteDevices {
         private static final int BONDING_INITIATOR_LOCAL = 1;
         private static final int BONDING_INITIATOR_REMOTE = 2;
         private String mName;
-        private byte[] mAddress;
         private String mIdentityAddress;
         @AddressType private int mIdentityAddressType = BluetoothDevice.ADDRESS_TYPE_UNKNOWN;
         private boolean mIsConsolidated = false;
@@ -604,24 +613,6 @@ public class RemoteDevices {
         }
 
         /**
-         * @return the mAddress
-         */
-        byte[] getAddress() {
-            synchronized (mObject) {
-                return mAddress;
-            }
-        }
-
-        /**
-         * @param address the mAddress to set
-         */
-        void setAddress(byte[] address) {
-            synchronized (mObject) {
-                this.mAddress = address;
-            }
-        }
-
-        /**
          * @return the mDevice
          */
         BluetoothDevice getDevice() {
@@ -694,7 +685,7 @@ public class RemoteDevices {
                 mAdapterService
                         .getNative()
                         .setDeviceProperty(
-                                mAddress,
+                                Utils.getByteAddress(device),
                                 AbstractionLayer.BT_PROPERTY_REMOTE_FRIENDLY_NAME,
                                 mAlias.getBytes());
                 Intent intent = new Intent(BluetoothDevice.ACTION_ALIAS_CHANGED);
@@ -1091,9 +1082,9 @@ public class RemoteDevices {
         BluetoothDevice bdDevice = getDevice(address);
         DeviceProperties deviceProperties;
         if (bdDevice == null) {
-            debugLog("Added new device property, device=" + bdDevice);
             deviceProperties = addDeviceProperties(address, addressType);
             bdDevice = getDevice(address);
+            debugLog("Added new device property, device=" + bdDevice);
         } else {
             deviceProperties = getDeviceProperties(bdDevice);
             if (bdDevice.getAddressType() != addressType) {
@@ -1144,7 +1135,6 @@ public class RemoteDevices {
                         debugLog("Remote device alias is: " + deviceProperties.getAlias());
                         break;
                     case AbstractionLayer.BT_PROPERTY_BDADDR:
-                        deviceProperties.setAddress(val);
                         debugLog(
                                 "Remote Address is:" + Utils.getRedactedAddressStringFromByte(val));
                         break;
@@ -1339,6 +1329,8 @@ public class RemoteDevices {
 
         deviceProperties.setIsConsolidated(true);
         deviceProperties.setDeviceType(BluetoothDevice.DEVICE_TYPE_DUAL);
+        // Dual mode devices have public identity address type
+        deviceProperties.setIdentityAddressType(BluetoothDevice.ADDRESS_TYPE_PUBLIC);
         deviceProperties.setIdentityAddress(Utils.getAddressStringFromByte(secondaryAddress));
         mDualDevicesMap.put(
                 deviceProperties.getIdentityAddress(), Utils.getAddressStringFromByte(mainAddress));
@@ -1380,8 +1372,9 @@ public class RemoteDevices {
     void aclStateChangeCallback(
             int status,
             byte[] address,
+            int addressType,
+            int transport,
             int newState,
-            int transportLinkType,
             int hciReason,
             int handle) {
         if (status != AbstractionLayer.BT_STATUS_SUCCESS) {
@@ -1395,31 +1388,43 @@ public class RemoteDevices {
                         () -> {
                             Log.w(
                                     TAG,
-                                    "aclStateChangeCallback: device is NULL"
-                                            + ("address="
-                                                    + Utils.getRedactedAddressStringFromByte(
-                                                            address))
-                                            + (" newState=" + newState));
-                            // TODO: Set the correct address type
-                            return addDeviceProperties(address).getDevice();
+                                    "aclStateChangeCallback: Adding cache for unknown device "
+                                            + Utils.getRedactedAddressStringFromByte(address)
+                                            + " ("
+                                            + addressTypeToString(addressType));
+                            return addDeviceProperties(address, addressType).getDevice();
                         });
 
         DeviceProperties deviceProperties = getDeviceProperties(device);
 
         int state = mAdapterService.getState();
 
+        infoLog(
+                "aclStateChangeCallback: "
+                        + transportToString(transport)
+                        + (newState == AbstractionLayer.BT_ACL_STATE_CONNECTED
+                                ? " Connected "
+                                : " Disconnected ")
+                        + device
+                        + "("
+                        + addressTypeToString(addressType)
+                        + ") reason: "
+                        + hciReason
+                        + " adapter state: "
+                        + BluetoothAdapter.nameForState(state));
+
         Intent intent = null;
         if (newState == AbstractionLayer.BT_ACL_STATE_CONNECTED) {
-            deviceProperties.setConnectionHandle(handle, transportLinkType);
+            deviceProperties.setConnectionHandle(handle, transport);
             if (state == BluetoothAdapter.STATE_ON || state == BluetoothAdapter.STATE_TURNING_ON) {
                 intent = new Intent(BluetoothDevice.ACTION_ACL_CONNECTED);
-                intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, transportLinkType);
+                intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, transport);
             } else if (state == BluetoothAdapter.STATE_BLE_ON
                     || state == BluetoothAdapter.STATE_BLE_TURNING_ON) {
                 intent = new Intent(BluetoothAdapter.ACTION_BLE_ACL_CONNECTED);
             }
             BatteryService batteryService = BatteryService.getBatteryService();
-            if (batteryService != null && transportLinkType == BluetoothDevice.TRANSPORT_LE) {
+            if (batteryService != null && transport == BluetoothDevice.TRANSPORT_LE) {
                 batteryService.connectIfPossible(device);
             }
             mAdapterService.updatePhonePolicyOnAclConnect(device);
@@ -1428,13 +1433,8 @@ public class RemoteDevices {
                     Utils.getLoggableAddress(device), /* success */
                     1, /* reason */
                     "");
-            debugLog(
-                    "aclStateChangeCallback: Adapter State: "
-                            + BluetoothAdapter.nameForState(state)
-                            + " Connected: "
-                            + device);
         } else {
-            deviceProperties.setConnectionHandle(BluetoothDevice.ERROR, transportLinkType);
+            deviceProperties.setConnectionHandle(BluetoothDevice.ERROR, transport);
             if (getBondState(device) == BluetoothDevice.BOND_BONDING) {
                 // Send PAIRING_CANCEL intent to dismiss any dialog requesting bonding.
                 sendPairingCancelIntent(device);
@@ -1447,9 +1447,9 @@ public class RemoteDevices {
                 }
             }
             if (state == BluetoothAdapter.STATE_ON || state == BluetoothAdapter.STATE_TURNING_OFF) {
-                mAdapterService.notifyAclDisconnected(device, transportLinkType);
+                mAdapterService.notifyAclDisconnected(device, transport);
                 intent = new Intent(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-                intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, transportLinkType);
+                intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, transport);
             } else if (state == BluetoothAdapter.STATE_BLE_ON
                     || state == BluetoothAdapter.STATE_BLE_TURNING_OFF) {
                 intent = new Intent(BluetoothAdapter.ACTION_BLE_ACL_DISCONNECTED);
@@ -1459,7 +1459,7 @@ public class RemoteDevices {
                 BatteryService batteryService = BatteryService.getBatteryService();
                 if (batteryService != null
                         && batteryService.getConnectionState(device) != STATE_DISCONNECTED
-                        && transportLinkType == BluetoothDevice.TRANSPORT_LE) {
+                        && transport == BluetoothDevice.TRANSPORT_LE) {
                     batteryService.disconnect(device);
                 }
                 resetBatteryLevel(device, /* isBas= */ true);
@@ -1476,15 +1476,6 @@ public class RemoteDevices {
                     Utils.getLoggableAddress(device),
                     BluetoothAdapter.BluetoothConnectionCallback.disconnectReasonToString(
                             AdapterService.hciToAndroidDisconnectReason(hciReason)));
-            debugLog(
-                    "aclStateChangeCallback: Adapter State: "
-                            + BluetoothAdapter.nameForState(state)
-                            + " Disconnected: "
-                            + device
-                            + " transportLinkType: "
-                            + transportLinkType
-                            + " hciReason: "
-                            + hciReason);
         }
 
         int connectionState =
@@ -1497,7 +1488,7 @@ public class RemoteDevices {
                 mAdapterService.obfuscateAddress(device),
                 connectionState,
                 metricId,
-                transportLinkType);
+                transport);
 
         BluetoothStatsLog.write(
                 BluetoothStatsLog.BLUETOOTH_CLASS_OF_DEVICE_REPORTED,
@@ -2144,6 +2135,17 @@ public class RemoteDevices {
         Log.w(TAG, msg);
     }
 
+    private static String transportToString(int transport) {
+        switch (transport) {
+            case BluetoothDevice.TRANSPORT_BREDR:
+                return "BREDR";
+            case BluetoothDevice.TRANSPORT_LE:
+                return "LE";
+            default:
+                return "Unknown transport (" + transport + ")";
+        }
+    }
+
     private static String deviceTypeToString(int deviceType) {
         switch (deviceType) {
             case BluetoothDevice.DEVICE_TYPE_UNKNOWN:
@@ -2200,6 +2202,9 @@ public class RemoteDevices {
             StringBuilder sb = bonded ? sbBonded : sbKnown;
             sb.append("    ")
                     .append(anonAddress)
+                    .append("(")
+                    .append(addressTypeToString(deviceProperties.getDevice().getAddressType()))
+                    .append(")")
                     .append(" => ")
                     .append(anonIdentityAddress)
                     .append("(")

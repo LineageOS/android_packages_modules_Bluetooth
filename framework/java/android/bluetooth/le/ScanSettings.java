@@ -16,6 +16,7 @@
 
 package android.bluetooth.le;
 
+import android.annotation.NonNull;
 import android.annotation.SystemApi;
 import android.app.compat.CompatChanges;
 import android.bluetooth.BluetoothDevice;
@@ -209,6 +210,11 @@ public final class ScanSettings implements Parcelable {
         return mScanResultType;
     }
 
+    /** Returns report delay timestamp based on the device clock. */
+    public long getReportDelayMillis() {
+        return mReportDelayMillis;
+    }
+
     /** @hide */
     public int getMatchMode() {
         return mMatchMode;
@@ -230,11 +236,6 @@ public final class ScanSettings implements Parcelable {
     /** Returns the physical layer used during a scan. */
     public int getPhy() {
         return mPhy;
-    }
-
-    /** Returns report delay timestamp based on the device clock. */
-    public long getReportDelayMillis() {
-        return mReportDelayMillis;
     }
 
     private ScanSettings(
@@ -284,7 +285,7 @@ public final class ScanSettings implements Parcelable {
         return 0;
     }
 
-    public static final @android.annotation.NonNull Parcelable.Creator<ScanSettings> CREATOR =
+    public static final @NonNull Parcelable.Creator<ScanSettings> CREATOR =
             new Creator<ScanSettings>() {
                 @Override
                 public ScanSettings[] newArray(int size) {

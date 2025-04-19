@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.avrcpcontroller;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.ContentProvider;
 import android.content.ContentValues;
@@ -26,6 +25,7 @@ import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
+import com.android.bluetooth.btservice.AdapterService;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -47,8 +47,6 @@ import java.io.IOException;
  */
 public class AvrcpCoverArtProvider extends ContentProvider {
     private static final String TAG = AvrcpCoverArtProvider.class.getSimpleName();
-
-    private BluetoothAdapter mAdapter;
 
     public AvrcpCoverArtProvider() {}
 
@@ -131,7 +129,7 @@ public class AvrcpCoverArtProvider extends ContentProvider {
         }
 
         try {
-            device = mAdapter.getRemoteDevice(address);
+            device = AdapterService.getAdapterService().getRemoteDevice(address);
         } catch (IllegalArgumentException e) {
             throw new FileNotFoundException();
         }
@@ -148,7 +146,6 @@ public class AvrcpCoverArtProvider extends ContentProvider {
 
     @Override
     public boolean onCreate() {
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
         return true;
     }
 

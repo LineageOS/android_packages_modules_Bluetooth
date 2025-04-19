@@ -27,6 +27,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -58,6 +59,7 @@ import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.btservice.storage.MetadataDatabase;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
@@ -136,6 +138,13 @@ public class PhonePolicyTest {
         doReturn(STATE_DISCONNECTED).when(mHeadsetService).getConnectionState(any());
         doReturn(Collections.emptyList()).when(mA2dpService).getConnectedDevices();
         doReturn(Collections.emptyList()).when(mHeadsetService).getConnectedDevices();
+
+        when(mAdapterService.getRemoteDevice(anyString()))
+                .thenAnswer(
+                        invocation -> {
+                            String address = invocation.getArgument(0);
+                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+                        });
 
         SystemProperties.mProperties = mProperties;
 

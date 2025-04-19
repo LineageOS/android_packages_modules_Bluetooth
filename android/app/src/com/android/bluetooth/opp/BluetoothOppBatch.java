@@ -32,11 +32,11 @@
 
 package com.android.bluetooth.opp;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.util.Log;
 
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.BluetoothMethodProxy;
 
 import java.util.ArrayList;
@@ -104,7 +104,7 @@ public class BluetoothOppBatch {
         mShares = new ArrayList();
         mTimestamp = info.mTimestamp;
         mDirection = info.mDirection;
-        mDestination = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(info.mDestination);
+        mDestination = AdapterService.getAdapterService().getRemoteDevice(info.mDestination);
         mStatus = Constants.BATCH_STATUS_PENDING;
         mShares.add(info);
 

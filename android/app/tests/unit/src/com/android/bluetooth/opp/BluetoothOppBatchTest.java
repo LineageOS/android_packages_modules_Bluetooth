@@ -20,11 +20,16 @@ import static com.android.bluetooth.TestUtils.MockitoRule;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import android.content.Context;
+
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -32,6 +37,10 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 
+import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.btservice.AdapterService;
+
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -43,6 +52,8 @@ import org.mockito.Mock;
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppBatchTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
+    @Mock private AdapterService mAdapterService;
     @Mock private Context mContext;
 
     private final Context mTargetContext =
@@ -67,8 +78,20 @@ public class BluetoothOppBatchTest {
 
     @Before
     public void setUp() throws Exception {
+        TestUtils.setAdapterService(mAdapterService);
+        when(mAdapterService.getRemoteDevice(anyString()))
+                .thenAnswer(
+                        invocation -> {
+                            String address = invocation.getArgument(0);
+                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+                        });
         doReturn(mTargetContext.getContentResolver()).when(mContext).getContentResolver();
         mBluetoothOppBatch = new BluetoothOppBatch(mContext, mInitShareInfo);
+    }
+
+    @After
+    public void tearDown() {
+        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test

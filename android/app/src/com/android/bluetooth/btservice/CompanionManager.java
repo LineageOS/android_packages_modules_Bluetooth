@@ -215,7 +215,7 @@ public class CompanionManager {
             String address = getCompanionPreferences().getString(COMPANION_DEVICE_KEY, "");
 
             try {
-                mCompanionDevice = mAdapter.getRemoteDevice(address);
+                mCompanionDevice = mAdapterService.getRemoteDevice(address);
                 mCompanionType =
                         getCompanionPreferences().getInt(COMPANION_TYPE_KEY, COMPANION_TYPE_NONE);
             } catch (IllegalArgumentException e) {

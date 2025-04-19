@@ -23,12 +23,12 @@
 
 package com.android.bluetooth.le_audio;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeBroadcastMetadata;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -36,19 +36,12 @@ import com.android.internal.annotations.VisibleForTesting;
 public class LeAudioBroadcasterNativeInterface {
     private static final String TAG = LeAudioBroadcasterNativeInterface.class.getSimpleName();
 
-    private final BluetoothAdapter mAdapter;
-
     @GuardedBy("INSTANCE_LOCK")
     private static LeAudioBroadcasterNativeInterface sInstance;
 
     private static final Object INSTANCE_LOCK = new Object();
 
-    private LeAudioBroadcasterNativeInterface() {
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (mAdapter == null) {
-            Log.wtf(TAG, "No Bluetooth Adapter Available");
-        }
-    }
+    private LeAudioBroadcasterNativeInterface() {}
 
     /** Get singleton instance. */
     public static LeAudioBroadcasterNativeInterface getInstance() {
@@ -79,7 +72,8 @@ public class LeAudioBroadcasterNativeInterface {
 
     @VisibleForTesting
     public BluetoothDevice getDevice(byte[] address) {
-        return mAdapter.getRemoteDevice(address);
+        return AdapterService.getAdapterService()
+                .getRemoteDevice(Utils.getAddressStringFromByte(address));
     }
 
     // Callbacks from the native stack back into the Java framework.

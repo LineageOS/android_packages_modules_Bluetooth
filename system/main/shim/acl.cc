@@ -1091,9 +1091,8 @@ void DumpsysAcl(int fd) {
       continue;
     }
 
-    LOG_DUMPSYS(fd, "remote_addr:%s handle:0x%04x transport:%s",
-                link.remote_addr.ToRedactedStringForLogging().c_str(), link.hci_handle,
-                bt_transport_text(link.transport).c_str());
+    LOG_DUMPSYS(fd, "remote_addr:%s handle:0x%04x",
+                link.link_spec.ToRedactedStringForLogging().c_str(), link.hci_handle);
     LOG_DUMPSYS(fd, "    link_up_issued:%5s", (link.link_up_issued) ? "true" : "false");
     LOG_DUMPSYS(fd, "    flush_timeout:0x%04x", link.flush_timeout_in_ticks);
     LOG_DUMPSYS(fd, "    link_supervision_timeout:%.3f sec",
@@ -1122,9 +1121,8 @@ void DumpsysAcl(int fd) {
                   common::ToString(link.peer_le_features_valid).c_str(),
                   bd_features_text(link.peer_le_features).c_str());
 
-      LOG_DUMPSYS(fd, "    [le] active_remote_addr:%s[%s]",
-                  link.active_remote_addr.ToRedactedStringForLogging().c_str(),
-                  AddressTypeText(link.active_remote_addr_type).c_str());
+      LOG_DUMPSYS(fd, "    [le] active_addrt:%s",
+                  link.active_addrt.ToRedactedStringForLogging().c_str());
     }
   }
 }

@@ -110,7 +110,7 @@ struct gatt_interface_t {
   void (*BTA_GATTC_ServiceSearchRequest)(tCONN_ID conn_id, const bluetooth::Uuid* p_srvc_uuid);
   void (*BTA_GATTC_Open)(tGATT_IF client_if, const RawAddress& remote_bda,
                          tBTM_BLE_CONN_TYPE connection_type, bool opportunistic,
-                         uint16_t preferred_mtu);
+                         uint16_t preferred_mtu, bool prefer_relax_mode);
 } default_gatt_interface = {
         .BTA_GATTC_CancelOpen =
                 [](tGATT_IF client_if, const RawAddress& remote_bda, bool is_direct) {
@@ -138,9 +138,11 @@ struct gatt_interface_t {
                 },
         .BTA_GATTC_Open =
                 [](tGATT_IF client_if, const RawAddress& remote_bda,
-                   tBTM_BLE_CONN_TYPE connection_type, bool opportunistic, uint16_t preferred_mtu) {
+                   tBTM_BLE_CONN_TYPE connection_type, bool opportunistic, uint16_t preferred_mtu,
+                   bool prefer_relax_mode) {
                   BTA_GATTC_Open(client_if, remote_bda, BLE_ADDR_PUBLIC, connection_type,
-                                 BT_TRANSPORT_LE, opportunistic, LE_PHY_1M, preferred_mtu);
+                                 BT_TRANSPORT_LE, opportunistic, LE_PHY_1M, preferred_mtu,
+                                 prefer_relax_mode);
                 },
 };
 
@@ -613,14 +615,14 @@ static void btm_dm_start_gatt_discovery(const RawAddress& bd_addr) {
               "transport:{} opportunistic:{:c}",
               bd_addr, bt_transport_text(BT_TRANSPORT_LE), (kUseOpportunistic) ? 'T' : 'F');
       get_gatt_interface().BTA_GATTC_Open(bta_dm_discovery_cb.client_if, bd_addr,
-                                          BTM_BLE_DIRECT_CONNECTION, kUseOpportunistic, 0);
+                                          BTM_BLE_DIRECT_CONNECTION, kUseOpportunistic, 0, false);
     } else {
       log::debug(
               "Opening new gatt client connection for discovery peer:{} "
               "transport:{} opportunistic:{:c}",
               bd_addr, bt_transport_text(BT_TRANSPORT_LE), (!kUseOpportunistic) ? 'T' : 'F');
       get_gatt_interface().BTA_GATTC_Open(bta_dm_discovery_cb.client_if, bd_addr,
-                                          BTM_BLE_DIRECT_CONNECTION, !kUseOpportunistic, 0);
+                                          BTM_BLE_DIRECT_CONNECTION, !kUseOpportunistic, 0, false);
     }
   }
 }

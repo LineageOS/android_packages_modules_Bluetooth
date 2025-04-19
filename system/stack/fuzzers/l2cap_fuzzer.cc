@@ -99,7 +99,7 @@ void SnoopLogger::SetL2capChannelOpen(uint16_t, uint16_t, uint16_t, uint16_t, bo
 
 namespace connection_manager {
 bool direct_connect_add(uint8_t /* id */, const RawAddress& /* bd_addr */,
-                        tBLE_ADDR_TYPE /* addr_type */) {
+                        tBLE_ADDR_TYPE /* addr_type */, bool /* prefer_relax_mode */) {
   return true;
 }
 }  // namespace connection_manager

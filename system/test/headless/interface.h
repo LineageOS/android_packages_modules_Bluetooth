@@ -26,7 +26,7 @@
 #include "test/headless/log.h"
 #include "test/headless/property.h"
 #include "test/headless/text.h"
-#include "types/raw_address.h"
+#include "types/ble_address_with_type.h"
 
 using namespace bluetooth;
 
@@ -110,14 +110,13 @@ private:
 };
 
 struct acl_state_changed_params_t : public callback_params_t {
-  acl_state_changed_params_t(bt_status_t status, RawAddress remote_bd_addr, bt_acl_state_t state,
-                             int transport_link_type, bt_hci_error_code_t hci_reason,
-                             bt_conn_direction_t direction, uint16_t acl_handle)
+  acl_state_changed_params_t(bt_status_t status, tAclLinkSpec& link_spec, bt_acl_state_t state,
+                             bt_hci_error_code_t hci_reason, bt_conn_direction_t direction,
+                             uint16_t acl_handle)
       : callback_params_t("acl_state_changed", Callback::AclStateChanged),
         status(status),
-        remote_bd_addr(remote_bd_addr),
+        link_spec(link_spec),
         state(state),
-        transport_link_type(transport_link_type),
         hci_reason(hci_reason),
         direction(direction),
         acl_handle(acl_handle) {}
@@ -125,22 +124,18 @@ struct acl_state_changed_params_t : public callback_params_t {
   virtual ~acl_state_changed_params_t() {}
 
   bt_status_t status;
-  RawAddress remote_bd_addr;
+  tAclLinkSpec& link_spec;
   bt_acl_state_t state;
-  int transport_link_type;
   bt_hci_error_code_t hci_reason;
   bt_conn_direction_t direction;
   uint16_t acl_handle;
 
   std::string ToString() const override {
-    return std::format(
-            "status:{} remote_bd_addr:{} state:{} transport:{} reason:{}"
-            " direction:{} handle:{}",
-            bt_status_text(status), remote_bd_addr.ToString(),
-            (state == BT_ACL_STATE_CONNECTED) ? "CONNECTED" : "DISCONNECTED",
-            bt_transport_text(static_cast<const tBT_TRANSPORT>(transport_link_type)),
-            bt_status_text(static_cast<const bt_status_t>(hci_reason)),
-            bt_conn_direction_text(direction), acl_handle);
+    return std::format("status:{} link_spec:{} state:{} reason:{} direction:{} handle:{}",
+                       bt_status_text(status), link_spec.ToString(),
+                       (state == BT_ACL_STATE_CONNECTED) ? "CONNECTED" : "DISCONNECTED",
+                       bt_status_text(static_cast<const bt_status_t>(hci_reason)),
+                       bt_conn_direction_text(direction), acl_handle);
   }
 };
 

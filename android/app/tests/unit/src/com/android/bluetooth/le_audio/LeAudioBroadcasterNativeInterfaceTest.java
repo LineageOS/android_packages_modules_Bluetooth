@@ -20,12 +20,18 @@ import static com.android.bluetooth.TestUtils.MockitoRule;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeBroadcastMetadata;
 
 import androidx.test.runner.AndroidJUnit4;
+
+import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.After;
 import org.junit.Before;
@@ -40,12 +46,20 @@ import org.mockito.Mock;
 public class LeAudioBroadcasterNativeInterfaceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AdapterService mAdapterService;
     @Mock private LeAudioService mMockService;
 
     private LeAudioBroadcasterNativeInterface mNativeInterface;
 
     @Before
     public void setUp() throws Exception {
+        TestUtils.setAdapterService(mAdapterService);
+        when(mAdapterService.getRemoteDevice(anyString()))
+                .thenAnswer(
+                        invocation -> {
+                            String address = invocation.getArgument(0);
+                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+                        });
         when(mMockService.isAvailable()).thenReturn(true);
         LeAudioService.setLeAudioService(mMockService);
         mNativeInterface = LeAudioBroadcasterNativeInterface.getInstance();
@@ -54,6 +68,7 @@ public class LeAudioBroadcasterNativeInterfaceTest {
     @After
     public void tearDown() {
         LeAudioService.setLeAudioService(null);
+        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test

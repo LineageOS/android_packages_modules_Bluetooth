@@ -1405,7 +1405,7 @@ void GATT_StartIf(tGATT_IF gatt_if) {
  ******************************************************************************/
 bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                   tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport, bool opportunistic,
-                  uint8_t initiating_phys, uint16_t preferred_mtu) {
+                  uint8_t initiating_phys, uint16_t preferred_mtu, bool prefer_relax_mode) {
   /* Make sure app is registered */
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
   if (!p_reg) {
@@ -1434,8 +1434,8 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE ad
 
   bool ret = false;
   if (is_direct) {
-    log::debug("Starting direct connect gatt_if={} address={} transport={}", gatt_if, bd_addr,
-               transport);
+    log::debug("Starting direct connect gatt_if={} address={} transport={} prefer_relax_mode={}",
+               gatt_if, bd_addr, transport, prefer_relax_mode);
     bool tcb_exist = !!gatt_find_tcb_by_addr(bd_addr, transport);
 
     if (tcb_exist || transport == BT_TRANSPORT_BR_EDR) {
@@ -1443,7 +1443,7 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE ad
       ret = gatt_act_connect(p_reg, bd_addr, addr_type, transport, initiating_phys);
     } else {
       log::verbose("Connecting without tcb to: {}", bd_addr);
-      ret = connection_manager::direct_connect_add(gatt_if, bd_addr, addr_type);
+      ret = connection_manager::direct_connect_add(gatt_if, bd_addr, addr_type, prefer_relax_mode);
     }
 
   } else {
@@ -1492,7 +1492,7 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE ad
 bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBTM_BLE_CONN_TYPE connection_type,
                   tBT_TRANSPORT transport, bool opportunistic) {
   return GATT_Connect(gatt_if, bd_addr, BLE_ADDR_PUBLIC, connection_type, transport, opportunistic,
-                      LE_PHY_1M, 0);
+                      LE_PHY_1M, 0, false);
 }
 
 /*******************************************************************************

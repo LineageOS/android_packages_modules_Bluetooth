@@ -45,7 +45,8 @@ bool connection_manager::background_connect_remove(uint8_t /* app_id */,
 }
 
 bool connection_manager::direct_connect_add(uint8_t /* app_id */, const RawAddress& /* address */,
-                                            tBLE_ADDR_TYPE /* addr_type */) {
+                                            tBLE_ADDR_TYPE /* addr_type */,
+                                            bool /* prefer_relax_mode */) {
   inc_func_call_count(__func__);
   return false;
 }

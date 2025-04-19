@@ -83,7 +83,6 @@ struct btm_sec_disconnect btm_sec_disconnect;
 struct btm_sec_disconnected btm_sec_disconnected;
 struct btm_sec_encrypt_change btm_sec_encrypt_change;
 struct btm_sec_encryption_change_evt btm_sec_encryption_change_evt;
-struct btm_sec_is_a_bonded_dev btm_sec_is_a_bonded_dev;
 struct btm_sec_l2cap_access_req btm_sec_l2cap_access_req;
 struct btm_sec_l2cap_access_req_by_requirement btm_sec_l2cap_access_req_by_requirement;
 struct btm_sec_link_key_notification btm_sec_link_key_notification;
@@ -125,7 +124,6 @@ bool BTM_SetSecurityLevel::return_value = false;
 DEV_CLASS btm_get_dev_class::return_value = kDevClassEmpty;
 tBTM_STATUS btm_sec_bond_by_transport::return_value = tBTM_STATUS::BTM_SUCCESS;
 tBTM_STATUS btm_sec_disconnect::return_value = tBTM_STATUS::BTM_SUCCESS;
-bool btm_sec_is_a_bonded_dev::return_value = false;
 tBTM_STATUS btm_sec_l2cap_access_req::return_value = tBTM_STATUS::BTM_SUCCESS;
 tBTM_STATUS btm_sec_l2cap_access_req_by_requirement::return_value = tBTM_STATUS::BTM_SUCCESS;
 tBTM_STATUS btm_sec_service_access_request::return_value = tBTM_STATUS::BTM_SUCCESS;
@@ -318,10 +316,6 @@ void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status, uint8_t 
                                    uint8_t key_size) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::btm_sec_encryption_change_evt(handle, status, encr_enable, key_size);
-}
-bool btm_sec_is_a_bonded_dev(const RawAddress& bda) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_btm_sec::btm_sec_is_a_bonded_dev(bda);
 }
 tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm, bool is_originator,
                                      tBTM_SEC_CALLBACK* p_callback, void* p_ref_data) {

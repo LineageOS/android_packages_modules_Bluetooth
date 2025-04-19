@@ -30,7 +30,7 @@
 #include "bta/dm/bta_dm_disc_int.h"
 #include "bta/dm/bta_dm_int.h"
 #include "bta/dm/bta_dm_sec_int.h"
-#include "types/raw_address.h"
+#include "types/ble_address_with_type.h"
 
 // Mocked compile conditionals, if any
 
@@ -51,37 +51,35 @@ struct BTA_DmSetVisibility {
 extern struct BTA_DmSetVisibility BTA_DmSetVisibility;
 
 // Name: BTA_dm_acl_down
-// Params: const RawAddress bd_addr, tBT_TRANSPORT transport
+// Params: const tAclLinkSpec& link_spec
 // Return: void
 struct BTA_dm_acl_down {
-  std::function<void(const RawAddress bd_addr, tBT_TRANSPORT transport)> body{
-          [](const RawAddress /* bd_addr */, tBT_TRANSPORT /* transport */) {}};
-  void operator()(const RawAddress bd_addr, tBT_TRANSPORT transport) { body(bd_addr, transport); }
+  std::function<void(const tAclLinkSpec& link_spec)> body{
+          [](const tAclLinkSpec& /* link_spec */) {}};
+  void operator()(const tAclLinkSpec& link_spec) { body(link_spec); }
 };
 extern struct BTA_dm_acl_down BTA_dm_acl_down;
 
 // Name: BTA_dm_acl_up
-// Params: const RawAddress bd_addr, tBT_TRANSPORT transport
+// Params: const tAclLinkSpec& link_spec, uint16_t acl_handle
 // Return: void
 struct BTA_dm_acl_up {
-  std::function<void(const RawAddress bd_addr, tBT_TRANSPORT transport, uint16_t acl_handle)> body{
-          [](const RawAddress /* bd_addr */, tBT_TRANSPORT /* transport */,
-             uint16_t /* acl_handle */) {}};
-  void operator()(const RawAddress bd_addr, tBT_TRANSPORT transport, uint16_t acl_handle) {
-    body(bd_addr, transport, acl_handle);
+  std::function<void(const tAclLinkSpec& link_spec, uint16_t acl_handle)> body{
+          [](const tAclLinkSpec& /* link_spec */, uint16_t /* acl_handle */) {}};
+  void operator()(const tAclLinkSpec& link_spec, uint16_t acl_handle) {
+    body(link_spec, acl_handle);
   }
 };
 extern struct BTA_dm_acl_up BTA_dm_acl_up;
 
 // Name: BTA_dm_acl_up_failed
-// Params: const RawAddress bd_addr, tBT_TRANSPORT transport, tHCI_STATUS
+// Params: const tAclLinkSpec& link_spec, tHCI_STATUS
 // hci_status Return: void
 struct BTA_dm_acl_up_failed {
-  std::function<void(const RawAddress bd_addr, tBT_TRANSPORT transport, tHCI_STATUS hci_status)>
-          body{[](const RawAddress /* bd_addr */, tBT_TRANSPORT /* transport */,
-                  tHCI_STATUS /* hci_status */) {}};
-  void operator()(const RawAddress bd_addr, tBT_TRANSPORT transport, tHCI_STATUS hci_status) {
-    body(bd_addr, transport, hci_status);
+  std::function<void(const tAclLinkSpec& link_spec, tHCI_STATUS hci_status)> body{
+          [](const tAclLinkSpec& /* link_spec */, tHCI_STATUS /* hci_status */) {}};
+  void operator()(const tAclLinkSpec& link_spec, tHCI_STATUS hci_status) {
+    body(link_spec, hci_status);
   }
 };
 extern struct BTA_dm_acl_up_failed BTA_dm_acl_up_failed;
