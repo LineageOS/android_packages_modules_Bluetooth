@@ -1350,7 +1350,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
 
       // Do not update device properties of already bonded devices.
       if (com::android::bluetooth::flags::guard_bonded_device_properties() &&
-          btm_sec_is_a_bonded_dev(bdaddr)) {
+          BTM_IsBonded(bdaddr)) {
         log::debug("Ignore device properties from discovery results for the bonded device: {}[{}]",
                    bdaddr, AddressTypeText(addr_type));
 
@@ -3497,7 +3497,7 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
         bool during_bonding =
                 (bd_addr == pairing_cb.bd_addr || bd_addr == pairing_cb.static_bdaddr);
 
-        if (during_bonding || p_auth_cmpl->is_ctkd || !btm_sec_is_a_bonded_dev(bd_addr)) {
+        if (during_bonding || p_auth_cmpl->is_ctkd || !BTM_IsBonded(bd_addr)) {
           log::info("Removing ble bonding keys on SMP_CONN_TOUT during_bonding: {}, is_ctkd: {}",
                     during_bonding, p_auth_cmpl->is_ctkd);
           btif_dm_remove_ble_bonding_keys();

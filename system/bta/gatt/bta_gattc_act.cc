@@ -530,7 +530,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
 
       // Only load the database if we are bonded, since the device cache is
       // meaningless otherwise (as we need to do rediscovery regardless)
-      gatt::Database db = btm_sec_is_a_bonded_dev(p_clcb->bda)
+      gatt::Database db = BTM_IsBonded(p_clcb->bda)
                                   ? bta_gattc_cache_load(p_clcb->p_srcb->server_bda)
                                   : gatt::Database();
       auto robust_caching_support = GetRobustCachingSupport(p_clcb, db);

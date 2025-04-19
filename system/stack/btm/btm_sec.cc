@@ -2479,7 +2479,7 @@ void btm_sec_rmt_host_support_feat_evt(const RawAddress bd_addr, uint8_t feature
  *
  ******************************************************************************/
 void btm_io_capabilities_req(RawAddress p) {
-  if (btm_sec_is_a_bonded_dev(p)) {
+  if (BTM_IsBonded(p)) {
     auto p_dev_rec = btm_find_dev(p);
     ASSERT(p_dev_rec != NULL);
 
@@ -2676,7 +2676,7 @@ void btm_io_capabilities_rsp(const tBTM_SP_IO_RSP evt_data) {
 
   /* If device is bonded, and encrypted it's upgrading security and it's ok.
    * If it's bonded and not encrypted, it's remote missing keys scenario */
-  if (btm_sec_is_a_bonded_dev(evt_data.bd_addr) && !p_dev_rec->sec_rec.is_device_encrypted()) {
+  if (BTM_IsBonded(evt_data.bd_addr) && !p_dev_rec->sec_rec.is_device_encrypted()) {
     log::warn("Incoming bond request, but {} is already bonded (notifying user)", evt_data.bd_addr);
     bta_dm_remote_key_missing(evt_data.bd_addr);
     btm_sec_disconnect(p_dev_rec->hci_handle, HCI_ERR_AUTH_FAILURE,
@@ -4018,7 +4018,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason, std::string comme
   p_dev_rec->sec_rec.le_link = tSECURITY_STATE::IDLE;
   p_dev_rec->sec_rec.security_required = BTM_SEC_NONE;
   if (com::android::bluetooth::flags::reset_security_flags_on_pairing_failure() &&
-      !btm_sec_is_a_bonded_dev(p_dev_rec->bd_addr)) {
+      !BTM_IsBonded(p_dev_rec->bd_addr)) {
     log::warn("Clearing security flags for unbonded device {}", p_dev_rec->bd_addr);
     p_dev_rec->sec_rec.sec_flags = 0;
   }
@@ -5234,18 +5234,6 @@ void btm_sec_clear_ble_keys(tBTM_SEC_DEV_REC* p_dev_rec) {
 
   btm_ble_resolving_list_remove_dev(p_dev_rec);
 }
-
-/*******************************************************************************
- *
- * Function         btm_sec_is_a_bonded_dev
- *
- * Description       Is the specified device is a bonded device
- *                   (either on BR/EDR or LE)
- *
- * Returns          true - dev is bonded
- *
- ******************************************************************************/
-bool btm_sec_is_a_bonded_dev(const RawAddress& bda) { return btm_sec_cb.IsDeviceBonded(bda); }
 
 /*******************************************************************************
  *

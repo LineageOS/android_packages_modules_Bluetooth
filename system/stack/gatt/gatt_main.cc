@@ -487,10 +487,8 @@ static void gatt_le_connect_cback(uint16_t /* chan */, const RawAddress& bd_addr
   p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(bd_addr);
   if (p_srv_chg_clt != NULL) {
     check_srv_chg = true;
-  } else {
-    if (btm_sec_is_a_bonded_dev(bd_addr)) {
-      gatt_add_a_bonded_dev_for_srv_chg(bd_addr);
-    }
+  } else if (BTM_IsBonded(bd_addr)) {
+    gatt_add_a_bonded_dev_for_srv_chg(bd_addr);
   }
 
   if (!connected) {
@@ -848,10 +846,8 @@ void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t /* initiator */, tL2CAP
   tGATTS_SRV_CHG* p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda);
   if (p_srv_chg_clt != NULL) {
     gatt_chk_srv_chg(p_srv_chg_clt);
-  } else {
-    if (btm_sec_is_a_bonded_dev(p_tcb->peer_bda)) {
-      gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
-    }
+  } else if (BTM_IsBonded(p_tcb->peer_bda)) {
+    gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
   }
 
   /* send callback */
@@ -882,10 +878,9 @@ void gatt_l2cif_disconnect_ind_cback(uint16_t lcid, bool /* ack_needed */) {
     return;
   }
 
-  if (gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda) == NULL) {
-    if (btm_sec_is_a_bonded_dev(p_tcb->peer_bda)) {
-      gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
-    }
+  if (gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda) == nullptr &&
+      BTM_IsBonded(p_tcb->peer_bda)) {
+    gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
   }
   /* send disconnect callback */
   gatt_cleanup_upon_disc(p_tcb->peer_bda, GATT_CONN_TERMINATE_PEER_USER, BT_TRANSPORT_BR_EDR);
@@ -903,10 +898,9 @@ static void gatt_l2cif_disconnect(uint16_t lcid) {
   }
 
   /* If the device is not in the service changed client list, add it... */
-  if (gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda) == NULL) {
-    if (btm_sec_is_a_bonded_dev(p_tcb->peer_bda)) {
-      gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
-    }
+  if (gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda) == nullptr &&
+      BTM_IsBonded(p_tcb->peer_bda)) {
+    gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
   }
 
   gatt_cleanup_upon_disc(p_tcb->peer_bda, GATT_CONN_TERMINATE_LOCAL_HOST, BT_TRANSPORT_BR_EDR);
