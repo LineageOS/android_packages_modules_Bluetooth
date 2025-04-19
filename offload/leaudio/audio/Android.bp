@@ -21,6 +21,7 @@ rust_defaults {
     crate_root: "lib.rs",
     crate_name: "bluetooth_offload_leaudio_audio",
     edition: "2021",
+    host_supported: true,
     features: [
         "lc3",
         "opus",

@@ -193,19 +193,36 @@ public:
             ToString(context_type), ToString(remote_sink_only_context_types),
             ToString(remote_source_only_context_types), ToString(bidirectional_context));
 
-    if (bidirectional_context.test(context_type)) {
+    // For Android RINGTONE is already bidirectional use case.
+    if (bidirectional_context.test(context_type) || context_type == LeAudioContextType::RINGTONE) {
       remote_directions.sink = true;
       remote_directions.source = true;
-    } else if (remote_sink_only_context_types.test(context_type)) {
-      remote_directions.sink = true;
-    } else if (remote_source_only_context_types.test(context_type)) {
-      remote_directions.source = true;
-    } else {
-      log::warn("Unsupported context {}", ToString(context_type));
+      return remote_directions;
     }
 
-    log::info("context: {}, remote sink support: {}, remote source supporte: {}",
-              ToString(context_type), remote_directions.sink, remote_directions.source);
+    bool is_gmap_and_recording = (context_type == LeAudioContextType::GAME) &&
+                                 group->IsGmapEnabled() && remote_source_only_context_types.any();
+    if (remote_sink_only_context_types.test(context_type)) {
+      remote_directions.sink = true;
+    }
+
+    if (remote_source_only_context_types.test(context_type) || is_gmap_and_recording) {
+      remote_directions.source = true;
+    }
+
+    log::info(
+            "context: {}, remote sink support: {}, remote source supporte: {}, "
+            "is_gmap_and_recording: {}",
+            ToString(context_type), remote_directions.sink, remote_directions.source,
+            is_gmap_and_recording);
+
+    if (remote_directions.sink == false && remote_directions.source == false) {
+      log::warn(
+              "Context is not supported on the remote side. Fallback to UNSPECIFIED and for this "
+              "we enable only remote sink direction as for now.");
+      remote_directions.sink = true;
+    }
+
     return remote_directions;
   }
 
@@ -240,7 +257,10 @@ public:
     auto conversational_context_if_needed = AudioContexts();
     if (IsInCall() || IsInVoip()) {
       conversational_context_if_needed.set(LeAudioContextType::CONVERSATIONAL);
-      configuration_context_type = LeAudioContextType::CONVERSATIONAL;
+      if (!(group->IsGmapEnabled() &&
+            local_encoding_contexts_types_.source.test(LeAudioContextType::GAME))) {
+        configuration_context_type = LeAudioContextType::CONVERSATIONAL;
+      }
       log::info("Adding {}, isInCall: {}, inInVoip: {}", ToString(conversational_context_if_needed),
                 IsInCall(), IsInVoip());
     }
@@ -293,7 +313,8 @@ public:
      */
     if (configuration_context_type == LeAudioContextType::UNINITIALIZED) {
       configuration_context_type = getConfigurationContextType(
-              get_bidirectional(local_encoding_contexts_types_) | adjusted_dec_context_types);
+              get_bidirectional(local_encoding_contexts_types_) | adjusted_dec_context_types,
+              group->IsGmapEnabled());
     }
     /* Let's calculate expected contex types. Note, that here Local Source becomes Remote Sink  */
     expected_remote_context_types.sink &=
@@ -346,12 +367,12 @@ public:
   }
 
 private:
-  LeAudioContextType getConfigurationContextType(AudioContexts contexts) {
+  LeAudioContextType getConfigurationContextType(AudioContexts contexts, bool gmap_available) {
     /* Mini policy - always prioritize sink+source configurations so that we are
      * sure that for a mixed content we enable all the needed directions.
      */
     if (contexts.any()) {
-      LeAudioContextType context_priority_list[] = {
+      std::list<LeAudioContextType> context_priority_list = {
               /* Highest priority first */
               LeAudioContextType::CONVERSATIONAL, LeAudioContextType::RINGTONE,
               LeAudioContextType::LIVE,           LeAudioContextType::VOICEASSISTANTS,
@@ -360,6 +381,12 @@ private:
               LeAudioContextType::INSTRUCTIONAL,  LeAudioContextType::NOTIFICATIONS,
               LeAudioContextType::SOUNDEFFECTS,
       };
+
+      // Prioritize GMAP if available
+      if (gmap_available) {
+        context_priority_list.push_front(LeAudioContextType::GAME);
+      }
+
       for (auto ct : context_priority_list) {
         if (contexts.test(ct)) {
           log::debug("Selecting configuration context type: {}", ToString(ct));

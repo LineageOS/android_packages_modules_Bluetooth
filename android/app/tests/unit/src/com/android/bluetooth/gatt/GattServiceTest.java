@@ -202,13 +202,13 @@ public class GattServiceTest {
 
     @Test
     public void emptyClearServices() {
-        mService.clearServices(mGattServerCallback, mAttributionSource);
+        mService.clearServices(mGattServerCallback);
         verify(mNativeInterface, times(0)).gattServerDeleteService(eq(SERVER_IF), anyInt());
     }
 
     @Test
     public void clientReadPhy() {
-        mService.clientReadPhy(mGattCallback, mDevice, mAttributionSource);
+        mService.clientReadPhy(mGattCallback, mDevice);
         verify(mNativeInterface).gattClientReadPhy(CLIENT_IF, mDevice);
     }
 
@@ -218,8 +218,7 @@ public class GattServiceTest {
         int rxPhy = 1;
         int phyOptions = 3;
 
-        mService.clientSetPreferredPhy(
-                mGattCallback, mDevice, txPhy, rxPhy, phyOptions, mAttributionSource);
+        mService.clientSetPreferredPhy(mGattCallback, mDevice, txPhy, rxPhy, phyOptions);
         verify(mNativeInterface)
                 .gattClientSetPreferredPhy(CLIENT_IF, mDevice, txPhy, rxPhy, phyOptions);
     }
@@ -227,16 +226,13 @@ public class GattServiceTest {
     @Test
     public void connectionParameterUpdate() {
         int connectionPriority = BluetoothGatt.CONNECTION_PRIORITY_HIGH;
-        mService.connectionParameterUpdate(
-                mGattCallback, mDevice, connectionPriority, mAttributionSource);
+        mService.connectionParameterUpdate(mGattCallback, mDevice, connectionPriority);
 
         connectionPriority = BluetoothGatt.CONNECTION_PRIORITY_LOW_POWER;
-        mService.connectionParameterUpdate(
-                mGattCallback, mDevice, connectionPriority, mAttributionSource);
+        mService.connectionParameterUpdate(mGattCallback, mDevice, connectionPriority);
 
         connectionPriority = BluetoothGatt.CONNECTION_PRIORITY_BALANCED;
-        mService.connectionParameterUpdate(
-                mGattCallback, mDevice, connectionPriority, mAttributionSource);
+        mService.connectionParameterUpdate(mGattCallback, mDevice, connectionPriority);
 
         verify(mNativeInterface, times(3))
                 .gattConnectionParameterUpdate(
@@ -435,8 +431,7 @@ public class GattServiceTest {
         connectedDevices.add(mDevice);
         doReturn(connectedDevices).when(mClientMap).getConnectedDevices();
 
-        List<BluetoothDevice> deviceList =
-                mService.getDevicesMatchingConnectionStates(states, mAttributionSource);
+        List<BluetoothDevice> deviceList = mService.getDevicesMatchingConnectionStates(states);
 
         assertThat(deviceList).containsExactly(mDevice);
     }
@@ -515,13 +510,7 @@ public class GattServiceTest {
 
         int writeCharacteristicResult =
                 mService.writeCharacteristic(
-                        mGattCallback,
-                        mDevice,
-                        handle,
-                        writeType,
-                        authReq,
-                        value,
-                        mAttributionSource);
+                        mGattCallback, mDevice, handle, writeType, authReq, value);
         assertThat(writeCharacteristicResult)
                 .isEqualTo(BluetoothStatusCodes.ERROR_DEVICE_NOT_CONNECTED);
     }
@@ -537,7 +526,7 @@ public class GattServiceTest {
 
     @Test
     public void beginReliableWrite() {
-        mService.beginReliableWrite(mDevice, mAttributionSource);
+        mService.beginReliableWrite(mDevice);
         verify(mReliableQueue).add(mDevice);
     }
 
@@ -545,7 +534,7 @@ public class GattServiceTest {
     public void endReliableWrite() {
         boolean execute = true;
 
-        mService.endReliableWrite(mGattCallback, mDevice, execute, mAttributionSource);
+        mService.endReliableWrite(mGattCallback, mDevice, execute);
         verify(mReliableQueue).remove(mDevice);
         verify(mNativeInterface).gattClientExecuteWrite(CLIENT_CONN_ID, execute);
     }
@@ -564,7 +553,7 @@ public class GattServiceTest {
 
     @Test
     public void readRemoteRssi() {
-        mService.readRemoteRssi(mGattCallback, mDevice, mAttributionSource);
+        mService.readRemoteRssi(mGattCallback, mDevice);
         verify(mNativeInterface).gattClientReadRemoteRssi(CLIENT_IF, mDevice);
     }
 
@@ -572,7 +561,7 @@ public class GattServiceTest {
     public void configureMTU() {
         int mtu = 2;
 
-        mService.configureMTU(mGattCallback, mDevice, mtu, mAttributionSource);
+        mService.configureMTU(mGattCallback, mDevice, mtu);
         verify(mNativeInterface).gattClientConfigureMTU(CLIENT_CONN_ID, mtu);
     }
 
@@ -593,8 +582,7 @@ public class GattServiceTest {
                 peripheralLatency,
                 supervisionTimeout,
                 minConnectionEventLen,
-                maxConnectionEventLen,
-                mAttributionSource);
+                maxConnectionEventLen);
 
         verify(mNativeInterface)
                 .gattConnectionParameterUpdate(
@@ -622,7 +610,7 @@ public class GattServiceTest {
 
     @Test
     public void serverDisconnect() {
-        mService.serverDisconnect(mGattServerCallback, mDevice, mAttributionSource);
+        mService.serverDisconnect(mGattServerCallback, mDevice);
         verify(mNativeInterface).gattServerDisconnect(SERVER_IF, mDevice, SERVER_CONN_ID);
     }
 
@@ -632,15 +620,14 @@ public class GattServiceTest {
         int rxPhy = 1;
         int phyOptions = 3;
 
-        mService.serverSetPreferredPhy(
-                mGattServerCallback, mDevice, txPhy, rxPhy, phyOptions, mAttributionSource);
+        mService.serverSetPreferredPhy(mGattServerCallback, mDevice, txPhy, rxPhy, phyOptions);
         verify(mNativeInterface)
                 .gattServerSetPreferredPhy(SERVER_IF, mDevice, txPhy, rxPhy, phyOptions);
     }
 
     @Test
     public void serverReadPhy() {
-        mService.serverReadPhy(mGattServerCallback, mDevice, mAttributionSource);
+        mService.serverReadPhy(mGattServerCallback, mDevice);
         verify(mNativeInterface).gattServerReadPhy(SERVER_IF, mDevice);
     }
 
@@ -650,14 +637,12 @@ public class GattServiceTest {
         boolean confirm = true;
         byte[] value = new byte[] {5, 6};
 
-        mService.sendNotification(
-                mGattServerCallback, mDevice, handle, confirm, value, mAttributionSource);
+        mService.sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
         verify(mNativeInterface).gattServerSendIndication(SERVER_IF, handle, SERVER_CONN_ID, value);
 
         confirm = false;
 
-        mService.sendNotification(
-                mGattServerCallback, mDevice, handle, confirm, value, mAttributionSource);
+        mService.sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
         verify(mNativeInterface)
                 .gattServerSendNotification(SERVER_IF, handle, SERVER_CONN_ID, value);
     }

@@ -69,7 +69,7 @@ public class GattServiceBinderTest {
         int[] states = new int[] {STATE_CONNECTED};
 
         mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
-        verify(mService).getDevicesMatchingConnectionStates(states, mAttributionSource);
+        verify(mService).getDevicesMatchingConnectionStates(states);
     }
 
     @Test
@@ -135,27 +135,25 @@ public class GattServiceBinderTest {
 
         mBinder.clientSetPreferredPhy(
                 mGattCallback, mDevice, txPhy, rxPhy, phyOptions, mAttributionSource);
-        verify(mService)
-                .clientSetPreferredPhy(
-                        mGattCallback, mDevice, txPhy, rxPhy, phyOptions, mAttributionSource);
+        verify(mService).clientSetPreferredPhy(mGattCallback, mDevice, txPhy, rxPhy, phyOptions);
     }
 
     @Test
     public void clientReadPhy() throws Exception {
         mBinder.clientReadPhy(mGattCallback, mDevice, mAttributionSource);
-        verify(mService).clientReadPhy(mGattCallback, mDevice, mAttributionSource);
+        verify(mService).clientReadPhy(mGattCallback, mDevice);
     }
 
     @Test
     public void refreshDevice() throws Exception {
         mBinder.refreshDevice(mGattCallback, mDevice, mAttributionSource);
-        verify(mService).refreshDevice(mGattCallback, mDevice, mAttributionSource);
+        verify(mService).refreshDevice(mGattCallback, mDevice);
     }
 
     @Test
     public void discoverServices() throws Exception {
         mBinder.discoverServices(mGattCallback, mDevice, mAttributionSource);
-        verify(mService).discoverServices(mGattCallback, mDevice, mAttributionSource);
+        verify(mService).discoverServices(mGattCallback, mDevice);
     }
 
     @Test
@@ -164,7 +162,7 @@ public class GattServiceBinderTest {
 
         mBinder.discoverServiceByUuid(
                 mGattCallback, mDevice, new ParcelUuid(uuid), mAttributionSource);
-        verify(mService).discoverServiceByUuid(mGattCallback, mDevice, uuid, mAttributionSource);
+        verify(mService).discoverServiceByUuid(mGattCallback, mDevice, uuid);
     }
 
     @Test
@@ -213,14 +211,7 @@ public class GattServiceBinderTest {
         mBinder.writeCharacteristic(
                 mGattCallback, mDevice, handle, writeType, authReq, value, mAttributionSource);
         verify(mService)
-                .writeCharacteristic(
-                        mGattCallback,
-                        mDevice,
-                        handle,
-                        writeType,
-                        authReq,
-                        value,
-                        mAttributionSource);
+                .writeCharacteristic(mGattCallback, mDevice, handle, writeType, authReq, value);
     }
 
     @Test
@@ -240,15 +231,13 @@ public class GattServiceBinderTest {
         byte[] value = new byte[] {4, 5};
 
         mBinder.writeDescriptor(mGattCallback, mDevice, handle, authReq, value, mAttributionSource);
-        verify(mService)
-                .writeDescriptor(
-                        mGattCallback, mDevice, handle, authReq, value, mAttributionSource);
+        verify(mService).writeDescriptor(mGattCallback, mDevice, handle, authReq, value);
     }
 
     @Test
     public void beginReliableWrite() throws Exception {
         mBinder.beginReliableWrite(mDevice, mAttributionSource);
-        verify(mService).beginReliableWrite(mDevice, mAttributionSource);
+        verify(mService).beginReliableWrite(mDevice);
     }
 
     @Test
@@ -256,7 +245,7 @@ public class GattServiceBinderTest {
         boolean execute = true;
 
         mBinder.endReliableWrite(mGattCallback, mDevice, execute, mAttributionSource);
-        verify(mService).endReliableWrite(mGattCallback, mDevice, execute, mAttributionSource);
+        verify(mService).endReliableWrite(mGattCallback, mDevice, execute);
     }
 
     @Test
@@ -273,7 +262,7 @@ public class GattServiceBinderTest {
     @Test
     public void readRemoteRssi() throws Exception {
         mBinder.readRemoteRssi(mGattCallback, mDevice, mAttributionSource);
-        verify(mService).readRemoteRssi(mGattCallback, mDevice, mAttributionSource);
+        verify(mService).readRemoteRssi(mGattCallback, mDevice);
     }
 
     @Test
@@ -281,7 +270,7 @@ public class GattServiceBinderTest {
         int mtu = 2;
 
         mBinder.configureMTU(mGattCallback, mDevice, mtu, mAttributionSource);
-        verify(mService).configureMTU(mGattCallback, mDevice, mtu, mAttributionSource);
+        verify(mService).configureMTU(mGattCallback, mDevice, mtu);
     }
 
     @Test
@@ -290,9 +279,7 @@ public class GattServiceBinderTest {
 
         mBinder.connectionParameterUpdate(
                 mGattCallback, mDevice, connectionPriority, mAttributionSource);
-        verify(mService)
-                .connectionParameterUpdate(
-                        mGattCallback, mDevice, connectionPriority, mAttributionSource);
+        verify(mService).connectionParameterUpdate(mGattCallback, mDevice, connectionPriority);
     }
 
     @Test
@@ -323,8 +310,7 @@ public class GattServiceBinderTest {
                         peripheralLatency,
                         supervisionTimeout,
                         minConnectionEventLen,
-                        maxConnectionEventLen,
-                        mAttributionSource);
+                        maxConnectionEventLen);
     }
 
     @Test
@@ -340,7 +326,7 @@ public class GattServiceBinderTest {
     @Test
     public void unregisterServer() {
         mBinder.unregisterServer(mGattServerCallback, mAttributionSource);
-        verify(mService).unregisterServer(mGattServerCallback, mAttributionSource);
+        verify(mService).unregisterServer(mGattServerCallback);
     }
 
     @Test
@@ -364,7 +350,7 @@ public class GattServiceBinderTest {
     @Test
     public void serverDisconnect() {
         mBinder.serverDisconnect(mGattServerCallback, mDevice, mAttributionSource);
-        verify(mService).serverDisconnect(mGattServerCallback, mDevice, mAttributionSource);
+        verify(mService).serverDisconnect(mGattServerCallback, mDevice);
     }
 
     @Test
@@ -376,14 +362,13 @@ public class GattServiceBinderTest {
         mBinder.serverSetPreferredPhy(
                 mGattServerCallback, mDevice, txPhy, rxPhy, phyOptions, mAttributionSource);
         verify(mService)
-                .serverSetPreferredPhy(
-                        mGattServerCallback, mDevice, txPhy, rxPhy, phyOptions, mAttributionSource);
+                .serverSetPreferredPhy(mGattServerCallback, mDevice, txPhy, rxPhy, phyOptions);
     }
 
     @Test
     public void serverReadPhy() throws Exception {
         mBinder.serverReadPhy(mGattServerCallback, mDevice, mAttributionSource);
-        verify(mService).serverReadPhy(mGattServerCallback, mDevice, mAttributionSource);
+        verify(mService).serverReadPhy(mGattServerCallback, mDevice);
     }
 
     @Test
@@ -391,7 +376,7 @@ public class GattServiceBinderTest {
         BluetoothGattService svc = mock(BluetoothGattService.class);
 
         mBinder.addService(mGattServerCallback, svc, mAttributionSource);
-        verify(mService).addService(mGattServerCallback, svc, mAttributionSource);
+        verify(mService).addService(mGattServerCallback, svc);
     }
 
     @Test
@@ -399,13 +384,13 @@ public class GattServiceBinderTest {
         int handle = 2;
 
         mBinder.removeService(mGattServerCallback, handle, mAttributionSource);
-        verify(mService).removeService(mGattServerCallback, handle, mAttributionSource);
+        verify(mService).removeService(mGattServerCallback, handle);
     }
 
     @Test
     public void clearServices() {
         mBinder.clearServices(mGattServerCallback, mAttributionSource);
-        verify(mService).clearServices(mGattServerCallback, mAttributionSource);
+        verify(mService).clearServices(mGattServerCallback);
     }
 
     @Test
@@ -418,14 +403,7 @@ public class GattServiceBinderTest {
         mBinder.sendResponse(
                 mGattServerCallback, mDevice, requestId, status, offset, value, mAttributionSource);
         verify(mService)
-                .sendResponse(
-                        mGattServerCallback,
-                        mDevice,
-                        requestId,
-                        status,
-                        offset,
-                        value,
-                        mAttributionSource);
+                .sendResponse(mGattServerCallback, mDevice, requestId, status, offset, value);
     }
 
     @Test
@@ -436,9 +414,7 @@ public class GattServiceBinderTest {
 
         mBinder.sendNotification(
                 mGattServerCallback, mDevice, handle, confirm, value, mAttributionSource);
-        verify(mService)
-                .sendNotification(
-                        mGattServerCallback, mDevice, handle, confirm, value, mAttributionSource);
+        verify(mService).sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
     }
 
     @Test
