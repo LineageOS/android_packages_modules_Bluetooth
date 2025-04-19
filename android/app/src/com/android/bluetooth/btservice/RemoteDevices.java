@@ -1102,9 +1102,9 @@ public class RemoteDevices {
         BluetoothDevice bdDevice = getDevice(address);
         DeviceProperties deviceProperties;
         if (bdDevice == null) {
-            debugLog("Added new device property, device=" + bdDevice);
             deviceProperties = addDeviceProperties(address, addressType);
             bdDevice = getDevice(address);
+            debugLog("Added new device property, device=" + bdDevice);
         } else {
             deviceProperties = getDeviceProperties(bdDevice);
             if (bdDevice.getAddressType() != addressType) {
