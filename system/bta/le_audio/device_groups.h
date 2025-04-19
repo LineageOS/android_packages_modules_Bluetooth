@@ -437,6 +437,16 @@ public:
           const CodecManager::UnicastConfigurationRequirements& requirements,
           const types::AudioSetConfigurations* confs, bool use_preferred) const;
 
+  bool IsGmapEnabled() const {
+    for (auto const& device_weak : leAudioDevices_) {
+      auto device = device_weak.lock();
+      if (device && device->IsGmapEnabled()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
 private:
   bool is_enabled_;
 

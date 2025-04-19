@@ -21,7 +21,6 @@
 #include <bluetooth/log.h>
 #include <dlfcn.h>  //  dlopen
 
-#include <iostream>
 #include <map>
 #include <memory>
 
@@ -30,7 +29,7 @@
 #include "test/headless/interface.h"
 #include "test/headless/log.h"
 #include "test/headless/messenger.h"
-#include "types/raw_address.h"
+#include "types/ble_address_with_type.h"
 
 //
 // Aggregate disparate variables from callback API into unified single structure
@@ -160,22 +159,20 @@ static void le_address_associate([[maybe_unused]] RawAddress* main_bd_addr,
 }
 
 /** Bluetooth ACL connection state changed callback */
-static void acl_state_changed(bt_status_t status, RawAddress* remote_bd_addr, bt_acl_state_t state,
-                              int transport_link_type, bt_hci_error_code_t hci_reason,
-                              bt_conn_direction_t direction, uint16_t acl_handle) {
-  log::assert_that(remote_bd_addr != nullptr, "assert failed: remote_bd_addr != nullptr");
+static void acl_state_changed(bt_status_t status, tAclLinkSpec& link_spec, bt_acl_state_t state,
+                              bt_hci_error_code_t hci_reason, bt_conn_direction_t direction,
+                              uint16_t acl_handle) {
   const size_t num_callbacks = interface_api_callback_map_.size();
   auto callback_list = interface_api_callback_map_.find(__func__);
   if (callback_list != interface_api_callback_map_.end()) {
-    RawAddress raw_address(*remote_bd_addr);
     for (auto callback : callback_list->second) {
-      acl_state_changed_params_t params(status, raw_address, state, transport_link_type, hci_reason,
-                                        direction, acl_handle);
+      acl_state_changed_params_t params(status, link_spec, state, hci_reason, direction,
+                                        acl_handle);
       (callback)(&params);
     }
   }
   log::info("num_callbacks:{} status:{} device:{} state:{}", num_callbacks, bt_status_text(status),
-            remote_bd_addr->ToString(), (state) ? "disconnected" : "connected");
+            link_spec, (state) ? "disconnected" : "connected");
 }
 
 /** Bluetooth Link Quality Report callback */

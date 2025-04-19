@@ -161,6 +161,9 @@ class HeadsetStateMachine extends StateMachine {
     static {
         VENDOR_SPECIFIC_AT_COMMAND_COMPANY_ID = new HashMap<>();
         VENDOR_SPECIFIC_AT_COMMAND_COMPANY_ID.put(
+                BluetoothHeadset.VENDOR_RESULT_CODE_COMMAND_MOTOROLA,
+                BluetoothAssignedNumbers.MOTOROLA);
+        VENDOR_SPECIFIC_AT_COMMAND_COMPANY_ID.put(
                 BluetoothHeadset.VENDOR_SPECIFIC_HEADSET_EVENT_XEVENT,
                 BluetoothAssignedNumbers.PLANTRONICS);
         VENDOR_SPECIFIC_AT_COMMAND_COMPANY_ID.put(

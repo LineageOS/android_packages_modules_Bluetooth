@@ -25,13 +25,12 @@
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_ble_int.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/btu_hcif.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
-
-extern tBTM_CB btm_cb;
 
 using namespace bluetooth;
 

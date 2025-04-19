@@ -1426,6 +1426,20 @@ protected:
   MockCodecManager* mock_codec_manager_;
 };
 
+TEST_P(LeAudioAseConfigurationTest, test_get_codec_config_call) {
+  LeAudioDevice* left = AddTestDevice({{1, codec_spec_conf::kLeAudioLocationFrontLeft}},
+                                      {{1, codec_spec_conf::kLeAudioLocationFrontLeft}});
+  LeAudioDevice* right = AddTestDevice({{1, codec_spec_conf::kLeAudioLocationFrontRight}},
+                                       {{1, codec_spec_conf::kLeAudioLocationFrontRight}});
+
+  left->SetAvailableContexts({AudioContexts(), AudioContexts()});
+  right->SetAvailableContexts({AudioContexts(), AudioContexts()});
+
+  EXPECT_CALL(*mock_codec_manager_, GetCodecConfig(_, _)).Times(0);
+  group_->GetConfiguration(LeAudioContextType::MEDIA);
+  testing::Mock::VerifyAndClearExpectations(mock_codec_manager_);
+}
+
 TEST_P(LeAudioAseConfigurationTest, test_context_update) {
   LeAudioDevice* left = AddTestDevice({{1, codec_spec_conf::kLeAudioLocationFrontLeft}},
                                       {{1, codec_spec_conf::kLeAudioLocationFrontLeft}});

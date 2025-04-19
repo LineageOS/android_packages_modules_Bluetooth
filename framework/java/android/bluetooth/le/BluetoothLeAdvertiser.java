@@ -636,7 +636,7 @@ public final class BluetoothLeAdvertiser {
                     periodicData,
                     duration,
                     maxExtendedAdvertisingEvents,
-                    gattServer == null ? 0 : gattServer.getServerIf(),
+                    gattServer == null ? null : gattServer.getCallbackId(),
                     wrapped,
                     mAttributionSource);
         } catch (RemoteException e) {
@@ -772,8 +772,8 @@ public final class BluetoothLeAdvertiser {
                         handler::post,
                         () -> {
                             if (status != AdvertisingSetCallback.ADVERTISE_SUCCESS) {
-                                callback.onAdvertisingSetStarted(null, 0, status);
                                 mCallbackWrappers.remove(callback);
+                                callback.onAdvertisingSetStarted(null, 0, status);
                                 return;
                             }
 

@@ -29,6 +29,7 @@
 #include "hci/controller_interface_mock.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/l2cap_acl_interface.h"
 #include "stack/include/l2cap_controller_interface.h"
@@ -98,7 +99,7 @@ void SnoopLogger::SetL2capChannelOpen(uint16_t, uint16_t, uint16_t, uint16_t, bo
 
 namespace connection_manager {
 bool direct_connect_add(uint8_t /* id */, const RawAddress& /* bd_addr */,
-                        tBLE_ADDR_TYPE /* addr_type */) {
+                        tBLE_ADDR_TYPE /* addr_type */, bool /* prefer_relax_mode */) {
   return true;
 }
 }  // namespace connection_manager

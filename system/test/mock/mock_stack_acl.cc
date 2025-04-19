@@ -28,7 +28,6 @@
 
 #include "hci/class_of_device.h"
 #include "stack/include/acl_api.h"
-#include "stack/include/acl_client_callbacks.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_ble_api.h"
@@ -299,10 +298,9 @@ void btm_acl_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS statu
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_acl_connected(bda, handle, status, enc_mode);
 }
-void btm_acl_created(const RawAddress& bda, uint16_t hci_handle, tHCI_ROLE link_role,
-                     tBT_TRANSPORT transport) {
+void btm_acl_created(const tAclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role) {
   inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_acl_created(bda, hci_handle, link_role, transport);
+  test::mock::stack_acl::btm_acl_created(link_spec, hci_handle, link_role);
 }
 void btm_acl_device_down(void) {
   inc_func_call_count(__func__);

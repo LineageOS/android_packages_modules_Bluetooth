@@ -247,6 +247,7 @@ public class BluetoothInCallService extends InCallService {
         }
 
         void onStateChanged(BluetoothCall call, int state) {
+            Log.i(TAG, "In onStateChanged with state " + state);
             if (mCallInfo.isNullCall(call)) {
                 return;
             }

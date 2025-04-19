@@ -41,7 +41,6 @@ cc_defaults {
         "libbinder_ndk",
         "libcrypto",
         "libfmq",
-        "libstatslog",
         "libstatssocket",
         "libz",
         "server_configurable_flags",

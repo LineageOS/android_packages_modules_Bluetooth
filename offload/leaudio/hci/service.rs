@@ -103,7 +103,7 @@ impl IHciProxy for HciProxy {
         let seqnum: u16 = seqnum.try_into().map_err(|_| ExceptionCode::ILLEGAL_ARGUMENT)?;
 
         let state = self.state.lock().unwrap();
-        if let Some(arbiter) = state.arbiter.upgrade() {
+        if let (Some(arbiter), Some(_)) = (state.arbiter.upgrade(), state.streams.get(&handle)) {
             assert!(
                 data.len() <= arbiter.max_buf_len(),
                 "SDU Fragmentation over HCI is not supported"

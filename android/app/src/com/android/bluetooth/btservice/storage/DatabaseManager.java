@@ -71,7 +71,6 @@ public class DatabaseManager {
     private static final int MSG_CLEAR_DATABASE = 100;
     private static final String LOCAL_STORAGE = "LocalStorage";
 
-    private final BluetoothAdapter mAdapter;
     private final AdapterService mAdapterService;
     private HandlerThread mHandlerThread = null;
     private Handler mHandler = null;
@@ -85,7 +84,6 @@ public class DatabaseManager {
 
     /** Constructor of the DatabaseManager */
     public DatabaseManager(AdapterService service) {
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
         mAdapterService = requireNonNull(service);
     }
 
@@ -706,7 +704,7 @@ public class DatabaseManager {
             for (Metadata metadata : sortedMetadata) {
                 try {
                     mostRecentlyConnectedDevices.add(
-                            mAdapter.getRemoteDevice(metadata.getAddress()));
+                            mAdapterService.getRemoteDevice(metadata.getAddress()));
                 } catch (IllegalArgumentException ex) {
                     Log.d(
                             TAG,
@@ -759,7 +757,7 @@ public class DatabaseManager {
                 Metadata metadata = entry.getValue();
                 if (metadata.is_active_a2dp_device) {
                     try {
-                        return mAdapter.getRemoteDevice(metadata.getAddress());
+                        return mAdapterService.getRemoteDevice(metadata.getAddress());
                     } catch (IllegalArgumentException ex) {
                         Log.d(
                                 TAG,
@@ -788,7 +786,7 @@ public class DatabaseManager {
         }
         if (entry != null) {
             try {
-                return mAdapter.getRemoteDevice(entry.getValue().getAddress());
+                return mAdapterService.getRemoteDevice(entry.getValue().getAddress());
             } catch (IllegalArgumentException ex) {
                 Log.d(
                         TAG,
@@ -807,7 +805,7 @@ public class DatabaseManager {
         synchronized (mMetadataCache) {
             return mMetadataCache.entrySet().stream()
                     .filter(x -> x.getValue().isActiveHfpDevice)
-                    .map(x -> mAdapter.getRemoteDevice(x.getValue().getAddress()))
+                    .map(x -> mAdapterService.getRemoteDevice(x.getValue().getAddress()))
                     .collect(Collectors.toList());
         }
     }
@@ -1183,7 +1181,7 @@ public class DatabaseManager {
                                 && !Arrays.asList(bondedDevices).stream()
                                         .anyMatch(device -> address.equals(device.getAddress()))) {
                             List<Integer> list = metadata.getChangedCustomizedMeta();
-                            BluetoothDevice device = mAdapter.getRemoteDevice(address);
+                            BluetoothDevice device = mAdapterService.getRemoteDevice(address);
                             for (int key : list) {
                                 mAdapterService.onMetadataChanged(device, key, null);
                             }

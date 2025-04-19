@@ -3474,6 +3474,7 @@ tL2C_CCB* l2cu_find_ccb_by_cid(tL2C_LCB* p_lcb, uint16_t local_cid) {
     local_cid -= L2CAP_BASE_APPL_CID;
 
     if (local_cid >= MAX_L2CAP_CHANNELS) {
+      log::warn("local_cid is out of range");
       return NULL;
     }
 
@@ -3481,9 +3482,12 @@ tL2C_CCB* l2cu_find_ccb_by_cid(tL2C_LCB* p_lcb, uint16_t local_cid) {
 
     /* make sure the CCB is in use */
     if (!p_ccb->in_use) {
+      log::warn("p_ccb is not in use");
       p_ccb = NULL;
     } else if (p_lcb && p_lcb != p_ccb->p_lcb) {
       /* make sure it's for the same LCB */
+      log::warn("p_ccb doesn't have matching lcb: lcb of ccb handle: {}, lcb handle: {}",
+                p_ccb->p_lcb->Handle(), p_lcb->Handle());
       p_ccb = NULL;
     }
   }

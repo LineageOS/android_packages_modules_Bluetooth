@@ -904,8 +904,8 @@ fn merge() {
     // Send 1 packet on each CIS, and acknowledge them
     // -> The CIS 0x123 is removed from "NumberOfCompletedPackets" event
 
-    m.out_iso(&IsoData::new(0x123, 0, &[]).to_bytes());
-    m.arbiter().unwrap().push_audio(&IsoData::new(0x456, 6, &[0x66, 0x77]));
+    m.arbiter().unwrap().push_audio(&IsoData::new(0x123, 0, &[]));
+    m.out_iso(&IsoData::new(0x456, 6, &[0x66, 0x77]).to_bytes());
 
     {
         let state = sink.state.lock().unwrap();

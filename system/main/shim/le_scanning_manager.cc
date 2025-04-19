@@ -38,6 +38,7 @@
 #include "main_thread.h"
 #include "stack/acl/acl.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/advertise_data_parser.h"
 #include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/bt_dev_class.h"
@@ -53,8 +54,6 @@
 #include "types/raw_address.h"
 
 using namespace bluetooth;
-
-extern tBTM_CB btm_cb;
 
 namespace {
 constexpr char kBtmLogTag[] = "SCAN";
@@ -474,7 +473,7 @@ void BleScannerInterfaceImpl::on_scan_result(uint16_t event_type, uint8_t addres
 
   // Do not update device properties of already bonded devices.
   if (!com::android::bluetooth::flags::guard_bonded_device_properties() ||
-      !btm_sec_is_a_bonded_dev(raw_address)) {
+      !BTM_IsBonded(raw_address)) {
     do_in_jni_thread(base::BindOnce(&BleScannerInterfaceImpl::handle_remote_properties,
                                     base::Unretained(this), raw_address, ble_addr_type,
                                     advertising_data));

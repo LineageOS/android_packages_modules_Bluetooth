@@ -51,6 +51,7 @@
 #include "stack/btm/btm_ble_int.h"
 #include "stack/btm/btm_eir.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/btm/neighbor_inquiry.h"
 #include "stack/btm/security_device_record.h"
 #include "stack/include/acl_api_types.h"
@@ -114,8 +115,6 @@ uint16_t num_bd_entries_; /* Number of entries in database */
 uint16_t max_bd_entries_; /* Maximum number of entries that can be stored */
 
 }  // namespace
-
-extern tBTM_CB btm_cb;
 
 using namespace bluetooth;
 using bluetooth::Uuid;

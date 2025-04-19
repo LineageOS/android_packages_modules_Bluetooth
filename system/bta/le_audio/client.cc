@@ -420,7 +420,6 @@ public:
     LeAudioGroupStateMachine::Initialize(state_machine_callbacks);
     groupStateMachine_ = LeAudioGroupStateMachine::Get();
 
-    bluetooth::le_audio::AudioContextTypeManager::Initialize();
     audioContextTypeManager_ = bluetooth::le_audio::AudioContextTypeManager::Get();
 
     log::info("Reconnection mode: TARGETED_ANNOUNCEMENTS");
@@ -444,7 +443,7 @@ public:
                     initCb),
             true);
 
-    DeviceGroups::Get()->Initialize(device_group_callbacks);
+    DeviceGroups::Initialize(device_group_callbacks);
   }
 
   /* Helper function for update source local and in_call context metadata (if in call) */
@@ -1095,44 +1094,6 @@ public:
     group_remove_node(group, address, true);
   }
 
-  AudioContexts ChooseMetadataContextType(AudioContexts metadata_context_type) {
-    /* This function takes already filtered contexts which we are plannig to use
-     * in the Enable or UpdateMetadata command.
-     * Note we are not changing stream configuration here, but just the list of
-     * the contexts in the Metadata which will be provide to remote side.
-     * Ideally, we should send all the bits we have, but not all headsets like
-     * it.
-     */
-    if (osi_property_get_bool(kAllowMultipleContextsInMetadata, true)) {
-      return metadata_context_type;
-    }
-
-    log::debug("Converting to single context type: {}", metadata_context_type.to_string());
-
-    /* Mini policy */
-    if (metadata_context_type.any()) {
-      LeAudioContextType context_priority_list[] = {
-              /* Highest priority first */
-              LeAudioContextType::CONVERSATIONAL, LeAudioContextType::RINGTONE,
-              LeAudioContextType::LIVE,           LeAudioContextType::VOICEASSISTANTS,
-              LeAudioContextType::GAME,           LeAudioContextType::MEDIA,
-              LeAudioContextType::EMERGENCYALARM, LeAudioContextType::ALERTS,
-              LeAudioContextType::INSTRUCTIONAL,  LeAudioContextType::NOTIFICATIONS,
-              LeAudioContextType::SOUNDEFFECTS,
-      };
-      for (auto ct : context_priority_list) {
-        if (metadata_context_type.test(ct)) {
-          log::debug("Converted to single context type: {}", ToString(ct));
-          return AudioContexts(ct);
-        }
-      }
-    }
-
-    /* Fallback to BAP mandated context type */
-    log::warn("Invalid/unknown context, using 'UNSPECIFIED'");
-    return AudioContexts(LeAudioContextType::UNSPECIFIED);
-  }
-
   /* Return true if stream is started */
   bool GroupStream(LeAudioDeviceGroup* group, LeAudioContextType configuration_context_type,
                    BidirectionalPair<AudioContexts> remote_contexts) {
@@ -1677,9 +1638,19 @@ public:
     ReconfigureOrUpdateRemote(group, remote_direction);
 
     if (configuration_context_type_ != LeAudioContextType::CONVERSATIONAL) {
-      log::error("Something went wrong {} != {} ", ToString(configuration_context_type_),
-                 ToString(LeAudioContextType::CONVERSATIONAL));
-      return;
+      if (!com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+        log::error("Something went wrong {} != {} ", ToString(configuration_context_type_),
+                   ToString(LeAudioContextType::CONVERSATIONAL));
+        return;
+      }
+
+      if ((configuration_context_type_ == LeAudioContextType::GAME) && group->IsGmapEnabled()) {
+        log::debug("New group is being configured for bidirectional GMAP");
+      } else {
+        log::error("Something went wrong {} != {} ", ToString(configuration_context_type_),
+                   ToString(LeAudioContextType::CONVERSATIONAL));
+        return;
+      }
     }
 
     if (!ConfigureStream(group, true)) {
@@ -1702,7 +1673,7 @@ public:
       auto group_id_to_close = active_group_id_;
       groupSetAndNotifyInactive();
       GroupStop(group_id_to_close);
-
+      audioContextTypeManager_->OverrideContextTypes({AudioContexts(), AudioContexts()});
       return;
     }
 
@@ -4542,6 +4513,23 @@ public:
     return AudioReconfigurationResult::RECONFIGURATION_NEEDED;
   }
 
+  void handleInvalidContextTypeResumeRequest(LeAudioDeviceGroup* group) {
+    log::warn("Requested context type not available on the remote side");
+
+    /* When source monitor is enabled, that means that we don't want to notify healf module about
+     * this incident. This is because LeAudioService will already handle this case.
+     */
+    if (source_monitor_mode_) {
+      notifyAudioLocalSource(UnicastMonitorModeStatus::STREAMING_REQUESTED_NO_CONTEXT_VALIDATE);
+      return;
+    }
+
+    if (leAudioHealthStatus_) {
+      leAudioHealthStatus_->AddStatisticForGroup(
+              group, LeAudioHealthGroupStatType::STREAM_CONTEXT_NOT_AVAILABLE);
+    }
+  }
+
   /* Returns true if stream is started */
   bool OnAudioResume(LeAudioDeviceGroup* group, int local_direction) {
     auto remote_direction = (local_direction == bluetooth::le_audio::types::kLeAudioDirectionSink
@@ -4553,22 +4541,15 @@ public:
     ApplyRemoteMetadataAudioContextPolicy(group, remote_contexts, remote_direction);
 
     if (!remote_contexts.sink.any() && !remote_contexts.source.any()) {
-      log::warn("Requested context type not available on the remote side");
-
-      if (source_monitor_mode_) {
-        notifyAudioLocalSource(UnicastMonitorModeStatus::STREAMING_REQUESTED_NO_CONTEXT_VALIDATE);
-
-        return false;
-      }
-
-      if (leAudioHealthStatus_) {
-        leAudioHealthStatus_->AddStatisticForGroup(
-                group, LeAudioHealthGroupStatType::STREAM_CONTEXT_NOT_AVAILABLE);
-      }
+      handleInvalidContextTypeResumeRequest(group);
       return false;
     }
 
-    return GroupStream(group, configuration_context_type_, remote_contexts);
+    auto configuration_context = configuration_context_type_;
+    if (com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+      configuration_context = config.first;
+    }
+    return GroupStream(group, configuration_context, remote_contexts);
   }
 
   void OnAudioSuspend() {
@@ -4665,6 +4646,9 @@ public:
                 configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
       log::error("invalid resume request for context type: {}",
                  ToHexString(configuration_context_type_));
+      if (com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+        handleInvalidContextTypeResumeRequest(group);
+      }
       CancelLocalAudioSourceStreamingRequest();
       return;
     }
@@ -4947,6 +4931,9 @@ public:
                 configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
       log::error("invalid resume request for context type: {}",
                  ToHexString(configuration_context_type_));
+      if (com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+        handleInvalidContextTypeResumeRequest(group);
+      }
       CancelLocalAudioSinkStreamingRequest();
       return;
     }
@@ -5293,8 +5280,7 @@ public:
       return;
     }
 
-    UpdateSourceLocalMetadataContextTypes(
-            ChooseMetadataContextType(local_metadata_context_types_.source));
+    UpdateSourceLocalMetadataContextTypes(local_metadata_context_types_.source);
 
     ReconfigureOrUpdateRemote(group, bluetooth::le_audio::types::kLeAudioDirectionSink);
   }
@@ -5414,9 +5400,6 @@ public:
       }
     }
 
-    contexts_pair.sink = ChooseMetadataContextType(contexts_pair.sink);
-    contexts_pair.source = ChooseMetadataContextType(contexts_pair.source);
-
     log::debug("Aligned remote metadata audio context: sink={}, source={}",
                ToString(contexts_pair.sink), ToString(contexts_pair.source));
   }
@@ -5475,8 +5458,7 @@ public:
       return;
     }
 
-    UpdateSinkLocalMetadataContextTypes(
-            ChooseMetadataContextType(local_metadata_context_types_.sink));
+    UpdateSinkLocalMetadataContextTypes(local_metadata_context_types_.sink);
 
     /* Reconfigure or update only if the stream is already started
      * otherwise wait for the local sink to resume.
@@ -5773,7 +5755,14 @@ public:
     LeAudioContextType new_config_context = config.first;
     BidirectionalPair<AudioContexts> remote_metadata = config.second;
     if (!remote_metadata.sink.any() && !remote_metadata.source.any()) {
-      log::warn("No valid metadata to update or reconfigure to.");
+      log::warn("No valid metadata to update or reconfigure to");
+      if (group->IsStreaming() && new_config_context > LeAudioContextType::UNSPECIFIED) {
+        log::warn(" Stop the stream to group_id: {} and reconfigure from {} ->  {}",
+                  group->group_id_, ToString(configuration_context_type_),
+                  ToString(new_config_context));
+        initReconfiguration(group, configuration_context_type_);
+        configuration_context_type_ = new_config_context;
+      }
       return false;
     }
 
@@ -6235,8 +6224,9 @@ public:
 
   void speed_start_setup(int group_id, LeAudioContextType context_type, int num_of_connected,
                          bool is_reconfig = false) {
-    log::verbose("is_started {} is_reconfig {} num_of_connected {}",
-                 speed_tracker_.IsStarted(group_id), is_reconfig, num_of_connected);
+    log::verbose("is_started {} is_reconfig {} num_of_connected {}, context: {}",
+                 speed_tracker_.IsStarted(group_id), is_reconfig, num_of_connected,
+                 ToString(context_type));
     if (!speed_tracker_.IsStarted(group_id)) {
       speed_tracker_.Init(group_id, context_type, num_of_connected);
     }
@@ -6335,6 +6325,14 @@ public:
     speed_stop_reconfig(active_group_id_);
   }
 
+  bool isConfigurationChanged(LeAudioDeviceGroup* group) {
+    auto configured_context = group->GetConfigurationContextType();
+    log::debug(" group_id: {} configured_context: {}, configuration_context_type_: {}",
+               group->group_id_, bluetooth::common::ToString(configured_context),
+               bluetooth::common::ToString(configuration_context_type_));
+    return configured_context != configuration_context_type_;
+  }
+
   void OnStateMachineStatusReportCb(int group_id, GroupStreamStatus status) {
     /* When switching stream between two group, it is important to keep track if given status is for
      * active group or not in order to proper Audio HAL notifications.
@@ -6396,7 +6394,7 @@ public:
          * the group was in the ongoing reconfiguration. We should stop the
          * stream and reconfigure once again.
          */
-        if (group->GetConfigurationContextType() != configuration_context_type_) {
+        if (isConfigurationChanged(group)) {
           log::debug(
                   "The configuration {} is no longer valid. Stopping the stream to "
                   "reconfigure to {}",
@@ -6516,6 +6514,7 @@ public:
                       ToString(pre_configuration_context_type_),
                       ToString(configuration_context_type_));
               if ((configuration_context_type_ != pre_configuration_context_type_) &&
+                  (remote_contexts.sink.any() || remote_contexts.source.any()) &&
                   GroupStream(group, configuration_context_type_, remote_contexts)) {
                 /* If configuration succeed wait for new status. */
                 return;

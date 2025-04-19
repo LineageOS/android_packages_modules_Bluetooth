@@ -463,7 +463,6 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
     }
 
     if (!cs_requester_trackers_[connection_handle].setup_complete) {
-      acl_manager_->AddDeviceToRelaxedConnectionIntervalList(cs_remote_address);
       send_le_cs_read_remote_supported_capabilities(connection_handle);
       return;
     }
@@ -1524,7 +1523,7 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
       send_on_demand_data(live_tracker->address, procedure_data,
                           get_ras_raw_payload_size(connection_handle));
       // remove procedure data sent previously
-      if (procedure_done_status == CsProcedureDoneStatus::ALL_RESULTS_COMPLETE) {
+      if (procedure_done_status != CsProcedureDoneStatus::PARTIAL_RESULTS) {
         delete_consumed_procedure_data(live_tracker, live_tracker->procedure_counter);
       }
     }
@@ -1642,6 +1641,52 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
     reset_tracker_on_stopped(tracker);
   }
 
+  bool is_valid_ras_subevent_header(RasSubeventHeader subevent_header) {
+    switch (subevent_header.ranging_done_status_) {
+      case RangingDoneStatus::ALL_RESULTS_COMPLETE:
+      case RangingDoneStatus::PARTIAL_RESULTS:
+      case RangingDoneStatus::ABORTED:
+        break;
+      default:
+        log::error("invalid ras RangingDoneStatus: {}", subevent_header.ranging_done_status_);
+        return false;
+    }
+
+    switch (subevent_header.subevent_done_status_) {
+      case SubeventDoneStatus::ALL_RESULTS_COMPLETE:
+      case SubeventDoneStatus::ABORTED:
+        break;
+      default:
+        log::error("invalid ras SubeventDoneStatus: {}", subevent_header.subevent_done_status_);
+        return false;
+    }
+
+    switch (subevent_header.ranging_abort_reason_) {
+      case RangingAbortReason::NO_ABORT:
+      case RangingAbortReason::LOCAL_HOST_OR_REMOTE:
+      case RangingAbortReason::INSUFFICIENT_FILTERED_CHANNELS:
+      case RangingAbortReason::INSTANT_HAS_PASSED:
+      case RangingAbortReason::UNSPECIFIED:
+        break;
+      default:
+        log::error("invalid ras RangingAbortReason: {}", subevent_header.ranging_abort_reason_);
+        return false;
+    }
+
+    switch (subevent_header.subevent_abort_reason_) {
+      case ras::SubeventAbortReason::NO_ABORT:
+      case ras::SubeventAbortReason::LOCAL_HOST_OR_REMOTE:
+      case ras::SubeventAbortReason::NO_CS_SYNC_RECEIVED:
+      case ras::SubeventAbortReason::SCHEDULING_CONFLICTS_OR_LIMITED_RESOURCES:
+      case ras::SubeventAbortReason::UNSPECIFIED:
+        break;
+      default:
+        log::error("invalid ras SubeventAbortReason: {}", subevent_header.subevent_abort_reason_);
+        return false;
+    }
+    return true;
+  }
+
   void parse_ras_segments(RangingHeader ranging_header, PacketViewForRecombination& segment_data,
                           uint16_t connection_handle) {
     log::debug("Data size {}, Ranging_header {}", segment_data.size(), ranging_header.ToString());
@@ -1679,7 +1724,12 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
       }
       parse_index = after;
       log::debug("subevent_header: {}", subevent_header.ToString());
-
+      if (!is_valid_ras_subevent_header(subevent_header)) {
+        log::error("fatal, invalid RAS segment data from the remote device.");
+        handle_cs_setup_failure(connection_handle,
+                                DistanceMeasurementErrorCode::REASON_INTERNAL_ERROR);
+        return;
+      }
       subevent_sequence++;
       auto remote_subevent_result = std::make_shared<hal::SubeventResult>();
       std::shared_ptr<hal::SubeventResult> local_subevent_result = nullptr;
@@ -2173,7 +2223,15 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
 
   static void delete_consumed_procedure_data(CsTracker* live_tracker, uint16_t current_counter) {
     std::vector<CsProcedureData>& data_list = live_tracker->procedure_data_list;
-    while (data_list.begin()->counter < current_counter) {
+    if (!live_tracker->local_start) {
+      // do this only for responder, as the procedure_counter for initiator could be rewind when it
+      // was waiting for the remote data; and the data should be cleared on stop.
+      while (data_list.size() > 0 && data_list.begin()->counter > current_counter) {
+        log::debug("remove the trailing procedures from the last session for safe.");
+        data_list.erase(data_list.begin());
+      }
+    }
+    while (data_list.size() > 0 && data_list.begin()->counter <= current_counter) {
       log::debug("Delete obsolete procedure data, counter:{}", data_list.begin()->counter);
       data_list.erase(data_list.begin());
     }

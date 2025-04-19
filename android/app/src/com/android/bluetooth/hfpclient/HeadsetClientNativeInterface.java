@@ -347,8 +347,6 @@ public class HeadsetClientNativeInterface {
         event.valueInt2 = peerFeat;
         event.valueInt3 = chldFeat;
         event.device = getDevice(address);
-        // BluetoothAdapter.getDefaultAdapter().getRemoteDevice(Utils.getAddressStringFromByte
-        // (address));
         Log.d(TAG, "Device addr " + event.device + " State " + state);
         HeadsetClientService service = HeadsetClientService.getHeadsetClientService();
         if (service != null) {

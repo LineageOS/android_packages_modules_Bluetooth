@@ -848,7 +848,8 @@ public class ScanController {
                     extractBytes(batchRecord, i * TRUNCATED_RESULT_SIZE, TRUNCATED_RESULT_SIZE);
             byte[] address = extractBytes(record, 0, 6);
             Utils.reverse(address);
-            BluetoothDevice device = mAdapter.getRemoteDevice(address);
+            BluetoothDevice device =
+                    mAdapterService.getRemoteDevice(Utils.getAddressStringFromByte(address));
             int rssi = record[8];
             long timestampNanos = now - parseTimestampNanos(extractBytes(record, 9, 2));
             results.add(
@@ -874,7 +875,8 @@ public class ScanController {
             byte[] address = extractBytes(batchRecord, position, 6);
             // TODO: remove temp hack.
             Utils.reverse(address);
-            BluetoothDevice device = mAdapter.getRemoteDevice(address);
+            BluetoothDevice device =
+                    mAdapterService.getRemoteDevice(Utils.getAddressStringFromByte(address));
             position += 6;
             // Skip address type.
             position++;

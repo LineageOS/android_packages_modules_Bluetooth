@@ -32,12 +32,23 @@
 namespace bluetooth::metrics {
 
 using CounterKey = android::bluetooth::CodePathCounterKeyEnum;
+using EventType = android::bluetooth::EventType;
+using State = android::bluetooth::State;
 
 /** Unknown connection handle for metrics purpose. */
 constexpr uint32_t kUnknownConnectionHandle = 0xFFFF;
 
 /** Simple counter metric. */
 void Counter(CounterKey key, int64_t count = 1);
+
+/**
+ * Logs a Bluetooth Event
+ *
+ * @param address address of associated device
+ * @param event_type type of event where this is getting logged from
+ * @param state state associated with the event
+ */
+void LogBluetoothEvent(const hci::Address& address, EventType event_type, State state);
 
 /**
  * Log link layer connection event
@@ -334,16 +345,6 @@ struct LEConnectionSessionOptions {
 
 // Upload LE Session
 void LogMetricBluetoothLEConnection(LEConnectionSessionOptions session_options);
-
-/**
- * Logs a Bluetooth Event
- *
- * @param address address of associated device
- * @param event_type type of event where this is getting logged from
- * @param state state associated with the event
- */
-void LogMetricBluetoothEvent(const hci::Address& address, android::bluetooth::EventType event_type,
-                             android::bluetooth::State state);
 
 /**
  * Logs an RFCOMM connection when an RFCOMM port closes

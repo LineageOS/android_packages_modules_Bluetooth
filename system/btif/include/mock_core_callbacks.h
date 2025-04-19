@@ -20,7 +20,7 @@
 
 #include "btif/include/core_callbacks.h"
 #include "include/hardware/bluetooth.h"
-#include "types/raw_address.h"
+#include "types/ble_address_with_type.h"
 
 namespace bluetooth {
 namespace core {
@@ -53,8 +53,8 @@ EventCallbacks mock_event_callbacks = {
                                              RawAddress /* secondary_bd_addr */,
                                              uint8_t /* identity_address_type */) {},
         .invoke_acl_state_changed_cb =
-                [](bt_status_t /* status */, RawAddress /* bd_addr */, bt_acl_state_t /* state */,
-                   int /* transport_link_type */, bt_hci_error_code_t /* hci_reason */,
+                [](bt_status_t /* status */, tAclLinkSpec& /* link_spec */,
+                   bt_acl_state_t /* state */, bt_hci_error_code_t /* hci_reason */,
                    bt_conn_direction_t /* direction */, uint16_t /* acl_handle */) {},
         .invoke_thread_evt_cb = [](bt_cb_thread_evt /* event */) {},
         .invoke_le_test_mode_cb = [](bt_status_t /* status */, uint16_t /* count */) {},

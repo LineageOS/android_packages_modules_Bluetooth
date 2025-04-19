@@ -28,6 +28,7 @@
 #include "stack/btm/btm_sco.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_cb.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/btm_client_interface.h"
@@ -37,14 +38,12 @@
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_legacy_hci_interface.h"
 #include "test/mock/mock_main_shim_entry.h"
-#include "types/raw_address.h"
+#include "types/ble_address_with_type.h"
 
 using ::testing::_;
 using ::testing::Each;
 using ::testing::Eq;
 using ::testing::Invoke;
-
-extern tBTM_CB btm_cb;
 
 tL2C_CB l2cb;
 
@@ -200,7 +199,9 @@ TEST_F(StackBtmWithQueuesTest, change_packet_type) {
 
   // Create connection
   RawAddress bda({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
-  btm_acl_created(bda, handle, HCI_ROLE_CENTRAL, BT_TRANSPORT_BR_EDR);
+  tAclLinkSpec link_spec = {.addrt = {.type = BLE_ADDR_PUBLIC, .bda = bda},
+                            .transport = BT_TRANSPORT_BR_EDR};
+  btm_acl_created(link_spec, handle, HCI_ROLE_CENTRAL);
 
   uint64_t features = 0xffffffffffffffff;
   acl_process_supported_features(0x123, features);

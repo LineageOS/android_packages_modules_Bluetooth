@@ -2122,4 +2122,68 @@ public class ScanManagerTest {
                         anyInt());
         verify(mScanNativeInterface).gattClientMsftAdvMonitorEnable(eq(true));
     }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LE_SCAN_MSFT_SUPPORT)
+    public void testPreferApcfOverMsftScan() {
+        doReturn(true).when(mScanNativeInterface).gattClientIsMsftSupported();
+        doReturn(true).when(mBluetoothAdapterProxy).isOffloadedScanFilteringSupported();
+
+        final boolean isFiltered = true;
+        final ParcelUuid serviceUuid =
+                new ParcelUuid(UUID.fromString("12345678-90AB-CDEF-1234-567890ABCDEF"));
+        final byte[] serviceData = new byte[] {0x01, 0x02, 0x03};
+
+        doReturn(true).when(mProperties).getBoolean(eq(MSFT_HCI_EXT_ENABLED), anyBoolean());
+        SystemProperties.mProperties = mProperties;
+
+        // Create new ScanManager since sysprop and MSFT support are only checked when
+        // ScanManager is created
+        mScanManager =
+                new ScanManager(
+                        mAdapterService,
+                        mScanController,
+                        mBluetoothAdapterProxy,
+                        mLooper.getLooper(),
+                        mTimeProvider);
+
+        // Turn on screen
+        sendMessageWaitForProcessed(createScreenOnOffMessage(true));
+        // Create scan client with service data
+        List<ScanFilter> scanFilterList =
+                List.of(new ScanFilter.Builder().setServiceData(serviceUuid, serviceData).build());
+        ScanClient client =
+                createScanClient(
+                        isFiltered,
+                        SCAN_MODE_LOW_POWER,
+                        false,
+                        false,
+                        Binder.getCallingUid(),
+                        mMockAppScanStats,
+                        scanFilterList);
+        // Start scan
+        sendMessageWaitForProcessed(createStartStopScanMessage(true, client));
+
+        // Verify APCF APIs are called
+        verify(mScanNativeInterface).gattClientScanFilterParamAdd(any());
+
+        // Verify MSFT APIs are never called
+        verify(mScanNativeInterface, never())
+                .gattClientMsftAdvMonitorAdd(
+                        any(MsftAdvMonitor.Monitor.class),
+                        any(MsftAdvMonitor.Pattern[].class),
+                        any(MsftAdvMonitor.Address.class),
+                        anyInt());
+        verify(mScanNativeInterface, never()).gattClientMsftAdvMonitorEnable(anyBoolean());
+
+        // Stop scan
+        sendMessageWaitForProcessed(createStartStopScanMessage(false, client));
+
+        // Verify APCF APIs are called
+        verify(mScanNativeInterface).gattClientScanFilterParamDelete(anyInt(), anyInt());
+
+        // Verify MSFT APIs are never called
+        verify(mScanNativeInterface, never()).gattClientMsftAdvMonitorRemove(anyInt());
+        verify(mScanNativeInterface, never()).gattClientMsftAdvMonitorEnable(anyBoolean());
+    }
 }

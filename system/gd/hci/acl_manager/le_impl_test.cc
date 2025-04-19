@@ -284,7 +284,7 @@ protected:
     hci::Address remote_address;
     Address::FromString(remote_address_string, remote_address);
     hci::AddressWithType address_with_type(remote_address, hci::AddressType::PUBLIC_DEVICE_ADDRESS);
-    le_impl_->create_le_connection(address_with_type, true, false);
+    le_impl_->create_le_connection(address_with_type, true, false, false);
     sync_handler();
 
     hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
@@ -328,7 +328,7 @@ protected:
     hci::AddressWithType address_with_type(remote_address, hci::AddressType::PUBLIC_DEVICE_ADDRESS);
 
     // Create connection
-    le_impl_->create_le_connection(address_with_type, true, false);
+    le_impl_->create_le_connection(address_with_type, true, false, false);
 
     hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
     hci_layer_->IncomingEvent(
@@ -531,7 +531,8 @@ TEST_F(LeImplTest, connection_complete_with_periperal_role) {
 
   // Create connection
   le_impl_->create_le_connection(
-          {{0x21, 0x22, 0x23, 0x24, 0x25, 0x26}, AddressType::PUBLIC_DEVICE_ADDRESS}, true, false);
+          {{0x21, 0x22, 0x23, 0x24, 0x25, 0x26}, AddressType::PUBLIC_DEVICE_ADDRESS}, true, false,
+          false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
   hci_layer_->IncomingEvent(
           LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
@@ -562,7 +563,8 @@ TEST_F(LeImplTest, enhanced_connection_complete_with_periperal_role) {
   controller_->AddSupported(OpCode::LE_EXTENDED_CREATE_CONNECTION);
   // Create connection
   le_impl_->create_le_connection(
-          {{0x21, 0x22, 0x23, 0x24, 0x25, 0x26}, AddressType::PUBLIC_DEVICE_ADDRESS}, true, false);
+          {{0x21, 0x22, 0x23, 0x24, 0x25, 0x26}, AddressType::PUBLIC_DEVICE_ADDRESS}, true, false,
+          false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
   hci_layer_->IncomingEvent(
           LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
@@ -596,7 +598,7 @@ TEST_F(LeImplTest, connection_complete_with_central_role) {
   Address::FromString("D0:05:04:03:02:01", remote_address);
   hci::AddressWithType address_with_type(remote_address, hci::AddressType::PUBLIC_DEVICE_ADDRESS);
   // Create connection
-  le_impl_->create_le_connection(address_with_type, true, false);
+  le_impl_->create_le_connection(address_with_type, true, false, false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
   hci_layer_->IncomingEvent(
           LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
@@ -626,7 +628,7 @@ TEST_F(LeImplTest, enhanced_connection_complete_with_central_role) {
   Address::FromString("D0:05:04:03:02:01", remote_address);
   hci::AddressWithType address_with_type(remote_address, hci::AddressType::PUBLIC_DEVICE_ADDRESS);
   // Create connection
-  le_impl_->create_le_connection(address_with_type, true, false);
+  le_impl_->create_le_connection(address_with_type, true, false, false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
   hci_layer_->IncomingEvent(
           LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
@@ -1424,7 +1426,8 @@ TEST_F(LeImplTest, direct_connection_after_background_connection) {
 
   // arrange: Create background connection. Remember that acl_manager adds device background list
   le_impl_->add_device_to_background_connection_list(address);
-  le_impl_->create_le_connection(address, true, /* is_direct */ false);
+  le_impl_->create_le_connection(address, true, /* is_direct */ false,
+                                 /* prefer_relax_mode */ false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
   hci_layer_->IncomingEvent(
           LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
@@ -1433,7 +1436,8 @@ TEST_F(LeImplTest, direct_connection_after_background_connection) {
   sync_handler();
 
   // act: Create direct connection
-  le_impl_->create_le_connection(address, true, /* is_direct */ true);
+  le_impl_->create_le_connection(address, true, /* is_direct */ true,
+                                 /* prefer_relax_mode */ false);
   auto cancel_connection = hci_layer_->GetCommand(OpCode::LE_CREATE_CONNECTION_CANCEL);
   if (cancel_connection.IsValid()) {
     hci_layer_->IncomingEvent(
@@ -1498,7 +1502,8 @@ TEST_F(LeImplTest, direct_connection_after_direct_connection) {
                                AddressType::PUBLIC_DEVICE_ADDRESS);
 
   // Create first direct connection
-  le_impl_->create_le_connection(address, true, /* is_direct */ true);
+  le_impl_->create_le_connection(address, true, /* is_direct */ true,
+                                 /* prefer_relax_mode */ false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
   hci_layer_->IncomingEvent(
           LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
@@ -1518,7 +1523,8 @@ TEST_F(LeImplTest, direct_connection_after_direct_connection) {
   log::info("Second direct connect to the same device");
 
   // Create second direct connection
-  le_impl_->create_le_connection(address, true, /* is_direct */ true);
+  le_impl_->create_le_connection(address, true, /* is_direct */ true,
+                                 /* prefer_relax_mode */ false);
   sync_handler();
 
   CommandView cancel_connection = CommandView::Create(
@@ -1561,7 +1567,8 @@ TEST_F(LeImplTest, direct_connection_cancel_but_connected) {
                                AddressType::PUBLIC_DEVICE_ADDRESS);
 
   // Create first direct connection
-  le_impl_->create_le_connection(address, true, /* is_direct */ true);
+  le_impl_->create_le_connection(address, true, /* is_direct */ true,
+                                 /* prefer_relax_mode */ false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
   hci_layer_->IncomingEvent(
           LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
@@ -1590,7 +1597,8 @@ TEST_F(LeImplTest, direct_connection_cancel_but_connected) {
   le_impl_->on_le_disconnect(kHciHandle, ErrorCode::REMOTE_USER_TERMINATED_CONNECTION);
   sync_handler();
 
-  le_impl_->create_le_connection(address, true, /* is_direct */ true);
+  le_impl_->create_le_connection(address, true, /* is_direct */ true,
+                                 /* prefer_relax_mode */ false);
   ASSERT_TRUE(le_impl_->accept_list.contains(address));
   sync_handler();
 

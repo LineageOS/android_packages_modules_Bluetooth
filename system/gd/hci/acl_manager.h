@@ -80,7 +80,8 @@ public:
   virtual void CreateConnection(Address address);
 
   // Generates OnLeConnectSuccess if connected, or OnLeConnectFail otherwise
-  virtual void CreateLeConnection(AddressWithType address_with_type, bool is_direct);
+  virtual void CreateLeConnection(AddressWithType address_with_type, bool is_direct,
+                                  bool prefer_relax_mode);
 
   virtual void SetPrivacyPolicyForInitiatorAddress(LeAddressManager::AddressPolicy address_policy,
                                                    AddressWithType fixed_address,
@@ -125,7 +126,6 @@ public:
   virtual void OnClassicSuspendInitiatedDisconnect(uint16_t handle, ErrorCode reason);
   virtual void OnLeSuspendInitiatedDisconnect(uint16_t handle, ErrorCode reason);
   virtual void SetSystemSuspendState(bool suspended);
-  virtual void AddDeviceToRelaxedConnectionIntervalList(const Address address);
 
   static const ModuleFactory Factory;
 

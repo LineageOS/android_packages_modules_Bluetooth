@@ -57,6 +57,7 @@
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
+#include "stack/acl/acl.h"
 #include "stack/connection_manager/connection_manager.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/ble_scanner.h"
@@ -69,8 +70,8 @@
 #include "stack/include/gatt_api.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/main_thread.h"
+#include "types/ble_address_with_type.h"
 #include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;
@@ -681,7 +682,10 @@ static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
   return nullptr;
 }
 
-static void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport, uint16_t acl_handle) {
+static void bta_dm_acl_up(const tAclLinkSpec& link_spec, uint16_t acl_handle) {
+  const RawAddress& bd_addr = link_spec.addrt.bda;
+  tBT_TRANSPORT transport = link_spec.transport;
+
   // Disconnect if the device is being removed
   for (auto& it : bta_dm_cb.pending_removals) {
     if (bd_addr == it.identity_addr || bd_addr == it.pseudo_addr) {
@@ -721,8 +725,7 @@ static void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport, ui
 
   if (bta_dm_acl_cb.p_acl_cback) {
     tBTA_DM_ACL conn{};
-    conn.link_up.bd_addr = bd_addr;
-    conn.link_up.transport_link_type = transport;
+    conn.link_up.link_spec = link_spec;
     conn.link_up.acl_handle = acl_handle;
 
     bta_dm_acl_cb.p_acl_cback(BTA_DM_LINK_UP_EVT, &conn);
@@ -731,27 +734,28 @@ static void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport, ui
   bta_dm_adjust_roles(true);
 }
 
-void BTA_dm_acl_up(const RawAddress bd_addr, tBT_TRANSPORT transport, uint16_t acl_handle) {
-  do_in_main_thread(base::BindOnce(bta_dm_acl_up, bd_addr, transport, acl_handle));
+void BTA_dm_acl_up(const tAclLinkSpec& link_spec, uint16_t acl_handle) {
+  do_in_main_thread(base::BindOnce(bta_dm_acl_up, link_spec, acl_handle));
 }
 
-static void bta_dm_acl_up_failed(const RawAddress bd_addr, tBT_TRANSPORT transport,
-                                 tHCI_STATUS status) {
+static void bta_dm_acl_up_failed(const tAclLinkSpec& link_spec, tHCI_STATUS status) {
   if (bta_dm_acl_cb.p_acl_cback) {
     tBTA_DM_ACL conn = {};
-    conn.link_up_failed.bd_addr = bd_addr;
-    conn.link_up_failed.transport_link_type = transport;
+    conn.link_up_failed.link_spec = link_spec;
     conn.link_up_failed.status = status;
     bta_dm_acl_cb.p_acl_cback(BTA_DM_LINK_UP_FAILED_EVT, &conn);
   }
 }
 
-void BTA_dm_acl_up_failed(const RawAddress bd_addr, tBT_TRANSPORT transport, tHCI_STATUS status) {
-  do_in_main_thread(base::BindOnce(bta_dm_acl_up_failed, bd_addr, transport, status));
+void BTA_dm_acl_up_failed(const tAclLinkSpec& link_spec, tHCI_STATUS status) {
+  do_in_main_thread(base::BindOnce(bta_dm_acl_up_failed, link_spec, status));
 }
 
 
-static void bta_dm_acl_down(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+static void bta_dm_acl_down(const tAclLinkSpec& link_spec) {
+  const RawAddress& bd_addr = link_spec.addrt.bda;
+  tBT_TRANSPORT transport = link_spec.transport;
+
   log::info("Device {} disconnected over transport {}", bd_addr, bt_transport_text(transport));
   for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
     auto device = &bta_dm_cb.device_list.peer_device[i];
@@ -783,8 +787,7 @@ static void bta_dm_acl_down(const RawAddress& bd_addr, tBT_TRANSPORT transport) 
 
   if (bta_dm_acl_cb.p_acl_cback) {
     tBTA_DM_ACL conn{};
-    conn.link_down.bd_addr = bd_addr;
-    conn.link_down.transport_link_type = transport;
+    conn.link_down.link_spec = link_spec;
 
     bta_dm_acl_cb.p_acl_cback(BTA_DM_LINK_DOWN_EVT, &conn);
   }
@@ -793,8 +796,8 @@ static void bta_dm_acl_down(const RawAddress& bd_addr, tBT_TRANSPORT transport) 
   bta_dm_remove_on_disconnect(bd_addr, transport);
 }
 
-void BTA_dm_acl_down(const RawAddress bd_addr, tBT_TRANSPORT transport) {
-  do_in_main_thread(base::BindOnce(bta_dm_acl_down, bd_addr, transport));
+void BTA_dm_acl_down(const tAclLinkSpec& link_spec) {
+  do_in_main_thread(base::BindOnce(bta_dm_acl_down, link_spec));
 }
 
 /*******************************************************************************
@@ -1825,11 +1828,11 @@ tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr, tBT_TRANSPOR
   return ::allocate_device_for(bd_addr, transport);
 }
 
-void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport, uint16_t acl_handle) {
-  ::bta_dm_acl_up(bd_addr, transport, acl_handle);
+void bta_dm_acl_up(const tAclLinkSpec& link_spec, uint16_t acl_handle) {
+  ::bta_dm_acl_up(link_spec, acl_handle);
 }
-void bta_dm_acl_down(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
-  ::bta_dm_acl_down(bd_addr, transport);
+void bta_dm_acl_down(const tAclLinkSpec& link_spec) {
+  ::bta_dm_acl_down(link_spec);
 }
 void bta_dm_init_cb() { ::bta_dm_init_cb(); }
 void bta_dm_deinit_cb() { ::bta_dm_deinit_cb(); }

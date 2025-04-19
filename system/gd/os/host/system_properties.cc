@@ -49,9 +49,5 @@ bool ClearSystemPropertiesForHost() {
   return true;
 }
 
-bool IsRootCanalEnabled() { return false; }
-
-int GetAndroidVendorReleaseVersion() { return 0; }
-
 }  // namespace os
 }  // namespace bluetooth

@@ -18,6 +18,7 @@
 #pragma once
 
 #include <cstdint>
+#include <list>
 
 #include "internal_include/bt_target.h"
 #include "osi/include/alarm.h"
@@ -57,7 +58,7 @@ public:
   bool pairing_disabled{false};
   bool security_mode_changed{false}; /* mode changed during bonding */
   bool pin_type_changed{false};      /* pin type changed during bonding */
-  bool sec_req_pending{false};       /*   true if a request is pending */
+  bool l2c_service_access_pending{false}; /* If an L2CAP service access request is pending */
 
   uint8_t pin_code_len{0};                               /* for legacy devices */
   PIN_CODE pin_code;                                     /* for legacy devices */
@@ -72,8 +73,15 @@ public:
 
   RawAddress connecting_bda;
 
-  fixed_queue_t* sec_pending_q{nullptr}; /* pending sequrity requests in
-                                            tBTM_SEC_QUEUE_ENTRY format */
+  // Todo(b/405594028): Remove when separate_encryption_queue is released
+  fixed_queue_t* sec_pending_q{
+          nullptr}; /* pending sequrity requests in tBTM_SEC_QUEUE_ENTRY format */
+
+  // Pending service access requests in tBTM_SERVICE_ACCESS_REQ format
+  std::list<tBTM_SERVICE_ACCESS_REQ> service_access_q = {};
+
+  // Pending encryption requests
+  std::list<tBTM_SEC_REQ> enc_request_q = {};
 
   tBTM_SEC_SERV_REC sec_serv_rec[BTM_SEC_MAX_SERVICE_RECORDS];
 

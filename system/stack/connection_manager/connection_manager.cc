@@ -74,11 +74,12 @@ static void alarm_set_closure(alarm_t* alarm, uint64_t interval_ms, base::OnceCl
 using unique_alarm_ptr = std::unique_ptr<alarm_t, decltype(&alarm_free)>;
 
 namespace {
-static void ACL_AcceptLeConnectionFrom(const tBLE_BD_ADDR& legacy_address_with_type,
-                                       bool is_direct) {
+static void ACL_AcceptLeConnectionFrom(const tBLE_BD_ADDR& legacy_address_with_type, bool is_direct,
+                                       bool prefer_relax_mode) {
   BTM_LogHistory(kBtmLogTagACL, legacy_address_with_type, "Allow connection from", "Le");
   bluetooth::shim::GetAclManager()->CreateLeConnection(
-          bluetooth::ToAddressWithTypeFromLegacy(legacy_address_with_type), is_direct);
+          bluetooth::ToAddressWithTypeFromLegacy(legacy_address_with_type), is_direct,
+          prefer_relax_mode);
 }
 
 static void ACL_IgnoreLeConnectionFrom(const tBLE_BD_ADDR& legacy_address_with_type) {
@@ -325,7 +326,7 @@ bool background_connect_add(uint8_t app_id, const RawAddress& address) {
         return false;
       }
 
-      ACL_AcceptLeConnectionFrom(BTM_Sec_GetAddressWithType(address), false);
+      ACL_AcceptLeConnectionFrom(BTM_Sec_GetAddressWithType(address), false, false);
 
       bgconn_dev[address].is_in_accept_list = true;
     }
@@ -387,7 +388,7 @@ bool background_connect_remove(uint8_t app_id, const RawAddress& address) {
         /* Keep using filtering */
         log::debug("Keep using target announcement filtering");
       } else if (!it->second.doing_bg_conn.empty()) {
-        ACL_AcceptLeConnectionFrom(BTM_Sec_GetAddressWithType(address), false);
+        ACL_AcceptLeConnectionFrom(BTM_Sec_GetAddressWithType(address), false, false);
         bgconn_dev[address].is_in_accept_list = true;
       }
     }
@@ -498,7 +499,8 @@ static void find_in_device_record(const RawAddress& bd_addr, tBLE_BD_ADDR* addre
   return;
 }
 
-bool direct_connect_add(uint8_t app_id, const RawAddress& address, tBLE_ADDR_TYPE addr_type) {
+bool direct_connect_add(uint8_t app_id, const RawAddress& address, tBLE_ADDR_TYPE addr_type,
+                        bool prefer_relax_mode) {
   tBLE_BD_ADDR address_with_type{
           .type = addr_type,
           .bda = address,
@@ -548,12 +550,12 @@ bool direct_connect_add(uint8_t app_id, const RawAddress& address, tBLE_ADDR_TYP
       return false;
     }
 
-    ACL_AcceptLeConnectionFrom(address_with_type, true /* is_direct */);
+    ACL_AcceptLeConnectionFrom(address_with_type, true /* is_direct */, prefer_relax_mode);
     bgconn_dev[address].is_in_accept_list = true;
   } else {
     // if already in accept list, we should just bump parameters up for direct
     // connection. There is no API for that yet, so use API that's adding to accept list.
-    ACL_AcceptLeConnectionFrom(address_with_type, true /* is_direct */);
+    ACL_AcceptLeConnectionFrom(address_with_type, true /* is_direct */, prefer_relax_mode);
   }
 
   // Setup a timer
@@ -566,7 +568,7 @@ bool direct_connect_add(uint8_t app_id, const RawAddress& address, tBLE_ADDR_TYP
 }
 
 static void schedule_direct_connect_add(uint8_t app_id, const RawAddress& address) {
-  direct_connect_add(app_id, address);
+  direct_connect_add(app_id, address, false);
 }
 
 bool direct_connect_remove(uint8_t app_id, const RawAddress& address, bool connection_timeout) {
@@ -596,7 +598,7 @@ bool direct_connect_remove(uint8_t app_id, const RawAddress& address, bool conne
       /* In such case we need to add device back to allow list because, when connection timeout
        * out, the lower layer removes device from the allow list.
        */
-      ACL_AcceptLeConnectionFrom(BTM_Sec_GetAddressWithType(address), false /* is_direct */);
+      ACL_AcceptLeConnectionFrom(BTM_Sec_GetAddressWithType(address), false /* is_direct */, false);
     }
     return true;
   }

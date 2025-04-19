@@ -49,9 +49,9 @@ import java.util.function.Predicate;
  * Helper class that keeps track of registered GATT applications. This class manages application
  * callbacks and keeps track of GATT connections.
  *
- * @param <C> the callback type for this map
+ * @param <C> the callback type (must implement {@link IInterface}) for this map
  */
-public class ContextMap<C> {
+public class ContextMap<C extends IInterface> {
     private static final String TAG =
             GattServiceConfig.TAG_PREFIX + ContextMap.class.getSimpleName();
 
@@ -119,8 +119,7 @@ public class ContextMap<C> {
                 return;
             }
             try {
-                IBinder binder = ((IInterface) callback).asBinder();
-                binder.linkToDeath(deathRecipient, 0);
+                callback.asBinder().linkToDeath(deathRecipient, 0);
                 mDeathRecipient = deathRecipient;
             } catch (RemoteException e) {
                 Log.e(TAG, "Unable to link deathRecipient for app id " + id);
@@ -131,8 +130,7 @@ public class ContextMap<C> {
         public void unlinkToDeath() {
             if (mDeathRecipient != null) {
                 try {
-                    IBinder binder = ((IInterface) callback).asBinder();
-                    binder.unlinkToDeath(mDeathRecipient, 0);
+                    callback.asBinder().unlinkToDeath(mDeathRecipient, 0);
                 } catch (NoSuchElementException e) {
                     Log.e(TAG, "Unable to unlink deathRecipient for app id " + id);
                 }
@@ -261,6 +259,17 @@ public class ContextMap<C> {
         return appIds;
     }
 
+    /** Get all registered application callbacks. */
+    public List<C> getAllAppsCallbackId() {
+        List<C> appIds = new ArrayList();
+        synchronized (mAppsLock) {
+            for (App entry : mApps) {
+                appIds.add(entry.callback);
+            }
+        }
+        return appIds;
+    }
+
     /** Add a new connection for a given application ID. */
     void addConnection(int id, int connId, BluetoothDevice device) {
         synchronized (mConnectionsLock) {
@@ -302,6 +311,15 @@ public class ContextMap<C> {
         App app = getAppByPredicate(entry -> entry.id == id);
         if (app == null) {
             Log.e(TAG, "Context not found for ID " + id);
+        }
+        return app;
+    }
+
+    /** Get an application context by its callback object. */
+    public App getByCallbackId(C callbackId) {
+        App app = getAppByPredicate(entry -> entry.callback.asBinder() == callbackId.asBinder());
+        if (app == null) {
+            Log.e(TAG, "Context not found for callbackID " + callbackId);
         }
         return app;
     }

@@ -1047,6 +1047,71 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         await asyncio.gather(self.dut.a2dp.Suspend(source=dut_ref1_source),
                              channel.accept_suspend(timeout=8.0))
 
+    @avatar.asynchronous
+    async def test_dut_disconnects_after_no_avdt_start_response(self) -> None:
+        """Test that DUT disconnects L2CAP Channel after no response for AVDT Start for 15 seconds.
+
+        1. Pair and Connect RD1
+        2. Setup the acceptor expectations on signalling channel
+        2. Start streaming
+        4. Simulate no response for 15 seconds and expect AVDT Signalling L2CAP Channel disconnection
+        """
+
+        # Connect and pair RD1.
+        dut_ref1, ref1_dut = await asyncio.gather(
+            initiate_pairing(self.dut, self.ref1.address),
+            accept_pairing(self.ref1, self.dut.address),
+        )
+
+        # Create a listener to wait for AVDT L2CAP channel disconnection
+        avdtp_future = asyncio.get_running_loop().create_future()
+
+        # Create a wrapper to catch the L2CAP Channel disconnection
+        def catch_on_disconnection_request(original_request):
+
+            def wrapper(self, *args, **kwargs):
+                logger.info("<< Received AVDT Signalling L2CAP Channel Disconnection  >>")
+                nonlocal avdtp_future
+                avdtp_future.set_result(None)
+
+                result = original_request(self, *args, **kwargs)
+
+                return result
+
+            return wrapper
+
+        connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+        channel = SignalingChannel.accept(connection)
+
+        seid_information = [
+            SeidInformation(acp_seid=0x01, tsep=Tsep.SINK, media_type=AVDTP_AUDIO_MEDIA_TYPE)
+        ]
+        acceptor_service_capabilities = [
+            MediaTransportCapability(),
+            MediaCodecCapability(service_category=ServiceCategory.MEDIA_CODEC,
+                                 media_codec_specific_information_elements=[255, 255, 2, 53])
+        ]
+
+        # Connect AVDTP to RD1.
+        _, dut_ref1_source = await asyncio.gather(
+            channel.accept_open_stream(seid_information=seid_information,
+                                       service_capabilities=acceptor_service_capabilities),
+            open_source(self.dut, dut_ref1))
+
+        channel.signaling_channel.on_disconnection_request = catch_on_disconnection_request(
+            channel.signaling_channel.on_disconnection_request.__get__(
+                channel.signaling_channel, ClassicChannel))
+
+        # Start streaming to RD1.
+        self.dut.a2dp.Start(source=dut_ref1_source)
+
+        # Expect AVDT Start on RD1.
+        await channel.expect_signal(
+            StartCommand(transaction_label=channel.any, acp_seid=channel.any))
+
+        # Simulate no response for 15 seconds and wait for AVDT Singalling L2CAP Channel disconnect
+        await asyncio.gather(asyncio.sleep(15), asyncio.wait_for(avdtp_future, timeout=20.0))
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)

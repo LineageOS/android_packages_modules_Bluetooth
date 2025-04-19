@@ -2307,6 +2307,7 @@ impl IBluetoothGatt for BluetoothGatt {
             opportunistic,
             phy.into(),
             0,
+            false,
         );
     }
 

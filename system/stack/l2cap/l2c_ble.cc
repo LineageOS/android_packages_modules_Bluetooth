@@ -44,6 +44,7 @@
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_int_types.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/connection_manager/connection_manager.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_psm_types.h"
@@ -66,8 +67,6 @@ using namespace bluetooth;
 namespace {
 constexpr char kBtmLogTag[] = "L2CAP";
 }
-
-extern tBTM_CB btm_cb;
 
 void l2cble_start_conn_update(tL2C_LCB* p_lcb);
 
@@ -964,7 +963,8 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
 /** This function is to initiate a direct connection. Returns true if connection
  * initiated, false otherwise. */
 bool l2cble_create_conn(tL2C_LCB* p_lcb) {
-  if (!connection_manager::direct_connect_add(CONN_MGR_ID_L2CAP, p_lcb->remote_bd_addr)) {
+  if (!connection_manager::direct_connect_add(CONN_MGR_ID_L2CAP, p_lcb->remote_bd_addr,
+                                              BLE_ADDR_PUBLIC, false)) {
     return false;
   }
 

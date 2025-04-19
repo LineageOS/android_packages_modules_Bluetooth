@@ -833,6 +833,15 @@ static void btif_dm_cb_create_bond_le(const RawAddress bd_addr, tBLE_ADDR_TYPE a
   BTA_DmBond(bd_addr, addr_type, BT_TRANSPORT_LE, BT_DEVICE_TYPE_BLE);
   /*  Track  originator of bond creation  */
   pairing_cb.is_local_initiated = true;
+
+  // Store address type if not already stored
+  tBLE_ADDR_TYPE stored_addr_type;
+  if (btif_storage_get_remote_addr_type(&bd_addr, &stored_addr_type) != BT_STATUS_SUCCESS) {
+    btif_storage_set_remote_addr_type(&bd_addr, addr_type);
+  } else if (stored_addr_type != addr_type) {
+    log::warn("Address type does not match for {}, stored: {}, requested:{}", bd_addr,
+              AddressTypeText(stored_addr_type), AddressTypeText(addr_type));
+  }
 }
 
 /*******************************************************************************
@@ -1341,7 +1350,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
 
       // Do not update device properties of already bonded devices.
       if (com::android::bluetooth::flags::guard_bonded_device_properties() &&
-          btm_sec_is_a_bonded_dev(bdaddr)) {
+          BTM_IsBonded(bdaddr)) {
         log::debug("Ignore device properties from discovery results for the bonded device: {}[{}]",
                    bdaddr, AddressTypeText(addr_type));
 
@@ -2010,15 +2019,14 @@ static void btif_add_local_irk_to_resolving_list() {
    * Set all-zero set to resolving list to make controller generate RPA for
    * un-direct (broadcast) advertising RPA */
   if (bluetooth::shim::GetController()->IsRpaGenerationSupported()) {
-    log::info("Support RPA offload, set all-zero set in resolving list");
     const Octet16 all_zero_peer_irk = {0};
 
     if (com::android::bluetooth::flags::non_zero_local_irk() &&
         ble_local_key_cb.id_keys.irk == all_zero_peer_irk) {
-      log::warn("Local IRK is all-zero");
+      log::debug("Local IRK is all-zero, wait for it be generated");
       return;
     }
-    log::info("");
+    log::info("RPA offload is supported, add local IRK to resolving list");
     bluetooth::shim::GetAclManager()->AddDeviceToResolvingList(
             {bluetooth::hci::Address::kEmpty, bluetooth::hci::AddressType::PUBLIC_DEVICE_ADDRESS},
             all_zero_peer_irk, ble_local_key_cb.id_keys.irk);
@@ -2067,9 +2075,7 @@ void BTIF_dm_enable() {
   pairing_cb = {};
   pairing_cb.bond_type = BOND_TYPE_PERSISTENT;
 
-  if (!com::android::bluetooth::flags::non_zero_local_irk()) {
-    btif_add_local_irk_to_resolving_list();
-  }
+  btif_add_local_irk_to_resolving_list();
 
   // Enable address consolidation.
   btif_storage_load_le_devices();
@@ -2299,32 +2305,30 @@ void btif_dm_sec_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
  *
  ******************************************************************************/
 void btif_dm_acl_evt(tBTA_DM_ACL_EVT event, tBTA_DM_ACL* p_data) {
-  RawAddress bd_addr;
-
   switch (event) {
-    case BTA_DM_LINK_UP_EVT:
-      bd_addr = p_data->link_up.bd_addr;
-      log::verbose("BTA_DM_LINK_UP_EVT. Sending BT_ACL_STATE_CONNECTED");
+    case BTA_DM_LINK_UP_EVT: {
+      tAclLinkSpec& link_spec = p_data->link_up.link_spec;
+      log::verbose("BTA_DM_LINK_UP_EVT: Sending BT_ACL_STATE_CONNECTED {}", link_spec);
 
-      btif_update_remote_version_property(&bd_addr);
+      btif_update_remote_version_property(&link_spec.addrt.bda);
 
       GetInterfaceToProfiles()->events->invoke_acl_state_changed_cb(
-              BT_STATUS_SUCCESS, bd_addr, BT_ACL_STATE_CONNECTED,
-              (int)p_data->link_up.transport_link_type, HCI_SUCCESS,
+              BT_STATUS_SUCCESS, link_spec, BT_ACL_STATE_CONNECTED, HCI_SUCCESS,
               btm_is_acl_locally_initiated() ? bt_conn_direction_t::BT_CONN_DIRECTION_OUTGOING
                                              : bt_conn_direction_t::BT_CONN_DIRECTION_INCOMING,
               p_data->link_up.acl_handle);
 
-      if (p_data->link_up.transport_link_type == BT_TRANSPORT_LE && pairing_cb.bd_addr == bd_addr &&
-          is_device_le_audio_capable(bd_addr)) {
-        stack::l2cap::get_interface().L2CA_LockBleConnParamsForProfileConnection(bd_addr, true);
+      if (link_spec.transport == BT_TRANSPORT_LE && pairing_cb.bd_addr == link_spec.addrt.bda &&
+          is_device_le_audio_capable(link_spec.addrt.bda)) {
+        stack::l2cap::get_interface().L2CA_LockBleConnParamsForProfileConnection(
+                link_spec.addrt.bda, true);
       }
-      break;
+    } break;
 
     case BTA_DM_LINK_UP_FAILED_EVT:
       GetInterfaceToProfiles()->events->invoke_acl_state_changed_cb(
-              hci_error_to_bt_status(p_data->link_up_failed.status), p_data->link_up_failed.bd_addr,
-              BT_ACL_STATE_DISCONNECTED, p_data->link_up_failed.transport_link_type,
+              hci_error_to_bt_status(p_data->link_up_failed.status),
+              p_data->link_up_failed.link_spec, BT_ACL_STATE_DISCONNECTED,
               p_data->link_up_failed.status,
               btm_is_acl_locally_initiated() ? bt_conn_direction_t::BT_CONN_DIRECTION_OUTGOING
                                              : bt_conn_direction_t::BT_CONN_DIRECTION_INCOMING,
@@ -2332,11 +2336,11 @@ void btif_dm_acl_evt(tBTA_DM_ACL_EVT event, tBTA_DM_ACL* p_data) {
       break;
 
     case BTA_DM_LINK_DOWN_EVT: {
-      bd_addr = p_data->link_down.bd_addr;
+      tAclLinkSpec& link_spec = p_data->link_down.link_spec;
       if (!com::android::bluetooth::flags::temporary_pairing_tracking()) {
-        btm_set_bond_type_dev(p_data->link_down.bd_addr, BOND_TYPE_UNKNOWN);
+        btm_set_bond_type_dev(link_spec.addrt.bda, BOND_TYPE_UNKNOWN);
       }
-      GetInterfaceToProfiles()->onLinkDown(bd_addr, p_data->link_down.transport_link_type);
+      GetInterfaceToProfiles()->onLinkDown(link_spec.addrt.bda, link_spec.transport);
 
       bt_conn_direction_t direction;
       switch (btm_get_acl_disc_reason_code()) {
@@ -2353,14 +2357,13 @@ void btif_dm_acl_evt(tBTA_DM_ACL_EVT event, tBTA_DM_ACL* p_data) {
           direction = bt_conn_direction_t::BT_CONN_DIRECTION_UNKNOWN;
       }
       GetInterfaceToProfiles()->events->invoke_acl_state_changed_cb(
-              BT_STATUS_SUCCESS, bd_addr, BT_ACL_STATE_DISCONNECTED,
-              (int)p_data->link_down.transport_link_type,
+              BT_STATUS_SUCCESS, link_spec, BT_ACL_STATE_DISCONNECTED,
               static_cast<bt_hci_error_code_t>(btm_get_acl_disc_reason_code()), direction,
               INVALID_ACL_HANDLE);
       log::debug(
               "Sent BT_ACL_STATE_DISCONNECTED upward as ACL link down event "
               "device:{} reason:{}",
-              bd_addr,
+              link_spec,
               hci_reason_code_text(static_cast<tHCI_REASON>(btm_get_acl_disc_reason_code())));
     } break;
     case BTA_DM_LE_FEATURES_READ:
@@ -3494,7 +3497,7 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
         bool during_bonding =
                 (bd_addr == pairing_cb.bd_addr || bd_addr == pairing_cb.static_bdaddr);
 
-        if (during_bonding || p_auth_cmpl->is_ctkd || !btm_sec_is_a_bonded_dev(bd_addr)) {
+        if (during_bonding || p_auth_cmpl->is_ctkd || !BTM_IsBonded(bd_addr)) {
           log::info("Removing ble bonding keys on SMP_CONN_TOUT during_bonding: {}, is_ctkd: {}",
                     during_bonding, p_auth_cmpl->is_ctkd);
           btif_dm_remove_ble_bonding_keys();
@@ -3549,10 +3552,6 @@ void btif_dm_load_ble_local_keys(void) {
        BT_STATUS_SUCCESS)) {
     ble_local_key_cb.is_id_keys_rcvd = true;
     log::verbose("BLE ID keys loaded");
-  }
-
-  if (com::android::bluetooth::flags::non_zero_local_irk()) {
-    btif_add_local_irk_to_resolving_list();
   }
 }
 void btif_dm_get_ble_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK* p_key_mask, Octet16* p_er,

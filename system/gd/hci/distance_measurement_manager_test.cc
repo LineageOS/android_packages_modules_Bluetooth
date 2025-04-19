@@ -65,7 +65,6 @@ protected:
 
 class TestAclManager : public testing::MockAclManager {
 public:
-  void AddDeviceToRelaxedConnectionIntervalList(const Address /*address*/) override {}
   Address HACK_GetLeAddress(uint16_t /*connection_handle*/) override { return target_address_; }
 
 protected:
@@ -923,6 +922,81 @@ TEST_F(DistanceMeasurementManagerTest, schedule_next_cs_procedures) {
   cs_requester_.sync_client_handler();
 }
 
+TEST_F(DistanceMeasurementManagerTest, no_trailing_procedure_data) {
+  auto req_session_future = cs_requester_.GetDmSessionFuture();
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+  uint16_t procedure_counter = 10;
+
+  CsSubeventResultEvent req_subevent_result_1;
+  req_subevent_result_1.procedure_done_status = CsProcedureDoneStatus::ABORTED;
+  req_subevent_result_1.subevent_done_status = CsSubeventDoneStatus::ABORTED;
+  req_subevent_result_1.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::INITIATOR);
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, req_subevent_result_1));
+  CsSubeventResultEvent req_subevent_result_2;
+  req_subevent_result_2.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::INITIATOR);
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, req_subevent_result_2));
+  cs_requester_.sync_client_handler();
+  // construct responder data
+  CsModule cs_responder;
+  cs_responder.Start();
+  cs_responder.RespondTillProcedureEnableComplete(params);
+  cs_responder.dm_manager_->HandleMtuChanged(params.connection_handle, 517);
+
+  // use partial result to simulate a trailing counter
+  CsSubeventResultEvent resp_subevent_result_0;
+  resp_subevent_result_0.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  resp_subevent_result_0.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::REFLECTOR);
+  cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter + 1, resp_subevent_result_0));
+
+  CsSubeventResultEvent resp_subevent_result_1;
+  resp_subevent_result_1.procedure_done_status = CsProcedureDoneStatus::ABORTED;
+  resp_subevent_result_1.subevent_done_status = CsSubeventDoneStatus::ABORTED;
+  resp_subevent_result_1.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::REFLECTOR);
+
+  std::vector<uint8_t> segment_data_1;
+  EXPECT_CALL(cs_responder.mock_dm_callbacks_,
+              OnRasFragmentReady(params.requester_addr, procedure_counter, /*is_last=*/true, _))
+          .WillOnce([&segment_data_1](Address /*address*/, uint16_t /*procedure_counter*/,
+                                      bool /*is_last*/, std::vector<uint8_t> raw_data) {
+            segment_data_1 = std::move(raw_data);
+          });
+  cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, resp_subevent_result_1));
+  cs_responder.sync_client_handler();
+  cs_requester_.sync_client_handler();
+  // make sure the segment_header is correct
+  ras::SegmentationHeader segmentation_header;
+  PacketView<kLittleEndian> packet_bytes_view_1(
+          std::make_shared<std::vector<uint8_t>>(segment_data_1));
+  ras::SegmentationHeader::Parse(&segmentation_header, packet_bytes_view_1.begin());
+  ASSERT_EQ(segmentation_header.rolling_segment_counter_, 0);
+
+  std::vector<uint8_t> segment_data_2;
+  EXPECT_CALL(cs_responder.mock_dm_callbacks_,
+              OnRasFragmentReady(params.requester_addr, procedure_counter, /*is_last=*/true, _))
+          .WillOnce([&segment_data_2](Address /*address*/, uint16_t /*procedure_counter*/,
+                                      bool /*is_last*/, std::vector<uint8_t> raw_data) {
+            segment_data_2 = std::move(raw_data);
+          });
+  CsSubeventResultEvent resp_subevent_result_2;
+  resp_subevent_result_2.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::REFLECTOR);
+  cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, resp_subevent_result_2));
+  cs_responder.sync_client_handler();
+  // make sure the segment_header is correct
+  PacketView<kLittleEndian> packet_bytes_view_2(
+          std::make_shared<std::vector<uint8_t>>(segment_data_2));
+  ras::SegmentationHeader::Parse(&segmentation_header, packet_bytes_view_2.begin());
+  ASSERT_EQ(segmentation_header.rolling_segment_counter_, 0);
+
+  cs_requester_.sync_client_handler();
+  cs_responder.Stop();
+}
+
 TEST_F(DistanceMeasurementManagerTest, complete_mode2_procedure) {
   auto req_session_future = cs_requester_.GetDmSessionFuture();
   StartMeasurementParameters params;
@@ -980,6 +1054,90 @@ TEST_F(DistanceMeasurementManagerTest, complete_mode2_procedure) {
   cs_requester_.sync_client_handler();
   cs_responder.Stop();
 }
+
+enum InvalidRasTestingItem {
+  RANGING_DONE_STATUS,
+  SUBEVENT_DONE_STATUS,
+  RANGING_ABORT_REASON,
+  SUBEVENT_ABORT_REASON,
+};
+
+struct InvalidRasSegmentParams {
+  InvalidRasTestingItem testing_item_;
+};
+
+class DistanceMeasurementManagerInvalidRasTest
+    : public DistanceMeasurementManagerTest,
+      public WithParamInterface<InvalidRasSegmentParams> {
+public:
+  static void make_invalid_testing_segment(std::vector<uint8_t>& segment_data,
+                                           InvalidRasTestingItem testing_item) {
+    uint8_t origin_value = 0;
+    switch (testing_item) {
+      case RANGING_DONE_STATUS:
+        segment_data.at(9) = (segment_data.at(9) & 0xF0) | 0x02;
+        break;
+      case SUBEVENT_DONE_STATUS:
+        segment_data.at(9) = (segment_data.at(9) & 0x0F) | 0x10;
+        break;
+      case RANGING_ABORT_REASON:
+        segment_data.at(10) = (segment_data.at(10) & 0xF0) | 0x04;
+        break;
+      case SUBEVENT_ABORT_REASON:
+        segment_data.at(10) = (segment_data.at(10) & 0x0F) | 0x40;
+        break;
+    }
+  }
+};
+
+TEST_P(DistanceMeasurementManagerInvalidRasTest, invalid_ras_segment_data) {
+  auto req_session_future = cs_requester_.GetDmSessionFuture();
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+  uint16_t procedure_counter = 0;
+
+  CsSubeventResultEvent req_subevent_result;
+  req_subevent_result.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::INITIATOR);
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, req_subevent_result));
+  cs_requester_.sync_client_handler();
+  // construct responder data
+  log::info("start responder");
+  CsModule cs_responder;
+  cs_responder.Start();
+  cs_responder.RespondTillProcedureEnableComplete(params);
+  cs_responder.dm_manager_->HandleMtuChanged(params.connection_handle, 517);
+  std::vector<uint8_t> segment_data;
+  EXPECT_CALL(cs_responder.mock_dm_callbacks_,
+              OnRasFragmentReady(params.requester_addr, procedure_counter, /*is_last=*/true, _))
+          .WillOnce([&segment_data](Address /*address*/, uint16_t /*procedure_counter*/,
+                                    bool /*is_last*/, std::vector<uint8_t> raw_data) {
+            segment_data = std::move(raw_data);
+          });
+  CsSubeventResultEvent resp_subevent_result;
+  resp_subevent_result.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::REFLECTOR);
+  cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, resp_subevent_result));
+  cs_responder.sync_client_handler();
+
+  // send responder data
+  make_invalid_testing_segment(segment_data, GetParam().testing_item_);
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+              OnDistanceMeasurementStopped(params.responder_addr,
+                                           DistanceMeasurementErrorCode::REASON_INTERNAL_ERROR,
+                                           DistanceMeasurementMethod::METHOD_CS));
+  cs_requester_.dm_manager_->HandleRemoteData(params.responder_addr, params.connection_handle,
+                                              segment_data);
+
+  cs_requester_.sync_client_handler();
+  cs_responder.Stop();
+}
+
+INSTANTIATE_TEST_SUITE_P(invalid_ras_segment, DistanceMeasurementManagerInvalidRasTest,
+                         ::testing::Values(InvalidRasTestingItem::RANGING_DONE_STATUS,
+                                           InvalidRasTestingItem::SUBEVENT_DONE_STATUS,
+                                           InvalidRasTestingItem::RANGING_ABORT_REASON,
+                                           InvalidRasTestingItem::SUBEVENT_ABORT_REASON));
 
 struct RttTypeParams {
   CsRttType rtt_type;

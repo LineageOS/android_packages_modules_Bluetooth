@@ -1,19 +1,9 @@
 {
   "skip": [
-    "A2DP/SNK/AVP/BI-07-C",
-    "A2DP/SNK/SDP/BV-02-I",
-    "A2DP/SNK/SET/BV-04-I",
-    "A2DP/SNK/SET/BV-06-I",
-    "A2DP/SNK/SUS/BV-02-I",
-    "A2DP/SRC/AS/BV-01-I",
-    "A2DP/SRC/AS/BV-03-I",
-    "A2DP/SRC/AS/BV-04-I",
-    "A2DP/SRC/CC/BV-10-I",
-    "A2DP/SRC/SDP/BV-01-I",
-    "A2DP/SRC/SET/BV-05-I",
-    "A2DP/SRC/SET/BV-06-I",
-    "A2DP/SRC/SUS/BV-02-I",
-    "A2DP/SRC/SYN/BV-02-I",
+    // Fails with verdict:
+    // Didn't receive a valid AVDTP signal while waiting for signal ID Delay
+    // Report and message type Command.
+    "A2DP/SNK/SYN/BV-01-C",
     "AVCTP/CT/CCM/BV-01-C",
     "AVCTP/CT/CCM/BV-02-C",
     "AVCTP/CT/FRA/BV-01-C",
@@ -487,7 +477,7 @@
     "TSPC_A2DP_2_14": true,
     "TSPC_A2DP_2_15": true,
     "TSPC_A2DP_2_17": true,
-    "TSPC_A2DP_2a_3": true,
+    "TSPC_A2DP_2a_4": true,
     "TSPC_A2DP_2b_2": true,
     "TSPC_A2DP_3_1": true,
     "TSPC_A2DP_3_6": true,
@@ -505,12 +495,14 @@
     "TSPC_A2DP_3i_9": true,
     "TSPC_A2DP_4_1": true,
     "TSPC_A2DP_4_2": true,
-    "TSPC_A2DP_4_3": true,
+    // BluetoothA2dpSink provides no API for starting the A2DP stream.
+    "TSPC_A2DP_4_3": false,
     "TSPC_A2DP_4_4": true,
     "TSPC_A2DP_4_5": true,
     "TSPC_A2DP_4_6": true,
     "TSPC_A2DP_4_7": true,
-    "TSPC_A2DP_4_8": true,
+    // BluetoothA2dpSink does not support suspending the A2DP stream
+    "TSPC_A2DP_4_8": false,
     "TSPC_A2DP_4_9": true,
     "TSPC_A2DP_4_10": true,
     "TSPC_A2DP_4_13": true,
@@ -536,7 +528,7 @@
     "TSPC_A2DP_5i_8": true,
     "TSPC_A2DP_5i_9": true,
     "TSPC_A2DP_5j_1": true,
-    "TSPC_A2DP_7a_3": true,
+    "TSPC_A2DP_7a_4": true,
     "TSPC_A2DP_7b_2": true,
     "TSPC_A2DP_8_2": true,
     "TSPC_A2DP_8_3": true,
@@ -2314,6 +2306,14 @@
     "VCP": {}
   },
   "flags": [
+    {
+      "flags": [
+        "a2dp_version_1_4"
+      ],
+      "tests": [
+        "A2DP"
+      ]
+    },
     {
       "flags": [
         "set_addressed_player",

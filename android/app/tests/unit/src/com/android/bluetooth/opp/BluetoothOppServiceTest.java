@@ -22,6 +22,7 @@ import static com.android.bluetooth.opp.BluetoothOppService.WHERE_INVISIBLE_UNCO
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -31,6 +32,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.app.NotificationManager;
 import android.content.ContentResolver;
@@ -42,6 +44,10 @@ import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+
+import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.btservice.AdapterService;
 
@@ -69,12 +75,20 @@ public class BluetoothOppServiceTest {
 
     @Before
     public void setUp() throws Exception {
+        TestUtils.setAdapterService(mAdapterService);
         mockGetSystemService(
                 mAdapterService, Context.NOTIFICATION_SERVICE, NotificationManager.class);
         doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
         doReturn(mTargetContext.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();
         doReturn(mTargetContext.getContentResolver()).when(mAdapterService).getContentResolver();
+
+        when(mAdapterService.getRemoteDevice(anyString()))
+                .thenAnswer(
+                        invocation -> {
+                            String address = invocation.getArgument(0);
+                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+                        });
 
         BluetoothMethodProxy.setInstanceForTesting(mBluetoothMethodProxy);
 
@@ -118,6 +132,7 @@ public class BluetoothOppServiceTest {
 
         BluetoothMethodProxy.setInstanceForTesting(null);
         mService.cleanup();
+        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test

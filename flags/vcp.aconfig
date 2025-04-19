@@ -17,3 +17,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "vcp_handle_group_id_internally"
+    namespace: "bluetooth"
+    description: "Handle group id internally"
+    bug: "409519938"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

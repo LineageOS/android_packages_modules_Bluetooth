@@ -444,7 +444,7 @@ public:
           log::info("Controller send non-empty address field:{}", remote_address.GetAddress());
         }
         // direct connect canceled due to connection timeout, start background connect
-        create_le_connection(remote_address, false, false);
+        create_le_connection(remote_address, false, false, false);
         return;
       }
 
@@ -455,7 +455,7 @@ public:
       if (!accept_list.empty()) {
         AddressWithType empty(Address::kEmpty, AddressType::RANDOM_DEVICE_ADDRESS);
         handler_->Post(common::BindOnce(&le_impl::create_le_connection, common::Unretained(this),
-                                        empty, false, false));
+                                        empty, false, false, false));
       }
 
       if (le_client_handler_ == nullptr) {
@@ -691,9 +691,12 @@ public:
     }
   }
 
-  void direct_connect_add(AddressWithType address_with_type) {
-    log::debug("{}", address_with_type);
+  void direct_connect_add(AddressWithType address_with_type, bool prefer_relax_mode) {
+    log::debug("{}, {}", address_with_type, prefer_relax_mode);
     direct_connections_.insert(address_with_type);
+    if (prefer_relax_mode) {
+      relaxed_direct_connections_.insert(address_with_type);
+    }
     if (create_connection_timeout_alarms_.find(address_with_type) !=
         create_connection_timeout_alarms_.end()) {
       log::verbose("Timer already added for {}", address_with_type);
@@ -721,6 +724,7 @@ public:
       create_connection_timeout_alarms_.erase(it);
     }
     direct_connections_.erase(address_with_type);
+    relaxed_direct_connections_.erase(address_with_type);
   }
 
   void add_device_to_accept_list(AddressWithType address_with_type) {
@@ -867,18 +871,16 @@ public:
 
     uint16_t conn_interval_min;
     uint16_t conn_interval_max;
+
     bool prefer_relaxed_connection_interval = false;
-    if (com::android::bluetooth::flags::channel_sounding_in_stack()) {
-      for (const auto& address_with_type : direct_connections_) {
-        bluetooth::hci::Address address = address_with_type.GetAddress();
-        if (relaxed_connection_interval_devices_set_.count(address) > 0) {
-          log::info(
-                  "Found device {} in direct connection list that prefers using the relaxed "
-                  "connection interval",
-                  address);
-          prefer_relaxed_connection_interval = true;
-          break;
-        }
+    for (const auto& address_with_type : direct_connections_) {
+      if (relaxed_direct_connections_.count(address_with_type) > 0) {
+        log::info(
+                "Found device {} in direct connection list that prefers using the relaxed "
+                "connection interval",
+                address_with_type);
+        prefer_relaxed_connection_interval = true;
+        break;
       }
     }
 
@@ -1038,7 +1040,7 @@ public:
   }
 
   void create_le_connection(AddressWithType address_with_type, bool add_to_accept_list,
-                            bool is_direct) {
+                            bool is_direct, bool prefer_relax_mode) {
     if (le_client_callbacks_ == nullptr) {
       log::error("No callbacks to call");
       return;
@@ -1065,7 +1067,7 @@ public:
       }
 
       if (is_direct) {
-        direct_connect_add(address_with_type);
+        direct_connect_add(address_with_type, prefer_relax_mode);
       }
     }
 
@@ -1275,10 +1277,6 @@ public:
 
   void set_system_suspend_state(bool suspended) { system_suspend_ = suspended; }
 
-  void add_device_to_relaxed_connection_interval_list(const Address address) {
-    relaxed_connection_interval_devices_set_.insert(address);
-  }
-
   HciLayer* hci_layer_ = nullptr;
   Controller* controller_ = nullptr;
   os::Handler* handler_ = nullptr;
@@ -1292,6 +1290,7 @@ public:
   bool arm_on_resume_{};
   bool arm_on_disarm_{};
   std::unordered_set<AddressWithType> direct_connections_{};
+  std::unordered_set<AddressWithType> relaxed_direct_connections_{};
   // Set of devices that will not be removed from accept list after direct connect timeout
   std::unordered_set<AddressWithType> background_connections_;
   /* This is content of controller "Filter Accept List"*/
@@ -1304,8 +1303,6 @@ public:
   bool system_suspend_ = false;
   ConnectabilityState connectability_state_{ConnectabilityState::DISARMED};
   std::map<AddressWithType, os::Alarm> create_connection_timeout_alarms_{};
-  // Set of devices that should use the relaxed connection intervals.
-  std::unordered_set<Address> relaxed_connection_interval_devices_set_;
 };
 
 }  // namespace acl_manager

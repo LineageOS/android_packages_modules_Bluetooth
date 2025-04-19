@@ -562,17 +562,6 @@ struct btm_sec_encryption_change_evt {
 };
 extern struct btm_sec_encryption_change_evt btm_sec_encryption_change_evt;
 
-// Name: btm_sec_is_a_bonded_dev
-// Params: const RawAddress& bda
-// Return: bool
-struct btm_sec_is_a_bonded_dev {
-  static bool return_value;
-  std::function<bool(const RawAddress& bda)> body{
-          [](const RawAddress& /* bda */) { return return_value; }};
-  bool operator()(const RawAddress& bda) { return body(bda); }
-};
-extern struct btm_sec_is_a_bonded_dev btm_sec_is_a_bonded_dev;
-
 // Name: btm_sec_l2cap_access_req
 // Params: const RawAddress& bd_addr, uint16_t psm, bool is_originator,
 // tBTM_SEC_CALLBACK* p_callback, void* p_ref_data Return: tBTM_STATUS
@@ -640,11 +629,11 @@ struct btm_sec_link_key_request {
 };
 extern struct btm_sec_link_key_request btm_sec_link_key_request;
 
-// Name: btm_sec_mx_access_request
+// Name: btm_sec_service_access_request
 // Params: const RawAddress& bd_addr, bool is_originator, uint16_t
 // security_required, tBTM_SEC_CALLBACK* p_callback, void* p_ref_data Return:
 // tBTM_STATUS
-struct btm_sec_mx_access_request {
+struct btm_sec_service_access_request {
   static tBTM_STATUS return_value;
   std::function<tBTM_STATUS(const RawAddress& bd_addr, bool is_originator,
                             uint16_t security_required, tBTM_SEC_CALLBACK* p_callback,
@@ -657,7 +646,7 @@ struct btm_sec_mx_access_request {
     return body(bd_addr, is_originator, security_required, p_callback, p_ref_data);
   }
 };
-extern struct btm_sec_mx_access_request btm_sec_mx_access_request;
+extern struct btm_sec_service_access_request btm_sec_service_access_request;
 
 // Name: btm_sec_pin_code_request
 // Params: const uint8_t* p_event

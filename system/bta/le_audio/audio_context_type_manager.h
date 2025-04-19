@@ -31,7 +31,6 @@
 namespace bluetooth::le_audio {
 class AudioContextTypeManager {
 public:
-  static void Initialize(void);
   static void Cleanup(void);
   static std::shared_ptr<AudioContextTypeManager> Get(void);
   static void DebugDump(int fd);

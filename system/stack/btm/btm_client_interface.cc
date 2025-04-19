@@ -22,7 +22,7 @@
 #include "stack/include/acl_api.h"
 #include "stack/include/btm_ble_api.h"
 
-struct btm_client_interface_t btm_client_interface = {
+static struct btm_client_interface_t btm_client_interface = {
         .lifecycle =
                 {
                         .BTM_PmRegister = ::BTM_PmRegister,

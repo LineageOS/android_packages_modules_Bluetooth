@@ -196,7 +196,7 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         for (Map.Entry<String, ?> entry : allKeys.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
-            BluetoothDevice d = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(key);
+            BluetoothDevice d = mAdapterService.getRemoteDevice(key);
 
             if (value instanceof Integer
                     && mAdapterService.getBondState(d) == BluetoothDevice.BOND_BONDED) {
@@ -454,9 +454,7 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         Map<String, ?> allKeys = getVolumeMap().getAll();
         for (Map.Entry<String, ?> entry : allKeys.entrySet()) {
             Object value = entry.getValue();
-            BluetoothDevice d =
-                    BluetoothAdapter.getDefaultAdapter().getRemoteDevice(entry.getKey());
-
+            BluetoothDevice d = mAdapterService.getRemoteDevice(entry.getKey());
             String deviceName = mAdapterService.getRemoteName(d);
             if (deviceName == null) {
                 deviceName = "";

@@ -471,16 +471,14 @@ struct btm_connection_request {
 };
 extern struct btm_connection_request btm_connection_request;
 // Name: btm_acl_created
-// Params: const RawAddress& bda, uint16_t hci_handle, tHCI_ROLE link_role,
-// tBT_TRANSPORT transport Returns: void
+// Params: const tAclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role,
+// Returns: void
 struct btm_acl_created {
-  std::function<void(const RawAddress& bda, uint16_t hci_handle, tHCI_ROLE link_role,
-                     tBT_TRANSPORT transport)>
-          body{[](const RawAddress& /* bda */, uint16_t /* hci_handle */, tHCI_ROLE /* link_role */,
-                  tBT_TRANSPORT /* transport */) { ; }};
-  void operator()(const RawAddress& bda, uint16_t hci_handle, tHCI_ROLE link_role,
-                  tBT_TRANSPORT transport) {
-    body(bda, hci_handle, link_role, transport);
+  std::function<void(const tAclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role)> body{
+          [](const tAclLinkSpec& /* link_spec */, uint16_t /* hci_handle */,
+             tHCI_ROLE /* link_role */) { ; }};
+  void operator()(const tAclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role) {
+    body(link_spec, hci_handle, link_role);
   }
 };
 extern struct btm_acl_created btm_acl_created;

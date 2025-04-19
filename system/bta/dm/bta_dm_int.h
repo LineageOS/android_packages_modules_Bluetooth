@@ -38,7 +38,7 @@
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
 #include "macros.h"
-#include "types/raw_address.h"
+#include "types/ble_address_with_type.h"
 
 /*****************************************************************************
  *  Constants and data types
@@ -346,8 +346,8 @@ tBTM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void);
 namespace bluetooth::legacy::testing {
 
 tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr, tBT_TRANSPORT transport);
-void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport, uint16_t acl_handle);
-void bta_dm_acl_down(const RawAddress& bd_addr, tBT_TRANSPORT transport);
+void bta_dm_acl_up(const tAclLinkSpec& link_spec, uint16_t acl_handle);
+void bta_dm_acl_down(const tAclLinkSpec& link_spec);
 void bta_dm_init_cb();
 void bta_dm_deinit_cb();
 

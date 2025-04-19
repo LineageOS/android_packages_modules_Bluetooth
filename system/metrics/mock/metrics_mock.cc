@@ -84,6 +84,12 @@ void Counter(CounterKey key, int64_t count) {
   }
 }
 
+void LogBluetoothEvent(const hci::Address& address, EventType event_type, State state) {
+  if (metricsInstance) {
+    metricsInstance->LogBluetoothEvent(address, event_type, state);
+  }
+}
+
 void LogMetricLinkLayerConnectionEvent(const hci::Address& address, uint32_t connection_handle,
                                        android::bluetooth::DirectionEnum direction,
                                        uint16_t link_type, uint32_t hci_cmd, uint16_t hci_event,
@@ -274,13 +280,6 @@ void LogMetricBluetoothRemoteSupportedFeatures(const hci::Address& address, uint
 void LogMetricBluetoothLEConnection(LEConnectionSessionOptions session_options) {
   if (metricsInstance) {
     metricsInstance->LogMetricBluetoothLEConnection(session_options);
-  }
-}
-
-void LogMetricBluetoothEvent(const hci::Address& address, android::bluetooth::EventType event_type,
-                             android::bluetooth::State state) {
-  if (metricsInstance) {
-    metricsInstance->LogMetricBluetoothEvent(address, event_type, state);
   }
 }
 

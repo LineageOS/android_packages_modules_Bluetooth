@@ -149,6 +149,9 @@ public class BluetoothOppUtility {
                     cursor.getString(cursor.getColumnIndexOrThrow(BluetoothShare.MIMETYPE));
         }
 
+        // Ideally BluetoothDevice object should be retrieved from the AdapterService but address
+        // type is not necessary for reading the device name, so getting it from the
+        // BluetoothAdapter is fine.
         BluetoothDevice remoteDevice = adapter.getRemoteDevice(info.mDestAddr);
         info.mDeviceName = BluetoothOppManager.getInstance(context).getDeviceName(remoteDevice);
 

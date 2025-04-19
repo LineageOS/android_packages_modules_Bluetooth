@@ -1020,7 +1020,7 @@ bool A2dpCodecs::setPeerSinkCodecCapabilities(const uint8_t* p_peer_codec_capabi
   // the stack does not need to know about the peer capabilities,
   // since the validation and selection will be performed by the
   // bluetooth audio HAL for offloaded codecs.
-  if (!::bluetooth::audio::a2dp::provider::supports_codec(a2dp_codec_config->codecIndex()) &&
+  if (!a2dp_codec_config->isHardwareProviderCodec() &&
       !A2DP_IsPeerSinkCodecValid(p_peer_codec_capabilities)) {
     return false;
   }

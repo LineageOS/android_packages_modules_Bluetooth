@@ -15,12 +15,12 @@ itertools = "0.10.5"
 log = "0.4.14"
 log-panics = "2.1.0"
 nix = { version = "0.29", features = ["socket", "uio"] }
-num-derive = "0.3"
+num-derive = "0.4.2"
 num-traits = "0.2"
 rand = { version = "0.8.3", features = ["small_rng"] }
 serde_json = "1.0"
 syslog = "6"
-tokio = { version = "1", features = ['bytes', 'fs', 'io-util', 'libc', 'macros', 'mio', 'net', 'num_cpus', 'rt', 'rt-multi-thread', 'sync', 'time', 'tokio-macros'] }
+tokio = { version = "1", features = ['bytes', 'fs', 'io-util', 'libc', 'macros', 'mio', 'net', 'rt', 'rt-multi-thread', 'sync', 'time', 'tokio-macros'] }
 
 [lib]
 path = "src/lib.rs"

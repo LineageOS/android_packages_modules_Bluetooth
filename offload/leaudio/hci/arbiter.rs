@@ -88,7 +88,10 @@ impl Arbiter {
     pub fn set_completed(&self, handle: u16, num: usize) {
         let (state, cvar) = &*self.state_cvar;
         if let Some(buf_usage) = state.lock().unwrap().in_transit.get_mut(&handle) {
-            *buf_usage -= num;
+            if num > *buf_usage {
+                log::error!("More completed packets than sent reported {} / {}", num, *buf_usage);
+            }
+            *buf_usage = buf_usage.saturating_sub(num);
             cvar.notify_one();
         }
     }

@@ -34,6 +34,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.app.ActivityManager;
 import android.bluetooth.BluetoothAdapter;
@@ -59,6 +60,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.TestUtils.MockitoRule;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
 import com.android.bluetooth.le_scan.PeriodicScanManager;
@@ -86,11 +88,13 @@ import java.util.UUID;
 public class GattServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private IBluetoothGattCallback mGattCallback;
     @Mock private ContextMap<IBluetoothGattCallback> mClientMap;
+    @Mock private IBluetoothGattServerCallback mGattServerCallback;
+    @Mock private ContextMap<IBluetoothGattServerCallback> mServerMap;
     @Mock private ScanManager mScanManager;
     @Mock private PeriodicScanManager mPeriodicScanManager;
     @Mock private Set<BluetoothDevice> mReliableQueue;
-    @Mock private ContextMap<IBluetoothGattServerCallback> mServerMap;
     @Mock private DistanceMeasurementManager mDistanceMeasurementManager;
     @Mock private AdvertiseManagerNativeInterface mAdvertiseManagerNativeInterface;
     @Mock private Resources mResources;
@@ -98,6 +102,11 @@ public class GattServiceTest {
     @Mock private GattObjectsFactory mGattObjectsFactory;
     @Mock private ScanObjectsFactory mScanObjectsFactory;
     @Mock private GattNativeInterface mNativeInterface;
+
+    private static final int SERVER_IF = 34;
+    private static final int CLIENT_IF = 12;
+    private static final int SERVER_CONN_ID = 84;
+    private static final int CLIENT_CONN_ID = 42;
 
     private final BluetoothAdapter mAdapter =
             InstrumentationRegistry.getInstrumentation()
@@ -131,6 +140,14 @@ public class GattServiceTest {
         GattObjectsFactory.setInstanceForTesting(mGattObjectsFactory);
         ScanObjectsFactory.setInstanceForTesting(mScanObjectsFactory);
 
+        doReturn(SERVER_CONN_ID).when(mServerMap).connIdByDevice(SERVER_IF, mDevice);
+        doReturn(CLIENT_CONN_ID).when(mClientMap).connIdByDevice(CLIENT_IF, mDevice);
+        ContextMap<IBluetoothGattCallback>.App clientApp = mock(ContextMap.App.class);
+        clientApp.id = CLIENT_IF;
+        doReturn(clientApp).when(mClientMap).getByCallbackId(mGattCallback);
+        ContextMap<IBluetoothGattCallback>.App serverApp = mock(ContextMap.App.class);
+        serverApp.id = SERVER_IF;
+        doReturn(serverApp).when(mServerMap).getByCallbackId(mGattServerCallback);
         doReturn(mNativeInterface).when(mGattObjectsFactory).getNativeInterface();
         doReturn(mDistanceMeasurementManager)
                 .when(mGattObjectsFactory)
@@ -165,6 +182,13 @@ public class GattServiceTest {
         mService.mClientMap = mClientMap;
         mService.mReliableQueue = mReliableQueue;
         mService.mServerMap = mServerMap;
+
+        when(mAdapterService.getRemoteDevice(anyString()))
+                .thenAnswer(
+                        invocation -> {
+                            String address = invocation.getArgument(0);
+                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+                        });
     }
 
     @After
@@ -186,56 +210,41 @@ public class GattServiceTest {
 
     @Test
     public void emptyClearServices() {
-        int serverIf = 1;
-
-        mService.clearServices(serverIf, mAttributionSource);
-        verify(mNativeInterface, times(0)).gattServerDeleteService(eq(serverIf), anyInt());
+        mService.clearServices(mGattServerCallback);
+        verify(mNativeInterface, times(0)).gattServerDeleteService(eq(SERVER_IF), anyInt());
     }
 
     @Test
     public void clientReadPhy() {
-        int clientIf = 1;
-        Integer connId = 1;
-        doReturn(connId).when(mClientMap).connIdByDevice(clientIf, mDevice);
-
-        mService.clientReadPhy(clientIf, mDevice, mAttributionSource);
-        verify(mNativeInterface).gattClientReadPhy(clientIf, mDevice);
+        mService.clientReadPhy(mGattCallback, mDevice);
+        verify(mNativeInterface).gattClientReadPhy(CLIENT_IF, mDevice);
     }
 
     @Test
     public void clientSetPreferredPhy() {
-        int clientIf = 1;
         int txPhy = 2;
         int rxPhy = 1;
         int phyOptions = 3;
 
-        Integer connId = 1;
-        doReturn(connId).when(mClientMap).connIdByDevice(clientIf, mDevice);
-
-        mService.clientSetPreferredPhy(
-                clientIf, mDevice, txPhy, rxPhy, phyOptions, mAttributionSource);
+        mService.clientSetPreferredPhy(mGattCallback, mDevice, txPhy, rxPhy, phyOptions);
         verify(mNativeInterface)
-                .gattClientSetPreferredPhy(clientIf, mDevice, txPhy, rxPhy, phyOptions);
+                .gattClientSetPreferredPhy(CLIENT_IF, mDevice, txPhy, rxPhy, phyOptions);
     }
 
     @Test
     public void connectionParameterUpdate() {
-        int clientIf = 1;
         int connectionPriority = BluetoothGatt.CONNECTION_PRIORITY_HIGH;
-        mService.connectionParameterUpdate(
-                clientIf, mDevice, connectionPriority, mAttributionSource);
+        mService.connectionParameterUpdate(mGattCallback, mDevice, connectionPriority);
 
         connectionPriority = BluetoothGatt.CONNECTION_PRIORITY_LOW_POWER;
-        mService.connectionParameterUpdate(
-                clientIf, mDevice, connectionPriority, mAttributionSource);
+        mService.connectionParameterUpdate(mGattCallback, mDevice, connectionPriority);
 
         connectionPriority = BluetoothGatt.CONNECTION_PRIORITY_BALANCED;
-        mService.connectionParameterUpdate(
-                clientIf, mDevice, connectionPriority, mAttributionSource);
+        mService.connectionParameterUpdate(mGattCallback, mDevice, connectionPriority);
 
         verify(mNativeInterface, times(3))
                 .gattConnectionParameterUpdate(
-                        eq(clientIf),
+                        eq(CLIENT_IF),
                         eq(mDevice),
                         anyInt(),
                         anyInt(),
@@ -252,7 +261,6 @@ public class GattServiceTest {
 
     @Test
     public void clientConnect() throws Exception {
-        int clientIf = 1;
         int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
         boolean isDirect = false;
         int transport = 2;
@@ -260,7 +268,7 @@ public class GattServiceTest {
         int phy = 3;
 
         mService.clientConnect(
-                clientIf,
+                mGattCallback,
                 mDevice,
                 addressType,
                 isDirect,
@@ -271,12 +279,19 @@ public class GattServiceTest {
 
         verify(mNativeInterface)
                 .gattClientConnect(
-                        clientIf, mDevice, addressType, isDirect, transport, opportunistic, phy, 0);
+                        CLIENT_IF,
+                        mDevice,
+                        addressType,
+                        isDirect,
+                        transport,
+                        opportunistic,
+                        phy,
+                        0,
+                        false);
     }
 
     @Test
     public void clientConnectOverLeFailed() throws Exception {
-        int clientIf = 1;
         int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
         boolean isDirect = true;
         int transport = BluetoothDevice.TRANSPORT_LE;
@@ -292,7 +307,7 @@ public class GattServiceTest {
                         .build();
 
         mService.clientConnect(
-                clientIf,
+                mGattCallback,
                 mDevice,
                 addressType,
                 isDirect,
@@ -304,14 +319,22 @@ public class GattServiceTest {
         verify(mAdapterService).notifyDirectLeGattClientConnect(anyInt(), any());
         verify(mNativeInterface)
                 .gattClientConnect(
-                        clientIf, mDevice, addressType, isDirect, transport, opportunistic, phy, 0);
-        mService.onConnected(clientIf, 0, BluetoothGatt.GATT_CONNECTION_TIMEOUT, mDevice);
+                        CLIENT_IF,
+                        mDevice,
+                        addressType,
+                        isDirect,
+                        transport,
+                        opportunistic,
+                        phy,
+                        0,
+                        false);
+        mService.onConnectedFromNative(
+                CLIENT_IF, 0, BluetoothGatt.GATT_CONNECTION_TIMEOUT, mDevice);
         verify(mAdapterService).notifyGattClientConnectFailed(anyInt(), any());
     }
 
     @Test
     public void clientConnectDisconnectOverLe() throws Exception {
-        int clientIf = 1;
         int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
         boolean isDirect = true;
         int transport = BluetoothDevice.TRANSPORT_LE;
@@ -327,7 +350,7 @@ public class GattServiceTest {
                         .build();
 
         mService.clientConnect(
-                clientIf,
+                mGattCallback,
                 mDevice,
                 addressType,
                 isDirect,
@@ -339,16 +362,23 @@ public class GattServiceTest {
         verify(mAdapterService).notifyDirectLeGattClientConnect(anyInt(), any());
         verify(mNativeInterface)
                 .gattClientConnect(
-                        clientIf, mDevice, addressType, isDirect, transport, opportunistic, phy, 0);
-        mService.onConnected(clientIf, 15, BluetoothGatt.GATT_SUCCESS, mDevice);
-        mService.clientDisconnect(clientIf, mDevice, mAttributionSource);
+                        CLIENT_IF,
+                        mDevice,
+                        addressType,
+                        isDirect,
+                        transport,
+                        opportunistic,
+                        phy,
+                        0,
+                        false);
+        mService.onConnectedFromNative(CLIENT_IF, 15, BluetoothGatt.GATT_SUCCESS, mDevice);
+        mService.clientDisconnect(mGattCallback, mDevice, mAttributionSource);
 
         verify(mAdapterService).notifyGattClientDisconnect(anyInt(), any());
     }
 
     @Test
     public void clientConnectOverLeDisconnectedByRemote() throws Exception {
-        int clientIf = 1;
         int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
         boolean isDirect = true;
         int transport = BluetoothDevice.TRANSPORT_LE;
@@ -364,7 +394,7 @@ public class GattServiceTest {
                         .build();
 
         mService.clientConnect(
-                clientIf,
+                mGattCallback,
                 mDevice,
                 addressType,
                 isDirect,
@@ -376,9 +406,17 @@ public class GattServiceTest {
         verify(mAdapterService).notifyDirectLeGattClientConnect(anyInt(), any());
         verify(mNativeInterface)
                 .gattClientConnect(
-                        clientIf, mDevice, addressType, isDirect, transport, opportunistic, phy, 0);
-        mService.onConnected(clientIf, 15, BluetoothGatt.GATT_SUCCESS, mDevice);
-        mService.onDisconnected(clientIf, 15, 1, mDevice);
+                        CLIENT_IF,
+                        mDevice,
+                        addressType,
+                        isDirect,
+                        transport,
+                        opportunistic,
+                        phy,
+                        0,
+                        false);
+        mService.onConnectedFromNative(CLIENT_IF, 15, BluetoothGatt.GATT_SUCCESS, mDevice);
+        mService.onDisconnectedFromNative(CLIENT_IF, 15, 1, mDevice);
 
         verify(mAdapterService).notifyGattClientDisconnect(anyInt(), any());
     }
@@ -386,14 +424,11 @@ public class GattServiceTest {
     @Test
     public void disconnectAll() {
         Map<Integer, BluetoothDevice> connMap = new HashMap<>();
-        int clientIf = 1;
-        connMap.put(clientIf, mDevice);
+        connMap.put(CLIENT_IF, mDevice);
         doReturn(connMap).when(mClientMap).getConnectedMap();
-        Integer connId = 1;
-        doReturn(connId).when(mClientMap).connIdByDevice(clientIf, mDevice);
 
         mService.disconnectAll(mAttributionSource);
-        verify(mNativeInterface).gattClientDisconnect(clientIf, mDevice, connId);
+        verify(mNativeInterface).gattClientDisconnect(CLIENT_IF, mDevice, CLIENT_CONN_ID);
     }
 
     @Test
@@ -408,8 +443,7 @@ public class GattServiceTest {
         connectedDevices.add(mDevice);
         doReturn(connectedDevices).when(mClientMap).getConnectedDevices();
 
-        List<BluetoothDevice> deviceList =
-                mService.getDevicesMatchingConnectionStates(states, mAttributionSource);
+        List<BluetoothDevice> deviceList = mService.getDevicesMatchingConnectionStates(states);
 
         assertThat(deviceList).containsExactly(mDevice);
     }
@@ -443,43 +477,35 @@ public class GattServiceTest {
 
     @Test
     public void unregisterClient() {
-        int clientIf = 3;
-
         mService.unregisterClient(
-                clientIf, mAttributionSource, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
-        verify(mClientMap).remove(clientIf, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
-        verify(mNativeInterface).gattClientUnregisterApp(clientIf);
+                mGattCallback,
+                mAttributionSource,
+                ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
+        verify(mClientMap).remove(CLIENT_IF, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
+        verify(mNativeInterface).gattClientUnregisterApp(CLIENT_IF);
     }
 
     @Test
     public void readCharacteristic() {
-        int clientIf = 1;
         int handle = 2;
         int authReq = 3;
 
-        Integer connId = 1;
-        doReturn(connId).when(mClientMap).connIdByDevice(clientIf, mDevice);
-
-        mService.readCharacteristic(clientIf, mDevice, handle, authReq, mAttributionSource);
-        verify(mNativeInterface).gattClientReadCharacteristic(connId, handle, authReq);
+        mService.readCharacteristic(mGattCallback, mDevice, handle, authReq, mAttributionSource);
+        verify(mNativeInterface).gattClientReadCharacteristic(CLIENT_CONN_ID, handle, authReq);
     }
 
     @Test
     public void readUsingCharacteristicUuid() {
-        int clientIf = 1;
         UUID uuid = UUID.randomUUID();
         int startHandle = 2;
         int endHandle = 3;
         int authReq = 4;
 
-        Integer connId = 1;
-        doReturn(connId).when(mClientMap).connIdByDevice(clientIf, mDevice);
-
         mService.readUsingCharacteristicUuid(
-                clientIf, mDevice, uuid, startHandle, endHandle, authReq, mAttributionSource);
+                mGattCallback, mDevice, uuid, startHandle, endHandle, authReq, mAttributionSource);
         verify(mNativeInterface)
                 .gattClientReadUsingCharacteristicUuid(
-                        connId,
+                        CLIENT_CONN_ID,
                         uuid.getLeastSignificantBits(),
                         uuid.getMostSignificantBits(),
                         startHandle,
@@ -489,94 +515,70 @@ public class GattServiceTest {
 
     @Test
     public void writeCharacteristic() {
-        int clientIf = 1;
         int handle = 2;
         int writeType = 3;
         int authReq = 4;
         byte[] value = new byte[] {5, 6};
 
-        Integer connId = 1;
-        doReturn(connId).when(mClientMap).connIdByDevice(clientIf, mDevice);
-
         int writeCharacteristicResult =
                 mService.writeCharacteristic(
-                        clientIf, mDevice, handle, writeType, authReq, value, mAttributionSource);
+                        mGattCallback, mDevice, handle, writeType, authReq, value);
         assertThat(writeCharacteristicResult)
                 .isEqualTo(BluetoothStatusCodes.ERROR_DEVICE_NOT_CONNECTED);
     }
 
     @Test
     public void readDescriptor() throws Exception {
-        int clientIf = 1;
         int handle = 2;
         int authReq = 3;
 
-        Integer connId = 1;
-        doReturn(connId).when(mClientMap).connIdByDevice(clientIf, mDevice);
-
-        mService.readDescriptor(clientIf, mDevice, handle, authReq, mAttributionSource);
-        verify(mNativeInterface).gattClientReadDescriptor(connId, handle, authReq);
+        mService.readDescriptor(mGattCallback, mDevice, handle, authReq, mAttributionSource);
+        verify(mNativeInterface).gattClientReadDescriptor(CLIENT_CONN_ID, handle, authReq);
     }
 
     @Test
     public void beginReliableWrite() {
-        int clientIf = 1;
-
-        mService.beginReliableWrite(clientIf, mDevice, mAttributionSource);
+        mService.beginReliableWrite(mDevice);
         verify(mReliableQueue).add(mDevice);
     }
 
     @Test
     public void endReliableWrite() {
-        int clientIf = 1;
         boolean execute = true;
 
-        Integer connId = 1;
-        doReturn(connId).when(mClientMap).connIdByDevice(clientIf, mDevice);
-
-        mService.endReliableWrite(clientIf, mDevice, execute, mAttributionSource);
+        mService.endReliableWrite(mGattCallback, mDevice, execute);
         verify(mReliableQueue).remove(mDevice);
-        verify(mNativeInterface).gattClientExecuteWrite(connId, execute);
+        verify(mNativeInterface).gattClientExecuteWrite(CLIENT_CONN_ID, execute);
     }
 
     @Test
     public void registerForNotification() throws Exception {
-        int clientIf = 1;
         int handle = 2;
         boolean enable = true;
 
-        Integer connId = 1;
-        doReturn(connId).when(mClientMap).connIdByDevice(clientIf, mDevice);
-
-        mService.registerForNotification(clientIf, mDevice, handle, enable, mAttributionSource);
+        mService.registerForNotification(
+                mGattCallback, mDevice, handle, enable, mAttributionSource);
 
         verify(mNativeInterface)
-                .gattClientRegisterForNotifications(clientIf, mDevice, handle, enable);
+                .gattClientRegisterForNotifications(CLIENT_IF, mDevice, handle, enable);
     }
 
     @Test
     public void readRemoteRssi() {
-        int clientIf = 1;
-
-        mService.readRemoteRssi(clientIf, mDevice, mAttributionSource);
-        verify(mNativeInterface).gattClientReadRemoteRssi(clientIf, mDevice);
+        mService.readRemoteRssi(mGattCallback, mDevice);
+        verify(mNativeInterface).gattClientReadRemoteRssi(CLIENT_IF, mDevice);
     }
 
     @Test
     public void configureMTU() {
-        int clientIf = 1;
         int mtu = 2;
 
-        Integer connId = 1;
-        doReturn(connId).when(mClientMap).connIdByDevice(clientIf, mDevice);
-
-        mService.configureMTU(clientIf, mDevice, mtu, mAttributionSource);
-        verify(mNativeInterface).gattClientConfigureMTU(connId, mtu);
+        mService.configureMTU(mGattCallback, mDevice, mtu);
+        verify(mNativeInterface).gattClientConfigureMTU(CLIENT_CONN_ID, mtu);
     }
 
     @Test
     public void leConnectionUpdate() throws Exception {
-        int clientIf = 1;
         int minInterval = 3;
         int maxInterval = 4;
         int peripheralLatency = 5;
@@ -585,19 +587,18 @@ public class GattServiceTest {
         int maxConnectionEventLen = 8;
 
         mService.leConnectionUpdate(
-                clientIf,
+                mGattCallback,
                 mDevice,
                 minInterval,
                 maxInterval,
                 peripheralLatency,
                 supervisionTimeout,
                 minConnectionEventLen,
-                maxConnectionEventLen,
-                mAttributionSource);
+                maxConnectionEventLen);
 
         verify(mNativeInterface)
                 .gattConnectionParameterUpdate(
-                        clientIf,
+                        CLIENT_IF,
                         mDevice,
                         minInterval,
                         maxInterval,
@@ -609,74 +610,67 @@ public class GattServiceTest {
 
     @Test
     public void serverConnect() {
-        int serverIf = 1;
         int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
         boolean isDirect = true;
         int transport = 2;
 
         mService.serverConnect(
-                serverIf, mDevice, addressType, isDirect, transport, mAttributionSource);
+                mGattServerCallback, mDevice, addressType, isDirect, transport, mAttributionSource);
         verify(mNativeInterface)
-                .gattServerConnect(serverIf, mDevice, addressType, isDirect, transport);
+                .gattServerConnect(SERVER_IF, mDevice, addressType, isDirect, transport);
     }
 
     @Test
     public void serverDisconnect() {
-        int serverIf = 1;
-
-        Integer connId = 1;
-        doReturn(connId).when(mServerMap).connIdByDevice(serverIf, mDevice);
-
-        mService.serverDisconnect(serverIf, mDevice, mAttributionSource);
-        verify(mNativeInterface).gattServerDisconnect(serverIf, mDevice, connId);
+        mService.serverDisconnect(mGattServerCallback, mDevice);
+        verify(mNativeInterface).gattServerDisconnect(SERVER_IF, mDevice, SERVER_CONN_ID);
     }
 
     @Test
     public void serverSetPreferredPhy() throws Exception {
-        int serverIf = 1;
         int txPhy = 2;
         int rxPhy = 1;
         int phyOptions = 3;
 
-        mService.serverSetPreferredPhy(
-                serverIf, mDevice, txPhy, rxPhy, phyOptions, mAttributionSource);
+        mService.serverSetPreferredPhy(mGattServerCallback, mDevice, txPhy, rxPhy, phyOptions);
         verify(mNativeInterface)
-                .gattServerSetPreferredPhy(serverIf, mDevice, txPhy, rxPhy, phyOptions);
+                .gattServerSetPreferredPhy(SERVER_IF, mDevice, txPhy, rxPhy, phyOptions);
     }
 
     @Test
     public void serverReadPhy() {
-        int serverIf = 1;
-
-        mService.serverReadPhy(serverIf, mDevice, mAttributionSource);
-        verify(mNativeInterface).gattServerReadPhy(serverIf, mDevice);
+        mService.serverReadPhy(mGattServerCallback, mDevice);
+        verify(mNativeInterface).gattServerReadPhy(SERVER_IF, mDevice);
     }
 
     @Test
     public void sendNotification() throws Exception {
-        int serverIf = 1;
         int handle = 2;
         boolean confirm = true;
         byte[] value = new byte[] {5, 6};
 
-        Integer connId = 1;
-        doReturn(connId).when(mServerMap).connIdByDevice(serverIf, mDevice);
-
-        mService.sendNotification(serverIf, mDevice, handle, confirm, value, mAttributionSource);
-        verify(mNativeInterface).gattServerSendIndication(serverIf, handle, connId, value);
+        mService.sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
+        verify(mNativeInterface).gattServerSendIndication(SERVER_IF, handle, SERVER_CONN_ID, value);
 
         confirm = false;
 
-        mService.sendNotification(serverIf, mDevice, handle, confirm, value, mAttributionSource);
-        verify(mNativeInterface).gattServerSendNotification(serverIf, handle, connId, value);
+        mService.sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
+        verify(mNativeInterface)
+                .gattServerSendNotification(SERVER_IF, handle, SERVER_CONN_ID, value);
     }
 
     @Test
     public void unregAll() throws Exception {
         int appId = 1;
-        List<Integer> appIds = new ArrayList<>();
-        appIds.add(appId);
-        doReturn(appIds).when(mClientMap).getAllAppsIds();
+        ContextMap<IBluetoothGattCallback>.App app = mock(ContextMap.App.class);
+        IBluetoothGattCallback callback = mock(IBluetoothGattCallback.class);
+        app.id = appId;
+        app.callback = callback;
+        doReturn(app).when(mClientMap).getByCallbackId(callback);
+
+        List<IBluetoothGattCallback> callbacks = new ArrayList<>();
+        callbacks.add(callback);
+        doReturn(callbacks).when(mClientMap).getAllAppsCallbackId();
 
         mService.unregAll(mAttributionSource);
         verify(mClientMap).remove(appId, ContextMap.RemoveReason.REASON_UNREGISTER_ALL);
@@ -690,14 +684,12 @@ public class GattServiceTest {
 
     @Test
     public void restrictedHandles() throws Exception {
-        int clientIf = 1;
-        int connId = 1;
         ArrayList<GattDbElement> db = new ArrayList<>();
 
         ContextMap<IBluetoothGattCallback>.App app = mock(ContextMap.App.class);
         IBluetoothGattCallback callback = mock(IBluetoothGattCallback.class);
 
-        doReturn(app).when(mClientMap).getByConnId(connId);
+        doReturn(app).when(mClientMap).getByConnId(CLIENT_CONN_ID);
         app.callback = callback;
 
         GattDbElement hidService =
@@ -719,12 +711,13 @@ public class GattServiceTest {
         db.add(hidInfoChar);
         db.add(randomChar);
 
-        mService.onGetGattDb(connId, db);
+        mService.onGetGattDbFromNative(CLIENT_CONN_ID, db);
         // HID characteristics should be restricted
-        assertThat(mService.mRestrictedHandles.get(connId)).contains(hidInfoChar.id);
-        assertThat(mService.mRestrictedHandles.get(connId)).doesNotContain(randomChar.id);
+        assertThat(mService.mRestrictedHandles.get(CLIENT_CONN_ID)).contains(hidInfoChar.id);
+        assertThat(mService.mRestrictedHandles.get(CLIENT_CONN_ID)).doesNotContain(randomChar.id);
 
-        mService.onDisconnected(clientIf, connId, BluetoothGatt.GATT_SUCCESS, mDevice);
-        assertThat(mService.mRestrictedHandles).doesNotContainKey(connId);
+        mService.onDisconnectedFromNative(
+                CLIENT_IF, CLIENT_CONN_ID, BluetoothGatt.GATT_SUCCESS, mDevice);
+        assertThat(mService.mRestrictedHandles).doesNotContainKey(CLIENT_CONN_ID);
     }
 }

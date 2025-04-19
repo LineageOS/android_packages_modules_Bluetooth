@@ -19,6 +19,7 @@ package com.android.bluetooth.gatt;
 import static com.android.bluetooth.gatt.AdvertiseHelper.advertiseDataToBytes;
 
 import android.app.ActivityManager;
+import android.bluetooth.IBluetoothGattServerCallback;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertisingSetParameters;
@@ -251,11 +252,23 @@ public class AdvertiseManager {
             AdvertiseData periodicData,
             int duration,
             int maxExtAdvEvents,
-            int serverIf,
+            IBluetoothGattServerCallback gattServerCallback,
             IAdvertisingSetCallback callback,
             AttributionSource attrSource) {
         checkThread();
         // If we are using an isolated server, force usage of an NRPA
+        int serverIf = 0;
+        if (gattServerCallback != null) {
+            ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                    mService.getBluetoothGattService()
+                            .getServerMap()
+                            .getByCallbackId(gattServerCallback);
+            if (serverApp == null) {
+                Log.w(TAG, "startAdvertisingSet(" + gattServerCallback + "): App not registered");
+            } else {
+                serverIf = serverApp.id;
+            }
+        }
         if (serverIf != 0
                 && parameters.getOwnAddressType()
                         != AdvertisingSetParameters.ADDRESS_TYPE_RANDOM_NON_RESOLVABLE) {

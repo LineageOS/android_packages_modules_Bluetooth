@@ -1833,8 +1833,9 @@ public class HeadsetService extends ProfileService {
             if (connectionState != STATE_CONNECTED) {
                 return false;
             }
-            // Currently we support only "+ANDROID".
-            if (!command.equals(BluetoothHeadset.VENDOR_RESULT_CODE_COMMAND_ANDROID)) {
+            // Currently we support only "+ANDROID", "+MOTOROLA".
+            if (!command.equals(BluetoothHeadset.VENDOR_RESULT_CODE_COMMAND_ANDROID)
+                    && !command.equals(BluetoothHeadset.VENDOR_RESULT_CODE_COMMAND_MOTOROLA)) {
                 Log.w(TAG, "Disallowed unsolicited result code command: " + command);
                 return false;
             }

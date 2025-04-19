@@ -23,14 +23,18 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 
+import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.After;
 import org.junit.Before;
@@ -45,20 +49,29 @@ public class HearingAidNativeInterfaceTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AdapterService mAdapterService;
     @Mock private HearingAidService mService;
 
     private HearingAidNativeInterface mNativeInterface;
 
     @Before
     public void setUp() throws Exception {
+        TestUtils.setAdapterService(mAdapterService);
+        when(mAdapterService.getRemoteDevice(anyString()))
+                .thenAnswer(
+                        invocation -> {
+                            String address = invocation.getArgument(0);
+                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+                        });
         when(mService.isAvailable()).thenReturn(true);
         HearingAidService.setHearingAidService(mService);
         mNativeInterface = HearingAidNativeInterface.getInstance();
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         HearingAidService.setHearingAidService(null);
+        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test

@@ -29,6 +29,7 @@
 #include "stack/btm/security_device_record.h"
 #include "stack/include/bt_device_type.h"
 #include "stack/include/bt_octets.h"
+#include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
@@ -57,7 +58,6 @@ bool BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info);
 
 bool BTM_IsEncrypted(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 bool BTM_IsLinkKeyAuthed(const RawAddress& bd_addr, tBT_TRANSPORT transport);
-bool BTM_IsBonded(const RawAddress& bd_addr, tBT_TRANSPORT transport = BT_TRANSPORT_AUTO);
 bool BTM_IsAuthenticated(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 bool BTM_CanReadDiscoverableCharacteristics(const RawAddress& bd_addr);
 void BTM_update_version_info(const RawAddress& bd_addr,
@@ -356,29 +356,33 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(const RawAddress& bd_addr,
 
 /*******************************************************************************
  *
- * Function         btm_sec_mx_access_request
+ * Function         btm_sec_service_access_request
  *
  * Description      This function is called by all Multiplexing Protocols
- *during establishing connection to or from peer device to grant permission
- *to establish application connection.
+ *                  during establishing connection to or from peer device to
+ *                  grant permission to establish application connection.
  *
  * Parameters:      bd_addr       - Address of the peer device
  *                  psm           - L2CAP PSM
  *                  is_originator - true if protocol above L2CAP originates
  *                                  connection
- *                  mx_proto_id   - protocol ID of the multiplexer
- *                  mx_chan_id    - multiplexer channel to reach application
  *                  p_callback    - Pointer to callback function called if
- *                                  this function returns PENDING after
- *required procedures are completed p_ref_data    - Pointer to any reference
- *data needed by the the callback function.
+ *                                  this function returns PENDING after required
+ *                                  procedures are completed
+ *                  p_ref_data -    Pointer to any reference data needed by the
+ *                                  callback function.
  *
- * Returns          tBTM_STATUS::BTM_CMD_STARTED
+ * Returns          tBTM_STATUS::BTM_CMD_STARTED when the security procedure is
+ *                  started.
+ *                  tBTM_STATUS::BTM_CMD_STORED when the request is stored in
+ *                  the queue.
+ *                  tBTM_STATUS::BTM_SUCCESS when the security procedure is
+ *                  completed.
  *
  ******************************************************************************/
-tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, bool is_originator,
-                                      uint16_t security_requirement, tBTM_SEC_CALLBACK* p_callback,
-                                      void* p_ref_data);
+tBTM_STATUS btm_sec_service_access_request(const RawAddress& bd_addr, bool is_originator,
+                                           uint16_t security_requirement,
+                                           tBTM_SEC_CALLBACK* p_callback, void* p_ref_data);
 
 /*******************************************************************************
  *
@@ -680,17 +684,6 @@ void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec, tBTM_STATUS res,
  *
  ******************************************************************************/
 void btm_sec_clear_ble_keys(tBTM_SEC_DEV_REC* p_dev_rec);
-
-/*******************************************************************************
- *
- * Function         btm_sec_is_a_bonded_dev
- *
- * Description       Is the specified device is a bonded device
- *
- * Returns          true - dev is bonded
- *
- ******************************************************************************/
-bool btm_sec_is_a_bonded_dev(const RawAddress& bda);
 
 /*******************************************************************************
  *
