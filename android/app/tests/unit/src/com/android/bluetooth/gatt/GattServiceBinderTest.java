@@ -192,13 +192,7 @@ public class GattServiceBinderTest {
                 mAttributionSource);
         verify(mService)
                 .readUsingCharacteristicUuid(
-                        mGattCallback,
-                        mDevice,
-                        uuid,
-                        startHandle,
-                        endHandle,
-                        authReq,
-                        mAttributionSource);
+                        mGattCallback, mDevice, uuid, startHandle, endHandle, authReq);
     }
 
     @Test

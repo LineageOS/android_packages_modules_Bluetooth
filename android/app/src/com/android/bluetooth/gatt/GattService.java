@@ -271,15 +271,6 @@ public class GattService extends ProfileService {
 
     // Suppressed because we are conditionally enforcing
     @SuppressLint("AndroidFrameworkRequiresPermission")
-    private void permissionCheck(UUID characteristicUuid) {
-        if (!isHidCharUuid(characteristicUuid)) {
-            return;
-        }
-        this.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-    }
-
-    // Suppressed because we are conditionally enforcing
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     private void permissionCheck(int connId, int handle) {
         if (!isHandleRestricted(connId, handle)) {
             return;
@@ -720,7 +711,6 @@ public class GattService extends ProfileService {
 
     void onNotifyFromNative(
             int connId, BluetoothDevice device, int handle, boolean isNotify, byte[] data) {
-
         Log.v(
                 TAG,
                 "onNotify() - device=" + device + ", handle=" + handle + ", length=" + data.length);
@@ -1275,8 +1265,7 @@ public class GattService extends ProfileService {
             UUID uuid,
             int startHandle,
             int endHandle,
-            int authReq,
-            AttributionSource source) {
+            int authReq) {
         ContextMap<IBluetoothGattCallback>.App clientApp = mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
             Log.w(TAG, "readUsingCharacteristicUuid(" + callback + "): App not registered");
@@ -1288,18 +1277,6 @@ public class GattService extends ProfileService {
         Integer connId = mClientMap.connIdByDevice(clientIf, device);
         if (connId == null) {
             Log.e(TAG, "readUsingCharacteristicUuid() - No connection for " + device);
-            return;
-        }
-
-        try {
-            permissionCheck(uuid);
-        } catch (SecurityException ex) {
-            String callingPackage = source.getPackageName();
-            // Only throws on apps with target SDK T+ as this old API did not throw prior to T
-            if (checkCallerTargetSdk(this, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
-                throw ex;
-            }
-            Log.w(TAG, "readUsingCharacteristicUuid() - permission check failed!");
             return;
         }
 
@@ -2287,7 +2264,7 @@ public class GattService extends ProfileService {
         return HID_SERVICE_UUID.equals(uuid);
     }
 
-    private static boolean isHidCharUuid(final UUID uuid) {
+    static boolean isHidCharUuid(final UUID uuid) {
         for (UUID hidUuid : HID_UUIDS) {
             if (hidUuid.equals(uuid)) {
                 return true;

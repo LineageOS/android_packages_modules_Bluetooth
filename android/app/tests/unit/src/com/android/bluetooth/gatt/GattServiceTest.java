@@ -502,7 +502,7 @@ public class GattServiceTest {
         int authReq = 4;
 
         mService.readUsingCharacteristicUuid(
-                mGattCallback, mDevice, uuid, startHandle, endHandle, authReq, mAttributionSource);
+                mGattCallback, mDevice, uuid, startHandle, endHandle, authReq);
         verify(mNativeInterface)
                 .gattClientReadUsingCharacteristicUuid(
                         CLIENT_CONN_ID,

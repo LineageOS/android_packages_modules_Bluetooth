@@ -1447,7 +1447,9 @@ public final class BluetoothGatt implements BluetoothProfile {
      */
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
-    @RequiresPermission(BLUETOOTH_CONNECT)
+    @RequiresPermission(
+            allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
+            conditional = true)
     public boolean readUsingCharacteristicUuid(UUID uuid, int startHandle, int endHandle) {
         if (VDBG) Log.d(TAG, "readUsingCharacteristicUuid() - uuid: " + uuid);
         if (mService == null || !mClientRegistered) return false;

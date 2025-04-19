@@ -17,8 +17,10 @@
 package com.android.bluetooth.gatt;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
+import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 
 import static com.android.bluetooth.Utils.callerIsSystemOrActiveOrManagedUser;
+import static com.android.bluetooth.Utils.checkCallerTargetSdk;
 import static com.android.bluetooth.Utils.checkConnectPermissionForDataDelivery;
 
 import static java.util.Objects.requireNonNull;
@@ -33,7 +35,9 @@ import android.bluetooth.IBluetoothGatt;
 import android.bluetooth.IBluetoothGattCallback;
 import android.bluetooth.IBluetoothGattServerCallback;
 import android.content.AttributionSource;
+import android.os.Build;
 import android.os.ParcelUuid;
+import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ProfileService.IProfileServiceBinder;
@@ -224,8 +228,22 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         if (service == null) {
             return;
         }
+
+        try {
+            if (service.isHidCharUuid(uuid.getUuid())) {
+                service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+            }
+        } catch (SecurityException ex) {
+            String callingPackage = source.getPackageName();
+            // Only throws on apps with target SDK T+ as this old API did not throw prior to T
+            if (checkCallerTargetSdk(service, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
+                throw ex;
+            }
+            Log.w(TAG, "readUsingCharacteristicUuid() - permission check failed!");
+            return;
+        }
         service.readUsingCharacteristicUuid(
-                callback, device, uuid.getUuid(), startHandle, endHandle, authReq, source);
+                callback, device, uuid.getUuid(), startHandle, endHandle, authReq);
     }
 
     @Override
