@@ -31,6 +31,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -127,7 +128,16 @@ public class ScanControllerTest {
         doReturn(mScanManager)
                 .when(mScanObjectsFactory)
                 .createScanManager(any(), any(), any(), any());
-        doReturn(mPeriodicScanManager).when(mScanObjectsFactory).createPeriodicScanManager();
+        doReturn(mPeriodicScanManager)
+                .when(mScanObjectsFactory)
+                .createPeriodicScanManager(any(), any());
+        doAnswer(
+                        invocation -> {
+                            ((Runnable) invocation.getArgument(0)).run();
+                            return null;
+                        })
+                .when(mPeriodicScanManager)
+                .doOnScanThread(any());
         doReturn(mResources).when(mAdapterService).getResources();
         doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(mContext.getSharedPreferences("ScanControllerTest", Context.MODE_PRIVATE))

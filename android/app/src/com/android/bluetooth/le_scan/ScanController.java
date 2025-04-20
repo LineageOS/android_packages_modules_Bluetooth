@@ -162,14 +162,16 @@ public class ScanController {
         mScanThread.start();
         mAppOps = mAdapterService.getSystemService(AppOpsManager.class);
         mCompanionManager = mAdapterService.getSystemService(CompanionDeviceManager.class);
+        var scanObjectsFactory = ScanObjectsFactory.getInstance();
         mScanManager =
-                ScanObjectsFactory.getInstance()
-                        .createScanManager(
-                                mAdapterService,
-                                this,
-                                BluetoothAdapterProxy.getInstance(),
-                                mScanThread.getLooper());
-        mPeriodicScanManager = ScanObjectsFactory.getInstance().createPeriodicScanManager();
+                scanObjectsFactory.createScanManager(
+                        mAdapterService,
+                        this,
+                        BluetoothAdapterProxy.getInstance(),
+                        mScanThread.getLooper());
+        mPeriodicScanManager =
+                scanObjectsFactory.createPeriodicScanManager(
+                        mAdapterService, mScanThread.getLooper());
     }
 
     public void cleanup() {
@@ -1361,22 +1363,25 @@ public class ScanController {
     /**************************************************************************
      * PERIODIC SCANNING
      *************************************************************************/
+
     void registerSync(
             ScanResult scanResult,
             int skip,
             int timeout,
             IPeriodicAdvertisingCallback callback,
             AttributionSource source) {
-        mPeriodicScanManager.startSync(scanResult, skip, timeout, callback);
+        mPeriodicScanManager.doOnScanThread(
+                () -> mPeriodicScanManager.startSync(scanResult, skip, timeout, callback));
     }
 
     void unregisterSync(IPeriodicAdvertisingCallback callback, AttributionSource source) {
-        mPeriodicScanManager.stopSync(callback);
+        mPeriodicScanManager.doOnScanThread(() -> mPeriodicScanManager.stopSync(callback));
     }
 
     void transferSync(
             BluetoothDevice bda, int serviceData, int syncHandle, AttributionSource source) {
-        mPeriodicScanManager.transferSync(bda, serviceData, syncHandle);
+        mPeriodicScanManager.doOnScanThread(
+                () -> mPeriodicScanManager.transferSync(bda, serviceData, syncHandle));
     }
 
     void transferSetInfo(
@@ -1385,7 +1390,8 @@ public class ScanController {
             int advHandle,
             IPeriodicAdvertisingCallback callback,
             AttributionSource source) {
-        mPeriodicScanManager.transferSetInfo(bda, serviceData, advHandle, callback);
+        mPeriodicScanManager.doOnScanThread(
+                () -> mPeriodicScanManager.transferSetInfo(bda, serviceData, advHandle, callback));
     }
 
     int numHwTrackFiltersAvailable(AttributionSource source) {
