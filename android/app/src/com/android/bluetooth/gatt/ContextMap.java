@@ -392,20 +392,31 @@ public class ContextMap<C extends IInterface> {
         return null;
     }
 
-    /** Returns a connection ID for a given device. */
-    Integer connIdByDevice(int id, BluetoothDevice device) {
-        App entry = getById(id);
-        if (entry == null) {
-            return null;
-        }
+    /**
+     * Returns all connection IDs for a given device.
+     *
+     * <p>Devices are allowed to have multiple underlying connections (ATT bearers) to a remote
+     * device. When using BR/EDR, these can be different L2CAP connections targeting the ATT
+     * assigned PSM. When using LE, there's typically one underlying link targeting the fixed ATT
+     * channel for LE. When a device is dual mode, they can use any combination of these links.
+     *
+     * <p>One ATT bearer disconnecting doesn't necessarily mean the entire underlying connection is
+     * gone. We need to use all connections to carefully communicate state to GATT applications.
+     * When requesting a disconnection, we also need to make sure to request a disconnection on all
+     * connections, not just a single connection.
+     *
+     * <p>This function provides a way to get all connections for a device so we can do the above.
+     */
+    List<Connection> getConnectionsByDevice(int appId, BluetoothDevice device) {
+        List<Connection> currentConnections = new ArrayList<Connection>();
         synchronized (mConnectionsLock) {
             for (Connection connection : mConnections) {
-                if (connection.device.equals(device) && connection.appId == id) {
-                    return connection.connId;
+                if (connection.device.equals(device) && connection.appId == appId) {
+                    currentConnections.add(connection);
                 }
             }
         }
-        return null;
+        return currentConnections;
     }
 
     /** Returns the device for a given connection ID. */
@@ -420,6 +431,7 @@ public class ContextMap<C extends IInterface> {
         return null;
     }
 
+    /** Returns all Connections that have a given app UID. */
     public List<Connection> getConnectionByApp(int appId) {
         List<Connection> currentConnections = new ArrayList<Connection>();
         synchronized (mConnectionsLock) {
