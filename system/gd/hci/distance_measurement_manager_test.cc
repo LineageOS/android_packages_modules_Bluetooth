@@ -205,6 +205,8 @@ struct CsModule {
   DistanceMeasurementManager* dm_manager_ = nullptr;
   testing::MockDistanceMeasurementCallbacks mock_dm_callbacks_;
   std::unique_ptr<std::promise<void>> dm_session_promise_;
+  bool local_capabilities_complete_done_ = false;
+  bool remote_capabilities_complete_done_ = false;
 
   void Start() {
     test_hci_layer_ = new HciLayerFake;                    // Ownership is transferred to registry
@@ -496,10 +498,14 @@ struct CsModule {
   }
 
   void ReceivedReadLocalCapabilitiesComplete() {
+    if (local_capabilities_complete_done_) {
+      return;
+    }
     CsReadCapabilitiesCompleteEvent read_cs_complete_event;
     read_cs_complete_event.num_antennas_supported = 1;  // make the antenna_paths to be 2;
     test_hci_layer_->IncomingEvent(
             GetLocalSupportedCapabilitiesCompleteEvent(read_cs_complete_event));
+    local_capabilities_complete_done_ = true;
   }
 
   void StartMeasurementTillRasConnectedEvent(const StartMeasurementParameters& params) {
@@ -529,7 +535,7 @@ struct CsModule {
             /*num_hci_command_packets=*/0xFF));
     test_hci_layer_->IncomingLeMetaEvent(GetRemoteSupportedCapabilitiesCompleteEvent(
             params.connection_handle, read_cs_complete_event));
-
+    remote_capabilities_complete_done_ = true;
     test_hci_layer_->GetCommand(OpCode::LE_CS_SET_DEFAULT_SETTINGS);
     test_hci_layer_->IncomingEvent(LeCsSetDefaultSettingsCompleteBuilder::Create(
             /*num_hci_command_packets=*/static_cast<uint8_t>(0xEE), ErrorCode::SUCCESS,
@@ -596,14 +602,18 @@ struct CsModule {
     dm_manager_->HandleRasServerConnected(params.requester_addr, params.connection_handle,
                                           params.resp_hci_role);
     // remote capabilities
-    CsReadCapabilitiesCompleteEvent read_cs_complete_event;
-    test_hci_layer_->IncomingLeMetaEvent(GetRemoteSupportedCapabilitiesCompleteEvent(
-            params.connection_handle, read_cs_complete_event));
-    // set default settings
-    test_hci_layer_->GetCommand(OpCode::LE_CS_SET_DEFAULT_SETTINGS);
-    test_hci_layer_->IncomingEvent(LeCsSetDefaultSettingsCompleteBuilder::Create(
-            /*num_hci_command_packets=*/static_cast<uint8_t>(0xEE), ErrorCode::SUCCESS,
-            params.connection_handle));
+    // for back2back case, if the read_remote_caps is done for requester, when it works as
+    // responder, it don't get the event, as controller had cached it.
+    if (!remote_capabilities_complete_done_) {
+      CsReadCapabilitiesCompleteEvent read_cs_complete_event;
+      test_hci_layer_->IncomingLeMetaEvent(GetRemoteSupportedCapabilitiesCompleteEvent(
+              params.connection_handle, read_cs_complete_event));
+      // set default settings
+      test_hci_layer_->GetCommand(OpCode::LE_CS_SET_DEFAULT_SETTINGS);
+      test_hci_layer_->IncomingEvent(LeCsSetDefaultSettingsCompleteBuilder::Create(
+              /*num_hci_command_packets=*/static_cast<uint8_t>(0xEE), ErrorCode::SUCCESS,
+              params.connection_handle));
+    }
     // CS config
     CsConfigCompleteEvent cs_config_complete_event;
     cs_config_complete_event.main_mode_type = params.main_mode_type;
@@ -920,6 +930,86 @@ TEST_F(DistanceMeasurementManagerTest, schedule_next_cs_procedures) {
   EXPECT_EQ(enable_view.IsValid(), true);
   EXPECT_EQ(enable_view.GetProcedureEnable(), Enable::ENABLED);
   cs_requester_.sync_client_handler();
+}
+
+TEST_F(DistanceMeasurementManagerTest, procedure_enabled_after_stop) {
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillSetProcedureParameters(params);
+
+  cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+  cs_requester_.test_hci_layer_->IncomingEvent(LeCsProcedureEnableStatusBuilder::Create(
+          /*status=*/ErrorCode::SUCCESS,
+          /*num_hci_command_packets=*/0xff));
+  cs_requester_.dm_manager_->StopDistanceMeasurement(
+          params.responder_addr, params.connection_handle, DistanceMeasurementMethod::METHOD_CS);
+  // disable by stop request
+  cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+
+  CsProcedureEnableCompleteEvent complete_event;
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetProcedureEnableCompleteEvent(
+          params.connection_handle, Enable::ENABLED, complete_event));
+  // disable after stop
+  CommandView command_view =
+          cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+  LeCsProcedureEnableView enable_view =
+          LeCsProcedureEnableView::Create(DistanceMeasurementCommandView::Create(command_view));
+  cs_requester_.sync_client_handler();
+
+  EXPECT_EQ(enable_view.IsValid(), true);
+  EXPECT_EQ(enable_view.GetProcedureEnable(), Enable::DISABLED);
+}
+
+TEST_F(DistanceMeasurementManagerTest, b2b_conflict_before_requester_stop) {
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillSetProcedureParameters(params);
+
+  // local requester session is stopped by the responder as they share the same config_id
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+              OnDistanceMeasurementStopped(params.responder_addr,
+                                           DistanceMeasurementErrorCode::REASON_REMOTE_REQUEST,
+                                           DistanceMeasurementMethod::METHOD_CS));
+  // inject the responder event
+  cs_requester_.RespondTillProcedureEnableComplete(params);
+  cs_requester_.sync_client_handler();
+
+  // make sure the reponder still can handle the subevent
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+              OnRasFragmentReady(params.requester_addr, 0, /*is_last=*/true, _));
+
+  CsSubeventResultEvent resp_subevent_result;
+  resp_subevent_result.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::REFLECTOR);
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(
+          CsModule::GetSubeventResultEvent(params.connection_handle, 0, resp_subevent_result));
+  cs_requester_.sync_client_handler();
+}
+
+TEST_F(DistanceMeasurementManagerTest, b2b_conflict_after_requester_stop) {
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillSetProcedureParameters(params);
+  cs_requester_.dm_manager_->StopDistanceMeasurement(
+          params.responder_addr, params.connection_handle, DistanceMeasurementMethod::METHOD_CS);
+
+  // inject the responder event
+  cs_requester_.RespondTillProcedureEnableComplete(params);
+
+  // make sure the reponder still can handle the subevent
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+              OnRasFragmentReady(params.requester_addr, 0, /*is_last=*/true, _));
+
+  CsSubeventResultEvent resp_subevent_result;
+  resp_subevent_result.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::REFLECTOR);
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(
+          CsModule::GetSubeventResultEvent(params.connection_handle, 0, resp_subevent_result));
+  cs_requester_.sync_client_handler();
+
+  // requester start again, it should use 1 as config_id and trigger create_config command
+  cs_requester_.StartMeasurement(params);
+  CommandView command_view = cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_CREATE_CONFIG);
+  LeCsCreateConfigView create_config_view =
+          LeCsCreateConfigView::Create(DistanceMeasurementCommandView::Create(command_view));
+
+  EXPECT_TRUE(create_config_view.IsValid());
+  EXPECT_EQ(create_config_view.GetConfigId(), 1);
 }
 
 TEST_F(DistanceMeasurementManagerTest, no_trailing_procedure_data) {
