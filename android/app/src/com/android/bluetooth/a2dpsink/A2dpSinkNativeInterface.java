@@ -37,15 +37,15 @@ public class A2dpSinkNativeInterface {
 
     private static final Object INSTANCE_LOCK = new Object();
 
-    private A2dpSinkNativeInterface() {
-        mAdapterService = requireNonNull(AdapterService.getAdapterService());
+    private A2dpSinkNativeInterface(AdapterService adapterService) {
+        mAdapterService = requireNonNull(adapterService);
     }
 
     /** Get singleton instance. */
-    public static A2dpSinkNativeInterface getInstance() {
+    public static A2dpSinkNativeInterface getInstance(AdapterService adapterService) {
         synchronized (INSTANCE_LOCK) {
             if (sInstance == null) {
-                sInstance = new A2dpSinkNativeInterface();
+                sInstance = new A2dpSinkNativeInterface(adapterService);
             }
             return sInstance;
         }

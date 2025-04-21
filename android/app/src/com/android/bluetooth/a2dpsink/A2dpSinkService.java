@@ -70,7 +70,10 @@ public class A2dpSinkService extends ProfileService {
     private BluetoothDevice mActiveDevice = null;
 
     public A2dpSinkService(AdapterService adapterService) {
-        this(adapterService, A2dpSinkNativeInterface.getInstance(), Looper.getMainLooper());
+        this(
+                adapterService,
+                A2dpSinkNativeInterface.getInstance(adapterService),
+                Looper.getMainLooper());
     }
 
     @VisibleForTesting
