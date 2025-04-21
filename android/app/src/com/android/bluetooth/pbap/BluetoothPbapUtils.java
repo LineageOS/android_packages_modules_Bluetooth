@@ -622,10 +622,11 @@ class BluetoothPbapUtils {
      * contactId - Contact ID, data1 - field value from data table for phone/email/address*/
     @VisibleForTesting
     static void setContactFields(String fieldType, String contactId, String data) {
-        ContactData cData;
+        ContactData cData = null;
         if (sContactDataset.containsKey(contactId)) {
             cData = sContactDataset.get(contactId);
-        } else {
+        }
+        if (cData == null) {
             cData = new ContactData();
         }
 
