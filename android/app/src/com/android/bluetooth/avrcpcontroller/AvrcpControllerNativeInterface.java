@@ -16,12 +16,15 @@
 
 package com.android.bluetooth.avrcpcontroller;
 
+import static com.android.bluetooth.Utils.getAddressStringFromByte;
+
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.BluetoothDevice;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.Utils;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -38,6 +41,12 @@ public class AvrcpControllerNativeInterface {
     private static AvrcpControllerNativeInterface sInstance;
 
     private static final Object INSTANCE_LOCK = new Object();
+
+    private final AdapterService mAdapterService;
+
+    private AvrcpControllerNativeInterface() {
+        mAdapterService = requireNonNull(AdapterService.getAdapterService());
+    }
 
     static AvrcpControllerNativeInterface getInstance() {
         synchronized (INSTANCE_LOCK) {
@@ -121,9 +130,7 @@ public class AvrcpControllerNativeInterface {
     // Called by JNI when a device has connected or disconnected.
     void onConnectionStateChanged(
             boolean remoteControlConnected, boolean browsingConnected, byte[] address) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
         Log.d(
                 TAG,
                 "onConnectionStateChanged: "
@@ -138,9 +145,7 @@ public class AvrcpControllerNativeInterface {
     // Called by JNI to notify Avrcp of a remote device's Cover Art PSM
     @VisibleForTesting
     void getRcPsm(byte[] address, int psm) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
         Log.d(TAG, "getRcPsm: device=" + device + " psm=" + psm);
 
         mAvrcpController.getRcPsm(device, psm);
@@ -148,9 +153,7 @@ public class AvrcpControllerNativeInterface {
 
     // Called by JNI to report remote Player's capabilities
     void handlePlayerAppSetting(byte[] address, byte[] playerAttribRsp, int rspLen) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
         Log.d(TAG, "handlePlayerAppSetting: device=" + device + " rspLen=" + rspLen);
 
         mAvrcpController.handlePlayerAppSetting(device, playerAttribRsp, rspLen);
@@ -158,9 +161,7 @@ public class AvrcpControllerNativeInterface {
 
     @VisibleForTesting
     void onPlayerAppSettingChanged(byte[] address, byte[] playerAttribRsp, int rspLen) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
         Log.d(TAG, "onPlayerAppSettingChanged: device=" + device);
 
         mAvrcpController.onPlayerAppSettingChanged(device, playerAttribRsp, rspLen);
@@ -168,9 +169,7 @@ public class AvrcpControllerNativeInterface {
 
     // Called by JNI when remote wants to set absolute volume.
     void handleSetAbsVolume(byte[] address, byte absVol, byte label) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
         Log.d(TAG, "handleSetAbsVolume: device=" + device);
 
         mAvrcpController.handleSetAbsVolume(device, absVol, label);
@@ -178,9 +177,7 @@ public class AvrcpControllerNativeInterface {
 
     // Called by JNI when remote wants to receive absolute volume notifications.
     void handleRegisterNotificationAbsVol(byte[] address, byte label) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
         Log.d(TAG, "handleRegisterNotificationAbsVol: device=" + device);
 
         mAvrcpController.handleRegisterNotificationAbsVol(device, label);
@@ -188,9 +185,7 @@ public class AvrcpControllerNativeInterface {
 
     // Called by JNI when a track changes and local AvrcpController is registered for updates.
     void onTrackChanged(byte[] address, byte numAttributes, int[] attributes, String[] attribVals) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
         Log.d(TAG, "onTrackChanged: device=" + device);
 
         mAvrcpController.onTrackChanged(device, numAttributes, attributes, attribVals);
@@ -198,9 +193,7 @@ public class AvrcpControllerNativeInterface {
 
     // Called by JNI periodically based upon timer to update play position
     void onPlayPositionChanged(byte[] address, int songLen, int currSongPosition) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
         Log.d(TAG, "onPlayPositionChanged: device=" + device + " pos=" + currSongPosition);
 
         mAvrcpController.onPlayPositionChanged(device, songLen, currSongPosition);
@@ -208,9 +201,7 @@ public class AvrcpControllerNativeInterface {
 
     // Called by JNI on changes of play status
     void onPlayStatusChanged(byte[] address, byte playStatus) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
         Log.d(TAG, "onPlayStatusChanged: device=" + device + " playStatus=" + playStatus);
 
         mAvrcpController.onPlayStatusChanged(device, toPlaybackStateFromJni(playStatus));
@@ -218,9 +209,7 @@ public class AvrcpControllerNativeInterface {
 
     // Browsing related JNI callbacks.
     void handleGetFolderItemsRsp(byte[] address, int status, AvrcpItem[] items) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
         Log.d(
                 TAG,
                 "handleGetFolderItemsRsp:"
@@ -232,9 +221,7 @@ public class AvrcpControllerNativeInterface {
     }
 
     void handleGetPlayerItemsRsp(byte[] address, AvrcpPlayer[] items) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
         Log.d(
                 TAG,
                 "handleGetFolderItemsRsp:"
@@ -244,12 +231,53 @@ public class AvrcpControllerNativeInterface {
         mAvrcpController.handleGetPlayerItemsRsp(device, Arrays.asList(items));
     }
 
+    void handleChangeFolderRsp(byte[] address, int count) {
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
+        Log.d(TAG, "handleChangeFolderRsp: device=" + device + " count=" + count);
+
+        mAvrcpController.handleChangeFolderRsp(device, count);
+    }
+
+    void handleSetBrowsedPlayerRsp(byte[] address, int items, int depth) {
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
+        Log.d(TAG, "handleSetBrowsedPlayerRsp: device=" + device + " depth=" + depth);
+
+        mAvrcpController.handleSetBrowsedPlayerRsp(device, items, depth);
+    }
+
+    void handleSetAddressedPlayerRsp(byte[] address, int status) {
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
+        Log.d(TAG, "handleSetAddressedPlayerRsp device=" + device + " status=" + status);
+
+        mAvrcpController.handleSetAddressedPlayerRsp(device, status);
+    }
+
+    void handleAddressedPlayerChanged(byte[] address, int id) {
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
+        Log.d(TAG, "handleAddressedPlayerChanged: device=" + device + " id=" + id);
+
+        mAvrcpController.handleAddressedPlayerChanged(device, id);
+    }
+
+    void handleNowPlayingContentChanged(byte[] address) {
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
+        Log.d(TAG, "handleNowPlayingContentChanged: device=" + device);
+        mAvrcpController.handleNowPlayingContentChanged(device);
+    }
+
+    void onAvailablePlayerChanged(byte[] address) {
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
+        Log.d(TAG, "onAvailablePlayerChanged: device=" + device);
+        mAvrcpController.onAvailablePlayerChanged(device);
+    }
+
     // JNI Helper functions to convert native objects to java.
+    // Called within android/app/jni/com_android_bluetooth_avrcp_controller.cpp
     static AvrcpItem createFromNativeMediaItem(
             byte[] address, long uid, int type, String name, int[] attrIds, String[] attrVals) {
         BluetoothDevice device =
                 AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
+                        .getRemoteDevice(getAddressStringFromByte(address));
         Log.d(
                 TAG,
                 "createFromNativeMediaItem:"
@@ -275,7 +303,7 @@ public class AvrcpControllerNativeInterface {
             byte[] address, long uid, int type, String name, int playable) {
         BluetoothDevice device =
                 AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
+                        .getRemoteDevice(getAddressStringFromByte(address));
         Log.d(
                 TAG,
                 "createFromNativeFolderItem:"
@@ -306,7 +334,7 @@ public class AvrcpControllerNativeInterface {
             int playerType) {
         BluetoothDevice device =
                 AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
+                        .getRemoteDevice(getAddressStringFromByte(address));
         Log.d(
                 TAG,
                 "createFromNativePlayerItem:"
@@ -323,58 +351,6 @@ public class AvrcpControllerNativeInterface {
                 .setName(name)
                 .setPlayStatus(toPlaybackStateFromJni(playStatus))
                 .build();
-    }
-
-    void handleChangeFolderRsp(byte[] address, int count) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
-        Log.d(TAG, "handleChangeFolderRsp: device=" + device + " count=" + count);
-
-        mAvrcpController.handleChangeFolderRsp(device, count);
-    }
-
-    void handleSetBrowsedPlayerRsp(byte[] address, int items, int depth) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
-        Log.d(TAG, "handleSetBrowsedPlayerRsp: device=" + device + " depth=" + depth);
-
-        mAvrcpController.handleSetBrowsedPlayerRsp(device, items, depth);
-    }
-
-    void handleSetAddressedPlayerRsp(byte[] address, int status) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
-        Log.d(TAG, "handleSetAddressedPlayerRsp device=" + device + " status=" + status);
-
-        mAvrcpController.handleSetAddressedPlayerRsp(device, status);
-    }
-
-    void handleAddressedPlayerChanged(byte[] address, int id) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
-        Log.d(TAG, "handleAddressedPlayerChanged: device=" + device + " id=" + id);
-
-        mAvrcpController.handleAddressedPlayerChanged(device, id);
-    }
-
-    void handleNowPlayingContentChanged(byte[] address) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
-        Log.d(TAG, "handleNowPlayingContentChanged: device=" + device);
-        mAvrcpController.handleNowPlayingContentChanged(device);
-    }
-
-    void onAvailablePlayerChanged(byte[] address) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(Utils.getAddressStringFromByte(address));
-        Log.d(TAG, "onAvailablePlayerChanged: device=" + device);
-        mAvrcpController.onAvailablePlayerChanged(device);
     }
 
     /*
