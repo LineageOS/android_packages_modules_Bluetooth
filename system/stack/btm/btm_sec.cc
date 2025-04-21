@@ -3406,8 +3406,19 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
     }
   }
 
-  /* If this encryption was started by peer do not need to do anything */
-  if (!p_dev_rec->sec_rec.is_security_state_bredr_encrypting()) {
+  if (com::android::bluetooth::flags::reset_collision_state_on_encryption() &&
+      status == HCI_SUCCESS && !p_dev_rec->sec_rec.is_security_state_bredr_encrypting() &&
+      alarm_is_scheduled(btm_sec_cb.sec_collision_timer) && btm_sec_cb.p_collided_dev_rec &&
+      btm_sec_cb.p_collided_dev_rec->bd_addr == p_dev_rec->bd_addr) {
+    log::debug("Clear collision info after incoming encryption {}", p_dev_rec->bd_addr);
+    btm_sec_cb.p_collided_dev_rec = NULL;
+    alarm_cancel(btm_sec_cb.sec_collision_timer);
+  } else if (com::android::bluetooth::flags::reset_collision_state_on_encryption() &&
+             status == HCI_SUCCESS &&
+             p_dev_rec->sec_rec.classic_link == tSECURITY_STATE::AUTHENTICATING) {
+    log::debug("Incoming encryption occur during auth, so continue next security procedure");
+  } else if (!p_dev_rec->sec_rec.is_security_state_bredr_encrypting()) {
+    /* Link encrypted by peer, so no need to do anything */
     if (tSECURITY_STATE::DELAY_FOR_ENC == p_dev_rec->sec_rec.classic_link) {
       p_dev_rec->sec_rec.classic_link = tSECURITY_STATE::IDLE;
       log::verbose("clearing callback. p_dev_rec={}, p_callback={}", std::format_ptr(p_dev_rec),
