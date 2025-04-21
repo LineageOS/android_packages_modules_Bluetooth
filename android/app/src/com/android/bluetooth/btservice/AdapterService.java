@@ -91,6 +91,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.devicestate.DeviceStateManager;
+import android.hardware.display.DisplayManager;
 import android.os.AsyncTask;
 import android.os.BatteryStatsManager;
 import android.os.Binder;
@@ -725,7 +726,12 @@ public class AdapterService extends Service {
         if (Flags.adapterSuspendMgmt()) {
             mAdapterSuspend =
                     new AdapterSuspend(
-                            mNativeInterface, mLooper, getSystemService(DeviceStateManager.class));
+                            this,
+                            mNativeInterface,
+                            mLooper,
+                            getSystemService(DeviceStateManager.class),
+                            mPowerManager,
+                            getSystemService(DisplayManager.class));
         }
 
         invalidateBluetoothCaches();

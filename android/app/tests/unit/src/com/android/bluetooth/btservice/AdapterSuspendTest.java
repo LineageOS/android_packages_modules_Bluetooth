@@ -21,14 +21,14 @@ import static android.bluetooth.BluetoothAdapter.SCAN_MODE_NONE;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 
-import static com.google.common.truth.Truth.assertThat;
-
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.verify;
 
 import android.content.Context;
 import android.hardware.devicestate.DeviceStateManager;
+import android.hardware.display.DisplayManager;
+import android.os.PowerManager;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -48,7 +48,11 @@ import org.mockito.Mock;
 public class AdapterSuspendTest {
     private TestLooper mTestLooper;
     private DeviceStateManager mDeviceStateManager;
+    private DisplayManager mDisplayManager;
     private AdapterSuspend mAdapterSuspend;
+    private PowerManager mPowerManager;
+
+    private AdapterService mAdapterService = new AdapterService();
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Mock private AdapterNativeInterface mAdapterNativeInterface;
@@ -58,10 +62,17 @@ public class AdapterSuspendTest {
         Context context = InstrumentationRegistry.getInstrumentation().getContext();
         mTestLooper = new TestLooper();
         mDeviceStateManager = context.getSystemService(DeviceStateManager.class);
+        mDisplayManager = context.getSystemService(DisplayManager.class);
+        mPowerManager = context.getSystemService(PowerManager.class);
 
         mAdapterSuspend =
                 new AdapterSuspend(
-                        mAdapterNativeInterface, mTestLooper.getLooper(), mDeviceStateManager);
+                        mAdapterService,
+                        mAdapterNativeInterface,
+                        mTestLooper.getLooper(),
+                        mDeviceStateManager,
+                        mPowerManager,
+                        mDisplayManager);
     }
 
     private void triggerSuspend() throws Exception {
@@ -72,14 +83,8 @@ public class AdapterSuspendTest {
         mAdapterSuspend.handleResume();
     }
 
-    private boolean isSuspended() throws Exception {
-        return mAdapterSuspend.isSuspended();
-    }
-
     @Test
     public void testSuspend() throws Exception {
-        assertThat(isSuspended()).isFalse();
-
         triggerSuspend();
 
         verify(mAdapterNativeInterface).setDefaultEventMaskExcept(anyLong(), anyLong());
@@ -88,13 +93,11 @@ public class AdapterSuspendTest {
         verify(mAdapterNativeInterface).clearEventFilter();
         verify(mAdapterNativeInterface).clearFilterAcceptList();
         verify(mAdapterNativeInterface).disconnectAllAcls();
-        assertThat(isSuspended()).isTrue();
     }
 
     @Test
     public void testResume() throws Exception {
         triggerSuspend();
-        assertThat(isSuspended()).isTrue();
 
         clearInvocations(mAdapterNativeInterface);
         triggerResume();
@@ -104,6 +107,5 @@ public class AdapterSuspendTest {
         verify(mAdapterNativeInterface).restoreFilterAcceptList();
         verify(mAdapterNativeInterface)
                 .setScanMode(AdapterService.convertScanModeToHal(SCAN_MODE_CONNECTABLE));
-        assertThat(isSuspended()).isFalse();
     }
 }
