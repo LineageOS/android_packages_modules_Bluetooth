@@ -1,11 +1,11 @@
 //! Anything related to the adapter API (IBluetooth).
 
 use bt_topshim::btif::{
-    BaseCallbacks, BaseCallbacksDispatcher, BluetoothInterface, BluetoothProperty, BtAclState,
-    BtAddrType, BtBondState, BtConnectionDirection, BtConnectionState, BtDeviceType, BtDiscMode,
-    BtDiscoveryState, BtHciErrorCode, BtPinCode, BtPropertyType, BtScanMode, BtSspVariant, BtState,
-    BtStatus, BtThreadEvent, BtTransport, BtVendorProductInfo, DisplayAddress, DisplayUuid,
-    RawAddress, ToggleableProfile, Uuid, INVALID_RSSI,
+    AclLinkSpec, BaseCallbacks, BaseCallbacksDispatcher, BluetoothInterface, BluetoothProperty,
+    BtAclState, BtAddrType, BtBondState, BtConnectionDirection, BtConnectionState, BtDeviceType,
+    BtDiscMode, BtDiscoveryState, BtHciErrorCode, BtPinCode, BtPropertyType, BtScanMode,
+    BtSspVariant, BtState, BtStatus, BtThreadEvent, BtTransport, BtVendorProductInfo,
+    DisplayAddress, DisplayUuid, RawAddress, ToggleableProfile, Uuid, INVALID_RSSI,
 };
 use bt_topshim::profiles::gatt::GattStatus;
 use bt_topshim::profiles::hfp::EscoCodingFormat;
@@ -1530,9 +1530,8 @@ pub(crate) trait BtifBluetoothCallbacks {
     fn acl_state(
         &mut self,
         status: BtStatus,
-        addr: RawAddress,
+        acl_link_spec: AclLinkSpec,
         state: BtAclState,
-        link_type: BtTransport,
         hci_reason: BtHciErrorCode,
         conn_direction: BtConnectionDirection,
         acl_handle: u16,
@@ -2061,13 +2060,14 @@ impl BtifBluetoothCallbacks for Bluetooth {
     fn acl_state(
         &mut self,
         status: BtStatus,
-        addr: RawAddress,
+        acl_link_spec: AclLinkSpec,
         state: BtAclState,
-        link_type: BtTransport,
         hci_reason: BtHciErrorCode,
         conn_direction: BtConnectionDirection,
         _acl_handle: u16,
     ) {
+        let addr: RawAddress = acl_link_spec.addrt.bda;
+        let link_type: BtTransport = acl_link_spec.transport.into();
         // If discovery was previously paused at connect_all_enabled_profiles to avoid an outgoing
         // ACL connection colliding with an ongoing inquiry, resume it.
         self.resume_discovery();
