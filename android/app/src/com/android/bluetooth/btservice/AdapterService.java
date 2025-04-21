@@ -270,6 +270,17 @@ public class AdapterService extends Service {
     private final BluetoothHciVendorSpecificDispatcher mBluetoothHciVendorSpecificDispatcher =
             new BluetoothHciVendorSpecificDispatcher();
 
+    private final PowerManager.WakeLockStateListener mWakeLockListener =
+            new PowerManager.WakeLockStateListener() {
+                @Override
+                public void onStateChanged(boolean enabled) {
+                    if (mAdapterSuspend != null) {
+                        mAdapterSuspend.updateWakeLockState(enabled);
+                    }
+                    Log.d(TAG, "Wakelock callback state update: " + enabled);
+                }
+            };
+
     private final Looper mLooper;
     private final AdapterServiceHandler mHandler;
 
@@ -4393,6 +4404,9 @@ public class AdapterService extends Service {
         synchronized (this) {
             if (mWakeLock == null) {
                 mWakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, lockName);
+                if (Flags.refCountedNativeWakelock() && Flags.adapterSuspendMgmt()) {
+                    mWakeLock.setStateListener(mHandler::post, mWakeLockListener);
+                }
             }
 
             if (!mWakeLock.isHeld() || Flags.refCountedNativeWakelock()) {
