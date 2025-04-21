@@ -616,6 +616,7 @@ void bta_gattc_close_fail(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data
     cb_data.close.client_if = p_clcb->p_rcb->client_if;
     cb_data.close.conn_id = static_cast<tCONN_ID>(p_data->hdr.layer_specific);
     cb_data.close.remote_bda = p_clcb->bda;
+    cb_data.close.transport = p_clcb->transport;
     cb_data.close.reason = BTA_GATT_CONN_NONE;
     cb_data.close.status = GATT_ERROR;
 
@@ -636,6 +637,7 @@ void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
                           .status = GATT_SUCCESS,
                           .client_if = p_clcb->p_rcb->client_if,
                           .remote_bda = p_clcb->bda,
+                          .transport = p_clcb->transport,
                           .reason = GATT_CONN_OK,
                   },
   };

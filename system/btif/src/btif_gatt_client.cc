@@ -134,6 +134,21 @@ tBT_TRANSPORT to_bt_transport(int val) {
   return BT_TRANSPORT_AUTO;
 }
 
+int to_java_transport(tBT_TRANSPORT transport) {
+  switch (transport) {
+    case BT_TRANSPORT_AUTO:
+      return 0;
+    case BT_TRANSPORT_BR_EDR:
+      return 1;
+    case BT_TRANSPORT_LE:
+      return 2;
+    default:
+      break;
+  }
+  log::warn("Passed unexpected transport value:{}", transport);
+  return 0;
+}
+
 uint8_t rssi_request_client_if;
 
 static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
@@ -184,9 +199,11 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
     }
 
     case BTA_GATTC_OPEN_EVT: {
-      log::debug("BTA_GATTC_OPEN_EVT {}", p_data->open.remote_bda);
+      log::debug("BTA_GATTC_OPEN_EVT connId={}, device={}, transport={}", p_data->open.conn_id,
+                 p_data->open.remote_bda, p_data->open.transport);
       HAL_CBACK(callbacks, client->open_cb, static_cast<int>(p_data->open.conn_id),
-                p_data->open.status, p_data->open.client_if, p_data->open.remote_bda);
+                p_data->open.status, p_data->open.client_if,
+                to_java_transport(p_data->open.transport), p_data->open.remote_bda);
 
       if (GATT_DEF_BLE_MTU_SIZE != p_data->open.mtu && p_data->open.mtu) {
         HAL_CBACK(callbacks, client->configure_mtu_cb, static_cast<int>(p_data->open.conn_id),
@@ -200,9 +217,11 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
     }
 
     case BTA_GATTC_CLOSE_EVT: {
-      log::debug("BTA_GATTC_CLOSE_EVT {}", p_data->close.remote_bda);
+      log::debug("BTA_GATTC_CLOSE_EVT connId={}, device={}, transport={}", p_data->close.conn_id,
+                 p_data->close.remote_bda, p_data->close.transport);
       HAL_CBACK(callbacks, client->close_cb, static_cast<int>(p_data->close.conn_id),
-                p_data->close.status, p_data->close.client_if, p_data->close.remote_bda);
+                p_data->close.status, p_data->close.client_if,
+                to_java_transport(p_data->close.transport), p_data->close.remote_bda);
       break;
     }
 
@@ -322,6 +341,12 @@ void btif_gattc_open_impl(int client_if, RawAddress address, tBLE_ADDR_TYPE addr
     }
   }
 
+  // Determine transport
+  if (transport == BT_TRANSPORT_AUTO) {
+    // Prefer LE transport when LE is supported
+    transport = (device_type == BT_DEVICE_TYPE_BREDR) ? BT_TRANSPORT_BR_EDR : BT_TRANSPORT_LE;
+  }
+
   // Check for background connections
   if (!is_direct) {
     // Check for privacy 1.0 and 1.1 controller and do not start background
@@ -333,16 +358,11 @@ void btif_gattc_open_impl(int client_if, RawAddress address, tBLE_ADDR_TYPE addr
       BTM_BleGetVendorCapabilities(&vnd_capabilities);
       if (!vnd_capabilities.rpa_offloading) {
         auto callbacks = bt_gatt_callbacks;
-        HAL_CBACK(callbacks, client->open_cb, 0, BT_STATUS_UNSUPPORTED, client_if, address);
+        HAL_CBACK(callbacks, client->open_cb, to_java_transport(transport), 0,
+                  BT_STATUS_UNSUPPORTED, client_if, address);
         return;
       }
     }
-  }
-
-  // Determine transport
-  if (transport == BT_TRANSPORT_AUTO) {
-    // Prefer LE transport when LE is supported
-    transport = (device_type == BT_DEVICE_TYPE_BREDR) ? BT_TRANSPORT_BR_EDR : BT_TRANSPORT_LE;
   }
 
   // Connect!

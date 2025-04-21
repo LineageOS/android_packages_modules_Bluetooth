@@ -328,7 +328,7 @@ public class GattServiceTest {
                         0,
                         false);
         mService.onConnectedFromNative(
-                CLIENT_IF, 0, BluetoothGatt.GATT_CONNECTION_TIMEOUT, mDevice);
+                CLIENT_IF, 0, transport, BluetoothGatt.GATT_CONNECTION_TIMEOUT, mDevice);
         verify(mAdapterService).notifyGattClientConnectFailed(anyInt(), any());
     }
 
@@ -370,7 +370,8 @@ public class GattServiceTest {
                         phy,
                         0,
                         false);
-        mService.onConnectedFromNative(CLIENT_IF, 15, BluetoothGatt.GATT_SUCCESS, mDevice);
+        mService.onConnectedFromNative(
+                CLIENT_IF, 15, transport, BluetoothGatt.GATT_SUCCESS, mDevice);
         mService.clientDisconnect(mGattCallback, mDevice, mAttributionSource);
 
         verify(mAdapterService).notifyGattClientDisconnect(anyInt(), any());
@@ -414,8 +415,9 @@ public class GattServiceTest {
                         phy,
                         0,
                         false);
-        mService.onConnectedFromNative(CLIENT_IF, 15, BluetoothGatt.GATT_SUCCESS, mDevice);
-        mService.onDisconnectedFromNative(CLIENT_IF, 15, 1, mDevice);
+        mService.onConnectedFromNative(
+                CLIENT_IF, 15, transport, BluetoothGatt.GATT_SUCCESS, mDevice);
+        mService.onDisconnectedFromNative(CLIENT_IF, 15, transport, 1, mDevice);
 
         verify(mAdapterService).notifyGattClientDisconnect(anyInt(), any());
     }
@@ -716,7 +718,11 @@ public class GattServiceTest {
         assertThat(mService.mRestrictedHandles.get(CLIENT_CONN_ID)).doesNotContain(randomChar.id);
 
         mService.onDisconnectedFromNative(
-                CLIENT_IF, CLIENT_CONN_ID, BluetoothGatt.GATT_SUCCESS, mDevice);
+                CLIENT_IF,
+                CLIENT_CONN_ID,
+                BluetoothDevice.TRANSPORT_LE,
+                BluetoothGatt.GATT_SUCCESS,
+                mDevice);
         assertThat(mService.mRestrictedHandles).doesNotContainKey(CLIENT_CONN_ID);
     }
 }
