@@ -240,6 +240,7 @@ flag {
 flag {
     name: "rssi_scan_filter"
     namespace: "bluetooth"
+    is_exported: true
     description: "Add RSSI ScanFilter"
     bug: "404986559"
 }

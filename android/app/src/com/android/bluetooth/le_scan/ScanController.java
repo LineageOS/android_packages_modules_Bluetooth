@@ -60,6 +60,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.BluetoothAdapterProxy;
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.util.NumberUtils;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -602,6 +603,12 @@ public class ScanController {
         if (client.mFilters == null || client.mFilters.isEmpty()) {
             // TODO: Do we really wanna return true here?
             return true;
+        }
+        if (Flags.rssiScanFilter()) {
+            ScanSettings settings = client.mSettings;
+            if (scanResult.getRssi() < settings.getRssiThreshold()) {
+                return false;
+            }
         }
         for (ScanFilter filter : client.mFilters) {
             // Need to check the filter matches, and the original address without changing the API
