@@ -55,6 +55,7 @@ public class DistanceMeasurementTrackerTest {
     private static final int TIMEOUT_S = 1;
     private static final int TIMEOUT_MS = 1500;
     private static final int METHOD = DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI;
+    private static final int APP_UID = 100;
 
     private final BluetoothDevice mDevice = getTestDevice(35);
 
@@ -75,6 +76,7 @@ public class DistanceMeasurementTrackerTest {
         mTracker =
                 new DistanceMeasurementTracker(
                         mDistanceMeasurementManager,
+                        APP_UID,
                         mParams,
                         mDevice.getAddress(),
                         mUuid,
@@ -110,6 +112,7 @@ public class DistanceMeasurementTrackerTest {
         DistanceMeasurementTracker tracker =
                 new DistanceMeasurementTracker(
                         mDistanceMeasurementManager,
+                        APP_UID,
                         mParams,
                         mDevice.getAddress(),
                         mUuid,
@@ -123,6 +126,7 @@ public class DistanceMeasurementTrackerTest {
         DistanceMeasurementTracker tracker =
                 new DistanceMeasurementTracker(
                         mDistanceMeasurementManager,
+                        APP_UID,
                         mParams,
                         mDevice.getAddress(),
                         mUuid,

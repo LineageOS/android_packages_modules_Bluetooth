@@ -81,8 +81,8 @@ public class DistanceMeasurementNativeInterface {
     }
 
     void startDistanceMeasurement(
-            String address, int interval, int method, int sightType, int locationType) {
-        startDistanceMeasurementNative(address, interval, method, sightType, locationType);
+            int appUid, String address, int interval, int method, int sightType, int locationType) {
+        startDistanceMeasurementNative(appUid, address, interval, method, sightType, locationType);
     }
 
     void stopDistanceMeasurement(String address, int method) {
@@ -165,7 +165,7 @@ public class DistanceMeasurementNativeInterface {
     private native void cleanupNative();
 
     private native void startDistanceMeasurementNative(
-            String address, int interval, int method, int sightType, int locationType);
+            int appUid, String address, int interval, int method, int sightType, int locationType);
 
     private native void stopDistanceMeasurementNative(String address, int method);
 }
