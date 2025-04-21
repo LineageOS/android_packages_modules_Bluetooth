@@ -208,7 +208,7 @@ public class HeadsetService extends ProfileService {
         enableSwbCodec(
                 HeadsetHalConstants.BTHF_SWB_CODEC_VENDOR_APTX, mIsAptXSwbEnabled, mActiveDevice);
         // Step 6: Register Audio Device callback
-        if (Utils.isScoManagedByAudioEnabled()) {
+        if (mSystemInterface.isScoManagedByAudioEnabled()) {
             mSystemInterface
                     .getAudioManager()
                     .registerAudioDeviceCallback(mAudioManagerAudioDeviceCallback, mHandler);
@@ -240,7 +240,7 @@ public class HeadsetService extends ProfileService {
         unregisterReceiver(mHeadsetReceiver);
 
         // Step 6: Unregister Audio Device Callback
-        if (Utils.isScoManagedByAudioEnabled()) {
+        if (mSystemInterface.isScoManagedByAudioEnabled()) {
             mSystemInterface
                     .getAudioManager()
                     .unregisterAudioDeviceCallback(mAudioManagerAudioDeviceCallback);
@@ -824,7 +824,7 @@ public class HeadsetService extends ProfileService {
             } else {
                 stateMachine.sendMessage(HeadsetStateMachine.VOICE_RECOGNITION_START, device);
             }
-            if (!Utils.isScoManagedByAudioEnabled()) {
+            if (!mSystemInterface.isScoManagedByAudioEnabled()) {
                 stateMachine.sendMessage(HeadsetStateMachine.CONNECT_AUDIO, device);
                 logScoSessionMetric(
                         device,
@@ -834,7 +834,7 @@ public class HeadsetService extends ProfileService {
             }
         }
 
-        if (Utils.isScoManagedByAudioEnabled()) {
+        if (mSystemInterface.isScoManagedByAudioEnabled()) {
             BluetoothDevice voiceRecognitionDevice = device;
             // when isScoManagedByAudio is on, tell AudioManager to connect SCO
             AudioManager am = mSystemInterface.getAudioManager();
@@ -902,7 +902,7 @@ public class HeadsetService extends ProfileService {
             }
             mVoiceRecognitionStarted = false;
             stateMachine.sendMessage(HeadsetStateMachine.VOICE_RECOGNITION_STOP, device);
-            if (!Utils.isScoManagedByAudioEnabled()) {
+            if (!mSystemInterface.isScoManagedByAudioEnabled()) {
                 stateMachine.sendMessage(HeadsetStateMachine.DISCONNECT_AUDIO, device);
                 logScoSessionMetric(
                         device,
@@ -912,7 +912,7 @@ public class HeadsetService extends ProfileService {
             }
         }
 
-        if (Utils.isScoManagedByAudioEnabled()) {
+        if (mSystemInterface.isScoManagedByAudioEnabled()) {
             // do the task outside synchronized to avoid deadlock with Audio Fwk
             BluetoothDevice finalDevice = device;
             mHandler.post(
@@ -1093,7 +1093,7 @@ public class HeadsetService extends ProfileService {
             BluetoothDevice previousActiveDevice = mActiveDevice;
             mActiveDevice = null;
             mNativeInterface.setActiveDevice(null);
-            if (Utils.isScoManagedByAudioEnabled()) {
+            if (mSystemInterface.isScoManagedByAudioEnabled()) {
                 mSystemInterface
                         .getAudioManager()
                         .handleBluetoothActiveDeviceChanged(
@@ -1164,7 +1164,7 @@ public class HeadsetService extends ProfileService {
                     mNativeInterface.setActiveDevice(previousActiveDevice);
                     return false;
                 }
-                if (Utils.isScoManagedByAudioEnabled()) {
+                if (mSystemInterface.isScoManagedByAudioEnabled()) {
                     // tell Audio Framework that active device changed
                     mSystemInterface
                             .getAudioManager()
@@ -1176,7 +1176,7 @@ public class HeadsetService extends ProfileService {
                     broadcastActiveDevice(mActiveDevice);
                 }
             } else if (shouldPersistAudio()) {
-                if (Utils.isScoManagedByAudioEnabled()) {
+                if (mSystemInterface.isScoManagedByAudioEnabled()) {
                     // tell Audio Framework that active device changed
                     mSystemInterface
                             .getAudioManager()
@@ -1205,7 +1205,7 @@ public class HeadsetService extends ProfileService {
                     return false;
                 }
             } else {
-                if (Utils.isScoManagedByAudioEnabled()) {
+                if (mSystemInterface.isScoManagedByAudioEnabled()) {
                     // tell Audio Framework that active device changed
                     mSystemInterface
                             .getAudioManager()
@@ -1745,7 +1745,7 @@ public class HeadsetService extends ProfileService {
                             && callState != HeadsetHalConstants.CALL_STATE_DISCONNECTED
                             && !mSystemInterface.isCallIdle()
                             && isCallIdleBefore
-                            && !Utils.isScoManagedByAudioEnabled()) {
+                            && !mSystemInterface.isScoManagedByAudioEnabled()) {
                         mSystemInterface.getAudioManager().setA2dpSuspended(true);
                         mSystemInterface.getAudioManager().setLeAudioSuspended(true);
                     }
@@ -1761,7 +1761,7 @@ public class HeadsetService extends ProfileService {
                     if (callState == HeadsetHalConstants.CALL_STATE_IDLE
                             && mSystemInterface.isCallIdle()
                             && !isAudioOn()
-                            && !Utils.isScoManagedByAudioEnabled()) {
+                            && !mSystemInterface.isScoManagedByAudioEnabled()) {
                         // Resume A2DP when call ended and SCO is not connected
                         mSystemInterface.getAudioManager().setA2dpSuspended(false);
                         mSystemInterface.getAudioManager().setLeAudioSuspended(false);
@@ -2093,7 +2093,8 @@ public class HeadsetService extends ProfileService {
                 }
 
                 // Unsuspend A2DP when SCO connection is gone and call state is idle
-                if (mSystemInterface.isCallIdle() && !Utils.isScoManagedByAudioEnabled()) {
+                if (mSystemInterface.isCallIdle()
+                        && !mSystemInterface.isScoManagedByAudioEnabled()) {
                     mSystemInterface.getAudioManager().setA2dpSuspended(false);
                     mSystemInterface.getAudioManager().setLeAudioSuspended(false);
                 }

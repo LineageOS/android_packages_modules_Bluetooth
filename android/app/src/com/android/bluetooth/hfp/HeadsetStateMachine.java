@@ -1128,7 +1128,7 @@ class HeadsetStateMachine extends StateMachine {
                                         ? HeadsetHalConstants.AT_RESPONSE_OK
                                         : HeadsetHalConstants.AT_RESPONSE_ERROR,
                                 0);
-                        if (Utils.isScoManagedByAudioEnabled()) {
+                        if (mSystemInterface.isScoManagedByAudioEnabled()) {
                             mNativeInterface.startVoiceRecognition(mDevice, /* sendResult */ false);
                         }
                         break;
@@ -1359,7 +1359,7 @@ class HeadsetStateMachine extends StateMachine {
                     break;
                 case CONNECT_AUDIO:
                     stateLogD("CONNECT_AUDIO, device=" + mDevice);
-                    if (Utils.isScoManagedByAudioEnabled()) {
+                    if (mSystemInterface.isScoManagedByAudioEnabled()) {
                         stateLogD("ScoManagedByAudioEnabled, BT does not CONNECT_AUDIO");
                         transitionTo(mAudioConnecting);
                         break;
@@ -1894,7 +1894,7 @@ class HeadsetStateMachine extends StateMachine {
     }
 
     private void setAudioParameters() {
-        if (Utils.isScoManagedByAudioEnabled()) {
+        if (mSystemInterface.isScoManagedByAudioEnabled()) {
             Log.i(TAG, "isScoManagedByAudio enabled, do not setAudioParameters");
             return;
         }
