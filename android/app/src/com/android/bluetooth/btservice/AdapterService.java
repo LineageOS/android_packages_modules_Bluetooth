@@ -274,10 +274,9 @@ public class AdapterService extends Service {
             new PowerManager.WakeLockStateListener() {
                 @Override
                 public void onStateChanged(boolean enabled) {
-                    if (mAdapterSuspend != null) {
+                    if (Flags.adapterSuspendMgmt()) {
                         mAdapterSuspend.updateWakeLockState(enabled);
                     }
-                    Log.d(TAG, "Wakelock callback state update: " + enabled);
                 }
             };
 
@@ -738,7 +737,6 @@ public class AdapterService extends Service {
             mAdapterSuspend =
                     new AdapterSuspend(
                             this,
-                            mNativeInterface,
                             mLooper,
                             getSystemService(DeviceStateManager.class),
                             mPowerManager,
@@ -1524,11 +1522,8 @@ public class AdapterService extends Service {
             mBluetoothSocketManagerBinder = null;
         }
 
-        if (mAdapterSuspend != null) {
-            if (Flags.adapterSuspendMgmt()) {
-                mAdapterSuspend.cleanup();
-            }
-            mAdapterSuspend = null;
+        if (Flags.adapterSuspendMgmt()) {
+            mAdapterSuspend.cleanup();
         }
 
         mPreferredAudioProfilesCallbacks.kill();
@@ -4592,6 +4587,10 @@ public class AdapterService extends Service {
             }
             mTestModeEnabled = testModeEnabled;
             return;
+        }
+
+        if (Flags.adapterSuspendMgmt()) {
+            mAdapterSuspend.dump(fd, writer, args);
         }
 
         writer.println();

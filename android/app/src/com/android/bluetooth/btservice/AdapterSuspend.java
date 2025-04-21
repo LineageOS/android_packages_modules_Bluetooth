@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.btservice;
 
-import static android.bluetooth.BluetoothAdapter.SCAN_MODE_CONNECTABLE;
 import static android.bluetooth.BluetoothAdapter.SCAN_MODE_NONE;
 import static android.hardware.devicestate.DeviceState.PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_DOCKED;
 import static android.hardware.devicestate.DeviceState.PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_LID_CLOSED;
@@ -32,11 +31,15 @@ import android.hardware.display.DisplayManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.PowerManager;
+import android.os.SystemProperties;
 import android.util.Log;
 import android.view.Display;
 
 import com.android.bluetooth.Utils;
+import com.android.internal.annotations.VisibleForTesting;
 
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
 import java.util.Arrays;
 
 public class AdapterSuspend {
@@ -54,10 +57,35 @@ public class AdapterSuspend {
     private static final int DEVICE_STATE_LID_OPEN = 3;
     private static final int DEVICE_STATE_TABLET = 4;
 
+    static final String BLUETOOTH_SUSPEND_DISCONNECT_ACL =
+            "bluetooth.power.suspend.disconnect_acl.enabled";
+    static final String BLUETOOTH_SUSPEND_SCAN_MODE_NONE =
+            "bluetooth.power.suspend.scan_mode_none.enabled";
+
+    private final AdapterService mAdapterService;
     private final DeviceStateManager mDeviceStateManager;
     private final PowerManager mPowerManager;
     private final AdapterSuspendStateMachine mSuspendStateMachine;
     private final DisplayManager mDisplayManager;
+
+    private boolean mDisconnectAclOnSuspend;
+    private boolean mScanModeNoneOnSuspend;
+    private int mScanModeOnLastSuspend;
+
+    @VisibleForTesting
+    void setPropertyForTest(String key, boolean val) {
+        if (key.equals(BLUETOOTH_SUSPEND_DISCONNECT_ACL)) {
+            mDisconnectAclOnSuspend = val;
+        }
+        if (key.equals(BLUETOOTH_SUSPEND_SCAN_MODE_NONE)) {
+            mScanModeNoneOnSuspend = val;
+        }
+    }
+
+    @VisibleForTesting
+    void setLastScanModeForTest(int val) {
+        mScanModeOnLastSuspend = val;
+    }
 
     public final DeviceStateManager.DeviceStateCallback mDeviceStateCallback =
             new DeviceStateManager.DeviceStateCallback() {
@@ -140,12 +168,12 @@ public class AdapterSuspend {
 
     public AdapterSuspend(
             AdapterService adapterService,
-            AdapterNativeInterface adapterNativeInterface,
             Looper looper,
             DeviceStateManager deviceStateManager,
             PowerManager powerManager,
             DisplayManager displayManager) {
-        mAdapterNativeInterface = requireNonNull(adapterNativeInterface);
+        mAdapterService = requireNonNull(adapterService);
+        mAdapterNativeInterface = requireNonNull(adapterService.getNative());
         mPowerManager = requireNonNull(powerManager);
 
         mSuspendStateMachine =
@@ -155,6 +183,11 @@ public class AdapterSuspend {
         mDisplayManager.registerDisplayListener(mDisplayListener, handler);
         mDeviceStateManager = requireNonNull(deviceStateManager);
         mDeviceStateManager.registerCallback(handler::post, mDeviceStateCallback);
+
+        mDisconnectAclOnSuspend =
+                SystemProperties.getBoolean(BLUETOOTH_SUSPEND_DISCONNECT_ACL, false);
+        mScanModeNoneOnSuspend =
+                SystemProperties.getBoolean(BLUETOOTH_SUSPEND_SCAN_MODE_NONE, false);
     }
 
     void cleanup() {
@@ -166,32 +199,33 @@ public class AdapterSuspend {
         long mask = MASK_DISCONNECT_CMPLT | MASK_MODE_CHANGE;
         long leMask = 0;
 
-        // Avoid unexpected interrupt during suspend.
-        mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
-
-        // Disable inquiry scan and page scan.
-        mAdapterNativeInterface.setScanMode(AdapterService.convertScanModeToHal(SCAN_MODE_NONE));
-
-        mAdapterNativeInterface.clearEventFilter();
-        mAdapterNativeInterface.clearFilterAcceptList();
-        mAdapterNativeInterface.disconnectAllAcls();
-
-        if (allowWakeByHid) {
-            mAdapterNativeInterface.allowWakeByHid();
-            Log.i(TAG, "configure wake by hid");
+        mScanModeOnLastSuspend = mAdapterService.getScanMode();
+        if (mScanModeNoneOnSuspend && mScanModeOnLastSuspend != SCAN_MODE_NONE) {
+            mAdapterService.setScanMode(SCAN_MODE_NONE, "handleSuspend");
         }
-        Log.i(TAG, "ready to suspend");
+        if (mDisconnectAclOnSuspend) {
+            mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
+            mAdapterNativeInterface.clearEventFilter();
+            mAdapterNativeInterface.clearFilterAcceptList();
+            mAdapterNativeInterface.disconnectAllAcls();
+
+            if (allowWakeByHid) {
+                mAdapterNativeInterface.allowWakeByHid();
+            }
+        }
     }
 
     void handleResume() {
         long mask = 0;
         long leMask = 0;
-        mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
-        mAdapterNativeInterface.clearEventFilter();
-        mAdapterNativeInterface.restoreFilterAcceptList();
-        mAdapterNativeInterface.setScanMode(
-                AdapterService.convertScanModeToHal(SCAN_MODE_CONNECTABLE));
-        Log.i(TAG, "resumed");
+        if (mDisconnectAclOnSuspend) {
+            mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
+            mAdapterNativeInterface.clearEventFilter();
+            mAdapterNativeInterface.restoreFilterAcceptList();
+        }
+        if (mScanModeNoneOnSuspend && (mAdapterService.getScanMode() != mScanModeOnLastSuspend)) {
+            mAdapterService.setScanMode(mScanModeOnLastSuspend, "handleResume");
+        }
     }
 
     /**
@@ -204,5 +238,14 @@ public class AdapterSuspend {
         } else {
             mSuspendStateMachine.sendMessage(AdapterSuspendStateMachine.MSG_WAKELOCK_RELEASED);
         }
+    }
+
+    protected void dump(FileDescriptor fd, PrintWriter writer, String[] args) {
+        writer.println(TAG);
+        writer.println("  " + "Disconnect ACL on suspend: " + mDisconnectAclOnSuspend);
+        writer.println("  " + "Set scan mode to none on suspend: " + mScanModeNoneOnSuspend);
+        writer.println("  " + "Scan mode on last suspend: " + mScanModeOnLastSuspend);
+        writer.println();
+        mSuspendStateMachine.dump(fd, writer, args);
     }
 }

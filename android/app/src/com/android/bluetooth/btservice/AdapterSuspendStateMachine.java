@@ -23,6 +23,9 @@ import com.android.bluetooth.flags.Flags;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
+
 // There are three steady states: "Active", "Busy", "Suspended".
 //  - Active: Bluetooth running with screen on
 //  - Busy: Wake lock is acquired from Bluetooth service. Bluetooth running
@@ -38,15 +41,16 @@ import com.android.internal.util.StateMachine;
 //          <--------------------------
 //            wake lock is released
 //
-//            screen is off
-// (Active) --------------------------> (Suspended)
-//          <--------------------------
+//            screen is off or lid is closed
+// (Active) -------------------------------> (Suspended)
+//          <-------------------------------
 //            screen is on, no wake lock
 //
 //            screen is off, wake lock is released
+//                     or lid is closed
 // (Busy)   --------------------------------------> (Suspended)
 //          <--------------------------------------
-//            screen is on + wake lock is acquired
+//            screen is on, wake lock is acquired
 //
 //               BT wake is enabled, lid is closed
 // (Suspended) -------------------------------------> (Suspended)
@@ -262,5 +266,15 @@ final class AdapterSuspendStateMachine extends StateMachine {
             }
             return true;
         }
+    }
+
+    @Override
+    public void dump(FileDescriptor fd, PrintWriter writer, String[] args) {
+        super.dump(fd, writer, args);
+
+        writer.println("  " + " Screen on: " + mScreenOn);
+        writer.println("  " + " Wake lock held: " + mWakeLockHeld);
+        writer.println("  " + " Wake-by-HID allowed: " + mWakeByHidAllowed);
+        writer.println("  " + " Tablet mode: " + mTabletMode);
     }
 }
