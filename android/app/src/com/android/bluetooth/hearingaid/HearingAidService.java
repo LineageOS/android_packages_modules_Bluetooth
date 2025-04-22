@@ -91,7 +91,7 @@ public class HearingAidService extends ProfileService {
     private long mActiveDeviceHiSyncId = BluetoothHearingAid.HI_SYNC_ID_INVALID;
 
     public HearingAidService(AdapterService adapterService) {
-        this(adapterService, null, HearingAidNativeInterface.getInstance());
+        this(adapterService, null, HearingAidNativeInterface.getInstance(adapterService));
     }
 
     @VisibleForTesting
