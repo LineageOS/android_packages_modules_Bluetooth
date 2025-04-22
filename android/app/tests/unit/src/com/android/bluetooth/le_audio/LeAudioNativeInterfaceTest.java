@@ -25,7 +25,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeAudio;
 import android.bluetooth.BluetoothLeAudioCodecConfig;
 
@@ -63,7 +62,7 @@ public class LeAudioNativeInterfaceTest {
                         });
         when(mMockService.isAvailable()).thenReturn(true);
         LeAudioService.setLeAudioService(mMockService);
-        mNativeInterface = LeAudioNativeInterface.getInstance();
+        mNativeInterface = LeAudioNativeInterface.getInstance(mAdapterService);
     }
 
     @After
