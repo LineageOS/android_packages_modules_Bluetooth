@@ -69,16 +69,6 @@ flag {
 }
 
 flag {
-    name: "disconnect_on_encryption_failure"
-    namespace: "bluetooth"
-    description: "Disconnect ACL link when encryption fails"
-    bug: "378764380"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "upgrade_temp_bonding_on_auth_req"
     namespace: "bluetooth"
     description: "Upgrade security If it is on temp bonding & authentication is requirement"
