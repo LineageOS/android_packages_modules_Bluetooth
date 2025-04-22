@@ -11,6 +11,11 @@ import subprocess
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+from colorama import Fore, Style
+
+
+def log(ts, msg):
+    print(Fore.CYAN + f"  {ts}" + Style.RESET_ALL + f" | {msg}")
 
 
 @dataclasses.dataclass
@@ -644,7 +649,7 @@ def plot_tx_queue(ax, acl_connection: btsnoop.AclConnection):
     real_ts = np.array(real_ts, dtype="datetime64[us]")
     tx_delay = np.array(tx_delay)
 
-    ax.plot(real_ts, tx_delay / 1000000.0, color="green")
+    ax.scatter(real_ts, tx_delay / 1000000.0, color="green", marker=".")
 
 
 def generate_media_codec_capability(codec_type: Optional[str],
@@ -775,7 +780,7 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
                     continue
                 if pending_connection:
                     raise Exception(f"L2CAP AVDTP Channel collision")
-                print(f"  {packet.packet.timestamp} | L2CAP connection request")
+                log(packet.packet.timestamp, "L2CAP connection request")
                 pending_connection = packet
 
             elif isinstance(signal, l2cap.ConnectionResponse):
@@ -799,16 +804,12 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
                     # The L2CAP connection request is accepted, and
                     # either the signaling or transport channel is open.
                     if session:
-                        print(
-                            f"  {packet.packet.timestamp} | AVDTP transport channel connected (0x{destination_cid:x})"
-                        )
+                        log(packet.packet.timestamp, f"AVDTP transport channel connected (0x{destination_cid:x})")
                         assert not session.stream_cid
                         session.stream_cid = destination_cid
                         pending_connection = None
                     else:
-                        print(
-                            f"  {packet.packet.timestamp} | AVDTP signaling channel connected (0x{source_cid:x} - 0x{destination_cid:x})"
-                        )
+                        log(packet.packet.timestamp, f"AVDTP signaling channel connected (0x{source_cid:x} - 0x{destination_cid:x})")
                         session = AvdtpSession(source_cid, destination_cid)
                         pending_connection = None
 
@@ -833,11 +834,11 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
                     destination_cid, source_cid = source_cid, destination_cid
 
                 if session and destination_cid == session.stream_cid:
-                    print(f"  {packet.packet.timestamp} | AVDTP transport channel disconnected")
+                    log(packet.packet.timestamp, "AVDTP transport channel disconnected")
                     session.stream_cid = None
 
                 if session and destination_cid == session.remote_cid:
-                    print(f"  {packet.packet.timestamp} | AVDTP signaling channel disconnected")
+                    log(packet.packet.timestamp, "AVDTP signaling channel disconnected")
                     assert not session.stream_cid
                     session = None
             else:
@@ -849,7 +850,7 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
             and packet.channel_id == session.local_cid
         ):
             packet = AvdtpSignalingPacket.parse(packet)
-            print(f"Received AVDTP signal: {type(packet.signal).__name__}")
+            log(packet.packet.timestamp, f"<-- {type(packet.signal).__name__}")
 
             if (isinstance(packet.signal, avdtp.SetConfigurationCommand) or
                 isinstance(packet.signal, avdtp.ReconfigureCommand)):
@@ -879,7 +880,7 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
             and packet.channel_id == session.remote_cid
         ):
             packet = AvdtpSignalingPacket.parse(packet)
-            print(f"Sent AVDTP signal: {type(packet.signal).__name__}")
+            log(packet.packet.timestamp, f"--> {type(packet.signal).__name__}")
 
             if (isinstance(packet.signal, avdtp.SetConfigurationCommand) or
                 isinstance(packet.signal, avdtp.ReconfigureCommand)):
@@ -898,7 +899,7 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
 
     print(f"Extracted {len(all_streams)} audio streams")
 
-    fig, axs = plt.subplots(2)
+    fig, axs = plt.subplots(2, sharex=True)
     axs[0].xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%H:%M:%S.%f"))
     axs[0].xaxis.set_tick_params(rotation=45)
 
