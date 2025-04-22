@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "default_gatt_transport"
-    namespace: "bluetooth"
-    description: "Use LE as the default transport for GATT connections"
-    bug: "376276742"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "le_subrate_api"
     namespace: "bluetooth"
     description: "New API to control LE subrate parameters"
