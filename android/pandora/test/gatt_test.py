@@ -228,11 +228,13 @@ class GattTest(base_test.BaseTestClass):  # type: ignore[misc]
         # bond devices and disconnect
         await self.dut.aio.security.Secure(connection=dut_connection_to_ref, le=LE_LEVEL3)
         await self.ref.aio.host.Disconnect(ref_connection_to_dut)
+        await self.dut.aio.host.WaitDisconnection(connection=dut_connection_to_ref)
 
         # act: connect, perform service discovery, disconnect, add the second service, reconnect, and try discovery again
         dut_connection_to_ref, ref_connection_to_dut = await self.connect_dut_to_ref()
         first_discovery = await dut_gatt.DiscoverServices(dut_connection_to_ref)
         await self.ref.aio.host.Disconnect(ref_connection_to_dut)
+        await self.dut.aio.host.WaitDisconnection(connection=dut_connection_to_ref)
 
         # assert: that we found only one service in the first discovery
         assert_in(SERVICE_UUID_1, (service.uuid for service in first_discovery.services))
