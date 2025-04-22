@@ -31,7 +31,6 @@
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/hci_error_code.h"
 #include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 #include "types/remote_version_type.h"
 
 typedef struct {
@@ -283,6 +282,8 @@ public:
   bool is_bond_type_unknown() const { return bond_type == BOND_TYPE_UNKNOWN; }
   bool is_bond_type_persistent() const { return bond_type == BOND_TYPE_PERSISTENT; }
   bool is_bond_type_temporary() const { return bond_type == BOND_TYPE_TEMPORARY; }
+
+  bool is_bonded(tBT_TRANSPORT transport = BT_TRANSPORT_AUTO) const;
 
   uint8_t get_encryption_key_size() const { return enc_key_size; }
 
