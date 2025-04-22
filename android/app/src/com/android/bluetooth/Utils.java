@@ -96,6 +96,7 @@ public final class Utils {
     private static final String TAG = TAG_PREFIX_BLUETOOTH + Utils.class.getSimpleName();
 
     public static final int BD_ADDR_LEN = 6; // bytes
+    public static final int TYPED_BD_ADDR_LEN = 7; // bytes
     private static final int BD_UUID_LEN = 16; // bytes
 
     /** Thread pool to handle background and outgoing blocking task */
@@ -223,6 +224,32 @@ public final class Utils {
         }
 
         return String.format("XX:XX:XX:XX:%02X:%02X", address[4], address[5]);
+    }
+
+    public static String deviceTypeToString(int deviceType) {
+        return switch (deviceType) {
+            case BluetoothDevice.DEVICE_TYPE_UNKNOWN -> " ???? ";
+            case BluetoothDevice.DEVICE_TYPE_CLASSIC -> "BR/EDR";
+            case BluetoothDevice.DEVICE_TYPE_LE -> "  LE  ";
+            case BluetoothDevice.DEVICE_TYPE_DUAL -> " DUAL ";
+            default -> "Invalid device type: " + deviceType;
+        };
+    }
+
+    public static String addressTypeToString(int addressType) {
+        return switch (addressType) {
+            case BluetoothDevice.ADDRESS_TYPE_PUBLIC -> "Public ";
+            case BluetoothDevice.ADDRESS_TYPE_RANDOM -> "Random ";
+            default -> "Unknown";
+        };
+    }
+
+    public static String transportToString(int transport) {
+        return switch (transport) {
+            case BluetoothDevice.TRANSPORT_BREDR -> "BREDR";
+            case BluetoothDevice.TRANSPORT_LE -> "LE";
+            default -> "Unknown transport (" + transport + ")";
+        };
     }
 
     /**

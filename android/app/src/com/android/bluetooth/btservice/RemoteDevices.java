@@ -312,7 +312,7 @@ public class RemoteDevices {
                         "Properties for device "
                                 + BluetoothUtils.toAnonymizedAddress(key)
                                 + "["
-                                + addressTypeToString(addressType)
+                                + Utils.addressTypeToString(addressType)
                                 + "] are already added");
                 return mDevices.get(key);
             }
@@ -1391,7 +1391,7 @@ public class RemoteDevices {
                                     "aclStateChangeCallback: Adding cache for unknown device "
                                             + Utils.getRedactedAddressStringFromByte(address)
                                             + " ("
-                                            + addressTypeToString(addressType));
+                                            + Utils.addressTypeToString(addressType));
                             return addDeviceProperties(address, addressType).getDevice();
                         });
 
@@ -1401,13 +1401,13 @@ public class RemoteDevices {
 
         infoLog(
                 "aclStateChangeCallback: "
-                        + transportToString(transport)
+                        + Utils.transportToString(transport)
                         + (newState == AbstractionLayer.BT_ACL_STATE_CONNECTED
                                 ? " Connected "
                                 : " Disconnected ")
                         + device
                         + "("
-                        + addressTypeToString(addressType)
+                        + Utils.addressTypeToString(addressType)
                         + ") reason: "
                         + hciReason
                         + " adapter state: "
@@ -2135,43 +2135,6 @@ public class RemoteDevices {
         Log.w(TAG, msg);
     }
 
-    private static String transportToString(int transport) {
-        switch (transport) {
-            case BluetoothDevice.TRANSPORT_BREDR:
-                return "BREDR";
-            case BluetoothDevice.TRANSPORT_LE:
-                return "LE";
-            default:
-                return "Unknown transport (" + transport + ")";
-        }
-    }
-
-    private static String deviceTypeToString(int deviceType) {
-        switch (deviceType) {
-            case BluetoothDevice.DEVICE_TYPE_UNKNOWN:
-                return " ???? ";
-            case BluetoothDevice.DEVICE_TYPE_CLASSIC:
-                return "BR/EDR";
-            case BluetoothDevice.DEVICE_TYPE_LE:
-                return "  LE  ";
-            case BluetoothDevice.DEVICE_TYPE_DUAL:
-                return " DUAL ";
-            default:
-                return "Invalid device type: " + deviceType;
-        }
-    }
-
-    private static String addressTypeToString(int addressType) {
-        switch (addressType) {
-            case BluetoothDevice.ADDRESS_TYPE_PUBLIC:
-                return "Public ";
-            case BluetoothDevice.ADDRESS_TYPE_RANDOM:
-                return "Random ";
-            default:
-                return "Unknown";
-        }
-    }
-
     protected void dump(PrintWriter writer) {
         int bondedCount = 0;
         int knownCount = 0;
@@ -2203,15 +2166,17 @@ public class RemoteDevices {
             sb.append("    ")
                     .append(anonAddress)
                     .append("(")
-                    .append(addressTypeToString(deviceProperties.getDevice().getAddressType()))
+                    .append(
+                            Utils.addressTypeToString(
+                                    deviceProperties.getDevice().getAddressType()))
                     .append(")")
                     .append(" => ")
                     .append(anonIdentityAddress)
                     .append("(")
-                    .append(addressTypeToString(deviceProperties.getIdentityAddressType()))
+                    .append(Utils.addressTypeToString(deviceProperties.getIdentityAddressType()))
                     .append(")")
                     .append(" [")
-                    .append(deviceTypeToString(deviceProperties.getDeviceType()))
+                    .append(Utils.deviceTypeToString(deviceProperties.getDeviceType()))
                     .append("] [0x")
                     .append(String.format("%06X", deviceProperties.getBluetoothClass()))
                     .append("] [ACL BR/EDR:")
