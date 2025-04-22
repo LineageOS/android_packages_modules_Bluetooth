@@ -280,12 +280,8 @@ void SourceImpl::StopAudioTicks() {
 bool SourceImpl::OnSuspendReq() {
   std::lock_guard<std::mutex> guard(audioSourceCallbacksMutex_);
   if (CodecManager::GetInstance()->GetCodecLocation() == types::CodecLocation::HOST) {
-    if (com::android::bluetooth::flags::run_ble_audio_ticks_in_worker_thread()) {
-      worker_thread_->DoInThread(
-              base::BindOnce(&SourceImpl::StopAudioTicks, weak_factory_.GetWeakPtr()));
-    } else {
-      StopAudioTicks();
-    }
+    worker_thread_->DoInThread(
+            base::BindOnce(&SourceImpl::StopAudioTicks, weak_factory_.GetWeakPtr()));
   }
 
   if (audioSourceCallbacks_ == nullptr) {
@@ -382,12 +378,8 @@ void SourceImpl::Stop() {
   le_audio_sink_hal_state_ = HAL_STOPPED;
 
   if (CodecManager::GetInstance()->GetCodecLocation() == types::CodecLocation::HOST) {
-    if (com::android::bluetooth::flags::run_ble_audio_ticks_in_worker_thread()) {
-      worker_thread_->DoInThread(
-              base::BindOnce(&SourceImpl::StopAudioTicks, weak_factory_.GetWeakPtr()));
-    } else {
-      StopAudioTicks();
-    }
+    worker_thread_->DoInThread(
+            base::BindOnce(&SourceImpl::StopAudioTicks, weak_factory_.GetWeakPtr()));
   }
 
   std::lock_guard<std::mutex> guard(audioSourceCallbacksMutex_);
@@ -407,12 +399,8 @@ void SourceImpl::ConfirmStreamingRequest() {
     return;
   }
 
-  if (com::android::bluetooth::flags::run_ble_audio_ticks_in_worker_thread()) {
-    worker_thread_->DoInThread(
-            base::BindOnce(&SourceImpl::StartAudioTicks, weak_factory_.GetWeakPtr()));
-  } else {
-    StartAudioTicks();
-  }
+  worker_thread_->DoInThread(
+          base::BindOnce(&SourceImpl::StartAudioTicks, weak_factory_.GetWeakPtr()));
 }
 
 void SourceImpl::SuspendedForReconfiguration() {
