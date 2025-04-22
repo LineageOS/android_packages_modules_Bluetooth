@@ -43,15 +43,15 @@ public class HearingAidNativeInterface {
 
     private static final Object INSTANCE_LOCK = new Object();
 
-    private HearingAidNativeInterface() {
-        mAdapterService = requireNonNull(AdapterService.getAdapterService());
+    private HearingAidNativeInterface(AdapterService adapterService) {
+        mAdapterService = requireNonNull(adapterService);
     }
 
     /** Get singleton instance. */
-    public static HearingAidNativeInterface getInstance() {
+    public static HearingAidNativeInterface getInstance(AdapterService adapterService) {
         synchronized (INSTANCE_LOCK) {
             if (sInstance == null) {
-                sInstance = new HearingAidNativeInterface();
+                sInstance = new HearingAidNativeInterface(adapterService);
             }
             return sInstance;
         }
