@@ -43,8 +43,8 @@ public class HeadsetNativeInterface {
 
     private final AdapterService mAdapterService;
 
-    private HeadsetNativeInterface() {
-        mAdapterService = requireNonNull(AdapterService.getAdapterService());
+    private HeadsetNativeInterface(AdapterService adapterService) {
+        mAdapterService = requireNonNull(adapterService);
     }
 
     /**
@@ -52,10 +52,10 @@ public class HeadsetNativeInterface {
      *
      * @return default instance
      */
-    public static HeadsetNativeInterface getInstance() {
+    public static HeadsetNativeInterface getInstance(AdapterService adapterService) {
         synchronized (INSTANCE_LOCK) {
             if (sInstance == null) {
-                sInstance = new HeadsetNativeInterface();
+                sInstance = new HeadsetNativeInterface(adapterService);
             }
             return sInstance;
         }
