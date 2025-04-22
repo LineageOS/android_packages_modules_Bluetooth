@@ -29,6 +29,7 @@
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
+#include <hardware/ble_scanner.h>
 
 #include <bitset>
 #include <cstdint>
@@ -39,11 +40,14 @@
 
 #include "ble_appearance.h"
 #include "bta/include/bta_api.h"
+#include "btif/include/btif_gatt.h"
 #include "common/time_util.h"
 #include "hci/controller.h"
 #include "hci/controller_interface.h"
 #include "main/shim/acl_api.h"
+#include "main/shim/ble_scanner_interface_impl.h"
 #include "main/shim/entry.h"
+#include "main/shim/le_scanning_manager.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
 #include "osi/include/stack_power_telemetry.h"
@@ -86,6 +90,10 @@ using namespace bluetooth;
 static const char kPropertyInquiryScanInterval[] = "bluetooth.core.le.inquiry_scan_interval";
 static const char kPropertyInquiryScanWindow[] = "bluetooth.core.le.inquiry_scan_window";
 
+/* Error codes for toggling MSFT-based scanning */
+const uint8_t MSFT_FILTER_ENABLE_SUCCESS = 0x00;
+const uint8_t MSFT_FILTER_ENABLE_CMD_DISALLOWED = 0x0C;
+
 #ifndef PROPERTY_BLE_PRIVACY_OWN_ADDRESS_ENABLED
 #define PROPERTY_BLE_PRIVACY_OWN_ADDRESS_ENABLED \
   "bluetooth.core.gap.le.privacy.own_address_type.enabled"
@@ -95,6 +103,8 @@ static void btm_ble_start_scan();
 static void btm_ble_stop_scan();
 static tBTM_STATUS btm_ble_stop_adv(void);
 static tBTM_STATUS btm_ble_start_adv(void);
+
+static ::BleScannerInterface* scanner = bluetooth::shim::get_ble_scanner_instance();
 
 using bluetooth::shim::GetController;
 
@@ -1481,15 +1491,55 @@ void btm_send_hci_set_scan_params(uint8_t scan_type, uint16_t scan_int_1m, uint1
   }
 }
 
+/* MSFT advertisement enable callback */
+static void msft_adv_mon_enable_cb(uint8_t status) {
+  if (status == MSFT_FILTER_ENABLE_SUCCESS) {
+    return;
+  }
+
+  if (status == MSFT_FILTER_ENABLE_CMD_DISALLOWED) {
+    log::warn("Toggling MSFT advertisement monitor failed because it's already enabled/disabled");
+  } else {
+    log::error("Toggling MSFT advertisement monitor failed with status: {}", status);
+  }
+}
+
+/* Update MSFT-based scan to align with active scan requirements */
+static void btm_ble_update_msft_scan(tBTM_BLE_SCAN_COND_OP action) {
+  if (!com::android::bluetooth::flags::le_scan_msft_support() ||
+      !osi_property_get_bool("bluetooth.core.le.use_msft_hci_ext", false) ||
+      !scanner->IsMsftSupported()) {
+    return;
+  }
+
+  switch (action) {
+    case BTM_BLE_SCAN_COND_ADD:
+      log::debug("Disabling MSFT advertisement monitor");
+      scanner->MsftAdvMonitorEnable(false, base::Bind(msft_adv_mon_enable_cb));
+      break;
+
+    case BTM_BLE_SCAN_COND_DELETE:
+      log::debug("Enabling MSFT advertisement monitor");
+      scanner->MsftAdvMonitorEnable(true, base::Bind(msft_adv_mon_enable_cb));
+      break;
+
+    default:
+      break;
+  }
+}
+
 /* Scan filter param config event */
 static void btm_ble_scan_filt_param_cfg_evt(uint8_t /* avbl_space */,
-                                            tBTM_BLE_SCAN_COND_OP /* action_type */,
+                                            tBTM_BLE_SCAN_COND_OP action_type,
                                             tBTM_STATUS btm_status) {
-  if (btm_status != tBTM_STATUS::BTM_SUCCESS) {
-    log::error("{}", btm_status_text(btm_status));
-  } else {
+  if (btm_status == tBTM_STATUS::BTM_SUCCESS) {
     log::verbose("");
+    return;
   }
+  log::warn("{}", btm_status_text(btm_status));
+
+  // If APCF-based scan filtering is not supported, try MSFT-based filtering
+  btm_ble_update_msft_scan(action_type);
 }
 
 /*******************************************************************************
