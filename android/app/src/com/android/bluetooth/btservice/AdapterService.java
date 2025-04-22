@@ -679,7 +679,7 @@ public class AdapterService extends Service {
         mBluetoothKeystoreService.initJni();
 
         mBluetoothQualityReportNativeInterface =
-                requireNonNull(BluetoothQualityReportNativeInterface.getInstance());
+                requireNonNull(BluetoothQualityReportNativeInterface.getInstance(this));
         mBluetoothQualityReportNativeInterface.init();
 
         if (Flags.hciVendorSpecificExtension()) {
