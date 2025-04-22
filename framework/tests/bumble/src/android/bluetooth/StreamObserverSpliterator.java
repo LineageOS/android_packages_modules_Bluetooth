@@ -16,6 +16,8 @@
 
 package android.bluetooth;
 
+import android.util.Log;
+
 import io.grpc.stub.ClientCallStreamObserver;
 import io.grpc.stub.ClientResponseObserver;
 
@@ -28,7 +30,9 @@ import java.util.function.Consumer;
 
 public class StreamObserverSpliterator<ReqT, RespT>
         implements Spliterator<RespT>, ClientResponseObserver<ReqT, RespT> {
+    private static final String TAG = StreamObserverSpliterator.class.getSimpleName();
     private static final Object COMPLETED_INDICATOR = new Object();
+    private static final long WAIT_TIME_FOR_CANCEL_MS = 100;
 
     private final BlockingQueue<Object> mQueue = new LinkedBlockingQueue<>();
 
@@ -55,6 +59,11 @@ public class StreamObserverSpliterator<ReqT, RespT>
     public void cancel(String message) {
         if (mRequestStream != null) {
             mRequestStream.cancel(message, null);
+            try {
+                Thread.sleep(WAIT_TIME_FOR_CANCEL_MS);
+            } catch (Exception e) {
+                Log.e(TAG, "Exception happened while waiting for cancel", e);
+            }
         } else {
             throw new UnsupportedOperationException(
                     "Canceling operation is not supported when request type is missing!");
