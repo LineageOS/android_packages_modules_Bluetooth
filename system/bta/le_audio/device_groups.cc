@@ -864,12 +864,15 @@ BidirectionalPair<bool> LeAudioDeviceGroup::GetDirectionSupport(
   }
 
   if (audio_context_type_manager->IsAnyMetadataSet()) {
-    auto remote_contexts = audio_context_type_manager->GetAudioContextsForTheGroup(this).second;
-    bool is_gmap_recording = (ctx_type == LeAudioContextType::GAME) && IsGmapEnabled() &&
-                             remote_contexts.source.any();
-    return {.sink = remote_contexts.sink.test_any(ctx_type | LeAudioContextType::UNSPECIFIED),
-            .source = (is_gmap_recording || remote_contexts.source.test_any(
-                                                    ctx_type | LeAudioContextType::UNSPECIFIED))};
+    /* If current configuration according to context type manager is different then provided ctx type
+     * as a parameter, it means, this functions is called to build a cache which should not depend
+     * on current context configuration
+     */
+    auto [config_context, remote_contexts] =
+            audio_context_type_manager->GetAudioContextsForTheGroup(this);
+    if (config_context == ctx_type) {
+      return {.sink = remote_contexts.sink.any(), .source = remote_contexts.source.any()};
+    }
   }
 
   return audio_context_type_manager->GetDirectionsForGivenContext(ctx_type, this);
@@ -1377,10 +1380,9 @@ void LeAudioDeviceGroup::CigConfiguration::GetCisCount(LeAudioContextType contex
   auto avail_group_ase_src_count = group_->GetAseCount(types::kLeAudioDirectionSource);
   auto strategy = group_->GetGroupSinkStrategy();
 
-  bool is_bidirectional = group_->GetAllSupportedBidirectionalContextTypes().test(context_type);
-  bool is_source_only = !is_bidirectional && group_->GetAllSupportedSingleDirectionOnlyContextTypes(
-                                                           types::kLeAudioDirectionSource)
-                                                     .test(context_type);
+  auto directions = group_->GetDirectionSupport(context_type);
+  bool is_bidirectional = directions.sink && directions.source;
+  bool is_source_only = !directions.sink && directions.source;
   log::debug(
           "{} {}, strategy {}, group avail sink ases: {}, "
           "group avail source ases {} "
