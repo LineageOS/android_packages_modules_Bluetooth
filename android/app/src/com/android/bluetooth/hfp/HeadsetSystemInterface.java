@@ -24,12 +24,14 @@ import android.content.Intent;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.PowerManager;
+import android.os.SystemProperties;
 import android.telecom.PhoneAccount;
 import android.telecom.PhoneAccountHandle;
 import android.telecom.TelecomManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.telephony.BluetoothInCallService;
 
 import java.util.List;
@@ -47,6 +49,11 @@ class HeadsetSystemInterface {
     private final PowerManager.WakeLock mVoiceRecognitionWakeLock;
     private final TelephonyManager mTelephonyManager;
     private final TelecomManager mTelecomManager;
+
+    private static final String ENABLE_SCO_MANAGED_BY_AUDIO = "bluetooth.sco.managed_by_audio";
+
+    private boolean mIsScoManagedByAudioEnabled =
+            SystemProperties.getBoolean(ENABLE_SCO_MANAGED_BY_AUDIO, false);
 
     HeadsetSystemInterface(HeadsetService headsetService) {
         if (headsetService == null) {
@@ -347,5 +354,23 @@ class HeadsetSystemInterface {
     public boolean deactivateVoiceRecognition() {
         // TODO: need a method to deactivate voice recognition on Android
         return true;
+    }
+
+    /**
+     * Check if SCO managed by Audio is enabled. This is set via the system property
+     * bluetooth.sco.managed_by_audio.
+     *
+     * <p>When set to {@code false}, Bluetooth will managed the start and end of the SCO.
+     *
+     * <p>When set to {@code true}, Audio will manage the start and end of the SCO through HAL.
+     *
+     * @return true if SCO managed by Audio is enabled, false otherwise
+     */
+    public boolean isScoManagedByAudioEnabled() {
+        if (Flags.isScoManagedByAudio()) {
+            Log.d(TAG, "isScoManagedByAudioEnabled state is: " + mIsScoManagedByAudioEnabled);
+            return mIsScoManagedByAudioEnabled;
+        }
+        return false;
     }
 }

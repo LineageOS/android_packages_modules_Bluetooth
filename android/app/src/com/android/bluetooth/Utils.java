@@ -69,12 +69,9 @@ import android.provider.DeviceConfig;
 import android.provider.Telephony;
 import android.util.Log;
 
-import androidx.annotation.VisibleForTesting;
-
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.Flags;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -99,6 +96,7 @@ public final class Utils {
     private static final String TAG = TAG_PREFIX_BLUETOOTH + Utils.class.getSimpleName();
 
     public static final int BD_ADDR_LEN = 6; // bytes
+    public static final int TYPED_BD_ADDR_LEN = 7; // bytes
     private static final int BD_UUID_LEN = 16; // bytes
 
     /** Thread pool to handle background and outgoing blocking task */
@@ -112,11 +110,6 @@ public final class Utils {
     private static final String ENABLE_DUAL_MODE_AUDIO = "persist.bluetooth.enable_dual_mode_audio";
     private static boolean sDualModeEnabled =
             SystemProperties.getBoolean(ENABLE_DUAL_MODE_AUDIO, false);
-
-    private static final String ENABLE_SCO_MANAGED_BY_AUDIO = "bluetooth.sco.managed_by_audio";
-
-    private static boolean isScoManagedByAudioEnabled =
-            SystemProperties.getBoolean(ENABLE_SCO_MANAGED_BY_AUDIO, false);
 
     private static final String KEY_TEMP_ALLOW_LIST_DURATION_MS = "temp_allow_list_duration_ms";
     private static final long DEFAULT_TEMP_ALLOW_LIST_DURATION_MS = 20_000;
@@ -158,30 +151,6 @@ public final class Utils {
     public static boolean isDualModeAudioEnabled() {
         Log.i(TAG, "Dual mode enable state is: " + sDualModeEnabled);
         return sDualModeEnabled;
-    }
-
-    /**
-     * Check if SCO managed by Audio is enabled. This is set via the system property
-     * bluetooth.sco.managed_by_audio.
-     *
-     * <p>When set to {@code false}, Bluetooth will managed the start and end of the SCO.
-     *
-     * <p>When set to {@code true}, Audio will manage the start and end of the SCO through HAL.
-     *
-     * @return true if SCO managed by Audio is enabled, false otherwise
-     */
-    public static boolean isScoManagedByAudioEnabled() {
-        if (Flags.isScoManagedByAudio()) {
-            Log.d(TAG, "isScoManagedByAudioEnabled state is: " + isScoManagedByAudioEnabled);
-            return isScoManagedByAudioEnabled;
-        }
-        return false;
-    }
-
-    @VisibleForTesting
-    public static void setIsScoManagedByAudioEnabled(boolean enabled) {
-        Log.i(TAG, "Updating isScoManagedByAudioEnabled for testing to: " + enabled);
-        isScoManagedByAudioEnabled = enabled;
     }
 
     /**
@@ -255,6 +224,32 @@ public final class Utils {
         }
 
         return String.format("XX:XX:XX:XX:%02X:%02X", address[4], address[5]);
+    }
+
+    public static String deviceTypeToString(int deviceType) {
+        return switch (deviceType) {
+            case BluetoothDevice.DEVICE_TYPE_UNKNOWN -> " ???? ";
+            case BluetoothDevice.DEVICE_TYPE_CLASSIC -> "BR/EDR";
+            case BluetoothDevice.DEVICE_TYPE_LE -> "  LE  ";
+            case BluetoothDevice.DEVICE_TYPE_DUAL -> " DUAL ";
+            default -> "Invalid device type: " + deviceType;
+        };
+    }
+
+    public static String addressTypeToString(int addressType) {
+        return switch (addressType) {
+            case BluetoothDevice.ADDRESS_TYPE_PUBLIC -> "Public ";
+            case BluetoothDevice.ADDRESS_TYPE_RANDOM -> "Random ";
+            default -> "Unknown";
+        };
+    }
+
+    public static String transportToString(int transport) {
+        return switch (transport) {
+            case BluetoothDevice.TRANSPORT_BREDR -> "BREDR";
+            case BluetoothDevice.TRANSPORT_LE -> "LE";
+            default -> "Unknown transport (" + transport + ")";
+        };
     }
 
     /**

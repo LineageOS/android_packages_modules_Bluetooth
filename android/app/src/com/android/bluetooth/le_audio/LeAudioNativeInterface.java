@@ -47,15 +47,15 @@ public class LeAudioNativeInterface {
 
     private static final Object INSTANCE_LOCK = new Object();
 
-    private LeAudioNativeInterface() {
-        mAdapterService = requireNonNull(AdapterService.getAdapterService());
+    private LeAudioNativeInterface(AdapterService adapterService) {
+        mAdapterService = requireNonNull(adapterService);
     }
 
     /** Get singleton instance. */
-    public static LeAudioNativeInterface getInstance() {
+    public static LeAudioNativeInterface getInstance(AdapterService adapterService) {
         synchronized (INSTANCE_LOCK) {
             if (sInstance == null) {
-                sInstance = new LeAudioNativeInterface();
+                sInstance = new LeAudioNativeInterface(adapterService);
             }
             return sInstance;
         }

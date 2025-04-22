@@ -1082,15 +1082,24 @@ bt_status_t btif_storage_get_hid_connection_policy(const tAclLinkSpec& link_spec
                                                    bool* reconnect_allowed) {
   std::string bdstr = link_spec.addrt.bda.ToString();
 
-  int value = 0;
+  int value = 1;
+  bool existence_ok = true;
+  // transport == AUTO indicates we're still using the old storage format where BREDR and LE HID
+  // devices are not separated. In this case we default the allow reconnection to true.
   if (link_spec.transport == BT_TRANSPORT_LE) {
-    btif_config_get_int(bdstr, BTIF_STORAGE_KEY_HOGP_RECONNECT_ALLOWED, &value);
+    existence_ok = btif_config_get_int(bdstr, BTIF_STORAGE_KEY_HOGP_RECONNECT_ALLOWED, &value);
   } else if (link_spec.transport == BT_TRANSPORT_BR_EDR) {
-    btif_config_get_int(bdstr, BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED, &value);
+    existence_ok = btif_config_get_int(bdstr, BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED, &value);
   } else {
     log::error("Un expected!");
   }
   *reconnect_allowed = value ? true : false;
+
+  // In case transport != AUTO but policy doesn't exist, it means the storage is in a messy state.
+  // Try to recover by setting the policy now.
+  if (!existence_ok) {
+    btif_storage_set_hid_connection_policy(link_spec, true);
+  }
 
   return BT_STATUS_SUCCESS;
 }

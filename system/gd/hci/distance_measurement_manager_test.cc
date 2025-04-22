@@ -558,7 +558,8 @@ struct CsModule {
 
   void StartMeasurementTillSecurityEnable(const StartMeasurementParameters& params) {
     StartMeasurementTillCreateConfig(params);
-
+    dm_manager_->HandleConnIntervalUpdated(params.responder_addr, params.connection_handle,
+                                           kConnInterval);
     test_hci_layer_->GetCommand(OpCode::LE_CS_SECURITY_ENABLE);
     test_hci_layer_->IncomingEvent(LeCsSecurityEnableStatusBuilder::Create(
             /*status=*/ErrorCode::SUCCESS,
@@ -1088,8 +1089,13 @@ TEST_F(DistanceMeasurementManagerTest, no_trailing_procedure_data) {
 }
 
 TEST_F(DistanceMeasurementManagerTest, complete_mode2_procedure) {
-  auto req_session_future = cs_requester_.GetDmSessionFuture();
   StartMeasurementParameters params;
+  EXPECT_CALL(*cs_requester_.mock_ranging_hal_,
+              UpdateConnInterval(params.connection_handle, kConnInterval));
+  EXPECT_CALL(*cs_requester_.mock_ranging_hal_,
+              UpdateChannelSoundingConfig(params.connection_handle, _, _, _, kConnInterval));
+  EXPECT_CALL(*cs_requester_.mock_ranging_hal_,
+              UpdateProcedureEnableConfig(params.connection_handle, _));
   cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
   uint16_t procedure_counter = 0;
 
@@ -1141,6 +1147,47 @@ TEST_F(DistanceMeasurementManagerTest, complete_mode2_procedure) {
   cs_requester_.dm_manager_->HandleRemoteData(params.responder_addr, params.connection_handle,
                                               segment_data_1);
 
+  cs_requester_.sync_client_handler();
+  cs_responder.Stop();
+}
+
+TEST_F(DistanceMeasurementManagerTest, complete_mode2_procedure_with_hal_v1) {
+  EXPECT_CALL(*cs_requester_.mock_ranging_hal_, GetRangingHalVersion())
+          .WillRepeatedly(Return(hal::V_1));
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+  uint16_t procedure_counter = 0;
+
+  CsSubeventResultEvent req_subevent_result_1;
+  req_subevent_result_1.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::INITIATOR);
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, req_subevent_result_1));
+
+  cs_requester_.sync_client_handler();
+  // construct responder data
+
+  CsModule cs_responder;
+  cs_responder.Start();
+  cs_responder.RespondTillProcedureEnableComplete(params);
+  cs_responder.dm_manager_->HandleMtuChanged(params.connection_handle, 517);
+  std::vector<uint8_t> segment_data_1;
+  EXPECT_CALL(cs_responder.mock_dm_callbacks_,
+              OnRasFragmentReady(params.requester_addr, procedure_counter, /*is_last=*/true, _))
+          .WillOnce([&segment_data_1](Address /*address*/, uint16_t /*procedure_counter*/,
+                                      bool /*is_last*/, std::vector<uint8_t> raw_data) {
+            segment_data_1 = std::move(raw_data);
+          });
+  CsSubeventResultEvent resp_subevent_result_1;
+  resp_subevent_result_1.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::REFLECTOR);
+  cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, resp_subevent_result_1));
+  cs_responder.sync_client_handler();
+
+  // send responder data
+  EXPECT_CALL(*cs_requester_.mock_ranging_hal_, WriteRawData(params.connection_handle, _));
+
+  cs_requester_.dm_manager_->HandleRemoteData(params.responder_addr, params.connection_handle,
+                                              segment_data_1);
   cs_requester_.sync_client_handler();
   cs_responder.Stop();
 }

@@ -86,9 +86,13 @@ constexpr uint8_t kBleAddressRandomIdentity = kBleAddressIdentityBit | kBleAddre
 constexpr uint8_t kResolvableAddressMask = 0xc0;
 constexpr uint8_t kResolvableAddressMsb = 0x40;
 
+// Serialized form of tBLE_BD_ADDR
+typedef std::array<uint8_t, RawAddress::kLength + 1> tBLE_BD_ADDR_SERIALIZED;
+
 struct tBLE_BD_ADDR {
   tBLE_ADDR_TYPE type;
   RawAddress bda;
+
   bool AddressEquals(const RawAddress& other) const { return other == bda; }
   bool IsPublicDeviceType() const { return type == kBleAddressPublicDevice; }
   bool IsRandomDeviceType() const { return type == kBleAddressRandomDevice; }
@@ -118,6 +122,13 @@ struct tBLE_BD_ADDR {
 
   bool operator==(const tBLE_BD_ADDR rhs) const { return rhs.type == type && rhs.bda == bda; }
   bool operator!=(const tBLE_BD_ADDR rhs) const { return !(*this == rhs); }
+
+  tBLE_BD_ADDR_SERIALIZED ToSerialized() const {
+    tBLE_BD_ADDR_SERIALIZED serialized;
+    memcpy(serialized.data(), bda.address, RawAddress::kLength);
+    serialized[RawAddress::kLength] = type;
+    return serialized;
+  }
 };
 
 template <>

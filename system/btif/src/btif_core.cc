@@ -301,7 +301,7 @@ static bt_status_t btif_in_get_adapter_properties(void) {
   bt_bdname_t name;
   bt_scan_mode_t mode;
   uint32_t disc_timeout;
-  RawAddress bonded_devices[BTM_SEC_MAX_DEVICE_RECORDS];
+  tBLE_BD_ADDR_SERIALIZED serialized_bonded_devices[BTM_SEC_MAX_DEVICE_RECORDS];
   Uuid local_uuids[BT_MAX_NUM_UUIDS];
   bt_status_t status;
 
@@ -327,7 +327,7 @@ static bt_status_t btif_in_get_adapter_properties(void) {
 
   /* BONDED_DEVICES */
   BTIF_STORAGE_FILL_PROPERTY(&properties[num_props], BT_PROPERTY_ADAPTER_BONDED_DEVICES,
-                             sizeof(bonded_devices), bonded_devices);
+                             sizeof(serialized_bonded_devices), serialized_bonded_devices);
   btif_storage_get_adapter_property(&properties[num_props]);
   num_props++;
 

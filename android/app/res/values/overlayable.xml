@@ -50,6 +50,15 @@
             <item type="integer" name="gatt_low_power_min_interval_secondary"/>
             <item type="integer" name="gatt_low_power_max_interval_secondary"/>
             <item type="integer" name="gatt_low_power_latency_secondary"/>
+
+            <!-- Batch scan throttler configuration -->
+            <item type="integer" name="batch_scan_screen_off_minimum_delay_floor_ms"/>
+            <item type="integer" name="batch_scan_unfiltered_delay_floor_ms"/>
+            <item type="integer" name="batch_scan_unfiltered_screen_off_delay_floor_ms"/>
+            <item type="integer" name="batch_scan_screen_off_delay_ms"/>
+
+            <!-- A2DP sink values -->
+            <item type="bool" name="a2dp_sink_automatically_request_audio_focus"/>
         </policy>
     </overlayable>
 </resources>

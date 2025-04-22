@@ -155,7 +155,9 @@ public class GattServiceTest {
         doReturn(mScanManager)
                 .when(mScanObjectsFactory)
                 .createScanManager(any(), any(), any(), any());
-        doReturn(mPeriodicScanManager).when(mScanObjectsFactory).createPeriodicScanManager();
+        doReturn(mPeriodicScanManager)
+                .when(mScanObjectsFactory)
+                .createPeriodicScanManager(any(), any());
         doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(mContext.getSharedPreferences("GattServiceTestPrefs", Context.MODE_PRIVATE))
                 .when(mAdapterService)
@@ -502,7 +504,7 @@ public class GattServiceTest {
         int authReq = 4;
 
         mService.readUsingCharacteristicUuid(
-                mGattCallback, mDevice, uuid, startHandle, endHandle, authReq, mAttributionSource);
+                mGattCallback, mDevice, uuid, startHandle, endHandle, authReq);
         verify(mNativeInterface)
                 .gattClientReadUsingCharacteristicUuid(
                         CLIENT_CONN_ID,

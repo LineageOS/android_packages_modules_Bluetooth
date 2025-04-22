@@ -198,6 +198,7 @@ public class ScanManagerTest {
         doReturn(DEFAULT_TOTAL_NUM_OF_TRACKABLE_ADVERTISEMENTS)
                 .when(mAdapterService)
                 .getTotalNumOfTrackableAdvertisements();
+        doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();
 
         TestUtils.mockGetSystemService(
                 mAdapterService, Context.LOCATION_SERVICE, LocationManager.class, mLocationManager);

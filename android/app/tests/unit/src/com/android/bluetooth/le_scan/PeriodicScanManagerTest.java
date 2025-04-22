@@ -40,6 +40,9 @@ import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.bluetooth.TestLooper;
+import com.android.bluetooth.btservice.AdapterService;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -54,6 +57,7 @@ import org.mockito.Mock;
 public class PeriodicScanManagerTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AdapterService mAdapterService;
     @Mock private PeriodicScanNativeInterface mPeriodicScanNativeInterface;
     @Mock private IPeriodicAdvertisingCallback mCallback;
     @Mock private IBinder mBinder;
@@ -63,6 +67,7 @@ public class PeriodicScanManagerTest {
     private BluetoothDevice mTestDevice;
     private ScanResult mScanResult;
     private Context mTargetContext;
+    private int syncHandle;
 
     private static final String REMOTE_DEVICE_ADDRESS = "00:01:02:03:04:05";
 
@@ -70,7 +75,8 @@ public class PeriodicScanManagerTest {
     public void setUp() throws Exception {
         mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         PeriodicScanNativeInterface.setInstance(mPeriodicScanNativeInterface);
-        mPeriodicScanManager = new PeriodicScanManager();
+        mPeriodicScanManager =
+                new PeriodicScanManager(mAdapterService, new TestLooper().getLooper());
 
         BluetoothManager manager = mTargetContext.getSystemService(BluetoothManager.class);
         assertThat(manager).isNotNull();
@@ -84,6 +90,8 @@ public class PeriodicScanManagerTest {
 
         doReturn(mBinder).when(mCallback).asBinder();
         doNothing().when(mBinder).linkToDeath(any(), eq(0));
+
+        syncHandle = mPeriodicScanManager.mTempRegistrationId;
     }
 
     @After
@@ -93,14 +101,14 @@ public class PeriodicScanManagerTest {
     }
 
     @Test
-    public void testStartSync() throws Exception {
+    public void startSync() throws Exception {
         mPeriodicScanManager.startSync(mScanResult, 0, 0, mCallback);
         verify(mPeriodicScanNativeInterface)
                 .startSync(eq(0), eq(REMOTE_DEVICE_ADDRESS), eq(0), eq(0), anyInt());
     }
 
     @Test
-    public void testOnSyncStarted() throws Exception {
+    public void startSync_onSyncStarted() throws Exception {
         mPeriodicScanManager.startSync(mScanResult, 0, 0, mCallback);
 
         ArgumentCaptor<Integer> regId = ArgumentCaptor.forClass(Integer.class);
@@ -109,13 +117,14 @@ public class PeriodicScanManagerTest {
 
         mPeriodicScanManager.onSyncStarted(
                 regId.getValue(),
-                0,
+                syncHandle,
                 0,
                 BluetoothDevice.ADDRESS_TYPE_RANDOM,
                 REMOTE_DEVICE_ADDRESS,
                 0,
                 100,
                 0);
-        verify(mCallback).onSyncEstablished(anyInt(), eq(mTestDevice), eq(0), eq(0), eq(0), eq(0));
+        verify(mCallback)
+                .onSyncEstablished(eq(syncHandle), eq(mTestDevice), eq(0), eq(0), eq(0), eq(0));
     }
 }

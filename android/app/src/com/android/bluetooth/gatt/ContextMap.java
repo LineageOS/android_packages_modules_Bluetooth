@@ -60,56 +60,37 @@ public class ContextMap<C extends IInterface> {
     private static final int MAX_LAST_RECORDS = 5;
 
     /** Connection class helps map connection IDs to devices. */
-    public static class Connection {
-        public int connId;
-        public BluetoothDevice device;
-        public int appId;
-        public long startTime;
-
+    record Connection(int connId, BluetoothDevice device, int appId, long startTime) {
         Connection(int connId, BluetoothDevice device, int appId) {
-            this.connId = connId;
-            this.device = device;
-            this.appId = appId;
-            this.startTime = SystemClock.elapsedRealtime();
+            this(connId, device, appId, SystemClock.elapsedRealtime());
         }
     }
 
     /** Application entry mapping UUIDs to appIDs and callbacks. */
-    public class App {
-        /** The UUID of the application */
+    class App {
         public final UUID uuid;
-
-        /** The id of the application */
-        public int id;
-
-        /** The uid of the application */
-        public final int appUid;
-
-        /** The package name of the application */
-        public final String name;
-
-        /** The last attribution tag of the caller */
+        public final int uid;
+        public final String packageName;
         @Nullable public final String attributionTag;
 
-        /** Application callbacks */
+        public int id;
         public C callback;
-
-        /** Death recipient */
-        private IBinder.DeathRecipient mDeathRecipient;
 
         /** Flag to signal that transport is congested */
         public Boolean isCongested = false;
+
+        private IBinder.DeathRecipient mDeathRecipient;
 
         /** Internal callback info queue, waiting to be send on congestion clear */
         private final List<CallbackInfo> mCongestionQueue = new ArrayList<>();
 
         /** Creates a new app context. */
-        App(UUID uuid, C callback, int appUid, String name, AttributionSource attrSource) {
+        App(UUID uuid, C callback, int appUid, String packageName, AttributionSource source) {
             this.uuid = uuid;
             this.callback = callback;
-            this.appUid = appUid;
-            this.name = name;
-            this.attributionTag = getLastAttributionTag(attrSource);
+            this.uid = appUid;
+            this.packageName = packageName;
+            attributionTag = getLastAttributionTag(source);
         }
 
         /** Link death recipient */
@@ -137,11 +118,11 @@ public class ContextMap<C extends IInterface> {
             }
         }
 
-        public void queueCallback(CallbackInfo callbackInfo) {
+        void queueCallback(CallbackInfo callbackInfo) {
             mCongestionQueue.add(callbackInfo);
         }
 
-        public CallbackInfo popQueuedCallback() {
+        CallbackInfo popQueuedCallback() {
             if (mCongestionQueue.size() == 0) {
                 return null;
             }
@@ -151,7 +132,7 @@ public class ContextMap<C extends IInterface> {
 
     private class AppRecord {
         public final UUID uuid;
-        public final String appName;
+        public final String packageName;
         @Nullable public final String attributionTag;
         public final Instant registerTime;
 
@@ -161,9 +142,8 @@ public class ContextMap<C extends IInterface> {
 
         AppRecord(App app) {
             uuid = app.uuid;
-            appName = app.name;
+            packageName = app.packageName;
             attributionTag = app.attributionTag;
-
             registerTime = Instant.now();
         }
     }
@@ -404,7 +384,7 @@ public class ContextMap<C extends IInterface> {
     /** Counts the number of applications that have a given app UID. */
     public int countByAppUid(int appUid) {
         synchronized (mAppsLock) {
-            return (int) (mApps.stream().filter(app -> app.appUid == appUid).count());
+            return (int) (mApps.stream().filter(app -> app.uid == appUid).count());
         }
     }
 
@@ -447,7 +427,7 @@ public class ContextMap<C extends IInterface> {
                         .append(" app_if: ")
                         .append(record.clientIf)
                         .append(", appName: ")
-                        .append(record.appName);
+                        .append(record.packageName);
                 if (record.attributionTag != null) {
                     sb.append(", tag: ").append(record.attributionTag);
                 }

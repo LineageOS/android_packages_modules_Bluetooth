@@ -243,7 +243,7 @@ public class LeAudioService extends ProfileService {
     BluetoothLeScanner mAudioServersScanner;
 
     public LeAudioService(AdapterService adapterService) {
-        this(adapterService, LeAudioNativeInterface.getInstance());
+        this(adapterService, LeAudioNativeInterface.getInstance(adapterService));
     }
 
     @VisibleForTesting
