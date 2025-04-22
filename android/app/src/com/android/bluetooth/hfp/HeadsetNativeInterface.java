@@ -247,6 +247,12 @@ public class HeadsetNativeInterface {
         sendMessageToService(event);
     }
 
+    private void onAtBcc(byte[] address) {
+        HeadsetStackEvent event =
+                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_BCC, getDevice(address));
+        sendMessageToService(event);
+    }
+
     // Native wrappers to help unit testing
 
     /**

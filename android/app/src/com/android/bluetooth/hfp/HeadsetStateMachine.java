@@ -574,6 +574,11 @@ class HeadsetStateMachine extends StateMachine {
             mHasNrecEnabled = false;
             mHasSwbAptXEnabled = false;
 
+            if (mHeadsetService.mPendingScoConnection != null
+                    && mHeadsetService.mPendingScoConnection.equals(mDevice)) {
+                mHeadsetService.mPendingScoConnection = null;
+            }
+
             broadcastStateTransitions();
             logFailureIfNeeded();
 
@@ -1233,6 +1238,9 @@ class HeadsetStateMachine extends StateMachine {
                             updateAgIndicatorEnableState(
                                     (HeadsetAgIndicatorEnableState) event.valueObject);
                             break;
+                        case HeadsetStackEvent.EVENT_TYPE_BCC:
+                            mHeadsetService.processAtBcc(event.device);
+                            break;
                         default:
                             stateLogE("Unknown stack event: " + event);
                             break;
@@ -1577,6 +1585,11 @@ class HeadsetStateMachine extends StateMachine {
                 } else {
                     Counter.logIncrement("bluetooth.value_cvsd_codec_usage_over_hfp");
                 }
+            }
+
+            if (mHeadsetService.mPendingScoConnection != null
+                    && mHeadsetService.mPendingScoConnection.equals(mDevice)) {
+                mHeadsetService.mPendingScoConnection = null;
             }
 
             setAudioParameters();

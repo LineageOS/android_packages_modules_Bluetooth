@@ -1359,6 +1359,13 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type, cha
         break;
       }
 
+      if (bta_ag_is_sco_managed_by_audio()) {
+        log::info("Received BCC, informing audio framework to open SCO");
+        event = BTA_AG_AT_BCC_EVT;
+        bta_ag_send_ok(p_scb);
+        break;
+      }
+
       bta_ag_send_ok(p_scb);
       bta_ag_sco_open(p_scb, tBTA_AG_DATA::kEmpty);
       break;

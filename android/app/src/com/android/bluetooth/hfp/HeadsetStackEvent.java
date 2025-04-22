@@ -44,6 +44,7 @@ public class HeadsetStackEvent extends HeadsetMessageObject {
     public static final int EVENT_TYPE_BIEV = 19;
     public static final int EVENT_TYPE_BIA = 20;
     public static final int EVENT_TYPE_SWB = 21;
+    public static final int EVENT_TYPE_BCC = 22;
 
     public final int type;
     public final int valueInt;

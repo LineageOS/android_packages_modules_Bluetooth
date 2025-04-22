@@ -47,6 +47,7 @@ static jmethodID method_onSendDtmf;
 static jmethodID method_onNoiseReductionEnable;
 static jmethodID method_onWBS;
 static jmethodID method_onSWB;
+static jmethodID method_onAtBcc;
 static jmethodID method_onAtChld;
 static jmethodID method_onAtCnum;
 static jmethodID method_onAtCind;
@@ -454,6 +455,21 @@ public:
 
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtBia, service, roam, signal, battery,
                                  addr.get());
+  }
+
+  void AtBccCallback(RawAddress* bd_addr) override {
+    std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
+    CallbackEnv sCallbackEnv(__func__);
+    if (!sCallbackEnv.valid() || !mCallbacksObj) {
+      return;
+    }
+
+    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
+    if (addr.get() == nullptr) {
+      return;
+    }
+
+    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtBcc, addr.get());
   }
 
   void DebugDumpCallback(bool /* active */, uint16_t /* codec_id */,
@@ -1021,6 +1037,7 @@ int register_com_android_bluetooth_hfp(JNIEnv* env) {
           {"onNoiseReductionEnable", "(Z[B)V", &method_onNoiseReductionEnable},
           {"onWBS", "(I[B)V", &method_onWBS},
           {"onSWB", "(II[B)V", &method_onSWB},
+          {"onAtBcc", "([B)V", &method_onAtBcc},
           {"onAtChld", "(I[B)V", &method_onAtChld},
           {"onAtCnum", "([B)V", &method_onAtCnum},
           {"onAtCind", "([B)V", &method_onAtCind},
@@ -1036,5 +1053,4 @@ int register_com_android_bluetooth_hfp(JNIEnv* env) {
 
   return 0;
 }
-
-} /* namespace android */
+}  // namespace android
