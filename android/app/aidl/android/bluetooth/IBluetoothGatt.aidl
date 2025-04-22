@@ -51,7 +51,7 @@ interface IBluetoothGatt {
     void discoverServiceByUuid(in IBluetoothGattCallback callback, in BluetoothDevice device, in ParcelUuid uuid, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     void readCharacteristic(in IBluetoothGattCallback callback, in BluetoothDevice device, in int handle, in int authReq, in AttributionSource attributionSource);
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED}, conditional=true)")
     void readUsingCharacteristicUuid(in IBluetoothGattCallback callback, in BluetoothDevice device, in ParcelUuid uuid,
                            in int startHandle, in int endHandle, in int authReq, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
