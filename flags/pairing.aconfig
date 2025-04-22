@@ -290,3 +290,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "bond_state_machine_looper"
+    namespace: "bluetooth"
+    description: "Use main looper in BondStateMachine"
+    bug: "412423957"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
