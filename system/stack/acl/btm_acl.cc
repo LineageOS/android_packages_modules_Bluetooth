@@ -62,6 +62,7 @@
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sco.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/btm/btm_sec_utils.h"
 #include "stack/btm/internal/btm_api.h"
 #include "stack/btm/security_device_record.h"
 #include "stack/include/acl_api.h"
