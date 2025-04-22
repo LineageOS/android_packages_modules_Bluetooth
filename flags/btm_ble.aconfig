@@ -20,3 +20,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "gen_key_missing_evt_only_from_iocapreq"
+    namespace: "bluetooth"
+    description: "Genearte the key missing event only from IO_CAP_REQ and not from RSP"
+    bug: "411619742"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
