@@ -162,7 +162,7 @@ public class HeadsetService extends ProfileService {
     @VisibleForTesting ServiceFactory mFactory = new ServiceFactory();
 
     public HeadsetService(AdapterService adapterService) {
-        this(adapterService, HeadsetNativeInterface.getInstance(), null);
+        this(adapterService, HeadsetNativeInterface.getInstance(adapterService), null);
     }
 
     @VisibleForTesting
