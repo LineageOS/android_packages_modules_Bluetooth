@@ -188,7 +188,6 @@ public class PeriodicScanManager {
                                     e.getValue().deathRecipient,
                                     callback));
                     sendToCallback(
-                            syncHandle,
                             () ->
                                     callback.onSyncEstablished(
                                             syncHandle,
@@ -200,7 +199,6 @@ public class PeriodicScanManager {
 
                 } else {
                     sendToCallback(
-                            syncHandle,
                             () ->
                                     callback.onSyncEstablished(
                                             syncHandle,
@@ -228,7 +226,7 @@ public class PeriodicScanManager {
             PeriodicAdvertisingReport report =
                     new PeriodicAdvertisingReport(
                             syncHandle, txPower, rssi, dataStatus, ScanRecord.parseFromBytes(data));
-            sendToCallback(syncHandle, () -> callback.onPeriodicAdvertisingReport(report));
+            sendToCallback(() -> callback.onPeriodicAdvertisingReport(report));
         }
     }
 
@@ -244,7 +242,7 @@ public class PeriodicScanManager {
             synchronized (mSyncs) {
                 mSyncs.remove(binder);
             }
-            sendToCallback(syncHandle, () -> callback.onSyncLost(syncHandle));
+            sendToCallback(() -> callback.onSyncLost(syncHandle));
         }
     }
 
@@ -256,8 +254,7 @@ public class PeriodicScanManager {
             return;
         }
         for (IPeriodicAdvertisingCallback callback : callbacks) {
-            sendToCallback(
-                    syncHandle, () -> callback.onBigInfoAdvertisingReport(syncHandle, encrypted));
+            sendToCallback(() -> callback.onBigInfoAdvertisingReport(syncHandle, encrypted));
         }
     }
 
@@ -454,8 +451,7 @@ public class PeriodicScanManager {
         }
     }
 
-    private static void sendToCallback(int syncHandle, RemoteExceptionIgnoringRunnable wrapper) {
-        Log.i(TAG, "sendToCallback() syncHandle: " + syncHandle);
+    private static void sendToCallback(RemoteExceptionIgnoringRunnable wrapper) {
         wrapper.run();
     }
 }
