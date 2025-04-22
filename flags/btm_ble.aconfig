@@ -10,3 +10,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "ble_rnr_when_connected"
+    namespace: "bluetooth"
+    description: "If non-connectable, still read remote name if already connected"
+    bug: "411705040"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
