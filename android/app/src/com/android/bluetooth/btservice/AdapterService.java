@@ -2716,17 +2716,24 @@ public class AdapterService extends Service {
         return null;
     }
 
-    public BluetoothDevice getRemoteDevice(String address) {
+    public BluetoothDevice getRemoteDevice(String address, int addressType) {
         if (!BluetoothAdapter.checkBluetoothAddress(address)) {
             throw new IllegalArgumentException(address + " is not a valid Bluetooth address");
         }
 
+        // Reuse the existing BluetoothDevice object if it exists
         BluetoothDevice device =
                 Flags.retainAddressType() ? device = mRemoteDevices.getDevice(address) : null;
         if (device == null) {
-            device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+            // BluetoothAdapter.getRemoteLeDevice() is same as BluetoothAdapter.getRemoteDevice()
+            // with the specific address type.
+            device = BluetoothAdapter.getDefaultAdapter().getRemoteLeDevice(address, addressType);
         }
         return device;
+    }
+
+    public BluetoothDevice getRemoteDevice(String address) {
+        return getRemoteDevice(address, BluetoothDevice.ADDRESS_TYPE_PUBLIC);
     }
 
     public BluetoothDevice getDeviceFromByte(byte[] address) {
