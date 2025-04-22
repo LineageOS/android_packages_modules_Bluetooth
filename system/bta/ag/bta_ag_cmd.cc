@@ -47,7 +47,6 @@
 
 #include <bluetooth/metrics/os_metrics.h>
 
-#include "bta/include/bta_hfp_api.h"
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/helpers.h"
@@ -250,6 +249,7 @@ static void bta_ag_send_result(tBTA_AG_SCB* p_scb, size_t code, const char* p_ar
   if (result->arg_type == BTA_AG_RES_FMT_INT) {
     p += utl_itoa((uint16_t)int_arg, p);
   } else if (result->arg_type == BTA_AG_RES_FMT_STR) {
+    // NOLINTNEXTLINE(runtime/printf)
     strcpy(p, p_arg);
     p += strlen(p_arg);
   }
@@ -402,8 +402,8 @@ static bool bta_ag_parse_cmer(char* p_s, char* p_end, bool* p_enabled) {
 
   for (i = 0; i < 4; i++, p_s = p + 1) {
     /* skip to comma delimiter */
-    for (p = p_s; p < p_end && *p != ',' && *p != 0; p++)
-      ;
+    for (p = p_s; p < p_end && *p != ',' && *p != 0; p++) {
+    }
 
     /* get integer value */
     if (p > p_end) {
@@ -474,8 +474,8 @@ static tBTA_AG_PEER_CODEC bta_ag_parse_bac(char* p_s, char* p_end) {
 
   while (p_s) {
     /* skip to comma delimiter */
-    for (p = p_s; p < p_end && *p != ',' && *p != 0; p++)
-      ;
+    for (p = p_s; p < p_end && *p != ',' && *p != 0; p++) {
+    }
 
     /* get integer value */
     if (p > p_end) {
@@ -703,7 +703,8 @@ static int bta_ag_find_hf_ind_by_id(tBTA_AG_HF_IND* p_hf_ind, int size, uint32_t
  *
  ******************************************************************************/
 static bool bta_ag_parse_bind_set(tBTA_AG_SCB* p_scb, tBTA_AG_VAL val) {
-  char* p_token = strtok(val.str, ",");
+  char* saveptr = nullptr;
+  char* p_token = strtok_r(val.str, ",", &saveptr);
   if (p_token == nullptr) {
     return false;
   }
@@ -719,7 +720,7 @@ static bool bta_ag_parse_bind_set(tBTA_AG_SCB* p_scb, tBTA_AG_VAL val) {
     p_scb->peer_hf_indicators[index].ind_id = rcv_ind_id;
     log::verbose("peer_hf_ind[{}] = {}", index, rcv_ind_id);
 
-    p_token = strtok(nullptr, ",");
+    p_token = strtok_r(nullptr, ",", &saveptr);
   }
 
   return true;
@@ -748,6 +749,7 @@ static void bta_ag_bind_response(tBTA_AG_SCB* p_scb, uint8_t arg_type) {
         if (index > 1) {
           buffer[index++] = ',';
         }
+        // NOLINTNEXTLINE(runtime/printf)
         snprintf(&buffer[index++], 2, "%d", bta_ag_local_hf_ind_cfg[i + 1].ind_id);
       }
     }
@@ -812,13 +814,14 @@ static void bta_ag_bind_response(tBTA_AG_SCB* p_scb, uint8_t arg_type) {
  *
  ******************************************************************************/
 static bool bta_ag_parse_biev_response(tBTA_AG_SCB* p_scb, tBTA_AG_VAL* val) {
-  char* p_token = strtok(val->str, ",");
+  char* saveptr = nullptr;
+  char* p_token = strtok_r(val->str, ",", &saveptr);
   if (p_token == nullptr) {
     return false;
   }
   uint16_t rcv_ind_id = atoi(p_token);
 
-  p_token = strtok(nullptr, ",");
+  p_token = strtok_r(nullptr, ",", &saveptr);
   if (p_token == nullptr) {
     return false;
   }
