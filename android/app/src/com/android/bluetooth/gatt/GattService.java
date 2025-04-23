@@ -126,8 +126,6 @@ public class GattService extends ProfileService {
 
     @VisibleForTesting static final int GATT_CLIENT_LIMIT_PER_APP = 32;
 
-    @Nullable public final ScanController mScanController;
-
     /** This is only used when Flags.onlyStartScanDuringBleOn() is true. */
     private static GattService sGattService;
 
@@ -135,15 +133,18 @@ public class GattService extends ProfileService {
     @VisibleForTesting ContextMap<IBluetoothGattCallback> mClientMap = new ContextMap<>();
 
     /** List of our registered server apps. */
-    ContextMap<IBluetoothGattServerCallback> mServerMap = new ContextMap<>();
+    @VisibleForTesting ContextMap<IBluetoothGattServerCallback> mServerMap = new ContextMap<>();
 
-    /** Server handle map. */
-    private final HandleMap mHandleMap = new HandleMap();
+    /** Reliable write queue */
+    @VisibleForTesting Set<BluetoothDevice> mReliableQueue = new HashSet<>();
 
     /**
      * Set of restricted (which require a BLUETOOTH_PRIVILEGED permission) handles per connectionId.
      */
     @VisibleForTesting final Map<Integer, Set<Integer>> mRestrictedHandles = new HashMap<>();
+
+    /** Server handle map. */
+    private final HandleMap mHandleMap = new HandleMap();
 
     /**
      * HashMap used to synchronize writeCharacteristic calls mapping remote device to available
@@ -152,13 +153,14 @@ public class GattService extends ProfileService {
     private final HashMap<BluetoothDevice, Integer> mPermits = new HashMap<>();
 
     private final AdapterService mAdapterService;
-    private final AdvertiseManager mAdvertiseManager;
-    private final GattNativeInterface mNativeInterface;
-    private final CompanionDeviceManager mCompanionDeviceManager;
-    private final DistanceMeasurementManager mDistanceMeasurementManager;
     private final ActivityManager mActivityManager;
     private final PackageManager mPackageManager;
+    private final CompanionDeviceManager mCompanionDeviceManager;
+    private final GattNativeInterface mNativeInterface;
     private final HandlerThread mHandlerThread;
+    private final AdvertiseManager mAdvertiseManager;
+    @Nullable private final ScanController mScanController;
+    private final DistanceMeasurementManager mDistanceMeasurementManager;
 
     public GattService(AdapterService adapterService) {
         super(requireNonNull(adapterService));
@@ -198,8 +200,12 @@ public class GattService extends ProfileService {
         return BluetoothProperties.isProfileGattEnabled().orElse(true);
     }
 
-    /** Reliable write queue */
-    @VisibleForTesting Set<BluetoothDevice> mReliableQueue = new HashSet<>();
+    @Override
+    protected void setTestModeEnabled(boolean enableTestMode) {
+        if (mScanController != null) {
+            mScanController.setTestModeEnabled(enableTestMode);
+        }
+    }
 
     @Override
     protected IProfileServiceBinder initBinder() {
@@ -254,18 +260,44 @@ public class GattService extends ProfileService {
         return mScanController;
     }
 
-    CompanionDeviceManager getCompanionDeviceManager() {
-        return mCompanionDeviceManager;
-    }
-
     ContextMap<IBluetoothGattServerCallback> getServerMap() {
         return mServerMap;
     }
 
-    @Override
-    protected void setTestModeEnabled(boolean enableTestMode) {
-        if (mScanController != null) {
-            mScanController.setTestModeEnabled(enableTestMode);
+    CompanionDeviceManager getCompanionDeviceManager() {
+        return mCompanionDeviceManager;
+    }
+
+    private class ServerDeathRecipient implements IBinder.DeathRecipient {
+        private final IBluetoothGattServerCallback mCallback;
+        private final String mPackageName;
+
+        ServerDeathRecipient(IBluetoothGattServerCallback callback, String packageName) {
+            mCallback = callback;
+            mPackageName = packageName;
+        }
+
+        @Override
+        public void binderDied() {
+            Log.d(TAG, "Binder is dead - unregistering server " + mPackageName + " " + mCallback);
+            unregisterServer(mCallback);
+        }
+    }
+
+    private class ClientDeathRecipient implements IBinder.DeathRecipient {
+        private final IBluetoothGattCallback mCallback;
+        private final String mPackageName;
+
+        ClientDeathRecipient(IBluetoothGattCallback callback, String packageName) {
+            mCallback = callback;
+            mPackageName = packageName;
+        }
+
+        @Override
+        public void binderDied() {
+            Log.d(TAG, "Binder is dead - unregistering client " + mPackageName + " " + mCallback);
+            unregisterClient(
+                    mCallback, getAttributionSource(), ContextMap.RemoveReason.REASON_BINDER_DIED);
         }
     }
 
@@ -281,39 +313,6 @@ public class GattService extends ProfileService {
     private boolean isHandleRestricted(int connId, int handle) {
         Set<Integer> restrictedHandles = mRestrictedHandles.get(connId);
         return restrictedHandles != null && restrictedHandles.contains(handle);
-    }
-
-    class ServerDeathRecipient implements IBinder.DeathRecipient {
-        IBluetoothGattServerCallback mCallback;
-        private final String mPackageName;
-
-        ServerDeathRecipient(IBluetoothGattServerCallback callback, String packageName) {
-            mCallback = callback;
-            mPackageName = packageName;
-        }
-
-        @Override
-        public void binderDied() {
-            Log.d(TAG, "Binder is dead - unregistering server " + mPackageName + " " + mCallback);
-            unregisterServer(mCallback);
-        }
-    }
-
-    class ClientDeathRecipient implements IBinder.DeathRecipient {
-        IBluetoothGattCallback mCallback;
-        private final String mPackageName;
-
-        ClientDeathRecipient(IBluetoothGattCallback callback, String packageName) {
-            mCallback = callback;
-            mPackageName = packageName;
-        }
-
-        @Override
-        public void binderDied() {
-            Log.d(TAG, "Binder is dead - unregistering client " + mPackageName + " " + mCallback);
-            unregisterClient(
-                    mCallback, getAttributionSource(), ContextMap.RemoveReason.REASON_BINDER_DIED);
-        }
     }
 
     /**************************************************************************
@@ -340,9 +339,9 @@ public class GattService extends ProfileService {
                 TAG,
                 "onConnected() -"
                         + (" clientIf=" + clientIf)
-                        + (" connId=" + connId)
-                        + (" status=" + status)
-                        + (" device=" + device));
+                        + (", connId=" + connId)
+                        + (", status=" + status)
+                        + (", device=" + device));
         int connectionState = BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTED;
         if (status != 0) {
             mAdapterService.notifyGattClientConnectFailed(clientIf, device);
@@ -377,16 +376,14 @@ public class GattService extends ProfileService {
     void onDisconnectedFromNative(int clientIf, int connId, int status, BluetoothDevice device) {
         Log.d(
                 TAG,
-                "onDisconnected() - clientIf="
-                        + clientIf
-                        + ", connId="
-                        + connId
-                        + ", device="
-                        + device);
+                "onDisconnected() -"
+                        + (" clientIf=" + clientIf)
+                        + (", connId=" + connId)
+                        + (", status=" + status)
+                        + (", device=" + device));
         mClientMap.removeConnection(clientIf, connId);
         mAdapterService.notifyGattClientDisconnect(clientIf, device);
         ContextMap<IBluetoothGattCallback>.App app = mClientMap.getById(clientIf);
-
         mRestrictedHandles.remove(connId);
 
         // Remove AtomicBoolean representing permit if no other connections rely on this remote
@@ -455,13 +452,10 @@ public class GattService extends ProfileService {
             int clientIf, BluetoothDevice device, int txPhy, int rxPhy, int status) {
         Log.d(
                 TAG,
-                "onClientPhyRead() - device="
-                        + device
-                        + ", status="
-                        + status
-                        + ", clientIf="
-                        + clientIf);
-
+                "onClientPhyRead() -"
+                        + (" clientIf=" + clientIf)
+                        + (", device=" + device)
+                        + (", status=" + status));
         Integer connId = mClientMap.connIdByDevice(clientIf, device);
         if (connId == null) {
             Log.d(TAG, "onClientPhyRead() - no connection to " + device);
@@ -608,7 +602,6 @@ public class GattService extends ProfileService {
 
     void onGetGattDbFromNative(int connId, List<GattDbElement> db) {
         BluetoothDevice device = mClientMap.deviceByConnId(connId);
-
         Log.d(TAG, "onGetGattDb() - device=" + device);
 
         ContextMap<IBluetoothGattCallback>.App app = mClientMap.getByConnId(connId);
@@ -640,7 +633,6 @@ public class GattService extends ProfileService {
                         restrictedIds.add(el.id);
                     }
                     break;
-
                 case GattDbElement.TYPE_CHARACTERISTIC:
                     Log.d(TAG, "got characteristic with UUID=" + el.uuid + " id: " + el.id);
 
@@ -651,7 +643,6 @@ public class GattService extends ProfileService {
                         restrictedIds.add(el.id);
                     }
                     break;
-
                 case GattDbElement.TYPE_DESCRIPTOR:
                     Log.d(TAG, "got descriptor with UUID=" + el.uuid + " id: " + el.id);
 
@@ -660,7 +651,6 @@ public class GattService extends ProfileService {
                         restrictedIds.add(el.id);
                     }
                     break;
-
                 case GattDbElement.TYPE_INCLUDED_SERVICE:
                     Log.d(
                             TAG,
@@ -674,7 +664,6 @@ public class GattService extends ProfileService {
                     currSrvc.addIncludedService(
                             new BluetoothGattService(el.uuid, el.startHandle, el.type));
                     break;
-
                 default:
                     Log.e(
                             TAG,
@@ -696,17 +685,13 @@ public class GattService extends ProfileService {
 
     void onRegisterForNotificationsFromNative(int connId, int status, int registered, int handle) {
         BluetoothDevice device = mClientMap.deviceByConnId(connId);
-
         Log.d(
                 TAG,
-                "onRegisterForNotifications() - device="
-                        + device
-                        + ", status="
-                        + status
-                        + ", registered="
-                        + registered
-                        + ", handle="
-                        + handle);
+                "onRegisterForNotifications() -"
+                        + (" device=" + device)
+                        + (", status=" + status)
+                        + (", registered=" + registered)
+                        + (", handle=" + handle));
     }
 
     void onNotifyFromNative(
@@ -734,15 +719,12 @@ public class GattService extends ProfileService {
 
     void onReadCharacteristicFromNative(int connId, int status, int handle, byte[] data) {
         BluetoothDevice device = mClientMap.deviceByConnId(connId);
-
         Log.v(
                 TAG,
-                "onReadCharacteristic() - device="
-                        + device
-                        + ", status="
-                        + status
-                        + ", length="
-                        + data.length);
+                "onReadCharacteristic() -"
+                        + (" device=" + device)
+                        + (", status=" + status)
+                        + (", length=" + data.length));
 
         ContextMap<IBluetoothGattCallback>.App app = mClientMap.getByConnId(connId);
         if (app == null) {
@@ -760,12 +742,10 @@ public class GattService extends ProfileService {
 
         Log.v(
                 TAG,
-                "onWriteCharacteristic() - device="
-                        + device
-                        + ", status="
-                        + status
-                        + ", length="
-                        + data.length);
+                "onWriteCharacteristic() -"
+                        + (" device=" + device)
+                        + (", status=" + status)
+                        + (", length=" + data.length));
 
         ContextMap<IBluetoothGattCallback>.App app = mClientMap.getByConnId(connId);
         if (app == null) {
@@ -798,15 +778,12 @@ public class GattService extends ProfileService {
 
     void onReadDescriptorFromNative(int connId, int status, int handle, byte[] data) {
         BluetoothDevice device = mClientMap.deviceByConnId(connId);
-
         Log.v(
                 TAG,
-                "onReadDescriptor() - device="
-                        + device
-                        + ", status="
-                        + status
-                        + ", length="
-                        + data.length);
+                "onReadDescriptor() -"
+                        + (" device=" + device)
+                        + (", status=" + status)
+                        + (", length=" + data.length));
 
         ContextMap<IBluetoothGattCallback>.App app = mClientMap.getByConnId(connId);
         if (app == null) {
@@ -817,15 +794,12 @@ public class GattService extends ProfileService {
 
     void onWriteDescriptorFromNative(int connId, int status, int handle, byte[] data) {
         BluetoothDevice device = mClientMap.deviceByConnId(connId);
-
         Log.v(
                 TAG,
-                "onWriteDescriptor() - device="
-                        + device
-                        + ", status="
-                        + status
-                        + ", length="
-                        + data.length);
+                "onWriteDescriptor() -"
+                        + (" device=" + device)
+                        + (", status=" + status)
+                        + (", length=" + data.length));
 
         ContextMap<IBluetoothGattCallback>.App app = mClientMap.getByConnId(connId);
         if (app == null) {
@@ -837,14 +811,11 @@ public class GattService extends ProfileService {
     void onReadRemoteRssiFromNative(int clientIf, BluetoothDevice device, int rssi, int status) {
         Log.d(
                 TAG,
-                "onReadRemoteRssi() - clientIf="
-                        + clientIf
-                        + " device="
-                        + device
-                        + ", rssi="
-                        + rssi
-                        + ", status="
-                        + status);
+                "onReadRemoteRssi() -"
+                        + (" clientIf=" + clientIf)
+                        + (", device=" + device)
+                        + (", rssi=" + rssi)
+                        + (", status=" + status));
 
         ContextMap<IBluetoothGattCallback>.App app = mClientMap.getById(clientIf);
         if (app == null) {
@@ -855,7 +826,6 @@ public class GattService extends ProfileService {
 
     void onConfigureMTUFromNative(int connId, int status, int mtu) {
         BluetoothDevice device = mClientMap.deviceByConnId(connId);
-
         Log.d(TAG, "onConfigureMTU() device=" + device + ", status=" + status + ", mtu=" + mtu);
 
         ContextMap<IBluetoothGattCallback>.App app = mClientMap.getByConnId(connId);
@@ -867,7 +837,6 @@ public class GattService extends ProfileService {
 
     void onClientCongestionFromNative(int connId, boolean congested) {
         Log.v(TAG, "onClientCongestion() - connId=" + connId + ", congested=" + congested);
-
         ContextMap<IBluetoothGattCallback>.App app = mClientMap.getByConnId(connId);
 
         if (app == null) {
@@ -1016,16 +985,12 @@ public class GattService extends ProfileService {
 
         Log.d(
                 TAG,
-                "clientConnect() - device="
-                        + device
-                        + ", addressType="
-                        + addressType
-                        + ", isDirect="
-                        + isDirect
-                        + ", opportunistic="
-                        + opportunistic
-                        + ", phy="
-                        + phy);
+                "clientConnect() -"
+                        + (" device=" + device)
+                        + (", addressType=" + addressType)
+                        + (", isDirect=" + isDirect)
+                        + (", opportunistic=" + opportunistic)
+                        + (", phy=" + phy));
         statsLogAppPackage(device, source.getUid(), clientIf);
 
         logClientForegroundInfo(source.getUid(), isDirect);
@@ -1502,19 +1467,13 @@ public class GattService extends ProfileService {
                         device, CompanionManager.GATT_CONN_LATENCY, connectionPriority);
 
         int timeout = 500; // 5s. Link supervision timeout is measured in N * 10ms
-
         Log.d(
                 TAG,
-                "connectionParameterUpdate() - device="
-                        + device
-                        + " params="
-                        + connectionPriority
-                        + " interval="
-                        + minInterval
-                        + "/"
-                        + maxInterval
-                        + " timeout="
-                        + timeout);
+                "connectionParameterUpdate() -"
+                        + (" device=" + device)
+                        + (", params=" + connectionPriority)
+                        + (", interval=" + minInterval + "/" + maxInterval)
+                        + (", timeout=" + timeout));
 
         mNativeInterface.gattConnectionParameterUpdate(
                 clientIf, device, minInterval, maxInterval, latency, timeout, 0, 0);
@@ -1537,21 +1496,13 @@ public class GattService extends ProfileService {
         int clientIf = clientApp.id;
         Log.d(
                 TAG,
-                "leConnectionUpdate() - device="
-                        + device
-                        + ", intervals="
-                        + minInterval
-                        + "/"
-                        + maxInterval
-                        + ", latency="
-                        + peripheralLatency
-                        + ", timeout="
-                        + supervisionTimeout
-                        + "msec"
-                        + ", min_ce="
-                        + minConnectionEventLen
-                        + ", max_ce="
-                        + maxConnectionEventLen);
+                "leConnectionUpdate() -"
+                        + (" device=" + device)
+                        + (", intervals=" + minInterval + "/" + maxInterval)
+                        + (", latency=" + peripheralLatency)
+                        + (", timeout=" + supervisionTimeout + "msec")
+                        + (", min_ce=" + minConnectionEventLen)
+                        + (", max_ce=" + maxConnectionEventLen));
 
         mNativeInterface.gattConnectionParameterUpdate(
                 clientIf,
@@ -1761,16 +1712,12 @@ public class GattService extends ProfileService {
             boolean isLong) {
         Log.v(
                 TAG,
-                "onServerReadCharacteristic() connId="
-                        + connId
-                        + ", device="
-                        + device
-                        + ", handle="
-                        + handle
-                        + ", requestId="
-                        + transId
-                        + ", offset="
-                        + offset);
+                "onServerReadCharacteristic() -"
+                        + (" device=" + device)
+                        + (", connId=" + connId)
+                        + (", transId=" + transId)
+                        + (", handle=" + handle)
+                        + (", offset=" + offset));
 
         HandleMap.Entry entry = mHandleMap.getByHandle(handle);
         if (entry == null) {
@@ -1799,16 +1746,12 @@ public class GattService extends ProfileService {
             boolean isLong) {
         Log.v(
                 TAG,
-                "onServerReadDescriptor() connId="
-                        + connId
-                        + ", device="
-                        + device
-                        + ", handle="
-                        + handle
-                        + ", requestId="
-                        + transId
-                        + ", offset="
-                        + offset);
+                "onServerReadDescriptor() -"
+                        + (" device=" + device)
+                        + (", connId=" + connId)
+                        + (", transId=" + transId)
+                        + (", handle=" + handle)
+                        + (", offset=" + offset));
 
         HandleMap.Entry entry = mHandleMap.getByHandle(handle);
         if (entry == null) {
@@ -1840,18 +1783,13 @@ public class GattService extends ProfileService {
             byte[] data) {
         Log.v(
                 TAG,
-                "onServerWriteCharacteristic() connId="
-                        + connId
-                        + ", device="
-                        + device
-                        + ", handle="
-                        + handle
-                        + ", requestId="
-                        + transId
-                        + ", isPrep="
-                        + isPrep
-                        + ", offset="
-                        + offset);
+                "onServerWriteCharacteristic() -"
+                        + (" device=" + device)
+                        + (", connId=" + connId)
+                        + (", transId=" + transId)
+                        + (", handle=" + handle)
+                        + (", offset=" + offset)
+                        + (", isPrep=" + isPrep));
 
         HandleMap.Entry entry = mHandleMap.getByHandle(handle);
         if (entry == null) {
@@ -1883,18 +1821,13 @@ public class GattService extends ProfileService {
             byte[] data) {
         Log.v(
                 TAG,
-                "onAttributeWrite() connId="
-                        + connId
-                        + ", device="
-                        + device
-                        + ", handle="
-                        + handle
-                        + ", requestId="
-                        + transId
-                        + ", isPrep="
-                        + isPrep
-                        + ", offset="
-                        + offset);
+                "onServerWriteDescriptor() -"
+                        + (" device=" + device)
+                        + (", connId=" + connId)
+                        + (", transId=" + transId)
+                        + (", handle=" + handle)
+                        + (", offset=" + offset)
+                        + (", isPrep=" + isPrep));
 
         HandleMap.Entry entry = mHandleMap.getByHandle(handle);
         if (entry == null) {
@@ -1917,12 +1850,10 @@ public class GattService extends ProfileService {
     void onExecuteWriteFromNative(BluetoothDevice device, int connId, int transId, int execWrite) {
         Log.d(
                 TAG,
-                "onExecuteWrite() connId="
-                        + connId
-                        + ", device="
-                        + device
-                        + ", transId="
-                        + transId);
+                "onExecuteWrite() -"
+                        + (" device=" + device)
+                        + (", connId=" + connId)
+                        + (", transId=" + transId));
 
         ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getByConnId(connId);
         if (app == null) {
@@ -2456,10 +2387,9 @@ public class GattService extends ProfileService {
                 applicationUid);
         Log.d(
                 TAG,
-                "Gatt Logging: metric_id="
-                        + mAdapterService.getMetricId(device)
-                        + ", app_uid="
-                        + applicationUid);
+                "Gatt Logging:"
+                        + (" metric_id=" + mAdapterService.getMetricId(device))
+                        + (", app_uid=" + applicationUid));
     }
 
     private void statsLogGattConnectionStateChange(
@@ -2479,14 +2409,11 @@ public class GattService extends ProfileService {
                 connectionStatus);
         Log.d(
                 TAG,
-                "Gatt Logging: metric_id="
-                        + mAdapterService.getMetricId(device)
-                        + ", session_index="
-                        + sessionIndex
-                        + ", connection state="
-                        + connectionState
-                        + ", connection status="
-                        + connectionStatus);
+                "Gatt Logging:"
+                        + (" metric_id=" + mAdapterService.getMetricId(device))
+                        + (", session_index=" + sessionIndex)
+                        + (", connectionState=" + connectionState)
+                        + (", connectionStatus=" + connectionStatus));
     }
 
     private static int connectionStatusToState(int status) {
