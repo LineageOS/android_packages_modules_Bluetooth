@@ -446,7 +446,6 @@ impl ISuspend for Suspend {
 
         // Restore event filter and accept list to normal.
         self.intf.lock().unwrap().clear_event_filter();
-        self.intf.lock().unwrap().clear_filter_accept_list();
         self.intf.lock().unwrap().restore_filter_accept_list();
         self.bt.lock().unwrap().scan_mode_exit_suspend();
 
