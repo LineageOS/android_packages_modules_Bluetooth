@@ -4654,18 +4654,6 @@ public:
 
     log::info("configuration_context_type_: {}", ToString(configuration_context_type_));
 
-    /* Check if the device resume is allowed */
-    if (!group->HasCodecConfigurationForDirection(
-                configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
-      log::error("invalid resume request for context type: {}",
-                 ToHexString(configuration_context_type_));
-      if (com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
-        handleInvalidContextTypeResumeRequest(group);
-      }
-      CancelLocalAudioSourceStreamingRequest();
-      return;
-    }
-
     /* Group should not be resumed if:
      * - configured context type is not allowed
      * - updated metadata contains only not allowed context types
@@ -4683,6 +4671,18 @@ public:
               ToString(group->GetAllowedContextMask(
                       bluetooth::le_audio::types::kLeAudioDirectionSink)),
               ToString(configuration_context_type_));
+      CancelLocalAudioSourceStreamingRequest();
+      return;
+    }
+
+    /* Check if the device resume is allowed */
+    if (!group->HasCodecConfigurationForDirection(
+                configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
+      log::error("invalid resume request for context type: {}",
+                 ToHexString(configuration_context_type_));
+      if (com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+        handleInvalidContextTypeResumeRequest(group);
+      }
       CancelLocalAudioSourceStreamingRequest();
       return;
     }
@@ -4949,18 +4949,6 @@ public:
 
     log::info("configuration_context_type_: {}", ToString(configuration_context_type_));
 
-    /* Check if the device resume is allowed */
-    if (!group->HasCodecConfigurationForDirection(
-                configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
-      log::error("invalid resume request for context type: {}",
-                 ToHexString(configuration_context_type_));
-      if (com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
-        handleInvalidContextTypeResumeRequest(group);
-      }
-      CancelLocalAudioSinkStreamingRequest();
-      return;
-    }
-
     /* Group should not be resumed if:
      * - configured context type is not allowed
      * - updated metadata contains only not allowed context types
@@ -4979,6 +4967,18 @@ public:
                       bluetooth::le_audio::types::kLeAudioDirectionSource)),
               ToString(configuration_context_type_));
       CancelLocalAudioSourceStreamingRequest();
+      return;
+    }
+
+    /* Check if the device resume is allowed */
+    if (!group->HasCodecConfigurationForDirection(
+                configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
+      log::error("invalid resume request for context type: {}",
+                 ToHexString(configuration_context_type_));
+      if (com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+        handleInvalidContextTypeResumeRequest(group);
+      }
+      CancelLocalAudioSinkStreamingRequest();
       return;
     }
 
