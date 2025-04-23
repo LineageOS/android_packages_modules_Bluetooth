@@ -26,7 +26,6 @@ import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.IInterface;
 import android.os.Looper;
 import android.os.RemoteException;
 import android.util.Log;
@@ -119,10 +118,6 @@ public class PeriodicScanManager {
         }
     }
 
-    private static IBinder toBinder(IPeriodicAdvertisingCallback e) {
-        return ((IInterface) e).asBinder();
-    }
-
     private Map.Entry<IBinder, SyncTransferInfo> findSyncTransfer(String address) {
         return mSyncTransfers.entrySet().stream()
                 .filter(e -> e.getValue().address.equals(address))
@@ -188,7 +183,6 @@ public class PeriodicScanManager {
                                     e.getValue().deathRecipient,
                                     callback));
                     sendToCallback(
-                            syncHandle,
                             () ->
                                     callback.onSyncEstablished(
                                             syncHandle,
@@ -200,7 +194,6 @@ public class PeriodicScanManager {
 
                 } else {
                     sendToCallback(
-                            syncHandle,
                             () ->
                                     callback.onSyncEstablished(
                                             syncHandle,
@@ -228,7 +221,7 @@ public class PeriodicScanManager {
             PeriodicAdvertisingReport report =
                     new PeriodicAdvertisingReport(
                             syncHandle, txPower, rssi, dataStatus, ScanRecord.parseFromBytes(data));
-            sendToCallback(syncHandle, () -> callback.onPeriodicAdvertisingReport(report));
+            sendToCallback(() -> callback.onPeriodicAdvertisingReport(report));
         }
     }
 
@@ -240,11 +233,11 @@ public class PeriodicScanManager {
             return;
         }
         for (IPeriodicAdvertisingCallback callback : callbacks) {
-            IBinder binder = toBinder(callback);
+            IBinder binder = callback.asBinder();
             synchronized (mSyncs) {
                 mSyncs.remove(binder);
             }
-            sendToCallback(syncHandle, () -> callback.onSyncLost(syncHandle));
+            sendToCallback(() -> callback.onSyncLost(syncHandle));
         }
     }
 
@@ -256,8 +249,7 @@ public class PeriodicScanManager {
             return;
         }
         for (IPeriodicAdvertisingCallback callback : callbacks) {
-            sendToCallback(
-                    syncHandle, () -> callback.onBigInfoAdvertisingReport(syncHandle, encrypted));
+            sendToCallback(() -> callback.onBigInfoAdvertisingReport(syncHandle, encrypted));
         }
     }
 
@@ -265,7 +257,7 @@ public class PeriodicScanManager {
             ScanResult scanResult, int skip, int timeout, IPeriodicAdvertisingCallback callback) {
         checkThread();
         SyncDeathRecipient deathRecipient = new SyncDeathRecipient(callback);
-        IBinder binder = toBinder(callback);
+        IBinder binder = callback.asBinder();
         try {
             binder.linkToDeath(deathRecipient, 0);
         } catch (RemoteException e) {
@@ -327,7 +319,7 @@ public class PeriodicScanManager {
 
     public void stopSync(IPeriodicAdvertisingCallback callback) {
         checkThread();
-        IBinder binder = toBinder(callback);
+        IBinder binder = callback.asBinder();
         Log.d(TAG, "stopSync() " + binder);
         SyncInfo sync = null;
         synchronized (mSyncs) {
@@ -393,7 +385,7 @@ public class PeriodicScanManager {
             IPeriodicAdvertisingCallback callback) {
         checkThread();
         SyncDeathRecipient deathRecipient = new SyncDeathRecipient(callback);
-        IBinder binder = toBinder(callback);
+        IBinder binder = callback.asBinder();
         Log.d(TAG, "transferSetInfo() " + binder);
         try {
             binder.linkToDeath(deathRecipient, 0);
@@ -454,8 +446,7 @@ public class PeriodicScanManager {
         }
     }
 
-    private static void sendToCallback(int syncHandle, RemoteExceptionIgnoringRunnable wrapper) {
-        Log.i(TAG, "sendToCallback() syncHandle: " + syncHandle);
+    private static void sendToCallback(RemoteExceptionIgnoringRunnable wrapper) {
         wrapper.run();
     }
 }

@@ -45,6 +45,7 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.IPeriodicAdvertisingCallback;
 import android.bluetooth.le.IScannerCallback;
+import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.AttributionSource;
@@ -54,6 +55,7 @@ import android.location.LocationManager;
 import android.os.Binder;
 import android.os.RemoteException;
 import android.os.WorkSource;
+import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
@@ -62,6 +64,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.GattNativeInterface;
 import com.android.bluetooth.gatt.GattObjectsFactory;
 
@@ -577,6 +580,26 @@ public class ScanControllerTest {
 
         assertThat(newScanSettingsFloor.getReportDelayMillis())
                 .isEqualTo(ScanController.DEFAULT_REPORT_DELAY_FLOOR);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_RSSI_SCAN_FILTER)
+    public void matchesFilters_rssiThreshold() {
+        final int rssiThreshold = -50;
+        final int rssiAboveThreshold = -40;
+        final int rssiBelowThreshold = -60;
+
+        ScanSettings settings = new ScanSettings.Builder().setRssiThreshold(rssiThreshold).build();
+        ScanClient client = new ScanClient(TEST_SCANNER_ID, settings, null);
+
+        ScanRecord mockScanRecord = mock(ScanRecord.class);
+        ScanResult resultAboveThreshold =
+                new ScanResult(mDevice, 0, 0, 0, 0, 0, rssiAboveThreshold, 0, mockScanRecord, 0);
+        assertThat(mScanController.matchesFilters(client, resultAboveThreshold)).isTrue();
+
+        ScanResult resultBelowThreshold =
+                new ScanResult(mDevice, 0, 0, 0, 0, 0, rssiBelowThreshold, 0, mockScanRecord, 0);
+        assertThat(mScanController.matchesFilters(client, resultBelowThreshold)).isFalse();
     }
 
     @Test

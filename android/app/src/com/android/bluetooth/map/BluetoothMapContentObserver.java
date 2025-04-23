@@ -2012,8 +2012,8 @@ public class BluetoothMapContentObserver {
                         long id =
                                 c.getLong(
                                         c.getColumnIndex(BluetoothMapContract.MessageColumns._ID));
-                        int folderId =
-                                c.getInt(
+                        long folderId =
+                                c.getLong(
                                         c.getColumnIndex(
                                                 BluetoothMapContract.MessageColumns.FOLDER_ID));
                         int readFlag =
@@ -2034,7 +2034,7 @@ public class BluetoothMapContentObserver {
                         if (msg == null) {
                             listChanged = true;
                             /* New message - created with message unread */
-                            msg = new Msg(id, folderId, 0, readFlag);
+                            msg = new Msg(id, (int) folderId, 0, readFlag);
                             msgList.put(id, msg);
                             Event evt;
                             /* Incoming message from the network */

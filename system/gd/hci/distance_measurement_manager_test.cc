@@ -824,6 +824,36 @@ TEST_F(DistanceMeasurementManagerTest, retry_fail_procedure_enable_command) {
   cs_requester_.sync_client_handler();
 }
 
+TEST_F(DistanceMeasurementManagerTest,
+       no_retry_procedure_enable_command_error_for_stopped_session) {
+  auto dm_session_future = cs_requester_.GetDmSessionFuture();
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillSetProcedureParameters(params);
+
+  cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+  cs_requester_.dm_manager_->StopDistanceMeasurement(
+          params.responder_addr, params.connection_handle, DistanceMeasurementMethod::METHOD_CS);
+  CommandView command_view =
+          cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+  LeCsProcedureEnableView enable_view =
+          LeCsProcedureEnableView::Create(DistanceMeasurementCommandView::Create(command_view));
+  EXPECT_TRUE(enable_view.IsValid());
+  // 'DISABLED' triggered by the 'StopDistanceMeasurement'
+  EXPECT_EQ(enable_view.GetProcedureEnable(), Enable::DISABLED);
+
+  cs_requester_.test_hci_layer_->IncomingEvent(LeCsProcedureEnableStatusBuilder::Create(
+          /*status=*/ErrorCode::LINK_LAYER_COLLISION,
+          /*num_hci_command_packets=*/0xff));
+  auto future = cs_requester_.fake_timer_advance(params.interval + 10);
+  future.wait_for(kTimeout);
+  cs_requester_.sync_client_handler();
+
+  cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
+
+  fake_timerfd_reset();
+  cs_requester_.sync_client_handler();
+}
+
 TEST_F(DistanceMeasurementManagerTest, retry_fail_procedure_enable_complete) {
   auto dm_session_future = cs_requester_.GetDmSessionFuture();
   StartMeasurementParameters params;
@@ -848,7 +878,7 @@ TEST_F(DistanceMeasurementManagerTest, retry_fail_procedure_enable_complete) {
             /*status=*/ErrorCode::SUCCESS,
             /*num_hci_command_packets=*/0xff));
     cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetProcedureEnableCompleteEvent(
-            params.connection_handle, Enable::ENABLED, complete_event));
+            params.connection_handle, i == 0 ? Enable::ENABLED : Enable::DISABLED, complete_event));
     auto future = cs_requester_.fake_timer_advance(params.interval + 10);
     future.wait_for(kTimeout);
     cs_requester_.sync_client_handler();
@@ -857,31 +887,37 @@ TEST_F(DistanceMeasurementManagerTest, retry_fail_procedure_enable_complete) {
   cs_requester_.sync_client_handler();
 }
 
-TEST_F(DistanceMeasurementManagerTest, unexpected_procedure_enable_complete_as_disable) {
+TEST_F(DistanceMeasurementManagerTest,
+       no_retry_procedure_enable_complete_error_for_stopped_session) {
   auto dm_session_future = cs_requester_.GetDmSessionFuture();
   StartMeasurementParameters params;
   cs_requester_.StartMeasurementTillSetProcedureParameters(params);
-
-  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
-              OnDistanceMeasurementStopped(params.responder_addr,
-                                           DistanceMeasurementErrorCode::REASON_INTERNAL_ERROR,
-                                           DistanceMeasurementMethod::METHOD_CS))
-          .WillOnce([this](const Address& /*address*/, DistanceMeasurementErrorCode /*error_code*/,
-                           DistanceMeasurementMethod /*method*/) {
-            ASSERT_NE(cs_requester_.dm_session_promise_, nullptr);
-            cs_requester_.dm_session_promise_->set_value();
-            cs_requester_.dm_session_promise_.reset();
-          });
 
   cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
   cs_requester_.test_hci_layer_->IncomingEvent(LeCsProcedureEnableStatusBuilder::Create(
           /*status=*/ErrorCode::SUCCESS,
           /*num_hci_command_packets=*/0xff));
+  cs_requester_.dm_manager_->StopDistanceMeasurement(
+          params.responder_addr, params.connection_handle, DistanceMeasurementMethod::METHOD_CS);
+  CommandView command_view =
+          cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+  LeCsProcedureEnableView enable_view =
+          LeCsProcedureEnableView::Create(DistanceMeasurementCommandView::Create(command_view));
+  EXPECT_TRUE(enable_view.IsValid());
+  // 'DISABLED' triggered by the 'StopDistanceMeasurement'
+  EXPECT_EQ(enable_view.GetProcedureEnable(), Enable::DISABLED);
+
   CsProcedureEnableCompleteEvent complete_event;
   complete_event.status = ErrorCode::LINK_LAYER_COLLISION;
   cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetProcedureEnableCompleteEvent(
           params.connection_handle, Enable::DISABLED, complete_event));
+  auto future = cs_requester_.fake_timer_advance(params.interval + 10);
+  future.wait_for(kTimeout);
+  cs_requester_.sync_client_handler();
 
+  cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
+
+  fake_timerfd_reset();
   cs_requester_.sync_client_handler();
 }
 

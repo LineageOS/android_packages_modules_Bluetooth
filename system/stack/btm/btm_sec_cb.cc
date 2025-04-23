@@ -186,23 +186,7 @@ bool tBTM_SEC_CB::IsDeviceBonded(const RawAddress bd_addr, tBT_TRANSPORT transpo
     return false;
   }
 
-  bool bonded = false;
-
-  // Check BR/EDR bond status if requested transport is BT_TRANSPORT_BR_EDR or BT_TRANSPORT_AUTO
-  if (transport != BT_TRANSPORT_LE) {
-    if (com::android::bluetooth::flags::temporary_pairing_tracking()) {
-      bonded = sec_rec->is_bond_type_persistent() && sec_rec->is_link_key_known();
-    } else {
-      bonded = sec_rec->is_link_key_known();
-    }
-  }
-
-  // Check LE bond status if requested transport is BT_TRANSPORT_LE or BT_TRANSPORT_AUTO
-  if (transport != BT_TRANSPORT_BR_EDR) {
-    bonded |= (sec_rec->ble_keys.key_type != BTM_LE_KEY_NONE && sec_rec->is_le_link_key_known());
-  }
-
-  return bonded;
+  return sec_rec->is_bonded(transport);
 }
 
 #define BTM_NO_AVAIL_SEC_SERVICES ((uint16_t)0xffff)
@@ -357,4 +341,24 @@ uint8_t tBTM_SEC_CB::RemoveServiceByPsm(uint16_t psm) {
   log::verbose("psm:0x{:x} num_freed:{}", psm, num_freed);
 
   return num_freed;
+}
+
+bool tBTM_SEC_REC::is_bonded(tBT_TRANSPORT transport) const {
+  bool bonded = false;
+
+  // Check BR/EDR bond status if requested transport is BT_TRANSPORT_BR_EDR or BT_TRANSPORT_AUTO
+  if (transport != BT_TRANSPORT_LE) {
+    if (com::android::bluetooth::flags::temporary_pairing_tracking()) {
+      bonded = is_bond_type_persistent() && is_link_key_known();
+    } else {
+      bonded = is_link_key_known();
+    }
+  }
+
+  // Check LE bond status if requested transport is BT_TRANSPORT_LE or BT_TRANSPORT_AUTO
+  if (transport != BT_TRANSPORT_BR_EDR) {
+    bonded |= (ble_keys.key_type != BTM_LE_KEY_NONE && is_le_link_key_known());
+  }
+
+  return bonded;
 }

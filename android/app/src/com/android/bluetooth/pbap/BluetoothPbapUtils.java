@@ -265,7 +265,7 @@ class BluetoothPbapUtils {
         BluetoothPbapUtils.sDbIdentifier.set(pref.getLong("DbIdentifier", timeStamp));
         BluetoothPbapUtils.sPrimaryVersionCounter = pref.getLong("primary", 0);
         BluetoothPbapUtils.sSecondaryVersionCounter = pref.getLong("secondary", 0);
-        BluetoothPbapUtils.sTotalFields = pref.getLong("totalContacts", 0);
+        BluetoothPbapUtils.sTotalContacts = pref.getLong("totalContacts", 0);
         BluetoothPbapUtils.sContactsLastUpdated = pref.getLong("lastUpdatedTimestamp", timeStamp);
         BluetoothPbapUtils.sTotalFields = pref.getLong("totalFields", 0);
         BluetoothPbapUtils.sTotalSvcFields = pref.getLong("totalSvcFields", 0);

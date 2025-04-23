@@ -132,6 +132,21 @@ public class ScannerMap {
         }
     }
 
+    /** Remove the context for a given UUID */
+    public void remove(UUID uuid) {
+        Log.d(TAG, "remove() - uuid: " + uuid);
+
+        Iterator<ScannerApp> i = mApps.iterator();
+        while (i.hasNext()) {
+            ScannerApp entry = i.next();
+            if (entry.mUuid.equals(uuid)) {
+                entry.cleanup();
+                i.remove();
+                break;
+            }
+        }
+    }
+
     /** Erases all application context entries. */
     public void clear() {
         for (ScannerApp entry : mApps) {

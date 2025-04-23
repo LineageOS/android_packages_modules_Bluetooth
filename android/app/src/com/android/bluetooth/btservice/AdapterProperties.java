@@ -896,8 +896,10 @@ class AdapterProperties {
                             + Utils.addressTypeToString(addressType)
                             + "]");
 
-            // TODO(b/358566084): Save address type as well
-            BluetoothDevice device = mAdapter.getRemoteDevice(address);
+            BluetoothDevice device =
+                    Flags.retainAddressType()
+                            ? mService.getRemoteDevice(address, addressType)
+                            : mAdapter.getRemoteDevice(address);
             onBondStateChanged(device, BluetoothDevice.BOND_BONDED);
         }
     }
