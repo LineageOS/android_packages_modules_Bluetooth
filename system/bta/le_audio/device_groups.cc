@@ -1061,8 +1061,8 @@ bool LeAudioDeviceGroup::UpdateAudioSetConfigurationCache(LeAudioContextType ctx
   }
 
   if (update_config) {
-    log::info("config: {} -> {}, use_preference: {}", ToHexString(ctx_type),
-              (new_conf ? new_conf->name.c_str() : "(none)"), use_preference);
+    log::info("config: {} -> {}, use_preference: {}", common::ToString(ctx_type),
+              new_conf ? new_conf->name.c_str() : "(none)", use_preference);
     cached_map.erase(ctx_type);
     if (new_conf) {
       cached_map.insert(std::make_pair(ctx_type, std::make_pair(true, std::move(new_conf))));
@@ -2039,7 +2039,7 @@ bool LeAudioDeviceGroup::ConfigureAses(
   log::info("Choosed ASE Configuration for group: {}, configuration: {}", group_id_,
             audio_set_conf->name);
 
-  configuration_context_type_ = context_type;
+  SetConfigurationContextType(context_type);
   SetMetadataContexts(metadata_context_types);
   return true;
 }
@@ -2047,8 +2047,11 @@ bool LeAudioDeviceGroup::ConfigureAses(
 std::shared_ptr<const types::AudioSetConfiguration> LeAudioDeviceGroup::GetCachedConfiguration(
         LeAudioContextType context_type) const {
   if (context_to_configuration_cache_map_.count(context_type) != 0) {
+    log::verbose("group_id: {} found configuration for {}", group_id_,
+                 common::ToString(context_type));
     return context_to_configuration_cache_map_.at(context_type).second;
   }
+  log::verbose("group_id:  {} NO configuration for {}", group_id_, common::ToString(context_type));
   return nullptr;
 }
 
@@ -2070,6 +2073,7 @@ std::shared_ptr<const types::AudioSetConfiguration> LeAudioDeviceGroup::GetActiv
 std::shared_ptr<const types::AudioSetConfiguration> LeAudioDeviceGroup::GetConfiguration(
         LeAudioContextType context_type) const {
   if (context_type == LeAudioContextType::UNINITIALIZED) {
+    log::warn("group_id: {}, called with UNINITIALIZED", group_id_);
     return nullptr;
   }
 
@@ -2088,6 +2092,8 @@ std::shared_ptr<const types::AudioSetConfiguration> LeAudioDeviceGroup::GetConfi
     conf = valid_config_pair.second.get();
   }
   if (!is_valid || (conf == nullptr)) {
+    log::verbose("group_id: {}, {} - need to update configuration cache.", group_id_,
+                 common::ToString(context_type));
     UpdateAudioSetConfigurationCache(context_type);
   }
 
