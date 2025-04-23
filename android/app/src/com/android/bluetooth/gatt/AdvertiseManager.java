@@ -119,10 +119,6 @@ public class AdvertiseManager {
             AdvertisingSetDeathRecipient deathRecipient,
             IAdvertisingSetCallback callback) {}
 
-    IBinder toBinder(IAdvertisingSetCallback e) {
-        return e.asBinder();
-    }
-
     class AdvertisingSetDeathRecipient implements IBinder.DeathRecipient {
         public IAdvertisingSetCallback callback;
         private final String mPackageName;
@@ -291,7 +287,7 @@ public class AdvertiseManager {
         }
         AdvertisingSetDeathRecipient deathRecipient =
                 new AdvertisingSetDeathRecipient(callback, packageName);
-        IBinder binder = toBinder(callback);
+        IBinder binder = callback.asBinder();
         try {
             binder.linkToDeath(deathRecipient, 0);
         } catch (RemoteException e) {
@@ -372,7 +368,7 @@ public class AdvertiseManager {
 
     void stopAdvertisingSet(IAdvertisingSetCallback callback) {
         checkThread();
-        IBinder binder = toBinder(callback);
+        IBinder binder = callback.asBinder();
         Log.d(TAG, "stopAdvertisingSet() " + binder);
 
         AdvertiserInfo adv = mAdvertisers.remove(binder);
