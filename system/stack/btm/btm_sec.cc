@@ -2513,7 +2513,7 @@ void btm_io_capabilities_rsp(const tBTM_SP_IO_RSP evt_data) {
    *  key missing event and disconnect.*/
   if (BTM_IsBonded(evt_data.bd_addr) && !p_dev_rec->sec_rec.is_device_encrypted()) {
     log::warn("Incoming bond request, but {} is already bonded (notifying user)", evt_data.bd_addr);
-    if(!com::android::bluetooth::flags::gen_key_missing_evt_only_from_iocapreq()) {
+    if (!com::android::bluetooth::flags::gen_key_missing_evt_only_from_iocapreq()) {
       bta_dm_remote_key_missing(evt_data.bd_addr);
       btm_sec_disconnect(p_dev_rec->hci_handle, HCI_ERR_AUTH_FAILURE,
                          "btm_io_capabilities_rsp for bonded device");
