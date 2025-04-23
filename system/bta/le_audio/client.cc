@@ -4883,8 +4883,13 @@ public:
   }
 
   void notifyAudioLocalSink(UnicastMonitorModeStatus status) {
+    if (sink_monitor_notified_status_.has_value()) {
+      log::verbose("source_monitor_notified_status_: {}, status: {}",
+                   ToString(sink_monitor_notified_status_.value()), ToString(status));
+    }
+
     if (sink_monitor_notified_status_ != status) {
-      log::info("Stream monitoring status changed to: {}", static_cast<int>(status));
+      log::info("Stream monitoring status changed to: {}", ToString(status));
       sink_monitor_notified_status_ = status;
       callbacks_->OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSink,
                                              status);
@@ -4892,8 +4897,12 @@ public:
   }
 
   void notifyAudioLocalSource(UnicastMonitorModeStatus status) {
+    if (source_monitor_notified_status_.has_value()) {
+      log::verbose("source_monitor_notified_status_: {}, status: {}",
+                   ToString(source_monitor_notified_status_.value()), ToString(status));
+    }
     if (source_monitor_notified_status_ != status) {
-      log::info("Source stream monitoring status changed to: {}", static_cast<int>(status));
+      log::info("Source stream monitoring status changed to: {}", ToString(status));
       source_monitor_notified_status_ = status;
       callbacks_->OnUnicastMonitorModeStatus(bluetooth::le_audio::types::kLeAudioDirectionSource,
                                              status);
