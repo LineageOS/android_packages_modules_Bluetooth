@@ -44,14 +44,14 @@ public class AvrcpControllerNativeInterface {
 
     private final AdapterService mAdapterService;
 
-    private AvrcpControllerNativeInterface() {
-        mAdapterService = requireNonNull(AdapterService.getAdapterService());
+    private AvrcpControllerNativeInterface(AdapterService adapterService) {
+        mAdapterService = requireNonNull(adapterService);
     }
 
-    static AvrcpControllerNativeInterface getInstance() {
+    static AvrcpControllerNativeInterface getInstance(AdapterService adapterService) {
         synchronized (INSTANCE_LOCK) {
             if (sInstance == null) {
-                sInstance = new AvrcpControllerNativeInterface();
+                sInstance = new AvrcpControllerNativeInterface(adapterService);
             }
             return sInstance;
         }
