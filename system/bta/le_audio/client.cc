@@ -466,6 +466,12 @@ public:
     local_metadata_context_types_.sink = contexts;
   }
 
+  void setConfigurationContextType(LeAudioContextType context_type) {
+    log::debug("{} -> {}", common::ToString(configuration_context_type_),
+               common::ToString(context_type));
+    configuration_context_type_ = context_type;
+  }
+
   void ReconfigureAfterVbcClose() {
     log::debug("VBC close timeout");
 
@@ -4488,7 +4494,7 @@ public:
       // use case even when it eventually ends up being the exact same
       // codec and qos configuration.
       if (configuration_context_type_ != context_type) {
-        configuration_context_type_ = context_type;
+        setConfigurationContextType(context_type);
         group->SetConfigurationContextType(context_type);
       }
       return AudioReconfigurationResult::RECONFIGURATION_NOT_NEEDED;
@@ -4502,7 +4508,7 @@ public:
       group->InvalidateCachedConfigurations(context_type);
     }
 
-    configuration_context_type_ = context_type;
+    setConfigurationContextType(context_type);
 
     // Note: The local sink config is based on remote device's source config
     //       and vice versa.
@@ -4640,6 +4646,8 @@ public:
       log::error("Invalid group: {}", static_cast<int>(active_group_id_));
       return;
     }
+
+    log::info("configuration_context_type_: {}", ToString(configuration_context_type_));
 
     /* Check if the device resume is allowed */
     if (!group->HasCodecConfigurationForDirection(
@@ -4923,8 +4931,9 @@ public:
        * further.
        */
       ReconfigureOrUpdateRemote(group, bluetooth::le_audio::types::kLeAudioDirectionSource);
-      log::info("new_configuration_context = {}", ToString(configuration_context_type_));
     }
+
+    log::info("configuration_context_type_: {}", ToString(configuration_context_type_));
 
     /* Check if the device resume is allowed */
     if (!group->HasCodecConfigurationForDirection(
@@ -5164,7 +5173,7 @@ public:
      * to be set here as it might be the initial configuration.
      */
 
-    configuration_context_type_ = new_context_type;
+    setConfigurationContextType(new_context_type);
 
     log::info("group_id {}, previous_context {} context type {} ({}), {}", group->group_id_,
               ToString(previous_context_type), ToString(new_context_type),
@@ -5761,7 +5770,7 @@ public:
                   group->group_id_, ToString(configuration_context_type_),
                   ToString(new_config_context));
         initReconfiguration(group, configuration_context_type_);
-        configuration_context_type_ = new_config_context;
+        setConfigurationContextType(new_config_context);
       }
       return false;
     }
@@ -6745,7 +6754,7 @@ private:
     }
 
     local_metadata_context_types_.source.clear();
-    configuration_context_type_ = LeAudioContextType::UNINITIALIZED;
+    setConfigurationContextType(LeAudioContextType::UNINITIALIZED);
 
     bluetooth::le_audio::MetricsCollector::Get()->OnStreamEnded(active_group_id_);
   }
