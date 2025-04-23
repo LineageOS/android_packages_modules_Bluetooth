@@ -2077,7 +2077,7 @@ public class LeAudioService extends ProfileService {
 
             mAdapterService
                     .getBluetoothScanController()
-                    .registerScannerInternal(this, getAttributionSource(), null);
+                    .registerScannerInternal(this, null, getAttributionSource());
         }
 
         synchronized void stopBackgroundScan() {

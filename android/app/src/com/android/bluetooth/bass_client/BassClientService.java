@@ -244,7 +244,7 @@ public class BassClientService extends ProfileService {
                 }
 
                 mScannerId = SCANNER_ID_INITIALIZING;
-                controller.registerScannerInternal(this, getAttributionSource(), null);
+                controller.registerScannerInternal(this, null, getAttributionSource());
             }
         }
 
