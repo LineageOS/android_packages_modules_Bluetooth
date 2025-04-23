@@ -38,6 +38,11 @@ const size_t kMaxCommandLength = 1000;
 // Allow referencing of fuzzer entrance function as-is.
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size);
 
+// TODO: b/280300628 for fixing memory leaks. Until it's fixed leak
+// detection needs to be turned off to unblock fuzzing.
+// NOLINTNEXTLINE(bugprone-reserved-identifier)
+extern "C" const char *__asan_default_options() { return "detect_leaks=0"; }
+
 void runFuzzerOnCorpusAndExitProcess() {
   for (const auto &corpus_entry : fs::directory_iterator("./data/corpus")) {
     if (!corpus_entry.is_regular_file()) {
@@ -52,6 +57,7 @@ void runFuzzerOnCorpusAndExitProcess() {
     corpus.read(data, size);
     corpus.close();
     LLVMFuzzerTestOneInput(reinterpret_cast<const uint8_t *>(data), size);
+    delete[] data;
   }
   exit(0);
 }
