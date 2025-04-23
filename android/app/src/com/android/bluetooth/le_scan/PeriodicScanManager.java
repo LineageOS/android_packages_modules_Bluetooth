@@ -26,7 +26,6 @@ import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.IInterface;
 import android.os.Looper;
 import android.os.RemoteException;
 import android.util.Log;
@@ -117,10 +116,6 @@ public class PeriodicScanManager {
             Log.d(TAG, "Binder is dead - unregistering advertising set");
             stopSync(mCallback);
         }
-    }
-
-    private static IBinder toBinder(IPeriodicAdvertisingCallback e) {
-        return ((IInterface) e).asBinder();
     }
 
     private Map.Entry<IBinder, SyncTransferInfo> findSyncTransfer(String address) {
@@ -238,7 +233,7 @@ public class PeriodicScanManager {
             return;
         }
         for (IPeriodicAdvertisingCallback callback : callbacks) {
-            IBinder binder = toBinder(callback);
+            IBinder binder = callback.asBinder();
             synchronized (mSyncs) {
                 mSyncs.remove(binder);
             }
@@ -262,7 +257,7 @@ public class PeriodicScanManager {
             ScanResult scanResult, int skip, int timeout, IPeriodicAdvertisingCallback callback) {
         checkThread();
         SyncDeathRecipient deathRecipient = new SyncDeathRecipient(callback);
-        IBinder binder = toBinder(callback);
+        IBinder binder = callback.asBinder();
         try {
             binder.linkToDeath(deathRecipient, 0);
         } catch (RemoteException e) {
@@ -324,7 +319,7 @@ public class PeriodicScanManager {
 
     public void stopSync(IPeriodicAdvertisingCallback callback) {
         checkThread();
-        IBinder binder = toBinder(callback);
+        IBinder binder = callback.asBinder();
         Log.d(TAG, "stopSync() " + binder);
         SyncInfo sync = null;
         synchronized (mSyncs) {
@@ -390,7 +385,7 @@ public class PeriodicScanManager {
             IPeriodicAdvertisingCallback callback) {
         checkThread();
         SyncDeathRecipient deathRecipient = new SyncDeathRecipient(callback);
-        IBinder binder = toBinder(callback);
+        IBinder binder = callback.asBinder();
         Log.d(TAG, "transferSetInfo() " + binder);
         try {
             binder.linkToDeath(deathRecipient, 0);
