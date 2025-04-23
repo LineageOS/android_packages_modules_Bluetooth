@@ -32,7 +32,11 @@ import java.util.UUID;
 public class CsipSetCoordinatorNativeInterface {
     private static final String TAG = CsipSetCoordinatorNativeInterface.class.getSimpleName();
 
-    CsipSetCoordinatorNativeInterface() {}
+    private final AdapterService mAdapterService;
+
+    CsipSetCoordinatorNativeInterface(AdapterService adapterService) {
+        mAdapterService = requireNonNull(adapterService);
+    }
 
     void init() {
         initNative();
@@ -51,8 +55,7 @@ public class CsipSetCoordinatorNativeInterface {
     }
 
     BluetoothDevice getDevice(byte[] address) {
-        return AdapterService.getAdapterService()
-                .getRemoteDevice(Utils.getAddressStringFromByte(address));
+        return mAdapterService.getRemoteDevice(Utils.getAddressStringFromByte(address));
     }
 
     private static byte[] getByteAddress(BluetoothDevice device) {

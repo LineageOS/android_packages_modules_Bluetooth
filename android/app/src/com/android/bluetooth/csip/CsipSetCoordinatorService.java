@@ -120,7 +120,8 @@ public class CsipSetCoordinatorService extends ProfileService {
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(
-                        nativeInterface, () -> new CsipSetCoordinatorNativeInterface());
+                        nativeInterface,
+                        () -> new CsipSetCoordinatorNativeInterface(mAdapterService));
         mServiceFactory = requireNonNull(serviceFactory);
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
