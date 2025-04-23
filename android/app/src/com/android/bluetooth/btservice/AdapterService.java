@@ -3595,7 +3595,11 @@ public class AdapterService extends Service {
         }
         disconnectEnabledProfile(BluetoothProfile.HEADSET, device);
         disconnectEnabledProfile(BluetoothProfile.HEADSET_CLIENT, device);
-        disconnectEnabledProfile(BluetoothProfile.A2DP, device);
+        if (Flags.a2dpDelayDisconnect()) {
+            disconnectEnabledA2dpProfile(device);
+        } else {
+            disconnectEnabledProfile(BluetoothProfile.A2DP, device);
+        }
         disconnectEnabledProfile(BluetoothProfile.A2DP_SINK, device);
         disconnectEnabledProfile(BluetoothProfile.MAP_CLIENT, device);
         disconnectEnabledProfile(BluetoothProfile.MAP, device);
@@ -3627,6 +3631,52 @@ public class AdapterService extends Service {
                             Log.i(TAG, "Disconnecting " + profile);
                             profile.disconnect(device);
                         });
+    }
+
+    /**
+     * Disconnect enabled A2DP profile.
+     *
+     * <p>This function takes into account interop checks.
+     *
+     * @param device is the remote device with which to disconnect this profile
+     */
+    private void disconnectEnabledA2dpProfile(BluetoothDevice device) {
+        final var headset = getHeadsetService();
+        getStartedConnectableProfile(BluetoothProfile.A2DP)
+                .filter(
+                        profile -> {
+                            final int state = profile.getConnectionState(device);
+                            return state == STATE_CONNECTED || state == STATE_CONNECTING;
+                        })
+                .filter(
+                        profile -> {
+                            return shouldDelayA2dpDisconnection(device) && headset.isPresent();
+                        })
+                .ifPresent(
+                        profile -> {
+                            if (headset.get().isInCall() || headset.get().isRinging()) {
+                                Log.i(TAG, "Post a delayed message to disconnect A2DP profile");
+                                mHandler.postDelayed(
+                                        () -> {
+                                            Log.i(TAG, "Disconnecting " + profile);
+                                            profile.disconnect(device);
+                                        },
+                                        400);
+                                return;
+                            }
+                            Log.i(TAG, "Disconnecting " + profile);
+                            profile.disconnect(device);
+                        });
+    }
+
+    /** Check if A2DP disconnection should be delayed for interop device. */
+    private boolean shouldDelayA2dpDisconnection(BluetoothDevice device) {
+        Objects.requireNonNull(device, "device must not be null");
+        boolean matched =
+                interopMatchAddrOrName(
+                        InteropUtil.InteropFeature.INTEROP_A2DP_DELAY_DISCONNECT,
+                        device.getAddress());
+        return matched;
     }
 
     /**
