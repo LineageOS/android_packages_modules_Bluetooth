@@ -3085,7 +3085,8 @@ public class BassClientServiceTest {
                 .setActiveGroupAllowedContextMask(
                         eq(
                                 BluetoothLeAudio.CONTEXTS_ALL
-                                        & ~BluetoothLeAudio.CONTEXT_TYPE_SOUND_EFFECTS),
+                                        & ~(BluetoothLeAudio.CONTEXT_TYPE_UNSPECIFIED
+                                                | BluetoothLeAudio.CONTEXT_TYPE_SOUND_EFFECTS)),
                         eq(BluetoothLeAudio.CONTEXTS_ALL));
 
         // Verify all group members getting ADD_BCAST_SOURCE message
