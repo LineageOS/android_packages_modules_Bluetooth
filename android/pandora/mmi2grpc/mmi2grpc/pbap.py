@@ -91,10 +91,9 @@ class PBAPProxy(ProfileProxy):
     @match_description
     def TSC_MMI_verify_phonebook_size(self, **kwargs):
         """
-        Verify that the phonebook size = (?P<size>[0-9]+)
+        Verify that the phonebook size = (?P<size>[0-9]+)(
 
-        Note: Owner's card is also
-        included in the count.
+        Note: Owner's card is also included in the count.)?
         """
 
         return "OK"
@@ -153,5 +152,46 @@ class PBAPProxy(ProfileProxy):
         """
          Verify that the new missed calls = (?P<size>[0-9]+)
         """
+
+        return "OK"
+
+    @assert_description
+    def TSC_OBEX_MMI_iut_accept_slc_connect_rfcomm(self, pts_addr: bytes, **kwargs):
+        """
+         Please accept the rfcomm channel connection for an OBEX connection.
+        """
+
+        self.os.SetAccessPermission(address=pts_addr, access_type=ACCESS_PHONEBOOK)
+        self.connection = self.host.WaitConnection(address=pts_addr).connection
+
+        return "OK"
+
+    @assert_description
+    def TSC_OBEX_MMI_tester_verify_sent_file_or_folder(self, **kwargs):
+        """
+         Was the currently displayed file or folder sent by the IUT?
+        """
+
+        return "OK"
+
+    @assert_description
+    def _mmi_39(self, **kwargs):
+        """
+        Verify the content of the phonebook sent by the IUT is accurate.
+        """
+
+        return "OK"
+
+    @assert_description
+    def _mmi_20000(self, pts_addr: bytes, **kwargs):
+        """
+        Please prepare IUT into a connectable mode in BR/EDR.
+
+        Description:
+        Verify that the Implementation Under Test (IUT) can accept GATT connect
+        request from PTS.
+        """
+
+        self.connection = self.host.WaitConnection(address=pts_addr).connection
 
         return "OK"
