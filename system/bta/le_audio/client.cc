@@ -4647,6 +4647,11 @@ public:
       return;
     }
 
+    if (com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+      auto [new_context_type, _] = audioContextTypeManager_->GetAudioContextsForTheGroup(group);
+      setConfigurationContextType(new_context_type);
+    }
+
     log::info("configuration_context_type_: {}", ToString(configuration_context_type_));
 
     /* Check if the device resume is allowed */
@@ -5173,7 +5178,9 @@ public:
      * to be set here as it might be the initial configuration.
      */
 
-    setConfigurationContextType(new_context_type);
+    if (!com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+      setConfigurationContextType(new_context_type);
+    }
 
     log::info("group_id {}, previous_context {} context type {} ({}), {}", group->group_id_,
               ToString(previous_context_type), ToString(new_context_type),
