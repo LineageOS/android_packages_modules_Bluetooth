@@ -552,7 +552,7 @@ public class ScanController {
                     continuePiStartScan(scannerId, cbApp);
                 }
             } else {
-                mScannerMap.remove(scannerId);
+                mScannerMap.remove(uuid);
             }
             if (cbApp.mCallback != null) {
                 cbApp.mCallback.onScannerRegistered(status, scannerId);
