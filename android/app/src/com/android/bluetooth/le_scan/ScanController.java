@@ -595,22 +595,23 @@ public class ScanController {
     }
 
     // Check if a scan record matches a specific filters.
-    private static boolean matchesFilters(ScanClient client, ScanResult scanResult) {
+    @VisibleForTesting
+    static boolean matchesFilters(ScanClient client, ScanResult scanResult) {
         return matchesFilters(client, scanResult, null);
     }
 
     // Check if a scan record matches a specific filters or original address
     private static boolean matchesFilters(
             ScanClient client, ScanResult scanResult, String originalAddress) {
-        if (client.mFilters == null || client.mFilters.isEmpty()) {
-            // TODO: Do we really wanna return true here?
-            return true;
-        }
         if (Flags.rssiScanFilter()) {
             ScanSettings settings = client.mSettings;
             if (scanResult.getRssi() < settings.getRssiThreshold()) {
                 return false;
             }
+        }
+        if (client.mFilters == null || client.mFilters.isEmpty()) {
+            // TODO: Do we really wanna return true here?
+            return true;
         }
         for (ScanFilter filter : client.mFilters) {
             // Need to check the filter matches, and the original address without changing the API
