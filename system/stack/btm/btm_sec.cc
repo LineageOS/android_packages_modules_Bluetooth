@@ -2311,14 +2311,18 @@ void btm_sec_rmt_host_support_feat_evt(const RawAddress bd_addr, uint8_t feature
  *
  ******************************************************************************/
 void btm_io_capabilities_req(RawAddress p) {
-  if (BTM_IsBonded(p)) {
-    auto p_dev_rec = btm_find_dev(p);
-    ASSERT(p_dev_rec != NULL);
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(p);
 
-    /* If device is bonded, and encrypted it's upgrading security and it's ok.
-     * If it's bonded and not encrypted, it's remote missing keys scenario */
+  if (p_dev_rec == nullptr) {
+    log::error("No memory to allocate new p_dev_rec");
+    return;
+  }
+
+  if (p_dev_rec->sec_rec.is_bonded(BT_TRANSPORT_AUTO)) {
+    /* Encrypted link means that the device is already authenticated and is trying to upgrade
+     * security */
     if (!p_dev_rec->sec_rec.is_device_encrypted()) {
-      log::warn("Incoming bond request, but {} is already bonded (notifying user)", p);
+      log::warn("key_missing: Incoming pairing request for already bonded device {}", p);
       bta_dm_remote_key_missing(p);
       btsnd_hcic_io_cap_req_neg_reply(p, HCI_ERR_PAIRING_NOT_ALLOWED);
       btm_sec_disconnect(p_dev_rec->hci_handle, HCI_ERR_AUTH_FAILURE,
@@ -2326,15 +2330,8 @@ void btm_io_capabilities_req(RawAddress p) {
       return;
     }
 
-    log::warn("Incoming bond request, but {} is already bonded (removing)", p);
+    log::info("Incoming pairing request for bonded and encrypted device {}", p);
     bta_dm_process_remove_device(p);
-  }
-
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(p);
-
-  if (p_dev_rec == nullptr) {
-    log::error("No memory to allocate new p_dev_rec");
-    return;
   }
 
   if ((btm_sec_cb.security_mode == BTM_SEC_MODE_SC) && (!p_dev_rec->remote_feature_received)) {
@@ -2510,8 +2507,8 @@ void btm_io_capabilities_rsp(const tBTM_SP_IO_RSP evt_data) {
   /* If device is bonded, and encrypted it's upgrading security and it's ok.
    * If it's bonded and not encrypted, it's remote missing keys scenario
    * Do not process this RSP and return, REQ will handle generation of
-   *  key missing event and disconnect.*/
-  if (BTM_IsBonded(evt_data.bd_addr) && !p_dev_rec->sec_rec.is_device_encrypted()) {
+   * key missing event and disconnect.*/
+  if (p_dev_rec->sec_rec.is_bonded() && !p_dev_rec->sec_rec.is_device_encrypted()) {
     log::warn("Incoming bond request, but {} is already bonded (notifying user)", evt_data.bd_addr);
     if (!com::android::bluetooth::flags::gen_key_missing_evt_only_from_iocapreq()) {
       bta_dm_remote_key_missing(evt_data.bd_addr);
@@ -3864,7 +3861,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason, std::string comme
   p_dev_rec->sec_rec.le_link = tSECURITY_STATE::IDLE;
   p_dev_rec->sec_rec.security_required = BTM_SEC_NONE;
   if (com::android::bluetooth::flags::reset_security_flags_on_pairing_failure() &&
-      !BTM_IsBonded(p_dev_rec->bd_addr)) {
+      !p_dev_rec->sec_rec.is_bonded()) {
     log::warn("Clearing security flags for unbonded device {}", p_dev_rec->bd_addr);
     p_dev_rec->sec_rec.sec_flags = 0;
   }
