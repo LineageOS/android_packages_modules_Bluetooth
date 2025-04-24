@@ -5901,14 +5901,13 @@ public:
                                    BidirectionalPair<AudioContexts> remote_contexts) {
     bool is_dsa_reconfig_needed = DsaReconfigureNeeded(group, new_configuration_context);
     bool is_configuration_changed = (new_configuration_context != configuration_context_type_);
-    if (!is_configuration_changed &&
-        com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+    if (com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
       /* Check if directional configuration has changed. E.g. for GAME we might switch from uni
        * direction to bidirection */
       bool const has_sink_ase_config = group->IsDirectionAvailableForConfiguration(
-              configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSink);
+              new_configuration_context, bluetooth::le_audio::types::kLeAudioDirectionSink);
       bool const has_source_ase_config = group->IsDirectionAvailableForConfiguration(
-              configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSource);
+              new_configuration_context, bluetooth::le_audio::types::kLeAudioDirectionSource);
 
       /* Check if for any direction, the configuration list mismatches the latest metadata on that
        * direction */
@@ -5920,14 +5919,15 @@ public:
       auto const is_missing_source_ase_context =
               remote_contexts.source.none() && has_source_ase_config;
 
-      is_configuration_changed = is_missing_sink_ase_config || is_missing_source_ase_config ||
-                                 is_missing_sink_ase_context || is_missing_source_ase_context;
+      is_configuration_changed = is_configuration_changed || is_missing_sink_ase_config ||
+                                 is_missing_source_ase_config || is_missing_sink_ase_context ||
+                                 is_missing_source_ase_context;
 
       // Clear DSA configuration cache when DSA mode has changed
       auto clear_dsa_config_cache = com::android::bluetooth::flags::dsa_use_codec_extensibility() &&
                                     is_dsa_reconfig_needed;
       if (is_configuration_changed || clear_dsa_config_cache) {
-        group->InvalidateCachedConfigurations(configuration_context_type_);
+        group->InvalidateCachedConfigurations(new_configuration_context);
       }
     }
 
