@@ -57,3 +57,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "return_correct_ble_state"
+    namespace: "bluetooth"
+    description: "Return correct BLE state from bluetooth adapter"
+    bug: "412811035"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
