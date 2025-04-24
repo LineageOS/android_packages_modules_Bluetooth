@@ -2931,16 +2931,12 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
     return;
   }
 
-  if (com::android::bluetooth::flags::clear_auth_collision_state_on_pairing_complete()) {
-    if (p_dev_rec && btm_sec_cb.p_collided_dev_rec &&
-        p_dev_rec->bd_addr == btm_sec_cb.p_collided_dev_rec->bd_addr) {
-      btm_sec_cb.collision_start_time = 0;
-      btm_sec_cb.p_collided_dev_rec = NULL;
-      if (alarm_is_scheduled(btm_sec_cb.sec_collision_timer))
-        alarm_cancel(btm_sec_cb.sec_collision_timer);
-    }
-  } else {
+  if (p_dev_rec && btm_sec_cb.p_collided_dev_rec &&
+      p_dev_rec->bd_addr == btm_sec_cb.p_collided_dev_rec->bd_addr) {
     btm_sec_cb.collision_start_time = 0;
+    btm_sec_cb.p_collided_dev_rec = NULL;
+    if (alarm_is_scheduled(btm_sec_cb.sec_collision_timer))
+      alarm_cancel(btm_sec_cb.sec_collision_timer);
   }
 
   btm_restore_mode();
@@ -3741,16 +3737,15 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason, std::string comme
   /* clear unused flags */
   p_dev_rec->sm4 &= BTM_SM4_TRUE;
 
-  if (com::android::bluetooth::flags::clear_auth_collision_state_on_pairing_complete()) {
-    if (btm_sec_cb.p_collided_dev_rec &&
-        p_dev_rec->bd_addr == btm_sec_cb.p_collided_dev_rec->bd_addr) {
-      log::debug("clear auth collision info after disconnection");
-      btm_sec_cb.collision_start_time = 0;
-      btm_sec_cb.p_collided_dev_rec = NULL;
-      if (alarm_is_scheduled(btm_sec_cb.sec_collision_timer))
-        alarm_cancel(btm_sec_cb.sec_collision_timer);
-    }
+  if (btm_sec_cb.p_collided_dev_rec &&
+      p_dev_rec->bd_addr == btm_sec_cb.p_collided_dev_rec->bd_addr) {
+    log::debug("clear auth collision info after disconnection");
+    btm_sec_cb.collision_start_time = 0;
+    btm_sec_cb.p_collided_dev_rec = NULL;
+    if (alarm_is_scheduled(btm_sec_cb.sec_collision_timer))
+      alarm_cancel(btm_sec_cb.sec_collision_timer);
   }
+
   /* If we are in the process of bonding we need to tell client that auth failed
    */
   const uint8_t old_pairing_flags = btm_sec_cb.pairing_flags;
