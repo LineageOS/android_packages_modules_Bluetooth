@@ -78,6 +78,7 @@ void VolumeControlDevice::Disconnect(tGATT_IF gatt_if) {
   }
 
   device_ready = false;
+  group_id = bluetooth::groups::kGroupUnknown;
   handles_pending.clear();
 }
 
@@ -288,6 +289,7 @@ bool VolumeControlDevice::UpdateHandles(void) {
 void VolumeControlDevice::ResetHandles(void) {
   known_service_handles_ = false;
   device_ready = false;
+  group_id = bluetooth::groups::kGroupUnknown;
 
   // the handles are not valid, so discard pending GATT operations
   BtaGattQueue::Clean(connection_id);
@@ -486,13 +488,22 @@ void VolumeControlDevice::EnqueueRemainingRequests(tGATT_IF /*gatt_if*/,
   }
 }
 
-bool VolumeControlDevice::VerifyReady(uint16_t handle) {
-  handles_pending.erase(handle);
-  device_ready = handles_pending.size() == 0;
+bool VolumeControlDevice::VerifyReady() {
+  if (com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+    device_ready = (handles_pending.size() == 0) && (group_id != bluetooth::groups::kGroupUnknown);
+  } else {
+    device_ready = handles_pending.size() == 0;
+  }
 
-  log::debug("{}, handles_pending size={}", address, handles_pending.size());
+  log::debug("{}, handles_pending size={}, group_id={}", address, handles_pending.size(), group_id);
 
   return device_ready;
+}
+
+bool VolumeControlDevice::VerifyReady(uint16_t handle) {
+  handles_pending.erase(handle);
+
+  return VerifyReady();
 }
 
 void VolumeControlDevice::GetExtAudioOutVolumeOffset(uint8_t ext_output_id, GATT_READ_OP_CB cb,

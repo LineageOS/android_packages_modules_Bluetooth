@@ -121,6 +121,7 @@ public class VolumeControlServiceTest {
     private static final int CALL_MAX_VOL = 8;
     private static final int GROUP_ID = 1;
     private static final int GROUP_ID_2 = 2;
+    private static final int GROUP_ID_INVALID = -1;
 
     private final BluetoothAdapter mAdapter =
             InstrumentationRegistry.getInstrumentation()
@@ -384,10 +385,15 @@ public class VolumeControlServiceTest {
         int groupVolume = 6;
 
         // Both devices are in the same group
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
-                .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
+                    .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+        } else {
+            generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
+            generateDeviceAvailableMessageFromNative(mDeviceTwo, GROUP_ID, 1, 1);
+        }
 
         // Connect and disconnect first device
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTING, STATE_DISCONNECTED);
@@ -414,8 +420,12 @@ public class VolumeControlServiceTest {
         // Unbond first device, group and second device volume should remain
         doReturn(BOND_NONE).when(mAdapterService).getBondState(mDevice);
         mService.bondStateChanged(mDevice, BOND_NONE);
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(CSIS_GROUP_ID_INVALID);
-        when(mCsipService.getGroupDevicesOrdered(GROUP_ID)).thenReturn(Arrays.asList(mDeviceTwo));
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP))
+                    .thenReturn(CSIS_GROUP_ID_INVALID);
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
+                    .thenReturn(Arrays.asList(mDeviceTwo));
+        }
         expect.that(mService.getDevices()).doesNotContain(mDevice);
         expect.that(mService.getDevices()).contains(mDeviceTwo);
         expect.that(mService.getDeviceVolume(mDevice)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
@@ -426,9 +436,11 @@ public class VolumeControlServiceTest {
         doReturn(BOND_NONE).when(mAdapterService).getBondState(mDeviceTwo);
         mService.bondStateChanged(mDeviceTwo, BOND_NONE);
         mLooper.dispatchAll();
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP))
-                .thenReturn(CSIS_GROUP_ID_INVALID);
-        when(mCsipService.getGroupDevicesOrdered(GROUP_ID)).thenReturn(Arrays.asList());
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP))
+                    .thenReturn(CSIS_GROUP_ID_INVALID);
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID)).thenReturn(Arrays.asList());
+        }
         expect.that(mService.getDevices()).doesNotContain(mDevice);
         expect.that(mService.getDevices()).doesNotContain(mDeviceTwo);
         expect.that(mService.getDeviceVolume(mDevice)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
@@ -468,10 +480,15 @@ public class VolumeControlServiceTest {
         int groupVolume = 6;
 
         // Both devices are in the same group
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
-                .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
+                    .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+        } else {
+            generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
+            generateDeviceAvailableMessageFromNative(mDeviceTwo, GROUP_ID, 1, 1);
+        }
 
         // Connect and go to disconnecting on first device
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTING, STATE_DISCONNECTED);
@@ -589,10 +606,15 @@ public class VolumeControlServiceTest {
         int devTwoVolume = 30;
 
         // Both devices are in the same group
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
-                .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
+                    .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+        } else {
+            generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
+            generateDeviceAvailableMessageFromNative(mDeviceTwo, GROUP_ID, 1, 1);
+        }
 
         assertThat(mService.getGroupVolume(GROUP_ID)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
         assertThat(mService.getDeviceVolume(mDevice)).isEqualTo(VOLUME_CONTROL_UNKNOWN_VOLUME);
@@ -663,10 +685,15 @@ public class VolumeControlServiceTest {
         int groupVolume = 6;
 
         // Both devices are in the same group
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
-                .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
+                    .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+        } else {
+            generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
+            generateDeviceAvailableMessageFromNative(mDeviceTwo, GROUP_ID, 1, 1);
+        }
 
         assertThat(mService.getGroupMute(GROUP_ID)).isFalse();
         assertThat(mService.getMute(mDevice)).isFalse();
@@ -767,12 +794,14 @@ public class VolumeControlServiceTest {
         boolean initialAutonomousFlag = true;
 
         // Both devices are in the same group
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
-                .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
+                    .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+        }
 
-        generateDeviceAvailableMessageFromNative(mDevice, 1);
+        generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_DISCONNECTED);
         assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_CONNECTED);
         assertThat(mService.getDevices()).contains(mDevice);
@@ -804,7 +833,7 @@ public class VolumeControlServiceTest {
 
         // Connect second device and read different volume. Expect it will NOT be set to AF
         // and to another set member, but the existing volume gets applied to it
-        generateDeviceAvailableMessageFromNative(mDeviceTwo, 1);
+        generateDeviceAvailableMessageFromNative(mDeviceTwo, GROUP_ID, 1, 1);
         generateConnectionMessageFromNative(mDeviceTwo, STATE_CONNECTED, STATE_DISCONNECTED);
         assertThat(mService.getConnectionState(mDeviceTwo)).isEqualTo(STATE_CONNECTED);
         assertThat(mService.getDevices()).contains(mDeviceTwo);
@@ -830,12 +859,14 @@ public class VolumeControlServiceTest {
         boolean initialMuteState = false;
         boolean initialAutonomousFlag = true;
 
-        // Set group for device
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupDevicesOrdered(GROUP_ID)).thenReturn(Arrays.asList(mDevice));
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            // Set group for device
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID)).thenReturn(Arrays.asList(mDevice));
+        }
 
-        // Connect device
-        generateDeviceAvailableMessageFromNative(mDevice, 1);
+        // Connect device, first group
+        generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_DISCONNECTED);
         when(mBassClientService.getSyncedBroadcastSinks()).thenReturn(new ArrayList<>());
 
@@ -851,12 +882,15 @@ public class VolumeControlServiceTest {
         // AF not set volume before device disconnected
         generateConnectionMessageFromNative(mDevice, STATE_DISCONNECTED, STATE_CONNECTED);
 
-        // Set group for second device
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID_2);
-        when(mCsipService.getGroupDevicesOrdered(GROUP_ID_2)).thenReturn(Arrays.asList(mDeviceTwo));
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            // Set group for second device
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID_2);
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID_2))
+                    .thenReturn(Arrays.asList(mDeviceTwo));
+        }
 
-        // Connected second device
-        generateDeviceAvailableMessageFromNative(mDeviceTwo, 1);
+        // Connected second device, second group
+        generateDeviceAvailableMessageFromNative(mDeviceTwo, GROUP_ID_2, 1, 1);
         generateConnectionMessageFromNative(mDeviceTwo, STATE_CONNECTED, STATE_DISCONNECTED);
 
         // Device volume updated with reset flag and no cache, mIgnoreSetVolumeFromAF is cleared
@@ -884,16 +918,18 @@ public class VolumeControlServiceTest {
         boolean initialMuteState = false;
         boolean initialAutonomousFlag = true;
 
-        // Both devices are in the same group
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
-                .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            // Both devices are in the same group
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
+                    .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+        }
 
         when(mAudioManager.getStreamVolume(anyInt())).thenReturn(streamVolume);
         when(mAudioManager.getStreamMaxVolume(anyInt())).thenReturn(streamMaxVolume);
 
-        generateDeviceAvailableMessageFromNative(mDevice, 1);
+        generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_DISCONNECTED);
         assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_CONNECTED);
         assertThat(mService.getDevices()).contains(mDevice);
@@ -924,7 +960,7 @@ public class VolumeControlServiceTest {
 
         // Connect second device and read different volume. Expect it will NOT be set to AF
         // and to another set member, but the existing volume gets applied to it
-        generateDeviceAvailableMessageFromNative(mDeviceTwo, 1);
+        generateDeviceAvailableMessageFromNative(mDeviceTwo, GROUP_ID, 1, 1);
         generateConnectionMessageFromNative(mDeviceTwo, STATE_CONNECTED, STATE_DISCONNECTED);
         assertThat(mService.getConnectionState(mDeviceTwo)).isEqualTo(STATE_CONNECTED);
         assertThat(mService.getDevices()).contains(mDeviceTwo);
@@ -962,8 +998,15 @@ public class VolumeControlServiceTest {
         int volume_2 = 20;
 
         // Both devices are in the same group
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
+                    .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+        } else {
+            generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
+            generateDeviceAvailableMessageFromNative(mDeviceTwo, GROUP_ID, 1, 1);
+        }
 
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_DISCONNECTED);
         assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_CONNECTED);
@@ -992,9 +1035,13 @@ public class VolumeControlServiceTest {
         int groupVolume = 56;
 
         // For now only one device is in the group
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP))
-                .thenReturn(CSIS_GROUP_ID_INVALID);
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP))
+                    .thenReturn(CSIS_GROUP_ID_INVALID);
+        } else {
+            generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
+        }
 
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_DISCONNECTED);
         assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_CONNECTED);
@@ -1011,7 +1058,11 @@ public class VolumeControlServiceTest {
         inOrderNative.verify(mNativeInterface, never()).setVolume(any(), anyInt());
 
         // But gets the volume when it becomes the group member
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+        } else {
+            generateDeviceAvailableMessageFromNative(mDeviceTwo, GROUP_ID, 1, 1);
+        }
         mService.handleGroupNodeAdded(GROUP_ID, mDeviceTwo);
         inOrderNative.verify(mNativeInterface).setVolume(eq(mDeviceTwo), eq(groupVolume));
     }
@@ -1027,8 +1078,15 @@ public class VolumeControlServiceTest {
         int volume_2 = 20;
 
         // Both devices are in the same group
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
+                    .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+        } else {
+            generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
+            generateDeviceAvailableMessageFromNative(mDeviceTwo, GROUP_ID, 1, 1);
+        }
 
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_DISCONNECTED);
         assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_CONNECTED);
@@ -1066,9 +1124,13 @@ public class VolumeControlServiceTest {
         int volume = 100;
 
         // For now only one device is in the group
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP))
-                .thenReturn(CSIS_GROUP_ID_INVALID);
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP))
+                    .thenReturn(CSIS_GROUP_ID_INVALID);
+        } else {
+            generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
+        }
 
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_DISCONNECTED);
         assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_CONNECTED);
@@ -1090,7 +1152,11 @@ public class VolumeControlServiceTest {
         inOrderNative.verify(mNativeInterface, never()).mute(any());
 
         // But gets the volume when it becomes the group member
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+        } else {
+            generateDeviceAvailableMessageFromNative(mDeviceTwo, GROUP_ID, 1, 1);
+        }
         mService.handleGroupNodeAdded(GROUP_ID, mDeviceTwo);
         inOrderNative.verify(mNativeInterface).setVolume(eq(mDeviceTwo), eq(volume));
         inOrderNative.verify(mNativeInterface).mute(eq(mDeviceTwo));
@@ -1115,7 +1181,7 @@ public class VolumeControlServiceTest {
     @Test
     public void serviceBinderVolumeOffsetMethods() {
         // Send a message to trigger connection completed
-        generateDeviceAvailableMessageFromNative(mDevice, 2);
+        generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 2, 1);
 
         assertThat(mBinder.isVolumeOffsetAvailable(mDevice, mAttributionSource)).isTrue();
 
@@ -1133,32 +1199,42 @@ public class VolumeControlServiceTest {
     public void getGroupId() {
         int groupVolume = 56;
 
-        generateDeviceAvailableMessageFromNative(mDevice, 1);
-        generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-        assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_CONNECTED);
-        assertThat(mService.getDevices()).contains(mDevice);
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
+            generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_DISCONNECTED);
+            assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_CONNECTED);
+            assertThat(mService.getDevices()).contains(mDevice);
 
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP))
-                .thenReturn(LE_AUDIO_GROUP_ID_INVALID);
-        when(mLeAudioService.getGroupId(mDevice)).thenReturn(LE_AUDIO_GROUP_ID_INVALID);
-        mService.setDeviceVolume(mDevice, groupVolume, true);
-        verify(mNativeInterface, never()).setGroupVolume(anyInt(), anyInt());
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP))
+                    .thenReturn(LE_AUDIO_GROUP_ID_INVALID);
+            when(mLeAudioService.getGroupId(mDevice)).thenReturn(LE_AUDIO_GROUP_ID_INVALID);
+            mService.setDeviceVolume(mDevice, groupVolume, true);
+            verify(mNativeInterface, never()).setGroupVolume(anyInt(), anyInt());
 
-        when(mLeAudioService.getGroupId(mDevice)).thenReturn(GROUP_ID);
-        mService.setDeviceVolume(mDevice, groupVolume, true);
-        verify(mNativeInterface).setGroupVolume(GROUP_ID, groupVolume);
+            when(mLeAudioService.getGroupId(mDevice)).thenReturn(GROUP_ID);
+            mService.setDeviceVolume(mDevice, groupVolume, true);
+            verify(mNativeInterface).setGroupVolume(GROUP_ID, groupVolume);
 
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID_2);
-        mService.setDeviceVolume(mDevice, groupVolume, true);
-        verify(mNativeInterface).setGroupVolume(GROUP_ID_2, groupVolume);
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID_2);
+            mService.setDeviceVolume(mDevice, groupVolume, true);
+            verify(mNativeInterface).setGroupVolume(GROUP_ID_2, groupVolume);
+        } else {
+            generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_DISCONNECTED);
+            assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_CONNECTED);
+            assertThat(mService.getDevices()).contains(mDevice);
+
+            mService.setDeviceVolume(mDevice, groupVolume, true);
+            verify(mNativeInterface, never()).setGroupVolume(anyInt(), anyInt());
+
+            generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
+            mService.setDeviceVolume(mDevice, groupVolume, true);
+            verify(mNativeInterface).setGroupVolume(GROUP_ID, groupVolume);
+        }
     }
 
     @Test
     public void getGroupDevices() throws Exception {
         int groupVolume = 56;
-
-        // Send a message to trigger connection completed
-        generateDeviceAvailableMessageFromNative(mDevice, 2);
 
         // Register callback and verify it is called with known devices
         IBluetoothVolumeControlCallback callback =
@@ -1177,19 +1253,28 @@ public class VolumeControlServiceTest {
         generateVolumeStateChanged(null, GROUP_ID, groupVolume, 0, false, false);
         inOrderCallback.verify(callback, never()).onDeviceVolumeChanged(any(), anyInt());
 
-        when(mLeAudioService.getGroupDevices(GROUP_ID)).thenReturn(Arrays.asList(mDevice));
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mLeAudioService.getGroupDevices(GROUP_ID)).thenReturn(Arrays.asList(mDevice));
+        } else {
+            generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
+        }
         generateVolumeStateChanged(null, GROUP_ID, groupVolume, 0, false, false);
         inOrderCallback.verify(callback).onDeviceVolumeChanged(eq(mDevice), eq(groupVolume));
 
-        when(mCsipService.getGroupDevicesOrdered(GROUP_ID)).thenReturn(Arrays.asList(mDeviceTwo));
-        generateVolumeStateChanged(null, GROUP_ID, groupVolume, 0, false, false);
-        inOrderCallback.verify(callback).onDeviceVolumeChanged(eq(mDeviceTwo), eq(groupVolume));
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
+                    .thenReturn(Arrays.asList(mDeviceTwo));
+            generateVolumeStateChanged(null, GROUP_ID, groupVolume, 0, false, false);
+            inOrderCallback.verify(callback).onDeviceVolumeChanged(eq(mDeviceTwo), eq(groupVolume));
 
-        when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
-                .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
+                    .thenReturn(Arrays.asList(mDeviceTwo, mDevice));
+        } else {
+            generateDeviceAvailableMessageFromNative(mDeviceTwo, GROUP_ID, 1, 1);
+        }
         generateVolumeStateChanged(null, GROUP_ID, groupVolume, 0, false, false);
-        inOrderCallback.verify(callback).onDeviceVolumeChanged(eq(mDevice), eq(groupVolume));
         inOrderCallback.verify(callback).onDeviceVolumeChanged(eq(mDeviceTwo), eq(groupVolume));
+        inOrderCallback.verify(callback).onDeviceVolumeChanged(eq(mDevice), eq(groupVolume));
     }
 
     @Test
@@ -1198,11 +1283,13 @@ public class VolumeControlServiceTest {
         int deviceOneVolume = 46;
         int deviceTwoVolume = 36;
 
-        // Both devices are in the same group
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            // Both devices are in the same group
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+        }
 
-        generateDeviceAvailableMessageFromNative(mDevice, 1);
+        generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_DISCONNECTED);
         assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_CONNECTED);
         assertThat(mService.getDevices()).contains(mDevice);
@@ -1231,11 +1318,13 @@ public class VolumeControlServiceTest {
     @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_VOLUME_CONTROL_FOR_CONNECTED_DEVICES)
     public void testServiceBinderSetDeviceVolumeNoGroupId() throws Exception {
         int deviceVolume = 42;
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP))
-                .thenReturn(LE_AUDIO_GROUP_ID_INVALID);
-        when(mLeAudioService.getGroupId(mDevice)).thenReturn(LE_AUDIO_GROUP_ID_INVALID);
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP))
+                    .thenReturn(LE_AUDIO_GROUP_ID_INVALID);
+            when(mLeAudioService.getGroupId(mDevice)).thenReturn(LE_AUDIO_GROUP_ID_INVALID);
+        }
 
-        generateDeviceAvailableMessageFromNative(mDevice, 1);
+        generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID_INVALID, 1, 1);
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_DISCONNECTED);
         assertThat(mService.getDevices()).contains(mDevice);
 
@@ -1270,11 +1359,13 @@ public class VolumeControlServiceTest {
     public void serviceBinderRegisterCallbackWhenDeviceAlreadyConnected() throws Exception {
         int groupVolume = 56;
 
-        // Both devices are in the same group
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            // Both devices are in the same group
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+        }
 
-        generateDeviceAvailableMessageFromNative(mDevice, 2);
+        generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 2, 1);
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_DISCONNECTED);
         assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_CONNECTED);
         assertThat(mService.getDevices()).contains(mDevice);
@@ -1285,7 +1376,7 @@ public class VolumeControlServiceTest {
         inOrderNative.verify(mNativeInterface, never()).setVolume(any(), anyInt());
 
         // Verify that second device gets the proper group volume level when connected
-        generateDeviceAvailableMessageFromNative(mDeviceTwo, 1);
+        generateDeviceAvailableMessageFromNative(mDeviceTwo, GROUP_ID, 1, 1);
         generateConnectionMessageFromNative(mDeviceTwo, STATE_CONNECTED, STATE_DISCONNECTED);
         assertThat(mService.getConnectionState(mDeviceTwo)).isEqualTo(STATE_CONNECTED);
         assertThat(mService.getDevices()).contains(mDeviceTwo);
@@ -1355,7 +1446,7 @@ public class VolumeControlServiceTest {
         int deviceOneVolume = 46;
         int deviceTwoVolume = 36;
 
-        generateDeviceAvailableMessageFromNative(mDevice, 1);
+        generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_DISCONNECTED);
         assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_CONNECTED);
         assertThat(mService.getDevices()).contains(mDevice);
@@ -1363,16 +1454,18 @@ public class VolumeControlServiceTest {
         verify(mNativeInterface).setVolume(eq(mDevice), eq(deviceOneVolume));
 
         // Verify that second device gets the proper group volume level when connected
-        generateDeviceAvailableMessageFromNative(mDeviceTwo, 1);
+        generateDeviceAvailableMessageFromNative(mDeviceTwo, GROUP_ID, 1, 1);
         generateConnectionMessageFromNative(mDeviceTwo, STATE_CONNECTED, STATE_DISCONNECTED);
         assertThat(mService.getConnectionState(mDeviceTwo)).isEqualTo(STATE_CONNECTED);
         assertThat(mService.getDevices()).contains(mDeviceTwo);
         mService.setDeviceVolume(mDeviceTwo, deviceTwoVolume, false);
         verify(mNativeInterface).setVolume(eq(mDeviceTwo), eq(deviceTwoVolume));
 
-        // Both devices are in the same group
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            // Both devices are in the same group
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+        }
 
         // Register callback and verify it is called with known devices
         IBluetoothVolumeControlCallback callback =
@@ -1395,7 +1488,7 @@ public class VolumeControlServiceTest {
         int deviceOneVolume = 46;
         int deviceTwoVolume = 36;
 
-        generateDeviceAvailableMessageFromNative(mDevice, 1);
+        generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_DISCONNECTED);
         assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_CONNECTED);
         assertThat(mService.getDevices()).contains(mDevice);
@@ -1403,16 +1496,18 @@ public class VolumeControlServiceTest {
         verify(mNativeInterface).setVolume(eq(mDevice), eq(deviceOneVolume));
 
         // Verify that second device gets the proper group volume level when connected
-        generateDeviceAvailableMessageFromNative(mDeviceTwo, 1);
+        generateDeviceAvailableMessageFromNative(mDeviceTwo, GROUP_ID, 1, 1);
         generateConnectionMessageFromNative(mDeviceTwo, STATE_CONNECTED, STATE_DISCONNECTED);
         assertThat(mService.getConnectionState(mDeviceTwo)).isEqualTo(STATE_CONNECTED);
         assertThat(mService.getDevices()).contains(mDeviceTwo);
         mService.setDeviceVolume(mDeviceTwo, deviceTwoVolume, false);
         verify(mNativeInterface).setVolume(eq(mDeviceTwo), eq(deviceTwoVolume));
 
-        // Both devices are in the same group
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            // Both devices are in the same group
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+        }
 
         // Register callback and verify it is called with known devices
         IBluetoothVolumeControlCallback callback =
@@ -1475,12 +1570,15 @@ public class VolumeControlServiceTest {
         int groupVolume = 56;
         int deviceOneVolume = 46;
 
-        // Both devices are in the same group
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            // Both devices are in the same group
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+        }
 
         // Send a message to trigger connection completed
-        generateDeviceAvailableMessageFromNative(mDevice, 2);
+        generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
+        generateDeviceAvailableMessageFromNative(mDeviceTwo, GROUP_ID, 1, 1);
 
         mService.setDeviceVolume(mDevice, groupVolume, true);
         verify(mNativeInterface).setGroupVolume(eq(GROUP_ID), eq(groupVolume));
@@ -1497,8 +1595,10 @@ public class VolumeControlServiceTest {
             assertThat(mService.mCallbacks.getRegisteredCallbackCount()).isEqualTo(size + 1);
         }
 
-        when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
-                .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            when(mCsipService.getGroupDevicesOrdered(GROUP_ID))
+                    .thenReturn(Arrays.asList(mDevice, mDeviceTwo));
+        }
 
         // Send group volume change.
         generateVolumeStateChanged(null, GROUP_ID, groupVolume, 0, false, true);
@@ -1519,13 +1619,15 @@ public class VolumeControlServiceTest {
     public void volumeControlChangedForBroadcastPrimaryGroup() {
         int groupVolume = 30;
 
-        // Both devices are in the same group
-        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
-        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+        if (!Flags.vcpHandleGroupIdInternally()) {
+            // Both devices are in the same group
+            when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+            when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(GROUP_ID);
+        }
 
         when(mAudioManager.getStreamVolume(anyInt())).thenReturn(groupVolume);
 
-        generateDeviceAvailableMessageFromNative(mDevice, 1);
+        generateDeviceAvailableMessageFromNative(mDevice, GROUP_ID, 1, 1);
         generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_DISCONNECTED);
         assertThat(mService.getConnectionState(mDevice)).isEqualTo(STATE_CONNECTED);
         assertThat(mService.getDevices()).contains(mDevice);
@@ -1576,13 +1678,19 @@ public class VolumeControlServiceTest {
     }
 
     private void generateDeviceAvailableMessageFromNative(
-            BluetoothDevice device, int numberOfExtOffsets) {
+            BluetoothDevice device,
+            int groupId,
+            int numberOfExtOffsets,
+            int numberOfExternalInputs) {
         // Send a message to trigger connection completed
         VolumeControlStackEvent event =
                 new VolumeControlStackEvent(VolumeControlStackEvent.EVENT_TYPE_DEVICE_AVAILABLE);
         event.device = device;
-        event.valueInt1 = numberOfExtOffsets; // number of external outputs
+        event.valueInt1 = groupId;
+        event.valueInt2 = numberOfExtOffsets; // number of external outputs
+        event.valueInt3 = numberOfExternalInputs;
         mService.messageFromNative(event);
+        mLooper.dispatchAll();
     }
 
     private void generateVolumeStateChanged(

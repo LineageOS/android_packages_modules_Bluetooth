@@ -627,6 +627,7 @@ cc_test {
         "test/common/bta_gatt_queue_mock.cc",
         "test/common/btm_api_mock.cc",
         "test/common/mock_csis_client.cc",
+        "test/common/mock_device_groups.cc",
         "vc/device.cc",
         "vc/devices_test.cc",
         "vc/vc.cc",
