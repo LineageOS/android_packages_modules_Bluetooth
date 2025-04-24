@@ -289,6 +289,7 @@ uint16_t sdpu_get_active_ccb_cid(const RawAddress& bd_addr);
 bool sdpu_process_pend_ccb_same_cid(const tCONN_CB& ccb);
 bool sdpu_process_pend_ccb_new_cid(const tCONN_CB& ccb);
 void sdpu_clear_pend_ccb(const tCONN_CB& ccb);
+void sdpu_clear_all_ccbs_for_cid(uint16_t cid);
 void sdpu_callback(const tCONN_CB& ccb, tSDP_REASON reason);
 
 /* Functions provided by sdp_db.cc */
