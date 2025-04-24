@@ -7,3 +7,13 @@ flag {
     description: "Check for NIL SDP property length"
     bug: "329171845"
 }
+
+flag {
+    name: "sdp_ccb_clean_up_after_l2cap_disc"
+    namespace: "bluetooth"
+    description: "Clean up SDP CCBs if upper disconnects L2CAP"
+    bug: "413457570"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
