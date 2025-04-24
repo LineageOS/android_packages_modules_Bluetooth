@@ -35,8 +35,10 @@
 #include "types/raw_address.h"
 
 typedef enum {
+  HIDH_DEV_UNUSED,
   HIDH_DEV_NO_CONN,
   HIDH_DEV_CONNECTED,
+  HIDH_DEV_REMOVING,
 } tHIDH_DEV_STATE;
 
 typedef struct per_device_ctb {

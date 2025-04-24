@@ -28,6 +28,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <com_android_bluetooth_flags.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <stdlib.h>
 #include <string.h>
@@ -431,11 +432,24 @@ tHID_STATUS HID_HostRemoveDev(uint8_t dev_handle) {
     return HID_ERR_INVALID_PARAM;
   }
 
-  HID_HostCloseDev(dev_handle);
-  hh_cb.devices[dev_handle].in_use = false;
-  hh_cb.devices[dev_handle].conn.conn_state = HID_CONN_STATE_UNUSED;
-  hh_cb.devices[dev_handle].conn.ctrl_cid = hh_cb.devices[dev_handle].conn.intr_cid = 0;
+  if (!com::android::bluetooth::flags::wait_hid_disconnect_before_marking_unused()) {
+    HID_HostCloseDev(dev_handle);
+    hh_cb.devices[dev_handle].in_use = false;
+    hh_cb.devices[dev_handle].conn.conn_state = HID_CONN_STATE_UNUSED;
+    hh_cb.devices[dev_handle].conn.ctrl_cid = hh_cb.devices[dev_handle].conn.intr_cid = 0;
+    hh_cb.devices[dev_handle].attr_mask = 0;
+    return HID_SUCCESS;
+  }
+
   hh_cb.devices[dev_handle].attr_mask = 0;
+  if (hh_cb.devices[dev_handle].state == HIDH_DEV_CONNECTED) {
+    hh_cb.devices[dev_handle].state = HIDH_DEV_REMOVING;
+    log::verbose("set handle {} state to REMOVING", dev_handle);
+    HID_HostCloseDev(dev_handle);
+  } else if (hh_cb.devices[dev_handle].state == HIDH_DEV_NO_CONN) {
+    hh_cb.devices[dev_handle].state = HIDH_DEV_UNUSED;
+    log::verbose("set handle {} state to UNUSED", dev_handle);
+  }
   return HID_SUCCESS;
 }
 
@@ -534,7 +548,8 @@ tHID_STATUS HID_HostCloseDev(uint8_t dev_handle) {
     return HID_ERR_INVALID_PARAM;
   }
 
-  if (hh_cb.devices[dev_handle].state != HIDH_DEV_CONNECTED) {
+  if (hh_cb.devices[dev_handle].state != HIDH_DEV_CONNECTED &&
+      hh_cb.devices[dev_handle].state != HIDH_DEV_REMOVING) {
     bluetooth::metrics::Counter(
             bluetooth::metrics::CounterKey::HIDH_ERR_NO_CONNECTION_AT_HOST_CLOSE_DEV);
     return HID_ERR_NO_CONNECTION;
