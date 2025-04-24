@@ -240,7 +240,7 @@ struct HciLayer::impl {
     log::assert_that(waiting_command_ == op_code, "Waiting for {}, got {}",
                      OpCodeText(waiting_command_), OpCodeText(op_code));
 
-    bool is_vendor_specific = static_cast<int>(op_code) & (0x3f << 10);
+    bool is_vendor_specific = (static_cast<int>(op_code) & (0x3f << 10)) == (0x3f << 10);
     using WaitingFor = CommandQueueEntry::WaitingFor;
     WaitingFor waiting_for = command_queue_.front().waiting_for_;
     CommandStatusView status_view = CommandStatusView::Create(event);
