@@ -210,6 +210,11 @@ class SignalingChannel(pyee.EventEmitter):
     def _on_avdtp_packet(self, packet):
         self.transport_queue.put_nowait(packet)
 
+    def discard_audio_data(self):
+        while not self.transport_queue.empty():
+            self.transport_queue.get_nowait()
+        logger.info(f"RTP channel queue cleared")
+
     async def accept_discover(self, seid_information: typing.List[av.SeidInformation]):
         cmd = await self.expect_signal(av.DiscoverCommand(transaction_label=self.any))
         self.send_signal(
@@ -299,19 +304,19 @@ class SignalingChannel(pyee.EventEmitter):
         await self.expect_signal(av.DelayReportResponse(transaction_label=self.any),
                                  timeout=timeout)
 
-    async def receive_audio_data(self, test_log_path: str, duration_s: float = 1.0):
+    async def receive_audio_data(self, test_log_path: str, filename: str, duration_s: float = 1.0):
         """
         Asynchronously receives and processes audio data for a specified duration.
 
         Received audio can be converted to *.wav by running:
-        ffmpeg -f <codec_name> -i <test_log_path>/receive_audio_data.data output.wav
+        ffmpeg -f <codec_name> -i <test_log_path>/receive_audio_data_<filename>.data output.wav
 
         Args:
-            test_log_path: The test specific log path.
+            test_log_path: The test specific log directory path.
             duration_s: The duration in seconds for which the audio is being received (default: 1.0 second).
         """
         start_time = time.time()
-        test_log_path = os.path.join(test_log_path, "receive_audio_data.data")
+        test_log_path = os.path.join(test_log_path, f"receive_audio_data_{filename}.data")
         logger.info(f"Saving to: {test_log_path}")
         with open(test_log_path, "wb") as output_file:
             frames = 0

@@ -199,6 +199,7 @@ class A2dp(val context: Context) : A2DPImplBase(), Closeable {
                     .map { it.getIntExtra(BluetoothA2dp.EXTRA_STATE, BluetoothAdapter.ERROR) }
 
             audioTrack!!.pause()
+            audioTrack!!.flush()
             withTimeoutOrNull(timeoutMillis) {
                 a2dpPlayingStateFlow.filter { it == BluetoothA2dp.STATE_NOT_PLAYING }.first()
             }
