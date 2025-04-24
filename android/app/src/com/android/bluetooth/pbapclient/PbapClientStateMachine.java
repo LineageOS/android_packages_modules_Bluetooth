@@ -126,19 +126,22 @@ class PbapClientStateMachine extends StateMachine {
         private final String mName;
         private PbapPhonebookMetadata mMetadata;
         private int mNumDownloaded;
+        private int mNumDownloadedWithImages;
 
         Phonebook(String name) {
             mName = name;
             mMetadata = null;
             mNumDownloaded = 0;
+            mNumDownloadedWithImages = 0;
         }
 
         public void setMetadata(PbapPhonebookMetadata metadata) {
             mMetadata = metadata;
         }
 
-        public void onContactsDownloaded(int numDownloaded) {
+        public void onContactsDownloaded(int numDownloaded, int numWithImages) {
             mNumDownloaded += numDownloaded;
+            mNumDownloadedWithImages += numWithImages;
         }
 
         public int getTotalNumberOfContacts() {
@@ -151,6 +154,10 @@ class PbapClientStateMachine extends StateMachine {
             return mNumDownloaded;
         }
 
+        public int getNumberOfContactsDownloadedWithImages() {
+            return mNumDownloadedWithImages;
+        }
+
         @Override
         @SuppressWarnings("ReferenceEquality") // equals() doesn't work because the constant is null
         public String toString() {
@@ -158,7 +165,9 @@ class PbapClientStateMachine extends StateMachine {
                 return mName
                         + " ["
                         + getNumberOfContactsDownloaded()
-                        + "/ UNKNOWN] (db:UNKNOWN, pc:UNKNOWN, sc:UNKNOWN)";
+                        + "/ UNKNOWN, images="
+                        + getNumberOfContactsDownloadedWithImages()
+                        + "] (db:UNKNOWN, pc:UNKNOWN, sc:UNKNOWN)";
             }
 
             String databaseIdentifier = mMetadata.databaseIdentifier();
@@ -184,7 +193,7 @@ class PbapClientStateMachine extends StateMachine {
             return mName
                     + " ["
                     + (getNumberOfContactsDownloaded() + "/" + totalContactsExpected)
-                    + "] ("
+                    + (", images=" + getNumberOfContactsDownloadedWithImages() + "] (")
                     + ("db:" + databaseIdentifier)
                     + (", pc:" + primaryVersionCounter)
                     + (", sc:" + secondaryVersionCounter)
@@ -635,21 +644,30 @@ class PbapClientStateMachine extends StateMachine {
                     phonebook = contacts.getPhonebook();
                     if (currentPhonebook != null && currentPhonebook.equals(phonebook)) {
                         int numReceived = contacts.getCount();
-                        mPhonebooks.get(phonebook).onContactsDownloaded(numReceived);
+                        int numImagesDownloaded = contacts.getCountWithPhotoData();
+                        mPhonebooks
+                                .get(phonebook)
+                                .onContactsDownloaded(numReceived, numImagesDownloaded);
                         int totalContactDownloaded =
                                 mPhonebooks.get(phonebook).getNumberOfContactsDownloaded();
                         int totalContactsExpected =
                                 mPhonebooks.get(phonebook).getTotalNumberOfContacts();
+                        int totalContactDownloadedWithImages =
+                                mPhonebooks
+                                        .get(phonebook)
+                                        .getNumberOfContactsDownloadedWithImages();
 
                         info(
                                 "Downloading: received contacts, phonebook="
                                         + phonebook
                                         + ", entries="
                                         + numReceived
+                                        + (" (images=" + numImagesDownloaded + ")")
                                         + ", total="
                                         + totalContactDownloaded
                                         + "/"
-                                        + totalContactsExpected);
+                                        + totalContactsExpected
+                                        + (" (images=" + totalContactDownloadedWithImages + ")"));
                         if (numReceived != 0) {
                             storeDownloadedContacts(phonebook, contacts);
                         } else {
@@ -969,7 +987,13 @@ class PbapClientStateMachine extends StateMachine {
                 onPhonebookContactsDownloadFailed(phonebook);
                 return;
             }
-            debug("Received contacts, phonebook=" + phonebook + ", count=" + contacts.getCount());
+            debug(
+                    "Received contacts, phonebook="
+                            + phonebook
+                            + ", count="
+                            + contacts.getCount()
+                            + ", w/images="
+                            + contacts.getCountWithPhotoData());
             onPhonebookContactsReceived(contacts);
         }
     }
