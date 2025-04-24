@@ -34,19 +34,24 @@
 #include "stack/include/l2cap_types.h"
 #include "types/raw_address.h"
 
-enum { HID_DEV_NO_CONN, HID_DEV_CONNECTED };
+typedef enum {
+  HIDH_DEV_NO_CONN,
+  HIDH_DEV_CONNECTED,
+} tHIDH_DEV_STATE;
 
 typedef struct per_device_ctb {
+  // Deprecate with wait_hid_disconnect_before_marking_unused
   bool in_use;
-  RawAddress addr;    /* BD-Addr of the host device */
-  uint16_t attr_mask; /* 0x01- virtual_cable; 0x02- normally_connectable; 0x03-
-                         reconn_initiate;
-                                 0x04- sdp_disable; */
-  uint8_t state;      /* Device state if in HOST-KNOWN mode */
-  uint8_t conn_tries; /* Remembers the number of connection attempts while
-                         CONNECTING */
-
-  tHID_CONN conn; /* L2CAP channel info */
+  // BD-Addr of the host device
+  RawAddress addr;
+  // 0x01- virtual_cable; 0x02- normally_connectable; 0x03- reconn_initiate; 0x04- sdp_disable;
+  uint16_t attr_mask;
+  // Device state
+  tHIDH_DEV_STATE state;
+  // Remembers the number of connection attempts while CONNECTING
+  uint8_t conn_tries;
+  // L2CAP channel info
+  tHID_CONN conn;
 } tHID_HOST_DEV_CTB;
 
 typedef struct host_ctb {
@@ -70,6 +75,7 @@ void hidh_conn_dereg(void);
 tHID_STATUS hidh_conn_disconnect(uint8_t dhandle);
 tHID_STATUS hidh_conn_initiate(uint8_t dhandle);
 void hidh_dump(int fd);
+bool hidh_in_use(const per_device_ctb& ctb);
 
 /******************************************************************************
  * Main Control Block

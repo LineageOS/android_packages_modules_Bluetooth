@@ -244,9 +244,8 @@ static void hidh_l2cif_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid
   if (psm == HID_PSM_CONTROL) {
     p_hcon->conn_flags = 0;
     p_hcon->ctrl_cid = l2cap_cid;
-    p_hcon->disc_reason = HID_SUCCESS; /* Authentication passed. Reset
-                                              disc_reason (from
-                                              HID_ERR_AUTH_FAILED) */
+    /* Authentication passed. Reset disc_reason (from HID_ERR_AUTH_FAILED) */
+    p_hcon->disc_reason = HID_SUCCESS;
     p_hcon->conn_state = HID_CONN_STATE_CONNECTING_INTR;
     BTM_LogHistory(kBtmLogTag, hh_cb.devices[i].addr, "Connecting",
                    "waiting for interrupt channel");
@@ -357,9 +356,8 @@ static void hidh_l2cif_connect_cfm(uint16_t l2cap_cid, tL2CAP_CONN result) {
   /* receive Control Channel connect confirmation */
   if (l2cap_cid == p_hcon->ctrl_cid) {
     /* check security requirement */
-    p_hcon->disc_reason = HID_SUCCESS; /* Authentication passed. Reset
-                                              disc_reason (from
-                                              HID_ERR_AUTH_FAILED) */
+    /* Authentication passed. Reset disc_reason (from HID_ERR_AUTH_FAILED) */
+    p_hcon->disc_reason = HID_SUCCESS;
 
     /* Transition to the next appropriate state, configuration */
     p_hcon->conn_state = HID_CONN_STATE_CONFIG;
@@ -472,7 +470,7 @@ static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, uint16_t /* initiator */,
     /* Reset disconnect reason to success, as connection successful */
     p_hcon->disc_reason = HID_SUCCESS;
 
-    hh_cb.devices[dhandle].state = HID_DEV_CONNECTED;
+    hh_cb.devices[dhandle].state = HIDH_DEV_CONNECTED;
     hh_cb.callback(dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_OPEN, 0, NULL);
     BTM_LogHistory(kBtmLogTag, hh_cb.devices[dhandle].addr, "Connected",
                    std::format("control:0x{:04x} interrupt:0x{:04x} state:{}", p_hcon->ctrl_cid,
@@ -521,7 +519,7 @@ static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
   }
 
   if ((p_hcon->ctrl_cid == 0) && (p_hcon->intr_cid == 0)) {
-    hh_cb.devices[dhandle].state = HID_DEV_NO_CONN;
+    hh_cb.devices[dhandle].state = HIDH_DEV_NO_CONN;
     p_hcon->conn_state = HID_CONN_STATE_UNUSED;
 
     if (!ack_needed) {
@@ -617,7 +615,7 @@ static void hidh_l2cif_disconnect_cfm_actual(uint16_t l2cap_cid, uint16_t /* res
   }
 
   if ((p_hcon->ctrl_cid == 0) && (p_hcon->intr_cid == 0)) {
-    hh_cb.devices[dhandle].state = HID_DEV_NO_CONN;
+    hh_cb.devices[dhandle].state = HIDH_DEV_NO_CONN;
     p_hcon->conn_state = HID_CONN_STATE_UNUSED;
     BTM_LogHistory(kBtmLogTag, hh_cb.devices[dhandle].addr, "Disconnected");
     hh_cb.callback(dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE, p_hcon->disc_reason,
@@ -935,7 +933,7 @@ static uint8_t find_conn_by_cid(uint16_t cid) {
   uint8_t xx;
 
   for (xx = 0; xx < kHID_HOST_MAX_DEVICES; xx++) {
-    if ((hh_cb.devices[xx].in_use) &&
+    if (hidh_in_use(hh_cb.devices[xx]) &&
         (hh_cb.devices[xx].conn.conn_state != HID_CONN_STATE_UNUSED) &&
         ((hh_cb.devices[xx].conn.ctrl_cid == cid) || (hh_cb.devices[xx].conn.intr_cid == cid))) {
       break;
@@ -979,15 +977,17 @@ void hidh_dump(int fd) {
               hh_cb.sdp_busy ? "true" : "false");
   for (int i = 0; i < HID_HOST_MAX_DEVICES; i++) {
     auto& dev = hh_cb.devices[i];
-    if (dev.in_use) {
+    if (hidh_in_use(dev)) {
       LOG_DUMPSYS(fd,
                   "Device:%s, handle:%d, state:%s, conn_state:%s, conn_flags:0x%02x, "
                   "control_cid:0x%04x, intr_cid:0x%04x",
                   dev.addr.ToRedactedStringForLogging().c_str(), i,
-                  dev.state == HID_DEV_CONNECTED ? "CONNECTED" : "NOT_CONNECTED",
+                  dev.state == HIDH_DEV_CONNECTED ? "CONNECTED" : "NOT_CONNECTED",
                   dev.conn.state_text(dev.conn.conn_state).c_str(), dev.conn.conn_flags,
                   dev.conn.ctrl_cid, dev.conn.intr_cid);
     }
   }
 }
 #undef DUMPSYS_TAG
+
+bool hidh_in_use(const per_device_ctb& ctb) { return ctb.in_use; }
