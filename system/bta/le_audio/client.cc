@@ -4944,7 +4944,15 @@ public:
       /* We need new configuration_context_type_ to be selected before we go any
        * further.
        */
-      ReconfigureOrUpdateRemote(group, bluetooth::le_audio::types::kLeAudioDirectionSource);
+      if (!ReconfigureOrUpdateRemote(group, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
+        log::error("Unable to reconfigure group at this time, configuration_context_type_ = {}",
+                   ToString(configuration_context_type_));
+        if (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING) {
+          log::debug("Group is releasing, cancel streaming request and wait for release to end.");
+          CancelLocalAudioSinkStreamingRequest();
+          return;
+        }
+      }
     }
 
     log::info("configuration_context_type_: {}", ToString(configuration_context_type_));
@@ -6967,21 +6975,33 @@ LeAudioStateMachineHciCallbacksImpl stateMachineHciCallbacksImpl;
 class CallbacksImpl : public LeAudioGroupStateMachine::Callbacks {
 public:
   void StatusReportCb(int group_id, GroupStreamStatus status) override {
-    if (instance) {
-      instance->OnStateMachineStatusReportCb(group_id, status);
-    }
+    do_in_main_thread(base::BindOnce(
+            [](int group_id, GroupStreamStatus status) {
+              if (instance) {
+                instance->OnStateMachineStatusReportCb(group_id, status);
+              }
+            },
+            group_id, status));
   }
 
   void OnStateTransitionTimeout(int group_id) override {
-    if (instance) {
-      instance->OnLeAudioDeviceSetStateTimeout(group_id);
-    }
+    do_in_main_thread(base::BindOnce(
+            [](int group_id) {
+              if (instance) {
+                instance->OnLeAudioDeviceSetStateTimeout(group_id);
+              }
+            },
+            group_id));
   }
 
   void OnUpdatedCisConfiguration(int group_id, uint8_t direction) {
-    if (instance) {
-      instance->OnUpdatedCisConfiguration(group_id, direction);
-    }
+    do_in_main_thread(base::BindOnce(
+            [](int group_id, uint8_t direction) {
+              if (instance) {
+                instance->OnUpdatedCisConfiguration(group_id, direction);
+              }
+            },
+            group_id, direction));
   }
 };
 
