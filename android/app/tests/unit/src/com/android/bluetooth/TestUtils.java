@@ -159,7 +159,6 @@ public class TestUtils {
         }
     }
 
-
     /**
      * Wait for looper to finish its current task and all tasks schedule before this
      *

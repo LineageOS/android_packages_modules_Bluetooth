@@ -1786,8 +1786,8 @@ public class HeadsetStateMachineTest {
     @Test
     public void testProcessVolumeEventAudioConnected_withVolumeControlEnabled_ShowUiFlagEnabled() {
         doReturn(true)
-            .when(mProperties)
-            .getBoolean(eq(HeadsetStateMachine.HFP_VOLUME_CONTROL_ENABLED), anyBoolean());
+                .when(mProperties)
+                .getBoolean(eq(HeadsetStateMachine.HFP_VOLUME_CONTROL_ENABLED), anyBoolean());
 
         setUpAudioOnState();
 
@@ -1801,15 +1801,15 @@ public class HeadsetStateMachineTest {
         var flagsCaptor = ArgumentCaptor.forClass(Integer.class);
         verify(mockAudioManager).setStreamVolume(anyInt(), anyInt(), flagsCaptor.capture());
         assertThat(flagsCaptor.getValue() & AudioManager.FLAG_SHOW_UI)
-            .isEqualTo(AudioManager.FLAG_SHOW_UI);
+                .isEqualTo(AudioManager.FLAG_SHOW_UI);
     }
 
     @RequiresFlagsEnabled(Flags.FLAG_HFP_VOLUME_CONTROL_PROPERTY)
     @Test
     public void testProcessVolumeEventAudioConnected_withVolumeControlEnabled_ShowUiFlagDisabled() {
         doReturn(false)
-            .when(mProperties)
-            .getBoolean(eq(HeadsetStateMachine.HFP_VOLUME_CONTROL_ENABLED), anyBoolean());
+                .when(mProperties)
+                .getBoolean(eq(HeadsetStateMachine.HFP_VOLUME_CONTROL_ENABLED), anyBoolean());
 
         setUpAudioOnState();
 
