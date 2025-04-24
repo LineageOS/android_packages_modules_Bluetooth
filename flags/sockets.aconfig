@@ -112,3 +112,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "handle_hci_error_controller_busy"
+    namespace: "bluetooth"
+    description: "Handle HCI_ERR_CONTROLLER_BUSY error code in L2cap layer"
+    bug: "406447470"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
