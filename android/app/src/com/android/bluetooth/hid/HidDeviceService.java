@@ -111,7 +111,8 @@ public class HidDeviceService extends ProfileService {
     }
 
     public static boolean isEnabled() {
-        return BluetoothProperties.isProfileHidDeviceEnabled().orElse(false);
+        return BluetoothProperties.isProfileHidDeviceEnabled().orElse(false)
+                && !BluetoothProperties.isProfileHidDeviceRuntimeDisabled().orElse(false);
     }
 
     private class HidDeviceServiceHandler extends Handler {

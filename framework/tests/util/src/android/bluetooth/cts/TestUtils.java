@@ -85,7 +85,8 @@ public class TestUtils extends android.bluetooth.test_utils.TestUtils {
                 return BluetoothProperties.isProfileAshaCentralEnabled().orElse(default_value);
             }
             case BluetoothProfile.HID_DEVICE -> {
-                return BluetoothProperties.isProfileHidDeviceEnabled().orElse(false);
+                return BluetoothProperties.isProfileHidDeviceEnabled().orElse(false)
+                        && BluetoothProperties.isProfileHidDeviceRuntimeDisabled().orElse(false);
             }
             case BluetoothProfile.HID_HOST -> {
                 return BluetoothProperties.isProfileHidHostEnabled().orElse(false);
