@@ -137,7 +137,7 @@ public class HeadsetService extends ProfileService {
     private final HeadsetSystemInterface mSystemInterface;
 
     private int mMaxHeadsetConnections = 1;
-    private BluetoothDevice mExposedActiveDevice;
+    BluetoothDevice mExposedActiveDevice;
     private BluetoothDevice mActiveDevice;
     // Device waiting for audio framework to start SCO
     BluetoothDevice mPendingScoConnection;
@@ -2214,7 +2214,10 @@ public class HeadsetService extends ProfileService {
                         continue;
                     }
 
-                    mExposedActiveDevice = null;
+                    if (mExposedActiveDevice != null
+                            && address.equals(mExposedActiveDevice.getAddress())) {
+                        mExposedActiveDevice = null;
+                    }
 
                     if (mPendingScoConnection != null
                             && address.equals(mPendingScoConnection.getAddress())) {
