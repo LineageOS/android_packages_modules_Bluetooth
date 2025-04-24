@@ -25,6 +25,7 @@ except ImportError:
     from .packets.avdtp import *
 import pyee
 import typing
+from unittest.mock import ANY
 
 import asyncio
 import bumble.avdtp as avdtp
@@ -41,25 +42,6 @@ logger = logging.getLogger(__name__)
 
 av.print = lambda *args, **kwargs: logger.debug(" ".join(map(str, args)))
 
-
-class Any:
-    """Helper class that will match all other values.
-       Use an element of this class in expected packets to match any value
-      returned by the AVDTP signaling."""
-
-    def __eq__(self, other) -> bool:
-        return True
-
-    def __format__(self, format_spec: str) -> str:
-        return "_"
-
-    def __len__(self) -> int:
-        return 1
-
-    def show(self, prefix: str = "") -> str:
-        return prefix + "_"
-
-
 RoleType = Optional[typing.Literal["acceptor", "initiator"]]
 
 
@@ -69,7 +51,6 @@ class SignalingChannel(pyee.EventEmitter):
     transport_channel: Optional[l2cap.ClassicChannel] = None
     avdtp_server: Optional[l2cap.ClassicChannelServer] = None
     role: RoleType = None
-    any: Any = Any()
     acp_seid: int = 0
     int_seid: int = 0
 
@@ -111,9 +92,14 @@ class SignalingChannel(pyee.EventEmitter):
 
     async def expect_signal(self,
                             expected_sig: typing.Union[SignalingPacket, type],
-                            timeout: float = 3) -> SignalingPacket:
-        packet = await asyncio.wait_for(self.signaling_queue.get(), timeout=timeout)
-        sig = SignalingPacket.parse_all(packet)
+                            timeout: float = 3) -> Optional[SignalingPacket]:
+        try:
+            packet = await asyncio.wait_for(self.signaling_queue.get(), timeout=timeout)
+            sig = SignalingPacket.parse_all(packet)
+        except TimeoutError:
+            raise TimeoutError(
+                f"TimeoutError while waiting for signal: {expected_sig.__class__.__name__}"
+            ) from None
 
         if isinstance(expected_sig, type) and not isinstance(sig, expected_sig):
             logger.error("Received unexpected signal")
@@ -135,9 +121,12 @@ class SignalingChannel(pyee.EventEmitter):
         return sig
 
     async def expect_media(self, timeout: float = 3.0) -> avdtp.MediaPacket:
-        packet = await asyncio.wait_for(self.transport_queue.get(), timeout=timeout)
-        logger.debug(f"<<< {self.connection.self_address} {self.role} received media <<<")
-        logger.debug(f"RTP Packet: {packet.hex()}")
+        try:
+            packet = await asyncio.wait_for(self.transport_queue.get(), timeout=timeout)
+            logger.debug(f"<<< {self.connection.self_address} {self.role} received media <<<")
+            logger.debug(f"RTP Packet: {packet.hex()}")
+        except TimeoutError:
+            raise TimeoutError(f"TimeoutError while waiting for media") from None
 
         return avdtp.MediaPacket.from_bytes(packet)
 
@@ -216,7 +205,7 @@ class SignalingChannel(pyee.EventEmitter):
         logger.info(f"RTP channel queue cleared")
 
     async def accept_discover(self, seid_information: typing.List[av.SeidInformation]):
-        cmd = await self.expect_signal(av.DiscoverCommand(transaction_label=self.any))
+        cmd = await self.expect_signal(av.DiscoverCommand(transaction_label=ANY))
         self.send_signal(
             av.DiscoverResponse(transaction_label=cmd.transaction_label,
                                 seid_information=seid_information))
@@ -224,7 +213,7 @@ class SignalingChannel(pyee.EventEmitter):
     async def accept_get_all_capabilities(self,
                                           service_capabilities: typing.List[ServiceCapability]):
         cmd = await self.expect_signal(
-            av.GetAllCapabilitiesCommand(acp_seid=self.any, transaction_label=self.any))
+            av.GetAllCapabilitiesCommand(acp_seid=ANY, transaction_label=ANY))
         self.send_signal(
             av.GetAllCapabilitiesResponse(transaction_label=cmd.transaction_label,
                                           service_capabilities=service_capabilities))
@@ -232,35 +221,31 @@ class SignalingChannel(pyee.EventEmitter):
     async def accept_set_configuration(self,
                                        expected_configuration: typing.List[ServiceCapability]):
         cmd = await self.expect_signal(
-            av.SetConfigurationCommand(transaction_label=self.any,
-                                       acp_seid=self.any,
-                                       int_seid=self.any,
+            av.SetConfigurationCommand(transaction_label=ANY,
+                                       acp_seid=ANY,
+                                       int_seid=ANY,
                                        service_capabilities=expected_configuration))
         self.acp_seid = cmd.acp_seid
         self.int_seid = cmd.int_seid
         self.send_signal(SetConfigurationResponse(transaction_label=cmd.transaction_label))
 
     async def accept_open(self, timeout: float = 3.0):
-        cmd = await self.expect_signal(av.OpenCommand(transaction_label=self.any,
-                                                      acp_seid=self.any),
+        cmd = await self.expect_signal(av.OpenCommand(transaction_label=ANY, acp_seid=ANY),
                                        timeout=timeout)
         self.send_signal(av.OpenResponse(transaction_label=cmd.transaction_label))
 
     async def accept_start(self, timeout: float = 3.0):
-        cmd = await self.expect_signal(av.StartCommand(transaction_label=self.any,
-                                                       acp_seid=self.any),
+        cmd = await self.expect_signal(av.StartCommand(transaction_label=ANY, acp_seid=ANY),
                                        timeout=timeout)
         self.send_signal(av.StartResponse(transaction_label=cmd.transaction_label))
 
     async def accept_suspend(self, timeout: float = 3.0):
-        cmd = await self.expect_signal(av.SuspendCommand(transaction_label=self.any,
-                                                         acp_seid=self.any),
+        cmd = await self.expect_signal(av.SuspendCommand(transaction_label=ANY, acp_seid=ANY),
                                        timeout=timeout)
         self.send_signal(av.SuspendResponse(transaction_label=cmd.transaction_label))
 
     async def accept_close(self, timeout: float = 3.0):
-        cmd = await self.expect_signal(av.CloseCommand(transaction_label=self.any,
-                                                       acp_seid=self.any),
+        cmd = await self.expect_signal(av.CloseCommand(transaction_label=ANY, acp_seid=ANY),
                                        timeout=timeout)
         self.send_signal(av.CloseResponse(transaction_label=cmd.transaction_label))
 
@@ -283,14 +268,16 @@ class SignalingChannel(pyee.EventEmitter):
                     capability, av.DelayReportingCapability):
                 expected_configuration.append(capability)
             else:
-                expected_configuration.append(self.any)
+                expected_configuration.append(ANY)
 
         await self.accept_discover(seid_information)
         await self.accept_get_all_capabilities(service_capabilities)
         await self.accept_set_configuration(expected_configuration)
         await self.accept_open()
-
-        await asyncio.wait_for(avdtp_future, timeout=timeout)
+        try:
+            await asyncio.wait_for(avdtp_future, timeout=timeout)
+        except TimeoutError:
+            raise TimeoutError(f"TimeoutError while waiting for AVDTP stream to open") from None
 
     async def initiate_delay_report(self, delay_ms: int = 100, timeout: float = 3.0):
         delay_one_tenth = delay_ms * 10
@@ -301,8 +288,7 @@ class SignalingChannel(pyee.EventEmitter):
                                   acp_seid=self.acp_seid,
                                   delay_msb=delay_msb,
                                   delay_lsb=delay_lsb))
-        await self.expect_signal(av.DelayReportResponse(transaction_label=self.any),
-                                 timeout=timeout)
+        await self.expect_signal(av.DelayReportResponse(transaction_label=ANY), timeout=timeout)
 
     async def receive_audio_data(self, test_log_path: str, filename: str, duration_s: float = 1.0):
         """
