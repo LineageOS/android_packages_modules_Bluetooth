@@ -1478,6 +1478,28 @@ public class VolumeControlService extends ProfileService {
         }
     }
 
+    private void removeDeviceData(BluetoothDevice device) {
+        Log.d(TAG, "Remove data for device: " + device);
+
+        int groupId = getGroupId(device);
+
+        mAudioOffsets.remove(device);
+        mAudioInputs.remove(device);
+        mDeviceVolumeCache.remove(device);
+        mDeviceMuteCache.remove(device);
+
+        for (BluetoothDevice groupDevice : getGroupDevices(groupId)) {
+            if (mAdapterService.getBondState(groupDevice) != BOND_NONE) {
+                // Return if any device from group is BONDED or BONDING
+                return;
+            }
+        }
+
+        Log.d(TAG, "Remove group data for id: " + groupId);
+        mGroupVolumeCache.remove(groupId);
+        mGroupMuteCache.remove(groupId);
+    }
+
     /** Process a change in the bonding state for a device */
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
         mHandler.post(() -> bondStateChanged(device, toState));
@@ -1510,6 +1532,7 @@ public class VolumeControlService extends ProfileService {
                 return;
             }
             removeStateMachine(device);
+            removeDeviceData(device);
         }
     }
 
@@ -1557,6 +1580,7 @@ public class VolumeControlService extends ProfileService {
             if (bondState == BOND_NONE) {
                 Log.d(TAG, device + " is unbond. Remove state machine");
                 removeStateMachine(device);
+                removeDeviceData(device);
             }
         }
         mAdapterService.handleProfileConnectionStateChange(
