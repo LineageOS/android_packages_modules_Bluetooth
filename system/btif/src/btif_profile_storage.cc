@@ -421,9 +421,21 @@ void btif_storage_add_hearing_aid(const HearingDevice& dev_info) {
           [](const HearingDevice& dev_info) {
             std::string bdstr = dev_info.address.ToString();
             log::verbose("saving hearing aid device: {}", dev_info.address);
+            btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HEARING_AID_SERVICE_CHANGED_CCC_HANDLE,
+                                dev_info.service_changed_ccc_handle);
+            btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HEARING_AID_READ_PSM_HANDLE,
+                                dev_info.read_psm_handle);
             btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HEARING_AID_CAPABILITIES,
                                 dev_info.capabilities);
             btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HEARING_AID_CODECS, dev_info.codecs);
+            btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HEARING_AID_AUDIO_CONTROL_POINT,
+                                dev_info.audio_control_point_handle);
+            btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HEARING_AID_VOLUME_HANDLE,
+                                dev_info.volume_handle);
+            btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HEARING_AID_AUDIO_STATUS_HANDLE,
+                                dev_info.audio_status_handle);
+            btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HEARING_AID_AUDIO_STATUS_CCC_HANDLE,
+                                dev_info.audio_status_ccc_handle);
             btif_config_set_uint64(bdstr, BTIF_STORAGE_KEY_HEARING_AID_SYNC_ID,
                                    dev_info.hi_sync_id);
             btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HEARING_AID_RENDER_DELAY,
@@ -461,6 +473,37 @@ void btif_storage_load_bonded_hearing_aids() {
       codecs = value;
     }
 
+    uint16_t audio_control_point_handle = 0;
+    if (btif_config_get_int(name, BTIF_STORAGE_KEY_HEARING_AID_AUDIO_CONTROL_POINT, &value)) {
+      audio_control_point_handle = value;
+    }
+
+    uint16_t audio_status_handle = 0;
+    if (btif_config_get_int(name, BTIF_STORAGE_KEY_HEARING_AID_AUDIO_STATUS_HANDLE, &value)) {
+      audio_status_handle = value;
+    }
+
+    uint16_t audio_status_ccc_handle = 0;
+    if (btif_config_get_int(name, BTIF_STORAGE_KEY_HEARING_AID_AUDIO_STATUS_CCC_HANDLE, &value)) {
+      audio_status_ccc_handle = value;
+    }
+
+    uint16_t service_changed_ccc_handle = 0;
+    if (btif_config_get_int(name, BTIF_STORAGE_KEY_HEARING_AID_SERVICE_CHANGED_CCC_HANDLE,
+                            &value)) {
+      service_changed_ccc_handle = value;
+    }
+
+    uint16_t volume_handle = 0;
+    if (btif_config_get_int(name, BTIF_STORAGE_KEY_HEARING_AID_VOLUME_HANDLE, &value)) {
+      volume_handle = value;
+    }
+
+    uint16_t read_psm_handle = 0;
+    if (btif_config_get_int(name, BTIF_STORAGE_KEY_HEARING_AID_READ_PSM_HANDLE, &value)) {
+      read_psm_handle = value;
+    }
+
     uint64_t lvalue;
     uint64_t hi_sync_id = 0;
     if (btif_config_get_uint64(name, BTIF_STORAGE_KEY_HEARING_AID_SYNC_ID, &lvalue)) {
@@ -484,8 +527,10 @@ void btif_storage_load_bonded_hearing_aids() {
 
     // add extracted information to BTA Hearing Aid
     do_in_main_thread(Bind(&HearingAid::AddFromStorage,
-                           HearingDevice(bd_addr, capabilities, codecs, hi_sync_id, render_delay,
-                                         preparation_delay),
+                           HearingDevice(bd_addr, capabilities, codecs, audio_control_point_handle,
+                                         audio_status_handle, audio_status_ccc_handle,
+                                         service_changed_ccc_handle, volume_handle, read_psm_handle,
+                                         hi_sync_id, render_delay, preparation_delay),
                            is_acceptlisted));
   }
 }
@@ -493,8 +538,14 @@ void btif_storage_load_bonded_hearing_aids() {
 /** Deletes the bonded hearing aid device info from NVRAM */
 void btif_storage_remove_hearing_aid(const RawAddress& address) {
   std::string addrstr = address.ToString();
+  btif_config_remove(addrstr, BTIF_STORAGE_KEY_HEARING_AID_READ_PSM_HANDLE);
   btif_config_remove(addrstr, BTIF_STORAGE_KEY_HEARING_AID_CAPABILITIES);
   btif_config_remove(addrstr, BTIF_STORAGE_KEY_HEARING_AID_CODECS);
+  btif_config_remove(addrstr, BTIF_STORAGE_KEY_HEARING_AID_AUDIO_CONTROL_POINT);
+  btif_config_remove(addrstr, BTIF_STORAGE_KEY_HEARING_AID_VOLUME_HANDLE);
+  btif_config_remove(addrstr, BTIF_STORAGE_KEY_HEARING_AID_AUDIO_STATUS_HANDLE);
+  btif_config_remove(addrstr, BTIF_STORAGE_KEY_HEARING_AID_AUDIO_STATUS_CCC_HANDLE);
+  btif_config_remove(addrstr, BTIF_STORAGE_KEY_HEARING_AID_SERVICE_CHANGED_CCC_HANDLE);
   btif_config_remove(addrstr, BTIF_STORAGE_KEY_HEARING_AID_SYNC_ID);
   btif_config_remove(addrstr, BTIF_STORAGE_KEY_HEARING_AID_RENDER_DELAY);
   btif_config_remove(addrstr, BTIF_STORAGE_KEY_HEARING_AID_PREPARATION_DELAY);
