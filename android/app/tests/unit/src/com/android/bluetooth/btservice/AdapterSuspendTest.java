@@ -30,6 +30,8 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.hardware.devicestate.DeviceStateManager;
 import android.hardware.display.DisplayManager;
@@ -48,6 +50,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /** Test cases for {@link AdapterSuspend}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
@@ -57,6 +63,7 @@ public class AdapterSuspendTest {
 
     @Mock private AdapterNativeInterface mAdapterNativeInterface;
     @Mock private AdapterService mAdapterService;
+    @Mock private BluetoothDevice mBluetoothDevice;
 
     private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
     private final DeviceStateManager mDeviceStateManager =
@@ -107,5 +114,26 @@ public class AdapterSuspendTest {
         verify(mAdapterNativeInterface).clearEventFilter();
         verify(mAdapterNativeInterface).restoreFilterAcceptList();
         verify(mAdapterService).setScanMode(eq(SCAN_MODE_CONNECTABLE), eq("handleResume"));
+    }
+
+    @Test
+    public void testAudioReconnect() throws Exception {
+        List<BluetoothDevice> nullDevices = new ArrayList<>(Arrays.asList(null, null));
+        List<BluetoothDevice> activeDevices = new ArrayList<>(Arrays.asList(mBluetoothDevice));
+
+        // It's possible that getActiveDevices returns list of nulls.
+        // Make sure we save the actual active device, and not the nulls.
+        doReturn(nullDevices).when(mAdapterService).getActiveDevices(BluetoothProfile.A2DP);
+        doReturn(activeDevices).when(mAdapterService).getActiveDevices(BluetoothProfile.LE_AUDIO);
+        mAdapterSuspend.handleSuspend(true);
+
+        // It is possible to call handleSuspend twice.
+        // Make sure we don't accidentally overwrite the saved device with an empty list.
+        doReturn(nullDevices).when(mAdapterService).getActiveDevices(BluetoothProfile.LE_AUDIO);
+        mAdapterSuspend.handleSuspend(true);
+
+        // Verify we initiate reconnection attempt on resume.
+        mAdapterSuspend.handleResume();
+        verify(mAdapterService).connectAllEnabledProfiles(mBluetoothDevice);
     }
 }
