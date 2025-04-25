@@ -1057,6 +1057,70 @@ public class PairingTest {
         assertThat(sAdapter.getBondedDevices()).contains(mBumbleDevice);
     }
 
+    /**
+     * Ensure that bond loss handling is not enforced for temporarily paired devices
+     *
+     * <p>Prerequisites:
+     *
+     * <ol>
+     *   <li>Bumble and Android are not bonded
+     * </ol>
+     *
+     * <p>Steps:
+     *
+     * <ol>
+     *   <li>Create RFCOMM insecure socket between DUT and REF
+     *   <li>Connect DUT and REF over LE
+     *   <li>Disconnect LE
+     *   <li>Disconnect BR/EDR
+     *   <li>Initiate pairing from DUT
+     * </ol>
+     *
+     * <p>Expectation: Pairing should not be autonomously rejected
+     */
+    @Test
+    public void testTemporaryPaired_bondLoss_DutInitiate() throws Exception {
+        IntentReceiver intentReceiver =
+                new IntentReceiver.Builder(sTargetContext, BluetoothDevice.ACTION_ACL_DISCONNECTED)
+                        .build();
+
+        String deviceName = sAdapter.getName();
+        // set adapter name for verification
+        sAdapter.setName(CF_NAME);
+        testStep_Advertise(OwnAddressType.PUBLIC);
+        testStep_temporaryBond(intentReceiver);
+        ConnectLEResponse leConn =
+                testStep_CreateLeConnection(intentReceiver, OwnAddressType.PUBLIC);
+        // Disconnect Bumble
+        mBumble.hostBlocking()
+                .disconnect(
+                        DisconnectRequest.newBuilder()
+                                .setConnection(leConn.getConnection())
+                                .build());
+        // Wait for ACL to get disconnected
+        intentReceiver.verifyReceivedOrdered(
+                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
+
+        intentReceiver.verifyReceivedOrdered(
+                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+        // revert adapter name
+        sAdapter.setName(deviceName);
+        // delete keys at  bumble side
+        mBumble.hostBlocking().factoryReset(Empty.getDefaultInstance());
+        // Read fresh address
+        HostProto.ReadLocalAddressResponse readLocalAddressResponse =
+                mBumble.hostBlocking().readLocalAddress(Empty.getDefaultInstance());
+        mBumbleDevice =
+                sAdapter.getRemoteDevice(
+                        Utils.addressStringFromByteString(readLocalAddressResponse.getAddress()));
+        testStep_BondBredr(intentReceiver);
+        assertThat(sAdapter.getBondedDevices()).contains(mBumbleDevice);
+    }
+
     /** Helper/testStep functions goes here */
 
     /**
