@@ -21,14 +21,15 @@ import static com.google.common.truth.Truth.assertThat;
 import android.bluetooth.le.ScanFilter;
 import android.os.ParcelUuid;
 
+import androidx.test.runner.AndroidJUnit4;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 import java.util.UUID;
 
 /** Test cases for {@link MsftAdvMonitorMergedPatternList}. */
-@RunWith(JUnit4.class)
+@RunWith(AndroidJUnit4.class)
 public final class MsftAdvMonitorMergedPatternListTest {
     private static final ParcelUuid SERVICE_DATA_UUID =
             new ParcelUuid(UUID.fromString("01234567-890A-BCDE-F123-4567890ABCDE"));

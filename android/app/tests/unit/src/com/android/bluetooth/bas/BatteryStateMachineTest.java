@@ -40,6 +40,7 @@ import android.bluetooth.BluetoothDevice;
 import android.os.Looper;
 
 import androidx.test.filters.SmallTest;
+import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
 
@@ -47,12 +48,11 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 import org.mockito.Mock;
 
 /** Test cases for {@link BatteryStateMachine}. */
 @SmallTest
-@RunWith(JUnit4.class)
+@RunWith(AndroidJUnit4.class)
 public class BatteryStateMachineTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
