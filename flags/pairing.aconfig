@@ -300,3 +300,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "bonding_initiator_state_reset"
+    namespace: "bluetooth"
+    description: "Reset bonding initiator state only if both transports are disconnected"
+    bug: "413483250"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
