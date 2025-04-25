@@ -2395,21 +2395,12 @@ static PeriodicAdvertisingParameters parsePeriodicParams(JNIEnv* env, jobject i)
   return p;
 }
 
-static void ble_advertising_set_started_cb(int reg_id, int server_if, uint8_t advertiser_id,
-                                           int8_t tx_power, uint8_t status) {
-  std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
-  CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid() || !mAdvertiseCallbacksObj) {
-    return;
-  }
-
+static void ble_advertising_set_started_cb(int /*reg_id*/, int server_if, uint8_t advertiser_id,
+                                           int8_t /*tx_power*/, uint8_t status) {
   // tie advertiser ID to server_if, once the advertisement has started
   if (status == 0 /* AdvertisingCallback::AdvertisingStatus::SUCCESS */ && server_if != 0) {
     sPrivateGattServerManager->AssociateServerWithAdvertiser(server_if, advertiser_id);
   }
-
-  sCallbackEnv->CallVoidMethod(mAdvertiseCallbacksObj, method_onAdvertisingSetStarted, reg_id,
-                               advertiser_id, tx_power, status);
 }
 
 static void ble_advertising_set_timeout_cb(uint8_t advertiser_id, uint8_t status) {

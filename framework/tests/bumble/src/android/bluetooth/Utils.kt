@@ -24,6 +24,7 @@ import android.util.Log
 import com.google.common.io.BaseEncoding.base16
 import com.google.protobuf.ByteString
 import java.util.Locale
+import java.util.UUID
 import org.mockito.Mockito.any
 import org.mockito.Mockito.doAnswer
 import org.mockito.kotlin.whenever
@@ -32,6 +33,8 @@ fun Intent.getBluetoothDeviceExtra(): BluetoothDevice =
     this.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)!!
 
 object Utils {
+    const val TAG = "Utils"
+
     @JvmField val BUMBLE_DEVICE_NAME = "Bumble"
 
     @JvmField val BUMBLE_RANDOM_ADDRESS = "51:F7:A8:75:AC:5E"
@@ -45,6 +48,26 @@ object Utils {
     @JvmStatic
     fun addressBytesFromString(address: String): ByteArray {
         return base16().upperCase().withSeparator(":", 2).decode(address.uppercase(Locale.US))
+    }
+
+    @JvmStatic
+    fun uuidFromString(uuidString: String): UUID? {
+        val baseUuidPostfix = "-0000-1000-8000-00805F9B34FB"
+        return when (uuidString.length) {
+            4 -> {
+                UUID.fromString("0000$uuidString$baseUuidPostfix")
+            }
+            8 -> {
+                UUID.fromString("$uuidString$baseUuidPostfix")
+            }
+            36 -> {
+                UUID.fromString(uuidString)
+            }
+            else -> {
+                Log.w(TAG, "Invalid UUID string. Returning null")
+                null
+            }
+        }
     }
 
     fun intentLogger(tag: String, intent: Intent) {
