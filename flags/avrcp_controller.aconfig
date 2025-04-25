@@ -20,13 +20,3 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
-
-flag {
-    name: "associate_browse_l2cap_request_with_active_control_channel"
-    namespace: "bluetooth"
-    description: " Associate a browse l2cap channel connection with the control channel from that same device regardless of specified role"
-    bug: "373482555"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}

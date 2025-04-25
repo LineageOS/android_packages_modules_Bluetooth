@@ -170,15 +170,6 @@ void avct_bcb_unbind_disc(tAVCT_BCB* /* p_bcb */, tAVCT_LCB_EVT* p_data) {
  * Returns          Nothing.
  *
  ******************************************************************************/
-namespace {
-bool is_valid_role_check(const tAVCT_CCB* p_ccb) {
-  return com::android::bluetooth::flags::
-                         associate_browse_l2cap_request_with_active_control_channel()
-                 ? true
-                 : p_ccb->cc.role == AVCT_ROLE_ACCEPTOR;
-}
-}  // namespace
-
 void avct_bcb_open_ind(tAVCT_BCB* p_bcb, tAVCT_LCB_EVT* p_data) {
   tAVCT_CCB* p_ccb = &avct_cb.ccb[0];
   tAVCT_CCB* p_ccb_bind = nullptr;
@@ -193,7 +184,7 @@ void avct_bcb_open_ind(tAVCT_BCB* p_bcb, tAVCT_LCB_EVT* p_data) {
       p_ccb_bind = p_ccb;
       p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_BROWSE_CONN_CFM_EVT, 0,
                              &p_ccb->p_lcb->peer_addr);
-    } else if ((p_ccb->p_bcb == NULL) && is_valid_role_check(p_ccb) && (p_ccb->p_lcb != NULL) &&
+    } else if ((p_ccb->p_bcb == NULL) && (p_ccb->p_lcb != NULL) &&
                p_bcb->peer_addr == p_ccb->p_lcb->peer_addr) {
       /* if unbound acceptor and lcb allocated and bd_addr are the same for bcb
          and lcb */
