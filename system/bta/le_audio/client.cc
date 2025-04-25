@@ -321,23 +321,22 @@ public:
     std::strftime(ts, sizeof(ts), "%T", std::gmtime(&end_ts_.tv_sec));
 
     if (total_time_ < 900) {
-      stream << "[ 🌟 ";
+      stream << "[ 🌕 ";
     } else if (total_time_ < 1500) {
-      stream << "[ 🌤 ";
+      stream << "[ 🌔 ";
     } else if (total_time_ < 2500) {
-      stream << "[ 🌧 ";
+      stream << "[ 🌓 ";
     } else {
-      stream << "[ ❗ ";
+      stream << "[ 🌒 ";
     }
 
-    stream << ts << ": Gid: " << group_id_ << "(#" << num_of_devices_ << "), " << context_type_
-           << ", ";
+    stream << ts << ", gID:" << group_id_ << ", #dev:" << num_of_devices_ << ", " << context_type_;
     auto hal_idle = total_time_ - stream_setup_time_ - reconfig_time_;
     if (reconfig_time_ != 0) {
-      stream << "t:" << total_time_ << "ms (r:" << reconfig_time_ << "/s:" << stream_setup_time_
+      stream << ", t:" << total_time_ << "ms (r:" << reconfig_time_ << "/s:" << stream_setup_time_
              << "/hal:" << hal_idle << ")";
     } else {
-      stream << "t:" << total_time_ << "ms (hal:" << hal_idle << ")";
+      stream << ", t:" << total_time_ << "ms (hal:" << hal_idle << ")";
     }
     stream << "]";
   }
@@ -4373,47 +4372,50 @@ public:
              << ", data_interval_us: " << +conf.data_interval_us << "\n";
     };
 
-    stream << "\n";
-    stream << "  Speaker codec config (audio framework):\n";
+    stream << "  AF playback codec config:\n";
     stream << "\taudio sender state: " << audio_sender_state_ << "\n";
     config_printer(audio_framework_source_config);
 
-    stream << "  Microphone codec config (audio framework):\n";
+    stream << "  AF recording codec config:\n";
     stream << "\taudio receiver state: " << audio_receiver_state_ << "\n";
     config_printer(audio_framework_sink_config);
 
-    stream << "  Speaker codec config (SW encoder):\n";
-    config_printer(current_encoder_config_);
+    if (CodecManager::GetInstance()->GetCodecLocation() ==
+        bluetooth::le_audio::types::CodecLocation::HOST) {
+      stream << "  SW Encoding codec config:\n";
+      config_printer(current_encoder_config_);
 
-    stream << "  Microphone codec config (SW decoder):\n";
-    config_printer(current_decoder_config_);
+      stream << "  SW Decoding codec config:\n";
+      config_printer(current_decoder_config_);
+    }
   }
 
   void Dump(int fd) {
     std::stringstream stream;
 
-    stream << "  APP ID: " << +gatt_if_ << "\n";
+    stream << "  Active group (gID): " << +active_group_id_ << "\n";
+    stream << "  GATT App ID: " << +gatt_if_ << "\n";
     stream << "  TBS state: " << (in_call_ ? " In call" : "No calls") << "\n";
-    stream << "  Active group: " << +active_group_id_ << "\n";
     stream << "  Reconnection mode: "
            << (reconnection_mode_ == BTM_BLE_BKG_CONNECT_ALLOW_LIST ? "Allow List"
                                                                     : "Targeted Announcements")
            << "\n";
-    stream << "  Configuration: " << bluetooth::common::ToString(configuration_context_type_)
+    stream << "  Current scenario: " << bluetooth::common::ToString(configuration_context_type_)
            << " (" << loghex(static_cast<uint16_t>(configuration_context_type_)) << ")\n";
-    stream << "  Local source metadata context type mask: "
+    stream << "  Playback metadata context type mask: "
            << local_metadata_context_types_.source.to_string() << "\n";
-    stream << "  Local sink metadata context type mask: "
+    stream << "  Recording metadata context type mask: "
            << local_metadata_context_types_.sink.to_string() << "\n";
-    stream << "  Sink listening mode: " << (sink_monitor_mode_ ? "true" : "false") << "\n";
-    if (sink_monitor_notified_status_) {
-      stream << "  Local sink notified state: "
-             << static_cast<int>(sink_monitor_notified_status_.value()) << "\n";
-    }
-    stream << "  Source monitor mode: " << (source_monitor_mode_ ? "true" : "false") << "\n";
+
+    stream << "  Playback monitor mode: " << (source_monitor_mode_ ? "true" : "false") << "\n";
     if (source_monitor_notified_status_) {
-      dprintf(fd, "  Local source notified state: %d\n",
-              static_cast<int>(source_monitor_notified_status_.value()));
+      stream << "/r, notified state: " << static_cast<int>(source_monitor_notified_status_.value())
+             << "\n";
+    }
+    stream << "  Recording monitor mode: " << (sink_monitor_mode_ ? "true" : "false") << "\n";
+    if (sink_monitor_notified_status_) {
+      stream << "/r, notified state: " << static_cast<int>(sink_monitor_notified_status_.value())
+             << "\n";
     }
 
     auto codec_loc = CodecManager::GetInstance()->GetCodecLocation();
@@ -4430,14 +4432,14 @@ public:
       dprintf(fd, "  Codec location: UNKNOWN\n");
     }
 
+    printCurrentStreamConfiguration(stream);
     stream << "  Stream creation speed: ";
     for (auto t : stream_speed_history_) {
       t.Dump(stream);
-      stream << ",";
+      stream << "\n\t\t\t ";
     }
     stream << "\n";
-    printCurrentStreamConfiguration(stream);
-    stream << "\n";
+
     aseGroups_.Dump(stream, active_group_id_);
     stream << "\n ";
     stream << "  Not grouped devices:\n";

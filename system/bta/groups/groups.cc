@@ -378,7 +378,7 @@ void DeviceGroups::CleanUp(DeviceGroupsCallbacks* callbacks) {
 }
 
 std::ostream& operator<<(std::ostream& out, bluetooth::groups::DeviceGroup const& group) {
-  out << "    == Group id: " << group.group_id_ << " == \n"
+  out << "    == Group (gID): " << group.group_id_ << " == \n"
       << "      Uuid: " << group.group_uuid_ << std::endl;
   out << "      Devices:\n";
   for (auto const& addr : group.devices_) {

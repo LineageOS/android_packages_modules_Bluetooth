@@ -1821,7 +1821,7 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
     auto const strategy = utils::GetStrategyForAseConfig(ase_confs, device_cnt);
 
     log::debug(
-            "Number of devices: {}, number of ASEs: {},  Max ASE per device: {} "
+            "Number of devices: {}, number of cfg ASEs: {},  Max req ASE per device: {} "
             "config strategy: {}, group strategy: {}",
             device_cnt, ase_cnt, max_required_ase_per_dev, static_cast<int>(strategy),
             (int)required_snk_strategy);
@@ -2429,7 +2429,7 @@ void LeAudioDeviceGroup::PrintDebugState(void) const {
             << bluetooth::common::ToString(GetAllowedContextMask())
             << ", \n configuration context type: "
             << bluetooth::common::ToString(GetConfigurationContextType())
-            << ", \n active configuration name: " << (active_conf ? active_conf->name : " not set");
+            << ", \n active config: \"" << (active_conf ? active_conf->name : " not set") << "\"";
 
   if (cig.cises.size() > 0) {
     log::info("\n Allocated CISes: {}", static_cast<int>(cig.cises.size()));
@@ -2470,44 +2470,52 @@ void LeAudioDeviceGroup::Dump(std::stringstream& stream, int active_group_id) co
   bool is_active = (group_id_ == active_group_id);
   auto active_conf = GetActiveConfiguration();
 
-  stream << "    ■ Group id: " << group_id_ << ", " << (is_enabled_ ? "Enabled" : "Disabled")
+  stream << "    ■ Group (gID): " << group_id_ << ", " << (is_enabled_ ? "Enabled" : "Disabled")
          << ", " << (is_active ? "Active\n" : "Inactive\n") << "      Current state: " << GetState()
          << ",\ttarget state: " << GetTargetState() << ",\tcig state: " << cig.GetState() << "\n"
-         << std::format("      DSA mode: {}{}, is_active: {}\n", common::ToString(dsa_.mode),
-                        (dsa_.mode == DsaMode::DISABLED) ? ""
-                        : com::android::bluetooth::flags::dsa_use_codec_extensibility()
-                                ? " (codec extensibility)"
-                                : " (static)",
-                        dsa_.active)
-         << "      Group supported contexts: " << GetSupportedContexts() << "\n"
-         << "      Group available contexts: " << GetAvailableContexts() << "\n"
-         << "      Group user allowed contexts: " << GetAllowedContextMask() << "\n"
-         << "      Configuration context type: "
-         << bluetooth::common::ToString(GetConfigurationContextType()).c_str() << "\n"
-         << "      Active configuration name:\t" << (active_conf ? active_conf->name : "Not set")
-         << "\n"
-         << "      Stream configuration:\t\t"
-         << (stream_conf.conf != nullptr ? stream_conf.conf->name : "Not set ") << "\n"
-         << "      Codec ID: " << +(stream_conf.codec_id.coding_format)
-         << ",\tpending reconfiguration: " << stream_conf.pending_configuration << "\n"
          << "      Num of devices:\t" << Size() << " (" << NumOfConnected() << " connected)\n"
          << "      Num of sinks:\t" << stream_conf.stream_params.sink.num_of_devices << " ("
          << stream_conf.stream_params.sink.stream_config.stream_map.size() << " connected)\n"
          << "      Num of sources:\t" << stream_conf.stream_params.source.num_of_devices << " ("
-         << stream_conf.stream_params.source.stream_config.stream_map.size() << " connected)";
+         << stream_conf.stream_params.source.stream_config.stream_map.size() << " connected)\n"
+         << "      Group sink supported contexts:      "
+         << GetSupportedContexts(types::kLeAudioDirectionSink) << "\n"
+         << "      Group sink available contexts:      "
+         << GetAvailableContexts(types::kLeAudioDirectionSink) << "\n"
+         << "      Group sink user allowed contexts:   "
+         << GetAllowedContextMask(types::kLeAudioDirectionSink) << "\n"
+         << "      Group source supported contexts:    "
+         << GetSupportedContexts(types::kLeAudioDirectionSource) << "\n"
+         << "      Group source available contexts:    "
+         << GetAvailableContexts(types::kLeAudioDirectionSource) << "\n"
+         << "      Group source user allowed contexts: "
+         << GetAllowedContextMask(types::kLeAudioDirectionSource) << "\n"
+         << "      Configuration context type: "
+         << bluetooth::common::ToString(GetConfigurationContextType()).c_str() << "\n"
+         << "      Current Codec ID: " << +(stream_conf.codec_id.coding_format)
+         << ",\tpending reconfiguration: " << stream_conf.pending_configuration << "\n"
+         << "      Active config: \"" << (active_conf ? active_conf->name : "Not set") << "\"\n"
+         << "      Stream config: \""
+         << (stream_conf.conf != nullptr ? stream_conf.conf->name : "Not set") << "\"\n";
 
   if (GetFirstActiveDevice() != nullptr) {
     uint32_t sink_delay;
     if (GetPresentationDelay(&sink_delay, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
-      stream << "\n      presentation_delay for sink (speaker): " << sink_delay << " us";
+      stream << "      Presentation delay for playback (sink): " << sink_delay << " us\n";
     }
 
     uint32_t source_delay;
     if (GetPresentationDelay(&source_delay, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
-      stream << "\n      presentation_delay for source (microphone): " << source_delay << " us";
+      stream << "      Presentation delay for recording (source): " << source_delay << " us\n";
     }
   }
-  stream << "\n";
+
+  stream << std::format("      DSA mode: {}{}, is_active: {}\n", common::ToString(dsa_.mode),
+                        (dsa_.mode == DsaMode::DISABLED) ? ""
+                        : com::android::bluetooth::flags::dsa_use_codec_extensibility()
+                                ? " (codec extensibility)"
+                                : " (static)",
+                        dsa_.active);
 
   stream << "      == CISes (" << static_cast<int>(cig.cises.size()) << "):";
   if (cig.cises.size() > 0) {
