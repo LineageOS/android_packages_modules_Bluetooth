@@ -2131,6 +2131,7 @@ public class BassClientService extends ProfileService {
                 }
 
                 mSyncFailureCounter.clear();
+                mTimeoutHandler.stopAll(MESSAGE_SYNC_LOST_TIMEOUT);
 
                 printAllSyncData();
             } else {
