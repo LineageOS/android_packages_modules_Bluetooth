@@ -44,6 +44,7 @@ using bluetooth::packet::BitInserter;
 using testing::_;
 using testing::AtLeast;
 using testing::Return;
+using testing::Sequence;
 using testing::WithParamInterface;
 
 namespace {
@@ -587,7 +588,8 @@ struct CsModule {
     StartMeasurementTillSetProcedureParameters(params);
     EXPECT_CALL(mock_dm_callbacks_,
                 OnDistanceMeasurementStarted(params.responder_addr,
-                                             DistanceMeasurementMethod::METHOD_CS));
+                                             DistanceMeasurementMethod::METHOD_CS))
+            .RetiresOnSaturation();
 
     CsProcedureEnableCompleteEvent complete_event;
     test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
@@ -958,6 +960,38 @@ TEST_F(DistanceMeasurementManagerTest, procedure_enabled_after_stop) {
 
   EXPECT_EQ(enable_view.IsValid(), true);
   EXPECT_EQ(enable_view.GetProcedureEnable(), Enable::DISABLED);
+}
+
+TEST_F(DistanceMeasurementManagerTest, duplicated_requesting_session) {
+  StartMeasurementParameters params;
+  // first request
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+  cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
+  // second request
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+              OnDistanceMeasurementStarted(params.responder_addr, METHOD_CS))
+          .RetiresOnSaturation();
+  params.interval = 1000;
+  cs_requester_.StartMeasurement(params);
+  params.interval = 200;
+  cs_requester_.sync_client_handler();
+  cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
+
+  cs_requester_.dm_manager_->StopDistanceMeasurement(
+          params.responder_addr, params.connection_handle, DistanceMeasurementMethod::METHOD_CS);
+  // disable by stop request
+  CommandView command_view =
+          cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+  LeCsProcedureEnableView enable_view =
+          LeCsProcedureEnableView::Create(DistanceMeasurementCommandView::Create(command_view));
+  EXPECT_EQ(enable_view.IsValid(), true);
+  EXPECT_EQ(enable_view.GetProcedureEnable(), Enable::DISABLED);
+  cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
+
+  // start a new request after stop
+  cs_requester_.StartMeasurement(params);
+  cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+  cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
 }
 
 TEST_F(DistanceMeasurementManagerTest, b2b_conflict_before_requester_stop) {
