@@ -20,8 +20,7 @@ license {
 filegroup {
     name: "mmi2grpc",
     srcs: [
-        ":pandora-python-src",
-        ":pandora_experimental-python-src",
+        ":pandora_interfaces-python-src",
         "mmi2grpc/*.py",
     ],
 }

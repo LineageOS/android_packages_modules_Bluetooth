@@ -10,8 +10,7 @@ java_library {
         "//packages/modules/Bluetooth/framework/tests/metrics:__subpackages__",
     ],
     srcs: [
-        ":pandora-protos",
-        ":pandora_experimental-protos",
+        ":pandora_interfaces-protos",
     ],
     static_libs: [
         "grpc-java-lite",
@@ -23,7 +22,6 @@ java_library {
     ],
     proto: {
         include_dirs: [
-            "external/pandora/bt-test-interfaces",
             "external/protobuf/src",
             "packages/modules/Bluetooth/pandora/interfaces",
         ],
@@ -43,8 +41,7 @@ java_library {
     ],
     srcs: [
         ":libprotobuf-internal-protos",
-        ":pandora-protos",
-        "pandora/*.proto",
+        ":pandora_interfaces-protos",
     ],
     static_libs: [
         "libprotobuf-java-lite",
@@ -55,7 +52,6 @@ java_library {
         canonical_path_from_root: false,
         type: "lite",
         include_dirs: [
-            "external/pandora/bt-test-interfaces",
             "external/protobuf/src",
             "packages/modules/Bluetooth/pandora/interfaces",
         ],
@@ -63,7 +59,7 @@ java_library {
 }
 
 filegroup {
-    name: "pandora_experimental-protos",
+    name: "pandora_interfaces-protos",
     srcs: [
         "pandora/*.proto",
     ],
