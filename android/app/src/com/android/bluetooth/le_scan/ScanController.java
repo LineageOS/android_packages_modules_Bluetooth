@@ -501,8 +501,7 @@ public class ScanController {
         } catch (PendingIntent.CanceledException e) {
             final long token = Binder.clearCallingIdentity();
             try {
-                stopScan(client.mScannerId);
-                unregisterScanner(client.mScannerId);
+                handleDeadScanClient(client);
             } finally {
                 Binder.restoreCallingIdentity(token);
             }
@@ -705,7 +704,21 @@ public class ScanController {
         mScanManager.callbackDone(clientIf, status);
     }
 
-    ScanClient findBatchScanClientById(int scannerId) {
+    private ScanClient findScanClientById(int clientIf) {
+        for (ScanClient client : mScanManager.getRegularScanQueue()) {
+            if (client.mScannerId == clientIf) {
+                return client;
+            }
+        }
+        for (ScanClient client : mScanManager.getBatchScanQueue()) {
+            if (client.mScannerId == clientIf) {
+                return client;
+            }
+        }
+        return null;
+    }
+
+    private ScanClient findBatchScanClientById(int scannerId) {
         for (ScanClient client : mScanManager.getBatchScanQueue()) {
             if (client.mScannerId == scannerId) {
                 return client;
@@ -772,7 +785,8 @@ public class ScanController {
                     sendResultsByPendingIntent(
                             app.mInfo, permittedResults, ScanSettings.CALLBACK_TYPE_ALL_MATCHES);
                 } catch (PendingIntent.CanceledException e) {
-                    Log.d(TAG, "Exception while sending result", e);
+                    Log.e(TAG, "Error sending result via PendingIntent: " + e);
+                    handleDeadScanClient(client);
                 }
             }
         } else {
@@ -1036,7 +1050,11 @@ public class ScanController {
             try {
                 sendErrorByPendingIntent(app.mInfo, errorCode);
             } catch (PendingIntent.CanceledException e) {
-                Log.e(TAG, "Error sending error code via PendingIntent:" + e);
+                Log.e(TAG, "Error sending error code via PendingIntent: " + e);
+                ScanClient client = findScanClientById(scannerId);
+                if (client != null) {
+                    handleDeadScanClient(client);
+                }
             }
         }
     }
@@ -1423,24 +1441,10 @@ public class ScanController {
                             + mScannerId
                             + ")!");
 
-            ScanClient client = getScanClient(mScannerId);
+            ScanClient client = findScanClientById(mScannerId);
             if (client != null) {
                 handleDeadScanClient(client);
             }
-        }
-
-        private ScanClient getScanClient(int clientIf) {
-            for (ScanClient client : mScanManager.getRegularScanQueue()) {
-                if (client.mScannerId == clientIf) {
-                    return client;
-                }
-            }
-            for (ScanClient client : mScanManager.getBatchScanQueue()) {
-                if (client.mScannerId == clientIf) {
-                    return client;
-                }
-            }
-            return null;
         }
     }
 
