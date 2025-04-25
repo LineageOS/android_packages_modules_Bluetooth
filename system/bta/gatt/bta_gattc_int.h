@@ -251,7 +251,7 @@ typedef struct {
    * Properties */
   bool read_multiple_not_supported;
 
-  uint8_t srvc_hdl_chg;    /* service handle change indication pending */
+  bool srvc_hdl_chg;       /* service handle change indication pending */
   bool srvc_hdl_db_hash;   /* read db hash pending */
   uint8_t srvc_disc_count; /* current discovery retry count */
   uint16_t attr_index;     /* cache NV saving/loading attribute index */
