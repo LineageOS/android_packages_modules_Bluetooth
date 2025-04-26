@@ -273,11 +273,9 @@ public class AvrcpControllerNativeInterface {
 
     // JNI Helper functions to convert native objects to java.
     // Called within android/app/jni/com_android_bluetooth_avrcp_controller.cpp
-    static AvrcpItem createFromNativeMediaItem(
+    AvrcpItem createFromNativeMediaItem(
             byte[] address, long uid, int type, String name, int[] attrIds, String[] attrVals) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(getAddressStringFromByte(address));
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
         Log.d(
                 TAG,
                 "createFromNativeMediaItem:"
@@ -299,11 +297,9 @@ public class AvrcpControllerNativeInterface {
                 .build();
     }
 
-    static AvrcpItem createFromNativeFolderItem(
+    AvrcpItem createFromNativeFolderItem(
             byte[] address, long uid, int type, String name, int playable) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(getAddressStringFromByte(address));
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
         Log.d(
                 TAG,
                 "createFromNativeFolderItem:"
@@ -325,16 +321,14 @@ public class AvrcpControllerNativeInterface {
                 .build();
     }
 
-    static AvrcpPlayer createFromNativePlayerItem(
+    AvrcpPlayer createFromNativePlayerItem(
             byte[] address,
             int id,
             String name,
             byte[] transportFlags,
             int playStatus,
             int playerType) {
-        BluetoothDevice device =
-                AdapterService.getAdapterService()
-                        .getRemoteDevice(getAddressStringFromByte(address));
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
         Log.d(
                 TAG,
                 "createFromNativePlayerItem:"

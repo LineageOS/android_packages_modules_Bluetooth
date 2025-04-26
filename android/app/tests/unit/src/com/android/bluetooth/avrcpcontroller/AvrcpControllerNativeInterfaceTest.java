@@ -29,10 +29,8 @@ import android.support.v4.media.session.PlaybackStateCompat;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -48,20 +46,17 @@ public class AvrcpControllerNativeInterfaceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Mock private AdapterService mAdapterService;
 
+    private AvrcpControllerNativeInterface mNativeInterface;
+
     @Before
     public void setUp() {
-        TestUtils.setAdapterService(mAdapterService);
         when(mAdapterService.getRemoteDevice(anyString()))
                 .thenAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
                             return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
                         });
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        TestUtils.clearAdapterService(mAdapterService);
+        mNativeInterface = AvrcpControllerNativeInterface.getInstance(mAdapterService);
     }
 
     @Test
@@ -72,7 +67,7 @@ public class AvrcpControllerNativeInterfaceTest {
         String[] attrVals = new String[] {"test_title"};
 
         AvrcpItem item =
-                AvrcpControllerNativeInterface.createFromNativeMediaItem(
+                mNativeInterface.createFromNativeMediaItem(
                         REMOTE_DEVICE_ADDRESS_AS_ARRAY,
                         uid,
                         type,
@@ -97,7 +92,7 @@ public class AvrcpControllerNativeInterfaceTest {
         int playable = 0x01; // Playable folder
 
         AvrcpItem item =
-                AvrcpControllerNativeInterface.createFromNativeFolderItem(
+                mNativeInterface.createFromNativeFolderItem(
                         REMOTE_DEVICE_ADDRESS_AS_ARRAY, uid, type, folderName, playable);
 
         assertThat(item.getDevice().getAddress()).isEqualTo(REMOTE_DEVICE_ADDRESS);
@@ -118,7 +113,7 @@ public class AvrcpControllerNativeInterfaceTest {
         int playerType = AvrcpPlayer.TYPE_AUDIO; // No getter exists
 
         AvrcpPlayer player =
-                AvrcpControllerNativeInterface.createFromNativePlayerItem(
+                mNativeInterface.createFromNativePlayerItem(
                         REMOTE_DEVICE_ADDRESS_AS_ARRAY,
                         playerId,
                         name,
