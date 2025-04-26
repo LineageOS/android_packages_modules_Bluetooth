@@ -198,23 +198,23 @@ class GattTest(base_test.BaseTestClass):  # type: ignore[misc]
         # act: perform service discovery, disconnect, add the second service, reconnect, and try discovery again
         first_discovery = await dut_gatt.DiscoverServices(dut_connection_to_ref)
         await self.ref.aio.host.Disconnect(ref_connection_to_dut)
-        self.ref.device.add_service(Service(SERVICE_UUID_2, []))  # type:ignore
-        dut_connection_to_ref, _ = await self.connect_dut_to_ref()
-        second_discovery = await dut_gatt.DiscoverServices(dut_connection_to_ref)
 
         # assert: that we found only one service in the first discovery
         assert_in(SERVICE_UUID_1, (service.uuid for service in first_discovery.services))
         assert_not_in(SERVICE_UUID_2, (service.uuid for service in first_discovery.services))
+
+        self.ref.device.add_service(Service(SERVICE_UUID_2, []))  # type:ignore
+        dut_connection_to_ref, _ = await self.connect_dut_to_ref()
+        second_discovery = await dut_gatt.DiscoverServices(dut_connection_to_ref)
+
         # assert: but found both in the second discovery
         assert_in(SERVICE_UUID_1, (service.uuid for service in second_discovery.services))
         assert_in(SERVICE_UUID_2, (service.uuid for service in second_discovery.services))
 
     @avatar.asynchronous
     async def test_do_not_discover_when_bonded(self) -> None:
-        # NOTE: if service change indication is ever enabled in Bumble, both this test + the previous test must DISABLE IT
-        # otherwise this test will fail, and the previous test will pass even on a broken implementation
-
-        raise signals.TestSkip('TODO(aryarahul): b/276757181')
+        # NOTE: if service change indication is ever enabled in Bumble, both this test and `test_rediscover_whenever_unbonded`
+        # must DISABLE IT otherwise this test will fail, and the previous test will pass even on a broken implementation
         if not isinstance(self.ref, BumblePandoraDevice):
             raise signals.TestSkip('Test require Bumble as reference device(s)')
 
@@ -228,22 +228,25 @@ class GattTest(base_test.BaseTestClass):  # type: ignore[misc]
         # bond devices and disconnect
         await self.dut.aio.security.Secure(connection=dut_connection_to_ref, le=LE_LEVEL3)
         await self.ref.aio.host.Disconnect(ref_connection_to_dut)
+        await self.dut.aio.host.WaitDisconnection(connection=dut_connection_to_ref)
 
         # act: connect, perform service discovery, disconnect, add the second service, reconnect, and try discovery again
         dut_connection_to_ref, ref_connection_to_dut = await self.connect_dut_to_ref()
         first_discovery = await dut_gatt.DiscoverServices(dut_connection_to_ref)
         await self.ref.aio.host.Disconnect(ref_connection_to_dut)
+        await self.dut.aio.host.WaitDisconnection(connection=dut_connection_to_ref)
+
+        # assert: that we found only one service in the first discovery
+        assert_in(SERVICE_UUID_1, (service.uuid for service in first_discovery.services))
+        assert_not_in(SERVICE_UUID_2, (service.uuid for service in first_discovery.services))
 
         self.ref.device.add_service(Service(SERVICE_UUID_2, []))  # type:ignore
         dut_connection_to_ref, _ = await self.connect_dut_to_ref()
         second_discovery = await dut_gatt.DiscoverServices(dut_connection_to_ref)
 
-        # assert: that we found only one service in the first discovery
-        assert_in(SERVICE_UUID_1, (service.uuid for service in first_discovery.services))
-        assert_not_in(SERVICE_UUID_2, (service.uuid for service in first_discovery.services))
-        # assert: but found both in the second discovery
+        # assert: that we found only one service in the second discovery as well when it is bonded
         assert_in(SERVICE_UUID_1, (service.uuid for service in second_discovery.services))
-        assert_in(SERVICE_UUID_2, (service.uuid for service in second_discovery.services))
+        assert_not_in(SERVICE_UUID_2, (service.uuid for service in second_discovery.services))
 
     @avatar.asynchronous
     async def test_eatt_when_not_encrypted_no_timeout(self) -> None:

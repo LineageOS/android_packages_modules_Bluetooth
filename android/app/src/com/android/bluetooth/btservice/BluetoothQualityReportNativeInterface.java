@@ -39,15 +39,15 @@ public class BluetoothQualityReportNativeInterface {
 
     private final AdapterService mAdapterService;
 
-    private BluetoothQualityReportNativeInterface() {
-        mAdapterService = requireNonNull(AdapterService.getAdapterService());
+    private BluetoothQualityReportNativeInterface(AdapterService adapterService) {
+        mAdapterService = requireNonNull(adapterService);
     }
 
     /** Get singleton instance. */
-    public static BluetoothQualityReportNativeInterface getInstance() {
+    public static BluetoothQualityReportNativeInterface getInstance(AdapterService adapterService) {
         synchronized (INSTANCE_LOCK) {
             if (sInstance == null) {
-                sInstance = new BluetoothQualityReportNativeInterface();
+                sInstance = new BluetoothQualityReportNativeInterface(adapterService);
             }
             return sInstance;
         }

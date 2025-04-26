@@ -134,7 +134,7 @@ public class AvrcpControllerService extends ProfileService {
     }
 
     public AvrcpControllerService(AdapterService adapterService) {
-        this(adapterService, AvrcpControllerNativeInterface.getInstance());
+        this(adapterService, AvrcpControllerNativeInterface.getInstance(adapterService));
     }
 
     @VisibleForTesting

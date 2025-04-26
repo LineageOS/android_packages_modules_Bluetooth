@@ -240,6 +240,7 @@ flag {
 flag {
     name: "rssi_scan_filter"
     namespace: "bluetooth"
+    is_exported: true
     description: "Add RSSI ScanFilter"
     bug: "404986559"
 }
@@ -296,6 +297,26 @@ flag {
     namespace: "bluetooth"
     description: "Add support check for batch scans when scan starts"
     bug: "411519279"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "continue_queued_command_after_discovery"
+    namespace: "bluetooth"
+    description: "Execute enqueued command exiting discovery state"
+    bug: "411021422"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "service_rediscovery_fix"
+    namespace: "bluetooth"
+    description: "Fix handling service change with multiple reconnecting clients trying to discover services immediately after connection"
+    bug: "413723825"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

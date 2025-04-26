@@ -77,13 +77,13 @@ public class ContextMapTest {
     public void getAppMethods() {
         ContextMap<IBluetoothGattCallback> contextMap = getMapWithAppAndConnection();
         App contextMapById = contextMap.getById(APP_ID1);
-        assertThat(contextMapById.name).isEqualTo(APP_NAME);
+        assertThat(contextMapById.packageName).isEqualTo(APP_NAME);
         assertThat(contextMapById.callback).isEqualTo(mMockCallback);
         assertThat(contextMapById.uuid).isEqualTo(RANDOM_UUID1);
         App contextMapByUuid = contextMap.getByUuid(RANDOM_UUID1);
-        assertThat(contextMapByUuid.name).isEqualTo(APP_NAME);
+        assertThat(contextMapByUuid.packageName).isEqualTo(APP_NAME);
         App contextMapByConn = contextMap.getByConnId(CONN_ID1);
-        assertThat(contextMapByConn.name).isEqualTo(APP_NAME);
+        assertThat(contextMapByConn.packageName).isEqualTo(APP_NAME);
 
         List<Integer> ids = contextMap.getAllAppsIds();
         assertThat(ids).containsExactly(APP_ID1, APP_ID2);
@@ -104,12 +104,11 @@ public class ContextMapTest {
 
         List<ContextMap.Connection> connList = contextMap.getConnectionByApp(APP_ID1);
         assertThat(connList).hasSize(1);
-        assertThat(connList.get(0).connId).isEqualTo(CONN_ID1);
-        assertThat(connList.get(0).device).isEqualTo(mDevice1);
-        assertThat(connList.get(0).appId).isEqualTo(APP_ID1);
+        assertThat(connList.get(0).connId()).isEqualTo(CONN_ID1);
+        assertThat(connList.get(0).device()).isEqualTo(mDevice1);
+        assertThat(connList.get(0).appId()).isEqualTo(APP_ID1);
         assertThat(contextMap.getConnectionByApp(APP_ID2)).hasSize(1);
         assertThat(contextMap.getConnectionByApp(123456)).isEmpty();
-
         assertThat(contextMap.getConnectedMap())
                 .containsExactly(APP_ID1, mDevice1, APP_ID2, mDevice2);
     }

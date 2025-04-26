@@ -59,9 +59,6 @@ bool BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info);
 bool BTM_IsEncrypted(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 bool BTM_IsLinkKeyAuthed(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 bool BTM_IsAuthenticated(const RawAddress& bd_addr, tBT_TRANSPORT transport);
-bool BTM_CanReadDiscoverableCharacteristics(const RawAddress& bd_addr);
-void BTM_update_version_info(const RawAddress& bd_addr,
-                             const remote_version_info& remote_version_info);
 
 /*******************************************************************************
  *
@@ -709,6 +706,3 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported, bool sc_
  *
  ******************************************************************************/
 void btm_sec_cr_loc_oob_data_cback_event(const RawAddress& address, tSMP_LOC_OOB_DATA loc_oob_data);
-
-// Return DEV_CLASS of bda. If record doesn't exist, create one.
-DEV_CLASS btm_get_dev_class(const RawAddress& bda);

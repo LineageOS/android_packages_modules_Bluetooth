@@ -16,6 +16,7 @@
 
 package android.bluetooth.le;
 
+import android.annotation.FlaggedApi;
 import android.annotation.NonNull;
 import android.annotation.SystemApi;
 import android.app.compat.CompatChanges;
@@ -198,6 +199,8 @@ public final class ScanSettings implements Parcelable {
 
     private final int mPhy;
 
+    private final int mRssiThreshold;
+
     public int getScanMode() {
         return mScanMode;
     }
@@ -238,6 +241,11 @@ public final class ScanSettings implements Parcelable {
         return mPhy;
     }
 
+    @FlaggedApi(Flags.FLAG_RSSI_SCAN_FILTER)
+    public int getRssiThreshold() {
+        return mRssiThreshold;
+    }
+
     private ScanSettings(
             int scanMode,
             int callbackType,
@@ -246,7 +254,8 @@ public final class ScanSettings implements Parcelable {
             int matchMode,
             int numOfMatchesPerFilter,
             boolean legacy,
-            int phy) {
+            int phy,
+            int rssiThreshold) {
         mScanMode = scanMode;
         mCallbackType = callbackType;
         mScanResultType = scanResultType;
@@ -255,6 +264,7 @@ public final class ScanSettings implements Parcelable {
         mMatchMode = matchMode;
         mLegacy = legacy;
         mPhy = phy;
+        mRssiThreshold = rssiThreshold;
     }
 
     private ScanSettings(Parcel in) {
@@ -266,6 +276,7 @@ public final class ScanSettings implements Parcelable {
         mNumOfMatchesPerFilter = in.readInt();
         mLegacy = in.readInt() != 0;
         mPhy = in.readInt();
+        mRssiThreshold = in.readInt();
     }
 
     @Override
@@ -278,6 +289,7 @@ public final class ScanSettings implements Parcelable {
         dest.writeInt(mNumOfMatchesPerFilter);
         dest.writeInt(mLegacy ? 1 : 0);
         dest.writeInt(mPhy);
+        dest.writeInt(mRssiThreshold);
     }
 
     @Override
@@ -308,6 +320,7 @@ public final class ScanSettings implements Parcelable {
         private int mNumOfMatchesPerFilter = MATCH_NUM_MAX_ADVERTISEMENT;
         private boolean mLegacy = true;
         private int mPhy = BluetoothDevice.PHY_LE_1M;
+        private int mRssiThreshold = Byte.MIN_VALUE;
 
         // Instance initializer for mNumOfMatchesPerFilter
         {
@@ -466,6 +479,19 @@ public final class ScanSettings implements Parcelable {
         }
 
         /**
+         * Sets the RSSI threshold. When filtering by RSSI threshold, an advertisement will pass the
+         * filter only if its RSSI value is greater than or equal to the specified threshold.
+         *
+         * @param rssiThreshold the high threshold of RSSI value. The valid range is [-127, 126].
+         * @return this builder
+         */
+        @FlaggedApi(Flags.FLAG_RSSI_SCAN_FILTER)
+        public @NonNull Builder setRssiThreshold(int rssiThreshold) {
+            mRssiThreshold = rssiThreshold;
+            return this;
+        }
+
+        /**
          * Build {@link ScanSettings}.
          *
          * @throws IllegalArgumentException if the settings cannot be built.
@@ -485,7 +511,8 @@ public final class ScanSettings implements Parcelable {
                     mMatchMode,
                     mNumOfMatchesPerFilter,
                     mLegacy,
-                    mPhy);
+                    mPhy,
+                    mRssiThreshold);
         }
     }
 

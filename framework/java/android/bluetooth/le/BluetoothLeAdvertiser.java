@@ -218,6 +218,7 @@ public final class BluetoothLeAdvertiser {
             public void onAdvertisingSetStarted(
                     AdvertisingSet advertisingSet, int txPower, int status) {
                 if (status != AdvertisingSetCallback.ADVERTISE_SUCCESS) {
+                    mLegacyAdvertisers.remove(callback);
                     postStartFailure(callback, status);
                     return;
                 }

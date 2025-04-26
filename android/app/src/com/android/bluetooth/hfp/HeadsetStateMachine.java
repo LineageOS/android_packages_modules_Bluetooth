@@ -574,6 +574,11 @@ class HeadsetStateMachine extends StateMachine {
             mHasNrecEnabled = false;
             mHasSwbAptXEnabled = false;
 
+            if (mHeadsetService.mPendingScoConnection != null
+                    && mHeadsetService.mPendingScoConnection.equals(mDevice)) {
+                mHeadsetService.mPendingScoConnection = null;
+            }
+
             broadcastStateTransitions();
             logFailureIfNeeded();
 
@@ -1128,7 +1133,7 @@ class HeadsetStateMachine extends StateMachine {
                                         ? HeadsetHalConstants.AT_RESPONSE_OK
                                         : HeadsetHalConstants.AT_RESPONSE_ERROR,
                                 0);
-                        if (Utils.isScoManagedByAudioEnabled()) {
+                        if (mSystemInterface.isScoManagedByAudioEnabled()) {
                             mNativeInterface.startVoiceRecognition(mDevice, /* sendResult */ false);
                         }
                         break;
@@ -1232,6 +1237,9 @@ class HeadsetStateMachine extends StateMachine {
                         case HeadsetStackEvent.EVENT_TYPE_BIA:
                             updateAgIndicatorEnableState(
                                     (HeadsetAgIndicatorEnableState) event.valueObject);
+                            break;
+                        case HeadsetStackEvent.EVENT_TYPE_BCC:
+                            mHeadsetService.processAtBcc(event.device);
                             break;
                         default:
                             stateLogE("Unknown stack event: " + event);
@@ -1359,7 +1367,7 @@ class HeadsetStateMachine extends StateMachine {
                     break;
                 case CONNECT_AUDIO:
                     stateLogD("CONNECT_AUDIO, device=" + mDevice);
-                    if (Utils.isScoManagedByAudioEnabled()) {
+                    if (mSystemInterface.isScoManagedByAudioEnabled()) {
                         stateLogD("ScoManagedByAudioEnabled, BT does not CONNECT_AUDIO");
                         transitionTo(mAudioConnecting);
                         break;
@@ -1577,6 +1585,11 @@ class HeadsetStateMachine extends StateMachine {
                 } else {
                     Counter.logIncrement("bluetooth.value_cvsd_codec_usage_over_hfp");
                 }
+            }
+
+            if (mHeadsetService.mPendingScoConnection != null
+                    && mHeadsetService.mPendingScoConnection.equals(mDevice)) {
+                mHeadsetService.mPendingScoConnection = null;
             }
 
             setAudioParameters();
@@ -1894,7 +1907,7 @@ class HeadsetStateMachine extends StateMachine {
     }
 
     private void setAudioParameters() {
-        if (Utils.isScoManagedByAudioEnabled()) {
+        if (mSystemInterface.isScoManagedByAudioEnabled()) {
             Log.i(TAG, "isScoManagedByAudio enabled, do not setAudioParameters");
             return;
         }

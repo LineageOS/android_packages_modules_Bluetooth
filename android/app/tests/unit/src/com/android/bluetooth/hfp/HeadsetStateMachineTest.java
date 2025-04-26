@@ -48,10 +48,12 @@ import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.HandlerThread;
 import android.os.UserHandle;
+import android.platform.test.annotations.EnableFlags;
 import android.platform.test.annotations.RequiresFlagsDisabled;
 import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.platform.test.flag.junit.CheckFlagsRule;
 import android.platform.test.flag.junit.DeviceFlagsValueProvider;
+import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.CallLog;
 import android.provider.CallLog.Calls;
@@ -63,13 +65,10 @@ import android.test.mock.MockContentResolver;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.PhonePolicy;
 import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -86,11 +85,15 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
+import platform.test.runner.parameterized.Parameters;
+
 import java.util.ArrayList;
+import java.util.List;
 
 /** Test cases for {@link HeadsetStateMachine}. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
+@RunWith(ParameterizedAndroidJunit4.class)
 public class HeadsetStateMachineTest {
     private static final int CONNECT_TIMEOUT_TEST_MILLIS = 1000;
     private static final int CONNECT_TIMEOUT_TEST_WAIT_MILLIS = CONNECT_TIMEOUT_TEST_MILLIS * 3 / 2;
@@ -98,10 +101,19 @@ public class HeadsetStateMachineTest {
     private static final String TEST_PHONE_NUMBER = "1234567890";
     private static final int MAX_RETRY_DISCONNECT_AUDIO = 3;
 
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+    @Rule public final SetFlagsRule mSetFlagsRule;
 
     @Rule
     public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
+
+    @Parameters(name = "{0}")
+    public static List<FlagsParameterization> getParams() {
+        return FlagsParameterization.allCombinationsOf(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO);
+    }
+
+    public HeadsetStateMachineTest(FlagsParameterization flags) {
+        mSetFlagsRule = new SetFlagsRule(flags);
+    }
 
     private HandlerThread mHandlerThread;
     private HeadsetStateMachine mHeadsetStateMachine;
@@ -133,6 +145,7 @@ public class HeadsetStateMachineTest {
         // Stub system interface
         doReturn(mPhoneState).when(mSystemInterface).getHeadsetPhoneState();
         doReturn(mAudioManager).when(mSystemInterface).getAudioManager();
+        doReturn(false).when(mSystemInterface).isScoManagedByAudioEnabled();
         doReturn(true).when(mDatabaseManager).setAudioPolicyMetadata(any(), any());
         doReturn(true).when(mNativeInterface).connectHfp(mDevice);
         doReturn(true).when(mNativeInterface).disconnectHfp(mDevice);
@@ -559,9 +572,9 @@ public class HeadsetStateMachineTest {
      * ScoManagedByAudioEnabled
      */
     @Test
+    @EnableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testStateTransition_ConnectedToAudioConnecting_ConnectAudio_ScoManagedByAudio() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO);
-        Utils.setIsScoManagedByAudioEnabled(true);
+        doReturn(true).when(mSystemInterface).isScoManagedByAudioEnabled();
 
         setUpConnectedState();
         // Send CONNECT_AUDIO message
@@ -571,7 +584,6 @@ public class HeadsetStateMachineTest {
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
         assertThat(mHeadsetStateMachine.getCurrentState())
                 .isInstanceOf(HeadsetStateMachine.AudioConnecting.class);
-        Utils.setIsScoManagedByAudioEnabled(false);
     }
 
     /**
@@ -2050,9 +2062,9 @@ public class HeadsetStateMachineTest {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testSetAudioParameters_isScoManagedByAudio() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO);
-        Utils.setIsScoManagedByAudioEnabled(true);
+        doReturn(true).when(mSystemInterface).isScoManagedByAudioEnabled();
 
         setUpConnectedState();
         mHeadsetStateMachine.sendMessage(
@@ -2071,7 +2083,6 @@ public class HeadsetStateMachineTest {
                         mDevice));
 
         verify(mAudioManager, times(0)).setParameters(any());
-        Utils.setIsScoManagedByAudioEnabled(false);
     }
 
     /**

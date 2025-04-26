@@ -33,6 +33,7 @@ import android.bluetooth.OobData;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Looper;
 import android.os.Message;
 import android.os.UserHandle;
 import android.util.Log;
@@ -43,6 +44,7 @@ import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.hfpclient.HeadsetClientService;
@@ -100,6 +102,21 @@ final class BondStateMachine extends StateMachine {
     @VisibleForTesting Set<BluetoothDevice> mPendingBondedDevices = new HashSet<>();
 
     private BondStateMachine(
+            AdapterService service,
+            Looper looper,
+            AdapterProperties prop,
+            RemoteDevices remoteDevices) {
+        super("BondStateMachine:", looper);
+        addState(mStableState);
+        addState(mPendingCommandState);
+        mRemoteDevices = remoteDevices;
+        mAdapterService = service;
+        mAdapterProperties = prop;
+        mAdapter = BluetoothAdapter.getDefaultAdapter();
+        setInitialState(mStableState);
+    }
+
+    private BondStateMachine(
             AdapterService service, AdapterProperties prop, RemoteDevices remoteDevices) {
         super("BondStateMachine:");
         addState(mStableState);
@@ -112,9 +129,15 @@ final class BondStateMachine extends StateMachine {
     }
 
     public static BondStateMachine make(
-            AdapterService service, AdapterProperties prop, RemoteDevices remoteDevices) {
+            AdapterService service,
+            Looper looper,
+            AdapterProperties prop,
+            RemoteDevices remoteDevices) {
         Log.d(TAG, "make");
-        BondStateMachine bsm = new BondStateMachine(service, prop, remoteDevices);
+        BondStateMachine bsm =
+                Flags.bondStateMachineLooper()
+                        ? new BondStateMachine(service, looper, prop, remoteDevices)
+                        : new BondStateMachine(service, prop, remoteDevices);
         bsm.start();
         return bsm;
     }

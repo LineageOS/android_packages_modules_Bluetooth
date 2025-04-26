@@ -719,6 +719,10 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
               p_data->val.num <= BTA_AG_SCO_APTX_SWB_SETTINGS_Q3 ? BTHF_SWB_YES : BTHF_SWB_NO,
               &btif_hf_cb[idx].connected_bda);
       break;
+    case BTA_AG_AT_BCC_EVT:
+      log::info("Calling AtBccCallback for {}", btif_hf_cb[idx].connected_bda);
+      bt_hf_callbacks->AtBccCallback(&btif_hf_cb[idx].connected_bda);
+      break;
 
     default:
       log::warn("unhandled event {}", event);

@@ -98,7 +98,7 @@ public class HeadsetClientService extends ProfileService {
         mMinAmVcVol = mAudioManager.getStreamMinVolume(AudioManager.STREAM_VOICE_CALL);
 
         // Setup the JNI service
-        mNativeInterface = HeadsetClientNativeInterface.getInstance();
+        mNativeInterface = HeadsetClientNativeInterface.getInstance(mAdapterService);
         mNativeInterface.initialize();
 
         mBatteryManager = getSystemService(BatteryManager.class);

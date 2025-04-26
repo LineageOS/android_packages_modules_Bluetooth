@@ -1027,6 +1027,7 @@ impl<'a> Display for DisplayAddress<'a> {
     }
 }
 
+pub type AclLinkSpec = bindings::tAclLinkSpec;
 pub type OobData = bindings::bt_oob_data_s;
 
 /// An enum representing `bt_callbacks_t` from btif.
@@ -1042,15 +1043,7 @@ pub enum BaseCallbacks {
     BondState(BtStatus, RawAddress, BtBondState, i32),
     AddressConsolidate(RawAddress, RawAddress),
     LeAddressAssociate(RawAddress, RawAddress, u8),
-    AclState(
-        BtStatus,
-        RawAddress,
-        BtAclState,
-        BtTransport,
-        BtHciErrorCode,
-        BtConnectionDirection,
-        u16,
-    ),
+    AclState(BtStatus, AclLinkSpec, BtAclState, BtHciErrorCode, BtConnectionDirection, u16),
     ThreadEvent(BtThreadEvent),
     // Unimplemented so far:
     // dut_mode_recv_cb
@@ -1116,8 +1109,8 @@ cb_variant!(BaseCb, le_address_associate_cb -> BaseCallbacks::LeAddressAssociate
 cb_variant!(BaseCb, thread_evt_cb -> BaseCallbacks::ThreadEvent, u32 -> BtThreadEvent);
 
 cb_variant!(BaseCb, acl_state_cb -> BaseCallbacks::AclState,
-u32 -> BtStatus, *mut RawAddress, bindings::bt_acl_state_t -> BtAclState, i32 -> BtTransport, bindings::bt_hci_error_code_t -> BtHciErrorCode, bindings::bt_conn_direction_t -> BtConnectionDirection, u16 -> u16, {
-    let _1 = unsafe { *(_1 as *const RawAddress) };
+u32 -> BtStatus, *mut AclLinkSpec, bindings::bt_acl_state_t -> BtAclState, bindings::bt_hci_error_code_t -> BtHciErrorCode, bindings::bt_conn_direction_t -> BtConnectionDirection, u16 -> u16, {
+    let _1 = unsafe { *(_1 as *const AclLinkSpec) };
 });
 
 cb_variant!(BaseCb, generate_local_oob_data_cb -> BaseCallbacks::GenerateLocalOobData, u8, OobData -> Box::<OobData>);

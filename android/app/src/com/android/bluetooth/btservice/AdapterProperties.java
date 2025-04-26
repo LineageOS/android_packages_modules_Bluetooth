@@ -25,6 +25,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import static com.android.bluetooth.Utils.BD_ADDR_LEN;
+import static com.android.bluetooth.Utils.TYPED_BD_ADDR_LEN;
 
 import android.annotation.NonNull;
 import android.app.BroadcastOptions;
@@ -852,15 +853,7 @@ class AdapterProperties {
                         mUuids = Utils.byteArrayToUuid(val);
                         break;
                     case AbstractionLayer.BT_PROPERTY_ADAPTER_BONDED_DEVICES:
-                        int number = val.length / BD_ADDR_LEN;
-                        byte[] addrByte = new byte[BD_ADDR_LEN];
-                        for (int j = 0; j < number; j++) {
-                            System.arraycopy(val, j * BD_ADDR_LEN, addrByte, 0, BD_ADDR_LEN);
-                            onBondStateChanged(
-                                    mAdapter.getRemoteDevice(
-                                            Utils.getAddressStringFromByte(addrByte)),
-                                    BluetoothDevice.BOND_BONDED);
-                        }
+                        updateBondedDevices(val);
                         break;
                     case AbstractionLayer.BT_PROPERTY_ADAPTER_DISCOVERABLE_TIMEOUT:
                         mDiscoverableTimeout = Utils.byteArrayToInt(val, 0);
@@ -884,6 +877,30 @@ class AdapterProperties {
                         Log.e(TAG, "Property change not handled in Java land:" + type);
                 }
             }
+        }
+    }
+
+    private void updateBondedDevices(byte[] val) {
+        int number = val.length / TYPED_BD_ADDR_LEN;
+        int addressType;
+        byte[] addrByte = new byte[BD_ADDR_LEN];
+        for (int j = 0; j < number; j++) {
+            System.arraycopy(val, j * TYPED_BD_ADDR_LEN, addrByte, 0, BD_ADDR_LEN);
+            addressType = val[(j * TYPED_BD_ADDR_LEN) + BD_ADDR_LEN];
+            String address = Utils.getAddressStringFromByte(addrByte);
+
+            debugLog(
+                    "updateBondedDevices: Add device: "
+                            + BluetoothUtils.toAnonymizedAddress(address)
+                            + "["
+                            + Utils.addressTypeToString(addressType)
+                            + "]");
+
+            BluetoothDevice device =
+                    Flags.retainAddressType()
+                            ? mService.getRemoteDevice(address, addressType)
+                            : mAdapter.getRemoteDevice(address);
+            onBondStateChanged(device, BluetoothDevice.BOND_BONDED);
         }
     }
 

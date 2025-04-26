@@ -127,6 +127,27 @@ enum class UnicastMonitorModeStatus {
   STREAMING_REQUESTED_NO_CONTEXT_VALIDATE,
 };
 
+inline std::ostream& operator<<(std::ostream& os, const UnicastMonitorModeStatus& status) {
+  switch (status) {
+    case UnicastMonitorModeStatus::STREAMING_REQUESTED:
+      os << "STREAMING_REQUESTED";
+      break;
+    case UnicastMonitorModeStatus::STREAMING:
+      os << "STREAMING";
+      break;
+    case UnicastMonitorModeStatus::STREAMING_REQUESTED_NO_CONTEXT_VALIDATE:
+      os << "CONTEXT NOT AVAILABLE";
+      break;
+    case UnicastMonitorModeStatus::STREAMING_SUSPENDED:
+      os << "STREAMING_SUSPENDED";
+      break;
+    default:
+      os << "UNKNOWN";
+      break;
+  }
+  return os;
+}
+
 typedef enum {
   LE_AUDIO_CODEC_INDEX_SOURCE_LC3 = 0,
   LE_AUDIO_CODEC_INDEX_SOURCE_INVALID = 1000 * 1000,
@@ -607,4 +628,6 @@ struct formatter<bluetooth::le_audio::btle_audio_frame_duration_index_t>
 template <>
 struct formatter<bluetooth::le_audio::GroupStreamStatus>
     : enum_formatter<bluetooth::le_audio::GroupStreamStatus> {};
+template <>
+struct formatter<bluetooth::le_audio::UnicastMonitorModeStatus> : ostream_formatter {};
 }  // namespace std

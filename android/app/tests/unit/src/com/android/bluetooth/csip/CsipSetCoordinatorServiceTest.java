@@ -38,9 +38,9 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
@@ -106,12 +106,12 @@ public class CsipSetCoordinatorServiceTest {
     private CsipSetCoordinatorService mService;
     private InOrder mInOrder;
     private TestLooper mLooper;
-    private final CsipSetCoordinatorNativeInterface mNativeCallback =
-            new CsipSetCoordinatorNativeInterface();
+    private CsipSetCoordinatorNativeInterface mNativeCallback;
 
     @Before
     public void setUp() throws Exception {
         TestUtils.setAdapterService(mAdapterService);
+        mNativeCallback = new CsipSetCoordinatorNativeInterface(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService).getBondState(any());
         doReturn(new ParcelUuid[] {BluetoothUuid.COORDINATED_SET})

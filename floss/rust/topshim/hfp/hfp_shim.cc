@@ -267,6 +267,8 @@ public:
     log::warn("AT+BIA=,,{},{},{},{},from addr {}", service, signal, roam, battery, *bd_addr);
   }
 
+  void AtBccCallback(RawAddress* bd_addr) override { log::warn("AT+BCC from addr {}", *bd_addr); }
+
   void DebugDumpCallback(bool active, uint16_t codec_id, int total_num_decoded_frames,
                          double packet_loss_ratio, uint64_t begin_ts, uint64_t end_ts,
                          const char* pkt_status_in_hex, const char* pkt_status_in_binary) override {

@@ -57,7 +57,7 @@ public class LeAdvertisingTest {
     @Rule public final PandoraDevice mBumble = new PandoraDevice();
 
     @Test
-    @Ignore("b/343525982: Remove hidden api's dependencies to enable the test.")
+    @Ignore("b/343749428: Remove hidden api's dependencies to enable the test.")
     public void advertisingSet() throws Exception {
         Pair<String, Integer> addressPair = startAdvertising().join();
         ScanningResponse response = scanWithBumble(addressPair);

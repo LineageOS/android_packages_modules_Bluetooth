@@ -1043,7 +1043,6 @@ void btif_hh_load_bonded_dev(const tAclLinkSpec& link_spec_ref, tBTA_HH_ATTR_MAS
     log::warn("Resolving link spec {} transport to BREDR/LE", link_spec);
     btif_hh_transport_select(link_spec);
     reconnect_allowed = true;
-    btif_storage_set_hid_connection_policy(link_spec, reconnect_allowed);
 
     // remove and re-write the hid info
     btif_storage_remove_hid_info(link_spec);
@@ -1051,6 +1050,7 @@ void btif_hh_load_bonded_dev(const tAclLinkSpec& link_spec_ref, tBTA_HH_ATTR_MAS
                                      dscp_info.product_id, dscp_info.version, dscp_info.ctry_code,
                                      dscp_info.ssr_max_latency, dscp_info.ssr_min_tout,
                                      dscp_info.descriptor.dl_len, dscp_info.descriptor.dsc_list);
+    btif_storage_set_hid_connection_policy(link_spec, reconnect_allowed);
   }
 
   if (hh_add_device(link_spec, attr_mask, reconnect_allowed)) {

@@ -374,6 +374,7 @@ typedef enum : uint8_t {
   BTA_AG_AT_BIND_EVT = 28, /* HF indicator */
   BTA_AG_AT_BIEV_EVT = 29, /* HF indicator updates from peer */
   BTA_AG_AT_BIA_EVT = 32,  /* AG indicator activation event from peer */
+  BTA_AG_AT_BCC_EVT = 33,  /* Audio connection setup by HF */
 } tBTA_AG_EVT;
 
 /* data associated with most non-AT events */

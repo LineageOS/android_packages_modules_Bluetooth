@@ -1340,6 +1340,7 @@ protected:
       group->ClearStreamingMetadataContexts();
       group->SetState(group->GetTargetState());
       state_machine_callbacks_->StatusReportCb(group->group_id_, GroupStreamStatus::SUSPENDED);
+      SyncOnMainLoop();
     });
 
     ON_CALL(mock_state_machine_, ProcessHciNotifAclDisconnected(_, _))
@@ -1468,18 +1469,25 @@ protected:
       group->SetTargetState(types::AseState::BTA_LE_AUDIO_ASE_STATE_IDLE);
       group->SetState(types::AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING);
       state_machine_callbacks_->StatusReportCb(group->group_id_, GroupStreamStatus::RELEASING);
+      SyncOnMainLoop();
 
       if (stay_at_releasing_stop_stream) {
         log::info("StopStream {} -> stay in Releasing state", group->group_id_);
         return;
       }
-      group->SetState(group->GetTargetState());
 
+      // Note: Group is set to IDLE on LeAudioGroupStateMachineImpl::ProcessHciNotifCisDisconnected
+      //       - simulate event on the main loop thread
       do_in_main_thread(base::BindOnce(
-              [](bluetooth::le_audio::LeAudioGroupStateMachine::Callbacks* cb, int group_id) {
+              [](bluetooth::le_audio::LeAudioGroupStateMachine::Callbacks* cb, int group_id,
+                 LeAudioDeviceGroup* group) {
+                // We should probably pass group_id and retrieve back the group here
+                if (!LeAudioClient::Get()->GetGroupDevices(group_id).empty()) {
+                  group->SetState(group->GetTargetState());
+                }
                 cb->StatusReportCb(group_id, GroupStreamStatus::IDLE);
               },
-              state_machine_callbacks_, group->group_id_));
+              state_machine_callbacks_, group->group_id_, group));
     });
   }
 
@@ -1579,6 +1587,7 @@ protected:
   }
 
   void TearDown() override {
+    SyncOnMainLoop();
     // WARNING: Message loop cleanup should wait for all the 'till now' scheduled calls
     // so it should be called right at the very begginning of teardown.
     cleanup_message_loop_thread();
@@ -1771,6 +1780,10 @@ protected:
   void SyncOnMainLoop() {
     // Wait for the main loop to flush
     // WARNING: Not tested with Timers pushing periodic tasks to the main loop
+    if (message_loop_thread.GetThreadId() == base::PlatformThread::CurrentId()) {
+      log::warn("Tried syncing on the main loop from inside the main loop thread.");
+      return;
+    }
     while (num_async_tasks > 0) {
     }
   }
@@ -2005,6 +2018,12 @@ protected:
       ASSERT_NE(nullptr, unicast_sink_hal_cb_);
       unicast_sink_hal_cb_->OnAudioMetadataUpdate(std::move(tracks_vec));
     }
+  }
+
+  void UpdateLocalSourceEmptyMetadata(DsaMode dsa_mode = DsaMode::DISABLED) {
+    std::vector<playback_track_metadata_v7> empty_tracks = {};
+    ASSERT_NE(nullptr, unicast_source_hal_cb_);
+    unicast_source_hal_cb_->OnAudioMetadataUpdate(std::move(empty_tracks), dsa_mode);
   }
 
   void UpdateLocalSinkEmptyMetadata(void) {
@@ -2925,13 +2944,13 @@ protected:
   }
 
   void TearDown() override {
+    SyncOnMainLoop();
     MockCodecInterface::ClearMockInstanceHookList();
 
     // Clear the default actions before the parent class teardown is called
     Mock::VerifyAndClear(&mock_btm_interface_);
     Mock::VerifyAndClear(&mock_gatt_interface_);
     Mock::VerifyAndClear(&mock_audio_hal_client_callbacks_);
-    groups.clear();
     UnicastTestNoInit::TearDown();
   }
 
@@ -6469,11 +6488,7 @@ TEST_F(UnicastTest, DisconnecteWhileAlmostStreaming_twoDevices) {
               OnConnectionState(ConnectionState::DISCONNECTED, test_address1))
           .Times(1);
 
-  do_in_main_thread(base::BindOnce(
-          [](bluetooth::le_audio::LeAudioGroupStateMachine::Callbacks* cb, int group_id) {
-            cb->StatusReportCb(group_id, GroupStreamStatus::IDLE);
-          },
-          state_machine_callbacks_, group_id));
+  state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::IDLE);
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 }
@@ -6930,6 +6945,99 @@ TEST_F(UnicastTest, TestUnidirectionalGameAndLiveRecordingMicOnlyDev) {
   LocalAudioSinkSuspend();
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_state_machine_);
+}
+
+TEST_F(UnicastTest, TestUnidirectionalMediaAndUnsupportedLive) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  int group_id = bluetooth::groups::kGroupUnknown;
+
+  /**
+   * Scenario test steps
+   * 1. Configure group to support MEDIA | CONVERSATIONAL | UNSPECIFIED
+   * 2. Start a MEDIA
+   * 3. Start recording during MEDIA playback
+   */
+
+  available_snk_context_types_ =
+          (types::LeAudioContextType::CONVERSATIONAL | types::LeAudioContextType::MEDIA |
+           types::LeAudioContextType::UNSPECIFIED)
+                  .value();
+  supported_snk_context_types_ = available_snk_context_types_;
+  available_src_context_types_ = available_snk_context_types_;
+  supported_src_context_types_ = available_src_context_types_;
+
+  // Setup
+  default_channel_cnt = 1;
+  SampleDatabaseParameters db_params{
+          .conn_id = 1,
+          .addr = test_address0,
+          .sink_audio_allocation = codec_spec_conf::kLeAudioLocationFrontLeft,
+          .source_audio_allocation = codec_spec_conf::kLeAudioLocationFrontLeft,
+          .sink_channel_cnt = 0x01,
+          .source_channel_cnt = 0x01,
+          .sample_freq_mask = le_audio::codec_spec_caps::kLeAudioSamplingFreq32000Hz,
+          .add_csis = false,
+          .add_cas = false,
+          .add_pacs = true,
+          .add_ascs_cnt = 1,
+          .set_size = 0,
+          .rank = 0,
+          .gatt_status = GATT_SUCCESS,
+          .max_supported_codec_frames_per_sdu = 1,
+  };
+  SetSampleDatabaseEarbudsValid(db_params);
+
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::CONNECTED, test_address0))
+          .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
+          .WillOnce(DoAll(SaveArg<1>(&group_id)));
+
+  types::BidirectionalPair<types::AudioContexts> expected_metadata_contexts = {
+          .sink = types::AudioContexts(types::LeAudioContextType::MEDIA),
+          .source = types::AudioContexts(types::LeAudioContextType::UNSPECIFIED)};
+  EXPECT_CALL(mock_state_machine_,
+              StartStream(_, types::LeAudioContextType::LIVE, expected_metadata_contexts, _))
+          .Times(1);
+
+  log::info("Connecting LeAudio to {}", test_address0);
+  ConnectLeAudio(test_address0);
+  ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
+
+  // Both audio sessions are always started to monitor the metadata (even for mic only devices)
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
+
+  EXPECT_CALL(*mock_codec_manager_,
+              UpdateActiveUnicastAudioHalClient(mock_le_audio_source_hal_client_,
+                                                mock_le_audio_sink_hal_client_, true))
+          .Times(1);
+
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+
+  // Configure MEDIA scenario, with LIVE on local sink
+  UpdateLocalSourceMetadata(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC);
+  UpdateLocalSinkMetadata(AUDIO_SOURCE_MIC);
+  LocalAudioSinkResume();
+  SyncOnMainLoop();
+
+  LocalAudioSourceResume();
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_sink_hal_client_);
+  Mock::VerifyAndClearExpectations(mock_codec_manager_);
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+  SyncOnMainLoop();
+
+  // Verify Data transfer on local audio source and sink
+  uint8_t cis_count_out = 1;
+  uint8_t cis_count_in = 1;
+  TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920, 40);
+  SyncOnMainLoop();
 }
 
 TEST_F(UnicastTest, TestUnidirectionalVoiceAssistant_Sink) {
@@ -10785,6 +10893,7 @@ TEST_F(UnicastTest, MicrophoneAttachToCurrentMediaScenario) {
 
   // Update metadata on local audio sink
   UpdateLocalSinkMetadata(AUDIO_SOURCE_MIC);
+  SyncOnMainLoop();
 
   // Resume on local audio sink
   ASSERT_NE(unicast_sink_hal_cb_, nullptr);
@@ -11944,6 +12053,116 @@ TEST_F(UnicastTest, EmptyLocalSinkMetadataDuringLocalSourceStream) {
   Mock::VerifyAndClearExpectations(&mock_state_machine_);
 }
 
+TEST_F(UnicastTest, StopMediaBlockMediaStartSoundEffect) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  int group_id = bluetooth::groups::kGroupUnknown;
+  uint16_t conn_id = 1;
+
+  /* Scenario:
+   * 1. Start and Stop Media
+   * 2. Remove Media and Soundeffect From Available contexts
+   * 3. Start SoundEffect -> This should be blocked
+   * 4. Start Media -> This should be notified up
+   *
+   */
+  available_snk_context_types_ =
+          (types::LeAudioContextType::MEDIA | types::LeAudioContextType::SOUNDEFFECTS |
+           types::LeAudioContextType::UNSPECIFIED)
+                  .value();
+  available_src_context_types_ = available_snk_context_types_;
+  supported_snk_context_types_ = available_snk_context_types_;
+  supported_src_context_types_ = available_src_context_types_;
+
+  SetSampleDatabaseEarbudsValid(conn_id, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+                                codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt,
+                                default_channel_cnt, 0x0004, false /*add_csis*/, true /*add_cas*/,
+                                true /*add_pacs*/, default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/,
+                                0 /*rank*/);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::CONNECTED, test_address0))
+          .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
+          .WillOnce(DoAll(SaveArg<1>(&group_id)));
+
+  ConnectLeAudio(test_address0);
+  ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
+
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
+  types::BidirectionalPair<types::AudioContexts> metadata = {
+          .sink = types::AudioContexts(types::LeAudioContextType::MEDIA),
+          .source = types::AudioContexts()};
+  EXPECT_CALL(mock_state_machine_, StartStream(_, types::LeAudioContextType::MEDIA, metadata, _))
+          .Times(1);
+
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+
+  log::debug("Start stream with MEDIA");
+  StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_UNKNOWN, group_id);
+  SyncOnMainLoop();
+
+  LeAudioClient::Get()->SetUnicastMonitorMode(bluetooth::le_audio::types::kLeAudioDirectionSource,
+                                              true);
+
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+
+  // Verify Data transfer on one audio source cis
+  uint8_t cis_count_out = 1;
+  uint8_t cis_count_in = 0;
+  TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920);
+
+  log::debug("Inject available context types");
+  auto new_sink_available_context = types::AudioContexts(types::LeAudioContextType::UNSPECIFIED);
+  InjectAvailableContextTypes(test_address0, 1, new_sink_available_context,
+                              AudioContexts(available_src_context_types_));
+  SyncOnMainLoop();
+
+  log::debug("Inject Local Source tracks 0 and stop stream");
+  UpdateLocalSourceEmptyMetadata();
+  LocalAudioSourceSuspend();
+
+  // simulate suspend timeout passed, alarm executing
+  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  SyncOnMainLoop();
+
+  // Allow only MEDIA
+  int allowed_contexts = static_cast<int>(types::LeAudioContextType::MEDIA);
+  LeAudioClient::Get()->SetGroupAllowedContextMask(group_id, allowed_contexts, allowed_contexts);
+  EXPECT_CALL(mock_state_machine_, StartStream(_, _, _, _)).Times(0);
+
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnUnicastMonitorModeStatus(
+                      bluetooth::le_audio::types::kLeAudioDirectionSource,
+                      UnicastMonitorModeStatus::STREAMING_REQUESTED_NO_CONTEXT_VALIDATE))
+          .Times(0);
+  log::debug("Inject Soundeffect");
+  UpdateLocalSourceMetadata(AUDIO_USAGE_ASSISTANCE_SONIFICATION, AUDIO_CONTENT_TYPE_SONIFICATION);
+  SyncOnMainLoop();
+  LocalAudioSourceResume(false, true);
+
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+
+  log::debug("Start MEDIA");
+  EXPECT_CALL(mock_state_machine_, StartStream(_, _, _, _)).Times(0);
+
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnUnicastMonitorModeStatus(
+                      bluetooth::le_audio::types::kLeAudioDirectionSource,
+                      UnicastMonitorModeStatus::STREAMING_REQUESTED_NO_CONTEXT_VALIDATE))
+          .Times(1);
+  log::debug("Inject Soundeffect");
+  UpdateLocalSourceMetadata(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_UNKNOWN);
+  SyncOnMainLoop();
+  LocalAudioSourceResume(false, true);
+
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+}
+
 TEST_F(UnicastTest, UnidirectionalGameContextRequestedFromAudioFramework) {
   const RawAddress test_address0 = GetTestAddress(0);
   int group_id = bluetooth::groups::kGroupUnknown;
@@ -12740,81 +12959,98 @@ TEST_F(UnicastTest, GroupStreamStatus) {
 
   InSequence s;
 
-  /* Check if all states are properly notified */
+  /* Check if all states are properly notified
+   * Note: All GroupStreamStatus should be reported to the upper layer as either IDLE or STREAMING
+   */
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id, GroupStreamStatus::IDLE))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::IDLE);
+  SyncOnMainLoop();
 
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id, GroupStreamStatus::STREAMING))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::STREAMING);
+  SyncOnMainLoop();
 
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id, GroupStreamStatus::IDLE))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::RELEASING);
+  SyncOnMainLoop();
 
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id, GroupStreamStatus::STREAMING))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::STREAMING);
+  SyncOnMainLoop();
 
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id, GroupStreamStatus::IDLE))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::RELEASING_AUTONOMOUS);
+  SyncOnMainLoop();
 
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id, GroupStreamStatus::STREAMING))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::STREAMING);
+  SyncOnMainLoop();
 
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id, GroupStreamStatus::IDLE))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::SUSPENDING);
+  SyncOnMainLoop();
 
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id, GroupStreamStatus::STREAMING))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::STREAMING);
+  SyncOnMainLoop();
 
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id, GroupStreamStatus::IDLE))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::SUSPENDED);
+  SyncOnMainLoop();
 
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id, GroupStreamStatus::STREAMING))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::STREAMING);
+  SyncOnMainLoop();
 
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id, GroupStreamStatus::IDLE))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::CONFIGURED_AUTONOMOUS);
+  SyncOnMainLoop();
 
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id, GroupStreamStatus::STREAMING))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::STREAMING);
+  SyncOnMainLoop();
 
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id, GroupStreamStatus::IDLE))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::CONFIGURED_BY_USER);
+  SyncOnMainLoop();
 
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id, GroupStreamStatus::STREAMING))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::STREAMING);
+  SyncOnMainLoop();
 
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id, GroupStreamStatus::IDLE))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::DESTROYED);
+  SyncOnMainLoop();
 
   /* Check if there are no resending of the same state */
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::RELEASING);
@@ -12823,12 +13059,14 @@ TEST_F(UnicastTest, GroupStreamStatus) {
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::CONFIGURED_AUTONOMOUS);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::CONFIGURED_BY_USER);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::IDLE);
+  SyncOnMainLoop();
 
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id, GroupStreamStatus::STREAMING))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::STREAMING);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::STREAMING);
+  SyncOnMainLoop();
 }
 
 TEST_F(UnicastTest, GroupStreamStatusManyGroups) {
@@ -12876,12 +13114,14 @@ TEST_F(UnicastTest, GroupStreamStatusManyGroups) {
               OnGroupStreamStatus(group_id_1, GroupStreamStatus::IDLE))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id_1, GroupStreamStatus::IDLE);
+  SyncOnMainLoop();
 
   // Group 2 IDLE
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id_2, GroupStreamStatus::IDLE))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id_2, GroupStreamStatus::IDLE);
+  SyncOnMainLoop();
 
   log::info("Group 1 active and start streaming");
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
@@ -12955,12 +13195,14 @@ TEST_F(UnicastTest, GroupStreamStatusManyGroups_GettingConfigWhileOtherGroupIsSt
               OnGroupStreamStatus(group_id_1, GroupStreamStatus::IDLE))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id_1, GroupStreamStatus::IDLE);
+  SyncOnMainLoop();
 
   // Group 2 IDLE
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id_2, GroupStreamStatus::IDLE))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id_2, GroupStreamStatus::IDLE);
+  SyncOnMainLoop();
 
   log::info("Group 1 active and start streaming");
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
@@ -13046,6 +13288,7 @@ TEST_F(UnicastTest, GroupStreamStatusResendAfterRemove) {
   LeAudioClient::Get()->GroupSetActive(group_id);
   SyncOnMainLoop();
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::STREAMING);
+  SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 
   // No resend
@@ -13053,6 +13296,7 @@ TEST_F(UnicastTest, GroupStreamStatusResendAfterRemove) {
               OnGroupStreamStatus(group_id, GroupStreamStatus::IDLE))
           .Times(0);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::IDLE);
+  SyncOnMainLoop();
 
   // No resend after removing only one device
   /*
@@ -13070,6 +13314,7 @@ TEST_F(UnicastTest, GroupStreamStatusResendAfterRemove) {
               OnGroupStreamStatus(group_id, GroupStreamStatus::IDLE))
           .Times(0);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::IDLE);
+  SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 
   // Resend after removing last device
@@ -13088,6 +13333,7 @@ TEST_F(UnicastTest, GroupStreamStatusResendAfterRemove) {
               OnGroupStreamStatus(group_id, GroupStreamStatus::IDLE))
           .Times(1);
   state_machine_callbacks_->StatusReportCb(group_id, GroupStreamStatus::IDLE);
+  SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 }
 
@@ -14081,6 +14327,80 @@ TEST_F(UnicastTestHandoverMode, UpdateMetadataToNotAllowedContextsInCallMode) {
   /* Expect stream to be stopped when not allowed context is set and inCall mode is not set */
   EXPECT_CALL(mock_state_machine_, StopStream(_));
   LeAudioClient::Get()->SetInCall(false);
+}
+
+TEST_F(UnicastTest, HandleConfigureStreamFailure) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  int group_id = bluetooth::groups::kGroupUnknown;
+
+  /* Scenario
+   * 1. Start streaming MEDIA
+   * 2. Reconfigure to a different audio context
+   * 3. Gracefully handle ConfigureStream failing for whatever reason
+   */
+
+  // Set just some basic audio contexts availability
+  SetTestRemoteAudioContexts(
+          types::LeAudioContextType::UNSPECIFIED | types::LeAudioContextType::LIVE |
+          types::LeAudioContextType::CONVERSATIONAL | types::LeAudioContextType::MEDIA);
+
+  default_channel_cnt = 1;
+  default_src_channel_cnt = 1;
+  SetSampleDatabaseEarbudsValid(
+          1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+          codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt, default_channel_cnt, 0x0004,
+          /* source sample freq 16khz */ false /*add_csis*/, true /*add_cas*/, true /*add_pacs*/,
+          default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/, 0 /*rank*/);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::CONNECTED, test_address0))
+          .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
+          .WillOnce(DoAll(SaveArg<1>(&group_id)));
+
+  types::BidirectionalPair<types::AudioContexts> metadata_contexts = {
+          .sink = types::AudioContexts(types::LeAudioContextType::UNSPECIFIED),
+          .source = types::AudioContexts(types::LeAudioContextType::UNSPECIFIED)};
+
+  log::info("Test: Connecting LeAudio to {}", test_address0);
+  ConnectLeAudio(test_address0);
+  ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
+
+  log::debug("Test: Call GroupSetActive");
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+
+  UpdateLocalSourceMetadata(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, false);
+  LocalAudioSourceResume();
+  SyncOnMainLoop();
+  LocalAudioSourceSuspend();
+  SyncOnMainLoop();
+
+  // Simulate ConfigureStream failure
+  EXPECT_CALL(mock_state_machine_, ConfigureStream(_, _, _, _, _))
+          .WillRepeatedly([this](LeAudioDeviceGroup* group,
+                                 types::LeAudioContextType /*context_type*/,
+                                 const types::BidirectionalPair<
+                                         types::AudioContexts>& /* metadata_context_types */,
+                                 types::BidirectionalPair<std::vector<uint8_t>> /* ccid_lists */,
+                                 bool /*configure_qos*/) {
+            this->state_machine_callbacks_->StatusReportCb(group->group_id_,
+                                                           GroupStreamStatus::IDLE);
+            SyncOnMainLoop();
+            return false;
+          });
+
+  log::debug("Test: Try reconfiguring to LIVE");
+  UpdateLocalSinkMetadata(AUDIO_SOURCE_MIC);
+  UpdateLocalSourceMetadata(AUDIO_USAGE_UNKNOWN, AUDIO_CONTENT_TYPE_UNKNOWN, true);
+  LocalAudioSinkResume();
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_sink_hal_client_);
+  Mock::VerifyAndClearExpectations(mock_codec_manager_);
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
 }
 
 class UnicastTestGmap : public UnicastTest {

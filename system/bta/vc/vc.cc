@@ -56,6 +56,8 @@
 
 using base::Closure;
 using bluetooth::csis::CsisClient;
+using bluetooth::groups::DeviceGroups;
+using bluetooth::groups::DeviceGroupsCallbacks;
 using bluetooth::vc::ConnectionState;
 using bluetooth::vc::VolumeInputStatus;
 using bluetooth::vc::VolumeInputType;
@@ -81,6 +83,7 @@ namespace {
 class VolumeControlImpl;
 VolumeControlImpl* instance;
 std::mutex instance_mutex;
+DeviceGroupsCallbacks* device_group_callbacks;
 
 /**
  * Overview:
@@ -129,6 +132,8 @@ public:
                     },
                     initCb),
             true);
+
+    DeviceGroups::Initialize(device_group_callbacks);
   }
 
   void StartOpportunisticConnect(const RawAddress& address) {
@@ -434,15 +439,21 @@ public:
     }
 
     auto csis_api = CsisClient::Get();
-    if (!csis_api) {
-      bluetooth::log::warn("Csis module is not available");
-      callbacks_->OnVolumeStateChanged(device->address, device->volume, device->mute, device->flags,
-                                       true);
-      return;
+    if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+      if (!csis_api) {
+        bluetooth::log::warn("Csis module is not available");
+        callbacks_->OnVolumeStateChanged(device->address, device->volume, device->mute,
+                                         device->flags, true);
+        return;
+      }
     }
 
-    auto group_id =
-            csis_api->GetGroupId(device->address, bluetooth::le_audio::uuid::kCapServiceUuid);
+    int group_id;
+    if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+      group_id = csis_api->GetGroupId(device->address, bluetooth::le_audio::uuid::kCapServiceUuid);
+    } else {
+      group_id = device->group_id;
+    }
     if (group_id == bluetooth::groups::kGroupUnknown) {
       bluetooth::log::warn("No group for device {}", device->address);
       callbacks_->OnVolumeStateChanged(device->address, device->volume, device->mute, device->flags,
@@ -450,13 +461,22 @@ public:
       return;
     }
 
-    auto devices = csis_api->GetDeviceList(group_id);
-    for (auto it = devices.begin(); it != devices.end();) {
-      auto dev = volume_control_devices_.FindByAddress(*it);
-      if (!dev || !dev->IsConnected() || (dev->address == device->address)) {
-        it = devices.erase(it);
-      } else {
-        it++;
+    std::vector<RawAddress> devices;
+    if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+      devices = csis_api->GetDeviceList(group_id);
+      for (auto it = devices.begin(); it != devices.end();) {
+        auto dev = volume_control_devices_.FindByAddress(*it);
+        if (!dev || !dev->IsConnected() || (dev->address == device->address)) {
+          it = devices.erase(it);
+        } else {
+          it++;
+        }
+      }
+    } else {
+      for (auto groupDevice : volume_control_devices_.getGroupDevices(group_id)) {
+        if (groupDevice->IsConnected() && (groupDevice->address != device->address)) {
+          devices.push_back(groupDevice->address);
+        }
       }
     }
 
@@ -634,7 +654,7 @@ public:
             device->address, input->id, input->gain_setting, input->mute, input->gain_mode,
             input->change_counter);
 
-    if (!device->device_ready) {
+    if (!device->IsReady()) {
       return;
     }
 
@@ -658,7 +678,7 @@ public:
 
     bluetooth::log::info("{}, id={:#x} type={}", device->address, input->id, input->type);
 
-    if (!device->device_ready) {
+    if (!device->IsReady()) {
       return;
     }
 
@@ -682,7 +702,7 @@ public:
 
     bluetooth::log::info("{}, id={:#x} status {}", device->address, input->id, input->status);
 
-    if (!device->device_ready) {
+    if (!device->IsReady()) {
       return;
     }
 
@@ -702,7 +722,7 @@ public:
     bluetooth::log::info("{}, id={:#x}, descriptor: {}", device->address, input->id,
                          input->description);
 
-    if (!device->device_ready) {
+    if (!device->IsReady()) {
       return;
     }
 
@@ -759,7 +779,7 @@ public:
                          device->address, input->id, input->gain_settings.unit,
                          input->gain_settings.min, input->gain_settings.max);
 
-    if (!device->device_ready) {
+    if (!device->IsReady()) {
       return;
     }
 
@@ -1152,12 +1172,19 @@ public:
       auto group_id = std::get<int>(addr_or_group_id);
       bluetooth::log::debug("group: {}", group_id);
       auto csis_api = CsisClient::Get();
-      if (!csis_api) {
-        bluetooth::log::error("Csis is not there");
-        return;
+      if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+        if (!csis_api) {
+          bluetooth::log::error("Csis is not there");
+          return;
+        }
       }
 
-      auto devices = csis_api->GetDeviceList(group_id);
+      std::vector<RawAddress> devices;
+      if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+        devices = csis_api->GetDeviceList(group_id);
+      } else {
+        devices = volume_control_devices_.getGroupDevicesAddresses(group_id);
+      }
       if (devices.empty()) {
         bluetooth::log::error("group id: {} has no devices", group_id);
         return;
@@ -1171,29 +1198,42 @@ public:
       bool muteNotChanged = false;
       bool deviceNotReady = false;
 
-      for (auto it = devices.begin(); it != devices.end();) {
-        auto dev = volume_control_devices_.FindByAddress(*it);
-        if (!dev) {
-          it = devices.erase(it);
-          continue;
+      if (com::android::bluetooth::flags::vcp_handle_group_id_internally() &&
+          com::android::bluetooth::flags::vcp_allow_set_same_volume_if_pending()) {
+        devices.clear();
+        for (auto groupDevice : volume_control_devices_.getGroupDevices(group_id)) {
+          if (IsMuteOrUnmuteRequired(groupDevice, mute)) {
+            devices.push_back(groupDevice->address);
+          } else {
+            muteNotChanged = muteNotChanged ? muteNotChanged : (groupDevice->mute == mute);
+            deviceNotReady = deviceNotReady ? deviceNotReady : !groupDevice->IsReady();
+          }
         }
+      } else {
+        for (auto it = devices.begin(); it != devices.end();) {
+          auto dev = volume_control_devices_.FindByAddress(*it);
+          if (!dev) {
+            it = devices.erase(it);
+            continue;
+          }
 
-        if (!com::android::bluetooth::flags::vcp_allow_set_same_volume_if_pending()) {
-          if (!dev->IsReady() || (dev->mute == mute)) {
-            it = devices.erase(it);
-            muteNotChanged = muteNotChanged ? muteNotChanged : (dev->mute == mute);
-            deviceNotReady = deviceNotReady ? deviceNotReady : !dev->IsReady();
-            continue;
+          if (!com::android::bluetooth::flags::vcp_allow_set_same_volume_if_pending()) {
+            if (!dev->IsReady() || (dev->mute == mute)) {
+              it = devices.erase(it);
+              muteNotChanged = muteNotChanged ? muteNotChanged : (dev->mute == mute);
+              deviceNotReady = deviceNotReady ? deviceNotReady : !dev->IsReady();
+              continue;
+            }
+          } else {
+            if (!IsMuteOrUnmuteRequired(dev, mute)) {
+              it = devices.erase(it);
+              muteNotChanged = muteNotChanged ? muteNotChanged : (dev->mute == mute);
+              deviceNotReady = deviceNotReady ? deviceNotReady : !dev->IsReady();
+              continue;
+            }
           }
-        } else {
-          if (!IsMuteOrUnmuteRequired(dev, mute)) {
-            it = devices.erase(it);
-            muteNotChanged = muteNotChanged ? muteNotChanged : (dev->mute == mute);
-            deviceNotReady = deviceNotReady ? deviceNotReady : !dev->IsReady();
-            continue;
-          }
+          it++;
         }
-        it++;
       }
 
       if (devices.empty()) {
@@ -1256,12 +1296,19 @@ public:
       auto group_id = std::get<int>(addr_or_group_id);
       bluetooth::log::debug("group_id: {}, vol: {}", group_id, volume);
       auto csis_api = CsisClient::Get();
-      if (!csis_api) {
-        bluetooth::log::error("Csis is not there");
-        return;
+      if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+        if (!csis_api) {
+          bluetooth::log::error("Csis is not there");
+          return;
+        }
       }
 
-      auto devices = csis_api->GetDeviceList(group_id);
+      std::vector<RawAddress> devices;
+      if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+        devices = csis_api->GetDeviceList(group_id);
+      } else {
+        devices = volume_control_devices_.getGroupDevicesAddresses(group_id);
+      }
       if (devices.empty()) {
         bluetooth::log::error("group id: {} has no devices", group_id);
         return;
@@ -1277,30 +1324,43 @@ public:
       bool volumeNotChanged = false;
       bool deviceNotReady = false;
 
-      for (auto it = devices.begin(); it != devices.end();) {
-        auto dev = volume_control_devices_.FindByAddress(*it);
-        if (!dev) {
-          it = devices.erase(it);
-          continue;
-        }
-
-        if (!com::android::bluetooth::flags::vcp_allow_set_same_volume_if_pending()) {
-          if (!dev->IsReady() || (dev->volume == volume)) {
-            it = devices.erase(it);
-            volumeNotChanged = volumeNotChanged ? volumeNotChanged : (dev->volume == volume);
-            deviceNotReady = deviceNotReady ? deviceNotReady : !dev->IsReady();
-            continue;
-          }
-        } else {
-          if (!IsSetAbsoluteVolumeRequired(dev, volume)) {
-            it = devices.erase(it);
-            volumeNotChanged = volumeNotChanged ? volumeNotChanged : (dev->volume == volume);
-            deviceNotReady = deviceNotReady ? deviceNotReady : !dev->IsReady();
-            continue;
+      if (com::android::bluetooth::flags::vcp_handle_group_id_internally() &&
+          com::android::bluetooth::flags::vcp_allow_set_same_volume_if_pending()) {
+        devices.clear();
+        for (auto groupDevice : volume_control_devices_.getGroupDevices(group_id)) {
+          if (IsSetAbsoluteVolumeRequired(groupDevice, volume)) {
+            devices.push_back(groupDevice->address);
+          } else {
+            volumeNotChanged =
+                    volumeNotChanged ? volumeNotChanged : (groupDevice->volume == volume);
+            deviceNotReady = deviceNotReady ? deviceNotReady : !groupDevice->IsReady();
           }
         }
+      } else {
+        for (auto it = devices.begin(); it != devices.end();) {
+          auto dev = volume_control_devices_.FindByAddress(*it);
+          if (!dev) {
+            it = devices.erase(it);
+            continue;
+          }
 
-        it++;
+          if (!com::android::bluetooth::flags::vcp_allow_set_same_volume_if_pending()) {
+            if (!dev->IsReady() || (dev->volume == volume)) {
+              it = devices.erase(it);
+              volumeNotChanged = volumeNotChanged ? volumeNotChanged : (dev->volume == volume);
+              deviceNotReady = deviceNotReady ? deviceNotReady : !dev->IsReady();
+              continue;
+            }
+          } else {
+            if (!IsSetAbsoluteVolumeRequired(dev, volume)) {
+              it = devices.erase(it);
+              volumeNotChanged = volumeNotChanged ? volumeNotChanged : (dev->volume == volume);
+              deviceNotReady = deviceNotReady ? deviceNotReady : !dev->IsReady();
+              continue;
+            }
+          }
+          it++;
+        }
       }
 
       if (devices.empty()) {
@@ -1541,6 +1601,22 @@ public:
     BTA_GATTC_AppDeregister(gatt_if_);
   }
 
+  void OnGroupAddedCb(const RawAddress& address, const bluetooth::Uuid& uuid, int group_id) {
+    bluetooth::log::debug("address: {}, uuid: {}, group_id: {}", address, uuid.ToString(),
+                          group_id);
+    /* We are interested in the groups which are in the context of CAP */
+    if (uuid != bluetooth::le_audio::uuid::kCapServiceUuid) {
+      return;
+    }
+
+    verify_device_ready(address, group_id);
+  }
+
+  void OnGroupMemberAddedCb(const RawAddress& address, int group_id) {
+    bluetooth::log::debug("address: {}, group_id: {}", address, group_id);
+    verify_device_ready(address, group_id);
+  }
+
 private:
   tGATT_IF gatt_if_;
   bluetooth::vc::VolumeControlCallbacks* callbacks_;
@@ -1552,28 +1628,55 @@ private:
 
   static constexpr uint64_t kOperationMonitorTimeoutMs = 3000;
 
+  void verify_device_ready(const RawAddress& address, int group_id) {
+    VolumeControlDevice* device = volume_control_devices_.FindByAddress(address);
+    if (!device) {
+      bluetooth::log::error("Skipping unknown device {}", address);
+      return;
+    }
+
+    bluetooth::log::debug("{}, isReady {}", device->address, device->IsReady());
+    if (device->IsReady()) {
+      return;
+    }
+
+    device->group_id = group_id;
+    // VerifyReady sets the device_ready flag if all remaining GATT operations
+    // are completed and group id is known
+    if (device->VerifyReady()) {
+      device_ready(device);
+    }
+  }
+
   void verify_device_ready(VolumeControlDevice* device, uint16_t handle) {
     bluetooth::log::debug("{}, isReady {}", device->address, device->IsReady());
     if (device->IsReady()) {
       return;
     }
 
+    device->group_id = DeviceGroups::Get()->GetGroupId(device->address,
+                                                       bluetooth::le_audio::uuid::kCapServiceUuid);
+
     // VerifyReady sets the device_ready flag if all remaining GATT operations
-    // are completed
+    // are completed and group id is known
     if (device->VerifyReady(handle)) {
-      bluetooth::log::info("Outstanding reads completed.");
-
-      callbacks_->OnDeviceAvailable(device->address, device->audio_offsets.Size(),
-                                    device->audio_inputs.Size());
-      callbacks_->OnConnectionState(ConnectionState::CONNECTED, device->address);
-
-      // once profile connected we can notify current states
-      callbacks_->OnVolumeStateChanged(device->address, device->volume, device->mute, device->flags,
-                                       true);
-
-      device->EnqueueRemainingRequests(gatt_if_, chrc_read_callback_static,
-                                       chrc_multi_read_callback_static, OnGattWriteCccStatic);
+      device_ready(device);
     }
+  }
+
+  void device_ready(VolumeControlDevice* device) {
+    bluetooth::log::info("Outstanding reads completed and group id is known");
+
+    callbacks_->OnDeviceAvailable(device->address, device->group_id, device->audio_offsets.Size(),
+                                  device->audio_inputs.Size());
+    callbacks_->OnConnectionState(ConnectionState::CONNECTED, device->address);
+
+    // once profile connected we can notify current states
+    callbacks_->OnVolumeStateChanged(device->address, device->volume, device->mute, device->flags,
+                                     true);
+
+    device->EnqueueRemainingRequests(gatt_if_, chrc_read_callback_static,
+                                     chrc_multi_read_callback_static, OnGattWriteCccStatic);
   }
 
   void device_cleanup_helper(VolumeControlDevice* device, bool notify) {
@@ -1733,6 +1836,32 @@ private:
     }
   }
 };
+
+class DeviceGroupsCallbacksImpl : public DeviceGroupsCallbacks {
+public:
+  void OnGroupAdded(const RawAddress& address, const bluetooth::Uuid& uuid, int group_id) override {
+    if (instance) {
+      instance->OnGroupAddedCb(address, uuid, group_id);
+    }
+  }
+
+  void OnGroupMemberAdded(const RawAddress& address, int group_id) override {
+    if (instance) {
+      instance->OnGroupMemberAddedCb(address, group_id);
+    }
+  }
+
+  void OnGroupRemoved(const bluetooth::Uuid& /*uuid*/, int /*group_id*/) override {}
+
+  void OnGroupMemberRemoved(const RawAddress& /*address*/, int /*group_id*/) override {}
+
+  void OnGroupAddFromStorage(const RawAddress& /*address*/, const bluetooth::Uuid& /*uuid*/,
+                             int /*group_id*/) override {}
+};
+
+class DeviceGroupsCallbacksImpl;
+DeviceGroupsCallbacksImpl deviceGroupsCallbacksImpl;
+
 }  // namespace
 
 void VolumeControl::Initialize(bluetooth::vc::VolumeControlCallbacks* callbacks,
@@ -1743,6 +1872,7 @@ void VolumeControl::Initialize(bluetooth::vc::VolumeControlCallbacks* callbacks,
     return;
   }
 
+  device_group_callbacks = &deviceGroupsCallbacksImpl;
   instance = new VolumeControlImpl(callbacks, initCb);
 }
 

@@ -103,11 +103,11 @@ public class AvrcpTargetService extends ProfileService {
         this(
                 requireNonNull(adapterService),
                 adapterService.getSystemService(AudioManager.class),
-                AvrcpNativeInterface.getInstance(),
+                AvrcpNativeInterface.getInstance(adapterService),
                 new AvrcpVolumeManager(
                         requireNonNull(adapterService),
                         adapterService.getSystemService(AudioManager.class),
-                        AvrcpNativeInterface.getInstance()),
+                        AvrcpNativeInterface.getInstance(adapterService)),
                 Looper.myLooper());
     }
 

@@ -39,6 +39,7 @@ import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
 
 import androidx.test.filters.SmallTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
@@ -354,6 +355,36 @@ public class BluetoothPbapUtilsTest {
         BluetoothPbapUtils.updateSecondaryVersionCounter(mContext, null);
 
         assertThat(BluetoothPbapUtils.sSecondaryVersionCounter).isEqualTo(1);
+    }
+
+    @Test
+    public void fetchPbapParams_equals_savePbapParams() {
+        long primaryVersionCounter = 1;
+        long secondaryVersionCounter = 2;
+        long totalContacts = 3;
+        long totalFields = 4;
+        long totalSvcFields = 5;
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        try {
+            BluetoothPbapUtils.sPrimaryVersionCounter = primaryVersionCounter;
+            BluetoothPbapUtils.sSecondaryVersionCounter = secondaryVersionCounter;
+            BluetoothPbapUtils.sTotalContacts = totalContacts;
+            BluetoothPbapUtils.sTotalFields = totalFields;
+            BluetoothPbapUtils.sTotalSvcFields = totalSvcFields;
+
+            BluetoothPbapUtils.savePbapParams(context);
+            clearStaticFields();
+            BluetoothPbapUtils.fetchPbapParams(context);
+
+            assertThat(BluetoothPbapUtils.sPrimaryVersionCounter).isEqualTo(primaryVersionCounter);
+            assertThat(BluetoothPbapUtils.sSecondaryVersionCounter)
+                    .isEqualTo(secondaryVersionCounter);
+            assertThat(BluetoothPbapUtils.sTotalContacts).isEqualTo(totalContacts);
+            assertThat(BluetoothPbapUtils.sTotalFields).isEqualTo(totalFields);
+            assertThat(BluetoothPbapUtils.sTotalSvcFields).isEqualTo(totalSvcFields);
+        } finally {
+
+        }
     }
 
     private static void clearStaticFields() {

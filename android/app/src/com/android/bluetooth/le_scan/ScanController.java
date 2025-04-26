@@ -60,6 +60,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.BluetoothAdapterProxy;
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.util.NumberUtils;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -161,14 +162,16 @@ public class ScanController {
         mScanThread.start();
         mAppOps = mAdapterService.getSystemService(AppOpsManager.class);
         mCompanionManager = mAdapterService.getSystemService(CompanionDeviceManager.class);
+        var scanObjectsFactory = ScanObjectsFactory.getInstance();
         mScanManager =
-                ScanObjectsFactory.getInstance()
-                        .createScanManager(
-                                mAdapterService,
-                                this,
-                                BluetoothAdapterProxy.getInstance(),
-                                mScanThread.getLooper());
-        mPeriodicScanManager = ScanObjectsFactory.getInstance().createPeriodicScanManager();
+                scanObjectsFactory.createScanManager(
+                        mAdapterService,
+                        this,
+                        BluetoothAdapterProxy.getInstance(),
+                        mScanThread.getLooper());
+        mPeriodicScanManager =
+                scanObjectsFactory.createPeriodicScanManager(
+                        mAdapterService, mScanThread.getLooper());
     }
 
     public void cleanup() {
@@ -360,26 +363,17 @@ public class ScanController {
             String originalAddress) {
         Log.v(
                 TAG,
-                "onScanResult() - eventType=0x"
-                        + Integer.toHexString(eventType)
-                        + ", addressType="
-                        + addressType
-                        + ", address="
-                        + BluetoothUtils.toAnonymizedAddress(address)
-                        + ", primaryPhy="
-                        + primaryPhy
-                        + ", secondaryPhy="
-                        + secondaryPhy
-                        + ", advertisingSid=0x"
-                        + Integer.toHexString(advertisingSid)
-                        + ", txPower="
-                        + txPower
-                        + ", rssi="
-                        + rssi
-                        + ", periodicAdvInt=0x"
-                        + Integer.toHexString(periodicAdvInt)
-                        + ", originalAddress="
-                        + originalAddress);
+                "onScanResult() -"
+                        + (" eventType=0x" + Integer.toHexString(eventType))
+                        + (", addressType=" + addressType)
+                        + (", address=" + BluetoothUtils.toAnonymizedAddress(address))
+                        + (", primaryPhy=" + primaryPhy)
+                        + (", secondaryPhy=" + secondaryPhy)
+                        + (", advertisingSid=0x" + Integer.toHexString(advertisingSid))
+                        + (", txPower=" + txPower)
+                        + (", rssi=" + rssi)
+                        + (", periodicAdvInt=0x" + Integer.toHexString(periodicAdvInt))
+                        + (", originalAddress=" + originalAddress));
 
         // Retain the original behavior of returning bluetoothAddress when identityAddress is null
         String identityAddress = Utils.getBrEdrAddress(address, mAdapterService);
@@ -498,8 +492,7 @@ public class ScanController {
         } catch (PendingIntent.CanceledException e) {
             final long token = Binder.clearCallingIdentity();
             try {
-                stopScan(client.mScannerId);
-                unregisterScanner(client.mScannerId);
+                handleDeadScanClient(client);
             } finally {
                 Binder.restoreCallingIdentity(token);
             }
@@ -529,12 +522,10 @@ public class ScanController {
         UUID uuid = new UUID(uuidMsb, uuidLsb);
         Log.d(
                 TAG,
-                "onScannerRegistered() - UUID="
-                        + uuid
-                        + ", scannerId="
-                        + scannerId
-                        + ", status="
-                        + status);
+                "onScannerRegistered() -"
+                        + (" UUID=" + uuid)
+                        + (", scannerId=" + scannerId)
+                        + (", status=" + status));
 
         // First check the callback map
         ScannerMap.ScannerApp cbApp = mScannerMap.getByUuid(uuid);
@@ -549,7 +540,7 @@ public class ScanController {
                     continuePiStartScan(scannerId, cbApp);
                 }
             } else {
-                mScannerMap.remove(scannerId);
+                mScannerMap.remove(uuid);
             }
             if (cbApp.mCallback != null) {
                 cbApp.mCallback.onScannerRegistered(status, scannerId);
@@ -592,13 +583,20 @@ public class ScanController {
     }
 
     // Check if a scan record matches a specific filters.
-    private static boolean matchesFilters(ScanClient client, ScanResult scanResult) {
+    @VisibleForTesting
+    static boolean matchesFilters(ScanClient client, ScanResult scanResult) {
         return matchesFilters(client, scanResult, null);
     }
 
     // Check if a scan record matches a specific filters or original address
     private static boolean matchesFilters(
             ScanClient client, ScanResult scanResult, String originalAddress) {
+        if (Flags.rssiScanFilter()) {
+            ScanSettings settings = client.mSettings;
+            if (scanResult.getRssi() < settings.getRssiThreshold()) {
+                return false;
+            }
+        }
         if (client.mFilters == null || client.mFilters.isEmpty()) {
             // TODO: Do we really wanna return true here?
             return true;
@@ -632,12 +630,10 @@ public class ScanController {
     void onScanFilterEnableDisabled(int action, int status, int clientIf) {
         Log.d(
                 TAG,
-                "onScanFilterEnableDisabled() - clientIf="
-                        + clientIf
-                        + ", status="
-                        + status
-                        + ", action="
-                        + action);
+                "onScanFilterEnableDisabled() -"
+                        + (" clientIf=" + clientIf)
+                        + (", status=" + status)
+                        + (", action=" + action));
         mScanManager.callbackDone(clientIf, status);
     }
 
@@ -645,14 +641,11 @@ public class ScanController {
     void onScanFilterParamsConfigured(int action, int status, int clientIf, int availableSpace) {
         Log.d(
                 TAG,
-                "onScanFilterParamsConfigured() - clientIf="
-                        + clientIf
-                        + ", status="
-                        + status
-                        + ", action="
-                        + action
-                        + ", availableSpace="
-                        + availableSpace);
+                "onScanFilterParamsConfigured() -"
+                        + (" clientIf=" + clientIf)
+                        + (", status=" + status)
+                        + (", action=" + action)
+                        + (", availableSpace=" + availableSpace));
         mScanManager.callbackDone(clientIf, status);
     }
 
@@ -661,16 +654,12 @@ public class ScanController {
             int action, int status, int clientIf, int filterType, int availableSpace) {
         Log.d(
                 TAG,
-                "onScanFilterConfig() - clientIf="
-                        + clientIf
-                        + ", action = "
-                        + action
-                        + " status = "
-                        + status
-                        + ", filterType="
-                        + filterType
-                        + ", availableSpace="
-                        + availableSpace);
+                "onScanFilterConfig() -"
+                        + (" clientIf=" + clientIf)
+                        + (", action= " + action)
+                        + (" status= " + status)
+                        + (", filterType=" + filterType)
+                        + (", availableSpace=" + availableSpace));
 
         mScanManager.callbackDone(clientIf, status);
     }
@@ -686,16 +675,28 @@ public class ScanController {
     void onBatchScanStartStopped(int startStopAction, int status, int clientIf) {
         Log.d(
                 TAG,
-                "onBatchScanStartStopped() - clientIf="
-                        + clientIf
-                        + ", status="
-                        + status
-                        + ", startStopAction="
-                        + startStopAction);
+                "onBatchScanStartStopped() -"
+                        + (" clientIf=" + clientIf)
+                        + (", status=" + status)
+                        + (", startStopAction=" + startStopAction));
         mScanManager.callbackDone(clientIf, status);
     }
 
-    ScanClient findBatchScanClientById(int scannerId) {
+    private ScanClient findScanClientById(int clientIf) {
+        for (ScanClient client : mScanManager.getRegularScanQueue()) {
+            if (client.mScannerId == clientIf) {
+                return client;
+            }
+        }
+        for (ScanClient client : mScanManager.getBatchScanQueue()) {
+            if (client.mScannerId == clientIf) {
+                return client;
+            }
+        }
+        return null;
+    }
+
+    private ScanClient findBatchScanClientById(int scannerId) {
         for (ScanClient client : mScanManager.getBatchScanQueue()) {
             if (client.mScannerId == scannerId) {
                 return client;
@@ -721,14 +722,11 @@ public class ScanController {
             throws RemoteException {
         Log.d(
                 TAG,
-                "onBatchScanReports() - scannerId="
-                        + scannerId
-                        + ", status="
-                        + status
-                        + ", reportType="
-                        + reportType
-                        + ", numRecords="
-                        + numRecords);
+                "onBatchScanReports() -"
+                        + (" scannerId=" + scannerId)
+                        + (", status=" + status)
+                        + (", reportType=" + reportType)
+                        + (", numRecords=" + numRecords));
 
         Set<ScanResult> results = parseBatchScanResults(numRecords, reportType, recordData);
         if (reportType == ScanManager.SCAN_RESULT_TYPE_TRUNCATED) {
@@ -762,7 +760,8 @@ public class ScanController {
                     sendResultsByPendingIntent(
                             app.mInfo, permittedResults, ScanSettings.CALLBACK_TYPE_ALL_MATCHES);
                 } catch (PendingIntent.CanceledException e) {
-                    Log.d(TAG, "Exception while sending result", e);
+                    Log.e(TAG, "Error sending result via PendingIntent: " + e);
+                    handleDeadScanClient(client);
                 }
             }
         } else {
@@ -943,14 +942,11 @@ public class ScanController {
     void onTrackAdvFoundLost(AdvtFilterOnFoundOnLostInfo trackingInfo) throws RemoteException {
         Log.d(
                 TAG,
-                "onTrackAdvFoundLost() - scannerId= "
-                        + trackingInfo.clientIf()
-                        + " address = "
-                        + trackingInfo.address()
-                        + " addressType = "
-                        + trackingInfo.addressType()
-                        + " adv_state = "
-                        + trackingInfo.advState());
+                "onTrackAdvFoundLost() -"
+                        + (" scannerId=" + trackingInfo.clientIf())
+                        + (", address=" + trackingInfo.address())
+                        + (", addressType=" + trackingInfo.addressType())
+                        + (", adv_state=" + trackingInfo.advState()));
 
         ScannerMap.ScannerApp app = mScannerMap.getById(trackingInfo.clientIf());
         if (app == null) {
@@ -992,12 +988,10 @@ public class ScanController {
                 } else {
                     Log.d(
                             TAG,
-                            "Not reporting onlost/onfound : "
-                                    + advertiserState
-                                    + " scannerId = "
-                                    + client.mScannerId
-                                    + " callbackType "
-                                    + settings.getCallbackType());
+                            "Not reporting onlost/onfound -"
+                                    + (" advertiserState=" + advertiserState)
+                                    + (", scannerId=" + client.mScannerId)
+                                    + (", callbackType=" + settings.getCallbackType()));
                 }
             }
         }
@@ -1026,7 +1020,11 @@ public class ScanController {
             try {
                 sendErrorByPendingIntent(app.mInfo, errorCode);
             } catch (PendingIntent.CanceledException e) {
-                Log.e(TAG, "Error sending error code via PendingIntent:" + e);
+                Log.e(TAG, "Error sending error code via PendingIntent: " + e);
+                ScanClient client = findScanClientById(scannerId);
+                if (client != null) {
+                    handleDeadScanClient(client);
+                }
             }
         }
     }
@@ -1090,16 +1088,16 @@ public class ScanController {
             }
             return;
         }
-        registerScannerInternal(callback, source, workSource);
+        registerScannerInternal(callback, workSource, source);
     }
 
     /** Intended for internal use within the Bluetooth app. Bypass permission check */
     public void registerScannerInternal(
-            IScannerCallback callback, AttributionSource attrSource, WorkSource workSource) {
+            IScannerCallback callback, WorkSource workSource, AttributionSource source) {
         UUID uuid = UUID.randomUUID();
         Log.d(TAG, "registerScanner() - UUID=" + uuid);
 
-        mScannerMap.add(uuid, attrSource, workSource, callback, mAdapterService, this);
+        mScannerMap.add(uuid, source, workSource, callback, mAdapterService, this);
         mScanManager.registerScanner(uuid);
     }
 
@@ -1354,22 +1352,25 @@ public class ScanController {
     /**************************************************************************
      * PERIODIC SCANNING
      *************************************************************************/
+
     void registerSync(
             ScanResult scanResult,
             int skip,
             int timeout,
             IPeriodicAdvertisingCallback callback,
             AttributionSource source) {
-        mPeriodicScanManager.startSync(scanResult, skip, timeout, callback);
+        mPeriodicScanManager.doOnScanThread(
+                () -> mPeriodicScanManager.startSync(scanResult, skip, timeout, callback));
     }
 
     void unregisterSync(IPeriodicAdvertisingCallback callback, AttributionSource source) {
-        mPeriodicScanManager.stopSync(callback);
+        mPeriodicScanManager.doOnScanThread(() -> mPeriodicScanManager.stopSync(callback));
     }
 
     void transferSync(
             BluetoothDevice bda, int serviceData, int syncHandle, AttributionSource source) {
-        mPeriodicScanManager.transferSync(bda, serviceData, syncHandle);
+        mPeriodicScanManager.doOnScanThread(
+                () -> mPeriodicScanManager.transferSync(bda, serviceData, syncHandle));
     }
 
     void transferSetInfo(
@@ -1378,7 +1379,8 @@ public class ScanController {
             int advHandle,
             IPeriodicAdvertisingCallback callback,
             AttributionSource source) {
-        mPeriodicScanManager.transferSetInfo(bda, serviceData, advHandle, callback);
+        mPeriodicScanManager.doOnScanThread(
+                () -> mPeriodicScanManager.transferSetInfo(bda, serviceData, advHandle, callback));
     }
 
     int numHwTrackFiltersAvailable(AttributionSource source) {
@@ -1403,30 +1405,14 @@ public class ScanController {
         public void binderDied() {
             Log.d(
                     TAG,
-                    "Binder is dead - unregistering scanner ("
-                            + mPackageName
-                            + " "
-                            + mScannerId
-                            + ")!");
+                    "Binder is dead - unregistering scanner -"
+                            + (" packageName=" + mPackageName)
+                            + (", scannerId=" + mScannerId));
 
-            ScanClient client = getScanClient(mScannerId);
+            ScanClient client = findScanClientById(mScannerId);
             if (client != null) {
                 handleDeadScanClient(client);
             }
-        }
-
-        private ScanClient getScanClient(int clientIf) {
-            for (ScanClient client : mScanManager.getRegularScanQueue()) {
-                if (client.mScannerId == clientIf) {
-                    return client;
-                }
-            }
-            for (ScanClient client : mScanManager.getBatchScanQueue()) {
-                if (client.mScannerId == clientIf) {
-                    return client;
-                }
-            }
-            return null;
         }
     }
 

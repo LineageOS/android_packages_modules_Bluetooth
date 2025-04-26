@@ -1349,8 +1349,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
       }
 
       // Do not update device properties of already bonded devices.
-      if (com::android::bluetooth::flags::guard_bonded_device_properties() &&
-          BTM_IsBonded(bdaddr)) {
+      if (BTM_IsBonded(bdaddr)) {
         log::debug("Ignore device properties from discovery results for the bonded device: {}[{}]",
                    bdaddr, AddressTypeText(addr_type));
 

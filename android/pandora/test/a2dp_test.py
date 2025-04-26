@@ -68,6 +68,7 @@ from mobly.asserts import assert_greater_equal  # type: ignore
 from mobly.asserts import assert_in  # type: ignore
 from mobly.asserts import assert_is_not_none  # type: ignore
 from mobly.asserts import assert_less_equal  # type: ignore
+from mobly.asserts import assert_raises  # type: ignore
 from mobly.asserts import fail  # type: ignore
 from pandora.a2dp_grpc_aio import A2DP
 from pandora.a2dp_pb2 import STEREO, Configuration, PlaybackAudioRequest, Source
@@ -1111,6 +1112,37 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # Simulate no response for 15 seconds and wait for AVDT Singalling L2CAP Channel disconnect
         await asyncio.gather(asyncio.sleep(15), asyncio.wait_for(avdtp_future, timeout=20.0))
+
+    @avatar.asynchronous
+    async def test_sink_as_initiator__no_reconnect_after_acl_disconnect(self) -> None:
+        """Test that Android DUT does not retry connection when remote started AVDT and disconnected ACL.
+
+        1. Pair and Connect RD1 -> DUT
+        2. Initiate AVDT RD1 -> DUT
+        3. Disconnect ACL RD1 -> DUT
+        4. Check that DUT does not retry connection
+        """
+        # 1. Pair and Connect RD1 -> DUT
+        ref1_dut, dut_ref1 = await asyncio.gather(
+            initiate_pairing(self.ref1, self.dut.address),
+            accept_pairing(self.dut, self.ref1.address),
+        )
+
+        # 2. Initiate AVDT RD1 -> DUT
+        connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+        await SignalingChannel.initiate(connection)
+
+        # 3. Disconnect ACL RD1 -> DUT
+        await self.ref1.aio.host.Disconnect(connection=ref1_dut)
+        await self.dut.aio.host.WaitDisconnection(connection=dut_ref1, timeout=5)
+
+        # 4. Check that DUT does not retry connection
+        with assert_raises(asyncio.TimeoutError):
+            await asyncio.wait_for(
+                self.ref1.aio.host.WaitConnection(address=self.dut.address, timeout=15), 10.0)
+        logger.info(
+            "No new connection for 10 seconds on DUT. accept_signalling_timer properly canceled."
+        )
 
 
 if __name__ == '__main__':

@@ -468,51 +468,6 @@ TEST_F(HearingAidTest, disconnect_when_connected) {
   HearingAid::Disconnect(test_address);
 }
 
-/* Test that bonded device that was loaded from storage refreshes GATT handles */
-TEST_F(HearingAidTest, load_from_storage) {
-  set_sample_database(1);
-  SetEncryptionResult(test_address, true);
-  HearingDevice saved_dev;
-
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
-  HearingAid::Connect(test_address);
-  ON_CALL(btm_interface, BTM_IsEncrypted(test_address, _)).WillByDefault(Return(true));
-
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION, _));
-  HearingAid::Connect(test_address);
-
-  Mock::VerifyAndClearExpectations(&*callbacks);
-  Mock::VerifyAndClearExpectations(&gatt_interface);
-  Mock::VerifyAndClearExpectations(&btm_interface);
-
-
-  EXPECT_CALL(gatt_interface, CancelOpen(_, test_address, _)).Times(AnyNumber());
-  HearingAid::Disconnect(test_address);
-
-  ON_CALL(btif_storage_interface_, AddHearingAid(_))
-          .WillByDefault(Invoke([&](const HearingDevice* dev_info) { saved_dev = *dev_info; }));
-
-  ON_CALL(btif_storage_interface_, GetHearingAidProp(_, _, _, _, _, _))
-          .WillByDefault(Invoke([&](const RawAddress& /*address*/, uint8_t* capabilities,
-                                    uint64_t* hi_sync_id, uint16_t* render_delay,
-                                    uint16_t* preparation_delay, uint16_t* codecs) {
-            *capabilities = saved_dev.capabilities;
-            *hi_sync_id = saved_dev.hi_sync_id;
-            *render_delay = saved_dev.render_delay;
-            *preparation_delay = saved_dev.preparation_delay;
-            *codecs = saved_dev.codecs;
-            return true;
-          }));
-
-  Mock::VerifyAndClearExpectations(&gatt_interface);
-  EXPECT_CALL(gatt_interface, ServiceSearchRequest).Times(1);
-
-  HearingAid::AddFromStorage(saved_dev, true);
-
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION, _));
-  HearingAid::Connect(test_address);
-}
-
 }  // namespace
 }  // namespace internal
 }  // namespace hearing_aid

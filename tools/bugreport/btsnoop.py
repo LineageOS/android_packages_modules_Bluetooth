@@ -73,6 +73,7 @@ class Packet:
 class AclConnection:
     """Save all packets sent or received on an ACL connection."""
 
+    btsnoop: 'Btsnoop'
     connection_handle: int
     uuid: int = dataclasses.field(default_factory=next_uuid)
     remote_name: Optional[str] = None
@@ -210,6 +211,7 @@ class Btsnoop:
 
                         assert connection_handle not in active_acl_connections
                         acl_connection = AclConnection(
+                            self,
                             connection_handle,
                             bd_addr=bd_addr,
                             connected=packet,
@@ -249,7 +251,7 @@ class Btsnoop:
                 elif connection_handle in active_le_acl_connections:
                     pass
                 else:
-                    acl_connection = AclConnection(connection_handle)
+                    acl_connection = AclConnection(self, connection_handle)
                     acl_connection.append(packet)
                     active_acl_connections[connection_handle] = acl_connection
                     self.acl_connections.append(acl_connection)

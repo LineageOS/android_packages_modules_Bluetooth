@@ -283,7 +283,7 @@ public class ScanManager {
         IntentFilter locationIntentFilter = new IntentFilter(LocationManager.MODE_CHANGED_ACTION);
         locationIntentFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         mAdapterService.registerReceiver(mLocationReceiver, locationIntentFilter);
-        mBatchScanThrottler = new BatchScanThrottler(timeProvider, mScreenOn);
+        mBatchScanThrottler = new BatchScanThrottler(mAdapterService, timeProvider, mScreenOn);
 
         Log.d(TAG, "IsMsftSupported? " + mIsMsftSupported);
     }
@@ -1811,6 +1811,9 @@ public class ScanManager {
         int deliveryMode = getDeliveryMode(client);
         int rssiThreshold = Byte.MIN_VALUE;
         ScanSettings settings = client.mSettings;
+        if (Flags.rssiScanFilter()) {
+            rssiThreshold = settings.getRssiThreshold();
+        }
         int onFoundTimeout = getOnFoundOnLostTimeoutMillis(settings, true);
         int onFoundCount = getOnFoundOnLostSightings(settings);
         int onLostTimeout = 10000;

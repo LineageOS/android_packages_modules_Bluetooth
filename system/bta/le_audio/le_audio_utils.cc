@@ -65,6 +65,7 @@ LeAudioContextType AudioContentToLeAudioContext(audio_content_type_t content_typ
     case AUDIO_USAGE_GAME:
       return LeAudioContextType::GAME;
     case AUDIO_USAGE_NOTIFICATION:
+    case AUDIO_USAGE_NOTIFICATION_EVENT:
       return LeAudioContextType::NOTIFICATIONS;
     case AUDIO_USAGE_NOTIFICATION_TELEPHONY_RINGTONE:
       return LeAudioContextType::RINGTONE;

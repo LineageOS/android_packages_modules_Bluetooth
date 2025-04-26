@@ -46,18 +46,21 @@ import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUuid;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioDeviceCallback;
+import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.ParcelUuid;
 import android.os.PowerManager;
 import android.os.RemoteException;
+import android.platform.test.annotations.DisableFlags;
+import android.platform.test.annotations.EnableFlags;
+import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.telecom.PhoneAccount;
-import android.util.Log;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.Utils;
@@ -84,6 +87,9 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.hamcrest.MockitoHamcrest;
 
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
+import platform.test.runner.parameterized.Parameters;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -91,11 +97,20 @@ import java.util.Set;
 
 /** Test cases for {@link HeadsetServiceAndStateMachine}. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
+@RunWith(ParameterizedAndroidJunit4.class)
 public class HeadsetServiceAndStateMachineTest {
     private static final String TAG = HeadsetServiceAndStateMachineTest.class.getSimpleName();
 
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+    @Rule public final SetFlagsRule mSetFlagsRule;
+
+    @Parameters(name = "{0}")
+    public static List<FlagsParameterization> getParams() {
+        return FlagsParameterization.allCombinationsOf(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO);
+    }
+
+    public HeadsetServiceAndStateMachineTest(FlagsParameterization flags) {
+        mSetFlagsRule = new SetFlagsRule(flags);
+    }
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
@@ -113,6 +128,7 @@ public class HeadsetServiceAndStateMachineTest {
     @Mock private HeadsetPhoneState mPhoneState;
     @Mock private RemoteDevices mRemoteDevices;
     @Mock private SystemProperties.MockableSystemProperties mProperties;
+    @Mock private AudioDeviceInfo mAudioDeviceInfo;
 
     private static final int MAX_HEADSET_CONNECTIONS = 5;
     private static final ParcelUuid[] FAKE_HEADSET_UUID = {BluetoothUuid.HFP};
@@ -166,6 +182,10 @@ public class HeadsetServiceAndStateMachineTest {
         doReturn(true).when(mSystemInterface).deactivateVoiceRecognition();
         doReturn(mVoiceRecognitionWakeLock).when(mSystemInterface).getVoiceRecognitionWakeLock();
         doReturn(true).when(mSystemInterface).isCallIdle();
+        doReturn(false).when(mSystemInterface).isScoManagedByAudioEnabled();
+        if (Flags.isScoManagedByAudio()) {
+            doReturn(true).when(mSystemInterface).isScoManagedByAudioEnabled();
+        }
         // Mock methods in HeadsetNativeInterface
         doReturn(true).when(mNativeInterface).connectHfp(any(BluetoothDevice.class));
         doReturn(true).when(mNativeInterface).disconnectHfp(any(BluetoothDevice.class));
@@ -378,6 +398,7 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Normal start and stop
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testVirtualCall_normalStartStop() throws RemoteException {
         for (int i = 0; i < MAX_HEADSET_CONNECTIONS; ++i) {
             BluetoothDevice device = getTestDevice(i);
@@ -417,6 +438,7 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Virtual call should be preempted by telecom call
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testVirtualCall_preemptedByTelecomCall() throws RemoteException {
         for (int i = 0; i < MAX_HEADSET_CONNECTIONS; ++i) {
             BluetoothDevice device = getTestDevice(i);
@@ -461,6 +483,7 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Virtual call should be rejected when there is a telecom call
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testVirtualCall_rejectedWhenThereIsTelecomCall() throws RemoteException {
         for (int i = 0; i < MAX_HEADSET_CONNECTIONS; ++i) {
             BluetoothDevice device = getTestDevice(i);
@@ -511,6 +534,7 @@ public class HeadsetServiceAndStateMachineTest {
 
     /** Test the behavior when dialing outgoing call from the headset */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testDialingOutCall_NormalDialingOut() throws RemoteException {
         for (int i = 0; i < MAX_HEADSET_CONNECTIONS; ++i) {
             BluetoothDevice device = getTestDevice(i);
@@ -605,6 +629,7 @@ public class HeadsetServiceAndStateMachineTest {
 
     /** Test the behavior when dialing outgoing call from the headset */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testDialingOutCall_DialingOutPreemptVirtualCall() throws RemoteException {
         for (int i = 0; i < MAX_HEADSET_CONNECTIONS; ++i) {
             BluetoothDevice device = getTestDevice(i);
@@ -664,6 +689,7 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Reference: Section 4.25, Page 64/144 of HFP 1.7.1 specification
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_SingleHfInitiatedSuccess() {
         // Connect HF
         BluetoothDevice device = getTestDevice(0);
@@ -684,10 +710,8 @@ public class HeadsetServiceAndStateMachineTest {
      * SCO connection is handled by the Audio Framework
      */
     @Test
+    @EnableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_SingleHfInitiatedSuccess_ScoManagedByAudio() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO);
-        Utils.setIsScoManagedByAudioEnabled(true);
-
         // Connect HF
         BluetoothDevice device = getTestDevice(0);
         connectTestDevice(device);
@@ -699,8 +723,6 @@ public class HeadsetServiceAndStateMachineTest {
         verify(mNativeInterface).sendBsir(eq(device), eq(true));
         // Start voice recognition
         startVoiceRecognitionFromHf_ScoManagedByAudio(device);
-
-        Utils.setIsScoManagedByAudioEnabled(false);
     }
 
     /**
@@ -711,6 +733,7 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Reference: Section 4.25, Page 64/144 of HFP 1.7.1 specification
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_SingleHfStopSuccess() {
         // Connect HF
         BluetoothDevice device = getTestDevice(0);
@@ -753,6 +776,7 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Reference: Section 4.25, Page 64/144 of HFP 1.7.1 specification
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_SingleHfInitiatedFailedToActivate() {
         doReturn(false).when(mSystemInterface).activateVoiceRecognition();
         // Connect HF
@@ -786,6 +810,7 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Reference: Section 4.25, Page 64/144 of HFP 1.7.1 specification
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_SingleHfInitiatedTimeout() {
         // Connect HF
         BluetoothDevice device = getTestDevice(0);
@@ -828,6 +853,7 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Reference: Section 4.25, Page 64/144 of HFP 1.7.1 specification
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_SingleAgInitiatedSuccess() {
         // Connect HF
         BluetoothDevice device = getTestDevice(0);
@@ -848,10 +874,8 @@ public class HeadsetServiceAndStateMachineTest {
      * SCO connection is handled by the Audio Framework
      */
     @Test
+    @EnableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_SingleAgInitiatedSuccess_ScoManagedByAudio() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO);
-        Utils.setIsScoManagedByAudioEnabled(true);
-
         // Connect HF
         BluetoothDevice device = getTestDevice(0);
         connectTestDevice(device);
@@ -863,8 +887,6 @@ public class HeadsetServiceAndStateMachineTest {
         verify(mNativeInterface).sendBsir(eq(device), eq(true));
         // Start voice recognition
         startVoiceRecognitionFromAg_ScoManagedByAudio();
-
-        Utils.setIsScoManagedByAudioEnabled(false);
     }
 
     /**
@@ -876,6 +898,7 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Reference: Section 4.25, Page 64/144 of HFP 1.7.1 specification
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_SingleAgStopSuccess() {
         // Connect HF
         BluetoothDevice device = getTestDevice(0);
@@ -910,6 +933,7 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Reference: Section 4.25, Page 64/144 of HFP 1.7.1 specification
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_SingleAgInitiatedDeviceNotConnected() {
         // Start voice recognition
         BluetoothDevice disconnectedDevice = getTestDevice(0);
@@ -929,6 +953,7 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Reference: Section 4.25, Page 64/144 of HFP 1.7.1 specification
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_MultiHfInitiatedSwitchActiveDeviceSuccess() {
         // Connect two devices
         BluetoothDevice deviceA = getTestDevice(0);
@@ -990,6 +1015,7 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Reference: Section 4.25, Page 64/144 of HFP 1.7.1 specification
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_MultiHfInitiatedSwitchActiveDeviceReplyWrongHfSuccess() {
         // Connect two devices
         InOrder inOrder = inOrder(mNativeInterface);
@@ -1051,6 +1077,7 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Reference: Section 4.25, Page 64/144 of HFP 1.7.1 specification
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_MultiAgInitiatedSuccess() {
         // Connect two devices
         BluetoothDevice deviceA = getTestDevice(0);
@@ -1097,6 +1124,7 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Reference: Section 4.25, Page 64/144 of HFP 1.7.1 specification
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_MultiAgInitiatedDeviceNotActive() {
         // Connect two devices
         BluetoothDevice deviceA = getTestDevice(0);
@@ -1188,6 +1216,7 @@ public class HeadsetServiceAndStateMachineTest {
      * AptX SWB codec disabled.
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testIncomingCall_NonHdNonVoipCall_AptXDisabled() {
         configureHeadsetServiceForAptxVoice(true);
 
@@ -1272,6 +1301,7 @@ public class HeadsetServiceAndStateMachineTest {
      * SWB codec enabled.
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testIncomingCall_HdNonVoipCall_AptXEnabled() {
         configureHeadsetServiceForAptxVoice(true);
         BluetoothDevice device = getTestDevice(0);
@@ -1355,6 +1385,7 @@ public class HeadsetServiceAndStateMachineTest {
      * LC3 SWB enabled
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testSetAudioParametersWithAptxVoice_Lc3SwbEnabled() {
         configureHeadsetServiceForAptxVoice(true);
         // Connect HF
@@ -1386,6 +1417,7 @@ public class HeadsetServiceAndStateMachineTest {
      * Test LC3 SWB enabled
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testSetAudioParametersWithoutAptxVoice_Lc3SwbEnabled() {
         configureHeadsetServiceForAptxVoice(false);
         // Connect HF
@@ -1416,6 +1448,7 @@ public class HeadsetServiceAndStateMachineTest {
      * aptX SWB enabled
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testSetAudioParametersWithAptxVoice_AptXSwbEnabled() {
         configureHeadsetServiceForAptxVoice(true);
         // Connect HF
@@ -1447,6 +1480,7 @@ public class HeadsetServiceAndStateMachineTest {
      * SWB disabled
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testSetAudioParametersWithAptxVoice_SwbDisabled() {
         configureHeadsetServiceForAptxVoice(true);
         // Connect HF
@@ -1476,6 +1510,7 @@ public class HeadsetServiceAndStateMachineTest {
      * Test SWB disabled
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testSetAudioParametersWithoutAptxVoice_SwbDisabled() {
         configureHeadsetServiceForAptxVoice(false);
         // Connect HF
@@ -1505,6 +1540,7 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>AptX SWB and AptX SWB PM enabled
      */
     @Test
+    @DisableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_AptXSwbEnabled() {
         configureHeadsetServiceForAptxVoice(true);
         BluetoothDevice device = getTestDevice(0);
@@ -1647,10 +1683,6 @@ public class HeadsetServiceAndStateMachineTest {
     }
 
     private void startVoiceRecognitionFromHf_ScoManagedByAudio(BluetoothDevice device) {
-        if (!Flags.isScoManagedByAudio()) {
-            Log.i(TAG, "isScoManagedByAudio is disabled");
-            return;
-        }
         // Start voice recognition
         HeadsetStackEvent startVrEvent =
                 new HeadsetStackEvent(
@@ -1718,10 +1750,8 @@ public class HeadsetServiceAndStateMachineTest {
      * mActiveDevice's CALL_STATE_CHANGED message
      */
     @Test
+    @EnableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
     public void testPhoneStateChange_SynchronousCallStateChanged() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO);
-        Utils.setIsScoManagedByAudioEnabled(true);
-
         BluetoothDevice device = getTestDevice(0);
         assertThat(device).isNotNull();
         connectTestDevice(device);
@@ -1753,8 +1783,189 @@ public class HeadsetServiceAndStateMachineTest {
         mTestLooper.dispatchAll();
         // HeadsetStateMachine completes processing CALL_STATE_CHANGED message
         verify(mNativeInterface).phoneStateChange(device, headsetCallState);
+    }
 
-        Utils.setIsScoManagedByAudioEnabled(false);
+    /*
+     * Test when AT+BCC is received but audio framework has not updated the active device - HF
+     * starts audio connection.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
+    public void testHfStartsAudioConnection_scoManagedByAudio() {
+        ArgumentCaptor<AudioDeviceCallback> callback =
+                ArgumentCaptor.forClass(AudioDeviceCallback.class);
+        when(mSystemInterface.getAudioManager()).thenReturn(mAudioManager);
+
+        BluetoothDevice device = getTestDevice(0);
+        assertThat(device).isNotNull();
+        connectTestDevice(device);
+        verify(mAudioManager).registerAudioDeviceCallback(callback.capture(), any());
+
+        mHeadsetService.setActiveDevice(device);
+        mTestLooper.dispatchAll();
+        assertThat(mHeadsetService.setActiveDevice(device)).isTrue();
+        mTestLooper.dispatchAll();
+
+        // State Machine is asked to process AT+BCC callback but the active device is not updated
+        // yet
+        HeadsetStackEvent atBccEvent =
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_BCC,
+                        HeadsetHalConstants.CONNECTION_STATE_CONNECTED,
+                        device);
+        mHeadsetService.messageFromNative(atBccEvent);
+        mTestLooper.dispatchAll();
+        assertThat(mHeadsetService.mPendingScoConnection).isEqualTo(device);
+
+        // trigger audio callback
+        AudioDeviceCallback callbackVal = callback.getValue();
+        when(mAudioDeviceInfo.getType()).thenReturn(AudioDeviceInfo.TYPE_BLUETOOTH_SCO);
+        when(mAudioDeviceInfo.getAddress()).thenReturn(device.getAddress());
+        when(mAdapterService.getDeviceFromByte(Utils.getBytesFromAddress(device.getAddress())))
+                .thenReturn(device);
+        when(mAudioManager.getAvailableCommunicationDevices())
+                .thenReturn(List.of(mAudioDeviceInfo));
+        callbackVal.onAudioDevicesAdded(new AudioDeviceInfo[] {mAudioDeviceInfo});
+        mTestLooper.dispatchAll();
+
+        verify(mAudioManager).setCommunicationDevice(mAudioDeviceInfo);
+    }
+
+    /*
+     * Test when AT+BCC is received but audio framework has not updated the active device - HF
+     * starts audio connection but device is disconnected before starting SCO.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
+    public void testHfStartsAudioConnection_deviceDisconnected() {
+        ArgumentCaptor<AudioDeviceCallback> callback =
+                ArgumentCaptor.forClass(AudioDeviceCallback.class);
+        when(mSystemInterface.getAudioManager()).thenReturn(mAudioManager);
+
+        BluetoothDevice device = getTestDevice(0);
+        assertThat(device).isNotNull();
+        connectTestDevice(device);
+        verify(mAudioManager).registerAudioDeviceCallback(callback.capture(), any());
+
+        mHeadsetService.setActiveDevice(device);
+        mTestLooper.dispatchAll();
+        assertThat(mHeadsetService.setActiveDevice(device)).isTrue();
+        mTestLooper.dispatchAll();
+
+        // State Machine is asked to process AT+BCC callback but the active device is not updated
+        // yet
+        HeadsetStackEvent atBccEvent =
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_BCC,
+                        HeadsetHalConstants.CONNECTION_STATE_CONNECTED,
+                        device);
+        mHeadsetService.messageFromNative(atBccEvent);
+        mTestLooper.dispatchAll();
+        assertThat(mHeadsetService.mPendingScoConnection).isEqualTo(device);
+
+        // Now disconnect the device
+        HeadsetStackEvent connectingEvent =
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED,
+                        HeadsetHalConstants.CONNECTION_STATE_DISCONNECTED,
+                        device);
+        mHeadsetService.messageFromNative(connectingEvent);
+        mTestLooper.dispatchAll();
+
+        verifyConnectionStateIntent(device, STATE_DISCONNECTED, STATE_CONNECTED);
+
+        assertThat(mHeadsetService.mPendingScoConnection).isEqualTo(null);
+        verify(mAudioManager, times(0)).setCommunicationDevice(mAudioDeviceInfo);
+    }
+
+    /*
+     * Test when AT+BCC is received but audio framework has not updated the active device - HF
+     * starts audio connection but device has SCO started by other means.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
+    public void testHfStartsAudioConnection_scoStartedByOtherMeans() {
+        ArgumentCaptor<AudioDeviceCallback> callback =
+                ArgumentCaptor.forClass(AudioDeviceCallback.class);
+        when(mSystemInterface.getAudioManager()).thenReturn(mAudioManager);
+
+        BluetoothDevice device = getTestDevice(0);
+        assertThat(device).isNotNull();
+        connectTestDevice(device);
+        verify(mAudioManager).registerAudioDeviceCallback(callback.capture(), any());
+
+        mHeadsetService.setActiveDevice(device);
+        mTestLooper.dispatchAll();
+        assertThat(mHeadsetService.setActiveDevice(device)).isTrue();
+        mTestLooper.dispatchAll();
+
+        // State Machine is asked to process AT+BCC callback but the active device is not updated
+        // yet
+        HeadsetStackEvent atBccEvent =
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_BCC,
+                        HeadsetHalConstants.CONNECTION_STATE_CONNECTED,
+                        device);
+        mHeadsetService.messageFromNative(atBccEvent);
+        mTestLooper.dispatchAll();
+        assertThat(mHeadsetService.mPendingScoConnection).isEqualTo(device);
+
+        // Transition to AUDIO_STATE_CONNECTED as if SCO is connected
+        doReturn(true).when(mSystemInterface).isInCall();
+        mHeadsetService.messageFromNative(
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED,
+                        HeadsetHalConstants.AUDIO_STATE_CONNECTED,
+                        device));
+        mTestLooper.dispatchAll();
+
+        assertThat(mHeadsetService.mPendingScoConnection).isEqualTo(null);
+    }
+
+    /*
+     * Test that mExposedDevice is set correctly
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
+    public void testMExposedDevice_isSetCorrectly() {
+        ArgumentCaptor<AudioDeviceCallback> callback =
+                ArgumentCaptor.forClass(AudioDeviceCallback.class);
+        when(mSystemInterface.getAudioManager()).thenReturn(mAudioManager);
+
+        BluetoothDevice device = getTestDevice(0);
+        assertThat(device).isNotNull();
+        connectTestDevice(device);
+        assertThat(mHeadsetService.mExposedActiveDevice).isNull();
+        verify(mAudioManager).registerAudioDeviceCallback(callback.capture(), any());
+
+        mHeadsetService.setActiveDevice(device);
+        mTestLooper.dispatchAll();
+        assertThat(mHeadsetService.setActiveDevice(device)).isTrue();
+        mTestLooper.dispatchAll();
+        assertThat(mHeadsetService.mExposedActiveDevice).isNull();
+
+        // trigger audio callback to add device
+        AudioDeviceCallback callbackVal = callback.getValue();
+        when(mAudioDeviceInfo.getType()).thenReturn(AudioDeviceInfo.TYPE_BLUETOOTH_SCO);
+        when(mAudioDeviceInfo.getAddress()).thenReturn(device.getAddress());
+        when(mAdapterService.getDeviceFromByte(Utils.getBytesFromAddress(device.getAddress())))
+                .thenReturn(device);
+        when(mAudioManager.getAvailableCommunicationDevices())
+                .thenReturn(List.of(mAudioDeviceInfo));
+        callbackVal.onAudioDevicesAdded(new AudioDeviceInfo[] {mAudioDeviceInfo});
+        mTestLooper.dispatchAll();
+        assertThat(mHeadsetService.mExposedActiveDevice).isEqualTo(device);
+
+        // trigger audio callback to remove device
+        when(mAudioDeviceInfo.getType()).thenReturn(AudioDeviceInfo.TYPE_BLUETOOTH_SCO);
+        // trigger removal of a device that is not the exposed active device
+        when(mAudioDeviceInfo.getAddress()).thenReturn("00:00:00:00");
+        callbackVal.onAudioDevicesRemoved(new AudioDeviceInfo[] {mAudioDeviceInfo});
+        assertThat(mHeadsetService.mExposedActiveDevice).isEqualTo(device);
+
+        when(mAudioDeviceInfo.getAddress()).thenReturn(device.getAddress());
+        callbackVal.onAudioDevicesRemoved(new AudioDeviceInfo[] {mAudioDeviceInfo});
+        assertThat(mHeadsetService.mExposedActiveDevice).isNull();
     }
 
     private void connectTestDevice(BluetoothDevice device) {
@@ -1833,7 +2044,7 @@ public class HeadsetServiceAndStateMachineTest {
                 hasExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState));
     }
 
-    /**
+    /*
      * Verify the series of invocations after {@link
      * BluetoothHeadset#startScoUsingVirtualVoiceCall()}
      *

@@ -128,3 +128,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "wait_hid_disconnect_before_marking_unused"
+    namespace: "bluetooth"
+    description: "Mark device unused only after it's properly disconnected"
+    bug: "412876005"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

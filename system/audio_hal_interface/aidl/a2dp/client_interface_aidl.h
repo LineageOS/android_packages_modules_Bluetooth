@@ -129,7 +129,8 @@ public:
   /***
    * Read data from audio HAL through fmq
    ***/
-  size_t ReadAudioData(uint8_t* p_buf, uint32_t len);
+  size_t ReadAudioData(uint8_t* p_buf, size_t len);
+  size_t ReadAudioDataExact(uint8_t* p_buf, size_t len);
 
   static constexpr PcmConfiguration kInvalidPcmConfiguration = {};
 
@@ -152,6 +153,11 @@ protected:
 
   bool session_started_;
   std::unique_ptr<DataMQ> data_mq_;
+
+  static constexpr size_t kFmqBufferCapacity = 15360;
+
+  uint8_t fmq_buffer_[kFmqBufferCapacity];
+  size_t fmq_buffer_size_ = 0;
 
   ::ndk::ScopedAIBinder_DeathRecipient death_recipient_;
   // static constexpr const char* kDefaultAudioProviderFactoryInterface =

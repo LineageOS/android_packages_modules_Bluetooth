@@ -472,8 +472,7 @@ void BleScannerInterfaceImpl::on_scan_result(uint16_t event_type, uint8_t addres
   }
 
   // Do not update device properties of already bonded devices.
-  if (!com::android::bluetooth::flags::guard_bonded_device_properties() ||
-      !BTM_IsBonded(raw_address)) {
+  if (!BTM_IsBonded(raw_address)) {
     do_in_jni_thread(base::BindOnce(&BleScannerInterfaceImpl::handle_remote_properties,
                                     base::Unretained(this), raw_address, ble_addr_type,
                                     advertising_data));

@@ -872,10 +872,12 @@ static void btif_a2dp_source_audio_tx_stop_event(void) {
     return;
   }
 
-  /* Drain data still left in the queue */
-  static constexpr size_t AUDIO_STREAM_OUTPUT_BUFFER_SZ = 28 * 512;
-  uint8_t p_buf[AUDIO_STREAM_OUTPUT_BUFFER_SZ * 2];
-  bluetooth::audio::a2dp::read(p_buf, sizeof(p_buf));
+  if (!com::android::bluetooth::flags::a2dp_fmq_read_exact()) {
+    /* Drain data still left in the queue */
+    static constexpr size_t AUDIO_STREAM_OUTPUT_BUFFER_SZ = 28 * 512;
+    uint8_t p_buf[AUDIO_STREAM_OUTPUT_BUFFER_SZ * 2];
+    bluetooth::audio::a2dp::read(p_buf, sizeof(p_buf));
+  }
 
   /* Stop the timer first */
   btif_a2dp_source_cb.media_alarm.CancelAndWait();

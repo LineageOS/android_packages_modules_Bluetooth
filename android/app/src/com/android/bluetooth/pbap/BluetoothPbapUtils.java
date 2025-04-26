@@ -265,7 +265,7 @@ class BluetoothPbapUtils {
         BluetoothPbapUtils.sDbIdentifier.set(pref.getLong("DbIdentifier", timeStamp));
         BluetoothPbapUtils.sPrimaryVersionCounter = pref.getLong("primary", 0);
         BluetoothPbapUtils.sSecondaryVersionCounter = pref.getLong("secondary", 0);
-        BluetoothPbapUtils.sTotalFields = pref.getLong("totalContacts", 0);
+        BluetoothPbapUtils.sTotalContacts = pref.getLong("totalContacts", 0);
         BluetoothPbapUtils.sContactsLastUpdated = pref.getLong("lastUpdatedTimestamp", timeStamp);
         BluetoothPbapUtils.sTotalFields = pref.getLong("totalFields", 0);
         BluetoothPbapUtils.sTotalSvcFields = pref.getLong("totalSvcFields", 0);
@@ -622,10 +622,11 @@ class BluetoothPbapUtils {
      * contactId - Contact ID, data1 - field value from data table for phone/email/address*/
     @VisibleForTesting
     static void setContactFields(String fieldType, String contactId, String data) {
-        ContactData cData;
+        ContactData cData = null;
         if (sContactDataset.containsKey(contactId)) {
             cData = sContactDataset.get(contactId);
-        } else {
+        }
+        if (cData == null) {
             cData = new ContactData();
         }
 

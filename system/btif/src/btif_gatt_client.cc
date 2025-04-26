@@ -341,31 +341,8 @@ void btif_gattc_open_impl(int client_if, RawAddress address, tBLE_ADDR_TYPE addr
 
   // Determine transport
   if (transport == BT_TRANSPORT_AUTO) {
-    if (com::android::bluetooth::flags::default_gatt_transport()) {
-      // Prefer LE transport when LE is supported
-      transport = (device_type == BT_DEVICE_TYPE_BREDR) ? BT_TRANSPORT_BR_EDR : BT_TRANSPORT_LE;
-    } else {
-      switch (device_type) {
-        case BT_DEVICE_TYPE_BREDR:
-          transport = BT_TRANSPORT_BR_EDR;
-          break;
-
-        case BT_DEVICE_TYPE_BLE:
-          transport = BT_TRANSPORT_LE;
-          break;
-
-        case BT_DEVICE_TYPE_DUMO:
-          transport = (addr_type == BLE_ADDR_RANDOM) ? BT_TRANSPORT_LE : BT_TRANSPORT_BR_EDR;
-          break;
-
-        default:
-          log::error("Unknown device type {}", DeviceTypeText(device_type));
-          // transport must not be AUTO for finding control blocks. Use LE for backward
-          // compatibility.
-          transport = BT_TRANSPORT_LE;
-          break;
-      }
-    }
+    // Prefer LE transport when LE is supported
+    transport = (device_type == BT_DEVICE_TYPE_BREDR) ? BT_TRANSPORT_BR_EDR : BT_TRANSPORT_LE;
   }
 
   // Connect!
