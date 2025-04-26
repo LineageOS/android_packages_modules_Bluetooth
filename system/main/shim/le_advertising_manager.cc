@@ -83,8 +83,14 @@ public:
     uint8_t client_id = is_native_advertiser(reg_id);
     // if registered by native client, remove the register id
     if (client_id != kAdvertiserClientIdJni) {
-      native_reg_id_map[client_id].erase(reg_id);
+      native_reg_id_map_[client_id].erase(reg_id);
     }
+    if (com::android::bluetooth::flags::fix_private_gatt_advertisement()) {
+      // TODO(b/406124107): When removing flag, consider this lock_guard.
+      std::lock_guard<std::mutex> lock(reg_callback_mutex_);
+      reg_id_to_reg_callback_.erase(reg_id);
+    }
+
     BTM_LogHistory(kBtmLogTag, RawAddress::kEmpty, "Le advert stopped",
                    std::format("advert_id:{}", advertiser_id));
   }
@@ -145,7 +151,7 @@ public:
 
   // ::BleAdvertiserInterface
   void StartAdvertisingSet(uint8_t client_id, int reg_id,
-                           ::BleAdvertiserInterface::IdTxPowerStatusCallback /* register_cb */,
+                           ::BleAdvertiserInterface::IdTxPowerStatusCallback register_cb,
                            ::AdvertiseParameters params, std::vector<uint8_t> advertise_data,
                            std::vector<uint8_t> scan_response_data,
                            ::PeriodicAdvertisingParameters periodic_params,
@@ -164,7 +170,15 @@ public:
 
     // if registered by native client, add the register id
     if (client_id != kAdvertiserClientIdJni) {
-      native_reg_id_map[client_id].insert(reg_id);
+      native_reg_id_map_[client_id].insert(reg_id);
+    }
+
+    if (com::android::bluetooth::flags::fix_private_gatt_advertisement()) {
+      // TODO(b/406124107): When removing flag, consider this lock_guard.
+      std::lock_guard<std::mutex> lock(reg_callback_mutex_);
+      if (!reg_id_to_reg_callback_.insert_or_assign(reg_id, register_cb).second) {
+        log::warn("reg_id {} is already in the reg_id_to_reg_callback map!", reg_id);
+      }
     }
 
     bluetooth::shim::GetAdvertising()->ExtendedCreateAdvertiser(
@@ -244,6 +258,17 @@ public:
                                    advertiser_id, tx_power, status));
       return;
     }
+
+    if (com::android::bluetooth::flags::fix_private_gatt_advertisement()) {
+      // TODO(b/406124107): When removing flag, consider this lock_guard.
+      std::lock_guard<std::mutex> lock(reg_callback_mutex_);
+      if (reg_id_to_reg_callback_.contains(reg_id)) {
+        do_in_jni_thread(
+                base::BindOnce(reg_id_to_reg_callback_[reg_id], advertiser_id, tx_power, status));
+        reg_id_to_reg_callback_.erase(reg_id);
+      }
+    }
+
     do_in_jni_thread(base::BindOnce(&::AdvertisingCallbacks::OnAdvertisingSetStarted,
                                     base::Unretained(advertising_callbacks_), reg_id, advertiser_id,
                                     tx_power, status));
@@ -415,7 +440,7 @@ private:
     // Return client id if it's native advertiser, otherwise return jni id as
     // default
     for (auto const& entry : native_adv_callbacks_map_) {
-      if (native_reg_id_map[entry.first].count(reg_id)) {
+      if (native_reg_id_map_[entry.first].count(reg_id)) {
         return entry.first;
       }
     }
@@ -423,7 +448,11 @@ private:
   }
 
   std::map<uint8_t, ::BleAdvertiserInterface::GetAddressCallback> address_callbacks_;
-  std::map<uint8_t, std::set<int>> native_reg_id_map;
+  std::map<uint8_t, std::set<int>> native_reg_id_map_;
+
+  std::mutex reg_callback_mutex_;
+  std::map<uint8_t, ::BleAdvertiserInterface::IdTxPowerStatusCallback> reg_id_to_reg_callback_
+          GUARDED_BY(reg_callback_mutex_);
 };
 
 ::BleAdvertiserInterface* bluetooth::shim::get_ble_advertiser_instance() {

@@ -1922,6 +1922,52 @@ public class HeadsetServiceAndStateMachineTest {
         assertThat(mHeadsetService.mPendingScoConnection).isEqualTo(null);
     }
 
+    /*
+     * Test that mExposedDevice is set correctly
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
+    public void testMExposedDevice_isSetCorrectly() {
+        ArgumentCaptor<AudioDeviceCallback> callback =
+                ArgumentCaptor.forClass(AudioDeviceCallback.class);
+        when(mSystemInterface.getAudioManager()).thenReturn(mAudioManager);
+
+        BluetoothDevice device = getTestDevice(0);
+        assertThat(device).isNotNull();
+        connectTestDevice(device);
+        assertThat(mHeadsetService.mExposedActiveDevice).isNull();
+        verify(mAudioManager).registerAudioDeviceCallback(callback.capture(), any());
+
+        mHeadsetService.setActiveDevice(device);
+        mTestLooper.dispatchAll();
+        assertThat(mHeadsetService.setActiveDevice(device)).isTrue();
+        mTestLooper.dispatchAll();
+        assertThat(mHeadsetService.mExposedActiveDevice).isNull();
+
+        // trigger audio callback to add device
+        AudioDeviceCallback callbackVal = callback.getValue();
+        when(mAudioDeviceInfo.getType()).thenReturn(AudioDeviceInfo.TYPE_BLUETOOTH_SCO);
+        when(mAudioDeviceInfo.getAddress()).thenReturn(device.getAddress());
+        when(mAdapterService.getDeviceFromByte(Utils.getBytesFromAddress(device.getAddress())))
+                .thenReturn(device);
+        when(mAudioManager.getAvailableCommunicationDevices())
+                .thenReturn(List.of(mAudioDeviceInfo));
+        callbackVal.onAudioDevicesAdded(new AudioDeviceInfo[] {mAudioDeviceInfo});
+        mTestLooper.dispatchAll();
+        assertThat(mHeadsetService.mExposedActiveDevice).isEqualTo(device);
+
+        // trigger audio callback to remove device
+        when(mAudioDeviceInfo.getType()).thenReturn(AudioDeviceInfo.TYPE_BLUETOOTH_SCO);
+        // trigger removal of a device that is not the exposed active device
+        when(mAudioDeviceInfo.getAddress()).thenReturn("00:00:00:00");
+        callbackVal.onAudioDevicesRemoved(new AudioDeviceInfo[] {mAudioDeviceInfo});
+        assertThat(mHeadsetService.mExposedActiveDevice).isEqualTo(device);
+
+        when(mAudioDeviceInfo.getAddress()).thenReturn(device.getAddress());
+        callbackVal.onAudioDevicesRemoved(new AudioDeviceInfo[] {mAudioDeviceInfo});
+        assertThat(mHeadsetService.mExposedActiveDevice).isNull();
+    }
+
     private void connectTestDevice(BluetoothDevice device) {
         doReturn(CONNECTION_POLICY_UNKNOWN)
                 .when(mDatabaseManager)

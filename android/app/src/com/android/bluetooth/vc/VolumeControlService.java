@@ -29,6 +29,8 @@ import static android.bluetooth.IBluetoothCsipSetCoordinator.CSIS_GROUP_ID_INVAL
 import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 import static android.bluetooth.IBluetoothVolumeControl.VOLUME_CONTROL_UNKNOWN_VOLUME;
 
+import static com.android.bluetooth.flags.Flags.vcpHandleGroupIdInternally;
+
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
@@ -100,6 +102,7 @@ public class VolumeControlService extends ProfileService {
             new HashMap<>();
     private final Map<BluetoothDevice, VolumeControlInputDescriptor> mAudioInputs =
             new ConcurrentHashMap<>();
+    private final Map<BluetoothDevice, Integer> mGroupIds = new ConcurrentHashMap<>();
     private final Map<Integer, Integer> mGroupVolumeCache = new ConcurrentHashMap<>();
     private final Map<Integer, Boolean> mGroupMuteCache = new ConcurrentHashMap<>();
     private final Map<BluetoothDevice, Integer> mDeviceVolumeCache = new ConcurrentHashMap<>();
@@ -181,6 +184,7 @@ public class VolumeControlService extends ProfileService {
         mNativeInterface.cleanup();
 
         mAudioOffsets.clear();
+        mGroupIds.clear();
         mGroupVolumeCache.clear();
         mGroupMuteCache.clear();
         mDeviceVolumeCache.clear();
@@ -272,6 +276,10 @@ public class VolumeControlService extends ProfileService {
             return GROUP_ID_INVALID;
         }
 
+        if (vcpHandleGroupIdInternally()) {
+            return mGroupIds.getOrDefault(device, GROUP_ID_INVALID);
+        }
+
         CsipSetCoordinatorService csipClient = mFactory.getCsipSetCoordinatorService();
         if (csipClient != null) {
             int groupId = csipClient.getGroupId(device, BluetoothUuid.CAP);
@@ -299,6 +307,15 @@ public class VolumeControlService extends ProfileService {
         List<BluetoothDevice> result = new ArrayList<>();
 
         if (groupId == GROUP_ID_INVALID) {
+            return result;
+        }
+
+        if (vcpHandleGroupIdInternally()) {
+            for (Map.Entry<BluetoothDevice, Integer> entry : mGroupIds.entrySet()) {
+                if (entry.getValue() == groupId) {
+                    result.add(entry.getKey());
+                }
+            }
             return result;
         }
 
@@ -1107,7 +1124,12 @@ public class VolumeControlService extends ProfileService {
     }
 
     void handleDeviceAvailable(
-            BluetoothDevice device, int numberOfExternalOutputs, int numberOfExternalInputs) {
+            BluetoothDevice device,
+            int groupId,
+            int numberOfExternalOutputs,
+            int numberOfExternalInputs) {
+        mGroupIds.put(device, groupId);
+        Log.d(TAG, "handleDeviceAvailable: mGroupIds: " + mGroupIds);
         handleExternalOutputs(device, numberOfExternalOutputs);
         handleExternalInputs(device, numberOfExternalInputs);
     }
@@ -1359,7 +1381,8 @@ public class VolumeControlService extends ProfileService {
 
         BluetoothDevice device = stackEvent.device;
         if (stackEvent.type == VolumeControlStackEvent.EVENT_TYPE_DEVICE_AVAILABLE) {
-            handleDeviceAvailable(device, stackEvent.valueInt1, stackEvent.valueInt2);
+            handleDeviceAvailable(
+                    device, stackEvent.valueInt1, stackEvent.valueInt2, stackEvent.valueInt3);
             return;
         }
 
@@ -1478,6 +1501,36 @@ public class VolumeControlService extends ProfileService {
         }
     }
 
+    private void removeDeviceData(BluetoothDevice device) {
+        Log.d(TAG, "Remove data for device: " + device);
+
+        int groupId = getGroupId(device);
+
+        mAudioOffsets.remove(device);
+        mAudioInputs.remove(device);
+        mDeviceVolumeCache.remove(device);
+        mDeviceMuteCache.remove(device);
+        mGroupIds.remove(device);
+
+        if (vcpHandleGroupIdInternally()) {
+            if (!getGroupDevices(groupId).isEmpty()) {
+                // Return if group is not empty
+                return;
+            }
+        } else {
+            for (BluetoothDevice groupDevice : getGroupDevices(groupId)) {
+                if (mAdapterService.getBondState(groupDevice) != BOND_NONE) {
+                    // Return if any device from group is BONDED or BONDING
+                    return;
+                }
+            }
+        }
+
+        Log.d(TAG, "Remove group data for id: " + groupId);
+        mGroupVolumeCache.remove(groupId);
+        mGroupMuteCache.remove(groupId);
+    }
+
     /** Process a change in the bonding state for a device */
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
         mHandler.post(() -> bondStateChanged(device, toState));
@@ -1510,6 +1563,7 @@ public class VolumeControlService extends ProfileService {
                 return;
             }
             removeStateMachine(device);
+            removeDeviceData(device);
         }
     }
 
@@ -1557,6 +1611,7 @@ public class VolumeControlService extends ProfileService {
             if (bondState == BOND_NONE) {
                 Log.d(TAG, device + " is unbond. Remove state machine");
                 removeStateMachine(device);
+                removeDeviceData(device);
             }
         }
         mAdapterService.handleProfileConnectionStateChange(

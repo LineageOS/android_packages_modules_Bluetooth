@@ -44,6 +44,7 @@ public:
   uint8_t change_counter;
   bool mute;
   uint8_t flags;
+  int group_id;
 
   tCONN_ID connection_id;
   uint16_t mtu_ = GATT_DEF_BLE_MTU_SIZE;
@@ -70,6 +71,7 @@ public:
         change_counter(0),
         mute(false),
         flags(0),
+        group_id(bluetooth::groups::kGroupUnknown),
         connection_id(GATT_INVALID_CONN_ID),
         volume_state_handle(0),
         volume_state_ccc_handle(0),
@@ -148,6 +150,7 @@ public:
   void EnqueueRemainingRequests(tGATT_IF gatt_if, GATT_READ_OP_CB chrc_read_cb,
                                 GATT_READ_MULTI_OP_CB chrc_multi_read,
                                 GATT_WRITE_OP_CB cccd_write_cb);
+  bool VerifyReady();
   bool VerifyReady(uint16_t handle);
   bool IsReady() { return device_ready; }
 
@@ -202,6 +205,27 @@ public:
                              });
 
     return (iter == devices_.end()) ? nullptr : &(*iter);
+  }
+
+  std::vector<VolumeControlDevice*> getGroupDevices(int group_id) {
+    std::vector<VolumeControlDevice*> groupDevices;
+    std::for_each(devices_.begin(), devices_.end(),
+                  [&groupDevices, &group_id](VolumeControlDevice& device) {
+                    if (device.group_id == group_id) {
+                      groupDevices.push_back(&device);
+                    }
+                  });
+
+    return groupDevices;
+  }
+
+  std::vector<RawAddress> getGroupDevicesAddresses(int group_id) {
+    std::vector<RawAddress> groupDevicesAddresses;
+    for (auto groupDevice : getGroupDevices(group_id)) {
+      groupDevicesAddresses.push_back(groupDevice->address);
+    }
+
+    return groupDevicesAddresses;
   }
 
   size_t Size() { return devices_.size(); }

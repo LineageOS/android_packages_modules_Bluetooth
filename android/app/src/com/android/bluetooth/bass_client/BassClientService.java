@@ -244,7 +244,7 @@ public class BassClientService extends ProfileService {
                 }
 
                 mScannerId = SCANNER_ID_INITIALIZING;
-                controller.registerScannerInternal(this, getAttributionSource(), null);
+                controller.registerScannerInternal(this, null, getAttributionSource());
             }
         }
 
@@ -990,10 +990,14 @@ public class BassClientService extends ProfileService {
             return;
         }
 
-        /* Don't bother active group (external broadcaster scenario) with SOUND EFFECTS */
+        /* Don't bother active group (external broadcaster scenario) with SOUND EFFECTS
+         * and UNSPECIFIED context type
+         */
         if (!mIsAllowedContextOfActiveGroupModified && isDevicePartOfActiveUnicastGroup(sink)) {
             leAudioService.setActiveGroupAllowedContextMask(
-                    BluetoothLeAudio.CONTEXTS_ALL & ~BluetoothLeAudio.CONTEXT_TYPE_SOUND_EFFECTS,
+                    BluetoothLeAudio.CONTEXTS_ALL
+                            & ~(BluetoothLeAudio.CONTEXT_TYPE_UNSPECIFIED
+                                    | BluetoothLeAudio.CONTEXT_TYPE_SOUND_EFFECTS),
                     BluetoothLeAudio.CONTEXTS_ALL);
             mIsAllowedContextOfActiveGroupModified = true;
         }

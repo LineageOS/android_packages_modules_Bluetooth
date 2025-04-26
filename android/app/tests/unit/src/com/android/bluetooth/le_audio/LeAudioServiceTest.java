@@ -860,7 +860,6 @@ public class LeAudioServiceTest {
         mService.messageFromNative(nodeGroupRemoved);
     }
 
-
     /** Test setting connection policy */
     @Test
     public void testSetConnectionPolicy() {
@@ -1208,7 +1207,6 @@ public class LeAudioServiceTest {
         // set active device again
         assertThat(mService.setActiveDevice(mSingleDevice_2)).isTrue();
         verify(mNativeInterface).groupSetActive(groupId_2);
-
 
         // First wait for ACTIVE state will be sent from native
         LeAudioStackEvent activeGroupState =
@@ -2088,7 +2086,6 @@ public class LeAudioServiceTest {
         assertThat(codecStatus.getInputCodecConfig()).isNull();
         assertThat(codecStatus.getOutputCodecConfig()).isNotNull();
     }
-
 
     /** Test native interface group status message handling */
     @Test
@@ -3013,12 +3010,10 @@ public class LeAudioServiceTest {
     /**
      * Test the group is activated once the available contexts are back.
      *
-     * Scenario:
-     *  1. Have a group of 2 devices. The available contexts are non-zero.
-     *     The group shall be active at this point.
-     *  2. All group devices are disconnected.
-     *  3. Group devices are reconnected. The available contexts are zero.
-     *  4. The available contexts are updated with non-zero value. Group becomes active.
+     * <p>Scenario: 1. Have a group of 2 devices. The available contexts are non-zero. The group
+     * shall be active at this point. 2. All group devices are disconnected. 3. Group devices are
+     * reconnected. The available contexts are zero. 4. The available contexts are updated with
+     * non-zero value. Group becomes active.
      */
     @Test
     public void testActivateDeviceWhenAvailableContextAreBack_Scenario3() {
