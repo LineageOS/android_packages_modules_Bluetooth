@@ -321,6 +321,31 @@ static bool IsSlcConnected(RawAddress* bd_addr) {
   return btif_hf_cb[idx].state == BTHF_CONNECTION_STATE_SLC_CONNECTED;
 }
 
+/**
+ * Check if other HFP connection is active for bd_addr
+ *
+ * @param bd_addr remote device address
+ * @return true if other side HFP connection is active for bd_addr
+ */
+static bool is_other_hfp_connection_active(int current_idx, const RawAddress& bd_addr) {
+  for (int i = 0; i < BTA_AG_MAX_NUM_CLIENTS; i++) {
+    if (i == current_idx) {
+      continue;  // Skip self
+    }
+    // Check if another slot for the SAME device is already CONNECTED or CONNECTING
+    if ((btif_hf_cb[i].state == BTHF_CONNECTION_STATE_CONNECTED ||
+         btif_hf_cb[i].state == BTHF_CONNECTION_STATE_SLC_CONNECTED ||
+         btif_hf_cb[i].state == BTHF_CONNECTION_STATE_CONNECTING) &&
+        btif_hf_cb[i].connected_bda == bd_addr) {
+      log::info("Found other active HFP instance for {} at index {} with state {}", bd_addr, i,
+                btif_hf_cb[i].state);
+      return true;
+    }
+  }
+  log::info("No other active HFP instance found for {}", bd_addr);
+  return false;
+}
+
 /*******************************************************************************
  *
  * Function         btif_hf_upstreams_evt
@@ -361,6 +386,30 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
       break;
     // RFCOMM connected or failed to connect
     case BTA_AG_OPEN_EVT:
+      if (com::android::bluetooth::flags::fix_hfp_rfcomm_collision_state_machine_error() &&
+          p_data->open.status != BTA_AG_SUCCESS) {
+        RawAddress current_bda = p_data->open.bd_addr;  // Get address from event data
+
+        // Check if another connection to the same device is already established, both sides may
+        // initiate the HFP connection.
+        if (is_other_hfp_connection_active(idx, current_bda)) {
+          log::warn(
+                  "Ignoring self-initiated AG open failure event for {} "
+                  "because another connection is active.",
+                  current_bda);
+
+          // Clean up ONLY the state associated with THIS failed outgoing attempt.
+          reset_control_block(&btif_hf_cb[idx]);
+          btif_queue_advance();  // Advance the connection queue if needed
+
+          break;
+        }
+        log::info(
+                "No other active connection found for {}. Processing "
+                "failure event.",
+                current_bda);
+      }
+
       bt_hf_callbacks->ConnectionStateCallback(BTHF_CONNECTION_STATE_CONNECTING,
                                                &(p_data->open.bd_addr));
       // Check if an outgoing connection is pending
