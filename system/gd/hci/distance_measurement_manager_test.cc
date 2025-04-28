@@ -51,6 +51,7 @@ static constexpr auto kTimeout = std::chrono::seconds(1);
 static constexpr uint8_t kMaxRetryCounterForCreateConfig = 0x03;
 static constexpr uint8_t kMaxRetryCounterForCsEnable = 0x03;
 static constexpr uint8_t kConnInterval = 24;
+static constexpr uint16_t kMinProcedureInterval = 0x01;
 }
 
 namespace bluetooth {
@@ -967,6 +968,29 @@ TEST_F(DistanceMeasurementManagerTest, schedule_next_cs_procedures) {
   EXPECT_EQ(enable_view.IsValid(), true);
   EXPECT_EQ(enable_view.GetProcedureEnable(), Enable::ENABLED);
   cs_requester_.sync_client_handler();
+}
+
+TEST_F(DistanceMeasurementManagerTest, interval_updates_between_2_sessions) {
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillSetProcedureParameters(params);
+  // consume the procedure_enable command
+  cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+  cs_requester_.dm_manager_->StopDistanceMeasurement(
+          params.responder_addr, params.connection_handle, DistanceMeasurementMethod::METHOD_CS);
+  // consume the disable command by stop request
+  cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+
+  params.interval = 5000;  // LOW frequency
+  cs_requester_.StartMeasurement(params);
+  // disable after stop
+  CommandView command_view =
+          cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_SET_PROCEDURE_PARAMETERS);
+  LeCsSetProcedureParametersView params_view = LeCsSetProcedureParametersView::Create(
+          DistanceMeasurementCommandView::Create(command_view));
+  cs_requester_.sync_client_handler();
+
+  EXPECT_EQ(params_view.IsValid(), true);
+  EXPECT_EQ(params_view.GetMinProcedureInterval(), kMinProcedureInterval);
 }
 
 TEST_F(DistanceMeasurementManagerTest, procedure_enabled_after_stop) {
