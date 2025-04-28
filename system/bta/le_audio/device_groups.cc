@@ -1367,6 +1367,74 @@ types::LeAudioConfigurationStrategy LeAudioDeviceGroup::GetGroupSinkStrategy() c
   return *strategy_;
 }
 
+types::LeAudioConfigurationStrategy LeAudioDeviceGroup::FindGroupStrategyForConfig(
+        const types::AudioSetConfiguration* audio_set_conf) const {
+  auto strategy_selector = [&, this](uint8_t direction) {
+    int expected_group_size = Size();
+
+    if (!audio_locations_.get(direction)) {
+      log::error("No audio locations for direction: {} available in the group {}", +direction,
+                 group_id_);
+      return types::LeAudioConfigurationStrategy::RFU;
+    }
+
+    /* Simple strategy picker */
+    log::debug("Group {} size {}", group_id_, expected_group_size);
+    if (expected_group_size > 1) {
+      return types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE;
+    }
+
+    /* Check supported audio locations */
+    auto const& locations = audio_locations_.get(direction).value();
+
+    log::verbose("audio location 0x{:04x}", locations.to_ulong());
+    if (!(locations.to_ulong() & codec_spec_conf::kLeAudioLocationAnyLeft) ||
+        !(locations.to_ulong() & codec_spec_conf::kLeAudioLocationAnyRight) || locations.none()) {
+      return types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE;
+    }
+
+    // Get the channel count from the provided configuration
+    auto const& configs = audio_set_conf->confs.get(direction);
+    auto config_element = std::max_element(
+            configs.begin(), configs.end(),
+            [](types::AseConfiguration const& a, types::AseConfiguration const& b) {
+              return a.codec.GetChannelCountPerIsoStream() < b.codec.GetChannelCountPerIsoStream();
+            });
+    auto max_channel_count = (config_element != configs.end())
+                                     ? config_element->codec.GetChannelCountPerIsoStream()
+                                     : 1;
+    if (max_channel_count == 1) {
+      return types::LeAudioConfigurationStrategy::STEREO_TWO_CISES_PER_DEVICE;
+    }
+
+    return types::LeAudioConfigurationStrategy::STEREO_ONE_CIS_PER_DEVICE;
+  };
+
+  auto strategy = strategy_selector(types::kLeAudioDirectionSink);
+  if (strategy == types::LeAudioConfigurationStrategy::RFU) {
+    log::warn(
+            "Unable to find the proper remote sink strategy for group {}. Trying source direction "
+            "instead",
+            group_id_);
+    strategy = strategy_selector(types::kLeAudioDirectionSource);
+  }
+
+  log::info("Group strategy set to: {}", [](types::LeAudioConfigurationStrategy strategy) {
+    switch (strategy) {
+      case types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE:
+        return "MONO_ONE_CIS_PER_DEVICE";
+      case types::LeAudioConfigurationStrategy::STEREO_TWO_CISES_PER_DEVICE:
+        return "STEREO_TWO_CISES_PER_DEVICE";
+      case types::LeAudioConfigurationStrategy::STEREO_ONE_CIS_PER_DEVICE:
+        return "STEREO_ONE_CIS_PER_DEVICE";
+      default:
+        return "RFU";
+    }
+  }(strategy));
+
+  return strategy;
+}
+
 int LeAudioDeviceGroup::GetAseCount(uint8_t direction) const {
   int result = 0;
   for (const auto& device_iter : leAudioDevices_) {
@@ -1386,11 +1454,24 @@ void LeAudioDeviceGroup::CigConfiguration::GetCisCount(LeAudioContextType contex
   auto expected_device_cnt = group_->DesiredSize();
   auto avail_group_ase_snk_cnt = group_->GetAseCount(types::kLeAudioDirectionSink);
   auto avail_group_ase_src_count = group_->GetAseCount(types::kLeAudioDirectionSource);
-  auto strategy = group_->GetGroupSinkStrategy();
 
   auto directions = group_->GetDirectionSupport(context_type);
   bool is_bidirectional = directions.sink && directions.source;
   bool is_source_only = !directions.sink && directions.source;
+
+  auto current_config = group_->IsUsingPreferredAudioSetConfiguration(context_type)
+                                ? group_->GetCachedPreferredConfiguration(context_type)
+                                : group_->GetCachedConfiguration(context_type);
+  if (!current_config) {
+    log::warn("No valid group configuration is currently available, looking into PAC records.");
+  }
+
+  // For non-LC3 codecs like Opus, we should base the strategy calcualation based on the config
+  const bool derive_strategy_from_config =
+          current_config && com::android::bluetooth::flags::leaudio_add_opus_hi_res_codec_type();
+  auto strategy = derive_strategy_from_config
+                          ? group_->FindGroupStrategyForConfig(current_config.get())
+                          : group_->GetGroupSinkStrategy();
   log::debug(
           "{} {}, strategy {}, group avail sink ases: {}, "
           "group avail source ases {} "

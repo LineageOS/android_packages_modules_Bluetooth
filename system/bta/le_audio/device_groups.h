@@ -164,6 +164,8 @@ public:
   LeAudioDevice* GetFirstDevice(void) const;
   LeAudioDevice* GetFirstDeviceWithAvailableContext(types::LeAudioContextType context_type) const;
   types::LeAudioConfigurationStrategy GetGroupSinkStrategy(void) const;
+  types::LeAudioConfigurationStrategy FindGroupStrategyForConfig(
+          const types::AudioSetConfiguration* audio_set_conf) const;
   inline void InvalidateGroupStrategy(void) { strategy_ = std::nullopt; }
   int GetAseCount(uint8_t direction) const;
   LeAudioDevice* GetNextDevice(LeAudioDevice* leAudioDevice) const;
