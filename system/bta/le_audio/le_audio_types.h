@@ -1191,7 +1191,8 @@ struct ase {
         cis_state(CisState::IDLE),
         data_path_state(DataPathState::IDLE),
         configured_for_context_type(LeAudioContextType::UNINITIALIZED),
-        state(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE) {}
+        state(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE),
+        expected_state(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE) {}
 
   struct hdl_pair hdls;
   uint8_t id;
@@ -1221,6 +1222,11 @@ struct ase {
   LeAudioLtvMap metadata;
 
   AseState state;
+
+  /* Keeps the expected state send via control point.
+   * Note: There is no expect_state after RELEASE,
+   * as it depends on the remote caching capabilities. */
+  AseState expected_state;
 };
 
 struct acs_ac_record {
