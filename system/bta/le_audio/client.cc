@@ -521,6 +521,20 @@ public:
                          .source = local_metadata_context_types_.sink};
     }
 
+    if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+      /* Check if current configuration actually  */
+      auto directions = group->GetDirectionSupport(new_configuration_context);
+      bool is_bidirectional = directions.sink && directions.source;
+      log::info("group_id: {}, {} is bidirectional: {}", group->group_id_,
+                common::ToString(new_configuration_context), is_bidirectional);
+
+      if (is_bidirectional) {
+        groupStateMachine_->DisableStreamingDirection(
+                group, bluetooth::le_audio::types::kLeAudioDirectionSource);
+        return;
+      }
+    }
+
     log::debug("new_configuration_context= {}", ToString(new_configuration_context));
     ReconfigureOrUpdateMetadata(group, new_configuration_context, remote_metadata);
   }
@@ -4646,11 +4660,23 @@ public:
     }
 
     /* Last suspends group - triggers group stop */
-    if ((audio_receiver_state_ == AudioState::IDLE) ||
-        (audio_receiver_state_ == AudioState::READY_TO_RELEASE)) {
-      OnAudioSuspend();
-      bluetooth::le_audio::MetricsCollector::Get()->OnStreamEnded(active_group_id_);
-    }
+    switch (audio_receiver_state_) {
+      case AudioState::IDLE:
+      case AudioState::READY_TO_RELEASE:
+        OnAudioSuspend();
+        bluetooth::le_audio::MetricsCollector::Get()->OnStreamEnded(active_group_id_);
+        break;
+      case AudioState::STARTED: {
+        auto group = aseGroups_.FindById(active_group_id_);
+        if (group && com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+          groupStateMachine_->DisableStreamingDirection(
+                  group, bluetooth::le_audio::types::kLeAudioDirectionSink);
+        }
+        break;
+      }
+      default:
+        break;
+    };
 
     log::info("OUT: audio_receiver_state_: {},  audio_sender_state_: {}",
               ToString(audio_receiver_state_), ToString(audio_sender_state_));
@@ -4910,9 +4936,21 @@ public:
     }
 
     /* Last suspends group - triggers group stop */
-    if ((audio_sender_state_ == AudioState::IDLE) ||
-        (audio_sender_state_ == AudioState::READY_TO_RELEASE)) {
-      OnAudioSuspend();
+    switch (audio_sender_state_) {
+      case AudioState::IDLE:
+      case AudioState::READY_TO_RELEASE:
+        OnAudioSuspend();
+        break;
+      case AudioState::STARTED: {
+        auto group = aseGroups_.FindById(active_group_id_);
+        if (group && com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+          groupStateMachine_->DisableStreamingDirection(
+                  group, bluetooth::le_audio::types::kLeAudioDirectionSource);
+        }
+        break;
+      }
+      default:
+        break;
     }
 
     log::info("OUT: audio_receiver_state_: {},  audio_sender_state_: {}",
