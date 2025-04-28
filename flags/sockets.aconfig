@@ -18,16 +18,6 @@ flag {
 }
 
 flag {
-    name: "donot_push_error_code_to_app_when_connected"
-    namespace: "bluetooth"
-    description: "donot send error code to app when sock is already is connected, this can cause unwanted bytes even after socket is disconnected"
-    bug: "365844219"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "bt_offload_socket_api"
     namespace: "bluetooth"
     description: "New socket API to create offload socket"
