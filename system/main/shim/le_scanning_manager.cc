@@ -852,13 +852,13 @@ void bluetooth::shim::set_target_announcements_filter(bool enable) {
   bluetooth::hci::AdvertisingPacketContentFilterCommand cap_filter{};
   cap_filter.filter_type = bluetooth::hci::ApcfFilterType::SERVICE_DATA;
   cap_filter.data = {0x53, 0x18, 0x01};
-  cap_filter.data_mask = {0x53, 0x18, 0xFF};
+  cap_filter.data_mask = {0xFF, 0xFF, 0xFF};
   cap_bap_filter.push_back(cap_filter);
 
   bluetooth::hci::AdvertisingPacketContentFilterCommand bap_filter{};
   bap_filter.filter_type = bluetooth::hci::ApcfFilterType::SERVICE_DATA;
   bap_filter.data = {0x4e, 0x18, 0x01};
-  bap_filter.data_mask = {0x4e, 0x18, 0xFF};
+  bap_filter.data_mask = {0xFF, 0xFF, 0xFF};
 
   cap_bap_filter.push_back(bap_filter);
   bluetooth::shim::GetScanning()->ScanFilterAdd(filter_index, cap_bap_filter);
