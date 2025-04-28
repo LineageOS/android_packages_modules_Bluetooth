@@ -2440,8 +2440,6 @@ public class HeadsetService extends ProfileService {
         logD("isAptXSwbPmEnabled: " + mIsAptXSwbPmEnabled);
         return mIsAptXSwbPmEnabled;
     }
-
-    @VisibleForTesting
     void processAtBcc(BluetoothDevice device) {
         synchronized (mStateMachines) {
             if (!device.equals(mActiveDevice)) {
