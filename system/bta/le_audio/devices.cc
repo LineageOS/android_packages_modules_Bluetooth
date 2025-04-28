@@ -839,6 +839,18 @@ bool LeAudioDevice::HaveAnyUnconfiguredAses(void) {
   return iter != ases_.end();
 }
 
+bool LeAudioDevice::HaveAllActiveAsesInExpectedState(void) {
+  log::verbose("{}", address_);
+  auto iter = std::find_if(ases_.begin(), ases_.end(), [](const auto& ase) {
+    log::verbose("ASE id: {}, active: {}, expected_state: {}, state: {}", ase.id, ase.active,
+                 bluetooth::common::ToString(ase.expected_state),
+                 bluetooth::common::ToString(ase.state));
+    return ase.active && (ase.expected_state != ase.state);
+  });
+
+  return iter == ases_.end();
+}
+
 bool LeAudioDevice::HaveAllActiveAsesSameState(AseState state) {
   log::verbose("{}", address_);
   auto iter = std::find_if(ases_.begin(), ases_.end(), [&state](const auto& ase) {
@@ -873,12 +885,25 @@ bool LeAudioDevice::IsReadyToCreateStream(void) {
     if (ase.direction == types::kLeAudioDirectionSink &&
         (ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING &&
          ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING)) {
-      return true;
+      if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+        if (ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING ||
+            ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+          return true;
+        }
+      } else {
+        return true;
+      }
     }
 
     if (ase.direction == types::kLeAudioDirectionSource &&
         ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING) {
-      return true;
+      if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+        if (ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING) {
+          return true;
+        }
+      } else {
+        return true;
+      }
     }
 
     return false;

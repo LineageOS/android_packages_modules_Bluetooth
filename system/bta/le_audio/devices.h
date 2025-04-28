@@ -170,6 +170,7 @@ public:
   uint8_t GetActiveEnabledDirections(void);
   uint8_t GetActiveQoSConfiguredDirections(void);
   bool HaveActiveAse(void);
+  bool HaveAllActiveAsesInExpectedState(void);
   bool HaveAllActiveAsesSameState(types::AseState state);
   bool HaveAllActiveAsesSameDataPathState(types::DataPathState state) const;
   bool HaveAnyUnconfiguredAses(void);

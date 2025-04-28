@@ -3030,6 +3030,11 @@ private:
 
     do {
       if (ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSource) {
+        if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+          if (ase->expected_state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING) {
+            continue;
+          }
+        }
         stream << "ASE_ID " << +ase->id << ",";
         ids.push_back(ase->id);
         SetAseExpectedState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
@@ -3162,8 +3167,14 @@ private:
           group->SetStreamingMetadataContexts(streaming_audio_context.value(), ase->direction);
         }
 
-        if (!group->HaveAllActiveDevicesAsesTheSameState(
-                    AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING)) {
+        if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+          if (!group->HaveAllActiveDevicesAsesInExpectedState()) {
+            log::verbose("More Ases to get in streaming state for group_id: {}", group->group_id_);
+            return;
+          }
+
+        } else if (!group->HaveAllActiveDevicesAsesTheSameState(
+                           AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING)) {
           /* More ASEs notification form this device has to come for this group
            */
           return;
