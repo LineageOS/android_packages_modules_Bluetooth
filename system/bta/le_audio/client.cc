@@ -4687,6 +4687,58 @@ public:
                                                     "s_state: " + ToString(audio_sender_state_));
   }
 
+  void startSendingAudioWrapper(LeAudioDeviceGroup* group) {
+    if (!com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+      StartSendingAudio(group->group_id_);
+      return;
+    }
+
+    auto remote_direction = bluetooth::le_audio::types::kLeAudioDirectionSink;
+
+    if (group->GetActiveEnabledDirections() & remote_direction) {
+      log::info("Remote Sink Direction already enabled for group_id: {}", group->group_id_);
+      StartSendingAudio(group->group_id_);
+    } else if (group->GetActiveQoSConfiguredDirections() & remote_direction) {
+      log::info("Remote Sink Direction needs to be enabled first for group_id: {}",
+                group->group_id_);
+      groupStateMachine_->EnableStreamingDirection(group, remote_direction);
+    } else {
+      log::error("Group direction: {} in invalid state", remote_direction);
+      group->PrintDebugState();
+    }
+  }
+
+  void startReceivingAudioWrapper(LeAudioDeviceGroup* group) {
+    if (!com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+      StartReceivingAudio(group->group_id_);
+      return;
+    }
+
+    auto remote_direction = bluetooth::le_audio::types::kLeAudioDirectionSource;
+
+    if (group->GetActiveEnabledDirections() & remote_direction) {
+      log::info("Remote Source Direction already enabled for group_id: {}", group->group_id_);
+      StartReceivingAudio(group->group_id_);
+    } else if (group->GetActiveQoSConfiguredDirections() & remote_direction) {
+      log::info("Remote Source Direction needs to be enabled first for group_id: {}",
+                group->group_id_);
+      groupStateMachine_->EnableStreamingDirection(group, remote_direction);
+    } else {
+      log::error("Group direction: {} in invalid state", remote_direction);
+      group->PrintDebugState();
+    }
+  }
+
+  void reenableDirectionIfNeeded(LeAudioDeviceGroup* group, uint8_t remote_direction) {
+    if (!com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+      log::debug("Flag leaudio_dynamic_direction_opening is not enabled");
+      return;
+    }
+
+    if (group->GetActiveQoSConfiguredDirections() & remote_direction) {
+      groupStateMachine_->EnableStreamingDirection(group, remote_direction);
+    }
+  }
   void OnLocalAudioSourceResume() {
     log::info("active group_id: {}, IN: audio_receiver_state_: {}, audio_sender_state_: {}",
               active_group_id_, ToString(audio_receiver_state_), ToString(audio_sender_state_));
@@ -4801,7 +4853,7 @@ public:
               if (group->IsDirectionAvailableForConfiguration(
                           upcoming_configuration_context_type,
                           bluetooth::le_audio::types::kLeAudioDirectionSink)) {
-                StartSendingAudio(active_group_id_);
+                startSendingAudioWrapper(group);
               } else {
                 log::warn(
                         "sink is not configured. \n audio_receiver_state: {} "
@@ -4838,7 +4890,7 @@ public:
                           upcoming_configuration_context_type,
                           bluetooth::le_audio::types::kLeAudioDirectionSink)) {
                 StopSuspendTimeout();
-                StartSendingAudio(active_group_id_);
+                startSendingAudioWrapper(group);
               } else {
                 log::warn(
                         "sink is not configured. \n audio_receiver_state: {} "
@@ -4886,6 +4938,7 @@ public:
           case AudioState::READY_TO_RELEASE:
             /* Stream is up just restore it */
             StopSuspendTimeout();
+            reenableDirectionIfNeeded(group, bluetooth::le_audio::types::kLeAudioDirectionSink);
             ConfirmLocalAudioSourceStreamingRequest();
             bluetooth::le_audio::MetricsCollector::Get()->OnStreamStarted(
                     active_group_id_, upcoming_configuration_context_type);
@@ -5120,7 +5173,7 @@ public:
               if (group->IsDirectionAvailableForConfiguration(
                           configuration_context_type_,
                           bluetooth::le_audio::types::kLeAudioDirectionSource)) {
-                StartReceivingAudio(active_group_id_);
+                startReceivingAudioWrapper(group);
               } else {
                 log::warn(
                         "source is not configured. \n audio_receiver_state: {} "
@@ -5156,7 +5209,7 @@ public:
                           configuration_context_type_,
                           bluetooth::le_audio::types::kLeAudioDirectionSource)) {
                 StopSuspendTimeout();
-                StartReceivingAudio(active_group_id_);
+                startReceivingAudioWrapper(group);
               } else {
                 log::warn(
                         "source is not configured. \n audio_receiver_state: {} "
@@ -5201,6 +5254,7 @@ public:
           case AudioState::READY_TO_RELEASE:
             /* Stream is up just restore it */
             StopSuspendTimeout();
+            reenableDirectionIfNeeded(group, bluetooth::le_audio::types::kLeAudioDirectionSource);
             ConfirmLocalAudioSinkStreamingRequest();
             break;
           case AudioState::RELEASING:
@@ -6552,7 +6606,7 @@ public:
         }
 
         if (audio_sender_state_ == AudioState::READY_TO_START) {
-          StartSendingAudio(group_id);
+          startSendingAudioWrapper(group);
         } else if (audio_sender_state_ == AudioState::STARTED) {
           /* If we are already sending, the initial configuration was already sent and
            * we might need to just update the current channel mixing information.
@@ -6565,7 +6619,7 @@ public:
         }
 
         if (audio_receiver_state_ == AudioState::READY_TO_START) {
-          StartReceivingAudio(group_id);
+          startReceivingAudioWrapper(group);
         } else if (audio_receiver_state_ == AudioState::STARTED) {
           /* If we are already receiving, the initial configuration was already sent and
            * we might need to just update the current channel mixing information.
