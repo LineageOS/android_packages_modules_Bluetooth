@@ -59,6 +59,10 @@
 
             <!-- A2DP sink values -->
             <item type="bool" name="a2dp_sink_automatically_request_audio_focus"/>
+
+            <!-- AVRCP target values -->
+            <item type="integer" name="config_safe_media_volume"/>
+
         </policy>
     </overlayable>
 </resources>
