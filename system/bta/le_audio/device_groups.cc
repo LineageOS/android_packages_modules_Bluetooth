@@ -878,6 +878,17 @@ BidirectionalPair<bool> LeAudioDeviceGroup::GetDirectionSupport(
   return audio_context_type_manager->GetDirectionsForGivenContext(ctx_type, this);
 }
 
+BidirectionalPair<bool> LeAudioDeviceGroup::GetConfiguredDirections(void) {
+  if (stream_conf.conf == nullptr) {
+    log::info("group_id: {} is not configured", group_id_);
+    return {false, false};
+  }
+
+  auto directions = stream_conf.conf->getDirections();
+  log::info("group_id: {}, sink: {}, source: {}", group_id_, directions.sink, directions.source);
+  return directions;
+}
+
 CodecManager::UnicastConfigurationRequirements
 LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextType ctx_type) const {
   auto new_req = CodecManager::UnicastConfigurationRequirements{

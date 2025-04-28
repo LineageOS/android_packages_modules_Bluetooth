@@ -1313,6 +1313,10 @@ struct AudioSetConfiguration {
                            return ase_cfg.codec.id != types::kLeAudioCodecHeadtracking;
                          });
   }
+
+  BidirectionalPair<bool> getDirections() const {
+    return {.sink = !confs.sink.empty(), .source = !confs.source.empty()};
+  }
 };
 
 std::ostream& operator<<(std::ostream& os, const AudioSetConfiguration& config);
