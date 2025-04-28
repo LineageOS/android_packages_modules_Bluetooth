@@ -454,11 +454,14 @@ tBTM_STATUS BTM_EnableTestMode(void) {
  *
  ******************************************************************************/
 tBTM_STATUS BTM_DeleteStoredLinkKey(const RawAddress* bd_addr, tBTM_CMPL_CB* p_cb) {
-  /* Read and Write STORED link key stems from a legacy use-case and is no
-   * longer expected to be used. Disable explicitly for Floss and queue overall
-   * deletion from Fluoride.
-   */
-#if !defined(TARGET_FLOSS)
+  /* Read and Write STORED link key stems from a legacy use-case */
+  /* If the controller doesn't support this then just return success */
+  if (!bluetooth::shim::GetController()->IsSupported(
+              bluetooth::hci::OpCode::DELETE_STORED_LINK_KEY)) {
+    log::info("BTM: BTM_DeleteStoredLinkKey: DELETE_STORED_LINK_KEY not supported");
+    return tBTM_STATUS::BTM_SUCCESS;
+  }
+
   /* Check if the previous command is completed */
   if (btm_sec_cb.devcb.p_stored_link_key_cmpl_cb) {
     return tBTM_STATUS::BTM_BUSY;
@@ -477,7 +480,6 @@ tBTM_STATUS BTM_DeleteStoredLinkKey(const RawAddress* bd_addr, tBTM_CMPL_CB* p_c
   } else {
     btsnd_hcic_delete_stored_key(*bd_addr, delete_all_flag);
   }
-#endif
 
   return tBTM_STATUS::BTM_SUCCESS;
 }
