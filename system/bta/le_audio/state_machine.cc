@@ -2957,13 +2957,22 @@ private:
     /* Request server to update ASEs with new metadata */
     for (struct ase* ase = leAudioDevice->GetFirstActiveAse(); ase != nullptr;
          ase = leAudioDevice->GetNextActiveAse(ase)) {
-      log::debug("device: {}, ase_id: {}, cis_id: {}, ase state: {}", leAudioDevice->address_,
-                 ase->id, ase->cis_id, ToString(ase->state));
+      log::debug("device: {}, ase_id: {}, cis_id: {}, ase state: {}, ase expected_state: {}",
+                 leAudioDevice->address_, ase->id, ase->cis_id, ToString(ase->state),
+                 ToString(ase->expected_state));
 
       if (ase->state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING &&
           ase->state != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
         /* This might happen when update metadata happens on late connect */
         log::debug(
+                "Metadata for ase_id {} cannot be updated due to invalid ase state - see log above",
+                ase->id);
+        continue;
+      }
+
+      if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening() &&
+          ase->expected_state != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+        log::info(
                 "Metadata for ase_id {} cannot be updated due to invalid ase state - see log above",
                 ase->id);
         continue;
