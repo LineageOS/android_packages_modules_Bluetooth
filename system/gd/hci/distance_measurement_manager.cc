@@ -409,6 +409,13 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
       cs_requester_trackers_[connection_handle] = CsTracker();
       it = cs_requester_trackers_.find(connection_handle);
     }
+    if (it->second.state != CsTrackerState::STOPPED) {
+      log::info("reuse the current ongoing session");
+      if (!it->second.waiting_for_start_callback) {
+        distance_measurement_callbacks_->OnDistanceMeasurementStarted(cs_remote_address, METHOD_CS);
+      }
+      return false;
+    }
     it->second.address = cs_remote_address;
     if (it->second.used_config_id == kInvalidConfigId) {
       uint8_t config_id;

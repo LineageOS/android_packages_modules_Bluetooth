@@ -300,6 +300,7 @@ cc_test {
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/include",
+        "packages/modules/Bluetooth/system/stack/include",
     ],
     host_supported: true,
     // TODO(b/231993739): Reenable isolated:true by deleting the explicit disable below
@@ -348,6 +349,7 @@ cc_test {
         ":TestCommonMockFunctions",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
+        ":TestMockStackBtm",
         "common/bidi_queue_unittest.cc",
         "common/blocking_queue_unittest.cc",
         "common/byte_array_test.cc",

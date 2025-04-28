@@ -181,7 +181,7 @@
     </string>
 
     <!-- Max remote volume that can be saved between reconnection -->
-    <integer name="config_safe_media_volume" translatable="false">15</integer>
+    <integer name="config_safe_media_volume" translatable="false">100</integer>
 
     <!-- Batch scan throttler configuration -->
     <!-- Minimum batch trigger interval to check for batched results when the screen is off -->

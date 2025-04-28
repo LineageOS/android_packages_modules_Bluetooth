@@ -1468,7 +1468,16 @@ public class RemoteDevices {
             if (mAdapterService.isAllProfilesUnknown(device)) {
                 DeviceProperties deviceProp = getDeviceProperties(device);
                 if (deviceProp != null && deviceProp.isBondingInitiatedLocally()) {
-                    deviceProp.setBondingInitiatedLocally(false);
+                    // Reset bonding initiator state if both transports are disconnected
+                    boolean disconnected =
+                            deviceProp.getConnectionHandle(BluetoothDevice.TRANSPORT_LE)
+                                            == BluetoothDevice.ERROR
+                                    && deviceProp.getConnectionHandle(
+                                                    BluetoothDevice.TRANSPORT_BREDR)
+                                            == BluetoothDevice.ERROR;
+                    if (!Flags.bondingInitiatorStateReset() || disconnected) {
+                        deviceProp.setBondingInitiatedLocally(false);
+                    }
                 }
             }
             SecurityLog.writeEvent(
