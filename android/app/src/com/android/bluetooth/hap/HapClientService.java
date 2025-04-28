@@ -164,7 +164,7 @@ public class HapClientService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup HapClient Service");
+        Log.i(TAG, "cleanup()");
 
         if (sHapClient == null) {
             Log.w(TAG, "cleanup() called before initialization");

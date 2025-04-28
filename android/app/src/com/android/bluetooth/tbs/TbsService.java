@@ -66,7 +66,7 @@ public class TbsService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup Tbs Service");
+        Log.i(TAG, "cleanup()");
 
         if (sTbsService == null) {
             Log.w(TAG, "cleanup() called before initialization");

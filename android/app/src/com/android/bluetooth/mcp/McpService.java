@@ -88,7 +88,7 @@ public class McpService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup Mcp Service");
+        Log.i(TAG, "cleanup()");
 
         if (sMcpService == null) {
             Log.w(TAG, "cleanup() called before initialization");

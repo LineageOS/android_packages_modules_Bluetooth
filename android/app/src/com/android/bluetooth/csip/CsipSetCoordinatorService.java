@@ -155,7 +155,7 @@ public class CsipSetCoordinatorService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup CSIP Set Coordinator Service");
+        Log.i(TAG, "cleanup()");
 
         if (sCsipSetCoordinatorService == null) {
             Log.w(TAG, "cleanup() called before initialization");

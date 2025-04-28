@@ -714,7 +714,7 @@ public class BassClientService extends ProfileService {
     @Override
     @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786 - Fix BASS annotation
     public void cleanup() {
-        Log.i(TAG, "Cleanup BassClient Service");
+        Log.i(TAG, "cleanup()");
 
         mUnicastSourceStreamStatus = Optional.empty();
 

@@ -164,7 +164,7 @@ public class A2dpService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup A2dp Service");
+        Log.i(TAG, "cleanup()");
 
         if (sA2dpService == null) {
             Log.w(TAG, "cleanup() called before initialization");
