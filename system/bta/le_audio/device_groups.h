@@ -180,6 +180,7 @@ public:
           types::DataPathState data_path_state) const;
   int GetNumOfActiveDevices(void) const;
   bool IsDeviceInTheGroup(LeAudioDevice* leAudioDevice) const;
+  uint8_t GetActiveEnabledDirections(void);
   uint8_t GetActiveQoSConfiguredDirections(void);
   bool HaveAllActiveDevicesAsesTheSameState(types::AseState state) const;
   bool HaveAnyActiveDeviceInStreamingState() const;

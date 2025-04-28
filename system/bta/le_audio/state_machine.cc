@@ -399,6 +399,22 @@ public:
     return PrepareAndSendEnableToTheGroup(group, remote_direction);
   }
 
+  bool DisableStreamingDirection(LeAudioDeviceGroup* group, uint8_t remote_direction) {
+    if (group == nullptr) {
+      log::error("Group is null");
+      return false;
+    }
+
+    if (!(group->GetActiveEnabledDirections() & remote_direction)) {
+      log::error("group_id: {} is not in valid state to disable streaming for direction: {}",
+                 group->group_id_, remote_direction);
+      return false;
+    }
+
+    return PrepareAndSendDisableToTheGroup(group, remote_direction) ==
+           GroupStreamStatus::SUSPENDING;
+  }
+
   void SuspendStream(LeAudioDeviceGroup* group) override {
     /* All ASEs should aim to achieve target state */
     SetTargetState(group, AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
@@ -2687,7 +2703,9 @@ private:
     return true;
   }
 
-  GroupStreamStatus PrepareAndSendDisableToTheGroup(LeAudioDeviceGroup* group) {
+  GroupStreamStatus PrepareAndSendDisableToTheGroup(
+          LeAudioDeviceGroup* group,
+          uint8_t remote_directions = bluetooth::le_audio::types::kLeAudioDirectionBoth) {
     log::info("grop_id: {}", group->group_id_);
 
     auto leAudioDevice = group->GetFirstActiveDevice();
@@ -2698,13 +2716,15 @@ private:
       return GroupStreamStatus::IDLE;
     }
 
+    bool sent = false;
     for (; leAudioDevice; leAudioDevice = group->GetNextActiveDevice(leAudioDevice)) {
-      PrepareAndSendDisable(leAudioDevice);
+      sent |= PrepareAndSendDisable(leAudioDevice, remote_directions);
     }
-    return GroupStreamStatus::SUSPENDING;
+
+    return sent ? GroupStreamStatus::SUSPENDING : GroupStreamStatus::IDLE;
   }
 
-  void PrepareAndSendDisable(LeAudioDevice* leAudioDevice) {
+  bool PrepareAndSendDisable(LeAudioDevice* leAudioDevice, uint8_t remote_directions) {
     ase* ase = leAudioDevice->GetFirstActiveAse();
     log::assert_that(ase, "shouldn't be called without an active ASE");
 
@@ -2713,13 +2733,35 @@ private:
 
     std::vector<uint8_t> ids;
     do {
-      log::debug("device: {}, ase_id: {}, cis_id: {}, ase state: {}", leAudioDevice->address_,
-                 ase->id, ase->cis_id, ToString(ase->state));
+      if (!(ase->direction & remote_directions)) {
+        log::info(
+                "group_id: {}, {}, ase_id: {} ({:#x}),  enabled_directions {:#x} not to disable: ",
+                leAudioDevice->group_id_, leAudioDevice->address_, ase->id, ase->direction,
+                remote_directions);
+        continue;
+      }
+
+      if (ase->state != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING ||
+          ase->expected_state != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+        log::warn("Probably ASE is already disabling: ase->state {}, ase->expected_state {}",
+                  ToString(ase->state), ToString(ase->expected_state));
+        continue;
+      }
+
+      log::debug("device: {}, ase_id: {}({:#x}), cis_id: {}, ase state: {}",
+                 leAudioDevice->address_, ase->id, ase->direction, ase->cis_id,
+                 ToString(ase->state));
+
       ids.push_back(ase->id);
       SetAseExpectedState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING);
-
       msg_stream << "ASE_ID " << +ase->id << ", ";
     } while ((ase = leAudioDevice->GetNextActiveAse(ase)));
+
+    if (ids.empty()) {
+      log::info("{}, no ASE to Disable, remote_directions: {}", leAudioDevice->address_,
+                remote_directions);
+      return false;
+    }
 
     leAudioDevice->last_ase_ctp_command_sent =
             bluetooth::le_audio::client_parser::ascs::kCtpOpcodeDisable;
@@ -2731,6 +2773,7 @@ private:
 
     log_history_->AddLogHistory(kLogControlPointCmd, leAudioDevice->group_id_,
                                 leAudioDevice->address_, msg_stream.str());
+    return true;
   }
 
   GroupStreamStatus PrepareAndSendReleaseToTheGroup(LeAudioDeviceGroup* group) {

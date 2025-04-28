@@ -441,6 +441,19 @@ uint8_t LeAudioDeviceGroup::GetActiveQoSConfiguredDirections(void) {
   return enabled_remote_directions;
 }
 
+uint8_t LeAudioDeviceGroup::GetActiveEnabledDirections(void) {
+  uint8_t enabled_remote_directions = 0;
+  for (const auto dev : leAudioDevices_) {
+    auto device = dev.lock();
+    if (device == nullptr) {
+      continue;
+    }
+    enabled_remote_directions |= device->GetActiveEnabledDirections();
+  }
+  log::debug("group_id: {}, enabled_remote_directions: {}", group_id_, enabled_remote_directions);
+  return enabled_remote_directions;
+}
+
 bool LeAudioDeviceGroup::HaveAllActiveDevicesAsesTheSameState(AseState state) const {
   auto iter = std::find_if(leAudioDevices_.begin(), leAudioDevices_.end(), [&state](auto& d) {
     if (d.expired()) {

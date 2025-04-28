@@ -167,6 +167,7 @@ public:
   struct types::ase* GetAseToMatchBidirectionCis(struct types::ase* ase);
   types::BidirectionalPair<struct types::ase*> GetAsesByCisConnHdl(uint16_t conn_hdl);
   types::BidirectionalPair<struct types::ase*> GetAsesByCisId(uint8_t cis_id);
+  uint8_t GetActiveEnabledDirections(void);
   uint8_t GetActiveQoSConfiguredDirections(void);
   bool HaveActiveAse(void);
   bool HaveAllActiveAsesSameState(types::AseState state);

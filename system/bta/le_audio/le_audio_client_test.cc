@@ -875,6 +875,16 @@ protected:
               }
               return true;
             });
+    ON_CALL(mock_state_machine_, DisableStreamingDirection(_, _))
+            .WillByDefault([](LeAudioDeviceGroup* group, uint8_t remote_direction) {
+              log::info("DisableStreamingDirection: group_id: {}, directions: {}", group->group_id_,
+                        remote_direction);
+              auto group_state = group->GetState();
+              if (group->GetState() != types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+                return false;
+              }
+              return true;
+            });
     ON_CALL(mock_state_machine_, ConfigureStream(_, _, _, _, _))
             .WillByDefault([this](LeAudioDeviceGroup* group, types::LeAudioContextType context_type,
                                   types::BidirectionalPair<types::AudioContexts>
