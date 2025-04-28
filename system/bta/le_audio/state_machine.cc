@@ -375,6 +375,30 @@ public:
     return PrepareAndSendCodecConfigToTheGroup(group);
   }
 
+  bool EnableStreamingDirection(LeAudioDeviceGroup* group, uint8_t remote_direction) {
+    if (group == nullptr) {
+      log::error("Group is null");
+      return false;
+    }
+
+    if (!(group->GetActiveQoSConfiguredDirections() & remote_direction)) {
+      log::error("group_id: {} is not in valid state to enable streaming for direction: {}",
+                 group->group_id_, remote_direction);
+      group->PrintDebugState();
+      return false;
+    }
+
+    auto metadata = group->GetMetadataContexts();
+    if (metadata.get(remote_direction).none()) {
+      log::error("group_id: {}, there is NO metadata for direction: {}", group->group_id_,
+                 remote_direction);
+      group->PrintDebugState();
+      return false;
+    }
+
+    return PrepareAndSendEnableToTheGroup(group, remote_direction);
+  }
+
   void SuspendStream(LeAudioDeviceGroup* group) override {
     /* All ASEs should aim to achieve target state */
     SetTargetState(group, AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
@@ -2574,7 +2598,7 @@ private:
     }
   }
 
-  void PrepareAndSendEnableToTheGroup(LeAudioDeviceGroup* group, uint8_t remote_directions) {
+  bool PrepareAndSendEnableToTheGroup(LeAudioDeviceGroup* group, uint8_t remote_directions) {
     log::info("group_id: {}, remote_directions: {}", group->group_id_, remote_directions);
 
     auto leAudioDevice = group->GetFirstActiveDevice();
@@ -2582,20 +2606,22 @@ private:
       log::error("No active device for the group");
       group->PrintDebugState();
       ClearGroup(group, true);
-      return;
+      return false;
     }
 
+    bool result = false;
     for (; leAudioDevice; leAudioDevice = group->GetNextActiveDevice(leAudioDevice)) {
-      PrepareAndSendEnable(leAudioDevice, remote_directions);
+      result |= PrepareAndSendEnable(leAudioDevice, remote_directions);
     }
+    return result;
   }
 
-  void PrepareAndSendEnableToTheGroup(LeAudioDeviceGroup* group) {
-    PrepareAndSendEnableToTheGroup(
+  bool PrepareAndSendEnableToTheGroup(LeAudioDeviceGroup* group) {
+    return PrepareAndSendEnableToTheGroup(
             group, state_machine_callbacks_->OnGetEnabledDirections(group->group_id_));
   }
 
-  void PrepareAndSendEnable(LeAudioDevice* leAudioDevice, uint8_t remote_directions) {
+  bool PrepareAndSendEnable(LeAudioDevice* leAudioDevice, uint8_t remote_directions) {
     struct bluetooth::le_audio::client_parser::ascs::ctp_enable conf;
     std::vector<struct bluetooth::le_audio::client_parser::ascs::ctp_enable> confs;
     std::vector<uint8_t> value;
@@ -2615,9 +2641,23 @@ private:
         continue;
       }
 
+      if (ase->state != AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
+        log::warn("group_id: {}, {}, ase_id: {} ({:#x}) not in QoS state: {} ",
+                  leAudioDevice->group_id_, leAudioDevice->address_, ase->id, ase->direction,
+                  ToString(ase->state));
+        continue;
+      }
+
+      if (ase->expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING) {
+        log::warn("group_id: {}, {}, ase_id: {} ({:#x}) already enabling", leAudioDevice->group_id_,
+                  leAudioDevice->address_, ase->id, ase->direction);
+        continue;
+      }
+
       log::debug("device: {}, ase_id: {}({:#x}), cis_id: {}, ase state: {}",
                  leAudioDevice->address_, ase->id, ase->direction, ase->cis_id,
                  ToString(ase->state));
+
       conf.ase_id = ase->id;
       conf.metadata = ase->metadata.RawPacket();
       confs.push_back(conf);
@@ -2632,7 +2672,7 @@ private:
     if (confs.empty()) {
       log::warn("group_id: {}, {}, nothing to enable", leAudioDevice->group_id_,
                 leAudioDevice->address_);
-      return;
+      return false;
     }
 
     leAudioDevice->last_ase_ctp_command_sent =
@@ -2644,6 +2684,7 @@ private:
     log::info("group_id: {}, {}", leAudioDevice->group_id_, leAudioDevice->address_);
     log_history_->AddLogHistory(kLogControlPointCmd, leAudioDevice->group_id_,
                                 leAudioDevice->address_, msg_stream.str(), extra_stream.str());
+    return true;
   }
 
   GroupStreamStatus PrepareAndSendDisableToTheGroup(LeAudioDeviceGroup* group) {

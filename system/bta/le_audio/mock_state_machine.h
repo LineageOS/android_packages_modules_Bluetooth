@@ -44,6 +44,9 @@ public:
                bluetooth::le_audio::types::BidirectionalPair<std::vector<uint8_t>> ccid_lists,
                bool configure_qos),
               (override));
+  MOCK_METHOD((bool), EnableStreamingDirection,
+              (bluetooth::le_audio::LeAudioDeviceGroup * group, uint8_t remote_direction),
+              (override));
   MOCK_METHOD((void), StopStream, (bluetooth::le_audio::LeAudioDeviceGroup * group), (override));
   MOCK_METHOD((void), ProcessGattNotifEvent,
               (uint8_t* value, uint16_t len, bluetooth::le_audio::types::ase* ase,

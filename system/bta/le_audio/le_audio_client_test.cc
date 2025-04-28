@@ -865,6 +865,16 @@ protected:
     ON_CALL(mock_state_machine_, Initialize(_))
             .WillByDefault(SaveArg<0>(&state_machine_callbacks_));
 
+    ON_CALL(mock_state_machine_, EnableStreamingDirection(_, _))
+            .WillByDefault([](LeAudioDeviceGroup* group, uint8_t remote_direction) {
+              log::info("EnableStreamingDirection: group_id: {}, directions: {}", group->group_id_,
+                        remote_direction);
+              auto group_state = group->GetState();
+              if (group->GetState() != types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+                return false;
+              }
+              return true;
+            });
     ON_CALL(mock_state_machine_, ConfigureStream(_, _, _, _, _))
             .WillByDefault([this](LeAudioDeviceGroup* group, types::LeAudioContextType context_type,
                                   types::BidirectionalPair<types::AudioContexts>

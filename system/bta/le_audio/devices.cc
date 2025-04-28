@@ -755,6 +755,22 @@ BidirectionalPair<struct ase*> LeAudioDevice::GetAsesByCisId(uint8_t cis_id) {
   return ases;
 }
 
+uint8_t LeAudioDevice::GetActiveQoSConfiguredDirections(void) {
+  uint8_t qos_configured_directions = 0;
+  for (const auto ase : ases_) {
+    if (!ase.active) {
+      continue;
+    }
+    if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED ||
+        (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING &&
+         ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING)) {
+      qos_configured_directions |= ase.direction;
+    }
+  }
+  log::debug("{}, qos_configured_directions: {}", address_, qos_configured_directions);
+  return qos_configured_directions;
+}
+
 bool LeAudioDevice::HaveActiveAse(void) {
   auto iter = std::find_if(ases_.begin(), ases_.end(), [](const auto& ase) { return ase.active; });
 
