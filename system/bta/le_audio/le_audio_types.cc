@@ -609,31 +609,31 @@ std::ostream& operator<<(std::ostream& os, const types::LeAudioCoreCodecConfig& 
 std::string contextTypeToStr(const LeAudioContextType& context) {
   switch (context) {
     case LeAudioContextType::UNINITIALIZED:
-      return "UNINITIALIZED";
+      return "UNINIT";
     case LeAudioContextType::UNSPECIFIED:
-      return "UNSPECIFIED";
+      return "UNSPEC";
     case LeAudioContextType::CONVERSATIONAL:
-      return "CONVERSATIONAL";
+      return "CONV";
     case LeAudioContextType::MEDIA:
       return "MEDIA";
     case LeAudioContextType::GAME:
       return "GAME";
     case LeAudioContextType::INSTRUCTIONAL:
-      return "INSTRUCTIONAL";
+      return "INSTR";
     case LeAudioContextType::VOICEASSISTANTS:
-      return "VOICEASSISTANTS";
+      return "VOICEA";
     case LeAudioContextType::LIVE:
       return "LIVE";
     case LeAudioContextType::SOUNDEFFECTS:
-      return "SOUNDEFFECTS";
+      return "SFX";
     case LeAudioContextType::NOTIFICATIONS:
-      return "NOTIFICATIONS";
+      return "NOTIF";
     case LeAudioContextType::RINGTONE:
-      return "RINGTONE";
+      return "RING";
     case LeAudioContextType::ALERTS:
       return "ALERTS";
     case LeAudioContextType::EMERGENCYALARM:
-      return "EMERGENCYALARM";
+      return "EMERG";
     default:
       return "UNKNOWN";
   }
@@ -674,7 +674,7 @@ std::string AudioContexts::to_string() const {
     for (auto ctx : bluetooth::le_audio::types::kLeAudioContextAllTypesArray) {
       if (test(ctx)) {
         if (s.tellp() != initial_pos) {
-          s << " | ";
+          s << "|";
         }
         s << ctx;
       }

@@ -991,6 +991,8 @@ private:
           log::error("{}: ADSP config size mismatches the software: {} != {}",
                      direction == types::kLeAudioDirectionSink ? "Sink" : "Source",
                      adsp_set_ase_confs.size(), software_set_ase_confs.size());
+          log::error("software: {}, adsp: {}", software_audio_set_conf->name,
+                     adsp_audio_set_conf.name);
           continue;
         }
 

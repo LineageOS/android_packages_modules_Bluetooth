@@ -1047,7 +1047,7 @@ void LeAudioDevice::DumpPacsDebugState(std::stringstream& stream,
 }
 
 void LeAudioDevice::DumpPacsDebugState(std::stringstream& stream) {
-  stream << "      ● Device PACS, address: " << address_.ToRedactedStringForLogging() << "\n";
+  stream << "      ● PACS [" << address_.ToRedactedStringForLogging() << "]:\n";
   stream << "\t  == Sink PACs:\n";
   DumpPacsDebugState(stream, snk_pacs_);
   stream << "\t  == Source PACs:\n";
@@ -1078,37 +1078,39 @@ void LeAudioDevice::Dump(std::stringstream& stream) {
                                      ? locationToString(audio_locations_.source->value.to_ulong())
                                      : "None";
 
-  stream << "      ● Device address: " << address_.ToRedactedStringForLogging() << ", "
-         << connection_state_
+  stream << "      ● Device [" << address_.ToRedactedStringForLogging()
+         << "]: " << connection_state_ << ", " << (encrypted_ ? "Encrypted" : "Unecrypted")
          << ", conn_id: " << (conn_id_ == GATT_INVALID_CONN_ID ? "-1" : std::to_string(conn_id_))
-         << ", acl_handle: " << std::to_string(acl_handle) << ", snk_location: " << snk_location
-         << ", src_location: " << src_location << ", mtu: " << std::to_string(mtu_) << ", "
-         << (encrypted_ ? "Encrypted" : "Unecrypted")
-         << "\n\t  Sink avail. contexts: " << common::ToString(avail_contexts_.sink)
-         << "\n\t  Source avail. contexts: " << common::ToString(avail_contexts_.source) << "\n";
+         << ", acl_handle: " << std::to_string(acl_handle) << ", mtu: " << std::to_string(mtu_)
+         << "\n\t  Audio Locations: Sink= " << snk_location << ", Source= " << src_location
+         << "\n\t  Snk supp.  contexts: " << common::ToString(supp_contexts_.sink)
+         << "\n\t  Snk avail. contexts: " << common::ToString(avail_contexts_.sink)
+         << "\n\t  Src supp.  contexts: " << common::ToString(supp_contexts_.source)
+         << "\n\t  Src avail. contexts: " << common::ToString(avail_contexts_.source) << "\n";
 
   if (gmap_client_ != nullptr) {
     stream << "\t  ";
     gmap_client_->DebugDump(stream);
   } else {
     stream << "\t  ";
-    stream << "GmapClient not initialized\n";
+    stream << "GmapClient: Not initialized\n";
   }
 
   if (ases_.size() > 0) {
     stream << "\t  == ASEs (" << static_cast<int>(ases_.size()) << "):\n";
-    stream << "\t    id  active dir     cis_id  cis_handle  sdu  latency rtn  "
-              "cis_state            data_path_state\n";
+    stream << "\t    id | active | dir   | cis id / handle | sdu | latency | rtn | state           "
+              "       | cis_state             | data_path_state\n";
     for (auto& ase : ases_) {
-      stream << std::setfill('\x20') << "\t    " << std::left << std::setw(4)
-             << static_cast<int>(ase.id) << std::left << std::setw(7)
+      stream << std::setfill('\x20') << "\t    " << std::left << std::setw(5)
+             << static_cast<int>(ase.id) << std::left << std::setw(9)
              << (ase.active ? "true" : "false") << std::left << std::setw(8)
              << (ase.direction == types::kLeAudioDirectionSink ? "sink" : "source") << std::left
-             << std::setw(8) << static_cast<int>(ase.cis_id) << std::left << std::setw(12)
-             << ase.cis_conn_hdl << std::left << std::setw(5) << ase.qos_config.max_sdu_size
-             << std::left << std::setw(8) << ase.qos_config.max_transport_latency << std::left
-             << std::setw(5) << static_cast<int>(ase.qos_config.retrans_nb) << std::left
-             << std::setw(21) << bluetooth::common::ToString(ase.cis_state) << std::setw(19)
+             << std::setw(4) << static_cast<int>(ase.cis_id) << std::left << "/ " << std::setw(12)
+             << ase.cis_conn_hdl << std::left << std::setw(6) << ase.qos_config.max_sdu_size
+             << std::left << std::setw(10) << ase.qos_config.max_transport_latency << std::left
+             << std::setw(6) << static_cast<int>(ase.qos_config.retrans_nb) << std::left
+             << std::setw(25) << bluetooth::common::ToString(ase.state) << std::setw(24)
+             << bluetooth::common::ToString(ase.cis_state) << std::setw(19)
              << bluetooth::common::ToString(ase.data_path_state) << "\n";
     }
   }
