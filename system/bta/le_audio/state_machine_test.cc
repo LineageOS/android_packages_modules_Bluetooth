@@ -178,6 +178,7 @@ public:
           delete;
 
   ~MockLeAudioGroupStateMachineCallbacks() override = default;
+  MOCK_METHOD((uint8_t), OnGetEnabledDirections, (int group_id), (override));
   MOCK_METHOD((void), StatusReportCb, (int group_id, bluetooth::le_audio::GroupStreamStatus status),
               (override));
   MOCK_METHOD((void), OnStateTransitionTimeout, (int group_id), (override));
@@ -287,6 +288,11 @@ protected:
             .WillByDefault(Invoke([](int group_id, bluetooth::le_audio::GroupStreamStatus status) {
               log::debug("[Testing] StatusReportCb: group id: {}, status: {}", group_id, status);
             }));
+
+    ON_CALL(mock_callbacks_, OnGetEnabledDirections(_)).WillByDefault(Invoke([](int group_id) {
+      log::debug("[Testing] OnGetEnabledDirections: group_id: {} ", group_id);
+      return types::kLeAudioDirectionBoth;
+    }));
 
     MockCsisClient::SetMockInstanceForTesting(&mock_csis_client_module_);
     ON_CALL(mock_csis_client_module_, Get()).WillByDefault(Return(&mock_csis_client_module_));

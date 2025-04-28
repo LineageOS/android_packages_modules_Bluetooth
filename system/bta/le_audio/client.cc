@@ -6397,6 +6397,37 @@ public:
     return configured_context != configuration_context_type_;
   }
 
+  uint8_t getEnabledDirections(int group_id) {
+    /* Based on the Audio HAL resumed sessions,
+     * this function returns which remote directions are expected to be in STREAMING state.
+     */
+    log::info("group_id: {}, audio_sender_state {}, audio_receiver_state {}", group_id,
+              bluetooth::common::ToString(audio_sender_state_),
+              bluetooth::common::ToString(audio_receiver_state_));
+    uint8_t enabled_remote_directions = 0;
+
+    if (!com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+      log::debug("leaudio_dynamic_direction_opening is not enabled.");
+      return bluetooth::le_audio::types::kLeAudioDirectionBoth;
+    }
+
+    if (group_id != active_group_id_) {
+      log::warn("group_id: {} does not match active_group_id: {}", group_id, active_group_id_);
+      return enabled_remote_directions;
+    }
+
+    if (audio_sender_state_ == AudioState::READY_TO_START ||
+        audio_sender_state_ == AudioState::STARTED) {
+      enabled_remote_directions |= bluetooth::le_audio::types::kLeAudioDirectionSink;
+    }
+
+    if (audio_receiver_state_ == AudioState::READY_TO_START ||
+        audio_receiver_state_ == AudioState::STARTED) {
+      enabled_remote_directions |= bluetooth::le_audio::types::kLeAudioDirectionSource;
+    }
+    return enabled_remote_directions;
+  }
+
   void OnStateMachineStatusReportCb(int group_id, GroupStreamStatus status) {
     /* When switching stream between two group, it is important to keep track if given status is for
      * active group or not in order to proper Audio HAL notifications.
@@ -7005,6 +7036,13 @@ LeAudioStateMachineHciCallbacksImpl stateMachineHciCallbacksImpl;
 
 class CallbacksImpl : public LeAudioGroupStateMachine::Callbacks {
 public:
+  uint8_t OnGetEnabledDirections(int group_id) {
+    if (instance) {
+      return instance->getEnabledDirections(group_id);
+    }
+    return 0;
+  }
+
   void StatusReportCb(int group_id, GroupStreamStatus status) override {
     do_in_main_thread(base::BindOnce(
             [](int group_id, GroupStreamStatus status) {

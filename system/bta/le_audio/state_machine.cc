@@ -203,7 +203,8 @@ public:
         leAudioDevice->HaveAllActiveAsesSameState(
                 AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED)) {
       log::info("{} in QoS state, proceed to Enable state", leAudioDevice->address_);
-      PrepareAndSendEnable(leAudioDevice);
+      PrepareAndSendEnable(leAudioDevice,
+                           state_machine_callbacks_->OnGetEnabledDirections(group->group_id_));
       return true;
     }
 
@@ -2454,7 +2455,8 @@ private:
 
         if (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
           /* We are here because of the reconnection of the single device. */
-          PrepareAndSendEnable(leAudioDevice);
+          PrepareAndSendEnable(leAudioDevice,
+                               state_machine_callbacks_->OnGetEnabledDirections(group->group_id_));
           return;
         }
 
@@ -2572,8 +2574,8 @@ private:
     }
   }
 
-  void PrepareAndSendEnableToTheGroup(LeAudioDeviceGroup* group) {
-    log::info("group_id: {}", group->group_id_);
+  void PrepareAndSendEnableToTheGroup(LeAudioDeviceGroup* group, uint8_t remote_directions) {
+    log::info("group_id: {}, remote_directions: {}", group->group_id_, remote_directions);
 
     auto leAudioDevice = group->GetFirstActiveDevice();
     if (!leAudioDevice) {
@@ -2584,11 +2586,16 @@ private:
     }
 
     for (; leAudioDevice; leAudioDevice = group->GetNextActiveDevice(leAudioDevice)) {
-      PrepareAndSendEnable(leAudioDevice);
+      PrepareAndSendEnable(leAudioDevice, remote_directions);
     }
   }
 
-  void PrepareAndSendEnable(LeAudioDevice* leAudioDevice) {
+  void PrepareAndSendEnableToTheGroup(LeAudioDeviceGroup* group) {
+    PrepareAndSendEnableToTheGroup(
+            group, state_machine_callbacks_->OnGetEnabledDirections(group->group_id_));
+  }
+
+  void PrepareAndSendEnable(LeAudioDevice* leAudioDevice, uint8_t remote_directions) {
     struct bluetooth::le_audio::client_parser::ascs::ctp_enable conf;
     std::vector<struct bluetooth::le_audio::client_parser::ascs::ctp_enable> confs;
     std::vector<uint8_t> value;
@@ -2601,8 +2608,16 @@ private:
     ase = leAudioDevice->GetFirstActiveAse();
     log::assert_that(ase, "shouldn't be called without an active ASE");
     do {
-      log::debug("device: {}, ase_id: {}, cis_id: {}, ase state: {}", leAudioDevice->address_,
-                 ase->id, ase->cis_id, ToString(ase->state));
+      if (!(ase->direction & remote_directions)) {
+        log::info("group_id: {}, {}, ase_id: {} ({:#x}), enabled_directions {:#x} not to enable",
+                  leAudioDevice->group_id_, leAudioDevice->address_, ase->id, ase->direction,
+                  remote_directions);
+        continue;
+      }
+
+      log::debug("device: {}, ase_id: {}({:#x}), cis_id: {}, ase state: {}",
+                 leAudioDevice->address_, ase->id, ase->direction, ase->cis_id,
+                 ToString(ase->state));
       conf.ase_id = ase->id;
       conf.metadata = ase->metadata.RawPacket();
       confs.push_back(conf);
@@ -2613,6 +2628,12 @@ private:
       extra_stream << "meta: " << base::HexEncode(conf.metadata.data(), conf.metadata.size())
                    << ";;";
     } while ((ase = leAudioDevice->GetNextActiveAse(ase)));
+
+    if (confs.empty()) {
+      log::warn("group_id: {}, {}, nothing to enable", leAudioDevice->group_id_,
+                leAudioDevice->address_);
+      return;
+    }
 
     leAudioDevice->last_ase_ctp_command_sent =
             bluetooth::le_audio::client_parser::ascs::kCtpOpcodeEnable;
