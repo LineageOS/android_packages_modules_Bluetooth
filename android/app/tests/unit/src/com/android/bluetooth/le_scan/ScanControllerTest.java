@@ -84,6 +84,7 @@ import org.mockito.Mock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -203,7 +204,7 @@ public class ScanControllerTest {
         IScannerCallback callback = mock(IScannerCallback.class);
         mApp.mCallback = callback;
         mApp.mAppScanStats = appScanStats;
-        scanClient.mStats = appScanStats;
+        scanClient.mStats = Optional.of(appScanStats);
         Set<ScanClient> scanClientSet = Collections.singleton(scanClient);
         doReturn(address).when(mAdapterService).getIdentityAddress(anyString());
         doReturn(scanClientSet).when(mScanManager).getRegularScanQueue();

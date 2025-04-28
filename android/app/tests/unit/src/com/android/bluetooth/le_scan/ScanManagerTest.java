@@ -117,6 +117,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -306,9 +307,10 @@ public class ScanManagerTest {
 
         mClientId = mClientId + 1;
         ScanClient client = new ScanClient(mClientId, scanSettings, scanFilterList, appUid);
-        client.mStats = appScanStats;
-        client.mStats.recordScanStart(
-                scanSettings, scanFilterList, isFiltered, false, mClientId, null);
+        client.mStats = Optional.of(appScanStats);
+        client.mStats
+                .get()
+                .recordScanStart(scanSettings, scanFilterList, isFiltered, false, mClientId, null);
         return client;
     }
 
@@ -414,8 +416,10 @@ public class ScanManagerTest {
         ScanSettings scanSettings = createScanSettingsWithPhy(scanMode, phy);
 
         ScanClient client = new ScanClient(id, scanSettings, scanFilterList);
-        client.mStats = mMockAppScanStats;
-        client.mStats.recordScanStart(scanSettings, scanFilterList, isFiltered, false, id, null);
+        client.mStats = Optional.of(mMockAppScanStats);
+        client.mStats
+                .get()
+                .recordScanStart(scanSettings, scanFilterList, isFiltered, false, id, null);
         return client;
     }
 
@@ -668,7 +672,7 @@ public class ScanManagerTest {
                     advanceTime(DEFAULT_SCAN_TIMEOUT_MILLIS);
                     mLooper.dispatchAll();
                     assertThat(client.mSettings.getScanMode()).isEqualTo(expectedScanMode);
-                    assertThat(client.mStats.isScanTimeout(client.mScannerId)).isTrue();
+                    assertThat(client.mStats.get().isScanTimeout(client.mScannerId)).isTrue();
                     // Turn off screen
                     sendMessageWaitForProcessed(createScreenOnOffMessage(false));
                     assertThat(client.mSettings.getScanMode()).isEqualTo(expectedScanMode);
@@ -710,7 +714,7 @@ public class ScanManagerTest {
                     doReturn(true).when(mMockAppScanStats).isScanningTooLong();
                     syncHandler(ScanManager.MSG_SCAN_TIMEOUT);
                     assertThat(client.mSettings.getScanMode()).isEqualTo(expectedScanMode);
-                    assertThat(client.mStats.isScanTimeout(client.mScannerId)).isTrue();
+                    assertThat(client.mStats.get().isScanTimeout(client.mScannerId)).isTrue();
                     // Turn off screen
                     sendMessageWaitForProcessed(createScreenOnOffMessage(false));
                     assertThat(client.mSettings.getScanMode()).isEqualTo(SCAN_MODE_SCREEN_OFF);
@@ -1297,7 +1301,7 @@ public class ScanManagerTest {
 
             advanceTime(scanTestDuration);
             // Record scan stop
-            client.mStats.recordScanStop(mClientId);
+            client.mStats.get().recordScanStop(mClientId);
             // Verify that the app scan stop is logged
             mInOrder.verify(mMetricsLogger)
                     .logAppScanStateChanged(
@@ -1860,7 +1864,7 @@ public class ScanManagerTest {
         assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client);
         assertThat(client.mSettings.getScanMode()).isEqualTo(SCAN_MODE_LOW_LATENCY);
         // Set AppScanStats to null
-        client.mStats = null;
+        client.mStats = Optional.empty();
         // Set connecting state
         sendMessageWaitForProcessed(createConnectingMessage(true));
         // Since AppScanStats is null, no downgrade takes place for scan mode
