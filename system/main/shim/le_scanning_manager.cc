@@ -67,6 +67,8 @@ constexpr uint16_t kListLogicOr = 0x01;
 constexpr uint8_t k1mPhyMask = 1;
 constexpr uint8_t kCodedPhyMask = 1 << 2;
 
+constexpr uint16_t kScanResponseMask = 1 << 3;
+
 class DefaultScanningCallback : public ::ScanningCallbacks {
   void OnScannerRegistered(const bluetooth::Uuid /* app_uuid */, uint8_t /* scanner_id */,
                            uint8_t /* status */) override {
@@ -483,9 +485,12 @@ void BleScannerInterfaceImpl::on_scan_result(uint16_t event_type, uint8_t addres
           advertising_sid, tx_power, rssi, periodic_advertising_interval, advertising_data));
 
   // TODO: Remove when StartInquiry in GD part implemented
-  btm_ble_process_adv_pkt_cont_for_inquiry(event_type, ble_addr_type, raw_address, primary_phy,
-                                           secondary_phy, advertising_sid, tx_power, rssi,
-                                           periodic_advertising_interval, advertising_data);
+  if (!com::android::bluetooth::flags::support_passive_scanning() ||
+      (event_type & kScanResponseMask)) {
+    btm_ble_process_adv_pkt_cont_for_inquiry(event_type, ble_addr_type, raw_address, primary_phy,
+                                             secondary_phy, advertising_sid, tx_power, rssi,
+                                             periodic_advertising_interval, advertising_data);
+  }
 }
 
 void BleScannerInterfaceImpl::OnScanResult(uint16_t event_type, uint8_t address_type,

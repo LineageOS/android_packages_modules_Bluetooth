@@ -1513,6 +1513,7 @@ package android.bluetooth.le {
     method @FlaggedApi("com.android.bluetooth.flags.rssi_scan_filter") public int getRssiThreshold();
     method public int getScanMode();
     method public int getScanResultType();
+    method @FlaggedApi("com.android.bluetooth.flags.support_passive_scanning") public int getScanType();
     method public void writeToParcel(android.os.Parcel, int);
     field public static final long AUTO_BATCH_MIN_REPORT_DELAY_MILLIS = 600000L; // 0x927c0L
     field public static final int CALLBACK_TYPE_ALL_MATCHES = 1; // 0x1
@@ -1530,6 +1531,9 @@ package android.bluetooth.le {
     field public static final int SCAN_MODE_LOW_LATENCY = 2; // 0x2
     field public static final int SCAN_MODE_LOW_POWER = 0; // 0x0
     field public static final int SCAN_MODE_OPPORTUNISTIC = -1; // 0xffffffff
+    field @FlaggedApi("com.android.bluetooth.flags.support_passive_scanning") public static final int SCAN_TYPE_ACTIVE = 2; // 0x2
+    field @FlaggedApi("com.android.bluetooth.flags.support_passive_scanning") public static final int SCAN_TYPE_PASSIVE = 1; // 0x1
+    field @FlaggedApi("com.android.bluetooth.flags.support_passive_scanning") public static final int SCAN_TYPE_UNKNOWN = 0; // 0x0
   }
 
   public static final class ScanSettings.Builder {
@@ -1543,6 +1547,7 @@ package android.bluetooth.le {
     method public android.bluetooth.le.ScanSettings.Builder setReportDelay(long);
     method @FlaggedApi("com.android.bluetooth.flags.rssi_scan_filter") @NonNull public android.bluetooth.le.ScanSettings.Builder setRssiThreshold(int);
     method public android.bluetooth.le.ScanSettings.Builder setScanMode(int);
+    method @FlaggedApi("com.android.bluetooth.flags.support_passive_scanning") @NonNull public android.bluetooth.le.ScanSettings.Builder setScanType(int);
   }
 
   public final class TransportBlock implements android.os.Parcelable {
