@@ -5,6 +5,7 @@
 #include <base/functional/callback.h>
 #include <base/location.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <log/log.h>
@@ -12,19 +13,8 @@
 #include <memory>
 
 #include "gd/hci/acl_manager_mock.h"
-#include "gd/hci/controller_mock.h"
-#include "main/shim/acl_api.h"
-#include "main/shim/entry.h"
-#include "main/shim/le_scanning_manager.h"
 #include "osi/include/alarm.h"
 #include "osi/test/alarm_mock.h"
-#include "security_device_record.h"
-#include "stack/btm/btm_dev.h"
-#include "stack/btm/internal/btm_api.h"
-#include "stack/btm/neighbor_inquiry.h"
-#include "stack/include/btm_ble_api.h"
-#include "stack/include/btm_log_history.h"
-#include "stack/l2cap/internal/l2c_api.h"
 #include "test/mock/mock_main_shim_entry.h"
 
 using testing::_;
@@ -176,8 +166,13 @@ TEST_F(BleConnectionManager, test_direct_connection_client) {
   EXPECT_CALL(*AlarmMock::Get(), AlarmSetOnMloop(_, _, _, _)).Times(1);
   EXPECT_TRUE(direct_connect_add(CLIENT1, address1, /* prefer_relax_mode */ false));
 
-  // App already doing a direct connection, attempt to re-add result in failure
-  EXPECT_FALSE(direct_connect_add(CLIENT1, address1, /* prefer_relax_mode */ false));
+  if (com::android::bluetooth::flags::idempotent_direct_connect_add()) {
+    // App already doing a direct connection, do nothing
+    EXPECT_TRUE(direct_connect_add(CLIENT1, address1, /* prefer_relax_mode */ false));
+  } else {
+    // App already doing a direct connection, attempt to re-add result in failure
+    EXPECT_FALSE(direct_connect_add(CLIENT1, address1, /* prefer_relax_mode */ false));
+  }
 
   // Client that don't do direct connection should fail attempt to stop it
   EXPECT_FALSE(direct_connect_remove(CLIENT2, address1));

@@ -673,7 +673,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup Sap Service");
+        Log.i(TAG, "cleanup()");
 
         setSapService(null);
         unregisterReceiver(mSapReceiver);

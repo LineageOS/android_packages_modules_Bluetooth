@@ -38,6 +38,7 @@ import android.bluetooth.BluetoothUuid;
 import android.os.ParcelUuid;
 
 import androidx.test.filters.MediumTest;
+import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils.MockitoRule;
@@ -49,14 +50,13 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 import org.mockito.Mock;
 
 import java.util.List;
 
 /** Test cases for {@link BatteryService}. */
 @MediumTest
-@RunWith(JUnit4.class)
+@RunWith(AndroidJUnit4.class)
 public class BatteryServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 

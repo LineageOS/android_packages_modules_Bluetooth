@@ -24,8 +24,8 @@ import static com.android.bluetooth.opp.BluetoothOppTransfer.TRANSPORT_ERROR;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -56,8 +56,9 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothObexTransport;
 import com.android.bluetooth.TestUtils;
-import com.android.obex.ObexTransport;
+import com.android.bluetooth.TestUtils.MockitoRule;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.obex.ObexTransport;
 
 import org.junit.After;
 import org.junit.Before;
@@ -130,7 +131,7 @@ public class BluetoothOppTransferTest {
                         42,
                         123456789,
                         false);
-        mBluetoothOppBatch = new BluetoothOppBatch(mContext, mInitShareInfo);
+        mBluetoothOppBatch = new BluetoothOppBatch(mAdapterService, mInitShareInfo);
         mTransfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch, mSession);
         mEventHandler = mTransfer.new EventHandler(Looper.getMainLooper());
     }
@@ -253,7 +254,7 @@ public class BluetoothOppTransferTest {
                         42,
                         123456789,
                         false);
-        mBluetoothOppBatch = new BluetoothOppBatch(mContext, mInitShareInfo);
+        mBluetoothOppBatch = new BluetoothOppBatch(mAdapterService, mInitShareInfo);
         mTransfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch, mSession);
         mEventHandler = mTransfer.new EventHandler(Looper.getMainLooper());
         mEventHandler.handleMessage(message);
@@ -301,7 +302,7 @@ public class BluetoothOppTransferTest {
                         42,
                         123456789,
                         false);
-        mBluetoothOppBatch = new BluetoothOppBatch(mContext, mInitShareInfo);
+        mBluetoothOppBatch = new BluetoothOppBatch(mAdapterService, mInitShareInfo);
         mTransfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch, mSession);
         mEventHandler = mTransfer.new EventHandler(Looper.getMainLooper());
 

@@ -214,7 +214,7 @@ public class GattService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup Gatt Service");
+        Log.i(TAG, "cleanup()");
 
         if (Flags.onlyStartScanDuringBleOn() && sGattService == null) {
             Log.w(TAG, "cleanup() called before initialization");

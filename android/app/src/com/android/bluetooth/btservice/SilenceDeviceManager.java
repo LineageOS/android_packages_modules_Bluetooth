@@ -200,7 +200,7 @@ public class SilenceDeviceManager {
     }
 
     void cleanup() {
-        Log.v(TAG, "cleanup()");
+        Log.i(TAG, "cleanup()");
         mSilenceDevices.clear();
     }
 

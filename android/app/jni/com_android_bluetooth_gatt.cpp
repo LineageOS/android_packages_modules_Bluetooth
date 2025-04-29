@@ -2722,12 +2722,13 @@ static void distanceMeasurementCleanupNative(JNIEnv* env, jobject /* object */) 
 }
 
 static void startDistanceMeasurementNative(JNIEnv* env, jobject /* object */, jstring address,
-                                           jint interval, jint method) {
+                                           jint interval, jint method, jint sight_type,
+                                           jint location_type) {
   if (!sGattIf) {
     return;
   }
-  sGattIf->distance_measurement_manager->StartDistanceMeasurement(str2addr(env, address), interval,
-                                                                  method);
+  sGattIf->distance_measurement_manager->StartDistanceMeasurement(
+          str2addr(env, address), interval, method, sight_type, location_type);
 }
 
 static void stopDistanceMeasurementNative(JNIEnv* env, jobject /* object */, jstring address,
@@ -2892,7 +2893,7 @@ static int register_com_android_bluetooth_gatt_distance_measurement(JNIEnv* env)
   const JNINativeMethod methods[] = {
           {"initializeNative", "()V", (void*)distanceMeasurementInitializeNative},
           {"cleanupNative", "()V", (void*)distanceMeasurementCleanupNative},
-          {"startDistanceMeasurementNative", "(Ljava/lang/String;II)V",
+          {"startDistanceMeasurementNative", "(Ljava/lang/String;IIII)V",
            (void*)startDistanceMeasurementNative},
           {"stopDistanceMeasurementNative", "(Ljava/lang/String;I)V",
            (void*)stopDistanceMeasurementNative},

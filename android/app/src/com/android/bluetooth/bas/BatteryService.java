@@ -97,7 +97,7 @@ public class BatteryService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup Battery Service");
+        Log.i(TAG, "cleanup()");
 
         setBatteryService(null);
 

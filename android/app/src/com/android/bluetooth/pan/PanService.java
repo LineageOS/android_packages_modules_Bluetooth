@@ -167,7 +167,7 @@ public class PanService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup Pan Service");
+        Log.i(TAG, "cleanup()");
 
         try {
             mTetheringManager.unregisterTetheringEventCallback(mTetheringCallback);

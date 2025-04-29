@@ -130,7 +130,7 @@ public class HearingAidService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup HearingAid Service");
+        Log.i(TAG, "cleanup()");
 
         // Cleanup native interface
         mNativeInterface.cleanup();

@@ -32,6 +32,22 @@ enum DistanceMeasurementMethod {
   METHOD_CS,
 };
 
+// Should match the value of
+// hardware/interfaces/bluetooth/ranging/aidl/android/hardware/bluetooth/ranging/SightType.aidl
+enum DistanceMeasurementSightType {
+  SIGHT_TYPE_UNKNOWN = 0,
+  SIGHT_TYPE_LINE_OF_SIGHT = 1,
+  SIGHT_TYPE_NON_LINE_OF_SIGHT = 2,
+};
+
+// Should match the value of
+// hardware/interfaces/bluetooth/ranging/aidl/android/hardware/bluetooth/ranging/LocationType.aidl
+enum DistanceMeasurementLocationType {
+  LOCATION_TYPE_UNKNOWN = 0,
+  LOCATION_TYPE_INDOOR = 1,
+  LOCATION_TYPE_OUTDOOR = 2,
+};
+
 enum DistanceMeasurementErrorCode {
   REASON_FEATURE_NOT_SUPPORTED_LOCAL,
   REASON_FEATURE_NOT_SUPPORTED_REMOTE,
@@ -86,7 +102,9 @@ public:
   void RegisterDistanceMeasurementCallbacks(DistanceMeasurementCallbacks* callbacks);
   void StartDistanceMeasurement(const Address&, uint16_t connection_handle,
                                 hci::Role local_hci_role, uint16_t interval,
-                                DistanceMeasurementMethod method);
+                                DistanceMeasurementMethod method,
+                                DistanceMeasurementSightType sight_type,
+                                DistanceMeasurementLocationType location_type);
   void StopDistanceMeasurement(const Address& address, uint16_t connection_handle,
                                DistanceMeasurementMethod method);
   void HandleRasClientConnectedEvent(

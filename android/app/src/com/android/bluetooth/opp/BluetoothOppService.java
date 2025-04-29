@@ -66,7 +66,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ObexTransport;
@@ -259,7 +258,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup BluetoothOpp Service");
+        Log.i(TAG, "cleanup()");
 
         if (sBluetoothOppService == null) {
             Log.w(TAG, "cleanup() called before initialization");
@@ -949,7 +948,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                     mBatches.get(i).addShare(info);
                 } else {
                     // There is ongoing batch
-                    BluetoothOppBatch newBatch = new BluetoothOppBatch(this, info);
+                    BluetoothOppBatch newBatch = new BluetoothOppBatch(mAdapterService, info);
                     newBatch.mId = mBatchId;
                     mBatchId++;
                     mBatches.add(newBatch);

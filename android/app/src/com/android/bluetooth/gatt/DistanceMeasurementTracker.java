@@ -17,6 +17,7 @@
 package com.android.bluetooth.gatt;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.le.ChannelSoundingParams;
 import android.bluetooth.le.DistanceMeasurementParams;
 import android.bluetooth.le.IDistanceMeasurementCallback;
 import android.os.Handler;
@@ -32,6 +33,8 @@ class DistanceMeasurementTracker {
     final BluetoothDevice mDevice;
     final String mIdentityAddress;
     final int mInterval; // Report interval in ms
+    final int mSightType;
+    final int mLocationType;
     final IDistanceMeasurementCallback mCallback;
     private final DistanceMeasurementManager mManager;
     private final UUID mUuid;
@@ -55,6 +58,13 @@ class DistanceMeasurementTracker {
         mInterval = interval;
         mDuration = params.getDurationSeconds();
         mMethod = params.getMethodId();
+        if (params.getChannelSoundingParams() != null) {
+            mSightType = params.getChannelSoundingParams().getSightType();
+            mLocationType = params.getChannelSoundingParams().getLocationType();
+        } else {
+            mSightType = ChannelSoundingParams.SIGHT_TYPE_UNKNOWN;
+            mLocationType = ChannelSoundingParams.LOCATION_TYPE_UNKNOWN;
+        }
         mCallback = callback;
     }
 

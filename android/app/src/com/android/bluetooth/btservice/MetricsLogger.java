@@ -38,6 +38,7 @@ import static com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVEN
 import static com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__PROFILE_CONNECTION_VOLUME_CONTROL;
 import static com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_BONDED;
 import static com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE;
+import static com.android.bluetooth.BluetoothStatsLog.CHANNEL_SOUNDING_TYPES_SUPPORTED;
 import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA;
 import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__CLASSIC;
 import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO;
@@ -1003,5 +1004,10 @@ public class MetricsLogger {
         final List<String> wordBreakdownList = getWordBreakdownList(deviceName);
         boolean isMedicalDevice = !getMatchedStringForMedicalDevice(wordBreakdownList).isEmpty();
         return isMedicalDevice;
+    }
+
+    /** Log the channel sounding types supported. */
+    public void logChannelSoundingTypesSupported(int[] channelSoundingTypes) {
+        BluetoothStatsLog.write(CHANNEL_SOUNDING_TYPES_SUPPORTED, channelSoundingTypes);
     }
 }

@@ -92,7 +92,7 @@ public class AdvertiseManager {
     }
 
     void cleanup() {
-        Log.d(TAG, "cleanup()");
+        Log.i(TAG, "cleanup()");
         mIsAvailable = false;
         mHandler.removeCallbacksAndMessages(null);
         forceRunSyncOnAdvertiseThread(

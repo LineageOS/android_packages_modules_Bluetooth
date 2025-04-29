@@ -84,7 +84,6 @@ public class MediaControlGattServiceTest {
             Looper.prepare();
         }
 
-
         doReturn(true).when(mGattServer).addService(any(BluetoothGattService.class));
         doReturn(new BluetoothDevice[0]).when(mAdapterService).getBondedDevices();
         doReturn(BluetoothDevice.ACCESS_ALLOWED).when(mMcpService).getDeviceAuthorization(any());

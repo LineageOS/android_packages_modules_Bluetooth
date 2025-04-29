@@ -31,7 +31,8 @@ public:
   MOCK_METHOD(std::vector<VendorSpecificCharacteristic>, GetVendorSpecificCharacteristics, ());
   MOCK_METHOD(void, OpenSession,
               (uint16_t connection_handle, uint16_t att_handle,
-               const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_data));
+               const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_data,
+               uint8_t sight_type, uint8_t location_type));
   MOCK_METHOD(void, HandleVendorSpecificReply,
               (uint16_t connection_handle,
                const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_reply));

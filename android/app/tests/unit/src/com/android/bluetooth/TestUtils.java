@@ -24,7 +24,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 import android.annotation.IntRange;
-import android.annotation.NonNull;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -39,6 +38,7 @@ import android.os.MessageQueue;
 import android.service.media.MediaBrowserService;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.uiautomator.UiDevice;
 
@@ -158,7 +158,6 @@ public class TestUtils {
             return null;
         }
     }
-
 
     /**
      * Wait for looper to finish its current task and all tasks schedule before this

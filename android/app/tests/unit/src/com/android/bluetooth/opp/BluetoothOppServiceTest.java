@@ -22,7 +22,6 @@ import static com.android.bluetooth.opp.BluetoothOppService.WHERE_INVISIBLE_UNCO
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -35,6 +34,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.NotificationManager;
+import android.bluetooth.BluetoothAdapter;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.MatrixCursor;
@@ -44,11 +44,8 @@ import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-
-import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.After;
@@ -183,8 +180,8 @@ public class BluetoothOppServiceTest {
         mService.mShares.add(shareInfo2);
 
         // batch1 will be removed
-        BluetoothOppBatch batch1 = new BluetoothOppBatch(mService, shareInfo);
-        BluetoothOppBatch batch2 = new BluetoothOppBatch(mService, shareInfo2);
+        BluetoothOppBatch batch1 = new BluetoothOppBatch(mAdapterService, shareInfo);
+        BluetoothOppBatch batch2 = new BluetoothOppBatch(mAdapterService, shareInfo2);
         batch2.mStatus = Constants.BATCH_STATUS_FINISHED;
         mService.mBatches.clear();
         mService.mBatches.add(batch1);

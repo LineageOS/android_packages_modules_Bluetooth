@@ -289,6 +289,7 @@ public class ScanManager {
     }
 
     void cleanup() {
+        Log.i(TAG, "cleanup()");
         mRegularScanClients.clear();
         mBatchClients.clear();
         mSuspendedScanClients.clear();

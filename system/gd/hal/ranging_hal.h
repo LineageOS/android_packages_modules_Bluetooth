@@ -312,7 +312,8 @@ public:
   virtual std::vector<VendorSpecificCharacteristic> GetVendorSpecificCharacteristics() = 0;
   virtual void OpenSession(
           uint16_t connection_handle, uint16_t att_handle,
-          const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_data) = 0;
+          const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_data,
+          uint8_t sight_type, uint8_t location_type) = 0;
   virtual void HandleVendorSpecificReply(
           uint16_t connection_handle,
           const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_reply) = 0;

@@ -175,7 +175,7 @@ public class ScanController {
     }
 
     public void cleanup() {
-        Log.i(TAG, "Cleanup ScanController");
+        Log.i(TAG, "cleanup()");
         mBinder.cleanup();
         mScanThread.quitSafely();
         mScannerMap.clear();

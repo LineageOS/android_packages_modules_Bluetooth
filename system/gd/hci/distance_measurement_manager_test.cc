@@ -189,6 +189,9 @@ struct StartMeasurementParameters {
   Role resp_hci_role = Role::PERIPHERAL;
   uint16_t interval = 200;  // 200ms
   DistanceMeasurementMethod method = DistanceMeasurementMethod::METHOD_CS;
+  DistanceMeasurementSightType sight_type = DistanceMeasurementSightType::SIGHT_TYPE_UNKNOWN;
+  DistanceMeasurementLocationType location_type =
+          DistanceMeasurementLocationType::LOCATION_TYPE_UNKNOWN;
   // used to override the CsConfigCompleteEvent
   CsMainModeType main_mode_type = CsMainModeType::MODE_2;
   CsRttType rtt_type = CsRttType::RTT_AA_ONLY;
@@ -496,7 +499,8 @@ struct CsModule {
 
   void StartMeasurement(const StartMeasurementParameters& params) {
     dm_manager_->StartDistanceMeasurement(params.responder_addr, params.connection_handle,
-                                          params.req_hci_role, params.interval, params.method);
+                                          params.req_hci_role, params.interval, params.method,
+                                          params.sight_type, params.location_type);
   }
 
   void ReceivedReadLocalCapabilitiesComplete() {
@@ -512,10 +516,11 @@ struct CsModule {
 
   void StartMeasurementTillRasConnectedEvent(const StartMeasurementParameters& params) {
     ReceivedReadLocalCapabilitiesComplete();
-    EXPECT_CALL(*mock_ranging_hal_, OpenSession(_, _, _))
+    EXPECT_CALL(*mock_ranging_hal_, OpenSession(_, _, _, _, _))
             .WillOnce([this](uint16_t connection_handle, uint16_t /*att_handle*/,
                              const std::vector<hal::VendorSpecificCharacteristic>&
-                                     vendor_specific_data) {
+                                     vendor_specific_data,
+                             uint8_t /* sight_type */, uint8_t /* location_type */) {
               mock_ranging_hal_->GetRangingHalCallback()->OnOpened(connection_handle,
                                                                    vendor_specific_data);
             });

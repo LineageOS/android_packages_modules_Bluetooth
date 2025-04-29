@@ -30,6 +30,7 @@ from bumble_experimental.hid import HIDService
 from bumble_experimental.oob import OOBService
 from bumble_experimental.opp import OppService
 from bumble_experimental.rfcomm import RFCOMMService
+from bumble_experimental.hf import HFService
 from pandora_experimental.asha_grpc_aio import add_AshaServicer_to_server
 from pandora_experimental.avrcp_grpc_aio import add_AVRCPServicer_to_server
 from pandora_experimental.bumble_config_grpc_aio import \
@@ -40,6 +41,7 @@ from pandora_experimental.hid_grpc_aio import add_HIDServicer_to_server
 from pandora_experimental.oob_grpc_aio import add_OOBServicer_to_server
 from pandora_experimental.opp_grpc_aio import add_OppServicer_to_server
 from pandora_experimental.rfcomm_grpc_aio import add_RFCOMMServicer_to_server
+from pandora_experimental.hfp_grpc_aio import add_HFPServicer_to_server
 
 BUMBLE_SERVER_GRPC_PORT = 7999
 ROOTCANAL_PORT_CUTTLEFISH = 7300
@@ -87,6 +89,7 @@ def register_rfcomm_dependent_servicers(bumble, _, server) -> None:
     rfcomm_server = RFCOMMServer(bumble.device)
     add_RFCOMMServicer_to_server(RFCOMMService(bumble.device, rfcomm_server), server)
     add_OppServicer_to_server(OppService(bumble.device, rfcomm_server), server)
+    add_HFPServicer_to_server(HFService(bumble.device, rfcomm_server), server)
 
 
 def register_experimental_services() -> None:

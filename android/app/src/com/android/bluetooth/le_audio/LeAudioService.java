@@ -218,9 +218,9 @@ public class LeAudioService extends ProfileService {
     private final BluetoothEventLogger mEventLogger =
             new BluetoothEventLogger(LOG_NB_EVENTS, TAG + " event log");
 
-    @VisibleForTesting TbsService mTbsService;
-
     @VisibleForTesting McpService mMcpService;
+
+    @VisibleForTesting TbsService mTbsService;
 
     @VisibleForTesting VolumeControlService mVolumeControlService;
 
@@ -697,7 +697,7 @@ public class LeAudioService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup LeAudio Service");
+        Log.i(TAG, "cleanup()");
 
         if (sLeAudioService == null) {
             Log.w(TAG, "cleanup() called before initialization");
@@ -4808,16 +4808,7 @@ public class LeAudioService extends ProfileService {
         }
     }
 
-    TbsService getTbsService() {
-        if (mTbsService != null) {
-            return mTbsService;
-        }
-
-        mTbsService = mServiceFactory.getTbsService();
-        return mTbsService;
-    }
-
-    McpService getMcpService() {
+    private McpService getMcpService() {
         if (mMcpService != null) {
             return mMcpService;
         }
@@ -4826,7 +4817,16 @@ public class LeAudioService extends ProfileService {
         return mMcpService;
     }
 
-    void setAuthorizationForRelatedProfiles(BluetoothDevice device, boolean authorize) {
+    private TbsService getTbsService() {
+        if (mTbsService != null) {
+            return mTbsService;
+        }
+
+        mTbsService = mServiceFactory.getTbsService();
+        return mTbsService;
+    }
+
+    private void setAuthorizationForRelatedProfiles(BluetoothDevice device, boolean authorize) {
         McpService mcpService = getMcpService();
         if (mcpService != null) {
             mcpService.setDeviceAuthorized(device, authorize);
@@ -4838,7 +4838,7 @@ public class LeAudioService extends ProfileService {
         }
     }
 
-    void removeAuthorizationInfoForRelatedProfiles(BluetoothDevice device) {
+    private void removeAuthorizationInfoForRelatedProfiles(BluetoothDevice device) {
         McpService mcpService = getMcpService();
         if (mcpService != null) {
             mcpService.removeDeviceAuthorizationInfo(device);

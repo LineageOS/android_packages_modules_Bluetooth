@@ -34,8 +34,8 @@ public:
     return vendor_specific_characteristics;
   }
   void OpenSession(uint16_t /* connection_handle */, uint16_t /* att_handle */,
-                   const std::vector<hal::VendorSpecificCharacteristic>& /* vendor_specific_data */)
-          override {}
+                   const std::vector<hal::VendorSpecificCharacteristic>& /* vendor_specific_data */,
+                   uint8_t /* sight_type */, uint8_t /* location_type */) override {}
 
   void HandleVendorSpecificReply(
           uint16_t /* connection_handle */,
