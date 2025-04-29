@@ -239,7 +239,7 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/MetricsLogger.java"
-            line="290"
+            line="287"
             column="9"/>
     </issue>
 
@@ -250,7 +250,7 @@
         errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="131"
+            line="141"
             column="26"/>
     </issue>
 
@@ -261,7 +261,7 @@
         errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="149"
+            line="159"
             column="26"/>
     </issue>
 
@@ -272,7 +272,7 @@
         errorLine2="                         ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="165"
+            line="175"
             column="26"/>
     </issue>
 
@@ -283,7 +283,7 @@
         errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="173"
+            line="183"
             column="26"/>
     </issue>
 
@@ -294,7 +294,7 @@
         errorLine2="                         ~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="181"
+            line="191"
             column="26"/>
     </issue>
 
@@ -305,7 +305,7 @@
         errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="189"
+            line="199"
             column="26"/>
     </issue>
 
@@ -316,7 +316,7 @@
         errorLine2="                         ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="197"
+            line="207"
             column="26"/>
     </issue>
 
@@ -327,7 +327,7 @@
         errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="303"
+            line="238"
             column="26"/>
     </issue>
 
@@ -338,7 +338,7 @@
         errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="310"
+            line="245"
             column="26"/>
     </issue>
 
@@ -349,7 +349,7 @@
         errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="317"
+            line="252"
             column="26"/>
     </issue>
 
@@ -360,7 +360,7 @@
         errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="324"
+            line="259"
             column="26"/>
     </issue>
 
@@ -371,7 +371,7 @@
         errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="330"
+            line="265"
             column="26"/>
     </issue>
 
@@ -382,7 +382,7 @@
         errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="336"
+            line="271"
             column="26"/>
     </issue>
 
@@ -393,7 +393,7 @@
         errorLine2="                           ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/BondStateMachine.java"
-            line="690"
+            line="713"
             column="28"/>
     </issue>
 
@@ -404,7 +404,7 @@
         errorLine2="                           ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/BondStateMachine.java"
-            line="720"
+            line="743"
             column="28"/>
     </issue>
 
@@ -415,7 +415,7 @@
         errorLine2="                                                              ~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/csip/CsipSetCoordinatorService.java"
-            line="857"
+            line="858"
             column="63"/>
     </issue>
 
@@ -730,44 +730,11 @@
     <issue
         id="VisibleForTests"
         message="This method should only be accessed from tests or within private scope"
-        errorLine1="                if (mSystemInterface.getVoiceRecognitionWakeLock().isHeld()) {"
-        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="271"
-            column="38"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                        mSystemInterface.getVoiceRecognitionWakeLock().release();"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="273"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                                        .getHeadsetPhoneState()"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="434"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
         errorLine1="            if (stateMachine.getConnectionState() != STATE_DISCONNECTED) {"
         errorLine2="                             ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="506"
+            line="507"
             column="30"/>
     </issue>
 
@@ -778,7 +745,7 @@
         errorLine2="                                               ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="567"
+            line="568"
             column="48"/>
     </issue>
 
@@ -789,7 +756,7 @@
         errorLine2="                                               ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="614"
+            line="615"
             column="48"/>
     </issue>
 
@@ -800,7 +767,7 @@
         errorLine2="                                 ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="633"
+            line="634"
             column="34"/>
     </issue>
 
@@ -811,40 +778,18 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="680"
+            line="681"
             column="33"/>
     </issue>
 
     <issue
         id="VisibleForTests"
         message="This method should only be accessed from tests or within private scope"
-        errorLine1="                if (mSystemInterface.getVoiceRecognitionWakeLock().isHeld()) {"
-        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="794"
-            column="38"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                        mSystemInterface.getVoiceRecognitionWakeLock().release();"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="796"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
         errorLine1="            int connectionState = stateMachine.getConnectionState();"
         errorLine2="                                               ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="812"
+            line="813"
             column="48"/>
     </issue>
 
@@ -855,19 +800,8 @@
         errorLine2="                                               ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="896"
+            line="902"
             column="48"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            if (mSystemInterface.isInCall() || mSystemInterface.isRinging()) {"
-        errorLine2="                                                                ~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1148"
-            column="65"/>
     </issue>
 
     <issue
@@ -877,162 +811,8 @@
         errorLine2="                             ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1262"
+            line="1268"
             column="30"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                if (mSystemInterface.getVoiceRecognitionWakeLock().isHeld()) {"
-        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1521"
-            column="38"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                        mSystemInterface.getVoiceRecognitionWakeLock().release();"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1523"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            if (!mSystemInterface.activateVoiceRecognition()) {"
-        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1610"
-            column="35"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            if (!mSystemInterface.getVoiceRecognitionWakeLock().isHeld()) {"
-        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1623"
-            column="35"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                mSystemInterface.getVoiceRecognitionWakeLock().acquire(sStartVrTimeoutMs);"
-        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1624"
-            column="34"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                if (mSystemInterface.getVoiceRecognitionWakeLock().isHeld()) {"
-        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1656"
-            column="38"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                        mSystemInterface.getVoiceRecognitionWakeLock().release();"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1658"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            if (!mSystemInterface.deactivateVoiceRecognition()) {"
-        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1679"
-            column="35"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                    boolean isCallIdleBefore = mSystemInterface.isCallIdle();"
-        errorLine2="                                                                ~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1736"
-            column="65"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                    mSystemInterface.getHeadsetPhoneState().setNumActiveCall(numActive);"
-        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1737"
-            column="38"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                    mSystemInterface.getHeadsetPhoneState().setNumHeldCall(numHeld);"
-        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1738"
-            column="38"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                    mSystemInterface.getHeadsetPhoneState().setCallState(callState);"
-        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1739"
-            column="38"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                            &amp;&amp; !mSystemInterface.isCallIdle()"
-        errorLine2="                                                 ~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1748"
-            column="50"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                            &amp;&amp; mSystemInterface.isCallIdle()"
-        errorLine2="                                                ~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1766"
-            column="49"/>
     </issue>
 
     <issue
@@ -1042,41 +822,8 @@
         errorLine2="                                               ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1838"
+            line="1840"
             column="48"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            if (mVoiceRecognitionStarted || mVirtualCallStarted || !mSystemInterface.isCallIdle()) {"
-        errorLine2="                                                                                     ~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1983"
-            column="86"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                                + mSystemInterface.isCallIdle());"
-        errorLine2="                                                   ~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1991"
-            column="52"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                || (mSystemInterface.isRinging() &amp;&amp; isInbandRingingEnabled());"
-        errorLine2="                                     ~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="2020"
-            column="38"/>
     </issue>
 
     <issue
@@ -1086,30 +833,8 @@
         errorLine2="                                                       ~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="2251"
+            line="2268"
             column="56"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                            + mSystemInterface.isRinging()"
-        errorLine2="                                               ~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="2320"
-            column="48"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            ProfileService.println(sb, &quot;Telecom.isRinging(): &quot; + mSystemInterface.isRinging());"
-        errorLine2="                                                                                  ~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="2399"
-            column="83"/>
     </issue>
 
     <issue
@@ -1119,7 +844,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
-            line="356"
+            line="357"
             column="29"/>
     </issue>
 
@@ -1130,140 +855,19 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
-            line="381"
+            line="382"
             column="29"/>
     </issue>
 
     <issue
         id="VisibleForTests"
         message="This method should only be accessed from tests or within private scope"
-        errorLine1="                if (!mSystemInterface.isHighDefCallInProgress()) {"
-        errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="                            mHeadsetService.processAtBcc(event.device);"
+        errorLine2="                                            ~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
-            line="536"
-            column="39"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                            mSystemInterface.answerCall(event.device);"
-        errorLine2="                                             ~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
-            line="875"
-            column="46"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                            mSystemInterface.hangupCall(event.device);"
-        errorLine2="                                             ~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
-            line="879"
-            column="46"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                            mSystemInterface.answerCall(event.device);"
-        errorLine2="                                             ~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
-            line="1181"
-            column="46"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                            mSystemInterface.hangupCall(event.device);"
-        errorLine2="                                             ~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
-            line="1184"
-            column="46"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                mSystemInterface.queryPhoneState(mHeadsetService);"
-        errorLine2="                                 ~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
-            line="1308"
-            column="34"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                                &amp;&amp; mSystemInterface.isHighDefCallInProgress()) {"
-        errorLine2="                                                    ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
-            line="1374"
-            column="53"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        final HeadsetPhoneState phoneState = mSystemInterface.getHeadsetPhoneState();"
-        errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
-            line="2151"
-            column="63"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        if (mSystemInterface.isRinging()) {"
-        errorLine2="                             ~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
-            line="2632"
-            column="30"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            mSystemInterface.answerCall(device);"
-        errorLine2="                             ~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
-            line="2633"
-            column="30"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                mSystemInterface.hangupCall(device);"
-        errorLine2="                                 ~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
-            line="2641"
-            column="34"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        mSystemInterface.getHeadsetPhoneState().listenForPhoneState(mDevice, events);"
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
-            line="2776"
-            column="26"/>
+            line="1242"
+            column="45"/>
     </issue>
 
     <issue
@@ -1273,7 +877,7 @@
         errorLine2="                                                ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
-            line="2776"
+            line="2787"
             column="49"/>
     </issue>
 
@@ -1328,7 +932,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/le_audio/LeAudioService.java"
-            line="206"
+            line="205"
             column="5"/>
     </issue>
 
@@ -1339,7 +943,7 @@
         errorLine2="                            ~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/le_audio/LeAudioService.java"
-            line="640"
+            line="641"
             column="29"/>
     </issue>
 
@@ -1350,7 +954,7 @@
         errorLine2="                            ~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/le_audio/LeAudioService.java"
-            line="728"
+            line="729"
             column="29"/>
     </issue>
 
@@ -1361,7 +965,7 @@
         errorLine2="                                                   ~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/le_audio/LeAudioService.java"
-            line="2790"
+            line="2785"
             column="52"/>
     </issue>
 
@@ -1372,7 +976,7 @@
         errorLine2="                                                   ~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/le_audio/LeAudioService.java"
-            line="3539"
+            line="3533"
             column="52"/>
     </issue>
 
@@ -1383,7 +987,7 @@
         errorLine2="                            ~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/le_audio/LeAudioService.java"
-            line="4736"
+            line="4730"
             column="29"/>
     </issue>
 
@@ -1581,7 +1185,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/AdapterService.java"
-            line="4328"
+            line="4345"
             column="17"/>
     </issue>
 
