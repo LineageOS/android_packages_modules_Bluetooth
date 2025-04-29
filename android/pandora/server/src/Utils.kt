@@ -131,7 +131,7 @@ fun <T> grpcUnary(
     scope: CoroutineScope,
     responseObserver: StreamObserver<T>,
     timeout: Long = 60,
-    block: suspend () -> T
+    block: suspend () -> T,
 ): Job {
     return scope.launch {
         try {
@@ -175,7 +175,7 @@ fun <T> grpcUnary(
 fun <T, U> grpcBidirectionalStream(
     scope: CoroutineScope,
     responseObserver: StreamObserver<U>,
-    block: CoroutineScope.(Flow<T>) -> Flow<U>
+    block: CoroutineScope.(Flow<T>) -> Flow<U>,
 ): StreamObserver<T> {
 
     val inputChannel = Channel<T>()
@@ -260,7 +260,7 @@ fun <T, U> grpcBidirectionalStream(
 fun <T> grpcServerStream(
     scope: CoroutineScope,
     responseObserver: StreamObserver<T>,
-    block: CoroutineScope.() -> Flow<T>
+    block: CoroutineScope.() -> Flow<T>,
 ) {
     val serverCallStreamObserver = responseObserver as ServerCallStreamObserver<T>
 
@@ -310,6 +310,7 @@ fun <T> getProfileProxy(context: Context, profile: Int): T {
                     override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
                         trySendBlocking(proxy)
                     }
+
                     override fun onServiceDisconnected(profile: Int) {}
                 }
 

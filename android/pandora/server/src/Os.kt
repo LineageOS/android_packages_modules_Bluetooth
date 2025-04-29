@@ -50,7 +50,7 @@ class Os(val context: Context) : OsImplBase() {
 
     override fun setAccessPermission(
         request: SetAccessPermissionRequest,
-        responseObserver: StreamObserver<Empty>
+        responseObserver: StreamObserver<Empty>,
     ) {
         grpcUnary<Empty>(scope, responseObserver) {
             val bluetoothDevice = request.address.toBluetoothDevice(bluetoothAdapter)
