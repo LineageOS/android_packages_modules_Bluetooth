@@ -83,7 +83,7 @@ public class McpService extends ProfileService {
 
     @Override
     protected IProfileServiceBinder initBinder() {
-        return new McpServiceBinder(this);
+        return null;
     }
 
     @Override
