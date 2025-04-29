@@ -180,8 +180,8 @@ public class BluetoothOppServiceTest {
         mService.mShares.add(shareInfo2);
 
         // batch1 will be removed
-        BluetoothOppBatch batch1 = new BluetoothOppBatch(mService, shareInfo);
-        BluetoothOppBatch batch2 = new BluetoothOppBatch(mService, shareInfo2);
+        BluetoothOppBatch batch1 = new BluetoothOppBatch(mAdapterService, shareInfo);
+        BluetoothOppBatch batch2 = new BluetoothOppBatch(mAdapterService, shareInfo2);
         batch2.mStatus = Constants.BATCH_STATUS_FINISHED;
         mService.mBatches.clear();
         mService.mBatches.add(batch1);

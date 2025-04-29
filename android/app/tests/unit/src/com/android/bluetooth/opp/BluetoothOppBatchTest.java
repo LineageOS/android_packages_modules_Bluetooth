@@ -51,7 +51,6 @@ public class BluetoothOppBatchTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private Context mContext;
 
     private final Context mTargetContext =
             InstrumentationRegistry.getInstrumentation().getTargetContext();
@@ -82,8 +81,8 @@ public class BluetoothOppBatchTest {
                             String address = invocation.getArgument(0);
                             return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
                         });
-        doReturn(mTargetContext.getContentResolver()).when(mContext).getContentResolver();
-        mBluetoothOppBatch = new BluetoothOppBatch(mContext, mInitShareInfo);
+        doReturn(mTargetContext.getContentResolver()).when(mAdapterService).getContentResolver();
+        mBluetoothOppBatch = new BluetoothOppBatch(mAdapterService, mInitShareInfo);
     }
 
     @After
