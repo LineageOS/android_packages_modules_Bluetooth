@@ -39,9 +39,11 @@ import static com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVEN
 import static com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_BONDED;
 import static com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__STATE_NONE;
 import static com.android.bluetooth.BluetoothStatsLog.CHANNEL_SOUNDING_TYPES_SUPPORTED;
-import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA;
+import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA_DUAL;
+import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA_ONLY;
 import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__CLASSIC;
-import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO;
+import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO_DUAL;
+import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO_ONLY;
 import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__TIME_PERIOD__DAY;
 import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__TIME_PERIOD__MONTH;
 import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__TIME_PERIOD__WEEK;
@@ -68,11 +70,13 @@ import android.bluetooth.BluetoothPbapClient;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSap;
+import android.bluetooth.BluetoothUuid;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.ParcelUuid;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.util.Log;
@@ -98,6 +102,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -333,7 +338,9 @@ public class MetricsLogger {
                             if (state == BluetoothProfile.STATE_CONNECTED) {
                                 updateHearingDeviceActiveTime(
                                         device,
-                                        HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA);
+                                        isDualModeHearingDevice(device)
+                                                ? HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA_DUAL
+                                                : HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA_ONLY);
                             }
                             break;
                         case BluetoothHidDevice.ACTION_CONNECTION_STATE_CHANGED:
@@ -367,7 +374,9 @@ public class MetricsLogger {
                             if (state == BluetoothProfile.STATE_CONNECTED) {
                                 updateHearingDeviceActiveTime(
                                         device,
-                                        HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO);
+                                        isDualModeHearingDevice(device)
+                                                ? HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO_DUAL
+                                                : HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO_ONLY);
                             }
                             break;
                         default:
@@ -997,6 +1006,12 @@ public class MetricsLogger {
             Settings.Secure.putString(contentResolver, timePeriodSettingsKey, now.toString());
             logHearingDeviceActiveEvent(device, deviceTypeProto, timePeriodProto);
         }
+    }
+
+    private boolean isDualModeHearingDevice(BluetoothDevice device) {
+        List<ParcelUuid> uuidList = Arrays.asList(mRemoteDevices.getUuids(device));
+        return uuidList.contains(BluetoothUuid.HEARING_AID)
+                && uuidList.contains(BluetoothUuid.LE_AUDIO);
     }
 
     private boolean isMedicalDevice(BluetoothDevice device) {
