@@ -73,7 +73,7 @@ public:
       return BT_STATUS_SUCCESS;
     }
     busy_ = true;
-    return connect_cb_(&address_, uuid_);
+    return connect_cb_(address_, uuid_);
   }
 
 private:
@@ -151,8 +151,8 @@ static void queue_int_release() { connect_queue.clear(); }
  * Returns          BT_STATUS_SUCCESS if successful
  *
  ******************************************************************************/
-bt_status_t btif_queue_connect(uint16_t uuid, const RawAddress* bda, btif_connect_cb_t connect_cb) {
-  return do_in_jni_thread(base::BindOnce(&queue_int_add, uuid, *bda, connect_cb));
+bt_status_t btif_queue_connect(uint16_t uuid, const RawAddress bda, btif_connect_cb_t connect_cb) {
+  return do_in_jni_thread(base::BindOnce(&queue_int_add, uuid, bda, connect_cb));
 }
 
 /*******************************************************************************

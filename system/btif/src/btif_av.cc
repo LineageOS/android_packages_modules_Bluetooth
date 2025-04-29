@@ -3434,25 +3434,24 @@ void btif_av_sink_set_audio_track_gain(float gain) {
 }
 
 // Establishes the AV signalling channel with the remote headset
-static bt_status_t connect_int(RawAddress* peer_address, uint16_t uuid) {
-  log::info("peer={} uuid=0x{:x}", *peer_address, uuid);
+static bt_status_t connect_int(RawAddress peer_address, uint16_t uuid) {
+  log::info("peer={} uuid=0x{:x}", peer_address, uuid);
 
   if (btif_av_both_enable()) {
-    const RawAddress tmp = *peer_address;
     if (uuid == UUID_SERVCLASS_AUDIO_SOURCE) {
-      btif_av_source_dispatch_sm_event(tmp, BTIF_AV_CONNECT_REQ_EVT);
+      btif_av_source_dispatch_sm_event(peer_address, BTIF_AV_CONNECT_REQ_EVT);
     } else if (uuid == UUID_SERVCLASS_AUDIO_SINK) {
-      btif_av_sink_dispatch_sm_event(tmp, BTIF_AV_CONNECT_REQ_EVT);
+      btif_av_sink_dispatch_sm_event(peer_address, BTIF_AV_CONNECT_REQ_EVT);
     }
     return BT_STATUS_SUCCESS;
   }
 
-  auto connection_task = [](RawAddress* peer_address, uint16_t uuid) {
+  auto connection_task = [](RawAddress peer_address, uint16_t uuid) {
     BtifAvPeer* peer = nullptr;
     if (uuid == UUID_SERVCLASS_AUDIO_SOURCE) {
-      peer = btif_av_source.FindOrCreatePeer(*peer_address, kBtaHandleUnknown);
+      peer = btif_av_source.FindOrCreatePeer(peer_address, kBtaHandleUnknown);
     } else if (uuid == UUID_SERVCLASS_AUDIO_SINK) {
-      peer = btif_av_sink.FindOrCreatePeer(*peer_address, kBtaHandleUnknown);
+      peer = btif_av_sink.FindOrCreatePeer(peer_address, kBtaHandleUnknown);
     }
     if (peer == nullptr) {
       btif_queue_advance();
@@ -3516,8 +3515,7 @@ bt_status_t btif_av_source_connect(const RawAddress& peer_address) {
     return BT_STATUS_NOT_READY;
   }
 
-  RawAddress peer_address_copy(peer_address);
-  return btif_queue_connect(UUID_SERVCLASS_AUDIO_SOURCE, &peer_address_copy, connect_int);
+  return btif_queue_connect(UUID_SERVCLASS_AUDIO_SOURCE, peer_address, connect_int);
 }
 
 bt_status_t btif_av_sink_connect(const RawAddress& peer_address) {
@@ -3528,8 +3526,7 @@ bt_status_t btif_av_sink_connect(const RawAddress& peer_address) {
     return BT_STATUS_NOT_READY;
   }
 
-  RawAddress peer_address_copy(peer_address);
-  return btif_queue_connect(UUID_SERVCLASS_AUDIO_SINK, &peer_address_copy, connect_int);
+  return btif_queue_connect(UUID_SERVCLASS_AUDIO_SINK, peer_address, connect_int);
 }
 
 bt_status_t btif_av_source_disconnect(const RawAddress& peer_address) {

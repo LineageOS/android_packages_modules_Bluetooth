@@ -287,21 +287,21 @@ static bt_status_t init(bthf_client_callbacks_t* callbacks) {
  * Returns         bt_status_t
  *
  ******************************************************************************/
-static bt_status_t connect_int(RawAddress* bd_addr, uint16_t /*uuid*/) {
+static bt_status_t connect_int(const RawAddress bd_addr, uint16_t /*uuid*/) {
   btif_hf_client_cb_t* cb = btif_hf_client_allocate_cb();
   if (cb == NULL) {
     log::error("could not allocate block!");
     return BT_STATUS_BUSY;
   }
 
-  cb->peer_bda = *bd_addr;
+  cb->peer_bda = bd_addr;
   if (is_connected(cb)) {
-    log::warn("Peer is already connected remote:{}", *bd_addr);
+    log::warn("Peer is already connected remote:{}", bd_addr);
     return BT_STATUS_BUSY;
   }
 
   cb->state = BTHF_CLIENT_CONNECTION_STATE_CONNECTING;
-  cb->peer_bda = *bd_addr;
+  cb->peer_bda = bd_addr;
 
   /* Open HF connection to remote device and get the relevant handle.
    * The handle is valid until we have called BTA_HfClientClose or the LL
@@ -310,7 +310,7 @@ static bt_status_t connect_int(RawAddress* bd_addr, uint16_t /*uuid*/) {
   return BTA_HfClientOpen(cb->peer_bda, &cb->handle);
 }
 
-static bt_status_t connect(const RawAddress* bd_addr) {
+static bt_status_t connect(const RawAddress bd_addr) {
   CHECK_BTHF_CLIENT_INIT();
   return btif_queue_connect(UUID_SERVCLASS_HF_HANDSFREE, bd_addr, connect_int);
 }
@@ -324,10 +324,10 @@ static bt_status_t connect(const RawAddress* bd_addr) {
  * Returns         bt_status_t
  *
  ******************************************************************************/
-static bt_status_t disconnect(const RawAddress* bd_addr) {
+static bt_status_t disconnect(const RawAddress bd_addr) {
   CHECK_BTHF_CLIENT_INIT();
 
-  btif_hf_client_cb_t* cb = btif_hf_client_get_cb_by_bda(*bd_addr);
+  btif_hf_client_cb_t* cb = btif_hf_client_get_cb_by_bda(bd_addr);
   if (cb != NULL) {
     BTA_HfClientClose(cb->handle);
     return BT_STATUS_SUCCESS;
@@ -345,8 +345,8 @@ static bt_status_t disconnect(const RawAddress* bd_addr) {
  * Returns         bt_status_t
  *
  ******************************************************************************/
-static bt_status_t connect_audio(const RawAddress* bd_addr) {
-  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(*bd_addr);
+static bt_status_t connect_audio(const RawAddress bd_addr) {
+  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(bd_addr);
   if (!cb) {
     return BT_STATUS_DEVICE_NOT_FOUND;
   }
@@ -363,7 +363,7 @@ static bt_status_t connect_audio(const RawAddress* bd_addr) {
   /* Inform the application that the audio connection has been initiated
    * successfully */
   btif_transfer_context(btif_in_hf_client_generic_evt, BTIF_HF_CLIENT_CB_AUDIO_CONNECTING,
-                        (char*)bd_addr, sizeof(RawAddress), NULL);
+                        (char*)&bd_addr, sizeof(RawAddress), NULL);
   return BT_STATUS_SUCCESS;
 }
 
@@ -376,8 +376,8 @@ static bt_status_t connect_audio(const RawAddress* bd_addr) {
  * Returns         bt_status_t
  *
  ******************************************************************************/
-static bt_status_t disconnect_audio(const RawAddress* bd_addr) {
-  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(*bd_addr);
+static bt_status_t disconnect_audio(const RawAddress bd_addr) {
+  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(bd_addr);
   if (!cb) {
     return BT_STATUS_DEVICE_NOT_FOUND;
   }
@@ -397,8 +397,8 @@ static bt_status_t disconnect_audio(const RawAddress* bd_addr) {
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t start_voice_recognition(const RawAddress* bd_addr) {
-  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(*bd_addr);
+static bt_status_t start_voice_recognition(const RawAddress bd_addr) {
+  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(bd_addr);
   if (!cb) {
     return BT_STATUS_DEVICE_NOT_FOUND;
   }
@@ -421,8 +421,8 @@ static bt_status_t start_voice_recognition(const RawAddress* bd_addr) {
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t stop_voice_recognition(const RawAddress* bd_addr) {
-  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(*bd_addr);
+static bt_status_t stop_voice_recognition(const RawAddress bd_addr) {
+  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(bd_addr);
   if (!cb) {
     return BT_STATUS_DEVICE_NOT_FOUND;
   }
@@ -445,9 +445,9 @@ static bt_status_t stop_voice_recognition(const RawAddress* bd_addr) {
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t volume_control(const RawAddress* bd_addr, bthf_client_volume_type_t type,
+static bt_status_t volume_control(const RawAddress bd_addr, bthf_client_volume_type_t type,
                                   int volume) {
-  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(*bd_addr);
+  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(bd_addr);
   if (!cb) {
     return BT_STATUS_DEVICE_NOT_FOUND;
   }
@@ -477,8 +477,8 @@ static bt_status_t volume_control(const RawAddress* bd_addr, bthf_client_volume_
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t dial(const RawAddress* bd_addr, const char* number) {
-  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(*bd_addr);
+static bt_status_t dial(const RawAddress bd_addr, const char* number) {
+  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(bd_addr);
   if (!cb) {
     return BT_STATUS_DEVICE_NOT_FOUND;
   }
@@ -502,8 +502,8 @@ static bt_status_t dial(const RawAddress* bd_addr, const char* number) {
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t dial_memory(const RawAddress* bd_addr, int location) {
-  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(*bd_addr);
+static bt_status_t dial_memory(const RawAddress bd_addr, int location) {
+  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(bd_addr);
   if (!cb) {
     return BT_STATUS_DEVICE_NOT_FOUND;
   }
@@ -523,9 +523,9 @@ static bt_status_t dial_memory(const RawAddress* bd_addr, int location) {
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t handle_call_action(const RawAddress* bd_addr, bthf_client_call_action_t action,
+static bt_status_t handle_call_action(const RawAddress bd_addr, bthf_client_call_action_t action,
                                       int idx) {
-  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(*bd_addr);
+  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(bd_addr);
   if (!cb) {
     return BT_STATUS_DEVICE_NOT_FOUND;
   }
@@ -614,8 +614,8 @@ static bt_status_t handle_call_action(const RawAddress* bd_addr, bthf_client_cal
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t query_current_calls(const RawAddress* bd_addr) {
-  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(*bd_addr);
+static bt_status_t query_current_calls(const RawAddress bd_addr) {
+  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(bd_addr);
   if (!cb) {
     return BT_STATUS_DEVICE_NOT_FOUND;
   }
@@ -639,8 +639,8 @@ static bt_status_t query_current_calls(const RawAddress* bd_addr) {
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t query_current_operator_name(const RawAddress* bd_addr) {
-  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(*bd_addr);
+static bt_status_t query_current_operator_name(const RawAddress bd_addr) {
+  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(bd_addr);
   if (!cb) {
     return BT_STATUS_DEVICE_NOT_FOUND;
   }
@@ -660,8 +660,8 @@ static bt_status_t query_current_operator_name(const RawAddress* bd_addr) {
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t retrieve_subscriber_info(const RawAddress* bd_addr) {
-  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(*bd_addr);
+static bt_status_t retrieve_subscriber_info(const RawAddress bd_addr) {
+  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(bd_addr);
   if (!cb) {
     return BT_STATUS_DEVICE_NOT_FOUND;
   }
@@ -681,8 +681,8 @@ static bt_status_t retrieve_subscriber_info(const RawAddress* bd_addr) {
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t send_dtmf(const RawAddress* bd_addr, char code) {
-  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(*bd_addr);
+static bt_status_t send_dtmf(const RawAddress bd_addr, char code) {
+  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(bd_addr);
   if (!cb) {
     return BT_STATUS_DEVICE_NOT_FOUND;
   }
@@ -702,8 +702,8 @@ static bt_status_t send_dtmf(const RawAddress* bd_addr, char code) {
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t request_last_voice_tag_number(const RawAddress* bd_addr) {
-  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(*bd_addr);
+static bt_status_t request_last_voice_tag_number(const RawAddress bd_addr) {
+  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(bd_addr);
   if (!cb) {
     return BT_STATUS_DEVICE_NOT_FOUND;
   }
@@ -745,9 +745,9 @@ static void cleanup(void) {
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t send_at_cmd(const RawAddress* bd_addr, int cmd, int val1, int val2,
+static bt_status_t send_at_cmd(const RawAddress bd_addr, int cmd, int val1, int val2,
                                const char* arg) {
-  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(*bd_addr);
+  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(bd_addr);
   if (!cb) {
     return BT_STATUS_DEVICE_NOT_FOUND;
   }
@@ -769,8 +769,8 @@ static bt_status_t send_at_cmd(const RawAddress* bd_addr, int cmd, int val1, int
  * Returns          bt_status_t
  *
  ******************************************************************************/
-static bt_status_t send_android_at(const RawAddress* bd_addr, const char* arg) {
-  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(*bd_addr);
+static bt_status_t send_android_at(const RawAddress bd_addr, const char* arg) {
+  btif_hf_client_cb_t* cb = btif_hf_client_get_connected_device(bd_addr);
   if (!cb) {
     return BT_STATUS_DEVICE_NOT_FOUND;
   }
