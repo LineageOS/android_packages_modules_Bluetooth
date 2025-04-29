@@ -301,8 +301,8 @@ static void register_for_iso() {
             auto iso = bluetooth::hci::IsoManager::GetInstance();
             if (iso) {
               auto reason = static_cast<uint8_t>(error_code);
-              log::info("ISO disconnection from GD, handle: 0x{:02x}, reason: 0x{:02x}", handle,
-                        reason);
+              log::info("ISO disconnection from GD, handle: 0x{:02x}, reason: {}", handle,
+                        bluetooth::hci::ErrorCodeText(error_code));
               iso->HandleDisconnect(handle, reason);
             }
           }));
