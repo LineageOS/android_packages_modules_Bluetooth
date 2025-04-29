@@ -92,7 +92,6 @@ public class SapRilReceiverHidlTest {
 
     @Before
     public void setUp() throws Exception {
-
         mHandlerThread = new HandlerThread("SapRilReceiverTest");
         mHandlerThread.start();
 

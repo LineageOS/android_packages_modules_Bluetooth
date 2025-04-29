@@ -108,7 +108,6 @@ public class SapServerTest {
 
     @Before
     public void setUp() throws Exception {
-
         mHandlerThread = new HandlerThread("SapServerTest");
         mHandlerThread.start();
 

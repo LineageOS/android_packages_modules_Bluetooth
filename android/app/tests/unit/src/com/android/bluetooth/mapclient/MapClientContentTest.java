@@ -53,7 +53,6 @@ import com.android.vcard.VCardConstants;
 import com.android.vcard.VCardEntry;
 import com.android.vcard.VCardProperty;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -102,7 +101,6 @@ public class MapClientContentTest {
 
     @Before
     public void setUp() throws Exception {
-
         mMockSmsContentProvider = new FakeContentProvider(mMockContext);
         mMockMmsContentProvider = new FakeContentProvider(mMockContext);
         mMockThreadContentProvider = new FakeContentProvider(mMockContext);
@@ -123,9 +121,6 @@ public class MapClientContentTest {
                 .thenReturn(Arrays.asList(mMockSubscription));
         createTestMessages();
     }
-
-    @After
-    public void tearDown() throws Exception {}
 
     /** Test that everything initializes correctly with an empty content provider */
     @Test

@@ -52,7 +52,6 @@ public class ContentControlIdKeeperTest {
 
     @Before
     public void setUp() throws Exception {
-
         doReturn(mLeAudioServiceMock).when(mServiceFactoryMock).getLeAudioService();
         ContentControlIdKeeper.initForTesting(mServiceFactoryMock);
     }
