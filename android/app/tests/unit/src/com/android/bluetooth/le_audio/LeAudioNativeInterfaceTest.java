@@ -53,7 +53,6 @@ public class LeAudioNativeInterfaceTest {
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.setAdapterService(mAdapterService);
         when(mAdapterService.getRemoteDevice(anyString()))
                 .thenAnswer(
                         invocation -> {
@@ -68,7 +67,6 @@ public class LeAudioNativeInterfaceTest {
     @After
     public void tearDown() {
         LeAudioService.setLeAudioService(null);
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test

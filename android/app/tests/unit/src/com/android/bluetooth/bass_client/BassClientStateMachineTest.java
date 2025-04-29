@@ -170,8 +170,6 @@ public class BassClientStateMachineTest {
         mEmptyTestDevice = mAdapter.getRemoteDevice(EMPTY_BLUETOOTH_DEVICE_ADDRESS);
         assertThat(mEmptyTestDevice).isNotNull();
 
-        TestUtils.setAdapterService(mAdapterService);
-
         BluetoothMethodProxy.setInstanceForTesting(mMethodProxy);
         doNothing()
                 .when(mMethodProxy)
@@ -220,7 +218,6 @@ public class BassClientStateMachineTest {
         mBassClientStateMachine.doQuit();
         mHandlerThread.quit();
         joinUninterruptibly(mHandlerThread);
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     /** Test that default state is disconnected */

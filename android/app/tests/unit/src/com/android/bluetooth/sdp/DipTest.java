@@ -66,7 +66,6 @@ public class DipTest {
     @Before
     public void setUp() throws Exception {
         SdpManagerNativeInterface.setInstance(mNativeInterface);
-        TestUtils.setAdapterService(mAdapterService);
         doReturn("00:01:02:03:04:05").when(mAdapterService).getIdentityAddress("00:01:02:03:04:05");
 
         if (Looper.myLooper() == null) {
@@ -78,7 +77,6 @@ public class DipTest {
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.clearAdapterService(mAdapterService);
         SdpManagerNativeInterface.setInstance(null);
     }
 
