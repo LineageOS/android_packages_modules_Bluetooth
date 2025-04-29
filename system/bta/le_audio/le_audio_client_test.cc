@@ -7401,6 +7401,72 @@ TEST_F(UnicastTest, LiveRecordingSuspendedOnSink_ResumeMedia) {
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 }
 
+TEST_F(UnicastTest, LiveRecordingSuspendedOnSink_BlockMedia) {
+  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
+  uint8_t group_size = 2;
+  int group_id = 2;
+
+  // Report working CSIS
+  ON_CALL(mock_csis_client_module_, IsCsisClientRunning()).WillByDefault(Return(true));
+  ON_CALL(mock_csis_client_module_, GetDesiredSize(group_id))
+          .WillByDefault(Invoke([&](int /*group_id*/) { return group_size; }));
+
+  // First earbud
+  const RawAddress test_address0 = GetTestAddress(0);
+  EXPECT_CALL(mock_btif_storage_, AddLeaudioAutoconnect(test_address0, true)).Times(1);
+  ConnectCsisDevice(test_address0, 1 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontLeft,
+                    codec_spec_conf::kLeAudioLocationFrontLeft, group_size, group_id, 1 /* rank*/);
+
+  // Second earbud
+  const RawAddress test_address1 = GetTestAddress(1);
+  EXPECT_CALL(mock_btif_storage_, AddLeaudioAutoconnect(test_address1, true)).Times(1);
+  ConnectCsisDevice(test_address1, 2 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontRight,
+                    codec_spec_conf::kLeAudioLocationFrontRight, group_size, group_id, 2 /* rank*/,
+                    true /*connect_through_csis*/);
+
+  // Start streaming
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupStreamStatus(group_id, GroupStreamStatus::STREAMING))
+          .Times(1);
+  StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_UNKNOWN, group_id, AUDIO_SOURCE_MIC);
+
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_sink_hal_client_);
+  SyncOnMainLoop();
+
+  ASSERT_NE(0lu, streaming_groups.count(group_id));
+  auto group = streaming_groups.at(group_id);
+
+  log::info("Suspend media, expect Remote Sink to be disabled");
+  EXPECT_CALL(mock_state_machine_,
+              DisableStreamingDirection(group, bluetooth::le_audio::types::kLeAudioDirectionSink))
+          .Times(1);
+  LocalAudioSourceSuspend();
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+  ASSERT_TRUE(group->IsStreaming());
+
+  log::info("Block Media");
+  auto sink_available_context = types::AudioContexts(types::LeAudioContextType::UNSPECIFIED);
+  auto source_available_context = types::kLeAudioContextAllRemoteSource;
+  InjectAvailableContextTypes(test_address0, 1, sink_available_context, source_available_context);
+  InjectAvailableContextTypes(test_address1, 1, sink_available_context, source_available_context);
+
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnHealthBasedGroupRecommendationAction(group_id, LeAudioHealthBasedAction::DISABLE))
+          .Times(0);
+  UpdateLocalSourceMetadata(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC);
+  for (int i = 0; i < 10; i++) {
+    LocalAudioSourceResume(false, false);
+  }
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+}
+
 TEST_F(UnicastTest, TwoEarbudsStreaming) {
   uint8_t group_size = 2;
   int group_id = 2;

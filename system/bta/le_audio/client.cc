@@ -4576,7 +4576,11 @@ public:
       return;
     }
 
-    if (leAudioHealthStatus_) {
+    /* Without the flag, this shall be called when group is not streaming */
+    bool group_is_streaming = com::android::bluetooth::flags::leaudio_dynamic_direction_opening()
+                                      ? group->IsStreaming()
+                                      : false;
+    if (leAudioHealthStatus_ && !group_is_streaming) {
       leAudioHealthStatus_->AddStatisticForGroup(
               group, LeAudioHealthGroupStatType::STREAM_CONTEXT_NOT_AVAILABLE);
     }
