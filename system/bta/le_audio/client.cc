@@ -471,6 +471,21 @@ public:
     configuration_context_type_ = context_type;
   }
 
+  bool isDynamicDirectionsEnabled(LeAudioDeviceGroup* group) {
+    if (!com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+      log::debug("leaudio_dynamic_direction_opening is not enabled");
+      return false;
+    }
+
+    if (group == nullptr) {
+      log::debug("Not valid group");
+      return false;
+    }
+
+    log::debug("is enabled: {}", group->IsGmapEnabled());
+    return group->IsGmapEnabled();
+  }
+
   void ReconfigureAfterVbcClose() {
     log::debug("VBC close timeout");
 
@@ -521,7 +536,7 @@ public:
                          .source = local_metadata_context_types_.sink};
     }
 
-    if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+    if (isDynamicDirectionsEnabled(group)) {
       /* Check if current configuration actually  */
       auto directions = group->GetDirectionSupport(new_configuration_context);
       bool is_bidirectional = directions.sink && directions.source;
@@ -4672,7 +4687,7 @@ public:
         break;
       case AudioState::STARTED: {
         auto group = aseGroups_.FindById(active_group_id_);
-        if (group && com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+        if (isDynamicDirectionsEnabled(group)) {
           groupStateMachine_->DisableStreamingDirection(
                   group, bluetooth::le_audio::types::kLeAudioDirectionSink);
         }
@@ -4692,7 +4707,7 @@ public:
   }
 
   void startSendingAudioWrapper(LeAudioDeviceGroup* group) {
-    if (!com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+    if (!isDynamicDirectionsEnabled(group)) {
       StartSendingAudio(group->group_id_);
       return;
     }
@@ -4713,7 +4728,7 @@ public:
   }
 
   void startReceivingAudioWrapper(LeAudioDeviceGroup* group) {
-    if (!com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+    if (!isDynamicDirectionsEnabled(group)) {
       StartReceivingAudio(group->group_id_);
       return;
     }
@@ -4734,8 +4749,7 @@ public:
   }
 
   void reenableDirectionIfNeeded(LeAudioDeviceGroup* group, uint8_t remote_direction) {
-    if (!com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
-      log::debug("Flag leaudio_dynamic_direction_opening is not enabled");
+    if (!isDynamicDirectionsEnabled(group)) {
       return;
     }
 
@@ -5000,7 +5014,7 @@ public:
         break;
       case AudioState::STARTED: {
         auto group = aseGroups_.FindById(active_group_id_);
-        if (group && com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+        if (isDynamicDirectionsEnabled(group)) {
           groupStateMachine_->DisableStreamingDirection(
                   group, bluetooth::le_audio::types::kLeAudioDirectionSource);
         }
@@ -6515,9 +6529,9 @@ public:
               bluetooth::common::ToString(audio_receiver_state_));
     uint8_t enabled_remote_directions = 0;
 
-    if (!com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+    auto group = aseGroups_.FindById(group_id);
+    if (!isDynamicDirectionsEnabled(group)) {
       log::debug("leaudio_dynamic_direction_opening is not enabled.");
-      auto group = aseGroups_.FindById(group_id);
       if (group && group->GetTargetState() == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
         log::info("group_id: {} is suspending.", group_id);
         return 0;
