@@ -43,7 +43,6 @@ import java.util.Objects;
 public class MediaPlayerWrapper {
     private static final String TAG = MediaPlayerWrapper.class.getSimpleName();
 
-    static boolean sTesting = false;
     private static final int PLAYBACK_STATE_CHANGE_EVENT_LOGGER_SIZE = 5;
     private static final String PLAYBACK_STATE_CHANGE_LOGGER_EVENT_TITLE =
             "BTAudio Playback State change Event";
@@ -294,7 +293,7 @@ public class MediaPlayerWrapper {
      */
     void registerCallback(Callback callback) {
         if (callback == null) {
-            e("Cannot register null callbacks for " + mPackageName);
+            Log.e(TAG, "Cannot register null callbacks for " + mPackageName);
             return;
         }
 
@@ -403,10 +402,6 @@ public class MediaPlayerWrapper {
             }
 
             sendMediaUpdate();
-
-            // TODO(apanicke): Add metric collection here.
-
-            if (sTesting) Log.wtf(TAG, "Crashing the stack");
         }
     }
 
@@ -470,7 +465,7 @@ public class MediaPlayerWrapper {
                             + Util.toMetadata(mContext, mediaMetadata));
 
             if (!Objects.equals(mediaMetadata, getMetadata())) {
-                e("The callback metadata doesn't match controller metadata");
+                Log.e(TAG, "The callback metadata doesn't match controller metadata");
             }
 
             // TODO: Certain players update different metadata fields as they load, such as Album
@@ -508,7 +503,7 @@ public class MediaPlayerWrapper {
                     TAG, "onPlaybackStateChanged(): " + mPackageName + " : " + state);
 
             if (!playstateEquals(state, getPlaybackState())) {
-                e("The callback playback state doesn't match the current state");
+                Log.e(TAG, "The callback playback state doesn't match the current state");
             }
 
             if (playstateEquals(state, mCurrentData.state)) {
@@ -539,7 +534,7 @@ public class MediaPlayerWrapper {
             Log.v(TAG, "onQueueChanged(): " + mPackageName);
 
             if (!Objects.equals(queue, getQueue())) {
-                e("The callback queue isn't the current queue");
+                Log.e(TAG, "The callback queue isn't the current queue");
             }
 
             List<Metadata> current_queue = Util.toMetadataList(mContext, queue);
@@ -595,14 +590,6 @@ public class MediaPlayerWrapper {
         }
 
         return false;
-    }
-
-    private static void e(String message) {
-        if (sTesting) {
-            Log.wtf(TAG, message);
-        } else {
-            Log.e(TAG, message);
-        }
     }
 
     private void d(String message) {
