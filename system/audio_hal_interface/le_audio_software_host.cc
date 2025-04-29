@@ -307,6 +307,11 @@ void LeAudioClientInterface::Sink::CancelStreamingRequest() {
 void LeAudioClientInterface::Sink::UpdateAudioConfigToHal(
         const ::le_audio::stream_config& /*offload_config*/) {}
 
+void LeAudioClientInterface::Sink::SetCodecPriority(
+        const ::bluetooth::le_audio::types::LeAudioCodecId& /*codecId*/, int32_t /*priority*/) {
+  log::info("");
+}
+
 void LeAudioClientInterface::Sink::UpdateBroadcastAudioConfigToHal(
         ::le_audio::broadcast_offload_config const& /*config*/) {}
 
@@ -458,6 +463,11 @@ void LeAudioClientInterface::Source::CancelStreamingRequest() {
 
 void LeAudioClientInterface::Source::UpdateAudioConfigToHal(
         const ::le_audio::stream_config& /*offload_config*/) {}
+
+void LeAudioClientInterface::Source::SetCodecPriority(
+        const ::bluetooth::le_audio::types::LeAudioCodecId& /*codecId*/, int32_t /*priority*/) {
+  log::info("");
+}
 
 void LeAudioClientInterface::Source::SuspendedForReconfiguration() {
   log::info("");

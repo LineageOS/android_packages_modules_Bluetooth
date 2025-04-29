@@ -164,6 +164,8 @@ public:
   LeAudioDevice* GetFirstDevice(void) const;
   LeAudioDevice* GetFirstDeviceWithAvailableContext(types::LeAudioContextType context_type) const;
   types::LeAudioConfigurationStrategy GetGroupSinkStrategy(void) const;
+  types::LeAudioConfigurationStrategy FindGroupStrategyForConfig(
+          const types::AudioSetConfiguration* audio_set_conf) const;
   inline void InvalidateGroupStrategy(void) { strategy_ = std::nullopt; }
   int GetAseCount(uint8_t direction) const;
   LeAudioDevice* GetNextDevice(LeAudioDevice* leAudioDevice) const;
@@ -218,6 +220,11 @@ public:
           const bluetooth::le_audio::btle_audio_codec_config_t& output_codec_config) const;
   bool IsUsingPreferredAudioSetConfiguration(const types::LeAudioContextType& context_type) const;
   void ResetPreferredAudioSetConfiguration(void) const;
+  const types::BidirectionalPair<
+          std::unique_ptr<const bluetooth::le_audio::btle_audio_codec_config_t>>&
+  GetPreferredAudioSetConfiguration(void) const {
+    return preferred_config_;
+  }
   bool ReloadAudioLocations(void);
   bool ReloadAudioDirections(void);
   types::AudioContexts GetAllSupportedBidirectionalContextTypes(void) const;

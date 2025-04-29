@@ -1248,6 +1248,30 @@ public:
     }
   }
 
+  void UpdateCodecConfigPreferenceToHal(
+          const bluetooth::le_audio::btle_audio_codec_config_t *input_codec_config,
+          const bluetooth::le_audio::btle_audio_codec_config_t *output_codec_config) {
+    if (!com::android::bluetooth::flags::le_audio_update_config_preference_to_hal()) {
+      log::warn(
+              "SetCodecPriority skipped due to flag not set: "
+              "le_audio_update_config_preference_to_hal");
+      return;
+    }
+
+    if (le_audio_sink_hal_client_ && input_codec_config) {
+      le_audio_sink_hal_client_->SetCodecPriority(
+              bluetooth::le_audio::utils::translateCodecTypeToLeAudioCodecId(
+                      input_codec_config->codec_type),
+              input_codec_config->codec_priority);
+    }
+    if (le_audio_source_hal_client_ && output_codec_config) {
+      le_audio_source_hal_client_->SetCodecPriority(
+              bluetooth::le_audio::utils::translateCodecTypeToLeAudioCodecId(
+                      output_codec_config->codec_type),
+              output_codec_config->codec_priority);
+    }
+  }
+
   void SetCodecConfigPreference(
           int group_id, bluetooth::le_audio::btle_audio_codec_config_t input_codec_config,
           bluetooth::le_audio::btle_audio_codec_config_t output_codec_config) override {
@@ -1263,6 +1287,7 @@ public:
     }
 
     if (group->SetPreferredAudioSetConfiguration(input_codec_config, output_codec_config)) {
+      UpdateCodecConfigPreferenceToHal(&input_codec_config, &output_codec_config);
       log::info("group id: {}, setting preferred codec is successful.", group_id);
     } else {
       log::warn("group id: {}, setting preferred codec is failed.", group_id);
@@ -1795,6 +1820,10 @@ public:
     /* Reset sink and source listener notified status */
     sink_monitor_notified_status_ = std::nullopt;
     source_monitor_notified_status_ = std::nullopt;
+
+    auto const& group_config_preference = group->GetPreferredAudioSetConfiguration();
+    UpdateCodecConfigPreferenceToHal(group_config_preference.source.get(),
+                                     group_config_preference.sink.get());
 
     SendAudioGroupSelectableCodecConfigChanged(group);
     SendAudioGroupCurrentCodecConfigChanged(group);

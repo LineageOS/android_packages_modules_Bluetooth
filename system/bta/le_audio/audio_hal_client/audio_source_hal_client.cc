@@ -78,6 +78,8 @@ public:
   void Stop() override;
   void ConfirmStreamingRequest() override;
   void CancelStreamingRequest() override;
+  void SetCodecPriority(const ::bluetooth::le_audio::types::LeAudioCodecId& codecId,
+                        int32_t priority) override;
   void UpdateRemoteDelay(uint16_t remote_delay_ms) override;
   void UpdateAudioConfigToHal(const ::bluetooth::le_audio::stream_config& config) override;
   std::optional<broadcaster::BroadcastConfiguration> GetBroadcastConfig(
@@ -441,6 +443,17 @@ void SourceImpl::CancelStreamingRequest() {
 
   log::info("");
   halSinkInterface_->CancelStreamingRequest();
+}
+
+void SourceImpl::SetCodecPriority(const ::bluetooth::le_audio::types::LeAudioCodecId& codecId,
+                                  int32_t priority) {
+  if ((halSinkInterface_ == nullptr) || (le_audio_sink_hal_state_ != HAL_STARTED)) {
+    log::error("Audio HAL Audio sink was not started!");
+    return;
+  }
+
+  log::info("");
+  halSinkInterface_->SetCodecPriority(codecId, priority);
 }
 
 void SourceImpl::UpdateRemoteDelay(uint16_t remote_delay_ms) {

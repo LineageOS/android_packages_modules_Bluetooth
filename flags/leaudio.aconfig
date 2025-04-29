@@ -339,3 +339,23 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "le_audio_update_config_preference_to_hal"
+    namespace: "bluetooth"
+    description: "Send user set config preference to BT Audio HAL"
+    bug: "413225593"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_add_opus_hi_res_codec_type"
+    namespace: "bluetooth"
+    description: "Add OPUS codec type to LE Audio"
+    bug: "410516242"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

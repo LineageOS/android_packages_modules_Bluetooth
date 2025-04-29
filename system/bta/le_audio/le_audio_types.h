@@ -313,7 +313,9 @@ constexpr uint8_t kLeAudioCodingFormatVendorSpecific =
 constexpr uint16_t kLeAudioVendorCompanyIdUndefined = 0x00;
 constexpr uint16_t kLeAudioVendorCodecIdUndefined = 0x00;
 
+// TODO: b/409508660 - Provide a common place to find the codec IDs
 constexpr uint16_t kLeAudioVendorCompanyIdGoogle = 0x00E0;
+constexpr uint16_t kLeAudioVendorCodecIdOpus = 0x0001;
 constexpr uint16_t kLeAudioVendorCodecIdHeadtracking = 0x0002;
 
 /* Metadata types from Assigned Numbers */
@@ -1315,6 +1317,11 @@ const types::LeAudioCodecId LeAudioCodecIdLc3 = {
         .coding_format = types::kLeAudioCodingFormatLC3,
         .vendor_company_id = types::kLeAudioVendorCompanyIdUndefined,
         .vendor_codec_id = types::kLeAudioVendorCodecIdUndefined};
+
+const types::LeAudioCodecId LeAudioCodecIdOpus = {
+        .coding_format = types::kLeAudioCodingFormatVendorSpecific,
+        .vendor_company_id = types::kLeAudioVendorCompanyIdGoogle,
+        .vendor_codec_id = types::kLeAudioVendorCodecIdOpus};
 
 static constexpr uint32_t kChannelAllocationStereo =
         codec_spec_conf::kLeAudioLocationFrontLeft | codec_spec_conf::kLeAudioLocationFrontRight;
