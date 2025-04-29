@@ -251,7 +251,11 @@ public class DistanceMeasurementManager {
             return;
         }
         mDistanceMeasurementNativeInterface.startDistanceMeasurement(
-                tracker.mIdentityAddress, tracker.mInterval, DISTANCE_MEASUREMENT_METHOD_RSSI);
+                tracker.mIdentityAddress,
+                tracker.mInterval,
+                DISTANCE_MEASUREMENT_METHOD_RSSI,
+                tracker.mSightType,
+                tracker.mLocationType);
     }
 
     private synchronized void startCsTracker(DistanceMeasurementTracker tracker) {
@@ -265,7 +269,9 @@ public class DistanceMeasurementManager {
         mDistanceMeasurementNativeInterface.startDistanceMeasurement(
                 tracker.mIdentityAddress,
                 tracker.mInterval,
-                DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING);
+                DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING,
+                tracker.mSightType,
+                tracker.mLocationType);
     }
 
     int stopDistanceMeasurement(UUID uuid, BluetoothDevice device, int method, boolean timeout) {

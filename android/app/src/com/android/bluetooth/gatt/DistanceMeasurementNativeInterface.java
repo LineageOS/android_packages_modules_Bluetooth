@@ -80,8 +80,9 @@ public class DistanceMeasurementNativeInterface {
         cleanupNative();
     }
 
-    void startDistanceMeasurement(String address, int interval, int method) {
-        startDistanceMeasurementNative(address, interval, method);
+    void startDistanceMeasurement(
+            String address, int interval, int method, int sightType, int locationType) {
+        startDistanceMeasurementNative(address, interval, method, sightType, locationType);
     }
 
     void stopDistanceMeasurement(String address, int method) {
@@ -163,7 +164,8 @@ public class DistanceMeasurementNativeInterface {
 
     private native void cleanupNative();
 
-    private native void startDistanceMeasurementNative(String address, int interval, int method);
+    private native void startDistanceMeasurementNative(
+            String address, int interval, int method, int sightType, int locationType);
 
     private native void stopDistanceMeasurementNative(String address, int method);
 }

@@ -30,6 +30,7 @@ import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothStatusCodes;
+import android.bluetooth.le.ChannelSoundingParams;
 import android.bluetooth.le.DistanceMeasurementMethod;
 import android.bluetooth.le.DistanceMeasurementParams;
 import android.bluetooth.le.DistanceMeasurementResult;
@@ -134,7 +135,9 @@ public class DistanceMeasurementManagerTest {
                 .startDistanceMeasurement(
                         mDevice.getAddress(),
                         RSSI_FREQUENCY_LOW,
-                        DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI);
+                        DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
+                        ChannelSoundingParams.SIGHT_TYPE_UNKNOWN,
+                        ChannelSoundingParams.LOCATION_TYPE_UNKNOWN);
     }
 
     @Test
@@ -167,7 +170,9 @@ public class DistanceMeasurementManagerTest {
                 .startDistanceMeasurement(
                         mDevice.getAddress(),
                         RSSI_FREQUENCY_LOW,
-                        DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI);
+                        DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
+                        ChannelSoundingParams.SIGHT_TYPE_UNKNOWN,
+                        ChannelSoundingParams.LOCATION_TYPE_UNKNOWN);
         mDistanceMeasurementManager.onDistanceMeasurementStarted(
                 mDevice.getAddress(), DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI);
         verify(mCallback).onStarted(mDevice);
@@ -186,7 +191,9 @@ public class DistanceMeasurementManagerTest {
                 .startDistanceMeasurement(
                         mDevice.getAddress(),
                         RSSI_FREQUENCY_LOW,
-                        DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI);
+                        DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
+                        ChannelSoundingParams.SIGHT_TYPE_UNKNOWN,
+                        ChannelSoundingParams.LOCATION_TYPE_UNKNOWN);
         mDistanceMeasurementManager.onDistanceMeasurementStopped(
                 mDevice.getAddress(),
                 BluetoothStatusCodes.ERROR_DISTANCE_MEASUREMENT_INTERNAL,
@@ -212,7 +219,9 @@ public class DistanceMeasurementManagerTest {
                 .startDistanceMeasurement(
                         mDevice.getAddress(),
                         CS_FREQUENCY_LOW,
-                        DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING);
+                        DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING,
+                        ChannelSoundingParams.SIGHT_TYPE_UNKNOWN,
+                        ChannelSoundingParams.LOCATION_TYPE_UNKNOWN);
         verify(mCallback).onStartFail(mDevice, BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED);
     }
 
@@ -233,7 +242,9 @@ public class DistanceMeasurementManagerTest {
                 .startDistanceMeasurement(
                         mDevice.getAddress(),
                         CS_FREQUENCY_LOW,
-                        DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING);
+                        DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING,
+                        ChannelSoundingParams.SIGHT_TYPE_UNKNOWN,
+                        ChannelSoundingParams.LOCATION_TYPE_UNKNOWN);
 
         mDistanceMeasurementManager.onDistanceMeasurementStarted(
                 mDevice.getAddress(),
