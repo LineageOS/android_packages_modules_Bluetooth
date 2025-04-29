@@ -1418,7 +1418,7 @@ public class AdapterService extends Service {
 
     @RequiresPermission(BLUETOOTH_CONNECT)
     void cleanup() {
-        Log.d(TAG, "cleanup()");
+        Log.i(TAG, "cleanup()");
         if (mCleaningUp) {
             Log.e(TAG, "cleanup() - Service already starting to cleanup, ignoring request...");
             return;

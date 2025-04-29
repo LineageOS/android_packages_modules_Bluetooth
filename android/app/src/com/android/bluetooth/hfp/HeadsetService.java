@@ -236,7 +236,7 @@ public class HeadsetService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup Headset Service");
+        Log.i(TAG, "cleanup()");
 
         // Step 7: Tear down broadcast receivers
         unregisterReceiver(mHeadsetReceiver);

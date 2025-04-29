@@ -146,7 +146,7 @@ public class HidHostService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup HidHost Service");
+        Log.i(TAG, "cleanup()");
 
         mNativeInterface.cleanup();
 

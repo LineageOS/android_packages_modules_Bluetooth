@@ -865,7 +865,7 @@ public class BluetoothMapService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup BluetoothMap Service");
+        Log.i(TAG, "cleanup()");
 
         setBluetoothMapService(null);
         unregisterReceiver(mMapReceiver);

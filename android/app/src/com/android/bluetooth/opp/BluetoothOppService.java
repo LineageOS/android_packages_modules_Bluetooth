@@ -259,7 +259,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup BluetoothOpp Service");
+        Log.i(TAG, "cleanup()");
 
         if (sBluetoothOppService == null) {
             Log.w(TAG, "cleanup() called before initialization");
