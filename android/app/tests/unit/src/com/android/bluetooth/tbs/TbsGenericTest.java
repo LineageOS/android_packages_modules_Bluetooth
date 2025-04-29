@@ -708,8 +708,7 @@ public class TbsGenericTest {
         args[0] = (byte) (callIndex & 0xFF);
         mTbsGattCallback
                 .getValue()
-                .onCallControlPointRequest(
-                        mDevice, TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT, args);
+                .onCallControlPointRequest(mDevice, TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT, args);
 
         // Active device should not be changed
         verify(leAudioService, never()).setActiveDevice(mDevice);

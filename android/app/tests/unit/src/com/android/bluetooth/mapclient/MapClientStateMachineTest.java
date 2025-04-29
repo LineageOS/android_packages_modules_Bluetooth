@@ -221,8 +221,7 @@ public class MapClientStateMachineTest {
                         mMasClient,
                         mDatabase);
         mLooper.dispatchAll();
-        verifyStateTransitionAndIntent(
-                STATE_DISCONNECTED, STATE_CONNECTING);
+        verifyStateTransitionAndIntent(STATE_DISCONNECTED, STATE_CONNECTING);
 
         when(mRequestOwnNumberCompletedWithNumber.isSearchCompleted()).thenReturn(true);
         when(mRequestOwnNumberCompletedWithNumber.getOwnNumber()).thenReturn(TEST_OWN_PHONE_NUMBER);
@@ -319,8 +318,7 @@ public class MapClientStateMachineTest {
 
         verify(mMasClient).shutdown();
         sendAndDispatchMessage(MceStateMachine.MSG_MAS_DISCONNECTED);
-        verifyStateTransitionAndIntent(
-                STATE_DISCONNECTING, STATE_DISCONNECTED);
+        verifyStateTransitionAndIntent(STATE_DISCONNECTING, STATE_DISCONNECTED);
     }
 
     /** Test disconnect timeout */

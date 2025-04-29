@@ -1448,7 +1448,7 @@ public class LeAudioBroadcastServiceTest {
         TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
         assertThat(mService.mUnicastGroupIdDeactivatedForBroadcastTransition).isEqualTo(groupId2);
 
-            verify(mLeAudioCallbacks).onBroadcastToUnicastFallbackGroupChanged(groupId2);
+        verify(mLeAudioCallbacks).onBroadcastToUnicastFallbackGroupChanged(groupId2);
 
         synchronized (mService.mLeAudioCallbacks) {
             mService.mLeAudioCallbacks.unregister(mLeAudioCallbacks);

@@ -467,7 +467,6 @@ public class PbapClientServiceTest {
         assertThat(PbapClientService.getPbapClientService()).isNull();
     }
 
-
     // connect (policy allowed) -> connect/true
 
     // old

@@ -17,7 +17,9 @@
 package com.android.bluetooth.avrcpcontroller;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -27,8 +29,8 @@ import android.support.v4.media.session.PlaybackStateCompat;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.After;
 import org.junit.Before;
@@ -36,7 +38,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 
 /** Test cases for {@link AvrcpControllerNativeInterface}. */
 @MediumTest

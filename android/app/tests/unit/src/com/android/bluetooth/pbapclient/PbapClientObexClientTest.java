@@ -80,8 +80,7 @@ public class PbapClientObexClientTest {
 
     // Normal supported features for our client
     private static final int SUPPORTED_FEATURES =
-            PbapSdpRecord.FEATURE_DOWNLOADING
-                    | PbapSdpRecord.FEATURE_DEFAULT_IMAGE_FORMAT;
+            PbapSdpRecord.FEATURE_DOWNLOADING | PbapSdpRecord.FEATURE_DEFAULT_IMAGE_FORMAT;
 
     // Default property filter for downloaded contacts
     private static final long DEFAULT_PROPERTIES =
