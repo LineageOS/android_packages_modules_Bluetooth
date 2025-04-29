@@ -88,7 +88,6 @@ public class MetadataTest {
 
     @Before
     public void setUp() throws Exception {
-
         mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         mTestResources = TestUtils.getTestApplicationResources(mTargetContext);
 

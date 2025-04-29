@@ -83,7 +83,6 @@ public class ImageTest {
 
     @Before
     public void setUp() throws Exception {
-
         mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         mTestResources = TestUtils.getTestApplicationResources(mTargetContext);
 

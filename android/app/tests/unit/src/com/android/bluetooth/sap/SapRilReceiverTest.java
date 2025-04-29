@@ -95,7 +95,6 @@ public class SapRilReceiverTest {
 
     @Before
     public void setUp() throws Exception {
-
         mHandlerThread = new HandlerThread("SapRilReceiverTest");
         mHandlerThread.start();
 

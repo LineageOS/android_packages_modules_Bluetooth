@@ -82,7 +82,6 @@ public class DataMigrationTest {
 
     @Before
     public void setUp() throws Exception {
-
         mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         mTargetContext.deleteSharedPreferences(TEST_PREF);
         mPrefs = mTargetContext.getSharedPreferences(TEST_PREF, Context.MODE_PRIVATE);

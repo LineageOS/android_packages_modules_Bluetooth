@@ -35,7 +35,6 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.R;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -235,9 +234,6 @@ public class A2dpCodecConfigTest {
                 .setCodecConfigPreference(
                         any(BluetoothDevice.class), any(BluetoothCodecConfig[].class));
     }
-
-    @After
-    public void tearDown() throws Exception {}
 
     @Test
     public void testAssignCodecConfigPriorities() {
