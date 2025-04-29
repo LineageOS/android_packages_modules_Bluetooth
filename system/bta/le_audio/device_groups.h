@@ -298,10 +298,13 @@ public:
   }
 
   inline void SetConfigurationContextType(types::LeAudioContextType context_type) {
+    log::debug("group_id: {}, {} -> {}", group_id_, common::ToString(configuration_context_type_),
+               common::ToString(context_type));
     configuration_context_type_ = context_type;
   }
 
   inline types::LeAudioContextType GetConfigurationContextType(void) const {
+    log::debug("group_id: {}, {}", group_id_, common::ToString(configuration_context_type_));
     return configuration_context_type_;
   }
 
