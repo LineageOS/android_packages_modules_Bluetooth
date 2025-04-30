@@ -3764,10 +3764,6 @@ public:
   }
 
   void SendAudioGroupCurrentCodecConfigChanged(LeAudioDeviceGroup* group) {
-    if (group == nullptr) {
-      log::warn("group is nullptr skip update");
-      return;
-    }
     // This shall be called when configuration changes
     log::debug("{}", group->group_id_);
 
@@ -5227,6 +5223,7 @@ public:
     /* Need to reconfigure stream. At this point pre_configuration_context_type shall be set */
 
     initReconfiguration(group, previous_context_type);
+    SendAudioGroupCurrentCodecConfigChanged(group);
     return true;
   }
 
@@ -6361,7 +6358,6 @@ public:
     CancelStreamingRequest();
     ReconfigurationComplete(previously_active_directions);
     speed_stop_reconfig(active_group_id_);
-    SendAudioGroupCurrentCodecConfigChanged(aseGroups_.FindById(active_group_id_));
   }
 
   bool isConfigurationChanged(LeAudioDeviceGroup* group) {
