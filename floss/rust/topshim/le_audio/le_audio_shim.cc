@@ -54,6 +54,13 @@ static le_audio::btle_audio_codec_config_t from_rust_btle_audio_codec_config(
     case static_cast<int>(BtLeAudioCodecIndex::SrcLc3):
       return le_audio::btle_audio_codec_config_t{
               .codec_type = le_audio::btle_audio_codec_index_t::LE_AUDIO_CODEC_INDEX_SOURCE_LC3};
+    case static_cast<int>(BtLeAudioCodecIndex::SrcOpus):
+      return le_audio::btle_audio_codec_config_t{
+              .codec_type = le_audio::btle_audio_codec_index_t::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS};
+    case static_cast<int>(BtLeAudioCodecIndex::SrcOpusHiRes):
+      return le_audio::btle_audio_codec_config_t{
+              .codec_type =
+                      le_audio::btle_audio_codec_index_t::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES};
     default:
       log::assert_that(false, "Unhandled enum value from C++");
   }
@@ -65,6 +72,11 @@ static BtLeAudioCodecConfig to_rust_btle_audio_codec_config(
   switch (codec_config.codec_type) {
     case le_audio::btle_audio_codec_index_t::LE_AUDIO_CODEC_INDEX_SOURCE_LC3:
       return BtLeAudioCodecConfig{.codec_type = static_cast<int>(BtLeAudioCodecIndex::SrcLc3)};
+    case le_audio::btle_audio_codec_index_t::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS:
+      return BtLeAudioCodecConfig{.codec_type = static_cast<int>(BtLeAudioCodecIndex::SrcOpus)};
+    case le_audio::btle_audio_codec_index_t::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES:
+      return BtLeAudioCodecConfig{.codec_type =
+                                          static_cast<int>(BtLeAudioCodecIndex::SrcOpusHiRes)};
     default:
       log::assert_that(false, "Unhandled enum value from C++");
   }

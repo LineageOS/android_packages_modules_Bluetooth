@@ -300,3 +300,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "identity_to_pseudo_addr"
+    namespace: "bluetooth"
+    description: "Convert identity address to pseudo address during connection"
+    bug: "414509356"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

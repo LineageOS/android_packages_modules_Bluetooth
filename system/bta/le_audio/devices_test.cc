@@ -2608,6 +2608,57 @@ TEST_P(LeAudioAseConfigurationTest, test_get_metadata_no_ccid) {
             uint8_t((uint16_t)LeAudioContextType::MEDIA >> 8));
 }
 
+TEST_P(LeAudioAseConfigurationTest, test_get_group_config_requirements) {
+  if (codec_coding_format_ != kLeAudioCodingFormatVendorSpecific) {
+    GTEST_SKIP();
+  }
+
+  // A group of two earbuds
+  LeAudioDevice* left = AddTestDevice({{2, codec_spec_conf::kLeAudioLocationFrontLeft}},
+                                      {{1, codec_spec_conf::kLeAudioLocationFrontLeft}});
+  LeAudioDevice* right = AddTestDevice({{2, codec_spec_conf::kLeAudioLocationFrontRight}},
+                                       {{1, codec_spec_conf::kLeAudioLocationFrontRight}});
+  const LeAudioCodecId OpusCodecId = {
+          .coding_format = kLeAudioCodingFormatVendorSpecific,
+          .vendor_company_id = types::kLeAudioVendorCompanyIdGoogle,
+          .vendor_codec_id = types::kLeAudioVendorCodecIdOpus,
+  };
+
+  PublishedAudioCapabilitiesBuilder pac_builder;
+  pac_builder.Add(OpusCodecId, GetSamplingFrequency(Lc3SettingId::LC3_16_2),
+                  GetFrameDuration(Lc3SettingId::LC3_16_2), kLeAudioCodecChannelCountSingleChannel,
+                  GetOctetsPerCodecFrame(Lc3SettingId::LC3_16_2));
+  left->snk_pacs_ = pac_builder.Get();
+  right->snk_pacs_ = pac_builder.Get();
+
+  ASSERT_EQ(2, group_->NumOfConnected());
+
+  // Set the preference to Hi Res codec
+  btle_audio_codec_config_t preferred_codec_config_during_media = {
+          .codec_type = LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES,
+          .sample_rate = LE_AUDIO_SAMPLE_RATE_INDEX_96000HZ,
+  };
+  group_->SetPreferredAudioSetConfiguration(preferred_codec_config_during_media,
+                                            preferred_codec_config_during_media);
+
+  TestGroupAseConfigurationData data[] = {{left, kLeAudioCodecChannelCountSingleChannel,
+                                           kLeAudioCodecChannelCountSingleChannel, 1, 0},
+                                          {right, kLeAudioCodecChannelCountSingleChannel,
+                                           kLeAudioCodecChannelCountSingleChannel, 1, 0}};
+  TestGroupAseConfiguration(LeAudioContextType::MEDIA, data, 2, kLeAudioDirectionSink);
+
+  auto requirements = group_->GetAudioSetConfigurationRequirements(LeAudioContextType::MEDIA);
+  ASSERT_EQ(requirements.audio_context_type, LeAudioContextType::MEDIA);
+
+  // Test for OPUS Hirez sampling frequency
+  ASSERT_TRUE(requirements.sink_requirements.has_value());
+  ASSERT_NE(requirements.sink_requirements->size(), 0lu);
+  ASSERT_EQ(requirements.sink_requirements->at(0)
+                    .params.GetAsCoreCodecConfig()
+                    .GetSamplingFrequencyHz(),
+            96000lu);
+}
+
 INSTANTIATE_TEST_CASE_P(Test, LeAudioAseConfigurationTest,
                         ::testing::Values(kLeAudioCodingFormatLC3,
                                           kLeAudioCodingFormatVendorSpecific));

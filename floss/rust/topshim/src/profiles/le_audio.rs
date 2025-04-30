@@ -18,6 +18,8 @@ pub mod ffi {
     #[derive(Debug, Copy, Clone)]
     pub enum BtLeAudioCodecIndex {
         SrcLc3 = 0,
+        SrcOpus = 1,
+        SrcOpusHiRes = 2,
         SrcInvalid = 1_000_000,
     }
 

@@ -38,6 +38,7 @@ namespace bluetooth {
 namespace audio {
 
 using aidl::BluetoothAudioClientInterface;
+using aidl::GetAidlCodecIdFromStackFormat;
 using aidl::GetAidlLeAudioBroadcastConfigurationRequirementFromStackFormat;
 using aidl::GetAidlLeAudioDeviceCapabilitiesFromStackFormat;
 using aidl::GetAidlLeAudioUnicastConfigurationRequirementsFromStackFormat;
@@ -302,6 +303,20 @@ void LeAudioClientInterface::Sink::UpdateAudioConfigToHal(
   dumpOffloadConfig("Encoding config:", offload_hal_config);
 
   get_aidl_client_interface(is_broadcaster_)->UpdateAudioConfig(offload_hal_config);
+}
+
+void LeAudioClientInterface::Sink::SetCodecPriority(
+        const ::bluetooth::le_audio::types::LeAudioCodecId& codecId, int32_t priority) {
+  if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::HIDL) {
+    return;
+  }
+
+  if (is_broadcaster_ || !is_aidl_offload_encoding_session(is_broadcaster_)) {
+    return;
+  }
+
+  get_aidl_client_interface(is_broadcaster_)
+          ->SetCodecPriority(GetAidlCodecIdFromStackFormat(codecId), priority);
 }
 
 std::optional<::bluetooth::le_audio::broadcaster::BroadcastConfiguration>
@@ -606,6 +621,21 @@ void LeAudioClientInterface::Source::UpdateAudioConfigToHal(
   dumpOffloadConfig("Decoding config:", offload_hal_config);
 
   aidl::le_audio::LeAudioSourceTransport::interface->UpdateAudioConfig(offload_hal_config);
+}
+
+void LeAudioClientInterface::Source::SetCodecPriority(
+        const ::bluetooth::le_audio::types::LeAudioCodecId& codecId, int32_t priority) {
+  if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::HIDL) {
+    return;
+  }
+
+  if (aidl::le_audio::LeAudioSourceTransport::interface->GetTransportInstance()->GetSessionType() !=
+      aidl::SessionType::LE_AUDIO_HARDWARE_OFFLOAD_DECODING_DATAPATH) {
+    return;
+  }
+
+  aidl::le_audio::LeAudioSourceTransport::interface->SetCodecPriority(
+          GetAidlCodecIdFromStackFormat(codecId), priority);
 }
 
 size_t LeAudioClientInterface::Source::Write(const uint8_t* p_buf, uint32_t len) {
