@@ -788,9 +788,20 @@ class BluetoothManagerService {
 
     class ClientDeathRecipient implements IBinder.DeathRecipient {
         private final String mPackageName;
+        private final IBinder mBinder;
+
+        ClientDeathRecipient(String packageName, IBinder binder) {
+            mPackageName = packageName;
+            mBinder = binder;
+        }
 
         ClientDeathRecipient(String packageName) {
+            if (Flags.bleDeathRecipientThread()) {
+                throw new IllegalStateException(
+                        "bleDeathRecipientThread flag is deprecating this constructor");
+            }
             mPackageName = packageName;
+            mBinder = null;
         }
 
         public void binderDied() {
