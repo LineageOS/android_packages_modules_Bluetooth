@@ -4527,15 +4527,18 @@ public class LeAudioService extends ProfileService {
                         + device
                         + " to policy="
                         + connectionPolicy);
+        final ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
+
         VolumeControlService volumeControlService = getVolumeControlService();
-        if (volumeControlService != null) {
+        if (volumeControlService != null
+                && Utils.arrayContains(featureUuids, BluetoothUuid.VOLUME_CONTROL)) {
             volumeControlService.setConnectionPolicy(device, connectionPolicy);
         }
 
         if (mHapClientService == null) {
             mHapClientService = mServiceFactory.getHapClientService();
         }
-        if (mHapClientService != null) {
+        if (mHapClientService != null && Utils.arrayContains(featureUuids, BluetoothUuid.HAS)) {
             mHapClientService.setConnectionPolicy(device, connectionPolicy);
         }
 
@@ -4544,14 +4547,17 @@ public class LeAudioService extends ProfileService {
         }
 
         // Disallow setting CSIP to forbidden until characteristic reads are complete
-        if (mCsipSetCoordinatorService != null) {
+        if (mCsipSetCoordinatorService != null
+                && Utils.arrayContains(featureUuids, BluetoothUuid.COORDINATED_SET)) {
             mCsipSetCoordinatorService.setConnectionPolicy(device, connectionPolicy);
         }
 
         if (mBassClientService == null) {
             mBassClientService = mServiceFactory.getBassClientService();
         }
-        if (mBassClientService != null && mBassClientService.isEnabled()) {
+        if (mBassClientService != null
+                && mBassClientService.isEnabled()
+                && Utils.arrayContains(featureUuids, BluetoothUuid.BASS)) {
             mBassClientService.setConnectionPolicy(device, connectionPolicy);
         }
     }

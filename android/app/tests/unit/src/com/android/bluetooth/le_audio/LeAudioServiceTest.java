@@ -234,9 +234,6 @@ public class LeAudioServiceTest {
         injectSupportedProfilesBitMask(
                 Set.of(BluetoothProfile.LE_AUDIO_BROADCAST, BluetoothProfile.LE_AUDIO));
 
-        doReturn(new ParcelUuid[] {BluetoothUuid.LE_AUDIO})
-                .when(mAdapterService)
-                .getRemoteUuids(any(BluetoothDevice.class));
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
 
@@ -251,7 +248,14 @@ public class LeAudioServiceTest {
                 .when(mAdapterService)
                 .getBondedDevices();
         doReturn(BOND_BONDED).when(mAdapterService).getBondState(any(BluetoothDevice.class));
-        doReturn(new ParcelUuid[] {BluetoothUuid.LE_AUDIO})
+        doReturn(
+                        new ParcelUuid[] {
+                            BluetoothUuid.LE_AUDIO,
+                            BluetoothUuid.VOLUME_CONTROL,
+                            BluetoothUuid.HAS,
+                            BluetoothUuid.COORDINATED_SET,
+                            BluetoothUuid.BASS
+                        })
                 .when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
 
@@ -928,6 +932,42 @@ public class LeAudioServiceTest {
         // Verify the connection state broadcast, and that we are in Disconnected state
         verifyConnectionStateIntent(mSingleDevice, STATE_DISCONNECTED, STATE_DISCONNECTING);
         assertThat(mService.getConnectionState(mSingleDevice)).isEqualTo(STATE_DISCONNECTED);
+    }
+
+    /**
+     * Verify that LE Audio service does not set profile connection policy to ALLOWED for
+     * non-available services.
+     */
+    @Test
+    public void testSetConnectionPolicyLeOnlyUUID() {
+        doReturn(new ParcelUuid[] {BluetoothUuid.LE_AUDIO})
+                .when(mAdapterService)
+                .getRemoteUuids(any(BluetoothDevice.class));
+        doReturn(true)
+                .when(mDatabaseManager)
+                .setProfileConnectionPolicy(any(BluetoothDevice.class), anyInt(), anyInt());
+        // Make LE Audio related services setConnectionPolicy() method return true.
+        // These should NOT be called if not available
+        when(mVolumeControlService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
+        when(mCsipSetCoordinatorService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
+        when(mHapClientService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
+        when(mBassClientService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
+        when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
+                .thenReturn(CONNECTION_POLICY_UNKNOWN);
+
+        assertThat(mService.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED)).isTrue();
+
+        // Verify connection policy for CSIP and VCP are also set to FORBIDDEN
+        verify(mVolumeControlService, never())
+                .setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED);
+        verify(mCsipSetCoordinatorService, never())
+                .setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED);
+        verify(mHapClientService, never())
+                .setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED);
+        if (BluetoothProperties.isProfileBapBroadcastAssistEnabled().orElse(false)) {
+            verify(mBassClientService, never())
+                    .setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED);
+        }
     }
 
     /**
