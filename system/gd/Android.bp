@@ -104,6 +104,7 @@ cc_defaults {
         "common/audit_log.cc",
         "common/stop_watch.cc",
         "common/strings.cc",
+        "common/utils.cc",
         "hal/link_clocker.cc",
         "hal/snoop_logger.cc",
         "hal/snoop_logger_socket.cc",
