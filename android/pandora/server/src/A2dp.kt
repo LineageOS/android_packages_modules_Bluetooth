@@ -60,9 +60,18 @@ class A2dp(val context: Context) : A2DPImplBase(), Closeable {
     private val scope: CoroutineScope
     private val flow: Flow<Intent>
 
-    private val audioManager = context.getSystemService(AudioManager::class.java)!!
+    private val audioManager: AudioManager by lazy {
+        val manager = context.getSystemService(AudioManager::class.java)
+        requireNotNull(manager) { "AudioManager service not available" }
+        manager
+    }
 
-    private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)!!
+    private val bluetoothManager: BluetoothManager by lazy {
+        val manager = context.getSystemService(BluetoothManager::class.java)
+        requireNotNull(manager) { "BluetoothManager service not available" }
+        manager
+    }
+
     private val bluetoothAdapter = bluetoothManager.adapter
     private val bluetoothA2dp = getProfileProxy<BluetoothA2dp>(context, BluetoothProfile.A2DP)
 
@@ -159,7 +168,7 @@ class A2dp(val context: Context) : A2DPImplBase(), Closeable {
 
             // Play an audio track.
             audioTrack = buildAudioTrack()
-            audioTrack!!.play()
+            audioTrack?.play() ?: throw RuntimeException("audioTrack is null")
 
             // If A2dp is not already playing, wait for it
             if (!bluetoothA2dp.isA2dpPlaying(device)) {
@@ -198,7 +207,11 @@ class A2dp(val context: Context) : A2DPImplBase(), Closeable {
                     .filter { it.getBluetoothDeviceExtra() == device }
                     .map { it.getIntExtra(BluetoothA2dp.EXTRA_STATE, BluetoothAdapter.ERROR) }
 
-            audioTrack!!.pause()
+            audioTrack?.let {
+                it.pause()
+                it.flush()
+            } ?: throw RuntimeException("audioTrack is null")
+
             withTimeoutOrNull(timeoutMillis) {
                 a2dpPlayingStateFlow.filter { it == BluetoothA2dp.STATE_NOT_PLAYING }.first()
             }
@@ -251,11 +264,19 @@ class A2dp(val context: Context) : A2DPImplBase(), Closeable {
     ): StreamObserver<PlaybackAudioRequest> {
         Log.i(TAG, "playbackAudio")
 
-        if (audioTrack!!.getPlayState() != AudioTrack.PLAYSTATE_PLAYING) {
-            responseObserver.onError(
-                Status.UNKNOWN.withDescription("AudioTrack is not started").asException()
-            )
+        audioTrack?.let { nonNullAudioTrack ->
+            if (nonNullAudioTrack.playState != AudioTrack.PLAYSTATE_PLAYING) {
+                responseObserver.onError(
+                    Status.UNKNOWN.withDescription("AudioTrack is not started").asException()
+                )
+            }
         }
+            ?: run {
+                responseObserver.onError(
+                    Status.UNKNOWN.withDescription("AudioTrack is null").asException()
+                )
+                throw IllegalStateException("audioTrack is null")
+            }
 
         // Volume is maxed out to avoid any amplitude modification of the provided audio data,
         // enabling the test runner to do comparisons between input and output audio signal.
@@ -277,13 +298,24 @@ class A2dp(val context: Context) : A2DPImplBase(), Closeable {
             override fun onNext(request: PlaybackAudioRequest) {
                 val data = request.data.toByteArray()
                 Log.i(TAG, "onNext: AudioTrack writes data=$data")
-                val written = synchronized(audioTrack!!) { audioTrack!!.write(data, 0, data.size) }
-                if (written != data.size) {
-                    Log.e(TAG, "onNext: AudioTrack write failed")
-                    responseObserver.onError(
-                        Status.UNKNOWN.withDescription("AudioTrack write failed").asException()
-                    )
+                audioTrack?.let { nonNullAudioTrack ->
+                    val written =
+                        synchronized(nonNullAudioTrack) {
+                            nonNullAudioTrack.write(data, 0, data.size)
+                        }
+                    if (written != data.size) {
+                        Log.e(TAG, "onNext: AudioTrack write failed")
+                        responseObserver.onError(
+                            Status.UNKNOWN.withDescription("AudioTrack write failed").asException()
+                        )
+                    }
                 }
+                    ?: run {
+                        responseObserver.onError(
+                            Status.UNKNOWN.withDescription("audioTrack is null").asException()
+                        )
+                        throw IllegalStateException("audioTrack is null")
+                    }
             }
 
             override fun onError(t: Throwable) {

@@ -44,7 +44,8 @@ from bumble.host import Host
 from bumble.link import LocalLink
 from bumble.transport import AsyncPipeSink
 from packets.avdtp import *
-from signaling_channel import SignalingChannel, Any
+from signaling_channel import SignalingChannel
+from unittest.mock import ANY
 
 # -----------------------------------------------------------------------------
 # Logging
@@ -128,8 +129,6 @@ def sink_codec_capabilities():
 # -----------------------------------------------------------------------------
 @pytest.mark.asyncio
 async def test_signaling_channel_as_source():
-    any = Any()
-
     two_devices = TwoDevices()
     # Enable Classic connections
     two_devices.devices[0].classic_enabled = True
@@ -172,7 +171,7 @@ async def test_signaling_channel_as_source():
     channel_int.send_signal(DiscoverCommand())
 
     result = await channel_int.expect_signal(
-        DiscoverResponse(transaction_label=any,
+        DiscoverResponse(transaction_label=ANY,
                          seid_information=[SeidInformation(acp_seid=1, tsep=Tsep.SINK)]))
 
     acp_seid = result.seid_information[0].acp_seid
@@ -181,7 +180,7 @@ async def test_signaling_channel_as_source():
 
     result = await channel_int.expect_signal(
         GetAllCapabilitiesResponse(
-            transaction_label=any,
+            transaction_label=ANY,
             service_capabilities=[
                 MediaTransportCapability(),
                 MediaCodecCapability(service_category=ServiceCategory.MEDIA_CODEC,
@@ -192,11 +191,11 @@ async def test_signaling_channel_as_source():
         SetConfigurationCommand(acp_seid=acp_seid,
                                 service_capabilities=[result.service_capabilities[0]]))
 
-    await channel_int.expect_signal(SetConfigurationResponse(transaction_label=any))
+    await channel_int.expect_signal(SetConfigurationResponse(transaction_label=ANY))
 
     channel_int.send_signal(OpenCommand(acp_seid=acp_seid))
 
-    await channel_int.expect_signal(OpenResponse(transaction_label=any))
+    await channel_int.expect_signal(OpenResponse(transaction_label=ANY))
 
     await asyncio.wait_for(avdtp_future, timeout=10.0)
 
@@ -225,7 +224,7 @@ async def test_signaling_channel_as_source():
 
     channel_int.send_signal(StartCommand(acp_seid=acp_seid))
 
-    await channel_int.expect_signal(StartResponse(transaction_label=any))
+    await channel_int.expect_signal(StartResponse(transaction_label=ANY))
 
     assert device_1_avdt_sink.in_use == 1
     assert device_1_avdt_sink.stream is not None
@@ -239,7 +238,7 @@ async def test_signaling_channel_as_source():
 
     channel_int.send_signal(CloseCommand(acp_seid=acp_seid))
 
-    await channel_int.expect_signal(CloseResponse(transaction_label=any))
+    await channel_int.expect_signal(CloseResponse(transaction_label=ANY))
 
     await channel_int.disconnect_transport_channel()
 
@@ -250,8 +249,6 @@ async def test_signaling_channel_as_source():
 # -----------------------------------------------------------------------------
 @pytest.mark.asyncio
 async def test_signaling_channel_as_sink():
-    any = Any()
-
     two_devices = TwoDevices()
     # Enable Classic connections
     two_devices.devices[0].classic_enabled = True
@@ -279,7 +276,7 @@ async def test_signaling_channel_as_sink():
 
     channel_int.send_signal(DiscoverCommand())
 
-    cmd = await channel_acp.expect_signal(DiscoverCommand(transaction_label=any))
+    cmd = await channel_acp.expect_signal(DiscoverCommand(transaction_label=ANY))
 
     seid_information = [SeidInformation(tsep=Tsep.SINK, media_type=avdtp.AVDTP_AUDIO_MEDIA_TYPE)]
 
@@ -297,7 +294,7 @@ async def test_signaling_channel_as_sink():
     channel_int.send_signal(GetAllCapabilitiesCommand(acp_seid=int_to_acp_seid))
 
     cmd = await channel_acp.expect_signal(
-        GetAllCapabilitiesCommand(acp_seid=int_to_acp_seid, transaction_label=any))
+        GetAllCapabilitiesCommand(acp_seid=int_to_acp_seid, transaction_label=ANY))
 
     acceptor_service_capabilities = [
         MediaTransportCapability(),
@@ -311,7 +308,7 @@ async def test_signaling_channel_as_sink():
 
     result = await channel_int.expect_signal(
         GetAllCapabilitiesResponse(
-            transaction_label=any,
+            transaction_label=ANY,
             service_capabilities=[
                 MediaTransportCapability(),
                 MediaCodecCapability(service_category=ServiceCategory.MEDIA_CODEC,
@@ -323,22 +320,22 @@ async def test_signaling_channel_as_sink():
                                 service_capabilities=[result.service_capabilities[0]]))
 
     cmd = await channel_acp.expect_signal(
-        SetConfigurationCommand(transaction_label=any,
+        SetConfigurationCommand(transaction_label=ANY,
                                 acp_seid=int_to_acp_seid,
                                 service_capabilities=[result.service_capabilities[0]]))
 
     channel_acp.send_signal(SetConfigurationResponse(transaction_label=cmd.transaction_label))
 
-    await channel_int.expect_signal(SetConfigurationResponse(transaction_label=any))
+    await channel_int.expect_signal(SetConfigurationResponse(transaction_label=ANY))
 
     channel_int.send_signal(OpenCommand(acp_seid=int_to_acp_seid))
 
     cmd = await channel_acp.expect_signal(
-        OpenCommand(transaction_label=any, acp_seid=int_to_acp_seid))
+        OpenCommand(transaction_label=ANY, acp_seid=int_to_acp_seid))
 
     channel_acp.send_signal(OpenResponse(transaction_label=cmd.transaction_label))
 
-    await channel_int.expect_signal(OpenResponse(transaction_label=any))
+    await channel_int.expect_signal(OpenResponse(transaction_label=ANY))
 
     await asyncio.wait_for(avdtp_future, timeout=10.0)
 
@@ -354,11 +351,11 @@ async def test_signaling_channel_as_sink():
     channel_int.send_signal(StartCommand(acp_seid=int_to_acp_seid))
 
     cmd = await channel_acp.expect_signal(
-        StartCommand(transaction_label=any, acp_seid=int_to_acp_seid))
+        StartCommand(transaction_label=ANY, acp_seid=int_to_acp_seid))
 
     channel_acp.send_signal(StartResponse(transaction_label=cmd.transaction_label))
 
-    await channel_int.expect_signal(StartResponse(transaction_label=any))
+    await channel_int.expect_signal(StartResponse(transaction_label=ANY))
 
     channel_int.send_media(bytes(source_packets[0]))
     channel_int.send_media(bytes(source_packets[1]))
@@ -371,11 +368,11 @@ async def test_signaling_channel_as_sink():
     channel_int.send_signal(CloseCommand(acp_seid=int_to_acp_seid))
 
     cmd = await channel_acp.expect_signal(
-        CloseCommand(transaction_label=any, acp_seid=int_to_acp_seid))
+        CloseCommand(transaction_label=ANY, acp_seid=int_to_acp_seid))
 
     channel_acp.send_signal(CloseResponse(transaction_label=cmd.transaction_label))
 
-    await channel_int.expect_signal(CloseResponse(transaction_label=any))
+    await channel_int.expect_signal(CloseResponse(transaction_label=ANY))
 
     await channel_int.disconnect_transport_channel()
     await channel_int.disconnect()

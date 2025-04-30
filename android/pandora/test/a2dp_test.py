@@ -19,9 +19,10 @@ import dataclasses
 import logging
 import numpy as np
 import time
+from unittest.mock import ANY
 
 from a2dp.packets.avdtp import *
-from a2dp.signaling_channel import Any, SignalingChannel
+from a2dp.signaling_channel import SignalingChannel
 from avatar import BumblePandoraDevice, PandoraDevice, PandoraDevices, pandora_snippet, enableFlag
 from bumble.a2dp import (
     A2DP_MPEG_2_4_AAC_CODEC_TYPE,
@@ -60,6 +61,7 @@ from bumble.l2cap import (
     L2CAP_Connection_Response,
 )
 from bumble.pairing import PairingDelegate
+from google.protobuf import empty_pb2
 from mobly import base_test, test_runner
 from mobly.asserts import assert_equal  # type: ignore
 from mobly.asserts import assert_greater_equal  # type: ignore
@@ -69,7 +71,7 @@ from mobly.asserts import assert_less_equal  # type: ignore
 from mobly.asserts import assert_raises  # type: ignore
 from mobly.asserts import fail  # type: ignore
 from pandora.a2dp_grpc_aio import A2DP
-from pandora.a2dp_pb2 import STEREO, Configuration, PlaybackAudioRequest, Source
+from pandora.a2dp_pb2 import STEREO, CodecId, CodecParameters, Configuration, PlaybackAudioRequest, Source
 from pandora.host_pb2 import Connection
 from pandora.security_pb2 import LEVEL2
 from typing import AsyncIterator, Optional
@@ -205,8 +207,6 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
     ref1: PandoraDevice
     ref2: PandoraDevice
 
-    any = Any()
-
     @avatar.asynchronous
     async def setup_class(self) -> None:
         self.devices = PandoraDevices(self)
@@ -314,7 +314,8 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         acceptor_service_capabilities = [
             MediaTransportCapability(),
             MediaCodecCapability(service_category=ServiceCategory.MEDIA_CODEC,
-                                 media_codec_specific_information_elements=[255, 255, 2, 53])
+                                 media_codec_specific_information_elements=bytearray(
+                                     [255, 255, 2, 53]))
         ]
 
         # Connect AVDTP to RD1.
@@ -330,7 +331,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
         await asyncio.gather(
             self.dut.a2dp.PlaybackAudio(generated_audio),
-            channel.receive_audio_data(test_log_path=self.log_path, duration_s=2.0))
+            channel.receive_audio_data(test_log_path=self.log_path, filename="sbc", duration_s=2.0))
 
         # Stop streaming to RD1.
         await asyncio.gather(self.dut.a2dp.Suspend(source=dut_ref1_source),
@@ -397,11 +398,10 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         logger.info(f"Current codec configuration: {configurationResponse.configuration}")
         assert configurationResponse.configuration.id.HasField('mpeg_aac')
 
-        new_configuration = Configuration()
-        new_configuration.id.sbc.SetInParent()
-        new_configuration.parameters.sampling_frequency_hz = 44100
-        new_configuration.parameters.bit_depth = 16
-        new_configuration.parameters.channel_mode = STEREO
+        new_configuration = Configuration(id=CodecId(sbc=empty_pb2.Empty()),
+                                          parameters=CodecParameters(channel_mode=STEREO,
+                                                                     sampling_frequency_hz=44100,
+                                                                     bit_depth=16))
 
         # Set new codec
         logger.info(f"Switching to codec: {new_configuration}")
@@ -439,11 +439,10 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         logger.info(f"Current codec configuration: {configurationResponse.configuration}")
         assert configurationResponse.configuration.id.HasField('mpeg_aac')
 
-        new_configuration = Configuration()
-        new_configuration.id.sbc.SetInParent()
-        new_configuration.parameters.sampling_frequency_hz = 176400
-        new_configuration.parameters.bit_depth = 24
-        new_configuration.parameters.channel_mode = STEREO
+        new_configuration = Configuration(id=CodecId(sbc=empty_pb2.Empty()),
+                                          parameters=CodecParameters(channel_mode=STEREO,
+                                                                     sampling_frequency_hz=176400,
+                                                                     bit_depth=24))
 
         # Set new codec
         logger.info(f"Switching to codec: {new_configuration}")
@@ -475,11 +474,10 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         logger.info(f"Current codec configuration: {configurationResponse.configuration}")
         assert configurationResponse.configuration.id.HasField('mpeg_aac')
 
-        new_configuration = Configuration()
-        new_configuration.id.sbc.SetInParent()
-        new_configuration.parameters.sampling_frequency_hz = 176400
-        new_configuration.parameters.bit_depth = 24
-        new_configuration.parameters.channel_mode = STEREO
+        new_configuration = Configuration(id=CodecId(sbc=empty_pb2.Empty()),
+                                          parameters=CodecParameters(channel_mode=STEREO,
+                                                                     sampling_frequency_hz=176400,
+                                                                     bit_depth=24))
 
         # Set new codec
         logger.info(f"Switching to codec: {new_configuration}")
@@ -514,18 +512,16 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # Connect AVDTP to RD1.
         _, dut_ref1_source = await asyncio.gather(
-            channel.accept_open_stream(
-                seid_information=[
-                    SeidInformation(acp_seid=0x01,
-                                    tsep=Tsep.SINK,
-                                    media_type=AVDTP_AUDIO_MEDIA_TYPE)
-                ],
-                service_capabilities=[
-                    MediaTransportCapability(),
-                    MediaCodecCapability(
-                        service_category=ServiceCategory.MEDIA_CODEC,
-                        media_codec_specific_information_elements=[255, 255, 2, 53])
-                ]), open_source(self.dut, dut_ref1))
+            channel.accept_open_stream(seid_information=[
+                SeidInformation(acp_seid=0x01, tsep=Tsep.SINK, media_type=AVDTP_AUDIO_MEDIA_TYPE)
+            ],
+                                       service_capabilities=[
+                                           MediaTransportCapability(),
+                                           MediaCodecCapability(
+                                               service_category=ServiceCategory.MEDIA_CODEC,
+                                               media_codec_specific_information_elements=bytearray(
+                                                   [255, 255, 2, 53]))
+                                       ]), open_source(self.dut, dut_ref1))
 
         # Start streaming to RD1.
         await asyncio.gather(self.dut.a2dp.Start(source=dut_ref1_source), channel.accept_start())
@@ -534,13 +530,12 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         await self.dut.a2dp.PlaybackAudio(generated_audio)
 
         # Verify that at least one audio frame is received on the transport channel.
-        await asyncio.wait_for(channel.expect_media(), 5.0)
+        await channel.expect_media(timeout=5.0)
 
         # Stop streaming to RD1.
         _, cmd = await asyncio.gather(
             self.dut.a2dp.Suspend(source=dut_ref1_source),
-            channel.expect_signal(SuspendCommand(transaction_label=self.any, acp_seid=self.any),
-                                  timeout=8.0))
+            channel.expect_signal(SuspendCommand(transaction_label=ANY, acp_seid=ANY), timeout=8.0))
 
         # Simulate AVDTP_BAD_STATE response.
         channel.send_signal(
@@ -933,21 +928,21 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
             acceptor_service_capabilities = [
                 MediaTransportCapability(),
                 MediaCodecCapability(service_category=ServiceCategory.MEDIA_CODEC,
-                                     media_codec_specific_information_elements=[255, 255, 2, 53]),
+                                     media_codec_specific_information_elements=bytearray(
+                                         [255, 255, 2, 53])),
                 DelayReportingCapability()
             ]
 
             await channel.accept_discover(seid_information)
             await channel.accept_get_all_capabilities(acceptor_service_capabilities)
             await channel.accept_set_configuration(expected_configuration=[
-                MediaTransportCapability(), channel.any,
+                MediaTransportCapability(), ANY,
                 DelayReportingCapability()
             ])
 
             start_time = time.perf_counter()
 
-            cmd = await channel.expect_signal(
-                OpenCommand(transaction_label=channel.any, acp_seid=channel.any))
+            cmd = await channel.expect_signal(OpenCommand(transaction_label=ANY, acp_seid=ANY))
 
             elapsed_time = time.perf_counter() - start_time
             assert_greater_equal(elapsed_time, 2.0)
@@ -965,7 +960,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         await self.dut.a2dp.PlaybackAudio(generated_audio)
 
         # Verify that at least one audio frame is received on the transport channel.
-        await asyncio.wait_for(channel.expect_media(), 5.0)
+        await channel.expect_media(timeout=5.0)
 
         # Stop streaming to RD1.
         await asyncio.gather(self.dut.a2dp.Suspend(source=dut_ref1_source),
@@ -1004,14 +999,15 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
             acceptor_service_capabilities = [
                 MediaTransportCapability(),
                 MediaCodecCapability(service_category=ServiceCategory.MEDIA_CODEC,
-                                     media_codec_specific_information_elements=[255, 255, 2, 53]),
+                                     media_codec_specific_information_elements=bytearray(
+                                         [255, 255, 2, 53])),
                 DelayReportingCapability()
             ]
 
             await channel.accept_discover(seid_information)
             await channel.accept_get_all_capabilities(acceptor_service_capabilities)
             await channel.accept_set_configuration(expected_configuration=[
-                MediaTransportCapability(), channel.any,
+                MediaTransportCapability(), ANY,
                 DelayReportingCapability()
             ])
 
@@ -1019,8 +1015,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
             await channel.initiate_delay_report()
 
-            cmd = await channel.expect_signal(
-                OpenCommand(transaction_label=channel.any, acp_seid=channel.any))
+            cmd = await channel.expect_signal(OpenCommand(transaction_label=ANY, acp_seid=ANY))
 
             elapsed_time = time.perf_counter() - start_time
             assert_less_equal(elapsed_time, 2.0)
@@ -1038,7 +1033,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         await self.dut.a2dp.PlaybackAudio(generated_audio)
 
         # Verify that at least one audio frame is received on the transport channel.
-        await asyncio.wait_for(channel.expect_media(), 5.0)
+        await channel.expect_media(timeout=5.0)
 
         # Stop streaming to RD1.
         await asyncio.gather(self.dut.a2dp.Suspend(source=dut_ref1_source),
@@ -1086,7 +1081,8 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         acceptor_service_capabilities = [
             MediaTransportCapability(),
             MediaCodecCapability(service_category=ServiceCategory.MEDIA_CODEC,
-                                 media_codec_specific_information_elements=[255, 255, 2, 53])
+                                 media_codec_specific_information_elements=bytearray(
+                                     [255, 255, 2, 53]))
         ]
 
         # Connect AVDTP to RD1.
@@ -1103,8 +1099,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         self.dut.a2dp.Start(source=dut_ref1_source)
 
         # Expect AVDT Start on RD1.
-        await channel.expect_signal(
-            StartCommand(transaction_label=channel.any, acp_seid=channel.any))
+        await channel.expect_signal(StartCommand(transaction_label=ANY, acp_seid=ANY))
 
         # Simulate no response for 15 seconds and wait for AVDT Singalling L2CAP Channel disconnect
         await asyncio.gather(asyncio.sleep(15), asyncio.wait_for(avdtp_future, timeout=20.0))
@@ -1138,6 +1133,159 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                 self.ref1.aio.host.WaitConnection(address=self.dut.address, timeout=15), 10.0)
         logger.info(
             "No new connection for 10 seconds on DUT. accept_signalling_timer properly canceled.")
+
+    @avatar.asynchronous
+    async def test_codec_reconfiguration(self) -> None:
+        """Basic A2DP connection with SignalingChannel and codec reconfiguration while streaming.
+
+        1. Pair and Connect RD1
+        2. Setup the acceptor expectations on signalling channel
+        3. Start streaming
+        4. Reconfigure codec from AAC to SBC
+        4. Check the codec reconfigured and stream resumed
+        """
+
+        # Connect and pair RD1.
+        dut_ref1, ref1_dut = await asyncio.gather(
+            initiate_pairing(self.dut, self.ref1.address),
+            accept_pairing(self.ref1, self.dut.address),
+        )
+
+        connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+        channel = SignalingChannel.accept(connection)
+
+        async def accept_open_stream_with_aac(channel: SignalingChannel):
+            seid_information = [
+                SeidInformation(acp_seid=0x01, tsep=Tsep.SINK, media_type=AVDTP_AUDIO_MEDIA_TYPE),
+                SeidInformation(acp_seid=0x02, tsep=Tsep.SINK, media_type=AVDTP_AUDIO_MEDIA_TYPE)
+            ]
+            acceptor_service_capabilities_sbc = [
+                MediaTransportCapability(),
+                MediaCodecCapability(
+                    service_category=ServiceCategory.MEDIA_CODEC,
+                    media_type=0x00,  # Audio
+                    media_codec_type=0x00,  # SBC
+                    # 0x3f
+                    # Sampling Frequency: 44100, 48000 Hz
+                    # Channel Mode: Mono, Dual Channel, Stereo, Joint Stereo
+                    # 0xff
+                    # Block Length: 4, 8, 12, 16
+                    # Subbands: 4, 8
+                    # Allocation method: SNR, Loudness
+                    # 0x02
+                    # Min bitpool: 2
+                    # 0x37
+                    # Max bitpool: 55
+                    media_codec_specific_information_elements=bytearray([0x3f, 0xff, 0x02, 0x37]))
+            ]
+
+            acceptor_service_capabilities_aac = [
+                MediaTransportCapability(),
+                MediaCodecCapability(
+                    service_category=ServiceCategory.MEDIA_CODEC,
+                    media_type=0x00,  # Audio
+                    media_codec_type=0x02,  # AAC
+                    # 0xc0
+                    # MPEG2 AAC LC, MPEG4 AAC LC
+                    # 0xff
+                    # Sampling Frequency: 8000 - 44100 Hz
+                    # 0xbc
+                    # Sampling Frequency: 48000 - 96000 Hz
+                    # Channels: 1, 2
+                    # 0x89, 0x00, 0x00
+                    # VBR
+                    # Bit Rate: 0x090000
+                    media_codec_specific_information_elements=bytearray(
+                        [0xc0, 0xff, 0xbc, 0x89, 0x00, 0x00])),
+                ContentProtectionCapability(cp_type=2)
+            ]
+
+            acceptor_configuration_aac = [
+                MediaTransportCapability(),
+                MediaCodecCapability(
+                    service_category=ServiceCategory.MEDIA_CODEC,
+                    media_type=0x00,  # Audio
+                    media_codec_type=0x02,  # AAC
+                    media_codec_specific_information_elements=ANY)
+            ]
+
+            await channel.accept_discover(seid_information)
+            await channel.accept_get_all_capabilities(acceptor_service_capabilities_sbc)
+            await channel.accept_get_all_capabilities(acceptor_service_capabilities_aac)
+            await channel.accept_set_configuration(acceptor_configuration_aac)
+            await channel.accept_open()
+
+        # Connect AVDTP to RD1.
+        _, dut_ref1_source = await asyncio.gather(accept_open_stream_with_aac(channel),
+                                                  open_source(self.dut, dut_ref1))
+
+        # Start streaming to RD1.
+        await asyncio.gather(self.dut.a2dp.Start(source=dut_ref1_source), channel.accept_start())
+
+        # Verify that audio is received on the transport channel.
+        generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
+        self.dut.a2dp.PlaybackAudio(generated_audio)
+        logger.info(f"Receive AAC audio data.")
+        await channel.receive_audio_data(test_log_path=self.log_path,
+                                         filename="aac",
+                                         duration_s=1.0)
+        logger.info(f"Finished receiving AAC audio data.")
+
+        # Get current codec status
+        configurationResponse = await self.dut.a2dp.GetConfiguration(connection=dut_ref1)
+        logger.info(f"Current codec configuration: {configurationResponse.configuration}")
+        assert configurationResponse.configuration.id.HasField('mpeg_aac')
+
+        new_configuration = Configuration(id=CodecId(sbc=empty_pb2.Empty()),
+                                          parameters=CodecParameters(channel_mode=STEREO,
+                                                                     sampling_frequency_hz=44100,
+                                                                     bit_depth=16))
+
+        async def handle_reconfiguration(channel: SignalingChannel):
+            logger.info(f"Waiting for suspend")
+            await channel.accept_suspend()
+
+            # Discard the received audio data from internal queue
+            channel.discard_audio_data()
+
+            logger.info(f"Waiting for close")
+            await channel.accept_close()
+
+            acceptor_configuration_sbc = [
+                MediaTransportCapability(),
+                MediaCodecCapability(
+                    service_category=ServiceCategory.MEDIA_CODEC,
+                    media_type=0x00,  # Audio
+                    media_codec_type=0x00,  # SBC
+                    media_codec_specific_information_elements=ANY)
+            ]
+            logger.info(f"Waiting for set configuration")
+            await channel.accept_set_configuration(acceptor_configuration_sbc)
+            logger.info(f"Waiting for open")
+            await channel.accept_open()
+            logger.info(f"Waiting for start")
+            await channel.accept_start(timeout=8.0)
+
+        # Set new codec
+        logger.info(f"Switching to codec: {new_configuration}")
+        await asyncio.gather(
+            self.dut.a2dp.SetConfiguration(connection=dut_ref1, configuration=new_configuration),
+            handle_reconfiguration(channel))
+
+        # Get current codec status
+        configurationResponse = await self.dut.a2dp.GetConfiguration(connection=dut_ref1)
+        logger.info(f"Current codec configuration: {configurationResponse.configuration}")
+        assert configurationResponse.configuration.id.HasField('sbc')
+
+        logger.info(f"Receive SBC audio data.")
+        await channel.receive_audio_data(test_log_path=self.log_path,
+                                         filename="sbc",
+                                         duration_s=1.0)
+        logger.info(f"Finished receiving SBC audio data.")
+
+        # # Stop streaming to RD1.
+        await asyncio.gather(self.dut.a2dp.Suspend(source=dut_ref1_source),
+                             channel.accept_suspend(timeout=8.0))
 
 
 if __name__ == '__main__':
