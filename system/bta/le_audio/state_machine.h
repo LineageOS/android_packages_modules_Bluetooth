@@ -60,6 +60,8 @@ public:
           const types::BidirectionalPair<types::AudioContexts>& metadata_context_types,
           types::BidirectionalPair<std::vector<uint8_t>> ccid_lists = {.sink = {}, .source = {}},
           bool configure_qos = false) = 0;
+  virtual bool EnableStreamingDirection(LeAudioDeviceGroup* group, uint8_t remote_direction) = 0;
+  virtual bool DisableStreamingDirection(LeAudioDeviceGroup* group, uint8_t remote_direction) = 0;
   virtual void StopStream(LeAudioDeviceGroup* group) = 0;
   virtual void ProcessGattCtpNotification(LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice,
                                           uint8_t* value, uint16_t len) = 0;

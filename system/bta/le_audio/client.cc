@@ -471,6 +471,21 @@ public:
     configuration_context_type_ = context_type;
   }
 
+  bool isDynamicDirectionsEnabled(LeAudioDeviceGroup* group) {
+    if (!com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+      log::debug("leaudio_dynamic_direction_opening is not enabled");
+      return false;
+    }
+
+    if (group == nullptr) {
+      log::debug("Not valid group");
+      return false;
+    }
+
+    log::debug("is enabled: {}", group->IsGmapEnabled());
+    return group->IsGmapEnabled();
+  }
+
   void ReconfigureAfterVbcClose() {
     log::debug("VBC close timeout");
 
@@ -519,6 +534,20 @@ public:
     } else {
       remote_metadata = {.sink = local_metadata_context_types_.source,
                          .source = local_metadata_context_types_.sink};
+    }
+
+    if (isDynamicDirectionsEnabled(group)) {
+      /* Check if current configuration actually  */
+      auto directions = group->GetDirectionSupport(new_configuration_context);
+      bool is_bidirectional = directions.sink && directions.source;
+      log::info("group_id: {}, {} is bidirectional: {}", group->group_id_,
+                common::ToString(new_configuration_context), is_bidirectional);
+
+      if (is_bidirectional) {
+        groupStateMachine_->DisableStreamingDirection(
+                group, bluetooth::le_audio::types::kLeAudioDirectionSource);
+        return;
+      }
     }
 
     log::debug("new_configuration_context= {}", ToString(new_configuration_context));
@@ -4562,7 +4591,11 @@ public:
       return;
     }
 
-    if (leAudioHealthStatus_) {
+    /* Without the flag, this shall be called when group is not streaming */
+    bool group_is_streaming = com::android::bluetooth::flags::leaudio_dynamic_direction_opening()
+                                      ? group->IsStreaming()
+                                      : false;
+    if (leAudioHealthStatus_ && !group_is_streaming) {
       leAudioHealthStatus_->AddStatisticForGroup(
               group, LeAudioHealthGroupStatType::STREAM_CONTEXT_NOT_AVAILABLE);
     }
@@ -4646,11 +4679,23 @@ public:
     }
 
     /* Last suspends group - triggers group stop */
-    if ((audio_receiver_state_ == AudioState::IDLE) ||
-        (audio_receiver_state_ == AudioState::READY_TO_RELEASE)) {
-      OnAudioSuspend();
-      bluetooth::le_audio::MetricsCollector::Get()->OnStreamEnded(active_group_id_);
-    }
+    switch (audio_receiver_state_) {
+      case AudioState::IDLE:
+      case AudioState::READY_TO_RELEASE:
+        OnAudioSuspend();
+        bluetooth::le_audio::MetricsCollector::Get()->OnStreamEnded(active_group_id_);
+        break;
+      case AudioState::STARTED: {
+        auto group = aseGroups_.FindById(active_group_id_);
+        if (isDynamicDirectionsEnabled(group)) {
+          groupStateMachine_->DisableStreamingDirection(
+                  group, bluetooth::le_audio::types::kLeAudioDirectionSink);
+        }
+        break;
+      }
+      default:
+        break;
+    };
 
     log::info("OUT: audio_receiver_state_: {},  audio_sender_state_: {}",
               ToString(audio_receiver_state_), ToString(audio_sender_state_));
@@ -4661,6 +4706,57 @@ public:
                                                     "s_state: " + ToString(audio_sender_state_));
   }
 
+  void startSendingAudioWrapper(LeAudioDeviceGroup* group) {
+    if (!isDynamicDirectionsEnabled(group)) {
+      StartSendingAudio(group->group_id_);
+      return;
+    }
+
+    auto remote_direction = bluetooth::le_audio::types::kLeAudioDirectionSink;
+
+    if (group->GetActiveEnabledDirections() & remote_direction) {
+      log::info("Remote Sink Direction already enabled for group_id: {}", group->group_id_);
+      StartSendingAudio(group->group_id_);
+    } else if (group->GetActiveQoSConfiguredDirections() & remote_direction) {
+      log::info("Remote Sink Direction needs to be enabled first for group_id: {}",
+                group->group_id_);
+      groupStateMachine_->EnableStreamingDirection(group, remote_direction);
+    } else {
+      log::error("Group direction: {} in invalid state", remote_direction);
+      group->PrintDebugState();
+    }
+  }
+
+  void startReceivingAudioWrapper(LeAudioDeviceGroup* group) {
+    if (!isDynamicDirectionsEnabled(group)) {
+      StartReceivingAudio(group->group_id_);
+      return;
+    }
+
+    auto remote_direction = bluetooth::le_audio::types::kLeAudioDirectionSource;
+
+    if (group->GetActiveEnabledDirections() & remote_direction) {
+      log::info("Remote Source Direction already enabled for group_id: {}", group->group_id_);
+      StartReceivingAudio(group->group_id_);
+    } else if (group->GetActiveQoSConfiguredDirections() & remote_direction) {
+      log::info("Remote Source Direction needs to be enabled first for group_id: {}",
+                group->group_id_);
+      groupStateMachine_->EnableStreamingDirection(group, remote_direction);
+    } else {
+      log::error("Group direction: {} in invalid state", remote_direction);
+      group->PrintDebugState();
+    }
+  }
+
+  void reenableDirectionIfNeeded(LeAudioDeviceGroup* group, uint8_t remote_direction) {
+    if (!isDynamicDirectionsEnabled(group)) {
+      return;
+    }
+
+    if (group->GetActiveQoSConfiguredDirections() & remote_direction) {
+      groupStateMachine_->EnableStreamingDirection(group, remote_direction);
+    }
+  }
   void OnLocalAudioSourceResume() {
     log::info("active group_id: {}, IN: audio_receiver_state_: {}, audio_sender_state_: {}",
               active_group_id_, ToString(audio_receiver_state_), ToString(audio_sender_state_));
@@ -4775,7 +4871,7 @@ public:
               if (group->IsDirectionAvailableForConfiguration(
                           upcoming_configuration_context_type,
                           bluetooth::le_audio::types::kLeAudioDirectionSink)) {
-                StartSendingAudio(active_group_id_);
+                startSendingAudioWrapper(group);
               } else {
                 log::warn(
                         "sink is not configured. \n audio_receiver_state: {} "
@@ -4812,7 +4908,7 @@ public:
                           upcoming_configuration_context_type,
                           bluetooth::le_audio::types::kLeAudioDirectionSink)) {
                 StopSuspendTimeout();
-                StartSendingAudio(active_group_id_);
+                startSendingAudioWrapper(group);
               } else {
                 log::warn(
                         "sink is not configured. \n audio_receiver_state: {} "
@@ -4860,6 +4956,7 @@ public:
           case AudioState::READY_TO_RELEASE:
             /* Stream is up just restore it */
             StopSuspendTimeout();
+            reenableDirectionIfNeeded(group, bluetooth::le_audio::types::kLeAudioDirectionSink);
             ConfirmLocalAudioSourceStreamingRequest();
             bluetooth::le_audio::MetricsCollector::Get()->OnStreamStarted(
                     active_group_id_, upcoming_configuration_context_type);
@@ -4910,9 +5007,21 @@ public:
     }
 
     /* Last suspends group - triggers group stop */
-    if ((audio_sender_state_ == AudioState::IDLE) ||
-        (audio_sender_state_ == AudioState::READY_TO_RELEASE)) {
-      OnAudioSuspend();
+    switch (audio_sender_state_) {
+      case AudioState::IDLE:
+      case AudioState::READY_TO_RELEASE:
+        OnAudioSuspend();
+        break;
+      case AudioState::STARTED: {
+        auto group = aseGroups_.FindById(active_group_id_);
+        if (isDynamicDirectionsEnabled(group)) {
+          groupStateMachine_->DisableStreamingDirection(
+                  group, bluetooth::le_audio::types::kLeAudioDirectionSource);
+        }
+        break;
+      }
+      default:
+        break;
     }
 
     log::info("OUT: audio_receiver_state_: {},  audio_sender_state_: {}",
@@ -5082,7 +5191,7 @@ public:
               if (group->IsDirectionAvailableForConfiguration(
                           configuration_context_type_,
                           bluetooth::le_audio::types::kLeAudioDirectionSource)) {
-                StartReceivingAudio(active_group_id_);
+                startReceivingAudioWrapper(group);
               } else {
                 log::warn(
                         "source is not configured. \n audio_receiver_state: {} "
@@ -5118,7 +5227,7 @@ public:
                           configuration_context_type_,
                           bluetooth::le_audio::types::kLeAudioDirectionSource)) {
                 StopSuspendTimeout();
-                StartReceivingAudio(active_group_id_);
+                startReceivingAudioWrapper(group);
               } else {
                 log::warn(
                         "source is not configured. \n audio_receiver_state: {} "
@@ -5163,6 +5272,7 @@ public:
           case AudioState::READY_TO_RELEASE:
             /* Stream is up just restore it */
             StopSuspendTimeout();
+            reenableDirectionIfNeeded(group, bluetooth::le_audio::types::kLeAudioDirectionSource);
             ConfirmLocalAudioSinkStreamingRequest();
             break;
           case AudioState::RELEASING:
@@ -6419,8 +6529,13 @@ public:
               bluetooth::common::ToString(audio_receiver_state_));
     uint8_t enabled_remote_directions = 0;
 
-    if (!com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+    auto group = aseGroups_.FindById(group_id);
+    if (!isDynamicDirectionsEnabled(group)) {
       log::debug("leaudio_dynamic_direction_opening is not enabled.");
+      if (group && group->GetTargetState() == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
+        log::info("group_id: {} is suspending.", group_id);
+        return 0;
+      }
       return bluetooth::le_audio::types::kLeAudioDirectionBoth;
     }
 
@@ -6514,7 +6629,7 @@ public:
         }
 
         if (audio_sender_state_ == AudioState::READY_TO_START) {
-          StartSendingAudio(group_id);
+          startSendingAudioWrapper(group);
         } else if (audio_sender_state_ == AudioState::STARTED) {
           /* If we are already sending, the initial configuration was already sent and
            * we might need to just update the current channel mixing information.
@@ -6527,7 +6642,7 @@ public:
         }
 
         if (audio_receiver_state_ == AudioState::READY_TO_START) {
-          StartReceivingAudio(group_id);
+          startReceivingAudioWrapper(group);
         } else if (audio_receiver_state_ == AudioState::STARTED) {
           /* If we are already receiving, the initial configuration was already sent and
            * we might need to just update the current channel mixing information.

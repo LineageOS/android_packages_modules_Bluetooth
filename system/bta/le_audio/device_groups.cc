@@ -423,6 +423,48 @@ bool LeAudioDeviceGroup::HaveAnyActiveDeviceInUnconfiguredState() const {
   return iter != leAudioDevices_.end();
 }
 
+uint8_t LeAudioDeviceGroup::GetActiveQoSConfiguredDirections(void) {
+  if (in_transition_ || GetTargetState() != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+    log::debug("group_id: {} is not in Streaming state", group_id_);
+    return 0;
+  }
+
+  uint8_t enabled_remote_directions = 0;
+  for (const auto dev : leAudioDevices_) {
+    auto device = dev.lock();
+    if (device == nullptr) {
+      continue;
+    }
+    enabled_remote_directions |= device->GetActiveQoSConfiguredDirections();
+  }
+  log::debug("group_id: {}, enabled_remote_directions: {}", group_id_, enabled_remote_directions);
+  return enabled_remote_directions;
+}
+
+uint8_t LeAudioDeviceGroup::GetActiveEnabledDirections(void) {
+  uint8_t enabled_remote_directions = 0;
+  for (const auto dev : leAudioDevices_) {
+    auto device = dev.lock();
+    if (device == nullptr) {
+      continue;
+    }
+    enabled_remote_directions |= device->GetActiveEnabledDirections();
+  }
+  log::debug("group_id: {}, enabled_remote_directions: {}", group_id_, enabled_remote_directions);
+  return enabled_remote_directions;
+}
+
+bool LeAudioDeviceGroup::HaveAllActiveDevicesAsesInExpectedState(void) const {
+  auto iter = std::find_if(leAudioDevices_.begin(), leAudioDevices_.end(), [](auto& d) {
+    if (d.expired()) {
+      return false;
+    }
+    return !(((d.lock()).get())->HaveAllActiveAsesInExpectedState());
+  });
+
+  return iter == leAudioDevices_.end();
+}
+
 bool LeAudioDeviceGroup::HaveAllActiveDevicesAsesTheSameState(AseState state) const {
   auto iter = std::find_if(leAudioDevices_.begin(), leAudioDevices_.end(), [&state](auto& d) {
     if (d.expired()) {

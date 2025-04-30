@@ -755,6 +755,37 @@ BidirectionalPair<struct ase*> LeAudioDevice::GetAsesByCisId(uint8_t cis_id) {
   return ases;
 }
 
+uint8_t LeAudioDevice::GetActiveEnabledDirections(void) {
+  uint8_t enabled_directions = 0;
+  for (const auto ase : ases_) {
+    if (!ase.active) {
+      continue;
+    }
+    if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING ||
+        ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+      enabled_directions |= ase.direction;
+    }
+  }
+  log::debug("{}, enabled_directions: {}", address_, enabled_directions);
+  return enabled_directions;
+}
+
+uint8_t LeAudioDevice::GetActiveQoSConfiguredDirections(void) {
+  uint8_t qos_configured_directions = 0;
+  for (const auto ase : ases_) {
+    if (!ase.active) {
+      continue;
+    }
+    if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED ||
+        (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING &&
+         ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING)) {
+      qos_configured_directions |= ase.direction;
+    }
+  }
+  log::debug("{}, qos_configured_directions: {}", address_, qos_configured_directions);
+  return qos_configured_directions;
+}
+
 bool LeAudioDevice::HaveActiveAse(void) {
   auto iter = std::find_if(ases_.begin(), ases_.end(), [](const auto& ase) { return ase.active; });
 
@@ -808,6 +839,18 @@ bool LeAudioDevice::HaveAnyUnconfiguredAses(void) {
   return iter != ases_.end();
 }
 
+bool LeAudioDevice::HaveAllActiveAsesInExpectedState(void) {
+  log::verbose("{}", address_);
+  auto iter = std::find_if(ases_.begin(), ases_.end(), [](const auto& ase) {
+    log::verbose("ASE id: {}, active: {}, expected_state: {}, state: {}", ase.id, ase.active,
+                 bluetooth::common::ToString(ase.expected_state),
+                 bluetooth::common::ToString(ase.state));
+    return ase.active && (ase.expected_state != ase.state);
+  });
+
+  return iter == ases_.end();
+}
+
 bool LeAudioDevice::HaveAllActiveAsesSameState(AseState state) {
   log::verbose("{}", address_);
   auto iter = std::find_if(ases_.begin(), ases_.end(), [&state](const auto& ase) {
@@ -842,12 +885,25 @@ bool LeAudioDevice::IsReadyToCreateStream(void) {
     if (ase.direction == types::kLeAudioDirectionSink &&
         (ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING &&
          ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING)) {
-      return true;
+      if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+        if (ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING ||
+            ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+          return true;
+        }
+      } else {
+        return true;
+      }
     }
 
     if (ase.direction == types::kLeAudioDirectionSource &&
         ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING) {
-      return true;
+      if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+        if (ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING) {
+          return true;
+        }
+      } else {
+        return true;
+      }
     }
 
     return false;
