@@ -364,10 +364,10 @@ public final class BluetoothHidDevice implements BluetoothProfile {
         private final Callback mCallback;
         private final AttributionSource mAttributionSource;
 
-        CallbackWrapper(Executor executor, Callback callback, AttributionSource attributionSource) {
+        CallbackWrapper(Executor executor, Callback callback, AttributionSource source) {
             mExecutor = executor;
             mCallback = callback;
-            mAttributionSource = attributionSource;
+            mAttributionSource = source;
         }
 
         @Override

@@ -176,7 +176,7 @@ public class ContextMap<C extends IInterface> {
     private final Object mConnectionsLock = new Object();
 
     /** Add an entry to the application context list. */
-    public App add(UUID uuid, C callback, Context context, AttributionSource attrSource) {
+    public App add(UUID uuid, C callback, Context context, AttributionSource source) {
         int appUid = Binder.getCallingUid();
         String appName = context.getPackageManager().getNameForUid(appUid);
         if (appName == null) {
@@ -184,7 +184,7 @@ public class ContextMap<C extends IInterface> {
             appName = "Unknown App (UID: " + appUid + ")";
         }
         synchronized (mAppsLock) {
-            App app = new App(uuid, callback, appUid, appName, attrSource);
+            App app = new App(uuid, callback, appUid, appName, source);
             mApps.add(app);
             recordRegisterApp(app);
 
