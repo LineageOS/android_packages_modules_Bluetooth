@@ -6517,6 +6517,11 @@ public:
 
     if (!com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
       log::debug("leaudio_dynamic_direction_opening is not enabled.");
+      auto group = aseGroups_.FindById(group_id);
+      if (group && group->GetTargetState() == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
+        log::info("group_id: {} is suspending.", group_id);
+        return 0;
+      }
       return bluetooth::le_audio::types::kLeAudioDirectionBoth;
     }
 

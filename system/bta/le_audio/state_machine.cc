@@ -2545,6 +2545,14 @@ private:
         /* SINK ASE goes from STREAMING to QoS Configured when Disabling. */
         if (ase->expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING) {
           SetAseExpectedState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
+          auto enabled_directions =
+                  state_machine_callbacks_->OnGetEnabledDirections(group->group_id_);
+          if (ase->direction & enabled_directions) {
+            log::info("Quick disable / enable happened for {}, {}", leAudioDevice->address_,
+                      ase->id);
+            PrepareAndSendEnable(leAudioDevice, ase->direction, ase->id);
+            return;
+          }
         }
 
         if (group->HaveAllActiveDevicesAsesTheSameState(
@@ -2573,6 +2581,18 @@ private:
         }
 
         group->SetState(AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
+
+        if (ase->expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
+          /* We are here after Receiver state ready. Check if we should not enable direction */
+          auto enabled_directions =
+                  state_machine_callbacks_->OnGetEnabledDirections(group->group_id_);
+          if (ase->direction & enabled_directions) {
+            log::info("Quick disable / enable happened for {}, {}", leAudioDevice->address_,
+                      ase->id);
+            PrepareAndSendEnable(leAudioDevice, ase->direction, ase->id);
+            return;
+          }
+        }
 
         if (!group->HaveAllCisesDisconnected()) {
           return;
@@ -2649,7 +2669,8 @@ private:
             group, state_machine_callbacks_->OnGetEnabledDirections(group->group_id_));
   }
 
-  bool PrepareAndSendEnable(LeAudioDevice* leAudioDevice, uint8_t remote_directions) {
+  bool PrepareAndSendEnable(LeAudioDevice* leAudioDevice, uint8_t remote_directions,
+                            int exact_ase = -1) {
     struct bluetooth::le_audio::client_parser::ascs::ctp_enable conf;
     std::vector<struct bluetooth::le_audio::client_parser::ascs::ctp_enable> confs;
     std::vector<uint8_t> value;
@@ -2679,6 +2700,11 @@ private:
       if (ase->expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING) {
         log::warn("group_id: {}, {}, ase_id: {} ({:#x}) already enabling", leAudioDevice->group_id_,
                   leAudioDevice->address_, ase->id, ase->direction);
+        continue;
+      }
+
+      if (exact_ase >= 0 && ase->id != exact_ase) {
+        log::info("Not an exact ase: {} != {}", exact_ase, ase->id);
         continue;
       }
 
