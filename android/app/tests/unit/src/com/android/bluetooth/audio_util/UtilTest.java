@@ -27,10 +27,14 @@ import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
 
 import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+/** Test cases for {@link Util}. */
+@RunWith(AndroidJUnit4.class)
 public class UtilTest {
     private static final String SONG_MEDIA_ID = "abc123";
     private static final String SONG_TITLE = "BT Test Song";
