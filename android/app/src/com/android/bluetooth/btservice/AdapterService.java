@@ -3433,6 +3433,12 @@ public class AdapterService extends Service {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
 
+        if (Flags.identityToPseudoAddr()) {
+            device =
+                    Objects.requireNonNullElse(
+                            mRemoteDevices.getDevice(device.getAddress()), device);
+        }
+
         // Checks if any profiles are enabled or disabled and if so, only connect enabled profiles
         if (!isAllProfilesUnknown(device)) {
             return connectEnabledProfiles(device);
