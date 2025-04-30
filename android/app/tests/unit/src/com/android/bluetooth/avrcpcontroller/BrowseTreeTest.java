@@ -22,13 +22,17 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.bluetooth.BluetoothDevice;
 
+import androidx.test.runner.AndroidJUnit4;
+
 import com.android.bluetooth.avrcpcontroller.BrowseTree.BrowseNode;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.Set;
 
 /** Test cases for {@link BrowseTree}. */
+@RunWith(AndroidJUnit4.class)
 public class BrowseTreeTest {
     private static final String ILLEGAL_ID = "illegal_id";
     private static final String TEST_HANDLE = "test_handle";
