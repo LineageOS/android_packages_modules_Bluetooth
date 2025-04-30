@@ -359,3 +359,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_dynamic_data_path_change"
+    namespace: "bluetooth"
+    description: "Change the data path dynamically"
+    bug: "414773442"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
