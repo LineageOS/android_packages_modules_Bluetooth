@@ -90,33 +90,6 @@ TEST_F(PowerTelemetryTest, test_LogBleAdvDetails) {
   ASSERT_EQ(2, (int)ldc.adv_list.size());
 }
 
-TEST_F(PowerTelemetryTest, test_LogTxPower) {
-  reset();
-
-  LogDataContainer& ldc = power_telemetry::GetInstance().pimpl_->GetCurrentLogDataContainer();
-  tBTM_TX_POWER_RESULT dummy_res;
-  dummy_res.rem_bda = bdaddr;
-
-  // Failed Case. Shouldn't crash if no init data
-  dummy_res.status = tBTM_STATUS::BTM_SUCCESS;
-  void* p = &dummy_res;
-  power_telemetry::GetInstance().LogTxPower(p);
-
-  // init data
-  power_telemetry::GetInstance().LogLinkDetails(handle, bdaddr, isConnected, true);
-
-  // Successful case
-  dummy_res.tx_power = 100;
-  power_telemetry::GetInstance().LogTxPower(p);
-  ASSERT_EQ(dummy_res.tx_power, ldc.acl.link_details_map[handle].tx_power_level);
-
-  // Failed case
-  dummy_res.tx_power = 99;
-  dummy_res.status = tBTM_STATUS::BTM_UNDEFINED;
-  power_telemetry::GetInstance().LogTxPower(p);
-  ASSERT_NE(dummy_res.tx_power, ldc.acl.link_details_map[handle].tx_power_level);
-}
-
 TEST_F(PowerTelemetryTest, test_LogAclLinkDetails) {
   reset();
   LogDataContainer& ldc = power_telemetry::GetInstance().pimpl_->GetCurrentLogDataContainer();
@@ -268,10 +241,6 @@ TEST_F(PowerTelemetryTest, test_feature_flag) {
   // init data
   isConnected = true;
   LogDataContainer& ldc = power_telemetry::GetInstance().pimpl_->GetCurrentLogDataContainer();
-  tBTM_TX_POWER_RESULT dummy_res;
-  dummy_res.rem_bda = bdaddr;
-  dummy_res.status = tBTM_STATUS::BTM_SUCCESS;
-  void* p = &dummy_res;
   power_telemetry::GetInstance().LogLinkDetails(handle, bdaddr, isConnected, true);
 
   // Set feature flag to false
@@ -320,10 +289,6 @@ TEST_F(PowerTelemetryTest, test_feature_flag) {
   // Set to 1 because of fake data
   power_telemetry::GetInstance().LogLinkDetails(handle, bdaddr, isConnected, true);
   ASSERT_EQ(1, (int)ldc.acl.link_details_map.count(handle));
-
-  dummy_res.tx_power = 100;
-  power_telemetry::GetInstance().LogTxPower(p);
-  ASSERT_EQ(0, ldc.acl.link_details_map[handle].tx_power_level);
 
   power_telemetry::GetInstance().LogBleScan(10);
   ASSERT_EQ(0, (int)power_telemetry::GetInstance().pimpl_->ble_scan.count_);
