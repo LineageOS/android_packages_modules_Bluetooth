@@ -805,6 +805,11 @@ class BluetoothManagerService {
         }
 
         public void binderDied() {
+            if (Flags.bleDeathRecipientThread()) {
+                Log.w(TAG, "Binder is dead - posting the unregister of " + mPackageName);
+                mHandler.post(() -> removeBleApp(mBinder, mPackageName));
+                return;
+            }
             Log.w(TAG, "Binder is dead - unregister " + mPackageName);
 
             for (Map.Entry<IBinder, ClientDeathRecipient> entry : mBleApps.entrySet()) {
