@@ -203,7 +203,8 @@ public:
         leAudioDevice->HaveAllActiveAsesSameState(
                 AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED)) {
       log::info("{} in QoS state, proceed to Enable state", leAudioDevice->address_);
-      PrepareAndSendEnable(leAudioDevice);
+      PrepareAndSendEnable(leAudioDevice,
+                           state_machine_callbacks_->OnGetEnabledDirections(group->group_id_));
       return true;
     }
 
@@ -1397,6 +1398,8 @@ public:
       leAudioDevice->last_ase_ctp_command_sent =
               bluetooth::le_audio::client_parser::ascs::kCtpOpcodeReceiverStopReady;
 
+      SetAseExpectedState(leAudioDevice, ases_pair.source,
+                          AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
       std::vector<uint8_t> ids = {ases_pair.source->id};
       std::vector<uint8_t> value;
 
@@ -1901,6 +1904,12 @@ private:
     RemoveDataPathByCisHandle(leAudioDevice, ase->cis_conn_hdl);
   }
 
+  void SetAseExpectedState(LeAudioDevice* leAudioDevice, struct ase* ase, AseState state) {
+    log::info("{} ({}), ase_id: {}, {} -> {}", leAudioDevice->address_, leAudioDevice->group_id_,
+              ase->id, ToString(ase->expected_state), ToString(state));
+    ase->expected_state = state;
+  }
+
   void SetAseState(LeAudioDevice* leAudioDevice, struct ase* ase, AseState state) {
     log::info("{} ({}), ase_id: {}, {} -> {}", leAudioDevice->address_, leAudioDevice->group_id_,
               ase->id, ToString(ase->state), ToString(state));
@@ -2067,6 +2076,7 @@ private:
         conf.codec_config = ase->codec_config.params.RawPacket();
       }
       confs.push_back(conf);
+      SetAseExpectedState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED);
 
       msg_stream << "ASE_ID " << +conf.ase_id << ",";
       if (ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink) {
@@ -2445,7 +2455,8 @@ private:
 
         if (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
           /* We are here because of the reconnection of the single device. */
-          PrepareAndSendEnable(leAudioDevice);
+          PrepareAndSendEnable(leAudioDevice,
+                               state_machine_callbacks_->OnGetEnabledDirections(group->group_id_));
           return;
         }
 
@@ -2478,6 +2489,11 @@ private:
         }
 
         SetAseState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
+
+        /* SINK ASE goes from STREAMING to QoS Configured when Disabling. */
+        if (ase->expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING) {
+          SetAseExpectedState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
+        }
 
         if (group->HaveAllActiveDevicesAsesTheSameState(
                     AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED)) {
@@ -2558,8 +2574,8 @@ private:
     }
   }
 
-  void PrepareAndSendEnableToTheGroup(LeAudioDeviceGroup* group) {
-    log::info("group_id: {}", group->group_id_);
+  void PrepareAndSendEnableToTheGroup(LeAudioDeviceGroup* group, uint8_t remote_directions) {
+    log::info("group_id: {}, remote_directions: {}", group->group_id_, remote_directions);
 
     auto leAudioDevice = group->GetFirstActiveDevice();
     if (!leAudioDevice) {
@@ -2570,11 +2586,16 @@ private:
     }
 
     for (; leAudioDevice; leAudioDevice = group->GetNextActiveDevice(leAudioDevice)) {
-      PrepareAndSendEnable(leAudioDevice);
+      PrepareAndSendEnable(leAudioDevice, remote_directions);
     }
   }
 
-  void PrepareAndSendEnable(LeAudioDevice* leAudioDevice) {
+  void PrepareAndSendEnableToTheGroup(LeAudioDeviceGroup* group) {
+    PrepareAndSendEnableToTheGroup(
+            group, state_machine_callbacks_->OnGetEnabledDirections(group->group_id_));
+  }
+
+  void PrepareAndSendEnable(LeAudioDevice* leAudioDevice, uint8_t remote_directions) {
     struct bluetooth::le_audio::client_parser::ascs::ctp_enable conf;
     std::vector<struct bluetooth::le_audio::client_parser::ascs::ctp_enable> confs;
     std::vector<uint8_t> value;
@@ -2587,17 +2608,32 @@ private:
     ase = leAudioDevice->GetFirstActiveAse();
     log::assert_that(ase, "shouldn't be called without an active ASE");
     do {
-      log::debug("device: {}, ase_id: {}, cis_id: {}, ase state: {}", leAudioDevice->address_,
-                 ase->id, ase->cis_id, ToString(ase->state));
+      if (!(ase->direction & remote_directions)) {
+        log::info("group_id: {}, {}, ase_id: {} ({:#x}), enabled_directions {:#x} not to enable",
+                  leAudioDevice->group_id_, leAudioDevice->address_, ase->id, ase->direction,
+                  remote_directions);
+        continue;
+      }
+
+      log::debug("device: {}, ase_id: {}({:#x}), cis_id: {}, ase state: {}",
+                 leAudioDevice->address_, ase->id, ase->direction, ase->cis_id,
+                 ToString(ase->state));
       conf.ase_id = ase->id;
       conf.metadata = ase->metadata.RawPacket();
       confs.push_back(conf);
+      SetAseExpectedState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING);
 
       /* Below is just for log history */
       msg_stream << "ASE_ID " << +ase->id << ",";
       extra_stream << "meta: " << base::HexEncode(conf.metadata.data(), conf.metadata.size())
                    << ";;";
     } while ((ase = leAudioDevice->GetNextActiveAse(ase)));
+
+    if (confs.empty()) {
+      log::warn("group_id: {}, {}, nothing to enable", leAudioDevice->group_id_,
+                leAudioDevice->address_);
+      return;
+    }
 
     leAudioDevice->last_ase_ctp_command_sent =
             bluetooth::le_audio::client_parser::ascs::kCtpOpcodeEnable;
@@ -2639,6 +2675,7 @@ private:
       log::debug("device: {}, ase_id: {}, cis_id: {}, ase state: {}", leAudioDevice->address_,
                  ase->id, ase->cis_id, ToString(ase->state));
       ids.push_back(ase->id);
+      SetAseExpectedState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING);
 
       msg_stream << "ASE_ID " << +ase->id << ", ";
     } while ((ase = leAudioDevice->GetNextActiveAse(ase)));
@@ -2690,6 +2727,8 @@ private:
                  ase->id, ase->cis_id, ToString(ase->state));
       if (ase->state != AseState::BTA_LE_AUDIO_ASE_STATE_IDLE) {
         ids.push_back(ase->id);
+        SetAseExpectedState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING);
+
         stream << "ASE_ID " << +ase->id << ",";
       } else {
         log::info("{}, ase: {} already in idle. Deactivate it", leAudioDevice->address_, ase->id);
@@ -2786,6 +2825,7 @@ private:
         validate_max_sdu_size = true;
       }
       confs.push_back(conf);
+      SetAseExpectedState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
 
       // dir...cis_id,sdu,lat,rtn,phy,frm;;
       extra_stream << +conf.cis << "," << +conf.max_sdu << "," << +conf.max_transport_latency << ","
@@ -2908,6 +2948,7 @@ private:
       if (ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSource) {
         stream << "ASE_ID " << +ase->id << ",";
         ids.push_back(ase->id);
+        SetAseExpectedState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
       }
     } while ((ase = leAudioDevice->GetNextActiveAse(ase)));
 
@@ -2941,6 +2982,11 @@ private:
                     ToString(group->GetTargetState()));
           group->PrintDebugState();
           return;
+        }
+
+        if (ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink) {
+          /* For remote Sink direction, STREAMING state is expected just after ENABLING */
+          SetAseExpectedState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
         }
 
         if (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
@@ -3118,6 +3164,10 @@ private:
       case AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING:
         SetAseState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING);
 
+        if (ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSource) {
+          /* For Source ASE expect QoS Configured state after Disabling */
+          SetAseExpectedState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
+        }
         /* Remote may autonomously bring ASEs to QoS configured state */
         if (group->GetTargetState() != AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
           ProcessAutonomousDisable(group, leAudioDevice, ase);

@@ -178,6 +178,7 @@ public:
           delete;
 
   ~MockLeAudioGroupStateMachineCallbacks() override = default;
+  MOCK_METHOD((uint8_t), OnGetEnabledDirections, (int group_id), (override));
   MOCK_METHOD((void), StatusReportCb, (int group_id, bluetooth::le_audio::GroupStreamStatus status),
               (override));
   MOCK_METHOD((void), OnStateTransitionTimeout, (int group_id), (override));
@@ -287,6 +288,11 @@ protected:
             .WillByDefault(Invoke([](int group_id, bluetooth::le_audio::GroupStreamStatus status) {
               log::debug("[Testing] StatusReportCb: group id: {}, status: {}", group_id, status);
             }));
+
+    ON_CALL(mock_callbacks_, OnGetEnabledDirections(_)).WillByDefault(Invoke([](int group_id) {
+      log::debug("[Testing] OnGetEnabledDirections: group_id: {} ", group_id);
+      return types::kLeAudioDirectionBoth;
+    }));
 
     MockCsisClient::SetMockInstanceForTesting(&mock_csis_client_module_);
     ON_CALL(mock_csis_client_module_, Get()).WillByDefault(Return(&mock_csis_client_module_));
@@ -1268,6 +1274,9 @@ protected:
                 ASSERT_NE(it, device->ases_.end());
                 const auto ase = &(*it);
 
+                ASSERT_EQ(ase->expected_state,
+                          types::AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED);
+
                 // Skip target latency param
                 ase_p++;
 
@@ -1331,6 +1340,9 @@ protected:
 
               // Inject Configured QoS state notification for each requested ASE
               auto* ase_p = &value[2];
+              std::vector<struct types::ase*> ases;
+              std::vector<client_parser::ascs::ase_qos_configured_state_params>
+                      qos_configured_state_params_vec;
               for (auto i = 0u; i < num_ase; ++i) {
                 client_parser::ascs::ase_qos_configured_state_params qos_configured_state_params;
 
@@ -1361,13 +1373,16 @@ protected:
                 qos_configured_state_params.pres_delay =
                         (uint16_t)((ase_p[0] << 16) | (ase_p[1] << 8) | ase_p[2]);
                 ase_p += 3;
+                ASSERT_EQ(ase->expected_state,
+                          types::AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
+                ases.push_back(ase);
 
                 if (caching) {
                   log::info("Device: {}", device->address_);
                   if (cached_ase_to_cis_id_map_.count(device->address_) > 0) {
                     auto ase_list = cached_ase_to_cis_id_map_.at(device->address_);
                     if (ase_list.count(ase_id) > 0) {
-                      auto cis_id = ase_list.at(ase_id);
+                      auto cis_id = ase_list.at(ase->id);
                       ASSERT_EQ(cis_id, qos_configured_state_params.cis_id);
                     } else {
                       ase_list[ase_id] = qos_configured_state_params.cis_id;
@@ -1381,9 +1396,13 @@ protected:
                   cached_qos_configuration_map_[ase_id] = qos_configured_state_params;
                 }
 
+                qos_configured_state_params_vec.push_back(qos_configured_state_params);
+              }
+
+              for (int i = 0; i < static_cast<int>(ases.size()); i++) {
                 if (inject_qos_configured) {
-                  InjectAseStateNotification(ase, device, group, ascs::kAseStateQoSConfigured,
-                                             &qos_configured_state_params);
+                  InjectAseStateNotification(ases[i], device, group, ascs::kAseStateQoSConfigured,
+                                             &qos_configured_state_params_vec[i]);
                 }
               }
             }));
@@ -1502,6 +1521,8 @@ protected:
 
               // Inject Streaming ASE state notification for each requested ASE
               auto* ase_p = &value[2];
+              std::vector<struct types::ase*> ases;
+              std::vector<client_parser::ascs::ase_transient_state_params> enable_params_vec;
               for (auto i = 0u; i < num_ase; ++i) {
                 /* Check if this is a valid ASE ID  */
                 auto ase_id = *ase_p++;
@@ -1509,7 +1530,9 @@ protected:
                                        [ase_id](auto& ase) { return ase.id == ase_id; });
                 ASSERT_NE(it, device->ases_.end());
                 const auto ase = &(*it);
+                ases.push_back(ase);
 
+                ASSERT_EQ(ase->expected_state, types::AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING);
                 auto meta_len = *ase_p++;
                 auto num_handled_bytes = ase_p - value.data();
                 ase_p += meta_len;
@@ -1518,9 +1541,15 @@ protected:
                         .metadata =
                                 std::vector<uint8_t>(value.begin() + num_handled_bytes,
                                                      value.begin() + num_handled_bytes + meta_len)};
+                enable_params_vec.push_back(enable_params);
+              }
 
+              for (int i = 0; i < static_cast<int>(ases.size()); i++) {
                 // Server does the 'ReceiverStartReady' on its own - goes to
                 // Streaming, when in Sink role
+                auto ase = ases[i];
+                auto enable_params = enable_params_vec[i];
+
                 if (ase->direction & bluetooth::le_audio::types::kLeAudioDirectionSink) {
                   if (inject_enabling) {
                     InjectAseStateNotification(ase, device, group, ascs::kAseStateEnabling,
@@ -1556,6 +1585,7 @@ protected:
 
               // Inject Disabling & QoS Conf. ASE state notification for each ASE
               auto* ase_p = &value[2];
+              std::vector<struct types::ase*> ases;
               for (auto i = 0u; i < num_ase; ++i) {
                 /* Check if this is a valid ASE ID  */
                 auto ase_id = *ase_p++;
@@ -1564,6 +1594,11 @@ protected:
                 ASSERT_NE(it, device->ases_.end());
                 const auto ase = &(*it);
 
+                ASSERT_EQ(ase->expected_state, types::AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING);
+                ases.push_back(ase);
+              }
+
+              for (auto ase : ases) {
                 // The Disabling state is present for Source ASE
                 if (ase->direction & bluetooth::le_audio::types::kLeAudioDirectionSource) {
                   client_parser::ascs::ase_transient_state_params disabling_params = {
@@ -1599,6 +1634,7 @@ protected:
 
               // Inject Streaming ASE state notification for each Source ASE
               auto* ase_p = &value[2];
+              std::vector<struct types::ase*> ases;
               for (auto i = 0u; i < num_ase; ++i) {
                 /* Check if this is a valid ASE ID  */
                 auto ase_id = *ase_p++;
@@ -1609,6 +1645,12 @@ protected:
                 // Once we did the 'ReceiverStartReady' the server goes to
                 // Streaming, when in Source role
                 const auto& ase = &(*it);
+
+                ASSERT_EQ(ase->expected_state, types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
+                ases.push_back(ase);
+              }
+
+              for (auto ase : ases) {
                 client_parser::ascs::ase_transient_state_params streaming_params = {
                         .metadata = ase->metadata.RawPacket()};
                 InjectAseStateNotification(ase, device, group, ascs::kAseStateStreaming,
@@ -1633,6 +1675,7 @@ protected:
               // Inject QoS configured ASE state notification for each Source
               // ASE
               auto* ase_p = &value[2];
+              std::vector<struct types::ase*> ases;
               for (auto i = 0u; i < num_ase; ++i) {
                 /* Check if this is a valid ASE ID  */
                 auto ase_id = *ase_p++;
@@ -1641,7 +1684,12 @@ protected:
                 ASSERT_NE(it, device->ases_.end());
 
                 const auto& ase = &(*it);
+                ASSERT_EQ(ase->expected_state,
+                          types::AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
+                ases.push_back(ase);
+              }
 
+              for (auto ase : ases) {
                 // FIXME: For now our fake peer does not remember qos params
                 client_parser::ascs::ase_qos_configured_state_params qos_configured_state_params;
                 InjectAseStateNotification(ase, device, group, ascs::kAseStateQoSConfigured,
@@ -1678,6 +1726,9 @@ protected:
 
               // Inject Releasing & Idle ASE state notification for each ASE
               auto* ase_p = &value[2];
+              std::vector<struct types::ase*> ases;
+
+              // Find ASES and check state
               for (auto i = 0u; i < num_ase; ++i) {
                 /* Check if this is a valid ASE ID  */
                 auto ase_id = *ase_p++;
@@ -1686,6 +1737,12 @@ protected:
                 ASSERT_NE(it, device->ases_.end());
                 const auto ase = &(*it);
 
+                ASSERT_EQ(ase->expected_state, types::AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING);
+                ases.push_back(ase);
+              }
+
+              // execute operation
+              for (auto ase : ases) {
                 // Prevent RELEASING notification for the whole group
                 if (!inject_releasing) {
                   continue;
@@ -1705,14 +1762,16 @@ protected:
                 }
 
                 /* Check if codec configuration is cached */
-                if (cached_codec_configuration_map_.count(ase_id) > 0) {
+                if (cached_codec_configuration_map_.count(ase->id) > 0) {
                   InjectAseStateNotification(ase, device, group, ascs::kAseStateCodecConfigured,
-                                             &cached_codec_configuration_map_[ase_id]);
+                                             &cached_codec_configuration_map_[ase->id]);
                 } else {
                   // Release - no caching
                   InjectAseStateNotification(ase, device, group, ascs::kAseStateIdle, nullptr);
                 }
               }
+
+
             }));
   }
 

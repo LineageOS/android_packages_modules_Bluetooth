@@ -38,6 +38,7 @@ public:
     virtual void StatusReportCb(int group_id, bluetooth::le_audio::GroupStreamStatus status) = 0;
     virtual void OnStateTransitionTimeout(int group_id) = 0;
     virtual void OnUpdatedCisConfiguration(int group_id, uint8_t direction) = 0;
+    virtual uint8_t OnGetEnabledDirections(int group_id) = 0;
   };
 
   virtual ~LeAudioGroupStateMachine() = default;
