@@ -704,16 +704,6 @@ public class GattService extends ProfileService {
         if (app == null) {
             return;
         }
-        try {
-            permissionCheck(connId, handle);
-        } catch (SecurityException ex) {
-            // Only throws on apps with target SDK T+ as this old API did not throw prior to T
-            if (checkCallerTargetSdk(this, app.packageName, Build.VERSION_CODES.TIRAMISU)) {
-                throw ex;
-            }
-            Log.w(TAG, "onNotify() - permission check failed!");
-            return;
-        }
         callbackToApp(() -> app.callback.onNotify(device, handle, data));
     }
 
