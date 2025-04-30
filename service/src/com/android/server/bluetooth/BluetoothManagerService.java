@@ -998,6 +998,9 @@ class BluetoothManagerService {
 
     // Clear all apps using BLE scan only mode.
     private void clearBleApps() {
+        if (Flags.bleDeathRecipientThread()) {
+            mBleApps.entrySet().stream().forEach(e -> e.getKey().unlinkToDeath(e.getValue(), 0));
+        }
         mBleApps.clear();
     }
 
