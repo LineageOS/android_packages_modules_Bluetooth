@@ -785,6 +785,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
                 PbapStateMachine.make(
                         this,
                         mHandlerThread.getLooper(),
+                        mAdapterService,
                         remoteDevice,
                         socket,
                         mSessionStatusHandler,
