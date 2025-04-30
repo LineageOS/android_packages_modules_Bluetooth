@@ -1165,6 +1165,7 @@ public:
 
     bool result = groupStateMachine_->StartStream(group, configuration_context_type,
                                                   remote_contexts, ccids);
+    setConfigurationContextType(configuration_context_type);
 
     if (result && !group_is_streaming) {
       /* Notify Java about new configuration when start stream has been accepted and
@@ -4532,7 +4533,7 @@ public:
     }
 
     log::info("Session reconfiguration needed group: {} for context type: {}", group->group_id_,
-              ToHexString(context_type));
+              ToString(context_type));
     if (com::android::bluetooth::flags::dsa_use_codec_extensibility() && dsa_reconfigure_needed) {
       log::debug("Invalidate current {} configuration for DSA mode change",
                  common::ToString(context_type));
@@ -4677,13 +4678,17 @@ public:
       log::error("Invalid group: {}", static_cast<int>(active_group_id_));
       return;
     }
+    auto upcoming_configuration_context_type = configuration_context_type_;
 
     if (com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+      /* Get configuration context type from the audioContextTypeManager only when it is unknown */
       auto [new_context_type, _] = audioContextTypeManager_->GetAudioContextsForTheGroup(group);
-      setConfigurationContextType(new_context_type);
+      upcoming_configuration_context_type = new_context_type;
     }
 
-    log::info("configuration_context_type_: {}", ToString(configuration_context_type_));
+    log::info("Group state: {}, targetState: {},  upcoming_configuration_context_type_: {}",
+              ToString(group->GetState()), ToString(group->GetTargetState()),
+              ToString(upcoming_configuration_context_type));
 
     /* Group should not be resumed if:
      * - configured context type is not allowed
@@ -4694,23 +4699,24 @@ public:
         (!group->GetAllowedContextMask(bluetooth::le_audio::types::kLeAudioDirectionSink)
                   .test_all(local_metadata_context_types_.source) ||
          !group->GetAllowedContextMask(bluetooth::le_audio::types::kLeAudioDirectionSink)
-                  .test(configuration_context_type_))) {
+                  .test(upcoming_configuration_context_type))) {
       log::warn(
               "Block source resume request context types: {}, allowed context mask: {}, "
               "configured: {}",
               ToString(local_metadata_context_types_.source),
               ToString(group->GetAllowedContextMask(
                       bluetooth::le_audio::types::kLeAudioDirectionSink)),
-              ToString(configuration_context_type_));
+              ToString(upcoming_configuration_context_type));
       CancelLocalAudioSourceStreamingRequest();
       return;
     }
 
     /* Check if the device resume is allowed */
     if (!group->HasCodecConfigurationForDirection(
-                configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
+                upcoming_configuration_context_type,
+                bluetooth::le_audio::types::kLeAudioDirectionSink)) {
       log::error("invalid resume request for context type: {}",
-                 ToHexString(configuration_context_type_));
+                 ToString(upcoming_configuration_context_type));
       if (com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
         handleInvalidContextTypeResumeRequest(group);
       }
@@ -4720,9 +4726,9 @@ public:
 
     log::debug(
             "active_group_id: {}\n audio_receiver_state: {}\n audio_sender_state: "
-            "{}\n configuration_context_type_: {}\n",
+            "{}\n upcoming_configuration_context_type: {}\n",
             active_group_id_, audio_receiver_state_, audio_sender_state_,
-            ToHexString(configuration_context_type_));
+            ToString(upcoming_configuration_context_type));
 
     switch (audio_sender_state_) {
       case AudioState::STARTED:
@@ -4747,16 +4753,17 @@ public:
           case AudioState::READY_TO_START:
             audio_sender_state_ = AudioState::READY_TO_START;
             if (!group->IsDirectionAvailableForConfiguration(
-                        configuration_context_type_,
+                        upcoming_configuration_context_type,
                         bluetooth::le_audio::types::kLeAudioDirectionSink)) {
               log::warn(
                       "sink is not configured. \n audio_receiver_state: {} "
                       "\naudio_sender_state: {} \n isPendingConfiguration: {} \n "
                       "Reconfiguring to {}",
                       ToString(audio_receiver_state_), ToString(audio_sender_state_),
-                      group->IsPendingConfiguration(), ToString(configuration_context_type_));
+                      group->IsPendingConfiguration(),
+                      ToString(upcoming_configuration_context_type));
               group->PrintDebugState();
-              SetConfigurationAndStopStreamWhenNeeded(group, configuration_context_type_);
+              SetConfigurationAndStopStreamWhenNeeded(group, upcoming_configuration_context_type);
             }
             break;
           case AudioState::STARTED:
@@ -4766,7 +4773,7 @@ public:
              */
             if (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
               if (group->IsDirectionAvailableForConfiguration(
-                          configuration_context_type_,
+                          upcoming_configuration_context_type,
                           bluetooth::le_audio::types::kLeAudioDirectionSink)) {
                 StartSendingAudio(active_group_id_);
               } else {
@@ -4775,9 +4782,10 @@ public:
                         "\naudio_sender_state: {} \n isPendingConfiguration: {} \n "
                         "Reconfiguring to {}",
                         ToString(audio_receiver_state_), ToString(audio_sender_state_),
-                        group->IsPendingConfiguration(), ToString(configuration_context_type_));
+                        group->IsPendingConfiguration(),
+                        ToString(upcoming_configuration_context_type));
                 group->PrintDebugState();
-                SetConfigurationAndStopStreamWhenNeeded(group, configuration_context_type_);
+                SetConfigurationAndStopStreamWhenNeeded(group, upcoming_configuration_context_type);
               }
             } else {
               log::error(
@@ -4785,7 +4793,8 @@ public:
                       "\naudio_sender_state: {} \n isPendingConfiguration: {} \n "
                       "Reconfiguring to {}",
                       ToString(audio_receiver_state_), ToString(audio_sender_state_),
-                      group->IsPendingConfiguration(), ToString(configuration_context_type_));
+                      group->IsPendingConfiguration(),
+                      ToString(upcoming_configuration_context_type));
               group->PrintDebugState();
               CancelStreamingRequest();
             }
@@ -4800,7 +4809,7 @@ public:
             /* If the other direction is streaming we can start sending audio */
             if (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
               if (group->IsDirectionAvailableForConfiguration(
-                          configuration_context_type_,
+                          upcoming_configuration_context_type,
                           bluetooth::le_audio::types::kLeAudioDirectionSink)) {
                 StopSuspendTimeout();
                 StartSendingAudio(active_group_id_);
@@ -4810,9 +4819,10 @@ public:
                         "\naudio_sender_state: {} \n isPendingConfiguration: {} \n "
                         "Reconfiguring to {}",
                         ToString(audio_receiver_state_), ToString(audio_sender_state_),
-                        group->IsPendingConfiguration(), ToString(configuration_context_type_));
+                        group->IsPendingConfiguration(),
+                        ToString(upcoming_configuration_context_type));
                 group->PrintDebugState();
-                SetConfigurationAndStopStreamWhenNeeded(group, configuration_context_type_);
+                SetConfigurationAndStopStreamWhenNeeded(group, upcoming_configuration_context_type);
               }
             } else {
               log::error(
@@ -4820,7 +4830,8 @@ public:
                       "\naudio_sender_state: {} \n isPendingConfiguration: {} \n "
                       "Reconfiguring to {}",
                       ToString(audio_receiver_state_), ToString(audio_sender_state_),
-                      group->IsPendingConfiguration(), ToString(configuration_context_type_));
+                      group->IsPendingConfiguration(),
+                      ToString(upcoming_configuration_context_type));
               group->PrintDebugState();
               CancelStreamingRequest();
             }
@@ -4838,7 +4849,7 @@ public:
                 "audio_receiver_state: {} \naudio_sender_state: {} \n "
                 "isPendingConfiguration: {} \n Reconfiguring to {}",
                 ToString(audio_receiver_state_), ToString(audio_sender_state_),
-                group->IsPendingConfiguration(), ToString(configuration_context_type_));
+                group->IsPendingConfiguration(), ToString(upcoming_configuration_context_type));
         group->PrintDebugState();
         break;
       case AudioState::READY_TO_RELEASE:
@@ -4851,7 +4862,7 @@ public:
             StopSuspendTimeout();
             ConfirmLocalAudioSourceStreamingRequest();
             bluetooth::le_audio::MetricsCollector::Get()->OnStreamStarted(
-                    active_group_id_, configuration_context_type_);
+                    active_group_id_, upcoming_configuration_context_type);
             break;
           case AudioState::RELEASING:
             /* Keep waiting. After release is done, Audio Hal will be notified
@@ -4986,7 +4997,9 @@ public:
       }
     }
 
-    log::info("configuration_context_type_: {}", ToString(configuration_context_type_));
+    log::info("Group state: {}, targetState: {},  configuration_context_type_: {}",
+              ToString(group->GetState()), ToString(group->GetTargetState()),
+              ToString(configuration_context_type_));
 
     /* Group should not be resumed if:
      * - configured context type is not allowed
@@ -5013,7 +5026,7 @@ public:
     if (!group->HasCodecConfigurationForDirection(
                 configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
       log::error("invalid resume request for context type: {}",
-                 ToHexString(configuration_context_type_));
+                 ToString(configuration_context_type_));
       if (com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
         handleInvalidContextTypeResumeRequest(group);
       }
@@ -5025,7 +5038,7 @@ public:
             "active_group_id: {}\n audio_receiver_state: {}\n audio_sender_state: "
             "{}\n configuration_context_type_: {}\n group {}\n",
             active_group_id_, audio_receiver_state_, audio_sender_state_,
-            ToHexString(configuration_context_type_), group ? " exist " : " does not exist ");
+            ToString(configuration_context_type_), group ? " exist " : " does not exist ");
 
     switch (audio_receiver_state_) {
       case AudioState::STARTED:
@@ -5232,7 +5245,7 @@ public:
 
     log::info("group_id {}, previous_context {} context type {} ({}), {}", group->group_id_,
               ToString(previous_context_type), ToString(new_context_type),
-              ToHexString(new_context_type), ToString(reconfig_result));
+              ToString(new_context_type), ToString(reconfig_result));
     if (reconfig_result == AudioReconfigurationResult::RECONFIGURATION_NOT_NEEDED) {
       return false;
     }

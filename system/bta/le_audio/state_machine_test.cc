@@ -2770,6 +2770,13 @@ TEST_F(StateMachineTest, testStreamMultipleMedia_OneMemberHasNoAsesAndNotConnect
   // Check if group has transitioned to a proper state
   ASSERT_EQ(group->GetState(), types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
   ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+
+  // Validate direcions
+  auto group_config = group->GetActiveConfiguration();
+  ASSERT_NE(group_config, nullptr);
+  auto [sink_is_enabled, source_is_enabled] = group_config->getDirections();
+  ASSERT_TRUE(sink_is_enabled);
+  ASSERT_FALSE(source_is_enabled);
 }
 
 TEST_F(StateMachineTest, testStreamSingleConversational_TwsWithTwoBidirectional) {
@@ -2826,6 +2833,13 @@ TEST_F(StateMachineTest, testStreamSingleConversational_TwsWithTwoBidirectional)
   // Check if group has transitioned to a proper state
   ASSERT_EQ(group->GetState(), types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
   ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+
+  // Validate direcions
+  auto group_config = group->GetActiveConfiguration();
+  ASSERT_NE(group_config, nullptr);
+  auto [sink_is_enabled, source_is_enabled] = group_config->getDirections();
+  ASSERT_TRUE(sink_is_enabled);
+  ASSERT_TRUE(source_is_enabled);
 }
 
 TEST_F(StateMachineTest, testStreamMultipleConversational) {

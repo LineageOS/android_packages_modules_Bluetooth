@@ -215,6 +215,7 @@ public:
   CodecManager::UnicastConfigurationRequirements GetAudioSetConfigurationRequirements(
           types::LeAudioContextType ctx_type) const;
   types::BidirectionalPair<bool> GetDirectionSupport(types::LeAudioContextType ctx_type) const;
+  types::BidirectionalPair<bool> GetConfiguredDirections(void);
   bool SetPreferredAudioSetConfiguration(
           const bluetooth::le_audio::btle_audio_codec_config_t& input_codec_config,
           const bluetooth::le_audio::btle_audio_codec_config_t& output_codec_config) const;
@@ -297,10 +298,13 @@ public:
   }
 
   inline void SetConfigurationContextType(types::LeAudioContextType context_type) {
+    log::debug("group_id: {}, {} -> {}", group_id_, common::ToString(configuration_context_type_),
+               common::ToString(context_type));
     configuration_context_type_ = context_type;
   }
 
   inline types::LeAudioContextType GetConfigurationContextType(void) const {
+    log::debug("group_id: {}, {}", group_id_, common::ToString(configuration_context_type_));
     return configuration_context_type_;
   }
 
