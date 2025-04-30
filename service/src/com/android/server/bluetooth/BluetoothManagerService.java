@@ -855,6 +855,36 @@ class BluetoothManagerService {
         }
     }
 
+    private void addBleApp(IBinder token, String packageName) {
+        String header = "addBleApp(" + token + ", " + packageName + "): ";
+        ClientDeathRecipient r = mBleApps.get(token);
+        if (r != null) {
+            Log.v(TAG, header + "Lifecycle is already monitored");
+            return;
+        }
+        ClientDeathRecipient deathRec = new ClientDeathRecipient(packageName, token);
+        try {
+            token.linkToDeath(deathRec, 0);
+        } catch (RemoteException ex) {
+            Log.e(TAG, header + "Already dead");
+            return;
+        }
+        mBleApps.put(token, deathRec);
+        Log.v(TAG, header + "Monitoring lifecycle");
+    }
+
+    private void removeBleApp(IBinder token, String packageName) {
+        String header = "removeBleApp(" + token + ", " + packageName + "): ";
+        ClientDeathRecipient r = mBleApps.get(token);
+        if (r == null) {
+            Log.v(TAG, header + "Lifecycle is already un-monitored");
+            return;
+        }
+        token.unlinkToDeath(r, 0);
+        mBleApps.remove(token);
+        Log.d(TAG, header + "Lifecycle no longer monitored");
+    }
+
     private int updateBleAppCount(IBinder token, boolean enable, String packageName) {
         String header = "updateBleAppCount(" + token + ", " + enable + ", " + packageName + ")";
         ClientDeathRecipient r = mBleApps.get(token);
@@ -906,7 +936,11 @@ class BluetoothManagerService {
             return false;
         }
 
-        updateBleAppCount(token, true, packageName);
+        if (Flags.bleDeathRecipientThread()) {
+            addBleApp(token, packageName);
+        } else {
+            updateBleAppCount(token, true, packageName);
+        }
 
         if (mState.oneOf(
                 STATE_ON,
@@ -938,7 +972,12 @@ class BluetoothManagerService {
             Log.i(TAG, "disableBle: Already disabled");
             return false;
         }
-        updateBleAppCount(token, false, packageName);
+
+        if (Flags.bleDeathRecipientThread()) {
+            removeBleApp(token, packageName);
+        } else {
+            updateBleAppCount(token, false, packageName);
+        }
 
         if (mState.oneOf(STATE_BLE_ON) && !isBleAppPresent()) {
             if (mEnable) {
