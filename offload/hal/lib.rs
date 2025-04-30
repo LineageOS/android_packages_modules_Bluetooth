@@ -18,6 +18,9 @@ mod service;
 
 pub use service::{HciProxy, HciProxyCallbacks};
 
+use core::ffi::CStr;
+use std::io::Write;
+
 #[allow(missing_docs)]
 pub trait HciHal: Send + Sync {
     fn initialize(&self, client: HciProxyCallbacks);
@@ -26,7 +29,12 @@ pub trait HciHal: Send + Sync {
     fn send_iso(&self, data: &[u8]);
     fn send_sco(&self, data: &[u8]);
     fn close(&self);
-    fn client_died(&self);
+    fn client_died(&self) {}
+
+    /// # Safety
+    ///
+    /// `_writer` must be backed by a concrete std::fs::File type
+    unsafe fn dump(&self, _writer: &mut dyn Write, _args: &[&CStr]) {}
 }
 
 #[allow(missing_docs)]
