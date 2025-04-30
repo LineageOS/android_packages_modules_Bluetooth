@@ -2818,6 +2818,7 @@ public class AdapterService extends Service {
         mBondAttemptCallerInfo.put(device.getAddress(), createBondCaller);
 
         mRemoteDevices.setBondingInitiatedLocally(device);
+        addAssociatedPackage(device, callingPackage);
 
         // Pairing is unreliable while scanning, so cancel discovery
         // Note, remove this when native stack improves
