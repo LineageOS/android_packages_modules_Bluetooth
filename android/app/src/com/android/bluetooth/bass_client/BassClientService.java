@@ -1656,6 +1656,15 @@ public class BassClientService extends ProfileService {
             Log.e(TAG, "connect: connection policy set to forbidden");
             return false;
         }
+
+        final ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
+        if (!Utils.arrayContains(featureUuids, BluetoothUuid.BASS)) {
+            Log.e(
+                    TAG,
+                    "connect: Cannot connect to " + device + " : Remote does not have BASS UUID");
+            return false;
+        }
+
         synchronized (mStateMachines) {
             BassClientStateMachine stateMachine = getOrCreateStateMachine(device);
             if (stateMachine == null) {
