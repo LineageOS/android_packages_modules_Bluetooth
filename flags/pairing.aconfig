@@ -52,16 +52,6 @@ flag {
 }
 
 flag {
-    name: "prevent_service_connections_on_remove_bond"
-    namespace: "bluetooth"
-    description: "Disable service connections on remove bond"
-    bug: "378736590"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "donot_update_sec_flags_on_csrk_save"
     namespace: "bluetooth"
     description: "Updating sec flags while saving csrk info can cause setting securith level wrongly as security level might have not determined at that time"
