@@ -326,7 +326,7 @@ public final class BluetoothCodecConfig implements Parcelable {
     }
 
     private BluetoothCodecConfig(Parcel in) {
-        mCodecType = BluetoothCodecType.createFromType(in.readInt());
+        mCodecType = in.readBoolean() ? BluetoothCodecType.createFromParcel(in) : null;
         mCodecPriority = in.readInt();
         mSampleRate = in.readInt();
         mBitsPerSample = in.readInt();
@@ -496,7 +496,12 @@ public final class BluetoothCodecConfig implements Parcelable {
      */
     @Override
     public void writeToParcel(Parcel out, int flags) {
-        out.writeInt(getCodecType());
+        if (mCodecType != null) {
+            out.writeBoolean(true);
+            mCodecType.writeToParcel(out, flags);
+        } else {
+            out.writeBoolean(false);
+        }
         out.writeInt(mCodecPriority);
         out.writeInt(mSampleRate);
         out.writeInt(mBitsPerSample);

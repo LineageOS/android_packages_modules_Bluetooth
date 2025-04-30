@@ -75,6 +75,19 @@ static std::shared_timed_mutex interface_mutex;
 static jobject mCallbacksObj = nullptr;
 static std::shared_timed_mutex callbacks_mutex;
 
+static jobject newBluetoothCodecType(CallbackEnv& env, btav_a2dp_codec_index_t codec_type) {
+  for (auto const& codec : supported_codecs) {
+    if (codec.codec_capabilities.codec_type == codec_type) {
+      return env->NewObject(android_bluetooth_BluetoothCodecType.clazz,
+                            android_bluetooth_BluetoothCodecType.constructor, codec_type,
+                            codec.codec_id, env->NewStringUTF(codec.name.c_str()));
+    }
+  }
+
+  log::warn("unable to create BluetoothCodecStatus from codec type {}", codec_type);
+  return nullptr;
+}
+
 static void bta2dp_connection_state_callback(const RawAddress& bd_addr,
                                              btav_connection_state_t state,
                                              const btav_error_t& /* error */) {
@@ -140,7 +153,8 @@ static void bta2dp_audio_config_callback(
 
   jobject codecConfigObj = sCallbackEnv->NewObject(
           android_bluetooth_BluetoothCodecConfig.clazz,
-          android_bluetooth_BluetoothCodecConfig.constructor, (jint)codec_config.codec_type,
+          android_bluetooth_BluetoothCodecConfig.constructor,
+          newBluetoothCodecType(sCallbackEnv, codec_config.codec_type),
           (jint)codec_config.codec_priority, (jint)codec_config.sample_rate,
           (jint)codec_config.bits_per_sample, (jint)codec_config.channel_mode,
           (jlong)codec_config.codec_specific_1, (jlong)codec_config.codec_specific_2,
@@ -153,10 +167,12 @@ static void bta2dp_audio_config_callback(
   for (auto const& cap : codecs_local_capabilities) {
     jobject capObj = sCallbackEnv->NewObject(
             android_bluetooth_BluetoothCodecConfig.clazz,
-            android_bluetooth_BluetoothCodecConfig.constructor, (jint)cap.codec_type,
-            (jint)cap.codec_priority, (jint)cap.sample_rate, (jint)cap.bits_per_sample,
-            (jint)cap.channel_mode, (jlong)cap.codec_specific_1, (jlong)cap.codec_specific_2,
-            (jlong)cap.codec_specific_3, (jlong)cap.codec_specific_4);
+            android_bluetooth_BluetoothCodecConfig.constructor,
+            newBluetoothCodecType(sCallbackEnv, cap.codec_type), (jint)cap.codec_priority,
+            (jint)cap.sample_rate, (jint)cap.bits_per_sample, (jint)cap.channel_mode,
+            (jlong)cap.codec_specific_1, (jlong)cap.codec_specific_2, (jlong)cap.codec_specific_3,
+            (jlong)cap.codec_specific_4);
+
     sCallbackEnv->SetObjectArrayElement(local_capabilities_array, i++, capObj);
     sCallbackEnv->DeleteLocalRef(capObj);
   }
@@ -168,10 +184,11 @@ static void bta2dp_audio_config_callback(
   for (auto const& cap : codecs_selectable_capabilities) {
     jobject capObj = sCallbackEnv->NewObject(
             android_bluetooth_BluetoothCodecConfig.clazz,
-            android_bluetooth_BluetoothCodecConfig.constructor, (jint)cap.codec_type,
-            (jint)cap.codec_priority, (jint)cap.sample_rate, (jint)cap.bits_per_sample,
-            (jint)cap.channel_mode, (jlong)cap.codec_specific_1, (jlong)cap.codec_specific_2,
-            (jlong)cap.codec_specific_3, (jlong)cap.codec_specific_4);
+            android_bluetooth_BluetoothCodecConfig.constructor,
+            newBluetoothCodecType(sCallbackEnv, cap.codec_type), (jint)cap.codec_priority,
+            (jint)cap.sample_rate, (jint)cap.bits_per_sample, (jint)cap.channel_mode,
+            (jlong)cap.codec_specific_1, (jlong)cap.codec_specific_2, (jlong)cap.codec_specific_3,
+            (jlong)cap.codec_specific_4);
     sCallbackEnv->SetObjectArrayElement(selectable_capabilities_array, i++, capObj);
     sCallbackEnv->DeleteLocalRef(capObj);
   }
@@ -512,7 +529,8 @@ int register_com_android_bluetooth_a2dp(JNIEnv* env) {
   env->DeleteLocalRef(jniA2dpNativeInterfaceClass);
 
   const JNIJavaMethod codecConfigCallbacksMethods[] = {
-          {"<init>", "(IIIIIJJJJ)V", &android_bluetooth_BluetoothCodecConfig.constructor},
+          {"<init>", "(Landroid/bluetooth/BluetoothCodecType;IIIIJJJJ)V",
+           &android_bluetooth_BluetoothCodecConfig.constructor},
           {"getCodecType", "()I", &android_bluetooth_BluetoothCodecConfig.getCodecType},
           {"getExtendedCodecType", "()Landroid/bluetooth/BluetoothCodecType;",
            &android_bluetooth_BluetoothCodecConfig.getExtendedCodecType},
