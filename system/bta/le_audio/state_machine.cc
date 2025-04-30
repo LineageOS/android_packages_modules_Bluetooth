@@ -1282,6 +1282,31 @@ public:
             kLogRemoveDataPathOp + " cis_h:" + loghex(cis_conn_hdl));
   }
 
+  void PrepareAndSendReceiverStopReady(LeAudioDevice* leAudioDevice, struct ase* ase) {
+    log::info("{}, ase_id: {}({:#x} state: {})", leAudioDevice->address_, ase->id, ase->direction,
+              ToString(ase->state));
+
+    if (ase->state != AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING) {
+      log::warn("{}, ase_id: {}({:#x} not in valid state: {}", leAudioDevice->address_, ase->id,
+                ase->direction, ToString(ase->state));
+      return;
+    }
+
+    leAudioDevice->last_ase_ctp_command_sent =
+            bluetooth::le_audio::client_parser::ascs::kCtpOpcodeReceiverStopReady;
+
+    SetAseExpectedState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
+    std::vector<uint8_t> ids = {ase->id};
+    std::vector<uint8_t> value;
+
+    bluetooth::le_audio::client_parser::ascs::PrepareAseCtpAudioReceiverStopReady(ids, value);
+    WriteToControlPoint(leAudioDevice, value);
+
+    log_history_->AddLogHistory(kLogControlPointCmd, leAudioDevice->group_id_,
+                                leAudioDevice->address_,
+                                kLogAseStopReadyOp + "ASE_ID " + std::to_string(ase->id));
+  }
+
   void ProcessHciNotifCisDisconnected(
           LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice,
           const bluetooth::hci::iso_manager::cis_disconnected_evt* event) override {
@@ -1435,20 +1460,7 @@ public:
 
     /* We should send Receiver Stop Ready when acting as a source */
     if (ases_pair.source && ases_pair.source->state == AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING) {
-      leAudioDevice->last_ase_ctp_command_sent =
-              bluetooth::le_audio::client_parser::ascs::kCtpOpcodeReceiverStopReady;
-
-      SetAseExpectedState(leAudioDevice, ases_pair.source,
-                          AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
-      std::vector<uint8_t> ids = {ases_pair.source->id};
-      std::vector<uint8_t> value;
-
-      bluetooth::le_audio::client_parser::ascs::PrepareAseCtpAudioReceiverStopReady(ids, value);
-      WriteToControlPoint(leAudioDevice, value);
-
-      log_history_->AddLogHistory(
-              kLogControlPointCmd, leAudioDevice->group_id_, leAudioDevice->address_,
-              kLogAseStopReadyOp + "ASE_ID " + std::to_string(ases_pair.source->id));
+      PrepareAndSendReceiverStopReady(leAudioDevice, ases_pair.source);
     }
 
     /* Tear down CIS's data paths within the group */
@@ -3268,22 +3280,23 @@ private:
       case AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING:
         SetAseState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING);
 
-        if (ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSource) {
-          /* For Source ASE expect QoS Configured state after Disabling */
-          SetAseExpectedState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
-        }
-        /* Remote may autonomously bring ASEs to QoS configured state */
-        if (group->GetTargetState() != AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
-          ProcessAutonomousDisable(group, leAudioDevice, ase);
+        /* If target state is QoS Configured it means it is Suspended procedure where CISes
+         * are going to be disconnected*/
+        if (group->GetTargetState() == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
+          /* Process the Disable Transition of the rest of group members if no
+           * more ASE notifications has to come from this device. */
+          if (leAudioDevice->IsReadyToSuspendStream()) {
+            ProcessGroupDisable(group);
+          }
           return;
         }
 
-        /* Process the Disable Transition of the rest of group members if no
-         * more ASE notifications has to come from this device. */
-        if (leAudioDevice->IsReadyToSuspendStream()) {
-          ProcessGroupDisable(group);
+        if (ase->expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING) {
+          PrepareAndSendReceiverStopReady(leAudioDevice, ase);
+          return;
         }
 
+        ProcessAutonomousDisable(group, leAudioDevice, ase);
         break;
 
       default:
