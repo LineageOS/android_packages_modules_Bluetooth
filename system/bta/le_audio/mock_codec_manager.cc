@@ -190,6 +190,13 @@ bool CodecManager::IsUsingCodecExtensibility() const {
   return false;
 }
 
+void CodecManager::ConfigureDataPath(hci_data_direction_t direction, uint8_t dataPathId,
+                                     std::vector<uint8_t> dataPathConfig) const {
+  if (pimpl_) {
+    pimpl_->ConfigureDataPath(direction, dataPathId, dataPathConfig);
+  }
+}
+
 std::ostream& operator<<(std::ostream& os, const CodecManager::UnicastConfigurationRequirements&) {
   return os;
 }
