@@ -69,7 +69,7 @@ public final class MsftAdvMonitorMergedPatternListTest {
         assertThat(patternList.add(filterIndex, monitor.getPatterns())).isEqualTo(addedFilterIndex);
 
         // Only removing the last filter index should result in successful removal
-        assertThat(patternList.remove(addedFilterIndex)).isEqualTo(false);
-        assertThat(patternList.remove(addedFilterIndex)).isEqualTo(true);
+        assertThat(patternList.remove(addedFilterIndex)).isFalse();
+        assertThat(patternList.remove(addedFilterIndex)).isTrue();
     }
 }

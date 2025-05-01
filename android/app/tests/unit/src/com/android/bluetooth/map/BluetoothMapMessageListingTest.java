@@ -79,7 +79,7 @@ public class BluetoothMapMessageListingTest {
         assertThat(listing.getCount()).isEqualTo(0);
         listing.add(mListingElementEarliestWithReadFalse);
         assertThat(listing.getCount()).isEqualTo(1);
-        assertThat(listing.hasUnread()).isEqualTo(true);
+        assertThat(listing.hasUnread()).isTrue();
     }
 
     @Test

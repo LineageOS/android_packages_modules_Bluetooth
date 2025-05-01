@@ -328,7 +328,7 @@ public class BluetoothOppUtilityTest {
         assertThat(info.mFileUri).isNull();
         assertThat(info.mFileType).isEqualTo(fileTypeValue);
         assertThat(info.mDeviceName).isEqualTo(deviceNameValue);
-        assertThat(info.mHandoverInitiated).isEqualTo(false);
+        assertThat(info.mHandoverInitiated).isFalse();
         assertThat(info.mFileName).isEqualTo(fileNameValue);
     }
 
