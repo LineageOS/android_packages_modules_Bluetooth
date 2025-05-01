@@ -19,7 +19,7 @@ from bumble.hfp import HfProtocol
 hf_protocol: Optional[HfProtocol] = None
 from pandora_experimental.hfp_grpc_aio import HFPServicer
 
-from bumble.pandora import utils
+from pandora_services import utils
 
 from bumble.core import (
     BT_BR_EDR_TRANSPORT,

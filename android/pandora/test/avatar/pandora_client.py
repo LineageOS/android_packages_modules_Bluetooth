@@ -23,9 +23,9 @@ import logging
 
 from avatar.metrics.interceptors import aio_interceptors
 from avatar.metrics.interceptors import interceptors
-from bumble import pandora as bumble_server
+import pandora_services as bumble_server
 from bumble.hci import Address as BumbleAddress
-from bumble.pandora.device import PandoraDevice as BumblePandoraDevice
+from pandora_services.device import PandoraDevice as BumblePandoraDevice
 from dataclasses import dataclass
 from pandora import host_grpc
 from pandora import host_grpc_aio

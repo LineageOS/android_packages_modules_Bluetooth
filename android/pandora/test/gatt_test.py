@@ -18,13 +18,13 @@ import grpc
 import logging
 
 from avatar import BumblePandoraDevice, PandoraDevice, PandoraDevices
-from bumble import pandora as bumble_server
+import pandora_services as bumble_server
 from bumble.gatt import (Characteristic, Service, GATT_VOLUME_CONTROL_SERVICE,
                          GATT_AUDIO_INPUT_CONTROL_SERVICE, GATT_PRIMARY_SERVICE_ATTRIBUTE_TYPE,
                          GATT_SECONDARY_SERVICE_ATTRIBUTE_TYPE, UUID)
 from bumble.l2cap import L2CAP_Control_Frame
 from bumble.pairing import PairingConfig
-from bumble_experimental.gatt import GATTService
+from pandora_services.gatt import GATTService
 from mobly import base_test, signals, test_runner
 from mobly.asserts import assert_equal  # type: ignore
 from mobly.asserts import assert_in  # type: ignore

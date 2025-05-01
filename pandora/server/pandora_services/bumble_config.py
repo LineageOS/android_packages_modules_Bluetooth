@@ -19,8 +19,8 @@ from bumble.device import Connection as BumbleConnection
 from bumble.device import Device
 from bumble.pairing import PairingConfig
 from bumble.pairing import PairingDelegate as BasePairingDelegate
-from bumble.pandora import Config, utils
-from bumble.pandora.security import PairingDelegate, SecurityService
+from pandora_services import Config, utils
+from pandora_services.security import PairingDelegate, SecurityService
 from google.protobuf.empty_pb2 import Empty
 from pandora.host_pb2 import PUBLIC
 from pandora_experimental.bumble_config_grpc_aio import BumbleConfigServicer

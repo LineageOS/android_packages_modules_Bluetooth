@@ -21,7 +21,7 @@ from avatar import PandoraDevices
 from avatar.aio import asynchronous
 from avatar.pandora_client import BumblePandoraClient, PandoraClient
 from bumble.rfcomm import Server
-from bumble_experimental.rfcomm import RFCOMMService
+from pandora_services.rfcomm import RFCOMMService
 from mobly import base_test, test_runner
 from mobly.asserts import assert_equal  # type: ignore
 from mobly.asserts import assert_in  # type: ignore
