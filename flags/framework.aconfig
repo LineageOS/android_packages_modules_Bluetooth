@@ -89,3 +89,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "hci_instance_name_use_injected"
+    namespace: "bluetooth"
+    description: "Inject service manager bluetooth hci instance name"
+    bug: "413484664"
+}
