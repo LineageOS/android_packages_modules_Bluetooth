@@ -29,9 +29,12 @@
 #include "test/mock/mock_stack_btm_dev.h"
 #include "test/mock/mock_stack_l2cap_api.h"
 #include "test/mock/mock_stack_l2cap_ble.h"
+#include "test/mock/mock_stack_l2cap_interface.h"
 #include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
+using ::testing::NiceMock;
+using ::testing::Unused;
 
 namespace {
 
@@ -47,40 +50,37 @@ constexpr uint8_t kDummyDstUuid[] = {0x00, 0x00, 0x00, 0x00, 0x22, 0x22, 0x22, 0
 static tL2CAP_APPL_INFO appl_info;
 
 class FakeBtStack {
+  NiceMock<bluetooth::testing::stack::l2cap::Mock> mock_l2cap_interface;
+
 public:
   FakeBtStack() {
-    test::mock::stack_l2cap_api::L2CA_DataWrite.body = [](uint16_t cid, BT_HDR* p_data) {
+    ON_CALL(mock_l2cap_interface, L2CA_DataWrite).WillByDefault([](uint16_t cid, BT_HDR* p_data) {
       bluetooth::log::assert_that(cid == kDummyCid, "assert failed: cid == kDummyCid");
       osi_free(p_data);
       return tL2CAP_DW_RESULT::SUCCESS;
-    };
-    test::mock::stack_l2cap_api::L2CA_DisconnectReq.body = [](uint16_t cid) {
+    });
+    ON_CALL(mock_l2cap_interface, L2CA_DisconnectReq).WillByDefault([](uint16_t cid) {
       bluetooth::log::assert_that(cid == kDummyCid, "assert failed: cid == kDummyCid");
       return true;
-    };
-    test::mock::stack_l2cap_api::L2CA_ConnectReqWithSecurity.body =
-            [](uint16_t psm, const RawAddress& p_bd_addr, uint16_t sec_level) {
+    });
+    ON_CALL(mock_l2cap_interface, L2CA_ConnectReqWithSecurity)
+            .WillByDefault([](uint16_t psm, const RawAddress& p_bd_addr, uint16_t sec_level) {
               bluetooth::log::assert_that(p_bd_addr == kDummyRemoteAddr,
                                           "assert failed: p_bd_addr == kDummyRemoteAddr");
               return kDummyCid;
-            };
-    test::mock::stack_l2cap_api::L2CA_RegisterWithSecurity.body =
-            [](uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info, bool enable_snoop,
-               tL2CAP_ERTM_INFO* p_ertm_info, uint16_t my_mtu, uint16_t required_remote_mtu,
-               uint16_t sec_level) {
+            });
+    ON_CALL(mock_l2cap_interface, L2CA_RegisterWithSecurity)
+            .WillByDefault([](uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info, bool enable_snoop,
+                              tL2CAP_ERTM_INFO* p_ertm_info, uint16_t my_mtu,
+                              uint16_t required_remote_mtu, uint16_t sec_level) {
               appl_info = p_cb_info;
               return psm;
-            };
-    test::mock::stack_l2cap_api::L2CA_Deregister.body = [](uint16_t psm) {};
+            });
+    ON_CALL(mock_l2cap_interface, L2CA_Deregister).WillByDefault([](uint16_t psm) {});
+    bluetooth::testing::stack::l2cap::set_interface(&mock_l2cap_interface);
   }
 
-  ~FakeBtStack() {
-    test::mock::stack_l2cap_api::L2CA_DataWrite = {};
-    test::mock::stack_l2cap_api::L2CA_ConnectReqWithSecurity = {};
-    test::mock::stack_l2cap_api::L2CA_DisconnectReq = {};
-    test::mock::stack_l2cap_api::L2CA_RegisterWithSecurity = {};
-    test::mock::stack_l2cap_api::L2CA_Deregister = {};
-  }
+  ~FakeBtStack() { bluetooth::testing::stack::l2cap::reset_interface(); }
 };
 
 class Fakes {
