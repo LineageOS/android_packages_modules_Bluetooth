@@ -48,6 +48,7 @@ typedef struct {
 typedef struct {
   tBTA_DM_SEC_CBACK* p_sec_cback;
   tBTA_DM_SEC_CBACK* p_sec_sirk_cback;
+  tBTA_DM_SEC_CBACK* p_ble_auth_cmpl_cback;
   /* Storage for pin code request parameters */
   RawAddress pin_bd_addr;
   DEV_CLASS pin_dev_class;
@@ -75,6 +76,7 @@ void bta_dm_ble_confirm_reply(const RawAddress& bd_addr, bool accept);
 void bta_dm_ble_passkey_reply(const RawAddress& bd_addr, bool accept, uint32_t passkey);
 void bta_dm_ble_sirk_confirm_device_reply(const RawAddress& bd_addr, bool accept);
 void bta_dm_ble_sirk_sec_cb_register(tBTA_DM_SEC_CBACK* p_cback);
+void bta_dm_ble_auth_cmpl_cb_register(tBTA_DM_SEC_CBACK* p_cback);
 void bta_dm_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                  tBT_DEVICE_TYPE device_type);
 void bta_dm_bond_cancel(const RawAddress& bd_addr);
