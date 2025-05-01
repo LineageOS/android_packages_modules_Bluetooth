@@ -200,6 +200,6 @@ public class BluetoothPbapCallLogComposerTest {
 
     @Test
     public void testIsAfterLast_returnsFalseWhenNotInitialized() {
-        assertThat(mComposer.isAfterLast()).isEqualTo(false);
+        assertThat(mComposer.isAfterLast()).isFalse();
     }
 }

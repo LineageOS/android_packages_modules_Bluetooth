@@ -90,22 +90,22 @@ public class BluetoothActivityEnergyInfoTest {
                 new BluetoothActivityEnergyInfo(
                         timestamp, stackState, txTime, rxTime, idleTime, energyUsed);
 
-        assertThat(info.isValid()).isEqualTo(true);
+        assertThat(info.isValid()).isTrue();
 
         info =
                 new BluetoothActivityEnergyInfo(
                         timestamp, stackState, -1, rxTime, idleTime, energyUsed);
-        assertThat(info.isValid()).isEqualTo(false);
+        assertThat(info.isValid()).isFalse();
 
         info =
                 new BluetoothActivityEnergyInfo(
                         timestamp, stackState, txTime, -1, idleTime, energyUsed);
-        assertThat(info.isValid()).isEqualTo(false);
+        assertThat(info.isValid()).isFalse();
 
         info =
                 new BluetoothActivityEnergyInfo(
                         timestamp, stackState, txTime, rxTime, -1, energyUsed);
-        assertThat(info.isValid()).isEqualTo(false);
+        assertThat(info.isValid()).isFalse();
     }
 
     @Test

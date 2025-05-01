@@ -316,6 +316,6 @@ public class HfpNativeInterfaceTest {
     @Test
     public void testSendAndroidAt() {
         // If the device is null, should return False
-        assertThat(mNativeInterface.sendAndroidAt(null, anyString())).isEqualTo(false);
+        assertThat(mNativeInterface.sendAndroidAt(null, anyString())).isFalse();
     }
 }

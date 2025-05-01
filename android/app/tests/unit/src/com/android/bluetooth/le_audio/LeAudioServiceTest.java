@@ -1156,8 +1156,8 @@ public class LeAudioServiceTest {
         List<BluetoothProfileConnectionInfo> connInfos =
                 connectionInfoArgumentCaptor.getAllValues();
         assertThat(connInfos).hasSize(2);
-        assertThat(connInfos.get(0).isLeOutput()).isEqualTo(true);
-        assertThat(connInfos.get(1).isLeOutput()).isEqualTo(false);
+        assertThat(connInfos.get(0).isLeOutput()).isTrue();
+        assertThat(connInfos.get(1).isLeOutput()).isFalse();
 
         reset(mAudioManager);
 
@@ -1576,8 +1576,8 @@ public class LeAudioServiceTest {
         /* Verify input and output has been connected to AF*/
         List<BluetoothProfileConnectionInfo> connInfos = testConnectioInfoCapture.getAllValues();
         assertThat(connInfos).hasSize(2);
-        assertThat(connInfos.get(0).isLeOutput()).isEqualTo(true);
-        assertThat(connInfos.get(1).isLeOutput()).isEqualTo(false);
+        assertThat(connInfos.get(0).isLeOutput()).isTrue();
+        assertThat(connInfos.get(1).isLeOutput()).isFalse();
 
         // Remove source direction
         injectAudioConfChanged(
@@ -1598,7 +1598,7 @@ public class LeAudioServiceTest {
 
         connInfos = testConnectioInfoCapture.getAllValues();
         assertThat(connInfos).hasSize(3);
-        assertThat(connInfos.get(2).isLeOutput()).isEqualTo(false);
+        assertThat(connInfos.get(2).isLeOutput()).isFalse();
 
         // remove Sink and add Source back
 
@@ -1623,8 +1623,8 @@ public class LeAudioServiceTest {
 
         connInfos = testConnectioInfoCapture.getAllValues();
         assertThat(connInfos).hasSize(5);
-        assertThat(connInfos.get(3).isLeOutput()).isEqualTo(true);
-        assertThat(connInfos.get(4).isLeOutput()).isEqualTo(false);
+        assertThat(connInfos.get(3).isLeOutput()).isTrue();
+        assertThat(connInfos.get(4).isLeOutput()).isFalse();
     }
 
     /** Test native interface audio configuration changed message handling */
