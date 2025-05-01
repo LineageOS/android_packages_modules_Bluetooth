@@ -111,11 +111,11 @@ class AppAdvertiseStats {
     private int mAppImportance = IMPORTANCE_CACHED;
     public ArrayList<AppAdvertiserRecord> mAdvertiserRecords = new ArrayList<AppAdvertiserRecord>();
 
-    AppAdvertiseStats(int appUid, int id, String name, AttributionSource attrSource) {
+    AppAdvertiseStats(int appUid, int id, String name, AttributionSource source) {
         this.mAppUid = appUid;
         this.mId = id;
         this.mAppName = name;
-        this.mAttributionTag = getLastAttributionTag(attrSource);
+        this.mAttributionTag = getLastAttributionTag(source);
     }
 
     void recordAdvertiseStart(

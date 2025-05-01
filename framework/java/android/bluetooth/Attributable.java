@@ -32,25 +32,25 @@ import java.util.List;
 public interface Attributable {
     /** @hide */
     @SuppressWarnings("AmbiguousMethodReference")
-    void setAttributionSource(@NonNull AttributionSource attributionSource);
+    void setAttributionSource(@NonNull AttributionSource source);
 
     /** @hide */
     @SuppressWarnings("AmbiguousMethodReference")
     static @Nullable <T extends Attributable> T setAttributionSource(
-            @Nullable T attributable, @NonNull AttributionSource attributionSource) {
+            @Nullable T attributable, @NonNull AttributionSource source) {
         if (attributable != null) {
-            attributable.setAttributionSource(attributionSource);
+            attributable.setAttributionSource(source);
         }
         return attributable;
     }
 
     /** @hide */
     static @Nullable <T extends Attributable> List<T> setAttributionSource(
-            @Nullable List<T> attributableList, @NonNull AttributionSource attributionSource) {
+            @Nullable List<T> attributableList, @NonNull AttributionSource source) {
         if (attributableList != null) {
             final int size = attributableList.size();
             for (int i = 0; i < size; i++) {
-                setAttributionSource(attributableList.get(i), attributionSource);
+                setAttributionSource(attributableList.get(i), source);
             }
         }
         return attributableList;

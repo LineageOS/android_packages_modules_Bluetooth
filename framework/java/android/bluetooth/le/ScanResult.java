@@ -191,8 +191,8 @@ public final class ScanResult implements Parcelable, Attributable {
     }
 
     /** @hide */
-    public void setAttributionSource(@NonNull AttributionSource attributionSource) {
-        Attributable.setAttributionSource(mDevice, attributionSource);
+    public void setAttributionSource(@NonNull AttributionSource source) {
+        Attributable.setAttributionSource(mDevice, source);
     }
 
     /**

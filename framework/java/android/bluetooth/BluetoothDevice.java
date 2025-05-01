@@ -1577,21 +1577,20 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     }
 
     /** @hide */
-    public void setAttributionSource(@NonNull AttributionSource attributionSource) {
-        mAttributionSource = attributionSource;
+    public void setAttributionSource(@NonNull AttributionSource source) {
+        mAttributionSource = source;
     }
 
     /**
      * Method should never be used anywhere. Only exception is from {@link Intent} Used to set the
      * device current attribution source
      *
-     * @param attributionSource The associated {@link AttributionSource} for this device in this
-     *     process
+     * @param source The associated {@link AttributionSource} for this device in this process
      * @hide
      */
     @SystemApi
-    public void prepareToEnterProcess(@NonNull AttributionSource attributionSource) {
-        setAttributionSource(attributionSource);
+    public void prepareToEnterProcess(@NonNull AttributionSource source) {
+        setAttributionSource(source);
     }
 
     @Override

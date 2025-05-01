@@ -44,7 +44,7 @@ class AdvertiserMap {
             new BluetoothEventLogger(5, "Last Advertising");
 
     /** Add an entry to the stats map if it doesn't already exist. */
-    void addAppAdvertiseStats(int id, Context context, AttributionSource attrSource) {
+    void addAppAdvertiseStats(int id, Context context, AttributionSource source) {
         int appUid = Binder.getCallingUid();
         String appName = context.getPackageManager().getNameForUid(appUid);
         if (appName == null) {
@@ -54,7 +54,7 @@ class AdvertiserMap {
 
         synchronized (this) {
             if (!mAppAdvertiseStats.containsKey(id)) {
-                addAppAdvertiseStats(id, new AppAdvertiseStats(appUid, id, appName, attrSource));
+                addAppAdvertiseStats(id, new AppAdvertiseStats(appUid, id, appName, source));
             }
         }
     }
