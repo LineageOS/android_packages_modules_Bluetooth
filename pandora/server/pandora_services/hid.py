@@ -11,7 +11,7 @@ from google.protobuf import empty_pb2  # pytype: disable=pyi-error
 
 from pandora_experimental.hid_grpc_aio import HIDServicer
 
-from bumble.pandora import utils
+from pandora_services import utils
 from pandora_experimental.hid_pb2 import (
     ProtocolModeEvent,
     ReportEvent,

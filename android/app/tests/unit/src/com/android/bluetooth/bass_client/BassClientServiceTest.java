@@ -414,6 +414,17 @@ public class BassClientServiceTest {
         assertThat(mBassClientService.connect(mCurrentDevice)).isFalse();
     }
 
+    /** Test connecting to a device without UUID. - service.connect() should return false. */
+    @Test
+    public void testConnectToDevice_whenUuidIsMissing_returnFalse() {
+        // Return No UUID
+        doReturn(new ParcelUuid[] {})
+                .when(mAdapterService)
+                .getRemoteUuids(any(BluetoothDevice.class));
+
+        assertThat(mBassClientService.connect(mCurrentDevice)).isFalse();
+    }
+
     /**
      * Test whether service.startSearchingForSources() calls BluetoothLeScannerWrapper.startScan().
      */

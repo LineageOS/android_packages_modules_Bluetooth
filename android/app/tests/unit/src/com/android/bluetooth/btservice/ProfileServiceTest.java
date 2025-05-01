@@ -73,7 +73,7 @@ public class ProfileServiceTest {
 
     @Spy
     private AdapterService mAdapterService =
-            new AdapterService(InstrumentationRegistry.getInstrumentation().getTargetContext());
+            new AdapterService(InstrumentationRegistry.getInstrumentation().getContext());
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
@@ -160,9 +160,6 @@ public class ProfileServiceTest {
                                                 && profile != BluetoothProfile.PAN
                                                 && profile != BluetoothProfile.A2DP)
                         .toArray();
-        TestUtils.setAdapterService(mAdapterService);
-
-        assertThat(AdapterService.getAdapterService()).isNotNull();
 
         A2dpSinkNativeInterface.setInstance(mA2dpSinkNativeInterface);
         AvrcpNativeInterface.setInstance(mAvrcpNativeInterface);
@@ -178,9 +175,6 @@ public class ProfileServiceTest {
     @After
     public void tearDown()
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        TestUtils.clearAdapterService(mAdapterService);
-        mAdapterService = null;
-        mProfiles = null;
         A2dpSinkNativeInterface.setInstance(null);
         AvrcpNativeInterface.setInstance(null);
         AvrcpControllerNativeInterface.setInstance(null);

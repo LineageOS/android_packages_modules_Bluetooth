@@ -24,8 +24,11 @@ python_test_host {
     ],
     embedded_launcher: false,
     libs: [
-        "bumble_services_experimental-python",
-        "libavatar",
+        "bumble",
+        "bumble-pandora-services",
+        "libprotobuf-python",
+        "mobly",
+        "pandora-python",
     ],
     required: [
         "aapt",
@@ -54,8 +57,11 @@ python_test_host {
     test_config: "AndroidPhyTest.xml",
     embedded_launcher: false,
     libs: [
-        "bumble_services_experimental-python",
-        "libavatar",
+        "bumble",
+        "bumble-pandora-services",
+        "libprotobuf-python",
+        "mobly",
+        "pandora-python",
     ],
     required: [
         "aapt",

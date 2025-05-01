@@ -36,6 +36,7 @@
 #include "btm_iso_api.h"
 #include "btm_iso_api_types.h"
 #include "client_parser.h"
+#include "codec_manager.h"
 #include "common/strings.h"
 #include "device_groups.h"
 #include "devices.h"
@@ -121,6 +122,7 @@ using bluetooth::le_audio::LeAudioGroupStateMachine;
 
 using bluetooth::hci::ErrorCode;
 using bluetooth::hci::ErrorCodeText;
+using bluetooth::le_audio::CodecManager;
 using bluetooth::le_audio::DsaMode;
 using bluetooth::le_audio::DsaModes;
 using bluetooth::le_audio::types::ase;
@@ -1191,11 +1193,14 @@ public:
 
     if (ases_pair.sink && (ases_pair.sink->data_path_state == DataPathState::IDLE)) {
       PrepareDataPath(group->group_id_, ases_pair.sink);
+      PrepareIsoDataPath(group->group_id_, ases_pair.sink);
     }
 
     if (ases_pair.source && (ases_pair.source->data_path_state == DataPathState::IDLE)) {
       PrepareDataPath(group->group_id_, ases_pair.source);
+      PrepareIsoDataPath(group->group_id_, ases_pair.source);
     } else {
+      PrepareDataPath(group->group_id_, ases_pair.sink);
       applyDsaDataPath(group, leAudioDevice, event->cis_conn_hdl);
     }
 
@@ -1921,7 +1926,7 @@ private:
     return true;
   }
 
-  static void PrepareDataPath(int group_id, struct ase* ase) {
+  static void PrepareIsoDataPath(int group_id, struct ase* ase) {
     bluetooth::hci::iso_manager::iso_data_path_params param = {
             .data_path_dir = ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink
                                      ? bluetooth::hci::iso_manager::kIsoDataPathDirectionIn
@@ -1938,12 +1943,37 @@ private:
 
     LeAudioLogHistory::Get()->AddLogHistory(
             kLogStateMachineTag, group_id, RawAddress::kEmpty,
-            kLogSetDataPathOp + "cis_h:" + loghex(ase->cis_conn_hdl),
+            kLogSetIsoDataPathOp + "cis_h:" + loghex(ase->cis_conn_hdl),
             "direction: " + loghex(param.data_path_dir) + ", codecId: " +
                     ToString(ase->data_path_configuration.isoDataPathConfig.codecId));
 
     ase->data_path_state = DataPathState::CONFIGURING;
     IsoManager::GetInstance()->SetupIsoDataPath(ase->cis_conn_hdl, std::move(param));
+  }
+
+  static void PrepareDataPath(int group_id, struct ase* ase) {
+    if (!ase) {
+      log::error("Invalid ASE");
+      return;
+    }
+
+    if (!com::android::bluetooth::flags::leaudio_dynamic_data_path_change()) {
+      log::debug("Skipped due to leaudio_dynamic_data_path_change flag not being set.");
+      return;
+    }
+
+    hci_data_direction_t direction =
+            ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink
+                    ? hci_data_direction_t::HOST_TO_CONTROLLER
+                    : hci_data_direction_t::CONTROLLER_TO_HOST;
+    CodecManager::GetInstance()->ConfigureDataPath(direction,
+                                                   ase->data_path_configuration.dataPathId,
+                                                   ase->data_path_configuration.dataPathConfig);
+    LeAudioLogHistory::Get()->AddLogHistory(
+            kLogStateMachineTag, group_id, RawAddress::kEmpty,
+            kLogSetDataPathOp + "cis_h:" + loghex(ase->cis_conn_hdl),
+            "direction: " + loghex(static_cast<int>(direction)) +
+                    ", dataPathId: " + ToString(ase->data_path_configuration.dataPathId));
   }
 
   static void ReleaseDataPath(LeAudioDeviceGroup* group) {

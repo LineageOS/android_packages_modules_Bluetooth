@@ -250,7 +250,7 @@ public class AdapterServiceTest {
         when(mMockPackageManager.getPermissionInfo(any(), anyInt()))
                 .thenReturn(new PermissionInfo());
 
-        Context targetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Context targetContext = InstrumentationRegistry.getInstrumentation().getContext();
 
         mMockContentResolver = new MockContentResolver(targetContext);
         mMockContentResolver.addProvider(

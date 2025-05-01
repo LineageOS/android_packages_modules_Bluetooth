@@ -61,7 +61,7 @@ public class BluetoothOppHandoverReceiverTest {
 
     @Before
     public void setUp() {
-        mContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        mContext = InstrumentationRegistry.getInstrumentation().getContext();
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
         doReturn(0).when(mCallProxy).contentResolverDelete(any(), any(Uri.class), any(), any());
         doReturn(null)

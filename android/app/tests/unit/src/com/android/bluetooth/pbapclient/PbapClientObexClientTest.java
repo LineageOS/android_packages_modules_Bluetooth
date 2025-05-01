@@ -109,7 +109,7 @@ public class PbapClientObexClientTest {
     public void setUp() throws IOException {
         mAdapter =
                 InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
+                        .getContext()
                         .getSystemService(BluetoothManager.class)
                         .getAdapter();
         assertThat(mAdapter).isNotNull();

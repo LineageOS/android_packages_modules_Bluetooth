@@ -20,10 +20,10 @@ import logging
 import numpy as np
 
 from avatar import BumblePandoraDevice, PandoraDevice, PandoraDevices, asynchronous
-from bumble import pandora as bumble_server
+import pandora_services as bumble_server
 from bumble.gatt import GATT_ASHA_SERVICE
 from bumble.pairing import PairingDelegate
-from bumble_experimental.asha import AshaGattService, AshaService
+from pandora_services.asha import AshaGattService, AshaService
 from mobly import base_test, signals, test_runner
 from mobly.asserts import assert_equal  # type: ignore
 from mobly.asserts import assert_false  # type: ignore

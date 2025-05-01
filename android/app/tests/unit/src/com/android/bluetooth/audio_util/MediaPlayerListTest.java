@@ -83,7 +83,7 @@ public class MediaPlayerListTest {
         // player with the *same* mock, giving us only one player in the end-- "testPlayer"
         mMediaSessionManager =
                 InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
+                        .getContext()
                         .getSystemService(MediaSessionManager.class);
         PackageManager mockPackageManager = mock(PackageManager.class);
         mockGetSystemService(
@@ -111,7 +111,7 @@ public class MediaPlayerListTest {
         // into the tests
         mMediaPlayerList =
                 new MediaPlayerList(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext(),
+                        InstrumentationRegistry.getInstrumentation().getContext(),
                         Looper.myLooper());
         mMediaPlayerList.init(mMediaUpdateCallback);
         mMediaPlayerList.setActivePlayer(mMediaPlayerList.addMediaPlayer(mMockController));
@@ -207,7 +207,7 @@ public class MediaPlayerListTest {
         // Create MediaSession with GLOBAL_PRIORITY flag.
         MediaSession session =
                 new MediaSession(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext(),
+                        InstrumentationRegistry.getInstrumentation().getContext(),
                         MediaPlayerListTest.class.getSimpleName());
         session.setFlags(
                 MediaSession.FLAG_EXCLUSIVE_GLOBAL_PRIORITY

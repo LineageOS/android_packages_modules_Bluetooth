@@ -20,7 +20,7 @@ from bumble.core import (
 )
 from bumble.device import Device
 from bumble.l2cap import ClassicChannelSpec
-from bumble.pandora import utils
+from pandora_services import utils
 from bumble.rfcomm import Server
 from bumble.sdp import (
     DataElement,

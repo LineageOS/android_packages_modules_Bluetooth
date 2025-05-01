@@ -43,7 +43,7 @@ import java.io.InputStream;
 @RunWith(AndroidJUnit4.class)
 public final class AvrcpCoverArtStorageTest {
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final Resources mTestResources = TestUtils.getTestApplicationResources(mTargetContext);
     private final BluetoothDevice mDevice1 = getTestDevice(56);
     private final BluetoothDevice mDevice2 = getTestDevice(57);

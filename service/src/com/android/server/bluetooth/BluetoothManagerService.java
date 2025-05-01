@@ -788,12 +788,28 @@ class BluetoothManagerService {
 
     class ClientDeathRecipient implements IBinder.DeathRecipient {
         private final String mPackageName;
+        private final IBinder mBinder;
+
+        ClientDeathRecipient(String packageName, IBinder binder) {
+            mPackageName = packageName;
+            mBinder = binder;
+        }
 
         ClientDeathRecipient(String packageName) {
+            if (Flags.bleDeathRecipientThread()) {
+                throw new IllegalStateException(
+                        "bleDeathRecipientThread flag is deprecating this constructor");
+            }
             mPackageName = packageName;
+            mBinder = null;
         }
 
         public void binderDied() {
+            if (Flags.bleDeathRecipientThread()) {
+                Log.w(TAG, "Binder is dead - posting the unregister of " + mPackageName);
+                mHandler.post(() -> removeBleApp(mBinder, mPackageName));
+                return;
+            }
             Log.w(TAG, "Binder is dead - unregister " + mPackageName);
 
             for (Map.Entry<IBinder, ClientDeathRecipient> entry : mBleApps.entrySet()) {
@@ -842,6 +858,36 @@ class BluetoothManagerService {
             Log.d(TAG, "disableBleScanMode: Resetting the mEnable flag for clean disable");
             mEnable = false;
         }
+    }
+
+    private void addBleApp(IBinder token, String packageName) {
+        String header = "addBleApp(" + token + ", " + packageName + "): ";
+        ClientDeathRecipient r = mBleApps.get(token);
+        if (r != null) {
+            Log.v(TAG, header + "Lifecycle is already monitored");
+            return;
+        }
+        ClientDeathRecipient deathRec = new ClientDeathRecipient(packageName, token);
+        try {
+            token.linkToDeath(deathRec, 0);
+        } catch (RemoteException ex) {
+            Log.e(TAG, header + "Already dead");
+            return;
+        }
+        mBleApps.put(token, deathRec);
+        Log.v(TAG, header + "Monitoring lifecycle");
+    }
+
+    private void removeBleApp(IBinder token, String packageName) {
+        String header = "removeBleApp(" + token + ", " + packageName + "): ";
+        ClientDeathRecipient r = mBleApps.get(token);
+        if (r == null) {
+            Log.v(TAG, header + "Lifecycle is already un-monitored");
+            return;
+        }
+        token.unlinkToDeath(r, 0);
+        mBleApps.remove(token);
+        Log.d(TAG, header + "Lifecycle no longer monitored");
     }
 
     private int updateBleAppCount(IBinder token, boolean enable, String packageName) {
@@ -895,7 +941,11 @@ class BluetoothManagerService {
             return false;
         }
 
-        updateBleAppCount(token, true, packageName);
+        if (Flags.bleDeathRecipientThread()) {
+            addBleApp(token, packageName);
+        } else {
+            updateBleAppCount(token, true, packageName);
+        }
 
         if (mState.oneOf(
                 STATE_ON,
@@ -927,7 +977,12 @@ class BluetoothManagerService {
             Log.i(TAG, "disableBle: Already disabled");
             return false;
         }
-        updateBleAppCount(token, false, packageName);
+
+        if (Flags.bleDeathRecipientThread()) {
+            removeBleApp(token, packageName);
+        } else {
+            updateBleAppCount(token, false, packageName);
+        }
 
         if (mState.oneOf(STATE_BLE_ON) && !isBleAppPresent()) {
             if (mEnable) {
@@ -943,6 +998,9 @@ class BluetoothManagerService {
 
     // Clear all apps using BLE scan only mode.
     private void clearBleApps() {
+        if (Flags.bleDeathRecipientThread()) {
+            mBleApps.entrySet().stream().forEach(e -> e.getKey().unlinkToDeath(e.getValue(), 0));
+        }
         mBleApps.clear();
     }
 

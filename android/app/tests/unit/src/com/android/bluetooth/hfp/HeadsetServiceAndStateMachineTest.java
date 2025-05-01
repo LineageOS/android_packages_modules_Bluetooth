@@ -136,7 +136,7 @@ public class HeadsetServiceAndStateMachineTest {
     private static final String TEST_CALLER_ID = "Test Name";
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final Set<BluetoothDevice> mBondedDevices = new HashSet<>();
 
     private PowerManager.WakeLock mVoiceRecognitionWakeLock;

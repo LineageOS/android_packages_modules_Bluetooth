@@ -94,7 +94,7 @@ public class SapServerTest {
 
     @Spy
     private Context mTargetContext =
-            new ContextWrapper(InstrumentationRegistry.getInstrumentation().getTargetContext());
+            new ContextWrapper(InstrumentationRegistry.getInstrumentation().getContext());
 
     @Spy private TestHandlerCallback mCallback = new TestHandlerCallback();
 

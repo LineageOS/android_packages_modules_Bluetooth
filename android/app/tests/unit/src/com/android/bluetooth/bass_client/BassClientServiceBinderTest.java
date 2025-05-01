@@ -59,7 +59,7 @@ public class BassClientServiceBinderTest {
 
     private final BluetoothAdapter mAdapter =
             InstrumentationRegistry.getInstrumentation()
-                    .getTargetContext()
+                    .getContext()
                     .getSystemService(BluetoothManager.class)
                     .getAdapter();
     private final AttributionSource mAttributionSource = mAdapter.getAttributionSource();

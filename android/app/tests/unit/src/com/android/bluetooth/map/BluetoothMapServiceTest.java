@@ -53,7 +53,7 @@ public class BluetoothMapServiceTest {
     private BluetoothMapService mService = null;
     private final BluetoothDevice mDevice = getTestDevice(32);
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 

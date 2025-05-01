@@ -2724,7 +2724,7 @@ public class AdapterService extends Service {
 
         // Reuse the existing BluetoothDevice object if it exists
         BluetoothDevice device =
-                Flags.retainAddressType() ? device = mRemoteDevices.getDevice(address) : null;
+                Flags.retainAddressType() ? mRemoteDevices.getDevice(address) : null;
         if (device == null) {
             // BluetoothAdapter.getRemoteLeDevice() is same as BluetoothAdapter.getRemoteDevice()
             // with the specific address type.

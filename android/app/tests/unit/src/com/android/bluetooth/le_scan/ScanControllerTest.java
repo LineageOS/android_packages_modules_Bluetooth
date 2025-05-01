@@ -112,12 +112,12 @@ public class ScanControllerTest {
 
     private final BluetoothAdapter mAdapter =
             InstrumentationRegistry.getInstrumentation()
-                    .getTargetContext()
+                    .getContext()
                     .getSystemService(BluetoothManager.class)
                     .getAdapter();
     private final BluetoothDevice mDevice = getTestDevice(89);
     private final AttributionSource mAttributionSource = mAdapter.getAttributionSource();
-    private final Context mContext = getInstrumentation().getTargetContext();
+    private final Context mContext = getInstrumentation().getContext();
 
     private CompanionManager mBtCompanionManager;
     private ScanController mScanController;

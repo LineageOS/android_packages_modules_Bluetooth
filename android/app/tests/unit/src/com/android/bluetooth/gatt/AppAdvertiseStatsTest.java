@@ -70,7 +70,7 @@ public class AppAdvertiseStatsTest {
     @Captor ArgumentCaptor<Long> mAdvDurationCaptor;
 
     private final AttributionSource mAttributionSource =
-            InstrumentationRegistry.getInstrumentation().getTargetContext().getAttributionSource();
+            InstrumentationRegistry.getInstrumentation().getContext().getAttributionSource();
 
     @Before
     public void setUp() throws Exception {

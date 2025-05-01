@@ -123,7 +123,6 @@ public final class DatabaseManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.setAdapterService(mAdapterService);
         when(mAdapterService.getRemoteDevice(anyString()))
                 .thenAnswer(
                         invocation -> {
@@ -134,14 +133,14 @@ public final class DatabaseManagerTest {
         // Create a memory database for DatabaseManager instead of use a real database.
         mDatabase =
                 Room.inMemoryDatabaseBuilder(
-                                InstrumentationRegistry.getInstrumentation().getTargetContext(),
+                                InstrumentationRegistry.getInstrumentation().getContext(),
                                 MetadataDatabase.class)
                         .build();
 
         when(mAdapterService.getPackageManager())
                 .thenReturn(
                         InstrumentationRegistry.getInstrumentation()
-                                .getTargetContext()
+                                .getContext()
                                 .getPackageManager());
 
         mDatabaseManager = new DatabaseManager(mAdapterService);
@@ -155,7 +154,6 @@ public final class DatabaseManagerTest {
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.clearAdapterService(mAdapterService);
         mDatabase.deleteAll();
         mDatabaseManager.cleanup();
     }

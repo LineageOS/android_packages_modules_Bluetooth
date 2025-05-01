@@ -69,7 +69,7 @@ public class AtPhonebookTest {
     private static final String INVALID_COMMAND = "invalid_command";
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothDevice mDevice = getTestDevice(198);
 
     private AtPhonebook mAtPhonebook;

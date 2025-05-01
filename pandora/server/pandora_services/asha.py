@@ -32,7 +32,7 @@ from bumble.gatt import (
     TemplateService,
 )
 from bumble.l2cap import Channel
-from bumble.pandora import utils
+from pandora_services import utils
 from bumble.utils import AsyncRunner
 from google.protobuf.empty_pb2 import Empty  # pytype: disable=pyi-error
 from pandora_experimental.asha_grpc_aio import AshaServicer

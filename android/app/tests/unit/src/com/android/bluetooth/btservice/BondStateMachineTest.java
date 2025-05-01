@@ -71,7 +71,7 @@ public class BondStateMachineTest {
     private static final int BOND_BONDED = BluetoothDevice.BOND_BONDED;
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothManager mBluetoothManager =
             mTargetContext.getSystemService(BluetoothManager.class);
 
@@ -90,7 +90,6 @@ public class BondStateMachineTest {
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.setAdapterService(mAdapterService);
         doReturn(mNativeInterface).when(mAdapterService).getNative();
         mHandlerThread = new HandlerThread("BondStateMachineTestHandlerThread");
         mHandlerThread.start();
@@ -118,7 +117,6 @@ public class BondStateMachineTest {
     @After
     public void tearDown() throws Exception {
         mHandlerThread.quit();
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test
@@ -185,7 +183,7 @@ public class BondStateMachineTest {
 
         BluetoothDevice device1 =
                 InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
+                        .getContext()
                         .getSystemService(BluetoothManager.class)
                         .getAdapter()
                         .getRemoteLeDevice(
@@ -193,7 +191,7 @@ public class BondStateMachineTest {
                                 BluetoothDevice.ADDRESS_TYPE_PUBLIC);
         BluetoothDevice device2 =
                 InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
+                        .getContext()
                         .getSystemService(BluetoothManager.class)
                         .getAdapter()
                         .getRemoteLeDevice(

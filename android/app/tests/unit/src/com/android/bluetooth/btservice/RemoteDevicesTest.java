@@ -65,7 +65,7 @@ public class RemoteDevicesTest {
     @Mock private AdapterService mAdapterService;
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothManager mBluetoothManager =
             mTargetContext.getSystemService(BluetoothManager.class);
     private final BluetoothDevice mDevice = getTestDevice(43);

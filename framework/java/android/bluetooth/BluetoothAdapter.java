@@ -1110,10 +1110,10 @@ public final class BluetoothAdapter {
     private BluetoothAdapter(
             @NonNull IBluetoothManager managerService,
             @Nullable Context context,
-            @NonNull AttributionSource attributionSource) {
+            @NonNull AttributionSource source) {
         mManagerService = requireNonNull(managerService);
         mContext = Optional.ofNullable(context);
-        mAttributionSource = requireNonNull(attributionSource);
+        mAttributionSource = requireNonNull(source);
 
         mQualityCallbackWrapper =
                 new CallbackWrapper<>(

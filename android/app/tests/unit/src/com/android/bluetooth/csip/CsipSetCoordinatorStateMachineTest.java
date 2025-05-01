@@ -57,7 +57,6 @@ import org.mockito.Mockito;
 public class CsipSetCoordinatorStateMachineTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private AdapterService mAdapterService;
     @Mock private CsipSetCoordinatorService mService;
     @Mock private CsipSetCoordinatorNativeInterface mNativeInterface;
 
@@ -70,8 +69,6 @@ public class CsipSetCoordinatorStateMachineTest {
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.setAdapterService(mAdapterService);
-
         // Set up thread and looper
         mHandlerThread = new HandlerThread("CsipSetCoordinatorServiceTestHandlerThread");
         mHandlerThread.start();
@@ -89,7 +86,6 @@ public class CsipSetCoordinatorStateMachineTest {
     public void tearDown() throws Exception {
         mStateMachine.doQuit();
         mHandlerThread.quit();
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     /** Test that default state is disconnected */

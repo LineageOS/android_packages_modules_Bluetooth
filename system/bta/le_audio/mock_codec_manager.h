@@ -88,4 +88,9 @@ public:
 
   MOCK_METHOD((void), Start, ());
   MOCK_METHOD((void), Stop, ());
+
+  MOCK_METHOD((void), ConfigureDataPath,
+              (hci_data_direction_t direction, uint8_t dataPathId,
+               std::vector<uint8_t> dataPathConfig),
+              (const));
 };

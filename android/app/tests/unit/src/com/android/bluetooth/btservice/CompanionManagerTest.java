@@ -35,8 +35,6 @@ import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.TestUtils;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -57,15 +55,13 @@ public class CompanionManagerTest {
     private final BluetoothDevice mDevice = getTestDevice(123);
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     private CompanionManager mCompanionManager;
     private HandlerThread mHandlerThread;
 
     @Before
     public void setUp() throws Exception {
-        // Prepare the TestUtils
-        TestUtils.setAdapterService(mAdapterService);
         when(mAdapterService.getRemoteDevice(anyString()))
                 .thenAnswer(
                         invocation -> {
@@ -93,7 +89,6 @@ public class CompanionManagerTest {
     @After
     public void tearDown() throws Exception {
         mHandlerThread.quit();
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test

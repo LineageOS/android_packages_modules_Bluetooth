@@ -46,3 +46,8 @@ void BTA_DmSirkConfirmDeviceReply(const RawAddress& bd_addr, bool accept) {
   log::assert_that(dm_interface != nullptr, "Mock BTA DM interface not set!");
   return dm_interface->BTA_DmSirkConfirmDeviceReply(bd_addr, accept);
 }
+
+void BTA_DmBleAuthCmplCbRegister(tBTA_DM_SEC_CBACK* p_cback) {
+  log::assert_that(dm_interface != nullptr, "Mock BTA DM interface not set!");
+  return dm_interface->BTA_DmBleAuthCmplCbRegister(p_cback);
+}

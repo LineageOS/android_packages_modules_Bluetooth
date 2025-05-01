@@ -17,9 +17,9 @@ package {
 }
 
 python_library_host {
-    name: "bumble_services_experimental-python",
+    name: "bumble-pandora-services",
     srcs: [
-        "bumble_experimental/*.py",
+        "pandora_services/*.py",
     ],
     libs: [
         "bumble",
@@ -27,6 +27,6 @@ python_library_host {
         "pandora_experimental-python",
     ],
     data: [
-        "bumble_experimental/py.typed",
+        "pandora_services/py.typed",
     ],
 }

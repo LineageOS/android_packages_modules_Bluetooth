@@ -155,7 +155,7 @@ public class BassClientStateMachineTest {
     private static final int UPDATE_SOURCE_FIXED_LENGTH = 6;
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothAdapter mAdapter =
             mTargetContext.getSystemService(BluetoothManager.class).getAdapter();
     private final BluetoothDevice mTestDevice = getTestDevice(0);
@@ -169,8 +169,6 @@ public class BassClientStateMachineTest {
     public void setUp() throws Exception {
         mEmptyTestDevice = mAdapter.getRemoteDevice(EMPTY_BLUETOOTH_DEVICE_ADDRESS);
         assertThat(mEmptyTestDevice).isNotNull();
-
-        TestUtils.setAdapterService(mAdapterService);
 
         BluetoothMethodProxy.setInstanceForTesting(mMethodProxy);
         doNothing()
@@ -220,7 +218,6 @@ public class BassClientStateMachineTest {
         mBassClientStateMachine.doQuit();
         mHandlerThread.quit();
         joinUninterruptibly(mHandlerThread);
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     /** Test that default state is disconnected */

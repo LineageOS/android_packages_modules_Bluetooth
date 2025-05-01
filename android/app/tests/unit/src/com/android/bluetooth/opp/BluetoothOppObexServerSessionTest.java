@@ -76,7 +76,7 @@ public class BluetoothOppObexServerSessionTest {
     private static final String TEST_PREF = "OppObexServer";
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final PowerManager mPowerManager = mTargetContext.getSystemService(PowerManager.class);
 
     private BluetoothOppObexServerSession mServerSession;
