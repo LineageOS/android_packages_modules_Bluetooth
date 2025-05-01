@@ -2783,6 +2783,9 @@ public class AdapterService extends Service {
     }
 
     public boolean addAssociatedPackage(BluetoothDevice device, String packageName) {
+        if (packageName == null) {
+            return false;
+        }
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         if (deviceProp == null) {
             return false;
