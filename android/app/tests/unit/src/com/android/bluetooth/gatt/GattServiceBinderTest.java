@@ -49,11 +49,11 @@ import java.util.UUID;
 public class GattServiceBinderTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private IBluetoothGattServerCallback mGattServerCallback;
     @Mock private IBluetoothGattCallback mGattCallback;
     @Mock private GattService mService;
 
-    private final AttributionSource mAttributionSource = new AttributionSource.Builder(1).build();
     private final BluetoothDevice mDevice = getTestDevice(109);
 
     private GattServiceBinder mBinder;

@@ -53,16 +53,16 @@ import java.util.List;
 public class PbapClientServiceBinderTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private PbapClientService mMockService;
+
     private BluetoothDevice mTestDevice;
-    private AttributionSource mAttributionSource;
 
     private PbapClientServiceBinder mPbapClientServiceBinder;
 
     @Before
     public void setUp() throws Exception {
         mTestDevice = getTestDevice(1);
-        mAttributionSource = new AttributionSource.Builder(1).build();
         mPbapClientServiceBinder = new PbapClientServiceBinder(mMockService);
     }
 
