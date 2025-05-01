@@ -122,7 +122,12 @@ public class GattService extends ProfileService {
                     "");
 
     private static final Set<String> GATT_CLIENTS_PREFER_RELAX_MODE =
-            new HashSet<>(Arrays.asList("activeunlock_primary", "channelsoundingtestapp"));
+            new HashSet<>(
+                    Arrays.asList(
+                            "activeunlock_primary",
+                            "channelsoundingtestapp",
+                            "com.google.android.apps.adm",
+                            "channelsounding"));
 
     @VisibleForTesting static final int GATT_CLIENT_LIMIT_PER_APP = 32;
 
