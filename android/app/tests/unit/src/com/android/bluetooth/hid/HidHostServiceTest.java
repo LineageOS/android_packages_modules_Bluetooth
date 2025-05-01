@@ -40,7 +40,6 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.Flags;
 
 import org.junit.After;
 import org.junit.Before;
@@ -110,8 +109,7 @@ public class HidHostServiceTest {
             doReturn(bondState).when(mAdapterService).getBondState(any());
             for (int policy : List.of(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
                 doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
-                assertThat(mService.okToConnect(mDevice))
-                        .isEqualTo(Flags.donotValidateBondStateFromProfiles());
+                assertThat(mService.okToConnect(mDevice)).isEqualTo(true);
             }
         }
     }

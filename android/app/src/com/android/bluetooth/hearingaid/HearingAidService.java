@@ -49,7 +49,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -333,15 +332,6 @@ public class HearingAidService extends ProfileService {
         }
         // Check connection policy and accept or reject the connection.
         int connectionPolicy = getConnectionPolicy(device);
-        if (!Flags.donotValidateBondStateFromProfiles()) {
-            int bondState = mAdapterService.getBondState(device);
-            // Allow this connection only if the device is bonded. Any attempt to connect while
-            // bonding would potentially lead to an unauthorized connection.
-            if (bondState != BluetoothDevice.BOND_BONDED) {
-                Log.w(TAG, "okToConnect: return false, bondState=" + bondState);
-                return false;
-            }
-        }
         if (connectionPolicy != CONNECTION_POLICY_UNKNOWN
                 && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
             // Otherwise, reject the connection if connectionPolicy is not valid.

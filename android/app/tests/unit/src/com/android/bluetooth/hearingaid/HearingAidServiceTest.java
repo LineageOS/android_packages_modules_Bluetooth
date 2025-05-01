@@ -64,7 +64,6 @@ import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.Flags;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
@@ -201,8 +200,7 @@ public class HearingAidServiceTest {
             doReturn(bondState).when(mAdapterService).getBondState(any());
             for (int policy : List.of(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
                 doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
-                assertThat(mService.okToConnect(mSingleDevice))
-                        .isEqualTo(Flags.donotValidateBondStateFromProfiles());
+                assertThat(mService.okToConnect(mSingleDevice)).isEqualTo(true);
             }
         }
     }
