@@ -90,7 +90,6 @@ public class BondStateMachineTest {
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.setAdapterService(mAdapterService);
         doReturn(mNativeInterface).when(mAdapterService).getNative();
         mHandlerThread = new HandlerThread("BondStateMachineTestHandlerThread");
         mHandlerThread.start();
@@ -118,7 +117,6 @@ public class BondStateMachineTest {
     @After
     public void tearDown() throws Exception {
         mHandlerThread.quit();
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test

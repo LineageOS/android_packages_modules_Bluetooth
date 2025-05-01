@@ -60,7 +60,6 @@ public class HearingAidNativeInterfaceTest {
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.setAdapterService(mAdapterService);
         when(mAdapterService.getRemoteDevice(anyString()))
                 .thenAnswer(
                         invocation -> {
@@ -75,7 +74,6 @@ public class HearingAidNativeInterfaceTest {
     @After
     public void tearDown() throws Exception {
         HearingAidService.setHearingAidService(null);
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test

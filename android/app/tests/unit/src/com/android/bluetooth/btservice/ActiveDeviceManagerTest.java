@@ -59,7 +59,6 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.TestLooper;
-import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -126,7 +125,6 @@ public class ActiveDeviceManagerTest {
         BluetoothMethodProxy.setInstanceForTesting(mMethodProxy);
         doReturn(mTestLooper.getLooper()).when(mMethodProxy).handlerThreadGetLooper(any());
         doNothing().when(mMethodProxy).threadStart(any());
-        TestUtils.setAdapterService(mAdapterService);
 
         mDatabaseManager = new TestDatabaseManager(mAdapterService);
 
@@ -209,7 +207,6 @@ public class ActiveDeviceManagerTest {
         if (mActiveDeviceManager != null) {
             mActiveDeviceManager.cleanup();
         }
-        TestUtils.clearAdapterService(mAdapterService);
         Utils.setDualModeAudioStateForTesting(mOriginalDualModeAudioState);
         assertThat(mTestLooper.nextMessage()).isNull();
     }

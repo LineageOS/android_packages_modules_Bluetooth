@@ -110,7 +110,6 @@ public class CsipSetCoordinatorServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.setAdapterService(mAdapterService);
         mNativeCallback = new CsipSetCoordinatorNativeInterface(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService).getBondState(any());
@@ -149,7 +148,6 @@ public class CsipSetCoordinatorServiceTest {
     public void tearDown() throws Exception {
         mService.cleanup();
         assertThat(CsipSetCoordinatorService.getCsipSetCoordinatorService()).isNull();
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test

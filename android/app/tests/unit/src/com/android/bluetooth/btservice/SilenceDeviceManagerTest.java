@@ -69,7 +69,6 @@ public class SilenceDeviceManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.setAdapterService(mAdapterService);
         when(mServiceFactory.getA2dpService()).thenReturn(mA2dpService);
         when(mServiceFactory.getHeadsetService()).thenReturn(mHeadsetService);
 
@@ -83,7 +82,6 @@ public class SilenceDeviceManagerTest {
     public void tearDown() throws Exception {
         mSilenceDeviceManager.cleanup();
         mHandlerThread.quit();
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test

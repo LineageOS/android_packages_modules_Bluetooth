@@ -71,7 +71,6 @@ public class ScannerMapTest {
     @Before
     public void setUp() throws Exception {
         BluetoothMethodProxy.setInstanceForTesting(mMapMethodProxy);
-        TestUtils.setAdapterService(mAdapterService);
         doReturn(mMockPackageManager).when(mAdapterService).getPackageManager();
         doReturn(APP_NAME).when(mMockPackageManager).getNameForUid(anyInt());
     }
@@ -79,7 +78,6 @@ public class ScannerMapTest {
     @After
     public void tearDown() throws Exception {
         BluetoothMethodProxy.setInstanceForTesting(null);
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test
