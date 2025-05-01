@@ -28,7 +28,7 @@ class BluetoothLintCheckerIssueRegistry : IssueRegistry() {
         listOf(
             LogEnforcementVariableCreationDetector.ISSUE,
             GuardedLogLineDetector.ISSUE,
-            GuardedLogLineDetector.WARNING
+            GuardedLogLineDetector.WARNING,
         )
 
     override val api: Int
@@ -41,6 +41,6 @@ class BluetoothLintCheckerIssueRegistry : IssueRegistry() {
         Vendor(
             vendorName = "Android",
             feedbackUrl = "http://b/issues/new?component=27441",
-            contact = "android-bluetooth@google.com"
+            contact = "android-bluetooth@google.com",
         )
 }

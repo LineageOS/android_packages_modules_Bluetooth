@@ -37,7 +37,7 @@ internal fun initializeRadioModeListener(
     resolver: ContentResolver,
     radio: String,
     modeKey: String,
-    callback: (m: Boolean) -> Unit
+    callback: (m: Boolean) -> Unit,
 ): Boolean {
     val observer =
         object : ContentObserver(Handler(looper)) {
@@ -51,12 +51,12 @@ internal fun initializeRadioModeListener(
     resolver.registerContentObserver(
         Settings.Global.getUriFor(radio),
         notifyForDescendants,
-        observer
+        observer,
     )
     resolver.registerContentObserver(
         Settings.Global.getUriFor(modeKey),
         notifyForDescendants,
-        observer
+        observer,
     )
     return getRadioModeValue(resolver, radio, modeKey)
 }
