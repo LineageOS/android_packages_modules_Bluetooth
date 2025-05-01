@@ -170,7 +170,10 @@ public class DistanceMeasurementManager {
     }
 
     void startDistanceMeasurement(
-            UUID uuid, DistanceMeasurementParams params, IDistanceMeasurementCallback callback) {
+            UUID uuid,
+            int appUid,
+            DistanceMeasurementParams params,
+            IDistanceMeasurementCallback callback) {
         checkThread();
 
         if (mIsTurnedOff) {
@@ -208,7 +211,8 @@ public class DistanceMeasurementManager {
         }
 
         DistanceMeasurementTracker tracker =
-                new DistanceMeasurementTracker(this, params, address, uuid, interval, callback);
+                new DistanceMeasurementTracker(
+                        this, appUid, params, address, uuid, interval, callback);
 
         switch (params.getMethodId()) {
             case DISTANCE_MEASUREMENT_METHOD_AUTO:
@@ -251,6 +255,7 @@ public class DistanceMeasurementManager {
             return;
         }
         mDistanceMeasurementNativeInterface.startDistanceMeasurement(
+                tracker.mAppUid,
                 tracker.mIdentityAddress,
                 tracker.mInterval,
                 DISTANCE_MEASUREMENT_METHOD_RSSI,
@@ -267,6 +272,7 @@ public class DistanceMeasurementManager {
             return;
         }
         mDistanceMeasurementNativeInterface.startDistanceMeasurement(
+                tracker.mAppUid,
                 tracker.mIdentityAddress,
                 tracker.mInterval,
                 DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING,

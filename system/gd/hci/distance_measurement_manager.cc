@@ -357,12 +357,12 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
     }
   }
 
-  void start_distance_measurement(const Address address, uint16_t connection_handle,
-                                  hci::Role local_hci_role, uint16_t interval,
-                                  DistanceMeasurementMethod method,
+  void start_distance_measurement(int32_t app_uid, const Address address,
+                                  uint16_t connection_handle, hci::Role local_hci_role,
+                                  uint16_t interval, DistanceMeasurementMethod method,
                                   DistanceMeasurementSightType sight_type,
                                   DistanceMeasurementLocationType location_type) {
-    log::info("Address:{}, method:{}", address, method);
+    log::info("app_uid: {}, Address:{}, method:{}", app_uid, address, method);
 
     // Remove this check if we support any connection less method
     if (connection_handle == kIllegalConnectionHandle) {
@@ -2809,10 +2809,10 @@ void DistanceMeasurementManager::RegisterDistanceMeasurementCallbacks(
 }
 
 void DistanceMeasurementManager::StartDistanceMeasurement(
-        const Address& address, uint16_t connection_handle, hci::Role local_hci_role,
-        uint16_t interval, DistanceMeasurementMethod method,
+        int32_t app_uid, const Address& address, uint16_t connection_handle,
+        hci::Role local_hci_role, uint16_t interval, DistanceMeasurementMethod method,
         DistanceMeasurementSightType sight_type, DistanceMeasurementLocationType location_type) {
-  CallOn(pimpl_.get(), &impl::start_distance_measurement, address, connection_handle,
+  CallOn(pimpl_.get(), &impl::start_distance_measurement, app_uid, address, connection_handle,
          local_hci_role, interval, method, sight_type, location_type);
 }
 

@@ -498,9 +498,9 @@ struct CsModule {
   }
 
   void StartMeasurement(const StartMeasurementParameters& params) {
-    dm_manager_->StartDistanceMeasurement(params.responder_addr, params.connection_handle,
-                                          params.req_hci_role, params.interval, params.method,
-                                          params.sight_type, params.location_type);
+    dm_manager_->StartDistanceMeasurement(
+            /*app_uid=*/100, params.responder_addr, params.connection_handle, params.req_hci_role,
+            params.interval, params.method, params.sight_type, params.location_type);
   }
 
   void ReceivedReadLocalCapabilitiesComplete() {

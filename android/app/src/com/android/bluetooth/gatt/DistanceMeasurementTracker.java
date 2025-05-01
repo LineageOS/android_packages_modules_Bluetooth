@@ -30,6 +30,7 @@ import java.util.UUID;
 class DistanceMeasurementTracker {
     private static final String TAG = DistanceMeasurementTracker.class.getSimpleName();
 
+    final int mAppUid;
     final BluetoothDevice mDevice;
     final String mIdentityAddress;
     final int mInterval; // Report interval in ms
@@ -46,12 +47,14 @@ class DistanceMeasurementTracker {
 
     DistanceMeasurementTracker(
             DistanceMeasurementManager manager,
+            int appUid,
             DistanceMeasurementParams params,
             String identityAddress,
             UUID uuid,
             int interval,
             IDistanceMeasurementCallback callback) {
         mManager = manager;
+        mAppUid = appUid;
         mDevice = params.getDevice();
         mIdentityAddress = identityAddress;
         mUuid = uuid;
