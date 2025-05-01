@@ -54,6 +54,7 @@ import static org.mockito.Mockito.verify;
 import android.annotation.SuppressLint;
 import android.app.AppOpsManager;
 import android.app.PropertyInvalidatedCache;
+import android.app.role.RoleManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.IBluetooth;
 import android.bluetooth.IBluetoothCallback;
@@ -110,8 +111,9 @@ public class BluetoothManagerServiceTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.allCombinationsOf(
-                Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP);
+        return FlagsParameterization.progressionOf(
+                Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP,
+                Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING);
     }
 
     public BluetoothManagerServiceTest(FlagsParameterization flags) {
@@ -127,6 +129,7 @@ public class BluetoothManagerServiceTest {
     @Mock BluetoothServerProxy mBluetoothServerProxy;
     @Mock Context mContext;
     @Mock UserManager mUserManager;
+    @Mock RoleManager mRoleManager;
     @Mock UserHandle mUserHandle;
     @Mock IBinder mBinder;
     @Mock IBluetoothManagerCallback mManagerCallback;
@@ -208,10 +211,13 @@ public class BluetoothManagerServiceTest {
                 .when(mBinder)
                 .linkToDeath(any(), anyInt());
 
+        doReturn(List.of("Foo")).when(mRoleManager).getRoleHolders(any());
+
         doReturn(BluetoothManagerServiceTest.class.getSimpleName()).when(mContext).getPackageName();
         doReturn(mContext).when(mContext).createContextAsUser(any(), anyInt());
         doReturn(mTargetContext.getContentResolver()).when(mContext).getContentResolver();
         doReturn(mTargetContext.getPackageManager()).when(mContext).getPackageManager();
+        doReturn(mRoleManager).when(mContext).getSystemService(RoleManager.class);
         doReturn(mUserManager).when(mContext).getSystemService(UserManager.class);
         doReturn(mAppOpsManager).when(mContext).getSystemService(AppOpsManager.class);
         doReturn(mPermissionManager).when(mContext).getSystemService(PermissionManager.class);
