@@ -53,7 +53,7 @@ public class BluetoothOppBatchTest {
     @Mock private AdapterService mAdapterService;
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothOppShareInfo mInitShareInfo =
             new BluetoothOppShareInfo(
                     0,

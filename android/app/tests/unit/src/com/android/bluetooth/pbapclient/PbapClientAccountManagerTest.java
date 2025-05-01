@@ -89,7 +89,7 @@ public class PbapClientAccountManagerTest {
     public void setUp() throws Exception {
         mAdapter =
                 InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
+                        .getContext()
                         .getSystemService(BluetoothManager.class)
                         .getAdapter();
         assertThat(mAdapter).isNotNull();

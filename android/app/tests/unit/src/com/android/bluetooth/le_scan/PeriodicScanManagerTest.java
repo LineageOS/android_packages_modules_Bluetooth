@@ -73,7 +73,7 @@ public class PeriodicScanManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
         PeriodicScanNativeInterface.setInstance(mPeriodicScanNativeInterface);
         mPeriodicScanManager =
                 new PeriodicScanManager(mAdapterService, new TestLooper().getLooper());

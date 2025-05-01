@@ -78,7 +78,7 @@ public class AvrcpTargetServiceTest {
 
     private final MediaSessionManager mMediaSessionManager =
             InstrumentationRegistry.getInstrumentation()
-                    .getTargetContext()
+                    .getContext()
                     .getSystemService(MediaSessionManager.class);
 
     private TestLooper mLooper;
@@ -141,7 +141,7 @@ public class AvrcpTargetServiceTest {
         firstQueue.get(1).duration = TEST_DATA;
         firstQueue.get(1).image =
                 new Image(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext(), Uri.EMPTY);
+                        InstrumentationRegistry.getInstrumentation().getContext(), Uri.EMPTY);
         assertThat(AvrcpTargetService.isQueueUpdated(firstQueue, secondQueue)).isFalse();
 
         secondQueue.get(1).title = TEST_DATA;

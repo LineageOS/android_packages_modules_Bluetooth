@@ -70,7 +70,7 @@ public class TbsGenericTest {
     @Captor private ArgumentCaptor<Integer> mDefaultGtbsTechnologyCaptor;
     @Captor private ArgumentCaptor<TbsGatt.Callback> mTbsGattCallback;
 
-    private final Context mContext = getInstrumentation().getTargetContext();
+    private final Context mContext = getInstrumentation().getContext();
     private final BluetoothDevice mDevice = getTestDevice(32);
 
     private TbsGeneric mTbsGeneric;

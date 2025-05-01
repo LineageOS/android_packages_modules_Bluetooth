@@ -64,7 +64,7 @@ public class ScannerMapTest {
     @Mock private ScanController mMockScanController;
     @Mock private IScannerCallback mMockScannerCallback;
     private final AttributionSource mAttributionSource =
-            InstrumentationRegistry.getInstrumentation().getTargetContext().getAttributionSource();
+            InstrumentationRegistry.getInstrumentation().getContext().getAttributionSource();
 
     @Spy private BluetoothMethodProxy mMapMethodProxy = BluetoothMethodProxy.getInstance();
 
@@ -87,7 +87,7 @@ public class ScannerMapTest {
         ScannerMap scannerMap = new ScannerMap();
         PendingIntent intent =
                 PendingIntent.getBroadcast(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext(),
+                        InstrumentationRegistry.getInstrumentation().getContext(),
                         0,
                         new Intent(),
                         PendingIntent.FLAG_IMMUTABLE);

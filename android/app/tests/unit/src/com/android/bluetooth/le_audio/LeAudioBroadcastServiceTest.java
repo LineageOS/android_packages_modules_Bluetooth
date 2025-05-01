@@ -175,7 +175,7 @@ public class LeAudioBroadcastServiceTest {
             List.of(LC3_48KHZ_CONFIG);
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothAdapter mAdapter =
             mTargetContext.getSystemService(BluetoothManager.class).getAdapter();
     private final BluetoothDevice mDevice = getTestDevice(0);

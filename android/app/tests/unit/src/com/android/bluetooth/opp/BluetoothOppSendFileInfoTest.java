@@ -64,7 +64,7 @@ public class BluetoothOppSendFileInfoTest {
 
     @Before
     public void setUp() {
-        mContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        mContext = InstrumentationRegistry.getInstrumentation().getContext();
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
     }
 

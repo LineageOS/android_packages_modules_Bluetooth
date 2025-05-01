@@ -69,7 +69,7 @@ public class BluetoothOppObexClientSessionTest {
     @Mock private BluetoothObexTransport mTransport;
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final PowerManager mPowerManager = mTargetContext.getSystemService(PowerManager.class);
 
     BluetoothOppObexClientSession mClientSession;

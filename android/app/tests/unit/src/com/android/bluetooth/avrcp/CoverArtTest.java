@@ -60,7 +60,7 @@ public class CoverArtTest {
     public void setUp() throws Exception {
         mTestResources =
                 TestUtils.getTestApplicationResources(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext());
+                        InstrumentationRegistry.getInstrumentation().getContext());
 
         m200by200Image = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
         m200by200ImageBlue = loadImage(com.android.bluetooth.tests.R.raw.image_200_200_blue);

@@ -52,7 +52,7 @@ public class BluetoothOppPreferenceTest {
         mContext =
                 spy(
                         new ContextWrapper(
-                                InstrumentationRegistry.getInstrumentation().getTargetContext()));
+                                InstrumentationRegistry.getInstrumentation().getContext()));
 
         mCallProxy = spy(BluetoothMethodProxy.getInstance());
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);

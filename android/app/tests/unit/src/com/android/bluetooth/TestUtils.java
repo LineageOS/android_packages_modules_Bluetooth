@@ -123,7 +123,7 @@ public class TestUtils {
         assertThat(id).isAtMost(0xFF);
         BluetoothDevice testDevice =
                 InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
+                        .getContext()
                         .getSystemService(BluetoothManager.class)
                         .getAdapter()
                         .getRemoteDevice(String.format("00:01:02:03:04:%02X", id));
@@ -141,7 +141,7 @@ public class TestUtils {
         assertThat(BluetoothAdapter.checkBluetoothAddress(address)).isTrue();
         BluetoothDevice testDevice =
                 InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
+                        .getContext()
                         .getSystemService(BluetoothManager.class)
                         .getAdapter()
                         .getRemoteDevice(address);
@@ -267,7 +267,7 @@ public class TestUtils {
     public static Intent prepareIntentToStartBluetoothBrowserMediaService() {
         final Intent intent =
                 new Intent(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext(),
+                        InstrumentationRegistry.getInstrumentation().getContext(),
                         BluetoothMediaBrowserService.class);
         intent.setAction(MediaBrowserService.SERVICE_INTERFACE);
         return intent;

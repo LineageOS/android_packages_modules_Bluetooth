@@ -66,7 +66,7 @@ public class BluetoothOppServiceTest {
     @Mock private AdapterService mAdapterService;
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     private BluetoothOppService mService;
 

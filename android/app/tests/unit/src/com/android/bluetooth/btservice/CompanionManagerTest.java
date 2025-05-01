@@ -57,7 +57,7 @@ public class CompanionManagerTest {
     private final BluetoothDevice mDevice = getTestDevice(123);
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     private CompanionManager mCompanionManager;
     private HandlerThread mHandlerThread;

@@ -118,7 +118,7 @@ public class AvrcpBipObexServerTest {
     public void setUp() throws Exception {
         mTestResources =
                 TestUtils.getTestApplicationResources(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext());
+                        InstrumentationRegistry.getInstrumentation().getContext());
 
         mCoverArt = loadCoverArt(com.android.bluetooth.tests.R.raw.image_200_200);
 

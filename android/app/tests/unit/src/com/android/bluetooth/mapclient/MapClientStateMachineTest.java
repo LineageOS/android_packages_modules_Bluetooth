@@ -146,7 +146,7 @@ public class MapClientStateMachineTest {
 
     private final BluetoothDevice mDevice = getTestDevice(74);
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     private Bmessage mTestIncomingSmsBmessage;
     private Bmessage mTestIncomingMmsBmessage;

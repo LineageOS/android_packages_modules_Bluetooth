@@ -163,7 +163,7 @@ public class ContextMapTest {
                         mMockCallback,
                         mAdapterService,
                         InstrumentationRegistry.getInstrumentation()
-                                .getTargetContext()
+                                .getContext()
                                 .getAttributionSource());
         app.id = APP_ID1;
         app =
@@ -172,7 +172,7 @@ public class ContextMapTest {
                         mMockCallback,
                         mAdapterService,
                         InstrumentationRegistry.getInstrumentation()
-                                .getTargetContext()
+                                .getContext()
                                 .getAttributionSource());
         app.id = APP_ID2;
 

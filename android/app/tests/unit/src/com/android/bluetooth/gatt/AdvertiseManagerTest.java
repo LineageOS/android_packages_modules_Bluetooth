@@ -112,7 +112,7 @@ public class AdvertiseManagerTest {
                 null,
                 mCallback,
                 InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
+                        .getContext()
                         .getAttributionSource());
 
         mAdvertiserId = mAdvertiseManager.mTempRegistrationId;

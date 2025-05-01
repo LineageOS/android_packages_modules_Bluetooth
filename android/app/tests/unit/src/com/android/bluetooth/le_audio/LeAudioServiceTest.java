@@ -156,7 +156,7 @@ public class LeAudioServiceTest {
 
     private final HashSet<BluetoothDevice> mBondedDevices = new HashSet<>();
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothDevice mLeftDevice = getTestDevice(0);
     private final BluetoothDevice mRightDevice = getTestDevice(1);
     private final BluetoothDevice mSingleDevice = getTestDevice(2);

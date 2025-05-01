@@ -48,7 +48,7 @@ public class PbapClientAccountAuthenticatorServiceTest {
 
     @Before
     public void setUp() {
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
         enableService(true);
     }
 

@@ -113,7 +113,7 @@ public class BluetoothPbapObexServerTest {
         mServer =
                 new BluetoothPbapObexServer(
                         mMockHandler,
-                        InstrumentationRegistry.getInstrumentation().getTargetContext(),
+                        InstrumentationRegistry.getInstrumentation().getContext(),
                         mMockStateMachine);
     }
 

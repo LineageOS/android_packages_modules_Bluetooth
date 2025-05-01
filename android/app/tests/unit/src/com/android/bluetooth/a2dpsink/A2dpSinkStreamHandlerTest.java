@@ -68,7 +68,7 @@ public class A2dpSinkStreamHandlerTest {
     private static final int DUCK_PERCENT = 75;
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     private HandlerThread mHandlerThread;
     private AvrcpControllerService mService;

@@ -43,7 +43,7 @@ public class BipImageTest {
     public void setUp() {
         mTestResources =
                 TestUtils.getTestApplicationResources(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext());
+                        InstrumentationRegistry.getInstrumentation().getContext());
     }
 
     @Test

@@ -77,7 +77,7 @@ public class PanServiceTest {
 
     private final BluetoothDevice mRemoteDevice = getTestDevice(0);
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     private PanService mService;
     private TestLooper mTestLooper;

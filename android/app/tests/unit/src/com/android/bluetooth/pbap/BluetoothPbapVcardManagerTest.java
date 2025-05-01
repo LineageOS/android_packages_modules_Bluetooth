@@ -68,7 +68,7 @@ public class BluetoothPbapVcardManagerTest {
     @Before
     public void setUp() {
         BluetoothMethodProxy.setInstanceForTesting(mPbapMethodProxy);
-        mContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        mContext = InstrumentationRegistry.getInstrumentation().getContext();
         mManager = new BluetoothPbapVcardManager(mContext);
     }
 
