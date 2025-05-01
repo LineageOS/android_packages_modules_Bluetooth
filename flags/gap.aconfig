@@ -321,3 +321,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "read_rssi_throttling"
+    namespace: "bluetooth"
+    description: "Modify API to throttle the ability of a client app to trigger remote RSSI reads"
+    bug: "414510325"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
