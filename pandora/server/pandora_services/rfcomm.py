@@ -25,7 +25,7 @@ from bumble.rfcomm import (
     find_rfcomm_channel_with_uuid,
     Server,
 )
-from bumble.pandora import utils
+from pandora_services import utils
 import grpc
 from pandora_experimental.rfcomm_grpc_aio import RFCOMMServicer
 from pandora_experimental.rfcomm_pb2 import (

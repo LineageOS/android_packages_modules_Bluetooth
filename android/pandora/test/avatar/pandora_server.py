@@ -26,8 +26,8 @@ from avatar.controllers import pandora_device
 from avatar.controllers import usb_bumble_device
 from avatar.pandora_client import BumblePandoraClient
 from avatar.pandora_client import PandoraClient
-from bumble import pandora as bumble_server
-from bumble.pandora.device import PandoraDevice as BumblePandoraDevice
+import pandora_services as bumble_server
+from pandora_services.device import PandoraDevice as BumblePandoraDevice
 from contextlib import suppress
 from mobly.controllers import android_device
 from mobly.controllers.android_device import AndroidDevice

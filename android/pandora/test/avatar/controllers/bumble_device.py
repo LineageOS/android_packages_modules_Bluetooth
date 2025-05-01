@@ -16,7 +16,7 @@
 import asyncio
 import avatar.aio
 
-from bumble.pandora.device import PandoraDevice as BumblePandoraDevice
+from pandora_services.device import PandoraDevice as BumblePandoraDevice
 from typing import Any, Dict, List, Optional
 
 MOBLY_CONTROLLER_CONFIG_NAME = 'BumbleDevice'

@@ -12,7 +12,7 @@ from pandora_experimental.oob_pb2 import (
 from bumble.smp import OobContext, OobSharedData
 from bumble.pairing import PairingConfig, PairingDelegate
 from bumble.device import Device
-from bumble.pandora import utils
+from pandora_services import utils
 
 
 # This class implements the Hid Pandora interface.

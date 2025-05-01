@@ -21,7 +21,7 @@ from bumble.core import ProtocolError
 from bumble.device import Connection as BumbleConnection, Device, Peer
 from bumble.gatt import Characteristic, Descriptor, Service, GATT_PRIMARY_SERVICE_ATTRIBUTE_TYPE
 from bumble.gatt_client import CharacteristicProxy, ServiceProxy
-from bumble.pandora import utils
+from pandora_services import utils
 from pandora_experimental.gatt_grpc_aio import GATTServicer
 from pandora_experimental.gatt_pb2 import (
     ATTRIBUTE_NOT_FOUND,

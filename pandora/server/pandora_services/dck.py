@@ -19,7 +19,7 @@ from bumble.core import UUID as BumbleUUID, AdvertisingData
 from bumble.device import Connection, Device
 from bumble.gatt import Characteristic, CharacteristicValue, TemplateService
 from bumble.l2cap import LeCreditBasedChannel, LeCreditBasedChannelSpec
-from bumble.pandora import utils
+from pandora_services import utils
 from google.protobuf.empty_pb2 import Empty
 from pandora_experimental.dck_grpc_aio import DckServicer
 from typing import Optional
