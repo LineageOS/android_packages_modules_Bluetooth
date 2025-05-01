@@ -83,7 +83,7 @@ public class BluetoothPbapCallLogComposerTest {
 
         mComposer =
                 new BluetoothPbapCallLogComposer(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext());
+                        InstrumentationRegistry.getInstrumentation().getContext());
     }
 
     @After

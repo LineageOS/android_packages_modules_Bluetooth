@@ -56,7 +56,7 @@ public class BatchScanThrottlerTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    private final Context mContext = getInstrumentation().getTargetContext();
+    private final Context mContext = getInstrumentation().getContext();
     private FakeTimeProvider mTimeProvider;
 
     @Before

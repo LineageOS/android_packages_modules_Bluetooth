@@ -45,7 +45,7 @@ public class UtilTest {
 
     @Before
     public void setUp() {
-        mContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        mContext = InstrumentationRegistry.getInstrumentation().getContext();
     }
 
     @Test

@@ -58,7 +58,7 @@ public class AdvertiserMapTest {
     @Mock private PackageManager mMockPackageManager;
 
     private final AttributionSource mAttributionSource =
-            InstrumentationRegistry.getInstrumentation().getTargetContext().getAttributionSource();
+            InstrumentationRegistry.getInstrumentation().getContext().getAttributionSource();
 
     @Before
     public void setUp() throws Exception {

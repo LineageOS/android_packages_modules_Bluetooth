@@ -49,7 +49,7 @@ public class PbapClientAccountAuthenticatorTest {
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
         mAuthenticator = new PbapClientAccountAuthenticator(mTargetContext);
     }
 

@@ -110,13 +110,13 @@ public class GattServiceTest {
 
     private final BluetoothAdapter mAdapter =
             InstrumentationRegistry.getInstrumentation()
-                    .getTargetContext()
+                    .getContext()
                     .getSystemService(BluetoothManager.class)
                     .getAdapter();
     private final BluetoothDevice mDevice = getTestDevice(109);
     private final AttributionSource mAttributionSource = mAdapter.getAttributionSource();
     private final Context mContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final CompanionDeviceManager mCompanionDeviceManager =
             mContext.getSystemService(CompanionDeviceManager.class);
 

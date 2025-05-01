@@ -83,7 +83,7 @@ public class AvrcpControllerServiceTest {
     private final BluetoothDevice mDevice = getTestDevice(89);
     private final BluetoothDevice mDevice2 = getTestDevice(41);
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     private AvrcpControllerService mService = null;
 

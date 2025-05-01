@@ -45,7 +45,7 @@ public class PhonebookPullRequestTest {
 
     @Before
     public void setUp() {
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
         mRequest = new PhonebookPullRequest(mTargetContext);
     }
 

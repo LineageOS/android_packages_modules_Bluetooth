@@ -904,7 +904,7 @@ public class PhonePolicyTest {
 
         MetadataDatabase mDatabase =
                 Room.inMemoryDatabaseBuilder(
-                                InstrumentationRegistry.getInstrumentation().getTargetContext(),
+                                InstrumentationRegistry.getInstrumentation().getContext(),
                                 MetadataDatabase.class)
                         .build();
         DatabaseManager db = new DatabaseManager(mAdapterService);
@@ -937,7 +937,7 @@ public class PhonePolicyTest {
 
         MetadataDatabase mDatabase =
                 Room.inMemoryDatabaseBuilder(
-                                InstrumentationRegistry.getInstrumentation().getTargetContext(),
+                                InstrumentationRegistry.getInstrumentation().getContext(),
                                 MetadataDatabase.class)
                         .build();
         DatabaseManager db = new DatabaseManager(mAdapterService);
@@ -976,7 +976,7 @@ public class PhonePolicyTest {
 
         MetadataDatabase mDatabase =
                 Room.inMemoryDatabaseBuilder(
-                                InstrumentationRegistry.getInstrumentation().getTargetContext(),
+                                InstrumentationRegistry.getInstrumentation().getContext(),
                                 MetadataDatabase.class)
                         .build();
         DatabaseManager db = new DatabaseManager(mAdapterService);

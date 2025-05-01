@@ -155,7 +155,7 @@ public class BassClientStateMachineTest {
     private static final int UPDATE_SOURCE_FIXED_LENGTH = 6;
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothAdapter mAdapter =
             mTargetContext.getSystemService(BluetoothManager.class).getAdapter();
     private final BluetoothDevice mTestDevice = getTestDevice(0);

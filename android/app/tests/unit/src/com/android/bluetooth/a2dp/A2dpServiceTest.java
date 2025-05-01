@@ -131,7 +131,7 @@ public class A2dpServiceTest {
                 Context.COMPANION_DEVICE_SERVICE,
                 CompanionDeviceManager.class,
                 mCompanionDeviceManager);
-        doReturn(InstrumentationRegistry.getInstrumentation().getTargetContext().getResources())
+        doReturn(InstrumentationRegistry.getInstrumentation().getContext().getResources())
                 .when(mAdapterService)
                 .getResources();
 

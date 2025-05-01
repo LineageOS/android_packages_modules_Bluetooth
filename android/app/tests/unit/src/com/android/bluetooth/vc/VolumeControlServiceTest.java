@@ -125,7 +125,7 @@ public class VolumeControlServiceTest {
 
     private final BluetoothAdapter mAdapter =
             InstrumentationRegistry.getInstrumentation()
-                    .getTargetContext()
+                    .getContext()
                     .getSystemService(BluetoothManager.class)
                     .getAdapter();
     private final BluetoothDevice mDevice = getTestDevice(134);

@@ -161,7 +161,7 @@ public class ScanManagerTest {
                     SCAN_MODE_AMBIENT_DISCOVERY, SCAN_MODE_AMBIENT_DISCOVERY);
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     private AppScanStats mMockAppScanStats;
     private MockContentResolver mMockContentResolver;

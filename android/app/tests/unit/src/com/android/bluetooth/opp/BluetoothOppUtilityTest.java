@@ -80,7 +80,7 @@ public class BluetoothOppUtilityTest {
     private static final Uri INCORRECT_FORMAT_URI = Uri.parse("www.google.com");
 
     private final Context mContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     @Before
     public void setUp() throws Exception {

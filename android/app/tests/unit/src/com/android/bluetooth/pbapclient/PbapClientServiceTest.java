@@ -112,7 +112,7 @@ public class PbapClientServiceTest {
     public static final int TRANSPORT_UNKNOWN = -1;
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothDevice mDevice = getTestDevice(56);
     private final Map<BluetoothDevice, PbapClientStateMachine> mDeviceMap =
             new HashMap<BluetoothDevice, PbapClientStateMachine>();

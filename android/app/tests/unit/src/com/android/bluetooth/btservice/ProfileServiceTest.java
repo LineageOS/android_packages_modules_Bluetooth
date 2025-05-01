@@ -73,7 +73,7 @@ public class ProfileServiceTest {
 
     @Spy
     private AdapterService mAdapterService =
-            new AdapterService(InstrumentationRegistry.getInstrumentation().getTargetContext());
+            new AdapterService(InstrumentationRegistry.getInstrumentation().getContext());
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 

@@ -55,7 +55,7 @@ public class AdapterSuspendTest {
 
     @Before
     public void setUp() throws Exception {
-        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getContext();
         mTestLooper = new TestLooper();
         mDeviceStateManager = context.getSystemService(DeviceStateManager.class);
 

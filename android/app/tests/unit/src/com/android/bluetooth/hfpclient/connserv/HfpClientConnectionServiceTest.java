@@ -85,7 +85,7 @@ public class HfpClientConnectionServiceTest {
 
     @Before
     public void setUp() {
-        Context targetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Context targetContext = InstrumentationRegistry.getInstrumentation().getContext();
 
         TestUtils.setAdapterService(mAdapterService);
         when(mAdapterService.getRemoteDevice(anyString()))

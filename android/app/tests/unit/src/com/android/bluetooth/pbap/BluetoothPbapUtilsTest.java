@@ -364,7 +364,7 @@ public class BluetoothPbapUtilsTest {
         long totalContacts = 3;
         long totalFields = 4;
         long totalSvcFields = 5;
-        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getContext();
         try {
             BluetoothPbapUtils.sPrimaryVersionCounter = primaryVersionCounter;
             BluetoothPbapUtils.sSecondaryVersionCounter = secondaryVersionCounter;

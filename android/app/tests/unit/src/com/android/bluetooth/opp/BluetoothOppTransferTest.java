@@ -387,7 +387,7 @@ public class BluetoothOppTransferTest {
     public void oppConnectionReceiver_onReceiveWithActionAclDisconnected_sendsConnectTimeout() {
         BluetoothDevice device =
                 InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
+                        .getContext()
                         .getSystemService(BluetoothManager.class)
                         .getAdapter()
                         .getRemoteDevice("01:23:45:67:89:AB");
@@ -409,7 +409,7 @@ public class BluetoothOppTransferTest {
     public void oppConnectionReceiver_onReceiveWithActionSdpRecord_withoutSdpRecord() {
         BluetoothDevice device =
                 InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
+                        .getContext()
                         .getSystemService(BluetoothManager.class)
                         .getAdapter()
                         .getRemoteDevice("01:23:45:67:89:AB");

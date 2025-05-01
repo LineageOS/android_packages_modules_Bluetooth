@@ -63,7 +63,7 @@ public class HearingAidServiceBinderTest {
     public void setUp() throws Exception {
         when(mService.isAvailable()).thenReturn(true);
         mBinder = new HearingAidServiceBinder(mService);
-        Context context = InstrumentationRegistry.getTargetContext();
+        Context context = InstrumentationRegistry.getContext();
         mAttributionSource =
                 context.getSystemService(BluetoothManager.class)
                         .getAdapter()

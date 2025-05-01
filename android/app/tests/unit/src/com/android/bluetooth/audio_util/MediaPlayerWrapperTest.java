@@ -93,7 +93,7 @@ public class MediaPlayerWrapperTest {
 
         mTestResources =
                 TestUtils.getTestApplicationResources(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext());
+                        InstrumentationRegistry.getInstrumentation().getContext());
         mTestBitmap = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
 
         Util.sUriImagesSupport = true;
