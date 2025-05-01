@@ -2421,6 +2421,36 @@
       "tests": [
         "A2DP/SNK/SYN/BV-01-C"
       ]
+    },
+    // VCP does not require CSIS,
+    // in PTS test mode, enabling this system property will
+    // add device to DeviceGroups without CSIS
+    {
+      "system_properties": {
+        "persist.bluetooth.pts": "true"
+      },
+      "tests": [
+        "VCP/VC/AICP/BV-01-C",
+        "VCP/VC/AICP/BV-02-C",
+        "VCP/VC/AICP/BV-03-C",
+        "VCP/VC/AICP/BV-04-C",
+        "VCP/VC/AICP/BV-05-C",
+        "VCP/VC/SPE/BI-05-C",
+        "VCP/VC/SPE/BI-08-C",
+        "VCP/VC/SPE/BI-09-C",
+        "VCP/VC/SPE/BI-10-C",
+        "VCP/VC/SPE/BI-11-C",
+        "VCP/VC/SPE/BI-12-C",
+        "VCP/VC/SPE/BI-13-C",
+        "VCP/VC/SPE/BI-15-C",
+        "VCP/VC/SPE/BI-16-C",
+        "VCP/VC/SPE/BI-17-C",
+        "VCP/VC/SPE/BI-18-C",
+        "VCP/VC/SPE/BI-19-C",
+        "VCP/VC/SPE/BI-20-C",
+        "VCP/VC/VCCP/BV-05-C",
+        "VCP/VC/VOCP/BV-01-C"
+      ]
     }
   ]
 }

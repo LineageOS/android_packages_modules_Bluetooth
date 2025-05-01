@@ -44,6 +44,7 @@
 #include "btm_ble_api_types.h"
 #include "gatt/database.h"
 #include "gatt_api.h"
+#include "gd/common/utils.h"
 #include "osi/include/alarm.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
@@ -1656,6 +1657,13 @@ private:
 
     device->group_id = DeviceGroups::Get()->GetGroupId(device->address,
                                                        bluetooth::le_audio::uuid::kCapServiceUuid);
+
+    if (com::android::bluetooth::flags::vcp_handle_group_id_internally() &&
+        device->group_id == bluetooth::groups::kGroupUnknown &&
+        bluetooth::common::IsPtsTestMode()) {
+      // Fix PTS VCP/VC tests by adding device to DeviceGroups, normally added by CSIS or LeAudio
+      DeviceGroups::Get()->AddDevice(device->address, bluetooth::le_audio::uuid::kCapServiceUuid);
+    }
 
     // VerifyReady sets the device_ready flag if all remaining GATT operations
     // are completed and group id is known
