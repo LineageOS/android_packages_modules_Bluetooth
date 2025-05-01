@@ -14,8 +14,11 @@
 
 use crate::{HciHal, HciHalStatus, HciProxyCallbacks};
 
-use core::ffi::c_void;
+use core::ffi::{c_int, c_void, CStr};
 use core::slice;
+use std::fs::File;
+use std::io::Write;
+use std::os::fd::AsRawFd;
 use std::sync::{Mutex, RwLock};
 
 /// Callbacks from C to Rust
@@ -48,7 +51,8 @@ pub struct CInterface {
     send_acl: unsafe extern "C" fn(handle: *mut c_void, data: *const u8, len: usize),
     send_sco: unsafe extern "C" fn(handle: *mut c_void, data: *const u8, len: usize),
     send_iso: unsafe extern "C" fn(handle: *mut c_void, data: *const u8, len: usize),
-    client_died: unsafe extern "C" fn(handle: *mut c_void),
+    client_died: Option<unsafe extern "C" fn(handle: *mut c_void)>,
+    dump: Option<unsafe extern "C" fn(handle: *mut c_void, fd: c_int)>,
 }
 
 //SAFETY: CInterface is safe to send between threads because we require the C code
@@ -152,12 +156,34 @@ impl HciHal for Ffi {
     fn client_died(&self) {
         let intf = self.intf.lock().unwrap();
 
-        // SAFETY: The C Code has initialized the `CInterface` with a valid
-        //         function pointer and an initialized `handle`.
-        unsafe {
-            (intf.client_died)(intf.handle);
+        if let Some(client_died) = intf.client_died {
+            // SAFETY: The C Code has initialized the `CInterface` with a valid
+            //         or null function pointer and an initialized `handle`.
+            unsafe {
+                client_died(intf.handle);
+            }
         }
         self.remove_client();
+    }
+
+    /// # Safety
+    ///
+    /// The `writer` must be a concrete `File` type, as it will be casted to a
+    /// `File` pointer to extract the raw file descriptor.
+    unsafe fn dump(&self, writer: &mut dyn Write, _args: &[&CStr]) {
+        let intf = self.intf.lock().unwrap();
+
+        // SAFETY: The `writer` is guaranteed to be supported by a concrete `File` type,
+        //         by the safety restriction of the function signature.
+        let fd = unsafe { &*(writer as *mut _ as *mut File) }.as_raw_fd();
+
+        if let Some(dump) = intf.dump {
+            // SAFETY: The C code has initialized the `CInterface` with a valid
+            //         or null function pointer and an initialized `handle`.
+            unsafe {
+                dump(intf.handle, fd);
+            }
+        }
     }
 }
 
