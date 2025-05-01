@@ -31,17 +31,17 @@ from pandora_services.oob import OOBService
 from pandora_services.opp import OppService
 from pandora_services.rfcomm import RFCOMMService
 from pandora_services.hf import HFService
-from pandora_experimental.asha_grpc_aio import add_AshaServicer_to_server
-from pandora_experimental.avrcp_grpc_aio import add_AVRCPServicer_to_server
-from pandora_experimental.bumble_config_grpc_aio import \
+from pandora.asha_grpc_aio import add_AshaServicer_to_server
+from pandora.avrcp_grpc_aio import add_AVRCPServicer_to_server
+from pandora.bumble_config_grpc_aio import \
     add_BumbleConfigServicer_to_server
-from pandora_experimental.dck_grpc_aio import add_DckServicer_to_server
-from pandora_experimental.gatt_grpc_aio import add_GATTServicer_to_server
-from pandora_experimental.hid_grpc_aio import add_HIDServicer_to_server
-from pandora_experimental.oob_grpc_aio import add_OOBServicer_to_server
-from pandora_experimental.opp_grpc_aio import add_OppServicer_to_server
-from pandora_experimental.rfcomm_grpc_aio import add_RFCOMMServicer_to_server
-from pandora_experimental.hfp_grpc_aio import add_HFPServicer_to_server
+from pandora.dck_grpc_aio import add_DckServicer_to_server
+from pandora.gatt_grpc_aio import add_GATTServicer_to_server
+from pandora.hid_grpc_aio import add_HIDServicer_to_server
+from pandora.oob_grpc_aio import add_OOBServicer_to_server
+from pandora.opp_grpc_aio import add_OppServicer_to_server
+from pandora.rfcomm_grpc_aio import add_RFCOMMServicer_to_server
+from pandora.hfp_grpc_aio import add_HFPServicer_to_server
 
 BUMBLE_SERVER_GRPC_PORT = 7999
 ROOTCANAL_PORT_CUTTLEFISH = 7300

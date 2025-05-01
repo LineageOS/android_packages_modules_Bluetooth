@@ -19,9 +19,9 @@ from mmi2grpc._helpers import assert_description
 from mmi2grpc._proxy import ProfileProxy
 from pandora.host_grpc import Host
 from pandora.host_pb2 import Connection
-from pandora_experimental.map_grpc import Map as MapProfile
-from pandora_experimental.os_grpc import Os
-from pandora_experimental.os_pb2 import ACCESS_MESSAGE
+from pandora.map_grpc import Map as MapProfile
+from pandora.os_grpc import Os
+from pandora.os_pb2 import ACCESS_MESSAGE
 
 
 class MAPProxy(ProfileProxy):

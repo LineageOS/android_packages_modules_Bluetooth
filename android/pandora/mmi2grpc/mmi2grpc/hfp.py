@@ -23,8 +23,8 @@ from pandora.host_grpc import Host
 from pandora.host_pb2 import CONNECTABLE, DISCOVERABLE_GENERAL
 from pandora.security_grpc import Security, SecurityStorage
 from pandora.security_pb2 import PairingEventAnswer
-from pandora_experimental.hfp_grpc import HFP
-from pandora_experimental.hfp_pb2 import (AUDIO_PATH_HANDSFREE, AUDIO_PATH_SPEAKERS)
+from pandora.hfp_grpc import HFP
+from pandora.hfp_pb2 import (AUDIO_PATH_HANDSFREE, AUDIO_PATH_SPEAKERS)
 
 # Standard time to wait before asking for waitConnection
 WAIT_DELAY_BEFORE_CONNECTION = 2

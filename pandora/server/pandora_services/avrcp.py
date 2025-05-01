@@ -20,7 +20,7 @@ from bumble.a2dp import (A2DP_SBC_CODEC_TYPE, SBC_DUAL_CHANNEL_MODE, SBC_JOINT_S
                          SbcMediaCodecInformation, make_audio_sink_service_sdp_records,
                          make_audio_source_service_sdp_records)
 from bumble.device import Device
-from pandora_experimental.avrcp_grpc_aio import AVRCPServicer
+from pandora.avrcp_grpc_aio import AVRCPServicer
 
 
 class AvrcpService(AVRCPServicer):

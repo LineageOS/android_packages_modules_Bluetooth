@@ -34,8 +34,8 @@ from mobly.asserts import assert_true  # type: ignore
 from pandora._utils import AioStream
 from pandora.host_pb2 import PUBLIC, RANDOM, AdvertiseResponse, Connection, DataTypes, OwnAddressType, ScanningResponse
 from pandora.security_pb2 import LE_LEVEL3
-from pandora_experimental.asha_grpc_aio import Asha as AioAsha, add_AshaServicer_to_server
-from pandora_experimental.asha_pb2 import PlaybackAudioRequest
+from pandora.asha_grpc_aio import Asha as AioAsha, add_AshaServicer_to_server
+from pandora.asha_pb2 import PlaybackAudioRequest
 from typing import AsyncIterator, ByteString, List, Optional, Tuple
 
 ASHA_UUID = GATT_ASHA_SERVICE.to_hex_str('-')

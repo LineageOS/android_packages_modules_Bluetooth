@@ -23,8 +23,8 @@ from pandora_services import Config, utils
 from pandora_services.security import PairingDelegate, SecurityService
 from google.protobuf.empty_pb2 import Empty
 from pandora.host_pb2 import PUBLIC
-from pandora_experimental.bumble_config_grpc_aio import BumbleConfigServicer
-from pandora_experimental.bumble_config_pb2 import (KeyDistribution, OverrideRequest)
+from pandora.bumble_config_grpc_aio import BumbleConfigServicer
+from pandora.bumble_config_pb2 import (KeyDistribution, OverrideRequest)
 
 
 class BumbleConfigService(BumbleConfigServicer):

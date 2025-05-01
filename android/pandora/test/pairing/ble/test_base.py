@@ -44,9 +44,9 @@ from pandora.security_pb2 import (
     PairingEventAnswer,
 )
 
-from pandora_experimental.gatt_grpc_aio import GATT as AioGATT
+from pandora.gatt_grpc_aio import GATT as AioGATT
 
-from pandora_experimental.gatt_pb2 import DiscoverServicesRequest
+from pandora.gatt_pb2 import DiscoverServicesRequest
 
 AUTHENTICATION_ERROR_RETURNED = [False, False]
 
