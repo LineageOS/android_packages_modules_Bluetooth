@@ -111,9 +111,7 @@ public class AdvertiseManagerTest {
                 maxExtAdvEvents,
                 null,
                 mCallback,
-                InstrumentationRegistry.getInstrumentation()
-                        .getContext()
-                        .getAttributionSource());
+                InstrumentationRegistry.getInstrumentation().getContext().getAttributionSource());
 
         mAdvertiserId = mAdvertiseManager.mTempRegistrationId;
     }
