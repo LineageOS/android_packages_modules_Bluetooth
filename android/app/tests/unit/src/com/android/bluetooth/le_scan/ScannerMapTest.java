@@ -58,12 +58,11 @@ public class ScannerMapTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private AdapterService mAdapterService;
     @Mock private PackageManager mMockPackageManager;
     @Mock private ScanController mMockScanController;
     @Mock private IScannerCallback mMockScannerCallback;
-    private final AttributionSource mAttributionSource =
-            InstrumentationRegistry.getInstrumentation().getContext().getAttributionSource();
 
     @Spy private BluetoothMethodProxy mMapMethodProxy = BluetoothMethodProxy.getInstance();
 
