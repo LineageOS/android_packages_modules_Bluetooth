@@ -163,3 +163,13 @@ flag {
     }
 }
 
+flag {
+    name: "voice_recognition_fixes"
+    namespace: "bluetooth"
+    description: "Fix issues with starting/stopping voice recognition"
+    bug: "415376528"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
