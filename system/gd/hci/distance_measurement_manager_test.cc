@@ -836,6 +836,59 @@ TEST_F(DistanceMeasurementManagerTest, fail_create_config_complete) {
     cs_requester_.test_hci_layer_->IncomingLeMetaEvent(
             CsModule::GetConfigCompleteEvent(params.connection_handle, cs_config_complete_event));
   }
+  dm_session_future.wait_for(kTimeout);
+  cs_requester_.sync_client_handler();
+}
+
+TEST_F(DistanceMeasurementManagerTest, fail_create_config_complete_in_wrong_state_no_retry) {
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+
+  CsConfigCompleteEvent cs_config_complete_event;
+  cs_config_complete_event.status = ErrorCode::COMMAND_DISALLOWED;
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(
+          CsModule::GetConfigCompleteEvent(params.connection_handle, cs_config_complete_event));
+  cs_requester_.sync_client_handler();
+
+  cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
+}
+
+TEST_F(DistanceMeasurementManagerTest, fail_security_enable_complete) {
+  auto dm_session_future = cs_requester_.GetDmSessionFuture();
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillCreateConfig(params);
+
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+              OnDistanceMeasurementStopped(params.responder_addr,
+                                           DistanceMeasurementErrorCode::REASON_INTERNAL_ERROR,
+                                           DistanceMeasurementMethod::METHOD_CS))
+          .WillOnce([this](const Address& /*address*/, DistanceMeasurementErrorCode /*error_code*/,
+                           DistanceMeasurementMethod /*method*/) {
+            ASSERT_NE(cs_requester_.dm_session_promise_, nullptr);
+            cs_requester_.dm_session_promise_->set_value();
+            cs_requester_.dm_session_promise_.reset();
+          });
+
+  cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_SECURITY_ENABLE);
+  cs_requester_.test_hci_layer_->IncomingEvent(LeCsSecurityEnableStatusBuilder::Create(
+          /*status=*/ErrorCode::SUCCESS,
+          /*num_hci_command_packets=*/0xFF));
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(LeCsSecurityEnableCompleteBuilder::Create(
+          ErrorCode::LINK_LAYER_COLLISION, params.connection_handle));
+
+  dm_session_future.wait_for(kTimeout);
+  cs_requester_.sync_client_handler();
+}
+
+TEST_F(DistanceMeasurementManagerTest, unexpected_fail_security_enable_complete) {
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_, OnDistanceMeasurementStopped(_, _, _)).Times(0);
+
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(LeCsSecurityEnableCompleteBuilder::Create(
+          ErrorCode::LINK_LAYER_COLLISION, params.connection_handle));
+
   cs_requester_.sync_client_handler();
 }
 
