@@ -1644,6 +1644,33 @@ public class HeadsetServiceAndStateMachineTest {
         verify(mLeAudioService, atLeastOnce()).setActiveAfterHfpHandover();
     }
 
+    @Test
+    @EnableFlags(Flags.FLAG_VOICE_RECOGNITION_FIXES)
+    public void testStopVoiceRecognitionBeforeStop_returnsFalse() {
+        BluetoothDevice device = getTestDevice(0);
+
+        assertThat(mHeadsetService.mFactory).isNotNull();
+        mHeadsetService.mFactory = mServiceFactory;
+
+        doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
+        doReturn(List.of(device)).when(mLeAudioService).getConnectedDevices();
+        List<BluetoothDevice> activeDeviceList = new ArrayList<>();
+        activeDeviceList.add(null);
+        doReturn(activeDeviceList).when(mLeAudioService).getActiveDevices();
+
+        // Connect HF
+        connectTestDevice(device);
+        // Make device active
+        assertThat(mHeadsetService.setActiveDevice(device)).isTrue();
+        mTestLooper.dispatchAll();
+        verify(mNativeInterface).setActiveDevice(device);
+        assertThat(mHeadsetService.getActiveDevice()).isEqualTo(device);
+
+        assertThat(mHeadsetService.stopVoiceRecognition(device)).isFalse();
+        mTestLooper.dispatchAll();
+        verify(mNativeInterface).atResponseCode(device, HeadsetHalConstants.AT_RESPONSE_ERROR, 0);
+    }
+
     private void startVoiceRecognitionFromHf(BluetoothDevice device) {
         // Start voice recognition
         HeadsetStackEvent startVrEvent =
