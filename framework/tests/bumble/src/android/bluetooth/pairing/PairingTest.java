@@ -1345,6 +1345,58 @@ public class PairingTest {
         intentReceiver.close();
     }
 
+    /**
+     * Verify isBondingInitiatedLocally()
+     *
+     * <p>Prerequisites:
+     *
+     * <ol>
+     *   <li>Bumble and Android are not bonded
+     * </ol>
+     *
+     * <p>Steps:
+     *
+     * <ol>
+     *   <li>Start pairing from DUT over BREDR transport
+     *   <li>Approve BREDR pairing
+     *   <li>Check return value of BluetoothDevice.isBondingInitiatedLocally()
+     * </ol>
+     *
+     * <p>Expectation: BluetoothDevice.isBondingInitiatedLocally() should return true
+     */
+    @Test
+    public void test_isBondingInitiatedLocally_whenBredrBondFromDUT() throws Exception {
+        testStep_BondBredr(null);
+        assertThat(sAdapter.getBondedDevices()).contains(mBumbleDevice);
+        assertThat(mBumbleDevice.isBondingInitiatedLocally()).isTrue();
+    }
+
+    /**
+     * Verify isBondingInitiatedLocally()
+     *
+     * <p>Prerequisites:
+     *
+     * <ol>
+     *   <li>Bumble and Android are not bonded
+     * </ol>
+     *
+     * <p>Steps:
+     *
+     * <ol>
+     *   <li>Start pairing from DUT over LE transport
+     *   <li>Approve LE pairing
+     *   <li>Check return value of BluetoothDevice.isBondingInitiatedLocally()
+     * </ol>
+     *
+     * <p>Expectation: BluetoothDevice.isBondingInitiatedLocally() should return true
+     */
+    @Test
+    public void test_isBondingInitiatedLocally_whenLeBondFromDUT() throws Exception {
+        testStep_BondLe(null, mBumbleDevice, OwnAddressType.PUBLIC);
+        assertThat(sAdapter.getBondedDevices()).contains(mBumbleDevice);
+        assertThat(mBumbleDevice.isBondingInitiatedLocally()).isTrue();
+    }
+
     /** Helper/testStep functions goes here */
 
     /**
