@@ -261,6 +261,7 @@ protected:
     com::android::bluetooth::flags::provider_->reset_flags();
     com::android::bluetooth::flags::provider_->leaudio_use_context_type_manager(true);
     com::android::bluetooth::flags::provider_->leaudio_dynamic_data_path_change(true);
+    com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
 
     reset_mock_function_count_map();
     bluetooth::manager::SetMockBtmInterface(&btm_interface);
