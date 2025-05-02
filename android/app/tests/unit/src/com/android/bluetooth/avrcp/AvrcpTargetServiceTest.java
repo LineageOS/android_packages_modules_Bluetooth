@@ -140,8 +140,7 @@ public class AvrcpTargetServiceTest {
         firstQueue.get(1).numTracks = TEST_DATA;
         firstQueue.get(1).duration = TEST_DATA;
         firstQueue.get(1).image =
-                new Image(
-                        InstrumentationRegistry.getInstrumentation().getContext(), Uri.EMPTY);
+                new Image(InstrumentationRegistry.getInstrumentation().getContext(), Uri.EMPTY);
         assertThat(AvrcpTargetService.isQueueUpdated(firstQueue, secondQueue)).isFalse();
 
         secondQueue.get(1).title = TEST_DATA;

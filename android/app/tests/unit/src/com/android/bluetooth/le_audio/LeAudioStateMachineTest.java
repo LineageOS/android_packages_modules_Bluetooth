@@ -48,7 +48,6 @@ import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
-import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 
 import org.junit.After;

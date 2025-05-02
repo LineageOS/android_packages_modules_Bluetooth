@@ -93,9 +93,7 @@ public class AdapterPropertiesTest {
         doReturn(mHandlerThread.getLooper()).when(mAdapterService).getMainLooper();
         when(mAdapterService.getResources())
                 .thenReturn(
-                        InstrumentationRegistry.getInstrumentation()
-                                .getContext()
-                                .getResources());
+                        InstrumentationRegistry.getInstrumentation().getContext().getResources());
 
         // Must be called to initialize services
         mAdapterProperties =

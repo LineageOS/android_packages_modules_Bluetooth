@@ -34,7 +34,6 @@ import android.bluetooth.BluetoothDevice;
 
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 
