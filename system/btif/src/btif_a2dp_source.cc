@@ -200,8 +200,11 @@ public:
     fixed_queue_free(tx_audio_queue, nullptr);
     tx_audio_queue = nullptr;
     tx_flush = false;
-    media_alarm.CancelAndWait();
-    wakelock_release();
+    if (!com::android::bluetooth::flags::ref_counted_native_wakelock() ||
+        btif_a2dp_source_is_streaming()) {
+      media_alarm.CancelAndWait();
+      wakelock_release();
+    }
     encoder_interface = nullptr;
     encoder_interval_ms = 0;
     stats.Reset();
