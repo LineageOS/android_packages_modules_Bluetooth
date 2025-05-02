@@ -272,15 +272,14 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
      */
     public static boolean doesClassMatchSink(BluetoothClass btClass) {
         // TODO optimize the rule
-        switch (btClass.getDeviceClass()) {
-            case BluetoothClass.Device.COMPUTER_DESKTOP:
-            case BluetoothClass.Device.COMPUTER_LAPTOP:
-            case BluetoothClass.Device.COMPUTER_SERVER:
-            case BluetoothClass.Device.COMPUTER_UNCATEGORIZED:
-                return true;
-            default:
-                return false;
-        }
+        return switch (btClass.getDeviceClass()) {
+            case BluetoothClass.Device.COMPUTER_DESKTOP,
+                            BluetoothClass.Device.COMPUTER_LAPTOP,
+                            BluetoothClass.Device.COMPUTER_SERVER,
+                            BluetoothClass.Device.COMPUTER_UNCATEGORIZED ->
+                    true;
+            default -> false;
+        };
     }
 
     /**

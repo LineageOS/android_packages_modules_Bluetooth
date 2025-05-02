@@ -195,20 +195,14 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
         public static final byte ERROR_NO_AVRCP_SERVICE = 0x04;
 
         String getStatusString() {
-            switch (status) {
-                case DOWNLOAD_PENDING:
-                    return "DOWNLOAD_PENDING";
-                case SUCCESS:
-                    return "SUCCESS";
-                case NO_DEVICE_CONNECTED:
-                    return "NO_DEVICE_CONNECTED";
-                case ERROR_MEDIA_ID_INVALID:
-                    return "ERROR_MEDIA_ID_INVALID";
-                case ERROR_NO_AVRCP_SERVICE:
-                    return "ERROR_NO_AVRCP_SERVICE";
-                default:
-                    return "UNDEFINED_ERROR_CASE";
-            }
+            return switch (status) {
+                case DOWNLOAD_PENDING -> "DOWNLOAD_PENDING";
+                case SUCCESS -> "SUCCESS";
+                case NO_DEVICE_CONNECTED -> "NO_DEVICE_CONNECTED";
+                case ERROR_MEDIA_ID_INVALID -> "ERROR_MEDIA_ID_INVALID";
+                case ERROR_NO_AVRCP_SERVICE -> "ERROR_NO_AVRCP_SERVICE";
+                default -> "UNDEFINED_ERROR_CASE";
+            };
         }
     }
 

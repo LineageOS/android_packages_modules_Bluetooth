@@ -50,15 +50,11 @@ class HearingAidStackEvent {
     }
 
     private static String eventTypeToString(int type) {
-        switch (type) {
-            case EVENT_TYPE_NONE:
-                return "EVENT_TYPE_NONE";
-            case EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                return "EVENT_TYPE_CONNECTION_STATE_CHANGED";
-            case EVENT_TYPE_DEVICE_AVAILABLE:
-                return "EVENT_TYPE_DEVICE_AVAILABLE";
-            default:
-                return "EVENT_TYPE_UNKNOWN:" + type;
-        }
+        return switch (type) {
+            case EVENT_TYPE_NONE -> "EVENT_TYPE_NONE";
+            case EVENT_TYPE_CONNECTION_STATE_CHANGED -> "EVENT_TYPE_CONNECTION_STATE_CHANGED";
+            case EVENT_TYPE_DEVICE_AVAILABLE -> "EVENT_TYPE_DEVICE_AVAILABLE";
+            default -> "EVENT_TYPE_UNKNOWN:" + type;
+        };
     }
 }

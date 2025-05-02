@@ -675,32 +675,26 @@ class AdapterProperties {
     }
 
     private static int convertToAdapterState(int state) {
-        switch (state) {
-            case STATE_DISCONNECTED:
-                return BluetoothAdapter.STATE_DISCONNECTED;
-            case STATE_DISCONNECTING:
-                return BluetoothAdapter.STATE_DISCONNECTING;
-            case STATE_CONNECTED:
-                return BluetoothAdapter.STATE_CONNECTED;
-            case STATE_CONNECTING:
-                return BluetoothAdapter.STATE_CONNECTING;
-        }
-        Log.e(TAG, "convertToAdapterState, unknown state " + state);
-        return -1;
+        return switch (state) {
+            case STATE_DISCONNECTED -> BluetoothAdapter.STATE_DISCONNECTED;
+            case STATE_DISCONNECTING -> BluetoothAdapter.STATE_DISCONNECTING;
+            case STATE_CONNECTED -> BluetoothAdapter.STATE_CONNECTED;
+            case STATE_CONNECTING -> BluetoothAdapter.STATE_CONNECTING;
+            default -> {
+                Log.e(TAG, "convertToAdapterState, unknown state " + state);
+                yield -1;
+            }
+        };
     }
 
     private static boolean isNormalStateTransition(int prevState, int nextState) {
-        switch (prevState) {
-            case STATE_DISCONNECTED:
-                return nextState == STATE_CONNECTING;
-            case STATE_CONNECTED:
-                return nextState == STATE_DISCONNECTING;
-            case STATE_DISCONNECTING:
-            case STATE_CONNECTING:
-                return (nextState == STATE_DISCONNECTED) || (nextState == STATE_CONNECTED);
-            default:
-                return false;
-        }
+        return switch (prevState) {
+            case STATE_DISCONNECTED -> nextState == STATE_CONNECTING;
+            case STATE_CONNECTED -> nextState == STATE_DISCONNECTING;
+            case STATE_DISCONNECTING, STATE_CONNECTING ->
+                    (nextState == STATE_DISCONNECTED) || (nextState == STATE_CONNECTED);
+            default -> false;
+        };
     }
 
     private boolean updateCountersAndCheckForConnectionStateChange(int state, int prevState) {
@@ -736,25 +730,22 @@ class AdapterProperties {
                 break;
         }
 
-        switch (state) {
-            case STATE_CONNECTING:
+        return switch (state) {
+            case STATE_CONNECTING -> {
                 mProfilesConnecting++;
-                return (mProfilesConnected == 0 && mProfilesConnecting == 1);
-
-            case STATE_CONNECTED:
+                yield (mProfilesConnected == 0 && mProfilesConnecting == 1);
+            }
+            case STATE_CONNECTED -> {
                 mProfilesConnected++;
-                return (mProfilesConnected == 1);
-
-            case STATE_DISCONNECTING:
+                yield (mProfilesConnected == 1);
+            }
+            case STATE_DISCONNECTING -> {
                 mProfilesDisconnecting++;
-                return (mProfilesConnected == 0 && mProfilesDisconnecting == 1);
-
-            case STATE_DISCONNECTED:
-                return (mProfilesConnected == 0 && mProfilesConnecting == 0);
-
-            default:
-                return true;
-        }
+                yield (mProfilesConnected == 0 && mProfilesDisconnecting == 1);
+            }
+            case STATE_DISCONNECTED -> (mProfilesConnected == 0 && mProfilesConnecting == 0);
+            default -> true;
+        };
     }
 
     private void updateProfileConnectionState(int profile, int newState, int oldState) {
@@ -1141,33 +1132,23 @@ class AdapterProperties {
 
     // TODO(b/406319687): Remove when do_not_dump_devices_from_adapter_properties is shipped
     private static String dumpDeviceType(int deviceType) {
-        switch (deviceType) {
-            case BluetoothDevice.DEVICE_TYPE_UNKNOWN:
-                return " ???? ";
-            case BluetoothDevice.DEVICE_TYPE_CLASSIC:
-                return "BR/EDR";
-            case BluetoothDevice.DEVICE_TYPE_LE:
-                return "  LE  ";
-            case BluetoothDevice.DEVICE_TYPE_DUAL:
-                return " DUAL ";
-            default:
-                return "Invalid device type: " + deviceType;
-        }
+        return switch (deviceType) {
+            case BluetoothDevice.DEVICE_TYPE_UNKNOWN -> " ???? ";
+            case BluetoothDevice.DEVICE_TYPE_CLASSIC -> "BR/EDR";
+            case BluetoothDevice.DEVICE_TYPE_LE -> "  LE  ";
+            case BluetoothDevice.DEVICE_TYPE_DUAL -> " DUAL ";
+            default -> "Invalid device type: " + deviceType;
+        };
     }
 
     private static String dumpConnectionState(int state) {
-        switch (state) {
-            case BluetoothAdapter.STATE_DISCONNECTED:
-                return "STATE_DISCONNECTED";
-            case BluetoothAdapter.STATE_DISCONNECTING:
-                return "STATE_DISCONNECTING";
-            case BluetoothAdapter.STATE_CONNECTING:
-                return "STATE_CONNECTING";
-            case BluetoothAdapter.STATE_CONNECTED:
-                return "STATE_CONNECTED";
-            default:
-                return "Unknown Connection State " + state;
-        }
+        return switch (state) {
+            case BluetoothAdapter.STATE_DISCONNECTED -> "STATE_DISCONNECTED";
+            case BluetoothAdapter.STATE_DISCONNECTING -> "STATE_DISCONNECTING";
+            case BluetoothAdapter.STATE_CONNECTING -> "STATE_CONNECTING";
+            case BluetoothAdapter.STATE_CONNECTED -> "STATE_CONNECTED";
+            default -> "Unknown Connection State " + state;
+        };
     }
 
     private static void infoLog(String msg) {

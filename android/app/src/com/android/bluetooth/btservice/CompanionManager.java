@@ -399,19 +399,11 @@ public class CompanionManager {
      */
     public int getGattConnParameters(BluetoothDevice device, int type, int priority) {
         int companionType = isCompanionDevice(device) ? mCompanionType : COMPANION_TYPE_NONE;
-        int parameter;
-        switch (companionType) {
-            case COMPANION_TYPE_PRIMARY:
-                parameter = getGattConnParameterPrimary(type, priority);
-                break;
-            case COMPANION_TYPE_SECONDARY:
-                parameter = getGattConnParameterSecondary(type, priority);
-                break;
-            default:
-                parameter = getGattConnParameterDefault(type, priority);
-                break;
-        }
-        return parameter;
+        return switch (companionType) {
+            case COMPANION_TYPE_PRIMARY -> getGattConnParameterPrimary(type, priority);
+            case COMPANION_TYPE_SECONDARY -> getGattConnParameterSecondary(type, priority);
+            default -> getGattConnParameterDefault(type, priority);
+        };
     }
 
     private int getGattConnParameterPrimary(int type, int priority) {

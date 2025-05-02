@@ -991,17 +991,12 @@ public class SapServer extends Thread implements Handler.Callback {
 
     @VisibleForTesting
     static String getMessageName(int messageId) {
-        switch (messageId) {
-            case SAP_MSG_RFC_REPLY:
-                return "SAP_MSG_REPLY";
-            case SAP_MSG_RIL_CONNECT:
-                return "SAP_MSG_RIL_CONNECT";
-            case SAP_MSG_RIL_REQ:
-                return "SAP_MSG_RIL_REQ";
-            case SAP_MSG_RIL_IND:
-                return "SAP_MSG_RIL_IND";
-            default:
-                return "Unknown message ID";
-        }
+        return switch (messageId) {
+            case SAP_MSG_RFC_REPLY -> "SAP_MSG_REPLY";
+            case SAP_MSG_RIL_CONNECT -> "SAP_MSG_RIL_CONNECT";
+            case SAP_MSG_RIL_REQ -> "SAP_MSG_RIL_REQ";
+            case SAP_MSG_RIL_IND -> "SAP_MSG_RIL_IND";
+            default -> "Unknown message ID";
+        };
     }
 }

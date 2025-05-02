@@ -696,18 +696,13 @@ public class HidDeviceService extends ProfileService {
     }
 
     private static int convertHalState(int halState) {
-        switch (halState) {
-            case HAL_CONN_STATE_CONNECTED:
-                return STATE_CONNECTED;
-            case HAL_CONN_STATE_CONNECTING:
-                return STATE_CONNECTING;
-            case HAL_CONN_STATE_DISCONNECTED:
-                return STATE_DISCONNECTED;
-            case HAL_CONN_STATE_DISCONNECTING:
-                return STATE_DISCONNECTING;
-            default:
-                return STATE_DISCONNECTED;
-        }
+        return switch (halState) {
+            case HAL_CONN_STATE_CONNECTED -> STATE_CONNECTED;
+            case HAL_CONN_STATE_CONNECTING -> STATE_CONNECTING;
+            case HAL_CONN_STATE_DISCONNECTED -> STATE_DISCONNECTED;
+            case HAL_CONN_STATE_DISCONNECTING -> STATE_DISCONNECTING;
+            default -> STATE_DISCONNECTED;
+        };
     }
 
     static final int HAL_CONN_STATE_CONNECTED = 0;

@@ -33,6 +33,7 @@ import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.List;
 
 /**
  * The {@link AdvertisingSetParameters} provide a way to adjust advertising preferences for each
@@ -626,19 +627,11 @@ public final class AdvertisingSetParameters implements Parcelable {
         @FlaggedApi(Flags.FLAG_DIRECTED_ADVERTISING_API)
         @SystemApi
         public @NonNull Builder setPeerAddressType(@AddressType int peerAddressType) {
-            switch (peerAddressType) {
-                case BluetoothDevice.ADDRESS_TYPE_PUBLIC:
-                case BluetoothDevice.ADDRESS_TYPE_RANDOM:
-                    mPeerAddressType = peerAddressType;
-                    break;
-                case BluetoothDevice.ADDRESS_TYPE_UNKNOWN:
-                case BluetoothDevice.ADDRESS_TYPE_ANONYMOUS:
-                    throw new IllegalArgumentException(
-                            "unsupported peer address type " + peerAddressType);
-                default:
-                    throw new IllegalArgumentException(
-                            "unknown peer address type " + peerAddressType);
+            if (!List.of(BluetoothDevice.ADDRESS_TYPE_PUBLIC, BluetoothDevice.ADDRESS_TYPE_RANDOM)
+                    .contains(peerAddressType)) {
+                throw new IllegalArgumentException("Invalid peer address type " + peerAddressType);
             }
+            mPeerAddressType = peerAddressType;
             return this;
         }
 

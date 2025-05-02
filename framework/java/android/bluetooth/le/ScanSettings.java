@@ -28,6 +28,8 @@ import android.os.Parcelable;
 
 import com.android.bluetooth.flags.Flags;
 
+import java.util.List;
+
 /**
  * Bluetooth LE scan settings are passed to {@link BluetoothLeScanner#startScan} to define the
  * parameters for the scan.
@@ -339,19 +341,19 @@ public final class ScanSettings implements Parcelable {
          * @throws IllegalArgumentException If the {@code scanMode} is invalid.
          */
         public Builder setScanMode(int scanMode) {
-            switch (scanMode) {
-                case SCAN_MODE_OPPORTUNISTIC:
-                case SCAN_MODE_LOW_POWER:
-                case SCAN_MODE_BALANCED:
-                case SCAN_MODE_LOW_LATENCY:
-                case SCAN_MODE_AMBIENT_DISCOVERY:
-                case SCAN_MODE_SCREEN_OFF:
-                case SCAN_MODE_SCREEN_OFF_BALANCED:
-                    mScanMode = scanMode;
-                    break;
-                default:
-                    throw new IllegalArgumentException("invalid scan mode " + scanMode);
+            if (!List.of(
+                            SCAN_MODE_OPPORTUNISTIC,
+                            SCAN_MODE_LOW_POWER,
+                            SCAN_MODE_BALANCED,
+                            SCAN_MODE_LOW_LATENCY,
+                            SCAN_MODE_AMBIENT_DISCOVERY,
+                            SCAN_MODE_SCREEN_OFF,
+                            SCAN_MODE_SCREEN_OFF_BALANCED)
+                    .contains(scanMode)) {
+                throw new IllegalArgumentException("invalid scan mode " + scanMode);
             }
+
+            mScanMode = scanMode;
             return this;
         }
 
@@ -522,23 +524,15 @@ public final class ScanSettings implements Parcelable {
      * @hide
      */
     public static String getScanModeString(int scanMode) {
-        switch (scanMode) {
-            case SCAN_MODE_OPPORTUNISTIC:
-                return "SCAN_MODE_OPPORTUNISTIC";
-            case SCAN_MODE_LOW_POWER:
-                return "SCAN_MODE_LOW_POWER";
-            case SCAN_MODE_BALANCED:
-                return "SCAN_MODE_BALANCED";
-            case SCAN_MODE_LOW_LATENCY:
-                return "SCAN_MODE_LOW_LATENCY";
-            case SCAN_MODE_AMBIENT_DISCOVERY:
-                return "SCAN_MODE_AMBIENT_DISCOVERY";
-            case SCAN_MODE_SCREEN_OFF:
-                return "SCAN_MODE_SCREEN_OFF";
-            case SCAN_MODE_SCREEN_OFF_BALANCED:
-                return "SCAN_MODE_SCREEN_OFF_BALANCED";
-            default:
-                return "UNKNOWN value=" + scanMode;
-        }
+        return switch (scanMode) {
+            case SCAN_MODE_OPPORTUNISTIC -> "SCAN_MODE_OPPORTUNISTIC";
+            case SCAN_MODE_LOW_POWER -> "SCAN_MODE_LOW_POWER";
+            case SCAN_MODE_BALANCED -> "SCAN_MODE_BALANCED";
+            case SCAN_MODE_LOW_LATENCY -> "SCAN_MODE_LOW_LATENCY";
+            case SCAN_MODE_AMBIENT_DISCOVERY -> "SCAN_MODE_AMBIENT_DISCOVERY";
+            case SCAN_MODE_SCREEN_OFF -> "SCAN_MODE_SCREEN_OFF";
+            case SCAN_MODE_SCREEN_OFF_BALANCED -> "SCAN_MODE_SCREEN_OFF_BALANCED";
+            default -> "UNKNOWN value=" + scanMode;
+        };
     }
 }

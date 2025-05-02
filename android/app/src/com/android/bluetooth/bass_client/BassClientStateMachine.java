@@ -2543,18 +2543,15 @@ class BassClientStateMachine extends StateMachine {
         if (getCurrentState() != null) {
             currentState = getCurrentState().getName();
         }
-        switch (currentState) {
-            case "Disconnected":
-                return STATE_DISCONNECTED;
-            case "Connecting":
-                return STATE_CONNECTING;
-            case "Connected":
-            case "ConnectedProcessing":
-                return STATE_CONNECTED;
-            default:
+        return switch (currentState) {
+            case "Disconnected" -> STATE_DISCONNECTED;
+            case "Connecting" -> STATE_CONNECTING;
+            case "Connected", "ConnectedProcessing" -> STATE_CONNECTED;
+            default -> {
                 Log.e(TAG, "Bad currentState: " + currentState);
-                return STATE_DISCONNECTED;
-        }
+                yield STATE_DISCONNECTED;
+            }
+        };
     }
 
     int getMaximumSourceCapacity() {

@@ -134,26 +134,18 @@ public class DistanceMeasurementNativeInterface {
     }
 
     private static int convertErrorCode(int errorCode) {
-        switch (errorCode) {
-            case REASON_FEATURE_NOT_SUPPORTED_LOCAL:
-                return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
-            case REASON_FEATURE_NOT_SUPPORTED_REMOTE:
-                return BluetoothStatusCodes.ERROR_REMOTE_OPERATION_NOT_SUPPORTED;
-            case REASON_LOCAL_REQUEST:
-                return BluetoothStatusCodes.REASON_LOCAL_STACK_REQUEST;
-            case REASON_REMOTE_REQUEST:
-                return BluetoothStatusCodes.REASON_REMOTE_REQUEST;
-            case REASON_DURATION_TIMEOUT:
-                return BluetoothStatusCodes.ERROR_TIMEOUT;
-            case REASON_NO_LE_CONNECTION:
-                return BluetoothStatusCodes.ERROR_NO_LE_CONNECTION;
-            case REASON_INVALID_PARAMETERS:
-                return BluetoothStatusCodes.ERROR_BAD_PARAMETERS;
-            case REASON_INTERNAL_ERROR:
-                return BluetoothStatusCodes.ERROR_DISTANCE_MEASUREMENT_INTERNAL;
-            default:
-                return BluetoothStatusCodes.ERROR_UNKNOWN;
-        }
+        return switch (errorCode) {
+            case REASON_FEATURE_NOT_SUPPORTED_LOCAL -> BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
+            case REASON_FEATURE_NOT_SUPPORTED_REMOTE ->
+                    BluetoothStatusCodes.ERROR_REMOTE_OPERATION_NOT_SUPPORTED;
+            case REASON_LOCAL_REQUEST -> BluetoothStatusCodes.REASON_LOCAL_STACK_REQUEST;
+            case REASON_REMOTE_REQUEST -> BluetoothStatusCodes.REASON_REMOTE_REQUEST;
+            case REASON_DURATION_TIMEOUT -> BluetoothStatusCodes.ERROR_TIMEOUT;
+            case REASON_NO_LE_CONNECTION -> BluetoothStatusCodes.ERROR_NO_LE_CONNECTION;
+            case REASON_INVALID_PARAMETERS -> BluetoothStatusCodes.ERROR_BAD_PARAMETERS;
+            case REASON_INTERNAL_ERROR -> BluetoothStatusCodes.ERROR_DISTANCE_MEASUREMENT_INTERNAL;
+            default -> BluetoothStatusCodes.ERROR_UNKNOWN;
+        };
     }
 
     /**********************************************************************************************/

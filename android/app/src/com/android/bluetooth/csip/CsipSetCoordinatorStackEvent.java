@@ -74,106 +74,77 @@ public class CsipSetCoordinatorStackEvent {
     }
 
     private static String eventTypeToString(int type) {
-        switch (type) {
-            case EVENT_TYPE_NONE:
-                return "EVENT_TYPE_NONE";
-            case EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                return "EVENT_TYPE_CONNECTION_STATE_CHANGED";
-            case EVENT_TYPE_DEVICE_AVAILABLE:
-                return "EVENT_TYPE_DEVICE_AVAILABLE";
-            case EVENT_TYPE_SET_MEMBER_AVAILABLE:
-                return "EVENT_TYPE_SET_MEMBER_AVAILABLE";
-            case EVENT_TYPE_GROUP_LOCK_CHANGED:
-                return "EVENT_TYPE_GROUP_LOCK_CHANGED";
-            default:
-                return "EVENT_TYPE_UNKNOWN:" + type;
-        }
+        return switch (type) {
+            case EVENT_TYPE_NONE -> "EVENT_TYPE_NONE";
+            case EVENT_TYPE_CONNECTION_STATE_CHANGED -> "EVENT_TYPE_CONNECTION_STATE_CHANGED";
+            case EVENT_TYPE_DEVICE_AVAILABLE -> "EVENT_TYPE_DEVICE_AVAILABLE";
+            case EVENT_TYPE_SET_MEMBER_AVAILABLE -> "EVENT_TYPE_SET_MEMBER_AVAILABLE";
+            case EVENT_TYPE_GROUP_LOCK_CHANGED -> "EVENT_TYPE_GROUP_LOCK_CHANGED";
+            default -> "EVENT_TYPE_UNKNOWN:" + type;
+        };
     }
 
     private static String connectionStateToString(int value) {
-        switch (value) {
-            case CONNECTION_STATE_DISCONNECTED:
-                return "CONNECTION_STATE_DISCONNECTED";
-            case CONNECTION_STATE_CONNECTING:
-                return "CONNECTION_STATE_CONNECTING";
-            case CONNECTION_STATE_CONNECTED:
-                return "CONNECTION_STATE_CONNECTED";
-            case CONNECTION_STATE_DISCONNECTING:
-                return "CONNECTION_STATE_DISCONNECTING";
-            default:
-                return "STATE_UNKNOWN";
-        }
+        return switch (value) {
+            case CONNECTION_STATE_DISCONNECTED -> "CONNECTION_STATE_DISCONNECTED";
+            case CONNECTION_STATE_CONNECTING -> "CONNECTION_STATE_CONNECTING";
+            case CONNECTION_STATE_CONNECTED -> "CONNECTION_STATE_CONNECTED";
+            case CONNECTION_STATE_DISCONNECTING -> "CONNECTION_STATE_DISCONNECTING";
+            default -> "STATE_UNKNOWN";
+        };
     }
 
     private static String eventTypeValueBool1ToString(int evType, boolean value) {
-        switch (evType) {
-            case EVENT_TYPE_GROUP_LOCK_CHANGED:
-                return "locked: " + Boolean.toString(value);
-            default:
-                return "<unused>";
-        }
+        return switch (evType) {
+            case EVENT_TYPE_GROUP_LOCK_CHANGED -> "locked: " + Boolean.toString(value);
+            default -> "<unused>";
+        };
     }
 
     private static String eventTypeValueUuid1ToString(int evType, UUID value) {
-        switch (evType) {
-            case EVENT_TYPE_DEVICE_AVAILABLE:
-                return "csis uuid: " + value;
-            default:
-                return "<unused>";
-        }
+        return switch (evType) {
+            case EVENT_TYPE_DEVICE_AVAILABLE -> "csis uuid: " + value;
+            default -> "<unused>";
+        };
     }
 
     private static String eventTypeValueInt1ToString(int evType, int value) {
-        switch (evType) {
-            case EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                return connectionStateToString(value);
-            case EVENT_TYPE_DEVICE_AVAILABLE:
-            case EVENT_TYPE_GROUP_LOCK_CHANGED:
-            case EVENT_TYPE_SET_MEMBER_AVAILABLE:
-                return "group id: " + value;
-            default:
-                return "<unused>";
-        }
+        return switch (evType) {
+            case EVENT_TYPE_CONNECTION_STATE_CHANGED -> connectionStateToString(value);
+            case EVENT_TYPE_DEVICE_AVAILABLE,
+                            EVENT_TYPE_GROUP_LOCK_CHANGED,
+                            EVENT_TYPE_SET_MEMBER_AVAILABLE ->
+                    "group id: " + value;
+            default -> "<unused>";
+        };
     }
 
     private static String eventTypeValueInt2ToString(int evType, int value) {
-        switch (evType) {
-            case EVENT_TYPE_DEVICE_AVAILABLE:
-                return "group size: " + value;
-            case EVENT_TYPE_GROUP_LOCK_CHANGED:
-                return "status:" + csipLockStatusToString(value);
-            default:
-                return "<unused>";
-        }
+        return switch (evType) {
+            case EVENT_TYPE_DEVICE_AVAILABLE -> "group size: " + value;
+            case EVENT_TYPE_GROUP_LOCK_CHANGED -> "status:" + csipLockStatusToString(value);
+            default -> "<unused>";
+        };
     }
 
     private static String eventTypeValueInt3ToString(int evType, int value) {
-        switch (evType) {
-            case EVENT_TYPE_DEVICE_AVAILABLE:
-                return "rank: " + value;
-            default:
-                return "<unused>";
-        }
+        return switch (evType) {
+            case EVENT_TYPE_DEVICE_AVAILABLE -> "rank: " + value;
+            default -> "<unused>";
+        };
     }
 
     private static String csipLockStatusToString(int state) {
-        switch (state) {
-            case LOCK_STATUS_SUCCESS:
-                return "LOCK_STATUS_SUCCESS";
-            case LOCK_STATUS_FAILED_INVALID_GROUP:
-                return "LOCK_STATUS_FAILED_INVALID_GROUP";
-            case LOCK_STATUS_FAILED_GROUP_EMPTY:
-                return "LOCK_STATUS_FAILED_GROUP_EMPTY";
-            case LOCK_STATUS_FAILED_GROUP_NOT_CONNECTED:
-                return "LOCK_STATUS_FAILED_GROUP_NOT_CONNECTED";
-            case LOCK_STATUS_FAILED_GROUP_LOCKED_BY_OTHERS:
-                return "LOCK_STATUS_FAILED_GROUP_LOCKED_BY_OTHERS";
-            case LOCK_STATUS_FAILED_OTHER_REASON:
-                return "LOCK_STATUS_FAILED_OTHER_REASON";
-            case LOCK_STATUS_GROUP_MEMBER_LOST:
-                return "LOCK_STATUS_GROUP_MEMBER_LOST";
-            default:
-                return "UNKNOWN";
-        }
+        return switch (state) {
+            case LOCK_STATUS_SUCCESS -> "LOCK_STATUS_SUCCESS";
+            case LOCK_STATUS_FAILED_INVALID_GROUP -> "LOCK_STATUS_FAILED_INVALID_GROUP";
+            case LOCK_STATUS_FAILED_GROUP_EMPTY -> "LOCK_STATUS_FAILED_GROUP_EMPTY";
+            case LOCK_STATUS_FAILED_GROUP_NOT_CONNECTED -> "LOCK_STATUS_FAILED_GROUP_NOT_CONNECTED";
+            case LOCK_STATUS_FAILED_GROUP_LOCKED_BY_OTHERS ->
+                    "LOCK_STATUS_FAILED_GROUP_LOCKED_BY_OTHERS";
+            case LOCK_STATUS_FAILED_OTHER_REASON -> "LOCK_STATUS_FAILED_OTHER_REASON";
+            case LOCK_STATUS_GROUP_MEMBER_LOST -> "LOCK_STATUS_GROUP_MEMBER_LOST";
+            default -> "UNKNOWN";
+        };
     }
 }

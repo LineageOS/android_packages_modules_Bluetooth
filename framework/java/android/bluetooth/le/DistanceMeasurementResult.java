@@ -28,6 +28,7 @@ import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.List;
 
 /**
  * Result of distance measurement.
@@ -561,20 +562,20 @@ public final class DistanceMeasurementResult implements Parcelable {
         @SystemApi
         @NonNull
         public Builder setDetectedAttackLevel(@Nadm int detectedAttackLevel) {
-            switch (detectedAttackLevel) {
-                case NADM_ATTACK_IS_EXTREMELY_UNLIKELY:
-                case NADM_ATTACK_IS_VERY_UNLIKELY:
-                case NADM_ATTACK_IS_UNLIKELY:
-                case NADM_ATTACK_IS_POSSIBLE:
-                case NADM_ATTACK_IS_LIKELY:
-                case NADM_ATTACK_IS_VERY_LIKELY:
-                case NADM_ATTACK_IS_EXTREMELY_LIKELY:
-                case NADM_UNKNOWN:
-                    mDetectedAttackLevel = detectedAttackLevel;
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid value " + detectedAttackLevel);
+            if (!List.of(
+                            NADM_ATTACK_IS_EXTREMELY_UNLIKELY,
+                            NADM_ATTACK_IS_VERY_UNLIKELY,
+                            NADM_ATTACK_IS_UNLIKELY,
+                            NADM_ATTACK_IS_POSSIBLE,
+                            NADM_ATTACK_IS_LIKELY,
+                            NADM_ATTACK_IS_VERY_LIKELY,
+                            NADM_ATTACK_IS_EXTREMELY_LIKELY,
+                            NADM_UNKNOWN)
+                    .contains(detectedAttackLevel)) {
+                throw new IllegalArgumentException("Invalid value " + detectedAttackLevel);
             }
+
+            mDetectedAttackLevel = detectedAttackLevel;
             return this;
         }
 

@@ -299,16 +299,16 @@ public class DistanceMeasurementManager {
                         + " => "
                         + BluetoothUtils.toAnonymizedAddress(address));
 
-        switch (method) {
-            case DISTANCE_MEASUREMENT_METHOD_AUTO:
-            case DISTANCE_MEASUREMENT_METHOD_RSSI:
-                return stopRssiTracker(uuid, address, timeout);
-            case DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING:
-                return stopCsTracker(uuid, address, timeout);
-            default:
+        return switch (method) {
+            case DISTANCE_MEASUREMENT_METHOD_AUTO, DISTANCE_MEASUREMENT_METHOD_RSSI ->
+                    stopRssiTracker(uuid, address, timeout);
+            case DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING ->
+                    stopCsTracker(uuid, address, timeout);
+            default -> {
                 Log.w(TAG, "stopDistanceMeasurement with invalid method:" + method);
-                return BluetoothStatusCodes.ERROR_DISTANCE_MEASUREMENT_INTERNAL;
-        }
+                yield BluetoothStatusCodes.ERROR_DISTANCE_MEASUREMENT_INTERNAL;
+            }
+        };
     }
 
     int getChannelSoundingMaxSupportedSecurityLevel(BluetoothDevice remoteDevice) {

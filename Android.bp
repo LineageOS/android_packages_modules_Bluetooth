@@ -192,6 +192,7 @@ java_defaults {
             "-Xep:ReturnAtTheEndOfVoidFunction:ERROR",
             "-Xep:ReturnFromVoid:ERROR",
             "-Xep:SelfAssertion:ERROR",
+            "-Xep:StatementSwitchToExpressionSwitch:ERROR",
             "-Xep:StaticAssignmentInConstructor:ERROR",
             "-Xep:StaticGuardedByInstance:ERROR",
             "-Xep:StringCaseLocaleUsage:ERROR",
