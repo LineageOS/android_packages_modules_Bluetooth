@@ -128,6 +128,7 @@ java_defaults {
             "-Xep:AlreadyChecked:ERROR",
             "-Xep:AmbiguousMethodReference:ERROR",
             "-Xep:ArrayRecordComponent:ERROR",
+            "-Xep:AssignmentExpression:ERROR",
             "-Xep:AttemptedNegativeZero:ERROR",
             "-Xep:BadImport:ERROR",
             "-Xep:BadInstanceof:ERROR",
