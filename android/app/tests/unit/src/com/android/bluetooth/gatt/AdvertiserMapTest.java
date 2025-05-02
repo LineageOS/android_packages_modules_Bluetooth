@@ -34,7 +34,6 @@ import android.content.pm.PackageManager;
 import android.os.Binder;
 
 import androidx.test.filters.SmallTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.Before;
@@ -53,9 +52,7 @@ public class AdvertiserMapTest {
 
     @Mock private Context mContext;
     @Mock private PackageManager mMockPackageManager;
-
-    private final AttributionSource mAttributionSource =
-            InstrumentationRegistry.getInstrumentation().getContext().getAttributionSource();
+    @Mock private AttributionSource mAttributionSource;
 
     @Before
     public void setUp() throws Exception {
