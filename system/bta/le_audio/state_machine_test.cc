@@ -296,18 +296,13 @@ protected:
             }));
 
     ON_CALL(mock_callbacks_, OnGetEnabledDirections(_)).WillByDefault(Invoke([this](int group_id) {
-      if (!com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
-        uint8_t directions = types::kLeAudioDirectionBoth;
-        if (group_is_suspending_) {
-          directions = 0;
-        }
-        log::debug("[Testing] OnGetEnabledDirections: group_id: {}, directions: {:#x}", group_id,
-                   directions);
-        return directions;
-      }
       log::debug("[Testing] OnGetEnabledDirections: group_id: {}, directions: {:#x}", group_id,
                  enabled_directions_);
-      return enabled_directions_;
+      /* Note: By default enabled_directions_ is Both.
+       * `group_is_suspendig_ `is used when SuspendStream() was called and group does not use
+       *  dynamic direction feature and this is needed to make sure that Group will stay in QoS
+       * configure state and not get enabled automatically. */
+      return group_is_suspending_ ? 0 : enabled_directions_;
     }));
 
     MockCsisClient::SetMockInstanceForTesting(&mock_csis_client_module_);
