@@ -27,8 +27,8 @@ from mobly.asserts import assert_equal  # type: ignore
 from mobly.asserts import assert_in  # type: ignore
 from mobly.asserts import assert_is_not_none  # type: ignore
 from mobly.asserts import fail  # type: ignore
-from pandora_experimental.rfcomm_grpc_aio import RFCOMM
-from pandora_experimental.rfcomm_pb2 import (
+from pandora.rfcomm_grpc_aio import RFCOMM
+from pandora.rfcomm_pb2 import (
     AcceptConnectionRequest,
     RxRequest,
     StartServerRequest,

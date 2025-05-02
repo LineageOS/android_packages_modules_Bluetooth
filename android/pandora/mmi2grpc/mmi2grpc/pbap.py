@@ -20,9 +20,9 @@ from mmi2grpc._helpers import assert_description, match_description
 from mmi2grpc._proxy import ProfileProxy
 from pandora.host_grpc import Host
 from pandora.host_pb2 import Connection
-from pandora_experimental.os_grpc import Os
-from pandora_experimental.os_pb2 import ACCESS_PHONEBOOK
-from pandora_experimental.pbap_grpc import PBAP
+from pandora.os_grpc import Os
+from pandora.os_pb2 import ACCESS_PHONEBOOK
+from pandora.pbap_grpc import PBAP
 
 
 class PBAPProxy(ProfileProxy):

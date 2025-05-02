@@ -24,8 +24,8 @@ from pandora.host_pb2 import (DISCOVERABLE_GENERAL, DISCOVERABLE_LIMITED, NOT_CO
                               NOT_DISCOVERABLE, PUBLIC, RANDOM, DataTypes)
 from pandora.security_grpc import Security, SecurityStorage
 from pandora.security_pb2 import LE_LEVEL3, LEVEL1, LEVEL2, PairingEventAnswer
-from pandora_experimental.gatt_grpc import GATT
-from pandora_experimental.gatt_pb2 import (GattCharacteristicParams, GattServiceParams)
+from pandora.gatt_grpc import GATT
+from pandora.gatt_pb2 import (GattCharacteristicParams, GattServiceParams)
 
 
 class GAPProxy(ProfileProxy):

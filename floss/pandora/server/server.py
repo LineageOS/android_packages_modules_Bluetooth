@@ -30,12 +30,12 @@ import grpc
 from pandora import a2dp_grpc_aio
 from pandora import host_grpc_aio
 from pandora import security_grpc_aio
-from pandora_experimental import gatt_grpc_aio
-from pandora_experimental import hfp_grpc_aio
-from pandora_experimental import hid_grpc_aio
-from pandora_experimental import l2cap_grpc_aio
-from pandora_experimental import modem_grpc_aio
-from pandora_experimental import rfcomm_grpc_aio
+from pandora import gatt_grpc_aio
+from pandora import hfp_grpc_aio
+from pandora import hid_grpc_aio
+from pandora import l2cap_grpc_aio
+from pandora import modem_grpc_aio
+from pandora import rfcomm_grpc_aio
 
 
 async def serve(port):

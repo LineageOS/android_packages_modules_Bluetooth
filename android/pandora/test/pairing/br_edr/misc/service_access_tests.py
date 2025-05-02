@@ -36,7 +36,7 @@ from bumble.sdp import (
 )
 
 from mobly.asserts import assert_equal, assert_is_not_none, assert_raises, fail
-from pandora_experimental.rfcomm_grpc_aio import RFCOMM as AioRFCOMM
+from pandora.rfcomm_grpc_aio import RFCOMM as AioRFCOMM
 from pandora.security_pb2 import PairingEventAnswer
 
 

@@ -25,7 +25,7 @@ from floss.pandora.floss import floss_enums
 from gi.repository import GLib
 from google.protobuf import any_pb2
 from pandora import host_pb2
-from pandora_experimental import os_pb2
+from pandora import os_pb2
 
 # All GLIB method calls should wait this many seconds by default
 GLIB_METHOD_CALL_TIMEOUT = 2

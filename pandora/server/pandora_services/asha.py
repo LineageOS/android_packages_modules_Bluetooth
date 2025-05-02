@@ -35,8 +35,8 @@ from bumble.l2cap import Channel
 from pandora_services import utils
 from bumble.utils import AsyncRunner
 from google.protobuf.empty_pb2 import Empty  # pytype: disable=pyi-error
-from pandora_experimental.asha_grpc_aio import AshaServicer
-from pandora_experimental.asha_pb2 import CaptureAudioRequest, CaptureAudioResponse, RegisterRequest
+from pandora.asha_grpc_aio import AshaServicer
+from pandora.asha_pb2 import CaptureAudioRequest, CaptureAudioResponse, RegisterRequest
 from typing import AsyncGenerator, List, Optional
 
 

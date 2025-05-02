@@ -35,8 +35,8 @@ from bumble.sdp import (
 from google.protobuf.empty_pb2 import Empty
 import grpc
 import logging
-from pandora_experimental.opp_grpc_aio import OppServicer
-from pandora_experimental.opp_pb2 import AcceptPutOperationResponse
+from pandora.opp_grpc_aio import OppServicer
+from pandora.opp_pb2 import AcceptPutOperationResponse
 
 OBEX_RFCOMM_CHANNEL = 0x07
 
