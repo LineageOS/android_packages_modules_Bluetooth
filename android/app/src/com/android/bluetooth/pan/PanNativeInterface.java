@@ -73,19 +73,16 @@ public class PanNativeInterface {
 
     @VisibleForTesting
     static int convertHalState(int halState) {
-        switch (halState) {
-            case CONN_STATE_CONNECTED:
-                return STATE_CONNECTED;
-            case CONN_STATE_CONNECTING:
-                return STATE_CONNECTING;
-            case CONN_STATE_DISCONNECTED:
-                return STATE_DISCONNECTED;
-            case CONN_STATE_DISCONNECTING:
-                return STATE_DISCONNECTING;
-            default:
+        return switch (halState) {
+            case CONN_STATE_CONNECTED -> STATE_CONNECTED;
+            case CONN_STATE_CONNECTING -> STATE_CONNECTING;
+            case CONN_STATE_DISCONNECTED -> STATE_DISCONNECTED;
+            case CONN_STATE_DISCONNECTING -> STATE_DISCONNECTING;
+            default -> {
                 Log.e(TAG, "Invalid pan connection state: " + halState);
-                return STATE_DISCONNECTED;
-        }
+                yield STATE_DISCONNECTED;
+            }
+        };
     }
 
     /**********************************************************************************************/

@@ -3565,19 +3565,13 @@ public class BluetoothMapContent {
                     "FRACTION_REQUEST_NEXT does not make sense as"
                             + " we always return the full message.");
         }
-        switch (type) {
-            case SMS_GSM:
-            case SMS_CDMA:
-                return getSmsMessage(id, appParams.getCharset());
-            case MMS:
-                return getMmsMessage(id, appParams);
-            case EMAIL:
-                return getEmailMessage(id, appParams, folderElement);
-            case IM:
-                return getIMMessage(id, appParams, folderElement);
-            default:
-                throw new IllegalArgumentException("Invalid message handle.");
-        }
+        return switch (type) {
+            case SMS_GSM, SMS_CDMA -> getSmsMessage(id, appParams.getCharset());
+            case MMS -> getMmsMessage(id, appParams);
+            case EMAIL -> getEmailMessage(id, appParams, folderElement);
+            case IM -> getIMMessage(id, appParams, folderElement);
+            default -> throw new IllegalArgumentException("Invalid message handle.");
+        };
     }
 
     private String setVCardFromPhoneNumber(

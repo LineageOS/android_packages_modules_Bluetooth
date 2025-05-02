@@ -2343,21 +2343,18 @@ class BluetoothManagerService {
     }
 
     int setBtHciSnoopLogMode(int mode) {
-        final BluetoothProperties.snoop_log_mode_values snoopMode;
-
-        switch (mode) {
-            case BluetoothAdapter.BT_SNOOP_LOG_MODE_DISABLED:
-                snoopMode = BluetoothProperties.snoop_log_mode_values.DISABLED;
-                break;
-            case BluetoothAdapter.BT_SNOOP_LOG_MODE_FILTERED:
-                snoopMode = BluetoothProperties.snoop_log_mode_values.FILTERED;
-                break;
-            case BluetoothAdapter.BT_SNOOP_LOG_MODE_FULL:
-                snoopMode = BluetoothProperties.snoop_log_mode_values.FULL;
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid HCI snoop log mode param value");
-        }
+        final BluetoothProperties.snoop_log_mode_values snoopMode =
+                switch (mode) {
+                    case BluetoothAdapter.BT_SNOOP_LOG_MODE_DISABLED ->
+                            BluetoothProperties.snoop_log_mode_values.DISABLED;
+                    case BluetoothAdapter.BT_SNOOP_LOG_MODE_FILTERED ->
+                            BluetoothProperties.snoop_log_mode_values.FILTERED;
+                    case BluetoothAdapter.BT_SNOOP_LOG_MODE_FULL ->
+                            BluetoothProperties.snoop_log_mode_values.FULL;
+                    default ->
+                            throw new IllegalArgumentException(
+                                    "Invalid HCI snoop log mode param value");
+                };
         try {
             BluetoothProperties.snoop_log_mode(snoopMode);
         } catch (RuntimeException e) {

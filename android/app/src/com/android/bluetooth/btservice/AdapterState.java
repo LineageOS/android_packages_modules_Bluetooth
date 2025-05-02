@@ -26,18 +26,32 @@ import com.android.bluetooth.flags.Flags;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 
-/**
- * This state machine handles Bluetooth Adapter State. Stable States: {@link OffState}: Initial
- * State {@link BleOnState} : Bluetooth Low Energy, Including GATT, is on {@link OnState} :
- * Bluetooth is on (All supported profiles)
- *
- * <p>Transition States: {@link TurningBleOnState} : OffState to BleOnState {@link
- * TurningBleOffState} : BleOnState to OffState {@link TurningOnState} : BleOnState to OnState
- * {@link TurningOffState} : OnState to BleOnState
- *
- * <p>+------ Off <-----+ | | v | TurningBleOn TO---> TurningBleOff | ^ ^ | | | +-----> ----+ |
- * BleOn | +------ <---+ O v | T TurningOn TO----> TurningOff | ^ | | +-----> On ------+
- */
+// This state machine handles Bluetooth Adapter State.
+// Stable States:
+//      {@link OffState}: Initial State
+//      {@link BleOnState} : Bluetooth Low Energy, Including GATT, is on
+//      {@link OnState} : Bluetooth is on (All supported profiles)
+//
+// Transition States:
+//      {@link TurningBleOnState} : OffState to BleOnState
+//      {@link TurningBleOffState} : BleOnState to OffState
+//      {@link TurningOnState} : BleOnState to OnState
+//      {@link TurningOffState} : OnState to BleOnState
+//
+//        +------   Off  <-----+
+//        |                    |
+//        v                    |
+// TurningBleOn   TO--->   TurningBleOff
+//        |                  ^ ^
+//        |                  | |
+//        +----->        ----+ |
+//                 BleOn       |
+//        +------        <---+ O
+//        v                  | T
+//    TurningOn  TO---->  TurningOff
+//        |                    ^
+//        |                    |
+//        +----->   On   ------+
 final class AdapterState extends StateMachine {
     private static final String TAG = AdapterState.class.getSimpleName();
 
@@ -92,34 +106,21 @@ final class AdapterState extends StateMachine {
     }
 
     private static String messageString(int message) {
-        switch (message) {
-            case BLE_TURN_ON:
-                return "BLE_TURN_ON";
-            case USER_TURN_ON:
-                return "USER_TURN_ON";
-            case BREDR_STARTED:
-                return "BREDR_STARTED";
-            case BLE_STARTED:
-                return "BLE_STARTED";
-            case USER_TURN_OFF:
-                return "USER_TURN_OFF";
-            case BLE_TURN_OFF:
-                return "BLE_TURN_OFF";
-            case BLE_STOPPED:
-                return "BLE_STOPPED";
-            case BREDR_STOPPED:
-                return "BREDR_STOPPED";
-            case BLE_START_TIMEOUT:
-                return "BLE_START_TIMEOUT";
-            case BLE_STOP_TIMEOUT:
-                return "BLE_STOP_TIMEOUT";
-            case BREDR_START_TIMEOUT:
-                return "BREDR_START_TIMEOUT";
-            case BREDR_STOP_TIMEOUT:
-                return "BREDR_STOP_TIMEOUT";
-            default:
-                return "Unknown message (" + message + ")";
-        }
+        return switch (message) {
+            case BLE_TURN_ON -> "BLE_TURN_ON";
+            case USER_TURN_ON -> "USER_TURN_ON";
+            case BREDR_STARTED -> "BREDR_STARTED";
+            case BLE_STARTED -> "BLE_STARTED";
+            case USER_TURN_OFF -> "USER_TURN_OFF";
+            case BLE_TURN_OFF -> "BLE_TURN_OFF";
+            case BLE_STOPPED -> "BLE_STOPPED";
+            case BREDR_STOPPED -> "BREDR_STOPPED";
+            case BLE_START_TIMEOUT -> "BLE_START_TIMEOUT";
+            case BLE_STOP_TIMEOUT -> "BLE_STOP_TIMEOUT";
+            case BREDR_START_TIMEOUT -> "BREDR_START_TIMEOUT";
+            case BREDR_STOP_TIMEOUT -> "BREDR_STOP_TIMEOUT";
+            default -> "Unknown message (" + message + ")";
+        };
     }
 
     public void doQuit() {
@@ -182,13 +183,11 @@ final class AdapterState extends StateMachine {
         @Override
         public boolean processMessage(Message msg) {
             switch (msg.what) {
-                case BLE_TURN_ON:
-                    transitionTo(mTurningBleOnState);
-                    break;
-
-                default:
+                case BLE_TURN_ON -> transitionTo(mTurningBleOnState);
+                default -> {
                     infoLog("Unhandled message - " + messageString(msg.what));
                     return false;
+                }
             }
             return true;
         }
@@ -204,17 +203,12 @@ final class AdapterState extends StateMachine {
         @Override
         public boolean processMessage(Message msg) {
             switch (msg.what) {
-                case USER_TURN_ON:
-                    transitionTo(mTurningOnState);
-                    break;
-
-                case BLE_TURN_OFF:
-                    transitionTo(mTurningBleOffState);
-                    break;
-
-                default:
+                case USER_TURN_ON -> transitionTo(mTurningOnState);
+                case BLE_TURN_OFF -> transitionTo(mTurningBleOffState);
+                default -> {
                     infoLog("Unhandled message - " + messageString(msg.what));
                     return false;
+                }
             }
             return true;
         }
@@ -230,13 +224,11 @@ final class AdapterState extends StateMachine {
         @Override
         public boolean processMessage(Message msg) {
             switch (msg.what) {
-                case USER_TURN_OFF:
-                    transitionTo(mTurningOffState);
-                    break;
-
-                default:
+                case USER_TURN_OFF -> transitionTo(mTurningOffState);
+                default -> {
                     infoLog("Unhandled message - " + messageString(msg.what));
                     return false;
+                }
             }
             return true;
         }
@@ -269,18 +261,16 @@ final class AdapterState extends StateMachine {
         @Override
         public boolean processMessage(Message msg) {
             switch (msg.what) {
-                case BLE_STARTED:
-                    transitionTo(mBleOnState);
-                    break;
+                case BLE_STARTED -> transitionTo(mBleOnState);
 
-                case BLE_START_TIMEOUT:
+                case BLE_START_TIMEOUT -> {
                     errorLog(messageString(msg.what));
                     transitionTo(mTurningBleOffState);
-                    break;
-
-                default:
+                }
+                default -> {
                     infoLog("Unhandled message - " + messageString(msg.what));
                     return false;
+                }
             }
             return true;
         }
@@ -309,18 +299,17 @@ final class AdapterState extends StateMachine {
         @Override
         public boolean processMessage(Message msg) {
             switch (msg.what) {
-                case BREDR_STARTED:
-                    transitionTo(mOnState);
-                    break;
+                case BREDR_STARTED -> transitionTo(mOnState);
 
-                case BREDR_START_TIMEOUT:
+                case BREDR_START_TIMEOUT -> {
                     errorLog(messageString(msg.what));
                     transitionTo(mTurningOffState);
-                    break;
+                }
 
-                default:
+                default -> {
                     infoLog("Unhandled message - " + messageString(msg.what));
                     return false;
+                }
             }
             return true;
         }
@@ -356,18 +345,17 @@ final class AdapterState extends StateMachine {
         @Override
         public boolean processMessage(Message msg) {
             switch (msg.what) {
-                case BREDR_STOPPED:
-                    transitionTo(mBleOnState);
-                    break;
+                case BREDR_STOPPED -> transitionTo(mBleOnState);
 
-                case BREDR_STOP_TIMEOUT:
+                case BREDR_STOP_TIMEOUT -> {
                     errorLog(messageString(msg.what));
                     transitionTo(mTurningBleOffState);
-                    break;
+                }
 
-                default:
+                default -> {
                     infoLog("Unhandled message - " + messageString(msg.what));
                     return false;
+                }
             }
             return true;
         }
@@ -400,18 +388,17 @@ final class AdapterState extends StateMachine {
         @Override
         public boolean processMessage(Message msg) {
             switch (msg.what) {
-                case BLE_STOPPED:
-                    transitionTo(mOffState);
-                    break;
+                case BLE_STOPPED -> transitionTo(mOffState);
 
-                case BLE_STOP_TIMEOUT:
+                case BLE_STOP_TIMEOUT -> {
                     errorLog(messageString(msg.what));
                     transitionTo(mOffState);
-                    break;
+                }
 
-                default:
+                default -> {
                     infoLog("Unhandled message - " + messageString(msg.what));
                     return false;
+                }
             }
             return true;
         }

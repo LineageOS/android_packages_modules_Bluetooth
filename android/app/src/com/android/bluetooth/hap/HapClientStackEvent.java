@@ -102,102 +102,76 @@ public class HapClientStackEvent {
     }
 
     private static String eventTypeValueListToString(int type, List value) {
-        switch (type) {
-            case EVENT_TYPE_ON_PRESET_INFO:
-                return "{presets count: " + (value == null ? 0 : value.size()) + "}";
-            default:
-                return "{list: empty}";
-        }
+        return switch (type) {
+            case EVENT_TYPE_ON_PRESET_INFO ->
+                    "{presets count: " + (value == null ? 0 : value.size()) + "}";
+            default -> "{list: empty}";
+        };
     }
 
     private static String eventTypeValueInt1ToString(int type, int value) {
-        switch (type) {
-            case EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                return "{state: " + getConnectionStateName(value) + "}";
-            case EVENT_TYPE_DEVICE_AVAILABLE:
-                return "{features: " + featuresToString(value) + "}";
-            case EVENT_TYPE_DEVICE_FEATURES:
-                return "{features: " + featuresToString(value) + "}";
-            case EVENT_TYPE_ON_PRESET_NAME_SET_ERROR:
-                return "{statusCode: " + statusCodeValueToString(value) + "}";
-            case EVENT_TYPE_ON_PRESET_INFO_ERROR:
-                return "{statusCode: " + statusCodeValueToString(value) + "}";
-            case EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED:
-                return "{presetIndex: " + value + "}";
-            case EVENT_TYPE_ON_ACTIVE_PRESET_SELECT_ERROR:
-                return "{statusCode: " + statusCodeValueToString(value) + "}";
-            case EVENT_TYPE_ON_PRESET_INFO:
-            default:
-                return "{unused: " + value + "}";
-        }
+        return switch (type) {
+            case EVENT_TYPE_CONNECTION_STATE_CHANGED ->
+                    "{state: " + getConnectionStateName(value) + "}";
+            case EVENT_TYPE_DEVICE_AVAILABLE -> "{features: " + featuresToString(value) + "}";
+            case EVENT_TYPE_DEVICE_FEATURES -> "{features: " + featuresToString(value) + "}";
+            case EVENT_TYPE_ON_PRESET_NAME_SET_ERROR ->
+                    "{statusCode: " + statusCodeValueToString(value) + "}";
+            case EVENT_TYPE_ON_PRESET_INFO_ERROR ->
+                    "{statusCode: " + statusCodeValueToString(value) + "}";
+            case EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED -> "{presetIndex: " + value + "}";
+            case EVENT_TYPE_ON_ACTIVE_PRESET_SELECT_ERROR ->
+                    "{statusCode: " + statusCodeValueToString(value) + "}";
+            default -> "{unused: " + value + "}";
+        };
     }
 
     private static String infoReasonToString(int value) {
-        switch (value) {
-            case PRESET_INFO_REASON_ALL_PRESET_INFO:
-                return "PRESET_INFO_REASON_ALL_PRESET_INFO";
-            case PRESET_INFO_REASON_PRESET_INFO_UPDATE:
-                return "PRESET_INFO_REASON_PRESET_INFO_UPDATE";
-            case PRESET_INFO_REASON_PRESET_DELETED:
-                return "PRESET_INFO_REASON_PRESET_DELETED";
-            case PRESET_INFO_REASON_PRESET_AVAILABILITY_CHANGED:
-                return "PRESET_INFO_REASON_PRESET_AVAILABILITY_CHANGED";
-            case PRESET_INFO_REASON_PRESET_INFO_REQUEST_RESPONSE:
-                return "PRESET_INFO_REASON_PRESET_INFO_REQUEST_RESPONSE";
-            default:
-                return "UNKNOWN";
-        }
+        return switch (value) {
+            case PRESET_INFO_REASON_ALL_PRESET_INFO -> "PRESET_INFO_REASON_ALL_PRESET_INFO";
+            case PRESET_INFO_REASON_PRESET_INFO_UPDATE -> "PRESET_INFO_REASON_PRESET_INFO_UPDATE";
+            case PRESET_INFO_REASON_PRESET_DELETED -> "PRESET_INFO_REASON_PRESET_DELETED";
+            case PRESET_INFO_REASON_PRESET_AVAILABILITY_CHANGED ->
+                    "PRESET_INFO_REASON_PRESET_AVAILABILITY_CHANGED";
+            case PRESET_INFO_REASON_PRESET_INFO_REQUEST_RESPONSE ->
+                    "PRESET_INFO_REASON_PRESET_INFO_REQUEST_RESPONSE";
+            default -> "UNKNOWN";
+        };
     }
 
     private static String eventTypeValueInt2ToString(int type, int value) {
-        switch (type) {
-            case EVENT_TYPE_ON_PRESET_NAME_SET_ERROR:
-                return "{presetIndex: " + value + "}";
-            case EVENT_TYPE_ON_PRESET_INFO:
-                return "{info_reason: " + infoReasonToString(value) + "}";
-            case EVENT_TYPE_ON_PRESET_INFO_ERROR:
-                return "{presetIndex: " + value + "}";
-            case EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED:
-                return "{groupId: " + value + "}";
-            case EVENT_TYPE_ON_ACTIVE_PRESET_SELECT_ERROR:
-                return "{groupId: " + value + "}";
-            default:
-                return "{unused: " + value + "}";
-        }
+        return switch (type) {
+            case EVENT_TYPE_ON_PRESET_NAME_SET_ERROR -> "{presetIndex: " + value + "}";
+            case EVENT_TYPE_ON_PRESET_INFO -> "{info_reason: " + infoReasonToString(value) + "}";
+            case EVENT_TYPE_ON_PRESET_INFO_ERROR -> "{presetIndex: " + value + "}";
+            case EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED -> "{groupId: " + value + "}";
+            case EVENT_TYPE_ON_ACTIVE_PRESET_SELECT_ERROR -> "{groupId: " + value + "}";
+            default -> "{unused: " + value + "}";
+        };
     }
 
     private static String eventTypeValueInt3ToString(int type, int value) {
-        switch (type) {
-            case EVENT_TYPE_ON_PRESET_INFO:
-            case EVENT_TYPE_ON_PRESET_INFO_ERROR:
-            case EVENT_TYPE_ON_PRESET_NAME_SET_ERROR:
-                return "{groupId: " + value + "}";
-            default:
-                return "{unused: " + value + "}";
-        }
+        return switch (type) {
+            case EVENT_TYPE_ON_PRESET_INFO,
+                            EVENT_TYPE_ON_PRESET_INFO_ERROR,
+                            EVENT_TYPE_ON_PRESET_NAME_SET_ERROR ->
+                    "{groupId: " + value + "}";
+            default -> "{unused: " + value + "}";
+        };
     }
 
     private static String statusCodeValueToString(int value) {
-        switch (value) {
-            case STATUS_NO_ERROR:
-                return "STATUS_NO_ERROR";
-            case STATUS_SET_NAME_NOT_ALLOWED:
-                return "STATUS_SET_NAME_NOT_ALLOWED";
-            case STATUS_OPERATION_NOT_SUPPORTED:
-                return "STATUS_OPERATION_NOT_SUPPORTED";
-            case STATUS_OPERATION_NOT_POSSIBLE:
-                return "STATUS_OPERATION_NOT_POSSIBLE";
-            case STATUS_INVALID_PRESET_NAME_LENGTH:
-                return "STATUS_INVALID_PRESET_NAME_LENGTH";
-            case STATUS_INVALID_PRESET_INDEX:
-                return "STATUS_INVALID_PRESET_INDEX";
-            case STATUS_GROUP_OPERATION_NOT_SUPPORTED:
-                return "STATUS_GROUP_OPERATION_NOT_SUPPORTED";
-            case STATUS_PROCEDURE_ALREADY_IN_PROGRESS:
-                return "STATUS_PROCEDURE_ALREADY_IN_PROGRESS";
-            default:
-                return "ERROR_UNKNOWN";
-        }
+        return switch (value) {
+            case STATUS_NO_ERROR -> "STATUS_NO_ERROR";
+            case STATUS_SET_NAME_NOT_ALLOWED -> "STATUS_SET_NAME_NOT_ALLOWED";
+            case STATUS_OPERATION_NOT_SUPPORTED -> "STATUS_OPERATION_NOT_SUPPORTED";
+            case STATUS_OPERATION_NOT_POSSIBLE -> "STATUS_OPERATION_NOT_POSSIBLE";
+            case STATUS_INVALID_PRESET_NAME_LENGTH -> "STATUS_INVALID_PRESET_NAME_LENGTH";
+            case STATUS_INVALID_PRESET_INDEX -> "STATUS_INVALID_PRESET_INDEX";
+            case STATUS_GROUP_OPERATION_NOT_SUPPORTED -> "STATUS_GROUP_OPERATION_NOT_SUPPORTED";
+            case STATUS_PROCEDURE_ALREADY_IN_PROGRESS -> "STATUS_PROCEDURE_ALREADY_IN_PROGRESS";
+            default -> "ERROR_UNKNOWN";
+        };
     }
 
     private static String featuresToString(int value) {
@@ -227,27 +201,18 @@ public class HapClientStackEvent {
     }
 
     private static String eventTypeToString(int type) {
-        switch (type) {
-            case EVENT_TYPE_NONE:
-                return "EVENT_TYPE_NONE";
-            case EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                return "EVENT_TYPE_CONNECTION_STATE_CHANGED";
-            case EVENT_TYPE_DEVICE_AVAILABLE:
-                return "EVENT_TYPE_DEVICE_AVAILABLE";
-            case EVENT_TYPE_DEVICE_FEATURES:
-                return "EVENT_TYPE_DEVICE_FEATURES";
-            case EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED:
-                return "EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED";
-            case EVENT_TYPE_ON_ACTIVE_PRESET_SELECT_ERROR:
-                return "EVENT_TYPE_ON_ACTIVE_PRESET_SELECT_ERROR";
-            case EVENT_TYPE_ON_PRESET_INFO:
-                return "EVENT_TYPE_ON_PRESET_INFO";
-            case EVENT_TYPE_ON_PRESET_NAME_SET_ERROR:
-                return "EVENT_TYPE_ON_PRESET_NAME_SET_ERROR";
-            case EVENT_TYPE_ON_PRESET_INFO_ERROR:
-                return "EVENT_TYPE_ON_PRESET_INFO_ERROR";
-            default:
-                return "EVENT_TYPE_UNKNOWN:" + type;
-        }
+        return switch (type) {
+            case EVENT_TYPE_NONE -> "EVENT_TYPE_NONE";
+            case EVENT_TYPE_CONNECTION_STATE_CHANGED -> "EVENT_TYPE_CONNECTION_STATE_CHANGED";
+            case EVENT_TYPE_DEVICE_AVAILABLE -> "EVENT_TYPE_DEVICE_AVAILABLE";
+            case EVENT_TYPE_DEVICE_FEATURES -> "EVENT_TYPE_DEVICE_FEATURES";
+            case EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED -> "EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED";
+            case EVENT_TYPE_ON_ACTIVE_PRESET_SELECT_ERROR ->
+                    "EVENT_TYPE_ON_ACTIVE_PRESET_SELECT_ERROR";
+            case EVENT_TYPE_ON_PRESET_INFO -> "EVENT_TYPE_ON_PRESET_INFO";
+            case EVENT_TYPE_ON_PRESET_NAME_SET_ERROR -> "EVENT_TYPE_ON_PRESET_NAME_SET_ERROR";
+            case EVENT_TYPE_ON_PRESET_INFO_ERROR -> "EVENT_TYPE_ON_PRESET_INFO_ERROR";
+            default -> "EVENT_TYPE_UNKNOWN:" + type;
+        };
     }
 }

@@ -868,17 +868,13 @@ public class ScanManager {
         }
 
         private static boolean upgradeScanModeByOneLevel(ScanClient client) {
-            switch (client.mScanModeApp) {
-                case ScanSettings.SCAN_MODE_LOW_POWER:
-                    return client.updateScanMode(ScanSettings.SCAN_MODE_BALANCED);
-                case ScanSettings.SCAN_MODE_BALANCED:
-                case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY:
-                    return client.updateScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY);
-                case ScanSettings.SCAN_MODE_OPPORTUNISTIC:
-                case ScanSettings.SCAN_MODE_LOW_LATENCY:
-                default:
-                    return false;
-            }
+            return switch (client.mScanModeApp) {
+                case ScanSettings.SCAN_MODE_LOW_POWER ->
+                        client.updateScanMode(ScanSettings.SCAN_MODE_BALANCED);
+                case ScanSettings.SCAN_MODE_BALANCED, ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY ->
+                        client.updateScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY);
+                default -> false;
+            };
         }
 
         private void handleRevertScanModeUpgrade(ScanClient client) {
@@ -1368,16 +1364,12 @@ public class ScanManager {
     }
 
     private static int getFullScanStoragePercent(int resultType) {
-        switch (resultType) {
-            case SCAN_RESULT_TYPE_FULL:
-                return 100;
-            case SCAN_RESULT_TYPE_TRUNCATED:
-                return 0;
-            case SCAN_RESULT_TYPE_BOTH:
-                return 50;
-            default:
-                return 50;
-        }
+        return switch (resultType) {
+            case SCAN_RESULT_TYPE_FULL -> 100;
+            case SCAN_RESULT_TYPE_TRUNCATED -> 0;
+            case SCAN_RESULT_TYPE_BOTH -> 50;
+            default -> 50;
+        };
     }
 
     private BatchScanParams fetchBatchScanParams() {
@@ -1406,38 +1398,38 @@ public class ScanManager {
     // parameter set as follows.
     private int getBatchScanWindowMillis(int scanMode) {
         ContentResolver resolver = mAdapterService.getContentResolver();
-        switch (scanMode) {
-            case ScanSettings.SCAN_MODE_LOW_LATENCY:
-                return Settings.Global.getInt(
-                        resolver,
-                        Settings.Global.BLE_SCAN_BALANCED_WINDOW_MS,
-                        SCAN_MODE_BALANCED_WINDOW_MS);
-            case ScanSettings.SCAN_MODE_SCREEN_OFF:
-                return mAdapterService.getScreenOffLowPowerWindowMillis();
-            default:
-                return Settings.Global.getInt(
-                        resolver,
-                        Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
-                        SCAN_MODE_LOW_POWER_WINDOW_MS);
-        }
+        return switch (scanMode) {
+            case ScanSettings.SCAN_MODE_LOW_LATENCY ->
+                    Settings.Global.getInt(
+                            resolver,
+                            Settings.Global.BLE_SCAN_BALANCED_WINDOW_MS,
+                            SCAN_MODE_BALANCED_WINDOW_MS);
+            case ScanSettings.SCAN_MODE_SCREEN_OFF ->
+                    mAdapterService.getScreenOffLowPowerWindowMillis();
+            default ->
+                    Settings.Global.getInt(
+                            resolver,
+                            Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
+                            SCAN_MODE_LOW_POWER_WINDOW_MS);
+        };
     }
 
     private int getBatchScanIntervalMillis(int scanMode) {
         ContentResolver resolver = mAdapterService.getContentResolver();
-        switch (scanMode) {
-            case ScanSettings.SCAN_MODE_LOW_LATENCY:
-                return Settings.Global.getInt(
-                        resolver,
-                        Settings.Global.BLE_SCAN_BALANCED_INTERVAL_MS,
-                        SCAN_MODE_BALANCED_INTERVAL_MS);
-            case ScanSettings.SCAN_MODE_SCREEN_OFF:
-                return mAdapterService.getScreenOffLowPowerIntervalMillis();
-            default:
-                return Settings.Global.getInt(
-                        resolver,
-                        Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
-                        SCAN_MODE_LOW_POWER_INTERVAL_MS);
-        }
+        return switch (scanMode) {
+            case ScanSettings.SCAN_MODE_LOW_LATENCY ->
+                    Settings.Global.getInt(
+                            resolver,
+                            Settings.Global.BLE_SCAN_BALANCED_INTERVAL_MS,
+                            SCAN_MODE_BALANCED_INTERVAL_MS);
+            case ScanSettings.SCAN_MODE_SCREEN_OFF ->
+                    mAdapterService.getScreenOffLowPowerIntervalMillis();
+            default ->
+                    Settings.Global.getInt(
+                            resolver,
+                            Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
+                            SCAN_MODE_LOW_POWER_INTERVAL_MS);
+        };
     }
 
     // Set the batch alarm to be triggered within a short window after batch interval. This
@@ -1861,33 +1853,32 @@ public class ScanManager {
                     SCAN_MODE_LOW_POWER_WINDOW_MS);
         }
 
-        switch (settings.getScanMode()) {
-            case ScanSettings.SCAN_MODE_LOW_LATENCY:
-                return Settings.Global.getInt(
-                        resolver,
-                        Settings.Global.BLE_SCAN_LOW_LATENCY_WINDOW_MS,
-                        SCAN_MODE_LOW_LATENCY_WINDOW_MS);
-            case ScanSettings.SCAN_MODE_BALANCED:
-            case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY:
-                return Settings.Global.getInt(
-                        resolver,
-                        Settings.Global.BLE_SCAN_BALANCED_WINDOW_MS,
-                        SCAN_MODE_BALANCED_WINDOW_MS);
-            case ScanSettings.SCAN_MODE_LOW_POWER:
-                return Settings.Global.getInt(
-                        resolver,
-                        Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
-                        SCAN_MODE_LOW_POWER_WINDOW_MS);
-            case ScanSettings.SCAN_MODE_SCREEN_OFF:
-                return mAdapterService.getScreenOffLowPowerWindowMillis();
-            case ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED:
-                return mAdapterService.getScreenOffBalancedWindowMillis();
-            default:
-                return Settings.Global.getInt(
-                        resolver,
-                        Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
-                        SCAN_MODE_LOW_POWER_WINDOW_MS);
-        }
+        return switch (settings.getScanMode()) {
+            case ScanSettings.SCAN_MODE_LOW_LATENCY ->
+                    Settings.Global.getInt(
+                            resolver,
+                            Settings.Global.BLE_SCAN_LOW_LATENCY_WINDOW_MS,
+                            SCAN_MODE_LOW_LATENCY_WINDOW_MS);
+            case ScanSettings.SCAN_MODE_BALANCED, ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY ->
+                    Settings.Global.getInt(
+                            resolver,
+                            Settings.Global.BLE_SCAN_BALANCED_WINDOW_MS,
+                            SCAN_MODE_BALANCED_WINDOW_MS);
+            case ScanSettings.SCAN_MODE_LOW_POWER ->
+                    Settings.Global.getInt(
+                            resolver,
+                            Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
+                            SCAN_MODE_LOW_POWER_WINDOW_MS);
+            case ScanSettings.SCAN_MODE_SCREEN_OFF ->
+                    mAdapterService.getScreenOffLowPowerWindowMillis();
+            case ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED ->
+                    mAdapterService.getScreenOffBalancedWindowMillis();
+            default ->
+                    Settings.Global.getInt(
+                            resolver,
+                            Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
+                            SCAN_MODE_LOW_POWER_WINDOW_MS);
+        };
     }
 
     private int getScanIntervalMillis(ScanSettings settings) {
@@ -1898,33 +1889,32 @@ public class ScanManager {
                     Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
                     SCAN_MODE_LOW_POWER_INTERVAL_MS);
         }
-        switch (settings.getScanMode()) {
-            case ScanSettings.SCAN_MODE_LOW_LATENCY:
-                return Settings.Global.getInt(
-                        resolver,
-                        Settings.Global.BLE_SCAN_LOW_LATENCY_INTERVAL_MS,
-                        SCAN_MODE_LOW_LATENCY_INTERVAL_MS);
-            case ScanSettings.SCAN_MODE_BALANCED:
-            case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY:
-                return Settings.Global.getInt(
-                        resolver,
-                        Settings.Global.BLE_SCAN_BALANCED_INTERVAL_MS,
-                        SCAN_MODE_BALANCED_INTERVAL_MS);
-            case ScanSettings.SCAN_MODE_LOW_POWER:
-                return Settings.Global.getInt(
-                        resolver,
-                        Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
-                        SCAN_MODE_LOW_POWER_INTERVAL_MS);
-            case ScanSettings.SCAN_MODE_SCREEN_OFF:
-                return mAdapterService.getScreenOffLowPowerIntervalMillis();
-            case ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED:
-                return mAdapterService.getScreenOffBalancedIntervalMillis();
-            default:
-                return Settings.Global.getInt(
-                        resolver,
-                        Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
-                        SCAN_MODE_LOW_POWER_INTERVAL_MS);
-        }
+        return switch (settings.getScanMode()) {
+            case ScanSettings.SCAN_MODE_LOW_LATENCY ->
+                    Settings.Global.getInt(
+                            resolver,
+                            Settings.Global.BLE_SCAN_LOW_LATENCY_INTERVAL_MS,
+                            SCAN_MODE_LOW_LATENCY_INTERVAL_MS);
+            case ScanSettings.SCAN_MODE_BALANCED, ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY ->
+                    Settings.Global.getInt(
+                            resolver,
+                            Settings.Global.BLE_SCAN_BALANCED_INTERVAL_MS,
+                            SCAN_MODE_BALANCED_INTERVAL_MS);
+            case ScanSettings.SCAN_MODE_LOW_POWER ->
+                    Settings.Global.getInt(
+                            resolver,
+                            Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
+                            SCAN_MODE_LOW_POWER_INTERVAL_MS);
+            case ScanSettings.SCAN_MODE_SCREEN_OFF ->
+                    mAdapterService.getScreenOffLowPowerIntervalMillis();
+            case ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED ->
+                    mAdapterService.getScreenOffBalancedIntervalMillis();
+            default ->
+                    Settings.Global.getInt(
+                            resolver,
+                            Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
+                            SCAN_MODE_LOW_POWER_INTERVAL_MS);
+        };
     }
 
     private static int getScanPhyMask(boolean usePhy1m, boolean usePhyCoded) {

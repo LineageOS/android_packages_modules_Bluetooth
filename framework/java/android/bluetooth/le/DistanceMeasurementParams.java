@@ -16,6 +16,10 @@
 
 package android.bluetooth.le;
 
+import static android.bluetooth.le.DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_AUTO;
+import static android.bluetooth.le.DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING;
+import static android.bluetooth.le.DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI;
+
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.IntDef;
@@ -30,6 +34,7 @@ import android.os.Parcelable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.List;
 
 /**
  * The {@link DistanceMeasurementParams} provide a way to adjust distance measurement preferences.
@@ -269,15 +274,11 @@ public final class DistanceMeasurementParams implements Parcelable {
          */
         @SystemApi
         public @NonNull Builder setFrequency(@ReportFrequency int frequency) {
-            switch (frequency) {
-                case REPORT_FREQUENCY_LOW:
-                case REPORT_FREQUENCY_MEDIUM:
-                case REPORT_FREQUENCY_HIGH:
-                    mFrequency = frequency;
-                    break;
-                default:
+            if (!List.of(REPORT_FREQUENCY_LOW, REPORT_FREQUENCY_MEDIUM, REPORT_FREQUENCY_HIGH)
+                    .contains(frequency)) {
                     throw new IllegalArgumentException("unknown frequency " + frequency);
             }
+            mFrequency = frequency;
             return this;
         }
 
@@ -290,15 +291,14 @@ public final class DistanceMeasurementParams implements Parcelable {
          */
         @SystemApi
         public @NonNull Builder setMethodId(@DistanceMeasurementMethodId int methodId) {
-            switch (methodId) {
-                case DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_AUTO:
-                case DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI:
-                case DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING:
-                    mMethodId = methodId;
-                    break;
-                default:
+            if (!List.of(
+                            DISTANCE_MEASUREMENT_METHOD_AUTO,
+                            DISTANCE_MEASUREMENT_METHOD_RSSI,
+                            DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING)
+                    .contains(methodId)) {
                     throw new IllegalArgumentException("unknown method id " + methodId);
             }
+            mMethodId = methodId;
             return this;
         }
 

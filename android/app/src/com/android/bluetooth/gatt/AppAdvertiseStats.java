@@ -230,27 +230,26 @@ class AppAdvertiseStats {
     }
 
     private static int convertStatusCode(int status) {
-        switch (status) {
-            case AdvertisingSetCallback.ADVERTISE_SUCCESS:
-                return BluetoothStatsLog.LE_ADV_ERROR_REPORTED__STATUS_CODE__ADV_STATUS_SUCCESS;
-            case AdvertisingSetCallback.ADVERTISE_FAILED_DATA_TOO_LARGE:
-                return BluetoothStatsLog
-                        .LE_ADV_ERROR_REPORTED__STATUS_CODE__ADV_STATUS_FAILED_DATA_TOO_LARGE;
-            case AdvertisingSetCallback.ADVERTISE_FAILED_TOO_MANY_ADVERTISERS:
-                return BluetoothStatsLog
-                        .LE_ADV_ERROR_REPORTED__STATUS_CODE__ADV_STATUS_FAILED_TOO_MANY_ADVERTISERS;
-            case AdvertisingSetCallback.ADVERTISE_FAILED_ALREADY_STARTED:
-                return BluetoothStatsLog
-                        .LE_ADV_ERROR_REPORTED__STATUS_CODE__ADV_STATUS_FAILED_ALREADY_STARTED;
-            case AdvertisingSetCallback.ADVERTISE_FAILED_INTERNAL_ERROR:
-                return BluetoothStatsLog
-                        .LE_ADV_ERROR_REPORTED__STATUS_CODE__ADV_STATUS_FAILED_INTERNAL_ERROR;
-            case AdvertisingSetCallback.ADVERTISE_FAILED_FEATURE_UNSUPPORTED:
-                return BluetoothStatsLog
-                        .LE_ADV_ERROR_REPORTED__STATUS_CODE__ADV_STATUS_FAILED_FEATURE_UNSUPPORTED;
-            default:
-                return BluetoothStatsLog.LE_ADV_ERROR_REPORTED__STATUS_CODE__ADV_STATUS_UNKNOWN;
-        }
+        return switch (status) {
+            case AdvertisingSetCallback.ADVERTISE_SUCCESS ->
+                    BluetoothStatsLog.LE_ADV_ERROR_REPORTED__STATUS_CODE__ADV_STATUS_SUCCESS;
+            case AdvertisingSetCallback.ADVERTISE_FAILED_DATA_TOO_LARGE ->
+                    BluetoothStatsLog
+                            .LE_ADV_ERROR_REPORTED__STATUS_CODE__ADV_STATUS_FAILED_DATA_TOO_LARGE;
+            case AdvertisingSetCallback.ADVERTISE_FAILED_TOO_MANY_ADVERTISERS ->
+                    BluetoothStatsLog
+                            .LE_ADV_ERROR_REPORTED__STATUS_CODE__ADV_STATUS_FAILED_TOO_MANY_ADVERTISERS;
+            case AdvertisingSetCallback.ADVERTISE_FAILED_ALREADY_STARTED ->
+                    BluetoothStatsLog
+                            .LE_ADV_ERROR_REPORTED__STATUS_CODE__ADV_STATUS_FAILED_ALREADY_STARTED;
+            case AdvertisingSetCallback.ADVERTISE_FAILED_INTERNAL_ERROR ->
+                    BluetoothStatsLog
+                            .LE_ADV_ERROR_REPORTED__STATUS_CODE__ADV_STATUS_FAILED_INTERNAL_ERROR;
+            case AdvertisingSetCallback.ADVERTISE_FAILED_FEATURE_UNSUPPORTED ->
+                    BluetoothStatsLog
+                            .LE_ADV_ERROR_REPORTED__STATUS_CODE__ADV_STATUS_FAILED_FEATURE_UNSUPPORTED;
+            default -> BluetoothStatsLog.LE_ADV_ERROR_REPORTED__STATUS_CODE__ADV_STATUS_UNKNOWN;
+        };
     }
 
     void enableAdvertisingSet(
@@ -458,31 +457,29 @@ class AppAdvertiseStats {
     }
 
     private static int convertAdvInterval(int interval) {
-        switch (interval) {
-            case AdvertisingSetParameters.INTERVAL_HIGH:
-                return BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_INTERVAL__INTERVAL_HIGH;
-            case AdvertisingSetParameters.INTERVAL_MEDIUM:
-                return BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_INTERVAL__INTERVAL_MEDIUM;
-            case AdvertisingSetParameters.INTERVAL_LOW:
-                return BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_INTERVAL__INTERVAL_LOW;
-            default:
-                return BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_INTERVAL__INTERVAL_UNKNOWN;
-        }
+        return switch (interval) {
+            case AdvertisingSetParameters.INTERVAL_HIGH ->
+                    BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_INTERVAL__INTERVAL_HIGH;
+            case AdvertisingSetParameters.INTERVAL_MEDIUM ->
+                    BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_INTERVAL__INTERVAL_MEDIUM;
+            case AdvertisingSetParameters.INTERVAL_LOW ->
+                    BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_INTERVAL__INTERVAL_LOW;
+            default -> BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_INTERVAL__INTERVAL_UNKNOWN;
+        };
     }
 
     private static int convertTxPowerLevel(int level) {
-        switch (level) {
-            case AdvertisingSetParameters.TX_POWER_ULTRA_LOW:
-                return BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_TX_POWER__TX_POWER_ULTRA_LOW;
-            case AdvertisingSetParameters.TX_POWER_LOW:
-                return BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_TX_POWER__TX_POWER_LOW;
-            case AdvertisingSetParameters.TX_POWER_MEDIUM:
-                return BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_TX_POWER__TX_POWER_MEDIUM;
-            case AdvertisingSetParameters.TX_POWER_HIGH:
-                return BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_TX_POWER__TX_POWER_HIGH;
-            default:
-                return BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_TX_POWER__TX_POWER_UNKNOWN;
-        }
+        return switch (level) {
+            case AdvertisingSetParameters.TX_POWER_ULTRA_LOW ->
+                    BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_TX_POWER__TX_POWER_ULTRA_LOW;
+            case AdvertisingSetParameters.TX_POWER_LOW ->
+                    BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_TX_POWER__TX_POWER_LOW;
+            case AdvertisingSetParameters.TX_POWER_MEDIUM ->
+                    BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_TX_POWER__TX_POWER_MEDIUM;
+            case AdvertisingSetParameters.TX_POWER_HIGH ->
+                    BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_TX_POWER__TX_POWER_HIGH;
+            default -> BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_TX_POWER__TX_POWER_UNKNOWN;
+        };
     }
 
     private static void dumpAppAdvertiserData(StringBuilder sb, AppAdvertiserData advData) {

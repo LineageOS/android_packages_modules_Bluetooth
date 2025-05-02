@@ -61,18 +61,13 @@ public class A2dpStackEvent {
     }
 
     private static String eventTypeToString(int type) {
-        switch (type) {
-            case EVENT_TYPE_NONE:
-                return "EVENT_TYPE_NONE";
-            case EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                return "EVENT_TYPE_CONNECTION_STATE_CHANGED";
-            case EVENT_TYPE_AUDIO_STATE_CHANGED:
-                return "EVENT_TYPE_AUDIO_STATE_CHANGED";
-            case EVENT_TYPE_CODEC_CONFIG_CHANGED:
-                return "EVENT_TYPE_CODEC_CONFIG_CHANGED";
-            default:
-                return "EVENT_TYPE_UNKNOWN:" + type;
-        }
+        return switch (type) {
+            case EVENT_TYPE_NONE -> "EVENT_TYPE_NONE";
+            case EVENT_TYPE_CONNECTION_STATE_CHANGED -> "EVENT_TYPE_CONNECTION_STATE_CHANGED";
+            case EVENT_TYPE_AUDIO_STATE_CHANGED -> "EVENT_TYPE_AUDIO_STATE_CHANGED";
+            case EVENT_TYPE_CODEC_CONFIG_CHANGED -> "EVENT_TYPE_CODEC_CONFIG_CHANGED";
+            default -> "EVENT_TYPE_UNKNOWN:" + type;
+        };
     }
 
     private static String eventTypeValueIntToString(int type, int value) {

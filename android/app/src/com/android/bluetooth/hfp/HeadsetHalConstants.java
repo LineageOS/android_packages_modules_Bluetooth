@@ -81,19 +81,13 @@ public final class HeadsetHalConstants {
     static final int BTHF_SWB_YES = 2;
 
     static String getConnectionStateName(int state) {
-        switch (state) {
-            case CONNECTION_STATE_DISCONNECTED:
-                return "CONNECTION_STATE_DISCONNECTED";
-            case CONNECTION_STATE_CONNECTING:
-                return "CONNECTION_STATE_CONNECTING";
-            case CONNECTION_STATE_CONNECTED:
-                return "CONNECTION_STATE_CONNECTED";
-            case CONNECTION_STATE_SLC_CONNECTED:
-                return "CONNECTION_STATE_SLC_CONNECTED";
-            case CONNECTION_STATE_DISCONNECTING:
-                return "CONNECTION_STATE_DISCONNECTING";
-            default:
-                return "UNKNOWN STATE!!!";
-        }
+        return switch (state) {
+            case CONNECTION_STATE_DISCONNECTED -> "CONNECTION_STATE_DISCONNECTED";
+            case CONNECTION_STATE_CONNECTING -> "CONNECTION_STATE_CONNECTING";
+            case CONNECTION_STATE_CONNECTED -> "CONNECTION_STATE_CONNECTED";
+            case CONNECTION_STATE_SLC_CONNECTED -> "CONNECTION_STATE_SLC_CONNECTED";
+            case CONNECTION_STATE_DISCONNECTING -> "CONNECTION_STATE_DISCONNECTING";
+            default -> "UNKNOWN STATE!!!";
+        };
     }
 }

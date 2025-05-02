@@ -137,18 +137,15 @@ public class BluetoothPbapActivity extends AlertActivity
     }
 
     private String createDisplayText(final int id) {
-        switch (id) {
-            case DIALOG_YES_NO_AUTH:
-                String mMessage2 = getString(R.string.pbap_session_key_dialog_title, mDevice);
-                return mMessage2;
-            default:
-                return null;
-        }
+        return switch (id) {
+            case DIALOG_YES_NO_AUTH -> getString(R.string.pbap_session_key_dialog_title, mDevice);
+            default -> null;
+        };
     }
 
     private View createView(final int id) {
-        switch (id) {
-            case DIALOG_YES_NO_AUTH:
+        return switch (id) {
+            case DIALOG_YES_NO_AUTH -> {
                 mView = getLayoutInflater().inflate(R.layout.auth, null);
                 mMessageView = (TextView) mView.findViewById(R.id.message);
                 mMessageView.setText(createDisplayText(id));
@@ -156,10 +153,10 @@ public class BluetoothPbapActivity extends AlertActivity
                 mKeyView.addTextChangedListener(this);
                 mKeyView.setFilters(
                         new InputFilter[] {new LengthFilter(BLUETOOTH_OBEX_AUTHKEY_MAX_LENGTH)});
-                return mView;
-            default:
-                return null;
-        }
+                yield mView;
+            }
+            default -> null;
+        };
     }
 
     @VisibleForTesting
