@@ -340,9 +340,9 @@ public class LeAudioRecycleViewAdapter
 
                             field =
                                     BluetoothHapClient.class.getDeclaredField(
-                                            "FEATURE_SYNCHRONIZATED_PRESETS");
+                                            "FEATURE_SYNCHRONIZED_PRESETS");
                             field.setAccessible(true);
-                            Integer FEATURE_SYNCHRONIZATED_PRESETS = (Integer) field.get(null);
+                            Integer FEATURE_SYNCHRONIZED_PRESETS = (Integer) field.get(null);
 
                             field =
                                     BluetoothHapClient.class.getDeclaredField(
@@ -373,9 +373,7 @@ public class LeAudioRecycleViewAdapter
                             String preset_synchronization_support =
                                     this.parent.getResources()
                                             .getStringArray(R.array.preset_synchronization_support)[
-                                            (features & FEATURE_SYNCHRONIZATED_PRESETS) != 0
-                                                    ? 1
-                                                    : 0];
+                                            (features & FEATURE_SYNCHRONIZED_PRESETS) != 0 ? 1 : 0];
                             String independent_presets =
                                     this.parent.getResources()
                                             .getStringArray(R.array.independent_presets)[
