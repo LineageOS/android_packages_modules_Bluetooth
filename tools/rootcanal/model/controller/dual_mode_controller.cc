@@ -2195,6 +2195,19 @@ void DualModeController::LeSetPhy(CommandView command) {
   send_event_(bluetooth::hci::LeSetPhyStatusBuilder::Create(status, kNumCommandPackets));
 }
 
+void DualModeController::LeSetDataLength(CommandView command) {
+  auto command_view = bluetooth::hci::LeSetDataLengthView::Create(command);
+  CHECK_PACKET_VIEW(command_view);
+
+  DEBUG(id_, "<< LE Set Data Length");
+  DEBUG(id_, "   connection_handle=0x{:x}", command_view.GetConnectionHandle());
+
+  ErrorCode status = link_layer_controller_.LeSetDataLength(
+          command_view.GetConnectionHandle(), command_view.GetTxOctets(), command_view.GetTxTime());
+  send_event_(bluetooth::hci::LeSetDataLengthCompleteBuilder::Create(
+          kNumCommandPackets, status, command_view.GetConnectionHandle()));
+}
+
 void DualModeController::LeReadSuggestedDefaultDataLength(CommandView command) {
   auto command_view = bluetooth::hci::LeReadSuggestedDefaultDataLengthView::Create(command);
   CHECK_PACKET_VIEW(command_view);
@@ -4125,7 +4138,7 @@ const std::unordered_map<OpCode, DualModeController::CommandHandler>
                  &DualModeController::LeRemoteConnectionParameterRequestReply},
                 {OpCode::LE_REMOTE_CONNECTION_PARAMETER_REQUEST_NEGATIVE_REPLY,
                  &DualModeController::LeRemoteConnectionParameterRequestNegativeReply},
-                //{OpCode::LE_SET_DATA_LENGTH, &DualModeController::LeSetDataLength},
+                {OpCode::LE_SET_DATA_LENGTH, &DualModeController::LeSetDataLength},
                 {OpCode::LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH,
                  &DualModeController::LeReadSuggestedDefaultDataLength},
                 {OpCode::LE_WRITE_SUGGESTED_DEFAULT_DATA_LENGTH,
