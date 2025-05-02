@@ -251,10 +251,12 @@ public class BrowseNodeTest {
     @Test
     public void toTreeString_returnFormattedString() {
         final String expected =
-                "  [id=1111, name=item, cached=false, size=2]\n"
-                        + "    [id=child1, name=child1, cached=false, size=1]\n"
-                        + "      [id=child3, name=child3, cached=false, size=0]\n"
-                        + "    [id=child2, name=child2, cached=false, size=0]\n";
+                """
+                  [id=1111, name=item, cached=false, size=2]
+                    [id=child1, name=child1, cached=false, size=1]
+                      [id=child3, name=child3, cached=false, size=0]
+                    [id=child2, name=child2, cached=false, size=0]
+                """;
 
         BrowseNode browseNode =
                 mBrowseTree
