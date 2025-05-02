@@ -331,3 +331,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "get_svc_uuids_from_ble_adv_data"
+    namespace: "bluetooth"
+    description: "Add API for getting service UUIDs from BLE advertising data. go/get-service-uuids-from-advertising-data"
+    bug: "389598210"
+}
