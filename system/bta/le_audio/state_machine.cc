@@ -3245,8 +3245,8 @@ private:
         }
 
         if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
-          if (!group->HaveAllActiveDevicesAsesInExpectedState()) {
-            log::verbose("More Ases to get in streaming state for group_id: {}", group->group_id_);
+          if (!group->HasAllRequiredStreamingAses()) {
+            log::info("More Ases to get in streaming state for group_id: {}", group->group_id_);
             return;
           }
 
