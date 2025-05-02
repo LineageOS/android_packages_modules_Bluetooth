@@ -122,6 +122,15 @@ struct bta_ag_is_sco_managed_by_audio {
 };
 extern struct bta_ag_is_sco_managed_by_audio bta_ag_is_sco_managed_by_audio;
 
+// Name: bta_ag_set_is_sco_managed_by_audio
+// Params: bool
+// Return: void
+struct bta_ag_set_is_sco_managed_by_audio {
+  std::function<void(bool value)> body{[](bool /* value */) {}};
+  void operator()(bool value) { body(value); }
+};
+extern struct bta_ag_set_is_sco_managed_by_audio bta_ag_set_is_sco_managed_by_audio;
+
 // Name: bta_ag_sco_close
 // Params: tBTA_AG_SCB* p_scb, const tBTA_AG_DATA&
 // Return: void

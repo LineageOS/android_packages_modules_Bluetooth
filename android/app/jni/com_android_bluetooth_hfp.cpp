@@ -993,6 +993,20 @@ static jboolean enableSwbNative(JNIEnv* env, jobject /* object */, jint swbCodec
   return JNI_TRUE;
 }
 
+static jboolean setIsScoManagedByAudioNative(JNIEnv* /* env */, jobject /* object */,
+                                             jboolean value) {
+  std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
+  if (!sBluetoothHfpInterface) {
+    log::warn("sBluetoothHfpInterface is null");
+    return JNI_FALSE;
+  }
+  bt_status_t status = sBluetoothHfpInterface->SetIsScoManagedByAudio(value == JNI_TRUE);
+  if (status != BT_STATUS_SUCCESS) {
+    log::error("Failed HF set is sco managed by audio, status: {}", bt_status_text(status));
+  }
+  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+}
+
 int register_com_android_bluetooth_hfp(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initializeNative", "(IZ)V", (void*)initializeNative},
@@ -1018,6 +1032,7 @@ int register_com_android_bluetooth_hfp(JNIEnv* env) {
           {"sendBsirNative", "(Z[B)Z", (void*)sendBsirNative},
           {"setActiveDeviceNative", "([B)Z", (void*)setActiveDeviceNative},
           {"enableSwbNative", "(IZ[B)Z", (void*)enableSwbNative},
+          {"setIsScoManagedByAudioNative", "(Z)Z", (void*)setIsScoManagedByAudioNative},
   };
   const int result =
           REGISTER_NATIVE_METHODS(env, "com/android/bluetooth/hfp/HeadsetNativeInterface", methods);

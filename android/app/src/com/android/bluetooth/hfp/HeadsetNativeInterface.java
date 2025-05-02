@@ -542,6 +542,16 @@ public class HeadsetNativeInterface {
         return enableSwbNative(swbCodec, enable, getByteAddress(device));
     }
 
+    /**
+     * Set whether we will use the new SCO Management path based on the java flag value/sys prop
+     *
+     * @param value True to enable, False to disable
+     * @return True on success, False on failure
+     */
+    boolean setIsScoManagedByAudio(boolean value) {
+        return setIsScoManagedByAudioNative(value);
+    }
+
     /* Native methods */
     private native boolean atResponseCodeNative(int responseCode, int errorCode, byte[] address);
 
@@ -610,4 +620,6 @@ public class HeadsetNativeInterface {
     private native boolean setActiveDeviceNative(byte[] address);
 
     private native boolean enableSwbNative(int swbCodec, boolean enable, byte[] address);
+
+    private native boolean setIsScoManagedByAudioNative(boolean value);
 }

@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.hfp;
 
+import static android.media.audio.Flags.scoManagedByAudio;
+
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothSinkAudioPolicy;
@@ -31,7 +33,6 @@ import android.telecom.TelecomManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.telephony.BluetoothInCallService;
 
 import java.util.List;
@@ -367,7 +368,7 @@ class HeadsetSystemInterface {
      * @return true if SCO managed by Audio is enabled, false otherwise
      */
     public boolean isScoManagedByAudioEnabled() {
-        if (Flags.isScoManagedByAudio()) {
+        if (scoManagedByAudio()) {
             Log.d(TAG, "isScoManagedByAudioEnabled state is: " + mIsScoManagedByAudioEnabled);
             return mIsScoManagedByAudioEnabled;
         }

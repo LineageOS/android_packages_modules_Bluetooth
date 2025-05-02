@@ -955,6 +955,7 @@ public:
   bt_status_t SetScoAllowed(bool value) override;
   bt_status_t SendBsir(bool value, RawAddress* bd_addr) override;
   bt_status_t SetActiveDevice(RawAddress* active_device_addr) override;
+  bt_status_t SetIsScoManagedByAudio(bool value) override;
   bt_status_t DebugDump() override;
 };
 
@@ -1641,6 +1642,12 @@ bt_status_t HeadsetInterface::DebugDump() {
           debug_dump.pkt_loss_ratio, debug_dump.latest_data.begin_ts_raw_us,
           debug_dump.latest_data.end_ts_raw_us, debug_dump.latest_data.status_in_hex.c_str(),
           debug_dump.latest_data.status_in_binary.c_str());
+  return BT_STATUS_SUCCESS;
+}
+
+bt_status_t HeadsetInterface::SetIsScoManagedByAudio(bool value) {
+  CHECK_BTHF_INIT();
+  BTA_AgSetIsScoManagedByAudio(value);
   return BT_STATUS_SUCCESS;
 }
 

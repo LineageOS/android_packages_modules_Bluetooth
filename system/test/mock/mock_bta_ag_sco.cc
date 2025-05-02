@@ -44,6 +44,7 @@ struct bta_ag_create_sco bta_ag_create_sco;
 struct bta_ag_get_active_device bta_ag_get_active_device;
 struct bta_ag_get_sco_offload_enabled bta_ag_get_sco_offload_enabled;
 struct bta_ag_is_sco_managed_by_audio bta_ag_is_sco_managed_by_audio;
+struct bta_ag_set_is_sco_managed_by_audio bta_ag_set_is_sco_managed_by_audio;
 struct bta_ag_sco_close bta_ag_sco_close;
 struct bta_ag_sco_codec_nego bta_ag_sco_codec_nego;
 struct bta_ag_sco_conn_close bta_ag_sco_conn_close;
@@ -104,6 +105,10 @@ const RawAddress& bta_ag_get_active_device() {
 bool bta_ag_get_sco_offload_enabled() {
   inc_func_call_count(__func__);
   return test::mock::bta_ag_sco::bta_ag_get_sco_offload_enabled();
+}
+void bta_ag_set_is_sco_managed_by_audio(bool value) {
+  inc_func_call_count(__func__);
+  test::mock::bta_ag_sco::bta_ag_set_is_sco_managed_by_audio(value);
 }
 bool bta_ag_is_sco_managed_by_audio() {
   inc_func_call_count(__func__);

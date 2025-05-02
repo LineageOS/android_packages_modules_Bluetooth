@@ -184,7 +184,6 @@ cc_library_static {
         "libbluetooth_metrics",
         "libbt-audio-asrc",
         "libbt-audio-hal-interface",
-
         "libcom.android.sysprop.bluetooth.wrapped",
         "libflatbuffers-cpp",
         "liblc3",

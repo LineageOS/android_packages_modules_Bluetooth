@@ -648,6 +648,8 @@ void BTA_AgSetScoAllowed(bool value);
 
 void BTA_AgSetActiveDevice(const RawAddress& active_device_addr);
 
+void BTA_AgSetIsScoManagedByAudio(bool value);
+
 namespace std {
 template <>
 struct formatter<tBTA_AG_RES> : enum_formatter<tBTA_AG_RES> {};
