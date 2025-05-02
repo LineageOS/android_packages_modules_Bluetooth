@@ -1148,6 +1148,18 @@ class BassClientStateMachine extends StateMachine {
                         .notifySourceRemoved(
                                 mDevice, sourceId, BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST);
             } else {
+                if (mPendingOperation == UPDATE_BCAST_SOURCE
+                        && hasPendingSourceOperation(prevRecvState.getBroadcastId())) {
+                    Log.d(
+                            TAG,
+                            "processBroadcastReceiverState: Source removed by remote, clear pending"
+                                    + " operations for this source");
+                    removeMessages(CANCEL_PENDING_SOURCE_OPERATION);
+                    mPendingMetadata = null;
+                    if (isPendingRemove(sourceId)) {
+                        setPendingRemove(sourceId, false);
+                    }
+                }
                 mService.getCallbacks()
                         .notifySourceRemoved(
                                 mDevice, sourceId, BluetoothStatusCodes.REASON_REMOTE_REQUEST);
