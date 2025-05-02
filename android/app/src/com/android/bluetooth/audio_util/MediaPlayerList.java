@@ -554,9 +554,9 @@ public class MediaPlayerList {
      */
     public PlaybackState getCurrentPlayStatus() {
         final MediaPlayerWrapper player = getActivePlayer();
-        if (player == null) return null;
+        if (player == null && !mAudioPlaybackIsActive) return null;
 
-        PlaybackState state = player.getPlaybackState();
+        PlaybackState state = player == null ? null : player.getPlaybackState();
         if (mAudioPlaybackIsActive
                 && (state == null || state.getState() != PlaybackState.STATE_PLAYING)) {
             return new PlaybackState.Builder()
@@ -1319,10 +1319,12 @@ public class MediaPlayerList {
                     AudioPlaybackConfiguration activeConfig = null;
                     for (AudioPlaybackConfiguration config : configs) {
                         if (config.isActive()
-                                && (config.getAudioAttributes().getUsage()
-                                        == AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
-                                && (config.getAudioAttributes().getContentType()
-                                        == AudioAttributes.CONTENT_TYPE_SPEECH)) {
+                            && (((config.getAudioAttributes().getUsage()
+                                    == AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+                                    && (config.getAudioAttributes().getContentType()
+                                        == AudioAttributes.CONTENT_TYPE_SPEECH))
+                                || config.getAudioAttributes().getUsage()
+                                    == AudioAttributes.USAGE_MEDIA)) {
                             activeConfig = config;
                             isActive = true;
                         }
