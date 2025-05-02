@@ -76,7 +76,7 @@ public class PbapClientObexClientTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     private BluetoothAdapter mAdapter = null;
-    private BluetoothDevice mDevice;
+    private final BluetoothDevice mDevice = getTestDevice(1);
 
     // Normal supported features for our client
     private static final int SUPPORTED_FEATURES =
@@ -113,7 +113,6 @@ public class PbapClientObexClientTest {
                         .getSystemService(BluetoothManager.class)
                         .getAdapter();
         assertThat(mAdapter).isNotNull();
-        mDevice = getTestDevice(1);
 
         mServer = new FakePbapObexServer();
         ObexTransport transport = mServer.getClientTransport();

@@ -114,21 +114,40 @@ public class TestUtils {
     }
 
     /**
-     * Create a test device.
+     * Create a mock BluetoothDevice.
      *
      * @param id the test device ID. It must be an integer in the interval [0, 0xFF].
      * @return {@link BluetoothDevice} test device for the device ID
      */
     public static BluetoothDevice getTestDevice(@IntRange(from = 0x00, to = 0xFF) int id) {
         assertThat(id).isAtMost(0xFF);
-        BluetoothDevice testDevice =
-                InstrumentationRegistry.getInstrumentation()
-                        .getContext()
-                        .getSystemService(BluetoothManager.class)
-                        .getAdapter()
-                        .getRemoteDevice(String.format("00:01:02:03:04:%02X", id));
-        assertThat(testDevice).isNotNull();
-        return testDevice;
+        final String address = String.format("00:01:02:03:04:%02X", id);
+        return getTestDevice(address);
+    }
+
+    /**
+     * Create a mock BluetoothDevice.
+     *
+     * @param address the test device address string.
+     * @return {@link BluetoothDevice} test device for the device address.
+     */
+    public static BluetoothDevice getTestDevice(@NonNull String address) {
+        BluetoothDevice mockDevice = mock(BluetoothDevice.class);
+        doReturn(address).when(mockDevice).getAddress();
+        doReturn(address).when(mockDevice).toString();
+        return mockDevice;
+    }
+
+    /**
+     * Create a test device.
+     *
+     * @param id the test device ID. It must be an integer in the interval [0, 0xFF].
+     * @return {@link BluetoothDevice} test device for the device ID
+     */
+    public static BluetoothDevice getRealDevice(@IntRange(from = 0x00, to = 0xFF) int id) {
+        assertThat(id).isAtMost(0xFF);
+        final String address = String.format("00:01:02:03:04:%02X", id);
+        return getRealDevice(address);
     }
 
     /**
@@ -137,7 +156,7 @@ public class TestUtils {
      * @param address the test device address string.
      * @return {@link BluetoothDevice} test device for the device address.
      */
-    public static BluetoothDevice getTestDevice(@NonNull String address) {
+    public static BluetoothDevice getRealDevice(@NonNull String address) {
         assertThat(BluetoothAdapter.checkBluetoothAddress(address)).isTrue();
         BluetoothDevice testDevice =
                 InstrumentationRegistry.getInstrumentation()

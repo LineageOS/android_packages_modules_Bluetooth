@@ -24,6 +24,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -1062,7 +1063,7 @@ public class HeadsetServiceTest {
                         any(BluetoothDevice.class), eq(BluetoothProfile.HEADSET)))
                 .thenReturn(CONNECTION_POLICY_UNKNOWN);
         for (int i = 0; i < 2; i++) {
-            mCurrentDevice = getTestDevice(i);
+            mCurrentDevice = getRealDevice(i);
             assertThat(mHeadsetService.connect(mCurrentDevice)).isTrue();
             when(mStateMachines.get(mCurrentDevice).getDevice()).thenReturn(mCurrentDevice);
             when(mStateMachines.get(mCurrentDevice).getConnectionState())
@@ -1070,8 +1071,8 @@ public class HeadsetServiceTest {
             when(mStateMachines.get(mCurrentDevice).setSilenceDevice(anyBoolean()))
                     .thenReturn(true);
         }
-        mCurrentDevice = getTestDevice(0);
-        BluetoothDevice otherDevice = getTestDevice(1);
+        mCurrentDevice = getRealDevice(0);
+        BluetoothDevice otherDevice = getRealDevice(1);
 
         // Test whether active device been removed after enable silence mode.
         assertThat(mHeadsetService.setActiveDevice(mCurrentDevice)).isTrue();
