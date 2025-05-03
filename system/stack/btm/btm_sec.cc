@@ -179,6 +179,31 @@ static tBTM_SEC_DEV_REC* btm_sec_find_dev_by_sec_state(tSECURITY_STATE state) {
   return nullptr;
 }
 
+static tBTM_STATUS btm_sec_report_bond_loss(const tBTM_SEC_DEV_REC* p_dev_rec,
+                                            tBT_TRANSPORT transport, const std::string& reason) {
+  RawAddress bd_addr;
+  uint16_t handle;
+
+  if (transport == BT_TRANSPORT_LE) {
+    bd_addr = p_dev_rec->ble.pseudo_addr;
+    handle = p_dev_rec->ble_hci_handle;
+  } else {
+    bd_addr = p_dev_rec->bd_addr;
+    handle = p_dev_rec->hci_handle;
+  }
+
+  log::warn("Bond loss detected for {}({}) reason: {}", bd_addr, transport, reason);
+  bta_dm_remote_key_missing(bd_addr);
+
+  if (handle == HCI_INVALID_HANDLE) {
+    log::warn("Already disconnected {}({})", bd_addr, transport);
+    return tBTM_STATUS::BTM_SUCCESS;
+  }
+
+  btm_sec_disconnect(handle, HCI_ERR_AUTH_FAILURE, reason.c_str());
+  return tBTM_STATUS::BTM_CMD_STARTED;
+}
+
 /*******************************************************************************
  *
  * Function         BTM_SecRegister
@@ -903,6 +928,17 @@ bool BTM_SecIsLeSecurityPending(const RawAddress& bd_addr) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
   return p_dev_rec && (p_dev_rec->sec_rec.is_security_state_le_encrypting() ||
                        p_dev_rec->sec_rec.le_link == tSECURITY_STATE::AUTHENTICATING);
+}
+
+tBTM_STATUS BTM_SecReportBondLoss(const RawAddress& bd_addr, tBT_TRANSPORT transport,
+                                  const std::string& reason) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
+  if (p_dev_rec == nullptr) {
+    log::error("No record found for {}", bd_addr);
+    return tBTM_STATUS::BTM_UNKNOWN_ADDR;
+  }
+
+  return btm_sec_report_bond_loss(p_dev_rec, transport, reason);
 }
 
 /*******************************************************************************
@@ -2322,11 +2358,9 @@ void btm_io_capabilities_req(RawAddress p) {
     /* Encrypted link means that the device is already authenticated and is trying to upgrade
      * security */
     if (!p_dev_rec->sec_rec.is_device_encrypted()) {
-      log::warn("key_missing: Incoming pairing request for already bonded device {}", p);
-      bta_dm_remote_key_missing(p);
       btsnd_hcic_io_cap_req_neg_reply(p, HCI_ERR_PAIRING_NOT_ALLOWED);
-      btm_sec_disconnect(p_dev_rec->hci_handle, HCI_ERR_AUTH_FAILURE,
-                         "btm_io_capabilities_req for bonded device");
+      btm_sec_report_bond_loss(p_dev_rec, BT_TRANSPORT_BR_EDR,
+                               "btm_io_capabilities_req for bonded device");
       return;
     }
 
@@ -2511,9 +2545,8 @@ void btm_io_capabilities_rsp(const tBTM_SP_IO_RSP evt_data) {
   if (p_dev_rec->sec_rec.is_bonded() && !p_dev_rec->sec_rec.is_device_encrypted()) {
     log::warn("Incoming bond request, but {} is already bonded (notifying user)", evt_data.bd_addr);
     if (!com::android::bluetooth::flags::gen_key_missing_evt_only_from_iocapreq()) {
-      bta_dm_remote_key_missing(evt_data.bd_addr);
-      btm_sec_disconnect(p_dev_rec->hci_handle, HCI_ERR_AUTH_FAILURE,
-                         "btm_io_capabilities_rsp for bonded device");
+      btm_sec_report_bond_loss(p_dev_rec, BT_TRANSPORT_BR_EDR,
+                               "btm_io_capabilities_rsp for bonded device");
     }
     return;
   }
@@ -2909,10 +2942,8 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
             reinterpret_cast<char const*>(p_dev_rec->sec_bd_name));
 
     if (status == HCI_ERR_KEY_MISSING) {
-      log::warn("auth_complete KEY_MISSING {} is already bonded (notifying user)",
-                p_dev_rec->bd_addr);
-      bta_dm_remote_key_missing(p_dev_rec->bd_addr);
-      btm_sec_disconnect(handle, HCI_ERR_AUTH_FAILURE, "auth_cmpl KEY_MISSING for bonded device");
+      btm_sec_report_bond_loss(p_dev_rec, BT_TRANSPORT_BR_EDR,
+                               "auth_cmpl KEY_MISSING for bonded device");
       return;
     }
 
@@ -3191,10 +3222,7 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
     btm_ble_link_encrypted(p_dev_rec->ble.pseudo_addr, encr_enable);
 
     if (status == HCI_ERR_KEY_MISSING) {
-      log::info("Remote key missing - will report");
-      bta_dm_remote_key_missing(p_dev_rec->ble.pseudo_addr);
-      btm_sec_send_hci_disconnect(p_dev_rec, HCI_ERR_HOST_REJECT_SECURITY,
-                                  p_dev_rec->ble_hci_handle, "encryption_change:key_missing");
+      btm_sec_report_bond_loss(p_dev_rec, BT_TRANSPORT_LE, "encryption_change:key_missing");
       return;
     }
 
