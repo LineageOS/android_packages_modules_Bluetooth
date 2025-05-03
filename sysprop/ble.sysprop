@@ -32,3 +32,27 @@ prop {
     access: Readonly
     prop_name: "bluetooth.ble.allow_enc_with_bredr"
 }
+
+prop {
+    api_name: "iso_aggressive_connection_threshold"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.iso_aggressive_connection_threshold"
+}
+
+prop {
+    api_name: "iso_min_connection_interval"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.iso_min_connection_interval"
+}
+
+prop {
+    api_name: "iso_max_connection_interval"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.iso_max_connection_interval"
+}

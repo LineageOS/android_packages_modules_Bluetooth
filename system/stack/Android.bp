@@ -629,6 +629,7 @@ cc_fuzz {
         "libbluetooth_metrics_mock",
         "libbluetooth_smp_pdl",
         "libbt-common",
+        "libcom.android.sysprop.bluetooth.wrapped",
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",

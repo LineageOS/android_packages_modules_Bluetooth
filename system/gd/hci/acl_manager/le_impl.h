@@ -40,10 +40,13 @@
 #include "hci/hci_packets.h"
 #include "hci/le_address_manager.h"
 #include "macros.h"
+#include "main/shim/entry.h"
 #include "os/alarm.h"
 #include "os/handler.h"
 #include "os/system_properties.h"
 #include "stack/include/btm_ble_api_types.h"
+#include "storage/config_keys.h"
+#include "storage/storage_module.h"
 
 namespace bluetooth {
 namespace hci {
@@ -97,6 +100,9 @@ static const std::string kPropertyEnableBlePrivacy = "bluetooth.core.gap.le.priv
 static const std::string kPropertyEnableBleOnlyInit1mPhy =
         "bluetooth.core.gap.le.conn.only_init_1m_phy.enabled";
 
+const std::optional<hci::Uuid> UUID_ASCS = hci::Uuid::FromString("184E");
+const std::optional<hci::Uuid> UUID_BASS = hci::Uuid::FromString("184F");
+
 enum class ConnectabilityState {
   DISARMED = 0,
   ARMING = 1,
@@ -104,7 +110,7 @@ enum class ConnectabilityState {
   DISARMING = 3,
 };
 
-enum class ConnectionMode { RELAXED = 0, AGGRESSIVE = 1 };
+enum class ConnectionMode { RELAXED = 0, AGGRESSIVE = 1, AGGRESSIVE_ISO = 2 };
 
 inline std::string connectability_state_machine_text(const ConnectabilityState& state) {
   switch (state) {
@@ -317,6 +323,8 @@ private:
         return "RELAXED";
       case ConnectionMode::AGGRESSIVE:
         return "AGGRESSIVE";
+      case ConnectionMode::AGGRESSIVE_ISO:
+        return "AGGRESSIVE_ISO";
       default:
         return "UNKNOWN";
     }
@@ -908,6 +916,7 @@ public:
     uint16_t conn_latency = os::GetSystemPropertyUint32(kPropertyConnLatency, kConnLatency);
     uint16_t supervision_timeout =
             os::GetSystemPropertyUint32(kPropertyConnSupervisionTimeout, kSupervisionTimeout);
+
     log::assert_that(
             check_connection_parameters(conn_interval_min, conn_interval_max, conn_latency,
                                         supervision_timeout),
@@ -986,6 +995,32 @@ public:
     }
   }
 
+  bool accept_list_contains_only_le_audio_devices() {
+    if (accept_list.empty()) {
+      return false;
+    }
+    storage::StorageModule* storage_module = shim::GetStorage();
+    if (storage_module == nullptr) {
+      log::warn("storage module is null");
+      return false;
+    }
+    // If found ASCS/BASS UUID in database cache, it is a lea device and reconnection scenario
+    for (auto it = accept_list.begin(); it != accept_list.end(); ++it) {
+      std::optional<std::vector<hci::Uuid>> uuids =
+              storage_module->GetDeviceByLegacyKey(it->GetAddress()).GetServiceUuidsLe();
+      if (!uuids.has_value() ||
+          std::find_if(uuids->begin(), uuids->end(), [](const hci::Uuid& uuid) {
+            return (uuid == UUID_ASCS) || (uuid == UUID_BASS);
+          }) == uuids->end()) {
+        log::verbose("{} does not support LE audio", it->GetAddress());
+        return false;
+      } else {
+        log::verbose("{} support LE audio", it->GetAddress());
+      }
+    }
+    return true;
+  }
+
   // Choose which connection mode should be used based on the number of ongoing ACL connections.
   // According to the connection mode, connection interval min/max values are set.
   void choose_connection_mode(size_t num_acl_connections, uint16_t* conn_interval_min,
@@ -993,14 +1028,30 @@ public:
     ConnectionMode connection_mode = ConnectionMode::RELAXED;
 
     uint32_t aggressive_connection_threshold = LeConnectionParameters::GetAggressiveConnThreshold();
-    log::debug("num_acl_connections={}, aggressive_connection_threshold={}", num_acl_connections,
-               aggressive_connection_threshold);
+    uint32_t iso_aggressive_connection_threshold =
+            LeConnectionParameters::GetLeIsoAggressiveConnThreshold();
+
+    log::debug(
+            "num_acl_connections={}, aggressive_connection_threshold={}, "
+            "iso_aggressive_connection_threshold={}",
+            num_acl_connections, aggressive_connection_threshold,
+            iso_aggressive_connection_threshold);
 
     if (num_acl_connections < aggressive_connection_threshold) {
       connection_mode = ConnectionMode::AGGRESSIVE;
     }
 
+    if (com::android::bluetooth::flags::leaudio_use_aggressive_params() &&
+        num_acl_connections < iso_aggressive_connection_threshold &&
+        accept_list_contains_only_le_audio_devices()) {
+      connection_mode = ConnectionMode::AGGRESSIVE_ISO;
+    }
+
     switch (connection_mode) {
+      case ConnectionMode::AGGRESSIVE_ISO:
+        *conn_interval_min = LeConnectionParameters::GetMinConnIntervalLeIsoAggressive();
+        *conn_interval_max = LeConnectionParameters::GetMaxConnIntervalLeIsoAggressive();
+        break;
       case ConnectionMode::AGGRESSIVE:
         *conn_interval_min = LeConnectionParameters::GetMinConnIntervalAggressive();
         *conn_interval_max = LeConnectionParameters::GetMaxConnIntervalAggressive();
