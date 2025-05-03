@@ -89,7 +89,7 @@ std::string ParameterProvider::SnoozLogFilePath() {
   if (getcwd(cwd, sizeof(cwd)) == nullptr) {
     log::error("Failed to get current working directory due to \"{}\", returning default",
                strerror(errno));
-    return "bt_config.conf";
+    return "btsnooz_hci.log";
   }
   return std::string(cwd) + "/btsnooz_hci.log";
 }

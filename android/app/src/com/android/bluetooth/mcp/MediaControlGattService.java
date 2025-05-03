@@ -1271,15 +1271,14 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     }
 
     private static int getMediaControlPointRequestPayloadLength(int opcode) {
-        switch (opcode) {
-            case Request.Opcodes.MOVE_RELATIVE:
-            case Request.Opcodes.GOTO_SEGMENT:
-            case Request.Opcodes.GOTO_TRACK:
-            case Request.Opcodes.GOTO_GROUP:
-                return 4;
-            default:
-                return 0;
-        }
+        return switch (opcode) {
+            case Request.Opcodes.MOVE_RELATIVE,
+                            Request.Opcodes.GOTO_SEGMENT,
+                            Request.Opcodes.GOTO_TRACK,
+                            Request.Opcodes.GOTO_GROUP ->
+                    4;
+            default -> 0;
+        };
     }
 
     @VisibleForTesting

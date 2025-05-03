@@ -64,7 +64,7 @@ public class PeriodicScanManagerTest {
 
     private BluetoothAdapter mAdapter;
     private PeriodicScanManager mPeriodicScanManager;
-    private BluetoothDevice mTestDevice;
+    private BluetoothDevice mDevice;
     private ScanResult mScanResult;
     private Context mTargetContext;
     private int syncHandle;
@@ -81,11 +81,11 @@ public class PeriodicScanManagerTest {
         BluetoothManager manager = mTargetContext.getSystemService(BluetoothManager.class);
         assertThat(manager).isNotNull();
         mAdapter = manager.getAdapter();
-        mTestDevice =
+        mDevice =
                 mAdapter.getRemoteLeDevice(
                         REMOTE_DEVICE_ADDRESS, BluetoothDevice.ADDRESS_TYPE_RANDOM);
 
-        mScanResult = new ScanResult(mTestDevice, 0, 0, 0, 0, 0, 0, 0, null, 0);
+        mScanResult = new ScanResult(mDevice, 0, 0, 0, 0, 0, 0, 0, null, 0);
         mCallback = mock(IPeriodicAdvertisingCallback.class);
 
         doReturn(mBinder).when(mCallback).asBinder();
@@ -125,6 +125,6 @@ public class PeriodicScanManagerTest {
                 100,
                 0);
         verify(mCallback)
-                .onSyncEstablished(eq(syncHandle), eq(mTestDevice), eq(0), eq(0), eq(0), eq(0));
+                .onSyncEstablished(eq(syncHandle), eq(mDevice), eq(0), eq(0), eq(0), eq(0));
     }
 }

@@ -112,21 +112,17 @@ public class HidHostNativeInterface {
     }
 
     private static int convertHalState(int halState) {
-        switch (halState) {
-            case CONN_STATE_CONNECTED:
-                return STATE_CONNECTED;
-            case CONN_STATE_CONNECTING:
-                return STATE_CONNECTING;
-            case CONN_STATE_DISCONNECTED:
-                return STATE_DISCONNECTED;
-            case CONN_STATE_DISCONNECTING:
-                return STATE_DISCONNECTING;
-            case CONN_STATE_ACCEPTING:
-                return HidHostService.STATE_ACCEPTING;
-            default:
+        return switch (halState) {
+            case CONN_STATE_CONNECTED -> STATE_CONNECTED;
+            case CONN_STATE_CONNECTING -> STATE_CONNECTING;
+            case CONN_STATE_DISCONNECTED -> STATE_DISCONNECTED;
+            case CONN_STATE_DISCONNECTING -> STATE_DISCONNECTING;
+            case CONN_STATE_ACCEPTING -> HidHostService.STATE_ACCEPTING;
+            default -> {
                 Log.e(TAG, "bad hid connection state: " + halState);
-                return STATE_DISCONNECTED;
-        }
+                yield STATE_DISCONNECTED;
+            }
+        };
     }
 
     /**********************************************************************************************/

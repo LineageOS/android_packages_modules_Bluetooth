@@ -1031,29 +1031,16 @@ public class RemoteDevices {
      */
     @VisibleForTesting
     static int batteryChargeIndicatorToPercentage(int indicator) {
-        int percent;
-        switch (indicator) {
-            case 5:
-                percent = HFP_BATTERY_CHARGE_INDICATOR_5;
-                break;
-            case 4:
-                percent = HFP_BATTERY_CHARGE_INDICATOR_4;
-                break;
-            case 3:
-                percent = HFP_BATTERY_CHARGE_INDICATOR_3;
-                break;
-            case 2:
-                percent = HFP_BATTERY_CHARGE_INDICATOR_2;
-                break;
-            case 1:
-                percent = HFP_BATTERY_CHARGE_INDICATOR_1;
-                break;
-            case 0:
-                percent = HFP_BATTERY_CHARGE_INDICATOR_0;
-                break;
-            default:
-                percent = BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
-        }
+        int percent =
+                switch (indicator) {
+                    case 5 -> HFP_BATTERY_CHARGE_INDICATOR_5;
+                    case 4 -> HFP_BATTERY_CHARGE_INDICATOR_4;
+                    case 3 -> HFP_BATTERY_CHARGE_INDICATOR_3;
+                    case 2 -> HFP_BATTERY_CHARGE_INDICATOR_2;
+                    case 1 -> HFP_BATTERY_CHARGE_INDICATOR_1;
+                    case 0 -> HFP_BATTERY_CHARGE_INDICATOR_0;
+                    default -> BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
+                };
         Log.d(TAG, "Battery charge indicator: " + indicator + "; converted to: " + percent + "%");
         return percent;
     }

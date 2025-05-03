@@ -357,20 +357,14 @@ public class AvrcpControllerNativeInterface {
     private static final byte JNI_PLAY_STATUS_REV_SEEK = 0x04;
 
     private static int toPlaybackStateFromJni(int fromJni) {
-        switch (fromJni) {
-            case JNI_PLAY_STATUS_STOPPED:
-                return PlaybackStateCompat.STATE_STOPPED;
-            case JNI_PLAY_STATUS_PLAYING:
-                return PlaybackStateCompat.STATE_PLAYING;
-            case JNI_PLAY_STATUS_PAUSED:
-                return PlaybackStateCompat.STATE_PAUSED;
-            case JNI_PLAY_STATUS_FWD_SEEK:
-                return PlaybackStateCompat.STATE_FAST_FORWARDING;
-            case JNI_PLAY_STATUS_REV_SEEK:
-                return PlaybackStateCompat.STATE_REWINDING;
-            default:
-                return PlaybackStateCompat.STATE_NONE;
-        }
+        return switch (fromJni) {
+            case JNI_PLAY_STATUS_STOPPED -> PlaybackStateCompat.STATE_STOPPED;
+            case JNI_PLAY_STATUS_PLAYING -> PlaybackStateCompat.STATE_PLAYING;
+            case JNI_PLAY_STATUS_PAUSED -> PlaybackStateCompat.STATE_PAUSED;
+            case JNI_PLAY_STATUS_FWD_SEEK -> PlaybackStateCompat.STATE_FAST_FORWARDING;
+            case JNI_PLAY_STATUS_REV_SEEK -> PlaybackStateCompat.STATE_REWINDING;
+            default -> PlaybackStateCompat.STATE_NONE;
+        };
     }
 
     /**********************************************************************************************/

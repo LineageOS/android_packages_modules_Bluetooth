@@ -28,6 +28,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.ContentResolver;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -43,6 +44,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+
+import java.io.IOException;
 
 /** Test cases for {@link PbapClientConnectionHandler}. */
 @SmallTest
@@ -126,9 +129,11 @@ public class PbapClientConnectionHandlerTest {
     }
 
     @Test
-    public void abort() {
+    public void abort() throws IOException {
         PbapSdpRecord record = mock(PbapSdpRecord.class);
         when(record.getL2capPsm()).thenReturn(1); // Valid PSM ranges 1 to 30;
+        BluetoothSocket socket = mock(BluetoothSocket.class);
+        when(mDevice.createL2capSocket(anyInt())).thenReturn(socket);
         mHandler.setPseRecord(record);
         mHandler.connectSocket(); // Workaround for setting mSocket as non-null value
         assertThat(mHandler.getSocket()).isNotNull();

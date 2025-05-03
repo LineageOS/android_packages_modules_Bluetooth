@@ -104,14 +104,11 @@ abstract class PbapClientRequest {
     }
 
     public static String typeToString(int type) {
-        switch (type) {
-            case TYPE_PULL_PHONEBOOK_METADATA:
-                return "TYPE_PULL_PHONEBOOK_METADATA";
-            case TYPE_PULL_PHONEBOOK:
-                return "TYPE_PULL_PHONEBOOK";
-            default:
-                return "TYPE_RESERVED (" + type + ")";
-        }
+        return switch (type) {
+            case TYPE_PULL_PHONEBOOK_METADATA -> "TYPE_PULL_PHONEBOOK_METADATA";
+            case TYPE_PULL_PHONEBOOK -> "TYPE_PULL_PHONEBOOK";
+            default -> "TYPE_RESERVED (" + type + ")";
+        };
     }
 
     @Override

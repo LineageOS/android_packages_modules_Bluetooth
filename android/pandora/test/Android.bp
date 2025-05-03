@@ -28,7 +28,7 @@ python_test_host {
         "bumble-pandora-services",
         "libprotobuf-python",
         "mobly",
-        "pandora-python",
+        "pandora_interfaces-python",
     ],
     required: [
         "aapt",
@@ -61,7 +61,7 @@ python_test_host {
         "bumble-pandora-services",
         "libprotobuf-python",
         "mobly",
-        "pandora-python",
+        "pandora_interfaces-python",
     ],
     required: [
         "aapt",
@@ -83,8 +83,7 @@ sh_binary_host {
     src: "avatar.sh",
     required: [
         "avatar",
-        "pandora-python-gen-src",
-        "pandora_experimental-python-gen-src",
+        "pandora_interfaces-python-gen-src",
         "tradefed",
     ],
 }

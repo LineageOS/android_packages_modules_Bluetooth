@@ -283,60 +283,34 @@ public class HeadsetClientStateMachine extends StateMachine {
 
     @VisibleForTesting
     static String getMessageName(int what) {
-        switch (what) {
-            case StackEvent.STACK_EVENT:
-                return "STACK_EVENT";
-            case CONNECT:
-                return "CONNECT";
-            case DISCONNECT:
-                return "DISCONNECT";
-            case CONNECT_AUDIO:
-                return "CONNECT_AUDIO";
-            case DISCONNECT_AUDIO:
-                return "DISCONNECT_AUDIO";
-            case VOICE_RECOGNITION_START:
-                return "VOICE_RECOGNITION_START";
-            case VOICE_RECOGNITION_STOP:
-                return "VOICE_RECOGNITION_STOP";
-            case SET_MIC_VOLUME:
-                return "SET_MIC_VOLUME";
-            case SET_SPEAKER_VOLUME:
-                return "SET_SPEAKER_VOLUME";
-            case DIAL_NUMBER:
-                return "DIAL_NUMBER";
-            case ACCEPT_CALL:
-                return "ACCEPT_CALL";
-            case REJECT_CALL:
-                return "REJECT_CALL";
-            case HOLD_CALL:
-                return "HOLD_CALL";
-            case TERMINATE_CALL:
-                return "TERMINATE_CALL";
-            case ENTER_PRIVATE_MODE:
-                return "ENTER_PRIVATE_MODE";
-            case SEND_DTMF:
-                return "SEND_DTMF";
-            case EXPLICIT_CALL_TRANSFER:
-                return "EXPLICIT_CALL_TRANSFER";
-            case DISABLE_NREC:
-                return "DISABLE_NREC";
-            case SEND_VENDOR_AT_COMMAND:
-                return "SEND_VENDOR_AT_COMMAND";
-            case SEND_BIEV:
-                return "SEND_BIEV";
-            case QUERY_CURRENT_CALLS:
-                return "QUERY_CURRENT_CALLS";
-            case QUERY_OPERATOR_NAME:
-                return "QUERY_OPERATOR_NAME";
-            case SUBSCRIBER_INFO:
-                return "SUBSCRIBER_INFO";
-            case CONNECTING_TIMEOUT:
-                return "CONNECTING_TIMEOUT";
-            case DISCONNECTING_TIMEOUT:
-                return "DISCONNECTING_TIMEOUT";
-            default:
-                return "UNKNOWN(" + what + ")";
-        }
+        return switch (what) {
+            case StackEvent.STACK_EVENT -> "STACK_EVENT";
+            case CONNECT -> "CONNECT";
+            case DISCONNECT -> "DISCONNECT";
+            case CONNECT_AUDIO -> "CONNECT_AUDIO";
+            case DISCONNECT_AUDIO -> "DISCONNECT_AUDIO";
+            case VOICE_RECOGNITION_START -> "VOICE_RECOGNITION_START";
+            case VOICE_RECOGNITION_STOP -> "VOICE_RECOGNITION_STOP";
+            case SET_MIC_VOLUME -> "SET_MIC_VOLUME";
+            case SET_SPEAKER_VOLUME -> "SET_SPEAKER_VOLUME";
+            case DIAL_NUMBER -> "DIAL_NUMBER";
+            case ACCEPT_CALL -> "ACCEPT_CALL";
+            case REJECT_CALL -> "REJECT_CALL";
+            case HOLD_CALL -> "HOLD_CALL";
+            case TERMINATE_CALL -> "TERMINATE_CALL";
+            case ENTER_PRIVATE_MODE -> "ENTER_PRIVATE_MODE";
+            case SEND_DTMF -> "SEND_DTMF";
+            case EXPLICIT_CALL_TRANSFER -> "EXPLICIT_CALL_TRANSFER";
+            case DISABLE_NREC -> "DISABLE_NREC";
+            case SEND_VENDOR_AT_COMMAND -> "SEND_VENDOR_AT_COMMAND";
+            case SEND_BIEV -> "SEND_BIEV";
+            case QUERY_CURRENT_CALLS -> "QUERY_CURRENT_CALLS";
+            case QUERY_OPERATOR_NAME -> "QUERY_OPERATOR_NAME";
+            case SUBSCRIBER_INFO -> "SUBSCRIBER_INFO";
+            case CONNECTING_TIMEOUT -> "CONNECTING_TIMEOUT";
+            case DISCONNECTING_TIMEOUT -> "DISCONNECTING_TIMEOUT";
+            default -> "UNKNOWN(" + what + ")";
+        };
     }
 
     @VisibleForTesting

@@ -3735,6 +3735,7 @@ public class AdapterService extends Service {
      * @param hciReason is the raw HCI disconnect reason from native.
      * @return the Android disconnect reason for apps.
      */
+    @SuppressWarnings("StatementSwitchToExpressionSwitch") // Code will be unclear either way
     static @BluetoothAdapter.BluetoothConnectionCallback.DisconnectReason int
             hciToAndroidDisconnectReason(int hciReason) {
         switch (hciReason) {

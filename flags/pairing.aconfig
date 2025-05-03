@@ -290,3 +290,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "always_set_identity_addr"
+    namespace: "bluetooth"
+    description: "Always set the identity address of the bonded devices"
+    bug: "415404383"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

@@ -26,6 +26,9 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 
+import static com.android.bluetooth.BluetoothStatsLog.BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_HIGH;
+import static com.android.bluetooth.BluetoothStatsLog.BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_STANDARD;
+import static com.android.bluetooth.BluetoothStatsLog.BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_UNKNOWN;
 import static com.android.bluetooth.bass_client.BassConstants.INVALID_BROADCAST_ID;
 import static com.android.bluetooth.flags.Flags.doNotHardcodeTmapRoleMask;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastApiManagePrimaryGroup;
@@ -415,16 +418,12 @@ public class LeAudioService extends ProfileService {
         }
 
         String getActiveStateString() {
-            switch (mActiveState) {
-                case ACTIVE_STATE_ACTIVE:
-                    return "ACTIVE_STATE_ACTIVE";
-                case ACTIVE_STATE_INACTIVE:
-                    return "ACTIVE_STATE_INACTIVE";
-                case ACTIVE_STATE_GETTING_ACTIVE:
-                    return "ACTIVE_STATE_GETTING_ACTIVE";
-                default:
-                    return "INVALID";
-            }
+            return switch (mActiveState) {
+                case ACTIVE_STATE_ACTIVE -> "ACTIVE_STATE_ACTIVE";
+                case ACTIVE_STATE_INACTIVE -> "ACTIVE_STATE_INACTIVE";
+                case ACTIVE_STATE_GETTING_ACTIVE -> "ACTIVE_STATE_GETTING_ACTIVE";
+                default -> "INVALID";
+            };
         }
 
         void updateAllowedContexts(Integer allowedSinkContexts, Integer allowedSourceContexts) {
@@ -582,17 +581,13 @@ public class LeAudioService extends ProfileService {
         }
 
         private static int convertToStatsAudioQuality(int audioQuality) {
-            switch (audioQuality) {
-                case BluetoothLeBroadcastSubgroupSettings.QUALITY_STANDARD:
-                    return BluetoothStatsLog
-                            .BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_STANDARD;
-                case BluetoothLeBroadcastSubgroupSettings.QUALITY_HIGH:
-                    return BluetoothStatsLog
-                            .BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_HIGH;
-                default:
-                    return BluetoothStatsLog
-                            .BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_UNKNOWN;
-            }
+            return switch (audioQuality) {
+                case BluetoothLeBroadcastSubgroupSettings.QUALITY_STANDARD ->
+                        BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_STANDARD;
+                case BluetoothLeBroadcastSubgroupSettings.QUALITY_HIGH ->
+                        BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_HIGH;
+                default -> BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_UNKNOWN;
+            };
         }
     }
 

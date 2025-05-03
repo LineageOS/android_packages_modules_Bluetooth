@@ -62,95 +62,69 @@ public class VolumeControlStackEvent {
     }
 
     private static String eventTypeToString(int type) {
-        switch (type) {
-            case EVENT_TYPE_NONE:
-                return "EVENT_TYPE_NONE";
-            case EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                return "EVENT_TYPE_CONNECTION_STATE_CHANGED";
-            case EVENT_TYPE_VOLUME_STATE_CHANGED:
-                return "EVENT_TYPE_VOLUME_STATE_CHANGED";
-            case EVENT_TYPE_DEVICE_AVAILABLE:
-                return "EVENT_TYPE_DEVICE_AVAILABLE";
-            case EVENT_TYPE_EXT_AUDIO_OUT_VOL_OFFSET_CHANGED:
-                return "EVENT_TYPE_EXT_AUDIO_OUT_VOL_OFFSET_CHANGED";
-            case EVENT_TYPE_EXT_AUDIO_OUT_LOCATION_CHANGED:
-                return "EVENT_TYPE_EXT_AUDIO_OUT_LOCATION_CHANGED";
-            case EVENT_TYPE_EXT_AUDIO_OUT_DESCRIPTION_CHANGED:
-                return "EVENT_TYPE_EXT_AUDIO_OUT_DESCRIPTION_CHANGED";
-            default:
-                return "EVENT_TYPE_UNKNOWN:" + type;
-        }
+        return switch (type) {
+            case EVENT_TYPE_NONE -> "EVENT_TYPE_NONE";
+            case EVENT_TYPE_CONNECTION_STATE_CHANGED -> "EVENT_TYPE_CONNECTION_STATE_CHANGED";
+            case EVENT_TYPE_VOLUME_STATE_CHANGED -> "EVENT_TYPE_VOLUME_STATE_CHANGED";
+            case EVENT_TYPE_DEVICE_AVAILABLE -> "EVENT_TYPE_DEVICE_AVAILABLE";
+            case EVENT_TYPE_EXT_AUDIO_OUT_VOL_OFFSET_CHANGED ->
+                    "EVENT_TYPE_EXT_AUDIO_OUT_VOL_OFFSET_CHANGED";
+            case EVENT_TYPE_EXT_AUDIO_OUT_LOCATION_CHANGED ->
+                    "EVENT_TYPE_EXT_AUDIO_OUT_LOCATION_CHANGED";
+            case EVENT_TYPE_EXT_AUDIO_OUT_DESCRIPTION_CHANGED ->
+                    "EVENT_TYPE_EXT_AUDIO_OUT_DESCRIPTION_CHANGED";
+            default -> "EVENT_TYPE_UNKNOWN:" + type;
+        };
     }
 
     private static String eventTypeValue1ToString(int type, int value) {
-        switch (type) {
-            case EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                return BluetoothProfile.getConnectionStateName(value);
-            case EVENT_TYPE_VOLUME_STATE_CHANGED:
-                return "{group_id:" + value + "}";
-            case EVENT_TYPE_DEVICE_AVAILABLE:
-                return "{group_id:" + value + "}";
-            case EVENT_TYPE_EXT_AUDIO_OUT_VOL_OFFSET_CHANGED:
-            case EVENT_TYPE_EXT_AUDIO_OUT_LOCATION_CHANGED:
-            case EVENT_TYPE_EXT_AUDIO_OUT_DESCRIPTION_CHANGED:
-                return "{ext output id:" + value + "}";
-            default:
-                break;
-        }
-        return Integer.toString(value);
+        return switch (type) {
+            case EVENT_TYPE_CONNECTION_STATE_CHANGED ->
+                    BluetoothProfile.getConnectionStateName(value);
+            case EVENT_TYPE_VOLUME_STATE_CHANGED -> "{group_id:" + value + "}";
+            case EVENT_TYPE_DEVICE_AVAILABLE -> "{group_id:" + value + "}";
+            case EVENT_TYPE_EXT_AUDIO_OUT_VOL_OFFSET_CHANGED,
+                            EVENT_TYPE_EXT_AUDIO_OUT_LOCATION_CHANGED,
+                            EVENT_TYPE_EXT_AUDIO_OUT_DESCRIPTION_CHANGED ->
+                    "{ext output id:" + value + "}";
+            default -> Integer.toString(value);
+        };
     }
 
     private static String eventTypeValue2ToString(int type, int value) {
-        switch (type) {
-            case EVENT_TYPE_VOLUME_STATE_CHANGED:
-                return "{volume:" + value + "}";
-            case EVENT_TYPE_DEVICE_AVAILABLE:
-                return "{num_ext_outputs:" + value + "}";
-            default:
-                break;
-        }
-        return Integer.toString(value);
+        return switch (type) {
+            case EVENT_TYPE_VOLUME_STATE_CHANGED -> "{volume:" + value + "}";
+            case EVENT_TYPE_DEVICE_AVAILABLE -> "{num_ext_outputs:" + value + "}";
+            default -> Integer.toString(value);
+        };
     }
 
     private static String eventTypeValue3ToString(int type, int value) {
-        switch (type) {
-            case EVENT_TYPE_VOLUME_STATE_CHANGED:
-                return "{flags:" + value + "}";
-            case EVENT_TYPE_DEVICE_AVAILABLE:
-                return "{num_ext_inputs:" + value + "}";
-            default:
-                break;
-        }
-        return Integer.toString(value);
+        return switch (type) {
+            case EVENT_TYPE_VOLUME_STATE_CHANGED -> "{flags:" + value + "}";
+            case EVENT_TYPE_DEVICE_AVAILABLE -> "{num_ext_inputs:" + value + "}";
+            default -> Integer.toString(value);
+        };
     }
 
     private static String eventTypeValueBool1ToString(int type, boolean value) {
-        switch (type) {
-            case EVENT_TYPE_VOLUME_STATE_CHANGED:
-                return "{muted:" + value + "}";
-            default:
-                break;
-        }
-        return Boolean.toString(value);
+        return switch (type) {
+            case EVENT_TYPE_VOLUME_STATE_CHANGED -> "{muted:" + value + "}";
+            default -> Boolean.toString(value);
+        };
     }
 
     private static String eventTypeValueBool2ToString(int type, boolean value) {
-        switch (type) {
-            case EVENT_TYPE_VOLUME_STATE_CHANGED:
-                return "{isAutonomous:" + value + "}";
-            default:
-                break;
-        }
-        return Boolean.toString(value);
+        return switch (type) {
+            case EVENT_TYPE_VOLUME_STATE_CHANGED -> "{isAutonomous:" + value + "}";
+            default -> Boolean.toString(value);
+        };
     }
 
     private static String eventTypeString1ToString(int type, String value) {
-        switch (type) {
-            case EVENT_TYPE_EXT_AUDIO_OUT_DESCRIPTION_CHANGED:
-                return "{description:" + value + "}";
-            default:
-                break;
-        }
-        return value;
+        return switch (type) {
+            case EVENT_TYPE_EXT_AUDIO_OUT_DESCRIPTION_CHANGED -> "{description:" + value + "}";
+            default -> value;
+        };
     }
 }

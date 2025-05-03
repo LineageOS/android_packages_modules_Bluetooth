@@ -66,7 +66,7 @@ public class HearingAidStateMachineTest {
     @Mock private HearingAidService mService;
     @Mock private HearingAidNativeInterface mNativeInterface;
 
-    private final BluetoothDevice mTestDevice = getTestDevice(0xDA);
+    private final BluetoothDevice mDevice = getTestDevice(0xDA);
 
     private HearingAidStateMachine mStateMachine;
     private InOrder mInOrder;
@@ -78,14 +78,14 @@ public class HearingAidStateMachineTest {
         mLooper = new TestLooper();
 
         doReturn(true).when(mService).okToConnect(any());
-        doReturn(true).when(mService).isConnectedPeerDevices(mTestDevice);
+        doReturn(true).when(mService).isConnectedPeerDevices(mDevice);
 
         doReturn(true).when(mNativeInterface).connectHearingAid(any());
         doReturn(true).when(mNativeInterface).disconnectHearingAid(any());
 
         mStateMachine =
                 new HearingAidStateMachine(
-                        mService, mTestDevice, mNativeInterface, mLooper.getLooper());
+                        mService, mDevice, mNativeInterface, mLooper.getLooper());
         mStateMachine.start();
     }
 
@@ -101,7 +101,7 @@ public class HearingAidStateMachineTest {
         // Inject an event for when incoming connection is requested
         HearingAidStackEvent connStCh =
                 new HearingAidStackEvent(HearingAidStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        connStCh.device = mTestDevice;
+        connStCh.device = mDevice;
         connStCh.valueInt1 = STATE_CONNECTED;
         sendAndDispatchMessage(HearingAidStateMachine.MESSAGE_STACK_EVENT, connStCh);
 
@@ -115,7 +115,7 @@ public class HearingAidStateMachineTest {
         // Inject an event for when incoming connection is requested
         HearingAidStackEvent connStCh =
                 new HearingAidStackEvent(HearingAidStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        connStCh.device = mTestDevice;
+        connStCh.device = mDevice;
         connStCh.valueInt1 = STATE_CONNECTING;
         sendAndDispatchMessage(HearingAidStateMachine.MESSAGE_STACK_EVENT, connStCh);
 
@@ -129,7 +129,7 @@ public class HearingAidStateMachineTest {
         // Send a message to trigger connection completed
         HearingAidStackEvent connCompletedEvent =
                 new HearingAidStackEvent(HearingAidStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        connCompletedEvent.device = mTestDevice;
+        connCompletedEvent.device = mDevice;
         connCompletedEvent.valueInt1 = STATE_CONNECTED;
         sendAndDispatchMessage(HearingAidStateMachine.MESSAGE_STACK_EVENT, connCompletedEvent);
 
@@ -141,7 +141,7 @@ public class HearingAidStateMachineTest {
 
     @Test
     public void outgoingConnect_whenTimeOut_isDisconnectedAndInAcceptList() {
-        sendAndDispatchMessage(HearingAidStateMachine.MESSAGE_CONNECT, mTestDevice);
+        sendAndDispatchMessage(HearingAidStateMachine.MESSAGE_CONNECT, mDevice);
 
         verifyIntentSent(
                 hasAction(ACTION_CONNECTION_STATE_CHANGED),
@@ -158,14 +158,14 @@ public class HearingAidStateMachineTest {
         assertThat(mStateMachine.getCurrentState())
                 .isInstanceOf(HearingAidStateMachine.Disconnected.class);
 
-        verify(mNativeInterface).addToAcceptlist(eq(mTestDevice));
+        verify(mNativeInterface).addToAcceptlist(eq(mDevice));
     }
 
     @Test
     public void incomingConnect_whenTimeOut_isDisconnectedAndInAcceptList() {
         HearingAidStackEvent connStCh =
                 new HearingAidStackEvent(HearingAidStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        connStCh.device = mTestDevice;
+        connStCh.device = mDevice;
         connStCh.valueInt1 = STATE_CONNECTING;
         sendAndDispatchMessage(HearingAidStateMachine.MESSAGE_STACK_EVENT, connStCh);
 
@@ -184,7 +184,7 @@ public class HearingAidStateMachineTest {
         assertThat(mStateMachine.getCurrentState())
                 .isInstanceOf(HearingAidStateMachine.Disconnected.class);
 
-        verify(mNativeInterface).addToAcceptlist(eq(mTestDevice));
+        verify(mNativeInterface).addToAcceptlist(eq(mDevice));
     }
 
     private void sendAndDispatchMessage(int what, Object obj) {

@@ -1820,7 +1820,8 @@ public class HeadsetServiceAndStateMachineTest {
         // trigger audio callback
         AudioDeviceCallback callbackVal = callback.getValue();
         when(mAudioDeviceInfo.getType()).thenReturn(AudioDeviceInfo.TYPE_BLUETOOTH_SCO);
-        when(mAudioDeviceInfo.getAddress()).thenReturn(device.getAddress());
+        final String address = device.getAddress();
+        when(mAudioDeviceInfo.getAddress()).thenReturn(address);
         when(mAdapterService.getDeviceFromByte(Utils.getBytesFromAddress(device.getAddress())))
                 .thenReturn(device);
         when(mAudioManager.getAvailableCommunicationDevices())
@@ -1947,7 +1948,8 @@ public class HeadsetServiceAndStateMachineTest {
         // trigger audio callback to add device
         AudioDeviceCallback callbackVal = callback.getValue();
         when(mAudioDeviceInfo.getType()).thenReturn(AudioDeviceInfo.TYPE_BLUETOOTH_SCO);
-        when(mAudioDeviceInfo.getAddress()).thenReturn(device.getAddress());
+        final String address = device.getAddress();
+        when(mAudioDeviceInfo.getAddress()).thenReturn(address);
         when(mAdapterService.getDeviceFromByte(Utils.getBytesFromAddress(device.getAddress())))
                 .thenReturn(device);
         when(mAudioManager.getAvailableCommunicationDevices())
@@ -1963,7 +1965,7 @@ public class HeadsetServiceAndStateMachineTest {
         callbackVal.onAudioDevicesRemoved(new AudioDeviceInfo[] {mAudioDeviceInfo});
         assertThat(mHeadsetService.mExposedActiveDevice).isEqualTo(device);
 
-        when(mAudioDeviceInfo.getAddress()).thenReturn(device.getAddress());
+        when(mAudioDeviceInfo.getAddress()).thenReturn(address);
         callbackVal.onAudioDevicesRemoved(new AudioDeviceInfo[] {mAudioDeviceInfo});
         assertThat(mHeadsetService.mExposedActiveDevice).isNull();
     }

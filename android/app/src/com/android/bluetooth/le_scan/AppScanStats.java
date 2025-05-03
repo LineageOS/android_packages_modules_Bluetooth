@@ -456,23 +456,22 @@ class AppScanStats {
     }
 
     private static int convertScanCallbackType(int type) {
-        switch (type) {
-            case ScanSettings.CALLBACK_TYPE_ALL_MATCHES:
-                return BluetoothStatsLog
-                        .LE_APP_SCAN_STATE_CHANGED__SCAN_CALLBACK_TYPE__TYPE_ALL_MATCHES;
-            case ScanSettings.CALLBACK_TYPE_FIRST_MATCH:
-                return BluetoothStatsLog
-                        .LE_APP_SCAN_STATE_CHANGED__SCAN_CALLBACK_TYPE__TYPE_FIRST_MATCH;
-            case ScanSettings.CALLBACK_TYPE_MATCH_LOST:
-                return BluetoothStatsLog
-                        .LE_APP_SCAN_STATE_CHANGED__SCAN_CALLBACK_TYPE__TYPE_MATCH_LOST;
-            case ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH:
-                return BluetoothStatsLog
-                        .LE_APP_SCAN_STATE_CHANGED__SCAN_CALLBACK_TYPE__TYPE_ALL_MATCHES_AUTO_BATCH;
-            default:
-                return BluetoothStatsLog
-                        .LE_APP_SCAN_STATE_CHANGED__SCAN_CALLBACK_TYPE__TYPE_UNKNOWN;
-        }
+        return switch (type) {
+            case ScanSettings.CALLBACK_TYPE_ALL_MATCHES ->
+                    BluetoothStatsLog
+                            .LE_APP_SCAN_STATE_CHANGED__SCAN_CALLBACK_TYPE__TYPE_ALL_MATCHES;
+            case ScanSettings.CALLBACK_TYPE_FIRST_MATCH ->
+                    BluetoothStatsLog
+                            .LE_APP_SCAN_STATE_CHANGED__SCAN_CALLBACK_TYPE__TYPE_FIRST_MATCH;
+            case ScanSettings.CALLBACK_TYPE_MATCH_LOST ->
+                    BluetoothStatsLog
+                            .LE_APP_SCAN_STATE_CHANGED__SCAN_CALLBACK_TYPE__TYPE_MATCH_LOST;
+            case ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH ->
+                    BluetoothStatsLog
+                            .LE_APP_SCAN_STATE_CHANGED__SCAN_CALLBACK_TYPE__TYPE_ALL_MATCHES_AUTO_BATCH;
+            default ->
+                    BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__SCAN_CALLBACK_TYPE__TYPE_UNKNOWN;
+        };
     }
 
     private static int convertScanType(LastScan scan) {
@@ -490,31 +489,27 @@ class AppScanStats {
 
     @VisibleForTesting
     static int convertScanMode(int mode) {
-        switch (mode) {
-            case ScanSettings.SCAN_MODE_OPPORTUNISTIC:
-                return BluetoothStatsLog
-                        .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_OPPORTUNISTIC;
-            case ScanSettings.SCAN_MODE_LOW_POWER:
-                return BluetoothStatsLog
-                        .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_LOW_POWER;
-            case ScanSettings.SCAN_MODE_BALANCED:
-                return BluetoothStatsLog
-                        .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_BALANCED;
-            case ScanSettings.SCAN_MODE_LOW_LATENCY:
-                return BluetoothStatsLog
-                        .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_LOW_LATENCY;
-            case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY:
-                return BluetoothStatsLog
-                        .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_AMBIENT_DISCOVERY;
-            case ScanSettings.SCAN_MODE_SCREEN_OFF:
-                return BluetoothStatsLog
-                        .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_SCREEN_OFF;
-            case ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED:
-                return BluetoothStatsLog
-                        .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_SCREEN_OFF_BALANCED;
-            default:
-                return BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_UNKNOWN;
-        }
+        return switch (mode) {
+            case ScanSettings.SCAN_MODE_OPPORTUNISTIC ->
+                    BluetoothStatsLog
+                            .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_OPPORTUNISTIC;
+            case ScanSettings.SCAN_MODE_LOW_POWER ->
+                    BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_LOW_POWER;
+            case ScanSettings.SCAN_MODE_BALANCED ->
+                    BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_BALANCED;
+            case ScanSettings.SCAN_MODE_LOW_LATENCY ->
+                    BluetoothStatsLog
+                            .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_LOW_LATENCY;
+            case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY ->
+                    BluetoothStatsLog
+                            .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_AMBIENT_DISCOVERY;
+            case ScanSettings.SCAN_MODE_SCREEN_OFF ->
+                    BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_SCREEN_OFF;
+            case ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED ->
+                    BluetoothStatsLog
+                            .LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_SCREEN_OFF_BALANCED;
+            default -> BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_UNKNOWN;
+        };
     }
 
     synchronized void recordScanTimeoutCountMetrics(int scannerId, long scanTimeoutMillis) {
@@ -671,22 +666,17 @@ class AppScanStats {
     }
 
     private static int getScanWeight(int scanMode) {
-        switch (scanMode) {
-            case ScanSettings.SCAN_MODE_OPPORTUNISTIC:
-                return OPPORTUNISTIC_WEIGHT;
-            case ScanSettings.SCAN_MODE_SCREEN_OFF:
-                return SCREEN_OFF_LOW_POWER_WEIGHT;
-            case ScanSettings.SCAN_MODE_LOW_POWER:
-                return LOW_POWER_WEIGHT;
-            case ScanSettings.SCAN_MODE_BALANCED:
-            case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY:
-            case ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED:
-                return BALANCED_WEIGHT;
-            case ScanSettings.SCAN_MODE_LOW_LATENCY:
-                return LOW_LATENCY_WEIGHT;
-            default:
-                return LOW_POWER_WEIGHT;
-        }
+        return switch (scanMode) {
+            case ScanSettings.SCAN_MODE_OPPORTUNISTIC -> OPPORTUNISTIC_WEIGHT;
+            case ScanSettings.SCAN_MODE_SCREEN_OFF -> SCREEN_OFF_LOW_POWER_WEIGHT;
+            case ScanSettings.SCAN_MODE_LOW_POWER -> LOW_POWER_WEIGHT;
+            case ScanSettings.SCAN_MODE_LOW_LATENCY -> LOW_LATENCY_WEIGHT;
+            case ScanSettings.SCAN_MODE_BALANCED,
+                            ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY,
+                            ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED ->
+                    BALANCED_WEIGHT;
+            default -> LOW_POWER_WEIGHT;
+        };
     }
 
     static void recordScanRadioResultCount() {
@@ -889,39 +879,26 @@ class AppScanStats {
     }
 
     private static String scanModeToString(int scanMode) {
-        switch (scanMode) {
-            case ScanSettings.SCAN_MODE_OPPORTUNISTIC:
-                return "OPPORTUNISTIC";
-            case ScanSettings.SCAN_MODE_LOW_LATENCY:
-                return "LOW_LATENCY";
-            case ScanSettings.SCAN_MODE_BALANCED:
-                return "BALANCED";
-            case ScanSettings.SCAN_MODE_LOW_POWER:
-                return "LOW_POWER";
-            case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY:
-                return "AMBIENT_DISCOVERY";
-            default:
-                return "UNKNOWN(" + scanMode + ")";
-        }
+        return switch (scanMode) {
+            case ScanSettings.SCAN_MODE_OPPORTUNISTIC -> "OPPORTUNISTIC";
+            case ScanSettings.SCAN_MODE_LOW_LATENCY -> "LOW_LATENCY";
+            case ScanSettings.SCAN_MODE_BALANCED -> "BALANCED";
+            case ScanSettings.SCAN_MODE_LOW_POWER -> "LOW_POWER";
+            case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY -> "AMBIENT_DISCOVERY";
+            default -> "UNKNOWN(" + scanMode + ")";
+        };
     }
 
     private static String callbackTypeToString(int callbackType) {
-        switch (callbackType) {
-            case ScanSettings.CALLBACK_TYPE_ALL_MATCHES:
-                return "ALL_MATCHES";
-            case ScanSettings.CALLBACK_TYPE_FIRST_MATCH:
-                return "FIRST_MATCH";
-            case ScanSettings.CALLBACK_TYPE_MATCH_LOST:
-                return "LOST";
-            case ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH:
-                return "ALL_MATCHES_AUTO_BATCH";
-            default:
-                return callbackType
-                                == (ScanSettings.CALLBACK_TYPE_FIRST_MATCH
-                                        | ScanSettings.CALLBACK_TYPE_MATCH_LOST)
-                        ? "[FIRST_MATCH | LOST]"
-                        : "UNKNOWN: " + callbackType;
-        }
+        return switch (callbackType) {
+            case ScanSettings.CALLBACK_TYPE_ALL_MATCHES -> "ALL_MATCHES";
+            case ScanSettings.CALLBACK_TYPE_FIRST_MATCH -> "FIRST_MATCH";
+            case ScanSettings.CALLBACK_TYPE_MATCH_LOST -> "LOST";
+            case ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH -> "ALL_MATCHES_AUTO_BATCH";
+            case ScanSettings.CALLBACK_TYPE_FIRST_MATCH | ScanSettings.CALLBACK_TYPE_MATCH_LOST ->
+                    "[FIRST_MATCH | LOST]";
+            default -> "UNKNOWN: " + callbackType;
+        };
     }
 
     @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate

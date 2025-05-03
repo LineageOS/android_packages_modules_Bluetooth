@@ -2861,44 +2861,26 @@ class HeadsetStateMachine extends StateMachine {
     }
 
     private static String getMessageName(int what) {
-        switch (what) {
-            case CONNECT:
-                return "CONNECT";
-            case DISCONNECT:
-                return "DISCONNECT";
-            case CONNECT_AUDIO:
-                return "CONNECT_AUDIO";
-            case DISCONNECT_AUDIO:
-                return "DISCONNECT_AUDIO";
-            case VOICE_RECOGNITION_START:
-                return "VOICE_RECOGNITION_START";
-            case VOICE_RECOGNITION_STOP:
-                return "VOICE_RECOGNITION_STOP";
-            case INTENT_SCO_VOLUME_CHANGED:
-                return "INTENT_SCO_VOLUME_CHANGED";
-            case INTENT_CONNECTION_ACCESS_REPLY:
-                return "INTENT_CONNECTION_ACCESS_REPLY";
-            case CALL_STATE_CHANGED:
-                return "CALL_STATE_CHANGED";
-            case DEVICE_STATE_CHANGED:
-                return "DEVICE_STATE_CHANGED";
-            case SEND_CLCC_RESPONSE:
-                return "SEND_CLCC_RESPONSE";
-            case SEND_VENDOR_SPECIFIC_RESULT_CODE:
-                return "SEND_VENDOR_SPECIFIC_RESULT_CODE";
-            case STACK_EVENT:
-                return "STACK_EVENT";
-            case VOICE_RECOGNITION_RESULT:
-                return "VOICE_RECOGNITION_RESULT";
-            case DIALING_OUT_RESULT:
-                return "DIALING_OUT_RESULT";
-            case CLCC_RSP_TIMEOUT:
-                return "CLCC_RSP_TIMEOUT";
-            case CONNECT_TIMEOUT:
-                return "CONNECT_TIMEOUT";
-            default:
-                return "UNKNOWN(" + what + ")";
-        }
+        return switch (what) {
+            case CONNECT -> "CONNECT";
+            case DISCONNECT -> "DISCONNECT";
+            case CONNECT_AUDIO -> "CONNECT_AUDIO";
+            case DISCONNECT_AUDIO -> "DISCONNECT_AUDIO";
+            case VOICE_RECOGNITION_START -> "VOICE_RECOGNITION_START";
+            case VOICE_RECOGNITION_STOP -> "VOICE_RECOGNITION_STOP";
+            case INTENT_SCO_VOLUME_CHANGED -> "INTENT_SCO_VOLUME_CHANGED";
+            case INTENT_CONNECTION_ACCESS_REPLY -> "INTENT_CONNECTION_ACCESS_REPLY";
+            case CALL_STATE_CHANGED -> "CALL_STATE_CHANGED";
+            case DEVICE_STATE_CHANGED -> "DEVICE_STATE_CHANGED";
+            case SEND_CLCC_RESPONSE -> "SEND_CLCC_RESPONSE";
+            case SEND_VENDOR_SPECIFIC_RESULT_CODE -> "SEND_VENDOR_SPECIFIC_RESULT_CODE";
+            case STACK_EVENT -> "STACK_EVENT";
+            case VOICE_RECOGNITION_RESULT -> "VOICE_RECOGNITION_RESULT";
+            case DIALING_OUT_RESULT -> "DIALING_OUT_RESULT";
+            case CLCC_RSP_TIMEOUT -> "CLCC_RSP_TIMEOUT";
+            case CONNECT_TIMEOUT -> "CONNECT_TIMEOUT";
+            default -> "UNKNOWN(" + what + ")";
+        };
     }
 
     private static void logHfpSessionMetric(BluetoothDevice device, int state) {

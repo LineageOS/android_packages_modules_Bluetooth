@@ -29,15 +29,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.IBluetoothLeBroadcastAssistantCallback;
 import android.bluetooth.le.ScanFilter;
 import android.content.AttributionSource;
 
 import androidx.test.filters.SmallTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.Before;
@@ -57,15 +54,10 @@ public class BassClientServiceBinderTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    private final BluetoothAdapter mAdapter =
-            InstrumentationRegistry.getInstrumentation()
-                    .getContext()
-                    .getSystemService(BluetoothManager.class)
-                    .getAdapter();
-    private final AttributionSource mAttributionSource = mAdapter.getAttributionSource();
-    private final BluetoothDevice mDevice = getTestDevice(0);
-
+    @Mock private AttributionSource mAttributionSource;
     @Mock private BassClientService mService;
+
+    private final BluetoothDevice mDevice = getTestDevice(0);
 
     private BassClientServiceBinder mBinder;
 

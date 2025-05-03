@@ -21,8 +21,10 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.os.Parcel;
 
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.Test;
@@ -343,9 +345,16 @@ public class HfpClientCallTest {
 
     @Test
     public void testParcelable() {
+        final BluetoothDevice device =
+                InstrumentationRegistry.getInstrumentation()
+                        .getContext()
+                        .getSystemService(BluetoothManager.class)
+                        .getAdapter()
+                        .getRemoteDevice("01:23:45:67:89:AB");
+
         HfpClientCall call =
                 new HfpClientCall(
-                        /* device= */ mDevice,
+                        /* device= */ device,
                         /* call id= */ TEST_ID,
                         /* call state= */ HfpClientCall.CALL_STATE_ACTIVE,
                         /* phone number= */ TEST_NUMBER,
@@ -354,7 +363,7 @@ public class HfpClientCallTest {
                         /* inBandRing= */ false);
 
         assertCall(
-                mDevice,
+                device,
                 TEST_ID,
                 HfpClientCall.CALL_STATE_ACTIVE,
                 TEST_NUMBER,
@@ -370,7 +379,7 @@ public class HfpClientCallTest {
         parcel.recycle();
 
         assertCall(
-                mDevice,
+                device,
                 TEST_ID,
                 HfpClientCall.CALL_STATE_ACTIVE,
                 TEST_NUMBER,

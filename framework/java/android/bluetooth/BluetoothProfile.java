@@ -405,18 +405,13 @@ public interface BluetoothProfile {
     @NonNull
     @RequiresNoPermission
     static String getConnectionStateName(int connectionState) {
-        switch (connectionState) {
-            case STATE_DISCONNECTED:
-                return "STATE_DISCONNECTED";
-            case STATE_CONNECTING:
-                return "STATE_CONNECTING";
-            case STATE_CONNECTED:
-                return "STATE_CONNECTED";
-            case STATE_DISCONNECTING:
-                return "STATE_DISCONNECTING";
-            default:
-                return "STATE_UNKNOWN";
-        }
+        return switch (connectionState) {
+            case STATE_DISCONNECTED -> "STATE_DISCONNECTED";
+            case STATE_CONNECTING -> "STATE_CONNECTING";
+            case STATE_CONNECTED -> "STATE_CONNECTED";
+            case STATE_DISCONNECTING -> "STATE_DISCONNECTING";
+            default -> "STATE_UNKNOWN";
+        };
     }
 
     /**
@@ -430,63 +425,35 @@ public interface BluetoothProfile {
     @NonNull
     @RequiresNoPermission
     static String getProfileName(int profile) {
-        switch (profile) {
-            case HEADSET:
-                return "HEADSET";
-            case A2DP:
-                return "A2DP";
-            case HID_HOST:
-                return "HID_HOST";
-            case PAN:
-                return "PAN";
-            case PBAP:
-                return "PBAP";
-            case GATT:
-                return "GATT";
-            case GATT_SERVER:
-                return "GATT_SERVER";
-            case MAP:
-                return "MAP";
-            case SAP:
-                return "SAP";
-            case A2DP_SINK:
-                return "A2DP_SINK";
-            case AVRCP_CONTROLLER:
-                return "AVRCP_CONTROLLER";
-            case AVRCP:
-                return "AVRCP";
-            case HEADSET_CLIENT:
-                return "HEADSET_CLIENT";
-            case PBAP_CLIENT:
-                return "PBAP_CLIENT";
-            case MAP_CLIENT:
-                return "MAP_CLIENT";
-            case HID_DEVICE:
-                return "HID_DEVICE";
-            case OPP:
-                return "OPP";
-            case HEARING_AID:
-                return "HEARING_AID";
-            case LE_AUDIO:
-                return "LE_AUDIO";
-            case VOLUME_CONTROL:
-                return "VOLUME_CONTROL";
-            case MCP_SERVER:
-                return "MCP_SERVER";
-            case CSIP_SET_COORDINATOR:
-                return "CSIP_SET_COORDINATOR";
-            case LE_AUDIO_BROADCAST:
-                return "LE_AUDIO_BROADCAST";
-            case LE_CALL_CONTROL:
-                return "LE_CALL_CONTROL";
-            case HAP_CLIENT:
-                return "HAP_CLIENT";
-            case LE_AUDIO_BROADCAST_ASSISTANT:
-                return "LE_AUDIO_BROADCAST_ASSISTANT";
-            case BATTERY:
-                return "BATTERY";
-            default:
-                return "UNKNOWN_PROFILE (" + profile + ")";
-        }
+        return switch (profile) {
+            case HEADSET -> "HEADSET";
+            case A2DP -> "A2DP";
+            case HID_HOST -> "HID_HOST";
+            case PAN -> "PAN";
+            case PBAP -> "PBAP";
+            case GATT -> "GATT";
+            case GATT_SERVER -> "GATT_SERVER";
+            case MAP -> "MAP";
+            case SAP -> "SAP";
+            case A2DP_SINK -> "A2DP_SINK";
+            case AVRCP_CONTROLLER -> "AVRCP_CONTROLLER";
+            case AVRCP -> "AVRCP";
+            case HEADSET_CLIENT -> "HEADSET_CLIENT";
+            case PBAP_CLIENT -> "PBAP_CLIENT";
+            case MAP_CLIENT -> "MAP_CLIENT";
+            case HID_DEVICE -> "HID_DEVICE";
+            case OPP -> "OPP";
+            case HEARING_AID -> "HEARING_AID";
+            case LE_AUDIO -> "LE_AUDIO";
+            case VOLUME_CONTROL -> "VOLUME_CONTROL";
+            case MCP_SERVER -> "MCP_SERVER";
+            case CSIP_SET_COORDINATOR -> "CSIP_SET_COORDINATOR";
+            case LE_AUDIO_BROADCAST -> "LE_AUDIO_BROADCAST";
+            case LE_CALL_CONTROL -> "LE_CALL_CONTROL";
+            case HAP_CLIENT -> "HAP_CLIENT";
+            case LE_AUDIO_BROADCAST_ASSISTANT -> "LE_AUDIO_BROADCAST_ASSISTANT";
+            case BATTERY -> "BATTERY";
+            default -> "UNKNOWN_PROFILE (" + profile + ")";
+        };
     }
 }

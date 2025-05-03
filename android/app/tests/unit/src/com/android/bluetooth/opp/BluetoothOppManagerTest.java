@@ -66,9 +66,7 @@ public class BluetoothOppManagerTest {
     @Before
     public void setUp() {
         mContext =
-                spy(
-                        new ContextWrapper(
-                                InstrumentationRegistry.getInstrumentation().getContext()));
+                spy(new ContextWrapper(InstrumentationRegistry.getInstrumentation().getContext()));
 
         mCallProxy = spy(BluetoothMethodProxy.getInstance());
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);

@@ -41,7 +41,6 @@ import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.IPeriodicAdvertisingCallback;
 import android.bluetooth.le.IScannerCallback;
@@ -59,7 +58,6 @@ import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
@@ -96,6 +94,7 @@ public class ScanControllerTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private GattObjectsFactory mGattObjectsFactory;
     @Mock private ScanObjectsFactory mScanObjectsFactory;
     @Mock private AdapterService mAdapterService;
@@ -111,13 +110,7 @@ public class ScanControllerTest {
     private static final int TEST_ACTION = 1;
     private static final int TEST_CLIENT_IF = 2;
 
-    private final BluetoothAdapter mAdapter =
-            InstrumentationRegistry.getInstrumentation()
-                    .getContext()
-                    .getSystemService(BluetoothManager.class)
-                    .getAdapter();
     private final BluetoothDevice mDevice = getTestDevice(89);
-    private final AttributionSource mAttributionSource = mAdapter.getAttributionSource();
     private final Context mContext = getInstrumentation().getContext();
 
     private CompanionManager mBtCompanionManager;
