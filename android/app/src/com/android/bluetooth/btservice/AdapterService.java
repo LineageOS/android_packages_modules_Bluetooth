@@ -2677,8 +2677,8 @@ public class AdapterService extends Service {
 
     public byte[] getByteIdentityAddress(BluetoothDevice device) {
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
-        if (deviceProp != null && deviceProp.getIdentityAddress() != null) {
-            return Utils.getBytesFromAddress(deviceProp.getIdentityAddress());
+        if (deviceProp != null && deviceProp.getIdentityAddress().getAddress() != null) {
+            return Utils.getBytesFromAddress(deviceProp.getIdentityAddress().getAddress());
         }
 
         // Return null if identity address unknown
@@ -2714,13 +2714,7 @@ public class AdapterService extends Service {
     }
 
     public String getIdentityAddress(String address) {
-        BluetoothDevice device = getRemoteDevice(address.toUpperCase(Locale.ROOT));
-        DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
-        if (deviceProp != null && deviceProp.getIdentityAddress() != null) {
-            return deviceProp.getIdentityAddress();
-        }
-        // Return null if identity address unknown
-        return null;
+        return getIdentityAddressWithType(address).getAddress();
     }
 
     /**
@@ -2734,20 +2728,9 @@ public class AdapterService extends Service {
     public BluetoothAddress getIdentityAddressWithType(@NonNull String address) {
         BluetoothDevice device = getRemoteDevice(address.toUpperCase(Locale.ROOT));
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
-
-        String identityAddress = null;
-        int identityAddressType = BluetoothDevice.ADDRESS_TYPE_UNKNOWN;
-
-        if (deviceProp != null) {
-            if (deviceProp.getIdentityAddress() != null) {
-                identityAddress = deviceProp.getIdentityAddress();
-            }
-            identityAddressType = deviceProp.getIdentityAddressType();
-        } else {
-            identityAddress = null;
-        }
-
-        return new BluetoothAddress(identityAddress, identityAddressType);
+        return deviceProp != null
+                ? deviceProp.getIdentityAddress()
+                : DeviceProperties.UNKNOWN_ADDRESS;
     }
 
     public boolean addAssociatedPackage(BluetoothDevice device, String packageName) {
