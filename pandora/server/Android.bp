@@ -24,7 +24,7 @@ python_library_host {
     libs: [
         "bumble",
         "libprotobuf-python",
-        "pandora_experimental-python",
+        "pandora_interfaces-python",
     ],
     data: [
         "pandora_services/py.typed",
