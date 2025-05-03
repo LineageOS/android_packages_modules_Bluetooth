@@ -462,19 +462,13 @@ void smp_proc_sec_req(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   }
 
   tBTM_LE_AUTH_REQ auth_req = *(tBTM_LE_AUTH_REQ*)p_data->p_data;
-  tBTM_BLE_SEC_REQ_ACT sec_req_act;
-
-  log::verbose("auth_req=0x{:x}", auth_req);
+  tBTM_BLE_SEC_REQ_ACT sec_req_act = btm_ble_link_sec_check(p_cb->pairing_bda, auth_req);
 
   p_cb->cb_evt = SMP_EVT_NONE;
-
-  btm_ble_link_sec_check(p_cb->pairing_bda, auth_req, &sec_req_act);
-
-  log::verbose("sec_req_act={}", sec_req_act);
+  log::verbose("auth_req={:#x} sec_req_act={}", auth_req, sec_req_act);
 
   switch (sec_req_act) {
     case BTM_BLE_SEC_REQ_ACT_ENCRYPT:
-      log::verbose("BTM_BLE_SEC_REQ_ACT_ENCRYPT");
       smp_sm_event(p_cb, SMP_ENC_REQ_EVT, NULL);
       break;
 
