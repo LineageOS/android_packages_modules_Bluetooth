@@ -17,12 +17,11 @@
 
 #include <bluetooth/log.h>
 
-#include <memory>
 #include <vector>
 
 #include "common/callback.h"
 #include "hci/hci_packets.h"
-#include "module.h"
+#include "os/handler.h"
 
 namespace bluetooth {
 namespace hci {
@@ -106,80 +105,57 @@ public:
   virtual void OnOwnAddressRead(uint8_t advertiser_id, uint8_t address_type, Address address) = 0;
 };
 
-class LeAdvertisingManager : public bluetooth::Module {
+class LeAdvertisingManager {
 public:
-  static constexpr AdvertiserId kInvalidId = 0xFF;
-  static constexpr uint8_t kInvalidHandle = 0xFF;
-  static constexpr uint8_t kAdvertisingSetIdMask = 0x0F;
-  static constexpr uint16_t kLeMaximumLegacyAdvertisingDataLength = 31;
-  static constexpr uint16_t kLeMaximumFragmentLength = 251;
-  static constexpr uint16_t kLeMaximumPeriodicDataFragmentLength = 252;
-  static constexpr uint16_t kLeMaximumGapDataLength = 255;
-  static constexpr FragmentPreference kFragment_preference =
-          FragmentPreference::CONTROLLER_SHOULD_NOT;
-  LeAdvertisingManager();
-  LeAdvertisingManager(const LeAdvertisingManager&) = delete;
-  LeAdvertisingManager& operator=(const LeAdvertisingManager&) = delete;
+  virtual ~LeAdvertisingManager() = default;
 
-  size_t GetNumberOfAdvertisingInstances() const;
+  virtual size_t GetNumberOfAdvertisingInstances() const = 0;
 
-  size_t GetNumberOfAdvertisingInstancesInUse() const;
+  virtual size_t GetNumberOfAdvertisingInstancesInUse() const = 0;
 
-  int GetAdvertiserRegId(AdvertiserId advertiser_id);
+  virtual int GetAdvertiserRegId(AdvertiserId advertiser_id) = 0;
 
-  void ExtendedCreateAdvertiser(
+  virtual void ExtendedCreateAdvertiser(
           uint8_t client_id, int reg_id, const AdvertisingConfig config,
           common::Callback<void(Address, AddressType)> scan_callback,
           common::Callback<void(ErrorCode, uint8_t, uint8_t)> set_terminated_callback,
-          uint16_t duration, uint8_t max_extended_advertising_events, os::Handler* handler);
+          uint16_t duration, uint8_t max_extended_advertising_events, os::Handler* handler) = 0;
 
-  void StartAdvertising(AdvertiserId advertiser_id, const AdvertisingConfig config,
-                        uint16_t duration,
-                        base::OnceCallback<void(uint8_t /* status */)> status_callback,
-                        base::OnceCallback<void(uint8_t /* status */)> timeout_callback,
-                        common::Callback<void(Address, AddressType)> scan_callback,
-                        common::Callback<void(ErrorCode, uint8_t, uint8_t)> set_terminated_callback,
-                        os::Handler* handler);
+  virtual void StartAdvertising(
+          AdvertiserId advertiser_id, const AdvertisingConfig config, uint16_t duration,
+          base::OnceCallback<void(uint8_t /* status */)> status_callback,
+          base::OnceCallback<void(uint8_t /* status */)> timeout_callback,
+          common::Callback<void(Address, AddressType)> scan_callback,
+          common::Callback<void(ErrorCode, uint8_t, uint8_t)> set_terminated_callback,
+          os::Handler* handler) = 0;
 
-  void GetOwnAddress(uint8_t advertiser_id);
+  virtual void GetOwnAddress(uint8_t advertiser_id) = 0;
 
-  void RegisterAdvertiser(
+  virtual void RegisterAdvertiser(
           common::ContextualOnceCallback<void(uint8_t /* inst_id */,
                                               AdvertisingCallback::AdvertisingStatus /* status */)>
-                  callback);
+                  callback) = 0;
 
-  void SetParameters(AdvertiserId advertiser_id, AdvertisingConfig config);
+  virtual void SetParameters(AdvertiserId advertiser_id, AdvertisingConfig config) = 0;
 
-  void SetData(AdvertiserId advertiser_id, bool set_scan_rsp, std::vector<GapData> data);
+  virtual void SetData(AdvertiserId advertiser_id, bool set_scan_rsp,
+                       std::vector<GapData> data) = 0;
 
-  void EnableAdvertiser(AdvertiserId advertiser_id, bool enable, uint16_t duration,
-                        uint8_t max_extended_advertising_events);
+  virtual void EnableAdvertiser(AdvertiserId advertiser_id, bool enable, uint16_t duration,
+                                uint8_t max_extended_advertising_events) = 0;
 
-  void SetPeriodicParameters(AdvertiserId advertiser_id,
-                             PeriodicAdvertisingParameters periodic_advertising_parameters);
+  virtual void SetPeriodicParameters(
+          AdvertiserId advertiser_id,
+          PeriodicAdvertisingParameters periodic_advertising_parameters) = 0;
 
-  void SetPeriodicData(AdvertiserId advertiser_id, std::vector<GapData> data);
+  virtual void SetPeriodicData(AdvertiserId advertiser_id, std::vector<GapData> data) = 0;
 
-  void EnablePeriodicAdvertising(AdvertiserId advertiser_id, bool enable, bool include_adi);
+  virtual void EnablePeriodicAdvertising(AdvertiserId advertiser_id, bool enable,
+                                         bool include_adi) = 0;
 
-  void RemoveAdvertiser(AdvertiserId advertiser_id);
+  virtual void RemoveAdvertiser(AdvertiserId advertiser_id) = 0;
 
-  void RegisterAdvertisingCallback(AdvertisingCallback* advertising_callback);
-
-  static const ModuleFactory Factory;
-
-protected:
-  void ListDependencies(ModuleList* list) const override;
-
-  void Start() override;
-
-  void Stop() override;
-
-  std::string ToString() const override;
-
-private:
-  struct impl;
-  std::unique_ptr<impl> pimpl_;
+  virtual void RegisterAdvertisingCallback(AdvertisingCallback* advertising_callback) = 0;
 };
 
 }  // namespace hci

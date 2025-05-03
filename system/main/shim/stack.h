@@ -19,6 +19,7 @@
 #include <functional>
 #include <mutex>
 
+#include "hci/le_advertising_manager.h"
 #include "module.h"
 #include "os/handler.h"
 #include "os/thread.h"
@@ -68,6 +69,7 @@ public:
   virtual Acl* GetAcl() const;
   virtual storage::StorageModule* GetStorage() const;
   virtual hal::SnoopLogger* GetSnoopLogger() const;
+  virtual hci::LeAdvertisingManager* GetLeAdvertisingManager() const;
 
   os::Handler* GetHandler();
 
