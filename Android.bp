@@ -162,6 +162,7 @@ java_defaults {
             "-Xep:InvalidInlineTag:ERROR",
             "-Xep:InvalidLink:ERROR",
             "-Xep:InvalidParam:ERROR",
+            "-Xep:JUnit4EmptyMethods:ERROR",
             "-Xep:JavaLangClash:ERROR",
             "-Xep:JavaUtilDate:ERROR",
             "-Xep:JdkObsolete:ERROR",
