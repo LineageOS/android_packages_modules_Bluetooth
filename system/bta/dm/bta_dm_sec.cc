@@ -84,6 +84,10 @@ void bta_dm_ble_sirk_confirm_device_reply(const RawAddress& bd_addr, bool accept
           bd_addr, accept ? tBTM_STATUS::BTM_SUCCESS : tBTM_STATUS::BTM_NOT_AUTHORIZED);
 }
 
+void bta_dm_ble_auth_cmpl_cb_register(tBTA_DM_SEC_CBACK* p_cback) {
+  bta_dm_sec_cb.p_ble_auth_cmpl_cback = p_cback;
+}
+
 void bta_dm_consolidate(const RawAddress& identity_addr, const RawAddress& rpa) {
   for (auto i = 0; i < bta_dm_cb.device_list.count; i++) {
     if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr != rpa) {
@@ -788,6 +792,11 @@ static tBTM_STATUS bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda
         // bta_dm_sec_cb.p_sec_cback(BTA_DM_AUTH_CMPL_EVT, &sec_event);
         bta_dm_sec_cb.p_sec_cback(BTA_DM_BLE_AUTH_CMPL_EVT, &sec_event);
       }
+
+      if (bta_dm_sec_cb.p_ble_auth_cmpl_cback) {
+        bta_dm_sec_cb.p_ble_auth_cmpl_cback(BTA_DM_BLE_AUTH_CMPL_EVT, &sec_event);
+      }
+
       break;
 
     case BTM_LE_ADDR_ASSOC_EVT:

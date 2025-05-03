@@ -313,7 +313,9 @@ constexpr uint8_t kLeAudioCodingFormatVendorSpecific =
 constexpr uint16_t kLeAudioVendorCompanyIdUndefined = 0x00;
 constexpr uint16_t kLeAudioVendorCodecIdUndefined = 0x00;
 
+// TODO: b/409508660 - Provide a common place to find the codec IDs
 constexpr uint16_t kLeAudioVendorCompanyIdGoogle = 0x00E0;
+constexpr uint16_t kLeAudioVendorCodecIdOpus = 0x0001;
 constexpr uint16_t kLeAudioVendorCodecIdHeadtracking = 0x0002;
 
 /* Metadata types from Assigned Numbers */
@@ -1189,7 +1191,8 @@ struct ase {
         cis_state(CisState::IDLE),
         data_path_state(DataPathState::IDLE),
         configured_for_context_type(LeAudioContextType::UNINITIALIZED),
-        state(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE) {}
+        state(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE),
+        expected_state(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE) {}
 
   struct hdl_pair hdls;
   uint8_t id;
@@ -1219,6 +1222,11 @@ struct ase {
   LeAudioLtvMap metadata;
 
   AseState state;
+
+  /* Keeps the expected state send via control point.
+   * Note: There is no expect_state after RELEASE,
+   * as it depends on the remote caching capabilities. */
+  AseState expected_state;
 };
 
 struct acs_ac_record {
@@ -1305,6 +1313,10 @@ struct AudioSetConfiguration {
                            return ase_cfg.codec.id != types::kLeAudioCodecHeadtracking;
                          });
   }
+
+  BidirectionalPair<bool> getDirections() const {
+    return {.sink = !confs.sink.empty(), .source = !confs.source.empty()};
+  }
 };
 
 std::ostream& operator<<(std::ostream& os, const AudioSetConfiguration& config);
@@ -1315,6 +1327,11 @@ const types::LeAudioCodecId LeAudioCodecIdLc3 = {
         .coding_format = types::kLeAudioCodingFormatLC3,
         .vendor_company_id = types::kLeAudioVendorCompanyIdUndefined,
         .vendor_codec_id = types::kLeAudioVendorCodecIdUndefined};
+
+const types::LeAudioCodecId LeAudioCodecIdOpus = {
+        .coding_format = types::kLeAudioCodingFormatVendorSpecific,
+        .vendor_company_id = types::kLeAudioVendorCompanyIdGoogle,
+        .vendor_codec_id = types::kLeAudioVendorCodecIdOpus};
 
 static constexpr uint32_t kChannelAllocationStereo =
         codec_spec_conf::kLeAudioLocationFrontLeft | codec_spec_conf::kLeAudioLocationFrontRight;

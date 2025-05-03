@@ -72,7 +72,7 @@ public class BluetoothOppReceiverTest {
     private static final String TEST_PREF = "BluetoothOppReceiverTest";
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private SharedPreferences mPrefs;
 
     BluetoothOppReceiver mReceiver;

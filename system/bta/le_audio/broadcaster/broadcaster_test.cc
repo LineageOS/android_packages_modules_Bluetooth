@@ -234,6 +234,9 @@ public:
   MOCK_METHOD((void), UpdateRemoteDelay, (uint16_t delay), (override));
   MOCK_METHOD((void), UpdateAudioConfigToHal, (const ::bluetooth::le_audio::stream_config&),
               (override));
+  MOCK_METHOD((void), SetCodecPriority,
+              (const ::bluetooth::le_audio::types::LeAudioCodecId& codecId, int32_t priority),
+              (override));
   MOCK_METHOD((std::optional<broadcaster::BroadcastConfiguration>), GetBroadcastConfig,
               ((const std::vector<std::pair<types::LeAudioContextType, uint8_t>>&),
                (const std::optional<std::vector<::bluetooth::le_audio::types::acs_ac_record>>&)),

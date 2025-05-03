@@ -87,7 +87,7 @@ public class BluetoothOppTransferHistoryTest {
         BluetoothMethodProxy.setInstanceForTesting(mBluetoothMethodProxy);
 
         Uri dataUrl = Uri.parse("content://com.android.bluetooth.opp.test/random");
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
 
         mIntent = new Intent();
         mIntent.setClass(mTargetContext, BluetoothOppTransferHistory.class);

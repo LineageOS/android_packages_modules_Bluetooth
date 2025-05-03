@@ -733,7 +733,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup BluetoothPbap Service");
+        Log.i(TAG, "cleanup()");
 
         setBluetoothPbapService(null);
         mSessionStatusHandler.sendEmptyMessage(SHUTDOWN);
@@ -785,6 +785,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
                 PbapStateMachine.make(
                         this,
                         mHandlerThread.getLooper(),
+                        mAdapterService,
                         remoteDevice,
                         socket,
                         mSessionStatusHandler,

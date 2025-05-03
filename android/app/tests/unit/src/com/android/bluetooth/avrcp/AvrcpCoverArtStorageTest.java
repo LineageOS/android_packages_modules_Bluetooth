@@ -46,7 +46,7 @@ public class AvrcpCoverArtStorageTest {
     public void setUp() throws Exception {
         mTestResources =
                 TestUtils.getTestApplicationResources(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext());
+                        InstrumentationRegistry.getInstrumentation().getContext());
 
         mAvrcpCoverArtStorage = new AvrcpCoverArtStorage(2);
     }

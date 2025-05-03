@@ -303,7 +303,7 @@ public class MapClientService extends ProfileService {
 
     @Override
     public synchronized void cleanup() {
-        Log.i(TAG, "Cleanup MapClient Service");
+        Log.i(TAG, "cleanup()");
 
         mMnsServer.stop();
         for (MceStateMachine stateMachine : mMapInstanceMap.values()) {

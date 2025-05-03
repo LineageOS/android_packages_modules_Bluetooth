@@ -714,7 +714,7 @@ public class BassClientService extends ProfileService {
     @Override
     @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786 - Fix BASS annotation
     public void cleanup() {
-        Log.i(TAG, "Cleanup BassClient Service");
+        Log.i(TAG, "cleanup()");
 
         mUnicastSourceStreamStatus = Optional.empty();
 
@@ -1656,6 +1656,15 @@ public class BassClientService extends ProfileService {
             Log.e(TAG, "connect: connection policy set to forbidden");
             return false;
         }
+
+        final ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
+        if (!Utils.arrayContains(featureUuids, BluetoothUuid.BASS)) {
+            Log.e(
+                    TAG,
+                    "connect: Cannot connect to " + device + " : Remote does not have BASS UUID");
+            return false;
+        }
+
         synchronized (mStateMachines) {
             BassClientStateMachine stateMachine = getOrCreateStateMachine(device);
             if (stateMachine == null) {
@@ -2131,6 +2140,7 @@ public class BassClientService extends ProfileService {
                 }
 
                 mSyncFailureCounter.clear();
+                mTimeoutHandler.stopAll(MESSAGE_SYNC_LOST_TIMEOUT);
 
                 printAllSyncData();
             } else {
@@ -2668,21 +2678,23 @@ public class BassClientService extends ProfileService {
     @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786 - Fix BASS annotation
     private boolean unsyncSource(int syncHandle) {
         Log.d(TAG, "unsyncSource: syncHandle: " + syncHandle);
-        if (mPeriodicAdvCallbacksMap.containsKey(syncHandle)) {
-            try {
-                BluetoothMethodProxy.getInstance()
-                        .periodicAdvertisingManagerUnregisterSync(
-                                BassClientPeriodicAdvertisingManager
-                                        .getPeriodicAdvertisingManager(),
-                                mPeriodicAdvCallbacksMap.get(syncHandle));
-            } catch (IllegalArgumentException ex) {
-                Log.e(TAG, "unregisterSync:IllegalArgumentException");
-                return false;
+        synchronized (mSourceSyncRequestsQueue) {
+            if (mPeriodicAdvCallbacksMap.containsKey(syncHandle)) {
+                try {
+                    BluetoothMethodProxy.getInstance()
+                            .periodicAdvertisingManagerUnregisterSync(
+                                    BassClientPeriodicAdvertisingManager
+                                            .getPeriodicAdvertisingManager(),
+                                    mPeriodicAdvCallbacksMap.get(syncHandle));
+                } catch (IllegalArgumentException ex) {
+                    Log.e(TAG, "unregisterSync:IllegalArgumentException");
+                    return false;
+                }
+            } else {
+                Log.d(TAG, "calling unregisterSync, not found syncHandle: " + syncHandle);
             }
-        } else {
-            Log.d(TAG, "calling unregisterSync, not found syncHandle: " + syncHandle);
+            clearAllDataForSyncHandle(syncHandle);
         }
-        clearAllDataForSyncHandle(syncHandle);
         return true;
     }
 
@@ -2823,45 +2835,45 @@ public class BassClientService extends ProfileService {
                     broadcastId,
                     pbData,
                     broadcastName);
-        }
 
-        // Check if there are resources for sync
-        if (activeSyncedSrc.size() >= MAX_ACTIVE_SYNCED_SOURCES_NUM) {
-            Log.d(TAG, "handleSelectSourceRequest: reached max allowed active source");
-            Boolean canceledActiveSync = false;
-            int broadcastIdToLostMonitoring = BassConstants.INVALID_BROADCAST_ID;
-            for (int syncHandle : activeSyncedSrc) {
-                if (!isAnyReceiverSyncedToBroadcast(getBroadcastIdForSyncHandle(syncHandle))) {
-                    canceledActiveSync = true;
+            // Check if there are resources for sync
+            if (activeSyncedSrc.size() >= MAX_ACTIVE_SYNCED_SOURCES_NUM) {
+                Log.d(TAG, "handleSelectSourceRequest: reached max allowed active source");
+                Boolean canceledActiveSync = false;
+                int broadcastIdToLostMonitoring = BassConstants.INVALID_BROADCAST_ID;
+                for (int syncHandle : activeSyncedSrc) {
+                    if (!isAnyReceiverSyncedToBroadcast(getBroadcastIdForSyncHandle(syncHandle))) {
+                        canceledActiveSync = true;
+                        broadcastIdToLostMonitoring = getBroadcastIdForSyncHandle(syncHandle);
+                        cancelActiveSync(syncHandle);
+                        break;
+                    }
+                }
+                if (!canceledActiveSync) {
+                    int syncHandle = activeSyncedSrc.get(0);
+                    // removing the 1st synced source before proceeding to add new
                     broadcastIdToLostMonitoring = getBroadcastIdForSyncHandle(syncHandle);
                     cancelActiveSync(syncHandle);
-                    break;
                 }
+                mTimeoutHandler.start(
+                        broadcastIdToLostMonitoring, MESSAGE_SYNC_LOST_TIMEOUT, sSyncLostTimeout);
             }
-            if (!canceledActiveSync) {
-                int syncHandle = activeSyncedSrc.get(0);
-                // removing the 1st synced source before proceeding to add new
-                broadcastIdToLostMonitoring = getBroadcastIdForSyncHandle(syncHandle);
-                cancelActiveSync(syncHandle);
-            }
-            mTimeoutHandler.start(
-                    broadcastIdToLostMonitoring, MESSAGE_SYNC_LOST_TIMEOUT, sSyncLostTimeout);
-        }
 
-        try {
-            BluetoothMethodProxy.getInstance()
-                    .periodicAdvertisingManagerRegisterSync(
-                            BassClientPeriodicAdvertisingManager.getPeriodicAdvertisingManager(),
-                            scanRes,
-                            0,
-                            BassConstants.PSYNC_TIMEOUT,
-                            paCb,
-                            null);
-        } catch (IllegalArgumentException ex) {
-            Log.e(TAG, "registerSync:IllegalArgumentException");
-            clearAllDataForSyncHandle(BassConstants.PENDING_SYNC_HANDLE);
-            handleSelectSourceRequest();
-            return;
+            try {
+                BluetoothMethodProxy.getInstance()
+                        .periodicAdvertisingManagerRegisterSync(
+                                BassClientPeriodicAdvertisingManager
+                                        .getPeriodicAdvertisingManager(),
+                                scanRes,
+                                0,
+                                BassConstants.PSYNC_TIMEOUT,
+                                paCb,
+                                null);
+            } catch (IllegalArgumentException ex) {
+                Log.e(TAG, "registerSync:IllegalArgumentException");
+                clearAllDataForSyncHandle(BassConstants.PENDING_SYNC_HANDLE);
+                handleSelectSourceRequest();
+            }
         }
     }
 

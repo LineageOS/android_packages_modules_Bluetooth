@@ -48,7 +48,7 @@ public class GPMWrapperTest {
 
     @Before
     public void setUp() throws Exception {
-        mContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        mContext = InstrumentationRegistry.getInstrumentation().getContext();
         mMediaController = mock(MediaController.class);
     }
 

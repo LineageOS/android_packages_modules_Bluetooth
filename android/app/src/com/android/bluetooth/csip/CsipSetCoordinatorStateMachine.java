@@ -548,19 +548,16 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
 
     int getConnectionState() {
         String currentState = getCurrentState().getName();
-        switch (currentState) {
-            case "Disconnected":
-                return STATE_DISCONNECTED;
-            case "Connecting":
-                return STATE_CONNECTING;
-            case "Connected":
-                return STATE_CONNECTED;
-            case "Disconnecting":
-                return STATE_DISCONNECTING;
-            default:
+        return switch (currentState) {
+            case "Disconnected" -> STATE_DISCONNECTED;
+            case "Connecting" -> STATE_CONNECTING;
+            case "Connected" -> STATE_CONNECTED;
+            case "Disconnecting" -> STATE_DISCONNECTING;
+            default -> {
                 Log.e(TAG, "Bad currentState: " + currentState);
-                return STATE_DISCONNECTED;
-        }
+                yield STATE_DISCONNECTED;
+            }
+        };
     }
 
     // This method does not check for error condition (newState == prevState)
@@ -572,7 +569,6 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                         + getConnectionStateName(prevState)
                         + "->"
                         + getConnectionStateName(newState));
-        mService.handleConnectionStateChanged(mDevice, prevState, newState);
 
         Intent intent =
                 new Intent(BluetoothCsipSetCoordinator.ACTION_CSIS_CONNECTION_STATE_CHANGED);
@@ -583,22 +579,18 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                 Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                         | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
         mService.sendBroadcast(intent, BLUETOOTH_CONNECT);
+
+        mService.handleConnectionStateChanged(mDevice, prevState, newState);
     }
 
     private static String messageWhatToString(int what) {
-        switch (what) {
-            case CONNECT:
-                return "CONNECT";
-            case DISCONNECT:
-                return "DISCONNECT";
-            case STACK_EVENT:
-                return "STACK_EVENT";
-            case CONNECT_TIMEOUT:
-                return "CONNECT_TIMEOUT";
-            default:
-                break;
-        }
-        return Integer.toString(what);
+        return switch (what) {
+            case CONNECT -> "CONNECT";
+            case DISCONNECT -> "DISCONNECT";
+            case STACK_EVENT -> "STACK_EVENT";
+            case CONNECT_TIMEOUT -> "CONNECT_TIMEOUT";
+            default -> Integer.toString(what);
+        };
     }
 
     /** Dump the state machine logs */

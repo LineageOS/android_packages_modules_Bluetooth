@@ -124,44 +124,38 @@ class SocketMetrics {
     }
 
     private static int getL2capLeConnectStatusCode(int socketExceptionCode) {
-        switch (socketExceptionCode) {
-            case (SOCKET_NO_ERROR):
-                return RESULT_L2CAP_CONN_SUCCESS;
-            case (BluetoothSocketException.NULL_DEVICE):
-                return RESULT_L2CAP_CONN_BLUETOOTH_NULL_BLUETOOTH_DEVICE;
-            case (BluetoothSocketException.SOCKET_MANAGER_FAILURE):
-                return RESULT_L2CAP_CONN_BLUETOOTH_GET_SOCKET_MANAGER_FAILED;
-            case (BluetoothSocketException.SOCKET_CLOSED):
-                return RESULT_L2CAP_CONN_BLUETOOTH_SOCKET_CONNECTION_CLOSED;
-            case (BluetoothSocketException.SOCKET_CONNECTION_FAILURE):
-                return RESULT_L2CAP_CONN_BLUETOOTH_SOCKET_CONNECTION_FAILED;
-            case (BluetoothSocketException.RPC_FAILURE):
-                return RESULT_L2CAP_CONN_BLUETOOTH_UNABLE_TO_SEND_RPC;
-            case (BluetoothSocketException.UNIX_FILE_SOCKET_CREATION_FAILURE):
-                return RESULT_L2CAP_CONN_BLUETOOTH_NULL_FILE_DESCRIPTOR;
-            default:
-                return RESULT_L2CAP_CONN_UNKNOWN;
-        }
+        return switch (socketExceptionCode) {
+            case (SOCKET_NO_ERROR) -> RESULT_L2CAP_CONN_SUCCESS;
+            case (BluetoothSocketException.NULL_DEVICE) ->
+                    RESULT_L2CAP_CONN_BLUETOOTH_NULL_BLUETOOTH_DEVICE;
+            case (BluetoothSocketException.SOCKET_MANAGER_FAILURE) ->
+                    RESULT_L2CAP_CONN_BLUETOOTH_GET_SOCKET_MANAGER_FAILED;
+            case (BluetoothSocketException.SOCKET_CLOSED) ->
+                    RESULT_L2CAP_CONN_BLUETOOTH_SOCKET_CONNECTION_CLOSED;
+            case (BluetoothSocketException.SOCKET_CONNECTION_FAILURE) ->
+                    RESULT_L2CAP_CONN_BLUETOOTH_SOCKET_CONNECTION_FAILED;
+            case (BluetoothSocketException.RPC_FAILURE) ->
+                    RESULT_L2CAP_CONN_BLUETOOTH_UNABLE_TO_SEND_RPC;
+            case (BluetoothSocketException.UNIX_FILE_SOCKET_CREATION_FAILURE) ->
+                    RESULT_L2CAP_CONN_BLUETOOTH_NULL_FILE_DESCRIPTOR;
+            default -> RESULT_L2CAP_CONN_UNKNOWN;
+        };
     }
 
     private static int getRfcommConnectStatusCode(int socketExceptionCode) {
-        switch (socketExceptionCode) {
-            case (SOCKET_NO_ERROR):
-                return RFCOMM_CONN_RESULT_SUCCESS;
-            case (BluetoothSocketException.NULL_DEVICE):
-                return RFCOMM_CONN_RESULT_NULL_BLUETOOTH_DEVICE;
-            case (BluetoothSocketException.SOCKET_MANAGER_FAILURE):
-                return RFCOMM_CONN_RESULT_GET_SOCKET_MANAGER_FAILED;
-            case (BluetoothSocketException.SOCKET_CLOSED):
-                return RFCOMM_CONN_RESULT_SOCKET_CONNECTION_CLOSED;
-            case (BluetoothSocketException.SOCKET_CONNECTION_FAILURE):
-                return RFCOMM_CONN_RESULT_SOCKET_CONNECTION_FAILED;
-            case (BluetoothSocketException.RPC_FAILURE):
-                return RFCOMM_CONN_RESULT_UNABLE_TO_SEND_RPC;
-            case (BluetoothSocketException.UNIX_FILE_SOCKET_CREATION_FAILURE):
-                return RFCOMM_CONN_RESULT_NULL_FILE_DESCRIPTOR;
-            default:
-                return RFCOMM_CONN_RESULT_FAILURE_UNKNOWN;
-        }
+        return switch (socketExceptionCode) {
+            case (SOCKET_NO_ERROR) -> RFCOMM_CONN_RESULT_SUCCESS;
+            case (BluetoothSocketException.NULL_DEVICE) -> RFCOMM_CONN_RESULT_NULL_BLUETOOTH_DEVICE;
+            case (BluetoothSocketException.SOCKET_MANAGER_FAILURE) ->
+                    RFCOMM_CONN_RESULT_GET_SOCKET_MANAGER_FAILED;
+            case (BluetoothSocketException.SOCKET_CLOSED) ->
+                    RFCOMM_CONN_RESULT_SOCKET_CONNECTION_CLOSED;
+            case (BluetoothSocketException.SOCKET_CONNECTION_FAILURE) ->
+                    RFCOMM_CONN_RESULT_SOCKET_CONNECTION_FAILED;
+            case (BluetoothSocketException.RPC_FAILURE) -> RFCOMM_CONN_RESULT_UNABLE_TO_SEND_RPC;
+            case (BluetoothSocketException.UNIX_FILE_SOCKET_CREATION_FAILURE) ->
+                    RFCOMM_CONN_RESULT_NULL_FILE_DESCRIPTOR;
+            default -> RFCOMM_CONN_RESULT_FAILURE_UNKNOWN;
+        };
     }
 }

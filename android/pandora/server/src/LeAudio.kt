@@ -25,13 +25,15 @@ import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.media.AudioTrack
 import android.media.AudioManager
+import android.media.AudioTrack
 import android.util.Log
 import com.google.protobuf.Empty
 import io.grpc.Status
 import io.grpc.stub.StreamObserver
 import java.io.Closeable
+import java.io.PrintWriter
+import java.io.StringWriter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -43,8 +45,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import pandora.LeAudioGrpc.LeAudioImplBase
 import pandora.LeAudioProto.*
-import java.io.PrintWriter
-import java.io.StringWriter
 
 @kotlinx.coroutines.ExperimentalCoroutinesApi
 class LeAudio(val context: Context) : LeAudioImplBase(), Closeable {
@@ -105,7 +105,10 @@ class LeAudio(val context: Context) : LeAudioImplBase(), Closeable {
         }
     }
 
-    override fun leAudioStart(request: LeAudioStartRequest, responseObserver: StreamObserver<Empty>) {
+    override fun leAudioStart(
+        request: LeAudioStartRequest,
+        responseObserver: StreamObserver<Empty>,
+    ) {
         grpcUnary<Empty>(scope, responseObserver) {
             if (audioTrack == null) {
                 audioTrack = buildAudioTrack()

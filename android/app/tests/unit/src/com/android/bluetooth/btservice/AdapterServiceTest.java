@@ -183,8 +183,8 @@ public class AdapterServiceTest {
     private int mForegroundUserId;
     private TestLooper mLooper;
 
-    private final BluetoothDevice mDevice = getTestDevice(0);
-    private final BluetoothDevice mDeviceTwo = getTestDevice(2);
+    private final BluetoothDevice mDevice1 = getTestDevice(0);
+    private final BluetoothDevice mDevice2 = getTestDevice(2);
 
     static void configureEnabledProfiles() {
         Log.e(TAG, "configureEnabledProfiles");
@@ -250,7 +250,7 @@ public class AdapterServiceTest {
         when(mMockPackageManager.getPermissionInfo(any(), anyInt()))
                 .thenReturn(new PermissionInfo());
 
-        Context targetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Context targetContext = InstrumentationRegistry.getInstrumentation().getContext();
 
         mMockContentResolver = new MockContentResolver(targetContext);
         mMockContentResolver.addProvider(
@@ -1056,13 +1056,13 @@ public class AdapterServiceTest {
                         | BluetoothDevice.CONNECTION_STATE_CONNECTED;
         InOrder order =
                 prepareLeAudioWithConnectedDevices(
-                        List.of(mDevice),
+                        List.of(mDevice1),
                         groupId,
                         true,
                         getConnectionState_LeAudioService,
                         getConnectionState_AdapterService);
 
-        mAdapterService.notifyDirectLeGattClientConnect(1, mDevice);
+        mAdapterService.notifyDirectLeGattClientConnect(1, mDevice1);
 
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, false);
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode.size()).isEqualTo(1);
@@ -1078,13 +1078,13 @@ public class AdapterServiceTest {
                         | BluetoothDevice.CONNECTION_STATE_CONNECTED;
         InOrder order =
                 prepareLeAudioWithConnectedDevices(
-                        List.of(mDevice),
+                        List.of(mDevice1),
                         groupId,
                         false,
                         getConnectionState_LeAudioService,
                         getConnectionState_AdapterService);
 
-        mAdapterService.notifyDirectLeGattClientConnect(1, mDevice);
+        mAdapterService.notifyDirectLeGattClientConnect(1, mDevice1);
 
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, false);
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode).isEmpty();
@@ -1100,14 +1100,14 @@ public class AdapterServiceTest {
                         | BluetoothDevice.CONNECTION_STATE_CONNECTED;
         InOrder order =
                 prepareLeAudioWithConnectedDevices(
-                        List.of(mDevice),
+                        List.of(mDevice1),
                         groupId,
                         false,
                         getConnectionState_LeAudioService,
                         getConnectionState_AdapterService);
 
         doReturn(CONNECTION_POLICY_FORBIDDEN).when(mMockLeAudioService).getConnectionPolicy(any());
-        mAdapterService.notifyDirectLeGattClientConnect(1, mDevice);
+        mAdapterService.notifyDirectLeGattClientConnect(1, mDevice1);
 
         order.verify(mMockLeAudioService, never()).setAutoActiveModeState(groupId, false);
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode).isEmpty();
@@ -1125,18 +1125,18 @@ public class AdapterServiceTest {
                         | BluetoothDevice.CONNECTION_STATE_CONNECTED;
         InOrder order =
                 prepareLeAudioWithConnectedDevices(
-                        List.of(mDevice),
+                        List.of(mDevice1),
                         groupId,
                         true,
                         getConnectionState_LeAudioService,
                         getConnectionState_AdapterService);
 
-        mAdapterService.notifyDirectLeGattClientConnect(clientIf, mDevice);
+        mAdapterService.notifyDirectLeGattClientConnect(clientIf, mDevice1);
 
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, false);
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode.size()).isEqualTo(1);
 
-        mAdapterService.notifyGattClientConnectFailed(clientIf, mDevice);
+        mAdapterService.notifyGattClientConnectFailed(clientIf, mDevice1);
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, true);
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode).isEmpty();
     }
@@ -1151,19 +1151,19 @@ public class AdapterServiceTest {
         int getConnectionState_AdapterService = BluetoothDevice.CONNECTION_STATE_DISCONNECTED;
         InOrder order =
                 prepareLeAudioWithConnectedDevices(
-                        List.of(mDevice),
+                        List.of(mDevice1),
                         groupId,
                         true,
                         getConnectionState_LeAudioService,
                         getConnectionState_AdapterService);
         InOrder orderNative = inOrder(mNativeInterface);
 
-        mAdapterService.notifyDirectLeGattClientConnect(clientIf, mDevice);
+        mAdapterService.notifyDirectLeGattClientConnect(clientIf, mDevice1);
 
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, false);
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode.size()).isEqualTo(1);
 
-        mAdapterService.notifyGattClientDisconnect(clientIf, mDevice);
+        mAdapterService.notifyGattClientDisconnect(clientIf, mDevice1);
         orderNative.verify(mNativeInterface, never()).disconnectAcl(any(), anyInt());
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, true);
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode).isEmpty();
@@ -1180,7 +1180,7 @@ public class AdapterServiceTest {
                         | BluetoothDevice.CONNECTION_STATE_CONNECTED;
         InOrder order =
                 prepareLeAudioWithConnectedDevices(
-                        List.of(mDevice),
+                        List.of(mDevice1),
                         groupId,
                         true,
                         getConnectionState_LeAudioService,
@@ -1188,12 +1188,12 @@ public class AdapterServiceTest {
 
         InOrder orderNative = inOrder(mNativeInterface);
 
-        mAdapterService.notifyDirectLeGattClientConnect(clientIf, mDevice);
+        mAdapterService.notifyDirectLeGattClientConnect(clientIf, mDevice1);
 
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, false);
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode.size()).isEqualTo(1);
 
-        mAdapterService.notifyGattClientDisconnect(clientIf, mDevice);
+        mAdapterService.notifyGattClientDisconnect(clientIf, mDevice1);
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, true);
         orderNative.verify(mNativeInterface).disconnectAcl(any(), eq(BluetoothDevice.TRANSPORT_LE));
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode).isEmpty();
@@ -1212,7 +1212,7 @@ public class AdapterServiceTest {
                         | BluetoothDevice.CONNECTION_STATE_CONNECTED;
         InOrder order =
                 prepareLeAudioWithConnectedDevices(
-                        List.of(mDevice),
+                        List.of(mDevice1),
                         groupId,
                         true,
                         getConnectionState_LeAudioService,
@@ -1221,25 +1221,25 @@ public class AdapterServiceTest {
         InOrder orderNative = inOrder(mNativeInterface);
 
         // Connect first client to device
-        mAdapterService.notifyDirectLeGattClientConnect(clientIf, mDevice);
+        mAdapterService.notifyDirectLeGattClientConnect(clientIf, mDevice1);
 
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, false);
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode.size()).isEqualTo(1);
 
         // Connect second client to device
-        mAdapterService.notifyDirectLeGattClientConnect(clientIfTwo, mDevice);
+        mAdapterService.notifyDirectLeGattClientConnect(clientIfTwo, mDevice1);
 
         order.verify(mMockLeAudioService, never()).setAutoActiveModeState(groupId, false);
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode.size()).isEqualTo(2);
 
         // Disconnect first client to device
-        mAdapterService.notifyGattClientDisconnect(clientIf, mDevice);
+        mAdapterService.notifyGattClientDisconnect(clientIf, mDevice1);
         order.verify(mMockLeAudioService, never()).setAutoActiveModeState(groupId, true);
         orderNative.verify(mNativeInterface, never()).disconnectAcl(any(), anyInt());
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode.size()).isEqualTo(1);
 
         // Disconnect second client to device
-        mAdapterService.notifyGattClientDisconnect(clientIfTwo, mDevice);
+        mAdapterService.notifyGattClientDisconnect(clientIfTwo, mDevice1);
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, true);
         orderNative
                 .verify(mNativeInterface, times(1))
@@ -1260,7 +1260,7 @@ public class AdapterServiceTest {
                         | BluetoothDevice.CONNECTION_STATE_CONNECTED;
         InOrder order =
                 prepareLeAudioWithConnectedDevices(
-                        List.of(mDevice, mDeviceTwo),
+                        List.of(mDevice1, mDevice2),
                         groupId,
                         true,
                         getConnectionState_LeAudioService,
@@ -1270,25 +1270,25 @@ public class AdapterServiceTest {
 
         // Connecting device one
         when(mMockLeAudioService.setAutoActiveModeState(groupId, false)).thenReturn(true);
-        mAdapterService.notifyDirectLeGattClientConnect(clientIf, mDevice);
+        mAdapterService.notifyDirectLeGattClientConnect(clientIf, mDevice1);
 
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, false);
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode.size()).isEqualTo(1);
 
         // Connecting device two
-        mAdapterService.notifyDirectLeGattClientConnect(clientIfTwo, mDeviceTwo);
+        mAdapterService.notifyDirectLeGattClientConnect(clientIfTwo, mDevice2);
 
         order.verify(mMockLeAudioService, never()).setAutoActiveModeState(groupId, false);
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode.size()).isEqualTo(2);
 
         // Disconnect first device
-        mAdapterService.notifyGattClientDisconnect(clientIf, mDevice);
+        mAdapterService.notifyGattClientDisconnect(clientIf, mDevice1);
         order.verify(mMockLeAudioService, never()).setAutoActiveModeState(groupId, true);
         orderNative.verify(mNativeInterface, never()).disconnectAcl(any(), anyInt());
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode.size()).isEqualTo(1);
 
         // Disconnect second device
-        mAdapterService.notifyGattClientDisconnect(clientIfTwo, mDeviceTwo);
+        mAdapterService.notifyGattClientDisconnect(clientIfTwo, mDevice2);
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, true);
         orderNative
                 .verify(mNativeInterface, times(2))
@@ -1309,7 +1309,7 @@ public class AdapterServiceTest {
                         | BluetoothDevice.CONNECTION_STATE_CONNECTED;
         InOrder order =
                 prepareLeAudioWithConnectedDevices(
-                        List.of(mDevice, mDeviceTwo),
+                        List.of(mDevice1, mDevice2),
                         groupId,
                         true,
                         getConnectionState_LeAudioService,
@@ -1319,13 +1319,13 @@ public class AdapterServiceTest {
 
         // Connecting device one
         when(mMockLeAudioService.setAutoActiveModeState(groupId, false)).thenReturn(true);
-        mAdapterService.notifyDirectLeGattClientConnect(clientIf, mDevice);
+        mAdapterService.notifyDirectLeGattClientConnect(clientIf, mDevice1);
 
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, false);
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode.size()).isEqualTo(1);
 
         // Connecting device two
-        mAdapterService.notifyDirectLeGattClientConnect(clientIfTwo, mDeviceTwo);
+        mAdapterService.notifyDirectLeGattClientConnect(clientIfTwo, mDevice2);
 
         order.verify(mMockLeAudioService, never()).setAutoActiveModeState(groupId, false);
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode.size()).isEqualTo(2);
@@ -1334,13 +1334,13 @@ public class AdapterServiceTest {
         when(mMockLeAudioService.isAutoActiveModeEnabled(groupId)).thenReturn(true);
 
         // Disconnect first device
-        mAdapterService.notifyGattClientDisconnect(clientIf, mDevice);
+        mAdapterService.notifyGattClientDisconnect(clientIf, mDevice1);
         order.verify(mMockLeAudioService, never()).setAutoActiveModeState(groupId, true);
         orderNative.verify(mNativeInterface, never()).disconnectAcl(any(), anyInt());
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode.size()).isEqualTo(1);
 
         // Disconnect second device
-        mAdapterService.notifyGattClientDisconnect(clientIfTwo, mDeviceTwo);
+        mAdapterService.notifyGattClientDisconnect(clientIfTwo, mDevice2);
 
         // Verify devices will not be disconnected
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, true);
@@ -1358,7 +1358,7 @@ public class AdapterServiceTest {
         when(mockPreferences.edit()).thenReturn(mockEditor);
 
         mAdapterService.handleBondStateChanged(
-                mDevice, BluetoothDevice.BOND_BONDED, BluetoothDevice.BOND_BONDING);
+                mDevice1, BluetoothDevice.BOND_BONDED, BluetoothDevice.BOND_BONDING);
 
         verify(mockEditor, times(3)).remove(anyString());
     }

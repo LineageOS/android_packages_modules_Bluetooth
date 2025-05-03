@@ -24,6 +24,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <map>
 #include <memory>
@@ -523,8 +524,12 @@ bool direct_connect_add(uint8_t app_id, const RawAddress& address, tBLE_ADDR_TYP
     // app already trying to connect to this particular device
     if (info.doing_direct_conn.count(app_id)) {
       log::info("attempt from app_id=0x{:x} to {} already in progress", app_id, address_with_type);
-      bluetooth::metrics::LogMetricLeConnectionRejected(address);
-      return false;
+      if (com::android::bluetooth::flags::idempotent_direct_connect_add()) {
+        return true;
+      } else {
+        bluetooth::metrics::LogMetricLeConnectionRejected(address);
+        return false;
+      }
     }
 
     // This is to match existing GD connection manager behavior - if multiple apps try direct

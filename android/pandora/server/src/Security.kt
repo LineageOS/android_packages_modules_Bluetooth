@@ -80,7 +80,7 @@ class Security(private val context: Context) : SecurityImplBase(), Closeable {
                     val pairingVariant =
                         intent.getIntExtra(
                             BluetoothDevice.EXTRA_PAIRING_VARIANT,
-                            BluetoothDevice.ERROR
+                            BluetoothDevice.ERROR,
                         )
                     val confirmationCases =
                         intArrayOf(
@@ -165,7 +165,7 @@ class Security(private val context: Context) : SecurityImplBase(), Closeable {
 
     suspend fun waitBREDRSecurityLevel(
         bluetoothDevice: BluetoothDevice,
-        level: SecurityLevel
+        level: SecurityLevel,
     ): Boolean {
         Log.i(TAG, "waitBREDRSecurityLevel")
         return when (level) {
@@ -185,7 +185,7 @@ class Security(private val context: Context) : SecurityImplBase(), Closeable {
 
     suspend fun waitLESecurityLevel(
         bluetoothDevice: BluetoothDevice,
-        level: LESecurityLevel
+        level: LESecurityLevel,
     ): Boolean {
         Log.i(TAG, "waitLESecurityLevel")
         return when (level) {
@@ -205,7 +205,7 @@ class Security(private val context: Context) : SecurityImplBase(), Closeable {
 
     override fun waitSecurity(
         request: WaitSecurityRequest,
-        responseObserver: StreamObserver<WaitSecurityResponse>
+        responseObserver: StreamObserver<WaitSecurityResponse>,
     ) {
         grpcUnary(globalScope, responseObserver) {
             Log.i(TAG, "waitSecurity")
@@ -239,7 +239,7 @@ class Security(private val context: Context) : SecurityImplBase(), Closeable {
             it.map { answer ->
                     Log.i(
                         TAG,
-                        "OnPairing: Handling PairingEventAnswer ${answer.answerCase} for device ${answer.event.address}"
+                        "OnPairing: Handling PairingEventAnswer ${answer.answerCase} for device ${answer.event.address}",
                     )
                     val device = answer.event.address.toBluetoothDevice(bluetoothAdapter)
                     when (answer.answerCase!!) {
@@ -261,7 +261,7 @@ class Security(private val context: Context) : SecurityImplBase(), Closeable {
                     val variant = intent.getIntExtra(EXTRA_PAIRING_VARIANT, BluetoothDevice.ERROR)
                     Log.i(
                         TAG,
-                        "OnPairing: Handling PairingEvent ${variant} for device ${device.address}"
+                        "OnPairing: Handling PairingEvent ${variant} for device ${device.address}",
                     )
                     val eventBuilder = PairingEvent.newBuilder().setAddress(device.toByteString())
                     when (variant) {
@@ -274,13 +274,13 @@ class Security(private val context: Context) : SecurityImplBase(), Closeable {
                             eventBuilder.numericComparison =
                                 intent.getIntExtra(
                                     BluetoothDevice.EXTRA_PAIRING_KEY,
-                                    BluetoothDevice.ERROR
+                                    BluetoothDevice.ERROR,
                                 )
                         BluetoothDevice.PAIRING_VARIANT_DISPLAY_PASSKEY -> {
                             val passkey =
                                 intent.getIntExtra(
                                     BluetoothDevice.EXTRA_PAIRING_KEY,
-                                    BluetoothDevice.ERROR
+                                    BluetoothDevice.ERROR,
                                 )
                             Log.i(TAG, "OnPairing: passkey=${passkey}")
                             eventBuilder.passkeyEntryNotification = passkey
@@ -313,7 +313,7 @@ class Security(private val context: Context) : SecurityImplBase(), Closeable {
                             val passkey =
                                 intent.getIntExtra(
                                     BluetoothDevice.EXTRA_PAIRING_KEY,
-                                    BluetoothDevice.ERROR
+                                    BluetoothDevice.ERROR,
                                 )
                             when (device.type) {
                                 DEVICE_TYPE_CLASSIC ->

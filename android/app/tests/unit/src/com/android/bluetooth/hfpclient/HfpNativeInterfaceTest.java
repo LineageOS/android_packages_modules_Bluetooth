@@ -24,16 +24,20 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import androidx.test.runner.AndroidJUnit4;
+
 import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
 /** Test cases for {@link HfpNativeInterface}. */
+@RunWith(AndroidJUnit4.class)
 public class HfpNativeInterfaceTest {
     private static final byte[] TEST_DEVICE_ADDRESS =
             new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -312,6 +316,6 @@ public class HfpNativeInterfaceTest {
     @Test
     public void testSendAndroidAt() {
         // If the device is null, should return False
-        assertThat(mNativeInterface.sendAndroidAt(null, anyString())).isEqualTo(false);
+        assertThat(mNativeInterface.sendAndroidAt(null, anyString())).isFalse();
     }
 }

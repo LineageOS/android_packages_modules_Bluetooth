@@ -69,6 +69,17 @@ flag {
 }
 
 flag {
+    name: "leaudio_dynamic_direction_opening"
+    namespace: "bluetooth"
+    description: "Enable direction only when needed"
+    bug: "412540131"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+
+flag {
     name: "le_ase_read_multiple_variable"
     namespace: "bluetooth"
     description: "Use GATT read multiple variable length characteristic values"
@@ -324,6 +335,36 @@ flag {
     namespace: "bluetooth"
     description: "Allow to control BIS sync state from BASS service level"
     bug: "407928525"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "le_audio_update_config_preference_to_hal"
+    namespace: "bluetooth"
+    description: "Send user set config preference to BT Audio HAL"
+    bug: "413225593"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_add_opus_hi_res_codec_type"
+    namespace: "bluetooth"
+    description: "Add OPUS codec type to LE Audio"
+    bug: "410516242"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_dynamic_data_path_change"
+    namespace: "bluetooth"
+    description: "Change the data path dynamically"
+    bug: "414773442"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

@@ -88,8 +88,7 @@ public class MetadataTest {
 
     @Before
     public void setUp() throws Exception {
-
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
         mTestResources = TestUtils.getTestApplicationResources(mTargetContext);
 
         mTestBitmap = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);

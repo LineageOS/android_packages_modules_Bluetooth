@@ -84,7 +84,7 @@ public class BluetoothPbapServiceTest {
 
     private final BluetoothDevice mRemoteDevice = getTestDevice(42);
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final MockContentResolver mMockContentResolver =
             new MockContentResolver(mTargetContext);
 

@@ -17,6 +17,7 @@
 package com.android.bluetooth.opp;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.opp.BluetoothOppTransfer.TRANSPORT_CONNECTED;
@@ -24,8 +25,8 @@ import static com.android.bluetooth.opp.BluetoothOppTransfer.TRANSPORT_ERROR;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -56,8 +57,8 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothObexTransport;
 import com.android.bluetooth.TestUtils;
-import com.android.obex.ObexTransport;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.obex.ObexTransport;
 
 import org.junit.After;
 import org.junit.Before;
@@ -130,7 +131,7 @@ public class BluetoothOppTransferTest {
                         42,
                         123456789,
                         false);
-        mBluetoothOppBatch = new BluetoothOppBatch(mContext, mInitShareInfo);
+        mBluetoothOppBatch = new BluetoothOppBatch(mAdapterService, mInitShareInfo);
         mTransfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch, mSession);
         mEventHandler = mTransfer.new EventHandler(Looper.getMainLooper());
     }
@@ -253,7 +254,7 @@ public class BluetoothOppTransferTest {
                         42,
                         123456789,
                         false);
-        mBluetoothOppBatch = new BluetoothOppBatch(mContext, mInitShareInfo);
+        mBluetoothOppBatch = new BluetoothOppBatch(mAdapterService, mInitShareInfo);
         mTransfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch, mSession);
         mEventHandler = mTransfer.new EventHandler(Looper.getMainLooper());
         mEventHandler.handleMessage(message);
@@ -301,7 +302,7 @@ public class BluetoothOppTransferTest {
                         42,
                         123456789,
                         false);
-        mBluetoothOppBatch = new BluetoothOppBatch(mContext, mInitShareInfo);
+        mBluetoothOppBatch = new BluetoothOppBatch(mAdapterService, mInitShareInfo);
         mTransfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch, mSession);
         mEventHandler = mTransfer.new EventHandler(Looper.getMainLooper());
 
@@ -372,7 +373,7 @@ public class BluetoothOppTransferTest {
     @Test
     @SuppressWarnings("DoNotCall")
     public void socketConnectThreadRun_bluetoothDisabled_connectionFailed() {
-        BluetoothDevice device = getTestDevice(12);
+        BluetoothDevice device = getRealDevice(34);
         BluetoothOppTransfer transfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch);
         BluetoothOppTransfer.SocketConnectThread socketConnectThread =
                 transfer.new SocketConnectThread(device, true);
@@ -386,7 +387,7 @@ public class BluetoothOppTransferTest {
     public void oppConnectionReceiver_onReceiveWithActionAclDisconnected_sendsConnectTimeout() {
         BluetoothDevice device =
                 InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
+                        .getContext()
                         .getSystemService(BluetoothManager.class)
                         .getAdapter()
                         .getRemoteDevice("01:23:45:67:89:AB");
@@ -408,7 +409,7 @@ public class BluetoothOppTransferTest {
     public void oppConnectionReceiver_onReceiveWithActionSdpRecord_withoutSdpRecord() {
         BluetoothDevice device =
                 InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
+                        .getContext()
                         .getSystemService(BluetoothManager.class)
                         .getAdapter()
                         .getRemoteDevice("01:23:45:67:89:AB");

@@ -64,9 +64,6 @@
       "name": "bluetooth_le_audio_codec_manager_test"
     },
     {
-      "name": "bluetooth_le_audio_test"
-    },
-    {
       "name": "bluetooth_packet_parser_test"
     },
     {
@@ -290,9 +287,6 @@
       "name": "bluetooth_le_audio_codec_manager_test"
     },
     {
-      "name": "bluetooth_le_audio_test"
-    },
-    {
       "name": "bluetooth_packet_parser_test"
     },
     {
@@ -508,9 +502,6 @@
     // Thoses test run on the host in the CI automatically.
     // Run the one that are available on the device on the
     // device as well
-    {
-      "name": "bluetooth_le_audio_test"
-    },
     {
       "name": "bluetooth_test_common"
     },

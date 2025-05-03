@@ -92,7 +92,7 @@ public class AdvertiseManager {
     }
 
     void cleanup() {
-        Log.d(TAG, "cleanup()");
+        Log.i(TAG, "cleanup()");
         mIsAvailable = false;
         mHandler.removeCallbacksAndMessages(null);
         forceRunSyncOnAdvertiseThread(
@@ -246,7 +246,7 @@ public class AdvertiseManager {
             int maxExtAdvEvents,
             IBluetoothGattServerCallback gattServerCallback,
             IAdvertisingSetCallback callback,
-            AttributionSource attrSource) {
+            AttributionSource source) {
         checkThread();
         // If we are using an isolated server, force usage of an NRPA
         int serverIf = 0;
@@ -305,7 +305,7 @@ public class AdvertiseManager {
 
             Log.d(TAG, "startAdvertisingSet() - reg_id=" + cbId + ", callback: " + binder);
 
-            mAdvertiserMap.addAppAdvertiseStats(cbId, mService, attrSource);
+            mAdvertiserMap.addAppAdvertiseStats(cbId, mService, source);
             fetchAppForegroundState(cbId);
             mAdvertiserMap.recordAdvertiseStart(
                     cbId,

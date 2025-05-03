@@ -178,6 +178,7 @@ public:
           delete;
 
   ~MockLeAudioGroupStateMachineCallbacks() override = default;
+  MOCK_METHOD((uint8_t), OnGetEnabledDirections, (int group_id), (override));
   MOCK_METHOD((void), StatusReportCb, (int group_id, bluetooth::le_audio::GroupStreamStatus status),
               (override));
   MOCK_METHOD((void), OnStateTransitionTimeout, (int group_id), (override));
@@ -241,6 +242,8 @@ protected:
   bool do_not_send_remove_iso_data_path_event_;
   uint8_t overwrite_cis_status_idx_;
   std::vector<uint8_t> cis_status_;
+  uint8_t enabled_directions_;
+  bool group_is_suspending_;
 
   /* Keep ASE in releasing state */
   bool stay_in_releasing_state_;
@@ -257,6 +260,8 @@ protected:
     __android_log_set_minimum_priority(ANDROID_LOG_DEBUG);
     com::android::bluetooth::flags::provider_->reset_flags();
     com::android::bluetooth::flags::provider_->leaudio_use_context_type_manager(true);
+    com::android::bluetooth::flags::provider_->leaudio_dynamic_data_path_change(true);
+    com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
 
     reset_mock_function_count_map();
     bluetooth::manager::SetMockBtmInterface(&btm_interface);
@@ -278,6 +283,8 @@ protected:
     block_releasing_state_device_list_.clear();
     stop_inject_configured_ase_after_first_ase_configured_ = false;
     cis_status_.clear();
+    enabled_directions_ = bluetooth::le_audio::types::kLeAudioDirectionBoth;
+    group_is_suspending_ = false;
 
     LeAudioGroupStateMachine::Initialize(&mock_callbacks_);
 
@@ -285,8 +292,19 @@ protected:
 
     ON_CALL(mock_callbacks_, StatusReportCb(_, _))
             .WillByDefault(Invoke([](int group_id, bluetooth::le_audio::GroupStreamStatus status) {
-              log::debug("[Testing] StatusReportCb: group id: {}, status: {}", group_id, status);
+              log::debug("[Testing] StatusReportCb: group id: {}, status: {}", group_id,
+                         common::ToString(status));
             }));
+
+    ON_CALL(mock_callbacks_, OnGetEnabledDirections(_)).WillByDefault(Invoke([this](int group_id) {
+      log::debug("[Testing] OnGetEnabledDirections: group_id: {}, directions: {:#x}", group_id,
+                 enabled_directions_);
+      /* Note: By default enabled_directions_ is Both.
+       * `group_is_suspendig_ `is used when SuspendStream() was called and group does not use
+       *  dynamic direction feature and this is needed to make sure that Group will stay in QoS
+       * configure state and not get enabled automatically. */
+      return group_is_suspending_ ? 0 : enabled_directions_;
+    }));
 
     MockCsisClient::SetMockInstanceForTesting(&mock_csis_client_module_);
     ON_CALL(mock_csis_client_module_, Get()).WillByDefault(Return(&mock_csis_client_module_));
@@ -1268,6 +1286,9 @@ protected:
                 ASSERT_NE(it, device->ases_.end());
                 const auto ase = &(*it);
 
+                ASSERT_EQ(ase->expected_state,
+                          types::AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED);
+
                 // Skip target latency param
                 ase_p++;
 
@@ -1331,6 +1352,9 @@ protected:
 
               // Inject Configured QoS state notification for each requested ASE
               auto* ase_p = &value[2];
+              std::vector<struct types::ase*> ases;
+              std::vector<client_parser::ascs::ase_qos_configured_state_params>
+                      qos_configured_state_params_vec;
               for (auto i = 0u; i < num_ase; ++i) {
                 client_parser::ascs::ase_qos_configured_state_params qos_configured_state_params;
 
@@ -1361,13 +1385,16 @@ protected:
                 qos_configured_state_params.pres_delay =
                         (uint16_t)((ase_p[0] << 16) | (ase_p[1] << 8) | ase_p[2]);
                 ase_p += 3;
+                ASSERT_EQ(ase->expected_state,
+                          types::AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
+                ases.push_back(ase);
 
                 if (caching) {
                   log::info("Device: {}", device->address_);
                   if (cached_ase_to_cis_id_map_.count(device->address_) > 0) {
                     auto ase_list = cached_ase_to_cis_id_map_.at(device->address_);
                     if (ase_list.count(ase_id) > 0) {
-                      auto cis_id = ase_list.at(ase_id);
+                      auto cis_id = ase_list.at(ase->id);
                       ASSERT_EQ(cis_id, qos_configured_state_params.cis_id);
                     } else {
                       ase_list[ase_id] = qos_configured_state_params.cis_id;
@@ -1381,9 +1408,13 @@ protected:
                   cached_qos_configuration_map_[ase_id] = qos_configured_state_params;
                 }
 
+                qos_configured_state_params_vec.push_back(qos_configured_state_params);
+              }
+
+              for (int i = 0; i < static_cast<int>(ases.size()); i++) {
                 if (inject_qos_configured) {
-                  InjectAseStateNotification(ase, device, group, ascs::kAseStateQoSConfigured,
-                                             &qos_configured_state_params);
+                  InjectAseStateNotification(ases[i], device, group, ascs::kAseStateQoSConfigured,
+                                             &qos_configured_state_params_vec[i]);
                 }
               }
             }));
@@ -1502,6 +1533,8 @@ protected:
 
               // Inject Streaming ASE state notification for each requested ASE
               auto* ase_p = &value[2];
+              std::vector<struct types::ase*> ases;
+              std::vector<client_parser::ascs::ase_transient_state_params> enable_params_vec;
               for (auto i = 0u; i < num_ase; ++i) {
                 /* Check if this is a valid ASE ID  */
                 auto ase_id = *ase_p++;
@@ -1509,7 +1542,9 @@ protected:
                                        [ase_id](auto& ase) { return ase.id == ase_id; });
                 ASSERT_NE(it, device->ases_.end());
                 const auto ase = &(*it);
+                ases.push_back(ase);
 
+                ASSERT_EQ(ase->expected_state, types::AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING);
                 auto meta_len = *ase_p++;
                 auto num_handled_bytes = ase_p - value.data();
                 ase_p += meta_len;
@@ -1518,9 +1553,15 @@ protected:
                         .metadata =
                                 std::vector<uint8_t>(value.begin() + num_handled_bytes,
                                                      value.begin() + num_handled_bytes + meta_len)};
+                enable_params_vec.push_back(enable_params);
+              }
 
+              for (int i = 0; i < static_cast<int>(ases.size()); i++) {
                 // Server does the 'ReceiverStartReady' on its own - goes to
                 // Streaming, when in Sink role
+                auto ase = ases[i];
+                auto enable_params = enable_params_vec[i];
+
                 if (ase->direction & bluetooth::le_audio::types::kLeAudioDirectionSink) {
                   if (inject_enabling) {
                     InjectAseStateNotification(ase, device, group, ascs::kAseStateEnabling,
@@ -1556,6 +1597,7 @@ protected:
 
               // Inject Disabling & QoS Conf. ASE state notification for each ASE
               auto* ase_p = &value[2];
+              std::vector<struct types::ase*> ases;
               for (auto i = 0u; i < num_ase; ++i) {
                 /* Check if this is a valid ASE ID  */
                 auto ase_id = *ase_p++;
@@ -1564,6 +1606,11 @@ protected:
                 ASSERT_NE(it, device->ases_.end());
                 const auto ase = &(*it);
 
+                ASSERT_EQ(ase->expected_state, types::AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING);
+                ases.push_back(ase);
+              }
+
+              for (auto ase : ases) {
                 // The Disabling state is present for Source ASE
                 if (ase->direction & bluetooth::le_audio::types::kLeAudioDirectionSource) {
                   client_parser::ascs::ase_transient_state_params disabling_params = {
@@ -1599,6 +1646,7 @@ protected:
 
               // Inject Streaming ASE state notification for each Source ASE
               auto* ase_p = &value[2];
+              std::vector<struct types::ase*> ases;
               for (auto i = 0u; i < num_ase; ++i) {
                 /* Check if this is a valid ASE ID  */
                 auto ase_id = *ase_p++;
@@ -1609,6 +1657,12 @@ protected:
                 // Once we did the 'ReceiverStartReady' the server goes to
                 // Streaming, when in Source role
                 const auto& ase = &(*it);
+
+                ASSERT_EQ(ase->expected_state, types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
+                ases.push_back(ase);
+              }
+
+              for (auto ase : ases) {
                 client_parser::ascs::ase_transient_state_params streaming_params = {
                         .metadata = ase->metadata.RawPacket()};
                 InjectAseStateNotification(ase, device, group, ascs::kAseStateStreaming,
@@ -1633,6 +1687,7 @@ protected:
               // Inject QoS configured ASE state notification for each Source
               // ASE
               auto* ase_p = &value[2];
+              std::vector<struct types::ase*> ases;
               for (auto i = 0u; i < num_ase; ++i) {
                 /* Check if this is a valid ASE ID  */
                 auto ase_id = *ase_p++;
@@ -1641,7 +1696,12 @@ protected:
                 ASSERT_NE(it, device->ases_.end());
 
                 const auto& ase = &(*it);
+                ASSERT_EQ(ase->expected_state,
+                          types::AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
+                ases.push_back(ase);
+              }
 
+              for (auto ase : ases) {
                 // FIXME: For now our fake peer does not remember qos params
                 client_parser::ascs::ase_qos_configured_state_params qos_configured_state_params;
                 InjectAseStateNotification(ase, device, group, ascs::kAseStateQoSConfigured,
@@ -1678,6 +1738,9 @@ protected:
 
               // Inject Releasing & Idle ASE state notification for each ASE
               auto* ase_p = &value[2];
+              std::vector<struct types::ase*> ases;
+
+              // Find ASES and check state
               for (auto i = 0u; i < num_ase; ++i) {
                 /* Check if this is a valid ASE ID  */
                 auto ase_id = *ase_p++;
@@ -1686,6 +1749,12 @@ protected:
                 ASSERT_NE(it, device->ases_.end());
                 const auto ase = &(*it);
 
+                ASSERT_EQ(ase->expected_state, types::AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING);
+                ases.push_back(ase);
+              }
+
+              // execute operation
+              for (auto ase : ases) {
                 // Prevent RELEASING notification for the whole group
                 if (!inject_releasing) {
                   continue;
@@ -1705,14 +1774,16 @@ protected:
                 }
 
                 /* Check if codec configuration is cached */
-                if (cached_codec_configuration_map_.count(ase_id) > 0) {
+                if (cached_codec_configuration_map_.count(ase->id) > 0) {
                   InjectAseStateNotification(ase, device, group, ascs::kAseStateCodecConfigured,
-                                             &cached_codec_configuration_map_[ase_id]);
+                                             &cached_codec_configuration_map_[ase->id]);
                 } else {
                   // Release - no caching
                   InjectAseStateNotification(ase, device, group, ascs::kAseStateIdle, nullptr);
                 }
               }
+
+
             }));
   }
 
@@ -2711,6 +2782,13 @@ TEST_F(StateMachineTest, testStreamMultipleMedia_OneMemberHasNoAsesAndNotConnect
   // Check if group has transitioned to a proper state
   ASSERT_EQ(group->GetState(), types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
   ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+
+  // Validate direcions
+  auto group_config = group->GetActiveConfiguration();
+  ASSERT_NE(group_config, nullptr);
+  auto [sink_is_enabled, source_is_enabled] = group_config->getDirections();
+  ASSERT_TRUE(sink_is_enabled);
+  ASSERT_FALSE(source_is_enabled);
 }
 
 TEST_F(StateMachineTest, testStreamSingleConversational_TwsWithTwoBidirectional) {
@@ -2767,6 +2845,13 @@ TEST_F(StateMachineTest, testStreamSingleConversational_TwsWithTwoBidirectional)
   // Check if group has transitioned to a proper state
   ASSERT_EQ(group->GetState(), types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
   ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+
+  // Validate direcions
+  auto group_config = group->GetActiveConfiguration();
+  ASSERT_NE(group_config, nullptr);
+  auto [sink_is_enabled, source_is_enabled] = group_config->getDirections();
+  ASSERT_TRUE(sink_is_enabled);
+  ASSERT_TRUE(source_is_enabled);
 }
 
 TEST_F(StateMachineTest, testStreamMultipleConversational) {
@@ -3359,6 +3444,7 @@ TEST_F(StateMachineTest, testDisableSingle) {
               StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::SUSPENDED));
 
   // Suspend the stream
+  group_is_suspending_ = true;
   LeAudioGroupStateMachine::Get()->SuspendStream(group);
 
   // Check if group has transition to a proper state
@@ -3422,6 +3508,7 @@ TEST_F(StateMachineTest, testDisableMultiple) {
               StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::SUSPENDED));
 
   // Suspend the stream
+  group_is_suspending_ = true;
   LeAudioGroupStateMachine::Get()->SuspendStream(group);
 
   // Check if group has transitioned to a proper state
@@ -3518,6 +3605,7 @@ TEST_F(StateMachineTest, testDisableBidirectional) {
               StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::SUSPENDED));
 
   // Suspend the stream
+  group_is_suspending_ = true;
   LeAudioGroupStateMachine::Get()->SuspendStream(group);
 
   // Check if group has transitioned to a proper state
@@ -4481,6 +4569,7 @@ TEST_F(StateMachineTest, testDisableAndReleaseBidirectional) {
                                                 .source = types::AudioContexts(context_type)});
 
   // Suspend the stream
+  group_is_suspending_ = true;
   LeAudioGroupStateMachine::Get()->SuspendStream(group);
 
   // Stop the stream
@@ -7774,6 +7863,431 @@ TEST_F(StateMachineTest, StopStreamAfterConfigureToQoS) {
 
   // Start the configuration and stream Media content
   LeAudioGroupStateMachine::Get()->StopStream(group);
+
+  testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+}
+
+TEST_F(StateMachineTest, StartStreamBidirectional_enableOnlyRemoteSinkFirst) {
+  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
+  const auto context_type = kContextTypeLive;
+  const auto leaudio_group_id = 6;
+  const auto num_devices = 2;
+  enabled_directions_ = bluetooth::le_audio::types::kLeAudioDirectionSink;
+
+  /* Scenario:
+   * 1. Start Streaming bidirectional scenario e.g. LIVE but start with Remote SINK directions
+   * 2. Enable Remote Source Directions
+   */
+
+  // Prepare multiple fake connected devices in a group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type, num_devices);
+  ASSERT_EQ(group->Size(), num_devices);
+
+  PrepareConfigureCodecHandler(group, 0, true);
+  PrepareConfigureQosHandler(group);
+  PrepareEnableHandler(group);
+  PrepareDisableHandler(group);
+  PrepareReleaseHandler(group);
+  PrepareReceiverStartReadyHandler(group);
+
+  InjectInitialIdleNotification(group);
+
+  auto* leAudioDevice = group->GetFirstDevice();
+  auto expected_devices_written = 0;
+  while (leAudioDevice) {
+    /* Three Writes:
+     * 1. Codec configure
+     * 2: Codec QoS
+     * 3: Enabling for Sink
+     * 4. Enabling For Source
+     * 5. Receiver Start Ready
+     */
+    EXPECT_CALL(gatt_queue,
+                WriteCharacteristic(leAudioDevice->conn_id_, leAudioDevice->ctp_hdls_.val_hdl, _,
+                                    GATT_WRITE_NO_RSP, _, _))
+            .Times(5);
+    expected_devices_written++;
+    leAudioDevice = group->GetNextDevice(leAudioDevice);
+  }
+  ASSERT_EQ(expected_devices_written, num_devices);
+
+  // validate group status. Times 2 is only because this unitest does not support mainloop.
+  EXPECT_CALL(mock_callbacks_,
+              StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::STREAMING));
+
+  log::info("Start the configuration and stream LIVE content");
+  LeAudioGroupStateMachine::Get()->StartStream(group, context_type,
+                                               {.sink = types::AudioContexts(context_type),
+                                                .source = types::AudioContexts(context_type)});
+
+  testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+
+  log::debug("Make sure both directions are configured");
+  auto group_config = group->GetActiveConfiguration();
+  ASSERT_NE(group_config, nullptr);
+  auto [sink_is_enabled, source_is_enabled] = group_config->getDirections();
+  ASSERT_TRUE(sink_is_enabled);
+  ASSERT_TRUE(source_is_enabled);
+
+  log::debug("Make sure there are Active QOS Configured ASES in Remote Source Direction");
+  ASSERT_EQ(group->GetActiveQoSConfiguredDirections(),
+            bluetooth::le_audio::types::kLeAudioDirectionSource);
+
+  log::debug("Enable Remote Source");
+  /* Note, times(2) should be solved in b/415122157 */
+  EXPECT_CALL(mock_callbacks_,
+              StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::STREAMING))
+          .Times(2);
+
+  enabled_directions_ = bluetooth::le_audio::types::kLeAudioDirectionBoth;
+  LeAudioGroupStateMachine::Get()->EnableStreamingDirection(
+          group, bluetooth::le_audio::types::kLeAudioDirectionSource);
+  testing::Mock::VerifyAndClearExpectations(&gatt_queue);
+  testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+}
+
+TEST_F(StateMachineTest, StartStreamBidirectional_enableOnlyRemoteSourceFirst) {
+  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
+  const auto context_type = kContextTypeLive;
+  const auto leaudio_group_id = 6;
+  const auto num_devices = 2;
+  enabled_directions_ = bluetooth::le_audio::types::kLeAudioDirectionSource;
+
+  /* Scenario:
+   * 1. Start Streaming bidirectional scenario e.g. LIVE but start with Remote Source directions
+   * 2. Enable Remote Sink Directions
+   */
+
+  // Prepare multiple fake connected devices in a group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type, num_devices);
+  ASSERT_EQ(group->Size(), num_devices);
+
+  PrepareConfigureCodecHandler(group, 0, true);
+  PrepareConfigureQosHandler(group);
+  PrepareEnableHandler(group);
+  PrepareDisableHandler(group);
+  PrepareReleaseHandler(group);
+  PrepareReceiverStartReadyHandler(group);
+
+  InjectInitialIdleNotification(group);
+
+  auto* leAudioDevice = group->GetFirstDevice();
+  auto expected_devices_written = 0;
+  while (leAudioDevice) {
+    /* Three Writes:
+     * 1. Codec configure
+     * 2: Codec QoS
+     * 3: Enabling for Sink
+     * 4. Enabling For Source
+     * 5. Receiver Start Ready
+     */
+    EXPECT_CALL(gatt_queue,
+                WriteCharacteristic(leAudioDevice->conn_id_, leAudioDevice->ctp_hdls_.val_hdl, _,
+                                    GATT_WRITE_NO_RSP, _, _))
+            .Times(5);
+    expected_devices_written++;
+    leAudioDevice = group->GetNextDevice(leAudioDevice);
+  }
+  ASSERT_EQ(expected_devices_written, num_devices);
+
+  EXPECT_CALL(mock_callbacks_,
+              StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::STREAMING));
+
+  log::info("Start the configuration and stream LIVE content");
+  LeAudioGroupStateMachine::Get()->StartStream(group, context_type,
+                                               {.sink = types::AudioContexts(context_type),
+                                                .source = types::AudioContexts(context_type)});
+
+  testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+
+  log::debug("Make sure both directions are configured");
+  auto group_config = group->GetActiveConfiguration();
+  ASSERT_NE(group_config, nullptr);
+  auto [sink_is_enabled, source_is_enabled] = group_config->getDirections();
+  ASSERT_TRUE(sink_is_enabled);
+  ASSERT_TRUE(source_is_enabled);
+
+  log::debug("Make sure there are Active QOS Configured ASES in Remote Sink Direction");
+  ASSERT_EQ(group->GetActiveQoSConfiguredDirections(),
+            bluetooth::le_audio::types::kLeAudioDirectionSink);
+
+  log::debug("Enable Remote Sink");
+  /* Note, times(2) should be solved in b/415122157 */
+  EXPECT_CALL(mock_callbacks_,
+              StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::STREAMING))
+          .Times(2);
+
+  enabled_directions_ = bluetooth::le_audio::types::kLeAudioDirectionBoth;
+  LeAudioGroupStateMachine::Get()->EnableStreamingDirection(
+          group, bluetooth::le_audio::types::kLeAudioDirectionSink);
+
+  testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+  testing::Mock::VerifyAndClearExpectations(&gatt_queue);
+}
+
+TEST_F(StateMachineTest, StartStreamBidirectional_DisableAndEnableSink) {
+  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
+  const auto context_type = kContextTypeLive;
+  const auto leaudio_group_id = 6;
+  const auto num_devices = 2;
+  enabled_directions_ = bluetooth::le_audio::types::kLeAudioDirectionBoth;
+
+  /* Scenario:
+   * 1. Start Streaming bidirectional scenario for Live
+   * 2. Disable Remote Sink Directions
+   * 3. Enable Remote Sink Directions
+   */
+
+  // Prepare multiple fake connected devices in a group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type, num_devices);
+  ASSERT_EQ(group->Size(), num_devices);
+
+  PrepareConfigureCodecHandler(group, 0, true);
+  PrepareConfigureQosHandler(group);
+  PrepareEnableHandler(group);
+  PrepareDisableHandler(group);
+  PrepareReleaseHandler(group);
+  PrepareReceiverStartReadyHandler(group);
+
+  InjectInitialIdleNotification(group);
+
+  auto* leAudioDevice = group->GetFirstDevice();
+  auto expected_devices_written = 0;
+  while (leAudioDevice) {
+    /* Three Writes:
+     * 1. Codec configure
+     * 2: Codec QoS
+     * 3: Enabling Both Directions;
+     * 4. Receiver Start Ready
+     * 5. Disable Sink
+     * 6, Enable Sink
+     */
+    EXPECT_CALL(gatt_queue,
+                WriteCharacteristic(leAudioDevice->conn_id_, leAudioDevice->ctp_hdls_.val_hdl, _,
+                                    GATT_WRITE_NO_RSP, _, _))
+            .Times(6);
+    expected_devices_written++;
+    leAudioDevice = group->GetNextDevice(leAudioDevice);
+  }
+  ASSERT_EQ(expected_devices_written, num_devices);
+
+  // validate group status. Times 2 is only because this unitest does not support mainloop.
+  EXPECT_CALL(mock_callbacks_,
+              StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::STREAMING));
+
+  log::info("Start the configuration and stream LIVE content");
+  LeAudioGroupStateMachine::Get()->StartStream(group, context_type,
+                                               {.sink = types::AudioContexts(context_type),
+                                                .source = types::AudioContexts(context_type)});
+
+  testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+
+  log::debug("Make sure both directions are configured");
+  auto group_config = group->GetActiveConfiguration();
+  ASSERT_NE(group_config, nullptr);
+  auto [sink_is_enabled, source_is_enabled] = group_config->getDirections();
+  ASSERT_TRUE(sink_is_enabled);
+  ASSERT_TRUE(source_is_enabled);
+
+  log::debug("Make sure all directions are enabled");
+  ASSERT_EQ(group->GetActiveEnabledDirections(), bluetooth::le_audio::types::kLeAudioDirectionBoth);
+
+  log::debug("Disable Remote Sink");
+  EXPECT_CALL(mock_callbacks_,
+              StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::STREAMING))
+          .Times(0);
+
+  enabled_directions_ = bluetooth::le_audio::types::kLeAudioDirectionSource;
+  LeAudioGroupStateMachine::Get()->DisableStreamingDirection(
+          group, bluetooth::le_audio::types::kLeAudioDirectionSink);
+
+  testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+
+  log::debug("Make sure there are Active QOS Configured ASES in Remote Sink Direction");
+  ASSERT_EQ(group->GetActiveQoSConfiguredDirections(),
+            bluetooth::le_audio::types::kLeAudioDirectionSink);
+  log::debug("Enable Remote Sink");
+  /* Note, times(2) should be solved in b/415122157 */
+  EXPECT_CALL(mock_callbacks_,
+              StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::STREAMING))
+          .Times(2);
+  enabled_directions_ = bluetooth::le_audio::types::kLeAudioDirectionBoth;
+  LeAudioGroupStateMachine::Get()->EnableStreamingDirection(
+          group, bluetooth::le_audio::types::kLeAudioDirectionSink);
+
+  testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+  testing::Mock::VerifyAndClearExpectations(&gatt_queue);
+}
+
+TEST_F(StateMachineTest, StartStreamBidirectional_DisableAndEnableSource) {
+  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
+  const auto context_type = kContextTypeLive;
+  const auto leaudio_group_id = 6;
+  const auto num_devices = 2;
+  enabled_directions_ = bluetooth::le_audio::types::kLeAudioDirectionBoth;
+
+  /* Scenario:
+   * 1. Start Streaming bidirectional scenario for Live
+   * 2. Disable Remote Source Directions
+   * 3. Enable Remote Source Directions
+   */
+
+  // Prepare multiple fake connected devices in a group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type, num_devices);
+  ASSERT_EQ(group->Size(), num_devices);
+
+  PrepareConfigureCodecHandler(group, 0, true);
+  PrepareConfigureQosHandler(group);
+  PrepareEnableHandler(group);
+  PrepareDisableHandler(group);
+  PrepareReleaseHandler(group);
+  PrepareReceiverStartReadyHandler(group);
+  PrepareReceiverStopReady(group);
+
+  InjectInitialIdleNotification(group);
+
+  auto* leAudioDevice = group->GetFirstDevice();
+  auto expected_devices_written = 0;
+  while (leAudioDevice) {
+    /* Three Writes:
+     * 1. Codec configure
+     * 2: Codec QoS
+     * 3: Enabling Both Directions;
+     * 4. Receiver Start Ready
+     * 5. Disable Source
+     * 6. ReceiverStopReady
+     * 7, Enable Source
+     * 8. ReceiverStartReady
+     */
+    EXPECT_CALL(gatt_queue,
+                WriteCharacteristic(leAudioDevice->conn_id_, leAudioDevice->ctp_hdls_.val_hdl, _,
+                                    GATT_WRITE_NO_RSP, _, _))
+            .Times(8);
+    expected_devices_written++;
+    leAudioDevice = group->GetNextDevice(leAudioDevice);
+  }
+  ASSERT_EQ(expected_devices_written, num_devices);
+
+  // validate group status. Times 2 is only because this unitest does not support mainloop.
+  EXPECT_CALL(mock_callbacks_,
+              StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::STREAMING));
+
+  log::info("Start the configuration and stream LIVE content");
+  LeAudioGroupStateMachine::Get()->StartStream(group, context_type,
+                                               {.sink = types::AudioContexts(context_type),
+                                                .source = types::AudioContexts(context_type)});
+
+  testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+
+  log::debug("Make sure both directions are configured");
+  auto group_config = group->GetActiveConfiguration();
+  ASSERT_NE(group_config, nullptr);
+  auto [sink_is_enabled, source_is_enabled] = group_config->getDirections();
+  ASSERT_TRUE(sink_is_enabled);
+  ASSERT_TRUE(source_is_enabled);
+
+  log::debug("Make sure all directions are enabled");
+  ASSERT_EQ(group->GetActiveEnabledDirections(), bluetooth::le_audio::types::kLeAudioDirectionBoth);
+
+  log::debug("Disable Remote Sink");
+  EXPECT_CALL(mock_callbacks_,
+              StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::STREAMING))
+          .Times(0);
+
+  LeAudioGroupStateMachine::Get()->DisableStreamingDirection(
+          group, bluetooth::le_audio::types::kLeAudioDirectionSource);
+
+  testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+
+  log::debug("Make sure there are Active QOS Configured ASES in Remote Source Direction");
+  ASSERT_EQ(group->GetActiveQoSConfiguredDirections(),
+            bluetooth::le_audio::types::kLeAudioDirectionSource);
+  log::debug("Enable Remote Source");
+  /* Note, times(2) should be solved in b/415122157 */
+  EXPECT_CALL(mock_callbacks_,
+              StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::STREAMING))
+          .Times(2);
+  LeAudioGroupStateMachine::Get()->EnableStreamingDirection(
+          group, bluetooth::le_audio::types::kLeAudioDirectionSource);
+
+  testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+  testing::Mock::VerifyAndClearExpectations(&gatt_queue);
+}
+
+TEST_F(StateMachineTest, StartStreamBidirectional_QuickDisableAndEnableSink) {
+  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
+  const auto context_type = kContextTypeLive;
+  const auto leaudio_group_id = 6;
+  const auto num_devices = 2;
+  enabled_directions_ = bluetooth::le_audio::types::kLeAudioDirectionBoth;
+
+  /* Scenario:
+   * 1. Start Streaming bidirectional scenario for Live
+   * 2. Disable Remote Sink Directions
+   * 3. Enable Remote Sink Directions
+   */
+
+  // Prepare multiple fake connected devices in a group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type, num_devices);
+  ASSERT_EQ(group->Size(), num_devices);
+
+  PrepareConfigureCodecHandler(group, 0, true);
+  PrepareConfigureQosHandler(group);
+  PrepareEnableHandler(group);
+  PrepareDisableHandler(group);
+  PrepareReleaseHandler(group);
+  PrepareReceiverStartReadyHandler(group);
+
+  InjectInitialIdleNotification(group);
+
+  auto* leAudioDevice = group->GetFirstDevice();
+  auto expected_devices_written = 0;
+  while (leAudioDevice) {
+    /* Three Writes:
+     * 1. Codec configure
+     * 2: Codec QoS
+     * 3: Enabling Both Directions;
+     * 4. Receiver Start Ready
+     * 5. Disable Sink
+     * 6, Enable Sink
+     */
+    EXPECT_CALL(gatt_queue,
+                WriteCharacteristic(leAudioDevice->conn_id_, leAudioDevice->ctp_hdls_.val_hdl, _,
+                                    GATT_WRITE_NO_RSP, _, _))
+            .Times(6);
+    expected_devices_written++;
+    leAudioDevice = group->GetNextDevice(leAudioDevice);
+  }
+  ASSERT_EQ(expected_devices_written, num_devices);
+
+  EXPECT_CALL(mock_callbacks_,
+              StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::STREAMING));
+
+  log::info("Start the configuration and stream LIVE content");
+  LeAudioGroupStateMachine::Get()->StartStream(group, context_type,
+                                               {.sink = types::AudioContexts(context_type),
+                                                .source = types::AudioContexts(context_type)});
+
+  testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+
+  log::debug("Make sure both directions are configured");
+  auto group_config = group->GetActiveConfiguration();
+  ASSERT_NE(group_config, nullptr);
+  auto [sink_is_enabled, source_is_enabled] = group_config->getDirections();
+  ASSERT_TRUE(sink_is_enabled);
+  ASSERT_TRUE(source_is_enabled);
+
+  log::debug("Make sure all directions are enabled");
+  ASSERT_EQ(group->GetActiveEnabledDirections(), bluetooth::le_audio::types::kLeAudioDirectionBoth);
+
+  log::debug("Disable and Enable quickly the Remote Sink");
+  /* Note, times(2) should be solved in b/415122157 */
+  EXPECT_CALL(mock_callbacks_,
+              StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::STREAMING))
+          .Times(2);
+
+  LeAudioGroupStateMachine::Get()->DisableStreamingDirection(
+          group, bluetooth::le_audio::types::kLeAudioDirectionSink);
 
   testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
 }

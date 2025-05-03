@@ -170,31 +170,22 @@ class PlayerApplicationSettings {
     }
 
     public static String repeatStatusToString(int repeatMode) {
-        switch (repeatMode) {
-            case PlaybackStateCompat.REPEAT_MODE_ALL:
-                return "ALL";
-            case PlaybackStateCompat.REPEAT_MODE_GROUP:
-                return "GROUP";
-            case PlaybackStateCompat.REPEAT_MODE_NONE:
-                return "NONE";
-            case PlaybackStateCompat.REPEAT_MODE_ONE:
-                return "ONE";
-            default:
-                return "Unsupported";
-        }
+        return switch (repeatMode) {
+            case PlaybackStateCompat.REPEAT_MODE_ALL -> "ALL";
+            case PlaybackStateCompat.REPEAT_MODE_GROUP -> "GROUP";
+            case PlaybackStateCompat.REPEAT_MODE_NONE -> "NONE";
+            case PlaybackStateCompat.REPEAT_MODE_ONE -> "ONE";
+            default -> "Unsupported";
+        };
     }
 
     public static String shuffleStatusToString(int shuffleMode) {
-        switch (shuffleMode) {
-            case PlaybackStateCompat.SHUFFLE_MODE_NONE:
-                return "NONE";
-            case PlaybackStateCompat.SHUFFLE_MODE_ALL:
-                return "ALL";
-            case PlaybackStateCompat.SHUFFLE_MODE_GROUP:
-                return "GROUP";
-            default:
-                return "Unsupported";
-        }
+        return switch (shuffleMode) {
+            case PlaybackStateCompat.SHUFFLE_MODE_NONE -> "NONE";
+            case PlaybackStateCompat.SHUFFLE_MODE_ALL -> "ALL";
+            case PlaybackStateCompat.SHUFFLE_MODE_GROUP -> "GROUP";
+            default -> "Unsupported";
+        };
     }
 
     @Override

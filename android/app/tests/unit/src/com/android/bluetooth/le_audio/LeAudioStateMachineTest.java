@@ -48,7 +48,6 @@ import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
-import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 
 import org.junit.After;
@@ -70,14 +69,11 @@ public class LeAudioStateMachineTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
-    @Mock private AdapterService mAdapterService;
     @Mock private LeAudioService mLeAudioService;
     @Mock private LeAudioNativeInterface mLeAudioNativeInterface;
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.setAdapterService(mAdapterService);
-
         // Set up thread and looper
         mHandlerThread = new HandlerThread("LeAudioStateMachineTestHandlerThread");
         mHandlerThread.start();
@@ -95,7 +91,6 @@ public class LeAudioStateMachineTest {
     public void tearDown() throws Exception {
         mLeAudioStateMachine.doQuit();
         mHandlerThread.quit();
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     /** Test that default state is disconnected */

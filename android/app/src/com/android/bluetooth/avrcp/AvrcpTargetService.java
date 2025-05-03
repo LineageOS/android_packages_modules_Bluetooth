@@ -256,7 +256,7 @@ public class AvrcpTargetService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup AVRCP Target Service");
+        Log.i(TAG, "cleanup()");
 
         if (sInstance == null) {
             Log.w(TAG, "cleanup() called before initialization");

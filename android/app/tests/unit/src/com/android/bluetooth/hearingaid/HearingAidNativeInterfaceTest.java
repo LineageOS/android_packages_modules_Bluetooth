@@ -32,7 +32,8 @@ import static org.mockito.Mockito.when;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 
-import com.android.bluetooth.TestUtils;
+import androidx.test.runner.AndroidJUnit4;
+
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 
@@ -40,11 +41,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
 /** Test cases for {@link HearingAidNativeInterface}. */
+@RunWith(AndroidJUnit4.class)
 public class HearingAidNativeInterfaceTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
@@ -56,7 +59,6 @@ public class HearingAidNativeInterfaceTest {
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.setAdapterService(mAdapterService);
         when(mAdapterService.getRemoteDevice(anyString()))
                 .thenAnswer(
                         invocation -> {
@@ -71,7 +73,6 @@ public class HearingAidNativeInterfaceTest {
     @After
     public void tearDown() throws Exception {
         HearingAidService.setHearingAidService(null);
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test

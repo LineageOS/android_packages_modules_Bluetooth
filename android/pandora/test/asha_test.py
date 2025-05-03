@@ -20,10 +20,10 @@ import logging
 import numpy as np
 
 from avatar import BumblePandoraDevice, PandoraDevice, PandoraDevices, asynchronous
-from bumble import pandora as bumble_server
+import pandora_services as bumble_server
 from bumble.gatt import GATT_ASHA_SERVICE
 from bumble.pairing import PairingDelegate
-from bumble_experimental.asha import AshaGattService, AshaService
+from pandora_services.asha import AshaGattService, AshaService
 from mobly import base_test, signals, test_runner
 from mobly.asserts import assert_equal  # type: ignore
 from mobly.asserts import assert_false  # type: ignore
@@ -34,8 +34,8 @@ from mobly.asserts import assert_true  # type: ignore
 from pandora._utils import AioStream
 from pandora.host_pb2 import PUBLIC, RANDOM, AdvertiseResponse, Connection, DataTypes, OwnAddressType, ScanningResponse
 from pandora.security_pb2 import LE_LEVEL3
-from pandora_experimental.asha_grpc_aio import Asha as AioAsha, add_AshaServicer_to_server
-from pandora_experimental.asha_pb2 import PlaybackAudioRequest
+from pandora.asha_grpc_aio import Asha as AioAsha, add_AshaServicer_to_server
+from pandora.asha_pb2 import PlaybackAudioRequest
 from typing import AsyncIterator, ByteString, List, Optional, Tuple
 
 ASHA_UUID = GATT_ASHA_SERVICE.to_hex_str('-')

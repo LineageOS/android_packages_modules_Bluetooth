@@ -480,20 +480,14 @@ public final class BluetoothQualityReport implements Parcelable {
             }
         }
 
-        switch (id) {
-            case QUALITY_REPORT_ID_MONITOR:
-                return mBqrCommon;
-            case QUALITY_REPORT_ID_APPROACH_LSTO:
-                return mBqrVsLsto;
-            case QUALITY_REPORT_ID_A2DP_CHOPPY:
-                return mBqrVsA2dpChoppy;
-            case QUALITY_REPORT_ID_SCO_CHOPPY:
-                return mBqrVsScoChoppy;
-            case QUALITY_REPORT_ID_CONN_FAIL:
-                return mBqrConnectFail;
-            default:
-                return null;
-        }
+        return switch (id) {
+            case QUALITY_REPORT_ID_MONITOR -> mBqrCommon;
+            case QUALITY_REPORT_ID_APPROACH_LSTO -> mBqrVsLsto;
+            case QUALITY_REPORT_ID_A2DP_CHOPPY -> mBqrVsA2dpChoppy;
+            case QUALITY_REPORT_ID_SCO_CHOPPY -> mBqrVsScoChoppy;
+            case QUALITY_REPORT_ID_CONN_FAIL -> mBqrConnectFail;
+            default -> null;
+        };
     }
 
     /** @hide */
@@ -882,20 +876,14 @@ public final class BluetoothQualityReport implements Parcelable {
                 }
             }
 
-            switch (id) {
-                case QUALITY_REPORT_ID_MONITOR:
-                    return "Quality monitor";
-                case QUALITY_REPORT_ID_APPROACH_LSTO:
-                    return "Approaching LSTO";
-                case QUALITY_REPORT_ID_A2DP_CHOPPY:
-                    return "A2DP choppy";
-                case QUALITY_REPORT_ID_SCO_CHOPPY:
-                    return "SCO choppy";
-                case QUALITY_REPORT_ID_CONN_FAIL:
-                    return "Connect fail";
-                default:
-                    return "INVALID";
-            }
+            return switch (id) {
+                case QUALITY_REPORT_ID_MONITOR -> "Quality monitor";
+                case QUALITY_REPORT_ID_APPROACH_LSTO -> "Approaching LSTO";
+                case QUALITY_REPORT_ID_A2DP_CHOPPY -> "A2DP choppy";
+                case QUALITY_REPORT_ID_SCO_CHOPPY -> "SCO choppy";
+                case QUALITY_REPORT_ID_CONN_FAIL -> "Connect fail";
+                default -> "INVALID";
+            };
         }
 
         /**
@@ -2343,20 +2331,14 @@ public final class BluetoothQualityReport implements Parcelable {
          */
         @SystemApi
         public static @NonNull String connectFailIdToString(@ConnectFailId int id) {
-            switch (id) {
-                case CONNECT_FAIL_ID_NO_ERROR:
-                    return "No error";
-                case CONNECT_FAIL_ID_PAGE_TIMEOUT:
-                    return "Page Timeout";
-                case CONNECT_FAIL_ID_CONNECTION_TIMEOUT:
-                    return "Connection Timeout";
-                case CONNECT_FAIL_ID_ACL_ALREADY_EXIST:
-                    return "ACL already exists";
-                case CONNECT_FAIL_ID_CONTROLLER_BUSY:
-                    return "Controller busy";
-                default:
-                    return "INVALID";
-            }
+            return switch (id) {
+                case CONNECT_FAIL_ID_NO_ERROR -> "No error";
+                case CONNECT_FAIL_ID_PAGE_TIMEOUT -> "Page Timeout";
+                case CONNECT_FAIL_ID_CONNECTION_TIMEOUT -> "Connection Timeout";
+                case CONNECT_FAIL_ID_ACL_ALREADY_EXIST -> "ACL already exists";
+                case CONNECT_FAIL_ID_CONTROLLER_BUSY -> "Controller busy";
+                default -> "INVALID";
+            };
         }
 
         /** BqrConnectFail to String. */

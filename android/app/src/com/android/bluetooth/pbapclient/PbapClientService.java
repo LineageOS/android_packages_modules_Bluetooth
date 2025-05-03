@@ -178,7 +178,7 @@ public class PbapClientService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup PbapClient Service");
+        Log.i(TAG, "cleanup()");
 
         setPbapClientService(null);
         cleanUpSdpRecord();

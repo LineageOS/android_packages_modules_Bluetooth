@@ -243,6 +243,8 @@ impl Worker {
             let mut worker = WorkerThread::new(fifo, audio, max_sdu_size, send);
             let mut clocker = Clocker::new(audio.frame_duration_us);
 
+            log::info!("Streaming started");
+
             loop {
                 let now = Instant::now();
                 let (deadline, sequence_number) = clocker.deadline(now);
@@ -255,6 +257,11 @@ impl Worker {
                 let iso_snapshot = { *iso.lock().unwrap() };
                 worker.schedule(iso_snapshot, sequence_number);
             }
+
+            if worker.underrun > 0 {
+                log::warn!("PCM underrun ends: {} SDU starved before stopped", worker.underrun);
+            }
+            log::info!("Streaming stopped");
         });
 
         Self { thread: Some(thread), halt }

@@ -83,51 +83,29 @@ class StackEvent {
     // for debugging only
     @VisibleForTesting
     static String eventTypeToString(int type) {
-        switch (type) {
-            case EVENT_TYPE_NONE:
-                return "EVENT_TYPE_NONE";
-            case EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                return "EVENT_TYPE_CONNECTION_STATE_CHANGED";
-            case EVENT_TYPE_AUDIO_STATE_CHANGED:
-                return "EVENT_TYPE_AUDIO_STATE_CHANGED";
-            case EVENT_TYPE_VR_STATE_CHANGED:
-                return "EVENT_TYPE_VR_STATE_CHANGED";
-            case EVENT_TYPE_NETWORK_STATE:
-                return "EVENT_TYPE_NETWORK_STATE";
-            case EVENT_TYPE_ROAMING_STATE:
-                return "EVENT_TYPE_ROAMING_STATE";
-            case EVENT_TYPE_NETWORK_SIGNAL:
-                return "EVENT_TYPE_NETWORK_SIGNAL";
-            case EVENT_TYPE_BATTERY_LEVEL:
-                return "EVENT_TYPE_BATTERY_LEVEL";
-            case EVENT_TYPE_OPERATOR_NAME:
-                return "EVENT_TYPE_OPERATOR_NAME";
-            case EVENT_TYPE_CALL:
-                return "EVENT_TYPE_CALL";
-            case EVENT_TYPE_CALLSETUP:
-                return "EVENT_TYPE_CALLSETUP";
-            case EVENT_TYPE_CALLHELD:
-                return "EVENT_TYPE_CALLHELD";
-            case EVENT_TYPE_CLIP:
-                return "EVENT_TYPE_CLIP";
-            case EVENT_TYPE_CALL_WAITING:
-                return "EVENT_TYPE_CALL_WAITING";
-            case EVENT_TYPE_CURRENT_CALLS:
-                return "EVENT_TYPE_CURRENT_CALLS";
-            case EVENT_TYPE_VOLUME_CHANGED:
-                return "EVENT_TYPE_VOLUME_CHANGED";
-            case EVENT_TYPE_CMD_RESULT:
-                return "EVENT_TYPE_CMD_RESULT";
-            case EVENT_TYPE_SUBSCRIBER_INFO:
-                return "EVENT_TYPE_SUBSCRIBER_INFO";
-            case EVENT_TYPE_RESP_AND_HOLD:
-                return "EVENT_TYPE_RESP_AND_HOLD";
-            case EVENT_TYPE_RING_INDICATION:
-                return "EVENT_TYPE_RING_INDICATION";
-            case EVENT_TYPE_IN_BAND_RINGTONE:
-                return "EVENT_TYPE_IN_BAND_RINGTONE";
-            default:
-                return "EVENT_TYPE_UNKNOWN:" + type;
-        }
+        return switch (type) {
+            case EVENT_TYPE_NONE -> "EVENT_TYPE_NONE";
+            case EVENT_TYPE_CONNECTION_STATE_CHANGED -> "EVENT_TYPE_CONNECTION_STATE_CHANGED";
+            case EVENT_TYPE_AUDIO_STATE_CHANGED -> "EVENT_TYPE_AUDIO_STATE_CHANGED";
+            case EVENT_TYPE_VR_STATE_CHANGED -> "EVENT_TYPE_VR_STATE_CHANGED";
+            case EVENT_TYPE_NETWORK_STATE -> "EVENT_TYPE_NETWORK_STATE";
+            case EVENT_TYPE_ROAMING_STATE -> "EVENT_TYPE_ROAMING_STATE";
+            case EVENT_TYPE_NETWORK_SIGNAL -> "EVENT_TYPE_NETWORK_SIGNAL";
+            case EVENT_TYPE_BATTERY_LEVEL -> "EVENT_TYPE_BATTERY_LEVEL";
+            case EVENT_TYPE_OPERATOR_NAME -> "EVENT_TYPE_OPERATOR_NAME";
+            case EVENT_TYPE_CALL -> "EVENT_TYPE_CALL";
+            case EVENT_TYPE_CALLSETUP -> "EVENT_TYPE_CALLSETUP";
+            case EVENT_TYPE_CALLHELD -> "EVENT_TYPE_CALLHELD";
+            case EVENT_TYPE_CLIP -> "EVENT_TYPE_CLIP";
+            case EVENT_TYPE_CALL_WAITING -> "EVENT_TYPE_CALL_WAITING";
+            case EVENT_TYPE_CURRENT_CALLS -> "EVENT_TYPE_CURRENT_CALLS";
+            case EVENT_TYPE_VOLUME_CHANGED -> "EVENT_TYPE_VOLUME_CHANGED";
+            case EVENT_TYPE_CMD_RESULT -> "EVENT_TYPE_CMD_RESULT";
+            case EVENT_TYPE_SUBSCRIBER_INFO -> "EVENT_TYPE_SUBSCRIBER_INFO";
+            case EVENT_TYPE_RESP_AND_HOLD -> "EVENT_TYPE_RESP_AND_HOLD";
+            case EVENT_TYPE_RING_INDICATION -> "EVENT_TYPE_RING_INDICATION";
+            case EVENT_TYPE_IN_BAND_RINGTONE -> "EVENT_TYPE_IN_BAND_RINGTONE";
+            default -> "EVENT_TYPE_UNKNOWN:" + type;
+        };
     }
 }

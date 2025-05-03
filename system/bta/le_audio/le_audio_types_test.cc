@@ -880,5 +880,77 @@ TEST(CodecConfigTest, test_tmap_and_gmap_target_latency) {
             types::kTargetLatencyUndefined);
 }
 
+TEST(UtilsTest, test_type_mapping) {
+  com::android::bluetooth::flags::provider_->leaudio_add_opus_hi_res_codec_type(true);
+
+  ASSERT_EQ(utils::translateToBtLeAudioCodecConfigSampleRate(
+                    LeAudioCodecConfiguration::kSampleRate384000),
+            LE_AUDIO_SAMPLE_RATE_INDEX_384000HZ);
+  ASSERT_EQ(utils::translateToBtLeAudioCodecConfigSampleRate(
+                    LeAudioCodecConfiguration::kSampleRate192000),
+            LE_AUDIO_SAMPLE_RATE_INDEX_192000HZ);
+  ASSERT_EQ(utils::translateToBtLeAudioCodecConfigSampleRate(
+                    LeAudioCodecConfiguration::kSampleRate176400),
+            LE_AUDIO_SAMPLE_RATE_INDEX_176400HZ);
+  ASSERT_EQ(utils::translateToBtLeAudioCodecConfigSampleRate(
+                    LeAudioCodecConfiguration::kSampleRate96000),
+            LE_AUDIO_SAMPLE_RATE_INDEX_96000HZ);
+  ASSERT_EQ(utils::translateToBtLeAudioCodecConfigSampleRate(
+                    LeAudioCodecConfiguration::kSampleRate88200),
+            LE_AUDIO_SAMPLE_RATE_INDEX_88200HZ);
+  ASSERT_EQ(utils::translateToBtLeAudioCodecConfigSampleRate(
+                    LeAudioCodecConfiguration::kSampleRate48000),
+            LE_AUDIO_SAMPLE_RATE_INDEX_48000HZ);
+  ASSERT_EQ(utils::translateToBtLeAudioCodecConfigSampleRate(
+                    LeAudioCodecConfiguration::kSampleRate44100),
+            LE_AUDIO_SAMPLE_RATE_INDEX_44100HZ);
+  ASSERT_EQ(utils::translateToBtLeAudioCodecConfigSampleRate(
+                    LeAudioCodecConfiguration::kSampleRate32000),
+            LE_AUDIO_SAMPLE_RATE_INDEX_32000HZ);
+  ASSERT_EQ(utils::translateToBtLeAudioCodecConfigSampleRate(
+                    LeAudioCodecConfiguration::kSampleRate24000),
+            LE_AUDIO_SAMPLE_RATE_INDEX_24000HZ);
+  ASSERT_EQ(utils::translateToBtLeAudioCodecConfigSampleRate(
+                    LeAudioCodecConfiguration::kSampleRate22050),
+            LE_AUDIO_SAMPLE_RATE_INDEX_22050HZ);
+  ASSERT_EQ(utils::translateToBtLeAudioCodecConfigSampleRate(
+                    LeAudioCodecConfiguration::kSampleRate16000),
+            LE_AUDIO_SAMPLE_RATE_INDEX_16000HZ);
+  ASSERT_EQ(utils::translateToBtLeAudioCodecConfigSampleRate(
+                    LeAudioCodecConfiguration::kSampleRate11025),
+            LE_AUDIO_SAMPLE_RATE_INDEX_11025HZ);
+  ASSERT_EQ(utils::translateToBtLeAudioCodecConfigSampleRate(
+                    LeAudioCodecConfiguration::kSampleRate8000),
+            LE_AUDIO_SAMPLE_RATE_INDEX_8000HZ);
+
+  ASSERT_EQ(bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_LC3,
+            utils::translateLeAudioCodecIdToCodecType(types::LeAudioCodecIdLc3));
+  ASSERT_EQ(bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_LC3,
+            utils::translateLeAudioCodecIdToCodecType(types::LeAudioCodecIdLc3, 22050));
+  ASSERT_EQ(bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_LC3,
+            utils::translateLeAudioCodecIdToCodecType(types::LeAudioCodecIdLc3, 96000));
+  ASSERT_EQ(bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS,
+            utils::translateLeAudioCodecIdToCodecType(types::LeAudioCodecIdOpus));
+  ASSERT_EQ(bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS,
+            utils::translateLeAudioCodecIdToCodecType(types::LeAudioCodecIdOpus, 48000));
+  // When using OPUS with frequencies higher than 48kHz in Bluetooth domain, on the Java API layer
+  // it is OPUS Hi-Res
+  ASSERT_EQ(bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES,
+            utils::translateLeAudioCodecIdToCodecType(types::LeAudioCodecIdOpus, 88200));
+  ASSERT_EQ(bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES,
+            utils::translateLeAudioCodecIdToCodecType(types::LeAudioCodecIdOpus, 96000));
+
+  ASSERT_EQ(types::LeAudioCodecIdLc3,
+            utils::translateCodecTypeToLeAudioCodecId(
+                    bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_LC3));
+  ASSERT_EQ(types::LeAudioCodecIdOpus,
+            utils::translateCodecTypeToLeAudioCodecId(
+                    bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS));
+  // When using OPUS Hi-Res codec ID from Java API, it is still just Opus in the Bluetooth domain
+  ASSERT_EQ(types::LeAudioCodecIdOpus,
+            utils::translateCodecTypeToLeAudioCodecId(
+                    bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES));
+}
+
 }  // namespace types
 }  // namespace bluetooth::le_audio

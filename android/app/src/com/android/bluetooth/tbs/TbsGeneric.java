@@ -977,18 +977,13 @@ public class TbsGeneric {
             };
 
     private static String callControlRequestOpcodeStr(int opcode) {
-        switch (opcode) {
-            case TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT:
-                return "ACCEPT";
-            case TbsGatt.CALL_CONTROL_POINT_OPCODE_TERMINATE:
-                return "TERMINATE";
-            case TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_HOLD:
-                return "LOCAL_HOLD";
-            case TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_RETRIEVE:
-                return "LOCAL_RETRIEVE";
-            default:
-                return "UNKNOWN";
-        }
+        return switch (opcode) {
+            case TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT -> "ACCEPT";
+            case TbsGatt.CALL_CONTROL_POINT_OPCODE_TERMINATE -> "TERMINATE";
+            case TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_HOLD -> "LOCAL_HOLD";
+            case TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_RETRIEVE -> "LOCAL_RETRIEVE";
+            default -> "UNKNOWN";
+        };
     }
 
     private static boolean isCcidValid(int ccid) {

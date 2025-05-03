@@ -112,9 +112,7 @@ python_binary_host {
     ],
     embedded_launcher: false,
     libs: [
-        "bumble-pandora",
-        "bumble_services_experimental-python",
-        "pandora-python",
-        "pandora_experimental-python",
+        "bumble-pandora-services",
+        "pandora_interfaces-python",
     ],
 }

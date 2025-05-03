@@ -319,15 +319,14 @@ public final class BluetoothClass implements Parcelable {
             // By the A2DP spec, sinks must indicate the RENDER service.
             // However we found some that do not (Chordette). So lets also
             // match on some other class bits.
-            switch (getDeviceClass()) {
-                case Device.AUDIO_VIDEO_HIFI_AUDIO:
-                case Device.AUDIO_VIDEO_HEADPHONES:
-                case Device.AUDIO_VIDEO_LOUDSPEAKER:
-                case Device.AUDIO_VIDEO_CAR_AUDIO:
-                    return true;
-                default:
-                    return false;
-            }
+            return switch (getDeviceClass()) {
+                case Device.AUDIO_VIDEO_HIFI_AUDIO,
+                                Device.AUDIO_VIDEO_HEADPHONES,
+                                Device.AUDIO_VIDEO_LOUDSPEAKER,
+                                Device.AUDIO_VIDEO_CAR_AUDIO ->
+                        true;
+                default -> false;
+            };
         } else if (profile == PROFILE_A2DP_SINK) {
             if (hasService(Service.CAPTURE)) {
                 return true;
@@ -335,14 +334,13 @@ public final class BluetoothClass implements Parcelable {
             // By the A2DP spec, srcs must indicate the CAPTURE service.
             // However if some device that do not, we try to
             // match on some other class bits.
-            switch (getDeviceClass()) {
-                case Device.AUDIO_VIDEO_HIFI_AUDIO:
-                case Device.AUDIO_VIDEO_SET_TOP_BOX:
-                case Device.AUDIO_VIDEO_VCR:
-                    return true;
-                default:
-                    return false;
-            }
+            return switch (getDeviceClass()) {
+                case Device.AUDIO_VIDEO_HIFI_AUDIO,
+                                Device.AUDIO_VIDEO_SET_TOP_BOX,
+                                Device.AUDIO_VIDEO_VCR ->
+                        true;
+                default -> false;
+            };
         } else if (profile == PROFILE_HEADSET) {
             // The render service class is required by the spec for HFP, so is a
             // pretty good signal
@@ -350,37 +348,35 @@ public final class BluetoothClass implements Parcelable {
                 return true;
             }
             // Just in case they forgot the render service class
-            switch (getDeviceClass()) {
-                case Device.AUDIO_VIDEO_HANDSFREE:
-                case Device.AUDIO_VIDEO_WEARABLE_HEADSET:
-                case Device.AUDIO_VIDEO_CAR_AUDIO:
-                    return true;
-                default:
-                    return false;
-            }
+            return switch (getDeviceClass()) {
+                case Device.AUDIO_VIDEO_HANDSFREE,
+                                Device.AUDIO_VIDEO_WEARABLE_HEADSET,
+                                Device.AUDIO_VIDEO_CAR_AUDIO ->
+                        true;
+                default -> false;
+            };
         } else if (profile == PROFILE_OPP) {
             if (hasService(Service.OBJECT_TRANSFER)) {
                 return true;
             }
 
-            switch (getDeviceClass()) {
-                case Device.COMPUTER_UNCATEGORIZED:
-                case Device.COMPUTER_DESKTOP:
-                case Device.COMPUTER_SERVER:
-                case Device.COMPUTER_LAPTOP:
-                case Device.COMPUTER_HANDHELD_PC_PDA:
-                case Device.COMPUTER_PALM_SIZE_PC_PDA:
-                case Device.COMPUTER_WEARABLE:
-                case Device.PHONE_UNCATEGORIZED:
-                case Device.PHONE_CELLULAR:
-                case Device.PHONE_CORDLESS:
-                case Device.PHONE_SMART:
-                case Device.PHONE_MODEM_OR_GATEWAY:
-                case Device.PHONE_ISDN:
-                    return true;
-                default:
-                    return false;
-            }
+            return switch (getDeviceClass()) {
+                case Device.COMPUTER_UNCATEGORIZED,
+                                Device.COMPUTER_DESKTOP,
+                                Device.COMPUTER_SERVER,
+                                Device.COMPUTER_LAPTOP,
+                                Device.COMPUTER_HANDHELD_PC_PDA,
+                                Device.COMPUTER_PALM_SIZE_PC_PDA,
+                                Device.COMPUTER_WEARABLE,
+                                Device.PHONE_UNCATEGORIZED,
+                                Device.PHONE_CELLULAR,
+                                Device.PHONE_CORDLESS,
+                                Device.PHONE_SMART,
+                                Device.PHONE_MODEM_OR_GATEWAY,
+                                Device.PHONE_ISDN ->
+                        true;
+                default -> false;
+            };
         } else if (profile == PROFILE_HID) {
             return getMajorDeviceClass() == Device.Major.PERIPHERAL;
         } else if (profile == PROFILE_PANU || profile == PROFILE_NAP) {

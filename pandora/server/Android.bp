@@ -17,16 +17,16 @@ package {
 }
 
 python_library_host {
-    name: "bumble_services_experimental-python",
+    name: "bumble-pandora-services",
     srcs: [
-        "bumble_experimental/*.py",
+        "pandora_services/*.py",
     ],
     libs: [
         "bumble",
         "libprotobuf-python",
-        "pandora_experimental-python",
+        "pandora_interfaces-python",
     ],
     data: [
-        "bumble_experimental/py.typed",
+        "pandora_services/py.typed",
     ],
 }

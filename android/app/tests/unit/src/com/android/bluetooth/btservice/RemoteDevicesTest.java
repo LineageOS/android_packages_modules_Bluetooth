@@ -65,7 +65,7 @@ public class RemoteDevicesTest {
     @Mock private AdapterService mAdapterService;
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothManager mBluetoothManager =
             mTargetContext.getSystemService(BluetoothManager.class);
     private final BluetoothDevice mDevice = getTestDevice(43);
@@ -651,7 +651,7 @@ public class RemoteDevicesTest {
 
         // Verify that the HFP indicator is disabled
         assertThat(mRemoteDevices.getDeviceProperties(mDevice).isHfpBatteryIndicatorEnabled())
-                .isEqualTo(false);
+                .isFalse();
 
         // Set HF indicator
         mRemoteDevices.onHfIndicatorStatus(
@@ -659,7 +659,7 @@ public class RemoteDevicesTest {
 
         // Verify that the HFP indicator is enabled
         assertThat(mRemoteDevices.getDeviceProperties(mDevice).isHfpBatteryIndicatorEnabled())
-                .isEqualTo(true);
+                .isTrue();
 
         // Try to set battery level with vendor specific event
         mRemoteDevices.onVendorSpecificHeadsetEvent(
@@ -705,7 +705,7 @@ public class RemoteDevicesTest {
 
         // Verify that the HFP indicator is enabled
         assertThat(mRemoteDevices.getDeviceProperties(mDevice).isHfpBatteryIndicatorEnabled())
-                .isEqualTo(true);
+                .isTrue();
 
         // Set HF indicator to false
         mRemoteDevices.onHfIndicatorStatus(
@@ -713,7 +713,7 @@ public class RemoteDevicesTest {
 
         // Verify that the HFP indicator is disabled
         assertThat(mRemoteDevices.getDeviceProperties(mDevice).isHfpBatteryIndicatorEnabled())
-                .isEqualTo(false);
+                .isFalse();
 
         // Try to set battery level with vendor specific event
         mRemoteDevices.onVendorSpecificHeadsetEvent(

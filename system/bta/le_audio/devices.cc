@@ -755,6 +755,37 @@ BidirectionalPair<struct ase*> LeAudioDevice::GetAsesByCisId(uint8_t cis_id) {
   return ases;
 }
 
+uint8_t LeAudioDevice::GetActiveEnabledDirections(void) {
+  uint8_t enabled_directions = 0;
+  for (const auto ase : ases_) {
+    if (!ase.active) {
+      continue;
+    }
+    if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING ||
+        ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+      enabled_directions |= ase.direction;
+    }
+  }
+  log::debug("{}, enabled_directions: {}", address_, enabled_directions);
+  return enabled_directions;
+}
+
+uint8_t LeAudioDevice::GetActiveQoSConfiguredDirections(void) {
+  uint8_t qos_configured_directions = 0;
+  for (const auto ase : ases_) {
+    if (!ase.active) {
+      continue;
+    }
+    if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED ||
+        (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING &&
+         ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING)) {
+      qos_configured_directions |= ase.direction;
+    }
+  }
+  log::debug("{}, qos_configured_directions: {}", address_, qos_configured_directions);
+  return qos_configured_directions;
+}
+
 bool LeAudioDevice::HaveActiveAse(void) {
   auto iter = std::find_if(ases_.begin(), ases_.end(), [](const auto& ase) { return ase.active; });
 
@@ -808,6 +839,36 @@ bool LeAudioDevice::HaveAnyUnconfiguredAses(void) {
   return iter != ases_.end();
 }
 
+bool LeAudioDevice::HasAllRequiredStreamingAses(void) {
+  /* Note, this function should be called after ENABLE CMD. */
+  log::verbose("{}", address_);
+  bool has_streaming_ases = false;
+  for (const auto& ase : ases_) {
+    log::verbose("ASE id: {}, active: {}, expected_state: {}, state: {}", ase.id, ase.active,
+                 bluetooth::common::ToString(ase.expected_state),
+                 bluetooth::common::ToString(ase.state));
+    if (!ase.active) {
+      continue;
+    }
+
+    if (ase.expected_state != ase.state) {
+      /* Still some ase in transition */
+      return false;
+    }
+
+    /* QoS config does not count as given direction might not be enabled */
+    if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING) {
+      return false;
+    }
+
+    if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+      has_streaming_ases = true;
+    }
+  }
+
+  return has_streaming_ases;
+}
+
 bool LeAudioDevice::HaveAllActiveAsesSameState(AseState state) {
   log::verbose("{}", address_);
   auto iter = std::find_if(ases_.begin(), ases_.end(), [&state](const auto& ase) {
@@ -832,26 +893,67 @@ bool LeAudioDevice::HaveAllActiveAsesSameDataPathState(types::DataPathState stat
 
 bool LeAudioDevice::IsReadyToCreateStream(void) {
   log::verbose("{}", address_);
-  auto iter = std::find_if(ases_.begin(), ases_.end(), [](const auto& ase) {
-    if (!ase.active) {
+  bool is_any_active = false;
+  bool is_any_direction_started = false;
+
+  auto iter = std::find_if(
+          ases_.begin(), ases_.end(),
+          [&is_any_active, &is_any_direction_started, this](const auto& ase) {
+            if (!ase.active) {
+              return false;
+            }
+
+            is_any_active = true;
+
+            log::verbose("{}, ase_id: {}, state: {}, expected_state: {},  direction: {}", address_,
+                         ase.id, common::ToString(ase.state), common::ToString(ase.expected_state),
+                         ase.direction);
+
+            /* We are searching here any active ASE which is not moved to STREAMING or ENABLING
+             * state */
+            if (ase.direction == types::kLeAudioDirectionSink &&
+                (ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING &&
+                 ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING)) {
+              if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+                if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED &&
+                    ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
+                  return false;
+                } else {
+                  return true;
+                }
+              } else {
+                return true;
+              }
+            }
+
+            if (ase.direction == types::kLeAudioDirectionSource &&
+                ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING) {
+              if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+                if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED &&
+                    ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
+                  return false;
+                } else {
+                  return true;
+                }
+              } else {
+                return true;
+              }
+            }
+
+            is_any_direction_started = true;
+            return false;
+          });
+
+  if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+    /* This is actually just for testing code, but still valid check. If it turns out that
+     * device has all directions in QoS state, it could be reported as Ready To Stream which is not
+     * true. At least one direction need to be enabled per device.
+     */
+    if (is_any_active && !is_any_direction_started) {
+      log::debug("{}, has active ASEs but has no enabled direction yet.", address_);
       return false;
     }
-
-    log::verbose("ASE id: {}, state: {}, direction: {}", ase.id,
-                 bluetooth::common::ToString(ase.state), ase.direction);
-    if (ase.direction == types::kLeAudioDirectionSink &&
-        (ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING &&
-         ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING)) {
-      return true;
-    }
-
-    if (ase.direction == types::kLeAudioDirectionSource &&
-        ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING) {
-      return true;
-    }
-
-    return false;
-  });
+  }
 
   return iter == ases_.end();
 }
@@ -1047,7 +1149,7 @@ void LeAudioDevice::DumpPacsDebugState(std::stringstream& stream,
 }
 
 void LeAudioDevice::DumpPacsDebugState(std::stringstream& stream) {
-  stream << "      ● Device PACS, address: " << address_.ToRedactedStringForLogging() << "\n";
+  stream << "      ● PACS [" << address_.ToRedactedStringForLogging() << "]:\n";
   stream << "\t  == Sink PACs:\n";
   DumpPacsDebugState(stream, snk_pacs_);
   stream << "\t  == Source PACs:\n";
@@ -1078,37 +1180,39 @@ void LeAudioDevice::Dump(std::stringstream& stream) {
                                      ? locationToString(audio_locations_.source->value.to_ulong())
                                      : "None";
 
-  stream << "      ● Device address: " << address_.ToRedactedStringForLogging() << ", "
-         << connection_state_
+  stream << "      ● Device [" << address_.ToRedactedStringForLogging()
+         << "]: " << connection_state_ << ", " << (encrypted_ ? "Encrypted" : "Unecrypted")
          << ", conn_id: " << (conn_id_ == GATT_INVALID_CONN_ID ? "-1" : std::to_string(conn_id_))
-         << ", acl_handle: " << std::to_string(acl_handle) << ", snk_location: " << snk_location
-         << ", src_location: " << src_location << ", mtu: " << std::to_string(mtu_) << ", "
-         << (encrypted_ ? "Encrypted" : "Unecrypted")
-         << "\n\t  Sink avail. contexts: " << common::ToString(avail_contexts_.sink)
-         << "\n\t  Source avail. contexts: " << common::ToString(avail_contexts_.source) << "\n";
+         << ", acl_handle: " << std::to_string(acl_handle) << ", mtu: " << std::to_string(mtu_)
+         << "\n\t  Audio Locations: Sink= " << snk_location << ", Source= " << src_location
+         << "\n\t  Snk supp.  contexts: " << common::ToString(supp_contexts_.sink)
+         << "\n\t  Snk avail. contexts: " << common::ToString(avail_contexts_.sink)
+         << "\n\t  Src supp.  contexts: " << common::ToString(supp_contexts_.source)
+         << "\n\t  Src avail. contexts: " << common::ToString(avail_contexts_.source) << "\n";
 
   if (gmap_client_ != nullptr) {
     stream << "\t  ";
     gmap_client_->DebugDump(stream);
   } else {
     stream << "\t  ";
-    stream << "GmapClient not initialized\n";
+    stream << "GmapClient: Not initialized\n";
   }
 
   if (ases_.size() > 0) {
     stream << "\t  == ASEs (" << static_cast<int>(ases_.size()) << "):\n";
-    stream << "\t    id  active dir     cis_id  cis_handle  sdu  latency rtn  "
-              "cis_state            data_path_state\n";
+    stream << "\t    id | active | dir   | cis id / handle | sdu | latency | rtn | state           "
+              "       | cis_state             | data_path_state\n";
     for (auto& ase : ases_) {
-      stream << std::setfill('\x20') << "\t    " << std::left << std::setw(4)
-             << static_cast<int>(ase.id) << std::left << std::setw(7)
+      stream << std::setfill('\x20') << "\t    " << std::left << std::setw(5)
+             << static_cast<int>(ase.id) << std::left << std::setw(9)
              << (ase.active ? "true" : "false") << std::left << std::setw(8)
              << (ase.direction == types::kLeAudioDirectionSink ? "sink" : "source") << std::left
-             << std::setw(8) << static_cast<int>(ase.cis_id) << std::left << std::setw(12)
-             << ase.cis_conn_hdl << std::left << std::setw(5) << ase.qos_config.max_sdu_size
-             << std::left << std::setw(8) << ase.qos_config.max_transport_latency << std::left
-             << std::setw(5) << static_cast<int>(ase.qos_config.retrans_nb) << std::left
-             << std::setw(21) << bluetooth::common::ToString(ase.cis_state) << std::setw(19)
+             << std::setw(4) << static_cast<int>(ase.cis_id) << std::left << "/ " << std::setw(12)
+             << ase.cis_conn_hdl << std::left << std::setw(6) << ase.qos_config.max_sdu_size
+             << std::left << std::setw(10) << ase.qos_config.max_transport_latency << std::left
+             << std::setw(6) << static_cast<int>(ase.qos_config.retrans_nb) << std::left
+             << std::setw(25) << bluetooth::common::ToString(ase.state) << std::setw(24)
+             << bluetooth::common::ToString(ase.cis_state) << std::setw(19)
              << bluetooth::common::ToString(ase.data_path_state) << "\n";
     }
   }

@@ -43,6 +43,7 @@ cc_library_static {
         "libbluetooth_crypto_toolbox",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libcom.android.sysprop.bluetooth.wrapped",
     ],
 }
 

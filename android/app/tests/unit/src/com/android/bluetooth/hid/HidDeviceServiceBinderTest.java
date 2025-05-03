@@ -49,9 +49,9 @@ public class HidDeviceServiceBinderTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private HidDeviceService mService;
 
-    private final AttributionSource mAttributionSource = new AttributionSource.Builder(1).build();
     private final BluetoothDevice mDevice = getTestDevice(29);
 
     private HidDeviceServiceBinder mBinder;

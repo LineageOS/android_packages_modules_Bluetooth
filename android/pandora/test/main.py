@@ -15,13 +15,14 @@ from typing import List, Tuple, Union, Literal
 _BUMBLE_BTSNOOP_FMT = 'bumble_btsnoop_{pid}_{instance}.log'
 
 # Import test cases modules.
+import avatar
 import a2dp_test
 import aics_test
 import asha_test
-import avatar.cases.host_test
-import avatar.cases.le_host_test
-import avatar.cases.le_security_test
-import avatar.cases.security_test
+import host_test
+import le_host_test
+import le_security_test
+import security_test
 import gatt_test
 import hap_test
 import hfpclient_test
@@ -32,7 +33,7 @@ from pairing import _test_class_list as _pairing_test_class_list
 from pandora.host_pb2 import PrimaryPhy, PRIMARY_1M, PRIMARY_CODED
 
 
-class LeHostTestFiltered(avatar.cases.le_host_test.LeHostTest):
+class LeHostTestFiltered(le_host_test.LeHostTest):
     """
     LeHostTestFiltered inherits from LeHostTest to skip currently broken and unfeasible to fix tests.
     Overridden tests will be visible as PASS when run.
@@ -66,15 +67,15 @@ class LeHostTestFiltered(avatar.cases.le_host_test.LeHostTest):
         current_test = f"test_extended_scan('{connectable_scannable}','{directed}',{data_len},{primary_phy})"
         logging.info(f"current test: {current_test}")
         if current_test not in self.skipped_tests:
-            assert current_test in avatar.cases.le_host_test.LeHostTest.__dict__
-            avatar.cases.le_host_test.LeHostTest.__dict__[current_test](self)
+            assert current_test in le_host_test.LeHostTest.__dict__
+            le_host_test.LeHostTest.__dict__[current_test](self)
 
 
 _TEST_CLASSES_LIST = [
-    avatar.cases.host_test.HostTest,
+    host_test.HostTest,
     LeHostTestFiltered,
-    avatar.cases.security_test.SecurityTest,
-    avatar.cases.le_security_test.LeSecurityTest,
+    security_test.SecurityTest,
+    le_security_test.LeSecurityTest,
     a2dp_test.A2dpTest,
     aics_test.AicsTest,
     sdp_test.SdpTest,

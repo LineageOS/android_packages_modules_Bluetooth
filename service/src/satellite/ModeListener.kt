@@ -58,7 +58,7 @@ public fun initialize(looper: Looper, resolver: ContentResolver, callback: (m: B
                 }
                 Log.i(TAG, "Trigger callback with state: $isOn")
                 callback(isOn)
-            }
+            },
         )
     Log.i(TAG, "Initialized successfully with state: $isOn")
 }

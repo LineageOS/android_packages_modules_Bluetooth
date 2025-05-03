@@ -77,7 +77,7 @@ public class MapClientServiceTest {
 
     private final BluetoothAdapter mAdapter =
             InstrumentationRegistry.getInstrumentation()
-                    .getTargetContext()
+                    .getContext()
                     .getSystemService(BluetoothManager.class)
                     .getAdapter();
     private final BluetoothDevice mRemoteDevice = getTestDevice(0);

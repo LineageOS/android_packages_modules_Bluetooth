@@ -94,7 +94,7 @@ public class SapServerTest {
 
     @Spy
     private Context mTargetContext =
-            new ContextWrapper(InstrumentationRegistry.getInstrumentation().getTargetContext());
+            new ContextWrapper(InstrumentationRegistry.getInstrumentation().getContext());
 
     @Spy private TestHandlerCallback mCallback = new TestHandlerCallback();
 
@@ -108,7 +108,6 @@ public class SapServerTest {
 
     @Before
     public void setUp() throws Exception {
-
         mHandlerThread = new HandlerThread("SapServerTest");
         mHandlerThread.start();
 

@@ -164,7 +164,7 @@ public class A2dpService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup A2dp Service");
+        Log.i(TAG, "cleanup()");
 
         if (sA2dpService == null) {
             Log.w(TAG, "cleanup() called before initialization");
@@ -344,15 +344,6 @@ public class A2dpService extends ProfileService {
         }
         // Check connectionPolicy and accept or reject the connection.
         int connectionPolicy = getConnectionPolicy(device);
-        if (!Flags.donotValidateBondStateFromProfiles()) {
-            int bondState = mAdapterService.getBondState(device);
-            // Allow this connection only if the device is bonded. Any attempt to connect while
-            // bonding would potentially lead to an unauthorized connection.
-            if (bondState != BluetoothDevice.BOND_BONDED) {
-                Log.w(TAG, "okToConnect: return false, bondState=" + bondState);
-                return false;
-            }
-        }
         if (connectionPolicy != CONNECTION_POLICY_UNKNOWN
                 && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
             if (!isOutgoingRequest) {

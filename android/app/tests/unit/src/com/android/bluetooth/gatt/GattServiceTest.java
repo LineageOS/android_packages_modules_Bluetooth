@@ -40,7 +40,6 @@ import android.app.ActivityManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.IBluetoothGattCallback;
 import android.bluetooth.IBluetoothGattServerCallback;
@@ -49,6 +48,7 @@ import android.content.AttributionSource;
 import android.content.Context;
 import android.content.res.Resources;
 import android.location.LocationManager;
+import android.os.Binder;
 import android.os.Bundle;
 import android.os.Process;
 import android.provider.Settings;
@@ -88,6 +88,7 @@ import java.util.UUID;
 public class GattServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private IBluetoothGattCallback mGattCallback;
     @Mock private ContextMap<IBluetoothGattCallback> mClientMap;
     @Mock private IBluetoothGattServerCallback mGattServerCallback;
@@ -108,15 +109,8 @@ public class GattServiceTest {
     private static final int SERVER_CONN_ID = 84;
     private static final int CLIENT_CONN_ID = 42;
 
-    private final BluetoothAdapter mAdapter =
-            InstrumentationRegistry.getInstrumentation()
-                    .getTargetContext()
-                    .getSystemService(BluetoothManager.class)
-                    .getAdapter();
     private final BluetoothDevice mDevice = getTestDevice(109);
-    private final AttributionSource mAttributionSource = mAdapter.getAttributionSource();
-    private final Context mContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
     private final CompanionDeviceManager mCompanionDeviceManager =
             mContext.getSystemService(CompanionDeviceManager.class);
 
@@ -140,6 +134,9 @@ public class GattServiceTest {
         GattObjectsFactory.setInstanceForTesting(mGattObjectsFactory);
         ScanObjectsFactory.setInstanceForTesting(mScanObjectsFactory);
 
+        doReturn(mContext.getPackageName()).when(mAttributionSource).getPackageName();
+        doReturn(mContext.getPackageName()).when(mAttributionSource).getAttributionTag();
+        doReturn(Binder.getCallingUid()).when(mAttributionSource).getUid();
         doReturn(SERVER_CONN_ID).when(mServerMap).connIdByDevice(SERVER_IF, mDevice);
         doReturn(CLIENT_CONN_ID).when(mClientMap).connIdByDevice(CLIENT_IF, mDevice);
         ContextMap<IBluetoothGattCallback>.App clientApp = mock(ContextMap.App.class);
@@ -461,7 +458,7 @@ public class GattServiceTest {
                 .gattClientRegisterApp(
                         uuid.getLeastSignificantBits(),
                         uuid.getMostSignificantBits(),
-                        mAttributionSource.getPackageName(),
+                        mContext.getPackageName(),
                         eattSupport);
     }
 

@@ -12,6 +12,16 @@ flag {
 }
 
 flag {
+    name: "ble_death_recipient_thread"
+    namespace: "bluetooth"
+    description: "Fix a race between death recipient and ble count"
+    bug: "414678172"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "factory_reset_from_the_system_server"
     namespace: "bluetooth"
     description: "make possible to factoryReset the Bluetooth when it is off"

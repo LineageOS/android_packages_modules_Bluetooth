@@ -19,6 +19,8 @@ use android_hardware_bluetooth::aidl::android::hardware::bluetooth::IBluetoothHc
 use android_hardware_bluetooth::aidl::android::hardware::bluetooth::Status::Status;
 use binder::{DeathRecipient, ExceptionCode, IBinder, Interface, Result as BinderResult, Strong};
 use bluetooth_offload_hci::{Module, ModuleBuilder};
+use core::ffi::CStr;
+use std::io::Write;
 use std::sync::{Arc, RwLock};
 
 /// Service Implementation of AIDL interface `hardware/interface/bluetoot/aidl`,
@@ -46,12 +48,20 @@ enum State {
     Opened { proxy: Arc<dyn Module>, _death_recipient: DeathRecipient },
 }
 
-impl<T: HciHal + 'static> Interface for HciProxy<T> {}
-
 impl<T: HciHal> HciProxy<T> {
     /// Create the HAL Proxy interface binded to the Bluetooth HCI HAL interface.
     pub fn new(modules: Vec<Box<dyn ModuleBuilder>>, hal: T) -> Self {
         Self { modules, ffi: Arc::new(hal), state: Arc::new(RwLock::new(State::Closed)) }
+    }
+}
+
+impl<T: HciHal + 'static> Interface for HciProxy<T> {
+    fn dump(&self, writer: &mut dyn Write, args: &[&CStr]) -> Result<(), binder::StatusCode> {
+        // SAFETY: The writer, coming from binder, is backed by a concrete File type.
+        unsafe {
+            self.ffi.dump(writer, args);
+        }
+        Ok(())
     }
 }
 

@@ -168,7 +168,7 @@ public class AvrcpControllerService extends ProfileService {
 
     @Override
     public synchronized void cleanup() {
-        Log.i(TAG, "Cleanup AVRCP Controller Service");
+        Log.i(TAG, "cleanup()");
 
         setActiveDevice(null);
         Intent stopIntent = new Intent(this, BluetoothMediaBrowserService.class);

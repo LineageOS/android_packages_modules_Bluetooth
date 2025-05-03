@@ -24,7 +24,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 import android.annotation.IntRange;
-import android.annotation.NonNull;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -39,6 +38,7 @@ import android.os.MessageQueue;
 import android.service.media.MediaBrowserService;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.uiautomator.UiDevice;
 
@@ -59,7 +59,7 @@ import java.util.stream.IntStream;
 
 /** A set of methods useful in Bluetooth instrumentation tests */
 public class TestUtils {
-    private static final String TAG = Utils.TAG_PREFIX_BLUETOOTH + TestUtils.class.getSimpleName();
+    private static final String TAG = "BluetoothTestUtils";
 
     private static String sSystemScreenOffTimeout = "10000";
 
@@ -114,21 +114,40 @@ public class TestUtils {
     }
 
     /**
-     * Create a test device.
+     * Create a mock BluetoothDevice.
      *
      * @param id the test device ID. It must be an integer in the interval [0, 0xFF].
      * @return {@link BluetoothDevice} test device for the device ID
      */
     public static BluetoothDevice getTestDevice(@IntRange(from = 0x00, to = 0xFF) int id) {
         assertThat(id).isAtMost(0xFF);
-        BluetoothDevice testDevice =
-                InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
-                        .getSystemService(BluetoothManager.class)
-                        .getAdapter()
-                        .getRemoteDevice(String.format("00:01:02:03:04:%02X", id));
-        assertThat(testDevice).isNotNull();
-        return testDevice;
+        final String address = String.format("00:01:02:03:04:%02X", id);
+        return getTestDevice(address);
+    }
+
+    /**
+     * Create a mock BluetoothDevice.
+     *
+     * @param address the test device address string.
+     * @return {@link BluetoothDevice} test device for the device address.
+     */
+    public static BluetoothDevice getTestDevice(@NonNull String address) {
+        BluetoothDevice mockDevice = mock(BluetoothDevice.class);
+        doReturn(address).when(mockDevice).getAddress();
+        doReturn(address).when(mockDevice).toString();
+        return mockDevice;
+    }
+
+    /**
+     * Create a test device.
+     *
+     * @param id the test device ID. It must be an integer in the interval [0, 0xFF].
+     * @return {@link BluetoothDevice} test device for the device ID
+     */
+    public static BluetoothDevice getRealDevice(@IntRange(from = 0x00, to = 0xFF) int id) {
+        assertThat(id).isAtMost(0xFF);
+        final String address = String.format("00:01:02:03:04:%02X", id);
+        return getRealDevice(address);
     }
 
     /**
@@ -137,11 +156,11 @@ public class TestUtils {
      * @param address the test device address string.
      * @return {@link BluetoothDevice} test device for the device address.
      */
-    public static BluetoothDevice getTestDevice(@NonNull String address) {
+    public static BluetoothDevice getRealDevice(@NonNull String address) {
         assertThat(BluetoothAdapter.checkBluetoothAddress(address)).isTrue();
         BluetoothDevice testDevice =
                 InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
+                        .getContext()
                         .getSystemService(BluetoothManager.class)
                         .getAdapter()
                         .getRemoteDevice(address);
@@ -158,7 +177,6 @@ public class TestUtils {
             return null;
         }
     }
-
 
     /**
      * Wait for looper to finish its current task and all tasks schedule before this
@@ -268,7 +286,7 @@ public class TestUtils {
     public static Intent prepareIntentToStartBluetoothBrowserMediaService() {
         final Intent intent =
                 new Intent(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext(),
+                        InstrumentationRegistry.getInstrumentation().getContext(),
                         BluetoothMediaBrowserService.class);
         intent.setAction(MediaBrowserService.SERVICE_INTERFACE);
         return intent;

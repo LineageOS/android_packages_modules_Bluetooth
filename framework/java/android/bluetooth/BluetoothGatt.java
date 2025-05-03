@@ -919,13 +919,13 @@ public final class BluetoothGatt implements BluetoothProfile {
             int transport,
             boolean opportunistic,
             int phy,
-            AttributionSource attributionSource) {
+            AttributionSource source) {
         mService = iGatt;
         mDevice = device;
         mTransport = transport;
         mPhy = phy;
         mOpportunistic = opportunistic;
-        mAttributionSource = attributionSource;
+        mAttributionSource = source;
         mServices = new CopyOnWriteArrayList<>();
 
         mConnState = CONN_STATE_IDLE;

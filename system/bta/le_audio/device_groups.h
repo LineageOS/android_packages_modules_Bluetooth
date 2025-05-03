@@ -164,6 +164,8 @@ public:
   LeAudioDevice* GetFirstDevice(void) const;
   LeAudioDevice* GetFirstDeviceWithAvailableContext(types::LeAudioContextType context_type) const;
   types::LeAudioConfigurationStrategy GetGroupSinkStrategy(void) const;
+  types::LeAudioConfigurationStrategy FindGroupStrategyForConfig(
+          const types::AudioSetConfiguration* audio_set_conf) const;
   inline void InvalidateGroupStrategy(void) { strategy_ = std::nullopt; }
   int GetAseCount(uint8_t direction) const;
   LeAudioDevice* GetNextDevice(LeAudioDevice* leAudioDevice) const;
@@ -178,6 +180,9 @@ public:
           types::DataPathState data_path_state) const;
   int GetNumOfActiveDevices(void) const;
   bool IsDeviceInTheGroup(LeAudioDevice* leAudioDevice) const;
+  uint8_t GetActiveEnabledDirections(void);
+  uint8_t GetActiveQoSConfiguredDirections(void);
+  bool HasAllRequiredStreamingAses(void) const;
   bool HaveAllActiveDevicesAsesTheSameState(types::AseState state) const;
   bool HaveAnyActiveDeviceInStreamingState() const;
   bool HaveAnyActiveDeviceInUnconfiguredState() const;
@@ -213,11 +218,17 @@ public:
   CodecManager::UnicastConfigurationRequirements GetAudioSetConfigurationRequirements(
           types::LeAudioContextType ctx_type) const;
   types::BidirectionalPair<bool> GetDirectionSupport(types::LeAudioContextType ctx_type) const;
+  types::BidirectionalPair<bool> GetConfiguredDirections(void);
   bool SetPreferredAudioSetConfiguration(
           const bluetooth::le_audio::btle_audio_codec_config_t& input_codec_config,
           const bluetooth::le_audio::btle_audio_codec_config_t& output_codec_config) const;
   bool IsUsingPreferredAudioSetConfiguration(const types::LeAudioContextType& context_type) const;
   void ResetPreferredAudioSetConfiguration(void) const;
+  const types::BidirectionalPair<
+          std::unique_ptr<const bluetooth::le_audio::btle_audio_codec_config_t>>&
+  GetPreferredAudioSetConfiguration(void) const {
+    return preferred_config_;
+  }
   bool ReloadAudioLocations(void);
   bool ReloadAudioDirections(void);
   types::AudioContexts GetAllSupportedBidirectionalContextTypes(void) const;
@@ -290,10 +301,13 @@ public:
   }
 
   inline void SetConfigurationContextType(types::LeAudioContextType context_type) {
+    log::debug("group_id: {}, {} -> {}", group_id_, common::ToString(configuration_context_type_),
+               common::ToString(context_type));
     configuration_context_type_ = context_type;
   }
 
   inline types::LeAudioContextType GetConfigurationContextType(void) const {
+    log::debug("group_id: {}, {}", group_id_, common::ToString(configuration_context_type_));
     return configuration_context_type_;
   }
 

@@ -21,7 +21,7 @@ import threading
 from mmi2grpc._helpers import assert_description
 from mmi2grpc._proxy import ProfileProxy
 from pandora.host_grpc import Host
-from pandora_experimental.rfcomm_grpc import RFCOMM
+from pandora.rfcomm_grpc import RFCOMM
 
 
 class RFCOMMProxy(ProfileProxy):

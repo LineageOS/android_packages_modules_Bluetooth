@@ -33,7 +33,9 @@
 #include "module.h"
 #include "os/handler.h"
 #include "os/system_properties.h"
+#include "stack/include/btm_sec_api.h"
 #include "storage/storage_module.h"
+#include "types/ble_address_with_type.h"
 
 namespace bluetooth {
 namespace hci {
@@ -705,14 +707,18 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
   }
 
   bool is_bonded(Address target_address) {
-    for (auto device : storage_module_->GetBondedDevices()) {
-      if (device.GetAddress() == target_address) {
-        log::debug("Addresses match!");
-        return true;
+    if (com::android::bluetooth::flags::irk_scan_bond_check_update()) {
+      return BTM_IsBonded(RawAddress(target_address.address), BT_TRANSPORT_LE);
+    } else {
+      for (auto device : storage_module_->GetBondedDevices()) {
+        if (device.GetAddress() == target_address) {
+          log::debug("Addresses match!");
+          return true;
+        }
       }
+      log::debug("Addresses don't match!");
+      return false;
     }
-    log::debug("Addresse DON'Ts match!");
-    return false;
   }
 
   void scan_filter_parameter_setup(ApcfAction action, uint8_t filter_index,
@@ -755,7 +761,6 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
           }
           remove_me_later_map_.erase(filter_index);
         }
-
         break;
       case ApcfAction::CLEAR:
         le_scanning_interface_->EnqueueCommand(
@@ -772,7 +777,6 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
           }
           remove_me_later_map_.erase(filter_index);
         }
-
         break;
       default:
         log::error("Unknown action type: {}", (uint16_t)action);

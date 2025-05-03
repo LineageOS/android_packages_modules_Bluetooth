@@ -18,12 +18,13 @@ package com.android.bluetooth.hap;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import androidx.test.runner.AndroidJUnit4;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 /** Test cases for {@link HapClientStackEvent}. */
-@RunWith(JUnit4.class)
+@RunWith(AndroidJUnit4.class)
 public final class HapClientStackEventTest {
 
     @Test
@@ -44,10 +45,10 @@ public final class HapClientStackEventTest {
 
         event.valueInt1 =
                 1 << HapClientStackEvent.FEATURE_BIT_NUM_TYPE_MONAURAL
-                        | 1 << HapClientStackEvent.FEATURE_BIT_NUM_SYNCHRONIZATED_PRESETS;
+                        | 1 << HapClientStackEvent.FEATURE_BIT_NUM_SYNCHRONIZED_PRESETS;
         eventStr = event.toString();
         assertThat(eventStr).contains("TYPE_MONAURAL");
-        assertThat(eventStr).contains("SYNCHRONIZATED_PRESETS");
+        assertThat(eventStr).contains("SYNCHRONIZED_PRESETS");
 
         event.valueInt1 =
                 1 << HapClientStackEvent.FEATURE_BIT_NUM_TYPE_BANDED

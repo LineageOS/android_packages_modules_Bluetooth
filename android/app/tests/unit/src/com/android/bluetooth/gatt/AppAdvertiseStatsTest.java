@@ -34,7 +34,6 @@ import android.platform.test.flag.junit.SetFlagsRule;
 import android.util.Log;
 
 import androidx.test.filters.SmallTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothStatsLog;
@@ -62,15 +61,12 @@ public class AppAdvertiseStatsTest {
     private CountDownLatch mLatch;
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private MetricsLogger mMetricsLogger;
 
     @Captor ArgumentCaptor<Long> mAdvDurationCaptor;
-
-    private final AttributionSource mAttributionSource =
-            InstrumentationRegistry.getInstrumentation().getTargetContext().getAttributionSource();
 
     @Before
     public void setUp() throws Exception {

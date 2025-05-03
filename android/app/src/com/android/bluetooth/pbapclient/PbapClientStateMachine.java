@@ -999,55 +999,34 @@ class PbapClientStateMachine extends StateMachine {
     }
 
     private static String eventToString(int message) {
-        switch (message) {
-            case -2 /* Special, from StateMachine.java */:
-                return "SM_INIT_CMD";
-            case -1 /* Special, from StateMachine.java */:
-                return "SM_QUIT_CMD";
-            case MSG_CONNECT:
-                return "MSG_CONNECT";
-            case MSG_DISCONNECT:
-                return "MSG_DISCONNECT";
-            case MSG_SDP_COMPLETE:
-                return "MSG_SDP_COMPLETE";
-            case MSG_SDP_FAILED:
-                return "MSG_SDP_FAILED";
-            case MSG_OBEX_CLIENT_CONNECTED:
-                return "MSG_OBEX_CLIENT_CONNECTED";
-            case MSG_OBEX_CLIENT_DISCONNECTED:
-                return "MSG_OBEX_CLIENT_DISCONNECTED";
-            case MSG_STORAGE_READY:
-                return "MSG_STORAGE_READY";
-            case MSG_ACCOUNT_ADDED:
-                return "MSG_ACCOUNT_ADDED";
-            case MSG_ACCOUNT_REMOVED:
-                return "MSG_ACCOUNT_REMOVED";
-            case MSG_DOWNLOAD:
-                return "MSG_DOWNLOAD";
-            case MSG_PHONEBOOK_METADATA_RECEIVED:
-                return "MSG_PHONEBOOK_METADATA_RECEIVED";
-            case MSG_PHONEBOOK_CONTACTS_RECEIVED:
-                return "MSG_PHONEBOOK_CONTACTS_RECEIVED";
-            case MSG_CONNECT_TIMEOUT:
-                return "MSG_CONNECT_TIMEOUT";
-            case MSG_DISCONNECT_TIMEOUT:
-                return "MSG_DISCONNECT_TIMEOUT";
-            default:
-                return "Unknown (" + message + ")";
-        }
+        return switch (message) {
+            case -2 /* Special, from StateMachine.java */ -> "SM_INIT_CMD";
+            case -1 /* Special, from StateMachine.java */ -> "SM_QUIT_CMD";
+            case MSG_CONNECT -> "MSG_CONNECT";
+            case MSG_DISCONNECT -> "MSG_DISCONNECT";
+            case MSG_SDP_COMPLETE -> "MSG_SDP_COMPLETE";
+            case MSG_SDP_FAILED -> "MSG_SDP_FAILED";
+            case MSG_OBEX_CLIENT_CONNECTED -> "MSG_OBEX_CLIENT_CONNECTED";
+            case MSG_OBEX_CLIENT_DISCONNECTED -> "MSG_OBEX_CLIENT_DISCONNECTED";
+            case MSG_STORAGE_READY -> "MSG_STORAGE_READY";
+            case MSG_ACCOUNT_ADDED -> "MSG_ACCOUNT_ADDED";
+            case MSG_ACCOUNT_REMOVED -> "MSG_ACCOUNT_REMOVED";
+            case MSG_DOWNLOAD -> "MSG_DOWNLOAD";
+            case MSG_PHONEBOOK_METADATA_RECEIVED -> "MSG_PHONEBOOK_METADATA_RECEIVED";
+            case MSG_PHONEBOOK_CONTACTS_RECEIVED -> "MSG_PHONEBOOK_CONTACTS_RECEIVED";
+            case MSG_CONNECT_TIMEOUT -> "MSG_CONNECT_TIMEOUT";
+            case MSG_DISCONNECT_TIMEOUT -> "MSG_DISCONNECT_TIMEOUT";
+            default -> "Unknown (" + message + ")";
+        };
     }
 
     private static String sdpCodeToString(int code) {
-        switch (code) {
-            case SDP_SUCCESS:
-                return "SDP_SUCCESS";
-            case SDP_FAILED:
-                return "SDP_FAILED";
-            case SDP_BUSY:
-                return "SDP_BUSY";
-            default:
-                return "Unknown (" + code + ")";
-        }
+        return switch (code) {
+            case SDP_SUCCESS -> "SDP_SUCCESS";
+            case SDP_FAILED -> "SDP_FAILED";
+            case SDP_BUSY -> "SDP_BUSY";
+            default -> "Unknown (" + code + ")";
+        };
     }
 
     private void debug(String message) {

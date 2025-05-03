@@ -80,10 +80,10 @@ public class AvrcpControllerServiceTest {
     @Mock private AvrcpControllerStateMachine mStateMachine2;
     @Mock private AvrcpControllerNativeInterface mNativeInterface;
 
-    private final BluetoothDevice mDevice = getTestDevice(89);
+    private final BluetoothDevice mDevice1 = getTestDevice(89);
     private final BluetoothDevice mDevice2 = getTestDevice(41);
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     private AvrcpControllerService mService = null;
 
@@ -99,7 +99,7 @@ public class AvrcpControllerServiceTest {
         // Set a mock A2dpSinkService for audio focus calls
         A2dpSinkService.setA2dpSinkService(mA2dpSinkService);
 
-        mService.mDeviceStateMap.put(mDevice, mStateMachine);
+        mService.mDeviceStateMap.put(mDevice1, mStateMachine);
         final Intent bluetoothBrowserMediaServiceStartIntent =
                 TestUtils.prepareIntentToStartBluetoothBrowserMediaService();
         mBluetoothBrowserMediaServiceTestRule.startService(bluetoothBrowserMediaServiceStartIntent);
@@ -127,51 +127,51 @@ public class AvrcpControllerServiceTest {
     public void disconnect_whenDisconnected_returnsFalse() {
         when(mStateMachine.getState()).thenReturn(STATE_DISCONNECTED);
 
-        assertThat(mService.disconnect(mDevice)).isFalse();
+        assertThat(mService.disconnect(mDevice1)).isFalse();
     }
 
     @Test
     public void disconnect_whenDisconnected_returnsTrue() {
         when(mStateMachine.getState()).thenReturn(STATE_CONNECTED);
 
-        assertThat(mService.disconnect(mDevice)).isTrue();
+        assertThat(mService.disconnect(mDevice1)).isTrue();
         verify(mStateMachine).disconnect();
     }
 
     @Test
     public void removeStateMachine() {
-        when(mStateMachine.getDevice()).thenReturn(mDevice);
+        when(mStateMachine.getDevice()).thenReturn(mDevice1);
 
         mService.removeStateMachine(mStateMachine);
 
-        assertThat(mService.mDeviceStateMap).doesNotContainKey(mDevice);
+        assertThat(mService.mDeviceStateMap).doesNotContainKey(mDevice1);
     }
 
     @Test
     public void getConnectedDevices() {
-        when(mAdapterService.getBondedDevices()).thenReturn(new BluetoothDevice[] {mDevice});
+        when(mAdapterService.getBondedDevices()).thenReturn(new BluetoothDevice[] {mDevice1});
         when(mStateMachine.getState()).thenReturn(STATE_CONNECTED);
 
-        assertThat(mService.getConnectedDevices()).contains(mDevice);
+        assertThat(mService.getConnectedDevices()).contains(mDevice1);
     }
 
     @Test
     public void setActiveDevice_whenA2dpSinkServiceIsNotInitialized_returnsFalse() {
         A2dpSinkService.setA2dpSinkService(null);
-        assertThat(mService.setActiveDevice(mDevice)).isFalse();
+        assertThat(mService.setActiveDevice(mDevice1)).isFalse();
 
         assertThat(mService.getActiveDevice()).isNull();
     }
 
     @Test
     public void getCurrentMetadataIfNoCoverArt_doesNotCrash() {
-        mService.getCurrentMetadataIfNoCoverArt(mDevice);
+        mService.getCurrentMetadataIfNoCoverArt(mDevice1);
     }
 
     @Test
     public void refreshContents() {
         BrowseTree.BrowseNode node = mock(BrowseTree.BrowseNode.class);
-        when(node.getDevice()).thenReturn(mDevice);
+        when(node.getDevice()).thenReturn(mDevice1);
 
         mService.refreshContents(node);
 
@@ -234,7 +234,7 @@ public class AvrcpControllerServiceTest {
     @Test
     public void getContentsOneDeviceConnected_returnSuccessStatus() {
         String parentMediaId = BrowseTree.ROOT;
-        mService.getBrowseTree().onConnected(mDevice);
+        mService.getBrowseTree().onConnected(mDevice1);
         BrowseResult result = mService.getContents(parentMediaId);
 
         assertThat(result.status()).isEqualTo(BrowseResult.SUCCESS);
@@ -254,7 +254,7 @@ public class AvrcpControllerServiceTest {
         BrowseTree.BrowseNode node = mock(BrowseTree.BrowseNode.class);
         when(mStateMachine.findNode(parentMediaId)).thenReturn(node);
         when(node.isCached()).thenReturn(false);
-        when(node.getDevice()).thenReturn(mDevice);
+        when(node.getDevice()).thenReturn(mDevice1);
         when(node.getID()).thenReturn(parentMediaId);
 
         BrowseResult result = mService.getContents(parentMediaId);
@@ -284,7 +284,7 @@ public class AvrcpControllerServiceTest {
     public void handleChangeFolderRsp() {
         int count = 1;
 
-        mService.handleChangeFolderRsp(mDevice, count);
+        mService.handleChangeFolderRsp(mDevice1, count);
 
         verify(mStateMachine)
                 .sendMessage(AvrcpControllerStateMachine.MESSAGE_PROCESS_FOLDER_PATH, count);
@@ -295,7 +295,7 @@ public class AvrcpControllerServiceTest {
         int items = 3;
         int depth = 5;
 
-        mService.handleSetBrowsedPlayerRsp(mDevice, items, depth);
+        mService.handleSetBrowsedPlayerRsp(mDevice1, items, depth);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -308,7 +308,7 @@ public class AvrcpControllerServiceTest {
     public void handleSetAddressedPlayerRsp() {
         int status = 1;
 
-        mService.handleSetAddressedPlayerRsp(mDevice, status);
+        mService.handleSetAddressedPlayerRsp(mDevice1, status);
 
         verify(mStateMachine)
                 .sendMessage(AvrcpControllerStateMachine.MESSAGE_PROCESS_SET_ADDRESSED_PLAYER);
@@ -318,7 +318,7 @@ public class AvrcpControllerServiceTest {
     public void handleAddressedPlayerChanged() {
         int id = 1;
 
-        mService.handleAddressedPlayerChanged(mDevice, id);
+        mService.handleAddressedPlayerChanged(mDevice1, id);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -327,7 +327,7 @@ public class AvrcpControllerServiceTest {
 
     @Test
     public void handleNowPlayingContentChanged() {
-        mService.handleNowPlayingContentChanged(mDevice);
+        mService.handleNowPlayingContentChanged(mDevice1);
 
         verify(mStateMachine).nowPlayingContentChanged();
     }
@@ -337,7 +337,7 @@ public class AvrcpControllerServiceTest {
         boolean remoteControlConnected = true;
         boolean browsingConnected = true; // Calls connect when any of them is true.
 
-        mService.onConnectionStateChanged(remoteControlConnected, browsingConnected, mDevice);
+        mService.onConnectionStateChanged(remoteControlConnected, browsingConnected, mDevice1);
 
         ArgumentCaptor<StackEvent> captor = ArgumentCaptor.forClass(StackEvent.class);
         verify(mStateMachine).connect(captor.capture());
@@ -353,7 +353,7 @@ public class AvrcpControllerServiceTest {
         boolean remoteControlConnected = false;
         boolean browsingConnected = false; // Calls disconnect when both of them are false.
 
-        mService.onConnectionStateChanged(remoteControlConnected, browsingConnected, mDevice);
+        mService.onConnectionStateChanged(remoteControlConnected, browsingConnected, mDevice1);
         assertThat(BluetoothMediaBrowserService.isActive()).isFalse();
         verify(mStateMachine).disconnect();
     }
@@ -362,7 +362,7 @@ public class AvrcpControllerServiceTest {
     public void getRcPsm() {
         int psm = 1;
 
-        mService.getRcPsm(mDevice, psm);
+        mService.getRcPsm(mDevice1, psm);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -373,7 +373,7 @@ public class AvrcpControllerServiceTest {
     public void handleRegisterNotificationAbsVol() {
         byte label = 1;
 
-        mService.handleRegisterNotificationAbsVol(mDevice, label);
+        mService.handleRegisterNotificationAbsVol(mDevice1, label);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -386,7 +386,7 @@ public class AvrcpControllerServiceTest {
         byte absVol = 15;
         byte label = 1;
 
-        mService.handleSetAbsVolume(mDevice, absVol, label);
+        mService.handleSetAbsVolume(mDevice1, absVol, label);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -399,7 +399,7 @@ public class AvrcpControllerServiceTest {
         int[] attrs = new int[0];
         String[] attrVals = new String[0];
 
-        mService.onTrackChanged(mDevice, numAttrs, attrs, attrVals);
+        mService.onTrackChanged(mDevice1, numAttrs, attrs, attrVals);
 
         ArgumentCaptor<AvrcpItem> captor = ArgumentCaptor.forClass(AvrcpItem.class);
         verify(mStateMachine)
@@ -407,7 +407,7 @@ public class AvrcpControllerServiceTest {
                         eq(AvrcpControllerStateMachine.MESSAGE_PROCESS_TRACK_CHANGED),
                         captor.capture());
         AvrcpItem item = captor.getValue();
-        assertThat(item.getDevice()).isEqualTo(mDevice);
+        assertThat(item.getDevice()).isEqualTo(mDevice1);
         assertThat(item.getItemType()).isEqualTo(AvrcpItem.TYPE_MEDIA);
         assertThat(item.getUuid()).isNotNull(); // Random uuid
     }
@@ -417,7 +417,7 @@ public class AvrcpControllerServiceTest {
         int songLen = 100;
         int currSongPos = 33;
 
-        mService.onPlayPositionChanged(mDevice, songLen, currSongPos);
+        mService.onPlayPositionChanged(mDevice1, songLen, currSongPos);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -430,7 +430,7 @@ public class AvrcpControllerServiceTest {
     public void onPlayStatusChanged() {
         byte status = PlaybackStateCompat.STATE_REWINDING;
 
-        mService.onPlayStatusChanged(mDevice, status);
+        mService.onPlayStatusChanged(mDevice1, status);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -446,7 +446,7 @@ public class AvrcpControllerServiceTest {
                     PlayerApplicationSettings.JNI_REPEAT_STATUS_ALL_TRACK_REPEAT
                 };
 
-        mService.onPlayerAppSettingChanged(mDevice, playerAttribRsp, 2);
+        mService.onPlayerAppSettingChanged(mDevice1, playerAttribRsp, 2);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -458,7 +458,7 @@ public class AvrcpControllerServiceTest {
 
     @Test
     public void onAvailablePlayerChanged() {
-        mService.onAvailablePlayerChanged(mDevice);
+        mService.onAvailablePlayerChanged(mDevice1);
 
         verify(mStateMachine)
                 .sendMessage(AvrcpControllerStateMachine.MESSAGE_PROCESS_AVAILABLE_PLAYER_CHANGED);
@@ -469,7 +469,7 @@ public class AvrcpControllerServiceTest {
         int status = 2;
         AvrcpItem[] items = new AvrcpItem[] {mock(AvrcpItem.class)};
 
-        mService.handleGetFolderItemsRsp(mDevice, status, items);
+        mService.handleGetFolderItemsRsp(mDevice1, status, items);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -481,7 +481,7 @@ public class AvrcpControllerServiceTest {
     public void handleGetPlayerItemsRsp() {
         List<AvrcpPlayer> items = List.of(mock(AvrcpPlayer.class));
 
-        mService.handleGetPlayerItemsRsp(mDevice, items);
+        mService.handleGetPlayerItemsRsp(mDevice1, items);
 
         verify(mStateMachine)
                 .sendMessage(
@@ -491,7 +491,7 @@ public class AvrcpControllerServiceTest {
 
     @Test
     public void dump_doesNotCrash() {
-        mService.getRcPsm(mDevice, 1);
+        mService.getRcPsm(mDevice1, 1);
         mService.dump(new StringBuilder());
     }
 
@@ -514,10 +514,10 @@ public class AvrcpControllerServiceTest {
      */
     @Test
     public void testActiveDeviceMaintainsAudioFocusWhenOtherDeviceConnects_audioFocusMaintained() {
-        mService.onConnectionStateChanged(true, true, mDevice);
+        mService.onConnectionStateChanged(true, true, mDevice1);
         // check set active device is called
-        verify(mA2dpSinkService).setActiveDevice(mDevice);
-        when(mA2dpSinkService.getActiveDevice()).thenReturn(mDevice);
+        verify(mA2dpSinkService).setActiveDevice(mDevice1);
+        when(mA2dpSinkService.getActiveDevice()).thenReturn(mDevice1);
 
         // connect another phone
         mService.onConnectionStateChanged(true, true, mDevice2);

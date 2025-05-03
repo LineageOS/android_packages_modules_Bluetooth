@@ -53,7 +53,7 @@ public class AdapterPropertiesTest {
     private static final byte[] TEST_BT_ADDR_BYTES_2 = {00, 11, 22, 33, 44, 66};
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothManager mBluetoothManager =
             mTargetContext.getSystemService(BluetoothManager.class);
 
@@ -93,9 +93,7 @@ public class AdapterPropertiesTest {
         doReturn(mHandlerThread.getLooper()).when(mAdapterService).getMainLooper();
         when(mAdapterService.getResources())
                 .thenReturn(
-                        InstrumentationRegistry.getInstrumentation()
-                                .getTargetContext()
-                                .getResources());
+                        InstrumentationRegistry.getInstrumentation().getContext().getResources());
 
         // Must be called to initialize services
         mAdapterProperties =

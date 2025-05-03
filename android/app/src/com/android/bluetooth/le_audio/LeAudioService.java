@@ -26,6 +26,9 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 
+import static com.android.bluetooth.BluetoothStatsLog.BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_HIGH;
+import static com.android.bluetooth.BluetoothStatsLog.BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_STANDARD;
+import static com.android.bluetooth.BluetoothStatsLog.BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_UNKNOWN;
 import static com.android.bluetooth.bass_client.BassConstants.INVALID_BROADCAST_ID;
 import static com.android.bluetooth.flags.Flags.doNotHardcodeTmapRoleMask;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastApiManagePrimaryGroup;
@@ -218,9 +221,9 @@ public class LeAudioService extends ProfileService {
     private final BluetoothEventLogger mEventLogger =
             new BluetoothEventLogger(LOG_NB_EVENTS, TAG + " event log");
 
-    @VisibleForTesting TbsService mTbsService;
-
     @VisibleForTesting McpService mMcpService;
+
+    @VisibleForTesting TbsService mTbsService;
 
     @VisibleForTesting VolumeControlService mVolumeControlService;
 
@@ -415,16 +418,12 @@ public class LeAudioService extends ProfileService {
         }
 
         String getActiveStateString() {
-            switch (mActiveState) {
-                case ACTIVE_STATE_ACTIVE:
-                    return "ACTIVE_STATE_ACTIVE";
-                case ACTIVE_STATE_INACTIVE:
-                    return "ACTIVE_STATE_INACTIVE";
-                case ACTIVE_STATE_GETTING_ACTIVE:
-                    return "ACTIVE_STATE_GETTING_ACTIVE";
-                default:
-                    return "INVALID";
-            }
+            return switch (mActiveState) {
+                case ACTIVE_STATE_ACTIVE -> "ACTIVE_STATE_ACTIVE";
+                case ACTIVE_STATE_INACTIVE -> "ACTIVE_STATE_INACTIVE";
+                case ACTIVE_STATE_GETTING_ACTIVE -> "ACTIVE_STATE_GETTING_ACTIVE";
+                default -> "INVALID";
+            };
         }
 
         void updateAllowedContexts(Integer allowedSinkContexts, Integer allowedSourceContexts) {
@@ -582,17 +581,13 @@ public class LeAudioService extends ProfileService {
         }
 
         private static int convertToStatsAudioQuality(int audioQuality) {
-            switch (audioQuality) {
-                case BluetoothLeBroadcastSubgroupSettings.QUALITY_STANDARD:
-                    return BluetoothStatsLog
-                            .BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_STANDARD;
-                case BluetoothLeBroadcastSubgroupSettings.QUALITY_HIGH:
-                    return BluetoothStatsLog
-                            .BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_HIGH;
-                default:
-                    return BluetoothStatsLog
-                            .BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_UNKNOWN;
-            }
+            return switch (audioQuality) {
+                case BluetoothLeBroadcastSubgroupSettings.QUALITY_STANDARD ->
+                        BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_STANDARD;
+                case BluetoothLeBroadcastSubgroupSettings.QUALITY_HIGH ->
+                        BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_HIGH;
+                default -> BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_UNKNOWN;
+            };
         }
     }
 
@@ -697,7 +692,7 @@ public class LeAudioService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup LeAudio Service");
+        Log.i(TAG, "cleanup()");
 
         if (sLeAudioService == null) {
             Log.w(TAG, "cleanup() called before initialization");
@@ -4527,15 +4522,18 @@ public class LeAudioService extends ProfileService {
                         + device
                         + " to policy="
                         + connectionPolicy);
+        final ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
+
         VolumeControlService volumeControlService = getVolumeControlService();
-        if (volumeControlService != null) {
+        if (volumeControlService != null
+                && Utils.arrayContains(featureUuids, BluetoothUuid.VOLUME_CONTROL)) {
             volumeControlService.setConnectionPolicy(device, connectionPolicy);
         }
 
         if (mHapClientService == null) {
             mHapClientService = mServiceFactory.getHapClientService();
         }
-        if (mHapClientService != null) {
+        if (mHapClientService != null && Utils.arrayContains(featureUuids, BluetoothUuid.HAS)) {
             mHapClientService.setConnectionPolicy(device, connectionPolicy);
         }
 
@@ -4544,14 +4542,17 @@ public class LeAudioService extends ProfileService {
         }
 
         // Disallow setting CSIP to forbidden until characteristic reads are complete
-        if (mCsipSetCoordinatorService != null) {
+        if (mCsipSetCoordinatorService != null
+                && Utils.arrayContains(featureUuids, BluetoothUuid.COORDINATED_SET)) {
             mCsipSetCoordinatorService.setConnectionPolicy(device, connectionPolicy);
         }
 
         if (mBassClientService == null) {
             mBassClientService = mServiceFactory.getBassClientService();
         }
-        if (mBassClientService != null && mBassClientService.isEnabled()) {
+        if (mBassClientService != null
+                && mBassClientService.isEnabled()
+                && Utils.arrayContains(featureUuids, BluetoothUuid.BASS)) {
             mBassClientService.setConnectionPolicy(device, connectionPolicy);
         }
     }
@@ -4808,16 +4809,7 @@ public class LeAudioService extends ProfileService {
         }
     }
 
-    TbsService getTbsService() {
-        if (mTbsService != null) {
-            return mTbsService;
-        }
-
-        mTbsService = mServiceFactory.getTbsService();
-        return mTbsService;
-    }
-
-    McpService getMcpService() {
+    private McpService getMcpService() {
         if (mMcpService != null) {
             return mMcpService;
         }
@@ -4826,7 +4818,16 @@ public class LeAudioService extends ProfileService {
         return mMcpService;
     }
 
-    void setAuthorizationForRelatedProfiles(BluetoothDevice device, boolean authorize) {
+    private TbsService getTbsService() {
+        if (mTbsService != null) {
+            return mTbsService;
+        }
+
+        mTbsService = mServiceFactory.getTbsService();
+        return mTbsService;
+    }
+
+    private void setAuthorizationForRelatedProfiles(BluetoothDevice device, boolean authorize) {
         McpService mcpService = getMcpService();
         if (mcpService != null) {
             mcpService.setDeviceAuthorized(device, authorize);
@@ -4838,7 +4839,7 @@ public class LeAudioService extends ProfileService {
         }
     }
 
-    void removeAuthorizationInfoForRelatedProfiles(BluetoothDevice device) {
+    private void removeAuthorizationInfoForRelatedProfiles(BluetoothDevice device) {
         McpService mcpService = getMcpService();
         if (mcpService != null) {
             mcpService.removeDeviceAuthorizationInfo(device);

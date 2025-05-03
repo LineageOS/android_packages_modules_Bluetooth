@@ -18,7 +18,6 @@
 
 #pragma once
 
-#include <cassert>
 #include <cstdbool>
 #include <cstddef>
 #include <cstdint>
@@ -172,19 +171,17 @@ public:
     };
     handle_ = swoff_leaudio_setup(iso_streams.data(), iso_streams.size(), &audio_config,
                                   &callbacks_c);
-    assert(handle != nullptr);
+    if (!handle_) {
+      abort();
+    }
   }
 
   ~LeAudioStream() {
-    assert(handle != nullptr);
     swoff_leaudio_drop(handle_);
     handle_ = nullptr;
   }
 
-  size_t write(const void *data, size_t len) {
-    assert(handle != nullptr);
-    return swoff_leaudio_write(handle_, data, len);
-  }
+  size_t write(const void *data, size_t len) { return swoff_leaudio_write(handle_, data, len); }
 
 private:
   void *handle_;

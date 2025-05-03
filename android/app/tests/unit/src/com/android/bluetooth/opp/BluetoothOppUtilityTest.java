@@ -47,6 +47,7 @@ import android.os.ParcelFileDescriptor;
 import android.provider.Settings;
 
 import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.R;
@@ -57,6 +58,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 
@@ -65,6 +67,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** Test cases for {@link BluetoothOppUtility}. */
+@RunWith(AndroidJUnit4.class)
 public class BluetoothOppUtilityTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
@@ -76,8 +79,7 @@ public class BluetoothOppUtilityTest {
             Uri.parse("content://com.android.bluetooth.opp/btopp/0123455343467");
     private static final Uri INCORRECT_FORMAT_URI = Uri.parse("www.google.com");
 
-    private final Context mContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
 
     @Before
     public void setUp() throws Exception {
@@ -325,7 +327,7 @@ public class BluetoothOppUtilityTest {
         assertThat(info.mFileUri).isNull();
         assertThat(info.mFileType).isEqualTo(fileTypeValue);
         assertThat(info.mDeviceName).isEqualTo(deviceNameValue);
-        assertThat(info.mHandoverInitiated).isEqualTo(false);
+        assertThat(info.mHandoverInitiated).isFalse();
         assertThat(info.mFileName).isEqualTo(fileNameValue);
     }
 

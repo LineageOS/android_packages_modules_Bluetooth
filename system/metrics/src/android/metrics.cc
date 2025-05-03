@@ -573,4 +573,25 @@ void LogMetricBluetoothQualityReport(const bqr::BqrLinkQualityEvent& event) {
   }
 }
 
+void LogMetricsChannelSoundingRequesterSessionReported(
+        const hci::Address& remote_addr, const std::vector<int32_t>& app_uids,
+        const std::vector<int32_t>& security_levels,
+        const std::vector<int32_t>& measurement_interval_ms,
+        android::bluetooth::ChannelSoundingStopReason stop_reason, int32_t setup_latency_ms,
+        int32_t duration_seconds, bool back_to_back,
+        android::bluetooth::ChannelSoundingType cs_type, int32_t min_subevent_len,
+        int32_t min_subevent_len_count) {
+  int32_t metric_id = 0;
+  if (!remote_addr.IsEmpty()) {
+    metric_id = MetricIdManager::GetInstance().AllocateId(remote_addr);
+  }
+  int ret = stats_write(CHANNEL_SOUNDING_REQUESTER_SESSION_REPORTED, metric_id, app_uids,
+                        security_levels, measurement_interval_ms, stop_reason, setup_latency_ms,
+                        duration_seconds, back_to_back, cs_type, min_subevent_len,
+                        min_subevent_len_count);
+  if (ret < 0) {
+    log::warn("failed to log the channel sounding session to statsd, error {}", ret);
+  }
+}
+
 }  // namespace bluetooth::metrics

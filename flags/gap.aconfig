@@ -321,3 +321,20 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "read_rssi_throttling"
+    namespace: "bluetooth"
+    description: "Modify API to throttle the ability of a client app to trigger remote RSSI reads"
+    bug: "414510325"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "get_svc_uuids_from_ble_adv_data"
+    namespace: "bluetooth"
+    description: "Add API for getting service UUIDs from BLE advertising data. go/get-service-uuids-from-advertising-data"
+    bug: "389598210"
+}

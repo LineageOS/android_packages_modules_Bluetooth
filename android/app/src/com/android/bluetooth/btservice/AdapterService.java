@@ -1418,7 +1418,7 @@ public class AdapterService extends Service {
 
     @RequiresPermission(BLUETOOTH_CONNECT)
     void cleanup() {
-        Log.d(TAG, "cleanup()");
+        Log.i(TAG, "cleanup()");
         if (mCleaningUp) {
             Log.e(TAG, "cleanup() - Service already starting to cleanup, ignoring request...");
             return;
@@ -2724,7 +2724,7 @@ public class AdapterService extends Service {
 
         // Reuse the existing BluetoothDevice object if it exists
         BluetoothDevice device =
-                Flags.retainAddressType() ? device = mRemoteDevices.getDevice(address) : null;
+                Flags.retainAddressType() ? mRemoteDevices.getDevice(address) : null;
         if (device == null) {
             // BluetoothAdapter.getRemoteLeDevice() is same as BluetoothAdapter.getRemoteDevice()
             // with the specific address type.
@@ -2783,6 +2783,9 @@ public class AdapterService extends Service {
     }
 
     public boolean addAssociatedPackage(BluetoothDevice device, String packageName) {
+        if (packageName == null) {
+            return false;
+        }
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         if (deviceProp == null) {
             return false;
@@ -2818,6 +2821,7 @@ public class AdapterService extends Service {
         mBondAttemptCallerInfo.put(device.getAddress(), createBondCaller);
 
         mRemoteDevices.setBondingInitiatedLocally(device);
+        addAssociatedPackage(device, callingPackage);
 
         // Pairing is unreliable while scanning, so cancel discovery
         // Note, remove this when native stack improves
@@ -3433,6 +3437,12 @@ public class AdapterService extends Service {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
 
+        if (Flags.identityToPseudoAddr()) {
+            device =
+                    Objects.requireNonNullElse(
+                            mRemoteDevices.getDevice(device.getAddress()), device);
+        }
+
         // Checks if any profiles are enabled or disabled and if so, only connect enabled profiles
         if (!isAllProfilesUnknown(device)) {
             return connectEnabledProfiles(device);
@@ -3725,6 +3735,7 @@ public class AdapterService extends Service {
      * @param hciReason is the raw HCI disconnect reason from native.
      * @return the Android disconnect reason for apps.
      */
+    @SuppressWarnings("StatementSwitchToExpressionSwitch") // Code will be unclear either way
     static @BluetoothAdapter.BluetoothConnectionCallback.DisconnectReason int
             hciToAndroidDisconnectReason(int hciReason) {
         switch (hciReason) {

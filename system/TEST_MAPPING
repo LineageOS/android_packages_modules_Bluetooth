@@ -1,7 +1,12 @@
+// Unit test that only target the native code and that are not relevant when
+// modifying code in other component (like Java app, system server of framework)
 {
   "bt-mainline-presubmit": [
     {
       "name": "bluetooth_le_audio_client_test"
+    },
+    {
+      "name": "bluetooth_le_audio_test"
     },
     {
       "name": "bluetooth_test_gd_unit"
@@ -12,7 +17,15 @@
       "name": "bluetooth_le_audio_client_test"
     },
     {
+      "name": "bluetooth_le_audio_test"
+    },
+    {
       "name": "bluetooth_test_gd_unit"
+    }
+  ],
+  "hwasan-presubmit": [
+    {
+      "name": "bluetooth_le_audio_test"
     }
   ]
 }

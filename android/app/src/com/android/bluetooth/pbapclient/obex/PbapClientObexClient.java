@@ -633,29 +633,21 @@ class PbapClientObexClient {
     }
 
     public static String transportToString(int transport) {
-        switch (transport) {
-            case TRANSPORT_NONE:
-                return "TRANSPORT_NONE";
-            case TRANSPORT_RFCOMM:
-                return "TRANSPORT_RFCOMM";
-            case TRANSPORT_L2CAP:
-                return "TRANSPORT_L2CAP";
-            default:
-                return "TRANSPORT_RESERVED (" + transport + ")";
-        }
+        return switch (transport) {
+            case TRANSPORT_NONE -> "TRANSPORT_NONE";
+            case TRANSPORT_RFCOMM -> "TRANSPORT_RFCOMM";
+            case TRANSPORT_L2CAP -> "TRANSPORT_L2CAP";
+            default -> "TRANSPORT_RESERVED (" + transport + ")";
+        };
     }
 
     private static String messageToString(int msg) {
-        switch (msg) {
-            case MSG_CONNECT:
-                return "MSG_CONNECT";
-            case MSG_DISCONNECT:
-                return "MSG_DISCONNECT";
-            case MSG_REQUEST:
-                return "MSG_REQUEST";
-            default:
-                return "MSG_RESERVED (" + msg + ")";
-        }
+        return switch (msg) {
+            case MSG_CONNECT -> "MSG_CONNECT";
+            case MSG_DISCONNECT -> "MSG_DISCONNECT";
+            case MSG_REQUEST -> "MSG_REQUEST";
+            default -> "MSG_RESERVED (" + msg + ")";
+        };
     }
 
     private void debug(String message) {

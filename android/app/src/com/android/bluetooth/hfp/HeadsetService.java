@@ -63,7 +63,6 @@ import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfpclient.HeadsetClientService;
 import com.android.bluetooth.hfpclient.HeadsetClientStateMachine;
 import com.android.bluetooth.le_audio.LeAudioService;
@@ -236,7 +235,7 @@ public class HeadsetService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup Headset Service");
+        Log.i(TAG, "cleanup()");
 
         // Step 7: Tear down broadcast receivers
         unregisterReceiver(mHeadsetReceiver);
@@ -2251,15 +2250,6 @@ public class HeadsetService extends ProfileService {
         }
         // Check connection policy and accept or reject the connection.
         int connectionPolicy = getConnectionPolicy(device);
-        if (!Flags.donotValidateBondStateFromProfiles()) {
-            int bondState = mAdapterService.getBondState(device);
-            // Allow this connection only if the device is bonded. Any attempt to connect while
-            // bonding would potentially lead to an unauthorized connection.
-            if (bondState != BluetoothDevice.BOND_BONDED) {
-                Log.w(TAG, "okToAcceptConnection: return false, bondState=" + bondState);
-                return false;
-            }
-        }
         if (connectionPolicy != CONNECTION_POLICY_UNKNOWN
                 && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
             // Otherwise, reject the connection if connection policy is not valid.
@@ -2440,8 +2430,6 @@ public class HeadsetService extends ProfileService {
         logD("isAptXSwbPmEnabled: " + mIsAptXSwbPmEnabled);
         return mIsAptXSwbPmEnabled;
     }
-
-    @VisibleForTesting
     void processAtBcc(BluetoothDevice device) {
         synchronized (mStateMachines) {
             if (!device.equals(mActiveDevice)) {

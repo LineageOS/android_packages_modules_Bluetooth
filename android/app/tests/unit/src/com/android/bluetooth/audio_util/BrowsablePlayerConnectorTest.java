@@ -62,7 +62,7 @@ public final class BrowsablePlayerConnectorTest {
 
     @Before
     public void setUp() {
-        mContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        mContext = InstrumentationRegistry.getInstrumentation().getContext();
         mTestLooper = new TestLooper();
 
         doAnswer(

@@ -30,7 +30,6 @@ import android.bluetooth.BluetoothLeAudioCodecConfig;
 
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.After;
@@ -53,7 +52,6 @@ public class LeAudioNativeInterfaceTest {
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.setAdapterService(mAdapterService);
         when(mAdapterService.getRemoteDevice(anyString()))
                 .thenAnswer(
                         invocation -> {
@@ -68,7 +66,6 @@ public class LeAudioNativeInterfaceTest {
     @After
     public void tearDown() {
         LeAudioService.setLeAudioService(null);
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test

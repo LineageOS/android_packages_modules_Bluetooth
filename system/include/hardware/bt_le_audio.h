@@ -150,6 +150,8 @@ inline std::ostream& operator<<(std::ostream& os, const UnicastMonitorModeStatus
 
 typedef enum {
   LE_AUDIO_CODEC_INDEX_SOURCE_LC3 = 0,
+  LE_AUDIO_CODEC_INDEX_SOURCE_OPUS = 1,
+  LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES = 2,
   LE_AUDIO_CODEC_INDEX_SOURCE_INVALID = 1000 * 1000,
 } btle_audio_codec_index_t;
 
@@ -239,6 +241,12 @@ typedef struct btle_audio_codec_config {
     switch (codec_type) {
       case LE_AUDIO_CODEC_INDEX_SOURCE_LC3:
         codec_name_str = "LC3";
+        break;
+      case LE_AUDIO_CODEC_INDEX_SOURCE_OPUS:
+        codec_name_str = "Opus";
+        break;
+      case LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES:
+        codec_name_str = "Opus Hi-Res";
         break;
       default:
         codec_name_str = "Unknown LE codec " + std::to_string(codec_type);

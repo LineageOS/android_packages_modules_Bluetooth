@@ -27,14 +27,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.IBluetoothHapClientCallback;
 import android.content.AttributionSource;
 
 import androidx.test.filters.MediumTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.Before;
@@ -50,14 +47,9 @@ import org.mockito.Mockito;
 public class HapClientServiceBinderTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private HapClientService mHapClientService;
 
-    private final BluetoothAdapter mAdapter =
-            InstrumentationRegistry.getInstrumentation()
-                    .getTargetContext()
-                    .getSystemService(BluetoothManager.class)
-                    .getAdapter();
-    private final AttributionSource mAttributionSource = mAdapter.getAttributionSource();
     private final BluetoothDevice mDevice = getTestDevice(0);
 
     private HapClientServiceBinder mBinder;

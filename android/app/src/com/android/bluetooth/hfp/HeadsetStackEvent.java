@@ -139,54 +139,31 @@ public class HeadsetStackEvent extends HeadsetMessageObject {
      * @return String that represents this event
      */
     public String getTypeString() {
-        switch (type) {
-            case EVENT_TYPE_NONE:
-                return "EVENT_TYPE_NONE";
-            case EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                return "EVENT_TYPE_CONNECTION_STATE_CHANGED";
-            case EVENT_TYPE_AUDIO_STATE_CHANGED:
-                return "EVENT_TYPE_AUDIO_STATE_CHANGED";
-            case EVENT_TYPE_VR_STATE_CHANGED:
-                return "EVENT_TYPE_VR_STATE_CHANGED";
-            case EVENT_TYPE_ANSWER_CALL:
-                return "EVENT_TYPE_ANSWER_CALL";
-            case EVENT_TYPE_HANGUP_CALL:
-                return "EVENT_TYPE_HANGUP_CALL";
-            case EVENT_TYPE_VOLUME_CHANGED:
-                return "EVENT_TYPE_VOLUME_CHANGED";
-            case EVENT_TYPE_DIAL_CALL:
-                return "EVENT_TYPE_DIAL_CALL";
-            case EVENT_TYPE_SEND_DTMF:
-                return "EVENT_TYPE_SEND_DTMF";
-            case EVENT_TYPE_NOISE_REDUCTION:
-                return "EVENT_TYPE_NOISE_REDUCTION";
-            case EVENT_TYPE_AT_CHLD:
-                return "EVENT_TYPE_AT_CHLD";
-            case EVENT_TYPE_SUBSCRIBER_NUMBER_REQUEST:
-                return "EVENT_TYPE_SUBSCRIBER_NUMBER_REQUEST";
-            case EVENT_TYPE_AT_CIND:
-                return "EVENT_TYPE_AT_CIND";
-            case EVENT_TYPE_AT_COPS:
-                return "EVENT_TYPE_AT_COPS";
-            case EVENT_TYPE_AT_CLCC:
-                return "EVENT_TYPE_AT_CLCC";
-            case EVENT_TYPE_UNKNOWN_AT:
-                return "EVENT_TYPE_UNKNOWN_AT";
-            case EVENT_TYPE_KEY_PRESSED:
-                return "EVENT_TYPE_KEY_PRESSED";
-            case EVENT_TYPE_WBS:
-                return "EVENT_TYPE_WBS";
-            case EVENT_TYPE_BIND:
-                return "EVENT_TYPE_BIND";
-            case EVENT_TYPE_BIEV:
-                return "EVENT_TYPE_BIEV";
-            case EVENT_TYPE_BIA:
-                return "EVENT_TYPE_BIA";
-            case EVENT_TYPE_SWB:
-                return "EVENT_TYPE_SWB";
-            default:
-                return "UNKNOWN";
-        }
+        return switch (type) {
+            case EVENT_TYPE_NONE -> "EVENT_TYPE_NONE";
+            case EVENT_TYPE_CONNECTION_STATE_CHANGED -> "EVENT_TYPE_CONNECTION_STATE_CHANGED";
+            case EVENT_TYPE_AUDIO_STATE_CHANGED -> "EVENT_TYPE_AUDIO_STATE_CHANGED";
+            case EVENT_TYPE_VR_STATE_CHANGED -> "EVENT_TYPE_VR_STATE_CHANGED";
+            case EVENT_TYPE_ANSWER_CALL -> "EVENT_TYPE_ANSWER_CALL";
+            case EVENT_TYPE_HANGUP_CALL -> "EVENT_TYPE_HANGUP_CALL";
+            case EVENT_TYPE_VOLUME_CHANGED -> "EVENT_TYPE_VOLUME_CHANGED";
+            case EVENT_TYPE_DIAL_CALL -> "EVENT_TYPE_DIAL_CALL";
+            case EVENT_TYPE_SEND_DTMF -> "EVENT_TYPE_SEND_DTMF";
+            case EVENT_TYPE_NOISE_REDUCTION -> "EVENT_TYPE_NOISE_REDUCTION";
+            case EVENT_TYPE_AT_CHLD -> "EVENT_TYPE_AT_CHLD";
+            case EVENT_TYPE_SUBSCRIBER_NUMBER_REQUEST -> "EVENT_TYPE_SUBSCRIBER_NUMBER_REQUEST";
+            case EVENT_TYPE_AT_CIND -> "EVENT_TYPE_AT_CIND";
+            case EVENT_TYPE_AT_COPS -> "EVENT_TYPE_AT_COPS";
+            case EVENT_TYPE_AT_CLCC -> "EVENT_TYPE_AT_CLCC";
+            case EVENT_TYPE_UNKNOWN_AT -> "EVENT_TYPE_UNKNOWN_AT";
+            case EVENT_TYPE_KEY_PRESSED -> "EVENT_TYPE_KEY_PRESSED";
+            case EVENT_TYPE_WBS -> "EVENT_TYPE_WBS";
+            case EVENT_TYPE_BIND -> "EVENT_TYPE_BIND";
+            case EVENT_TYPE_BIEV -> "EVENT_TYPE_BIEV";
+            case EVENT_TYPE_BIA -> "EVENT_TYPE_BIA";
+            case EVENT_TYPE_SWB -> "EVENT_TYPE_SWB";
+            default -> "UNKNOWN";
+        };
     }
 
     @Override

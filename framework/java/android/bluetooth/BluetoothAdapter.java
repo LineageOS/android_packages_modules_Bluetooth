@@ -296,24 +296,16 @@ public final class BluetoothAdapter {
     @SystemApi
     @RequiresNoPermission
     public static @NonNull String nameForState(@InternalAdapterState int state) {
-        switch (state) {
-            case STATE_OFF:
-                return "OFF";
-            case STATE_TURNING_ON:
-                return "TURNING_ON";
-            case STATE_ON:
-                return "ON";
-            case STATE_TURNING_OFF:
-                return "TURNING_OFF";
-            case STATE_BLE_TURNING_ON:
-                return "BLE_TURNING_ON";
-            case STATE_BLE_ON:
-                return "BLE_ON";
-            case STATE_BLE_TURNING_OFF:
-                return "BLE_TURNING_OFF";
-            default:
-                return "?!?!? (" + state + ")";
-        }
+        return switch (state) {
+            case STATE_OFF -> "OFF";
+            case STATE_TURNING_ON -> "TURNING_ON";
+            case STATE_ON -> "ON";
+            case STATE_TURNING_OFF -> "TURNING_OFF";
+            case STATE_BLE_TURNING_ON -> "BLE_TURNING_ON";
+            case STATE_BLE_ON -> "BLE_ON";
+            case STATE_BLE_TURNING_OFF -> "BLE_TURNING_OFF";
+            default -> "?!?!? (" + state + ")";
+        };
     }
 
     /**
@@ -1110,10 +1102,10 @@ public final class BluetoothAdapter {
     private BluetoothAdapter(
             @NonNull IBluetoothManager managerService,
             @Nullable Context context,
-            @NonNull AttributionSource attributionSource) {
+            @NonNull AttributionSource source) {
         mManagerService = requireNonNull(managerService);
         mContext = Optional.ofNullable(context);
-        mAttributionSource = requireNonNull(attributionSource);
+        mAttributionSource = requireNonNull(source);
 
         mQualityCallbackWrapper =
                 new CallbackWrapper<>(
@@ -4815,32 +4807,24 @@ public final class BluetoothAdapter {
         /** Returns human-readable strings corresponding to {@link DisconnectReason}. */
         @NonNull
         public static String disconnectReasonToString(@DisconnectReason int reason) {
-            switch (reason) {
-                case BluetoothStatusCodes.ERROR_UNKNOWN:
-                    return "Reason unknown";
-                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL_REQUEST:
-                    return "Local request";
-                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_REMOTE_REQUEST:
-                    return "Remote request";
-                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL:
-                    return "Local error";
-                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_REMOTE:
-                    return "Remote error";
-                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_TIMEOUT:
-                    return "Timeout";
-                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SECURITY:
-                    return "Security";
-                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SYSTEM_POLICY:
-                    return "System policy";
-                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_RESOURCE_LIMIT_REACHED:
-                    return "Resource constrained";
-                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_CONNECTION_ALREADY_EXISTS:
-                    return "Connection already exists";
-                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_BAD_PARAMETERS:
-                    return "Bad parameters";
-                default:
-                    return "Unrecognized disconnect reason: " + reason;
-            }
+            return switch (reason) {
+                case BluetoothStatusCodes.ERROR_UNKNOWN -> "Reason unknown";
+                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL_REQUEST -> "Local request";
+                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_REMOTE_REQUEST ->
+                        "Remote request";
+                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL -> "Local error";
+                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_REMOTE -> "Remote error";
+                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_TIMEOUT -> "Timeout";
+                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SECURITY -> "Security";
+                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SYSTEM_POLICY -> "System policy";
+                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_RESOURCE_LIMIT_REACHED ->
+                        "Resource constrained";
+                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_CONNECTION_ALREADY_EXISTS ->
+                        "Connection already exists";
+                case BluetoothStatusCodes.ERROR_DISCONNECT_REASON_BAD_PARAMETERS ->
+                        "Bad parameters";
+                default -> "Unrecognized disconnect reason: " + reason;
+            };
         }
     }
 
@@ -5372,19 +5356,16 @@ public final class BluetoothAdapter {
      * @hide
      */
     public static @ConnectionPolicy int priorityToConnectionPolicy(int priority) {
-        switch (priority) {
-            case BluetoothProfile.PRIORITY_AUTO_CONNECT:
-                return CONNECTION_POLICY_ALLOWED;
-            case BluetoothProfile.PRIORITY_ON:
-                return CONNECTION_POLICY_ALLOWED;
-            case BluetoothProfile.PRIORITY_OFF:
-                return CONNECTION_POLICY_FORBIDDEN;
-            case BluetoothProfile.PRIORITY_UNDEFINED:
-                return CONNECTION_POLICY_UNKNOWN;
-            default:
+        return switch (priority) {
+            case BluetoothProfile.PRIORITY_AUTO_CONNECT -> CONNECTION_POLICY_ALLOWED;
+            case BluetoothProfile.PRIORITY_ON -> CONNECTION_POLICY_ALLOWED;
+            case BluetoothProfile.PRIORITY_OFF -> CONNECTION_POLICY_FORBIDDEN;
+            case BluetoothProfile.PRIORITY_UNDEFINED -> CONNECTION_POLICY_UNKNOWN;
+            default -> {
                 Log.e(TAG, "setPriority: Invalid priority: " + priority);
-                return CONNECTION_POLICY_UNKNOWN;
-        }
+                yield CONNECTION_POLICY_UNKNOWN;
+            }
+        };
     }
 
     /**
@@ -5395,15 +5376,12 @@ public final class BluetoothAdapter {
      * @hide
      */
     public static int connectionPolicyToPriority(@ConnectionPolicy int connectionPolicy) {
-        switch (connectionPolicy) {
-            case CONNECTION_POLICY_ALLOWED:
-                return BluetoothProfile.PRIORITY_ON;
-            case CONNECTION_POLICY_FORBIDDEN:
-                return BluetoothProfile.PRIORITY_OFF;
-            case CONNECTION_POLICY_UNKNOWN:
-                return BluetoothProfile.PRIORITY_UNDEFINED;
-        }
-        return BluetoothProfile.PRIORITY_UNDEFINED;
+        return switch (connectionPolicy) {
+            case CONNECTION_POLICY_ALLOWED -> BluetoothProfile.PRIORITY_ON;
+            case CONNECTION_POLICY_FORBIDDEN -> BluetoothProfile.PRIORITY_OFF;
+            case CONNECTION_POLICY_UNKNOWN -> BluetoothProfile.PRIORITY_UNDEFINED;
+            default -> BluetoothProfile.PRIORITY_UNDEFINED;
+        };
     }
 
     /**

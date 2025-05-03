@@ -35,7 +35,6 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 
@@ -59,19 +58,17 @@ public class ScannerMapTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private AdapterService mAdapterService;
     @Mock private PackageManager mMockPackageManager;
     @Mock private ScanController mMockScanController;
     @Mock private IScannerCallback mMockScannerCallback;
-    private final AttributionSource mAttributionSource =
-            InstrumentationRegistry.getInstrumentation().getTargetContext().getAttributionSource();
 
     @Spy private BluetoothMethodProxy mMapMethodProxy = BluetoothMethodProxy.getInstance();
 
     @Before
     public void setUp() throws Exception {
         BluetoothMethodProxy.setInstanceForTesting(mMapMethodProxy);
-        TestUtils.setAdapterService(mAdapterService);
         doReturn(mMockPackageManager).when(mAdapterService).getPackageManager();
         doReturn(APP_NAME).when(mMockPackageManager).getNameForUid(anyInt());
     }
@@ -79,7 +76,6 @@ public class ScannerMapTest {
     @After
     public void tearDown() throws Exception {
         BluetoothMethodProxy.setInstanceForTesting(null);
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test
@@ -87,7 +83,7 @@ public class ScannerMapTest {
         ScannerMap scannerMap = new ScannerMap();
         PendingIntent intent =
                 PendingIntent.getBroadcast(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext(),
+                        InstrumentationRegistry.getInstrumentation().getContext(),
                         0,
                         new Intent(),
                         PendingIntent.FLAG_IMMUTABLE);

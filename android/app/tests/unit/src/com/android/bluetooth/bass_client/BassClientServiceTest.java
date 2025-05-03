@@ -414,6 +414,17 @@ public class BassClientServiceTest {
         assertThat(mBassClientService.connect(mCurrentDevice)).isFalse();
     }
 
+    /** Test connecting to a device without UUID. - service.connect() should return false. */
+    @Test
+    public void testConnectToDevice_whenUuidIsMissing_returnFalse() {
+        // Return No UUID
+        doReturn(new ParcelUuid[] {})
+                .when(mAdapterService)
+                .getRemoteUuids(any(BluetoothDevice.class));
+
+        assertThat(mBassClientService.connect(mCurrentDevice)).isFalse();
+    }
+
     /**
      * Test whether service.startSearchingForSources() calls BluetoothLeScannerWrapper.startScan().
      */
@@ -1585,7 +1596,7 @@ public class BassClientServiceTest {
                     messageCaptor.getAllValues().stream()
                             .filter(m -> m.what == BassClientStateMachine.UPDATE_BCAST_SOURCE)
                             .findFirst();
-            assertThat(msg.isPresent()).isEqualTo(true);
+            assertThat(msg.isPresent()).isTrue();
 
             // Verify using the right sourceId on each device
             assertThat(msg.get().arg1).isEqualTo(TEST_SOURCE_ID);
@@ -1619,7 +1630,7 @@ public class BassClientServiceTest {
                     messageCaptor.getAllValues().stream()
                             .filter(m -> m.what == BassClientStateMachine.UPDATE_BCAST_SOURCE)
                             .findFirst();
-            assertThat(msg.isPresent()).isEqualTo(true);
+            assertThat(msg.isPresent()).isTrue();
 
             // Verify using the right sourceId on each device
             assertThat(msg.get().arg1).isEqualTo(TEST_SOURCE_ID);
@@ -1641,7 +1652,7 @@ public class BassClientServiceTest {
                     messageCaptor.getAllValues().stream()
                             .filter(m -> m.what == BassClientStateMachine.REMOVE_BCAST_SOURCE)
                             .findFirst();
-            assertThat(msg.isPresent()).isEqualTo(true);
+            assertThat(msg.isPresent()).isTrue();
 
             if (sm.getDevice().equals(mCurrentDevice)) {
                 assertThat(msg.get().arg1).isEqualTo(TEST_SOURCE_ID);
@@ -1662,7 +1673,7 @@ public class BassClientServiceTest {
                     messageCaptor.getAllValues().stream()
                             .filter(m -> m.what == BassClientStateMachine.UPDATE_BCAST_SOURCE)
                             .findFirst();
-            assertThat(msg.isPresent()).isEqualTo(true);
+            assertThat(msg.isPresent()).isTrue();
 
             if (sm.getDevice().equals(mCurrentDevice)) {
                 assertThat(msg.get().arg1).isEqualTo(TEST_SOURCE_ID);
@@ -1718,7 +1729,7 @@ public class BassClientServiceTest {
                                 .findFirst();
                 assertThat(msg.get().arg2).isEqualTo(BassConstants.PA_SYNC_DO_NOT_SYNC);
             }
-            assertThat(msg.isPresent()).isEqualTo(true);
+            assertThat(msg.isPresent()).isTrue();
 
             assertThat(msg.get().arg1).isEqualTo(TEST_SOURCE_ID);
             // Verify metadata is null
@@ -1965,7 +1976,7 @@ public class BassClientServiceTest {
                     messageCaptor.getAllValues().stream()
                             .filter(m -> m.what == BassClientStateMachine.UPDATE_BCAST_SOURCE)
                             .findFirst();
-            assertThat(msg.isPresent()).isEqualTo(true);
+            assertThat(msg.isPresent()).isTrue();
             assertThat(msg.get().obj).isEqualTo(metaUpdate);
 
             // Verify using the right sourceId on each device
@@ -1996,7 +2007,7 @@ public class BassClientServiceTest {
                                                                         .REMOVE_BCAST_SOURCE)
                                                         && (m.arg1 == TEST_SOURCE_ID + 2))
                                 .findFirst();
-                assertThat(msg.isPresent()).isEqualTo(true);
+                assertThat(msg.isPresent()).isTrue();
                 injectRemoteSourceStateRemoval(sm, TEST_SOURCE_ID + 2);
             } else if (sm.getDevice().equals(mCurrentDevice1)) {
                 Optional<Message> msg =
@@ -2008,7 +2019,7 @@ public class BassClientServiceTest {
                                                                         .REMOVE_BCAST_SOURCE)
                                                         && (m.arg1 == TEST_SOURCE_ID + 3))
                                 .findFirst();
-                assertThat(msg.isPresent()).isEqualTo(true);
+                assertThat(msg.isPresent()).isTrue();
                 injectRemoteSourceStateRemoval(sm, TEST_SOURCE_ID + 3);
             } else {
                 throw new AssertionError("Unexpected device");
@@ -3599,9 +3610,9 @@ public class BassClientServiceTest {
 
         // validate modify notified flag
         paResult.setNotified(true);
-        assertThat(paResult.isNotified()).isEqualTo(true);
+        assertThat(paResult.isNotified()).isTrue();
         mBassClientService.clearNotifiedFlags();
-        assertThat(paResult.isNotified()).isEqualTo(false);
+        assertThat(paResult.isNotified()).isFalse();
     }
 
     @Test
@@ -4817,6 +4828,21 @@ public class BassClientServiceTest {
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
                         any(), any(), anyInt(), anyInt(), any(), any());
+    }
+
+    @Test
+    public void onSyncLost_stopTimeoutsOnStopSearching() throws RemoteException {
+        prepareConnectedDeviceGroup();
+        prepareSyncToSourceAndVerify();
+
+        onSyncLost();
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_SYNC_LOST_TIMEOUT);
+
+        mBassClientService.stopSearchingForSources();
+        checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_SYNC_LOST_TIMEOUT);
+
+        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+        verify(mCallback, never()).onSourceLost(eq(TEST_BROADCAST_ID));
     }
 
     @Test

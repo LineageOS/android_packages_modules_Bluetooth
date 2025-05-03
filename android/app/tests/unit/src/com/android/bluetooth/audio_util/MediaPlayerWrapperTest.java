@@ -93,7 +93,7 @@ public class MediaPlayerWrapperTest {
 
         mTestResources =
                 TestUtils.getTestApplicationResources(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext());
+                        InstrumentationRegistry.getInstrumentation().getContext());
         mTestBitmap = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
 
         Util.sUriImagesSupport = true;
@@ -148,10 +148,6 @@ public class MediaPlayerWrapperTest {
         doReturn(mTestMetadata.build()).when(mMockController).getMetadata();
         doReturn(mTestState.build()).when(mMockController).getPlaybackState();
         doReturn(getQueueFromDescriptions(mTestQueue)).when(mMockController).getQueue();
-
-        // Enable testing flag which enables Log.wtf statements. Some tests test against improper
-        // behaviour and the TerribleFailureListener is a good way to ensure that the error occurred
-        MediaPlayerWrapper.sTesting = true;
     }
 
     @After

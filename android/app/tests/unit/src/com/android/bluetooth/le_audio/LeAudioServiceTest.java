@@ -156,7 +156,7 @@ public class LeAudioServiceTest {
 
     private final HashSet<BluetoothDevice> mBondedDevices = new HashSet<>();
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothDevice mLeftDevice = getTestDevice(0);
     private final BluetoothDevice mRightDevice = getTestDevice(1);
     private final BluetoothDevice mSingleDevice = getTestDevice(2);
@@ -234,9 +234,6 @@ public class LeAudioServiceTest {
         injectSupportedProfilesBitMask(
                 Set.of(BluetoothProfile.LE_AUDIO_BROADCAST, BluetoothProfile.LE_AUDIO));
 
-        doReturn(new ParcelUuid[] {BluetoothUuid.LE_AUDIO})
-                .when(mAdapterService)
-                .getRemoteUuids(any(BluetoothDevice.class));
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
 
@@ -251,7 +248,14 @@ public class LeAudioServiceTest {
                 .when(mAdapterService)
                 .getBondedDevices();
         doReturn(BOND_BONDED).when(mAdapterService).getBondState(any(BluetoothDevice.class));
-        doReturn(new ParcelUuid[] {BluetoothUuid.LE_AUDIO})
+        doReturn(
+                        new ParcelUuid[] {
+                            BluetoothUuid.LE_AUDIO,
+                            BluetoothUuid.VOLUME_CONTROL,
+                            BluetoothUuid.HAS,
+                            BluetoothUuid.COORDINATED_SET,
+                            BluetoothUuid.BASS
+                        })
                 .when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
 
@@ -931,6 +935,42 @@ public class LeAudioServiceTest {
     }
 
     /**
+     * Verify that LE Audio service does not set profile connection policy to ALLOWED for
+     * non-available services.
+     */
+    @Test
+    public void testSetConnectionPolicyLeOnlyUUID() {
+        doReturn(new ParcelUuid[] {BluetoothUuid.LE_AUDIO})
+                .when(mAdapterService)
+                .getRemoteUuids(any(BluetoothDevice.class));
+        doReturn(true)
+                .when(mDatabaseManager)
+                .setProfileConnectionPolicy(any(BluetoothDevice.class), anyInt(), anyInt());
+        // Make LE Audio related services setConnectionPolicy() method return true.
+        // These should NOT be called if not available
+        when(mVolumeControlService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
+        when(mCsipSetCoordinatorService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
+        when(mHapClientService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
+        when(mBassClientService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
+        when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
+                .thenReturn(CONNECTION_POLICY_UNKNOWN);
+
+        assertThat(mService.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED)).isTrue();
+
+        // Verify connection policy for CSIP and VCP are also set to FORBIDDEN
+        verify(mVolumeControlService, never())
+                .setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED);
+        verify(mCsipSetCoordinatorService, never())
+                .setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED);
+        verify(mHapClientService, never())
+                .setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED);
+        if (BluetoothProperties.isProfileBapBroadcastAssistEnabled().orElse(false)) {
+            verify(mBassClientService, never())
+                    .setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED);
+        }
+    }
+
+    /**
      * Helper function to connect Test device
      *
      * @param device test device
@@ -1116,8 +1156,8 @@ public class LeAudioServiceTest {
         List<BluetoothProfileConnectionInfo> connInfos =
                 connectionInfoArgumentCaptor.getAllValues();
         assertThat(connInfos).hasSize(2);
-        assertThat(connInfos.get(0).isLeOutput()).isEqualTo(true);
-        assertThat(connInfos.get(1).isLeOutput()).isEqualTo(false);
+        assertThat(connInfos.get(0).isLeOutput()).isTrue();
+        assertThat(connInfos.get(1).isLeOutput()).isFalse();
 
         reset(mAudioManager);
 
@@ -1536,8 +1576,8 @@ public class LeAudioServiceTest {
         /* Verify input and output has been connected to AF*/
         List<BluetoothProfileConnectionInfo> connInfos = testConnectioInfoCapture.getAllValues();
         assertThat(connInfos).hasSize(2);
-        assertThat(connInfos.get(0).isLeOutput()).isEqualTo(true);
-        assertThat(connInfos.get(1).isLeOutput()).isEqualTo(false);
+        assertThat(connInfos.get(0).isLeOutput()).isTrue();
+        assertThat(connInfos.get(1).isLeOutput()).isFalse();
 
         // Remove source direction
         injectAudioConfChanged(
@@ -1558,7 +1598,7 @@ public class LeAudioServiceTest {
 
         connInfos = testConnectioInfoCapture.getAllValues();
         assertThat(connInfos).hasSize(3);
-        assertThat(connInfos.get(2).isLeOutput()).isEqualTo(false);
+        assertThat(connInfos.get(2).isLeOutput()).isFalse();
 
         // remove Sink and add Source back
 
@@ -1583,8 +1623,8 @@ public class LeAudioServiceTest {
 
         connInfos = testConnectioInfoCapture.getAllValues();
         assertThat(connInfos).hasSize(5);
-        assertThat(connInfos.get(3).isLeOutput()).isEqualTo(true);
-        assertThat(connInfos.get(4).isLeOutput()).isEqualTo(false);
+        assertThat(connInfos.get(3).isLeOutput()).isTrue();
+        assertThat(connInfos.get(4).isLeOutput()).isFalse();
     }
 
     /** Test native interface audio configuration changed message handling */
@@ -3010,10 +3050,12 @@ public class LeAudioServiceTest {
     /**
      * Test the group is activated once the available contexts are back.
      *
-     * <p>Scenario: 1. Have a group of 2 devices. The available contexts are non-zero. The group
-     * shall be active at this point. 2. All group devices are disconnected. 3. Group devices are
-     * reconnected. The available contexts are zero. 4. The available contexts are updated with
-     * non-zero value. Group becomes active.
+     * Scenario:
+     *  1. Have a group of 2 devices. The available contexts are non-zero.
+     *     The group shall be active at this point.
+     *  2. All group devices are disconnected.
+     *  3. Group devices are reconnected. The available contexts are zero.
+     *  4. The available contexts are updated with non-zero value. Group becomes active.
      */
     @Test
     public void testActivateDeviceWhenAvailableContextAreBack_Scenario3() {

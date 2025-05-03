@@ -33,14 +33,12 @@ final class StackEvent {
 
     @Override
     public String toString() {
-        switch (mType) {
-            case EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                return "EVENT_TYPE_CONNECTION_STATE_CHANGED " + mRemoteControlConnected;
-            case EVENT_TYPE_RC_FEATURES:
-                return "EVENT_TYPE_RC_FEATURES";
-            default:
-                return "Unknown";
-        }
+        return switch (mType) {
+            case EVENT_TYPE_CONNECTION_STATE_CHANGED ->
+                    "EVENT_TYPE_CONNECTION_STATE_CHANGED " + mRemoteControlConnected;
+            case EVENT_TYPE_RC_FEATURES -> "EVENT_TYPE_RC_FEATURES";
+            default -> "Unknown";
+        };
     }
 
     static StackEvent connectionStateChanged(

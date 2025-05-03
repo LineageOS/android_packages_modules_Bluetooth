@@ -24,6 +24,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -68,7 +69,6 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.Flags;
 
 import org.junit.After;
 import org.junit.Before;
@@ -107,7 +107,7 @@ public class HeadsetServiceTest {
     private static final String TEST_PHONE_NUMBER = "1234567890";
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final HashMap<BluetoothDevice, HeadsetStateMachine> mStateMachines = new HashMap<>();
 
     private HeadsetService mHeadsetService;
@@ -213,31 +213,19 @@ public class HeadsetServiceTest {
         int badPriorityValue = 1024;
         int badBondState = 42;
         testOkToAcceptConnectionCase(
-                mCurrentDevice,
-                BluetoothDevice.BOND_NONE,
-                CONNECTION_POLICY_UNKNOWN,
-                Flags.donotValidateBondStateFromProfiles());
+                mCurrentDevice, BluetoothDevice.BOND_NONE, CONNECTION_POLICY_UNKNOWN, true);
         testOkToAcceptConnectionCase(
                 mCurrentDevice, BluetoothDevice.BOND_NONE, CONNECTION_POLICY_FORBIDDEN, false);
         testOkToAcceptConnectionCase(
-                mCurrentDevice,
-                BluetoothDevice.BOND_NONE,
-                CONNECTION_POLICY_ALLOWED,
-                Flags.donotValidateBondStateFromProfiles());
+                mCurrentDevice, BluetoothDevice.BOND_NONE, CONNECTION_POLICY_ALLOWED, true);
         testOkToAcceptConnectionCase(
                 mCurrentDevice, BluetoothDevice.BOND_NONE, badPriorityValue, false);
         testOkToAcceptConnectionCase(
-                mCurrentDevice,
-                BluetoothDevice.BOND_BONDING,
-                CONNECTION_POLICY_UNKNOWN,
-                Flags.donotValidateBondStateFromProfiles());
+                mCurrentDevice, BluetoothDevice.BOND_BONDING, CONNECTION_POLICY_UNKNOWN, true);
         testOkToAcceptConnectionCase(
                 mCurrentDevice, BluetoothDevice.BOND_BONDING, CONNECTION_POLICY_FORBIDDEN, false);
         testOkToAcceptConnectionCase(
-                mCurrentDevice,
-                BluetoothDevice.BOND_BONDING,
-                CONNECTION_POLICY_ALLOWED,
-                Flags.donotValidateBondStateFromProfiles());
+                mCurrentDevice, BluetoothDevice.BOND_BONDING, CONNECTION_POLICY_ALLOWED, true);
         testOkToAcceptConnectionCase(
                 mCurrentDevice, BluetoothDevice.BOND_BONDING, badPriorityValue, false);
         testOkToAcceptConnectionCase(
@@ -248,18 +236,10 @@ public class HeadsetServiceTest {
                 mCurrentDevice, BluetoothDevice.BOND_BONDED, CONNECTION_POLICY_ALLOWED, true);
         testOkToAcceptConnectionCase(
                 mCurrentDevice, BluetoothDevice.BOND_BONDED, badPriorityValue, false);
-        testOkToAcceptConnectionCase(
-                mCurrentDevice,
-                badBondState,
-                CONNECTION_POLICY_UNKNOWN,
-                Flags.donotValidateBondStateFromProfiles());
+        testOkToAcceptConnectionCase(mCurrentDevice, badBondState, CONNECTION_POLICY_UNKNOWN, true);
         testOkToAcceptConnectionCase(
                 mCurrentDevice, badBondState, CONNECTION_POLICY_FORBIDDEN, false);
-        testOkToAcceptConnectionCase(
-                mCurrentDevice,
-                badBondState,
-                CONNECTION_POLICY_ALLOWED,
-                Flags.donotValidateBondStateFromProfiles());
+        testOkToAcceptConnectionCase(mCurrentDevice, badBondState, CONNECTION_POLICY_ALLOWED, true);
         testOkToAcceptConnectionCase(mCurrentDevice, badBondState, badPriorityValue, false);
     }
 
@@ -1083,7 +1063,7 @@ public class HeadsetServiceTest {
                         any(BluetoothDevice.class), eq(BluetoothProfile.HEADSET)))
                 .thenReturn(CONNECTION_POLICY_UNKNOWN);
         for (int i = 0; i < 2; i++) {
-            mCurrentDevice = getTestDevice(i);
+            mCurrentDevice = getRealDevice(i);
             assertThat(mHeadsetService.connect(mCurrentDevice)).isTrue();
             when(mStateMachines.get(mCurrentDevice).getDevice()).thenReturn(mCurrentDevice);
             when(mStateMachines.get(mCurrentDevice).getConnectionState())
@@ -1091,8 +1071,8 @@ public class HeadsetServiceTest {
             when(mStateMachines.get(mCurrentDevice).setSilenceDevice(anyBoolean()))
                     .thenReturn(true);
         }
-        mCurrentDevice = getTestDevice(0);
-        BluetoothDevice otherDevice = getTestDevice(1);
+        mCurrentDevice = getRealDevice(0);
+        BluetoothDevice otherDevice = getRealDevice(1);
 
         // Test whether active device been removed after enable silence mode.
         assertThat(mHeadsetService.setActiveDevice(mCurrentDevice)).isTrue();

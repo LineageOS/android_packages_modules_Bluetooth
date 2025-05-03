@@ -42,9 +42,9 @@ public class AvrcpControllerServiceBinderTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private AvrcpControllerService mService;
 
-    private final AttributionSource mAttributionSource = new AttributionSource.Builder(1).build();
     private final BluetoothDevice mDevice = getTestDevice(49);
 
     private AvrcpControllerServiceBinder mBinder;

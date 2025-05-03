@@ -17,14 +17,13 @@
 package com.android.bluetooth.btservice;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.getRealDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.content.Context;
@@ -34,9 +33,6 @@ import android.os.HandlerThread;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
-
-import com.android.bluetooth.TestUtils;
-import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.After;
 import org.junit.Before;
@@ -55,23 +51,21 @@ public class CompanionManagerTest {
     @Mock SharedPreferences mSharedPreferences;
     @Mock SharedPreferences.Editor mEditor;
 
-    private final BluetoothDevice mDevice = getTestDevice(123);
+    private final BluetoothDevice mTestDevice = getRealDevice(123);
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     private CompanionManager mCompanionManager;
     private HandlerThread mHandlerThread;
 
     @Before
     public void setUp() throws Exception {
-        // Prepare the TestUtils
-        TestUtils.setAdapterService(mAdapterService);
         when(mAdapterService.getRemoteDevice(anyString()))
                 .thenAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
-                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+                            return getRealDevice(address);
                         });
         // Start handler thread for this test
         mHandlerThread = new HandlerThread("CompanionManagerTestHandlerThread");
@@ -94,7 +88,6 @@ public class CompanionManagerTest {
     @After
     public void tearDown() throws Exception {
         mHandlerThread.quit();
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test
@@ -115,13 +108,13 @@ public class CompanionManagerTest {
     @Test
     public void testIsCompanionDevice() {
         loadCompanionInfoHelper(CompanionManager.COMPANION_TYPE_NONE);
-        assertThat(mCompanionManager.isCompanionDevice(mDevice)).isTrue();
+        assertThat(mCompanionManager.isCompanionDevice(mTestDevice)).isTrue();
 
         loadCompanionInfoHelper(CompanionManager.COMPANION_TYPE_PRIMARY);
-        assertThat(mCompanionManager.isCompanionDevice(mDevice)).isTrue();
+        assertThat(mCompanionManager.isCompanionDevice(mTestDevice)).isTrue();
 
         loadCompanionInfoHelper(CompanionManager.COMPANION_TYPE_SECONDARY);
-        assertThat(mCompanionManager.isCompanionDevice(mDevice)).isTrue();
+        assertThat(mCompanionManager.isCompanionDevice(mTestDevice)).isTrue();
     }
 
     @Test
@@ -144,7 +137,8 @@ public class CompanionManagerTest {
     }
 
     private void loadCompanionInfoHelper(int companionType) {
-        doReturn(mDevice.getAddress())
+        final String address = mTestDevice.getAddress();
+        doReturn(address)
                 .when(mSharedPreferences)
                 .getString(eq(CompanionManager.COMPANION_DEVICE_KEY), anyString());
         doReturn(companionType)
@@ -162,13 +156,13 @@ public class CompanionManagerTest {
 
         int min =
                 mCompanionManager.getGattConnParameters(
-                        mDevice, CompanionManager.GATT_CONN_INTERVAL_MIN, priority);
+                        mTestDevice, CompanionManager.GATT_CONN_INTERVAL_MIN, priority);
         int max =
                 mCompanionManager.getGattConnParameters(
-                        mDevice, CompanionManager.GATT_CONN_INTERVAL_MAX, priority);
+                        mTestDevice, CompanionManager.GATT_CONN_INTERVAL_MAX, priority);
         int latency =
                 mCompanionManager.getGattConnParameters(
-                        mDevice, CompanionManager.GATT_CONN_LATENCY, priority);
+                        mTestDevice, CompanionManager.GATT_CONN_LATENCY, priority);
 
         assertThat(max).isAtLeast(min);
         assertThat(max).isAtLeast(minInterval);

@@ -179,35 +179,24 @@ public final class BluetoothLeBroadcastReceiveState implements Parcelable {
     private final List<BluetoothLeAudioContentMetadata> mSubgroupMetadata;
 
     private static String paSyncStateToString(int paSyncState) {
-        switch (paSyncState) {
-            case 0x00:
-                return "Not synchronized to PA: [" + paSyncState + "]";
-            case 0x01:
-                return "SyncInfo Request: [" + paSyncState + "]";
-            case 0x02:
-                return "Synchronized to PA: [" + paSyncState + "]";
-            case 0x03:
-                return "Failed to synchronize to PA: [" + paSyncState + "]";
-            case 0x04:
-                return "No PAST: [" + paSyncState + "]";
-            default:
-                return "RFU: [" + paSyncState + "]";
-        }
+        return switch (paSyncState) {
+            case 0x00 -> "Not synchronized to PA: [" + paSyncState + "]";
+            case 0x01 -> "SyncInfo Request: [" + paSyncState + "]";
+            case 0x02 -> "Synchronized to PA: [" + paSyncState + "]";
+            case 0x03 -> "Failed to synchronize to PA: [" + paSyncState + "]";
+            case 0x04 -> "No PAST: [" + paSyncState + "]";
+            default -> "RFU: [" + paSyncState + "]";
+        };
     }
 
     private static String bigEncryptionStateToString(int bigEncryptionState) {
-        switch (bigEncryptionState) {
-            case 0x00:
-                return "Not encrypted: [" + bigEncryptionState + "]";
-            case 0x01:
-                return "Broadcast_Code required: [" + bigEncryptionState + "]";
-            case 0x02:
-                return "Decrypting: [" + bigEncryptionState + "]";
-            case 0x03:
-                return "Bad_Code (incorrect encryption key): [" + bigEncryptionState + "]";
-            default:
-                return "RFU: [" + bigEncryptionState + "]";
-        }
+        return switch (bigEncryptionState) {
+            case 0x00 -> "Not encrypted: [" + bigEncryptionState + "]";
+            case 0x01 -> "Broadcast_Code required: [" + bigEncryptionState + "]";
+            case 0x02 -> "Decrypting: [" + bigEncryptionState + "]";
+            case 0x03 -> "Bad_Code (incorrect encryption key): [" + bigEncryptionState + "]";
+            default -> "RFU: [" + bigEncryptionState + "]";
+        };
     }
 
     private static String bisSyncStateToString(Long bisSyncState, int bisSyncStateIndex) {

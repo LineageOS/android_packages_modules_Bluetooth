@@ -17,14 +17,13 @@
 package com.android.bluetooth.gatt
 
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
 import android.bluetooth.le.DistanceMeasurementMethod
 import android.bluetooth.le.DistanceMeasurementParams
 import android.bluetooth.le.IDistanceMeasurementCallback
+import android.content.AttributionSource
 import android.os.ParcelUuid
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.TestUtils.MockitoRule
 import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.btservice.AdapterService
@@ -49,15 +48,9 @@ class DistanceMeasurementBinderTest {
 
     @get:Rule val mockitoRule = MockitoRule()
 
+    @Mock private lateinit var attributionSource: AttributionSource
     @Mock private lateinit var distanceMeasurementManager: DistanceMeasurementManager
     @Mock private lateinit var adapterService: AdapterService
-
-    private val attributionSource =
-        InstrumentationRegistry.getInstrumentation()
-            .targetContext
-            .getSystemService(BluetoothManager::class.java)
-            .adapter
-            .attributionSource
 
     private lateinit var binder: DistanceMeasurementBinder
 
@@ -98,7 +91,8 @@ class DistanceMeasurementBinderTest {
                 .build()
         val callback = mock(IDistanceMeasurementCallback::class.java)
         binder.startDistanceMeasurement(ParcelUuid(uuid), params, callback, attributionSource)
-        verify(distanceMeasurementManager).startDistanceMeasurement(uuid, params, callback)
+        verify(distanceMeasurementManager)
+            .startDistanceMeasurement(uuid, attributionSource.uid, params, callback)
     }
 
     @Test

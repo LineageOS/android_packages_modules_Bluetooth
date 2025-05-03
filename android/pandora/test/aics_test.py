@@ -19,10 +19,10 @@ from avatar import PandoraDevices, BumblePandoraDevice
 from mobly import base_test, signals
 from mobly.asserts import assert_in, assert_not_in  # type: ignore
 
-from pandora_experimental.os_grpc_aio import Os as OsAio
+from pandora.os_grpc_aio import Os as OsAio
 from pandora.host_pb2 import RANDOM
-from pandora_experimental.gatt_grpc import GATT
-from pandora_experimental.gatt_pb2 import PRIMARY
+from pandora.gatt_grpc import GATT
+from pandora.gatt_pb2 import PRIMARY
 
 from bumble.att import UUID
 from bumble.gatt import GATT_VOLUME_CONTROL_SERVICE, GATT_AUDIO_INPUT_CONTROL_SERVICE

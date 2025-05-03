@@ -903,6 +903,13 @@ void tSMP_CB::reset() {
   this->init_security_mode = init_security_mode;
   this->smp_rsp_timer_ent = smp_rsp_timer_ent;
   this->delayed_auth_timer_ent = delayed_auth_timer_ent;
+
+  /* Initialize failure case for certification */
+  smp_cb.cert_failure =
+          static_cast<tSMP_STATUS>(stack_config_get_interface()->get_pts_smp_failure_case());
+  if (smp_cb.cert_failure) {
+    log::error("PTS FAILURE MODE IN EFFECT (CASE {})", smp_cb.cert_failure);
+  }
 }
 
 /*******************************************************************************

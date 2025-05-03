@@ -76,12 +76,11 @@ public class PbapClientObexClientTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     private BluetoothAdapter mAdapter = null;
-    private BluetoothDevice mDevice;
+    private final BluetoothDevice mDevice = getTestDevice(1);
 
     // Normal supported features for our client
     private static final int SUPPORTED_FEATURES =
-            PbapSdpRecord.FEATURE_DOWNLOADING
-                    | PbapSdpRecord.FEATURE_DEFAULT_IMAGE_FORMAT;
+            PbapSdpRecord.FEATURE_DOWNLOADING | PbapSdpRecord.FEATURE_DEFAULT_IMAGE_FORMAT;
 
     // Default property filter for downloaded contacts
     private static final long DEFAULT_PROPERTIES =
@@ -110,11 +109,10 @@ public class PbapClientObexClientTest {
     public void setUp() throws IOException {
         mAdapter =
                 InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
+                        .getContext()
                         .getSystemService(BluetoothManager.class)
                         .getAdapter();
         assertThat(mAdapter).isNotNull();
-        mDevice = getTestDevice(1);
 
         mServer = new FakePbapObexServer();
         ObexTransport transport = mServer.getClientTransport();

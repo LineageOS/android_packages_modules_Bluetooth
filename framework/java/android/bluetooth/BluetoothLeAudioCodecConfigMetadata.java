@@ -515,90 +515,56 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
     }
 
     private static int convertToSampleRateBitset(int samplingFrequencyValue) {
-        switch (samplingFrequencyValue) {
-            case CONFIG_SAMPLING_FREQUENCY_8000:
-                return SAMPLE_RATE_8000;
-            case CONFIG_SAMPLING_FREQUENCY_11025:
-                return SAMPLE_RATE_11025;
-            case CONFIG_SAMPLING_FREQUENCY_16000:
-                return SAMPLE_RATE_16000;
-            case CONFIG_SAMPLING_FREQUENCY_22050:
-                return SAMPLE_RATE_22050;
-            case CONFIG_SAMPLING_FREQUENCY_24000:
-                return SAMPLE_RATE_24000;
-            case CONFIG_SAMPLING_FREQUENCY_32000:
-                return SAMPLE_RATE_32000;
-            case CONFIG_SAMPLING_FREQUENCY_44100:
-                return SAMPLE_RATE_44100;
-            case CONFIG_SAMPLING_FREQUENCY_48000:
-                return SAMPLE_RATE_48000;
-            case CONFIG_SAMPLING_FREQUENCY_88200:
-                return SAMPLE_RATE_88200;
-            case CONFIG_SAMPLING_FREQUENCY_96000:
-                return SAMPLE_RATE_96000;
-            case CONFIG_SAMPLING_FREQUENCY_176400:
-                return SAMPLE_RATE_176400;
-            case CONFIG_SAMPLING_FREQUENCY_192000:
-                return SAMPLE_RATE_192000;
-            case CONFIG_SAMPLING_FREQUENCY_384000:
-                return SAMPLE_RATE_384000;
-            default:
-                return SAMPLE_RATE_NONE;
-        }
+        return switch (samplingFrequencyValue) {
+            case CONFIG_SAMPLING_FREQUENCY_8000 -> SAMPLE_RATE_8000;
+            case CONFIG_SAMPLING_FREQUENCY_11025 -> SAMPLE_RATE_11025;
+            case CONFIG_SAMPLING_FREQUENCY_16000 -> SAMPLE_RATE_16000;
+            case CONFIG_SAMPLING_FREQUENCY_22050 -> SAMPLE_RATE_22050;
+            case CONFIG_SAMPLING_FREQUENCY_24000 -> SAMPLE_RATE_24000;
+            case CONFIG_SAMPLING_FREQUENCY_32000 -> SAMPLE_RATE_32000;
+            case CONFIG_SAMPLING_FREQUENCY_44100 -> SAMPLE_RATE_44100;
+            case CONFIG_SAMPLING_FREQUENCY_48000 -> SAMPLE_RATE_48000;
+            case CONFIG_SAMPLING_FREQUENCY_88200 -> SAMPLE_RATE_88200;
+            case CONFIG_SAMPLING_FREQUENCY_96000 -> SAMPLE_RATE_96000;
+            case CONFIG_SAMPLING_FREQUENCY_176400 -> SAMPLE_RATE_176400;
+            case CONFIG_SAMPLING_FREQUENCY_192000 -> SAMPLE_RATE_192000;
+            case CONFIG_SAMPLING_FREQUENCY_384000 -> SAMPLE_RATE_384000;
+            default -> SAMPLE_RATE_NONE;
+        };
     }
 
     private static int convertToSamplingFrequencyValue(int sampleRateBitSet) {
-        switch (sampleRateBitSet) {
-            case SAMPLE_RATE_8000:
-                return CONFIG_SAMPLING_FREQUENCY_8000;
-            case SAMPLE_RATE_11025:
-                return CONFIG_SAMPLING_FREQUENCY_11025;
-            case SAMPLE_RATE_16000:
-                return CONFIG_SAMPLING_FREQUENCY_16000;
-            case SAMPLE_RATE_22050:
-                return CONFIG_SAMPLING_FREQUENCY_22050;
-            case SAMPLE_RATE_24000:
-                return CONFIG_SAMPLING_FREQUENCY_24000;
-            case SAMPLE_RATE_32000:
-                return CONFIG_SAMPLING_FREQUENCY_32000;
-            case SAMPLE_RATE_44100:
-                return CONFIG_SAMPLING_FREQUENCY_44100;
-            case SAMPLE_RATE_48000:
-                return CONFIG_SAMPLING_FREQUENCY_48000;
-            case SAMPLE_RATE_88200:
-                return CONFIG_SAMPLING_FREQUENCY_88200;
-            case SAMPLE_RATE_96000:
-                return CONFIG_SAMPLING_FREQUENCY_96000;
-            case SAMPLE_RATE_176400:
-                return CONFIG_SAMPLING_FREQUENCY_176400;
-            case SAMPLE_RATE_192000:
-                return CONFIG_SAMPLING_FREQUENCY_192000;
-            case SAMPLE_RATE_384000:
-                return CONFIG_SAMPLING_FREQUENCY_384000;
-            default:
-                return CONFIG_SAMPLING_FREQUENCY_UNKNOWN;
-        }
+        return switch (sampleRateBitSet) {
+            case SAMPLE_RATE_8000 -> CONFIG_SAMPLING_FREQUENCY_8000;
+            case SAMPLE_RATE_11025 -> CONFIG_SAMPLING_FREQUENCY_11025;
+            case SAMPLE_RATE_16000 -> CONFIG_SAMPLING_FREQUENCY_16000;
+            case SAMPLE_RATE_22050 -> CONFIG_SAMPLING_FREQUENCY_22050;
+            case SAMPLE_RATE_24000 -> CONFIG_SAMPLING_FREQUENCY_24000;
+            case SAMPLE_RATE_32000 -> CONFIG_SAMPLING_FREQUENCY_32000;
+            case SAMPLE_RATE_44100 -> CONFIG_SAMPLING_FREQUENCY_44100;
+            case SAMPLE_RATE_48000 -> CONFIG_SAMPLING_FREQUENCY_48000;
+            case SAMPLE_RATE_88200 -> CONFIG_SAMPLING_FREQUENCY_88200;
+            case SAMPLE_RATE_96000 -> CONFIG_SAMPLING_FREQUENCY_96000;
+            case SAMPLE_RATE_176400 -> CONFIG_SAMPLING_FREQUENCY_176400;
+            case SAMPLE_RATE_192000 -> CONFIG_SAMPLING_FREQUENCY_192000;
+            case SAMPLE_RATE_384000 -> CONFIG_SAMPLING_FREQUENCY_384000;
+            default -> CONFIG_SAMPLING_FREQUENCY_UNKNOWN;
+        };
     }
 
     private static int convertToFrameDurationBitset(int frameDurationValue) {
-        switch (frameDurationValue) {
-            case CONFIG_FRAME_DURATION_7500:
-                return FRAME_DURATION_7500;
-            case CONFIG_FRAME_DURATION_10000:
-                return FRAME_DURATION_10000;
-            default:
-                return FRAME_DURATION_NONE;
-        }
+        return switch (frameDurationValue) {
+            case CONFIG_FRAME_DURATION_7500 -> FRAME_DURATION_7500;
+            case CONFIG_FRAME_DURATION_10000 -> FRAME_DURATION_10000;
+            default -> FRAME_DURATION_NONE;
+        };
     }
 
     private static int convertToFrameDurationValue(int frameDurationBitset) {
-        switch (frameDurationBitset) {
-            case FRAME_DURATION_7500:
-                return CONFIG_FRAME_DURATION_7500;
-            case FRAME_DURATION_10000:
-                return CONFIG_FRAME_DURATION_10000;
-            default:
-                return CONFIG_FRAME_DURATION_UNKNOWN;
-        }
+        return switch (frameDurationBitset) {
+            case FRAME_DURATION_7500 -> CONFIG_FRAME_DURATION_7500;
+            case FRAME_DURATION_10000 -> CONFIG_FRAME_DURATION_10000;
+            default -> CONFIG_FRAME_DURATION_UNKNOWN;
+        };
     }
 }

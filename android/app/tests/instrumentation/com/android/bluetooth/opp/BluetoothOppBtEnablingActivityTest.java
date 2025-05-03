@@ -108,7 +108,7 @@ public class BluetoothOppBtEnablingActivityTest {
                     mOppManager[0] = BluetoothOppManager.getInstance(activity);
                 });
         Thread.sleep(spedUpTimeoutValue);
-        assertThat(mOppManager[0].mSendingFlag).isEqualTo(false);
+        assertThat(mOppManager[0].mSendingFlag).isFalse();
         assertActivityState(activityScenario, DESTROYED);
     }
 
@@ -127,7 +127,7 @@ public class BluetoothOppBtEnablingActivityTest {
                             new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
                     // Should be cancelled immediately
                     BluetoothOppManager mOppManager = BluetoothOppManager.getInstance(activity);
-                    assertThat(mOppManager.mSendingFlag).isEqualTo(false);
+                    assertThat(mOppManager.mSendingFlag).isFalse();
 
                     finishCalled.set(activity.isFinishing());
                 });

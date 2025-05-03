@@ -126,61 +126,40 @@ public class PbapSdpRecord {
      * <p>For example, 0x0102 is 1.2.
      */
     public static String versionToString(int version) {
-        switch (version) {
-            case FIELD_MISSING:
-                return "VERSION_UNKNOWN";
-            case VERSION_1_0:
-                return "VERSION_1_0";
-            case VERSION_1_1:
-                return "VERSION_1_1";
-            case VERSION_1_2:
-                return "VERSION_1_2";
-            default:
-                return "VERSION_UNRECOGNIZED_" + String.format("%04X", version);
-        }
+        return switch (version) {
+            case FIELD_MISSING -> "VERSION_UNKNOWN";
+            case VERSION_1_0 -> "VERSION_1_0";
+            case VERSION_1_1 -> "VERSION_1_1";
+            case VERSION_1_2 -> "VERSION_1_2";
+            default -> "VERSION_UNRECOGNIZED_" + String.format("%04X", version);
+        };
     }
 
     /** Get a string representation of any of the SDP feature constants */
     public static String featureToString(int feature) {
-        switch (feature) {
-            case FEATURE_DOWNLOADING:
-                return "FEATURE_DOWNLOADING";
-            case FEATURE_BROWSING:
-                return "FEATURE_BROWSING";
-            case FEATURE_DATABASE_IDENTIFIER:
-                return "FEATURE_DATABASE_IDENTIFIER";
-            case FEATURE_FOLDER_VERSION_COUNTERS:
-                return "FEATURE_FOLDER_VERSION_COUNTERS";
-            case FEATURE_VCARD_SELECTING:
-                return "FEATURE_VCARD_SELECTING";
-            case FEATURE_ENHANCED_MISSED_CALLS:
-                return "FEATURE_ENHANCED_MISSED_CALLS";
-            case FEATURE_XBT_UCI_VCARD_PROPERTY:
-                return "FEATURE_XBT_UCI_VCARD_PROPERTY";
-            case FEATURE_XBT_UID_VCARD_PROPERTY:
-                return "FEATURE_XBT_UID_VCARD_PROPERTY";
-            case FEATURE_CONTACT_REFERENCING:
-                return "FEATURE_CONTACT_REFERENCING";
-            case FEATURE_DEFAULT_IMAGE_FORMAT:
-                return "FEATURE_DEFAULT_IMAGE_FORMAT";
-            default:
-                return "FEATURE_RESERVED_BIT_" + feature;
-        }
+        return switch (feature) {
+            case FEATURE_DOWNLOADING -> "FEATURE_DOWNLOADING";
+            case FEATURE_BROWSING -> "FEATURE_BROWSING";
+            case FEATURE_DATABASE_IDENTIFIER -> "FEATURE_DATABASE_IDENTIFIER";
+            case FEATURE_FOLDER_VERSION_COUNTERS -> "FEATURE_FOLDER_VERSION_COUNTERS";
+            case FEATURE_VCARD_SELECTING -> "FEATURE_VCARD_SELECTING";
+            case FEATURE_ENHANCED_MISSED_CALLS -> "FEATURE_ENHANCED_MISSED_CALLS";
+            case FEATURE_XBT_UCI_VCARD_PROPERTY -> "FEATURE_XBT_UCI_VCARD_PROPERTY";
+            case FEATURE_XBT_UID_VCARD_PROPERTY -> "FEATURE_XBT_UID_VCARD_PROPERTY";
+            case FEATURE_CONTACT_REFERENCING -> "FEATURE_CONTACT_REFERENCING";
+            case FEATURE_DEFAULT_IMAGE_FORMAT -> "FEATURE_DEFAULT_IMAGE_FORMAT";
+            default -> "FEATURE_RESERVED_BIT_" + feature;
+        };
     }
 
     /** Get a string representation of any of the SDP repository constants */
     public static String repositoryToString(int repository) {
-        switch (repository) {
-            case REPOSITORY_LOCAL_PHONEBOOK:
-                return "REPOSITORY_LOCAL_PHONEBOOK";
-            case REPOSITORY_SIM_CARD:
-                return "REPOSITORY_SIM_CARD";
-            case REPOSITORY_SPEED_DIAL:
-                return "REPOSITORY_SPEED_DIAL";
-            case REPOSITORY_FAVORITES:
-                return "REPOSITORY_FAVORITES";
-            default:
-                return "REPOSITORY_RESERVED_BIT_" + repository;
-        }
+        return switch (repository) {
+            case REPOSITORY_LOCAL_PHONEBOOK -> "REPOSITORY_LOCAL_PHONEBOOK";
+            case REPOSITORY_SIM_CARD -> "REPOSITORY_SIM_CARD";
+            case REPOSITORY_SPEED_DIAL -> "REPOSITORY_SPEED_DIAL";
+            case REPOSITORY_FAVORITES -> "REPOSITORY_FAVORITES";
+            default -> "REPOSITORY_RESERVED_BIT_" + repository;
+        };
     }
 }

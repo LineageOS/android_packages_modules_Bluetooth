@@ -44,10 +44,9 @@ import java.util.concurrent.Executor;
  * as the looper for the current thread
  *
  * @deprecated Use {@link android.os.TestLooperManager} or {@link
- *     org.robolectric.shadows.ShadowLooper} instead.
- *     This class is not actively maintained.
- *     Both of the recommended alternatives allow fine control of execution.
- *     The Robolectric class also allows advancing time.
+ *     org.robolectric.shadows.ShadowLooper} instead. This class is not actively maintained. Both of
+ *     the recommended alternatives allow fine control of execution. The Robolectric class also
+ *     allows advancing time.
  */
 public class TestLooper {
     private static final String TAG = TestLooper.class.getSimpleName();
@@ -72,9 +71,7 @@ public class TestLooper {
         }
     }
 
-    /**
-     * Creates a TestLooper and installs it as the looper for the current thread.
-     */
+    /** Creates a TestLooper and installs it as the looper for the current thread. */
     public TestLooper() {
         this(SystemClock::uptimeMillis);
     }
@@ -83,11 +80,10 @@ public class TestLooper {
      * Creates a TestLooper with a custom clock and installs it as the looper for the current
      * thread.
      *
-     * Messages are dispatched when their {@link Message#when} is before or at {@link
-     * Clock#uptimeMillis()}.
-     * Use a custom clock with care. When using an offsettable clock like {@link
-     * com.android.server.testutils.OffsettableClock} be sure not to double offset messages by
-     * offsetting the clock and calling {@link #moveTimeForward(long)}. Instead, offset the clock
+     * <p>Messages are dispatched when their {@link Message#when} is before or at {@link
+     * Clock#uptimeMillis()}. Use a custom clock with care. When using an offsettable clock like
+     * {@link com.android.server.testutils.OffsettableClock} be sure not to double offset messages
+     * by offsetting the clock and calling {@link #moveTimeForward(long)}. Instead, offset the clock
      * and call {@link #dispatchAll()}.
      */
     public TestLooper(Clock clock) {
@@ -172,10 +168,7 @@ public class TestLooper {
         }
     }
 
-    /**
-     * Dispatch the next message in the queue
-     * Asserts that there is a message in the queue
-     */
+    /** Dispatch the next message in the queue Asserts that there is a message in the queue */
     public void dispatchNext() {
         assertTrue(isIdle());
         Message msg = mTestLooperManager.poll();
@@ -186,8 +179,7 @@ public class TestLooper {
     }
 
     /**
-     * Dispatch all messages currently in the queue
-     * Will not fail if there are no messages pending
+     * Dispatch all messages currently in the queue Will not fail if there are no messages pending
      *
      * @return the number of messages dispatched
      */
@@ -204,9 +196,7 @@ public class TestLooper {
         long uptimeMillis();
     }
 
-    /**
-     * Thread used to dispatch messages when the main thread is blocked waiting for a response.
-     */
+    /** Thread used to dispatch messages when the main thread is blocked waiting for a response. */
     private class AutoDispatchThread extends Thread {
         private static final int MAX_LOOPS = 100;
         private static final int LOOP_SLEEP_TIME_MS = 10;
@@ -214,10 +204,9 @@ public class TestLooper {
         private RuntimeException mAutoDispatchException = null;
 
         /**
-         * Run method for the auto dispatch thread.
-         * The thread loops a maximum of MAX_LOOPS times with a 10ms sleep between loops.
-         * The thread continues looping and attempting to dispatch all messages until
-         * {@link #stopAutoDispatch()} has been invoked.
+         * Run method for the auto dispatch thread. The thread loops a maximum of MAX_LOOPS times
+         * with a 10ms sleep between loops. The thread continues looping and attempting to dispatch
+         * all messages until {@link #stopAutoDispatch()} has been invoked.
          */
         @Override
         public void run() {
@@ -235,16 +224,19 @@ public class TestLooper {
                 } catch (InterruptedException e) {
                     if (dispatchCount == 0) {
                         Log.e(TAG, "stopAutoDispatch called before any messages were dispatched.");
-                        mAutoDispatchException = new IllegalStateException(
-                                "stopAutoDispatch called before any messages were dispatched.");
+                        mAutoDispatchException =
+                                new IllegalStateException(
+                                        "stopAutoDispatch called before any messages were"
+                                                + " dispatched.");
                     }
                     return;
                 }
             }
             if (dispatchCount == 0) {
                 Log.e(TAG, "AutoDispatchThread did not dispatch any messages.");
-                mAutoDispatchException = new IllegalStateException(
-                        "TestLooper did not dispatch any messages before exiting.");
+                mAutoDispatchException =
+                        new IllegalStateException(
+                                "TestLooper did not dispatch any messages before exiting.");
             }
         }
 
@@ -259,9 +251,7 @@ public class TestLooper {
         }
     }
 
-    /**
-     * Create and start a new AutoDispatchThread if one is not already running.
-     */
+    /** Create and start a new AutoDispatchThread if one is not already running. */
     public void startAutoDispatch() {
         if (mAutoDispatchThread != null) {
             throw new IllegalStateException(
@@ -271,9 +261,7 @@ public class TestLooper {
         mAutoDispatchThread.start();
     }
 
-    /**
-     * If an AutoDispatchThread is currently running, stop and clean up.
-     */
+    /** If an AutoDispatchThread is currently running, stop and clean up. */
     public void stopAutoDispatch() {
         if (mAutoDispatchThread != null) {
             if (mAutoDispatchThread.isAlive()) {
@@ -288,14 +276,13 @@ public class TestLooper {
             }
         } else {
             // stopAutoDispatch was called when startAutoDispatch has not created a new thread.
-            throw new IllegalStateException(
-                    "stopAutoDispatch called without startAutoDispatch.");
+            throw new IllegalStateException("stopAutoDispatch called without startAutoDispatch.");
         }
     }
 
     /**
-     * If an AutoDispatchThread is currently running, stop and clean up.
-     * This method ignores exceptions raised for indicating that no messages were dispatched.
+     * If an AutoDispatchThread is currently running, stop and clean up. This method ignores
+     * exceptions raised for indicating that no messages were dispatched.
      */
     public void stopAutoDispatchAndIgnoreExceptions() {
         try {
@@ -303,6 +290,5 @@ public class TestLooper {
         } catch (IllegalStateException e) {
             Log.e(TAG, "stopAutoDispatch", e);
         }
-
     }
 }

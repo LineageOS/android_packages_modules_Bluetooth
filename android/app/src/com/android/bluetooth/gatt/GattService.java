@@ -122,7 +122,12 @@ public class GattService extends ProfileService {
                     "");
 
     private static final Set<String> GATT_CLIENTS_PREFER_RELAX_MODE =
-            new HashSet<>(Arrays.asList("activeunlock_primary", "channelsoundingtestapp"));
+            new HashSet<>(
+                    Arrays.asList(
+                            "activeunlock_primary",
+                            "channelsoundingtestapp",
+                            "com.google.android.apps.adm",
+                            "channelsounding"));
 
     @VisibleForTesting static final int GATT_CLIENT_LIMIT_PER_APP = 32;
 
@@ -214,7 +219,7 @@ public class GattService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup Gatt Service");
+        Log.i(TAG, "cleanup()");
 
         if (Flags.onlyStartScanDuringBleOn() && sGattService == null) {
             Log.w(TAG, "cleanup() called before initialization");
@@ -702,16 +707,6 @@ public class GattService extends ProfileService {
 
         ContextMap<IBluetoothGattCallback>.App app = mClientMap.getByConnId(connId);
         if (app == null) {
-            return;
-        }
-        try {
-            permissionCheck(connId, handle);
-        } catch (SecurityException ex) {
-            // Only throws on apps with target SDK T+ as this old API did not throw prior to T
-            if (checkCallerTargetSdk(this, app.packageName, Build.VERSION_CODES.TIRAMISU)) {
-                throw ex;
-            }
-            Log.w(TAG, "onNotify() - permission check failed!");
             return;
         }
         callbackToApp(() -> app.callback.onNotify(device, handle, data));

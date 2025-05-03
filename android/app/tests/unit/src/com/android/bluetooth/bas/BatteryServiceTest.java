@@ -38,9 +38,9 @@ import android.bluetooth.BluetoothUuid;
 import android.os.ParcelUuid;
 
 import androidx.test.filters.MediumTest;
+import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
-import com.android.bluetooth.TestUtils.MockitoRule;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 
@@ -49,14 +49,13 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 import org.mockito.Mock;
 
 import java.util.List;
 
 /** Test cases for {@link BatteryService}. */
 @MediumTest
-@RunWith(JUnit4.class)
+@RunWith(AndroidJUnit4.class)
 public class BatteryServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
@@ -120,7 +119,7 @@ public class BatteryServiceTest {
                             badPolicyValue)) {
                 doReturn(bondState).when(mAdapterService).getBondState(any());
                 doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
-                assertThat(mService.canConnect(mDevice)).isEqualTo(false);
+                assertThat(mService.canConnect(mDevice)).isFalse();
             }
         }
     }
@@ -132,7 +131,7 @@ public class BatteryServiceTest {
 
         for (int policy : List.of(CONNECTION_POLICY_FORBIDDEN, badPolicyValue)) {
             doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.canConnect(mDevice)).isEqualTo(false);
+            assertThat(mService.canConnect(mDevice)).isFalse();
         }
         for (int policy : List.of(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
             doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());

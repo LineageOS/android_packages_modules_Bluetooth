@@ -321,21 +321,11 @@ public class BluetoothMapUtils {
      * @return String Formatted Map Handle
      */
     public static String getMapConvoHandle(long cpHandle, TYPE messageType) {
-        String mapHandle = "-1";
-        switch (messageType) {
-            case MMS:
-            case SMS_GSM:
-            case SMS_CDMA:
-                mapHandle = getLongLongAsString(cpHandle, CONVO_ID_TYPE_SMS_MMS);
-                break;
-            case EMAIL:
-            case IM:
-                mapHandle = getLongLongAsString(cpHandle, CONVO_ID_TYPE_EMAIL_IM);
-                break;
-            default:
-                throw new IllegalArgumentException("Message type not supported");
-        }
-        return mapHandle;
+        return switch (messageType) {
+            case MMS, SMS_GSM, SMS_CDMA -> getLongLongAsString(cpHandle, CONVO_ID_TYPE_SMS_MMS);
+            case EMAIL, IM -> getLongLongAsString(cpHandle, CONVO_ID_TYPE_EMAIL_IM);
+            default -> throw new IllegalArgumentException("Message type not supported");
+        };
     }
 
     /**

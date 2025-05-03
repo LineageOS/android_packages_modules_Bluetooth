@@ -696,6 +696,32 @@ TEST_F(LeImplTest, aggressive_connection_mode_selected_when_few_le_connections_e
             LeConnectionParameters::GetMaxConnIntervalAggressive());
 }
 
+TEST_F(LeImplTest,
+       le_iso_aggressive_connection_mode_not_selected_when_no_lea_device_found_in_accept_list) {
+  if (LeConnectionParameters::GetLeIsoAggressiveConnThreshold() == 0) {
+    GTEST_SKIP() << "Skipping test because the threshold is zero";
+  }
+
+  com::android::bluetooth::flags::provider_->initial_conn_params_p1(true);
+  com::android::bluetooth::flags::provider_->leaudio_use_aggressive_params(true);
+
+  std::vector<AddressWithType> accept_list;
+  Address test_non_le_audio_device_address = Address::FromString("00:11:22:33:44:55").value();
+  accept_list.push_back(
+          AddressWithType{test_non_le_audio_device_address, AddressType::PUBLIC_DEVICE_ADDRESS});
+
+  set_random_device_address_policy();
+  controller_->AddSupported(OpCode::LE_EXTENDED_CREATE_CONNECTION);
+
+  LeExtendedCreateConnectionView view = get_view_from_creating_connection("FF:EE:DD:CC:BB:AA");
+
+  ASSERT_TRUE(view.IsValid());
+  ASSERT_EQ(view.GetPhyScanParameters()[0].conn_interval_min_,
+            LeConnectionParameters::GetMinConnIntervalAggressive());
+  ASSERT_EQ(view.GetPhyScanParameters()[0].conn_interval_max_,
+            LeConnectionParameters::GetMaxConnIntervalAggressive());
+}
+
 TEST_F(LeImplTest, relaxed_connection_mode_selected_when_enough_le_connections_exist) {
   com::android::bluetooth::flags::provider_->initial_conn_params_p1(true);
   set_random_device_address_policy();

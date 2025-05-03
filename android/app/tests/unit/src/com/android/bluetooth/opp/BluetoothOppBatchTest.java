@@ -20,23 +20,20 @@ import static com.android.bluetooth.TestUtils.MockitoRule;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-import android.content.Context;
-
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
+import android.content.Context;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 
@@ -54,10 +51,9 @@ public class BluetoothOppBatchTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private Context mContext;
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothOppShareInfo mInitShareInfo =
             new BluetoothOppShareInfo(
                     0,
@@ -85,8 +81,8 @@ public class BluetoothOppBatchTest {
                             String address = invocation.getArgument(0);
                             return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
                         });
-        doReturn(mTargetContext.getContentResolver()).when(mContext).getContentResolver();
-        mBluetoothOppBatch = new BluetoothOppBatch(mContext, mInitShareInfo);
+        doReturn(mTargetContext.getContentResolver()).when(mAdapterService).getContentResolver();
+        mBluetoothOppBatch = new BluetoothOppBatch(mAdapterService, mInitShareInfo);
     }
 
     @After

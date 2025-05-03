@@ -41,10 +41,12 @@ using aidl::android::hardware::bluetooth::ranging::Config;
 using aidl::android::hardware::bluetooth::ranging::CsSyncPhyType;
 using aidl::android::hardware::bluetooth::ranging::IBluetoothChannelSounding;
 using aidl::android::hardware::bluetooth::ranging::IBluetoothChannelSoundingSession;
+using aidl::android::hardware::bluetooth::ranging::LocationType;
 using aidl::android::hardware::bluetooth::ranging::ModeType;
 using aidl::android::hardware::bluetooth::ranging::ProcedureEnableConfig;
 using aidl::android::hardware::bluetooth::ranging::Role;
 using aidl::android::hardware::bluetooth::ranging::RttType;
+using aidl::android::hardware::bluetooth::ranging::SightType;
 using aidl::android::hardware::bluetooth::ranging::StepTonePct;
 using aidl::android::hardware::bluetooth::ranging::SubModeType;
 using aidl::android::hardware::bluetooth::ranging::VendorSpecificData;
@@ -169,7 +171,8 @@ public:
   }
 
   void OpenSession(uint16_t connection_handle, uint16_t att_handle,
-                   const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_data) {
+                   const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_data,
+                   uint8_t sight_type, uint8_t location_type) {
     log::info("connection_handle 0x{:04x}, att_handle 0x{:04x} size of vendor_specific_data {}",
               connection_handle, att_handle, vendor_specific_data.size());
     session_trackers_[connection_handle] =
@@ -179,6 +182,8 @@ public:
     parameters.aclHandle = connection_handle;
     parameters.role = aidl::android::hardware::bluetooth::ranging::Role::INITIATOR;
     parameters.realTimeProcedureDataAttHandle = att_handle;
+    parameters.sightType = static_cast<SightType>(sight_type);
+    parameters.locationType = static_cast<LocationType>(location_type);
     CopyVendorSpecificData(vendor_specific_data, parameters.vendorSpecificData);
 
     auto& tracker = session_trackers_[connection_handle];

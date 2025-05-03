@@ -45,7 +45,6 @@ filegroup {
         "android/bluetooth/IBluetoothLeCallControlCallback.aidl",
         "android/bluetooth/IBluetoothMap.aidl",
         "android/bluetooth/IBluetoothMapClient.aidl",
-        "android/bluetooth/IBluetoothMcpServiceManager.aidl",
         "android/bluetooth/IBluetoothMetadataListener.aidl",
         "android/bluetooth/IBluetoothOobDataCallback.aidl",
         "android/bluetooth/IBluetoothPan.aidl",

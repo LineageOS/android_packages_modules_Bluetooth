@@ -158,301 +158,228 @@ public class LeAudioStackEvent {
     }
 
     private static String eventTypeToString(int type) {
-        switch (type) {
-            case EVENT_TYPE_NONE:
-                return "EVENT_TYPE_NONE";
-            case EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                return "EVENT_TYPE_CONNECTION_STATE_CHANGED";
-            case EVENT_TYPE_GROUP_STATUS_CHANGED:
-                return "EVENT_TYPE_GROUP_STATUS_CHANGED";
-            case EVENT_TYPE_GROUP_NODE_STATUS_CHANGED:
-                return "EVENT_TYPE_GROUP_NODE_STATUS_CHANGED";
-            case EVENT_TYPE_AUDIO_CONF_CHANGED:
-                return "EVENT_TYPE_AUDIO_CONF_CHANGED";
-            case EVENT_TYPE_SINK_AUDIO_LOCATION_AVAILABLE:
-                return "EVENT_TYPE_SINK_AUDIO_LOCATION_AVAILABLE";
-            case EVENT_TYPE_BROADCAST_CREATED:
-                return "EVENT_TYPE_BROADCAST_CREATED";
-            case EVENT_TYPE_BROADCAST_DESTROYED:
-                return "EVENT_TYPE_BROADCAST_DESTROYED";
-            case EVENT_TYPE_BROADCAST_STATE:
-                return "EVENT_TYPE_BROADCAST_STATE";
-            case EVENT_TYPE_BROADCAST_METADATA_CHANGED:
-                return "EVENT_TYPE_BROADCAST_METADATA_CHANGED";
-            case EVENT_TYPE_BROADCAST_AUDIO_SESSION_CREATED:
-                return "EVENT_TYPE_BROADCAST_AUDIO_SESSION_CREATED";
-            case EVENT_TYPE_AUDIO_LOCAL_CODEC_CONFIG_CAPA_CHANGED:
-                return "EVENT_TYPE_AUDIO_LOCAL_CODEC_CONFIG_CAPA_CHANGED";
-            case EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED:
-                return "EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED";
-            case EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED:
-                return "EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED";
-            case EVENT_TYPE_NATIVE_INITIALIZED:
-                return "EVENT_TYPE_NATIVE_INITIALIZED";
-            case EVENT_TYPE_HEALTH_BASED_DEV_RECOMMENDATION:
-                return "EVENT_TYPE_HEALTH_BASED_DEV_RECOMMENDATION";
-            case EVENT_TYPE_HEALTH_BASED_GROUP_RECOMMENDATION:
-                return "EVENT_TYPE_HEALTH_BASED_GROUP_RECOMMENDATION";
-            case EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS:
-                return "EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS";
-            case EVENT_TYPE_GROUP_STREAM_STATUS_CHANGED:
-                return "EVENT_TYPE_GROUP_STREAM_STATUS_CHANGED";
-            default:
-                return "EVENT_TYPE_UNKNOWN:" + type;
-        }
+        return switch (type) {
+            case EVENT_TYPE_NONE -> "EVENT_TYPE_NONE";
+            case EVENT_TYPE_CONNECTION_STATE_CHANGED -> "EVENT_TYPE_CONNECTION_STATE_CHANGED";
+            case EVENT_TYPE_GROUP_STATUS_CHANGED -> "EVENT_TYPE_GROUP_STATUS_CHANGED";
+            case EVENT_TYPE_GROUP_NODE_STATUS_CHANGED -> "EVENT_TYPE_GROUP_NODE_STATUS_CHANGED";
+            case EVENT_TYPE_AUDIO_CONF_CHANGED -> "EVENT_TYPE_AUDIO_CONF_CHANGED";
+            case EVENT_TYPE_SINK_AUDIO_LOCATION_AVAILABLE ->
+                    "EVENT_TYPE_SINK_AUDIO_LOCATION_AVAILABLE";
+            case EVENT_TYPE_BROADCAST_CREATED -> "EVENT_TYPE_BROADCAST_CREATED";
+            case EVENT_TYPE_BROADCAST_DESTROYED -> "EVENT_TYPE_BROADCAST_DESTROYED";
+            case EVENT_TYPE_BROADCAST_STATE -> "EVENT_TYPE_BROADCAST_STATE";
+            case EVENT_TYPE_BROADCAST_METADATA_CHANGED -> "EVENT_TYPE_BROADCAST_METADATA_CHANGED";
+            case EVENT_TYPE_BROADCAST_AUDIO_SESSION_CREATED ->
+                    "EVENT_TYPE_BROADCAST_AUDIO_SESSION_CREATED";
+            case EVENT_TYPE_AUDIO_LOCAL_CODEC_CONFIG_CAPA_CHANGED ->
+                    "EVENT_TYPE_AUDIO_LOCAL_CODEC_CONFIG_CAPA_CHANGED";
+            case EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED ->
+                    "EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED";
+            case EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED ->
+                    "EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED";
+            case EVENT_TYPE_NATIVE_INITIALIZED -> "EVENT_TYPE_NATIVE_INITIALIZED";
+            case EVENT_TYPE_HEALTH_BASED_DEV_RECOMMENDATION ->
+                    "EVENT_TYPE_HEALTH_BASED_DEV_RECOMMENDATION";
+            case EVENT_TYPE_HEALTH_BASED_GROUP_RECOMMENDATION ->
+                    "EVENT_TYPE_HEALTH_BASED_GROUP_RECOMMENDATION";
+            case EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS -> "EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS";
+            case EVENT_TYPE_GROUP_STREAM_STATUS_CHANGED -> "EVENT_TYPE_GROUP_STREAM_STATUS_CHANGED";
+            default -> "EVENT_TYPE_UNKNOWN:" + type;
+        };
     }
 
     private static String eventTypeValue1ToString(int type, int value) {
-        switch (type) {
-            case EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                switch (value) {
-                    case CONNECTION_STATE_DISCONNECTED:
-                        return "CONNECTION_STATE_DISCONNECTED";
-                    case CONNECTION_STATE_CONNECTING:
-                        return "CONNECTION_STATE_CONNECTING";
-                    case CONNECTION_STATE_CONNECTED:
-                        return "CONNECTION_STATE_CONNECTED";
-                    case CONNECTION_STATE_DISCONNECTING:
-                        return "CONNECTION_STATE_DISCONNECTING";
-                    default:
-                        return "UNKNOWN";
-                }
-            case EVENT_TYPE_GROUP_NODE_STATUS_CHANGED:
-                // same as EVENT_TYPE_GROUP_STATUS_CHANGED
-            case EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED:
-            case EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED:
-                // same as EVENT_TYPE_GROUP_STATUS_CHANGED
-            case EVENT_TYPE_GROUP_STREAM_STATUS_CHANGED:
-                // same as EVENT_TYPE_GROUP_STATUS_CHANGED
-            case EVENT_TYPE_GROUP_STATUS_CHANGED:
-                return "{group_id:" + Integer.toString(value) + "}";
-            case EVENT_TYPE_AUDIO_CONF_CHANGED:
+        return switch (type) {
+            case EVENT_TYPE_CONNECTION_STATE_CHANGED ->
+                    switch (value) {
+                        case CONNECTION_STATE_DISCONNECTED -> "CONNECTION_STATE_DISCONNECTED";
+                        case CONNECTION_STATE_CONNECTING -> "CONNECTION_STATE_CONNECTING";
+                        case CONNECTION_STATE_CONNECTED -> "CONNECTION_STATE_CONNECTED";
+                        case CONNECTION_STATE_DISCONNECTING -> "CONNECTION_STATE_DISCONNECTING";
+                        default -> "UNKNOWN";
+                    };
+            case EVENT_TYPE_GROUP_NODE_STATUS_CHANGED,
+                            EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED,
+                            EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED,
+                            EVENT_TYPE_GROUP_STREAM_STATUS_CHANGED,
+                            EVENT_TYPE_GROUP_STATUS_CHANGED ->
+                    "{group_id:" + Integer.toString(value) + "}";
                 // FIXME: It should have proper direction names here
-                return "{direction:" + value + "}";
-            case EVENT_TYPE_SINK_AUDIO_LOCATION_AVAILABLE:
-                return "{sink_audio_location:" + value + "}";
-            case EVENT_TYPE_BROADCAST_CREATED:
-                // same as EVENT_TYPE_BROADCAST_STATE
-            case EVENT_TYPE_BROADCAST_DESTROYED:
-                // same as EVENT_TYPE_BROADCAST_STATE
-            case EVENT_TYPE_BROADCAST_METADATA_CHANGED:
-                // same as EVENT_TYPE_BROADCAST_STATE
-            case EVENT_TYPE_BROADCAST_STATE:
-                return "{broadcastId:" + value + "}";
-            case EVENT_TYPE_HEALTH_BASED_GROUP_RECOMMENDATION:
-                return "{group_id: " + value + "}";
-            case EVENT_TYPE_HEALTH_BASED_DEV_RECOMMENDATION:
-                switch (value) {
-                    case HEALTH_RECOMMENDATION_ACTION_DISABLE:
-                        return "ACTION_DISABLE";
-                    case HEALTH_RECOMMENDATION_ACTION_CONSIDER_DISABLING:
-                        return "ACTION_CONSIDER_DISABLING";
-                    case HEALTH_RECOMMENDATION_ACTION_INACTIVATE_GROUP:
-                        return "ACTION_INACTIVATE_GROUP";
-                    default:
-                        return "UNKNOWN";
-                }
-            case EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS:
-                switch (value) {
-                    case DIRECTION_SINK:
-                        return "DIRECTION_SINK";
-                    case DIRECTION_SOURCE:
-                        return "DIRECTION_SOURCE";
-                    default:
-                        return "UNKNOWN";
-                }
-            default:
-                break;
-        }
-        return Integer.toString(value);
+            case EVENT_TYPE_AUDIO_CONF_CHANGED -> "{direction:" + value + "}";
+            case EVENT_TYPE_SINK_AUDIO_LOCATION_AVAILABLE -> "{sink_audio_location:" + value + "}";
+            case EVENT_TYPE_BROADCAST_CREATED,
+                            EVENT_TYPE_BROADCAST_DESTROYED,
+                            EVENT_TYPE_BROADCAST_METADATA_CHANGED,
+                            EVENT_TYPE_BROADCAST_STATE ->
+                    "{broadcastId:" + value + "}";
+            case EVENT_TYPE_HEALTH_BASED_GROUP_RECOMMENDATION -> "{group_id: " + value + "}";
+            case EVENT_TYPE_HEALTH_BASED_DEV_RECOMMENDATION ->
+                    switch (value) {
+                        case HEALTH_RECOMMENDATION_ACTION_DISABLE -> "ACTION_DISABLE";
+                        case HEALTH_RECOMMENDATION_ACTION_CONSIDER_DISABLING ->
+                                "ACTION_CONSIDER_DISABLING";
+                        case HEALTH_RECOMMENDATION_ACTION_INACTIVATE_GROUP ->
+                                "ACTION_INACTIVATE_GROUP";
+                        default -> "UNKNOWN";
+                    };
+            case EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS ->
+                    switch (value) {
+                        case DIRECTION_SINK -> "DIRECTION_SINK";
+                        case DIRECTION_SOURCE -> "DIRECTION_SOURCE";
+                        default -> "UNKNOWN";
+                    };
+            default -> Integer.toString(value);
+        };
     }
 
     private static String eventTypeValue2ToString(int type, int value) {
-        switch (type) {
-            case EVENT_TYPE_GROUP_STATUS_CHANGED:
-                switch (value) {
-                    case GROUP_STATUS_ACTIVE:
-                        return "GROUP_STATUS_ACTIVE";
-                    case GROUP_STATUS_INACTIVE:
-                        return "GROUP_STATUS_INACTIVE";
-                    case GROUP_STATUS_TURNED_IDLE_DURING_CALL:
-                        return "GROUP_STATUS_TURNED_IDLE_DURING_CALL";
-                    default:
-                        break;
-                }
-                break;
-            case EVENT_TYPE_GROUP_NODE_STATUS_CHANGED:
-                switch (value) {
-                    case GROUP_NODE_ADDED:
-                        return "GROUP_NODE_ADDED";
-                    case GROUP_NODE_REMOVED:
-                        return "GROUP_NODE_REMOVED";
-                    default:
-                        return "UNKNOWN";
-                }
-            case EVENT_TYPE_AUDIO_CONF_CHANGED:
-                return "{group_id:" + Integer.toString(value) + "}";
-            case EVENT_TYPE_BROADCAST_STATE:
-                return "{state:" + broadcastStateToString(value) + "}";
-            case EVENT_TYPE_HEALTH_BASED_GROUP_RECOMMENDATION:
-                switch (value) {
-                    case HEALTH_RECOMMENDATION_ACTION_DISABLE:
-                        return "ACTION_DISABLE";
-                    case HEALTH_RECOMMENDATION_ACTION_CONSIDER_DISABLING:
-                        return "ACTION_CONSIDER_DISABLING";
-                    case HEALTH_RECOMMENDATION_ACTION_INACTIVATE_GROUP:
-                        return "ACTION_INACTIVATE_GROUP";
-                    default:
-                        return "UNKNOWN";
-                }
-            case EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS:
-                switch (value) {
-                    case STATUS_LOCAL_STREAM_REQUESTED:
-                        return "STATUS_LOCAL_STREAM_REQUESTED";
-                    case STATUS_LOCAL_STREAM_STREAMING:
-                        return "STATUS_LOCAL_STREAM_STREAMING";
-                    case STATUS_LOCAL_STREAM_SUSPENDED:
-                        return "STATUS_LOCAL_STREAM_SUSPENDED";
-                    case STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE:
-                        return "STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE";
-                    default:
-                        return "UNKNOWN";
-                }
-            case EVENT_TYPE_GROUP_STREAM_STATUS_CHANGED:
-                switch (value) {
-                    case GROUP_STREAM_STATUS_IDLE:
-                        return "GROUP_STREAM_STATUS_IDLE";
-                    case GROUP_STREAM_STATUS_STREAMING:
-                        return "GROUP_STREAM_STATUS_STREAMING";
-                    default:
-                        return "UNKNOWN";
-                }
-            default:
-                break;
-        }
-        return Integer.toString(value);
+        return switch (type) {
+            case EVENT_TYPE_GROUP_STATUS_CHANGED ->
+                    switch (value) {
+                        case GROUP_STATUS_ACTIVE -> "GROUP_STATUS_ACTIVE";
+                        case GROUP_STATUS_INACTIVE -> "GROUP_STATUS_INACTIVE";
+                        case GROUP_STATUS_TURNED_IDLE_DURING_CALL ->
+                                "GROUP_STATUS_TURNED_IDLE_DURING_CALL";
+                        default -> Integer.toString(value);
+                    };
+            case EVENT_TYPE_GROUP_NODE_STATUS_CHANGED ->
+                    switch (value) {
+                        case GROUP_NODE_ADDED -> "GROUP_NODE_ADDED";
+                        case GROUP_NODE_REMOVED -> "GROUP_NODE_REMOVED";
+                        default -> "UNKNOWN";
+                    };
+            case EVENT_TYPE_AUDIO_CONF_CHANGED -> "{group_id:" + Integer.toString(value) + "}";
+            case EVENT_TYPE_BROADCAST_STATE -> "{state:" + broadcastStateToString(value) + "}";
+            case EVENT_TYPE_HEALTH_BASED_GROUP_RECOMMENDATION ->
+                    switch (value) {
+                        case HEALTH_RECOMMENDATION_ACTION_DISABLE -> "ACTION_DISABLE";
+                        case HEALTH_RECOMMENDATION_ACTION_CONSIDER_DISABLING ->
+                                "ACTION_CONSIDER_DISABLING";
+                        case HEALTH_RECOMMENDATION_ACTION_INACTIVATE_GROUP ->
+                                "ACTION_INACTIVATE_GROUP";
+                        default -> "UNKNOWN";
+                    };
+            case EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS ->
+                    switch (value) {
+                        case STATUS_LOCAL_STREAM_REQUESTED -> "STATUS_LOCAL_STREAM_REQUESTED";
+                        case STATUS_LOCAL_STREAM_STREAMING -> "STATUS_LOCAL_STREAM_STREAMING";
+                        case STATUS_LOCAL_STREAM_SUSPENDED -> "STATUS_LOCAL_STREAM_SUSPENDED";
+                        case STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE ->
+                                "STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE";
+                        default -> "UNKNOWN";
+                    };
+            case EVENT_TYPE_GROUP_STREAM_STATUS_CHANGED ->
+                    switch (value) {
+                        case GROUP_STREAM_STATUS_IDLE -> "GROUP_STREAM_STATUS_IDLE";
+                        case GROUP_STREAM_STATUS_STREAMING -> "GROUP_STREAM_STATUS_STREAMING";
+                        default -> "UNKNOWN";
+                    };
+            default -> Integer.toString(value);
+        };
     }
 
     private static String eventTypeValue3ToString(int type, int value) {
-        switch (type) {
-            case EVENT_TYPE_AUDIO_CONF_CHANGED:
+        return switch (type) {
                 // FIXME: It should have proper location names here
-                return "{snk_audio_loc:" + value + "}";
-            default:
-                break;
-        }
-        return Integer.toString(value);
+            case EVENT_TYPE_AUDIO_CONF_CHANGED -> "{snk_audio_loc:" + value + "}";
+            default -> Integer.toString(value);
+        };
     }
 
     private static String eventTypeValue4ToString(int type, int value) {
-        switch (type) {
-            case EVENT_TYPE_AUDIO_CONF_CHANGED:
+        return switch (type) {
                 // FIXME: It should have proper location names here
-                return "{src_audio_loc:" + value + "}";
-            default:
-                break;
-        }
-        return Integer.toString(value);
+            case EVENT_TYPE_AUDIO_CONF_CHANGED -> "{src_audio_loc:" + value + "}";
+            default -> Integer.toString(value);
+        };
     }
 
     private static String eventTypeValue5ToString(int type, int value) {
-        switch (type) {
-            case EVENT_TYPE_AUDIO_CONF_CHANGED:
-                return "{available_contexts:" + Integer.toBinaryString(value) + "}";
-            default:
-                break;
-        }
-        return Integer.toString(value);
+        return switch (type) {
+            case EVENT_TYPE_AUDIO_CONF_CHANGED ->
+                    "{available_contexts:" + Integer.toBinaryString(value) + "}";
+            default -> Integer.toString(value);
+        };
     }
 
     private static String eventTypeValueBool1ToString(int type, boolean value) {
-        switch (type) {
-            case EVENT_TYPE_BROADCAST_AUDIO_SESSION_CREATED:
-                // same as EVENT_TYPE_BROADCAST_CREATED
-            case EVENT_TYPE_BROADCAST_CREATED:
-                return "{success:" + value + "}";
-            default:
-                return "<unused>";
-        }
+        return switch (type) {
+            case EVENT_TYPE_BROADCAST_AUDIO_SESSION_CREATED, EVENT_TYPE_BROADCAST_CREATED ->
+                    "{success:" + value + "}";
+            default -> "<unused>";
+        };
     }
 
     private static String eventTypeValueCodec1ToString(
             int type, BluetoothLeAudioCodecConfig value) {
-        switch (type) {
-            case EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED:
-                return "{input codec =" + value + "}";
-            default:
-                return "<unused>";
-        }
+        return switch (type) {
+            case EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED ->
+                    "{input codec =" + value + "}";
+            default -> "<unused>";
+        };
     }
 
     private static String eventTypeValueCodec2ToString(
             int type, BluetoothLeAudioCodecConfig value) {
-        switch (type) {
-            case EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED:
-                return "{output codec =" + value + "}";
-            default:
-                return "<unused>";
-        }
+        return switch (type) {
+            case EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED ->
+                    "{output codec =" + value + "}";
+            default -> "<unused>";
+        };
     }
 
     private static String eventTypeValueCodecList1ToString(
             int type, List<BluetoothLeAudioCodecConfig> value) {
         String valueStr = "";
-        switch (type) {
-            case EVENT_TYPE_AUDIO_LOCAL_CODEC_CONFIG_CAPA_CHANGED:
+        return switch (type) {
+            case EVENT_TYPE_AUDIO_LOCAL_CODEC_CONFIG_CAPA_CHANGED -> {
                 for (BluetoothLeAudioCodecConfig n : value) {
                     valueStr = valueStr.concat(n.toString() + "\n");
                 }
-                return "{input local capa codec = \n" + valueStr + "}";
-            case EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED:
+                yield "{input local capa codec = \n" + valueStr + "}";
+            }
+            case EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED -> {
                 for (BluetoothLeAudioCodecConfig n : value) {
                     valueStr = valueStr.concat(n.toString() + "\n");
                 }
-                return "{input selectable codec =" + valueStr + "}";
-            default:
-                return "<unused>";
-        }
+                yield "{input selectable codec =" + valueStr + "}";
+            }
+            default -> "<unused>";
+        };
     }
 
     private static String eventTypeValueCodecList2ToString(
             int type, List<BluetoothLeAudioCodecConfig> value) {
         String valueStr = "";
-        switch (type) {
-            case EVENT_TYPE_AUDIO_LOCAL_CODEC_CONFIG_CAPA_CHANGED:
+        return switch (type) {
+            case EVENT_TYPE_AUDIO_LOCAL_CODEC_CONFIG_CAPA_CHANGED -> {
                 for (BluetoothLeAudioCodecConfig n : value) {
                     valueStr = valueStr.concat(n.toString() + "\n");
                 }
-                return "{output local capa codec = \n" + valueStr + "}";
-            case EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED:
+                yield "{output local capa codec = \n" + valueStr + "}";
+            }
+            case EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED -> {
                 for (BluetoothLeAudioCodecConfig n : value) {
                     valueStr = valueStr.concat(n.toString() + "\n");
                 }
-                return "{output selectable codec =" + valueStr + "}";
-            default:
-                return "<unused>";
-        }
+                yield "{output selectable codec =" + valueStr + "}";
+            }
+            default -> "<unused>";
+        };
     }
 
     private static String broadcastStateToString(int state) {
-        switch (state) {
-            case BROADCAST_STATE_STOPPED:
-                return "BROADCAST_STATE_STOPPED";
-            case BROADCAST_STATE_CONFIGURING:
-                return "BROADCAST_STATE_CONFIGURING";
-            case BROADCAST_STATE_PAUSED:
-                return "BROADCAST_STATE_PAUSED";
-            case BROADCAST_STATE_ENABLING:
-                return "BROADCAST_STATE_ENABLING";
-            case BROADCAST_STATE_DISABLING:
-                return "BROADCAST_STATE_DISABLING";
-            case BROADCAST_STATE_STOPPING:
-                return "BROADCAST_STATE_STOPPING";
-            case BROADCAST_STATE_STREAMING:
-                return "BROADCAST_STATE_STREAMING";
-            default:
-                return "UNKNOWN";
-        }
+        return switch (state) {
+            case BROADCAST_STATE_STOPPED -> "BROADCAST_STATE_STOPPED";
+            case BROADCAST_STATE_CONFIGURING -> "BROADCAST_STATE_CONFIGURING";
+            case BROADCAST_STATE_PAUSED -> "BROADCAST_STATE_PAUSED";
+            case BROADCAST_STATE_ENABLING -> "BROADCAST_STATE_ENABLING";
+            case BROADCAST_STATE_DISABLING -> "BROADCAST_STATE_DISABLING";
+            case BROADCAST_STATE_STOPPING -> "BROADCAST_STATE_STOPPING";
+            case BROADCAST_STATE_STREAMING -> "BROADCAST_STATE_STREAMING";
+            default -> "UNKNOWN";
+        };
     }
 
     private static String eventTypeValueBroadcastMetadataToString(

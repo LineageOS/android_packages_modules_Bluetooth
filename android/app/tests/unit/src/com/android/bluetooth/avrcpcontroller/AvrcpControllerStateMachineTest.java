@@ -21,7 +21,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.Utils.getBytesFromAddress;
 
@@ -94,7 +94,7 @@ public class AvrcpControllerStateMachineTest {
     private static final int UUID_START = 0;
     private static final int UUID_LENGTH = 25;
 
-    private final BluetoothDevice mDevice = getTestDevice(43);
+    private final BluetoothDevice mDevice = getRealDevice(43);
     private final byte[] mTestAddress = getBytesFromAddress(mDevice.getAddress());
 
     private final ArgumentCaptor<Intent> mIntentArgument = ArgumentCaptor.forClass(Intent.class);
@@ -196,7 +196,6 @@ public class AvrcpControllerStateMachineTest {
      * @return number of times mAvrcpControllerService.sendBroadcastAsUser() has been invoked
      */
     private int setUpConnectedState(boolean control, boolean browsing) {
-
         assertThat(mAvrcpStateMachine.getCurrentState())
                 .isInstanceOf(AvrcpControllerStateMachine.Disconnected.class);
 
