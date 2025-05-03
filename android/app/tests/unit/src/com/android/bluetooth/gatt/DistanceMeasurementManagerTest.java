@@ -92,9 +92,8 @@ public class DistanceMeasurementManagerTest {
         doReturn(mPackageManager).when(mAdapterService).getPackageManager();
         doReturn(true).when(mPackageManager).hasSystemFeature(any());
         doReturn(true).when(mAdapterService).isLeChannelSoundingSupported();
-        doReturn(mDevice.getAddress())
-                .when(mAdapterService)
-                .getIdentityAddress(mDevice.getAddress());
+        final String address = mDevice.getAddress();
+        doReturn(address).when(mAdapterService).getIdentityAddress(address);
         doReturn(true).when(mAdapterService).isConnected(any());
         DistanceMeasurementNativeInterface.setInstance(mDistanceMeasurementNativeInterface);
 

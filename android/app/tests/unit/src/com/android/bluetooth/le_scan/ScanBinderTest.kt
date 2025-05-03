@@ -18,12 +18,12 @@ package com.android.bluetooth.le_scan
 
 import android.app.PendingIntent
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
 import android.bluetooth.le.IPeriodicAdvertisingCallback
 import android.bluetooth.le.IScannerCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.content.AttributionSource
 import android.content.Intent
 import android.os.WorkSource
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -47,15 +47,10 @@ class ScanBinderTest {
 
     @get:Rule val mockitoRule = MockitoRule()
 
+    @Mock private lateinit var attributionSource: AttributionSource
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var scanController: ScanController
 
-    private val attributionSource =
-        InstrumentationRegistry.getInstrumentation()
-            .targetContext
-            .getSystemService(BluetoothManager::class.java)
-            .adapter
-            .attributionSource
     private val device: BluetoothDevice = getTestDevice(89)
     private lateinit var binder: ScanBinder
 
@@ -95,7 +90,7 @@ class ScanBinderTest {
     fun registerPiAndStartScan() {
         val intent =
             PendingIntent.getBroadcast(
-                InstrumentationRegistry.getInstrumentation().targetContext,
+                InstrumentationRegistry.getInstrumentation().context,
                 0,
                 Intent(),
                 PendingIntent.FLAG_IMMUTABLE,
@@ -119,7 +114,7 @@ class ScanBinderTest {
     fun stopScan_withIntent() {
         val intent =
             PendingIntent.getBroadcast(
-                InstrumentationRegistry.getInstrumentation().targetContext,
+                InstrumentationRegistry.getInstrumentation().context,
                 0,
                 Intent(),
                 PendingIntent.FLAG_IMMUTABLE,

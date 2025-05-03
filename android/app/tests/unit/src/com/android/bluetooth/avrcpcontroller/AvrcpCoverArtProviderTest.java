@@ -55,7 +55,7 @@ public class AvrcpCoverArtProviderTest {
 
     private static final String TEST_MODE = "test_mode";
 
-    private final BluetoothDevice mTestDevice = getTestDevice(48);
+    private final BluetoothDevice mDevice = getTestDevice(48);
 
     private AvrcpCoverArtProvider mArtProvider;
 
@@ -104,7 +104,7 @@ public class AvrcpCoverArtProviderTest {
 
     @Test
     public void getImageUri_withEmptyImageUuid() {
-        assertThat(AvrcpCoverArtProvider.getImageUri(mTestDevice, "")).isNull();
+        assertThat(AvrcpCoverArtProvider.getImageUri(mDevice, "")).isNull();
     }
 
     @Test
@@ -113,11 +113,11 @@ public class AvrcpCoverArtProviderTest {
         Uri expectedUri =
                 AvrcpCoverArtProvider.CONTENT_URI
                         .buildUpon()
-                        .appendQueryParameter("device", mTestDevice.getAddress())
+                        .appendQueryParameter("device", mDevice.getAddress())
                         .appendQueryParameter("uuid", uuid)
                         .build();
 
-        assertThat(AvrcpCoverArtProvider.getImageUri(mTestDevice, uuid)).isEqualTo(expectedUri);
+        assertThat(AvrcpCoverArtProvider.getImageUri(mDevice, uuid)).isEqualTo(expectedUri);
     }
 
     @Test

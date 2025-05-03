@@ -47,7 +47,7 @@ import java.io.OutputStream;
 public class PbapClientObexTransportTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    private BluetoothDevice mTestDevice;
+    private final BluetoothDevice mDevice = getTestDevice(1);
 
     @Mock private PbapClientSocket mMockSocket;
     @Mock private InputStream mMockInputStream;
@@ -55,14 +55,12 @@ public class PbapClientObexTransportTest {
 
     @Before
     public void setUp() throws IOException {
-        mTestDevice = getTestDevice(1);
-
         doReturn(mMockInputStream).when(mMockSocket).getInputStream();
         doReturn(mMockOutputStream).when(mMockSocket).getOutputStream();
         doReturn(BluetoothSocket.TYPE_L2CAP).when(mMockSocket).getConnectionType();
         doReturn(255).when(mMockSocket).getMaxTransmitPacketSize();
         doReturn(255).when(mMockSocket).getMaxReceivePacketSize();
-        doReturn(mTestDevice).when(mMockSocket).getRemoteDevice();
+        doReturn(mDevice).when(mMockSocket).getRemoteDevice();
     }
 
     @Test
@@ -177,7 +175,7 @@ public class PbapClientObexTransportTest {
     @Test
     public void testGetRemoteAddress_transportL2cap_returnsDeviceAddress() {
         PbapClientObexTransport transport = new PbapClientObexTransport(mMockSocket);
-        assertThat(transport.getRemoteAddress()).isEqualTo(mTestDevice.getAddress());
+        assertThat(transport.getRemoteAddress()).isEqualTo(mDevice.getAddress());
     }
 
     @Test
@@ -186,7 +184,7 @@ public class PbapClientObexTransportTest {
         PbapClientObexTransport transport = new PbapClientObexTransport(mMockSocket);
         // Identity address won't be "known" by the stack for a test device, so it'll return null.
         // assertThat(transport.getRemoteAddress()).isNull();
-        assertThat(transport.getRemoteAddress()).isEqualTo(mTestDevice.getAddress());
+        assertThat(transport.getRemoteAddress()).isEqualTo(mDevice.getAddress());
     }
 
     @Test
