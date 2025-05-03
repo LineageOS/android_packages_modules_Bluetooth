@@ -18,6 +18,7 @@
 
 #include <bluetooth/log.h>
 #include <flag_macros.h>
+#include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -32,12 +33,14 @@
 #include "hci/distance_measurement_manager_mock.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_layer_fake.h"
+#include "metrics/mock/metrics_mock.h"
 #include "module.h"
 #include "os/fake_timer/fake_timerfd.h"
 #include "packet/bit_inserter.h"
 #include "packet/packet_view.h"
 #include "ras/ras_packets.h"
 
+using android::bluetooth::ChannelSoundingStopReason;
 using bluetooth::os::fake_timer::fake_timerfd_advance;
 using bluetooth::os::fake_timer::fake_timerfd_reset;
 using bluetooth::packet::BitInserter;
@@ -498,9 +501,9 @@ struct CsModule {
   }
 
   void StartMeasurement(const StartMeasurementParameters& params) {
-    dm_manager_->StartDistanceMeasurement(params.responder_addr, params.connection_handle,
-                                          params.req_hci_role, params.interval, params.method,
-                                          params.sight_type, params.location_type);
+    dm_manager_->StartDistanceMeasurement(
+            /*app_uid=*/100, params.responder_addr, params.connection_handle, params.req_hci_role,
+            params.interval, params.method, params.sight_type, params.location_type);
   }
 
   void ReceivedReadLocalCapabilitiesComplete() {
@@ -644,12 +647,21 @@ struct CsModule {
 
 class DistanceMeasurementManagerTest : public ::testing::Test {
 protected:
-  void SetUp() override { cs_requester_.Start(); }
+  void SetUp() override {
+    metrics_ = std::make_shared<metrics::MockMetrics>();
+    metrics::MockMetrics::SetInstance(metrics_);
+    cs_requester_.Start();
+  }
 
-  void TearDown() override { cs_requester_.Stop(); }
+  void TearDown() override {
+    cs_requester_.Stop();
+    metrics::MockMetrics::SetInstance(nullptr);
+    metrics_ = nullptr;
+  }
 
 protected:
   CsModule cs_requester_;
+  std::shared_ptr<metrics::MockMetrics> metrics_;
 };
 
 TEST_F(DistanceMeasurementManagerTest, setup_teardown) {
@@ -697,11 +709,35 @@ TEST_F(DistanceMeasurementManagerTest, ras_remote_not_support) {
             cs_requester_.dm_session_promise_.reset();
           });
 
+  EXPECT_CALL(*metrics_,
+              LogMetricsChannelSoundingRequesterSessionReported(
+                      _, _, _, _, ChannelSoundingStopReason::REASON_RAS_REMOTE_NOT_SUPPORT, _, _,
+                      false, _, _, _));
   cs_requester_.StartMeasurement(params);
   cs_requester_.dm_manager_->HandleRasClientDisconnectedEvent(
           params.responder_addr, ras::RasDisconnectReason::SERVER_NOT_AVAILABLE);
 
   dm_session_future.wait_for(kTimeout);
+  cs_requester_.sync_client_handler();
+}
+
+TEST_F(DistanceMeasurementManagerTest, ras_client_disconnect_after_session_stopped) {
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+  EXPECT_CALL(*metrics_, LogMetricsChannelSoundingRequesterSessionReported(
+                                 _, _, _, _, ChannelSoundingStopReason::REASON_LOCAL_APP_REQUEST, _,
+                                 _, _, _, _, _));
+  cs_requester_.dm_manager_->StopDistanceMeasurement(params.responder_addr,
+                                                     params.connection_handle, METHOD_CS);
+
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_, OnDistanceMeasurementStopped(_, _, _)).Times(0);
+  EXPECT_CALL(*metrics_, LogMetricsChannelSoundingRequesterSessionReported(
+                                 _, _, _, _, ChannelSoundingStopReason::REASON_LE_DISCONNECT, _, _,
+                                 _, _, _, _))
+          .Times(0);
+
+  cs_requester_.dm_manager_->HandleRasClientDisconnectedEvent(
+          params.responder_addr, ras::RasDisconnectReason::GATT_DISCONNECT);
   cs_requester_.sync_client_handler();
 }
 

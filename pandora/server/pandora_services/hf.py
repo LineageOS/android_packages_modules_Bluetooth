@@ -17,7 +17,7 @@ from bumble import hfp
 from bumble.hfp import HfProtocol
 
 hf_protocol: Optional[HfProtocol] = None
-from pandora_experimental.hfp_grpc_aio import HFPServicer
+from pandora.hfp_grpc_aio import HFPServicer
 
 from pandora_services import utils
 

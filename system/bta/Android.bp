@@ -640,6 +640,7 @@ cc_test {
         "libbase",
         "libbinder",
         "libcrypto",
+        "libcutils",
         "liblog",
     ],
     static_libs: [
@@ -654,6 +655,7 @@ cc_test {
 
         "libchrome",
         "libgmock",
+        "libosi",
         "server_configurable_flags",
     ],
     sanitize: {

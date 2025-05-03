@@ -58,8 +58,8 @@ public class HapClientStackEvent {
             IBluetoothHapClient.FEATURE_BIT_NUM_TYPE_MONAURAL;
     public static final int FEATURE_BIT_NUM_TYPE_BANDED =
             IBluetoothHapClient.FEATURE_BIT_NUM_TYPE_BANDED;
-    public static final int FEATURE_BIT_NUM_SYNCHRONIZATED_PRESETS =
-            IBluetoothHapClient.FEATURE_BIT_NUM_SYNCHRONIZATED_PRESETS;
+    public static final int FEATURE_BIT_NUM_SYNCHRONIZED_PRESETS =
+            IBluetoothHapClient.FEATURE_BIT_NUM_SYNCHRONIZED_PRESETS;
     public static final int FEATURE_BIT_NUM_INDEPENDENT_PRESETS =
             IBluetoothHapClient.FEATURE_BIT_NUM_INDEPENDENT_PRESETS;
     public static final int FEATURE_BIT_NUM_DYNAMIC_PRESETS =
@@ -210,8 +210,8 @@ public class HapClientStackEvent {
             features_sb.append("TYPE_BINAURAL");
         }
 
-        if (BigInteger.valueOf(value).testBit(FEATURE_BIT_NUM_SYNCHRONIZATED_PRESETS)) {
-            features_sb.append(", SYNCHRONIZATED_PRESETS");
+        if (BigInteger.valueOf(value).testBit(FEATURE_BIT_NUM_SYNCHRONIZED_PRESETS)) {
+            features_sb.append(", SYNCHRONIZED_PRESETS");
         }
         if (BigInteger.valueOf(value).testBit(FEATURE_BIT_NUM_INDEPENDENT_PRESETS)) {
             features_sb.append(", INDEPENDENT_PRESETS");

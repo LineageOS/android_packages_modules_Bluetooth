@@ -44,7 +44,7 @@ java_library {
     srcs: [
         ":libprotobuf-internal-protos",
         ":pandora-protos",
-        "pandora_experimental/*.proto",
+        "pandora/*.proto",
     ],
     static_libs: [
         "libprotobuf-java-lite",
@@ -65,6 +65,6 @@ java_library {
 filegroup {
     name: "pandora_experimental-protos",
     srcs: [
-        "pandora_experimental/*.proto",
+        "pandora/*.proto",
     ],
 }

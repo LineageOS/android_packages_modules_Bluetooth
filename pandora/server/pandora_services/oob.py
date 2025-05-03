@@ -3,8 +3,8 @@ import grpc
 import grpc.aio
 import logging
 
-from pandora_experimental.oob_grpc_aio import OOBServicer
-from pandora_experimental.oob_pb2 import (
+from pandora.oob_grpc_aio import OOBServicer
+from pandora.oob_pb2 import (
     OobDataRequest,
     OobDataResponse,
 )

@@ -47,7 +47,8 @@ private const val TAG = "PandoraSecurityStorage"
 @kotlinx.coroutines.ExperimentalCoroutinesApi
 class SecurityStorage(private val context: Context) : SecurityStorageImplBase(), Closeable {
 
-    private val globalScope: CoroutineScope = CoroutineScope(Dispatchers.Default.limitedParallelism(1))
+    private val globalScope: CoroutineScope =
+        CoroutineScope(Dispatchers.Default.limitedParallelism(1))
     private val flow: Flow<Intent>
 
     private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)!!
@@ -57,7 +58,9 @@ class SecurityStorage(private val context: Context) : SecurityStorageImplBase(),
         val intentFilter = IntentFilter()
         intentFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
 
-        flow = intentFlow(context, intentFilter, globalScope).shareIn(globalScope, SharingStarted.Eagerly)
+        flow =
+            intentFlow(context, intentFilter, globalScope)
+                .shareIn(globalScope, SharingStarted.Eagerly)
     }
 
     override fun close() {
@@ -104,7 +107,7 @@ class SecurityStorage(private val context: Context) : SecurityStorageImplBase(),
                         .filter {
                             it.getIntExtra(
                                 BluetoothDevice.EXTRA_BOND_STATE,
-                                BluetoothAdapter.ERROR
+                                BluetoothAdapter.ERROR,
                             ) == BluetoothDevice.BOND_NONE
                         }
                         .first()

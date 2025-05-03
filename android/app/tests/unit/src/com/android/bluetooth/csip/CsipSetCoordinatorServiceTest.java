@@ -180,7 +180,7 @@ public class CsipSetCoordinatorServiceTest {
                             badPolicyValue)) {
                 doReturn(bondState).when(mAdapterService).getBondState(any());
                 doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
-                assertThat(mService.okToConnect(mDevice)).isEqualTo(false);
+                assertThat(mService.okToConnect(mDevice)).isFalse();
             }
         }
     }
@@ -192,11 +192,11 @@ public class CsipSetCoordinatorServiceTest {
 
         for (int policy : List.of(CONNECTION_POLICY_FORBIDDEN, badPolicyValue)) {
             doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.okToConnect(mDevice)).isEqualTo(false);
+            assertThat(mService.okToConnect(mDevice)).isFalse();
         }
         for (int policy : List.of(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
             doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.okToConnect(mDevice)).isEqualTo(true);
+            assertThat(mService.okToConnect(mDevice)).isTrue();
         }
     }
 

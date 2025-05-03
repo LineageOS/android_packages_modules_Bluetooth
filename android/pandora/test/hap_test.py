@@ -18,10 +18,10 @@ from bumble.gatt import GATT_HEARING_ACCESS_SERVICE, GATT_AUDIO_STREAM_CONTROL_S
 from bumble.profiles import hap
 from bumble.profiles.hap import DynamicPresets, HearingAccessService, HearingAidFeatures, HearingAidType, IndependentPresets, PresetChangedOperation, PresetChangedOperationAvailable, PresetRecord, PresetSynchronizationSupport, WritablePresetsSupport
 
-from pandora_experimental.os_grpc_aio import Os as OsAio
-from pandora_experimental.gatt_grpc_aio import GATT
-from pandora_experimental.hap_grpc_aio import HAP  # type: ignore
-from pandora_experimental.hap_pb2 import PresetRecord as grpcPresetRecord  # type: ignore
+from pandora.os_grpc_aio import Os as OsAio
+from pandora.gatt_grpc_aio import GATT
+from pandora.hap_grpc_aio import HAP  # type: ignore
+from pandora.hap_pb2 import PresetRecord as grpcPresetRecord  # type: ignore
 from pandora._utils import AioStream
 from pandora.security_pb2 import LE_LEVEL3
 from pandora.host_pb2 import RANDOM, AdvertiseResponse, Connection, DataTypes, ScanningResponse

@@ -71,15 +71,15 @@ public:
     distance_measurement_callbacks_ = callbacks;
   }
 
-  void StartDistanceMeasurement(RawAddress identity_addr, uint16_t interval, uint8_t method,
-                                uint8_t sight_type, uint8_t location_type) {
+  void StartDistanceMeasurement(int32_t app_uid, RawAddress identity_addr, uint16_t interval,
+                                uint8_t method, uint8_t sight_type, uint8_t location_type) {
     do_in_main_thread(base::BindOnce(&DistanceMeasurementInterfaceImpl::DoStartDistanceMeasurement,
-                                     base::Unretained(this), identity_addr, interval, method,
-                                     sight_type, location_type));
+                                     base::Unretained(this), app_uid, identity_addr, interval,
+                                     method, sight_type, location_type));
   }
 
-  void DoStartDistanceMeasurement(RawAddress identity_addr, uint16_t interval, uint8_t method,
-                                  uint8_t sight_type, uint8_t location_type) {
+  void DoStartDistanceMeasurement(int32_t app_uid, RawAddress identity_addr, uint16_t interval,
+                                  uint8_t method, uint8_t sight_type, uint8_t location_type) {
     auto distance_measurement_method = static_cast<DistanceMeasurementMethod>(method);
     auto distance_measurement_sight_type = static_cast<DistanceMeasurementSightType>(sight_type);
     auto distance_measurement_location_type =
@@ -87,8 +87,9 @@ public:
     hci::Role local_hci_role;
     uint16_t connection_handle = GetConnectionHandleAndRole(identity_addr, &local_hci_role);
     bluetooth::shim::GetDistanceMeasurementManager()->StartDistanceMeasurement(
-            identity_addr, connection_handle, local_hci_role, interval, distance_measurement_method,
-            distance_measurement_sight_type, distance_measurement_location_type);
+            app_uid, identity_addr, connection_handle, local_hci_role, interval,
+            distance_measurement_method, distance_measurement_sight_type,
+            distance_measurement_location_type);
     if (distance_measurement_method == DistanceMeasurementMethod::METHOD_CS) {
       bluetooth::ras::GetRasClient()->Connect(identity_addr);
     }

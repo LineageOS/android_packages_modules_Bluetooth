@@ -27,8 +27,8 @@ from bumble.rfcomm import (
 )
 from pandora_services import utils
 import grpc
-from pandora_experimental.rfcomm_grpc_aio import RFCOMMServicer
-from pandora_experimental.rfcomm_pb2 import (
+from pandora.rfcomm_grpc_aio import RFCOMMServicer
+from pandora.rfcomm_pb2 import (
     AcceptConnectionRequest,
     AcceptConnectionResponse,
     ConnectionRequest,

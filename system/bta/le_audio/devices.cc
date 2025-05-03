@@ -839,16 +839,34 @@ bool LeAudioDevice::HaveAnyUnconfiguredAses(void) {
   return iter != ases_.end();
 }
 
-bool LeAudioDevice::HaveAllActiveAsesInExpectedState(void) {
+bool LeAudioDevice::HasAllRequiredStreamingAses(void) {
+  /* Note, this function should be called after ENABLE CMD. */
   log::verbose("{}", address_);
-  auto iter = std::find_if(ases_.begin(), ases_.end(), [](const auto& ase) {
+  bool has_streaming_ases = false;
+  for (const auto& ase : ases_) {
     log::verbose("ASE id: {}, active: {}, expected_state: {}, state: {}", ase.id, ase.active,
                  bluetooth::common::ToString(ase.expected_state),
                  bluetooth::common::ToString(ase.state));
-    return ase.active && (ase.expected_state != ase.state);
-  });
+    if (!ase.active) {
+      continue;
+    }
 
-  return iter == ases_.end();
+    if (ase.expected_state != ase.state) {
+      /* Still some ase in transition */
+      return false;
+    }
+
+    /* QoS config does not count as given direction might not be enabled */
+    if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING) {
+      return false;
+    }
+
+    if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+      has_streaming_ases = true;
+    }
+  }
+
+  return has_streaming_ases;
 }
 
 bool LeAudioDevice::HaveAllActiveAsesSameState(AseState state) {
@@ -875,39 +893,67 @@ bool LeAudioDevice::HaveAllActiveAsesSameDataPathState(types::DataPathState stat
 
 bool LeAudioDevice::IsReadyToCreateStream(void) {
   log::verbose("{}", address_);
-  auto iter = std::find_if(ases_.begin(), ases_.end(), [](const auto& ase) {
-    if (!ase.active) {
+  bool is_any_active = false;
+  bool is_any_direction_started = false;
+
+  auto iter = std::find_if(
+          ases_.begin(), ases_.end(),
+          [&is_any_active, &is_any_direction_started, this](const auto& ase) {
+            if (!ase.active) {
+              return false;
+            }
+
+            is_any_active = true;
+
+            log::verbose("{}, ase_id: {}, state: {}, expected_state: {},  direction: {}", address_,
+                         ase.id, common::ToString(ase.state), common::ToString(ase.expected_state),
+                         ase.direction);
+
+            /* We are searching here any active ASE which is not moved to STREAMING or ENABLING
+             * state */
+            if (ase.direction == types::kLeAudioDirectionSink &&
+                (ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING &&
+                 ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING)) {
+              if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+                if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED &&
+                    ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
+                  return false;
+                } else {
+                  return true;
+                }
+              } else {
+                return true;
+              }
+            }
+
+            if (ase.direction == types::kLeAudioDirectionSource &&
+                ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING) {
+              if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+                if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED &&
+                    ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED) {
+                  return false;
+                } else {
+                  return true;
+                }
+              } else {
+                return true;
+              }
+            }
+
+            is_any_direction_started = true;
+            return false;
+          });
+
+  if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+    /* This is actually just for testing code, but still valid check. If it turns out that
+     * device has all directions in QoS state, it could be reported as Ready To Stream which is not
+     * true. At least one direction need to be enabled per device.
+     */
+    if (is_any_active && !is_any_direction_started) {
+      log::debug("{}, has active ASEs but has no enabled direction yet.", address_);
       return false;
     }
-
-    log::verbose("ASE id: {}, state: {}, direction: {}", ase.id,
-                 bluetooth::common::ToString(ase.state), ase.direction);
-    if (ase.direction == types::kLeAudioDirectionSink &&
-        (ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING &&
-         ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING)) {
-      if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
-        if (ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING ||
-            ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
-          return true;
-        }
-      } else {
-        return true;
-      }
-    }
-
-    if (ase.direction == types::kLeAudioDirectionSource &&
-        ase.state != AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING) {
-      if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
-        if (ase.expected_state == AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING) {
-          return true;
-        }
-      } else {
-        return true;
-      }
-    }
-
-    return false;
-  });
+  }
 
   return iter == ases_.end();
 }

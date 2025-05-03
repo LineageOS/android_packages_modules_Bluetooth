@@ -2783,6 +2783,9 @@ public class AdapterService extends Service {
     }
 
     public boolean addAssociatedPackage(BluetoothDevice device, String packageName) {
+        if (packageName == null) {
+            return false;
+        }
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         if (deviceProp == null) {
             return false;
@@ -2818,6 +2821,7 @@ public class AdapterService extends Service {
         mBondAttemptCallerInfo.put(device.getAddress(), createBondCaller);
 
         mRemoteDevices.setBondingInitiatedLocally(device);
+        addAssociatedPackage(device, callingPackage);
 
         // Pairing is unreliable while scanning, so cancel discovery
         // Note, remove this when native stack improves

@@ -654,7 +654,7 @@ public class TbsGenericTest {
         List<ParcelUuid> callParcelUuids = callUuidCaptor.getValue();
         assertThat(callParcelUuids).hasSize(2);
         for (ParcelUuid callParcelUuid : callParcelUuids) {
-            assertThat(callUuids.contains(callParcelUuid.getUuid())).isEqualTo(true);
+            assertThat(callUuids.contains(callParcelUuid.getUuid())).isTrue();
         }
 
         // // Respond with requestComplete...

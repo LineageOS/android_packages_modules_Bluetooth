@@ -75,7 +75,7 @@ class Opp(val context: Context) : OppImplBase(), Closeable {
         val file =
             File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
-                IMAGE_FILE_NAME
+                IMAGE_FILE_NAME,
             )
 
         if (file.exists()) {
@@ -85,7 +85,7 @@ class Opp(val context: Context) : OppImplBase(), Closeable {
 
     override fun openRfcommChannel(
         request: OpenRfcommChannelRequest,
-        responseObserver: StreamObserver<Empty>
+        responseObserver: StreamObserver<Empty>,
     ) {
         grpcUnary<Empty>(scope, responseObserver) {
             val bluetoothDevice = request.address.toBluetoothDevice(bluetoothAdapter)
@@ -96,7 +96,7 @@ class Opp(val context: Context) : OppImplBase(), Closeable {
 
     override fun openL2capChannel(
         request: OpenL2capChannelRequest,
-        responseObserver: StreamObserver<Empty>
+        responseObserver: StreamObserver<Empty>,
     ) {
         grpcUnary<Empty>(scope, responseObserver) {
             val bluetoothDevice = request.address.toBluetoothDevice(bluetoothAdapter)
@@ -107,7 +107,7 @@ class Opp(val context: Context) : OppImplBase(), Closeable {
 
     override fun acceptPutOperation(
         request: Empty,
-        responseObserver: StreamObserver<AcceptPutOperationResponse>
+        responseObserver: StreamObserver<AcceptPutOperationResponse>,
     ) {
         grpcUnary<AcceptPutOperationResponse>(scope, responseObserver) {
             acceptIncomingFile()
@@ -121,7 +121,7 @@ class Opp(val context: Context) : OppImplBase(), Closeable {
             .click()
         uiDevice.wait(
             Until.hasObject(By.text(INCOMING_FILE_ACCEPT_BTN)),
-            INCOMING_FILE_WAIT_TIMEOUT
+            INCOMING_FILE_WAIT_TIMEOUT,
         )
         uiDevice.waitForIdle()
         uiDevice
@@ -160,7 +160,7 @@ class Opp(val context: Context) : OppImplBase(), Closeable {
                         sendingIntent,
                         PackageManager.ResolveInfoFlags.of(
                             PackageManager.MATCH_DEFAULT_ONLY.toLong()
-                        )
+                        ),
                     )
                     .filter { it!!.loadLabel(context.packageManager) == "Bluetooth" }
                     .first()
@@ -181,7 +181,7 @@ class Opp(val context: Context) : OppImplBase(), Closeable {
         val file =
             File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
-                IMAGE_FILE_NAME
+                IMAGE_FILE_NAME,
             )
         var fileOutputStream: FileOutputStream? = null
 

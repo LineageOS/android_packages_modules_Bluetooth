@@ -25,7 +25,7 @@ from pandora.host_grpc import Host
 from pandora.host_pb2 import RANDOM
 from pandora.security_grpc import Security
 from pandora.security_pb2 import LE_LEVEL3, PairingEventAnswer
-from pandora_experimental.gatt_grpc import GATT
+from pandora.gatt_grpc import GATT
 
 BASE_UUID = uuid.UUID("00000000-0000-1000-8000-00805F9B34FB")
 

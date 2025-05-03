@@ -113,7 +113,8 @@ public class BluetoothManagerServiceTest {
     public static List<FlagsParameterization> getParams() {
         return FlagsParameterization.progressionOf(
                 Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP,
-                Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING);
+                Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
+                Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD);
     }
 
     public BluetoothManagerServiceTest(FlagsParameterization flags) {
@@ -131,6 +132,7 @@ public class BluetoothManagerServiceTest {
     @Mock UserManager mUserManager;
     @Mock RoleManager mRoleManager;
     @Mock UserHandle mUserHandle;
+    @Mock IBinder mBleBinder;
     @Mock IBinder mBinder;
     @Mock IBluetoothManagerCallback mManagerCallback;
     @Mock IBluetoothStateChangeCallback mStateChangeCallback;
@@ -254,10 +256,9 @@ public class BluetoothManagerServiceTest {
     @After
     public void tearDown() {
         PropertyInvalidatedCache.setTestMode(false);
-        if (mManagerService != null) {
-            mManagerService.unregisterAdapter(mManagerCallback);
-            mManagerService = null;
-        }
+    }
+
+    private void endTest() {
         mLooper.moveTimeForward(120_000); // 120 seconds
 
         assertThat(mLooper.nextMessage()).isNull();
@@ -317,6 +318,8 @@ public class BluetoothManagerServiceTest {
         if (!Flags.systemServerRemoveExtraThreadJump()) {
             syncHandler(MESSAGE_DISABLE);
         }
+
+        endTest();
     }
 
     @Test
@@ -328,7 +331,7 @@ public class BluetoothManagerServiceTest {
                         any(ServiceConnection.class),
                         anyInt(),
                         any(UserHandle.class));
-        mManagerService.enableBle("enable_bindFailure_removesTimeout", mBinder);
+        mManagerService.enableBle("enable_bindFailure_removesTimeout", mBleBinder);
         if (!Flags.systemServerRemoveExtraThreadJump()) {
             syncHandler(MESSAGE_ENABLE);
         }
@@ -338,11 +341,13 @@ public class BluetoothManagerServiceTest {
         // TODO(b/280518177): Failed to start should be noted / reported in metrics
         // Maybe show a popup or a crash notification
         // Should we attempt to re-bind ?
+
+        endTest();
     }
 
     @Test
     public void enable_bindTimeout() throws Exception {
-        mManagerService.enableBle("enable_bindTimeout", mBinder);
+        mManagerService.enableBle("enable_bindTimeout", mBleBinder);
         if (!Flags.systemServerRemoveExtraThreadJump()) {
             syncHandler(MESSAGE_ENABLE);
         }
@@ -355,6 +360,8 @@ public class BluetoothManagerServiceTest {
         //   * No error is printed to the user
         //   * Code stop trying to start the bluetooth.
         //   * if user ask to enable again, it will start a second bind but the first still run
+
+        endTest();
     }
 
     private BluetoothManagerService.BluetoothServiceConnection acceptBluetoothBinding() {
@@ -438,7 +445,7 @@ public class BluetoothManagerServiceTest {
 
     @Test
     public void enable_whileTurningToBleOn_shouldEnable() throws Exception {
-        mManagerService.enableBle("enable_whileTurningToBleOn_shouldEnable", mBinder);
+        mManagerService.enableBle("enable_whileTurningToBleOn_shouldEnable", mBleBinder);
         if (!Flags.systemServerRemoveExtraThreadJump()) {
             syncHandler(MESSAGE_ENABLE);
         }
@@ -457,11 +464,13 @@ public class BluetoothManagerServiceTest {
         syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
 
         mInOrder.verify(mAdapterBinder).bleOnToOn(any());
+
+        endTest();
     }
 
     @Test
     public void enable_whileNotYetBoundToBle_shouldEnable() throws Exception {
-        mManagerService.enableBle("enable_whileTurningToBleOn_shouldEnable", mBinder);
+        mManagerService.enableBle("enable_whileTurningToBleOn_shouldEnable", mBleBinder);
         if (!Flags.systemServerRemoveExtraThreadJump()) {
             syncHandler(MESSAGE_ENABLE);
         }
@@ -481,11 +490,13 @@ public class BluetoothManagerServiceTest {
         syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
 
         mInOrder.verify(mAdapterBinder).bleOnToOn(any());
+
+        endTest();
     }
 
     @Test
     public void offToBleOn() throws Exception {
-        mManagerService.enableBle("test_offToBleOn", mBinder);
+        mManagerService.enableBle("test_offToBleOn", mBleBinder);
         if (!Flags.systemServerRemoveExtraThreadJump()) {
             syncHandler(MESSAGE_ENABLE);
         }
@@ -495,6 +506,8 @@ public class BluetoothManagerServiceTest {
         // Check that there was no transition to STATE_ON
         mInOrder.verify(mAdapterBinder, never()).bleOnToOn(any());
         assertThat(mManagerService.getState()).isEqualTo(STATE_BLE_ON);
+
+        endTest();
     }
 
     @Test
@@ -507,11 +520,13 @@ public class BluetoothManagerServiceTest {
         transition_offToOn();
 
         assertThat(mManagerService.getState()).isEqualTo(STATE_ON);
+
+        endTest();
     }
 
     @Test
     public void crash_whileTransitionState_canRecover() throws Exception {
-        mManagerService.enableBle("crash_whileTransitionState_canRecover", mBinder);
+        mManagerService.enableBle("crash_whileTransitionState_canRecover", mBleBinder);
         if (!Flags.systemServerRemoveExtraThreadJump()) {
             syncHandler(MESSAGE_ENABLE);
         }
@@ -539,6 +554,8 @@ public class BluetoothManagerServiceTest {
 
         mLooper.moveTimeForward(120_000);
         discardMessage(MESSAGE_RESTART_BLUETOOTH_SERVICE);
+
+        endTest();
     }
 
     @Test
@@ -559,6 +576,8 @@ public class BluetoothManagerServiceTest {
         if (!Flags.systemServerRemoveExtraThreadJump()) {
             discardMessage(MESSAGE_ENABLE);
         }
+
+        endTest();
     }
 
     @Test
@@ -569,6 +588,8 @@ public class BluetoothManagerServiceTest {
         mManagerService.disable("disable_whenBinding_bluetoothShouldStop_new", true);
         mInOrder.verify(mContext).unbindService(any());
         assertThat(mManagerService.getState()).isEqualTo(STATE_OFF);
+
+        endTest();
     }
 
     @Test
@@ -580,6 +601,8 @@ public class BluetoothManagerServiceTest {
         mManagerService.disable("disable_whenBinding_bluetoothShouldStop_new", true);
         mInOrder.verify(mContext).unbindService(any());
         assertThat(mManagerService.getState()).isEqualTo(STATE_OFF);
+
+        endTest();
     }
 
     @Test
@@ -600,6 +623,8 @@ public class BluetoothManagerServiceTest {
         syncHandler(MESSAGE_DISABLE);
 
         assertThat(mManagerService.getState()).isEqualTo(STATE_OFF);
+
+        endTest();
     }
 
     @Test
@@ -624,6 +649,8 @@ public class BluetoothManagerServiceTest {
 
         mManagerService.onAirplaneModeChanged(false);
         assertThat(mLooper.nextMessage()).isNull(); // Must not create a MESSAGE_ENABLE
+
+        endTest();
     }
 
     @Test
@@ -645,7 +672,8 @@ public class BluetoothManagerServiceTest {
         assertThat(mManagerService.getState()).isEqualTo(STATE_BLE_TURNING_OFF);
 
         // As soon as we left BLE_ON, generate a call from 3p app that request to turn on Bluetooth
-        mManagerService.enableBle("enableBle_whenDisableAirplaneIsDelayed_startBluetooth", mBinder);
+        mManagerService.enableBle(
+                "enableBle_whenDisableAirplaneIsDelayed_startBluetooth", mBleBinder);
 
         // When all the profile are started, adapterService consider it is ON
         btCallback.onBluetoothStateChange(STATE_BLE_TURNING_OFF, STATE_OFF);
@@ -653,6 +681,8 @@ public class BluetoothManagerServiceTest {
 
         transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(STATE_ON);
+
+        endTest();
     }
 
     @Test
@@ -667,6 +697,8 @@ public class BluetoothManagerServiceTest {
         } finally {
             mockingSession.finishMocking();
         }
+
+        endTest();
     }
 
     @Test
@@ -683,6 +715,8 @@ public class BluetoothManagerServiceTest {
         transition_onToOff(btCallback);
         transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(STATE_ON);
+
+        endTest();
     }
 
     @Test
@@ -709,6 +743,8 @@ public class BluetoothManagerServiceTest {
         transition_onToOff(btCallback);
         transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(STATE_ON);
+
+        endTest();
     }
 
     @SafeVarargs

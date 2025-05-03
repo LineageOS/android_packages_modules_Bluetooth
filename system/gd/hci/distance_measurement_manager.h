@@ -100,7 +100,7 @@ public:
   DistanceMeasurementManager& operator=(const DistanceMeasurementManager&) = delete;
 
   void RegisterDistanceMeasurementCallbacks(DistanceMeasurementCallbacks* callbacks);
-  void StartDistanceMeasurement(const Address&, uint16_t connection_handle,
+  void StartDistanceMeasurement(int32_t app_uid, const Address&, uint16_t connection_handle,
                                 hci::Role local_hci_role, uint16_t interval,
                                 DistanceMeasurementMethod method,
                                 DistanceMeasurementSightType sight_type,

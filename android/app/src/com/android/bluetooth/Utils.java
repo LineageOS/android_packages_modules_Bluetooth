@@ -108,8 +108,12 @@ public final class Utils {
     private static final String PTS_TEST_MODE_PROPERTY = "persist.bluetooth.pts";
 
     private static final String ENABLE_DUAL_MODE_AUDIO = "persist.bluetooth.enable_dual_mode_audio";
-    private static boolean sDualModeEnabled =
-            SystemProperties.getBoolean(ENABLE_DUAL_MODE_AUDIO, false);
+
+    // See https://en.wikipedia.org/wiki/Initialization-on-demand_holder_idiom
+    private static class DualModeAudioSetting {
+        private static boolean sEnabled =
+                SystemProperties.getBoolean(ENABLE_DUAL_MODE_AUDIO, false);
+    }
 
     private static final String KEY_TEMP_ALLOW_LIST_DURATION_MS = "temp_allow_list_duration_ms";
     private static final long DEFAULT_TEMP_ALLOW_LIST_DURATION_MS = 20_000;
@@ -149,8 +153,8 @@ public final class Utils {
      * @return true if dual mode audio is enabled, false otherwise
      */
     public static boolean isDualModeAudioEnabled() {
-        Log.i(TAG, "Dual mode enable state is: " + sDualModeEnabled);
-        return sDualModeEnabled;
+        Log.i(TAG, "Dual mode enable state is: " + DualModeAudioSetting.sEnabled);
+        return DualModeAudioSetting.sEnabled;
     }
 
     /**
@@ -188,7 +192,7 @@ public final class Utils {
      */
     public static void setDualModeAudioStateForTesting(boolean enabled) {
         Log.i(TAG, "Updating dual mode audio state for testing to: " + enabled);
-        sDualModeEnabled = enabled;
+        DualModeAudioSetting.sEnabled = enabled;
     }
 
     public static @Nullable String getName(@Nullable BluetoothDevice device) {

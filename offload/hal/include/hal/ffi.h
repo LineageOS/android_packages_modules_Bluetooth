@@ -51,6 +51,7 @@ struct CCallbacks {
  * The `handle` value is passed as the first parameter of all functions.
  * Theses functions can be called from different threads, but NOT concurrently.
  * Locking over `handle` is not necessary.
+ * `client_died()` and `dump()` are optional, the pointer is nullable.
  */
 
 struct CInterface {
@@ -62,6 +63,7 @@ struct CInterface {
   void (*send_sco)(void *handle, const uint8_t *data, size_t len);
   void (*send_iso)(void *handle, const uint8_t *data, size_t len);
   void (*client_died)(void *handle);
+  void (*dump)(void *handle, int fd);
 };
 
 /**
@@ -103,13 +105,14 @@ private:
 class IBluetoothHci {
 public:
   virtual ~IBluetoothHci() = default;
-  virtual void initialize(const std::shared_ptr<IBluetoothHciCallbacks> &callbacks);
-  virtual void close();
-  virtual void sendHciCommand(const std::vector<uint8_t> &data);
-  virtual void sendAclData(const std::vector<uint8_t> &data);
-  virtual void sendScoData(const std::vector<uint8_t> &data);
-  virtual void sendIsoData(const std::vector<uint8_t> &data);
-  virtual void clientDied();
+  virtual void initialize(const std::shared_ptr<IBluetoothHciCallbacks> &callbacks) = 0;
+  virtual void close() = 0;
+  virtual void sendHciCommand(const std::vector<uint8_t> &data) = 0;
+  virtual void sendAclData(const std::vector<uint8_t> &data) = 0;
+  virtual void sendScoData(const std::vector<uint8_t> &data) = 0;
+  virtual void sendIsoData(const std::vector<uint8_t> &data) = 0;
+  virtual void clientDied() {}
+  virtual void dump(int fd) { (void)fd; }
 };
 
 static inline void IBluetoothHci_addService(IBluetoothHci *hci) {
@@ -142,7 +145,9 @@ static inline void IBluetoothHci_addService(IBluetoothHci *hci) {
                             std::vector<uint8_t>(data, data + len));
                   },
           .client_died =
-                  [](void *instance) { static_cast<IBluetoothHci *>(instance)->clientDied(); }});
+                  [](void *instance) { static_cast<IBluetoothHci *>(instance)->clientDied(); },
+          .dump = [](void *instance,
+                     int fd) { static_cast<IBluetoothHci *>(instance)->dump(fd); }});
 }
 
 }  // namespace aidl::android::hardware::bluetooth::hal

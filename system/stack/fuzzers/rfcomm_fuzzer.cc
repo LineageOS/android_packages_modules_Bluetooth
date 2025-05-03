@@ -39,9 +39,7 @@
 #include "test/mock/mock_stack_l2cap_interface.h"
 #include "test/rfcomm/stack_rfcomm_test_utils.h"
 
-using ::testing::_;
 using ::testing::NiceMock;
-using ::testing::Return;
 using ::testing::Unused;
 
 namespace bluetooth {

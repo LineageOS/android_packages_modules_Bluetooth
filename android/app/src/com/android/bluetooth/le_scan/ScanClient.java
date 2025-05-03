@@ -23,6 +23,7 @@ import android.os.UserHandle;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /** Helper class identifying a client that has requested LE scan results. */
 class ScanClient {
@@ -48,7 +49,7 @@ class ScanClient {
     boolean mHasScanWithoutLocationPermission;
     boolean mHasDisavowedLocation;
     List<String> mAssociatedDevices;
-    AppScanStats mStats = null;
+    Optional<AppScanStats> mStats = Optional.empty();
 
     ScanClient(int scannerId) {
         this(scannerId, DEFAULT_SCAN_SETTINGS, null);
@@ -92,9 +93,12 @@ class ScanClient {
                 .append(" scannerId ")
                 .append(mScannerId);
 
-        if (mStats != null && mStats.mAppName != null) {
-            sb.append(" [appScanStats ").append(mStats.mAppName).append("]");
-        }
+        mStats.ifPresent(
+                stats -> {
+                    if (stats.mAppName != null) {
+                        sb.append(" [appScanStats ").append(stats.mAppName).append("]");
+                    }
+                });
 
         return sb.append("]").toString();
     }

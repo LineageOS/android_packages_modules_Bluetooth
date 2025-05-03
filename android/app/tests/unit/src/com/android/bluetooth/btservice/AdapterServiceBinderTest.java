@@ -48,11 +48,11 @@ import java.io.FileDescriptor;
 public class AdapterServiceBinderTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private AdapterService mService;
     @Mock private AdapterProperties mAdapterProperties;
 
     private AdapterServiceBinder mBinder;
-    private AttributionSource mAttributionSource;
 
     @Before
     public void setUp() {
@@ -60,7 +60,6 @@ public class AdapterServiceBinderTest {
         doReturn(true).when(mService).isAvailable();
         doNothing().when(mService).enforceCallingOrSelfPermission(any(), any());
         mBinder = new AdapterServiceBinder(mService);
-        mAttributionSource = new AttributionSource.Builder(0).build();
     }
 
     @Test

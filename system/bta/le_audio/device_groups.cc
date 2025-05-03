@@ -454,15 +454,13 @@ uint8_t LeAudioDeviceGroup::GetActiveEnabledDirections(void) {
   return enabled_remote_directions;
 }
 
-bool LeAudioDeviceGroup::HaveAllActiveDevicesAsesInExpectedState(void) const {
-  auto iter = std::find_if(leAudioDevices_.begin(), leAudioDevices_.end(), [](auto& d) {
-    if (d.expired()) {
+bool LeAudioDeviceGroup::HasAllRequiredStreamingAses(void) const {
+  for (auto dev = GetFirstActiveDevice(); dev; dev = GetNextActiveDevice(dev)) {
+    if (!dev->HasAllRequiredStreamingAses()) {
       return false;
     }
-    return !(((d.lock()).get())->HaveAllActiveAsesInExpectedState());
-  });
-
-  return iter == leAudioDevices_.end();
+  }
+  return true;
 }
 
 bool LeAudioDeviceGroup::HaveAllActiveDevicesAsesTheSameState(AseState state) const {

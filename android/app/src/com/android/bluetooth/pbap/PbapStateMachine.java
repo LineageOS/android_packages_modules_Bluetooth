@@ -22,6 +22,8 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.NonNull;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -86,6 +88,7 @@ public class PbapStateMachine extends StateMachine {
     private static final int PBAP_OBEX_MAXIMUM_PACKET_SIZE = 8192;
 
     private final BluetoothPbapService mService;
+    private final AdapterService mAdapterService;
 
     private final WaitingForAuth mWaitingForAuth = new WaitingForAuth();
     private final Finished mFinished = new Finished();
@@ -102,6 +105,7 @@ public class PbapStateMachine extends StateMachine {
     private PbapStateMachine(
             @NonNull BluetoothPbapService service,
             Looper looper,
+            AdapterService adapterService,
             @NonNull BluetoothDevice device,
             @NonNull BluetoothSocket connSocket,
             Handler pbapHandler,
@@ -113,6 +117,7 @@ public class PbapStateMachine extends StateMachine {
         setDbg(true);
 
         mService = service;
+        mAdapterService = requireNonNull(adapterService);
         mRemoteDevice = device;
         mServiceHandler = pbapHandler;
         mConnSocket = connSocket;
@@ -127,13 +132,20 @@ public class PbapStateMachine extends StateMachine {
     static PbapStateMachine make(
             BluetoothPbapService service,
             Looper looper,
+            AdapterService adapterService,
             BluetoothDevice device,
             BluetoothSocket connSocket,
             Handler pbapHandler,
             int notificationId) {
         PbapStateMachine stateMachine =
                 new PbapStateMachine(
-                        service, looper, device, connSocket, pbapHandler, notificationId);
+                        service,
+                        looper,
+                        adapterService,
+                        device,
+                        connSocket,
+                        pbapHandler,
+                        notificationId);
         stateMachine.start();
         return stateMachine;
     }
@@ -170,11 +182,8 @@ public class PbapStateMachine extends StateMachine {
         // Should not be called from enter() method
         private void broadcastConnectionState(BluetoothDevice device, int fromState, int toState) {
             stateLogD("broadcastConnectionState " + device + ": " + fromState + "->" + toState);
-            AdapterService adapterService = AdapterService.getAdapterService();
-            if (adapterService != null) {
-                adapterService.updateProfileConnectionAdapterProperties(
-                        device, BluetoothProfile.PBAP, toState, fromState);
-            }
+            mAdapterService.updateProfileConnectionAdapterProperties(
+                    device, BluetoothProfile.PBAP, toState, fromState);
 
             Intent intent = new Intent(BluetoothPbap.ACTION_CONNECTION_STATE_CHANGED);
             intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, fromState);

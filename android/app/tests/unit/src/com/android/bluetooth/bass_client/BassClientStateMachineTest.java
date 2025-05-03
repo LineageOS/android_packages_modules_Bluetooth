@@ -608,7 +608,7 @@ public class BassClientStateMachineTest {
 
         verify(btGatt, never()).requestMtu(anyInt());
         verify(callbacks).notifyBassStateSetupFailed(eq(mBassClientStateMachine.getDevice()));
-        assertThat(mBassClientStateMachine.isBassStateReady()).isEqualTo(false);
+        assertThat(mBassClientStateMachine.isBassStateReady()).isFalse();
 
         // call requestMtu() if status is GATT_SUCCESS.
         mBassClientStateMachine.mDiscoveryInitiated = true;
@@ -1304,7 +1304,7 @@ public class BassClientStateMachineTest {
         cb.onMtuChanged(null, 10, GATT_FAILURE);
         verify(callbacks).notifyBassStateSetupFailed(eq(mBassClientStateMachine.getDevice()));
         assertThat(mBassClientStateMachine.mMTUChangeRequested).isTrue();
-        assertThat(mBassClientStateMachine.isBassStateReady()).isEqualTo(false);
+        assertThat(mBassClientStateMachine.isBassStateReady()).isFalse();
 
         cb.onMtuChanged(null, 10, GATT_SUCCESS);
         assertThat(mBassClientStateMachine.mMTUChangeRequested).isTrue();
@@ -2479,7 +2479,7 @@ public class BassClientStateMachineTest {
                 0x0L);
         // Verify notifyBassStateReady is called
         verify(callbacks).notifyBassStateReady(eq(mTestDevice));
-        assertThat(mBassClientStateMachine.isBassStateReady()).isEqualTo(true);
+        assertThat(mBassClientStateMachine.isBassStateReady()).isTrue();
     }
 
     @Test

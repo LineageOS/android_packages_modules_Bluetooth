@@ -47,7 +47,7 @@ class Map(context: Context) : MapImplBase() {
                 avdPhoneNumber,
                 generateAlphanumericString(DEFAULT_MESSAGE_LEN),
                 null,
-                null
+                null,
             )
             Empty.getDefaultInstance()
         }

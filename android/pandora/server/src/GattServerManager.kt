@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
 class GattServerManager(
     bluetoothManager: BluetoothManager,
     context: Context,
-    scope: CoroutineScope
+    scope: CoroutineScope,
 ) {
     val TAG = "PandoraGattServerManager"
 
@@ -48,6 +48,7 @@ class GattServerManager(
                 check(status == BluetoothGatt.GATT_SUCCESS)
                 scope.launch { serviceFlow.emit(service) }
             }
+
             override fun onMtuChanged(device: BluetoothDevice, mtu: Int) {
                 Log.i(TAG, "onMtuChanged mtu=$mtu")
                 negociatedMtu = mtu
@@ -57,7 +58,7 @@ class GattServerManager(
                 device: BluetoothDevice,
                 requestId: Int,
                 offset: Int,
-                characteristic: BluetoothGattCharacteristic
+                characteristic: BluetoothGattCharacteristic,
             ) {
                 Log.i(TAG, "onCharacteristicReadRequest requestId=$requestId")
                 if (negociatedMtu != -1) {
@@ -66,7 +67,7 @@ class GattServerManager(
                         requestId,
                         BluetoothGatt.GATT_SUCCESS,
                         offset,
-                        ByteArray(negociatedMtu)
+                        ByteArray(negociatedMtu),
                     )
                 } else {
                     server.sendResponse(
@@ -74,7 +75,7 @@ class GattServerManager(
                         requestId,
                         BluetoothGatt.GATT_SUCCESS,
                         offset,
-                        ByteArray(512 - offset)
+                        ByteArray(512 - offset),
                     )
                 }
             }
@@ -86,7 +87,7 @@ class GattServerManager(
                 preparedWrite: Boolean,
                 responseNeeded: Boolean,
                 offset: Int,
-                value: ByteArray
+                value: ByteArray,
             ) {
                 Log.i(TAG, "onCharacteristicWriteRequest requestId=$requestId")
             }

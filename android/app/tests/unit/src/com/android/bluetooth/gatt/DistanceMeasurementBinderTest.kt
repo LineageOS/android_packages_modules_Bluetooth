@@ -98,7 +98,8 @@ class DistanceMeasurementBinderTest {
                 .build()
         val callback = mock(IDistanceMeasurementCallback::class.java)
         binder.startDistanceMeasurement(ParcelUuid(uuid), params, callback, attributionSource)
-        verify(distanceMeasurementManager).startDistanceMeasurement(uuid, params, callback)
+        verify(distanceMeasurementManager)
+            .startDistanceMeasurement(uuid, attributionSource.uid, params, callback)
     }
 
     @Test

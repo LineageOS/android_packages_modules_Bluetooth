@@ -64,7 +64,7 @@ public final class Foo {
 }
                 """
                 ),
-                *stubs
+                *stubs,
             )
             .run()
             .expectClean()
@@ -101,7 +101,7 @@ public final class Foo {
 }
                 """
                 ),
-                *stubs
+                *stubs,
             )
             .run()
             .expectClean()
@@ -132,7 +132,7 @@ public final class Foo {
 }
                 """
                 ),
-                *stubs
+                *stubs,
             )
             .issues(GuardedLogLineDetector.WARNING)
             .run()
@@ -166,7 +166,7 @@ public final class Foo {
 }
                 """
                 ),
-                *stubs
+                *stubs,
             )
             .issues(GuardedLogLineDetector.ISSUE)
             .run()
@@ -200,7 +200,7 @@ public final class Foo {
 }
                 """
                 ),
-                *stubs
+                *stubs,
             )
             .issues(GuardedLogLineDetector.ISSUE)
             .run()
@@ -234,7 +234,7 @@ public final class Foo {
 }
                 """
                 ),
-                *stubs
+                *stubs,
             )
             .issues(GuardedLogLineDetector.ISSUE)
             .run()
@@ -268,7 +268,7 @@ public final class Foo {
 }
                 """
                 ),
-                *stubs
+                *stubs,
             )
             .issues(GuardedLogLineDetector.ISSUE)
             .run()
@@ -302,7 +302,7 @@ public final class Foo {
 }
                 """
                 ),
-                *stubs
+                *stubs,
             )
             .issues(GuardedLogLineDetector.ISSUE)
             .run()
@@ -338,7 +338,7 @@ public final class Foo {
 }
                 """
                 ),
-                *stubs
+                *stubs,
             )
             .issues(GuardedLogLineDetector.ISSUE)
             .run()
@@ -374,7 +374,7 @@ public final class Foo {
 }
                 """
                 ),
-                *stubs
+                *stubs,
             )
             .issues(GuardedLogLineDetector.ISSUE)
             .run()
@@ -410,7 +410,7 @@ public final class Foo {
 }
                 """
                 ),
-                *stubs
+                *stubs,
             )
             .issues(GuardedLogLineDetector.ISSUE)
             .run()
@@ -446,7 +446,7 @@ public final class Foo {
 }
                 """
                 ),
-                *stubs
+                *stubs,
             )
             .issues(GuardedLogLineDetector.ISSUE)
             .run()
@@ -482,7 +482,7 @@ public final class Foo {
 }
                 """
                 ),
-                *stubs
+                *stubs,
             )
             .issues(GuardedLogLineDetector.WARNING)
             .run()
@@ -548,11 +548,7 @@ public final class Foo {
             )
             .indented()
 
-    private val stubs =
-        arrayOf(
-            logFramework,
-            constantsHelper,
-        )
+    private val stubs = arrayOf(logFramework, constantsHelper)
 
     private fun createErrorCountString(errors: Int, warnings: Int): String {
         return "%d errors, %d warnings".format(errors, warnings)

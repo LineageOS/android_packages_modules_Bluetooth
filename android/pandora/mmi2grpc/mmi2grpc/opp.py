@@ -19,7 +19,7 @@ from mmi2grpc._helpers import assert_description
 from mmi2grpc._proxy import ProfileProxy
 from pandora.host_grpc import Host
 from pandora.host_pb2 import Connection
-from pandora_experimental.opp_grpc import Opp
+from pandora.opp_grpc import Opp
 
 
 class OPPProxy(ProfileProxy):

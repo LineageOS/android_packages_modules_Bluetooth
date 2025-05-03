@@ -1539,6 +1539,7 @@ protected:
     com::android::bluetooth::flags::provider_->le_audio_update_config_preference_to_hal(true);
     com::android::bluetooth::flags::provider_->leaudio_add_opus_hi_res_codec_type(true);
     com::android::bluetooth::flags::provider_->leaudio_dynamic_data_path_change(true);
+    com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
 
     // Enable flags
     com::android::bluetooth::flags::provider_->dsa_use_codec_extensibility(true);

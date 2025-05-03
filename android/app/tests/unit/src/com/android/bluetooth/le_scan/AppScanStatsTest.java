@@ -76,7 +76,7 @@ public class AppScanStatsTest {
         assertThat(appScanStats.mScannerMap).isEqualTo(map);
         assertThat(appScanStats.mScanController).isEqualTo(mMockScanController);
 
-        assertThat(appScanStats.isScanning()).isEqualTo(false);
+        assertThat(appScanStats.isScanning()).isFalse();
     }
 
     @Test

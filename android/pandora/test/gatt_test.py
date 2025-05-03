@@ -33,9 +33,9 @@ from mobly.asserts import assert_not_in  # type: ignore
 from mobly.asserts import assert_true  # type: ignore
 from pandora.host_pb2 import RANDOM, Connection, DataTypes
 from pandora.security_pb2 import LE_LEVEL3, PairingEventAnswer, SecureResponse
-from pandora_experimental.gatt_grpc import GATT
-from pandora_experimental.gatt_grpc_aio import GATT as AioGATT, add_GATTServicer_to_server
-from pandora_experimental.gatt_pb2 import SUCCESS, ReadCharacteristicsFromUuidResponse
+from pandora.gatt_grpc import GATT
+from pandora.gatt_grpc_aio import GATT as AioGATT, add_GATTServicer_to_server
+from pandora.gatt_pb2 import SUCCESS, ReadCharacteristicsFromUuidResponse
 from typing import Optional, Tuple
 
 
