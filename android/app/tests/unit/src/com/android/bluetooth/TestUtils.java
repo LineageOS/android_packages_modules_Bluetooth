@@ -59,7 +59,7 @@ import java.util.stream.IntStream;
 
 /** A set of methods useful in Bluetooth instrumentation tests */
 public class TestUtils {
-    private static final String TAG = "BluetoothTestUtils";
+    private static final String TAG = Utils.TAG_PREFIX_BLUETOOTH + TestUtils.class.getSimpleName();
 
     private static String sSystemScreenOffTimeout = "10000";
 
