@@ -64,11 +64,13 @@ public class PbapClientService extends ProfileService {
     // MAXIMUM_DEVICES set to 10 to prevent an excessive number of simultaneous devices.
     private static final int MAXIMUM_DEVICES = 10;
 
+    private static PbapClientService sPbapClientService;
+
     @VisibleForTesting
     final Map<BluetoothDevice, PbapClientStateMachineOld> mPbapClientStateMachineOldMap =
             new ConcurrentHashMap<>();
 
-    private static PbapClientService sPbapClientService;
+    private final AdapterService mAdapterService;
     private final PbapClientContactsStorage mPbapClientContactsStorage;
     private final PbapClientAccountManager mPbapClientAccountManager;
     private final DatabaseManager mDatabaseManager;
@@ -115,18 +117,19 @@ public class PbapClientService extends ProfileService {
 
     public PbapClientService(AdapterService adapterService) {
         super(requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(adapterService.getDatabase());
+        mAdapterService = adapterService;
+        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new Handler(Looper.getMainLooper());
 
         if (Flags.pbapClientStorageRefactor()) {
-            mPbapClientContactsStorage = new PbapClientContactsStorage(adapterService);
+            mPbapClientContactsStorage = new PbapClientContactsStorage(mAdapterService);
             mPbapClientAccountManager = null;
             mPbapClientStateMachineMap = new ConcurrentHashMap<>();
             mPbapClientContactsStorage.start();
         } else {
             mPbapClientAccountManager =
                     new PbapClientAccountManager(
-                            adapterService, new PbapClientAccountManagerCallback());
+                            mAdapterService, new PbapClientAccountManagerCallback());
             mPbapClientContactsStorage = null;
             mPbapClientStateMachineMap = null;
             mPbapClientAccountManager.start();
@@ -144,7 +147,8 @@ public class PbapClientService extends ProfileService {
             PbapClientContactsStorage storage,
             Map<BluetoothDevice, PbapClientStateMachine> deviceMap) {
         super(requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(adapterService.getDatabase());
+        mAdapterService = adapterService;
+        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new Handler(Looper.getMainLooper());
 
         mPbapClientContactsStorage = storage;
@@ -153,7 +157,7 @@ public class PbapClientService extends ProfileService {
         // For compatibility with tests while we phase the old state machine out
         mPbapClientAccountManager =
                 new PbapClientAccountManager(
-                        adapterService, new PbapClientAccountManagerCallback());
+                        mAdapterService, new PbapClientAccountManagerCallback());
 
         setComponentAvailable(AUTHENTICATOR_SERVICE, true);
 
@@ -272,6 +276,7 @@ public class PbapClientService extends ProfileService {
                 }
                 stateMachine =
                         new PbapClientStateMachine(
+                                mAdapterService,
                                 device,
                                 mPbapClientContactsStorage,
                                 this,
@@ -720,7 +725,8 @@ public class PbapClientService extends ProfileService {
     @VisibleForTesting
     PbapClientService(AdapterService adapterService, PbapClientAccountManager accountManager) {
         super(requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(adapterService.getDatabase());
+        mAdapterService = adapterService;
+        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new Handler(Looper.getMainLooper());
 
         if (Flags.pbapClientStorageRefactor()) {
