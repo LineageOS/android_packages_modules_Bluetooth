@@ -4214,6 +4214,7 @@ public class BluetoothMapContentObserver {
         try {
             /* Remove messages from virtual "deleted" folder (thread_id -1) */
             mResolver.delete(Sms.CONTENT_URI, "thread_id = " + DELETED_THREAD_ID, null);
+            mResolver.delete(Mms.CONTENT_URI, "thread_id = " + DELETED_THREAD_ID, null);
         } catch (SQLiteException e) {
             ContentProfileErrorReportUtils.report(
                     BluetoothProfile.MAP,
