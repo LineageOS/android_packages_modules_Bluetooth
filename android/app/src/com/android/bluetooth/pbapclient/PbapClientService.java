@@ -547,7 +547,7 @@ public class PbapClientService extends ProfileService {
                     HandlerThread smThread = new HandlerThread("PbapClientStateMachineOld");
                     smThread.start();
 
-                    smOld = new PbapClientStateMachineOld(this, device, smThread);
+                    smOld = new PbapClientStateMachineOld(mAdapterService, this, device, smThread);
                     smOld.start();
                     mPbapClientStateMachineOldMap.put(device, smOld);
                     return true;
