@@ -42,9 +42,10 @@ import java.io.InputStream;
 /** Test cases for {@link AvrcpCoverArtStorage}. */
 @RunWith(AndroidJUnit4.class)
 public final class AvrcpCoverArtStorageTest {
+
     private final Context mTargetContext =
             InstrumentationRegistry.getInstrumentation().getContext();
-    private final Resources mTestResources = TestUtils.getTestApplicationResources(mTargetContext);
+    private final Resources mTestResources = TestUtils.getTestApplicationResources();
     private final BluetoothDevice mDevice1 = getTestDevice(56);
     private final BluetoothDevice mDevice2 = getTestDevice(57);
     private Bitmap mImage1;

@@ -57,7 +57,7 @@ public class ImageTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     private @Mock Context mMockContext;
-    private Resources mTestResources;
+    private final Resources mTestResources = TestUtils.getTestApplicationResources();
     private MockContentResolver mTestContentResolver;
 
     private static final String TEST_AUTHORITY = "com.android.bluetooth.avrcp.test";
@@ -83,11 +83,8 @@ public class ImageTest {
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
-        mTestResources = TestUtils.getTestApplicationResources(mTargetContext);
-
         mTestBitmap = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
-
+        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
         mTestContentResolver = new MockContentResolver(mTargetContext);
         mTestContentResolver.addProvider(
                 TEST_AUTHORITY,
@@ -113,7 +110,6 @@ public class ImageTest {
     public void tearDown() throws Exception {
         mTestContentResolver = null;
         mTestBitmap = null;
-        mTestResources = null;
         mTargetContext = null;
         mMockContext = null;
         Util.sUriImagesSupport = false;
