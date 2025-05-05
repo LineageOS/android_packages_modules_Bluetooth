@@ -137,20 +137,21 @@ static AdvertiserAddressType GetAdvertiserAddressTypeNonConnectable(
 }
 
 struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerCallback {
-  impl(os::Handler* handler, hci::HciInterface* hci_layer, hci::ControllerInterface* controller,
+  impl(os::Handler* handler, hci::HciInterface* hci, hci::ControllerInterface* controller,
        hci::LeAddressManager* le_address_manager,
-       hci::OnAdvertisingSetTerminatedInterface* on_set_terminated) {
-    handler_ = handler;
-    hci_layer_ = hci_layer;
-    controller_ = controller;
+       hci::OnAdvertisingSetTerminatedInterface* on_set_terminated)
+      : handler_(handler),
+        hci_(hci),
+        controller_(controller),
+        le_address_manager_(le_address_manager),
+        on_set_terminated_(on_set_terminated) {
     le_maximum_advertising_data_length_ = controller_->GetLeMaximumAdvertisingDataLength();
-    on_set_terminated_ = on_set_terminated;
-    le_address_manager_ = le_address_manager;
+
     num_instances_ = controller_->GetLeNumberOfSupportedAdverisingSets();
 
-    le_advertising_interface_ = hci_layer_->GetLeAdvertisingInterface(
+    le_advertising_interface_ = hci_->GetLeAdvertisingInterface(
             handler_->BindOn(this, &LeAdvertisingManagerImpl::impl::handle_event));
-    hci_layer_->RegisterVendorSpecificEventHandler(
+    hci_->RegisterVendorSpecificEventHandler(
             hci::VseSubeventCode::BLE_STCHANGE,
             handler->BindOn(this, &LeAdvertisingManagerImpl::impl::multi_advertising_state_change));
 
@@ -163,7 +164,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
       num_instances_ += 1;
     } else {
       advertising_api_type_ = AdvertisingApiType::LEGACY;
-      hci_layer_->EnqueueCommand(
+      hci_->EnqueueCommand(
               LeReadAdvertisingPhysicalChannelTxPowerBuilder::Create(),
               handler->BindOnceOn(this, &impl::on_read_advertising_physical_channel_tx_power));
     }
@@ -1509,21 +1510,21 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
     }
   }
 
+  os::Handler* handler_;
+  hci::HciInterface* hci_;
+  hci::ControllerInterface* controller_;
+  hci::LeAddressManager* le_address_manager_;
+  hci::OnAdvertisingSetTerminatedInterface* on_set_terminated_;
   common::Callback<void(Address, AddressType)> scan_callback_;
   common::ContextualCallback<void(ErrorCode, uint16_t, hci::AddressWithType)>
           set_terminated_callback_{};
   AdvertisingCallback* advertising_callbacks_ = nullptr;
   os::Handler* registered_handler_{nullptr};
-  os::Handler* handler_;
-  hci::HciInterface* hci_layer_;
-  hci::ControllerInterface* controller_;
   uint16_t le_maximum_advertising_data_length_;
   int8_t le_physical_channel_tx_power_ = 0;
   int8_t le_tx_path_loss_comp_ = 0;
   hci::LeAdvertisingInterface* le_advertising_interface_;
   std::map<AdvertiserId, Advertiser> advertising_sets_;
-  hci::LeAddressManager* le_address_manager_;
-  hci::OnAdvertisingSetTerminatedInterface* on_set_terminated_;
   bool address_manager_registered = false;
   bool paused = false;
 
@@ -1826,11 +1827,10 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
 };
 
 LeAdvertisingManagerImpl::LeAdvertisingManagerImpl(
-        os::Handler* handler, hci::HciInterface* hci_layer, hci::ControllerInterface* controller,
+        os::Handler* handler, hci::HciInterface* hci, hci::ControllerInterface* controller,
         hci::LeAddressManager* le_address_manager,
         hci::OnAdvertisingSetTerminatedInterface* on_set_terminated) {
-  pimpl_ = std::make_unique<impl>(handler, hci_layer, controller, le_address_manager,
-                                  on_set_terminated);
+  pimpl_ = std::make_unique<impl>(handler, hci, controller, le_address_manager, on_set_terminated);
 }
 
 LeAdvertisingManagerImpl::~LeAdvertisingManagerImpl() = default;
