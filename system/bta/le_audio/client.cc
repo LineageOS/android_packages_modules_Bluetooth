@@ -4838,9 +4838,17 @@ public:
       case AudioState::IDLE:
         switch (audio_receiver_state_) {
           case AudioState::IDLE:
+            if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+              /* Let's set it before the OnAudioResume() as it is important in case group is already
+               * in QoS Configured state so the state machine can get enabled directions correctly.
+               */
+              audio_sender_state_ = AudioState::READY_TO_START;
+            }
             /* Stream is not started. Try to do it.*/
             if (OnAudioResume(group, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
-              audio_sender_state_ = AudioState::READY_TO_START;
+              if (!com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+                audio_sender_state_ = AudioState::READY_TO_START;
+              }
               if (!com::android::bluetooth::flags::leaudio_fix_stop_reconfiguration_timeout() &&
                   IsReconfigurationTimeoutRunning(active_group_id_)) {
                 StopReconfigurationTimeout(active_group_id_,
@@ -5160,8 +5168,16 @@ public:
       case AudioState::IDLE:
         switch (audio_sender_state_) {
           case AudioState::IDLE:
-            if (OnAudioResume(group, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
+            if (com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+              /* Let's set it before the OnAudioResume() as it is important in case group is already
+               * in QoS Configured state so the state machine can get enabled directions correctly.
+               */
               audio_receiver_state_ = AudioState::READY_TO_START;
+            }
+            if (OnAudioResume(group, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
+              if (!com::android::bluetooth::flags::leaudio_dynamic_direction_opening()) {
+                audio_receiver_state_ = AudioState::READY_TO_START;
+              }
               if (!com::android::bluetooth::flags::leaudio_fix_stop_reconfiguration_timeout() &&
                   IsReconfigurationTimeoutRunning(active_group_id_)) {
                 StopReconfigurationTimeout(active_group_id_,
