@@ -26,7 +26,6 @@ android_test {
         "androidx.test.rules",
         "flag-junit",
         "framework-bluetooth-pre-jarjar",
-        "frameworks-base-testutils",
         "junit",
         "mockito-target",
         "modules-utils-bytesmatcher",
