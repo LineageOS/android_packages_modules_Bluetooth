@@ -54,7 +54,7 @@ hci::RemoteNameRequestModule* GetRemoteNameRequest() {
 hci::LeScanningManager* GetScanning() { return Stack::GetInstance()->GetLeScanningManager(); }
 
 hci::DistanceMeasurementManager* GetDistanceMeasurementManager() {
-  return Stack::GetInstance()->GetInstance<hci::DistanceMeasurementManager>();
+  return Stack::GetInstance()->GetDistanceMeasurementManager();
 }
 
 hal::SnoopLogger* GetSnoopLogger() { return Stack::GetInstance()->GetSnoopLogger(); }

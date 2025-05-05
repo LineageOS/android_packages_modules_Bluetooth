@@ -19,6 +19,7 @@
 #include <functional>
 #include <mutex>
 
+#include "hci/distance_measurement_manager.h"
 #include "hci/le_advertising_manager.h"
 #include "hci/le_scanning_manager.h"
 #include "module.h"
@@ -72,7 +73,7 @@ public:
   virtual hal::SnoopLogger* GetSnoopLogger() const;
   virtual hci::LeScanningManager* GetLeScanningManager() const;
   virtual hci::LeAdvertisingManager* GetLeAdvertisingManager() const;
-
+  virtual hci::DistanceMeasurementManager* GetDistanceMeasurementManager() const;
   os::Handler* GetHandler();
 
   void Dump(int fd, std::promise<void> promise) const;

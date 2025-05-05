@@ -21,7 +21,6 @@
 #include "hal/ranging_hal.h"
 #include "hci/address.h"
 #include "hci/hci_packets.h"
-#include "module.h"
 
 namespace bluetooth {
 namespace hci {
@@ -92,56 +91,39 @@ public:
   virtual void OnHandleVendorSpecificReplyComplete(Address address, bool success) = 0;
 };
 
-class DistanceMeasurementManager : public bluetooth::Module {
+class DistanceMeasurementManager {
 public:
-  DistanceMeasurementManager();
-  ~DistanceMeasurementManager();
-  DistanceMeasurementManager(const DistanceMeasurementManager&) = delete;
-  DistanceMeasurementManager& operator=(const DistanceMeasurementManager&) = delete;
+  virtual ~DistanceMeasurementManager() = default;
 
-  void RegisterDistanceMeasurementCallbacks(DistanceMeasurementCallbacks* callbacks);
-  void StartDistanceMeasurement(int32_t app_uid, const Address&, uint16_t connection_handle,
-                                hci::Role local_hci_role, uint16_t interval,
-                                DistanceMeasurementMethod method,
-                                DistanceMeasurementSightType sight_type,
-                                DistanceMeasurementLocationType location_type);
-  void StopDistanceMeasurement(const Address& address, uint16_t connection_handle,
-                               DistanceMeasurementMethod method);
-  void HandleRasClientConnectedEvent(
+  virtual void RegisterDistanceMeasurementCallbacks(DistanceMeasurementCallbacks* callbacks) = 0;
+  virtual void StartDistanceMeasurement(int32_t app_uid, const Address&, uint16_t connection_handle,
+                                        hci::Role local_hci_role, uint16_t interval,
+                                        DistanceMeasurementMethod method,
+                                        DistanceMeasurementSightType sight_type,
+                                        DistanceMeasurementLocationType location_type) = 0;
+  virtual void StopDistanceMeasurement(const Address& address, uint16_t connection_handle,
+                                       DistanceMeasurementMethod method) = 0;
+  virtual void HandleRasClientConnectedEvent(
           const Address& address, uint16_t connection_handle, uint16_t att_handle,
           const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_data,
-          uint16_t conn_interval);
-  void HandleRasClientDisconnectedEvent(const Address& address,
-                                        const ras::RasDisconnectReason& ras_disconnect_reason);
-  void HandleVendorSpecificReply(
+          uint16_t conn_interval) = 0;
+  virtual void HandleRasClientDisconnectedEvent(
+          const Address& address, const ras::RasDisconnectReason& ras_disconnect_reason) = 0;
+  virtual void HandleVendorSpecificReply(
           const Address& address, uint16_t connection_handle,
-          const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_reply);
-  void HandleRasServerConnected(const Address& identity_address, uint16_t connection_handle,
-                                hci::Role local_hci_role);
-  void HandleMtuChanged(uint16_t connection_handle, uint16_t mtu);
-  void HandleRasServerDisconnected(const Address& identity_address, uint16_t connection_handle);
-  void HandleVendorSpecificReplyComplete(const Address& address, uint16_t connection_handle,
-                                         bool success);
-  void HandleRemoteData(const Address& address, uint16_t connection_handle,
-                        const std::vector<uint8_t>& raw_data);
-  void HandleRemoteDataTimeout(const Address& address, uint16_t connection_handle);
-  void HandleConnIntervalUpdated(const Address& address, uint16_t connection_handle,
-                                 uint16_t conn_interval);
-
-  static const ModuleFactory Factory;
-
-protected:
-  void ListDependencies(ModuleList* list) const override;
-
-  void Start() override;
-
-  void Stop() override;
-
-  std::string ToString() const override;
-
-private:
-  struct impl;
-  std::unique_ptr<impl> pimpl_;
+          const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_reply) = 0;
+  virtual void HandleRasServerConnected(const Address& identity_address, uint16_t connection_handle,
+                                        hci::Role local_hci_role) = 0;
+  virtual void HandleMtuChanged(uint16_t connection_handle, uint16_t mtu) = 0;
+  virtual void HandleRasServerDisconnected(const Address& identity_address,
+                                           uint16_t connection_handle) = 0;
+  virtual void HandleVendorSpecificReplyComplete(const Address& address, uint16_t connection_handle,
+                                                 bool success) = 0;
+  virtual void HandleRemoteData(const Address& address, uint16_t connection_handle,
+                                const std::vector<uint8_t>& raw_data) = 0;
+  virtual void HandleRemoteDataTimeout(const Address& address, uint16_t connection_handle) = 0;
+  virtual void HandleConnIntervalUpdated(const Address& address, uint16_t connection_handle,
+                                         uint16_t conn_interval) = 0;
 };
 
 }  // namespace hci

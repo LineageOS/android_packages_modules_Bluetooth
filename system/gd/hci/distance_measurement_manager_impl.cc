@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "hci/distance_measurement_manager.h"
+
+#include "hci/distance_measurement_manager_impl.h"
 
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
@@ -29,11 +30,10 @@
 #include "common/strings.h"
 #include "hal/ranging_hal.h"
 #include "hci/acl_manager.h"
-#include "hci/controller.h"
+#include "hci/controller_interface.h"
 #include "hci/distance_measurement_interface.h"
 #include "hci/event_checkers.h"
-#include "hci/hci_layer.h"
-#include "module.h"
+#include "hci/hci_interface.h"
 #include "os/alarm.h"
 #include "os/handler.h"
 #include "os/repeating_alarm.h"
@@ -48,8 +48,6 @@ using bluetooth::hci::acl_manager::PacketViewForRecombination;
 
 namespace bluetooth {
 namespace hci {
-const ModuleFactory DistanceMeasurementManager::Factory =
-        ModuleFactory([]() { return new DistanceMeasurementManager(); });
 // valid azimuth angle degree value is from 0 to 360.
 static constexpr int kInvalidAzimuthAngleDegree = -1;
 // valid altitude angle degree value is from -90 to 90
@@ -74,8 +72,8 @@ static constexpr uint16_t kMaxProcedureLen = 0x2710;    // 6.25s
 static constexpr uint16_t kMinProcedureInterval = 0x01;
 static constexpr uint16_t kMaxProcedureInterval = 0xFF;
 static constexpr uint16_t kMaxProcedureCount = 0x01;
-static constexpr uint32_t kMinSubeventLen = 0x0004E2;         // 1250us
-static constexpr uint32_t kMaxSubeventLen = 0x1E8480;         // 2s
+static constexpr uint32_t kMinSubeventLen = 0x0004E2;  // 1250us
+static constexpr uint32_t kMaxSubeventLen = 0x1E8480;  // 2s
 static constexpr uint8_t kTxPwrDelta = 0x00;
 static constexpr uint8_t kProcedureDataBufferSize = 0x10;  // Buffer size of Procedure data
 static constexpr uint16_t kRangingCounterMask = 0x0FFF;
@@ -93,7 +91,7 @@ static constexpr uint16_t kEnableSecurityTimeoutMs = 10000;  // 10s
 static constexpr uint16_t kProcedureScheduleGuardMs = 1000;  // 1s
 static constexpr double kConnIntervalUnitMs = 1.25;          // 1.25 ms
 
-struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
+struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback {
   struct CsProcedureData {
     CsProcedureData(uint16_t procedure_counter, uint8_t num_antenna_paths, uint8_t configuration_id,
                     uint8_t selected_tx_power)
@@ -320,9 +318,8 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
             ranging_result.velocity_meters_per_second_, DistanceMeasurementMethod::METHOD_CS);
   }
 
-  ~impl() {}
-  void start(os::Handler* handler, hci::Controller* controller, hal::RangingHal* ranging_hal,
-             hci::HciLayer* hci_layer, hci::AclManager* acl_manager) {
+  impl(os::Handler* handler, hci::HciInterface* hci_layer, hci::ControllerInterface* controller,
+       hci::AclManager* acl_manager, hal::RangingHal* ranging_hal) {
     handler_ = handler;
     controller_ = controller;
     ranging_hal_ = ranging_hal;
@@ -339,7 +336,7 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
       return;
     }
     distance_measurement_interface_ = hci_layer_->GetDistanceMeasurementInterface(
-            handler_->BindOn(this, &DistanceMeasurementManager::impl::handle_event));
+            handler_->BindOn(this, &DistanceMeasurementManagerImpl::impl::handle_event));
     distance_measurement_interface_->EnqueueCommand(
             LeCsReadLocalSupportedCapabilitiesBuilder::Create(),
             handler_->BindOnceOn(this, &impl::on_cs_read_local_supported_capabilities));
@@ -347,6 +344,8 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
       ranging_hal_->RegisterCallback(this);
     }
   }
+
+  ~impl() { stop(); }
 
   void stop() {
     hci_layer_->UnregisterLeEventHandler(hci::SubeventCode::TRANSMIT_POWER_REPORTING);
@@ -2870,8 +2869,8 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
 
   os::Handler* handler_ = nullptr;
   hal::RangingHal* ranging_hal_ = nullptr;
-  hci::Controller* controller_ = nullptr;
-  hci::HciLayer* hci_layer_ = nullptr;
+  hci::ControllerInterface* controller_ = nullptr;
+  hci::HciInterface* hci_layer_ = nullptr;
   hci::AclManager* acl_manager_ = nullptr;
   hci::DistanceMeasurementInterface* distance_measurement_interface_ = nullptr;
   std::unordered_map<Address, RSSITracker> rssi_trackers;
@@ -2898,104 +2897,100 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
           {4, 2, 3, 1}, {2, 4, 3, 1}, {4, 3, 2, 1}, {3, 4, 2, 1}, {3, 2, 4, 1}, {2, 3, 4, 1}};
 };
 
-DistanceMeasurementManager::DistanceMeasurementManager() { pimpl_ = std::make_unique<impl>(); }
-
-DistanceMeasurementManager::~DistanceMeasurementManager() = default;
-
-void DistanceMeasurementManager::ListDependencies(ModuleList* list) const {
-  list->add<hal::RangingHal>();
-  list->add<hci::Controller>();
-  list->add<hci::HciLayer>();
-  list->add<hci::AclManager>();
+DistanceMeasurementManagerImpl::DistanceMeasurementManagerImpl(os::Handler* handler,
+                                                               hci::HciInterface* hci_layer,
+                                                               hci::ControllerInterface* controller,
+                                                               hci::AclManager* acl_manager,
+                                                               hal::RangingHal* ranging_hal) {
+  pimpl_ = std::make_unique<impl>(handler, hci_layer, controller, acl_manager, ranging_hal);
 }
 
-void DistanceMeasurementManager::Start() {
-  pimpl_->start(GetHandler(), GetDependency<hci::Controller>(), GetDependency<hal::RangingHal>(),
-                GetDependency<hci::HciLayer>(), GetDependency<AclManager>());
-}
+DistanceMeasurementManagerImpl::~DistanceMeasurementManagerImpl() = default;
 
-void DistanceMeasurementManager::Stop() { pimpl_->stop(); }
-
-std::string DistanceMeasurementManager::ToString() const { return "Distance Measurement Manager"; }
-
-void DistanceMeasurementManager::RegisterDistanceMeasurementCallbacks(
+void DistanceMeasurementManagerImpl::RegisterDistanceMeasurementCallbacks(
         DistanceMeasurementCallbacks* callbacks) {
-  CallOn(pimpl_.get(), &impl::register_distance_measurement_callbacks, callbacks);
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::register_distance_measurement_callbacks, callbacks);
 }
 
-void DistanceMeasurementManager::StartDistanceMeasurement(
+void DistanceMeasurementManagerImpl::StartDistanceMeasurement(
         int32_t app_uid, const Address& address, uint16_t connection_handle,
         hci::Role local_hci_role, uint16_t interval, DistanceMeasurementMethod method,
         DistanceMeasurementSightType sight_type, DistanceMeasurementLocationType location_type) {
-  CallOn(pimpl_.get(), &impl::start_distance_measurement, app_uid, address, connection_handle,
-         local_hci_role, interval, method, sight_type, location_type);
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::start_distance_measurement, app_uid, address,
+                           connection_handle, local_hci_role, interval, method, sight_type,
+                           location_type);
 }
 
-void DistanceMeasurementManager::StopDistanceMeasurement(const Address& address,
-                                                         uint16_t connection_handle,
-                                                         DistanceMeasurementMethod method) {
-  CallOn(pimpl_.get(), &impl::stop_distance_measurement, address, connection_handle, method);
+void DistanceMeasurementManagerImpl::StopDistanceMeasurement(const Address& address,
+                                                             uint16_t connection_handle,
+                                                             DistanceMeasurementMethod method) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::stop_distance_measurement, address,
+                           connection_handle, method);
 }
 
-void DistanceMeasurementManager::HandleRasClientConnectedEvent(
+void DistanceMeasurementManagerImpl::HandleRasClientConnectedEvent(
         const Address& address, uint16_t connection_handle, uint16_t att_handle,
         const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_data,
         uint16_t conn_interval) {
-  CallOn(pimpl_.get(), &impl::handle_ras_client_connected_event, address, connection_handle,
-         att_handle, vendor_specific_data, conn_interval);
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::handle_ras_client_connected_event, address,
+                           connection_handle, att_handle, vendor_specific_data, conn_interval);
 }
 
-void DistanceMeasurementManager::HandleConnIntervalUpdated(const Address& address,
-                                                           uint16_t connection_handle,
-                                                           uint16_t conn_interval) {
-  CallOn(pimpl_.get(), &impl::handle_conn_interval_updated, address, connection_handle,
-         conn_interval);
+void DistanceMeasurementManagerImpl::HandleConnIntervalUpdated(const Address& address,
+                                                               uint16_t connection_handle,
+                                                               uint16_t conn_interval) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::handle_conn_interval_updated, address,
+                           connection_handle, conn_interval);
 }
 
-void DistanceMeasurementManager::HandleRasClientDisconnectedEvent(
+void DistanceMeasurementManagerImpl::HandleRasClientDisconnectedEvent(
         const Address& address, const ras::RasDisconnectReason& ras_disconnect_reason) {
-  CallOn(pimpl_.get(), &impl::handle_ras_client_disconnected_event, address, ras_disconnect_reason);
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::handle_ras_client_disconnected_event, address,
+                           ras_disconnect_reason);
 }
 
-void DistanceMeasurementManager::HandleVendorSpecificReply(
+void DistanceMeasurementManagerImpl::HandleVendorSpecificReply(
         const Address& address, uint16_t connection_handle,
         const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_reply) {
-  CallOn(pimpl_.get(), &impl::handle_ras_server_vendor_specific_reply, address, connection_handle,
-         vendor_specific_reply);
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::handle_ras_server_vendor_specific_reply, address,
+                           connection_handle, vendor_specific_reply);
 }
 
-void DistanceMeasurementManager::HandleRasServerConnected(const Address& identity_address,
-                                                          uint16_t connection_handle,
-                                                          hci::Role local_hci_role) {
-  CallOn(pimpl_.get(), &impl::handle_ras_server_connected, identity_address, connection_handle,
-         local_hci_role);
+void DistanceMeasurementManagerImpl::HandleRasServerConnected(const Address& identity_address,
+                                                              uint16_t connection_handle,
+                                                              hci::Role local_hci_role) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::handle_ras_server_connected, identity_address,
+                           connection_handle, local_hci_role);
 }
 
-void DistanceMeasurementManager::HandleMtuChanged(uint16_t connection_handle, uint16_t mtu) {
-  CallOn(pimpl_.get(), &impl::handle_mtu_changed, connection_handle, mtu);
+void DistanceMeasurementManagerImpl::HandleMtuChanged(uint16_t connection_handle, uint16_t mtu) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::handle_mtu_changed, connection_handle, mtu);
 }
 
-void DistanceMeasurementManager::HandleRasServerDisconnected(
+void DistanceMeasurementManagerImpl::HandleRasServerDisconnected(
         const bluetooth::hci::Address& identity_address, uint16_t connection_handle) {
-  CallOn(pimpl_.get(), &impl::handle_ras_server_disconnected, identity_address, connection_handle);
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::handle_ras_server_disconnected, identity_address,
+                           connection_handle);
 }
 
-void DistanceMeasurementManager::HandleVendorSpecificReplyComplete(const Address& address,
-                                                                   uint16_t connection_handle,
-                                                                   bool success) {
-  CallOn(pimpl_.get(), &impl::handle_vendor_specific_reply_complete, address, connection_handle,
-         success);
+void DistanceMeasurementManagerImpl::HandleVendorSpecificReplyComplete(const Address& address,
+                                                                       uint16_t connection_handle,
+                                                                       bool success) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::handle_vendor_specific_reply_complete, address,
+                           connection_handle, success);
 }
 
-void DistanceMeasurementManager::HandleRemoteData(const Address& address,
-                                                  uint16_t connection_handle,
-                                                  const std::vector<uint8_t>& raw_data) {
-  CallOn(pimpl_.get(), &impl::handle_remote_data, address, connection_handle, raw_data);
+void DistanceMeasurementManagerImpl::HandleRemoteData(const Address& address,
+                                                      uint16_t connection_handle,
+                                                      const std::vector<uint8_t>& raw_data) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::handle_remote_data, address, connection_handle,
+                           raw_data);
 }
 
-void DistanceMeasurementManager::HandleRemoteDataTimeout(const Address& address,
-                                                         uint16_t connection_handle) {
-  CallOn(pimpl_.get(), &impl::handle_remote_data_timeout, address, connection_handle);
+void DistanceMeasurementManagerImpl::HandleRemoteDataTimeout(const Address& address,
+                                                             uint16_t connection_handle) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::handle_remote_data_timeout, address,
+                           connection_handle);
 }
 
 }  // namespace hci
