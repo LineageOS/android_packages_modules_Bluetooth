@@ -34,6 +34,8 @@ static_library("common") {
     "//bt/system:target_defaults",
     "//bt/system/log:log_defaults",
   ]
+
+  deps = [ "//bt/sysprop:libcom.android.sysprop.bluetooth" ]
 }
 
 if (use.test) {
