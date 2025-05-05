@@ -16,15 +16,14 @@
 
 package com.android.bluetooth.hfpclient;
 
+import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.os.Parcel;
 
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.Test;
@@ -345,12 +344,7 @@ public class HfpClientCallTest {
 
     @Test
     public void testParcelable() {
-        final BluetoothDevice device =
-                InstrumentationRegistry.getInstrumentation()
-                        .getContext()
-                        .getSystemService(BluetoothManager.class)
-                        .getAdapter()
-                        .getRemoteDevice("01:23:45:67:89:AB");
+        final BluetoothDevice device = getRealDevice("01:23:45:67:89:AB");
 
         HfpClientCall call =
                 new HfpClientCall(

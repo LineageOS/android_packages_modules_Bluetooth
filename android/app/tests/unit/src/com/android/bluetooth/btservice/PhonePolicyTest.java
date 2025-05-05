@@ -145,7 +145,7 @@ public class PhonePolicyTest {
                 .thenAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
-                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+                            return getRealDevice(address);
                         });
 
         SystemProperties.mProperties = mProperties;
