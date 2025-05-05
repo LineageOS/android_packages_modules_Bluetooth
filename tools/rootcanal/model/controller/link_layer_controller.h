@@ -342,6 +342,9 @@ public:
                      bool all_phys_no_receive_preference, uint8_t tx_phys, uint8_t rx_phys,
                      bluetooth::hci::PhyOptions phy_options);
 
+  // HCI LE Set Data Length (Vol 4, Part E § 7.8.33).
+  ErrorCode LeSetDataLength(uint16_t connection_handle, uint16_t tx_octets, uint16_t tx_time);
+
   // HCI LE Set Host Feature command (Vol 4, Part E § 7.8.115).
   ErrorCode LeSetHostFeature(uint8_t bit_number, uint8_t bit_value);
 
