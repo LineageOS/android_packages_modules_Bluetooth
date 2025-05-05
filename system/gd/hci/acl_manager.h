@@ -28,7 +28,6 @@
 #include "hci/hci_packets.h"
 #include "hci/le_address_manager.h"
 #include "hci/le_on_advertising_set_terminated_interface.h"
-#include "hci/le_scanning_manager.h"
 #include "module.h"
 #include "os/handler.h"
 
@@ -47,7 +46,6 @@ namespace hci {
 class AclManager : public Module, public OnAdvertisingSetTerminatedInterface {
   friend class bluetooth::shim::legacy::Acl;
   friend bool bluetooth::shim::L2CA_SetAclPriority(uint16_t, bool);
-  friend class bluetooth::hci::LeScanningManager;
   friend class bluetooth::hci::DistanceMeasurementManager;
 
 public:

@@ -38,7 +38,7 @@
 #include "hci/distance_measurement_manager.h"
 #include "hci/hci_layer.h"
 #include "hci/le_advertising_manager_impl.h"
-#include "hci/le_scanning_manager.h"
+#include "hci/le_scanning_manager_impl.h"
 #include "hci/msft.h"
 #include "hci/remote_name_request.h"
 #include "lpp/lpp_offload_manager.h"
@@ -68,6 +68,7 @@ struct Stack::impl {
   Acl* acl_ = nullptr;
   std::shared_ptr<storage::StorageModule> storage_ = nullptr;
   std::shared_ptr<hal::SnoopLogger> snoop_logger_ = nullptr;
+  std::unique_ptr<hci::LeScanningManagerImpl> le_scanning_manager_ = nullptr;
   std::unique_ptr<hci::LeAdvertisingManagerImpl> le_advertising_manager_ = nullptr;
 };
 
@@ -111,7 +112,6 @@ void Stack::StartEverything() {
     modules.add<hci::AclManager>();
     modules.add<hci::RemoteNameRequestModule>();
     modules.add<hci::MsftExtensionManager>();
-    modules.add<hci::LeScanningManager>();
     modules.add<hci::DistanceMeasurementManager>();
 
     management_thread_ = new Thread("management_thread", Thread::Priority::NORMAL);
@@ -232,6 +232,12 @@ hal::SnoopLogger* Stack::GetSnoopLogger() const {
   return pimpl_->snoop_logger_.get();
 }
 
+hci::LeScanningManager* Stack::GetLeScanningManager() const {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  log::assert_that(is_running_, "assert failed: is_running_");
+  return pimpl_->le_scanning_manager_.get();
+}
+
 hci::LeAdvertisingManager* Stack::GetLeAdvertisingManager() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
@@ -266,6 +272,14 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
   pimpl_->snoop_logger_->Start();
   registry_.Start(modules, stack_thread_, stack_handler_);
 
+  log::info("Starting LeScanningManagerImpl");
+  pimpl_->le_scanning_manager_ = std::make_unique<hci::LeScanningManagerImpl>(
+          stack_handler_, static_cast<hci::HciLayer*>(registry_.Get(&hci::HciLayer::Factory)),
+          static_cast<hci::Controller*>(registry_.Get(&hci::Controller::Factory)),
+          static_cast<hci::AclManager*>(registry_.Get(&hci::AclManager::Factory))
+                  ->GetLeAddressManager(),
+          pimpl_->storage_.get());
+
   log::info("Starting LeAdvertisingManagerImpl");
   pimpl_->le_advertising_manager_ = std::make_unique<hci::LeAdvertisingManagerImpl>(
           stack_handler_, static_cast<hci::HciLayer*>(registry_.Get(&hci::HciLayer::Factory)),
@@ -280,6 +294,10 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
 void Stack::handle_shut_down(std::promise<void> promise) {
   log::info("Stopping LeAdvertisingManagerImpl");
   pimpl_->le_advertising_manager_.reset();
+
+  log::info("Stopping LeScanningManagerImpl");
+  pimpl_->le_scanning_manager_.reset();
+
   registry_.StopAll();
 
   pimpl_->snoop_logger_->Stop();
