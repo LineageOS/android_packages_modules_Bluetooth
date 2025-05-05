@@ -1621,12 +1621,18 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
           const SubeventAbortReason& subevent_abort_reason) {
     uint16_t counter = live_tracker->procedure_counter;
     CsProcedureDoneStatus procedure_done_status = procedure_data->local_status;
-    if (live_tracker->local_start && live_tracker->n_procedure_count > 1 &&
-        (procedure_done_status == CsProcedureDoneStatus::ABORTED ||
-         procedure_done_status == CsProcedureDoneStatus::ALL_RESULTS_COMPLETE)) {
-      live_tracker->procedure_counting_after_enable += 1;
-      if (live_tracker->procedure_counting_after_enable == live_tracker->n_procedure_count) {
+
+    if (live_tracker->local_start) {
+      bool should_schedule_procedure_enable = false;
+      if (live_tracker->n_procedure_count > 1 &&
+          procedure_done_status == CsProcedureDoneStatus::ALL_RESULTS_COMPLETE &&
+          ++live_tracker->procedure_counting_after_enable == live_tracker->n_procedure_count) {
+        should_schedule_procedure_enable = true;
         log::debug("enable procedure after finishing the last procedure");
+      }
+
+      if (should_schedule_procedure_enable ||
+          procedure_done_status == CsProcedureDoneStatus::ABORTED) {
         live_tracker->procedure_schedule_guard_alarm->Cancel();
         send_le_cs_procedure_enable(connection_handle, Enable::ENABLED);
       }
