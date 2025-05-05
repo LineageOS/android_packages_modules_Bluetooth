@@ -19,3 +19,12 @@ flag {
     }
 }
 
+flag {
+    name: "gatt_multi_bearer_connections"
+    namespace: "bluetooth"
+    description: "Run all advertise functions on a single thread"
+    bug: "412464556"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
