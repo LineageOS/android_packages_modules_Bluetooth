@@ -23,13 +23,23 @@ import android.hardware.bluetooth.offload.leaudio.StreamConfiguration;
  */
 interface IHciProxyCallbacks {
 
-   /**
-    * Start indication of a stream
-    */
-   void startStream(in int handle, in StreamConfiguration configuration);
+    /**
+     * Start indication of a stream
+     */
+    oneway void startStream(in int handle, in StreamConfiguration configuration);
 
-   /**
-    * Stop indication of a stream
-    */
-   void stopStream(in int handle);
+    /**
+     * Stop indication of a stream
+     */
+    oneway void stopStream(in int handle);
+
+    /**
+     * ISO Link-feedback event
+     */
+    oneway void linkFeedback(
+        in int handle,
+        in int sequence_number,
+        in int anchor_point_delay,
+        in int sdu_input_status
+    );
 }
