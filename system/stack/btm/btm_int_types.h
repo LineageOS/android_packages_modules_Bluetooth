@@ -32,29 +32,12 @@
 #include "stack/rnr/remote_name_request.h"
 #include "types/raw_address.h"
 
-constexpr size_t kMaxLogSize = 255;
+using TimestampedStringCircularBuffer = bluetooth::common::TimestampedStringCircularBuffer;
+
 constexpr size_t kBtmLogHistoryBufferSize = 200;
 constexpr size_t kMaxInquiryScanHistory = 10;
 
 extern bluetooth::common::TimestamperInMilliseconds timestamper_in_milliseconds;
-
-class TimestampedStringCircularBuffer
-    : public bluetooth::common::TimestampedCircularBuffer<std::string> {
-public:
-  explicit TimestampedStringCircularBuffer(size_t size)
-      : bluetooth::common::TimestampedCircularBuffer<std::string>(size) {}
-
-  void Push(const std::string& s) {
-    bluetooth::common::TimestampedCircularBuffer<std::string>::Push(s.substr(0, kMaxLogSize));
-  }
-
-  template <typename... Args>
-  void Push(Args... args) {
-    char buf[kMaxLogSize];
-    std::snprintf(buf, sizeof(buf), args...);
-    bluetooth::common::TimestampedCircularBuffer<std::string>::Push(std::string(buf));
-  }
-};
 
 /* Define a structure to hold all the BTM data
  */
