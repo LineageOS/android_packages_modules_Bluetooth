@@ -39,10 +39,8 @@ android_test {
         "platform-compat-test-rules",
         "platform-parametric-runner-lib",
         "platform-test-annotations",
-
-        // Linking source to test the working copy, not the on-device copy.
-        // Use 'pre-jarjar' so that we can reference symbols before renaming.
         "service-bluetooth-pre-jarjar",
+        "service-bluetooth.change-ids",
         "truth",
     ],
 
@@ -51,7 +49,6 @@ android_test {
         "android.test.mock.stubs.system",
         "android.test.runner.stubs.system",
         "framework-permission-s.stubs.module_lib",
-        "service-bluetooth.change-ids",
     ],
 
     jni_libs: [
