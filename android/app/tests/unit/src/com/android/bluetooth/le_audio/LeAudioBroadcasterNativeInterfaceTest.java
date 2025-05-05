@@ -17,7 +17,6 @@
 package com.android.bluetooth.le_audio;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.getRealDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
