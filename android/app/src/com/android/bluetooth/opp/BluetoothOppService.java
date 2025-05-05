@@ -214,15 +214,19 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
     private BluetoothOppObexServerSession mServerSession;
 
     public BluetoothOppService(AdapterService adapterService) {
-        super(adapterService);
+        this(adapterService, BluetoothOppPreference.getInstance(adapterService));
+    }
 
+    @VisibleForTesting
+    BluetoothOppService(AdapterService adapterService, BluetoothOppPreference oppPreference) {
+        super(adapterService);
         mAdapterService = adapterService;
 
         IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         registerReceiver(mBluetoothReceiver, filter);
 
-        BluetoothOppPreference.getInstance(this).dump();
+        oppPreference.dump();
 
         setComponentAvailable(OPP_PROVIDER, true);
         setComponentAvailable(INCOMING_FILE_CONFIRM_ACTIVITY, true);
