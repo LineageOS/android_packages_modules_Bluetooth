@@ -1133,7 +1133,7 @@ class HeadsetStateMachine extends StateMachine {
                                         ? HeadsetHalConstants.AT_RESPONSE_OK
                                         : HeadsetHalConstants.AT_RESPONSE_ERROR,
                                 0);
-                        if (mSystemInterface.isScoManagedByAudioEnabled()) {
+                        if (message.arg1 == 1 && mSystemInterface.isScoManagedByAudioEnabled()) {
                             mNativeInterface.startVoiceRecognition(mDevice, /* sendResult */ false);
                         }
                         break;
