@@ -25,6 +25,7 @@
 #define LOG_TAG "stack::sdp"
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
@@ -313,7 +314,8 @@ tCONN_CB* sdp_conn_originate(const RawAddress& bd_addr) {
  ******************************************************************************/
 void sdp_disconnect(tCONN_CB* p_ccb, tSDP_REASON reason) {
   tCONN_CB& ccb = *p_ccb;
-  log::verbose("SDP - disconnect  CID: 0x{:x}", ccb.connection_id);
+  log::verbose("SDP - disconnect  CID: 0x{:x}, cbb.con_state: {}", ccb.connection_id,
+               sdp_state_text(ccb.con_state));
 
   /* Check if we have a connection ID */
   if (ccb.connection_id != 0) {
@@ -326,6 +328,16 @@ void sdp_disconnect(tCONN_CB* p_ccb, tSDP_REASON reason) {
       if (!stack::l2cap::get_interface().L2CA_DisconnectReq(ccb.connection_id)) {
         log::warn("Unable to disconnect L2CAP peer:{} cid:{}", ccb.device_address,
                   ccb.connection_id);
+      } else if (com::android::bluetooth::flags::sdp_ccb_clean_up_after_l2cap_disc() &&
+                 ccb.con_state == tSDP_STATE::CONN_PEND) {
+        /* If we successfully disconnect L2CAP, and there are no CCBs for that CID that are
+         * connected, clean up all CCBs */
+        tCONN_CB* o_ccb = sdpu_find_ccb_by_cid(ccb.connection_id);
+        if (o_ccb == nullptr || o_ccb->con_state == tSDP_STATE::CONN_SETUP) {
+          log::verbose("Successfully disconnected L2CAP, cleaning up CCBs for peer:{} cid:0x{:x}",
+                       ccb.device_address, ccb.connection_id);
+          sdpu_clear_all_ccbs_for_cid(ccb.connection_id);
+        }
       }
     }
   }

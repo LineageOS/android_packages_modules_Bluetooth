@@ -571,6 +571,31 @@ void sdpu_clear_pend_ccb(const tCONN_CB& ccb) {
 
 /*******************************************************************************
  *
+ * Function         sdpu_clear_all_ccbs_for_cid
+ *
+ * Description      This function releases all sdp ccbs for given CID
+ *
+ *                  uint16_t : Remote CID
+ *
+ * Returns          returns none.
+ *
+ ******************************************************************************/
+void sdpu_clear_all_ccbs_for_cid(uint16_t cid) {
+  uint16_t xx;
+  tCONN_CB* p_ccb{};
+
+  // Look through each connection control block for active sdp on given cid
+  for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
+    if ((p_ccb->connection_id == cid) && (p_ccb->con_flags & SDP_FLAGS_IS_ORIG)) {
+      sdpu_callback(*p_ccb, tSDP_STATUS::SDP_CONN_FAILED);
+      sdpu_release_ccb(*p_ccb);
+    }
+  }
+  return;
+}
+
+/*******************************************************************************
+ *
  * Function         sdpu_build_attrib_seq
  *
  * Description      This function builds an attribute sequence from the list of
