@@ -25,6 +25,8 @@
 #include "bta/include/bta_hf_client_api.h"
 #include "test/fake/fake_osi.h"
 
+bool SDP_CancelServiceSearch(void* p_disc_db) { return false; }
+
 class BtaHfClientAddRecordTest : public ::testing::Test {
  protected:
   void SetUp() override { fake_osi_ = std::make_unique<test::fake::FakeOsi>(); }
