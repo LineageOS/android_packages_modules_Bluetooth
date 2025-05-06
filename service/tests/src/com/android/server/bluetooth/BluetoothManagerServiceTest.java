@@ -17,6 +17,8 @@
 package com.android.server.bluetooth;
 
 import static android.bluetooth.BluetoothAdapter.STATE_BLE_ON;
+import static android.bluetooth.BluetoothAdapter.STATE_BLE_TURNING_OFF;
+import static android.bluetooth.BluetoothAdapter.STATE_BLE_TURNING_ON;
 import static android.bluetooth.BluetoothAdapter.STATE_OFF;
 import static android.bluetooth.BluetoothAdapter.STATE_ON;
 import static android.bluetooth.BluetoothAdapter.STATE_TURNING_OFF;
@@ -53,7 +55,6 @@ import static org.mockito.Mockito.verify;
 
 import android.annotation.SuppressLint;
 import android.app.AppOpsManager;
-import android.app.PropertyInvalidatedCache;
 import android.app.role.RoleManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.IBluetooth;
@@ -66,6 +67,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
+import android.os.IpcDataCache;
 import android.os.Message;
 import android.os.UserHandle;
 import android.os.UserManager;
@@ -121,9 +123,6 @@ public class BluetoothManagerServiceTest {
         mSetFlagsRule = new SetFlagsRule(flags);
     }
 
-    private static final int STATE_BLE_TURNING_ON = 14; // can't find the symbol because hidden api
-    private static final int STATE_BLE_TURNING_OFF = 16; // can't find the symbol because hidden api
-
     private final Context mTargetContext =
             InstrumentationRegistry.getInstrumentation().getTargetContext();
 
@@ -147,15 +146,14 @@ public class BluetoothManagerServiceTest {
     private TestLooper mLooper;
     private BluetoothManagerService mManagerService;
 
-    private static class ServerQuery
-            extends PropertyInvalidatedCache.QueryHandler<IBluetoothManager, Integer> {
+    private static class ServerQuery extends IpcDataCache.QueryHandler<IBluetoothManager, Integer> {
         @Override
-        public Integer apply(IBluetoothManager x) {
+        public Integer apply(IBluetoothManager unusedManager) {
             return -1;
         }
 
         @Override
-        public boolean shouldBypassCache(IBluetoothManager x) {
+        public boolean shouldBypassCache(IBluetoothManager unusedManager) {
             return true;
         }
     }
@@ -173,15 +171,15 @@ public class BluetoothManagerServiceTest {
         MockitoAnnotations.initMocks(this);
         mInOrder = inOrder(mContext, mManagerCallback, mAdapterBinder);
 
-        PropertyInvalidatedCache<IBluetoothManager, Integer> testCache =
-                new PropertyInvalidatedCache<>(
+        IpcDataCache<IBluetoothManager, Integer> testCache =
+                new IpcDataCache<>(
                         8,
                         IBluetoothManager.IPC_CACHE_MODULE_SYSTEM,
                         IBluetoothManager.GET_SYSTEM_STATE_API,
                         IBluetoothManager.GET_SYSTEM_STATE_API,
                         new ServerQuery());
-        PropertyInvalidatedCache.setTestMode(true);
-        testCache.testPropertyName();
+        IpcDataCache.setCacheTestMode(true);
+        testCache.disableForCurrentProcess();
         // Mock these functions so security errors won't throw
         doReturn("name")
                 .when(mBluetoothServerProxy)
@@ -255,7 +253,7 @@ public class BluetoothManagerServiceTest {
 
     @After
     public void tearDown() {
-        PropertyInvalidatedCache.setTestMode(false);
+        IpcDataCache.setCacheTestMode(false);
     }
 
     private void endTest() {
@@ -274,13 +272,11 @@ public class BluetoothManagerServiceTest {
         IntStream.of(what)
                 .forEach(
                         w -> {
-                            String log = "Expecting message " + w + ": ";
+                            String log = "Expecting message " + w + ": but got ";
 
                             Message msg = mLooper.nextMessage();
-                            assertWithMessage(log + "but got null").that(msg).isNotNull();
-                            assertWithMessage(log + "but got " + msg.what)
-                                    .that(msg.what)
-                                    .isEqualTo(w);
+                            assertWithMessage(log + "null").that(msg).isNotNull();
+                            assertWithMessage(log + msg.what).that(msg.what).isEqualTo(w);
                             msg.getTarget().dispatchMessage(msg);
                         });
     }
