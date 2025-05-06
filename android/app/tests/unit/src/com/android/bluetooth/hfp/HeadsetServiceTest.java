@@ -163,14 +163,15 @@ public class HeadsetServiceTest {
         // Mock methods in HeadsetObjectsFactory
         doAnswer(
                         invocation -> {
-                            assertThat(mCurrentDevice).isNotNull();
+                            BluetoothDevice device = invocation.getArgument(0);
+                            assertThat(device).isNotNull();
                             final HeadsetStateMachine stateMachine =
                                     mock(HeadsetStateMachine.class);
                             doReturn(STATE_DISCONNECTED).when(stateMachine).getConnectionState();
                             doReturn(BluetoothHeadset.STATE_AUDIO_DISCONNECTED)
                                     .when(stateMachine)
                                     .getAudioState();
-                            mStateMachines.put(mCurrentDevice, stateMachine);
+                            mStateMachines.put(device, stateMachine);
                             return stateMachine;
                         })
                 .when(mObjectsFactory)
@@ -1062,17 +1063,14 @@ public class HeadsetServiceTest {
         when(mDatabaseManager.getProfileConnectionPolicy(
                         any(BluetoothDevice.class), eq(BluetoothProfile.HEADSET)))
                 .thenReturn(CONNECTION_POLICY_UNKNOWN);
-        for (int i = 0; i < 2; i++) {
-            mCurrentDevice = getRealDevice(i);
-            assertThat(mHeadsetService.connect(mCurrentDevice)).isTrue();
-            when(mStateMachines.get(mCurrentDevice).getDevice()).thenReturn(mCurrentDevice);
-            when(mStateMachines.get(mCurrentDevice).getConnectionState())
-                    .thenReturn(STATE_CONNECTED);
-            when(mStateMachines.get(mCurrentDevice).setSilenceDevice(anyBoolean()))
-                    .thenReturn(true);
-        }
         mCurrentDevice = getRealDevice(0);
         BluetoothDevice otherDevice = getRealDevice(1);
+        for (BluetoothDevice device : List.of(mCurrentDevice, otherDevice)) {
+            assertThat(mHeadsetService.connect(device)).isTrue();
+            doReturn(device).when(mStateMachines.get(device)).getDevice();
+            doReturn(STATE_CONNECTED).when(mStateMachines.get(device)).getConnectionState();
+            doReturn(true).when(mStateMachines.get(device)).setSilenceDevice(anyBoolean());
+        }
 
         // Test whether active device been removed after enable silence mode.
         assertThat(mHeadsetService.setActiveDevice(mCurrentDevice)).isTrue();
