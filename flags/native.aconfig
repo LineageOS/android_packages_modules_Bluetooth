@@ -20,3 +20,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "set_ptr_null_after_free"
+    namespace: "bluetooth"
+    description: "Set the alarm pointers to null after freeing them"
+    bug: "415965031"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
