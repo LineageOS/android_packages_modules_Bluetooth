@@ -161,6 +161,7 @@ cc_test {
     test_suites: ["device-tests"],
     srcs: [
         ":TestMockStackBtm",
+        ":TestMockStackSdp",
         ":TestCommonMockFunctions",
         "test/bta_hf_client_test.cc",
         "test/bta_dm_cust_uuid_test.cc",
@@ -204,9 +205,9 @@ cc_test {
     test_suites: ["device-tests"],
     srcs: [
         ":TestCommonMockFunctions",
-	":TestMockDevice",
-	":TestMockStack",
-	":TestMockBtif",
+        ":TestMockDevice",
+        ":TestMockStack",
+        ":TestMockBtif",
         "test/bta_hf_client_security_test.cc",
     ],
     shared_libs: [
@@ -227,6 +228,7 @@ cc_test {
         "libbt-common",
     ],
 }
+
 cc_test {
     name: "bt_host_test_bta",
     defaults: [
