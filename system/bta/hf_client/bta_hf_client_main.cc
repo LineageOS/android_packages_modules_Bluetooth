@@ -311,6 +311,14 @@ void bta_hf_client_cb_init(tBTA_HF_CLIENT_CB* client_cb, uint16_t handle) {
   client_cb->enabled_hf_indicators.clear();
   client_cb->peer_hf_indicators.clear();
 
+  if (client_cb->p_disc_db) {
+    if (!get_legacy_stack_sdp_api()->service.SDP_CancelServiceSearch(client_cb->p_disc_db)) {
+      log::warn("Unable to cancel SDP service discovery peer:{}",
+                ADDRESS_TO_LOGGABLE_STR(client_cb->peer_addr));
+    }
+    osi_free_and_reset((void**)&client_cb->p_disc_db);
+  }
+
   // Memset the rest of the block
   // memset(client_cb, 0, sizeof(tBTA_HF_CLIENT_CB));
   *client_cb = {};
