@@ -110,6 +110,10 @@ impl Stream {
     ) -> Result<Stream, String> {
         let mut state = CLIENT.state.lock().unwrap();
 
+        if iso_streams.iter().any(|s| state.stream.contains_key(&s.handle)) {
+            return Err("ISO Stream already used".to_string());
+        }
+
         let callbacks = StreamerEvents::new(*ccb, CLIENT.service.clone());
         let streamer = Arc::new(Streamer::new(iso_streams, audio, callbacks)?);
         for iso_stream in iso_streams {
