@@ -375,6 +375,7 @@ public:
 
   void SetPlayerSettings(std::vector<PlayerAttribute> attributes, std::vector<uint8_t> values,
                          SetPlayerSettingValueCallback cb) override {
+    log::info("");
     auto cb_lambda = [](const SetPlayerSettingValueCallback& cb, bool success) {
       do_in_main_thread(base::BindOnce(cb, success));
     };

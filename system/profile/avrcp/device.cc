@@ -250,6 +250,7 @@ void Device::VendorPacketHandler(uint8_t label, std::shared_ptr<VendorPacket> pk
     } break;
 
     case CommandPdu::GET_CURRENT_PLAYER_APPLICATION_SETTING_VALUE: {
+      log::info("{}: Command PDU: {}", address_, pkt->GetCommandPdu());
       if (player_settings_interface_ == nullptr) {
         log::error("Player Settings Interface not initialized.");
         auto response = RejectBuilder::MakeBuilder(pkt->GetCommandPdu(), Status::INVALID_COMMAND);
@@ -270,7 +271,8 @@ void Device::VendorPacketHandler(uint8_t label, std::shared_ptr<VendorPacket> pk
               get_current_player_setting_value_request->GetRequestedAttributes();
       for (auto attribute : attributes) {
         if (attribute < PlayerAttribute::EQUALIZER || attribute > PlayerAttribute::SCAN) {
-          log::warn("{}: Player Setting Attribute is not valid", address_);
+          log::warn("{}: Player Setting Attribute is not valid PDU: {} attribute: {}", address_,
+                    pkt->GetCommandPdu(), (int)attribute);
           auto response =
                   RejectBuilder::MakeBuilder(pkt->GetCommandPdu(), Status::INVALID_PARAMETER);
           send_message(label, false, std::move(response));
@@ -278,12 +280,14 @@ void Device::VendorPacketHandler(uint8_t label, std::shared_ptr<VendorPacket> pk
         }
       }
 
+      log::info("{}: Get current player setting value", address_);
       player_settings_interface_->GetCurrentPlayerSettingValue(
               attributes, base::Bind(&Device::GetPlayerApplicationSettingValueResponse,
                                      weak_ptr_factory_.GetWeakPtr(), label));
     } break;
 
     case CommandPdu::SET_PLAYER_APPLICATION_SETTING_VALUE: {
+      log::info("{}: Command PDU: {}", address_, pkt->GetCommandPdu());
       if (player_settings_interface_ == nullptr) {
         log::error("Player Settings Interface not initialized.");
         auto response = RejectBuilder::MakeBuilder(pkt->GetCommandPdu(), Status::INVALID_COMMAND);
@@ -307,7 +311,8 @@ void Device::VendorPacketHandler(uint8_t label, std::shared_ptr<VendorPacket> pk
       bool invalid_request = false;
       for (size_t i = 0; i < attributes.size(); i++) {
         if (attributes[i] < PlayerAttribute::EQUALIZER || attributes[i] > PlayerAttribute::SCAN) {
-          log::warn("{}: Player Setting Attribute is not valid", address_);
+          log::warn("{}: Player Setting Attribute is not valid PDU: {} attributes[i] = {}",
+                    address_, pkt->GetCommandPdu(), (int)attributes[i]);
           invalid_request = true;
           break;
         }
@@ -315,14 +320,16 @@ void Device::VendorPacketHandler(uint8_t label, std::shared_ptr<VendorPacket> pk
         if (attributes[i] == PlayerAttribute::REPEAT) {
           PlayerRepeatValue value = static_cast<PlayerRepeatValue>(values[i]);
           if (value < PlayerRepeatValue::OFF || value > PlayerRepeatValue::GROUP) {
-            log::warn("{}: Player Repeat Value is not valid", address_);
+            log::warn("{}: Player Repeat Value is not valid PDU: {} REPEAT value = {}", address_,
+                      pkt->GetCommandPdu(), (int)value);
             invalid_request = true;
             break;
           }
         } else if (attributes[i] == PlayerAttribute::SHUFFLE) {
           PlayerShuffleValue value = static_cast<PlayerShuffleValue>(values[i]);
           if (value < PlayerShuffleValue::OFF || value > PlayerShuffleValue::GROUP) {
-            log::warn("{}: Player Shuffle Value is not valid", address_);
+            log::warn("{}: Player Shuffle Value is not valid PDU: {} SHUFFLE value = {}", address_,
+                      pkt->GetCommandPdu(), (int)value);
             invalid_request = true;
             break;
           }
@@ -335,6 +342,7 @@ void Device::VendorPacketHandler(uint8_t label, std::shared_ptr<VendorPacket> pk
         return;
       }
 
+      log::info("{}: Set player settings", address_);
       player_settings_interface_->SetPlayerSettings(
               attributes, values,
               base::Bind(&Device::SetPlayerApplicationSettingValueResponse,
