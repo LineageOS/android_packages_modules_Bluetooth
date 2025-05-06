@@ -1051,7 +1051,32 @@ TEST_F(DistanceMeasurementManagerTest, schedule_next_cs_procedures) {
 
   cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
 
+  subevent_result.procedure_done_status = CsProcedureDoneStatus::ALL_RESULTS_COMPLETE;
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, subevent_result));
+  cs_requester_.sync_client_handler();
+
+  CommandView command_view =
+          cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+  LeCsProcedureEnableView enable_view =
+          LeCsProcedureEnableView::Create(DistanceMeasurementCommandView::Create(command_view));
+
+  EXPECT_EQ(enable_view.IsValid(), true);
+  EXPECT_EQ(enable_view.GetProcedureEnable(), Enable::ENABLED);
+  cs_requester_.sync_client_handler();
+}
+
+TEST_F(DistanceMeasurementManagerTest, reschedure_procedure_enable_when_procedures_were_aborted) {
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+  cs_requester_.sync_client_handler();
+
+  cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
+
+  uint16_t procedure_counter = 0;
+  CsSubeventResultEvent subevent_result;
   subevent_result.procedure_done_status = CsProcedureDoneStatus::ABORTED;
+
   cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
           params.connection_handle, procedure_counter, subevent_result));
   cs_requester_.sync_client_handler();
