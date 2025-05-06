@@ -27,6 +27,7 @@
 #include "hci/distance_measurement_manager.h"
 #include "hci/hci_packets.h"
 #include "hci/le_address_manager.h"
+#include "hci/le_on_advertising_set_terminated_interface.h"
 #include "hci/le_scanning_manager.h"
 #include "module.h"
 #include "os/handler.h"
@@ -43,7 +44,7 @@ bool L2CA_SetAclPriority(uint16_t, bool);
 
 namespace hci {
 
-class AclManager : public Module {
+class AclManager : public Module, public OnAdvertisingSetTerminatedInterface {
   friend class bluetooth::shim::legacy::Acl;
   friend bool bluetooth::shim::L2CA_SetAclPriority(uint16_t, bool);
   friend class bluetooth::hci::LeScanningManager;
@@ -116,9 +117,8 @@ public:
   virtual void WriteDefaultLinkPolicySettings(uint16_t default_link_policy_settings);
 
   // Callback from Advertising Manager to notify the advitiser (local) address
-  virtual void OnAdvertisingSetTerminated(ErrorCode status, uint16_t conn_handle,
-                                          uint8_t adv_set_id, hci::AddressWithType adv_address,
-                                          bool is_discoverable);
+  void OnAdvertisingSetTerminated(ErrorCode status, uint16_t conn_handle, uint8_t adv_set_id,
+                                  hci::AddressWithType adv_address, bool is_discoverable) override;
 
   virtual LeAddressManager* GetLeAddressManager();
 

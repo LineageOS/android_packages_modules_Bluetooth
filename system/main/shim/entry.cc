@@ -38,7 +38,7 @@ namespace shim {
 os::Handler* GetGdShimHandler() { return Stack::GetInstance()->GetHandler(); }
 
 hci::LeAdvertisingManager* GetAdvertising() {
-  return Stack::GetInstance()->GetInstance<hci::LeAdvertisingManager>();
+  return Stack::GetInstance()->GetLeAdvertisingManager();
 }
 
 hci::ControllerInterface* GetController() {
