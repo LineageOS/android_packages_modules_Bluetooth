@@ -17,6 +17,7 @@
 package com.android.bluetooth.opp;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -26,7 +27,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
-import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 
 import androidx.test.filters.MediumTest;
@@ -78,7 +78,7 @@ public class BluetoothOppBatchTest {
         doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
-                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+                            return getTestDevice(address);
                         })
                 .when(mAdapterService)
                 .getRemoteDevice(anyString());

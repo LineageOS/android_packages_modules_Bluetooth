@@ -26,7 +26,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.net.Uri;
 
@@ -66,7 +65,7 @@ public class AvrcpCoverArtProviderTest {
         doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
-                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+                            return getTestDevice(address);
                         })
                 .when(mAdapterService)
                 .getRemoteDevice(anyString());
