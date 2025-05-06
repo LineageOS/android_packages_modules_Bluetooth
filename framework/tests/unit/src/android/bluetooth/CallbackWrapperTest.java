@@ -22,13 +22,8 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-import android.os.test.TestLooper;
-
 import androidx.test.filters.SmallTest;
 
-import com.google.common.truth.Expect;
-
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -47,9 +42,7 @@ import java.util.function.Consumer;
 @SmallTest
 @RunWith(JUnit4.class)
 public class CallbackWrapperTest {
-
     @Rule public final MockitoRule mockito = MockitoJUnit.rule();
-    @Rule public Expect expect = Expect.create();
 
     private final Consumer<int[]> mRegisterConsumer = (int[] counter) -> counter[0]++;
     private final Consumer<int[]> mUnregisterConsumer = (int[] counter) -> counter[0]--;
@@ -62,23 +55,16 @@ public class CallbackWrapperTest {
     @Mock private Callback mCallback;
     @Mock private Callback mCallback2;
 
-    private TestLooper mLooper;
-    private Executor mExecutor;
+    private final Executor mExecutor = (r) -> r.run(); // synchronous Executor
+
     private Map<Callback, Executor> mCallbackExecutorMap;
     private CallbackWrapper<Callback, int[]> mCallbackWrapper;
 
     @Before
     public void setUp() {
-        mLooper = new TestLooper();
-        mExecutor = mLooper.getNewExecutor();
         mCallbackExecutorMap = new HashMap();
         mCallbackWrapper =
                 new CallbackWrapper(mRegisterConsumer, mUnregisterConsumer, mCallbackExecutorMap);
-    }
-
-    @After
-    public void tearDown() {
-        assertThat(mLooper.nextMessage()).isNull();
     }
 
     @Test
@@ -205,8 +191,6 @@ public class CallbackWrapperTest {
 
         mCallbackWrapper.forEach((cb) -> cb.onCallbackCalled());
 
-        assertThat(mLooper.dispatchAll()).isEqualTo(2);
-
         verify(mCallback).onCallbackCalled();
         verify(mCallback2).onCallbackCalled();
     }
@@ -218,8 +202,6 @@ public class CallbackWrapperTest {
         mCallbackWrapper.unregisterCallback(mUnusedCounter, mCallback2);
 
         mCallbackWrapper.forEach((cb) -> cb.onCallbackCalled());
-
-        assertThat(mLooper.dispatchAll()).isEqualTo(1);
 
         verify(mCallback).onCallbackCalled();
         verify(mCallback2, never()).onCallbackCalled();
