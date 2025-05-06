@@ -50,6 +50,7 @@ import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.obex.ResponseCodes;
 import com.android.vcard.VCardEntry;
 
@@ -67,6 +68,7 @@ import java.util.List;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class PbapClientStateMachineTest {
+
     private static final int L2CAP_PSM = 4101;
     private static final int RFCOMM_CHANNEL = 5;
     private static final int INVALID_L2CAP = -1;
@@ -91,6 +93,7 @@ public class PbapClientStateMachineTest {
 
     private final BluetoothDevice mDevice = getTestDevice(1);
 
+    @Mock private AdapterService mAdapterService;
     @Mock private Context mMockContext;
     private TestLooper mTestLooper;
 
@@ -101,7 +104,6 @@ public class PbapClientStateMachineTest {
     private final List<Account> mMockedAccounts = new ArrayList<>();
 
     @Mock private PbapClientObexClient mMockObexClient;
-
     @Mock private PbapClientStateMachine.Callback mMockCallback;
 
     private PbapClientStateMachine mPbapClientStateMachine = null;
@@ -152,6 +154,7 @@ public class PbapClientStateMachineTest {
 
         mPbapClientStateMachine =
                 new PbapClientStateMachine(
+                        mAdapterService,
                         mDevice,
                         mMockStorage,
                         mMockContext,

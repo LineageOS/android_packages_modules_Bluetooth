@@ -201,6 +201,7 @@ class PbapClientStateMachine extends StateMachine {
         }
     }
 
+    private final AdapterService mAdapterService;
     private final BluetoothDevice mDevice;
     private final Context mContext;
     private PbapSdpRecord mSdpRecord = null;
@@ -243,12 +244,13 @@ class PbapClientStateMachine extends StateMachine {
     private final Callback mCallback;
 
     PbapClientStateMachine(
+            AdapterService adapterService,
             BluetoothDevice device,
             PbapClientContactsStorage storage,
             Context context,
             Callback callback) {
         super(TAG);
-
+        mAdapterService = adapterService;
         mDevice = device;
         mContext = context;
         mContactsStorage = storage;
@@ -263,6 +265,7 @@ class PbapClientStateMachine extends StateMachine {
 
     @VisibleForTesting
     PbapClientStateMachine(
+            AdapterService adapterService,
             BluetoothDevice device,
             PbapClientContactsStorage storage,
             Context context,
@@ -270,7 +273,7 @@ class PbapClientStateMachine extends StateMachine {
             Callback callback,
             PbapClientObexClient obexClient) {
         super(TAG, looper);
-
+        mAdapterService = adapterService;
         mDevice = device;
         mContext = context;
         mContactsStorage = storage;
@@ -936,12 +939,9 @@ class PbapClientStateMachine extends StateMachine {
 
         info("Connection state changed, prev=" + prevState + ", new=" + state);
 
-        AdapterService adapterService = AdapterService.getAdapterService();
         mCallback.onConnectionStateChanged(prevState, state);
-        if (adapterService != null) {
-            adapterService.updateProfileConnectionAdapterProperties(
-                    mDevice, BluetoothProfile.PBAP_CLIENT, state, prevState);
-        }
+        mAdapterService.updateProfileConnectionAdapterProperties(
+                mDevice, BluetoothProfile.PBAP_CLIENT, state, prevState);
         mContext.sendBroadcastMultiplePermissions(
                 intent,
                 new String[] {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},

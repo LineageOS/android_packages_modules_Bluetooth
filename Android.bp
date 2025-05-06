@@ -162,6 +162,7 @@ java_defaults {
             "-Xep:InvalidInlineTag:ERROR",
             "-Xep:InvalidLink:ERROR",
             "-Xep:InvalidParam:ERROR",
+            "-Xep:JUnit4EmptyMethods:ERROR",
             "-Xep:JavaLangClash:ERROR",
             "-Xep:JavaUtilDate:ERROR",
             "-Xep:JdkObsolete:ERROR",
@@ -198,6 +199,7 @@ java_defaults {
             "-Xep:StaticGuardedByInstance:ERROR",
             "-Xep:StringCaseLocaleUsage:ERROR",
             "-Xep:StringCharset:ERROR",
+            "-Xep:StringConcatToTextBlock:ERROR",
             // "-Xep:StringSplitter:ERROR", // Not enabled in android platform
             "-Xep:SynchronizeOnNonFinalField:ERROR",
             "-Xep:ThreadJoinLoop:ERROR",

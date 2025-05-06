@@ -45,10 +45,15 @@ import java.util.Date;
 public class RequestTest {
 
     private static final String SIMPLE_MMS_MESSAGE =
-            "BEGIN:BMSG\r\nVERSION:1.0\r\nSTATUS:READ\r\nTYPE:MMS\r\nFOLDER:null\r\nBEGIN:BENV\r\n"
-                    + "BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r\n"
-                    + "BEGIN:BBODY\r\nLENGTH:39\r\nBEGIN:MSG\r\nThis is a new msg\r\nEND:MSG\r\n"
-                    + "END:BBODY\r\nEND:BENV\r\nEND:BMSG\r\n";
+            """
+            BEGIN:BMSG\r
+            VERSION:1.0\r\nSTATUS:READ\r\nTYPE:MMS\r\nFOLDER:null\r
+            BEGIN:BENV\r
+            BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r
+            BEGIN:BBODY\r\nLENGTH:39\r\nBEGIN:MSG\r\nThis is a new msg\r\nEND:MSG\r\nEND:BBODY\r
+            END:BENV\r
+            END:BMSG\r
+            """;
 
     private static final String TYPE_GET_FOLDER_LISTING = "x-obex/folder-listing";
     private static final String TYPE_GET_MESSAGE_LISTING = "x-bt/MAP-msg-listing";

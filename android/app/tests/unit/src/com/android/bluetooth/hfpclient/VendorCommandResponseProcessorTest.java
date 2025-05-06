@@ -29,10 +29,6 @@ import android.bluetooth.BluetoothDevice;
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.TestUtils;
-import com.android.bluetooth.btservice.AdapterService;
-
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -46,7 +42,6 @@ public class VendorCommandResponseProcessorTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private HeadsetClientNativeInterface mNativeInterface;
-    @Mock private AdapterService mAdapterService;
     @Mock private HeadsetClientService mHeadsetClientService;
 
     private static final int TEST_VENDOR_ID = BluetoothAssignedNumbers.APPLE;
@@ -57,14 +52,7 @@ public class VendorCommandResponseProcessorTest {
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.setAdapterService(mAdapterService);
-
         mProcessor = new VendorCommandResponseProcessor(mHeadsetClientService, mNativeInterface);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test

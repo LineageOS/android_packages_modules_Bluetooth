@@ -39,6 +39,7 @@ import android.service.media.MediaBrowserService;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.uiautomator.UiDevice;
 
@@ -168,9 +169,10 @@ public class TestUtils {
         return testDevice;
     }
 
-    public static Resources getTestApplicationResources(Context context) {
+    public static Resources getTestApplicationResources() {
         try {
-            return context.getPackageManager()
+            return ApplicationProvider.getApplicationContext()
+                    .getPackageManager()
                     .getResourcesForApplication("com.android.bluetooth.tests");
         } catch (PackageManager.NameNotFoundException e) {
             assertWithMessage("Unable to get test application resources: " + e.toString()).fail();

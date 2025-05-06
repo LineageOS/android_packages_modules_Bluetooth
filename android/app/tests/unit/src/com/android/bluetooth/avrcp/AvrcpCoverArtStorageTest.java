@@ -22,7 +22,6 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
@@ -38,16 +37,13 @@ import java.io.InputStream;
 /** Test cases for {@link AvrcpCoverArtStorage}. */
 @RunWith(AndroidJUnit4.class)
 public class AvrcpCoverArtStorageTest {
-    private Resources mTestResources;
+
+    private final Resources mTestResources = TestUtils.getTestApplicationResources();
 
     private AvrcpCoverArtStorage mAvrcpCoverArtStorage;
 
     @Before
     public void setUp() throws Exception {
-        mTestResources =
-                TestUtils.getTestApplicationResources(
-                        InstrumentationRegistry.getInstrumentation().getContext());
-
         mAvrcpCoverArtStorage = new AvrcpCoverArtStorage(2);
     }
 
@@ -55,7 +51,6 @@ public class AvrcpCoverArtStorageTest {
     public void tearDown() throws Exception {
         mAvrcpCoverArtStorage.clear();
         mAvrcpCoverArtStorage = null;
-        mTestResources = null;
     }
 
     private CoverArt getCoverArt(int resId) {

@@ -76,7 +76,7 @@ public class BrowserPlayerWrapperTest {
 
     @Mock Context mMockContext;
     private Context mTargetContext;
-    private Resources mTestResources;
+    private final Resources mTestResources = TestUtils.getTestApplicationResources();
     private MockContentResolver mTestContentResolver;
 
     private static final String TEST_AUTHORITY = "com.android.bluetooth.avrcp.test";
@@ -93,12 +93,8 @@ public class BrowserPlayerWrapperTest {
 
     @Before
     public void setUp() {
-
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
-        mTestResources = TestUtils.getTestApplicationResources(mTargetContext);
-
         mTestBitmap = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
-
+        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
         mTestContentResolver = new MockContentResolver(mTargetContext);
         mTestContentResolver.addProvider(
                 TEST_AUTHORITY,
@@ -134,7 +130,6 @@ public class BrowserPlayerWrapperTest {
         mThread = null;
         mTestContentResolver = null;
         mTestBitmap = null;
-        mTestResources = null;
         mTargetContext = null;
         Util.sUriImagesSupport = false;
     }

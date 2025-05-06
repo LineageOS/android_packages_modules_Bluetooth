@@ -168,33 +168,18 @@ class SourceAudioHalAsrc::ClockRecovery : public bluetooth::hal::ReadClockHandle
 public:
   ClockRecovery(bluetooth::common::MessageLoopThread* thread)
       : state_{.id = StateId::RESET}, reference_timing_{0, 0, 0} {
-    if (com::android::bluetooth::flags::run_clock_recovery_in_worker_thread()) {
-      read_clock_timer_.SchedulePeriodic(
-              thread->GetWeakPtr(),
-              base::BindRepeating(
-                      [](void*) {
-                        bluetooth::shim::GetHciLayer()->EnqueueCommand(
-                                bluetooth::hci::ReadClockBuilder::Create(
-                                        0, bluetooth::hci::WhichClock::LOCAL),
-                                get_main_thread()->BindOnce(
-                                        [](bluetooth::hci::CommandCompleteView) {}));
-                      },
-                      nullptr),
-              std::chrono::milliseconds(100));
-    } else {
-      read_clock_timer_.SchedulePeriodic(
-              get_main_thread()->GetWeakPtr(),
-              base::BindRepeating(
-                      [](void*) {
-                        bluetooth::shim::GetHciLayer()->EnqueueCommand(
-                                bluetooth::hci::ReadClockBuilder::Create(
-                                        0, bluetooth::hci::WhichClock::LOCAL),
-                                get_main_thread()->BindOnce(
-                                        [](bluetooth::hci::CommandCompleteView) {}));
-                      },
-                      nullptr),
-              std::chrono::milliseconds(100));
-    }
+    read_clock_timer_.SchedulePeriodic(
+            thread->GetWeakPtr(),
+            base::BindRepeating(
+                    [](void*) {
+                      bluetooth::shim::GetHciLayer()->EnqueueCommand(
+                              bluetooth::hci::ReadClockBuilder::Create(
+                                      0, bluetooth::hci::WhichClock::LOCAL),
+                              get_main_thread()->BindOnce(
+                                      [](bluetooth::hci::CommandCompleteView) {}));
+                    },
+                    nullptr),
+            std::chrono::milliseconds(100));
 
     hal::LinkClocker::Register(this);
   }

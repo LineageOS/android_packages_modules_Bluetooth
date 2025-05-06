@@ -22,7 +22,6 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
@@ -45,7 +44,8 @@ import java.util.Arrays;
 /** Test cases for {@link CoverArt}. */
 @RunWith(AndroidJUnit4.class)
 public class CoverArtTest {
-    private Resources mTestResources;
+
+    private final Resources mTestResources = TestUtils.getTestApplicationResources();
 
     private static final BipPixel PIXEL_THUMBNAIL = BipPixel.createFixed(200, 200);
     private static final String IMAGE_HANDLE_1 = "0000001";
@@ -58,10 +58,6 @@ public class CoverArtTest {
 
     @Before
     public void setUp() throws Exception {
-        mTestResources =
-                TestUtils.getTestApplicationResources(
-                        InstrumentationRegistry.getInstrumentation().getContext());
-
         m200by200Image = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
         m200by200ImageBlue = loadImage(com.android.bluetooth.tests.R.raw.image_200_200_blue);
         mImage = new Image(null, m200by200Image);
@@ -74,7 +70,6 @@ public class CoverArtTest {
         mImage = null;
         m200by200ImageBlue = null;
         m200by200Image = null;
-        mTestResources = null;
     }
 
     private Bitmap loadImage(int resId) {

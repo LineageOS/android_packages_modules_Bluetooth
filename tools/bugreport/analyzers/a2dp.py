@@ -611,6 +611,9 @@ def plot_tx_queue(ax, acl_connection: btsnoop.AclConnection):
     disconnected = acl_connection.disconnected
 
     # Contents of the TX queue.
+    # The offset represents the number of packets that were present in the
+    # queue before the stream started, in the case of truncated snoop logs.
+    tx_queue_offset = 0
     tx_queue = []
 
     real_ts = []
@@ -633,9 +636,12 @@ def plot_tx_queue(ax, acl_connection: btsnoop.AclConnection):
 
                 if connection_handle == acl_connection.connection_handle:
                     for _ in range(0, num_completed_packets):
-                        acked = tx_queue.pop()
-                        real_ts.append(acked.timestamp_us)
-                        tx_delay.append(packet.timestamp_us - acked.timestamp_us)
+                        if tx_queue:
+                            acked = tx_queue.pop()
+                            real_ts.append(acked.timestamp_us)
+                            tx_delay.append(packet.timestamp_us - acked.timestamp_us)
+                        else:
+                            tx_queue_offset += 1
 
         elif (packet.idc == btsnoop.Idc.ACL_DATA and
               packet.direction == btsnoop.Direction.SENT):
@@ -679,7 +685,7 @@ def generate_media_codec_capability(codec_type: Optional[str],
                 (44100, 0x20)
             ])
             if sampling_frequency not in sampling_frequencies:
-                raise InvalidException(f"unknown sampling frequency {sampling_frequency}")
+                raise ValueError(f"unknown sampling frequency {sampling_frequency}")
             return avdtp.MediaCodecCapability(
                 media_codec_type=0xff,
                 media_codec_specific_information_elements=[
@@ -696,7 +702,7 @@ def generate_media_codec_capability(codec_type: Optional[str],
                 (16000, 0x80),
             ])
             if sampling_frequency not in sampling_frequencies:
-                raise InvalidException(f"unknown sampling frequency {sampling_frequency}")
+                raise ValueError(f"unknown sampling frequency {sampling_frequency}")
             return avdtp.MediaCodecCapability(
                 media_codec_type=0xff,
                 media_codec_specific_information_elements=[
@@ -712,7 +718,7 @@ def generate_media_codec_capability(codec_type: Optional[str],
                 (16000, 0x80),
             ])
             if sampling_frequency not in sampling_frequencies:
-                raise InvalidException(f"unknown sampling frequency {sampling_frequency}")
+                raise ValueError(f"unknown sampling frequency {sampling_frequency}")
             return avdtp.MediaCodecCapability(
                 media_codec_type=0xff,
                 media_codec_specific_information_elements=[
@@ -730,7 +736,7 @@ def generate_media_codec_capability(codec_type: Optional[str],
                 ],
             )
         case _:
-            raise InvalidException(f"unknown codec type '{codec_type}'")
+            raise ValueError(f"unknown codec type '{codec_type}'")
 
 
 def plot_acl_connection(acl_connection: btsnoop.AclConnection,

@@ -130,7 +130,7 @@ public final class DatabaseManagerTest {
                 .thenAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
-                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+                            return getRealDevice(address);
                         });
 
         // Create a memory database for DatabaseManager instead of use a real database.

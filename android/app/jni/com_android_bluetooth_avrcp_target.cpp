@@ -1012,6 +1012,12 @@ static void getPlayerSettingsResponseNative(JNIEnv* env, jobject /* object */,
 static void setPlayerSettings(std::vector<PlayerAttribute> attributes, std::vector<uint8_t> values,
                               SetPlayerSettingValueCb cb) {
   log::debug("");
+  for (size_t i = 0; i < attributes.size(); i++) {
+    log::debug("attributes[{}]: {}", i, (int)attributes[i]);
+  }
+  for (size_t i = 0; i < values.size(); i++) {
+    log::debug("values[{}]: {}", i, (int)values[i]);
+  }
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) {
