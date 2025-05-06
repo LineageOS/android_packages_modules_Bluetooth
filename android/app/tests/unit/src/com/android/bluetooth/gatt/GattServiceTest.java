@@ -19,6 +19,7 @@ package com.android.bluetooth.gatt;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -37,7 +38,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.ActivityManager;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothStatusCodes;
@@ -186,7 +186,7 @@ public class GattServiceTest {
                 .thenAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
-                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+                            return getRealDevice(address);
                         });
     }
 
