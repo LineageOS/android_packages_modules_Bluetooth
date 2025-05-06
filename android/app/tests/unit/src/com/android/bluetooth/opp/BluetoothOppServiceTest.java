@@ -17,7 +17,7 @@
 package com.android.bluetooth.opp;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.opp.BluetoothOppService.WHERE_INVISIBLE_UNCONFIRMED;
@@ -25,6 +25,7 @@ import static com.android.bluetooth.opp.BluetoothOppService.WHERE_INVISIBLE_UNCO
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -38,6 +39,7 @@ import static org.mockito.Mockito.verify;
 import android.app.NotificationManager;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.MatrixCursor;
 import android.os.Looper;
 
@@ -65,22 +67,30 @@ public class BluetoothOppServiceTest {
     @Mock private AdapterService mAdapterService;
     @Mock private BluetoothMethodProxy mBluetoothMethodProxy;
 
+    private static final String TEST_PREF = "BluetoothOppServiceTest";
+
     private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
 
     private BluetoothOppService mService;
+    private SharedPreferences mPrefs;
 
     @Before
     public void setUp() throws Exception {
+        mContext.deleteSharedPreferences(TEST_PREF);
+        mPrefs = mContext.getSharedPreferences(TEST_PREF, Context.MODE_PRIVATE);
+        mPrefs.edit().clear().apply();
+
         mockGetSystemService(mAdapterService, NotificationManager.class);
         doReturn(mContext.getPackageName()).when(mAdapterService).getPackageName();
         doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(mContext.getResources()).when(mAdapterService).getResources();
         doReturn(mContext.getContentResolver()).when(mAdapterService).getContentResolver();
+        doReturn(mPrefs).when(mAdapterService).getSharedPreferences(anyString(), anyInt());
 
         doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
-                            return getTestDevice(address);
+                            return getRealDevice(address);
                         })
                 .when(mAdapterService)
                 .getRemoteDevice(anyString());
@@ -100,7 +110,7 @@ public class BluetoothOppServiceTest {
 
         mockGetBluetoothManager(mAdapterService);
 
-        BluetoothOppPreference oppPreference = BluetoothOppPreference.getInstance(mContext);
+        BluetoothOppPreference oppPreference = BluetoothOppPreference.getInstance(mAdapterService);
 
         mService = new BluetoothOppService(mAdapterService, oppPreference);
         mService.setAvailable(true);
@@ -120,6 +130,8 @@ public class BluetoothOppServiceTest {
 
     @After
     public void tearDown() throws Exception {
+        mPrefs.edit().clear().apply();
+        mContext.deleteSharedPreferences(TEST_PREF);
         // Since the update thread is not run (we mocked it), it will not clean itself on interrupt
         // (normally, the service will wait for the update thread to clean itself after
         // being interrupted). We clean it manually here
@@ -130,6 +142,7 @@ public class BluetoothOppServiceTest {
         }
 
         BluetoothMethodProxy.setInstanceForTesting(null);
+        BluetoothOppPreference.setInstance(null);
         mService.cleanup();
     }
 

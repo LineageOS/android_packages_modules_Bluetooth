@@ -18,6 +18,8 @@ package com.android.bluetooth.mapclient;
 
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
@@ -42,6 +44,7 @@ public class MnsService {
     private final SocketAcceptor mAcceptThread = new SocketAcceptor();
 
     private final MapClientService mMapClientService;
+    private final AdapterService mAdapterService;
 
     private ObexServerSockets mServerSockets;
 
@@ -50,8 +53,9 @@ public class MnsService {
 
     MnsService(AdapterService adapterService, MapClientService service) {
         Log.v(TAG, "MnsService()");
+        mAdapterService = requireNonNull(adapterService);
         mMapClientService = service;
-        mServerSockets = ObexServerSockets.create(adapterService, mAcceptThread);
+        mServerSockets = ObexServerSockets.create(mAdapterService, mAcceptThread);
         SdpManagerNativeInterface nativeInterface = SdpManagerNativeInterface.getInstance();
         if (!nativeInterface.isAvailable()) {
             Log.e(TAG, "SdpManagerNativeInterface is not available");
@@ -138,7 +142,7 @@ public class MnsService {
                 return false;
             }
             MnsObexServer srv = new MnsObexServer(stateMachine);
-            BluetoothObexTransport transport = new BluetoothObexTransport(socket);
+            BluetoothObexTransport transport = new BluetoothObexTransport(mAdapterService, socket);
             try {
                 new ServerSession(transport, srv, null);
                 return true;

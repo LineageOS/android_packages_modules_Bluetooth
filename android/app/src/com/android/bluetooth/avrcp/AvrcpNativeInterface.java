@@ -66,7 +66,7 @@ public class AvrcpNativeInterface {
     }
 
     void setBipClientStatus(BluetoothDevice device, boolean connected) {
-        String identityAddress = Utils.getBrEdrAddress(device);
+        String identityAddress = Utils.getBrEdrAddress(device, mAdapterService);
         setBipClientStatusNative(identityAddress, connected);
     }
 
@@ -207,7 +207,7 @@ public class AvrcpNativeInterface {
     }
 
     boolean disconnectDevice(BluetoothDevice device) {
-        String identityAddress = Utils.getBrEdrAddress(device);
+        String identityAddress = Utils.getBrEdrAddress(device, mAdapterService);
         d("disconnectDevice: identityAddress=" + identityAddress);
         return disconnectDeviceNative(identityAddress);
     }
@@ -245,7 +245,7 @@ public class AvrcpNativeInterface {
 
     void sendVolumeChanged(BluetoothDevice device, int volume) {
         d("sendVolumeChanged: volume=" + volume);
-        String identityAddress = Utils.getBrEdrAddress(device);
+        String identityAddress = Utils.getBrEdrAddress(device, mAdapterService);
         sendVolumeChangedNative(identityAddress, volume);
     }
 

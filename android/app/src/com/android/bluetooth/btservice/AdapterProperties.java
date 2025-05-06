@@ -1091,7 +1091,7 @@ class AdapterProperties {
         StringBuilder sb = new StringBuilder();
         for (BluetoothDevice device : mBondedDevices) {
             String address = device.getAddress();
-            String brEdrAddress = Utils.getBrEdrAddress(device);
+            String brEdrAddress = Utils.getBrEdrAddress(device, mService);
             if (brEdrAddress.equals(address)) {
                 writer.println(
                         "    "

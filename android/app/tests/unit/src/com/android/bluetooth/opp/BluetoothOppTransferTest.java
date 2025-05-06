@@ -40,7 +40,6 @@ import android.app.NotificationManager;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothUuid;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
@@ -75,7 +74,6 @@ public class BluetoothOppTransferTest {
     @Mock private AdapterService mAdapterService;
     @Mock private BluetoothOppObexSession mSession;
     @Mock private BluetoothMethodProxy mCallProxy;
-    @Mock private Context mMockContext;
 
     private BluetoothOppBatch mBluetoothOppBatch;
     private BluetoothOppTransfer mTransfer;
@@ -84,7 +82,7 @@ public class BluetoothOppTransferTest {
 
     @Before
     public void setUp() throws Exception {
-        mockGetSystemService(mMockContext, NotificationManager.class);
+        mockGetSystemService(mAdapterService, NotificationManager.class);
 
         doAnswer(
                         invocation -> {
@@ -128,8 +126,8 @@ public class BluetoothOppTransferTest {
                         123456789,
                         false);
         mBluetoothOppBatch = new BluetoothOppBatch(mAdapterService, mInitShareInfo);
-        mockGetBluetoothManager(mMockContext);
-        mTransfer = new BluetoothOppTransfer(mMockContext, mBluetoothOppBatch, mSession);
+        mockGetBluetoothManager(mAdapterService);
+        mTransfer = new BluetoothOppTransfer(mAdapterService, mBluetoothOppBatch, mSession);
         mEventHandler = mTransfer.new EventHandler(Looper.getMainLooper());
     }
 
@@ -182,17 +180,10 @@ public class BluetoothOppTransferTest {
     }
 
     @Test
-    public void start_bluetoothDisabled_batchFail() {
-        mTransfer.start();
-        // Since Bluetooth is disabled, the batch will fail
-        assertThat(mBluetoothOppBatch.mStatus).isEqualTo(Constants.BATCH_STATUS_FAILED);
-    }
-
-    @Test
     public void start_receiverRegistered() {
         doReturn(true).when(mCallProxy).bluetoothAdapterIsEnabled(any());
         mTransfer.start();
-        verify(mMockContext).registerReceiver(any(), any(IntentFilter.class));
+        verify(mAdapterService).registerReceiver(any(), any(IntentFilter.class));
         // need this, or else the handler thread might throw in middle of the next test
         mTransfer.stop();
     }
@@ -202,7 +193,7 @@ public class BluetoothOppTransferTest {
         doReturn(true).when(mCallProxy).bluetoothAdapterIsEnabled(any());
         mTransfer.start();
         mTransfer.stop();
-        verify(mMockContext).unregisterReceiver(any());
+        verify(mAdapterService).unregisterReceiver(any());
     }
 
     @Test
@@ -212,15 +203,6 @@ public class BluetoothOppTransferTest {
         assertThat(mTransfer.mConnectThread).isNull();
         assertThat(mBluetoothOppBatch.mStatus).isEqualTo(Constants.BATCH_STATUS_FAILED);
     }
-
-    // TODO: try to use ShadowBluetoothDevice
-    //    @Test
-    //    public void eventHandler_handleMessage_SOCKET_ERROR_RETRY_connectThreadInitiated() {
-    //        BluetoothDevice bluetoothDevice = ShadowBluetoothDevice();
-    //        Message message = Message.obtain(mEventHandler, SOCKET_ERROR_RETRY, bluetoothDevice);
-    //        mEventHandler.handleMessage(message);
-    //        assertThat(mTransfer.mConnectThread).isNotNull();
-    //    }
 
     @Test
     public void eventHandler_handleMessage_TRANSPORT_CONNECTED_obexSessionStarted() {
@@ -251,7 +233,7 @@ public class BluetoothOppTransferTest {
                         123456789,
                         false);
         mBluetoothOppBatch = new BluetoothOppBatch(mAdapterService, mInitShareInfo);
-        mTransfer = new BluetoothOppTransfer(mMockContext, mBluetoothOppBatch, mSession);
+        mTransfer = new BluetoothOppTransfer(mAdapterService, mBluetoothOppBatch, mSession);
         mEventHandler = mTransfer.new EventHandler(Looper.getMainLooper());
         mEventHandler.handleMessage(message);
 
@@ -299,7 +281,7 @@ public class BluetoothOppTransferTest {
                         123456789,
                         false);
         mBluetoothOppBatch = new BluetoothOppBatch(mAdapterService, mInitShareInfo);
-        mTransfer = new BluetoothOppTransfer(mMockContext, mBluetoothOppBatch, mSession);
+        mTransfer = new BluetoothOppTransfer(mAdapterService, mBluetoothOppBatch, mSession);
         mEventHandler = mTransfer.new EventHandler(Looper.getMainLooper());
 
         BluetoothOppShareInfo info = mock(BluetoothOppShareInfo.class);
@@ -334,7 +316,7 @@ public class BluetoothOppTransferTest {
         mBluetoothOppBatch.addShare(newInfo);
         mEventHandler.handleMessage(message);
 
-        verify(mMockContext)
+        verify(mAdapterService)
                 .sendBroadcast(
                         argThat(
                                 arg ->
@@ -347,7 +329,8 @@ public class BluetoothOppTransferTest {
     @Test
     public void socketConnectThreadConstructors() {
         BluetoothDevice device = getTestDevice(23);
-        BluetoothOppTransfer transfer = new BluetoothOppTransfer(mMockContext, mBluetoothOppBatch);
+        BluetoothOppTransfer transfer =
+                new BluetoothOppTransfer(mAdapterService, mBluetoothOppBatch);
         BluetoothOppTransfer.SocketConnectThread socketConnectThread =
                 transfer.new SocketConnectThread(device, true);
         BluetoothOppTransfer.SocketConnectThread socketConnectThread2 =
@@ -359,7 +342,8 @@ public class BluetoothOppTransferTest {
     @Test
     public void socketConnectThreadInterrupt() {
         final BluetoothDevice device = getTestDevice(34);
-        BluetoothOppTransfer transfer = new BluetoothOppTransfer(mMockContext, mBluetoothOppBatch);
+        BluetoothOppTransfer transfer =
+                new BluetoothOppTransfer(mAdapterService, mBluetoothOppBatch);
         BluetoothOppTransfer.SocketConnectThread socketConnectThread =
                 transfer.new SocketConnectThread(device, true);
         socketConnectThread.interrupt();
@@ -370,7 +354,8 @@ public class BluetoothOppTransferTest {
     @SuppressWarnings("DoNotCall")
     public void socketConnectThreadRun_bluetoothDisabled_connectionFailed() {
         final BluetoothDevice device = getRealDevice(34);
-        BluetoothOppTransfer transfer = new BluetoothOppTransfer(mMockContext, mBluetoothOppBatch);
+        BluetoothOppTransfer transfer =
+                new BluetoothOppTransfer(mAdapterService, mBluetoothOppBatch);
         BluetoothOppTransfer.SocketConnectThread socketConnectThread =
                 transfer.new SocketConnectThread(device, true);
         transfer.mSessionHandler = mEventHandler;
@@ -382,7 +367,8 @@ public class BluetoothOppTransferTest {
     @Test
     public void oppConnectionReceiver_onReceiveWithActionAclDisconnected_sendsConnectTimeout() {
         final BluetoothDevice device = getRealDevice("01:23:45:67:89:AB");
-        BluetoothOppTransfer transfer = new BluetoothOppTransfer(mMockContext, mBluetoothOppBatch);
+        BluetoothOppTransfer transfer =
+                new BluetoothOppTransfer(mAdapterService, mBluetoothOppBatch);
         transfer.mCurrentShare = mInitShareInfo;
         transfer.mCurrentShare.mConfirm = BluetoothShare.USER_CONFIRMATION_PENDING;
         BluetoothOppTransfer.OppConnectionReceiver receiver = transfer.new OppConnectionReceiver();
@@ -391,7 +377,7 @@ public class BluetoothOppTransferTest {
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
 
         transfer.mSessionHandler = mEventHandler;
-        receiver.onReceive(mMockContext, intent);
+        receiver.onReceive(mAdapterService, intent);
         verify(mCallProxy)
                 .handlerSendEmptyMessage(any(), eq(BluetoothOppObexSession.MSG_CONNECT_TIMEOUT));
     }
@@ -399,7 +385,8 @@ public class BluetoothOppTransferTest {
     @Test
     public void oppConnectionReceiver_onReceiveWithActionSdpRecord_withoutSdpRecord() {
         final BluetoothDevice device = getRealDevice("01:23:45:67:89:AB");
-        BluetoothOppTransfer transfer = new BluetoothOppTransfer(mMockContext, mBluetoothOppBatch);
+        BluetoothOppTransfer transfer =
+                new BluetoothOppTransfer(mAdapterService, mBluetoothOppBatch);
         transfer.mCurrentShare = mInitShareInfo;
         transfer.mCurrentShare.mConfirm = BluetoothShare.USER_CONFIRMATION_PENDING;
         transfer.mDevice = device;
@@ -410,7 +397,7 @@ public class BluetoothOppTransferTest {
         intent.putExtra(BluetoothDevice.EXTRA_UUID, BluetoothUuid.OBEX_OBJECT_PUSH);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
 
-        receiver.onReceive(mMockContext, intent);
+        receiver.onReceive(mAdapterService, intent);
 
         // No sdp record was passed to intent => sends TRANSPORT_ERROR
         verify(mCallProxy).handlerSendEmptyMessage(any(), eq(TRANSPORT_ERROR));

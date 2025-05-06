@@ -198,6 +198,7 @@ class PbapClientStateMachineOld extends StateMachine {
             if (mConnectionHandler == null && looper != null) {
                 mConnectionHandler =
                         new PbapClientConnectionHandler.Builder()
+                                .setAdapterService(mAdapterService)
                                 .setLooper(looper)
                                 .setLocalSupportedFeatures(LOCAL_SUPPORTED_FEATURES)
                                 .setService(mService)

@@ -267,7 +267,8 @@ public class BluetoothMapService extends ConnectableProfile {
 
         if (mBluetoothMnsObexClient == null) {
             mBluetoothMnsObexClient =
-                    new BluetoothMnsObexClient(mRemoteDevice, mMnsRecord, mSessionStatusHandler);
+                    new BluetoothMnsObexClient(
+                            mAdapterService, mRemoteDevice, mMnsRecord, mSessionStatusHandler);
         }
 
         boolean connected = false;

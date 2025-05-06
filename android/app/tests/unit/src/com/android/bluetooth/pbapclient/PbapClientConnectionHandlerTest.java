@@ -37,6 +37,7 @@ import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.After;
 import org.junit.Before;
@@ -55,6 +56,7 @@ public class PbapClientConnectionHandlerTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AdapterService mAdapterService;
     @Mock private PbapClientService mService;
     @Mock private ContentResolver mMockContentResolver;
     @Mock private PbapClientStateMachineOld mStateMachine;
@@ -86,6 +88,7 @@ public class PbapClientConnectionHandlerTest {
         mHandler =
                 new PbapClientConnectionHandler.Builder()
                         .setLooper(mLooper)
+                        .setAdapterService(mAdapterService)
                         .setLocalSupportedFeatures(SUPPORTED_FEATURES)
                         .setClientSM(mStateMachine)
                         .setService(mService)

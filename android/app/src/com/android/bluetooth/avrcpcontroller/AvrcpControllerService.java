@@ -153,7 +153,8 @@ public class AvrcpControllerService extends ConnectableProfile {
         mCoverArtEnabled = getResources().getBoolean(R.bool.avrcp_controller_enable_cover_art);
         if (mCoverArtEnabled) {
             setComponentAvailable(COVER_ART_PROVIDER, true);
-            mCoverArtManager = new AvrcpCoverArtManager(this, new ImageDownloadCallback());
+            mCoverArtManager =
+                    new AvrcpCoverArtManager(mAdapterService, this, new ImageDownloadCallback());
         } else {
             mCoverArtManager = null;
         }
