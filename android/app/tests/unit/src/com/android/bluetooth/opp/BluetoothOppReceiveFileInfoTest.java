@@ -65,7 +65,7 @@ public class BluetoothOppReceiveFileInfoTest {
     @After
     public void tearDown() {
         BluetoothMethodProxy.setInstanceForTesting(null);
-        BluetoothOppManager.sInstance = null;
+        BluetoothOppManager.setInstanceForTesting(null);
     }
 
     @Test

@@ -83,7 +83,7 @@ public class BluetoothOppManagerTest {
         BluetoothMethodProxy.setInstanceForTesting(null);
         BluetoothOppUtility.sSendFileMap.clear();
         mContext.getSharedPreferences(OPP_PREFERENCE_FILE, 0).edit().clear().apply();
-        BluetoothOppManager.sInstance = null;
+        BluetoothOppManager.setInstanceForTesting(null);
 
         Intents.release();
     }
@@ -96,7 +96,7 @@ public class BluetoothOppManagerTest {
         bluetoothOppManager.saveSendingFileInfo(
                 "text/plain", "content:///abc/xyz.txt", false, true);
 
-        BluetoothOppManager.sInstance = null;
+        BluetoothOppManager.setInstanceForTesting(null);
         BluetoothOppManager restartedBluetoothOppManager =
                 BluetoothOppManager.getInstance(mContext);
         assertThat(bluetoothOppManager.mSendingFlag)
@@ -127,7 +127,7 @@ public class BluetoothOppManagerTest {
                 false,
                 true);
 
-        BluetoothOppManager.sInstance = null;
+        BluetoothOppManager.setInstanceForTesting(null);
         BluetoothOppManager restartedBluetoothOppManager =
                 BluetoothOppManager.getInstance(mContext);
         assertThat(bluetoothOppManager.mSendingFlag)

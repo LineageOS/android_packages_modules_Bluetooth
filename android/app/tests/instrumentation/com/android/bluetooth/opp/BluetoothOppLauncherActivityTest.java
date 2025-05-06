@@ -107,7 +107,7 @@ public class BluetoothOppLauncherActivityTest {
 
         TestUtils.setUpUiTest();
 
-        BluetoothOppManager.setInstance(mBluetoothOppManager);
+        BluetoothOppManager.setInstanceForTesting(mBluetoothOppManager);
         Intents.init();
     }
 
@@ -118,7 +118,7 @@ public class BluetoothOppLauncherActivityTest {
         }
         TestUtils.tearDownUiTest();
         BluetoothMethodProxy.setInstanceForTesting(null);
-        BluetoothOppManager.setInstance(null);
+        BluetoothOppManager.setInstanceForTesting(null);
         Intents.release();
     }
 
