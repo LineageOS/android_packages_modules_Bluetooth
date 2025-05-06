@@ -45,6 +45,10 @@ bool sdpu_compare_uuid_with_attr(const Uuid& uuid, tSDP_DISC_ATTR* p_attr) {
   return true;
 }
 
+tCONN_CB* sdpu_find_ccb_by_db(tSDP_DISCOVERY_DB const*) { return NULL; }
+
+void sdp_disconnect(tCONN_CB* p_ccb, tSDP_STATUS reason) { return; }
+
 static void sdp_dm_cback(tBTA_SDP_EVT event, tBTA_SDP* p_data,
                          void* user_data) {
   return;
