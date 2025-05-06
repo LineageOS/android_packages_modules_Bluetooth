@@ -87,3 +87,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "watch_device_override_airplane_mode"
+    namespace: "bluetooth"
+    description: "If there is a watch connected, keep Bluetooth on"
+    bug: "416092966"
+}
