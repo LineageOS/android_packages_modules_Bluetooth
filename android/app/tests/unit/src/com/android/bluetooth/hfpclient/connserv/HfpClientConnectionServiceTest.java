@@ -53,10 +53,9 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.R;
-import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.RemoteDevices;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -73,6 +72,7 @@ public class HfpClientConnectionServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
+    @Mock private RemoteDevices mRemoteDevices;
     @Mock private HeadsetClientService mMockHeadsetClientService;
     @Mock private TelecomManager mMockTelecomManager;
     @Mock private Resources mMockResources;
@@ -87,7 +87,6 @@ public class HfpClientConnectionServiceTest {
     public void setUp() {
         Context targetContext = InstrumentationRegistry.getInstrumentation().getContext();
 
-        TestUtils.setAdapterService(mAdapterService);
         doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
@@ -95,6 +94,7 @@ public class HfpClientConnectionServiceTest {
                         })
                 .when(mAdapterService)
                 .getRemoteDevice(anyString());
+        doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
 
         // Set a mocked HeadsetClientService for testing so we can insure the right functions were
         // called through the service interface
@@ -132,11 +132,6 @@ public class HfpClientConnectionServiceTest {
                 targetContext.getSystemService(BluetoothManager.class));
     }
 
-    @After
-    public void tearDown() {
-        TestUtils.clearAdapterService(mAdapterService);
-    }
-
     private void createService() {
         mHfpClientConnectionService.onCreate();
     }
@@ -159,7 +154,7 @@ public class HfpClientConnectionServiceTest {
 
     private void setupDeviceConnection(BluetoothDevice device) throws Exception {
         mHfpClientConnectionService.onConnectionStateChanged(
-                device, STATE_CONNECTED, STATE_CONNECTING);
+                mAdapterService, device, STATE_CONNECTED, STATE_CONNECTING);
         HfpClientDeviceBlock block = mHfpClientConnectionService.findBlockForDevice(mDevice);
         assertThat(block).isNotNull();
         assertThat(block.getDevice()).isEqualTo(mDevice);
@@ -185,7 +180,7 @@ public class HfpClientConnectionServiceTest {
         createService();
         setupDeviceConnection(mDevice);
         HfpClientConnectionService.onConnectionStateChanged(
-                mDevice, STATE_DISCONNECTED, STATE_CONNECTED);
+                mAdapterService, mDevice, STATE_DISCONNECTED, STATE_CONNECTED);
         assertThat(mHfpClientConnectionService.findBlockForDevice(mDevice)).isNull();
     }
 
