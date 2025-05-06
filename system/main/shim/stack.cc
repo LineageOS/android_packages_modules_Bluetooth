@@ -31,8 +31,8 @@
 #include "common/strings.h"
 #include "hal/hci_hal.h"
 #include "hal/snoop_logger.h"
-#include "hci/acl_manager.h"
 #include "hci/acl_manager/acl_scheduler.h"
+#include "hci/acl_manager_impl.h"
 #include "hci/controller.h"
 #include "hci/controller_interface.h"
 #include "hci/distance_measurement_manager_impl.h"
@@ -68,6 +68,7 @@ struct Stack::impl {
   Acl* acl_ = nullptr;
   std::shared_ptr<storage::StorageModule> storage_ = nullptr;
   std::shared_ptr<hal::SnoopLogger> snoop_logger_ = nullptr;
+  std::unique_ptr<hci::AclManagerImpl> acl_manager_ = nullptr;
   std::unique_ptr<hci::LeScanningManager> le_scanning_manager_ = nullptr;
   std::unique_ptr<hci::LeAdvertisingManager> le_advertising_manager_ = nullptr;
   std::unique_ptr<hci::DistanceMeasurementManager> distance_measurement_manager_ = nullptr;
@@ -111,7 +112,6 @@ void Stack::StartEverything() {
 
     modules.add<hci::Controller>();
     modules.add<hci::acl_manager::AclScheduler>();
-    modules.add<hci::AclManager>();
     modules.add<hci::RemoteNameRequestModule>();
     modules.add<hci::MsftExtensionManager>();
 
@@ -233,6 +233,12 @@ hal::SnoopLogger* Stack::GetSnoopLogger() const {
   return pimpl_->snoop_logger_.get();
 }
 
+hci::AclManager* Stack::GetAclManager() const {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  log::assert_that(is_running_, "assert failed: is_running_");
+  return pimpl_->acl_manager_.get();
+}
+
 hci::LeScanningManager* Stack::GetLeScanningManager() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
@@ -281,21 +287,30 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
 
   auto hci_layer = static_cast<hci::HciLayer*>(registry_.Get(&hci::HciLayer::Factory));
   auto controller = static_cast<hci::Controller*>(registry_.Get(&hci::Controller::Factory));
-  auto acl_manager = static_cast<hci::AclManager*>(registry_.Get(&hci::AclManager::Factory));
   auto ranging_hal = static_cast<hal::RangingHal*>(registry_.Get(&hal::RangingHal::Factory));
+
+  auto acl_scheduler = static_cast<hci::acl_manager::AclScheduler*>(
+          registry_.Get(&hci::acl_manager::AclScheduler::Factory));
+  auto remote_name_request = static_cast<hci::RemoteNameRequestModule*>(
+          registry_.Get(&hci::RemoteNameRequestModule::Factory));
+
+  log::info("Starting AclManagerImpl");
+  pimpl_->acl_manager_ = std::make_unique<hci::AclManagerImpl>(
+          stack_handler_, hci_layer, controller, acl_scheduler, remote_name_request);
 
   log::info("Starting LeScanningManagerImpl");
   pimpl_->le_scanning_manager_ = std::make_unique<hci::LeScanningManagerImpl>(
-          stack_handler_, hci_layer, controller, acl_manager->GetLeAddressManager(),
+          stack_handler_, hci_layer, controller, pimpl_->acl_manager_->GetLeAddressManager(),
           pimpl_->storage_.get());
 
   log::info("Starting LeAdvertisingManagerImpl");
   pimpl_->le_advertising_manager_ = std::make_unique<hci::LeAdvertisingManagerImpl>(
-          stack_handler_, hci_layer, controller, acl_manager->GetLeAddressManager(), acl_manager);
+          stack_handler_, hci_layer, controller, pimpl_->acl_manager_->GetLeAddressManager(),
+          pimpl_->acl_manager_.get());
 
-  log::info("Staring DistanceMeasurementManagerImpl");
+  log::info("Starting DistanceMeasurementManagerImpl");
   pimpl_->distance_measurement_manager_ = std::make_unique<hci::DistanceMeasurementManagerImpl>(
-          stack_handler_, hci_layer, controller, acl_manager, ranging_hal);
+          stack_handler_, hci_layer, controller, pimpl_->acl_manager_.get(), ranging_hal);
 
   promise.set_value();
 }
@@ -309,6 +324,9 @@ void Stack::handle_shut_down(std::promise<void> promise) {
 
   log::info("Stopping LeScanningManagerImpl");
   pimpl_->le_scanning_manager_.reset();
+
+  log::info("Stopping AclManagerImpl");
+  pimpl_->acl_manager_.reset();
 
   registry_.StopAll();
 

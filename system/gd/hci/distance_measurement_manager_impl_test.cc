@@ -68,19 +68,6 @@ protected:
   void ListDependencies(ModuleList* /* list */) const override {}
 };
 
-class TestAclManager : public testing::MockAclManager {
-public:
-  Address HACK_GetLeAddress(uint16_t /*connection_handle*/) override { return target_address_; }
-
-protected:
-  void Start() override {}
-  void Stop() override {}
-  void ListDependencies(ModuleList* /* list */) const override {}
-
-public:
-  Address target_address_;
-};
-
 struct CsReadCapabilitiesCompleteEvent {
   ErrorCode error_code = ErrorCode::SUCCESS;
   uint8_t num_config_supported = 4;
@@ -204,7 +191,7 @@ struct CsModule {
   TestModuleRegistry fake_registry_;
   HciLayerFake* test_hci_layer_ = nullptr;
   TestController* mock_controller_ = nullptr;
-  TestAclManager* mock_acl_manager_ = nullptr;
+  testing::MockAclManager* mock_acl_manager_ = nullptr;
   hal::testing::MockRangingHal* mock_ranging_hal_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
   os::Handler* client_handler_ = nullptr;
@@ -220,11 +207,10 @@ struct CsModule {
     test_hci_layer_ = new HciLayerFake;                    // Ownership is transferred to registry
     mock_controller_ = new TestController;                 // Ownership is transferred to registry
     mock_ranging_hal_ = new hal::testing::MockRangingHal;  // Ownership is transferred to registry
-    mock_acl_manager_ = new TestAclManager;                // Ownership is transferred to registry
+    mock_acl_manager_ = new testing::MockAclManager;       // Ownership is transferred to registry
     fake_registry_.InjectTestModule(&hal::RangingHal::Factory, mock_ranging_hal_);
     fake_registry_.InjectTestModule(&Controller::Factory, mock_controller_);
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
-    fake_registry_.InjectTestModule(&AclManager::Factory, mock_acl_manager_);
 
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
@@ -234,7 +220,8 @@ struct CsModule {
     EXPECT_CALL(*mock_ranging_hal_, GetRangingHalVersion).WillRepeatedly(Return(hal::V_2));
 
     fake_registry_.Start<hal::RangingHal>(&thread_, handler_);
-    fake_registry_.Start<AclManager>(&thread_, handler_);
+    fake_registry_.Start<Controller>(&thread_, handler_);
+    fake_registry_.Start<HciLayer>(&thread_, handler_);
 
     handler_ = fake_registry_.GetTestHandler();
     dm_manager_ = new DistanceMeasurementManagerImpl(handler_, test_hci_layer_, mock_controller_,
@@ -1640,7 +1627,8 @@ TEST_F(DistanceMeasurementManagerTest, get_rssi_result_success) {
 
   cs_requester_.sync_client_handler();
   uint8_t rssi = 10;  // dBm
-  cs_requester_.mock_acl_manager_->target_address_ = params.responder_addr;
+  ON_CALL(*cs_requester_.mock_acl_manager_, HACK_GetLeAddress(_))
+          .WillByDefault(Return(params.responder_addr));
   auto future = cs_requester_.fake_timer_advance(params.interval);
   future.wait_for(kTimeout);
 

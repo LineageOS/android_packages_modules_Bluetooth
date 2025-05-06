@@ -30,7 +30,6 @@
 
 #include "btif/include/btif_hh.h"
 #include "hal/hci_hal.h"
-#include "hci/acl_manager.h"
 #include "hci/acl_manager/classic_acl_connection.h"
 #include "hci/acl_manager/connection_management_callbacks.h"
 #include "hci/acl_manager/le_acl_connection.h"
@@ -320,7 +319,6 @@ const ModuleFactory HciHal::Factory = ModuleFactory([]() { return nullptr; });
 }  // namespace bluetooth
 
 class MainShimTest : public testing::Test {
-public:
 protected:
   void SetUp() override {
     main_thread_start_up();

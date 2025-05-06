@@ -35,8 +35,8 @@
 #include "hci/acl_manager/le_connection_callbacks.h"
 #include "hci/acl_manager/le_connection_management_callbacks.h"
 #include "hci/acl_manager/round_robin_scheduler.h"
-#include "hci/controller.h"
-#include "hci/hci_layer.h"
+#include "hci/controller_interface.h"
+#include "hci/hci_interface.h"
 #include "hci/hci_packets.h"
 #include "hci/le_address_manager.h"
 #include "macros.h"
@@ -136,7 +136,7 @@ struct le_acl_connection {
 };
 
 struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
-  le_impl(HciLayer* hci_layer, Controller* controller, os::Handler* handler,
+  le_impl(HciInterface* hci_layer, ControllerInterface* controller, os::Handler* handler,
           RoundRobinScheduler* round_robin_scheduler, bool crash_on_unknown_handle,
           classic_impl* classic_impl)
       : hci_layer_(hci_layer),
@@ -449,7 +449,8 @@ public:
       on_common_le_connection_complete(remote_address);
       if (status == ErrorCode::UNKNOWN_CONNECTION) {
         if (remote_address.GetAddress() != Address::kEmpty) {
-          log::info("Controller send non-empty address field:{}", remote_address.GetAddress());
+          log::info("ControllerInterface send non-empty address field:{}",
+                    remote_address.GetAddress());
         }
         // direct connect canceled due to connection timeout, start background connect
         create_le_connection(remote_address, false, false, false);
@@ -1328,8 +1329,8 @@ public:
 
   void set_system_suspend_state(bool suspended) { system_suspend_ = suspended; }
 
-  HciLayer* hci_layer_ = nullptr;
-  Controller* controller_ = nullptr;
+  HciInterface* hci_layer_ = nullptr;
+  ControllerInterface* controller_ = nullptr;
   os::Handler* handler_ = nullptr;
   RoundRobinScheduler* round_robin_scheduler_ = nullptr;
   LeAddressManager* le_address_manager_ = nullptr;

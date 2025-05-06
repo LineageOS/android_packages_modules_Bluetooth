@@ -54,7 +54,7 @@ static_library("libbluetooth_gd") {
     "hal/snoop_logger_socket_thread.cc",
     "hal/socket_hal_host.cc",
     "hal/syscall_wrapper_impl.cc",
-    "hci/acl_manager.cc",
+    "hci/acl_manager_impl.cc",
     "hci/acl_manager/acl_connection.cc",
     "hci/acl_manager/acl_fragmenter.cc",
     "hci/acl_manager/acl_scheduler.cc",

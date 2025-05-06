@@ -48,7 +48,7 @@ class LeAddressManager {
 public:
   LeAddressManager(common::Callback<void(std::unique_ptr<CommandBuilder>)> enqueue_command,
                    os::Handler* handler, Address public_address, uint8_t accept_list_size,
-                   uint8_t resolving_list_size, Controller* controller);
+                   uint8_t resolving_list_size, ControllerInterface* controller);
   virtual ~LeAddressManager();
 
   enum AddressPolicy {
@@ -188,7 +188,7 @@ private:
   std::optional<std::chrono::time_point<std::chrono::system_clock>> address_rotation_interval_min;
   std::optional<std::chrono::time_point<std::chrono::system_clock>> address_rotation_interval_max;
 
-  Controller* controller_;
+  ControllerInterface* controller_;
 };
 
 }  // namespace hci

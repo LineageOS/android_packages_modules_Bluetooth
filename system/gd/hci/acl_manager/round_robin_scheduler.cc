@@ -26,7 +26,7 @@ namespace bluetooth {
 namespace hci {
 namespace acl_manager {
 
-RoundRobinScheduler::RoundRobinScheduler(os::Handler* handler, Controller* controller,
+RoundRobinScheduler::RoundRobinScheduler(os::Handler* handler, ControllerInterface* controller,
                                          common::BidiQueueEnd<AclBuilder, AclView>* hci_queue_end)
     : handler_(handler), controller_(controller), hci_queue_end_(hci_queue_end) {
   max_acl_packet_credits_ = controller_->GetNumAclPacketBuffers();
