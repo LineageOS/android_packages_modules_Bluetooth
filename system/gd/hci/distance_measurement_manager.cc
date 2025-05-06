@@ -1124,9 +1124,13 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
     }
     uint16_t connection_handle = event_view.GetConnectionHandle();
     auto req_it = cs_requester_trackers_.find(connection_handle);
+    bool is_expected_by_requester = false;
     if (req_it != cs_requester_trackers_.end() &&
-        req_it->second.state == CsTrackerState::WAIT_FOR_SECURITY_ENABLED &&
-        req_it->second.enable_security_timeout_alarm != nullptr) {
+        req_it->second.state == CsTrackerState::WAIT_FOR_SECURITY_ENABLED) {
+      is_expected_by_requester = true;
+    }
+    // cancel the timer on either success or fail
+    if (is_expected_by_requester && req_it->second.enable_security_timeout_alarm != nullptr) {
       log::debug("cancel alarm for security enable cmd.");
       req_it->second.enable_security_timeout_alarm->Cancel();
       req_it->second.enable_security_timeout_alarm = nullptr;
@@ -1134,13 +1138,14 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
     if (event_view.GetStatus() != ErrorCode::SUCCESS) {
       std::string error_code = ErrorCodeText(event_view.GetStatus());
       log::warn("Received LeCsSecurityEnableCompleteView with error code {}", error_code);
-      handle_cs_setup_failure(connection_handle, REASON_INTERNAL_ERROR,
-                              ChannelSoundingStopReason::REASON_SECURITY_ENABLE_COMPLETE_FAILED);
+      if (is_expected_by_requester) {
+        handle_cs_setup_failure(connection_handle, REASON_INTERNAL_ERROR,
+                                ChannelSoundingStopReason::REASON_SECURITY_ENABLE_COMPLETE_FAILED);
+      }
       return;
     }
 
-    if (req_it != cs_requester_trackers_.end() &&
-        req_it->second.state == CsTrackerState::WAIT_FOR_SECURITY_ENABLED) {
+    if (is_expected_by_requester) {
       send_le_cs_set_procedure_parameters(event_view.GetConnectionHandle(),
                                           req_it->second.used_config_id,
                                           req_it->second.remote_num_antennas_supported_);
@@ -1149,6 +1154,9 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
     if (res_it != cs_responder_trackers_.end() &&
         res_it->second.state == CsTrackerState::WAIT_FOR_SECURITY_ENABLED) {
       res_it->second.state = CsTrackerState::WAIT_FOR_PROCEDURE_ENABLED;
+      if (is_expected_by_requester) {
+        log::warn("both requester and responder were expecting the security_enable_complete!");
+      }
     }
   }
 
@@ -1165,19 +1173,24 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
       // settings, which will result in create config failure. Retry to ensure the remote side has
       // completed its setup.
       if (cs_requester_trackers_.find(connection_handle) != cs_requester_trackers_.end() &&
-          cs_requester_trackers_[connection_handle].retry_counter_for_create_config <
-                  kMaxRetryCounterForCreateConfig) {
-        cs_requester_trackers_[connection_handle].retry_counter_for_create_config++;
-        log::info("send_le_cs_create_config, retry counter {}",
-                  cs_requester_trackers_[connection_handle].retry_counter_for_create_config);
-        send_le_cs_create_config(connection_handle,
-                                 cs_requester_trackers_[connection_handle].requesting_config_id);
-      } else {
-        handle_cs_setup_failure(connection_handle, REASON_INTERNAL_ERROR,
-                                ChannelSoundingStopReason::REASON_CREATE_CONFIG_COMPLETE_FAILED);
+          cs_requester_trackers_[connection_handle].state ==
+                  CsTrackerState::WAIT_FOR_CONFIG_COMPLETE) {
+        if (cs_requester_trackers_[connection_handle].retry_counter_for_create_config <
+            kMaxRetryCounterForCreateConfig) {
+          log::info("Failed Create_Config_Complete with config id - {}", event_view.GetConfigId());
+          cs_requester_trackers_[connection_handle].retry_counter_for_create_config++;
+          log::info("send_le_cs_create_config, retry counter {}",
+                    cs_requester_trackers_[connection_handle].retry_counter_for_create_config);
+          send_le_cs_create_config(connection_handle,
+                                   cs_requester_trackers_[connection_handle].requesting_config_id);
+        } else {
+          handle_cs_setup_failure(connection_handle, REASON_INTERNAL_ERROR,
+                                  ChannelSoundingStopReason::REASON_CREATE_CONFIG_COMPLETE_FAILED);
+        }
       }
       return;
     }
+
     uint8_t config_id = event_view.GetConfigId();
     if (event_view.GetAction() == CsAction::CONFIG_REMOVED) {
       on_cs_config_removed(connection_handle, config_id);
