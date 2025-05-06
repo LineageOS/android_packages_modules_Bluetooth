@@ -113,14 +113,8 @@ using ::aidl::android::hardware::bluetooth::audio::PcmConfiguration;
 using ::aidl::android::hardware::bluetooth::audio::SessionType;
 
 using ::bluetooth::audio::aidl::a2dp::BluetoothAudioClientInterface;
-using ::bluetooth::audio::aidl::a2dp::codec::A2dpAacToHalConfig;
-using ::bluetooth::audio::aidl::a2dp::codec::A2dpAptxToHalConfig;
-using ::bluetooth::audio::aidl::a2dp::codec::A2dpCodecToHalBitsPerSample;
-using ::bluetooth::audio::aidl::a2dp::codec::A2dpCodecToHalChannelMode;
-using ::bluetooth::audio::aidl::a2dp::codec::A2dpCodecToHalSampleRate;
-using ::bluetooth::audio::aidl::a2dp::codec::A2dpLdacToHalConfig;
-using ::bluetooth::audio::aidl::a2dp::codec::A2dpOpusToHalConfig;
-using ::bluetooth::audio::aidl::a2dp::codec::A2dpSbcToHalConfig;
+using ::bluetooth::audio::aidl::a2dp::codec::getHalCodecConfiguration;
+using ::bluetooth::audio::aidl::a2dp::codec::getHalPcmConfiguration;
 
 /***
  *
@@ -244,72 +238,6 @@ std::unique_ptr<::bluetooth::audio::aidl::a2dp::ProviderInfo> provider_info;
 uint16_t remote_delay = 0;
 
 bool is_low_latency_mode_allowed = false;
-
-static bool a2dp_get_selected_hal_codec_config(const ahal_codec_configuration& config,
-                                               CodecConfiguration* codec_config) {
-  switch (config.codec_config.codec_type) {
-    case BTAV_A2DP_CODEC_INDEX_SOURCE_SBC:
-      [[fallthrough]];
-    case BTAV_A2DP_CODEC_INDEX_SINK_SBC: {
-      if (!A2dpSbcToHalConfig(config, codec_config)) {
-        return false;
-      }
-      break;
-    }
-    case BTAV_A2DP_CODEC_INDEX_SOURCE_AAC:
-      [[fallthrough]];
-    case BTAV_A2DP_CODEC_INDEX_SINK_AAC: {
-      if (!A2dpAacToHalConfig(config, codec_config)) {
-        return false;
-      }
-      break;
-    }
-    case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX:
-      [[fallthrough]];
-    case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD: {
-      if (!A2dpAptxToHalConfig(config, codec_config)) {
-        return false;
-      }
-      break;
-    }
-    case BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC: {
-      if (!A2dpLdacToHalConfig(config, codec_config)) {
-        return false;
-      }
-      break;
-    }
-    case BTAV_A2DP_CODEC_INDEX_SOURCE_OPUS: {
-      if (!A2dpOpusToHalConfig(config, codec_config)) {
-        return false;
-      }
-      break;
-    }
-    case BTAV_A2DP_CODEC_INDEX_MAX:
-      [[fallthrough]];
-    default:
-      log::error("Unknown codec_type={}", config.codec_config.codec_type);
-      return false;
-  }
-  codec_config->encodedAudioBitrate = config.codec_bitrate;
-  codec_config->peerMtu = config.peer_mtu;
-  log::info("CodecConfiguration={}", codec_config->toString());
-  return true;
-}
-
-static bool a2dp_get_selected_hal_pcm_config(const ahal_codec_configuration& config,
-                                             PcmConfiguration* pcm_config) {
-  if (pcm_config == nullptr) {
-    return false;
-  }
-
-  pcm_config->sampleRateHz = A2dpCodecToHalSampleRate(config.codec_config);
-  pcm_config->bitsPerSample = A2dpCodecToHalBitsPerSample(config.codec_config);
-  pcm_config->channelMode = A2dpCodecToHalChannelMode(config.codec_config);
-  pcm_config->dataIntervalUs = config.preferred_encoding_interval_us;
-
-  return pcm_config->sampleRateHz > 0 && pcm_config->bitsPerSample > 0 &&
-         pcm_config->channelMode != ChannelMode::UNKNOWN;
-}
 
 }  // namespace
 
@@ -478,39 +406,40 @@ bool setup_codec(const ahal_codec_configuration& config) {
   }
 
   // Fallback to legacy offloading path.
-  CodecConfiguration codec_config{};
-
-  if (!a2dp_get_selected_hal_codec_config(config, &codec_config)) {
-    log::error("Failed to get CodecConfiguration");
-    return false;
-  }
-
-  bool should_codec_offloading =
-          bluetooth::audio::aidl::a2dp::codec::IsCodecOffloadingEnabled(codec_config);
-  if (should_codec_offloading && !is_hal_offloading()) {
-    log::warn("Switching BluetoothAudio HAL to Hardware");
-    end_session();
-    active_hal_interface = offloading_hal_interface;
-  } else if (!should_codec_offloading && is_hal_offloading()) {
-    log::warn("Switching BluetoothAudio HAL to Software");
-    end_session();
-    active_hal_interface = software_hal_interface;
-  }
-
   AudioConfiguration audio_config{};
-  if (active_hal_interface->GetTransportInstance()->GetSessionType() ==
-      SessionType::A2DP_HARDWARE_OFFLOAD_ENCODING_DATAPATH) {
+  CodecConfiguration codec_config{};
+  PcmConfiguration pcm_config{};
+
+  // Compute the codec configuration for the hardware encoding session and
+  // check if the parameters are supported.
+  if (getHalCodecConfiguration(config, &codec_config)) {
+    if (!is_hal_offloading()) {
+      log::info("Switching BluetoothAudio HAL to Hardware");
+      end_session();
+      active_hal_interface = offloading_hal_interface;
+    }
+
     audio_config.set<AudioConfiguration::a2dpConfig>(codec_config);
-  } else {
-    PcmConfiguration pcm_config{};
-    if (!a2dp_get_selected_hal_pcm_config(config, &pcm_config)) {
-      log::error("Failed to get PcmConfiguration");
-      return false;
+    return active_hal_interface->UpdateAudioConfig(audio_config);
+  }
+
+  // Compute the PCM configuration for the software encoding session and
+  // check if the parameters are supported.
+  if (getHalPcmConfiguration(config, &pcm_config)) {
+    if (is_hal_offloading()) {
+      log::info("Switching BluetoothAudio HAL to Software");
+      end_session();
+      active_hal_interface = software_hal_interface;
     }
     audio_config.set<AudioConfiguration::pcmConfig>(pcm_config);
+    return active_hal_interface->UpdateAudioConfig(audio_config);
   }
 
-  return active_hal_interface->UpdateAudioConfig(audio_config);
+  log::error(
+          "The codec configuration cannot be set for either"
+          " software or hardware sessions:\n{}",
+          config.ToString());
+  return false;
 }
 
 void start_session() {
