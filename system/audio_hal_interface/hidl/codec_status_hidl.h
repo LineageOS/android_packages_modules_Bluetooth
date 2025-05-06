@@ -23,38 +23,28 @@
 #include "a2dp_codec_api.h"
 #include "audio_hal_interface/a2dp_encoding.h"
 
-namespace bluetooth {
-namespace audio {
-namespace hidl {
-namespace codec {
+namespace bluetooth::audio::hidl::codec {
 
-using ::android::hardware::bluetooth::audio::V2_0::BitsPerSample;
-using ::android::hardware::bluetooth::audio::V2_0::ChannelMode;
 using ::android::hardware::bluetooth::audio::V2_0::CodecConfiguration;
-using ::android::hardware::bluetooth::audio::V2_0::SampleRate;
+using ::android::hardware::bluetooth::audio::V2_0::PcmParameters;
+using ::bluetooth::audio::a2dp::ahal_codec_configuration;
 
-extern const CodecConfiguration kInvalidCodecConfiguration;
-
-SampleRate A2dpCodecToHalSampleRate(const btav_a2dp_codec_config_t& a2dp_codec_config);
-BitsPerSample A2dpCodecToHalBitsPerSample(const btav_a2dp_codec_config_t& a2dp_codec_config);
-ChannelMode A2dpCodecToHalChannelMode(const btav_a2dp_codec_config_t& a2dp_codec_config);
-
-bool A2dpSbcToHalConfig(const ::bluetooth::audio::a2dp::ahal_codec_configuration& config,
-                        CodecConfiguration* codec_config);
-bool A2dpAacToHalConfig(const ::bluetooth::audio::a2dp::ahal_codec_configuration& config,
-                        CodecConfiguration* codec_config);
-bool A2dpAptxToHalConfig(const ::bluetooth::audio::a2dp::ahal_codec_configuration& config,
-                         CodecConfiguration* codec_config);
-bool A2dpLdacToHalConfig(const ::bluetooth::audio::a2dp::ahal_codec_configuration& config,
-                         CodecConfiguration* codec_config);
-
+/// Configure the framework supported offload capabilities.
 bool UpdateOffloadingCapabilities(
         const std::vector<btav_a2dp_codec_config_t>& framework_preference);
-// Check whether this codec is supported by the audio HAL and is allowed to use
-// by preference of framework / Bluetooth SoC / runtime property.
-bool IsCodecOffloadingEnabled(const CodecConfiguration& codec_config);
 
-}  // namespace codec
-}  // namespace hidl
-}  // namespace audio
-}  // namespace bluetooth
+/// Return the pcm configuration to be used for the software encoding audio
+/// session with the Bluetooth Audio HAL. Returns false if the
+/// negotiated codec capabilities are not supported by the
+/// hardware offload encoding session, true otherwise.
+bool getHalPcmConfiguration(const ahal_codec_configuration& config,
+                            PcmParameters* pcm_configuration);
+
+/// Return the codec configuration to be used for the encoding audio session
+/// with the Bluetooth Audio HAL. Return false if the
+/// negotiated codec capabilities are not supported by the
+/// hardware offload encoding session, true otherwise.
+bool getHalCodecConfiguration(const ahal_codec_configuration& config,
+                              CodecConfiguration* codec_configuration);
+
+}  // namespace bluetooth::audio::hidl::codec
