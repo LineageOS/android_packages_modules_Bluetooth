@@ -449,7 +449,8 @@ public:
   void LeRemoteConnectionParameterRequestReply(CommandView command);
   void LeRemoteConnectionParameterRequestNegativeReply(CommandView command);
 
-  // 7.8.34 - 7.8.35
+  // 7.8.33 - 7.8.35
+  void LeSetDataLength(CommandView command);
   void LeReadSuggestedDefaultDataLength(CommandView command);
   void LeWriteSuggestedDefaultDataLength(CommandView command);
 

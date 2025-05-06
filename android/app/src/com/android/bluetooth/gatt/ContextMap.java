@@ -55,14 +55,26 @@ public class ContextMap<C extends IInterface> {
     private static final String TAG =
             GattServiceConfig.TAG_PREFIX + ContextMap.class.getSimpleName();
 
-    private static final DateTimeFormatter sDateFormat =
-            DateTimeFormatter.ofPattern("MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
     private static final int MAX_LAST_RECORDS = 5;
 
     /** Connection class helps map connection IDs to devices. */
     record Connection(int connId, BluetoothDevice device, int appId, long startTime) {
         Connection(int connId, BluetoothDevice device, int appId) {
             this(connId, device, appId, SystemClock.elapsedRealtime());
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Connection<")
+                    .append("conn_id: ")
+                    .append(connId)
+                    .append(", device: ")
+                    .append(device)
+                    .append(", app_id: ")
+                    .append(appId)
+                    .append(">");
+            return sb.toString();
         }
     }
 
@@ -145,6 +157,27 @@ public class ContextMap<C extends IInterface> {
             packageName = app.packageName;
             attributionTag = app.attributionTag;
             registerTime = Instant.now();
+        }
+
+        private static final DateTimeFormatter sDateFormat =
+                DateTimeFormatter.ofPattern("MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("AppRecord<")
+                    .append(sDateFormat.format(registerTime))
+                    .append(" ~ ")
+                    .append(sDateFormat.format(unregisterTime))
+                    .append(" app_if: ")
+                    .append(clientIf)
+                    .append(", appName: ")
+                    .append(packageName);
+            if (attributionTag != null) {
+                sb.append(", tag: ").append(attributionTag);
+            }
+            sb.append(", reason: ").append(reason).append(">");
+            return sb.toString();
         }
     }
 
@@ -420,18 +453,7 @@ public class ContextMap<C extends IInterface> {
             sb.append("  Entries: ").append(mApps.size()).append("\n");
             sb.append("  Last apps: ").append("\n");
             for (AppRecord record : mLastRecords) {
-                sb.append("       ")
-                        .append(sDateFormat.format(record.registerTime))
-                        .append(" ~ ")
-                        .append(sDateFormat.format(record.unregisterTime))
-                        .append(" app_if: ")
-                        .append(record.clientIf)
-                        .append(", appName: ")
-                        .append(record.packageName);
-                if (record.attributionTag != null) {
-                    sb.append(", tag: ").append(record.attributionTag);
-                }
-                sb.append(", reason: ").append(record.reason).append("\n");
+                sb.append("       ").append(record.toString()).append("\n");
             }
             sb.append("\n");
         }

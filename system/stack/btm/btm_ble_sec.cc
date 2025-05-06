@@ -728,10 +728,9 @@ static tBTM_SEC_ACTION btm_ble_determine_security_act(bool is_originator, const 
     }
   }
 
-  tBTM_BLE_SEC_REQ_ACT ble_sec_act = {BTM_BLE_SEC_REQ_ACT_NONE};
-  btm_ble_link_sec_check(bdaddr, auth_req, &ble_sec_act);
+  tBTM_BLE_SEC_REQ_ACT ble_sec_act = btm_ble_link_sec_check(bdaddr, auth_req);
 
-  log::verbose("ble_sec_act {}", ble_sec_act);
+  log::verbose("bdaddr:{} auth_req:{:#x} ble_sec_act:{}", bdaddr, auth_req, ble_sec_act);
 
   if (ble_sec_act == BTM_BLE_SEC_REQ_ACT_DISCARD) {
     return BTM_SEC_ENC_PENDING;
@@ -1117,60 +1116,48 @@ uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr) {
  * Returns          true: check is OK and the *p_sec_req_act contain the action
  *
  ******************************************************************************/
-void btm_ble_link_sec_check(const RawAddress& bd_addr, tBTM_LE_AUTH_REQ auth_req,
-                            tBTM_BLE_SEC_REQ_ACT* p_sec_req_act) {
+tBTM_BLE_SEC_REQ_ACT btm_ble_link_sec_check(const RawAddress& bd_addr, tBTM_LE_AUTH_REQ auth_req) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
-  uint8_t req_sec_level = SMP_SEC_NONE, cur_sec_level = SMP_SEC_NONE;
-
-  log::verbose("bd_addr:{}, auth_req=0x{:x}", bd_addr, auth_req);
-
   if (p_dev_rec == nullptr) {
-    log::error("received for unknown device");
-    return;
+    log::error("Unknown device {}", bd_addr);
+    return BTM_BLE_SEC_REQ_ACT_NONE;
   }
 
+  // Discard the security request if the link is encrypting or authenticating.
   if (p_dev_rec->sec_rec.is_security_state_encrypting() ||
       p_dev_rec->sec_rec.le_link == tSECURITY_STATE::AUTHENTICATING) {
-    /* race condition: discard the security request while central is encrypting
-     * the link */
-    *p_sec_req_act = BTM_BLE_SEC_REQ_ACT_DISCARD;
-  } else {
-    req_sec_level = SMP_SEC_UNAUTHENTICATE;
-    if (auth_req & BTM_LE_AUTH_REQ_MITM) {
-      req_sec_level = SMP_SEC_AUTHENTICATED;
-    }
-
-    log::verbose("dev_rec sec_flags=0x{:x}", p_dev_rec->sec_rec.sec_flags);
-
-    /* currently encrypted  */
-    if (p_dev_rec->sec_rec.sec_flags & BTM_SEC_LE_ENCRYPTED) {
-      if (p_dev_rec->sec_rec.sec_flags & BTM_SEC_LE_AUTHENTICATED) {
-        cur_sec_level = SMP_SEC_AUTHENTICATED;
-      } else {
-        cur_sec_level = SMP_SEC_UNAUTHENTICATE;
-      }
-    } else /* unencrypted link */
-    {
-      /* if bonded, get the key security level */
-      if (p_dev_rec->sec_rec.ble_keys.key_type & BTM_LE_KEY_PENC) {
-        cur_sec_level = p_dev_rec->sec_rec.ble_keys.sec_level;
-      } else {
-        cur_sec_level = SMP_SEC_NONE;
-      }
-    }
-
-    if (cur_sec_level >= req_sec_level) {
-      /* To avoid re-encryption on an encrypted link for an equal condition
-       * encryption */
-      *p_sec_req_act = BTM_BLE_SEC_REQ_ACT_ENCRYPT;
-    } else {
-      /* start the pairing process to upgrade the keys*/
-      *p_sec_req_act = BTM_BLE_SEC_REQ_ACT_PAIR;
-    }
+    log::warn(
+            "Discarding security request while central is encrypting the link, bd_addr={}, "
+            "auth_req=0x{:x}",
+            bd_addr, auth_req);
+    return BTM_BLE_SEC_REQ_ACT_DISCARD;
   }
 
-  log::verbose("cur_sec_level={} req_sec_level={} sec_req_act={}", cur_sec_level, req_sec_level,
-               *p_sec_req_act);
+  // Requested security level
+  uint8_t req_sec_level =
+          (auth_req & BTM_LE_AUTH_REQ_MITM) ? SMP_SEC_AUTHENTICATED : SMP_SEC_UNAUTHENTICATE;
+
+  // Get the current security level of the link
+  uint8_t cur_sec_level = SMP_SEC_NONE;
+  if (p_dev_rec->sec_rec.is_le_device_encrypted()) {
+    if (p_dev_rec->sec_rec.is_le_device_authenticated()) {
+      cur_sec_level = SMP_SEC_AUTHENTICATED;
+    } else {
+      cur_sec_level = SMP_SEC_UNAUTHENTICATE;
+    }
+  } else if (p_dev_rec->sec_rec.ble_keys.key_type & BTM_LE_KEY_PENC) {  // Bonded
+    cur_sec_level = p_dev_rec->sec_rec.ble_keys.sec_level;
+  } else {
+    cur_sec_level = SMP_SEC_NONE;
+  }
+
+  // Encrypt if the current security level meets the requirements. Otherwise, pair.
+  tBTM_BLE_SEC_REQ_ACT action =
+          (cur_sec_level >= req_sec_level) ? BTM_BLE_SEC_REQ_ACT_ENCRYPT : BTM_BLE_SEC_REQ_ACT_PAIR;
+
+  log::debug("addr:{}, auth_req=0x{:x}, cur_sec_level=0x{:x} req_sec_level={} sec_req_act={}",
+             bd_addr, auth_req, cur_sec_level, req_sec_level, action);
+  return action;
 }
 
 /*******************************************************************************
@@ -1190,8 +1177,6 @@ tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr, tBTM_BLE_SEC_ACT s
                                    uint8_t link_role) {
   tBTM_STATUS cmd = tBTM_STATUS::BTM_NO_RESOURCES;
   tBTM_SEC_DEV_REC* p_rec = btm_find_dev(bd_addr);
-  tBTM_BLE_SEC_REQ_ACT sec_req_act;
-  tBTM_LE_AUTH_REQ auth_req;
 
   if (p_rec == NULL) {
     log::warn("NULL device record!! sec_act=0x{:x}", sec_act);
@@ -1219,10 +1204,12 @@ tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr, tBTM_BLE_SEC_ACT s
          a sec_request to request the central to encrypt the link */
       FALLTHROUGH_INTENDED; /* FALLTHROUGH */
     case BTM_BLE_SEC_ENCRYPT_NO_MITM:
-    case BTM_BLE_SEC_ENCRYPT_MITM:
-      auth_req = (sec_act == BTM_BLE_SEC_ENCRYPT_NO_MITM) ? SMP_AUTH_BOND
-                                                          : (SMP_AUTH_BOND | SMP_AUTH_YN_BIT);
-      btm_ble_link_sec_check(bd_addr, auth_req, &sec_req_act);
+    case BTM_BLE_SEC_ENCRYPT_MITM: {
+      tBTM_LE_AUTH_REQ auth_req = (sec_act == BTM_BLE_SEC_ENCRYPT_NO_MITM)
+                                          ? SMP_AUTH_BOND
+                                          : (SMP_AUTH_BOND | SMP_AUTH_YN_BIT);
+      tBTM_BLE_SEC_REQ_ACT sec_req_act = btm_ble_link_sec_check(bd_addr, auth_req);
+
       if (sec_req_act == BTM_BLE_SEC_REQ_ACT_NONE || sec_req_act == BTM_BLE_SEC_REQ_ACT_DISCARD) {
         log::verbose("no action needed. Ignore");
         cmd = tBTM_STATUS::BTM_SUCCESS;
@@ -1240,7 +1227,7 @@ tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr, tBTM_BLE_SEC_ACT s
         p_rec->sec_rec.le_link = tSECURITY_STATE::AUTHENTICATING;
       }
       break;
-
+    }
     default:
       cmd = tBTM_STATUS::BTM_WRONG_MODE;
       break;

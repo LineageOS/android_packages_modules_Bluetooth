@@ -612,6 +612,38 @@ void LinkLayerController::IncomingLlPhyUpdateInd(model::packets::LinkLayerPacket
   connection.SetRxPhy(rx_phy);
 }
 
+// HCI LE Set Data Length (Vol 4, Part E § 7.8.33).
+ErrorCode LinkLayerController::LeSetDataLength(uint16_t connection_handle, uint16_t tx_octets,
+                                               uint16_t tx_time) {
+  // Note: no documented status code for this case.
+  if (!connections_.HasHandle(connection_handle) ||
+      connections_.GetPhyType(connection_handle) != Phy::Type::LOW_ENERGY) {
+    INFO(id_, "unknown or invalid connection handle");
+    return ErrorCode::UNKNOWN_CONNECTION;
+  }
+
+  // Note: no documented status code for this case.
+  if (tx_octets < 0x001B || tx_octets > 0x00FB) {
+    INFO(id_, "invalid TX_Octets parameter value: 0x{:x} is not in the range 0x1B .. 0xFB",
+         tx_octets);
+    return ErrorCode::INVALID_HCI_COMMAND_PARAMETERS;
+  }
+
+  // Note: no documented status code for this case.
+  if (tx_time < 0x0148 || tx_time > 0x4290) {
+    INFO(id_, "invalid TX_Time parameter value: 0x{:x} is not in the range 0x0148 .. 0x4290",
+         tx_time);
+    return ErrorCode::INVALID_HCI_COMMAND_PARAMETERS;
+  }
+
+  // As mentioned in the Core specification: the Controller may use smaller or
+  // larger values based on local information.
+  // For now the change is ignored and the LE Data Length Change event will
+  // not be generated.
+
+  return ErrorCode::SUCCESS;
+}
+
 // HCI LE Set Host Feature command (Vol 4, Part E § 7.8.115).
 ErrorCode LinkLayerController::LeSetHostFeature(uint8_t bit_number, uint8_t bit_value) {
   if (bit_number >= 64 || bit_value > 1) {
