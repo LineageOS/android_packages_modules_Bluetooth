@@ -112,3 +112,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "downgrade_to_basic_mode_on_no_info_resp"
+    namespace: "bluetooth"
+    description: "Downgrade L2cap mode to basic on info response timeout"
+    bug: "416031394"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
