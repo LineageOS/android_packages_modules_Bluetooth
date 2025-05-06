@@ -1,0 +1,50 @@
+# Usage:
+# pip install -e . --config-settings editable_mode=strict
+[build-system]
+requires = ["setuptools>=61.0.0", "grpcio-tools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "android-bt"
+version = "0.1.0"
+authors = [{ name = "Google", email = "android-bluetooth@google.com" }]
+requires-python = ">=3.11"
+dependencies = [
+    "mobly",
+    "typing_extensions",
+    "numpy >=1.22",
+    "scipy >= 1.8",
+    "mypy == 1.15.0",
+    "protobuf",
+    "types-protobuf",
+    "yapf",
+    "types-portpicker",
+    # Only for local test.
+    "pytest",
+    "bumble@ git+https://android.googlesource.com/platform/external/python/bumble",
+]
+
+[tool.setuptools.package-data]
+"*" = ["*.pyi", "py.typed"]
+
+[tool.setuptools.package-dir]
+"_pandora_build" = "pandora/interfaces/python"
+"pandora_services" = "pandora/server/pandora_services"
+"pandora" = "pandora/interfaces/python/pandora"
+"mmi2grpc" = "android/pandora/mmi2grpc/mmi2grpc"
+
+[tool.setuptools.cmdclass]
+build_py = "_pandora_build._build.cmd.build_py"
+
+[[tool.mypy.overrides]]
+module = "grpc.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "mobly.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# Generated files.
+module = "a2dp.packets.*"
+ignore_errors = true
