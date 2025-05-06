@@ -23,6 +23,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -61,12 +62,13 @@ public class CompanionManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        when(mAdapterService.getRemoteDevice(anyString()))
-                .thenAnswer(
+        doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
                             return getRealDevice(address);
-                        });
+                        })
+                .when(mAdapterService)
+                .getRemoteDevice(anyString());
         // Start handler thread for this test
         mHandlerThread = new HandlerThread("CompanionManagerTestHandlerThread");
         mHandlerThread.start();

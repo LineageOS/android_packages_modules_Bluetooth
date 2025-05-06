@@ -27,12 +27,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.app.NotificationManager;
 import android.content.ContentResolver;
@@ -78,12 +78,13 @@ public class BluetoothOppServiceTest {
         doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();
         doReturn(mTargetContext.getContentResolver()).when(mAdapterService).getContentResolver();
 
-        when(mAdapterService.getRemoteDevice(anyString()))
-                .thenAnswer(
+        doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
                             return getRealDevice(address);
-                        });
+                        })
+                .when(mAdapterService)
+                .getRemoteDevice(anyString());
 
         BluetoothMethodProxy.setInstanceForTesting(mBluetoothMethodProxy);
 

@@ -22,9 +22,9 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
@@ -75,12 +75,13 @@ public class BluetoothOppBatchTest {
     @Before
     public void setUp() throws Exception {
         TestUtils.setAdapterService(mAdapterService);
-        when(mAdapterService.getRemoteDevice(anyString()))
-                .thenAnswer(
+        doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
                             return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
-                        });
+                        })
+                .when(mAdapterService)
+                .getRemoteDevice(anyString());
         doReturn(mTargetContext.getContentResolver()).when(mAdapterService).getContentResolver();
         mBluetoothOppBatch = new BluetoothOppBatch(mAdapterService, mInitShareInfo);
     }
