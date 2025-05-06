@@ -44,6 +44,7 @@ import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.After;
 import org.junit.Before;
@@ -62,6 +63,7 @@ public class PbapClientStateMachineOldTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AdapterService mAdapterService;
     @Mock private PbapClientService mMockPbapClientService;
     @Mock private PbapClientConnectionHandler mMockHandler;
 
@@ -85,7 +87,11 @@ public class PbapClientStateMachineOldTest {
 
         mPbapClientStateMachine =
                 new PbapClientStateMachineOld(
-                        mMockPbapClientService, mDevice, mMockHandler, mHandlerThread);
+                        mAdapterService,
+                        mMockPbapClientService,
+                        mDevice,
+                        mMockHandler,
+                        mHandlerThread);
         mPbapClientStateMachine.start();
     }
 
