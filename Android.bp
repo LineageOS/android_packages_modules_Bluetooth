@@ -199,6 +199,7 @@ java_defaults {
             "-Xep:StaticGuardedByInstance:ERROR",
             "-Xep:StringCaseLocaleUsage:ERROR",
             "-Xep:StringCharset:ERROR",
+            "-Xep:StringConcatToTextBlock:ERROR",
             // "-Xep:StringSplitter:ERROR", // Not enabled in android platform
             "-Xep:SynchronizeOnNonFinalField:ERROR",
             "-Xep:ThreadJoinLoop:ERROR",
