@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "hci/le_scanning_manager.h"
+#include "hci/le_scanning_manager_impl.h"
 
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
@@ -29,12 +29,9 @@
 #include "hci/le_periodic_sync_manager.h"
 #include "hci/le_scanning_interface.h"
 #include "hci/le_scanning_reassembler.h"
-#include "main/shim/entry.h"
-#include "module.h"
 #include "os/handler.h"
 #include "os/system_properties.h"
 #include "stack/include/btm_sec_api.h"
-#include "storage/storage_module.h"
 #include "types/ble_address_with_type.h"
 
 namespace bluetooth {
@@ -65,9 +62,6 @@ constexpr uint8_t kCodedPhyMask = 1 << 2;
 
 // system properties
 const std::string kLeRxPathLossCompProperty = "bluetooth.hardware.radio.le_rx_path_loss_comp_db";
-
-const ModuleFactory LeScanningManager::Factory =
-        ModuleFactory([]() { return new LeScanningManager(); });
 
 enum class ScanApiType {
   LEGACY = 1,
@@ -162,26 +156,17 @@ struct BatchScanConfig {
   ScannerId ref_value;
 };
 
-struct LeScanningManager::impl : public LeAddressManagerCallback {
-  impl(Module* module) : module_(module), le_scanning_interface_(nullptr) {}
-
-  ~impl() {
-    if (address_manager_registered_) {
-      le_address_manager_->Unregister(this);
-    }
-  }
-
-  void start(os::Handler* handler, HciLayer* hci_layer, Controller* controller,
-             AclManager* acl_manager, storage::StorageModule* storage_module) {
-    module_handler_ = handler;
+struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
+  impl(os::Handler* handler, hci::HciInterface* hci_layer, hci::ControllerInterface* controller,
+       hci::LeAddressManager* le_address_manager, storage::StorageModule* storage_module) {
+    handler_ = handler;
     hci_layer_ = hci_layer;
     controller_ = controller;
-    acl_manager_ = acl_manager;
     storage_module_ = storage_module;
-    le_address_manager_ = acl_manager->GetLeAddressManager();
+    le_address_manager_ = le_address_manager;
     le_scanning_interface_ = hci_layer_->GetLeScanningInterface(
-            module_handler_->BindOn(this, &LeScanningManager::impl::handle_scan_results));
-    periodic_sync_manager_.Init(le_scanning_interface_, module_handler_);
+            handler_->BindOn(this, &LeScanningManagerImpl::impl::handle_scan_results));
+    periodic_sync_manager_.Init(le_scanning_interface_, handler_);
     /* Check to see if the opcode is supported and C19 (support for extended advertising). */
     if (controller_->IsSupported(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS) &&
         controller->SupportsBleExtendedAdvertising()) {
@@ -198,7 +183,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     if (is_filter_supported_) {
       le_scanning_interface_->EnqueueCommand(
               LeAdvFilterReadExtendedFeaturesBuilder::Create(),
-              module_handler_->BindOnceOn(this, &impl::on_apcf_read_extended_features_complete));
+              handler_->BindOnceOn(this, &impl::on_apcf_read_extended_features_complete));
     }
     is_batch_scan_supported_ = controller->IsSupported(OpCode::LE_BATCH_SCAN);
     is_periodic_advertising_sync_transfer_sender_supported_ =
@@ -207,10 +192,10 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     if (is_batch_scan_supported_) {
       hci_layer_->RegisterVendorSpecificEventHandler(
               VseSubeventCode::BLE_THRESHOLD,
-              handler->BindOn(this, &LeScanningManager::impl::on_storage_threshold_breach));
+              handler->BindOn(this, &LeScanningManagerImpl::impl::on_storage_threshold_breach));
       hci_layer_->RegisterVendorSpecificEventHandler(
               VseSubeventCode::BLE_TRACKING,
-              handler->BindOn(this, &LeScanningManager::impl::on_advertisement_tracking));
+              handler->BindOn(this, &LeScanningManagerImpl::impl::on_advertisement_tracking));
     }
     scanners_ = std::vector<Scanner>(kMaxAppNum + 1);
     for (size_t i = 0; i < scanners_.size(); i++) {
@@ -220,6 +205,13 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     batch_scan_config_.current_state = BatchScanState::DISABLED_STATE;
     batch_scan_config_.ref_value = kInvalidScannerId;
     le_rx_path_loss_comp_ = get_rx_path_loss_compensation();
+  }
+
+  ~impl() {
+    stop();
+    if (address_manager_registered_) {
+      le_address_manager_->Unregister(this);
+    }
   }
 
   void stop() {
@@ -479,7 +471,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
         le_scanning_interface_->EnqueueCommand(
                 LeSetExtendedScanParametersBuilder::Create(own_address_type_, filter_policy_, phy_,
                                                            parameter_vector),
-                module_handler_->BindOnceOn(this, &impl::on_set_scan_parameter_complete));
+                handler_->BindOnceOn(this, &impl::on_set_scan_parameter_complete));
         break;
       case ScanApiType::ANDROID_HCI:
         if ((phy_ & k1mPhyMask) == 0) {
@@ -489,7 +481,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
         le_scanning_interface_->EnqueueCommand(
                 LeExtendedScanParamsBuilder::Create(le_scan_type_, interval_ms_1m_, window_ms_1m_,
                                                     own_address_type_, filter_policy_),
-                module_handler_->BindOnceOn(this, &impl::on_set_scan_parameter_complete));
+                handler_->BindOnceOn(this, &impl::on_set_scan_parameter_complete));
 
         break;
       case ScanApiType::LEGACY:
@@ -501,7 +493,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
 
                 LeSetScanParametersBuilder::Create(le_scan_type_, interval_ms_1m_, window_ms_1m_,
                                                    own_address_type_, filter_policy_),
-                module_handler_->BindOnceOn(this, &impl::on_set_scan_parameter_complete));
+                handler_->BindOnceOn(this, &impl::on_set_scan_parameter_complete));
         break;
     }
   }
@@ -586,14 +578,14 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
                         FilterDuplicates::DISABLED /* filter duplicates */,
 #endif
                         0, 0),
-                module_handler_->BindOnce(check_complete<LeSetExtendedScanEnableCompleteView>));
+                handler_->BindOnce(check_complete<LeSetExtendedScanEnableCompleteView>));
         break;
       case ScanApiType::ANDROID_HCI:
       case ScanApiType::LEGACY:
         le_scanning_interface_->EnqueueCommand(
                 LeSetScanEnableBuilder::Create(Enable::ENABLED,
                                                Enable::DISABLED /* filter duplicates */),
-                module_handler_->BindOnce(check_complete<LeSetScanEnableCompleteView>));
+                handler_->BindOnce(check_complete<LeSetScanEnableCompleteView>));
         break;
     }
   }
@@ -616,14 +608,14 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
                         FilterDuplicates::DISABLED /* filter duplicates */,
 #endif
                         0, 0),
-                module_handler_->BindOnce(check_complete<LeSetExtendedScanEnableCompleteView>));
+                handler_->BindOnce(check_complete<LeSetExtendedScanEnableCompleteView>));
         break;
       case ScanApiType::ANDROID_HCI:
       case ScanApiType::LEGACY:
         le_scanning_interface_->EnqueueCommand(
                 LeSetScanEnableBuilder::Create(Enable::DISABLED,
                                                Enable::DISABLED /* filter duplicates */),
-                module_handler_->BindOnce(check_complete<LeSetScanEnableCompleteView>));
+                handler_->BindOnce(check_complete<LeSetScanEnableCompleteView>));
         break;
     }
   }
@@ -703,7 +695,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     Enable apcf_enable = enable ? Enable::ENABLED : Enable::DISABLED;
     le_scanning_interface_->EnqueueCommand(
             LeAdvFilterEnableBuilder::Create(apcf_enable),
-            module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+            handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
   }
 
   bool is_bonded(Address target_address) {
@@ -743,13 +735,13 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
                         advertising_filter_parameter.rssi_low_thresh,
                         advertising_filter_parameter.onlost_timeout,
                         advertising_filter_parameter.num_of_tracking_entries),
-                module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+                handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
         break;
       case ApcfAction::DELETE:
         tracker_id_map_.erase(filter_index);
         le_scanning_interface_->EnqueueCommand(
                 LeAdvFilterDeleteFilteringParametersBuilder::Create(filter_index),
-                module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+                handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
 
         // IRK Scanning
         if (entry != remove_me_later_map_.end()) {
@@ -765,7 +757,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       case ApcfAction::CLEAR:
         le_scanning_interface_->EnqueueCommand(
                 LeAdvFilterClearFilteringParametersBuilder::Create(),
-                module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+                handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
 
         // IRK Scanning
         if (entry != remove_me_later_map_.end()) {
@@ -866,7 +858,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       le_scanning_interface_->EnqueueCommand(
               LeAdvFilterBroadcasterAddressBuilder::Create(
                       action, filter_index, address, ApcfApplicationAddressType::NOT_APPLICABLE),
-              module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+              handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
       if (!is_empty_128bit(irk)) {
         // If an entry exists for this filter index, replace data because the filter has been
         // updated.
@@ -892,7 +884,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     } else {
       le_scanning_interface_->EnqueueCommand(
               LeAdvFilterClearBroadcasterAddressBuilder::Create(filter_index),
-              module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+              handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
       auto entry = remove_me_later_map_.find(filter_index);
       if (entry != remove_me_later_map_.end()) {
         // TODO(optedoblivion): If not bonded
@@ -959,11 +951,11 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     if (filter_type == ApcfFilterType::SERVICE_UUID) {
       le_scanning_interface_->EnqueueCommand(
               LeAdvFilterServiceUuidBuilder::Create(action, filter_index, combined_data),
-              module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+              handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
     } else {
       le_scanning_interface_->EnqueueCommand(
               LeAdvFilterSolicitationUuidBuilder::Create(action, filter_index, combined_data),
-              module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+              handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
     }
   }
 
@@ -971,7 +963,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
                                 std::vector<uint8_t> name) {
     le_scanning_interface_->EnqueueCommand(
             LeAdvFilterLocalNameBuilder::Create(action, filter_index, name),
-            module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+            handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
   }
 
   void update_manufacturer_data_filter(ApcfAction action, uint8_t filter_index, uint16_t company_id,
@@ -1002,7 +994,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
 
     le_scanning_interface_->EnqueueCommand(
             LeAdvFilterManufacturerDataBuilder::Create(action, filter_index, combined_data),
-            module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+            handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
   }
 
   void update_service_data_filter(ApcfAction action, uint8_t filter_index,
@@ -1019,7 +1011,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
 
     le_scanning_interface_->EnqueueCommand(
             LeAdvFilterServiceDataBuilder::Create(action, filter_index, combined_data),
-            module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+            handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
   }
 
   void update_transport_discovery_data_filter(ApcfAction action, uint8_t filter_index,
@@ -1062,7 +1054,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
               LeAdvFilterTransportDiscoveryDataBuilder::Create(
                       action, filter_index, org_id, tds_flags, tds_flags_mask, transport_data,
                       transport_data_mask, meta_data_type, meta_data),
-              module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+              handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
     } else {
       // In QTI controller, transport discovery data filter are supported by default.
       // keeping old version for backward compatibility
@@ -1079,7 +1071,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       le_scanning_interface_->EnqueueCommand(
               LeAdvFilterTransportDiscoveryDataOldBuilder::Create(action, filter_index,
                                                                   combined_data),
-              module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+              handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
     }
   }
 
@@ -1106,7 +1098,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
 
     le_scanning_interface_->EnqueueCommand(
             LeAdvFilterADTypeBuilder::Create(action, filter_index, combined_data),
-            module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+            handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
   }
 
   void batch_scan_set_storage_parameter(uint8_t batch_scan_full_max,
@@ -1125,13 +1117,13 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       batch_scan_config_.current_state = BatchScanState::ENABLE_CALLED;
       le_scanning_interface_->EnqueueCommand(
               LeBatchScanEnableBuilder::Create(Enable::ENABLED),
-              module_handler_->BindOnceOn(this, &impl::on_batch_scan_enable_complete));
+              handler_->BindOnceOn(this, &impl::on_batch_scan_enable_complete));
     }
 
     le_scanning_interface_->EnqueueCommand(
             LeBatchScanSetStorageParametersBuilder::Create(
                     batch_scan_full_max, batch_scan_truncated_max, batch_scan_notify_threshold),
-            module_handler_->BindOnceOn(this, &impl::on_batch_scan_complete));
+            handler_->BindOnceOn(this, &impl::on_batch_scan_complete));
   }
 
   void batch_scan_enable(BatchScanMode scan_mode, uint32_t duty_cycle_scan_window_slots,
@@ -1148,7 +1140,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       batch_scan_config_.current_state = BatchScanState::ENABLE_CALLED;
       le_scanning_interface_->EnqueueCommand(
               LeBatchScanEnableBuilder::Create(Enable::ENABLED),
-              module_handler_->BindOnceOn(this, &impl::on_batch_scan_enable_complete));
+              handler_->BindOnceOn(this, &impl::on_batch_scan_enable_complete));
     }
 
     batch_scan_config_.scan_mode = scan_mode;
@@ -1197,13 +1189,13 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
               LeBatchScanSetScanParametersBuilder::Create(
                       truncated_mode_enabled, full_mode_enabled, duty_cycle_scan_window_slots,
                       duty_cycle_scan_interval_slots, own_address_type, batch_scan_discard_rule),
-              module_handler_->BindOnceOn(this, &impl::on_batch_scan_disable_complete));
+              handler_->BindOnceOn(this, &impl::on_batch_scan_disable_complete));
     } else {
       le_scanning_interface_->EnqueueCommand(
               LeBatchScanSetScanParametersBuilder::Create(
                       truncated_mode_enabled, full_mode_enabled, duty_cycle_scan_window_slots,
                       duty_cycle_scan_interval_slots, own_address_type, batch_scan_discard_rule),
-              module_handler_->BindOnceOn(this, &impl::on_batch_scan_complete));
+              handler_->BindOnceOn(this, &impl::on_batch_scan_complete));
     }
   }
 
@@ -1231,8 +1223,8 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     le_scanning_interface_->EnqueueCommand(
             LeBatchScanReadResultParametersBuilder::Create(
                     static_cast<BatchScanDataRead>(scan_mode)),
-            module_handler_->BindOnceOn(this, &impl::on_batch_scan_read_result_complete, scanner_id,
-                                        total_num_of_records));
+            handler_->BindOnceOn(this, &impl::on_batch_scan_read_result_complete, scanner_id,
+                                 total_num_of_records));
   }
 
   void start_sync(uint8_t sid, const AddressWithType& address_with_type, uint16_t skip,
@@ -1624,13 +1616,11 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     le_address_manager_->AckResume(this);
   }
 
-  ScanApiType api_type_;
-
-  Module* module_;
-  os::Handler* module_handler_;
-  HciLayer* hci_layer_;
-  Controller* controller_;
+  os::Handler* handler_;
+  HciInterface* hci_layer_;
+  ControllerInterface* controller_;
   AclManager* acl_manager_;
+  ScanApiType api_type_;
   storage::StorageModule* storage_module_;
   LeScanningInterface* le_scanning_interface_;
   LeAddressManager* le_address_manager_;
@@ -1664,124 +1654,127 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
   int8_t le_rx_path_loss_comp_ = 0;
 };
 
-LeScanningManager::LeScanningManager() { pimpl_ = std::make_unique<impl>(this); }
-
-void LeScanningManager::ListDependencies(ModuleList* list) const {
-  list->add<HciLayer>();
-  list->add<Controller>();
-  list->add<AclManager>();
+LeScanningManagerImpl::LeScanningManagerImpl(os::Handler* handler, hci::HciInterface* hci_layer,
+                                             hci::ControllerInterface* controller,
+                                             hci::LeAddressManager* le_address_manager,
+                                             storage::StorageModule* storage_module) {
+  pimpl_ = std::make_unique<impl>(handler, hci_layer, controller, le_address_manager,
+                                  storage_module);
 }
 
-void LeScanningManager::Start() {
-  pimpl_->start(GetHandler(), GetDependency<HciLayer>(), GetDependency<Controller>(),
-                GetDependency<AclManager>(), shim::GetStorage());
+LeScanningManagerImpl::~LeScanningManagerImpl() = default;
+
+void LeScanningManagerImpl::RegisterScanner(Uuid app_uuid) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::register_scanner, app_uuid);
 }
 
-void LeScanningManager::Stop() {
-  pimpl_->stop();
-  pimpl_.reset();
+void LeScanningManagerImpl::Unregister(ScannerId scanner_id) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::unregister_scanner, scanner_id);
 }
 
-std::string LeScanningManager::ToString() const { return "Le Scanning Manager"; }
-
-void LeScanningManager::RegisterScanner(Uuid app_uuid) {
-  CallOn(pimpl_.get(), &impl::register_scanner, app_uuid);
+void LeScanningManagerImpl::Scan(bool start) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::scan, start);
 }
 
-void LeScanningManager::Unregister(ScannerId scanner_id) {
-  CallOn(pimpl_.get(), &impl::unregister_scanner, scanner_id);
+void LeScanningManagerImpl::SetScanParameters(LeScanType scan_type, ScannerId scanner_id_1m,
+                                              uint16_t scan_interval_1m, uint16_t scan_window_1m,
+                                              ScannerId scanner_id_coded,
+                                              uint16_t scan_interval_coded,
+                                              uint16_t scan_window_coded, uint8_t scan_phy) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::set_scan_parameters, scan_type, scanner_id_1m,
+                           scan_interval_1m, scan_window_1m, scanner_id_coded, scan_interval_coded,
+                           scan_window_coded, scan_phy);
 }
 
-void LeScanningManager::Scan(bool start) { CallOn(pimpl_.get(), &impl::scan, start); }
-
-void LeScanningManager::SetScanParameters(LeScanType scan_type, ScannerId scanner_id_1m,
-                                          uint16_t scan_interval_1m, uint16_t scan_window_1m,
-                                          ScannerId scanner_id_coded, uint16_t scan_interval_coded,
-                                          uint16_t scan_window_coded, uint8_t scan_phy) {
-  CallOn(pimpl_.get(), &impl::set_scan_parameters, scan_type, scanner_id_1m, scan_interval_1m,
-         scan_window_1m, scanner_id_coded, scan_interval_coded, scan_window_coded, scan_phy);
+void LeScanningManagerImpl::SetScanFilterPolicy(LeScanningFilterPolicy filter_policy) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::set_scan_filter_policy, filter_policy);
 }
 
-void LeScanningManager::SetScanFilterPolicy(LeScanningFilterPolicy filter_policy) {
-  CallOn(pimpl_.get(), &impl::set_scan_filter_policy, filter_policy);
+void LeScanningManagerImpl::ScanFilterEnable(bool enable) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::scan_filter_enable, enable);
 }
 
-void LeScanningManager::ScanFilterEnable(bool enable) {
-  CallOn(pimpl_.get(), &impl::scan_filter_enable, enable);
-}
-
-void LeScanningManager::ScanFilterParameterSetup(
+void LeScanningManagerImpl::ScanFilterParameterSetup(
         ApcfAction action, uint8_t filter_index,
         AdvertisingFilterParameter advertising_filter_parameter) {
-  CallOn(pimpl_.get(), &impl::scan_filter_parameter_setup, action, filter_index,
-         advertising_filter_parameter);
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::scan_filter_parameter_setup, action, filter_index,
+                           advertising_filter_parameter);
 }
 
-void LeScanningManager::ScanFilterAdd(uint8_t filter_index,
-                                      std::vector<AdvertisingPacketContentFilterCommand> filters) {
-  CallOn(pimpl_.get(), &impl::scan_filter_add, filter_index, filters);
+void LeScanningManagerImpl::ScanFilterAdd(
+        uint8_t filter_index, std::vector<AdvertisingPacketContentFilterCommand> filters) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::scan_filter_add, filter_index, filters);
 }
 
-void LeScanningManager::BatchScanConifgStorage(uint8_t batch_scan_full_max,
-                                               uint8_t batch_scan_truncated_max,
-                                               uint8_t batch_scan_notify_threshold,
-                                               ScannerId scanner_id) {
-  CallOn(pimpl_.get(), &impl::batch_scan_set_storage_parameter, batch_scan_full_max,
-         batch_scan_truncated_max, batch_scan_notify_threshold, scanner_id);
+void LeScanningManagerImpl::BatchScanConifgStorage(uint8_t batch_scan_full_max,
+                                                   uint8_t batch_scan_truncated_max,
+                                                   uint8_t batch_scan_notify_threshold,
+                                                   ScannerId scanner_id) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::batch_scan_set_storage_parameter,
+                           batch_scan_full_max, batch_scan_truncated_max,
+                           batch_scan_notify_threshold, scanner_id);
 }
 
-void LeScanningManager::BatchScanEnable(BatchScanMode scan_mode,
-                                        uint32_t duty_cycle_scan_window_slots,
-                                        uint32_t duty_cycle_scan_interval_slots,
-                                        BatchScanDiscardRule batch_scan_discard_rule) {
-  CallOn(pimpl_.get(), &impl::batch_scan_enable, scan_mode, duty_cycle_scan_window_slots,
-         duty_cycle_scan_interval_slots, batch_scan_discard_rule);
+void LeScanningManagerImpl::BatchScanEnable(BatchScanMode scan_mode,
+                                            uint32_t duty_cycle_scan_window_slots,
+                                            uint32_t duty_cycle_scan_interval_slots,
+                                            BatchScanDiscardRule batch_scan_discard_rule) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::batch_scan_enable, scan_mode,
+                           duty_cycle_scan_window_slots, duty_cycle_scan_interval_slots,
+                           batch_scan_discard_rule);
 }
 
-void LeScanningManager::BatchScanDisable() { CallOn(pimpl_.get(), &impl::batch_scan_disable); }
-
-void LeScanningManager::BatchScanReadReport(ScannerId scanner_id, BatchScanMode scan_mode) {
-  CallOn(pimpl_.get(), &impl::batch_scan_read_results, scanner_id, 0, scan_mode);
+void LeScanningManagerImpl::BatchScanDisable() {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::batch_scan_disable);
 }
 
-void LeScanningManager::StartSync(uint8_t sid, const AddressWithType& address_with_type,
-                                  uint16_t skip, uint16_t timeout, int reg_id) {
-  CallOn(pimpl_.get(), &impl::start_sync, sid, address_with_type, skip, timeout, reg_id);
+void LeScanningManagerImpl::BatchScanReadReport(ScannerId scanner_id, BatchScanMode scan_mode) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::batch_scan_read_results, scanner_id, 0, scan_mode);
 }
 
-void LeScanningManager::StopSync(uint16_t handle) {
-  CallOn(pimpl_.get(), &impl::stop_sync, handle);
+void LeScanningManagerImpl::StartSync(uint8_t sid, const AddressWithType& address_with_type,
+                                      uint16_t skip, uint16_t timeout, int reg_id) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::start_sync, sid, address_with_type, skip, timeout,
+                           reg_id);
 }
 
-void LeScanningManager::CancelCreateSync(uint8_t sid, const Address& address) {
-  CallOn(pimpl_.get(), &impl::cancel_create_sync, sid, address);
+void LeScanningManagerImpl::StopSync(uint16_t handle) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::stop_sync, handle);
 }
 
-void LeScanningManager::TransferSync(const Address& address, uint16_t handle, uint16_t service_data,
-                                     uint16_t sync_handle, int pa_source) {
-  CallOn(pimpl_.get(), &impl::transfer_sync, address, handle, service_data, sync_handle, pa_source);
+void LeScanningManagerImpl::CancelCreateSync(uint8_t sid, const Address& address) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::cancel_create_sync, sid, address);
 }
 
-void LeScanningManager::TransferSetInfo(const Address& address, uint16_t handle,
-                                        uint16_t service_data, uint8_t adv_handle, int pa_source) {
-  CallOn(pimpl_.get(), &impl::transfer_set_info, address, handle, service_data, adv_handle,
-         pa_source);
+void LeScanningManagerImpl::TransferSync(const Address& address, uint16_t handle,
+                                         uint16_t service_data, uint16_t sync_handle,
+                                         int pa_source) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::transfer_sync, address, handle, service_data,
+                           sync_handle, pa_source);
 }
 
-void LeScanningManager::SyncTxParameters(const Address& address, uint8_t mode, uint16_t skip,
-                                         uint16_t timeout, int reg_id) {
-  CallOn(pimpl_.get(), &impl::sync_tx_parameters, address, mode, skip, timeout, reg_id);
+void LeScanningManagerImpl::TransferSetInfo(const Address& address, uint16_t handle,
+                                            uint16_t service_data, uint8_t adv_handle,
+                                            int pa_source) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::transfer_set_info, address, handle, service_data,
+                           adv_handle, pa_source);
 }
 
-void LeScanningManager::TrackAdvertiser(uint8_t filter_index, ScannerId scanner_id) {
-  CallOn(pimpl_.get(), &impl::track_advertiser, filter_index, scanner_id);
+void LeScanningManagerImpl::SyncTxParameters(const Address& address, uint8_t mode, uint16_t skip,
+                                             uint16_t timeout, int reg_id) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::sync_tx_parameters, address, mode, skip, timeout,
+                           reg_id);
 }
 
-void LeScanningManager::RegisterScanningCallback(ScanningCallback* scanning_callback) {
-  CallOn(pimpl_.get(), &impl::register_scanning_callback, scanning_callback);
+void LeScanningManagerImpl::TrackAdvertiser(uint8_t filter_index, ScannerId scanner_id) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::track_advertiser, filter_index, scanner_id);
 }
 
-bool LeScanningManager::IsAdTypeFilterSupported() const {
+void LeScanningManagerImpl::RegisterScanningCallback(ScanningCallback* scanning_callback) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::register_scanning_callback, scanning_callback);
+}
+
+bool LeScanningManagerImpl::IsAdTypeFilterSupported() const {
   return pimpl_->is_ad_type_filter_supported();
 }
 

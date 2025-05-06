@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hci/distance_measurement_manager.h"
+#include "hci/distance_measurement_manager_impl.h"
 
 #include <bluetooth/log.h>
 #include <flag_macros.h>
@@ -56,7 +56,7 @@ static constexpr uint8_t kMaxRetryCounterForCreateConfig = 0x03;
 static constexpr uint8_t kMaxRetryCounterForCsEnable = 0x03;
 static constexpr uint8_t kConnInterval = 24;
 static constexpr uint16_t kMinProcedureInterval = 0x01;
-}
+}  // namespace
 
 namespace bluetooth {
 namespace hci {
@@ -210,7 +210,7 @@ struct CsModule {
   os::Handler* client_handler_ = nullptr;
   os::Handler* handler_ = nullptr;
 
-  DistanceMeasurementManager* dm_manager_ = nullptr;
+  DistanceMeasurementManagerImpl* dm_manager_ = nullptr;
   testing::MockDistanceMeasurementCallbacks mock_dm_callbacks_;
   std::unique_ptr<std::promise<void>> dm_session_promise_;
   bool local_capabilities_complete_done_ = false;
@@ -233,8 +233,12 @@ struct CsModule {
     EXPECT_CALL(*mock_ranging_hal_, IsBound()).Times(AtLeast(1)).WillRepeatedly(Return(true));
     EXPECT_CALL(*mock_ranging_hal_, GetRangingHalVersion).WillRepeatedly(Return(hal::V_2));
 
+    fake_registry_.Start<hal::RangingHal>(&thread_, handler_);
+    fake_registry_.Start<AclManager>(&thread_, handler_);
+
     handler_ = fake_registry_.GetTestHandler();
-    dm_manager_ = fake_registry_.Start<DistanceMeasurementManager>(&thread_, handler_);
+    dm_manager_ = new DistanceMeasurementManagerImpl(handler_, test_hci_layer_, mock_controller_,
+                                                     mock_acl_manager_, mock_ranging_hal_);
 
     test_hci_layer_->GetCommand(OpCode::LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES);
 
@@ -242,8 +246,7 @@ struct CsModule {
   }
 
   void Stop() {
-    fake_registry_.SynchronizeModuleHandler(&DistanceMeasurementManager::Factory,
-                                            std::chrono::milliseconds(20));
+    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     fake_registry_.StopAll();
   }
 

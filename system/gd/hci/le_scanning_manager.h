@@ -15,15 +15,12 @@
  */
 #pragma once
 
-#include <memory>
 #include <vector>
 
-#include "common/callback.h"
 #include "hci/address_with_type.h"
 #include "hci/hci_packets.h"
 #include "hci/le_scanning_callback.h"
 #include "hci/uuid.h"
-#include "module.h"
 
 namespace bluetooth {
 namespace hci {
@@ -35,85 +32,64 @@ enum class BatchScanMode : uint8_t {
   TRUNCATED_AND_FULL = 3,
 };
 
-class LeScanningManager : public bluetooth::Module {
+class LeScanningManager {
 public:
-  static constexpr uint8_t kMaxAppNum = 32;
-  static constexpr uint8_t kAdvertisingDataInfoNotPresent = 0xff;
-  static constexpr uint8_t kTxPowerInformationNotPresent = 0x7f;
-  static constexpr uint8_t kNotPeriodicAdvertisement = 0x00;
-  static constexpr ScannerId kInvalidScannerId = 0xFF;
-  LeScanningManager();
-  LeScanningManager(const LeScanningManager&) = delete;
-  LeScanningManager& operator=(const LeScanningManager&) = delete;
+  virtual ~LeScanningManager() = default;
 
-  virtual void RegisterScanner(const Uuid app_uuid);
+  virtual void RegisterScanner(const Uuid app_uuid) = 0;
 
-  virtual void Unregister(ScannerId scanner_id);
+  virtual void Unregister(ScannerId scanner_id) = 0;
 
-  virtual void Scan(bool start);
+  virtual void Scan(bool start) = 0;
 
   virtual void SetScanParameters(LeScanType scan_type, ScannerId scanner_id_1m,
                                  uint16_t scan_interval_1m, uint16_t scan_window_1m,
                                  ScannerId scanner_id_coded, uint16_t scan_interval_coded,
-                                 uint16_t scan_window_coded, uint8_t scan_phy);
+                                 uint16_t scan_window_coded, uint8_t scan_phy) = 0;
 
-  virtual void SetScanFilterPolicy(LeScanningFilterPolicy filter_policy);
+  virtual void SetScanFilterPolicy(LeScanningFilterPolicy filter_policy) = 0;
 
   /* Scan filter */
-  virtual void ScanFilterEnable(bool enable);
+  virtual void ScanFilterEnable(bool enable) = 0;
 
-  virtual void ScanFilterParameterSetup(ApcfAction action, uint8_t filter_index,
-                                        AdvertisingFilterParameter advertising_filter_parameter);
+  virtual void ScanFilterParameterSetup(
+          ApcfAction action, uint8_t filter_index,
+          AdvertisingFilterParameter advertising_filter_parameter) = 0;
 
   virtual void ScanFilterAdd(uint8_t filter_index,
-                             std::vector<AdvertisingPacketContentFilterCommand> filters);
+                             std::vector<AdvertisingPacketContentFilterCommand> filters) = 0;
 
   /*Batch Scan*/
   virtual void BatchScanConifgStorage(uint8_t batch_scan_full_max, uint8_t batch_scan_truncated_max,
-                                      uint8_t batch_scan_notify_threshold, ScannerId scanner_id);
+                                      uint8_t batch_scan_notify_threshold,
+                                      ScannerId scanner_id) = 0;
   virtual void BatchScanEnable(BatchScanMode scan_mode, uint32_t duty_cycle_scan_window_slots,
                                uint32_t duty_cycle_scan_interval_slots,
-                               BatchScanDiscardRule batch_scan_discard_rule);
-  virtual void BatchScanDisable();
-  virtual void BatchScanReadReport(ScannerId scanner_id, BatchScanMode scan_mode);
+                               BatchScanDiscardRule batch_scan_discard_rule) = 0;
+  virtual void BatchScanDisable() = 0;
+  virtual void BatchScanReadReport(ScannerId scanner_id, BatchScanMode scan_mode) = 0;
 
   virtual void StartSync(uint8_t sid, const AddressWithType& address, uint16_t skip,
-                         uint16_t timeout, int reg_id);
+                         uint16_t timeout, int reg_id) = 0;
 
-  virtual void StopSync(uint16_t handle);
+  virtual void StopSync(uint16_t handle) = 0;
 
-  virtual void CancelCreateSync(uint8_t sid, const Address& address);
+  virtual void CancelCreateSync(uint8_t sid, const Address& address) = 0;
 
   virtual void TransferSync(const Address& address, uint16_t handle, uint16_t service_data,
-                            uint16_t sync_handle, int pa_source);
+                            uint16_t sync_handle, int pa_source) = 0;
 
   virtual void TransferSetInfo(const Address& address, uint16_t handle, uint16_t service_data,
-                               uint8_t adv_handle, int pa_source);
+                               uint8_t adv_handle, int pa_source) = 0;
 
   virtual void SyncTxParameters(const Address& addr, uint8_t mode, uint16_t skip, uint16_t timeout,
-                                int reg_id);
+                                int reg_id) = 0;
 
-  virtual void TrackAdvertiser(uint8_t filter_index, ScannerId scanner_id);
+  virtual void TrackAdvertiser(uint8_t filter_index, ScannerId scanner_id) = 0;
 
-  virtual void RegisterScanningCallback(ScanningCallback* scanning_callback);
+  virtual void RegisterScanningCallback(ScanningCallback* scanning_callback) = 0;
 
-  virtual bool IsAdTypeFilterSupported() const;
-
-  static const ModuleFactory Factory;
-
-protected:
-  void ListDependencies(ModuleList* list) const override;
-
-  void Start() override;
-
-  void Stop() override;
-
-  std::string ToString() const override;
-
-private:
-  struct impl;
-  std::unique_ptr<impl> pimpl_;
+  virtual bool IsAdTypeFilterSupported() const = 0;
 };
-
 }  // namespace hci
 }  // namespace bluetooth

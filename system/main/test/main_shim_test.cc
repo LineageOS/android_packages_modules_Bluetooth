@@ -84,8 +84,6 @@ tBTM_CB btm_cb;
 tBTM_SEC_CB btm_sec_cb;
 btif_hh_cb_t btif_hh_cb;
 
-struct bluetooth::hci::LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback {};
-
 namespace {
 const hci::Address kAddress = {{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}};
 const hci::ClassOfDevice kCod = {{0x11, 0x22, 0x33}};

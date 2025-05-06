@@ -17,16 +17,11 @@
 
 #include <gmock/gmock.h>
 
-#include <memory>
-
-#include "hci/address.h"
 #include "hci/distance_measurement_manager.h"
 
 // Unit test interfaces
 namespace bluetooth {
 namespace hci {
-
-struct DistanceMeasurementManager::impl : public bluetooth::hci::LeAddressManagerCallback {};
 
 namespace testing {
 
@@ -51,10 +46,48 @@ public:
 
 class MockDistanceMeasurementManager : public DistanceMeasurementManager {
 public:
-  MOCK_METHOD(void, RegisterDistanceMeasurementCallbacks, (DistanceMeasurementCallbacks*));
+  MOCK_METHOD(void, RegisterDistanceMeasurementCallbacks,
+              (DistanceMeasurementCallbacks * callbacks), (override));
   MOCK_METHOD(void, StartDistanceMeasurement,
-              (int32_t, Address, uint16_t, uint16_t, DistanceMeasurementMethod,
-               DistanceMeasurementSightType, DistanceMeasurementLocationType));
+              (int32_t app_uid, const Address&, uint16_t connection_handle,
+               hci::Role local_hci_role, uint16_t interval, DistanceMeasurementMethod method,
+               DistanceMeasurementSightType sight_type,
+               DistanceMeasurementLocationType location_type),
+              (override));
+  MOCK_METHOD(void, StopDistanceMeasurement,
+              (const Address& address, uint16_t connection_handle,
+               DistanceMeasurementMethod method),
+              (override));
+  MOCK_METHOD(void, HandleRasClientConnectedEvent,
+              (const Address& address, uint16_t connection_handle, uint16_t att_handle,
+               const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_data,
+               uint16_t conn_interval),
+              (override));
+  MOCK_METHOD(void, HandleRasClientDisconnectedEvent,
+              (const Address& address, const ras::RasDisconnectReason& ras_disconnect_reason),
+              (override));
+  MOCK_METHOD(void, HandleVendorSpecificReply,
+              (const Address& address, uint16_t connection_handle,
+               const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_reply),
+              (override));
+  MOCK_METHOD(void, HandleRasServerConnected,
+              (const Address& identity_address, uint16_t connection_handle,
+               hci::Role local_hci_role),
+              (override));
+  MOCK_METHOD(void, HandleMtuChanged, (uint16_t connection_handle, uint16_t mtu), (override));
+  MOCK_METHOD(void, HandleRasServerDisconnected,
+              (const Address& identity_address, uint16_t connection_handle), (override));
+  MOCK_METHOD(void, HandleVendorSpecificReplyComplete,
+              (const Address& address, uint16_t connection_handle, bool success), (override));
+  MOCK_METHOD(void, HandleRemoteData,
+              (const Address& address, uint16_t connection_handle,
+               const std::vector<uint8_t>& raw_data),
+              (override));
+  MOCK_METHOD(void, HandleRemoteDataTimeout, (const Address& address, uint16_t connection_handle),
+              (override));
+  MOCK_METHOD(void, HandleConnIntervalUpdated,
+              (const Address& address, uint16_t connection_handle, uint16_t conn_interval),
+              (override));
 };
 
 }  // namespace testing
