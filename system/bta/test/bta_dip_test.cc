@@ -20,7 +20,6 @@
 
 #include "bta/sdp/bta_sdp_act.cc"
 #include "main/shim/metrics_api.h"
-#include "stack/sdp/sdp_api.cc"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
