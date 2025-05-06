@@ -126,12 +126,13 @@ public final class DatabaseManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        when(mAdapterService.getRemoteDevice(anyString()))
-                .thenAnswer(
+        doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
                             return getRealDevice(address);
-                        });
+                        })
+                .when(mAdapterService)
+                .getRemoteDevice(anyString());
 
         // Create a memory database for DatabaseManager instead of use a real database.
         mDatabase =

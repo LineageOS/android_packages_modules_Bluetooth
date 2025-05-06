@@ -34,7 +34,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.app.NotificationManager;
 import android.bluetooth.BluetoothAdapter;
@@ -91,12 +90,13 @@ public class BluetoothOppTransferTest {
         mockGetSystemService(mContext, Context.NOTIFICATION_SERVICE, NotificationManager.class);
 
         TestUtils.setAdapterService(mAdapterService);
-        when(mAdapterService.getRemoteDevice(anyString()))
-                .thenAnswer(
+        doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
                             return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
-                        });
+                        })
+                .when(mAdapterService)
+                .getRemoteDevice(anyString());
 
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
         doReturn(0)
