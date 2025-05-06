@@ -17,6 +17,7 @@
 package com.android.bluetooth.opp;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getRealDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -33,9 +34,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
@@ -285,7 +284,6 @@ public class BluetoothOppUtilityTest {
 
     @Test
     public void fillRecord_filledAllProperties() {
-        BluetoothAdapter adapter = mContext.getSystemService(BluetoothManager.class).getAdapter();
         int idValue = 1234;
         int directionValue = BluetoothShare.DIRECTION_OUTBOUND;
         long totalBytesValue = 10;
@@ -295,7 +293,7 @@ public class BluetoothOppUtilityTest {
         String destinationValue = "AA:BB:CC:00:11:22";
         String fileNameValue = mContext.getString(R.string.unknown_file);
         String fileTypeValue = "text/plain";
-        BluetoothDevice remoteDevice = adapter.getRemoteDevice(destinationValue);
+        final BluetoothDevice remoteDevice = getRealDevice(destinationValue);
         String deviceNameValue =
                 BluetoothOppManager.getInstance(mContext).getDeviceName(remoteDevice);
 

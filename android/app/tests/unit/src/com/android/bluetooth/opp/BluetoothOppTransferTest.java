@@ -36,9 +36,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import android.app.NotificationManager;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothUuid;
 import android.content.ContentValues;
 import android.content.Context;
@@ -50,7 +48,6 @@ import android.os.Message;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
@@ -93,7 +90,7 @@ public class BluetoothOppTransferTest {
         doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
-                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+                            return getRealDevice(address);
                         })
                 .when(mAdapterService)
                 .getRemoteDevice(anyString());
@@ -362,7 +359,7 @@ public class BluetoothOppTransferTest {
 
     @Test
     public void socketConnectThreadInterrupt() {
-        BluetoothDevice device = getTestDevice(34);
+        final BluetoothDevice device = getTestDevice(34);
         BluetoothOppTransfer transfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch);
         BluetoothOppTransfer.SocketConnectThread socketConnectThread =
                 transfer.new SocketConnectThread(device, true);
@@ -373,7 +370,7 @@ public class BluetoothOppTransferTest {
     @Test
     @SuppressWarnings("DoNotCall")
     public void socketConnectThreadRun_bluetoothDisabled_connectionFailed() {
-        BluetoothDevice device = getRealDevice(34);
+        final BluetoothDevice device = getRealDevice(34);
         BluetoothOppTransfer transfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch);
         BluetoothOppTransfer.SocketConnectThread socketConnectThread =
                 transfer.new SocketConnectThread(device, true);
@@ -385,12 +382,7 @@ public class BluetoothOppTransferTest {
 
     @Test
     public void oppConnectionReceiver_onReceiveWithActionAclDisconnected_sendsConnectTimeout() {
-        BluetoothDevice device =
-                InstrumentationRegistry.getInstrumentation()
-                        .getContext()
-                        .getSystemService(BluetoothManager.class)
-                        .getAdapter()
-                        .getRemoteDevice("01:23:45:67:89:AB");
+        final BluetoothDevice device = getRealDevice("01:23:45:67:89:AB");
         BluetoothOppTransfer transfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch);
         transfer.mCurrentShare = mInitShareInfo;
         transfer.mCurrentShare.mConfirm = BluetoothShare.USER_CONFIRMATION_PENDING;
@@ -407,13 +399,7 @@ public class BluetoothOppTransferTest {
 
     @Test
     public void oppConnectionReceiver_onReceiveWithActionSdpRecord_withoutSdpRecord() {
-        BluetoothDevice device =
-                InstrumentationRegistry.getInstrumentation()
-                        .getContext()
-                        .getSystemService(BluetoothManager.class)
-                        .getAdapter()
-                        .getRemoteDevice("01:23:45:67:89:AB");
-
+        final BluetoothDevice device = getRealDevice("01:23:45:67:89:AB");
         BluetoothOppTransfer transfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch);
         transfer.mCurrentShare = mInitShareInfo;
         transfer.mCurrentShare.mConfirm = BluetoothShare.USER_CONFIRMATION_PENDING;

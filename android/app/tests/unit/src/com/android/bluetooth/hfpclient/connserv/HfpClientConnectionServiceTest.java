@@ -21,6 +21,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -33,7 +34,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.ComponentName;
@@ -79,12 +79,7 @@ public class HfpClientConnectionServiceTest {
 
     private static final String TEST_NUMBER = "000-111-2222";
 
-    private final BluetoothDevice mDevice =
-            InstrumentationRegistry.getInstrumentation()
-                    .getContext()
-                    .getSystemService(BluetoothManager.class)
-                    .getAdapter()
-                    .getRemoteDevice("01:23:45:67:89:AB");
+    private final BluetoothDevice mDevice = getRealDevice("01:23:45:67:89:AB");
 
     private HfpClientConnectionService mHfpClientConnectionService;
 
@@ -96,7 +91,7 @@ public class HfpClientConnectionServiceTest {
         doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
-                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+                            return getRealDevice(address);
                         })
                 .when(mAdapterService)
                 .getRemoteDevice(anyString());
