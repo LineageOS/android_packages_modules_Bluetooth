@@ -61,9 +61,6 @@
       "name": "bluetooth_hh_test"
     },
     {
-      "name": "bluetooth_le_audio_codec_manager_test"
-    },
-    {
       "name": "bluetooth_packet_parser_test"
     },
     {
@@ -282,9 +279,6 @@
     },
     {
       "name": "bluetooth_hh_test"
-    },
-    {
-      "name": "bluetooth_le_audio_codec_manager_test"
     },
     {
       "name": "bluetooth_packet_parser_test"
