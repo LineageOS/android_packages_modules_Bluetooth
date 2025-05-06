@@ -242,6 +242,14 @@ class BluetoothManagerService {
                 }
 
                 @Override
+                public void onMediaProfileConnectionChange(boolean connected) {
+                    mHandler.post(
+                            () -> {
+                                AirplaneModeListener.setIsMediaProfileConnected(connected);
+                            });
+                }
+
+                @Override
                 public void setAdapterServiceBinder(IBinder adapterServiceBinder) {
                     mHandler.post(
                             () -> {
@@ -869,6 +877,9 @@ class BluetoothManagerService {
     }
 
     boolean isMediaProfileConnected() {
+        if (Flags.onewayMediaProfile()) {
+            throw new IllegalStateException("Not callable when the flag is enabled");
+        }
         if (!mState.oneOf(STATE_ON)) {
             return false;
         }
@@ -2024,6 +2035,7 @@ class BluetoothManagerService {
 
         if (prevState == STATE_ON) {
             autoOnSetupTimer();
+            AirplaneModeListener.setIsMediaProfileConnected(false);
         }
 
         // Notify all proxy objects first of adapter state change
