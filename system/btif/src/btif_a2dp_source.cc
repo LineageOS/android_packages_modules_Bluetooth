@@ -1216,25 +1216,11 @@ void btif_a2dp_source_debug_dump(int fd) {
           (unsigned long long)ave_time_us / 1000);
 }
 
-struct A2dpSessionMetrics {
-  int64_t audio_duration_ms = -1;
-  int32_t media_timer_min_ms = -1;
-  int32_t media_timer_max_ms = -1;
-  int32_t media_timer_avg_ms = -1;
-  int64_t total_scheduling_count = -1;
-  int32_t buffer_overruns_max_count = -1;
-  int32_t buffer_overruns_total = -1;
-  float buffer_underruns_average = -1;
-  int32_t buffer_underruns_count = -1;
-  int64_t codec_index = -1;
-  bool is_a2dp_offload = false;
-};
-
 static void btif_a2dp_source_update_metrics(void) {
   BtifMediaStats stats = btif_a2dp_source_cb.stats;
   SchedulingStats enqueue_stats = stats.tx_queue_enqueue_stats;
 
-  A2dpSessionMetrics metrics;
+  bluetooth::metrics::A2dpSession metrics;
   metrics.codec_index = stats.codec_index;
   metrics.is_a2dp_offload = btif_av_is_a2dp_offload_running();
 
@@ -1269,12 +1255,7 @@ static void btif_a2dp_source_update_metrics(void) {
   }
 
   if (metrics.audio_duration_ms != -1) {
-    bluetooth::metrics::LogMetricA2dpSessionMetricsEvent(
-            btif_av_source_active_peer(), metrics.audio_duration_ms, metrics.media_timer_min_ms,
-            metrics.media_timer_max_ms, metrics.media_timer_avg_ms, metrics.total_scheduling_count,
-            metrics.buffer_overruns_max_count, metrics.buffer_overruns_total,
-            metrics.buffer_underruns_average, metrics.buffer_underruns_count, metrics.codec_index,
-            metrics.is_a2dp_offload);
+    bluetooth::metrics::LogA2dpSessionReported(btif_av_source_active_peer(), metrics);
   }
 }
 

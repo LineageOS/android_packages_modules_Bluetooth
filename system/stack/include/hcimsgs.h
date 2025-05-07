@@ -157,9 +157,6 @@ void btsnd_hcic_rem_oob_reply(const RawAddress& bd_addr, const Octet16& c, const
 /* Remote OOB Data Request Negative Reply */
 void btsnd_hcic_rem_oob_neg_reply(const RawAddress& bd_addr);
 
-/* Read Default Erroneous Data Reporting */
-void btsnd_hcic_read_default_erroneous_data_rpt(void);
-
 /**** end of Simple Pairing Commands ****/
 
 extern void btsnd_hcic_set_event_filter(uint8_t filt_type, uint8_t filt_cond_type,
@@ -177,8 +174,6 @@ void btsnd_hcic_delete_stored_key(const RawAddress& bd_addr, bool delete_all_fla
 #define HCIC_PARAM_SIZE_WRITE_PARAM3 3
 
 void btsnd_hcic_write_pin_type(uint8_t type);      /* Write PIN Type */
-void btsnd_hcic_write_auto_accept(uint8_t flag);   /* Write Auto Accept */
-void btsnd_hcic_read_name(void);                   /* Read Local Name */
 void btsnd_hcic_write_page_tout(uint16_t timeout); /* Write Page Timeout */
 void btsnd_hcic_write_scan_enable(uint8_t flag);   /* Write Scan Enable */
 void btsnd_hcic_write_pagescan_cfg(uint16_t interval,
