@@ -143,6 +143,14 @@ impl<Cb: Callbacks> Streamer<Cb> {
     }
 }
 
+impl<Cb: Callbacks> Drop for Streamer<Cb> {
+    fn drop(&mut self) {
+        if let State::Running { .. } = *self.state.lock().unwrap() {
+            self.callbacks.stop()
+        }
+    }
+}
+
 impl AudioConfig {
     fn from(config: &CAudioConfig) -> Self {
         Self {

@@ -21,14 +21,12 @@ use aidl::android::hardware::bluetooth::offload::leaudio::IHciProxyCallbacks::{
     BnHciProxyCallbacks, IHciProxyCallbacks,
 };
 use aidl::android::hardware::bluetooth::offload::leaudio::StreamConfiguration::StreamConfiguration;
-use binder::{BinderFeatures, ExceptionCode, Interface, Result as BinderResult, Strong};
+use binder::{
+    BinderFeatures, DeathRecipient, ExceptionCode, IBinder, Interface, Result as BinderResult,
+    Strong, Weak as BinderWeak,
+};
 use std::collections::HashMap;
-use std::sync::{Arc, LazyLock, Mutex};
-
-struct FfiClient {
-    service: Strong<dyn IHciProxy>,
-    state: Arc<Mutex<State>>,
-}
+use std::sync::{Arc, Mutex, RwLock};
 
 struct HciClient {
     state: Arc<Mutex<State>>,
@@ -45,8 +43,20 @@ struct IsoStream {
     sdu_interval_us: u32,
 }
 
-static CLIENT: LazyLock<FfiClient> = LazyLock::new(|| {
-    let Ok(service) = binder::wait_for_interface::<dyn IHciProxy>(&format!(
+#[derive(Clone)]
+struct Service {
+    interface: Strong<dyn IHciProxy>,
+    state: Arc<Mutex<State>>,
+}
+
+static SERVICE: RwLock<Option<(Service, DeathRecipient)>> = RwLock::new(None);
+
+fn get_service() -> Service {
+    if let Some((s, _)) = &*SERVICE.read().unwrap() {
+        return s.clone();
+    }
+
+    let Ok(interface) = binder::wait_for_interface::<dyn IHciProxy>(&format!(
         "{}/default",
         BpHciProxy::get_descriptor()
     )) else {
@@ -59,9 +69,18 @@ static CLIENT: LazyLock<FfiClient> = LazyLock::new(|| {
         BinderFeatures::default(),
     );
 
-    service.registerCallbacks(&binder_client).expect("Registering Callbacks");
-    FfiClient { service, state }
-});
+    let mut death_recipient = DeathRecipient::new(move || {
+        log::info!("HCI Proxy has died");
+        *SERVICE.write().unwrap() = None;
+    });
+    interface.as_binder().link_to_death(&mut death_recipient).expect("Link to death");
+
+    interface.registerCallbacks(&binder_client).expect("Registering Callbacks");
+
+    let service = Service { interface: interface.clone(), state };
+    *SERVICE.write().unwrap() = Some((service.clone(), death_recipient));
+    service
+}
 
 impl Interface for HciClient {}
 
@@ -89,7 +108,6 @@ impl IHciProxyCallbacks for HciClient {
         let mut state = self.state.lock().unwrap();
 
         state.iso.remove(&handle);
-
         if let Some(streamer) = state.stream.get(&handle) {
             streamer.disable(handle);
         }
@@ -108,13 +126,14 @@ impl Stream {
         audio: &CAudioConfig,
         ccb: &CCallbacks,
     ) -> Result<Stream, String> {
-        let mut state = CLIENT.state.lock().unwrap();
+        let service = get_service();
+        let mut state = service.state.lock().unwrap();
 
         if iso_streams.iter().any(|s| state.stream.contains_key(&s.handle)) {
             return Err("ISO Stream already used".to_string());
         }
 
-        let callbacks = StreamerEvents::new(*ccb, CLIENT.service.clone());
+        let callbacks = StreamerEvents::new(*ccb, Strong::downgrade(&service.interface));
         let streamer = Arc::new(Streamer::new(iso_streams, audio, callbacks)?);
         for iso_stream in iso_streams {
             state.stream.insert(iso_stream.handle, streamer.clone());
@@ -129,7 +148,8 @@ impl Stream {
 
     pub fn write(&self, chunk: &[u8]) -> Result<usize, String> {
         let streamer = {
-            let state = CLIENT.state.lock().unwrap();
+            let service = get_service();
+            let state = service.state.lock().unwrap();
             state.stream.get(&self.handles[0]).unwrap().clone()
         };
         streamer.write(chunk)
@@ -138,7 +158,8 @@ impl Stream {
 
 impl Drop for Stream {
     fn drop(&mut self) {
-        let mut state = CLIENT.state.lock().unwrap();
+        let service = get_service();
+        let mut state = service.state.lock().unwrap();
         for h in &self.handles {
             state.stream.remove(h);
         }
@@ -147,10 +168,11 @@ impl Drop for Stream {
 
 struct StreamerEvents {
     ccb: Mutex<CCallbacks>,
-    hci: Strong<dyn IHciProxy>,
+    hci: BinderWeak<dyn IHciProxy>,
 }
+
 impl StreamerEvents {
-    fn new(ccb: CCallbacks, hci: Strong<dyn IHciProxy>) -> Self {
+    fn new(ccb: CCallbacks, hci: BinderWeak<dyn IHciProxy>) -> Self {
         Self { ccb: Mutex::new(ccb), hci }
     }
 }
@@ -165,7 +187,10 @@ impl Callbacks for StreamerEvents {
     }
 
     fn send(&self, handle: u16, sequence_number: u16, data: &[u8]) {
-        if let Err(e) = self.hci.sendPacket(handle.into(), sequence_number.into(), data) {
+        let Ok(hci) = self.hci.upgrade() else {
+            return;
+        };
+        if let Err(e) = hci.sendPacket(handle.into(), sequence_number.into(), data) {
             log::error!("Cannot send packet to HCI: {:?}", e);
         }
     }
