@@ -104,6 +104,8 @@ import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
 import platform.test.runner.parameterized.Parameters;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @RunWith(ParameterizedAndroidJunit4.class)
@@ -112,16 +114,46 @@ public class BluetoothManagerServiceTest {
 
     @Rule public final SetFlagsRule mSetFlagsRule;
 
-    @Parameters(name = "{0}")
-    public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.progressionOf(
-                Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP,
-                Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
-                Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD);
+    // Helps tests readability by removing the common prefix in the bluetooth flags name
+    static final class FlagsWrapper {
+        private static final String PREFIX = "com.android.bluetooth.flags.";
+
+        final FlagsParameterization mFlags;
+
+        FlagsWrapper(FlagsParameterization flags) {
+            mFlags = flags;
+        }
+
+        @Override
+        public String toString() {
+            return mFlags.mOverrides.entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .map(FlagsWrapper::entryToString)
+                    .collect(Collectors.joining(","));
+        }
+
+        private static String entryToString(Map.Entry<String, Boolean> entry) {
+            String flagName = entry.getKey();
+            if (flagName.startsWith(PREFIX)) {
+                flagName = flagName.substring(PREFIX.length());
+            }
+            return flagName + "=" + entry.getValue();
+        }
     }
 
-    public BluetoothManagerServiceTest(FlagsParameterization flags) {
-        mSetFlagsRule = new SetFlagsRule(flags);
+    @Parameters(name = "{0}")
+    public static List<FlagsWrapper> getParams() {
+        return FlagsParameterization.progressionOf(
+                        Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP,
+                        Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
+                        Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD)
+                .stream()
+                .map(FlagsWrapper::new)
+                .collect(Collectors.toList());
+    }
+
+    public BluetoothManagerServiceTest(FlagsWrapper flagsWrapper) {
+        mSetFlagsRule = new SetFlagsRule(flagsWrapper.mFlags);
     }
 
     private final Context mTargetContext =
