@@ -115,9 +115,6 @@ public:
     SAVE_OR_CALL(OnReadLinkSupervisionTimeoutComplete, link_supervision_timeout)
   }
   void OnReadFailedContactCounterComplete(uint16_t failed_contact_counter) override {
-    bluetooth::metrics::LogMetricReadFailedContactCounterResult(
-            address_, connection_handle_, static_cast<uint8_t>(ErrorCode::SUCCESS),
-            failed_contact_counter);
     SAVE_OR_CALL(OnReadFailedContactCounterComplete, failed_contact_counter);
   }
   void OnReadLinkQualityComplete(uint8_t link_quality) override {

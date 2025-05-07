@@ -51,8 +51,6 @@ public:
               (const hci::Address&, int64_t, int, int, int, int, int, int, float, int, int64_t,
                bool));
   MOCK_METHOD(void, LogMetricHfpPacketLossStats, (const hci::Address&, int, double, uint16_t));
-  MOCK_METHOD(void, LogMetricReadFailedContactCounterResult,
-              (const hci::Address&, uint16_t, uint32_t, int32_t));
   MOCK_METHOD(void, LogMetricReadTxPowerLevelResult,
               (const hci::Address&, uint16_t, uint32_t, int32_t));
   MOCK_METHOD(void, LogMetricSmpPairingEvent,

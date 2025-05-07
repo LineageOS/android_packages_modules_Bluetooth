@@ -280,7 +280,6 @@ static void update_scheduling_stats(SchedulingStats* stats, uint64_t now_us,
 // Update the A2DP Source related metrics.
 // This function should be called before collecting the metrics.
 static void btif_a2dp_source_update_metrics(void);
-static void btm_read_failed_contact_counter_cb(void* data);
 static void btm_read_tx_power_cb(void* data);
 
 static void btif_a2dp_source_accumulate_scheduling_stats(SchedulingStats* src,
@@ -1004,12 +1003,7 @@ static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n,
     // Request additional debug info if we had to flush buffers
     RawAddress peer_bda = btif_av_source_active_peer();
 
-    tBTM_STATUS status = BTM_ReadFailedContactCounter(peer_bda, btm_read_failed_contact_counter_cb);
-    if (status != tBTM_STATUS::BTM_CMD_STARTED) {
-      log::warn("Cannot read Failed Contact Counter: status {}", status);
-    }
-
-    status = BTM_ReadTxPower(peer_bda, BT_TRANSPORT_BR_EDR, btm_read_tx_power_cb);
+    tBTM_STATUS status = BTM_ReadTxPower(peer_bda, BT_TRANSPORT_BR_EDR, btm_read_tx_power_cb);
     if (status != tBTM_STATUS::BTM_CMD_STARTED) {
       log::warn("Cannot read Tx Power: status {}", status);
     }
@@ -1295,25 +1289,6 @@ static void btif_a2dp_source_update_metrics(void) {
 
 void btif_a2dp_source_set_dynamic_audio_buffer_size(uint8_t dynamic_audio_buffer_size) {
   btif_a2dp_source_dynamic_audio_buffer_size = dynamic_audio_buffer_size;
-}
-
-static void btm_read_failed_contact_counter_cb(void* data) {
-  if (data == nullptr) {
-    log::error("Read Failed Contact Counter request timed out");
-    return;
-  }
-
-  tBTM_FAILED_CONTACT_COUNTER_RESULT* result = (tBTM_FAILED_CONTACT_COUNTER_RESULT*)data;
-  if (result->status != tBTM_STATUS::BTM_SUCCESS) {
-    log::error("unable to read Failed Contact Counter (status {})", result->status);
-    return;
-  }
-  bluetooth::metrics::LogMetricReadFailedContactCounterResult(
-          result->rem_bda, bluetooth::metrics::kUnknownConnectionHandle, result->hci_status,
-          result->failed_contact_counter);
-
-  log::warn("device: {}, Failed Contact Counter: {}", result->rem_bda,
-            result->failed_contact_counter);
 }
 
 static void btm_read_tx_power_cb(void* data) {

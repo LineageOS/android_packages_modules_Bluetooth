@@ -170,19 +170,6 @@ void LogMetricHfpPacketLossStats(const hci::Address& address, int num_decoded_fr
                                  double packet_loss_ratio, uint16_t codec_id);
 
 /**
- * Log failed contact counter report
- *
- * @param address device associated with this event
- * @param handle connection handle of this event,
- *               {@link kUnknownConnectionHandle} if unknown
- * @param cmd_status command status from read failed contact counter command
- * @param failed_contact_counter Number of consecutive failed contacts for a
- *                               connection corresponding to the Handle
- */
-void LogMetricReadFailedContactCounterResult(const hci::Address& address, uint16_t handle,
-                                             uint32_t cmd_status, int32_t failed_contact_counter);
-
-/**
  * Log transmit power level for a particular device after read
  *
  * @param address device associated with this event
