@@ -250,20 +250,6 @@ void LogMetricA2dpSessionMetricsEvent(const hci::Address& address, int64_t audio
 void LogMetricHfpPacketLossStats(const Address& /* address */, int /* num_decoded_frames */,
                                  double /* packet_loss_ratio */, uint16_t /* codec_type */) {}
 
-void LogMetricReadRssiResult(const Address& address, uint16_t handle, uint32_t cmd_status,
-                             int8_t rssi) {
-  int metric_id = 0;
-  if (!address.IsEmpty()) {
-    metric_id = MetricIdManager::GetInstance().AllocateId(address);
-  }
-  int ret = stats_write(BLUETOOTH_DEVICE_RSSI_REPORTED, byteField, handle, cmd_status, rssi,
-                        metric_id);
-  if (ret < 0) {
-    log::warn("Failed for {}, handle {}, status {}, rssi {} dBm, error {}", address, handle,
-              common::ToHexString(cmd_status), rssi, ret);
-  }
-}
-
 void LogMetricReadFailedContactCounterResult(const Address& address, uint16_t handle,
                                              uint32_t cmd_status, int32_t failed_contact_counter) {
   int metric_id = 0;

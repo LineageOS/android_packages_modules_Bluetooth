@@ -170,18 +170,6 @@ void LogMetricHfpPacketLossStats(const hci::Address& address, int num_decoded_fr
                                  double packet_loss_ratio, uint16_t codec_id);
 
 /**
- * Log read RSSI result
- *
- * @param address device associated with this event
- * @param handle connection handle of this event,
- *               {@link kUnknownConnectionHandle} if unknown
- * @param cmd_status command status from read RSSI command
- * @param rssi rssi value in dBm
- */
-void LogMetricReadRssiResult(const hci::Address& address, uint16_t handle, uint32_t cmd_status,
-                             int8_t rssi);
-
-/**
  * Log failed contact counter report
  *
  * @param address device associated with this event

@@ -163,13 +163,6 @@ void LogMetricHfpPacketLossStats(const hci::Address& address, int num_decoded_fr
   }
 }
 
-void LogMetricReadRssiResult(const hci::Address& address, uint16_t handle, uint32_t cmd_status,
-                             int8_t rssi) {
-  if (metricsInstance) {
-    metricsInstance->LogMetricReadRssiResult(address, handle, cmd_status, rssi);
-  }
-}
-
 void LogMetricReadFailedContactCounterResult(const hci::Address& address, uint16_t handle,
                                              uint32_t cmd_status, int32_t failed_contact_counter) {
   if (metricsInstance) {

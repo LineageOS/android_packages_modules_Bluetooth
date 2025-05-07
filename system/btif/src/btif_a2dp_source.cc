@@ -280,7 +280,6 @@ static void update_scheduling_stats(SchedulingStats* stats, uint64_t now_us,
 // Update the A2DP Source related metrics.
 // This function should be called before collecting the metrics.
 static void btif_a2dp_source_update_metrics(void);
-static void btm_read_rssi_cb(void* data);
 static void btm_read_failed_contact_counter_cb(void* data);
 static void btm_read_tx_power_cb(void* data);
 
@@ -1004,13 +1003,8 @@ static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n,
 
     // Request additional debug info if we had to flush buffers
     RawAddress peer_bda = btif_av_source_active_peer();
-    tBTM_STATUS status =
-            get_btm_client_interface().link_controller.BTM_ReadRSSI(peer_bda, btm_read_rssi_cb);
-    if (status != tBTM_STATUS::BTM_CMD_STARTED) {
-      log::warn("Cannot read RSSI: status {}", status);
-    }
 
-    status = BTM_ReadFailedContactCounter(peer_bda, btm_read_failed_contact_counter_cb);
+    tBTM_STATUS status = BTM_ReadFailedContactCounter(peer_bda, btm_read_failed_contact_counter_cb);
     if (status != tBTM_STATUS::BTM_CMD_STARTED) {
       log::warn("Cannot read Failed Contact Counter: status {}", status);
     }
@@ -1301,25 +1295,6 @@ static void btif_a2dp_source_update_metrics(void) {
 
 void btif_a2dp_source_set_dynamic_audio_buffer_size(uint8_t dynamic_audio_buffer_size) {
   btif_a2dp_source_dynamic_audio_buffer_size = dynamic_audio_buffer_size;
-}
-
-static void btm_read_rssi_cb(void* data) {
-  if (data == nullptr) {
-    log::error("Read RSSI request timed out");
-    return;
-  }
-
-  tBTM_RSSI_RESULT* result = (tBTM_RSSI_RESULT*)data;
-  if (result->status != tBTM_STATUS::BTM_SUCCESS) {
-    log::error("unable to read remote RSSI (status {})", result->status);
-    return;
-  }
-
-  bluetooth::metrics::LogMetricReadRssiResult(result->rem_bda,
-                                              bluetooth::metrics::kUnknownConnectionHandle,
-                                              result->hci_status, result->rssi);
-
-  log::warn("device: {}, rssi: {}", result->rem_bda, result->rssi);
 }
 
 static void btm_read_failed_contact_counter_cb(void* data) {

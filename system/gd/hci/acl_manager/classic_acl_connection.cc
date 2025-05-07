@@ -127,11 +127,7 @@ public:
                                    std::array<uint8_t, 10> afh_channel_map) override {
     SAVE_OR_CALL(OnReadAfhChannelMapComplete, afh_mode, afh_channel_map)
   }
-  void OnReadRssiComplete(uint8_t rssi) override {
-    bluetooth::metrics::LogMetricReadRssiResult(address_, connection_handle_,
-                                                static_cast<uint8_t>(ErrorCode::SUCCESS), rssi);
-    SAVE_OR_CALL(OnReadRssiComplete, rssi);
-  }
+  void OnReadRssiComplete(uint8_t rssi) override { SAVE_OR_CALL(OnReadRssiComplete, rssi); }
   void OnReadClockComplete(uint32_t clock, uint16_t accuracy) override {
     SAVE_OR_CALL(OnReadClockComplete, clock, accuracy)
   }
