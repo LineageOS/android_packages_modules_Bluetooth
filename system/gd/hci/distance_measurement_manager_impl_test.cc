@@ -1315,17 +1315,19 @@ TEST_F(DistanceMeasurementManagerTest, complete_mode2_procedure) {
   cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
   uint16_t procedure_counter = 0;
 
-  CsSubeventResultEvent req_subevent_result_1;
-  req_subevent_result_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
-  req_subevent_result_1.subevent_done_status = CsSubeventDoneStatus::PARTIAL_RESULTS;
-  req_subevent_result_1.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::INITIATOR);
+  CsSubeventResultEvent req_subevent_result_1_1;
+  req_subevent_result_1_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  req_subevent_result_1_1.subevent_done_status = CsSubeventDoneStatus::PARTIAL_RESULTS;
+  req_subevent_result_1_1.result_data_structures =
+          CsModule::GetSubeventMode2Data(CsRole::INITIATOR);
   cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
-          params.connection_handle, procedure_counter, req_subevent_result_1));
-  req_subevent_result_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
-  req_subevent_result_1.subevent_done_status = CsSubeventDoneStatus::ALL_RESULTS_COMPLETE;
-  req_subevent_result_1.result_data_structures = CsModule::GetSubeventContinueMode2Data();
+          params.connection_handle, procedure_counter, req_subevent_result_1_1));
+  CsSubeventResultEvent req_subevent_result_1_2;
+  req_subevent_result_1_2.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  req_subevent_result_1_2.subevent_done_status = CsSubeventDoneStatus::ALL_RESULTS_COMPLETE;
+  req_subevent_result_1_2.result_data_structures = CsModule::GetSubeventContinueMode2Data();
   cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultContinueEvent(
-          params.connection_handle, req_subevent_result_1));
+          params.connection_handle, req_subevent_result_1_2));
 
   CsSubeventResultEvent req_subevent_result_2;
   req_subevent_result_2.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::INITIATOR);
@@ -1345,11 +1347,19 @@ TEST_F(DistanceMeasurementManagerTest, complete_mode2_procedure) {
                                       bool /*is_last*/, std::vector<uint8_t> raw_data) {
             segment_data_1 = std::move(raw_data);
           });
-  CsSubeventResultEvent resp_subevent_result_1;
-  resp_subevent_result_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
-  resp_subevent_result_1.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::REFLECTOR);
+  CsSubeventResultEvent resp_subevent_result_1_1;
+  resp_subevent_result_1_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  resp_subevent_result_1_1.subevent_done_status = CsSubeventDoneStatus::PARTIAL_RESULTS;
+  resp_subevent_result_1_1.result_data_structures =
+          CsModule::GetSubeventMode2Data(CsRole::REFLECTOR);
   cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
-          params.connection_handle, procedure_counter, resp_subevent_result_1));
+          params.connection_handle, procedure_counter, resp_subevent_result_1_1));
+  CsSubeventResultEvent resp_subevent_result_1_2;
+  resp_subevent_result_1_2.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  resp_subevent_result_1_2.subevent_done_status = CsSubeventDoneStatus::ALL_RESULTS_COMPLETE;
+  resp_subevent_result_1_2.result_data_structures = CsModule::GetSubeventContinueMode2Data();
+  cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultContinueEvent(
+          params.connection_handle, resp_subevent_result_1_2));
   CsSubeventResultEvent resp_subevent_result_2;
   resp_subevent_result_2.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::REFLECTOR);
   cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
@@ -1360,6 +1370,7 @@ TEST_F(DistanceMeasurementManagerTest, complete_mode2_procedure) {
   EXPECT_CALL(
           *cs_requester_.mock_ranging_hal_,
           WriteProcedureData(params.connection_handle, CsRole::INITIATOR, _, procedure_counter));
+
   cs_requester_.dm_manager_->HandleRemoteData(params.responder_addr, params.connection_handle,
                                               segment_data_1);
 
