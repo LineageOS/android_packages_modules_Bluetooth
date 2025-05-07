@@ -164,12 +164,12 @@ protected:
                     : new os::Handler(&thread_));
     bluetooth::hci::testing::mock_storage_->Start();
     fake_registry_.Start<HciLayer>(&thread_, client_handler_);
-    fake_registry_.Start<AclScheduler>(&thread_, client_handler_);
 
+    test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
     test_rnr_ = std::make_unique<RemoteNameRequestModuleMock>();
-    acl_manager_ = std::make_unique<AclManagerImpl>(
-            client_handler_, test_hci_layer_, test_controller_,
-            fake_registry_.GetModuleUnderTest<AclScheduler>(), test_rnr_.get());
+    acl_manager_ =
+            std::make_unique<AclManagerImpl>(client_handler_, test_hci_layer_, test_controller_,
+                                             test_acl_scheduler_.get(), test_rnr_.get());
   }
 
   void TearDown() override {
@@ -177,9 +177,9 @@ protected:
     bluetooth::hci::testing::mock_storage_ = nullptr;
     fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeModuleHandler(&AclScheduler::Factory, std::chrono::milliseconds(20));
     acl_manager_.reset();
     test_rnr_.reset();
+    test_acl_scheduler_.reset();
     fake_registry_.StopAll();
   }
 
@@ -197,6 +197,7 @@ protected:
 
   TestModuleRegistry fake_registry_;
   os::Thread& thread_ = fake_registry_.GetTestThread();
+  std::unique_ptr<AclScheduler> test_acl_scheduler_ = nullptr;
   std::unique_ptr<RemoteNameRequestModule> test_rnr_ = nullptr;
   std::unique_ptr<AclManagerImpl> acl_manager_ = nullptr;
   os::Handler* client_handler_ = nullptr;
@@ -252,7 +253,6 @@ protected:
 
   void TearDown() override {
     fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeModuleHandler(&AclScheduler::Factory, std::chrono::milliseconds(20));
     fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
     {
@@ -332,7 +332,6 @@ protected:
 
   void TearDown() override {
     fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeModuleHandler(&AclScheduler::Factory, std::chrono::milliseconds(20));
     fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     fake_registry_.StopAll();
     AclManagerWithCallbacksTest::TearDown();

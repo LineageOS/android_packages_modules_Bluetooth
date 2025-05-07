@@ -124,10 +124,12 @@ protected:
                     : new os::Handler(&thread_));
     bluetooth::hci::testing::mock_storage_->Start();
     fake_registry_.Start<HciLayer>(&thread_, client_handler_);
-    fake_registry_.Start<AclScheduler>(&thread_, client_handler_);
-    acl_manager_ = std::make_unique<AclManagerImpl>(
-            client_handler_, test_hci_layer_, test_controller_,
-            fake_registry_.GetModuleUnderTest<AclScheduler>(), nullptr /* RNRModule */);
+
+    test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
+    acl_manager_ =
+            std::make_unique<AclManagerImpl>(client_handler_, test_hci_layer_, test_controller_,
+                                             test_acl_scheduler_.get(), nullptr /* RNRModule */);
+
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 
     hci::Address address;
@@ -168,8 +170,8 @@ protected:
     le_connections_.clear();
     fake_registry_.SynchronizeHandler(handler_, std::chrono::milliseconds(20));
     fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeModuleHandler(&AclScheduler::Factory, std::chrono::milliseconds(20));
     fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
+    test_acl_scheduler_.reset();
     acl_manager_.reset();
     fake_registry_.StopAll();
   }
@@ -184,6 +186,7 @@ protected:
   TestController* test_controller_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
   os::Handler* handler_ = fake_registry_.GetTestHandler();
+  std::unique_ptr<AclScheduler> test_acl_scheduler_ = nullptr;
   std::unique_ptr<AclManagerImpl> acl_manager_ = nullptr;
   os::Handler* client_handler_ = nullptr;
   Address remote;
@@ -670,7 +673,6 @@ TEST_F(AclManagerWithLeConnectionTest, invoke_registered_callback_le_queue_disco
   test_hci_layer_->Disconnect(handle_, reason);
   fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
   fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
-  fake_registry_.SynchronizeModuleHandler(&AclScheduler::Factory, std::chrono::milliseconds(20));
   fake_registry_.SynchronizeHandler(handler_, std::chrono::milliseconds(20));
 
   EXPECT_CALL(mock_le_connection_management_callbacks_, OnDisconnection(reason));
@@ -1158,10 +1160,12 @@ protected:
                     : new os::Handler(&thread_));
     bluetooth::hci::testing::mock_storage_->Start();
     fake_registry_.Start<HciLayer>(&thread_, client_handler_);
-    fake_registry_.Start<AclScheduler>(&thread_, client_handler_);
-    acl_manager_ = std::make_unique<AclManagerImpl>(
-            client_handler_, test_hci_layer_, test_controller_,
-            fake_registry_.GetModuleUnderTest<AclScheduler>(), nullptr /* RNRModule */);
+
+    test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
+    acl_manager_ =
+            std::make_unique<AclManagerImpl>(client_handler_, test_hci_layer_, test_controller_,
+                                             test_acl_scheduler_.get(), nullptr /* RNRModule */);
+
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 
     hci::Address address;
@@ -1195,7 +1199,6 @@ TEST_F(AclManagerWithResolvableAddressTest, create_connection_cancel_fail) {
   test_hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
 
   fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
-  fake_registry_.SynchronizeModuleHandler(&AclScheduler::Factory, std::chrono::milliseconds(20));
   fake_registry_.SynchronizeHandler(handler_, std::chrono::milliseconds(20));
 
   Address remote2;
