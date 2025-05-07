@@ -58,11 +58,10 @@ import android.annotation.SuppressLint;
 import android.app.AppOpsManager;
 import android.app.role.RoleManager;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.IBluetooth;
+import android.bluetooth.IAdapter;
 import android.bluetooth.IBluetoothCallback;
 import android.bluetooth.IBluetoothManager;
 import android.bluetooth.IBluetoothManagerCallback;
-import android.bluetooth.IBluetoothStateChangeCallback;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -167,8 +166,7 @@ public class BluetoothManagerServiceTest {
     @Mock IBinder mBleBinder;
     @Mock IBinder mBinder;
     @Mock IBluetoothManagerCallback mManagerCallback;
-    @Mock IBluetoothStateChangeCallback mStateChangeCallback;
-    @Mock IBluetooth mAdapterService;
+    @Mock IAdapter mAdapterService;
     @Mock AdapterBinder mAdapterBinder;
     @Mock AppOpsManager mAppOpsManager;
     @Mock PermissionManager mPermissionManager;
@@ -420,13 +418,15 @@ public class BluetoothManagerServiceTest {
     }
 
     IBluetoothCallback transition_offToBleOn() throws Exception {
-        // Binding of IBluetooth
+        // Binding of IAdapter
         acceptBluetoothBinding();
 
         IBluetoothCallback btCallback = captureBluetoothCallback();
         mInOrder.verify(mAdapterBinder).offToBleOn(anyBoolean(), anyString(), any());
         verifyBleStateIntentSent(STATE_OFF, STATE_BLE_TURNING_ON);
-        mInOrder.verify(mManagerCallback).onBluetoothServiceUp(any());
+        btCallback.setAdapterServiceBinder(mBinder);
+        syncHandler(0); // To post setAdapterServiceBinder
+        mInOrder.verify(mManagerCallback).onBluetoothServiceUp(mBinder);
 
         assertThat(mManagerService.getState()).isEqualTo(STATE_BLE_TURNING_ON);
 

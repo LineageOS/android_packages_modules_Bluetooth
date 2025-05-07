@@ -30,7 +30,6 @@ import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.app.AppOpsManager;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.IBluetooth;
 import android.bluetooth.IBluetoothManager;
 import android.bluetooth.IBluetoothManagerCallback;
 import android.content.AttributionSource;
@@ -72,11 +71,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     @Nullable
     public IBinder registerAdapter(@NonNull IBluetoothManagerCallback callback) {
         requireNonNull(callback, "Callback cannot be null in registerAdapter");
-        IBluetooth bluetooth = mBluetoothManagerService.registerAdapter(callback);
-        if (bluetooth == null) {
-            return null;
-        }
-        return bluetooth.asBinder();
+        return mBluetoothManagerService.registerAdapter(callback);
     }
 
     @Override

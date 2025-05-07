@@ -45,7 +45,7 @@ import android.app.ActivityManager;
 import android.app.BroadcastOptions;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothStatusCodes;
-import android.bluetooth.IBluetooth;
+import android.bluetooth.IAdapter;
 import android.bluetooth.IBluetoothCallback;
 import android.bluetooth.IBluetoothManager;
 import android.bluetooth.IBluetoothManagerCallback;
@@ -239,6 +239,20 @@ class BluetoothManagerService {
                     }
                     Log.d(TAG, "IBluetoothCallback.onAdapterAddressChange: " + logAddress(address));
                     mHandler.post(() -> storeAddress(address));
+                }
+
+                @Override
+                public void setAdapterServiceBinder(IBinder adapterServiceBinder) {
+                    mHandler.post(
+                            () -> {
+                                if (mAdapter == null) {
+                                    return;
+                                }
+                                mAdapter.setAdapterServiceBinder(adapterServiceBinder);
+                                broadcastToAdapters(
+                                        "setAdapterServiceBinder",
+                                        (item) -> item.onBluetoothServiceUp(adapterServiceBinder));
+                            });
                 }
             };
 
@@ -759,11 +773,11 @@ class BluetoothManagerService {
     }
 
     // Called from unsafe binder thread
-    IBluetooth registerAdapter(IBluetoothManagerCallback callback) {
+    IBinder registerAdapter(IBluetoothManagerCallback callback) {
         mCallbacks.register(callback);
         // Copy to local variable to avoid race condition when checking for null
         AdapterBinder adapter = mAdapter;
-        return adapter != null ? adapter.getAdapterBinder() : null;
+        return adapter != null ? adapter.getAdapterServiceBinder() : null;
     }
 
     void unregisterAdapter(IBluetoothManagerCallback callback) {
@@ -1304,12 +1318,6 @@ class BluetoothManagerService {
         broadcastToAdapters("sendBluetoothOffCallback", IBluetoothManagerCallback::onBluetoothOff);
     }
 
-    private void sendBluetoothServiceUpCallback() {
-        broadcastToAdapters(
-                "sendBluetoothServiceUpCallback",
-                (item) -> item.onBluetoothServiceUp(mAdapter.getAdapterBinder().asBinder()));
-    }
-
     private void sendBluetoothServiceDownCallback() {
         broadcastToAdapters(
                 "sendBluetoothServiceDownCallback",
@@ -1465,7 +1473,6 @@ class BluetoothManagerService {
                     }
 
                     offToBleOn(mHciInstanceName);
-                    sendBluetoothServiceUpCallback();
 
                     if (!Flags.systemServerRemoveExtraThreadJump() && !mEnable) {
                         waitForState(STATE_ON);
@@ -1789,7 +1796,7 @@ class BluetoothManagerService {
     private void bindToAdapter() {
         UserHandle user = UserHandle.CURRENT;
         int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
-        Intent intent = new Intent(IBluetooth.class.getName());
+        Intent intent = new Intent(IAdapter.class.getName());
         intent.setComponent(resolveSystemService(intent));
 
         mHandler.sendEmptyMessageDelayed(MESSAGE_TIMEOUT_BIND, TIMEOUT_BIND_MS);
