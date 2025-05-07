@@ -17,7 +17,7 @@
 package com.android.bluetooth.le_audio;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.getRealDevice;
+import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -56,7 +56,7 @@ public class LeAudioNativeInterfaceTest {
         doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
-                            return getRealDevice(address);
+                            return getTestDevice(address);
                         })
                 .when(mAdapterService)
                 .getRemoteDevice(anyString());

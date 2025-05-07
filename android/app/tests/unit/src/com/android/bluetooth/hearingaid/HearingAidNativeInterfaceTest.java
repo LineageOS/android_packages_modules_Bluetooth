@@ -19,14 +19,12 @@ package com.android.bluetooth.hearingaid;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,23 +48,18 @@ import org.mockito.Mockito;
 /** Test cases for {@link HearingAidNativeInterface}. */
 @RunWith(AndroidJUnit4.class)
 public class HearingAidNativeInterfaceTest {
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
     @Mock private HearingAidService mService;
 
+    private final BluetoothDevice mDevice = getTestDevice(14);
+
     private HearingAidNativeInterface mNativeInterface;
 
     @Before
     public void setUp() throws Exception {
-        doAnswer(
-                        invocation -> {
-                            String address = invocation.getArgument(0);
-                            return getRealDevice(address);
-                        })
-                .when(mAdapterService)
-                .getRemoteDevice(anyString());
+        mockAdapterServiceGetRemoteDevice(mAdapterService, mDevice);
         when(mService.isAvailable()).thenReturn(true);
         HearingAidService.setHearingAidService(mService);
         mNativeInterface = HearingAidNativeInterface.getInstance(mAdapterService);
@@ -82,16 +75,14 @@ public class HearingAidNativeInterfaceTest {
         assertThat(mNativeInterface.getByteAddress(null))
                 .isEqualTo(Utils.getBytesFromAddress("00:00:00:00:00:00"));
 
-        BluetoothDevice device = getTestDevice(0);
-        assertThat(mNativeInterface.getByteAddress(device))
-                .isEqualTo(Utils.getBytesFromAddress(device.getAddress()));
+        assertThat(mNativeInterface.getByteAddress(mDevice))
+                .isEqualTo(Utils.getBytesFromAddress(mDevice.getAddress()));
     }
 
     @Test
     public void onConnectionStateChanged() {
-        BluetoothDevice device = getTestDevice(0);
         mNativeInterface.onConnectionStateChanged(
-                STATE_CONNECTED, mNativeInterface.getByteAddress(device));
+                STATE_CONNECTED, mNativeInterface.getByteAddress(mDevice));
 
         ArgumentCaptor<HearingAidStackEvent> event =
                 ArgumentCaptor.forClass(HearingAidStackEvent.class);
@@ -103,17 +94,16 @@ public class HearingAidNativeInterfaceTest {
         Mockito.clearInvocations(mService);
         HearingAidService.setHearingAidService(null);
         mNativeInterface.onConnectionStateChanged(
-                STATE_CONNECTED, mNativeInterface.getByteAddress(device));
+                STATE_CONNECTED, mNativeInterface.getByteAddress(mDevice));
         verify(mService, never()).messageFromNative(any());
     }
 
     @Test
     public void onDeviceAvailable() {
-        BluetoothDevice device = getTestDevice(0);
         byte capabilities = 0;
         long hiSyncId = 100;
         mNativeInterface.onDeviceAvailable(
-                capabilities, hiSyncId, mNativeInterface.getByteAddress(device));
+                capabilities, hiSyncId, mNativeInterface.getByteAddress(mDevice));
 
         ArgumentCaptor<HearingAidStackEvent> event =
                 ArgumentCaptor.forClass(HearingAidStackEvent.class);
@@ -126,7 +116,7 @@ public class HearingAidNativeInterfaceTest {
         Mockito.clearInvocations(mService);
         HearingAidService.setHearingAidService(null);
         mNativeInterface.onDeviceAvailable(
-                capabilities, hiSyncId, mNativeInterface.getByteAddress(device));
+                capabilities, hiSyncId, mNativeInterface.getByteAddress(mDevice));
         verify(mService, never()).messageFromNative(any());
     }
 }

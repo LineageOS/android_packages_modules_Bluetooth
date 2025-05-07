@@ -17,7 +17,7 @@
 package com.android.bluetooth.opp;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.getRealDevice;
+import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -45,7 +45,7 @@ import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.provider.Settings;
 
-import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
@@ -78,7 +78,7 @@ public class BluetoothOppUtilityTest {
             Uri.parse("content://com.android.bluetooth.opp/btopp/0123455343467");
     private static final Uri INCORRECT_FORMAT_URI = Uri.parse("www.google.com");
 
-    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+    private final Context mContext = ApplicationProvider.getApplicationContext();
 
     @Before
     public void setUp() throws Exception {
@@ -89,7 +89,6 @@ public class BluetoothOppUtilityTest {
     @After
     public void tearDown() throws Exception {
         TestUtils.tearDownUiTest();
-
         BluetoothMethodProxy.setInstanceForTesting(null);
     }
 
@@ -161,7 +160,6 @@ public class BluetoothOppUtilityTest {
 
     @Test
     public void openReceivedFile_fileNotExist() {
-
         Uri contentResolverUri = Uri.parse("content://com.android.bluetooth.opp/btopp/0123");
         Uri fileUri = Uri.parse("content:///tmp/randomFileName.txt");
 
@@ -293,7 +291,9 @@ public class BluetoothOppUtilityTest {
         String destinationValue = "AA:BB:CC:00:11:22";
         String fileNameValue = mContext.getString(R.string.unknown_file);
         String fileTypeValue = "text/plain";
-        final BluetoothDevice remoteDevice = getRealDevice(destinationValue);
+        final BluetoothDevice remoteDevice = getTestDevice(destinationValue);
+        doReturn("Unknown device").when(remoteDevice).getAlias();
+
         String deviceNameValue =
                 BluetoothOppManager.getInstance(mContext).getDeviceName(remoteDevice);
 

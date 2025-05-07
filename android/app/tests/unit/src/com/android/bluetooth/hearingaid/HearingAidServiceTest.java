@@ -31,7 +31,7 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.getRealDevice;
+import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -92,9 +92,9 @@ public class HearingAidServiceTest {
     @Mock private HearingAidNativeInterface mNativeInterface;
     @Mock private AudioManager mAudioManager;
 
-    private final BluetoothDevice mLeftDevice = getRealDevice(43);
-    private final BluetoothDevice mRightDevice = getRealDevice(23);
-    private final BluetoothDevice mSingleDevice = getRealDevice(13);
+    private final BluetoothDevice mLeftDevice = getTestDevice(43);
+    private final BluetoothDevice mRightDevice = getTestDevice(23);
+    private final BluetoothDevice mSingleDevice = getTestDevice(13);
 
     private HearingAidService mService;
     private HearingAidServiceBinder mBinder;

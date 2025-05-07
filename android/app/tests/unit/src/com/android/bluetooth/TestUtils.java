@@ -115,6 +115,18 @@ public class TestUtils {
     }
 
     /**
+     * Helper function to ensure the mocked AdapterService gets the same mocked BluetoothDevice
+     * object for the same address
+     */
+    public static void mockAdapterServiceGetRemoteDevice(
+            AdapterService adapterService, BluetoothDevice... devices) {
+        for (BluetoothDevice device : devices) {
+            final String address = device.getAddress();
+            doReturn(device).when(adapterService).getRemoteDevice(address);
+        }
+    }
+
+    /**
      * Create a mock BluetoothDevice.
      *
      * @param id the test device ID. It must be an integer in the interval [0, 0xFF].
