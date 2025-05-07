@@ -366,7 +366,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 if (mDbManager.getProfileConnectionPolicy(device, BluetoothProfile.A2DP)
                                 != CONNECTION_POLICY_ALLOWED
                         || mAudioManager.getMode() != AudioManager.MODE_NORMAL) {
-                    if (Utils.isWatch(mAdapterService, device)) {
+                    if (Utils.remoteDeviceIsWatch(mAdapterService, device)) {
                         Log.i(TAG, "Do not set hfp active for watch device " + device);
                         return;
                     }

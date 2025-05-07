@@ -165,13 +165,11 @@ public final class Utils {
     }
 
     /**
-     * Checks CoD and metadata to determine if the device is a watch
+     * Checks CoD and metadata to determine if the remote device is a watch
      *
-     * @param service Adapter service
-     * @param device the remote device
-     * @return {@code true} if it's a watch, {@code false} otherwise
+     * @return whether it's a watch or not
      */
-    public static boolean isWatch(
+    public static boolean remoteDeviceIsWatch(
             @NonNull AdapterService service, @NonNull BluetoothDevice device) {
         // Check CoD
         BluetoothClass deviceClass = new BluetoothClass(service.getRemoteClass(device));
@@ -1215,9 +1213,6 @@ public final class Utils {
     }
 
     /**
-     * Check if this is an automotive device
-     *
-     * @param context current device context
      * @return true if this Android device is an automotive device, false otherwise
      */
     public static boolean isAutomotive(Context context) {
@@ -1225,9 +1220,6 @@ public final class Utils {
     }
 
     /**
-     * Check if this is a watch device
-     *
-     * @param context current device context
      * @return true if this Android device is a watch device, false otherwise
      */
     public static boolean isWatch(Context context) {
@@ -1235,9 +1227,6 @@ public final class Utils {
     }
 
     /**
-     * Check if this is a TV device
-     *
-     * @param context current device context
      * @return true if this Android device is a TV device, false otherwise
      */
     public static boolean isTv(Context context) {

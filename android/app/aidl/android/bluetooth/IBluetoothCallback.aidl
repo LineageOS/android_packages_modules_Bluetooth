@@ -28,4 +28,5 @@ interface IBluetoothCallback
     void onAdapterAddressChange(String address);
     void setAdapterServiceBinder(in IBinder adapterServiceBinder);
     void onMediaProfileConnectionChange(boolean connected);
+    void onWatchConnectionChange(boolean connected);
 }
