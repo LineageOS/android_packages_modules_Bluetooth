@@ -28,6 +28,7 @@
 #include "hal/link_clocker.h"
 #include "hal/snoop_logger.h"
 #include "main/shim/entry.h"
+#include "os/parameter_provider.h"
 
 namespace bluetooth::hal {
 
@@ -178,7 +179,11 @@ protected:
     link_clocker_ = GetDependency<LinkClocker>();
     btsnoop_logger_ = shim::GetSnoopLogger();
 
-    backend_ = HciBackend::CreateAidl();
+    if (com::android::bluetooth::flags::hci_instance_name_use_injected()) {
+      backend_ = HciBackend::CreateAidl(bluetooth::os::ParameterProvider::GetHciInstanceName());
+    } else {
+      backend_ = HciBackend::CreateAidl();
+    }
     if (!backend_) {
       backend_ = HciBackend::CreateHidl(GetHandler());
     }

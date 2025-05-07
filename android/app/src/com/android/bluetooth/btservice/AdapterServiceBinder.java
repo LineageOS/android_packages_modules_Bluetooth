@@ -158,14 +158,14 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
-    public void offToBleOn(boolean quietMode, AttributionSource source) {
+    public void offToBleOn(boolean quietMode, String hciInstanceName, AttributionSource source) {
         AdapterService service = getService();
         if (service == null || !callerIsSystemOrActiveOrManagedUser(service, TAG, "offToBleOn")) {
             return;
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        service.offToBleOn(quietMode);
+        service.offToBleOn(quietMode, hciInstanceName);
     }
 
     @Override

@@ -56,6 +56,10 @@ public:
   static int GetCommonCriteriaConfigCompareResult();
 
   static void SetCommonCriteriaConfigCompareResult(int result);
+
+  static void SetHciInstanceName(const std::string& hci_interface_name);
+
+  static std::string GetHciInstanceName();
 };
 
 }  // namespace os

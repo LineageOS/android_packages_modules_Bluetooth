@@ -40,8 +40,8 @@ class AdapterBinder(rawBinder: IBinder) {
     }
 
     @Throws(RemoteException::class)
-    fun offToBleOn(quietMode: Boolean, source: AttributionSource) {
-        adapterBinder.offToBleOn(quietMode, source)
+    fun offToBleOn(quietMode: Boolean, hciInstanceName: String, source: AttributionSource) {
+        adapterBinder.offToBleOn(quietMode, hciInstanceName, source)
     }
 
     @Throws(RemoteException::class)
