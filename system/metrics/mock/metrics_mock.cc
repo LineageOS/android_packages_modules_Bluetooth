@@ -163,14 +163,6 @@ void LogMetricHfpPacketLossStats(const hci::Address& address, int num_decoded_fr
   }
 }
 
-void LogMetricReadTxPowerLevelResult(const hci::Address& address, uint16_t handle,
-                                     uint32_t cmd_status, int32_t transmit_power_level) {
-  if (metricsInstance) {
-    metricsInstance->LogMetricReadTxPowerLevelResult(address, handle, cmd_status,
-                                                     transmit_power_level);
-  }
-}
-
 void LogMetricSmpPairingEvent(const hci::Address& address, uint16_t smp_cmd,
                               android::bluetooth::DirectionEnum direction,
                               uint16_t smp_fail_reason) {

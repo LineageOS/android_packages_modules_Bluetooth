@@ -106,9 +106,6 @@ public:
     SAVE_OR_CALL(OnReadAutomaticFlushTimeoutComplete, flush_timeout)
   }
   void OnReadTransmitPowerLevelComplete(uint8_t transmit_power_level) override {
-    bluetooth::metrics::LogMetricReadTxPowerLevelResult(address_, connection_handle_,
-                                                        static_cast<uint8_t>(ErrorCode::SUCCESS),
-                                                        transmit_power_level);
     SAVE_OR_CALL(OnReadTransmitPowerLevelComplete, transmit_power_level)
   }
   void OnReadLinkSupervisionTimeoutComplete(uint16_t link_supervision_timeout) override {

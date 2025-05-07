@@ -54,10 +54,6 @@ void LogMetricA2dpAudioOverrunEvent(const Address& /* address */,
 void LogMetricHfpPacketLossStats(const Address& /* address */, int /* num_decoded_frames */,
                                  double /* packet_loss_ratio */, uint16_t /* codec_type */) {}
 
-void LogMetricReadTxPowerLevelResult(const Address& /* address */, uint16_t /* handle */,
-                                     uint32_t /* cmd_status */,
-                                     int32_t /* transmit_power_level */) {}
-
 void LogMetricRemoteVersionInfo(uint16_t /* handle */, uint8_t /* status */, uint8_t /* version */,
                                 uint16_t /* manufacturer_name */, uint16_t /* subversion */) {}
 

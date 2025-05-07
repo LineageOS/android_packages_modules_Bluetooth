@@ -280,7 +280,6 @@ static void update_scheduling_stats(SchedulingStats* stats, uint64_t now_us,
 // Update the A2DP Source related metrics.
 // This function should be called before collecting the metrics.
 static void btif_a2dp_source_update_metrics(void);
-static void btm_read_tx_power_cb(void* data);
 
 static void btif_a2dp_source_accumulate_scheduling_stats(SchedulingStats* src,
                                                          SchedulingStats* dst) {
@@ -999,14 +998,6 @@ static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n,
     bluetooth::metrics::LogMetricA2dpAudioOverrunEvent(
             btif_av_source_active_peer(), btif_a2dp_source_cb.encoder_interval_ms, drop_n,
             num_dropped_encoded_frames, num_dropped_encoded_bytes);
-
-    // Request additional debug info if we had to flush buffers
-    RawAddress peer_bda = btif_av_source_active_peer();
-
-    tBTM_STATUS status = BTM_ReadTxPower(peer_bda, BT_TRANSPORT_BR_EDR, btm_read_tx_power_cb);
-    if (status != tBTM_STATUS::BTM_CMD_STARTED) {
-      log::warn("Cannot read Tx Power: status {}", status);
-    }
   }
 
   // Update the statistics.
@@ -1289,22 +1280,4 @@ static void btif_a2dp_source_update_metrics(void) {
 
 void btif_a2dp_source_set_dynamic_audio_buffer_size(uint8_t dynamic_audio_buffer_size) {
   btif_a2dp_source_dynamic_audio_buffer_size = dynamic_audio_buffer_size;
-}
-
-static void btm_read_tx_power_cb(void* data) {
-  if (data == nullptr) {
-    log::error("Read Tx Power request timed out");
-    return;
-  }
-
-  tBTM_TX_POWER_RESULT* result = (tBTM_TX_POWER_RESULT*)data;
-  if (result->status != tBTM_STATUS::BTM_SUCCESS) {
-    log::error("unable to read Tx Power (status {})", result->status);
-    return;
-  }
-  bluetooth::metrics::LogMetricReadTxPowerLevelResult(result->rem_bda,
-                                                      bluetooth::metrics::kUnknownConnectionHandle,
-                                                      result->hci_status, result->tx_power);
-
-  log::warn("device: {}, Tx Power: {}", result->rem_bda, result->tx_power);
 }
