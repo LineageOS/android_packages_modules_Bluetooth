@@ -30,7 +30,7 @@
 #include "common/bind.h"
 #include "hardware/ble_advertiser.h"
 #include "hci/address.h"
-#include "hci/controller.h"
+#include "hci/controller_mock.h"
 #include "hci/hci_layer_fake.h"
 #include "hci/le_address_manager.h"
 #include "hci/le_on_advertising_set_terminated_interface.h"
@@ -48,11 +48,11 @@ using namespace std::literals::chrono_literals;
 
 using packet::RawBuilder;
 
-using testing::_;
-using testing::InSequence;
-using testing::SaveArg;
+using ::testing::_;
+using ::testing::InSequence;
+using ::testing::SaveArg;
 
-class TestController : public Controller {
+class TestController : public testing::MockController {
 public:
   bool IsSupported(OpCode op_code) const override { return supported_opcodes_.count(op_code) == 1; }
 
@@ -75,11 +75,6 @@ public:
   uint8_t num_advertisers_{0};
   VendorCapabilities vendor_capabilities_;
 
-protected:
-  void Start() override {}
-  void Stop() override {}
-  void ListDependencies(ModuleList* /* list */) const {}
-
 private:
   std::set<OpCode> supported_opcodes_{};
   bool support_ble_extended_advertising_ = false;
@@ -89,7 +84,7 @@ class TestLeAddressManager : public LeAddressManager {
 public:
   TestLeAddressManager(common::Callback<void(std::unique_ptr<CommandBuilder>)> enqueue_command,
                        os::Handler* handler, Address public_address, uint8_t accept_list_size,
-                       uint8_t resolving_list_size, Controller* controller)
+                       uint8_t resolving_list_size, ControllerInterface* controller)
       : LeAddressManager(enqueue_command, handler, public_address, accept_list_size,
                          resolving_list_size, controller) {
     address_policy_ = AddressPolicy::USE_STATIC_ADDRESS;
@@ -142,7 +137,6 @@ protected:
 
     test_controller_->AddSupported(param_opcode_);
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
-    fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
     test_controller_->num_advertisers_ = num_instances_;

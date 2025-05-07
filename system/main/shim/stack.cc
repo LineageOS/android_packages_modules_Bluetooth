@@ -34,7 +34,6 @@
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager_impl.h"
 #include "hci/controller.h"
-#include "hci/controller_interface.h"
 #include "hci/distance_measurement_manager_impl.h"
 #include "hci/hci_layer.h"
 #include "hci/le_advertising_manager_impl.h"
@@ -68,6 +67,7 @@ struct Stack::impl {
   Acl* acl_ = nullptr;
   std::shared_ptr<storage::StorageModule> storage_ = nullptr;
   std::shared_ptr<hal::SnoopLogger> snoop_logger_ = nullptr;
+  std::unique_ptr<hci::Controller> controller_ = nullptr;
   std::unique_ptr<hci::acl_manager::AclScheduler> acl_scheduler_ = nullptr;
   std::unique_ptr<hci::RemoteNameRequestModule> remote_name_request_ = nullptr;
   std::unique_ptr<hci::AclManagerImpl> acl_manager_ = nullptr;
@@ -112,7 +112,6 @@ void Stack::StartEverything() {
     modules.add<hal::RangingHal>();
     modules.add<hci::HciLayer>();
 
-    modules.add<hci::Controller>();
     modules.add<hci::MsftExtensionManager>();
 
     management_thread_ = new Thread("management_thread", Thread::Priority::NORMAL);
@@ -144,12 +143,9 @@ void Stack::StartEverything() {
 
     // Make sure the leaf modules are started
     log::assert_that(GetInstance<hal::HciHal>() != nullptr,
-                     "assert failed: GetInstance<storage::StorageModule>() != nullptr");
-    if (IsStarted<hci::Controller>()) {
-      pimpl_->acl_ = new Acl(stack_handler_, GetAclInterface());
-    } else {
-      log::error("Unable to create shim ACL layer as Controller has not started");
-    }
+                     "assert failed: GetInstance<hal::HciHal>() != nullptr");
+
+    pimpl_->acl_ = new Acl(stack_handler_, GetAclInterface());
 
     bluetooth::shim::hci_on_reset_complete();
     bluetooth::shim::init_advertising_manager();
@@ -163,11 +159,9 @@ void Stack::Stop() {
   bluetooth::shim::hci_on_shutting_down();
 
   // Make sure gd acl flag is enabled and we started it up
-  if (pimpl_->acl_ != nullptr) {
-    pimpl_->acl_->FinalShutdown();
-    delete pimpl_->acl_;
-    pimpl_->acl_ = nullptr;
-  }
+  pimpl_->acl_->FinalShutdown();
+  delete pimpl_->acl_;
+  pimpl_->acl_ = nullptr;
 
   log::assert_that(is_running_, "Gd stack not running");
   is_running_ = false;
@@ -233,6 +227,12 @@ hal::SnoopLogger* Stack::GetSnoopLogger() const {
   return pimpl_->snoop_logger_.get();
 }
 
+hci::ControllerInterface* Stack::GetController() const {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  log::assert_that(is_running_, "assert failed: is_running_");
+  return pimpl_->controller_.get();
+}
+
 hci::RemoteNameRequestModule* Stack::GetRemoteNameRequest() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
@@ -292,8 +292,10 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
   registry_.Start(modules, stack_thread_, stack_handler_);
 
   auto hci_layer = static_cast<hci::HciLayer*>(registry_.Get(&hci::HciLayer::Factory));
-  auto controller = static_cast<hci::Controller*>(registry_.Get(&hci::Controller::Factory));
   auto ranging_hal = static_cast<hal::RangingHal*>(registry_.Get(&hal::RangingHal::Factory));
+
+  log::info("Starting Controller");
+  pimpl_->controller_ = std::make_unique<hci::Controller>(stack_handler_, hci_layer);
 
   log::info("Starting AclScheduler");
   pimpl_->acl_scheduler_ = std::make_unique<hci::acl_manager::AclScheduler>(stack_handler_);
@@ -304,22 +306,23 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
 
   log::info("Starting AclManagerImpl");
   pimpl_->acl_manager_ = std::make_unique<hci::AclManagerImpl>(
-          stack_handler_, hci_layer, controller, pimpl_->acl_scheduler_.get(),
+          stack_handler_, hci_layer, pimpl_->controller_.get(), pimpl_->acl_scheduler_.get(),
           pimpl_->remote_name_request_.get());
 
   log::info("Starting LeScanningManagerImpl");
   pimpl_->le_scanning_manager_ = std::make_unique<hci::LeScanningManagerImpl>(
-          stack_handler_, hci_layer, controller, pimpl_->acl_manager_->GetLeAddressManager(),
-          pimpl_->storage_.get());
+          stack_handler_, hci_layer, pimpl_->controller_.get(),
+          pimpl_->acl_manager_->GetLeAddressManager(), pimpl_->storage_.get());
 
   log::info("Starting LeAdvertisingManagerImpl");
   pimpl_->le_advertising_manager_ = std::make_unique<hci::LeAdvertisingManagerImpl>(
-          stack_handler_, hci_layer, controller, pimpl_->acl_manager_->GetLeAddressManager(),
-          pimpl_->acl_manager_.get());
+          stack_handler_, hci_layer, pimpl_->controller_.get(),
+          pimpl_->acl_manager_->GetLeAddressManager(), pimpl_->acl_manager_.get());
 
   log::info("Starting DistanceMeasurementManagerImpl");
   pimpl_->distance_measurement_manager_ = std::make_unique<hci::DistanceMeasurementManagerImpl>(
-          stack_handler_, hci_layer, controller, pimpl_->acl_manager_.get(), ranging_hal);
+          stack_handler_, hci_layer, pimpl_->controller_.get(), pimpl_->acl_manager_.get(),
+          ranging_hal);
 
   promise.set_value();
 }
@@ -342,6 +345,9 @@ void Stack::handle_shut_down(std::promise<void> promise) {
 
   log::info("Stopping AclScheduler");
   pimpl_->acl_scheduler_.reset();
+
+  log::info("Stopping Controller");
+  pimpl_->controller_.reset();
 
   registry_.StopAll();
 

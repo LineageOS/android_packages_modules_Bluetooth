@@ -20,7 +20,7 @@
 
 #include "common/bidi_queue.h"
 #include "common/callback.h"
-#include "hci/controller.h"
+#include "hci/controller_mock.h"
 #include "hci/hci_packets.h"
 #include "os/handler.h"
 #include "packet/raw_builder.h"
@@ -37,7 +37,7 @@ namespace hci {
 namespace acl_manager {
 namespace {
 
-class TestController : public Controller {
+class TestController : public testing::MockController {
 public:
   uint16_t GetNumAclPacketBuffers() const { return max_acl_packet_credits_; }
 

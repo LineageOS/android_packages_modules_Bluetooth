@@ -96,11 +96,6 @@ public:
   uint16_t acl_buffer_length_ = 1024;
   uint16_t total_acl_buffers_ = 2;
   common::ContextualCallback<void(uint16_t /* handle */, uint16_t /* packets */)> acl_cb_;
-
-protected:
-  void Start() override {}
-  void Stop() override {}
-  void ListDependencies(ModuleList* /* list */) const {}
 };
 
 class AclManagerNoCallbacksTest : public ::testing::Test {
@@ -115,7 +110,6 @@ protected:
     EXPECT_CALL(*test_controller_, SupportsBlePrivacy());
 
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
-    fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
     bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(
@@ -1151,7 +1145,6 @@ protected:
     test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
     test_controller_ = new TestController;
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
-    fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
     bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(

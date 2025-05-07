@@ -29,7 +29,7 @@
 #include "hci/address.h"
 #include "hci/address_with_type.h"
 #include "hci/class_of_device.h"
-#include "hci/controller.h"
+#include "hci/controller_mock.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_layer_fake.h"
 #include "hci/remote_name_request_mock.h"
@@ -82,7 +82,7 @@ std::unique_ptr<BasePacketBuilder> NextPayload(uint16_t handle) {
   return std::move(payload);
 }
 
-class TestController : public Controller {
+class TestController : public testing::MockController {
 public:
   uint16_t GetAclPacketLength() const override { return acl_buffer_length_; }
 
@@ -96,11 +96,6 @@ public:
     le_buffer_size.le_data_packet_length_ = 32;
     return le_buffer_size;
   }
-
-protected:
-  void Start() override {}
-  void Stop() override {}
-  void ListDependencies(ModuleList* /* list */) const {}
 
 private:
   uint16_t acl_buffer_length_ = 1024;
@@ -155,7 +150,6 @@ protected:
     test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
     test_controller_ = new TestController;
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
-    fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
     bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(
@@ -457,7 +451,6 @@ protected:
     test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
     test_controller_ = new TestController;
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
-    fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
     acl_manager_ =

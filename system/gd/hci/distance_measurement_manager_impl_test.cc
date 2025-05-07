@@ -61,12 +61,6 @@ static constexpr uint16_t kMinProcedureInterval = 0x01;
 namespace bluetooth {
 namespace hci {
 namespace {
-class TestController : public testing::MockController {
-protected:
-  void Start() override {}
-  void Stop() override {}
-  void ListDependencies(ModuleList* /* list */) const override {}
-};
 
 struct CsReadCapabilitiesCompleteEvent {
   ErrorCode error_code = ErrorCode::SUCCESS;
@@ -190,7 +184,7 @@ struct StartMeasurementParameters {
 struct CsModule {
   TestModuleRegistry fake_registry_;
   HciLayerFake* test_hci_layer_ = nullptr;
-  TestController* mock_controller_ = nullptr;
+  testing::MockController* mock_controller_ = nullptr;
   testing::MockAclManager* mock_acl_manager_ = nullptr;
   hal::testing::MockRangingHal* mock_ranging_hal_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
@@ -205,11 +199,10 @@ struct CsModule {
 
   void Start() {
     test_hci_layer_ = new HciLayerFake;                    // Ownership is transferred to registry
-    mock_controller_ = new TestController;                 // Ownership is transferred to registry
+    mock_controller_ = new testing::MockController;        // Ownership is transferred to registry
     mock_ranging_hal_ = new hal::testing::MockRangingHal;  // Ownership is transferred to registry
     mock_acl_manager_ = new testing::MockAclManager;       // Ownership is transferred to registry
     fake_registry_.InjectTestModule(&hal::RangingHal::Factory, mock_ranging_hal_);
-    fake_registry_.InjectTestModule(&Controller::Factory, mock_controller_);
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
 
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
@@ -220,7 +213,6 @@ struct CsModule {
     EXPECT_CALL(*mock_ranging_hal_, GetRangingHalVersion).WillRepeatedly(Return(hal::V_2));
 
     fake_registry_.Start<hal::RangingHal>(&thread_, handler_);
-    fake_registry_.Start<Controller>(&thread_, handler_);
     fake_registry_.Start<HciLayer>(&thread_, handler_);
 
     handler_ = fake_registry_.GetTestHandler();

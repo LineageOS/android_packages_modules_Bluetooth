@@ -20,9 +20,10 @@
 
 #include "hci/address.h"
 #include "hci/controller_interface.h"
+#include "hci/hci_interface.h"
 #include "hci/hci_packets.h"
 #include "hci/le_rand_callback.h"
-#include "module.h"
+#include "os/handler.h"
 
 // TODO Remove this once all QTI specific hacks are removed.
 #define LMP_COMPID_QTI 0x001D
@@ -30,9 +31,9 @@
 namespace bluetooth {
 namespace hci {
 
-class Controller : public Module, public ControllerInterface {
+class Controller : public ControllerInterface {
 public:
-  Controller();
+  Controller(os::Handler* handler, hci::HciInterface* hci_interface);
   Controller(const Controller&) = delete;
   Controller& operator=(const Controller&) = delete;
 
@@ -201,8 +202,6 @@ public:
 
   virtual bool IsSupported(OpCode op_code) const override;
 
-  static const ModuleFactory Factory;
-
   static constexpr uint64_t kDefaultEventMask = 0x3dbfffffffffffff;
   static constexpr uint64_t kDefaultEventMaskPage2 = 0x2000000;
   static constexpr uint64_t kDefaultLeEventMask = 0x000000074d02fe7f;
@@ -218,15 +217,6 @@ public:
   static uint64_t MaskLeEventMask(HciVersion version, uint64_t mask);
 
   virtual bool IsRpaGenerationSupported(void) const override;
-
-protected:
-  void ListDependencies(ModuleList* list) const override;
-
-  void Start() override;
-
-  void Stop() override;
-
-  std::string ToString() const override;
 
 private:
   virtual uint64_t GetLocalFeatures(uint8_t page_number) const;
