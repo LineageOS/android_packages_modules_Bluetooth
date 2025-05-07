@@ -17,30 +17,27 @@
 # -----------------------------------------------------------------------------
 from __future__ import annotations
 
-try:
-    from packets import avdtp as av
-    from packets.avdtp import *
-except ImportError:
-    from .packets import avdtp as av
-    from .packets.avdtp import *
+from .packets import avdtp as av
 import pyee
 import typing
 from unittest.mock import ANY
+from typing import Optional
 
 import asyncio
-import bumble.avdtp as avdtp
 import bumble.device
-import bumble.l2cap as l2cap
+from bumble import avdtp
+from bumble import l2cap
 import logging
 import os
 import time
+from pandora_services import utils
 
 # -----------------------------------------------------------------------------
 # Logging
 # -----------------------------------------------------------------------------
 logger = logging.getLogger(__name__)
 
-av.print = lambda *args, **kwargs: logger.debug(" ".join(map(str, args)))
+setattr(av, "print", lambda *args, **kwargs: logger.debug(" ".join(map(str, args))))
 
 RoleType = Optional[typing.Literal["acceptor", "initiator"]]
 
@@ -57,8 +54,8 @@ class SignalingChannel(pyee.EventEmitter):
     def __init__(self, connection: bumble.device.Connection):
         super().__init__()
         self.connection = connection
-        self.signaling_queue = asyncio.Queue()
-        self.transport_queue = asyncio.Queue()
+        self.signaling_queue = asyncio.Queue[bytes]()
+        self.transport_queue = asyncio.Queue[bytes]()
 
     @classmethod
     async def initiate(cls, connection: bumble.device.Connection) -> SignalingChannel:
@@ -91,11 +88,12 @@ class SignalingChannel(pyee.EventEmitter):
         self.transport_channel = None
 
     async def expect_signal(self,
-                            expected_sig: typing.Union[SignalingPacket, type],
-                            timeout: float = 3) -> Optional[SignalingPacket]:
+                            expected_sig: typing.Union[av.SignalingPacket, type],
+                            timeout: float = 3) -> av.SignalingPacket:
         try:
             packet = await asyncio.wait_for(self.signaling_queue.get(), timeout=timeout)
-            sig = SignalingPacket.parse_all(packet)
+            sig = av.SignalingPacket.parse_all(packet)
+            assert isinstance(sig, av.SignalingPacket)
         except TimeoutError:
             raise TimeoutError(
                 f"TimeoutError while waiting for signal: {expected_sig.__class__.__name__}"
@@ -108,7 +106,7 @@ class SignalingChannel(pyee.EventEmitter):
             sig.show()
             raise ValueError(f"Received unexpected signal")
 
-        if isinstance(expected_sig, SignalingPacket) and sig != expected_sig:
+        if isinstance(expected_sig, av.SignalingPacket) and sig != expected_sig:
             logger.error("Received unexpected signal")
             logger.error("Expected signal:")
             expected_sig.show()
@@ -130,13 +128,17 @@ class SignalingChannel(pyee.EventEmitter):
 
         return avdtp.MediaPacket.from_bytes(packet)
 
-    def send_signal(self, packet: SignalingPacket):
+    def send_signal(self, packet: av.SignalingPacket):
         logger.debug(f">>> {self.connection.self_address} {self.role} sending signal: >>>")
         packet.show()
+        if not self.signaling_channel:
+            raise ValueError("Signaling L2CAP channel doesn't exist")
         self.signaling_channel.send_pdu(packet.serialize())
 
     def send_media(self, packet: bytes):
         logger.debug(f">>> {self.connection.self_address} {self.role} sending media >>>")
+        if not self.transport_channel:
+            raise ValueError("Transport L2CAP channel doesn't exist")
         self.transport_channel.send_pdu(packet)
 
     async def _initiate_signaling_channel(self):
@@ -211,7 +213,7 @@ class SignalingChannel(pyee.EventEmitter):
                                 seid_information=seid_information))
 
     async def accept_get_all_capabilities(self,
-                                          service_capabilities: typing.List[ServiceCapability]):
+                                          service_capabilities: typing.List[av.ServiceCapability]):
         cmd = await self.expect_signal(
             av.GetAllCapabilitiesCommand(acp_seid=ANY, transaction_label=ANY))
         self.send_signal(
@@ -219,15 +221,16 @@ class SignalingChannel(pyee.EventEmitter):
                                           service_capabilities=service_capabilities))
 
     async def accept_set_configuration(self,
-                                       expected_configuration: typing.List[ServiceCapability]):
+                                       expected_configuration: typing.List[av.ServiceCapability]):
         cmd = await self.expect_signal(
             av.SetConfigurationCommand(transaction_label=ANY,
                                        acp_seid=ANY,
                                        int_seid=ANY,
                                        service_capabilities=expected_configuration))
+        assert isinstance(cmd, av.SetConfigurationCommand)
         self.acp_seid = cmd.acp_seid
         self.int_seid = cmd.int_seid
-        self.send_signal(SetConfigurationResponse(transaction_label=cmd.transaction_label))
+        self.send_signal(av.SetConfigurationResponse(transaction_label=cmd.transaction_label))
 
     async def accept_open(self, timeout: float = 3.0):
         cmd = await self.expect_signal(av.OpenCommand(transaction_label=ANY, acp_seid=ANY),
@@ -251,7 +254,7 @@ class SignalingChannel(pyee.EventEmitter):
 
     async def accept_open_stream(self,
                                  seid_information: typing.List[av.SeidInformation],
-                                 service_capabilities: typing.List[ServiceCapability],
+                                 service_capabilities: typing.List[av.ServiceCapability],
                                  timeout: float = 10.0):
         avdtp_future = asyncio.get_running_loop().create_future()
 
@@ -262,7 +265,7 @@ class SignalingChannel(pyee.EventEmitter):
 
         self.on('connection', on_avdtp_connection)
 
-        expected_configuration: typing.List[ServiceCapability] = []
+        expected_configuration: typing.List[av.ServiceCapability] = []
         for capability in service_capabilities:
             if isinstance(capability, av.MediaTransportCapability) or isinstance(
                     capability, av.DelayReportingCapability):
