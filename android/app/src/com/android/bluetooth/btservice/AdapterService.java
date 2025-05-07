@@ -4177,9 +4177,9 @@ public class AdapterService extends Service {
         return mGattService == null ? null : mGattService.getDistanceMeasurement();
     }
 
-    void unregAllGattClient(AttributionSource source) {
+    void unregAllGattClient() {
         if (mGattService != null) {
-            mGattService.unregAll(source);
+            mGattService.unregAll();
         }
     }
 

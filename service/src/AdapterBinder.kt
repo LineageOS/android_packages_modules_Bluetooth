@@ -18,7 +18,6 @@ package com.android.server.bluetooth
 
 import android.bluetooth.IAdapter
 import android.bluetooth.IBluetoothCallback
-import android.content.AttributionSource
 import android.os.IBinder
 import android.os.RemoteException
 
@@ -36,43 +35,43 @@ class AdapterBinder(rawBinder: IBinder) {
             "]"
 
     @Throws(RemoteException::class)
-    fun onToBleOn(source: AttributionSource) {
-        adapterBinder.onToBleOn(source)
+    fun onToBleOn() {
+        adapterBinder.onToBleOn()
     }
 
     @Throws(RemoteException::class)
-    fun offToBleOn(quietMode: Boolean, hciInstanceName: String, source: AttributionSource) {
-        adapterBinder.offToBleOn(quietMode, hciInstanceName, source)
+    fun offToBleOn(quietMode: Boolean, hciInstanceName: String) {
+        adapterBinder.offToBleOn(quietMode, hciInstanceName)
     }
 
     @Throws(RemoteException::class)
-    fun bleOnToOff(source: AttributionSource) {
-        adapterBinder.bleOnToOff(source)
+    fun bleOnToOff() {
+        adapterBinder.bleOnToOff()
     }
 
     @Throws(RemoteException::class)
-    fun bleOnToOn(source: AttributionSource) {
-        adapterBinder.bleOnToOn(source)
+    fun bleOnToOn() {
+        adapterBinder.bleOnToOn()
     }
 
     @Throws(RemoteException::class)
-    fun registerCallback(callback: IBluetoothCallback, source: AttributionSource) {
-        adapterBinder.registerCallback(callback, source)
+    fun registerCallback(callback: IBluetoothCallback) {
+        adapterBinder.registerCallback(callback)
     }
 
     @Throws(RemoteException::class)
-    fun unregisterCallback(callback: IBluetoothCallback, source: AttributionSource) {
-        adapterBinder.unregisterCallback(callback, source)
+    fun unregisterCallback(callback: IBluetoothCallback) {
+        adapterBinder.unregisterCallback(callback)
     }
 
     @Throws(RemoteException::class)
-    fun setForegroundUserId(userId: Int, source: AttributionSource) {
-        adapterBinder.setForegroundUserId(userId, source)
+    fun setForegroundUserId(userId: Int) {
+        adapterBinder.setForegroundUserId(userId)
     }
 
     @Throws(RemoteException::class)
-    fun unregAllGattClient(source: AttributionSource) {
-        adapterBinder.unregAllGattClient(source)
+    fun unregAllGattClient() {
+        adapterBinder.unregAllGattClient()
     }
 
     @Throws(RemoteException::class)
@@ -80,9 +79,9 @@ class AdapterBinder(rawBinder: IBinder) {
         adapterBinder.onewayFactoryReset()
     }
 
-    fun isMediaProfileConnected(source: AttributionSource): Boolean {
+    fun isMediaProfileConnected(): Boolean {
         try {
-            return adapterBinder.isMediaProfileConnected(source)
+            return adapterBinder.isMediaProfileConnected()
         } catch (ex: RemoteException) {
             Log.e(TAG, "Error when calling isMediaProfileConnected", ex)
         }
