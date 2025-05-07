@@ -17,7 +17,7 @@
 package com.android.bluetooth.opp;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.getRealDevice;
+import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.opp.BluetoothOppService.WHERE_INVISIBLE_UNCONFIRMED;
 
@@ -40,8 +40,8 @@ import android.content.Context;
 import android.database.MatrixCursor;
 import android.os.Looper;
 
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.MediumTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
@@ -61,11 +61,10 @@ import org.mockito.Mockito;
 public class BluetoothOppServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private BluetoothMethodProxy mBluetoothMethodProxy;
     @Mock private AdapterService mAdapterService;
+    @Mock private BluetoothMethodProxy mBluetoothMethodProxy;
 
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
+    private final Context mContext = ApplicationProvider.getApplicationContext();
 
     private BluetoothOppService mService;
 
@@ -73,15 +72,15 @@ public class BluetoothOppServiceTest {
     public void setUp() throws Exception {
         mockGetSystemService(
                 mAdapterService, Context.NOTIFICATION_SERVICE, NotificationManager.class);
-        doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
-        doReturn(mTargetContext.getPackageManager()).when(mAdapterService).getPackageManager();
-        doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();
-        doReturn(mTargetContext.getContentResolver()).when(mAdapterService).getContentResolver();
+        doReturn(mContext.getPackageName()).when(mAdapterService).getPackageName();
+        doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
+        doReturn(mContext.getResources()).when(mAdapterService).getResources();
+        doReturn(mContext.getContentResolver()).when(mAdapterService).getContentResolver();
 
         doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
-                            return getRealDevice(address);
+                            return getTestDevice(address);
                         })
                 .when(mAdapterService)
                 .getRemoteDevice(anyString());
@@ -99,7 +98,7 @@ public class BluetoothOppServiceTest {
             Looper.prepare();
         }
 
-        BluetoothOppPreference oppPreference = BluetoothOppPreference.getInstance(mTargetContext);
+        BluetoothOppPreference oppPreference = BluetoothOppPreference.getInstance(mContext);
         mService = new BluetoothOppService(mAdapterService, oppPreference);
         mService.setAvailable(true);
 
@@ -204,7 +203,7 @@ public class BluetoothOppServiceTest {
 
     @Test
     public void trimDatabase_trimsOldOrInvisibleRecords() {
-        ContentResolver contentResolver = mTargetContext.getContentResolver();
+        ContentResolver contentResolver = mContext.getContentResolver();
 
         doReturn(1 /* any int is Ok */)
                 .when(mBluetoothMethodProxy)
