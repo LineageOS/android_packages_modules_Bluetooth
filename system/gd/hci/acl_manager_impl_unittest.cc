@@ -32,7 +32,7 @@
 #include "hci/controller.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_layer_fake.h"
-#include "hci/remote_name_request.h"
+#include "hci/remote_name_request_mock.h"
 #include "os/thread.h"
 #include "packet/raw_builder.h"
 #include "test/mock/mock_main_shim_entry.h"
@@ -165,11 +165,11 @@ protected:
     bluetooth::hci::testing::mock_storage_->Start();
     fake_registry_.Start<HciLayer>(&thread_, client_handler_);
     fake_registry_.Start<AclScheduler>(&thread_, client_handler_);
-    fake_registry_.Start<RemoteNameRequestModule>(&thread_, client_handler_);
+
+    test_rnr_ = std::make_unique<RemoteNameRequestModuleMock>();
     acl_manager_ = std::make_unique<AclManagerImpl>(
             client_handler_, test_hci_layer_, test_controller_,
-            fake_registry_.GetModuleUnderTest<AclScheduler>(),
-            fake_registry_.GetModuleUnderTest<RemoteNameRequestModule>());
+            fake_registry_.GetModuleUnderTest<AclScheduler>(), test_rnr_.get());
   }
 
   void TearDown() override {
@@ -179,6 +179,7 @@ protected:
     fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
     fake_registry_.SynchronizeModuleHandler(&AclScheduler::Factory, std::chrono::milliseconds(20));
     acl_manager_.reset();
+    test_rnr_.reset();
     fake_registry_.StopAll();
   }
 
@@ -196,6 +197,7 @@ protected:
 
   TestModuleRegistry fake_registry_;
   os::Thread& thread_ = fake_registry_.GetTestThread();
+  std::unique_ptr<RemoteNameRequestModule> test_rnr_ = nullptr;
   std::unique_ptr<AclManagerImpl> acl_manager_ = nullptr;
   os::Handler* client_handler_ = nullptr;
 };

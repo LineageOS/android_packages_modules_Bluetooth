@@ -14,40 +14,39 @@
  * limitations under the License.
  */
 
-#include "remote_name_request.h"
+#include "remote_name_request_impl.h"
 
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 
 #include "hci/acl_manager/acl_scheduler.h"
-#include "hci/hci_layer.h"
+#include "hci/hci_interface.h"
 #include "hci/hci_packets.h"
 
 namespace bluetooth {
 namespace hci {
 
-struct RemoteNameRequestModule::impl {
+struct RemoteNameRequestModuleImpl::impl {
 public:
-  impl(const RemoteNameRequestModule& module) : module_(module) {}
-
-  void Start() {
-    log::info("Starting RemoteNameRequestModule");
-    hci_layer_ = module_.GetDependency<HciLayer>();
-    acl_scheduler_ = module_.GetDependency<acl_manager::AclScheduler>();
-    handler_ = module_.GetHandler();
+  impl(os::Handler* handler, HciInterface* hci_interface,
+       acl_manager::AclScheduler* acl_scheduler) {
+    log::info("Starting RemoteNameRequestModuleImpl");
+    handler_ = handler;
+    hci_layer_ = hci_interface;
+    acl_scheduler_ = acl_scheduler;
 
     hci_layer_->RegisterEventHandler(
             EventCode::REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION,
-            handler_->BindOn(this, &RemoteNameRequestModule::impl::
+            handler_->BindOn(this, &RemoteNameRequestModuleImpl::impl::
                                            on_remote_host_supported_features_notification));
     hci_layer_->RegisterEventHandler(
             EventCode::REMOTE_NAME_REQUEST_COMPLETE,
             handler_->BindOn(this,
-                             &RemoteNameRequestModule::impl::on_remote_name_request_complete));
+                             &RemoteNameRequestModuleImpl::impl::on_remote_name_request_complete));
   }
 
   void Stop() {
-    log::info("Stopping RemoteNameRequestModule");
+    log::info("Stopping RemoteNameRequestModuleImpl");
     hci_layer_->UnregisterEventHandler(EventCode::REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION);
     hci_layer_->UnregisterEventHandler(EventCode::REMOTE_NAME_REQUEST_COMPLETE);
   }
@@ -208,8 +207,8 @@ private:
     }
   }
 
-  const RemoteNameRequestModule& module_;
-  HciLayer* hci_layer_;
+public:
+  HciInterface* hci_layer_;
   acl_manager::AclScheduler* acl_scheduler_;
   os::Handler* handler_;
 
@@ -218,38 +217,35 @@ private:
   RemoteNameCallback on_remote_name_complete_;
 };
 
-const ModuleFactory RemoteNameRequestModule::Factory =
-        ModuleFactory([]() { return new RemoteNameRequestModule(); });
+RemoteNameRequestModuleImpl::RemoteNameRequestModuleImpl(os::Handler* handler,
+                                                         HciInterface* hci_interface,
+                                                         acl_manager::AclScheduler* acl_scheduler) {
+  pimpl_ = std::make_unique<impl>(handler, hci_interface, acl_scheduler);
+}
 
-RemoteNameRequestModule::RemoteNameRequestModule() : pimpl_(std::make_unique<impl>(*this)) {}
-RemoteNameRequestModule::~RemoteNameRequestModule() = default;
+RemoteNameRequestModuleImpl::~RemoteNameRequestModuleImpl() {
+  pimpl_->Stop();
+  pimpl_.reset();
+}
 
-void RemoteNameRequestModule::StartRemoteNameRequest(
+void RemoteNameRequestModuleImpl::StartRemoteNameRequest(
         Address address, std::unique_ptr<RemoteNameRequestBuilder> request,
         CompletionCallback on_completion,
         RemoteHostSupportedFeaturesCallback on_remote_host_supported_features_notification,
         RemoteNameCallback on_remote_name_complete) {
-  CallOn(pimpl_.get(), &impl::StartRemoteNameRequest, address, std::move(request),
-         std::move(on_completion), std::move(on_remote_host_supported_features_notification),
-         std::move(on_remote_name_complete));
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::StartRemoteNameRequest, address, std::move(request),
+                           std::move(on_completion),
+                           std::move(on_remote_host_supported_features_notification),
+                           std::move(on_remote_name_complete));
 }
 
-void RemoteNameRequestModule::CancelRemoteNameRequest(Address address) {
-  CallOn(pimpl_.get(), &impl::CancelRemoteNameRequest, address);
+void RemoteNameRequestModuleImpl::CancelRemoteNameRequest(Address address) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::CancelRemoteNameRequest, address);
 }
 
-void RemoteNameRequestModule::ReportRemoteNameRequestCancellation(Address address) {
-  CallOn(pimpl_.get(), &impl::ReportRemoteNameRequestCancellation, address);
+void RemoteNameRequestModuleImpl::ReportRemoteNameRequestCancellation(Address address) {
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::ReportRemoteNameRequestCancellation, address);
 }
-
-void RemoteNameRequestModule::ListDependencies(ModuleList* list) const {
-  list->add<HciLayer>();
-  list->add<acl_manager::AclScheduler>();
-}
-
-void RemoteNameRequestModule::Start() { pimpl_->Start(); }
-
-void RemoteNameRequestModule::Stop() { pimpl_->Stop(); }
 
 }  // namespace hci
 }  // namespace bluetooth

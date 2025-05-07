@@ -29,6 +29,7 @@
 #include "hci/controller_mock.h"
 #include "hci/hci_layer_fake.h"
 #include "hci/hci_packets.h"
+#include "hci/remote_name_request_mock.h"
 #include "os/handler.h"
 #include "packet/bit_inserter.h"
 #include "packet/raw_builder.h"
@@ -159,7 +160,7 @@ protected:
     hci_queue_.GetDownEnd()->RegisterDequeue(
             handler_, common::Bind(&ClassicImplTest::HciDownEndDequeue, common::Unretained(this)));
     acl_scheduler_ = new MockAclScheduler();
-    rnr_ = new RemoteNameRequestModule();
+    rnr_ = new RemoteNameRequestModuleMock();
     classic_impl_ =
             new acl_manager::classic_impl(hci_layer_, controller_, handler_, round_robin_scheduler_,
                                           kCrashOnUnknownHandle, acl_scheduler_, rnr_);

@@ -48,7 +48,7 @@ hci::ControllerInterface* GetController() {
 hci::HciInterface* GetHciLayer() { return Stack::GetInstance()->GetInstance<hci::HciLayer>(); }
 
 hci::RemoteNameRequestModule* GetRemoteNameRequest() {
-  return Stack::GetInstance()->GetInstance<hci::RemoteNameRequestModule>();
+  return Stack::GetInstance()->GetRemoteNameRequest();
 }
 
 hci::LeScanningManager* GetScanning() { return Stack::GetInstance()->GetLeScanningManager(); }
