@@ -178,7 +178,7 @@ static tBTA_DM_SERVICE_DISCOVERY_STATE bta_dm_discovery_get_state() {
   return bta_dm_discovery_cb.service_discovery_state;
 }
 
-// TODO. Currently we did nothing
+// TODO Currently we did nothing
 static void bta_dm_discovery_cancel() {}
 
 /*******************************************************************************
@@ -283,7 +283,8 @@ static void bta_dm_disc_result(tBTA_DM_SVC_RES& disc_result) {
       // Some devices provide PPCP values that are incompatible with the device-side firmware.
       log::info("disable PPCP read: interop matched name {} address {}", remote_name,
                 bta_dm_discovery_cb.peer_bdaddr);
-    } else {
+    } else if (!com::android::bluetooth::flags::read_ppcp_only_for_success() ||
+               disc_result.result == BTA_SUCCESS) {
       log::info("reading PPCP");
       GAP_BleReadPeerPrefConnParams(bta_dm_discovery_cb.peer_bdaddr);
     }
