@@ -300,16 +300,6 @@ struct btsnd_hcic_read_rssi {
 };
 extern struct btsnd_hcic_read_rssi btsnd_hcic_read_rssi;
 
-// Name: btsnd_hcic_read_tx_power
-// Params: uint16_t handle, uint8_t type
-// Return: void
-struct btsnd_hcic_read_tx_power {
-  std::function<void(uint16_t handle, uint8_t type)> body{
-          [](uint16_t /* handle */, uint8_t /* type */) {}};
-  void operator()(uint16_t handle, uint8_t type) { body(handle, type); }
-};
-extern struct btsnd_hcic_read_tx_power btsnd_hcic_read_tx_power;
-
 // Name: btsnd_hcic_reject_conn
 // Params: const RawAddress& dest, uint8_t reason
 // Return: void

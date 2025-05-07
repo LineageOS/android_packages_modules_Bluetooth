@@ -196,8 +196,6 @@ void btsnd_hcic_write_voice_settings(uint16_t flags); /* Write Voice Settings */
 void btsnd_hcic_write_auto_flush_tout(uint16_t handle,
                                       uint16_t timeout); /* Write Retransmit Timeout */
 
-void btsnd_hcic_read_tx_power(uint16_t handle, uint8_t type); /* Read Tx Power */
-
 /* Write Link Supervision Timeout */
 void btsnd_hcic_write_link_super_tout(uint16_t handle, uint16_t timeout);
 /* Write Link Supervision Timeout */
@@ -257,8 +255,6 @@ void btsnd_hcic_ble_write_adv_params(uint16_t adv_int_min, uint16_t adv_int_max,
                                      tBLE_ADDR_TYPE addr_type_own, tBLE_ADDR_TYPE addr_type_dir,
                                      const RawAddress& direct_bda, uint8_t channel_map,
                                      uint8_t adv_filter_policy);
-
-void btsnd_hcic_ble_read_adv_chnl_tx_power(void);
 
 void btsnd_hcic_ble_set_adv_data(uint8_t data_len, uint8_t* p_data);
 

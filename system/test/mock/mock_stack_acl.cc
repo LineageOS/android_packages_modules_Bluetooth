@@ -65,7 +65,6 @@ struct acl_peer_supports_ble_connection_subrating_host
 struct acl_refresh_remote_address acl_refresh_remote_address;
 struct acl_set_peer_le_features_from_handle acl_set_peer_le_features_from_handle;
 struct btm_acl_for_bda btm_acl_for_bda;
-struct BTM_ReadTxPower BTM_ReadTxPower;
 struct BTM_SetLinkSuperTout BTM_SetLinkSuperTout;
 struct btm_remove_acl btm_remove_acl;
 struct btm_get_acl_disc_reason_code btm_get_acl_disc_reason_code;
@@ -104,7 +103,6 @@ struct btm_read_remote_ext_features_complete_raw btm_read_remote_ext_features_co
 struct btm_read_remote_ext_features_failed btm_read_remote_ext_features_failed;
 struct btm_read_remote_version_complete btm_read_remote_version_complete;
 struct btm_read_rssi_complete btm_read_rssi_complete;
-struct btm_read_tx_power_complete btm_read_tx_power_complete;
 struct btm_rejectlist_role_change_device btm_rejectlist_role_change_device;
 struct btm_set_packet_types_from_address btm_set_packet_types_from_address;
 struct on_acl_br_edr_connected on_acl_br_edr_connected;
@@ -200,11 +198,6 @@ void acl_send_data_packet_br_edr(const RawAddress& bd_addr, BT_HDR* p_buf) {
 tACL_CONN* btm_acl_for_bda(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);
   return test::mock::stack_acl::btm_acl_for_bda(bd_addr, transport);
-}
-tBTM_STATUS BTM_ReadTxPower(const RawAddress& remote_bda, tBT_TRANSPORT transport,
-                            tBTM_CMPL_CB* p_cb) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_acl::BTM_ReadTxPower(remote_bda, transport, p_cb);
 }
 tBTM_STATUS BTM_SetLinkSuperTout(const RawAddress& remote_bda, uint16_t timeout) {
   inc_func_call_count(__func__);
@@ -363,10 +356,6 @@ void btm_read_remote_version_complete(tHCI_STATUS status, uint16_t handle, uint8
 void btm_read_rssi_complete(uint8_t* p, uint16_t evt_len) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_read_rssi_complete(p, evt_len);
-}
-void btm_read_tx_power_complete(uint8_t* p, uint16_t evt_len, bool is_ble) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_read_tx_power_complete(p, evt_len, is_ble);
 }
 void btm_rejectlist_role_change_device(const RawAddress& bd_addr, uint8_t hci_status) {
   inc_func_call_count(__func__);

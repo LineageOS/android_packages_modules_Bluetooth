@@ -54,16 +54,6 @@ typedef struct {
   uint16_t automatic_flush_timeout;
 } tBTM_AUTOMATIC_FLUSH_TIMEOUT_RESULT;
 
-/* Structure returned with read current TX power event (in tBTM_CMPL_CB callback
- * function) in response to BTM_ReadTxPower call.
- */
-typedef struct {
-  tBTM_STATUS status;
-  uint8_t hci_status;
-  RawAddress rem_bda;
-  int8_t tx_power;
-} tBTM_TX_POWER_RESULT;
-
 /* Structure returned with read link quality event (in tBTM_CMPL_CB callback
  * function) in response to BTM_ReadLinkQuality call.
  */

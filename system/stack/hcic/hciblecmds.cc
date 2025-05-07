@@ -134,18 +134,6 @@ void btsnd_hcic_ble_write_adv_params(uint16_t adv_int_min, uint16_t adv_int_max,
 
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
-void btsnd_hcic_ble_read_adv_chnl_tx_power(void) {
-  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  uint8_t* pp = (uint8_t*)(p + 1);
-
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_READ_CMD;
-  p->offset = 0;
-
-  UINT16_TO_STREAM(pp, HCI_BLE_READ_ADV_CHNL_TX_POWER);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_READ_CMD);
-
-  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-}
 
 void btsnd_hcic_ble_set_adv_data(uint8_t data_len, uint8_t* p_data) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);

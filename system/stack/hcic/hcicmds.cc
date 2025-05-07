@@ -1102,22 +1102,6 @@ void btsnd_hcic_write_auto_flush_tout(uint16_t handle, uint16_t tout) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_read_tx_power(uint16_t handle, uint8_t type) {
-  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  uint8_t* pp = (uint8_t*)(p + 1);
-
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_READ_TX_POWER;
-  p->offset = 0;
-
-  UINT16_TO_STREAM(pp, HCI_READ_TRANSMIT_POWER_LEVEL);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_READ_TX_POWER);
-
-  UINT16_TO_STREAM(pp, handle);
-  UINT8_TO_STREAM(pp, type);
-
-  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-}
-
 void btsnd_hcic_write_link_super_tout(uint16_t handle, uint16_t timeout) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
