@@ -78,8 +78,6 @@ import android.sysprop.BluetoothProperties;
 
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.modules.expresslog.Counter;
-import com.android.modules.expresslog.Histogram;
 import com.android.server.bluetooth.airplane.AirplaneModeListener;
 import com.android.server.bluetooth.satellite.SatelliteModeListener;
 
@@ -614,10 +612,6 @@ class BluetoothManagerService {
                 }
             };
 
-    private final Histogram mShutdownLatencyHistogram =
-            new Histogram(
-                    "bluetooth.value_shutdown_latency", new Histogram.UniformOptions(50, 0, 3000));
-
     BluetoothManagerService(
             @NonNull Context context, @NonNull Looper looper, @NonNull String hciInstanceName) {
         mContext = requireNonNull(context, "Context cannot be null");
@@ -710,9 +704,6 @@ class BluetoothManagerService {
         mDeviceConfigAllowAutoOn =
                 SystemProperties.getBoolean("bluetooth.server.automatic_turn_on", false);
         Log.d(TAG, "AutoOnFeature property=" + mDeviceConfigAllowAutoOn);
-        if (mDeviceConfigAllowAutoOn) {
-            Counter.logIncrement("bluetooth.value_auto_on_supported");
-        }
     }
 
     private Unit onBleScanDisabled() {
@@ -1100,7 +1091,6 @@ class BluetoothManagerService {
             Log.d(TAG, "Bluetooth is not allowed, preventing AutoOn");
             return Unit.INSTANCE;
         }
-        Counter.logIncrement("bluetooth.value_auto_on_triggered");
         sendToggleNotification("auto_on_bt_enabled_notification");
         enable("BluetoothSystemServer/AutoOn");
         return Unit.INSTANCE;
@@ -1217,7 +1207,6 @@ class BluetoothManagerService {
             // mAdapter can be null when Bluetooth crashed and sent SERVICE_DISCONNECTED
             return;
         }
-        long currentTimeMs = System.currentTimeMillis();
 
         try {
             mAdapter.unregisterCallback(mBluetoothCallback, mContext.getAttributionSource());
@@ -1232,9 +1221,6 @@ class BluetoothManagerService {
         mContext.unbindService(mConnection);
 
         killBluetoothProcess(mAdapter, deathNotifier);
-
-        long timeSpentForShutdown = System.currentTimeMillis() - currentTimeMs;
-        mShutdownLatencyHistogram.logSample((float) timeSpentForShutdown);
 
         // TODO: b/356931756 - Remove sleep
         Log.d(TAG, "Force sleep 100 ms for propagating Bluetooth app death");

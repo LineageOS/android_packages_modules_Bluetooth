@@ -35,7 +35,6 @@ import android.os.Looper
 import android.os.SystemClock
 import android.provider.Settings
 import androidx.annotation.VisibleForTesting
-import com.android.modules.expresslog.Counter
 import com.android.server.bluetooth.airplane.hasUserToggledApm as hasUserToggledApm
 import com.android.server.bluetooth.airplane.isOnOverrode as isAirplaneModeOn
 import com.android.server.bluetooth.satellite.isOn as isSatelliteModeOn
@@ -139,9 +138,6 @@ public fun setUserEnabled(
     if (!setFeatureEnabledForUserUnchecked(context, status)) {
         throw IllegalStateException("AutoOnFeature database failure for user: ${context.getUser()}")
     }
-    Counter.logIncrement(
-        if (status) "bluetooth.value_auto_on_enabled" else "bluetooth.value_auto_on_disabled"
-    )
     Timer.resetStorage(context.contentResolver)
     resetAutoOnTimerForUser(looper, context, state, callback_on)
 }

@@ -18,7 +18,6 @@
 
 #define LOG_TAG "BluetoothMetrics"
 
-#include <Counter.h>
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
 #include <statslog_bt.h>
@@ -182,38 +181,29 @@ void LogMetricA2dpPlaybackEvent(const Address& address, int playback_state, int 
 }
 
 void LogA2dpSessionReported(const hci::Address& address, const A2dpSession& session) {
-  char const* expresslog_metric_id;
   a2dp::CodecId codec_id;
   switch (session.codec_index) {
     case BTAV_A2DP_CODEC_INDEX_SOURCE_SBC:
-      expresslog_metric_id = "bluetooth.value_sbc_codec_usage_over_a2dp";
       codec_id = a2dp::CodecId::SBC;
       break;
     case BTAV_A2DP_CODEC_INDEX_SOURCE_AAC:
-      expresslog_metric_id = "bluetooth.value_aac_codec_usage_over_a2dp";
       codec_id = a2dp::CodecId::AAC;
       break;
     case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX:
-      expresslog_metric_id = "bluetooth.value_aptx_codec_usage_over_a2dp";
       codec_id = a2dp::CodecId::APTX;
       break;
     case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD:
-      expresslog_metric_id = "bluetooth.value_aptx_hd_codec_usage_over_a2dp";
       codec_id = a2dp::CodecId::APTX_HD;
       break;
     case BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC:
-      expresslog_metric_id = "bluetooth.value_ldac_codec_usage_over_a2dp";
       codec_id = a2dp::CodecId::LDAC;
       break;
     case BTAV_A2DP_CODEC_INDEX_SOURCE_OPUS:
-      expresslog_metric_id = "bluetooth.value_opus_codec_usage_over_a2dp";
       codec_id = a2dp::CodecId::OPUS;
       break;
     default:
       return;
   }
-
-  android::expresslog::Counter::logIncrement(expresslog_metric_id);
 
   int32_t metric_id = MetricIdManager::GetInstance().AllocateId(address);
   int ret = stats_write(A2DP_SESSION_REPORTED, session.audio_duration_ms,

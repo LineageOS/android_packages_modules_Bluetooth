@@ -27,7 +27,6 @@ java_defaults {
         "bluetooth_constants_java",
         "bluetooth_flags_java_lib",
         "modules-utils-build",
-        "modules-utils-expresslog",
         "service-bluetooth-binder-aidl",
     ],
     libs: [

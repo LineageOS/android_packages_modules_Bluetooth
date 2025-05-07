@@ -87,7 +87,6 @@ import android.util.Pair;
 
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
-import com.android.modules.expresslog.Counter;
 
 import java.io.IOException;
 import java.lang.annotation.Retention;
@@ -3535,8 +3534,6 @@ public final class BluetoothAdapter {
                             + proxy.getAdapter()
                             + " but expected "
                             + this);
-            Counter.logIncrementWithUid(
-                    "bluetooth.value_close_profile_proxy_adapter_mismatch", Process.myUid());
             proxy.getAdapter().closeProfileProxy(proxy);
             return;
         }

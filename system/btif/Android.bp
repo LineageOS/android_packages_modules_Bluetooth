@@ -503,7 +503,6 @@ cc_test {
             shared_libs: [
                 "libaaudio",
                 "libbinder_ndk",
-                "libexpresslog",
                 "libstatssocket",
             ],
         },
@@ -625,7 +624,6 @@ cc_test {
             ],
             shared_libs: [
                 "libbinder_ndk",
-                "libexpresslog",
                 "libstatssocket",
             ],
         },

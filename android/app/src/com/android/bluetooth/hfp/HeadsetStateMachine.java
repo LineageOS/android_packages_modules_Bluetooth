@@ -60,7 +60,6 @@ import com.android.bluetooth.util.SystemProperties;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
-import com.android.modules.expresslog.Counter;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -1551,23 +1550,10 @@ class HeadsetStateMachine extends StateMachine {
             removeDeferredMessages(CONNECT_AUDIO);
             // Set active device to current active SCO device when the current active device
             // is different from mCurrentDevice. This is to accommodate active device state
-            // mis-match between native and Java.
+            // mismatch between native and Java.
             if (!mDevice.equals(mHeadsetService.getActiveDevice())
                     && !hasDeferredMessages(DISCONNECT_AUDIO)) {
                 mHeadsetService.setActiveDevice(mDevice);
-            }
-
-            // TODO (b/276463350): Remove check when Express metrics no longer need jni
-            if (!Utils.isInstrumentationTestMode()) {
-                if (mHasSwbLc3Enabled) {
-                    Counter.logIncrement("bluetooth.value_lc3_codec_usage_over_hfp");
-                } else if (mHasSwbAptXEnabled) {
-                    Counter.logIncrement("bluetooth.value_aptx_codec_usage_over_hfp");
-                } else if (mHasWbsEnabled) {
-                    Counter.logIncrement("bluetooth.value_msbc_codec_usage_over_hfp");
-                } else {
-                    Counter.logIncrement("bluetooth.value_cvsd_codec_usage_over_hfp");
-                }
             }
 
             if (mHeadsetService.mPendingScoConnection != null
