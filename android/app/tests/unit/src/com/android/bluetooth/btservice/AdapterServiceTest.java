@@ -199,7 +199,7 @@ public class AdapterServiceTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.allCombinationsOf();
+        return FlagsParameterization.allCombinationsOf(Flags.FLAG_LIMIT_USER_SWITCH_PROPAGATION);
     }
 
     public AdapterServiceTest(FlagsParameterization flags) {
@@ -301,10 +301,12 @@ public class AdapterServiceTest {
                 .getDatabasePath(anyString());
 
         // Sets the foreground user id to match that of the tests (restored in tearDown)
-        mForegroundUserId = Utils.getForegroundUserId();
-        int callingUid = Binder.getCallingUid();
-        UserHandle callingUser = UserHandle.getUserHandleForUid(callingUid);
-        Utils.setForegroundUserId(callingUser.getIdentifier());
+        if (!Flags.limitUserSwitchPropagation()) {
+            mForegroundUserId = Utils.getForegroundUserId();
+            int callingUid = Binder.getCallingUid();
+            UserHandle callingUser = UserHandle.getUserHandleForUid(callingUid);
+            Utils.setForegroundUserId(callingUser.getIdentifier());
+        }
 
         when(mIBluetoothCallback.asBinder()).thenReturn(mBinder);
 
@@ -326,7 +328,9 @@ public class AdapterServiceTest {
         Log.e(TAG, "tearDown()");
 
         // Restores the foregroundUserId to the ID prior to the test setup
-        Utils.setForegroundUserId(mForegroundUserId);
+        if (!Flags.limitUserSwitchPropagation()) {
+            Utils.setForegroundUserId(mForegroundUserId);
+        }
 
         LeAudioService.setLeAudioService(null);
         mAdapterService.cleanup();

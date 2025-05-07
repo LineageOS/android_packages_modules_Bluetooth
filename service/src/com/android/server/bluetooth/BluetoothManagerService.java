@@ -659,7 +659,9 @@ class BluetoothManagerService {
 
         IntentFilter filterUser = new IntentFilter();
         filterUser.addAction(UserManager.ACTION_USER_RESTRICTIONS_CHANGED);
-        filterUser.addAction(Intent.ACTION_USER_SWITCHED);
+        if (!Flags.limitUserSwitchPropagation()) {
+            filterUser.addAction(Intent.ACTION_USER_SWITCHED);
+        }
         filterUser.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         mContext.registerReceiverForAllUsers(
                 new BroadcastReceiver() {
@@ -667,6 +669,10 @@ class BluetoothManagerService {
                     public void onReceive(Context context, Intent intent) {
                         switch (intent.getAction()) {
                             case Intent.ACTION_USER_SWITCHED:
+                                if (Flags.limitUserSwitchPropagation()) {
+                                    throw new IllegalStateException(
+                                            "limitUserSwitchPropagation is activated");
+                                }
                                 int foregroundUserId =
                                         intent.getIntExtra(Intent.EXTRA_USER_HANDLE, 0);
                                 propagateForegroundUserId(foregroundUserId);
@@ -1474,7 +1480,9 @@ class BluetoothManagerService {
 
                     mAdapter = BluetoothServerProxy.getInstance().createAdapterBinder(service);
 
-                    propagateForegroundUserId(ActivityManager.getCurrentUser());
+                    if (!Flags.limitUserSwitchPropagation()) {
+                        propagateForegroundUserId(ActivityManager.getCurrentUser());
+                    }
 
                     try {
                         mAdapter.registerCallback(mBluetoothCallback);
@@ -1803,7 +1811,26 @@ class BluetoothManagerService {
         handleEnable();
     }
 
+    private void bindToAdapterForCurrentUser() {
+        requireNonNull(mCurrentUser, "There is no user to start for.");
+        int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
+        Intent intent = new Intent(IAdapter.class.getName());
+        intent.setComponent(resolveSystemService(intent));
+
+        Log.d(TAG, "Start binding to the Bluetooth service with intent=" + intent);
+        if (!mContext.bindServiceAsUser(intent, mConnection, flags, mCurrentUser)) {
+            Log.e(TAG, "Fail to bind to intent=" + intent);
+            mContext.unbindService(mConnection);
+            return;
+        }
+        mHandler.sendEmptyMessageDelayed(MESSAGE_TIMEOUT_BIND, TIMEOUT_BIND_MS);
+    }
+
     private void bindToAdapter() {
+        if (Flags.limitUserSwitchPropagation()) {
+            bindToAdapterForCurrentUser();
+            return;
+        }
         UserHandle user = UserHandle.CURRENT;
         int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
         Intent intent = new Intent(IAdapter.class.getName());
