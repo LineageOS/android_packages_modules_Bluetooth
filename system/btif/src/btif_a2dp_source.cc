@@ -941,9 +941,6 @@ static uint32_t btif_a2dp_source_read_callback(uint8_t* p_buf, uint32_t len) {
     btif_a2dp_source_cb.stats.media_read_total_underflow_count++;
     btif_a2dp_source_cb.stats.media_read_last_underflow_us =
             bluetooth::common::time_get_os_boottime_us();
-    bluetooth::metrics::LogMetricA2dpAudioUnderrunEvent(btif_av_source_active_peer(),
-                                                        btif_a2dp_source_cb.encoder_interval_ms,
-                                                        len - bytes_read);
   }
 
   return bytes_read;

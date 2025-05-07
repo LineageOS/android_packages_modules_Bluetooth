@@ -97,17 +97,6 @@ void LogMetricRemoteVersionInfo(uint16_t handle, uint8_t status, uint8_t version
                                 uint16_t manufacturer_name, uint16_t subversion);
 
 /**
- * Log A2DP audio buffer underrun event
- *
- * @param address A2DP device associated with this event
- * @param encoding_interval_millis encoding interval in milliseconds
- * @param num_missing_pcm_bytes number of PCM bytes that cannot be read from
- *                              the source
- */
-void LogMetricA2dpAudioUnderrunEvent(const hci::Address& address, uint64_t encoding_interval_millis,
-                                     int num_missing_pcm_bytes);
-
-/**
  * Log A2DP audio buffer overrun event
  *
  * @param address A2DP device associated with this event

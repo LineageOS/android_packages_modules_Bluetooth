@@ -146,21 +146,6 @@ void LogMetricRemoteVersionInfo(uint16_t handle, uint8_t status, uint8_t version
   }
 }
 
-void LogMetricA2dpAudioUnderrunEvent(const Address& address, uint64_t encoding_interval_millis,
-                                     int num_missing_pcm_bytes) {
-  int metric_id = 0;
-  if (!address.IsEmpty()) {
-    metric_id = MetricIdManager::GetInstance().AllocateId(address);
-  }
-  int64_t encoding_interval_nanos = encoding_interval_millis * 1000000;
-  int ret = stats_write(BLUETOOTH_A2DP_AUDIO_UNDERRUN_REPORTED, byteField, encoding_interval_nanos,
-                        num_missing_pcm_bytes, metric_id);
-  if (ret < 0) {
-    log::warn("Failed for {}, encoding_interval_nanos {}, num_missing_pcm_bytes {}, error {}",
-              address, encoding_interval_nanos, num_missing_pcm_bytes, ret);
-  }
-}
-
 void LogMetricA2dpAudioOverrunEvent(const Address& address, uint64_t encoding_interval_millis,
                                     int num_dropped_buffers, int num_dropped_encoded_frames,
                                     int num_dropped_encoded_bytes) {

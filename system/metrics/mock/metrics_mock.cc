@@ -116,14 +116,6 @@ void LogMetricRemoteVersionInfo(uint16_t handle, uint8_t status, uint8_t version
   }
 }
 
-void LogMetricA2dpAudioUnderrunEvent(const hci::Address& address, uint64_t encoding_interval_millis,
-                                     int num_missing_pcm_bytes) {
-  if (metricsInstance) {
-    metricsInstance->LogMetricA2dpAudioUnderrunEvent(address, encoding_interval_millis,
-                                                     num_missing_pcm_bytes);
-  }
-}
-
 void LogMetricA2dpAudioOverrunEvent(const hci::Address& address, uint64_t encoding_interval_millis,
                                     int num_dropped_buffers, int num_dropped_encoded_frames,
                                     int num_dropped_encoded_bytes) {

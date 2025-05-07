@@ -56,9 +56,6 @@ void LogMetricSocketConnectionState(const Address& address, int port, int type,
 
 void LogMetricHciTimeoutEvent(uint32_t hci_cmd) {}
 
-void LogMetricA2dpAudioUnderrunEvent(const Address& address, uint64_t encoding_interval_millis,
-                                     int num_missing_pcm_bytes) {}
-
 void LogMetricA2dpAudioOverrunEvent(const Address& address, uint64_t encoding_interval_millis,
                                     int num_dropped_buffers, int num_dropped_encoded_frames,
                                     int num_dropped_encoded_bytes) {
