@@ -409,7 +409,7 @@ public class AdapterServiceTest {
             Context ctx,
             IBluetoothCallback callback,
             AdapterNativeInterface nativeInterface) {
-        adapter.offToBleOn(false);
+        adapter.offToBleOn(false, "default");
         TestUtils.syncHandler(looper, 0); // `init` need to be run first
         TestUtils.syncHandler(looper, AdapterState.BLE_TURN_ON);
         verifyStateChange(callback, STATE_OFF, STATE_BLE_TURNING_ON);
@@ -621,7 +621,7 @@ public class AdapterServiceTest {
     public void testGattStartTimeout() {
         assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
 
-        mAdapterService.offToBleOn(false);
+        mAdapterService.offToBleOn(false, "default");
         syncHandler(0); // `init` need to be run first
         syncHandler(AdapterState.BLE_TURN_ON);
         verifyStateChange(STATE_OFF, STATE_BLE_TURNING_ON);

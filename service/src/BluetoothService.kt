@@ -35,7 +35,18 @@ class BluetoothService(context: Context) : SystemService(context) {
     init {
         mHandlerThread = HandlerThread("BluetoothManagerService")
         mHandlerThread.start()
-        mBluetoothManagerService = BluetoothManagerService(context, mHandlerThread.getLooper())
+        if (Flags.hciInstanceNameUseInjected()) {
+            var bluetoothHciInstance = BluetoothHciInstance()
+            mBluetoothManagerService =
+                BluetoothManagerService(
+                    context,
+                    mHandlerThread.getLooper(),
+                    bluetoothHciInstance.getInstance(),
+                )
+        } else {
+            mBluetoothManagerService =
+                BluetoothManagerService(context, mHandlerThread.getLooper(), "default")
+        }
     }
 
     private fun initialize(user: TargetUser) {

@@ -66,13 +66,15 @@ public class AdapterNativeInterface {
             boolean startRestricted,
             boolean isCommonCriteriaMode,
             int configCompareResult,
-            boolean isAtvDevice) {
+            boolean isAtvDevice,
+            String hciInstanceName) {
         mJniCallbacks = new JniCallbacks(service, adapterProperties);
         return initNative(
                 startRestricted,
                 isCommonCriteriaMode,
                 configCompareResult,
-                isAtvDevice);
+                isAtvDevice,
+                hciInstanceName);
     }
 
     void cleanup() {
@@ -342,7 +344,8 @@ public class AdapterNativeInterface {
             boolean startRestricted,
             boolean isCommonCriteriaMode,
             int configCompareResult,
-            boolean isAtvDevice);
+            boolean isAtvDevice,
+            String hciInstanceName);
 
     private native void cleanupNative();
 

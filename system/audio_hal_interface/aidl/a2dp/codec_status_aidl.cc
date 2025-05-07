@@ -31,11 +31,7 @@
 #include "bta/include/bta_av_api.h"
 #include "client_interface_aidl.h"
 
-namespace bluetooth {
-namespace audio {
-namespace aidl {
-namespace a2dp {
-namespace codec {
+namespace bluetooth::audio::aidl::a2dp::codec {
 
 using ::aidl::android::hardware::bluetooth::audio::AacCapabilities;
 using ::aidl::android::hardware::bluetooth::audio::AacConfiguration;
@@ -66,6 +62,53 @@ std::vector<AudioCapabilities> audio_hal_capabilities(0);
 // capabilities that audio HAL supports and frameworks / Bluetooth SoC / runtime
 // preference would like to use.
 std::vector<AudioCapabilities> offloading_preference(0);
+
+static int32_t A2dpCodecToHalSampleRate(const btav_a2dp_codec_config_t& a2dp_codec_config) {
+  switch (a2dp_codec_config.sample_rate) {
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_44100:
+      return 44100;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_48000:
+      return 48000;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_88200:
+      return 88200;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_96000:
+      return 96000;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_176400:
+      return 176400;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_192000:
+      return 192000;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_16000:
+      return 16000;
+    case BTAV_A2DP_CODEC_SAMPLE_RATE_24000:
+      return 24000;
+    default:
+      return 0;
+  }
+}
+
+static int8_t A2dpCodecToHalBitsPerSample(const btav_a2dp_codec_config_t& a2dp_codec_config) {
+  switch (a2dp_codec_config.bits_per_sample) {
+    case BTAV_A2DP_CODEC_BITS_PER_SAMPLE_16:
+      return 16;
+    case BTAV_A2DP_CODEC_BITS_PER_SAMPLE_24:
+      return 24;
+    case BTAV_A2DP_CODEC_BITS_PER_SAMPLE_32:
+      return 32;
+    default:
+      return 0;
+  }
+}
+
+static ChannelMode A2dpCodecToHalChannelMode(const btav_a2dp_codec_config_t& a2dp_codec_config) {
+  switch (a2dp_codec_config.channel_mode) {
+    case BTAV_A2DP_CODEC_CHANNEL_MODE_MONO:
+      return ChannelMode::MONO;
+    case BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO:
+      return ChannelMode::STEREO;
+    default:
+      return ChannelMode::UNKNOWN;
+  }
+}
 
 template <typename T>
 struct identity {
@@ -151,55 +194,60 @@ bool opus_offloading_capability_match(const std::optional<OpusCapabilities>& opu
   return true;
 }
 
-}  // namespace
-
-const CodecConfiguration kInvalidCodecConfiguration = {};
-
-int32_t A2dpCodecToHalSampleRate(const btav_a2dp_codec_config_t& a2dp_codec_config) {
-  switch (a2dp_codec_config.sample_rate) {
-    case BTAV_A2DP_CODEC_SAMPLE_RATE_44100:
-      return 44100;
-    case BTAV_A2DP_CODEC_SAMPLE_RATE_48000:
-      return 48000;
-    case BTAV_A2DP_CODEC_SAMPLE_RATE_88200:
-      return 88200;
-    case BTAV_A2DP_CODEC_SAMPLE_RATE_96000:
-      return 96000;
-    case BTAV_A2DP_CODEC_SAMPLE_RATE_176400:
-      return 176400;
-    case BTAV_A2DP_CODEC_SAMPLE_RATE_192000:
-      return 192000;
-    case BTAV_A2DP_CODEC_SAMPLE_RATE_16000:
-      return 16000;
-    case BTAV_A2DP_CODEC_SAMPLE_RATE_24000:
-      return 24000;
-    default:
-      return 0;
+/***
+ * Check whether this codec is supported by the audio HAL and is allowed to
+ * use by preference of framework / Bluetooth SoC / runtime property.
+ ***/
+bool IsCodecOffloadingEnabled(const CodecConfiguration& codec_config) {
+  for (auto preference : offloading_preference) {
+    if (codec_config.codecType != preference.get<AudioCapabilities::a2dpCapabilities>().codecType) {
+      continue;
+    }
+    auto codec_capability = preference.get<AudioCapabilities::a2dpCapabilities>();
+    switch (codec_capability.codecType) {
+      case CodecType::SBC: {
+        auto sbc_capability = codec_capability.capabilities
+                                      .get<CodecCapabilities::Capabilities::sbcCapabilities>();
+        auto sbc_config = codec_config.config.get<CodecConfiguration::CodecSpecific::sbcConfig>();
+        return sbc_offloading_capability_match(sbc_capability, sbc_config);
+      }
+      case CodecType::AAC: {
+        auto aac_capability = codec_capability.capabilities
+                                      .get<CodecCapabilities::Capabilities::aacCapabilities>();
+        auto aac_config = codec_config.config.get<CodecConfiguration::CodecSpecific::aacConfig>();
+        return aac_offloading_capability_match(aac_capability, aac_config);
+      }
+      case CodecType::APTX:
+        [[fallthrough]];
+      case CodecType::APTX_HD: {
+        auto aptx_capability = codec_capability.capabilities
+                                       .get<CodecCapabilities::Capabilities::aptxCapabilities>();
+        auto aptx_config = codec_config.config.get<CodecConfiguration::CodecSpecific::aptxConfig>();
+        return aptx_offloading_capability_match(aptx_capability, aptx_config);
+      }
+      case CodecType::LDAC: {
+        auto ldac_capability = codec_capability.capabilities
+                                       .get<CodecCapabilities::Capabilities::ldacCapabilities>();
+        auto ldac_config = codec_config.config.get<CodecConfiguration::CodecSpecific::ldacConfig>();
+        return ldac_offloading_capability_match(ldac_capability, ldac_config);
+      }
+      case CodecType::OPUS: {
+        std::optional<OpusCapabilities> opus_capability =
+                codec_capability.capabilities
+                        .get<CodecCapabilities::Capabilities::opusCapabilities>();
+        std::optional<OpusConfiguration> opus_config =
+                codec_config.config.get<CodecConfiguration::CodecSpecific::opusConfig>();
+        return opus_offloading_capability_match(opus_capability, opus_config);
+      }
+      case CodecType::UNKNOWN:
+        [[fallthrough]];
+      default:
+        log::error("Unknown codecType={}", toString(codec_capability.codecType));
+        return false;
+    }
   }
-}
-
-int8_t A2dpCodecToHalBitsPerSample(const btav_a2dp_codec_config_t& a2dp_codec_config) {
-  switch (a2dp_codec_config.bits_per_sample) {
-    case BTAV_A2DP_CODEC_BITS_PER_SAMPLE_16:
-      return 16;
-    case BTAV_A2DP_CODEC_BITS_PER_SAMPLE_24:
-      return 24;
-    case BTAV_A2DP_CODEC_BITS_PER_SAMPLE_32:
-      return 32;
-    default:
-      return 0;
-  }
-}
-
-ChannelMode A2dpCodecToHalChannelMode(const btav_a2dp_codec_config_t& a2dp_codec_config) {
-  switch (a2dp_codec_config.channel_mode) {
-    case BTAV_A2DP_CODEC_CHANNEL_MODE_MONO:
-      return ChannelMode::MONO;
-    case BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO:
-      return ChannelMode::STEREO;
-    default:
-      return ChannelMode::UNKNOWN;
-  }
+  log::info("software codec={}", codec_config.toString());
+  return false;
 }
 
 bool A2dpSbcToHalConfig(const ahal_codec_configuration& config, CodecConfiguration* codec_config) {
@@ -483,6 +531,8 @@ bool A2dpOpusToHalConfig(const ahal_codec_configuration& config, CodecConfigurat
   return true;
 }
 
+}  // namespace
+
 bool UpdateOffloadingCapabilities(
         const std::vector<btav_a2dp_codec_config_t>& framework_preference) {
   audio_hal_capabilities = BluetoothAudioClientInterface::GetAudioCapabilities(
@@ -537,64 +587,60 @@ bool UpdateOffloadingCapabilities(
   return true;
 }
 
-/***
- * Check whether this codec is supported by the audio HAL and is allowed to
- * use by preference of framework / Bluetooth SoC / runtime property.
- ***/
-bool IsCodecOffloadingEnabled(const CodecConfiguration& codec_config) {
-  for (auto preference : offloading_preference) {
-    if (codec_config.codecType != preference.get<AudioCapabilities::a2dpCapabilities>().codecType) {
-      continue;
-    }
-    auto codec_capability = preference.get<AudioCapabilities::a2dpCapabilities>();
-    switch (codec_capability.codecType) {
-      case CodecType::SBC: {
-        auto sbc_capability = codec_capability.capabilities
-                                      .get<CodecCapabilities::Capabilities::sbcCapabilities>();
-        auto sbc_config = codec_config.config.get<CodecConfiguration::CodecSpecific::sbcConfig>();
-        return sbc_offloading_capability_match(sbc_capability, sbc_config);
-      }
-      case CodecType::AAC: {
-        auto aac_capability = codec_capability.capabilities
-                                      .get<CodecCapabilities::Capabilities::aacCapabilities>();
-        auto aac_config = codec_config.config.get<CodecConfiguration::CodecSpecific::aacConfig>();
-        return aac_offloading_capability_match(aac_capability, aac_config);
-      }
-      case CodecType::APTX:
-        [[fallthrough]];
-      case CodecType::APTX_HD: {
-        auto aptx_capability = codec_capability.capabilities
-                                       .get<CodecCapabilities::Capabilities::aptxCapabilities>();
-        auto aptx_config = codec_config.config.get<CodecConfiguration::CodecSpecific::aptxConfig>();
-        return aptx_offloading_capability_match(aptx_capability, aptx_config);
-      }
-      case CodecType::LDAC: {
-        auto ldac_capability = codec_capability.capabilities
-                                       .get<CodecCapabilities::Capabilities::ldacCapabilities>();
-        auto ldac_config = codec_config.config.get<CodecConfiguration::CodecSpecific::ldacConfig>();
-        return ldac_offloading_capability_match(ldac_capability, ldac_config);
-      }
-      case CodecType::OPUS: {
-        std::optional<OpusCapabilities> opus_capability =
-                codec_capability.capabilities
-                        .get<CodecCapabilities::Capabilities::opusCapabilities>();
-        std::optional<OpusConfiguration> opus_config =
-                codec_config.config.get<CodecConfiguration::CodecSpecific::opusConfig>();
-        return opus_offloading_capability_match(opus_capability, opus_config);
-      }
-      case CodecType::UNKNOWN:
-        [[fallthrough]];
-      default:
-        log::error("Unknown codecType={}", toString(codec_capability.codecType));
-        return false;
-    }
+bool getHalPcmConfiguration(const ahal_codec_configuration& config,
+                            PcmConfiguration* pcm_configuration) {
+  if (pcm_configuration == nullptr) {
+    return false;
   }
-  log::info("software codec={}", codec_config.toString());
+
+  pcm_configuration->sampleRateHz = A2dpCodecToHalSampleRate(config.codec_config);
+  pcm_configuration->bitsPerSample = A2dpCodecToHalBitsPerSample(config.codec_config);
+  pcm_configuration->channelMode = A2dpCodecToHalChannelMode(config.codec_config);
+  pcm_configuration->dataIntervalUs = config.preferred_encoding_interval_us;
+
+  return pcm_configuration->sampleRateHz > 0 && pcm_configuration->bitsPerSample > 0 &&
+         pcm_configuration->channelMode != ChannelMode::UNKNOWN;
+}
+
+bool getHalCodecConfiguration(const ahal_codec_configuration& config,
+                              CodecConfiguration* codec_configuration) {
+  if (codec_configuration == nullptr) {
+    return false;
+  }
+
+  codec_configuration->encodedAudioBitrate = config.codec_bitrate;
+  codec_configuration->peerMtu = config.peer_mtu;
+
+  switch (config.codec_config.codec_type) {
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_SBC:
+    case BTAV_A2DP_CODEC_INDEX_SINK_SBC:
+      return A2dpSbcToHalConfig(config, codec_configuration) &&
+             IsCodecOffloadingEnabled(*codec_configuration);
+
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_AAC:
+    case BTAV_A2DP_CODEC_INDEX_SINK_AAC:
+      return A2dpAacToHalConfig(config, codec_configuration) &&
+             IsCodecOffloadingEnabled(*codec_configuration);
+
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX:
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD:
+      return A2dpAptxToHalConfig(config, codec_configuration) &&
+             IsCodecOffloadingEnabled(*codec_configuration);
+
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC:
+      return A2dpLdacToHalConfig(config, codec_configuration) &&
+             IsCodecOffloadingEnabled(*codec_configuration);
+
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_OPUS:
+      return A2dpOpusToHalConfig(config, codec_configuration) &&
+             IsCodecOffloadingEnabled(*codec_configuration);
+
+    case BTAV_A2DP_CODEC_INDEX_MAX:
+    default:
+      break;
+  }
+
   return false;
 }
 
-}  // namespace codec
-}  // namespace a2dp
-}  // namespace aidl
-}  // namespace audio
-}  // namespace bluetooth
+}  // namespace bluetooth::audio::aidl::a2dp::codec

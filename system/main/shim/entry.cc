@@ -38,7 +38,7 @@ namespace shim {
 os::Handler* GetGdShimHandler() { return Stack::GetInstance()->GetHandler(); }
 
 hci::LeAdvertisingManager* GetAdvertising() {
-  return Stack::GetInstance()->GetInstance<hci::LeAdvertisingManager>();
+  return Stack::GetInstance()->GetLeAdvertisingManager();
 }
 
 hci::ControllerInterface* GetController() {
@@ -51,12 +51,10 @@ hci::RemoteNameRequestModule* GetRemoteNameRequest() {
   return Stack::GetInstance()->GetInstance<hci::RemoteNameRequestModule>();
 }
 
-hci::LeScanningManager* GetScanning() {
-  return Stack::GetInstance()->GetInstance<hci::LeScanningManager>();
-}
+hci::LeScanningManager* GetScanning() { return Stack::GetInstance()->GetLeScanningManager(); }
 
 hci::DistanceMeasurementManager* GetDistanceMeasurementManager() {
-  return Stack::GetInstance()->GetInstance<hci::DistanceMeasurementManager>();
+  return Stack::GetInstance()->GetDistanceMeasurementManager();
 }
 
 hal::SnoopLogger* GetSnoopLogger() { return Stack::GetInstance()->GetSnoopLogger(); }

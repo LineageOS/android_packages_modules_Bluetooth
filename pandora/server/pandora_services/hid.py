@@ -1,10 +1,10 @@
 from __future__ import annotations
 import asyncio
 import grpc
-import grpc.aio
 import logging
 import struct
 import sys
+from typing import AsyncGenerator
 
 from bumble.device import Device
 from google.protobuf import empty_pb2  # pytype: disable=pyi-error
@@ -12,30 +12,17 @@ from google.protobuf import empty_pb2  # pytype: disable=pyi-error
 from pandora.hid_grpc_aio import HIDServicer
 
 from pandora_services import utils
-from pandora.hid_pb2 import (
-    ProtocolModeEvent,
-    ReportEvent,
-    PROTOCOL_REPORT_MODE,
-    PROTOCOL_BOOT_MODE,
-    PROTOCOL_UNSUPPORTED_MODE,
-    SERVICE_TYPE_HID,
-    SERVICE_TYPE_HOGP,
-)
+from pandora import hid_pb2
 
 from bumble.core import (
     BT_BR_EDR_TRANSPORT,
     BT_L2CAP_PROTOCOL_ID,
     BT_HUMAN_INTERFACE_DEVICE_SERVICE,
     BT_HIDP_PROTOCOL_ID,
-    UUID,
     ProtocolError,
 )
-
 from bumble.hci import (
-    HCI_StatusError,
-    HCI_CONNECTION_ALREADY_EXISTS_ERROR,
-    HCI_PAGE_TIMEOUT_ERROR,
-)
+    HCI_StatusError,)
 from bumble.hid import (
     Device as HID_Device,
     HID_CONTROL_PSM,
@@ -44,18 +31,35 @@ from bumble.hid import (
 )
 
 from bumble.sdp import (
-    Client as SDP_Client,
     DataElement,
     ServiceAttribute,
     SDP_PUBLIC_BROWSE_ROOT,
     SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID,
     SDP_SERVICE_CLASS_ID_LIST_ATTRIBUTE_ID,
     SDP_BLUETOOTH_PROFILE_DESCRIPTOR_LIST_ATTRIBUTE_ID,
-    SDP_ALL_ATTRIBUTES_RANGE,
     SDP_LANGUAGE_BASE_ATTRIBUTE_ID_LIST_ATTRIBUTE_ID,
     SDP_ADDITIONAL_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID,
     SDP_SERVICE_RECORD_HANDLE_ATTRIBUTE_ID,
     SDP_BROWSE_GROUP_LIST_ATTRIBUTE_ID,
+)
+from bumble.core import AdvertisingData
+from bumble.device import Connection
+from bumble.gatt import (
+    Descriptor,
+    Service,
+    Characteristic,
+    CharacteristicValue,
+    GATT_DEVICE_INFORMATION_SERVICE,
+    GATT_HUMAN_INTERFACE_DEVICE_SERVICE,
+    GATT_BATTERY_SERVICE,
+    GATT_BATTERY_LEVEL_CHARACTERISTIC,
+    GATT_MANUFACTURER_NAME_STRING_CHARACTERISTIC,
+    GATT_REPORT_CHARACTERISTIC,
+    GATT_REPORT_MAP_CHARACTERISTIC,
+    GATT_PROTOCOL_MODE_CHARACTERISTIC,
+    GATT_HID_INFORMATION_CHARACTERISTIC,
+    GATT_HID_CONTROL_POINT_CHARACTERISTIC,
+    GATT_REPORT_REFERENCE_DESCRIPTOR,
 )
 from bumble.utils import AsyncRunner
 
@@ -231,26 +235,6 @@ HID_REPORT_MAP = bytes(  # Text String, 50 Octet Report Descriptor
 # Default protocol mode set to report protocol
 protocol_mode = Message.ProtocolMode.REPORT_PROTOCOL
 
-from bumble.core import AdvertisingData
-from bumble.device import Device, Connection, Peer
-from bumble.gatt import (
-    Descriptor,
-    Service,
-    Characteristic,
-    CharacteristicValue,
-    GATT_DEVICE_INFORMATION_SERVICE,
-    GATT_HUMAN_INTERFACE_DEVICE_SERVICE,
-    GATT_BATTERY_SERVICE,
-    GATT_BATTERY_LEVEL_CHARACTERISTIC,
-    GATT_MANUFACTURER_NAME_STRING_CHARACTERISTIC,
-    GATT_REPORT_CHARACTERISTIC,
-    GATT_REPORT_MAP_CHARACTERISTIC,
-    GATT_PROTOCOL_MODE_CHARACTERISTIC,
-    GATT_HID_INFORMATION_CHARACTERISTIC,
-    GATT_HID_CONTROL_POINT_CHARACTERISTIC,
-    GATT_REPORT_REFERENCE_DESCRIPTOR,
-)
-
 # -----------------------------------------------------------------------------
 
 # Protocol Modes (HID Specification V1.1.1 Section 2.1.2)
@@ -338,26 +322,26 @@ HID_KEYBOARD_REPORT_MAP = bytes(
 # pylint: disable=invalid-overridden-method
 class ServerListener(Device.Listener, Connection.Listener):
 
-    def __init__(self, device):
+    def __init__(self, device: Device):
         self.device = device
 
     @AsyncRunner.run_in_task()
-    async def on_connection(self, connection):
+    async def on_connection(self, connection: Connection):
         logging.info(f'=== Connected to {connection}')
         connection.listener = self
 
     @AsyncRunner.run_in_task()
-    async def on_disconnection(self, reason):
+    async def on_disconnection(self, reason: int):
         logging.info(f'### Disconnected, reason={reason}')
 
 
 # -----------------------------------------------------------------------------
-def on_hid_control_point_write(_connection, value):
-    logging.info(f'Control Point Write: {value}')
+def on_hid_control_point_write(connection: Connection | None, value: bytes):
+    logging.info(f'Control Point Write: {value!r}')
 
 
 # -----------------------------------------------------------------------------
-def sdp_records():
+def sdp_records() -> dict[int, list[ServiceAttribute]]:
     service_record_handle = 0x00010006
     return {
         service_record_handle: [
@@ -499,7 +483,7 @@ def sdp_records():
 
 
 # -----------------------------------------------------------------------------
-def hogp_device(device):
+def setup_hogp_device(device: Device) -> None:
     # Create an 'input report' characteristic to send keyboard reports to the host
     input_report_kb_characteristic = Characteristic(
         GATT_REPORT_CHARACTERISTIC,
@@ -629,150 +613,141 @@ def hogp_device(device):
     device.listener = ServerListener(device)
 
 
-async def handle_virtual_cable_unplug():
-    hid_host_bd_addr = str(hid_device.remote_device_bd_address)
-    await hid_device.disconnect_interrupt_channel()
-    await hid_device.disconnect_control_channel()
-    await hid_device.device.keystore.delete(hid_host_bd_addr)  # type: ignore
-    connection = hid_device.connection
-    if connection is not None:
-        await connection.disconnect()
-
-
-def on_get_report_cb(report_id: int, report_type: int, buffer_size: int):
-    retValue = hid_device.GetSetStatus()
-    logging.info("GET_REPORT report_id: " + str(report_id) + "report_type: " + str(report_type) +
-                 "buffer_size:" + str(buffer_size))
-    if report_type == Message.ReportType.INPUT_REPORT:
-        if report_id == 1:
-            retValue.data = bytearray([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
-            retValue.status = hid_device.GetSetReturn.SUCCESS
-        elif report_id == 2:
-            retValue.data = bytearray([0x02, 0x00, 0x00, 0x00])
-            retValue.status = hid_device.GetSetReturn.SUCCESS
-        else:
-            retValue.status = hid_device.GetSetReturn.REPORT_ID_NOT_FOUND
-
-    return retValue
-
-
-def on_set_report_cb(report_id: int, report_type: int, report_size: int, data: bytes):
-    retValue = hid_device.GetSetStatus()
-    logging.info("SET_REPORT report_id: " + str(report_id) + "report_type: " + str(report_type) +
-                 "report_size " + str(report_size) + "data:" + str(data))
-
-    report = ReportEvent()
-    report.report_type = report_type
-    report.report_id = report_id
-    report.report_data = str(data.hex())
-
-    if hid_report_queue:
-        hid_report_queue.put_nowait(report)
-
-    if report_type == Message.ReportType.FEATURE_REPORT:
-        retValue.status = hid_device.GetSetReturn.ERR_INVALID_PARAMETER
-    elif report_type == Message.ReportType.INPUT_REPORT:
-        if report_id == 1 and report_size != 9:
-            retValue.status = hid_device.GetSetReturn.ERR_INVALID_PARAMETER
-        elif report_id == 2 and report_size != 4:
-            retValue.status = hid_device.GetSetReturn.ERR_INVALID_PARAMETER
-        elif report_id == 3:
-            retValue.status = hid_device.GetSetReturn.REPORT_ID_NOT_FOUND
-        else:
-            retValue.status = hid_device.GetSetReturn.SUCCESS
-    else:
-        retValue.status = hid_device.GetSetReturn.SUCCESS
-
-    return retValue
-
-
-def on_get_protocol_cb():
-    retValue = hid_device.GetSetStatus()
-    retValue.data = protocol_mode.to_bytes(length=1, byteorder=sys.byteorder)
-    retValue.status = hid_device.GetSetReturn.SUCCESS
-    return retValue
-
-
-def on_set_protocol_cb(protocol: int):
-    retValue = hid_device.GetSetStatus()
-    # We do not support SET_PROTOCOL.
-    logging.info(f"SET_PROTOCOL mode: {protocol}")
-    mode = ProtocolModeEvent()
-    if protocol == PROTOCOL_REPORT_MODE:
-        mode.protocol_mode = PROTOCOL_REPORT_MODE
-    elif protocol == PROTOCOL_BOOT_MODE:
-        mode.protocol_mode = PROTOCOL_BOOT_MODE
-    else:
-        mode.protocol_mode = PROTOCOL_UNSUPPORTED_MODE
-    hid_protoMode_queue.put_nowait(mode)
-    retValue.status = hid_device.GetSetReturn.ERR_UNSUPPORTED_REQUEST
-    return retValue
-
-
-def on_virtual_cable_unplug_cb():
-    logging.info('Received Virtual Cable Unplug')
-    asyncio.create_task(handle_virtual_cable_unplug())
-
-
-hid_protoMode_queue = None
-hid_report_queue = None
-hid_device = None
-
-
-def register_hid(self) -> None:
-    self.device.sdp_service_records.update(sdp_records())
-    global hid_device
-    hid_device = HID_Device(self.device)
-    # Register for  call backs
-    hid_device.register_get_report_cb(on_get_report_cb)
-    hid_device.register_set_report_cb(on_set_report_cb)
-    hid_device.register_get_protocol_cb(on_get_protocol_cb)
-    hid_device.register_set_protocol_cb(on_set_protocol_cb)
-    # Register for virtual cable unplug call back
-    hid_device.on('virtual_cable_unplug', on_virtual_cable_unplug_cb)
-
-
 # This class implements the Hid Pandora interface.
 class HIDService(HIDServicer):
-
-    hid_device = None
 
     def __init__(self, device: Device) -> None:
         super().__init__()
         self.device = device
-        self.event_queue: Optional[asyncio.Queue[ProtocolModeEvent]] = None
+        self.hid_proto_mode_queue: asyncio.Queue[hid_pb2.ProtocolModeEvent] | None = None
+        self.hid_report_queue: asyncio.Queue[hid_pb2.ReportEvent] | None = None
+        self.hid_device: HID_Device | None = None
+
+    async def handle_virtual_cable_unplug(self) -> None:
+        if not self.hid_device:
+            raise RuntimeError("Device not registered")
+        hid_host_bd_addr = str(self.hid_device.remote_device_bd_address)
+        await self.hid_device.disconnect_interrupt_channel()
+        await self.hid_device.disconnect_control_channel()
+        await self.hid_device.device.keystore.delete(hid_host_bd_addr)  # type: ignore
+        connection = self.hid_device.connection
+        if connection is not None:
+            await connection.disconnect()
+
+    def on_get_report_cb(self, report_id: int, report_type: int, buffer_size: int):
+        response = HID_Device.GetSetStatus()
+        logging.info("GET_REPORT report_id: " + str(report_id) + "report_type: " +
+                     str(report_type) + "buffer_size:" + str(buffer_size))
+        if report_type == Message.ReportType.INPUT_REPORT:
+            if report_id == 1:
+                response.data = bytearray([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+                response.status = HID_Device.GetSetReturn.SUCCESS
+            elif report_id == 2:
+                response.data = bytearray([0x02, 0x00, 0x00, 0x00])
+                response.status = HID_Device.GetSetReturn.SUCCESS
+            else:
+                response.status = HID_Device.GetSetReturn.REPORT_ID_NOT_FOUND
+
+        return response
+
+    def on_set_report_cb(self, report_id: int, report_type: int, report_size: int, data: bytes):
+        response = HID_Device.GetSetStatus()
+        logging.info("SET_REPORT report_id: " + str(report_id) + "report_type: " +
+                     str(report_type) + "report_size " + str(report_size) + "data:" + str(data))
+
+        report = hid_pb2.ReportEvent(
+            report_type=report_type,  # type: ignore
+            report_id=report_id,  # type: ignore
+            report_data=str(data.hex()),
+        )
+
+        if self.hid_report_queue:
+            self.hid_report_queue.put_nowait(report)
+
+        if report_type == Message.ReportType.FEATURE_REPORT:
+            response.status = HID_Device.GetSetReturn.ERR_INVALID_PARAMETER
+        elif report_type == Message.ReportType.INPUT_REPORT:
+            if report_id == 1 and report_size != 9:
+                response.status = HID_Device.GetSetReturn.ERR_INVALID_PARAMETER
+            elif report_id == 2 and report_size != 4:
+                response.status = HID_Device.GetSetReturn.ERR_INVALID_PARAMETER
+            elif report_id == 3:
+                response.status = HID_Device.GetSetReturn.REPORT_ID_NOT_FOUND
+            else:
+                response.status = HID_Device.GetSetReturn.SUCCESS
+        else:
+            response.status = HID_Device.GetSetReturn.SUCCESS
+
+        return response
+
+    def on_get_protocol_cb(self) -> HID_Device.GetSetStatus:
+        return HID_Device.GetSetStatus(
+            data=protocol_mode.to_bytes(length=1, byteorder=sys.byteorder),
+            status=HID_Device.GetSetReturn.SUCCESS,
+        )
+
+    def on_set_protocol_cb(self, protocol: int) -> HID_Device.GetSetStatus:
+        # We do not support SET_PROTOCOL.
+        logging.info(f"SET_PROTOCOL mode: {protocol}")
+        mode = hid_pb2.ProtocolModeEvent()
+        if protocol == hid_pb2.PROTOCOL_REPORT_MODE:
+            mode.protocol_mode = hid_pb2.PROTOCOL_REPORT_MODE
+        elif protocol == hid_pb2.PROTOCOL_BOOT_MODE:
+            mode.protocol_mode = hid_pb2.PROTOCOL_BOOT_MODE
+        else:
+            mode.protocol_mode = hid_pb2.PROTOCOL_UNSUPPORTED_MODE
+
+        if self.hid_proto_mode_queue:
+            self.hid_proto_mode_queue.put_nowait(mode)
+        return HID_Device.GetSetStatus(status=HID_Device.GetSetReturn.ERR_UNSUPPORTED_REQUEST)
+
+    def on_virtual_cable_unplug_cb(self) -> None:
+        logging.info('Received Virtual Cable Unplug')
+        asyncio.create_task(self.handle_virtual_cable_unplug())
+
+    def register_hid(self) -> None:
+        self.device.sdp_service_records.update(sdp_records())
+        self.hid_device = HID_Device(self.device)
+        # Register for  call backs
+        self.hid_device.register_get_report_cb(self.on_get_report_cb)
+        self.hid_device.register_set_report_cb(self.on_set_report_cb)
+        self.hid_device.register_get_protocol_cb(self.on_get_protocol_cb)
+        self.hid_device.register_set_protocol_cb(self.on_set_protocol_cb)
+        # Register for virtual cable unplug call back
+        self.hid_device.on('virtual_cable_unplug', self.on_virtual_cable_unplug_cb)
 
     @utils.rpc
-    async def RegisterService(self, request: empty_pb2.Empty,
+    async def RegisterService(self, request: hid_pb2.ServiceRequest,
                               context: grpc.ServicerContext) -> empty_pb2.Empty:
-
-        if request.service_type == SERVICE_TYPE_HID:
-            logging.info(f'Registering HID')
-            register_hid(self)
-        elif request.service_type == SERVICE_TYPE_HOGP:
-            logging.info(f'Registering HOGP')
-            hogp_device(self.device)
+        if request.service_type == hid_pb2.SERVICE_TYPE_HID:
+            logging.info('Registering HID')
+            self.register_hid()
+        elif request.service_type == hid_pb2.SERVICE_TYPE_HOGP:
+            logging.info('Registering HOGP')
+            setup_hogp_device(self.device)
         else:
-            logging.info(f'Registering both HID and HOGP')
-            register_hid(self)
-            hogp_device(self.device)
+            logging.info('Registering both HID and HOGP')
+            self.register_hid()
+            setup_hogp_device(self.device)
 
         return empty_pb2.Empty()
 
     @utils.rpc
     async def ConnectHost(self, request: empty_pb2.Empty,
                           context: grpc.ServicerContext) -> empty_pb2.Empty:
+        if not self.hid_device:
+            raise RuntimeError("Device not registered")
 
-        logging.info(f'ConnectHost')
+        logging.info('ConnectHost')
         try:
-            hid_host_bd_addr = str(hid_device.remote_device_bd_address)
+            hid_host_bd_addr = str(self.hid_device.remote_device_bd_address)
             connection = await self.device.connect(hid_host_bd_addr, transport=BT_BR_EDR_TRANSPORT)
             await connection.authenticate()
             await connection.encrypt()
-            await hid_device.connect_control_channel()
-            await hid_device.connect_interrupt_channel()
+            await self.hid_device.connect_control_channel()
+            await self.hid_device.connect_interrupt_channel()
         except AttributeError as e:
-            logging.error(f'Device does not exist')
+            logging.error('Device does not exist')
             raise e
         except (HCI_StatusError, ProtocolError) as e:
             logging.error(f"Connection failure error: {e}")
@@ -783,18 +758,19 @@ class HIDService(HIDServicer):
     @utils.rpc
     async def DisconnectHost(self, request: empty_pb2.Empty,
                              context: grpc.ServicerContext) -> empty_pb2.Empty:
-
-        logging.info(f'DisconnectHost')
+        logging.info('DisconnectHost')
+        if not self.hid_device:
+            raise RuntimeError("Device not registered")
         try:
-            await hid_device.disconnect_interrupt_channel()
-            await hid_device.disconnect_control_channel()
-            connection = hid_device.connection
+            await self.hid_device.disconnect_interrupt_channel()
+            await self.hid_device.disconnect_control_channel()
+            connection = self.hid_device.connection
             if connection is not None:
                 await connection.disconnect()
             else:
-                logging.info(f'Already disconnected from Hid Host')
+                logging.info('Already disconnected from Hid Host')
         except AttributeError as e:
-            logging.error(f'Device does not exist')
+            logging.error('Device does not exist')
             raise e
 
         return empty_pb2.Empty()
@@ -802,58 +778,57 @@ class HIDService(HIDServicer):
     @utils.rpc
     async def VirtualCableUnplugHost(self, request: empty_pb2.Empty,
                                      context: grpc.ServicerContext) -> empty_pb2.Empty:
-
-        logging.info(f'VirtualCableUnplugHost')
+        logging.info('VirtualCableUnplugHost')
+        if not self.hid_device:
+            raise RuntimeError("Device not registered")
         try:
-            hid_device.virtual_cable_unplug()
+            self.hid_device.virtual_cable_unplug()
             try:
-                hid_host_bd_addr = str(hid_device.remote_device_bd_address)
-                await hid_device.device.keystore.delete(hid_host_bd_addr)
+                hid_host_bd_addr = str(self.hid_device.remote_device_bd_address)
+                if self.hid_device.device.keystore:
+                    await self.hid_device.device.keystore.delete(hid_host_bd_addr)
             except KeyError:
-                logging.error(f'Device not found or Device already unpaired.')
+                logging.error('Device not found or Device already unpaired.')
                 raise
         except AttributeError as e:
-            logging.exception(f'Device does not exist')
+            logging.exception('Device does not exist')
             raise e
         return empty_pb2.Empty()
 
     @utils.rpc
     async def OnSetProtocolMode(
             self, request: empty_pb2.Empty,
-            context: grpc.ServicerContext) -> AsyncGenerator[ProtocolModeEvent, None]:
-        logging.info(f'OnSetProtocolMode')
+            context: grpc.ServicerContext) -> AsyncGenerator[hid_pb2.ProtocolModeEvent, None]:
+        logging.info('OnSetProtocolMode')
+        if not self.hid_device:
+            raise RuntimeError("Device not registered")
 
-        if self.event_queue is not None:
+        if self.hid_proto_mode_queue is not None:
             raise RuntimeError('already streaming OnSetProtocolMode events')
 
-        self.event_queue = asyncio.Queue()
-        global hid_protoMode_queue
-        hid_protoMode_queue = self.event_queue
+        self.hid_proto_mode_queue = asyncio.Queue[hid_pb2.ProtocolModeEvent]()
 
         try:
-            while event := await hid_protoMode_queue.get():
+            while event := await self.hid_proto_mode_queue.get():
                 yield event
-
         finally:
-            self.event_queue = None
-            hid_protoMode_queue = None
+            self.hid_proto_mode_queue = None
 
     @utils.rpc
-    async def OnSetReport(self, request: empty_pb2.Empty,
-                          context: grpc.ServicerContext) -> AsyncGenerator[ReportEvent, None]:
-        logging.info(f'OnSetReport')
+    async def OnSetReport(
+            self, request: empty_pb2.Empty,
+            context: grpc.ServicerContext) -> AsyncGenerator[hid_pb2.ReportEvent, None]:
+        logging.info('OnSetReport')
+        if not self.hid_device:
+            raise RuntimeError("Device not registered")
 
-        if self.event_queue is not None:
+        if self.hid_report_queue is not None:
             raise RuntimeError('already streaming OnSetReport events')
 
-        self.event_queue = asyncio.Queue()
-        global hid_report_queue
-        hid_report_queue = self.event_queue
+        self.hid_report_queue = asyncio.Queue[hid_pb2.ReportEvent]()
 
         try:
-            while event := await hid_report_queue.get():
+            while event := await self.hid_report_queue.get():
                 yield event
-
         finally:
-            self.event_queue = None
-            hid_report_queue = None
+            self.hid_report_queue = None

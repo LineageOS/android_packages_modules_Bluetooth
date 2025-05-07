@@ -54,7 +54,7 @@ interface IBluetooth
     int getState();
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
-    oneway void offToBleOn(boolean quietMode, in AttributionSource attributionSource);
+    oneway void offToBleOn(boolean quietMode, in String hciInstanceName, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
     oneway void onToBleOn(in AttributionSource attributionSource);
 

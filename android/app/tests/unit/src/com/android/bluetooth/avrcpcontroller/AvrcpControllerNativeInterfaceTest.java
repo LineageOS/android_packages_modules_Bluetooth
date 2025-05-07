@@ -22,7 +22,7 @@ import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doAnswer;
 
 import android.support.v4.media.session.PlaybackStateCompat;
 
@@ -50,12 +50,13 @@ public class AvrcpControllerNativeInterfaceTest {
 
     @Before
     public void setUp() {
-        when(mAdapterService.getRemoteDevice(anyString()))
-                .thenAnswer(
+        doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
                             return getRealDevice(address);
-                        });
+                        })
+                .when(mAdapterService)
+                .getRemoteDevice(anyString());
         mNativeInterface = AvrcpControllerNativeInterface.getInstance(mAdapterService);
     }
 

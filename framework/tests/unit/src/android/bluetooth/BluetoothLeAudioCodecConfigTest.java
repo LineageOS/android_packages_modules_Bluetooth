@@ -24,38 +24,35 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+
 /** Test cases for {@link BluetoothLeAudioCodecConfig}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothLeAudioCodecConfigTest {
 
     @Rule public Expect expect = Expect.create();
 
-    private int[] mCodecTypeArray =
-            new int[] {
-                BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3,
-                BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_INVALID,
-            };
+    private final List<Integer> mCodecTypeArray =
+            List.of(
+                    BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3,
+                    BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_INVALID);
 
     @Test
     public void testBluetoothLeAudioCodecConfig_valid_get_methods() {
-        for (int codecIdx = 0; codecIdx < mCodecTypeArray.length; codecIdx++) {
-            int codecType = mCodecTypeArray[codecIdx];
-
+        for (int codecType : mCodecTypeArray) {
             BluetoothLeAudioCodecConfig leAudioCodecConfig =
-                    buildBluetoothLeAudioCodecConfig(codecType);
+                    new BluetoothLeAudioCodecConfig.Builder().setCodecType(codecType).build();
 
-            if (codecType == BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3) {
-                expect.that(leAudioCodecConfig.getCodecName()).isEqualTo("LC3");
-            }
-            if (codecType == BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_INVALID) {
-                expect.that(leAudioCodecConfig.getCodecName()).isEqualTo("INVALID CODEC");
-            }
+            expect.that(leAudioCodecConfig.getCodecName())
+                    .isEqualTo(
+                            switch (codecType) {
+                                case BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3 -> "LC3";
+                                case BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_INVALID ->
+                                        "INVALID CODEC";
+                                default -> throw new IllegalStateException("Impossible value");
+                            });
 
             expect.that(leAudioCodecConfig.getCodecType()).isEqualTo(codecType);
         }
-    }
-
-    private BluetoothLeAudioCodecConfig buildBluetoothLeAudioCodecConfig(int sourceCodecType) {
-        return new BluetoothLeAudioCodecConfig.Builder().setCodecType(sourceCodecType).build();
     }
 }

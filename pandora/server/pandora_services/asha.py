@@ -62,12 +62,12 @@ class AshaGattService(TemplateService):
         logger = logging.getLogger(__name__)
 
         # Handler for volume control
-        def on_volume_write(connection: Connection, value: bytes) -> None:
+        def on_volume_write(connection: Connection | None, value: bytes) -> None:
             logger.info(f"--- VOLUME Write:{value[0]}")
             self.emit("volume", connection, value[0])
 
         # Handler for audio control commands
-        def on_audio_control_point_write(connection: Connection, value: bytes) -> None:
+        def on_audio_control_point_write(connection: Connection | None, value: bytes) -> None:
             logger.info(f"type {type(value)}")
             logger.info(f"--- AUDIO CONTROL POINT Write:{value.hex()}")
             opcode = value[0]
@@ -100,7 +100,7 @@ class AshaGattService(TemplateService):
                     device.notify_subscribers(self.audio_status_characteristic,
                                               force=True))  # type: ignore[no-untyped-call]
 
-        def on_read_only_properties_read(connection: Connection) -> bytes:
+        def on_read_only_properties_read(connection: Connection | None) -> bytes:
             value = (
                 bytes([
                     AshaGattService.PROTOCOL_VERSION,  # Version
@@ -112,7 +112,7 @@ class AshaGattService(TemplateService):
             self.emit("read_only_properties", connection, value)
             return value
 
-        def on_le_psm_out_read(connection: Connection) -> bytes:
+        def on_le_psm_out_read(connection: Connection | None) -> bytes:
             self.emit("le_psm_out", connection, self.psm)
             return struct.pack("<H", self.psm)
 

@@ -34,6 +34,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
@@ -141,12 +142,13 @@ public class PhonePolicyTest {
         doReturn(Collections.emptyList()).when(mA2dpService).getConnectedDevices();
         doReturn(Collections.emptyList()).when(mHeadsetService).getConnectedDevices();
 
-        when(mAdapterService.getRemoteDevice(anyString()))
-                .thenAnswer(
+        doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
                             return getRealDevice(address);
-                        });
+                        })
+                .when(mAdapterService)
+                .getRemoteDevice(anyString());
 
         SystemProperties.mProperties = mProperties;
 

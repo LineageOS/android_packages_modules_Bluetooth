@@ -371,7 +371,7 @@ public class AdapterServiceTest {
     }
 
     private void offToBleOn() {
-        mAdapterService.offToBleOn(false);
+        mAdapterService.offToBleOn(false, "default");
         syncHandler(0); // `init` need to be run first
         syncHandler(AdapterState.BLE_TURN_ON);
         verifyStateChange(STATE_OFF, STATE_BLE_TURNING_ON);

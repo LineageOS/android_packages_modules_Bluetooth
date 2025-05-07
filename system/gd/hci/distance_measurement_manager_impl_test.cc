@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hci/distance_measurement_manager.h"
+#include "hci/distance_measurement_manager_impl.h"
 
 #include <bluetooth/log.h>
 #include <flag_macros.h>
@@ -56,7 +56,7 @@ static constexpr uint8_t kMaxRetryCounterForCreateConfig = 0x03;
 static constexpr uint8_t kMaxRetryCounterForCsEnable = 0x03;
 static constexpr uint8_t kConnInterval = 24;
 static constexpr uint16_t kMinProcedureInterval = 0x01;
-}
+}  // namespace
 
 namespace bluetooth {
 namespace hci {
@@ -210,7 +210,7 @@ struct CsModule {
   os::Handler* client_handler_ = nullptr;
   os::Handler* handler_ = nullptr;
 
-  DistanceMeasurementManager* dm_manager_ = nullptr;
+  DistanceMeasurementManagerImpl* dm_manager_ = nullptr;
   testing::MockDistanceMeasurementCallbacks mock_dm_callbacks_;
   std::unique_ptr<std::promise<void>> dm_session_promise_;
   bool local_capabilities_complete_done_ = false;
@@ -233,8 +233,12 @@ struct CsModule {
     EXPECT_CALL(*mock_ranging_hal_, IsBound()).Times(AtLeast(1)).WillRepeatedly(Return(true));
     EXPECT_CALL(*mock_ranging_hal_, GetRangingHalVersion).WillRepeatedly(Return(hal::V_2));
 
+    fake_registry_.Start<hal::RangingHal>(&thread_, handler_);
+    fake_registry_.Start<AclManager>(&thread_, handler_);
+
     handler_ = fake_registry_.GetTestHandler();
-    dm_manager_ = fake_registry_.Start<DistanceMeasurementManager>(&thread_, handler_);
+    dm_manager_ = new DistanceMeasurementManagerImpl(handler_, test_hci_layer_, mock_controller_,
+                                                     mock_acl_manager_, mock_ranging_hal_);
 
     test_hci_layer_->GetCommand(OpCode::LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES);
 
@@ -242,8 +246,7 @@ struct CsModule {
   }
 
   void Stop() {
-    fake_registry_.SynchronizeModuleHandler(&DistanceMeasurementManager::Factory,
-                                            std::chrono::milliseconds(20));
+    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     fake_registry_.StopAll();
   }
 
@@ -836,6 +839,59 @@ TEST_F(DistanceMeasurementManagerTest, fail_create_config_complete) {
     cs_requester_.test_hci_layer_->IncomingLeMetaEvent(
             CsModule::GetConfigCompleteEvent(params.connection_handle, cs_config_complete_event));
   }
+  dm_session_future.wait_for(kTimeout);
+  cs_requester_.sync_client_handler();
+}
+
+TEST_F(DistanceMeasurementManagerTest, fail_create_config_complete_in_wrong_state_no_retry) {
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+
+  CsConfigCompleteEvent cs_config_complete_event;
+  cs_config_complete_event.status = ErrorCode::COMMAND_DISALLOWED;
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(
+          CsModule::GetConfigCompleteEvent(params.connection_handle, cs_config_complete_event));
+  cs_requester_.sync_client_handler();
+
+  cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
+}
+
+TEST_F(DistanceMeasurementManagerTest, fail_security_enable_complete) {
+  auto dm_session_future = cs_requester_.GetDmSessionFuture();
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillCreateConfig(params);
+
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+              OnDistanceMeasurementStopped(params.responder_addr,
+                                           DistanceMeasurementErrorCode::REASON_INTERNAL_ERROR,
+                                           DistanceMeasurementMethod::METHOD_CS))
+          .WillOnce([this](const Address& /*address*/, DistanceMeasurementErrorCode /*error_code*/,
+                           DistanceMeasurementMethod /*method*/) {
+            ASSERT_NE(cs_requester_.dm_session_promise_, nullptr);
+            cs_requester_.dm_session_promise_->set_value();
+            cs_requester_.dm_session_promise_.reset();
+          });
+
+  cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_SECURITY_ENABLE);
+  cs_requester_.test_hci_layer_->IncomingEvent(LeCsSecurityEnableStatusBuilder::Create(
+          /*status=*/ErrorCode::SUCCESS,
+          /*num_hci_command_packets=*/0xFF));
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(LeCsSecurityEnableCompleteBuilder::Create(
+          ErrorCode::LINK_LAYER_COLLISION, params.connection_handle));
+
+  dm_session_future.wait_for(kTimeout);
+  cs_requester_.sync_client_handler();
+}
+
+TEST_F(DistanceMeasurementManagerTest, unexpected_fail_security_enable_complete) {
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_, OnDistanceMeasurementStopped(_, _, _)).Times(0);
+
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(LeCsSecurityEnableCompleteBuilder::Create(
+          ErrorCode::LINK_LAYER_COLLISION, params.connection_handle));
+
   cs_requester_.sync_client_handler();
 }
 
@@ -998,7 +1054,32 @@ TEST_F(DistanceMeasurementManagerTest, schedule_next_cs_procedures) {
 
   cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
 
+  subevent_result.procedure_done_status = CsProcedureDoneStatus::ALL_RESULTS_COMPLETE;
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, subevent_result));
+  cs_requester_.sync_client_handler();
+
+  CommandView command_view =
+          cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+  LeCsProcedureEnableView enable_view =
+          LeCsProcedureEnableView::Create(DistanceMeasurementCommandView::Create(command_view));
+
+  EXPECT_EQ(enable_view.IsValid(), true);
+  EXPECT_EQ(enable_view.GetProcedureEnable(), Enable::ENABLED);
+  cs_requester_.sync_client_handler();
+}
+
+TEST_F(DistanceMeasurementManagerTest, reschedure_procedure_enable_when_procedures_were_aborted) {
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+  cs_requester_.sync_client_handler();
+
+  cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
+
+  uint16_t procedure_counter = 0;
+  CsSubeventResultEvent subevent_result;
   subevent_result.procedure_done_status = CsProcedureDoneStatus::ABORTED;
+
   cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
           params.connection_handle, procedure_counter, subevent_result));
   cs_requester_.sync_client_handler();

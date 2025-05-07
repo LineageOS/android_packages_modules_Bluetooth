@@ -38,7 +38,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
@@ -143,12 +142,13 @@ public class ScanControllerTest {
 
         TestUtils.mockGetSystemService(
                 mAdapterService, Context.LOCATION_SERVICE, LocationManager.class);
-        when(mAdapterService.getRemoteDevice(anyString()))
-                .thenAnswer(
+        doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
                             return getRealDevice(address);
-                        });
+                        })
+                .when(mAdapterService)
+                .getRemoteDevice(anyString());
 
         mBtCompanionManager = new CompanionManager(mAdapterService, null);
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();

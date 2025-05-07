@@ -50,8 +50,10 @@ android_test {
         "android.test.base.stubs.system",
         "android.test.mock.stubs.system",
         "android.test.runner.stubs.system",
+        "framework-permission-s.stubs.module_lib",
         "service-bluetooth.change-ids",
     ],
+
     jni_libs: [
         // these are needed for Extended Mockito
         "libdexmakerjvmtiagent",
@@ -64,5 +66,6 @@ android_test {
         "mts-bt",
     ],
 
+    sdk_version: "system_server_current",
     min_sdk_version: "36",
 }

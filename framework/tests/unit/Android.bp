@@ -4,7 +4,10 @@ package {
 
 android_test {
     name: "FrameworkBluetoothTests",
-    defaults: ["bluetooth_lint_rules"],
+    defaults: [
+        "bluetooth_errorprone_rules",
+        "bluetooth_lint_rules",
+    ],
 
     sdk_version: "module_current",
     min_sdk_version: "36",
@@ -30,7 +33,6 @@ android_test {
         "androidx.test.rules",
         "flag-junit",
         "framework-bluetooth-pre-jarjar",
-        "frameworks-base-testutils",
         "junit",
         "mockito-target",
         "modules-utils-bytesmatcher",

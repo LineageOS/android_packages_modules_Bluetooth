@@ -23,9 +23,9 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.net.Uri;
 
@@ -62,12 +62,13 @@ public class AvrcpCoverArtProviderTest {
     @Before
     public void setUp() {
         TestUtils.setAdapterService(mAdapterService);
-        when(mAdapterService.getRemoteDevice(anyString()))
-                .thenAnswer(
+        doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
-                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
-                        });
+                            return getTestDevice(address);
+                        })
+                .when(mAdapterService)
+                .getRemoteDevice(anyString());
         mArtProvider = new AvrcpCoverArtProvider();
     }
 
