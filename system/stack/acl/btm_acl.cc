@@ -148,7 +148,6 @@ static bool IsEprAvailable(const tACL_CONN& p_acl) {
 }
 
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb, uint8_t max_page_number);
-static void btm_read_failed_contact_counter_timeout(void* data);
 static void btm_read_remote_ext_features(uint16_t handle, uint8_t page_number);
 static void btm_read_rssi_timeout(void* data);
 static void btm_read_tx_power_timeout(void* data);
@@ -1573,48 +1572,6 @@ tBTM_STATUS BTM_ReadRSSI(const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb) {
 
 /*******************************************************************************
  *
- * Function         BTM_ReadFailedContactCounter
- *
- * Description      This function is called to read the failed contact counter.
- *                  The result is returned in the callback.
- *                  (tBTM_FAILED_CONTACT_COUNTER_RESULT)
- *
- * Returns          tBTM_STATUS::BTM_CMD_STARTED if successfully initiated or error code
- *
- ******************************************************************************/
-tBTM_STATUS BTM_ReadFailedContactCounter(const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb) {
-  tACL_CONN* p;
-  tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
-  tBT_DEVICE_TYPE dev_type;
-  tBLE_ADDR_TYPE addr_type;
-
-  /* If someone already waiting on the result, do not allow another */
-  if (btm_cb.devcb.p_failed_contact_counter_cmpl_cb) {
-    return tBTM_STATUS::BTM_BUSY;
-  }
-
-  get_btm_client_interface().peer.BTM_ReadDevInfo(remote_bda, &dev_type, &addr_type);
-  if (dev_type == BT_DEVICE_TYPE_BLE) {
-    transport = BT_TRANSPORT_LE;
-  }
-
-  p = internal_.btm_bda_to_acl(remote_bda, transport);
-  if (p != (tACL_CONN*)NULL) {
-    btm_cb.devcb.p_failed_contact_counter_cmpl_cb = p_cb;
-    alarm_set_on_mloop(btm_cb.devcb.read_failed_contact_counter_timer, BTM_DEV_REPLY_TIMEOUT_MS,
-                       btm_read_failed_contact_counter_timeout, NULL);
-
-    btsnd_hcic_read_failed_contact_counter(p->hci_handle);
-    return tBTM_STATUS::BTM_CMD_STARTED;
-  }
-  log::warn("Unable to find active acl");
-
-  /* If here, no BD Addr found */
-  return tBTM_STATUS::BTM_UNKNOWN_ADDR;
-}
-
-/*******************************************************************************
- *
  * Function         BTM_ReadTxPower
  *
  * Description      This function is called to read the current
@@ -1812,70 +1769,6 @@ void btm_read_rssi_complete(uint8_t* p, uint16_t evt_len) {
 
 err_out:
   log::error("Bogus event packet, too short");
-}
-
-/*******************************************************************************
- *
- * Function         btm_read_failed_contact_counter_timeout
- *
- * Description      Callback when reading the failed contact counter times out.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_read_failed_contact_counter_timeout(void* /* data */) {
-  tBTM_FAILED_CONTACT_COUNTER_RESULT result;
-  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_failed_contact_counter_cmpl_cb;
-  btm_cb.devcb.p_failed_contact_counter_cmpl_cb = NULL;
-  result.status = tBTM_STATUS::BTM_DEVICE_TIMEOUT;
-  if (p_cb) {
-    (*p_cb)(&result);
-  }
-}
-
-/*******************************************************************************
- *
- * Function         btm_read_failed_contact_counter_complete
- *
- * Description      This function is called when the command complete message
- *                  is received from the HCI for the read failed contact
- *                  counter request.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_read_failed_contact_counter_complete(uint8_t* p) {
-  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_failed_contact_counter_cmpl_cb;
-  tBTM_FAILED_CONTACT_COUNTER_RESULT result;
-
-  alarm_cancel(btm_cb.devcb.read_failed_contact_counter_timer);
-  btm_cb.devcb.p_failed_contact_counter_cmpl_cb = NULL;
-
-  /* If there was a registered callback, call it */
-  if (p_cb) {
-    uint16_t handle;
-    STREAM_TO_UINT8(result.hci_status, p);
-
-    if (result.hci_status == HCI_SUCCESS) {
-      result.status = tBTM_STATUS::BTM_SUCCESS;
-
-      STREAM_TO_UINT16(handle, p);
-
-      STREAM_TO_UINT16(result.failed_contact_counter, p);
-      log::debug("Failed contact counter complete: counter {}, hci status:{}",
-                 result.failed_contact_counter,
-                 hci_status_code_text(to_hci_status_code(result.hci_status)));
-
-      tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
-      if (p_acl_cb != nullptr) {
-        result.rem_bda = p_acl_cb->link_spec.addrt.bda;
-      }
-    } else {
-      result.status = tBTM_STATUS::BTM_ERR_PROCESSING;
-    }
-
-    (*p_cb)(&result);
-  }
 }
 
 /*******************************************************************************

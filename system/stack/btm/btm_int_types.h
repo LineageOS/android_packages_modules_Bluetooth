@@ -52,11 +52,6 @@ typedef struct tBTM_DEVCB {
   tBTM_CMPL_CB* p_rssi_cmpl_cb; /* Callback function to be called when  */
                                 /* read RSSI function completes */
 
-  alarm_t* read_failed_contact_counter_timer;     /* Read Failed Contact Counter */
-                                                  /* timer */
-  tBTM_CMPL_CB* p_failed_contact_counter_cmpl_cb; /* Callback function to be */
-  /* called when read Failed Contact Counter function completes */
-
   alarm_t* read_automatic_flush_timeout_timer;     /* Read Automatic Flush Timeout */
                                                    /* timer */
   tBTM_CMPL_CB* p_automatic_flush_timeout_cmpl_cb; /* Callback function to be */
@@ -74,14 +69,12 @@ typedef struct tBTM_DEVCB {
 
   void Init() {
     read_rssi_timer = alarm_new("btm.read_rssi_timer");
-    read_failed_contact_counter_timer = alarm_new("btm.read_failed_contact_counter_timer");
     read_automatic_flush_timeout_timer = alarm_new("btm.read_automatic_flush_timeout_timer");
     read_tx_power_timer = alarm_new("btm.read_tx_power_timer");
   }
 
   void Free() {
     alarm_free(read_rssi_timer);
-    alarm_free(read_failed_contact_counter_timer);
     alarm_free(read_automatic_flush_timeout_timer);
     alarm_free(read_tx_power_timer);
   }

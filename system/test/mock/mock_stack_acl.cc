@@ -65,7 +65,6 @@ struct acl_peer_supports_ble_connection_subrating_host
 struct acl_refresh_remote_address acl_refresh_remote_address;
 struct acl_set_peer_le_features_from_handle acl_set_peer_le_features_from_handle;
 struct btm_acl_for_bda btm_acl_for_bda;
-struct BTM_ReadFailedContactCounter BTM_ReadFailedContactCounter;
 struct BTM_ReadTxPower BTM_ReadTxPower;
 struct BTM_SetLinkSuperTout BTM_SetLinkSuperTout;
 struct btm_remove_acl btm_remove_acl;
@@ -100,7 +99,6 @@ struct btm_acl_role_changed btm_acl_role_changed;
 struct btm_cont_rswitch_from_handle btm_cont_rswitch_from_handle;
 struct btm_establish_continue_from_address btm_establish_continue_from_address;
 struct btm_read_automatic_flush_timeout_complete btm_read_automatic_flush_timeout_complete;
-struct btm_read_failed_contact_counter_complete btm_read_failed_contact_counter_complete;
 struct btm_read_remote_ext_features_complete btm_read_remote_ext_features_complete;
 struct btm_read_remote_ext_features_complete_raw btm_read_remote_ext_features_complete_raw;
 struct btm_read_remote_ext_features_failed btm_read_remote_ext_features_failed;
@@ -202,10 +200,6 @@ void acl_send_data_packet_br_edr(const RawAddress& bd_addr, BT_HDR* p_buf) {
 tACL_CONN* btm_acl_for_bda(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);
   return test::mock::stack_acl::btm_acl_for_bda(bd_addr, transport);
-}
-tBTM_STATUS BTM_ReadFailedContactCounter(const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_acl::BTM_ReadFailedContactCounter(remote_bda, p_cb);
 }
 tBTM_STATUS BTM_ReadTxPower(const RawAddress& remote_bda, tBT_TRANSPORT transport,
                             tBTM_CMPL_CB* p_cb) {
@@ -345,10 +339,6 @@ void btm_establish_continue_from_address(const RawAddress& bda, tBT_TRANSPORT tr
 void btm_read_automatic_flush_timeout_complete(uint8_t* p) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_read_automatic_flush_timeout_complete(p);
-}
-void btm_read_failed_contact_counter_complete(uint8_t* p) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_read_failed_contact_counter_complete(p);
 }
 void btm_read_remote_ext_features_complete(uint16_t handle, uint8_t page_num, uint8_t max_page,
                                            uint8_t* features) {

@@ -179,7 +179,6 @@ shim::acl_interface_t acl_interface{
         .link.classic.on_sniff_subrating = nullptr,
         .link.classic.on_read_clock_complete = nullptr,
         .link.classic.on_read_clock_offset_complete = nullptr,
-        .link.classic.on_read_failed_contact_counter_complete = nullptr,
         .link.classic.on_read_link_policy_settings_complete = nullptr,
         .link.classic.on_read_link_quality_complete = nullptr,
         .link.classic.on_read_link_supervision_timeout_complete = nullptr,

@@ -209,7 +209,6 @@ void btsnd_hcic_write_cur_iac_lap(uint8_t num_cur_iac,
 void btsnd_hcic_read_rssi(uint16_t handle); /* Read RSSI */
 using ReadEncKeySizeCb = base::OnceCallback<void(uint8_t, uint16_t, uint8_t)>;
 void btsnd_hcic_read_encryption_key_size(uint16_t handle, ReadEncKeySizeCb cb);
-void btsnd_hcic_read_failed_contact_counter(uint16_t handle);
 void btsnd_hcic_enable_test_mode(void);            /* Enable Device Under Test Mode */
 void btsnd_hcic_write_pagescan_type(uint8_t type); /* Write Page Scan Type */
 void btsnd_hcic_write_inqscan_type(uint8_t type);  /* Write Inquiry Scan Type */
