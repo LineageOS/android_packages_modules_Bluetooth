@@ -116,8 +116,13 @@ extern "C" const char* __asan_default_options();
 extern "C" const char* __asan_default_options() { return "detect_container_overflow=0"; }
 
 std::atomic<int> num_async_tasks;
+std::atomic<int> num_delayed_tasks;
 bluetooth::common::MessageLoopThread message_loop_thread("test message loop");
+bluetooth::common::MessageLoopThread delayed_message_loop_thread("test delayed message loop");
 bluetooth::common::MessageLoopThread* get_main_thread() { return &message_loop_thread; }
+std::vector<base::OnceClosure> pending_tasks_;
+std::vector<base::OnceClosure> pending_delayed_tasks_;
+bool hold_delayed_tasks = false;
 
 bt_status_t do_in_main_thread(base::OnceClosure task) {
   // Wrap the task with task counter so we could later know if there are
@@ -136,8 +141,32 @@ bt_status_t do_in_main_thread(base::OnceClosure task) {
 }
 
 bt_status_t do_in_main_thread_delayed(base::OnceClosure task, std::chrono::microseconds /*delay*/) {
-  /* For testing purpose it is ok to just skip delay */
-  return do_in_main_thread(std::move(task));
+  if (hold_delayed_tasks) {
+    /* Wrap the task with task counter so we could later know if there are
+     * any callbacks scheduled and we should wait before performing some actions
+     */
+    pending_delayed_tasks_.push_back(std::move(task));
+    return BT_STATUS_SUCCESS;
+  } else {
+    /* For testing purpose it is ok to just skip delay */
+    return do_in_main_thread(std::move(task));
+  }
+}
+
+static void execute_delayed_tasks() {
+  for (auto& task : pending_delayed_tasks_) {
+    if (!delayed_message_loop_thread.DoInThread(base::BindOnce(
+                [](base::OnceClosure task, std::atomic<int>& num_delayed_tasks) {
+                  std::move(task).Run();
+                  num_delayed_tasks--;
+                },
+                std::move(task), std::ref(num_async_tasks)))) {
+      bluetooth::log::error("failed to post task to task runner!");
+      return;
+    }
+    num_delayed_tasks++;
+  }
+  pending_delayed_tasks_.clear();
 }
 
 static void init_message_loop_thread() {
@@ -152,7 +181,21 @@ static void init_message_loop_thread() {
   }
 }
 
+static void init_delayed_message_loop_thread() {
+  num_delayed_tasks = 0;
+  message_loop_thread.StartUp();
+  if (!message_loop_thread.IsRunning()) {
+    FAIL() << "unable to create delayed message loop thread.";
+  }
+
+  if (!message_loop_thread.EnableRealTimeScheduling()) {
+    bluetooth::log::error("Unable to set real time scheduling");
+  }
+}
+
 static void cleanup_message_loop_thread() { message_loop_thread.ShutDown(); }
+
+static void cleanup_delayed_message_loop_thread() { delayed_message_loop_thread.ShutDown(); }
 
 const tBLE_BD_ADDR BTM_Sec_GetAddressWithType(const RawAddress& bd_addr) {
   return tBLE_BD_ADDR{.type = BLE_ADDR_PUBLIC, .bda = bd_addr};
@@ -1545,6 +1588,7 @@ protected:
     com::android::bluetooth::flags::provider_->dsa_use_codec_extensibility(true);
 
     init_message_loop_thread();
+    init_delayed_message_loop_thread();
     reset_mock_function_count_map();
     hci::testing::mock_controller_ =
             std::make_unique<NiceMock<bluetooth::hci::testing::MockControllerInterface>>();
@@ -1634,6 +1678,8 @@ protected:
     // WARNING: Message loop cleanup should wait for all the 'till now' scheduled calls
     // so it should be called right at the very begginning of teardown.
     cleanup_message_loop_thread();
+    cleanup_delayed_message_loop_thread();
+    hold_delayed_tasks = false;
 
     if (is_audio_unicast_source_acquired) {
       if (unicast_source_hal_cb_ != nullptr) {
@@ -3871,6 +3917,64 @@ TEST_F(UnicastTest, ConnectRemoteDisconnectOnTimeoutOneEarbud) {
   /* For background connect, test needs to Inject Connected Event */
   InjectConnectedEvent(test_address0, 1);
   SyncOnMainLoop();
+}
+
+TEST_F(UnicastTest, AutoconnectTwoEarbudsOneEarlyConnected) {
+  com::android::bluetooth::flags::provider_->leaudio_do_not_set_autoconnecting_on_connected_device(
+          true);
+  uint8_t group_size = 2;
+  int group_id = 2;
+
+  // Report working CSIS
+  ON_CALL(mock_csis_client_module_, IsCsisClientRunning()).WillByDefault(Return(true));
+
+  // First earbud
+  const RawAddress test_address0 = GetTestAddress(0);
+  EXPECT_CALL(mock_btif_storage_, AddLeaudioAutoconnect(test_address0, true)).Times(1);
+  ConnectCsisDevice(test_address0, 1 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontLeft,
+                    codec_spec_conf::kLeAudioLocationFrontLeft, group_size, group_id, 1 /* rank*/);
+
+  // Second earbud
+  const RawAddress test_address1 = GetTestAddress(1);
+  EXPECT_CALL(mock_btif_storage_, AddLeaudioAutoconnect(test_address1, true)).Times(1);
+  ConnectCsisDevice(test_address1, 2 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontRight,
+                    codec_spec_conf::kLeAudioLocationFrontRight, group_size, group_id, 2 /* rank*/,
+                    true /*connect_through_csis*/);
+
+  SetUpMockCodecManager(::bluetooth::le_audio::types::CodecLocation::HOST);
+
+  // Start streaming
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+  StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
+  auto group = streaming_groups.at(group_id);
+  auto device1 = group->GetFirstDevice();
+  auto device2 = group->GetNextDevice(device1);
+
+  hold_delayed_tasks = true;
+  DisconnectLeAudioWithAclClose(test_address0, 1);
+  DisconnectLeAudioWithAclClose(test_address1, 2);
+
+  /* Simulate first device connected from Targeted announcement */
+  hold_delayed_tasks = false;
+
+  /* Remove default action on the direct connect */
+  ON_CALL(mock_gatt_interface_, Open(_, _, BTM_BLE_DIRECT_CONNECTION, _)).WillByDefault(Return());
+  InjectConnectedEvent(test_address0, 1);
+  SyncOnMainLoop();
+  ASSERT_EQ(device1->connection_state_, DeviceConnectState::CONNECTED);
+  ASSERT_EQ(device2->connection_state_, DeviceConnectState::CONNECTING_AUTOCONNECT);
+
+  execute_delayed_tasks();
+  SyncOnMainLoop();
+
+  ASSERT_EQ(device1->connection_state_, DeviceConnectState::CONNECTED);
+  ASSERT_EQ(device2->connection_state_, DeviceConnectState::CONNECTING_AUTOCONNECT);
+  InjectConnectedEvent(test_address1, 2);
+  SyncOnMainLoop();
+
+  ASSERT_EQ(device1->connection_state_, DeviceConnectState::CONNECTED);
+  ASSERT_EQ(device2->connection_state_, DeviceConnectState::CONNECTED);
 }
 
 TEST_F(UnicastTest, ConnectTwoEarbudsCsisGrouped) {

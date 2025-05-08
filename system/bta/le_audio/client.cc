@@ -2120,7 +2120,9 @@ public:
   }
 
   void BackgroundConnectIfNeeded(LeAudioDevice* leAudioDevice) {
-    if (!leAudioDevice->autoconnect_flag_) {
+    if (!leAudioDevice->autoconnect_flag_ ||
+        (com::android::bluetooth::flags::leaudio_do_not_set_autoconnecting_on_connected_device() &&
+         leAudioDevice->GetConnectionState() != DeviceConnectState::DISCONNECTED)) {
       log::debug("Device {} not in the background connect", leAudioDevice->address_);
       return;
     }
@@ -2551,7 +2553,6 @@ public:
       log::info("Group {} is invalid or disabled", leAudioDevice->group_id_);
       return;
     }
-
     leAudioDevice->SetConnectionState(DeviceConnectState::CONNECTING_AUTOCONNECT);
 
     /* Cancel previous bakcground connect */
