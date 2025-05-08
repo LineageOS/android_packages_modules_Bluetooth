@@ -138,7 +138,7 @@ void DualModeController::HandleAcl(std::shared_ptr<std::vector<uint8_t>> packet)
     return;
   }
 
-  link_layer_controller_.SendAclToRemote(acl_packet);
+  link_layer_controller_.HandleAcl(acl_packet);
 }
 
 void DualModeController::HandleSco(std::shared_ptr<std::vector<uint8_t>> packet) {

@@ -86,7 +86,6 @@ public:
                                            const Address& peer_address);
   ErrorCode SendCommandToRemoteByHandle(OpCode opcode, pdl::packet::slice args, uint16_t handle);
   ErrorCode SendScoToRemote(bluetooth::hci::ScoView sco_packet);
-  ErrorCode SendAclToRemote(bluetooth::hci::AclView acl_packet);
 
   void ForwardToLm(bluetooth::hci::CommandView command);
   void ForwardToLl(bluetooth::hci::CommandView command);
@@ -313,6 +312,7 @@ public:
   // Returns true if the specified ACL connection handle is valid.
   bool HasAclConnection(uint16_t connection_handle);
 
+  void HandleAcl(bluetooth::hci::AclView acl);
   void HandleIso(bluetooth::hci::IsoView iso);
 
   // BR/EDR Commands
