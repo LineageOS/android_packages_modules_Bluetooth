@@ -271,6 +271,7 @@ public class AdapterService extends Service {
     private final Looper mLooper;
     private final AdapterServiceHandler mHandler;
 
+    private boolean mIsMediaProfileConnected;
     private int mStackReportedState;
     private long mTxTimeTotalMs;
     private long mRxTimeTotalMs;
@@ -4271,6 +4272,15 @@ public class AdapterService extends Service {
         mPhonePolicy.ifPresent(
                 policy ->
                         policy.profileConnectionStateChanged(profile, device, fromState, toState));
+        if (!Flags.onewayMediaProfile()) {
+            return;
+        }
+        boolean mediaConnected = isMediaProfileConnected();
+        if (mIsMediaProfileConnected != mediaConnected) {
+            mIsMediaProfileConnected = mediaConnected;
+            broadcastToSystemServerCallbacks(
+                    "mediaConnected", (c) -> c.onMediaProfileConnectionChange(mediaConnected));
+        }
     }
 
     /** Handle Bluetooth app state when active device changes for a given {@code profile}. */
