@@ -49,6 +49,7 @@
 #include "le_audio/le_audio_types.h"
 #include "le_audio_set_configuration_provider.h"
 #include "le_audio_utils.h"
+#include "le_audio_vendor_codec.h"
 #include "main/shim/entry.h"
 #include "osi/include/properties.h"
 #include "stack/include/hcimsgs.h"
@@ -215,6 +216,8 @@ public:
     switch (codec_id.coding_format) {
       case types::kLeAudioCodingFormatLC3:
         return true;
+      case types::kLeAudioCodingFormatVendorSpecific:
+        return vendor::IsKnownCodec(codec_id);
     }
     return false;
   }
@@ -291,7 +294,14 @@ public:
           continue;
         }
 
-        FillRemoteCoreCapabilityToBtLeAudioCodecConfigs(pac, vec);
+        if (pac.codec_id.coding_format == types::kLeAudioCodingFormatVendorSpecific) {
+          // TODO(b/416662050): Ask BT Audio HAL about the vendor codec details instead of trying to
+          // parse the vendor buffers in the BT stack.
+          vendor::FillRemoteCapabilityToBtLeAudioCodecConfigs(pac.codec_id, pac.codec_spec_caps_raw,
+                                                              vec);
+        } else {
+          FillRemoteCoreCapabilityToBtLeAudioCodecConfigs(pac, vec);
+        }
       }
     }
     return vec;

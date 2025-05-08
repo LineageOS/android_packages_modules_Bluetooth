@@ -198,15 +198,21 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
     public static final int CHANNEL_COUNT_2 = 0x01 << 1;
 
     /**
-     * Values are the bit mask as defined in the Bluetooth Assigned Numbers, Generic Audio,
-     * Supported_Frame_Durations table
+     * These values do not follow strictly the bit mask defined in the Bluetooth Assigned Numbers,
+     * Generic Audio, Supported_Frame_Durations table, and may deviate or extend beyond what was
+     * defined there.
      *
      * @hide
      */
     @IntDef(
             flag = true,
             prefix = "FRAME_DURATION_",
-            value = {FRAME_DURATION_NONE, FRAME_DURATION_7500, FRAME_DURATION_10000})
+            value = {
+                FRAME_DURATION_NONE,
+                FRAME_DURATION_7500,
+                FRAME_DURATION_10000,
+                FRAME_DURATION_20000
+            })
     @Retention(RetentionPolicy.SOURCE)
     public @interface FrameDuration {}
 
@@ -218,6 +224,10 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
 
     /** Frame duration 10000 us. */
     public static final int FRAME_DURATION_10000 = 0x01 << 1;
+
+    /** Frame duration 20000 us. */
+    /** @hide */
+    public static final int FRAME_DURATION_20000 = 0x01 << 2;
 
     private final @SourceCodecType int mCodecType;
     private final @CodecPriority int mCodecPriority;
@@ -336,6 +346,7 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
             case FRAME_DURATION_NONE -> "None";
             case FRAME_DURATION_7500 -> "7.5 ms";
             case FRAME_DURATION_10000 -> "10 ms";
+            case FRAME_DURATION_20000 -> "20 ms";
             default -> "Unknown bit " + frameDurationBit;
         };
     }

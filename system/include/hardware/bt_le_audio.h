@@ -190,7 +190,8 @@ typedef enum {
 typedef enum {
   LE_AUDIO_FRAME_DURATION_INDEX_NONE = 0,
   LE_AUDIO_FRAME_DURATION_INDEX_7500US = 0x01 << 0,
-  LE_AUDIO_FRAME_DURATION_INDEX_10000US = 0x01 << 1
+  LE_AUDIO_FRAME_DURATION_INDEX_10000US = 0x01 << 1,
+  LE_AUDIO_FRAME_DURATION_INDEX_20000US = 0x01 << 2
 } btle_audio_frame_duration_index_t;
 
 typedef struct btle_audio_codec_config {
