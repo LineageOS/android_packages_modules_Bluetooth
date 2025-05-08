@@ -66,19 +66,18 @@ public class PeriodicScanManagerTest {
     private PeriodicScanManager mPeriodicScanManager;
     private BluetoothDevice mDevice;
     private ScanResult mScanResult;
-    private Context mTargetContext;
     private int syncHandle;
 
     private static final String REMOTE_DEVICE_ADDRESS = "00:01:02:03:04:05";
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
         PeriodicScanNativeInterface.setInstance(mPeriodicScanNativeInterface);
         mPeriodicScanManager =
                 new PeriodicScanManager(mAdapterService, new TestLooper().getLooper());
 
-        BluetoothManager manager = mTargetContext.getSystemService(BluetoothManager.class);
+        final Context context = InstrumentationRegistry.getInstrumentation().getContext();
+        BluetoothManager manager = context.getSystemService(BluetoothManager.class);
         assertThat(manager).isNotNull();
         mAdapter = manager.getAdapter();
         mDevice =

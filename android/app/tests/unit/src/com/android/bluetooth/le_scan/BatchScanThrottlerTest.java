@@ -18,8 +18,6 @@ package com.android.bluetooth.le_scan;
 
 import static android.bluetooth.le.ScanSettings.SCAN_MODE_BALANCED;
 
-import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
-
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.le_scan.ScanController.DEFAULT_REPORT_DELAY_FLOOR;
 
@@ -31,6 +29,7 @@ import android.content.Context;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.R;
 import com.android.bluetooth.TestUtils.FakeTimeProvider;
@@ -38,7 +37,6 @@ import com.android.bluetooth.TestUtils.FakeTimeProvider;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -53,16 +51,11 @@ import java.util.stream.LongStream;
 @SmallTest
 @RunWith(TestParameterInjector.class)
 public class BatchScanThrottlerTest {
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
-    private final Context mContext = getInstrumentation().getContext();
-    private FakeTimeProvider mTimeProvider;
-
-    @Before
-    public void setUp() {
-        mTimeProvider = new FakeTimeProvider();
-    }
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+    private final FakeTimeProvider mTimeProvider = new FakeTimeProvider();
 
     private void advanceTime(long amountToAdvanceMillis) {
         mTimeProvider.advanceTime(Duration.ofMillis(amountToAdvanceMillis));
