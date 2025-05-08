@@ -25,6 +25,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static android.media.audio.Flags.FLAG_DEPRECATE_STREAM_BT_SCO;
 import static android.media.audio.Flags.FLAG_SCO_MANAGED_BY_AUDIO;
+import static android.media.audio.Flags.FLAG_UNIFY_ABSOLUTE_VOLUME_MANAGEMENT;
 
 import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
@@ -1835,6 +1836,23 @@ public class HeadsetStateMachineTest {
 
         mHeadsetStateMachine.sendMessage(
                 HeadsetStateMachine.INTENT_SCO_VOLUME_CHANGED, volumeChange);
+        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+
+        // verify volume processed
+        verify(mNativeInterface).setVolume(mDevice, HeadsetHalConstants.VOLUME_TYPE_SPK, vol);
+
+        mHeadsetStateMachine.mSpeakerVolume = originalVolume;
+    }
+
+    @EnableFlags(FLAG_UNIFY_ABSOLUTE_VOLUME_MANAGEMENT)
+    @Test
+    public void testVolumeChangeEvent_fromVolumeIndexWhenAudioOn() {
+        setUpAudioOnState();
+        int originalVolume = mHeadsetStateMachine.mSpeakerVolume;
+        mHeadsetStateMachine.mSpeakerVolume = 0;
+        int vol = 10;
+
+        mHeadsetStateMachine.sendMessage(HeadsetStateMachine.SCO_VOLUME_CHANGED, vol);
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
 
         // verify volume processed
