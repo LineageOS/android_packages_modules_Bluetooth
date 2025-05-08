@@ -238,6 +238,7 @@ impl Module for LeAudioModule {
                 ReturnParameters::Reset(ref ret) if ret.status == Status::Success => {
                     let mut state = self.state.lock().unwrap();
                     *state = Default::default();
+                    Service::reset();
                 }
 
                 ReturnParameters::LeReadBufferSizeV2(ref ret) if ret.status == Status::Success => {
@@ -247,7 +248,7 @@ impl Module for LeAudioModule {
                         ret.iso_data_packet_length.into(),
                         ret.total_num_iso_data_packets.into(),
                     )));
-                    Service::reset(Arc::downgrade(state.arbiter.as_ref().unwrap()));
+                    Service::set_arbiter(Arc::downgrade(state.arbiter.as_ref().unwrap()));
                 }
 
                 ReturnParameters::LeSetCigParameters(ref ret) if ret.status == Status::Success => {
