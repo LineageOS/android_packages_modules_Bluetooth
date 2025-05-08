@@ -33,7 +33,7 @@
 #include "acl_api_types.h"
 #include "btm_sec_cb.h"
 #include "btm_sec_int_types.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/entry.h"
 #include "stack/btm/btm_int_types.h"

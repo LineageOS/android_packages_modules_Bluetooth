@@ -31,7 +31,7 @@
 #include <set>
 
 #include "gd/hci/acl_manager.h"
-#include "gd/hci/controller_interface.h"
+#include "gd/hci/controller.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"

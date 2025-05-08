@@ -47,7 +47,7 @@
 #include "common/strings.h"
 #include "gatt_api.h"
 #include "hardware/bt_le_audio.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci_error_code.h"
 #include "internal_include/bt_trace.h"
 #include "le_audio/codec_manager.h"

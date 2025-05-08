@@ -44,7 +44,7 @@
 #include "common/strings.h"
 #include "gatt_api.h"
 #include "hardware/bluetooth.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci_error_code.h"
 #include "hcidefs.h"
 #include "internal_include/bt_trace.h"

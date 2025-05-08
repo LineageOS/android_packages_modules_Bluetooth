@@ -58,8 +58,8 @@ using acl_manager::RoundRobinScheduler;
 
 struct AclManagerImpl::impl {
   explicit impl(const AclManagerImpl& acl_manager, os::Handler* handler,
-                HciInterface* hci_interface, ControllerInterface* controller,
-                AclScheduler* acl_scheduler, RemoteNameRequestModule* remote_name_request_module)
+                HciInterface* hci_interface, Controller* controller, AclScheduler* acl_scheduler,
+                RemoteNameRequestModule* remote_name_request_module)
       : acl_manager_(acl_manager) {
     handler_ = handler;
     hci_layer_ = hci_interface;
@@ -185,7 +185,7 @@ struct AclManagerImpl::impl {
   AclScheduler* acl_scheduler_ = nullptr;
   RemoteNameRequestModule* remote_name_request_module_ = nullptr;
   os::Handler* handler_ = nullptr;
-  ControllerInterface* controller_ = nullptr;
+  Controller* controller_ = nullptr;
   HciInterface* hci_layer_ = nullptr;
   RoundRobinScheduler* round_robin_scheduler_ = nullptr;
   common::BidiQueueEnd<AclBuilder, AclView>* hci_queue_end_ = nullptr;
@@ -366,7 +366,7 @@ void AclManagerImpl::HACK_SetAclTxPriority(uint8_t handle, bool high_priority) {
 }
 
 AclManagerImpl::AclManagerImpl(os::Handler* handler, HciInterface* hci_interface,
-                               ControllerInterface* controller, AclScheduler* acl_scheduler,
+                               Controller* controller, AclScheduler* acl_scheduler,
                                RemoteNameRequestModule* remote_name_request_module) {
   pimpl_ = std::make_unique<impl>(*this, handler, hci_interface, controller, acl_scheduler,
                                   remote_name_request_module);

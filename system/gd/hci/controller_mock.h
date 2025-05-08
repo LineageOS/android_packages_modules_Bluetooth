@@ -20,7 +20,7 @@
 #include <cstdint>
 
 #include "hci/address.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/hci_packets.h"
 #include "hci/le_rand_callback.h"
 
@@ -29,7 +29,7 @@ namespace bluetooth {
 namespace hci {
 namespace testing {
 
-class MockController : public ControllerInterface {
+class MockController : public Controller {
 public:
   MOCK_METHOD(void, RegisterCompletedAclPacketsCallback, (CompletedAclPacketsCallback cb));
   MOCK_METHOD(void, UnregisterCompletedAclPacketsCallback, ());

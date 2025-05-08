@@ -34,7 +34,7 @@
 #include "btm_dev.h"
 #include "btm_sec_cb.h"
 #include "crypto_toolbox/crypto_toolbox.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "main/shim/entry.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/internal/btm_api.h"

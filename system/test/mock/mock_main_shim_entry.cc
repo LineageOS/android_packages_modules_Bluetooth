@@ -59,7 +59,7 @@ class Dumpsys;
 namespace shim {
 
 hci::AclManager* GetAclManager() { return hci::testing::mock_acl_manager_.get(); }
-hci::ControllerInterface* GetController() { return hci::testing::mock_controller_.get(); }
+hci::Controller* GetController() { return hci::testing::mock_controller_.get(); }
 hci::HciInterface* GetHciLayer() { return hci::testing::mock_hci_layer_.get(); }
 hci::LeAdvertisingManager* GetAdvertising() { return hci::testing::mock_le_advertising_manager_; }
 hci::LeScanningManager* GetScanning() { return hci::testing::mock_le_scanning_manager_; }

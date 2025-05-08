@@ -67,7 +67,7 @@ struct Stack::impl {
   Acl* acl_ = nullptr;
   std::shared_ptr<storage::StorageModule> storage_ = nullptr;
   std::shared_ptr<hal::SnoopLogger> snoop_logger_ = nullptr;
-  std::unique_ptr<hci::ControllerInterface> controller_ = nullptr;
+  std::unique_ptr<hci::Controller> controller_ = nullptr;
   std::unique_ptr<hci::acl_manager::AclScheduler> acl_scheduler_ = nullptr;
   std::unique_ptr<hci::RemoteNameRequestModule> remote_name_request_ = nullptr;
   std::unique_ptr<hci::AclManagerImpl> acl_manager_ = nullptr;
@@ -227,7 +227,7 @@ hal::SnoopLogger* Stack::GetSnoopLogger() const {
   return pimpl_->snoop_logger_.get();
 }
 
-hci::ControllerInterface* Stack::GetController() const {
+hci::Controller* Stack::GetController() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
   return pimpl_->controller_.get();

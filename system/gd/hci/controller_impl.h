@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "hci/address.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/hci_interface.h"
 #include "hci/hci_packets.h"
 #include "hci/le_rand_callback.h"
@@ -31,7 +31,7 @@
 namespace bluetooth {
 namespace hci {
 
-class ControllerImpl : public ControllerInterface {
+class ControllerImpl : public Controller {
 public:
   ControllerImpl(os::Handler* handler, hci::HciInterface* hci_interface);
   ControllerImpl(const ControllerImpl&) = delete;

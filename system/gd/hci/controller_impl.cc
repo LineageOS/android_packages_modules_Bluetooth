@@ -26,7 +26,7 @@
 #include <string>
 #include <utility>
 
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/event_checkers.h"
 #include "hci/hci_interface.h"
 #include "os/system_properties.h"

@@ -84,7 +84,7 @@ class TestLeAddressManager : public LeAddressManager {
 public:
   TestLeAddressManager(common::Callback<void(std::unique_ptr<CommandBuilder>)> enqueue_command,
                        os::Handler* handler, Address public_address, uint8_t accept_list_size,
-                       uint8_t resolving_list_size, ControllerInterface* controller)
+                       uint8_t resolving_list_size, Controller* controller)
       : LeAddressManager(enqueue_command, handler, public_address, accept_list_size,
                          resolving_list_size, controller) {
     address_policy_ = AddressPolicy::USE_STATIC_ADDRESS;
