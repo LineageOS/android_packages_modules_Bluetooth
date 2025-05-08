@@ -30,7 +30,7 @@
 #include "hci/acl_manager/le_connection_callbacks.h"
 #include "hci/acl_manager/le_connection_management_callbacks_mock.h"
 #include "hci/address_with_type.h"
-#include "hci/controller.h"
+#include "hci/controller_mock.h"
 #include "hci/hci_layer_fake.h"
 #include "hci/hci_packets.h"
 #include "hci/octets.h"
@@ -172,7 +172,7 @@ namespace acl_manager {
 
 namespace {
 
-class TestController : public Controller {
+class TestController : public testing::MockController {
 public:
   bool IsSupported(OpCode op_code) const override {
     log::info("IsSupported");

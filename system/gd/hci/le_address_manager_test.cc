@@ -18,7 +18,7 @@
 
 #include <gtest/gtest.h>
 
-#include "hci/controller.h"
+#include "hci/controller_mock.h"
 #include "hci/hci_layer_fake.h"
 #include "hci/octets.h"
 #include "packet/raw_builder.h"
@@ -35,7 +35,7 @@ using packet::kLittleEndian;
 using packet::PacketView;
 using packet::RawBuilder;
 
-class TestController : public Controller {
+class TestController : public testing::MockController {
 public:
   bool IsSupported(OpCode op_code) const override { return supported_opcodes_.count(op_code) == 1; }
 
@@ -57,11 +57,6 @@ public:
 
   uint8_t num_advertisers_{0};
   VendorCapabilities vendor_capabilities_;
-
-protected:
-  void Start() override {}
-  void Stop() override {}
-  void ListDependencies(ModuleList* /* list */) const {}
 
 private:
   std::set<OpCode> supported_opcodes_{};

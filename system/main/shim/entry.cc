@@ -18,7 +18,6 @@
 
 #include "hal/snoop_logger.h"
 #include "hci/acl_manager.h"
-#include "hci/controller.h"
 #include "hci/controller_interface.h"
 #include "hci/distance_measurement_manager.h"
 #include "hci/hci_layer.h"
@@ -41,9 +40,7 @@ hci::LeAdvertisingManager* GetAdvertising() {
   return Stack::GetInstance()->GetLeAdvertisingManager();
 }
 
-hci::ControllerInterface* GetController() {
-  return Stack::GetInstance()->GetInstance<hci::Controller>();
-}
+hci::ControllerInterface* GetController() { return Stack::GetInstance()->GetController(); }
 
 hci::HciInterface* GetHciLayer() { return Stack::GetInstance()->GetInstance<hci::HciLayer>(); }
 

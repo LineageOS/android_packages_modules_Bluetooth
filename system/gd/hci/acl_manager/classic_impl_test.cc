@@ -124,6 +124,8 @@ namespace acl_manager {
 
 class MockAclScheduler : public AclScheduler {
 public:
+  MockAclScheduler(os::Handler* handler) : AclScheduler(handler) {}
+
   virtual void ReportAclConnectionCompletion(
           Address /* address */, common::ContextualOnceCallback<void()> handle_outgoing_connection,
           common::ContextualOnceCallback<void()> handle_incoming_connection,
@@ -159,7 +161,7 @@ protected:
             new acl_manager::RoundRobinScheduler(handler_, controller_, hci_queue_.GetUpEnd());
     hci_queue_.GetDownEnd()->RegisterDequeue(
             handler_, common::Bind(&ClassicImplTest::HciDownEndDequeue, common::Unretained(this)));
-    acl_scheduler_ = new MockAclScheduler();
+    acl_scheduler_ = new MockAclScheduler(handler_);
     rnr_ = new RemoteNameRequestModuleMock();
     classic_impl_ =
             new acl_manager::classic_impl(hci_layer_, controller_, handler_, round_robin_scheduler_,
