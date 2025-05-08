@@ -116,14 +116,6 @@ void LogMetricRemoteVersionInfo(uint16_t handle, uint8_t status, uint8_t version
   }
 }
 
-void LogMetricA2dpAudioUnderrunEvent(const hci::Address& address, uint64_t encoding_interval_millis,
-                                     int num_missing_pcm_bytes) {
-  if (metricsInstance) {
-    metricsInstance->LogMetricA2dpAudioUnderrunEvent(address, encoding_interval_millis,
-                                                     num_missing_pcm_bytes);
-  }
-}
-
 void LogMetricA2dpAudioOverrunEvent(const hci::Address& address, uint64_t encoding_interval_millis,
                                     int num_dropped_buffers, int num_dropped_encoded_frames,
                                     int num_dropped_encoded_bytes) {
@@ -141,17 +133,9 @@ void LogMetricA2dpPlaybackEvent(const hci::Address& address, int playback_state,
   }
 }
 
-void LogMetricA2dpSessionMetricsEvent(const hci::Address& address, int64_t audio_duration_ms,
-                                      int media_timer_min_ms, int media_timer_max_ms,
-                                      int media_timer_avg_ms, int total_scheduling_count,
-                                      int buffer_overruns_max_count, int buffer_overruns_total,
-                                      float buffer_underruns_average, int buffer_underruns_count,
-                                      int64_t codec_index, bool is_a2dp_offload) {
+void LogA2dpSessionReported(const hci::Address& address, const A2dpSession& session) {
   if (metricsInstance) {
-    metricsInstance->LogMetricA2dpSessionMetricsEvent(
-            address, audio_duration_ms, media_timer_min_ms, media_timer_max_ms, media_timer_avg_ms,
-            total_scheduling_count, buffer_overruns_max_count, buffer_overruns_total,
-            buffer_underruns_average, buffer_underruns_count, codec_index, is_a2dp_offload);
+    metricsInstance->LogA2dpSessionReported(address, session);
   }
 }
 

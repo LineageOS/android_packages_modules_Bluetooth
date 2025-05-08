@@ -44,12 +44,9 @@ public:
                uint16_t, uint16_t, uint16_t, uint16_t));
   MOCK_METHOD(void, LogMetricHciTimeoutEvent, (uint32_t));
   MOCK_METHOD(void, LogMetricRemoteVersionInfo, (uint16_t, uint8_t, uint8_t, uint16_t, uint16_t));
-  MOCK_METHOD(void, LogMetricA2dpAudioUnderrunEvent, (const hci::Address&, uint64_t, int));
   MOCK_METHOD(void, LogMetricA2dpAudioOverrunEvent, (const hci::Address&, uint64_t, int, int, int));
   MOCK_METHOD(void, LogMetricA2dpPlaybackEvent, (const hci::Address&, int, int));
-  MOCK_METHOD(void, LogMetricA2dpSessionMetricsEvent,
-              (const hci::Address&, int64_t, int, int, int, int, int, int, float, int, int64_t,
-               bool));
+  MOCK_METHOD(void, LogA2dpSessionReported, (const hci::Address&, const A2dpSession&));
   MOCK_METHOD(void, LogMetricHfpPacketLossStats, (const hci::Address&, int, double, uint16_t));
   MOCK_METHOD(void, LogMetricSmpPairingEvent,
               (const hci::Address&, uint16_t, android::bluetooth::DirectionEnum, uint16_t));

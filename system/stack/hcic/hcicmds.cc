@@ -966,19 +966,6 @@ void btsnd_hcic_delete_stored_key(const RawAddress& bd_addr, bool delete_all_fla
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_read_name(void) {
-  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  uint8_t* pp = (uint8_t*)(p + 1);
-
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_READ_CMD;
-  p->offset = 0;
-
-  UINT16_TO_STREAM(pp, HCI_READ_LOCAL_NAME);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_READ_CMD);
-
-  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-}
-
 void btsnd_hcic_write_page_tout(uint16_t timeout) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);

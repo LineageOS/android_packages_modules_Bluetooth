@@ -146,21 +146,6 @@ void LogMetricRemoteVersionInfo(uint16_t handle, uint8_t status, uint8_t version
   }
 }
 
-void LogMetricA2dpAudioUnderrunEvent(const Address& address, uint64_t encoding_interval_millis,
-                                     int num_missing_pcm_bytes) {
-  int metric_id = 0;
-  if (!address.IsEmpty()) {
-    metric_id = MetricIdManager::GetInstance().AllocateId(address);
-  }
-  int64_t encoding_interval_nanos = encoding_interval_millis * 1000000;
-  int ret = stats_write(BLUETOOTH_A2DP_AUDIO_UNDERRUN_REPORTED, byteField, encoding_interval_nanos,
-                        num_missing_pcm_bytes, metric_id);
-  if (ret < 0) {
-    log::warn("Failed for {}, encoding_interval_nanos {}, num_missing_pcm_bytes {}, error {}",
-              address, encoding_interval_nanos, num_missing_pcm_bytes, ret);
-  }
-}
-
 void LogMetricA2dpAudioOverrunEvent(const Address& address, uint64_t encoding_interval_millis,
                                     int num_dropped_buffers, int num_dropped_encoded_frames,
                                     int num_dropped_encoded_bytes) {
@@ -196,15 +181,10 @@ void LogMetricA2dpPlaybackEvent(const Address& address, int playback_state, int 
   }
 }
 
-void LogMetricA2dpSessionMetricsEvent(const hci::Address& address, int64_t audio_duration_ms,
-                                      int media_timer_min_ms, int media_timer_max_ms,
-                                      int media_timer_avg_ms, int total_scheduling_count,
-                                      int buffer_overruns_max_count, int buffer_overruns_total,
-                                      float buffer_underruns_average, int buffer_underruns_count,
-                                      int64_t codec_index, bool is_a2dp_offload) {
+void LogA2dpSessionReported(const hci::Address& address, const A2dpSession& session) {
   char const* expresslog_metric_id;
   a2dp::CodecId codec_id;
-  switch (codec_index) {
+  switch (session.codec_index) {
     case BTAV_A2DP_CODEC_INDEX_SOURCE_SBC:
       expresslog_metric_id = "bluetooth.value_sbc_codec_usage_over_a2dp";
       codec_id = a2dp::CodecId::SBC;
@@ -236,11 +216,12 @@ void LogMetricA2dpSessionMetricsEvent(const hci::Address& address, int64_t audio
   android::expresslog::Counter::logIncrement(expresslog_metric_id);
 
   int32_t metric_id = MetricIdManager::GetInstance().AllocateId(address);
-  int ret = stats_write(A2DP_SESSION_REPORTED, audio_duration_ms, media_timer_min_ms,
-                        media_timer_max_ms, media_timer_avg_ms, total_scheduling_count,
-                        buffer_overruns_max_count, buffer_overruns_total, buffer_underruns_average,
-                        buffer_underruns_count, static_cast<uint64_t>(codec_id), is_a2dp_offload,
-                        metric_id);
+  int ret = stats_write(A2DP_SESSION_REPORTED, session.audio_duration_ms,
+                        session.media_timer_min_ms, session.media_timer_max_ms,
+                        session.media_timer_avg_ms, session.total_scheduling_count,
+                        session.buffer_overruns_max_count, session.buffer_overruns_total,
+                        session.buffer_underruns_average, session.buffer_underruns_count,
+                        static_cast<uint64_t>(codec_id), session.is_a2dp_offload, metric_id);
 
   if (ret < 0) {
     log::warn("failed to log a2dp_session_reported");
