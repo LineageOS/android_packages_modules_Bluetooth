@@ -42,6 +42,16 @@ flag {
 }
 
 flag {
+    name: "oneway_media_profile"
+    namespace: "bluetooth"
+    description: "remove non-oneway call to check if media profile are connected"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+    bug: "416087818"
+}
+
+flag {
     name: "publish_binder_on_start"
     namespace: "bluetooth"
     description: "As mentioned in SystemService.java, binder should be published during onStart"

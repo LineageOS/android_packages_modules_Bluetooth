@@ -99,7 +99,7 @@
              android:exported="true"
              android:permission="android.permission.ACCESS_BLUETOOTH_SHARE">
             <intent-filter>
-                <action android:name="android.bluetooth.IBluetooth"/>
+                <action android:name="android.bluetooth.IAdapter"/>
             </intent-filter>
         </service>
 

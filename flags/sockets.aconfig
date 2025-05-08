@@ -122,3 +122,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "donot_pm_classic_on_le_traffic"
+    namespace: "bluetooth"
+    description: "Donot exit the sniff on classic link if on LE only traffic"
+    bug: "416266693"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

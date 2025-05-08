@@ -58,11 +58,10 @@ import android.annotation.SuppressLint;
 import android.app.AppOpsManager;
 import android.app.role.RoleManager;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.IBluetooth;
+import android.bluetooth.IAdapter;
 import android.bluetooth.IBluetoothCallback;
 import android.bluetooth.IBluetoothManager;
 import android.bluetooth.IBluetoothManagerCallback;
-import android.bluetooth.IBluetoothStateChangeCallback;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -104,6 +103,8 @@ import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
 import platform.test.runner.parameterized.Parameters;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @RunWith(ParameterizedAndroidJunit4.class)
@@ -112,16 +113,46 @@ public class BluetoothManagerServiceTest {
 
     @Rule public final SetFlagsRule mSetFlagsRule;
 
-    @Parameters(name = "{0}")
-    public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.progressionOf(
-                Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP,
-                Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
-                Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD);
+    // Helps tests readability by removing the common prefix in the bluetooth flags name
+    static final class FlagsWrapper {
+        private static final String PREFIX = "com.android.bluetooth.flags.";
+
+        final FlagsParameterization mFlags;
+
+        FlagsWrapper(FlagsParameterization flags) {
+            mFlags = flags;
+        }
+
+        @Override
+        public String toString() {
+            return mFlags.mOverrides.entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .map(FlagsWrapper::entryToString)
+                    .collect(Collectors.joining(","));
+        }
+
+        private static String entryToString(Map.Entry<String, Boolean> entry) {
+            String flagName = entry.getKey();
+            if (flagName.startsWith(PREFIX)) {
+                flagName = flagName.substring(PREFIX.length());
+            }
+            return flagName + "=" + entry.getValue();
+        }
     }
 
-    public BluetoothManagerServiceTest(FlagsParameterization flags) {
-        mSetFlagsRule = new SetFlagsRule(flags);
+    @Parameters(name = "{0}")
+    public static List<FlagsWrapper> getParams() {
+        return FlagsParameterization.progressionOf(
+                        Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP,
+                        Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
+                        Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD)
+                .stream()
+                .map(FlagsWrapper::new)
+                .collect(Collectors.toList());
+    }
+
+    public BluetoothManagerServiceTest(FlagsWrapper flagsWrapper) {
+        mSetFlagsRule = new SetFlagsRule(flagsWrapper.mFlags);
     }
 
     private final Context mTargetContext =
@@ -135,8 +166,7 @@ public class BluetoothManagerServiceTest {
     @Mock IBinder mBleBinder;
     @Mock IBinder mBinder;
     @Mock IBluetoothManagerCallback mManagerCallback;
-    @Mock IBluetoothStateChangeCallback mStateChangeCallback;
-    @Mock IBluetooth mAdapterService;
+    @Mock IAdapter mAdapterService;
     @Mock AdapterBinder mAdapterBinder;
     @Mock AppOpsManager mAppOpsManager;
     @Mock PermissionManager mPermissionManager;
@@ -388,13 +418,15 @@ public class BluetoothManagerServiceTest {
     }
 
     IBluetoothCallback transition_offToBleOn() throws Exception {
-        // Binding of IBluetooth
+        // Binding of IAdapter
         acceptBluetoothBinding();
 
         IBluetoothCallback btCallback = captureBluetoothCallback();
         mInOrder.verify(mAdapterBinder).offToBleOn(anyBoolean(), anyString(), any());
         verifyBleStateIntentSent(STATE_OFF, STATE_BLE_TURNING_ON);
-        mInOrder.verify(mManagerCallback).onBluetoothServiceUp(any());
+        btCallback.setAdapterServiceBinder(mBinder);
+        syncHandler(0); // To post setAdapterServiceBinder
+        mInOrder.verify(mManagerCallback).onBluetoothServiceUp(mBinder);
 
         assertThat(mManagerService.getState()).isEqualTo(STATE_BLE_TURNING_ON);
 

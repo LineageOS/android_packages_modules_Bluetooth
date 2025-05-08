@@ -63,12 +63,6 @@ public class AdapterServiceBinderTest {
     }
 
     @Test
-    public void getAddress() {
-        mBinder.getAddress(mAttributionSource);
-        verify(mAdapterProperties).getAddress();
-    }
-
-    @Test
     public void dump() {
         FileDescriptor fd = new FileDescriptor();
         String[] args = new String[] {};

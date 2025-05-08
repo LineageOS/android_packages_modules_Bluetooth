@@ -22,15 +22,14 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.HEADSET;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -45,6 +44,7 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothStatusCodes;
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -56,6 +56,7 @@ import androidx.room.Room;
 import androidx.room.testing.MigrationTestHelper;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
@@ -104,13 +105,10 @@ public final class DatabaseManagerTest {
     private static final int MAX_META_ID = 16;
     private static final byte[] TEST_BYTE_ARRAY = "TEST_VALUE".getBytes();
 
+    private final Context mContext = ApplicationProvider.getApplicationContext();
     private final BluetoothDevice mDevice1 = getTestDevice(54);
     private final BluetoothDevice mDevice2 = getTestDevice(55);
     private final BluetoothDevice mDevice3 = getTestDevice(56);
-
-    private final BluetoothDevice mTestDevice1 = getRealDevice(54);
-    private final BluetoothDevice mTestDevice2 = getRealDevice(55);
-    private final BluetoothDevice mTestDevice3 = getRealDevice(56);
 
     private MetadataDatabase mDatabase;
     private DatabaseManager mDatabaseManager;
@@ -126,26 +124,12 @@ public final class DatabaseManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        doAnswer(
-                        invocation -> {
-                            String address = invocation.getArgument(0);
-                            return getRealDevice(address);
-                        })
-                .when(mAdapterService)
-                .getRemoteDevice(anyString());
+        mockAdapterServiceGetRemoteDevice(mAdapterService, mDevice1, mDevice2, mDevice3);
 
         // Create a memory database for DatabaseManager instead of use a real database.
-        mDatabase =
-                Room.inMemoryDatabaseBuilder(
-                                InstrumentationRegistry.getInstrumentation().getContext(),
-                                MetadataDatabase.class)
-                        .build();
+        mDatabase = Room.inMemoryDatabaseBuilder(mContext, MetadataDatabase.class).build();
 
-        when(mAdapterService.getPackageManager())
-                .thenReturn(
-                        InstrumentationRegistry.getInstrumentation()
-                                .getContext()
-                                .getPackageManager());
+        when(mAdapterService.getPackageManager()).thenReturn(mContext.getPackageManager());
 
         mDatabaseManager = new DatabaseManager(mAdapterService);
 
@@ -374,16 +358,15 @@ public final class DatabaseManagerTest {
 
     @Test
     public void testRemoveUnusedMetadata_WithSingleBondedDevice() {
-        // Insert two devices to database and cache, only mTestDevice1 is
-        // in the bonded list
-        Metadata otherData = new Metadata(mTestDevice2.getAddress());
-        // Add metadata for otherDevice
+        // Insert two devices to database and cache, only mDevice1 is in the bonded list
+        Metadata otherData = new Metadata(mDevice2.getAddress());
+        // Add metadata for mDevice2
         otherData.setCustomizedMeta(0, TEST_BYTE_ARRAY);
-        mDatabaseManager.mMetadataCache.put(mTestDevice2.getAddress(), otherData);
+        mDatabaseManager.mMetadataCache.put(mDevice2.getAddress(), otherData);
         mDatabase.insert(otherData);
 
-        Metadata data = new Metadata(mTestDevice1.getAddress());
-        mDatabaseManager.mMetadataCache.put(mTestDevice1.getAddress(), data);
+        Metadata data = new Metadata(mDevice1.getAddress());
+        mDatabaseManager.mMetadataCache.put(mDevice1.getAddress(), data);
         mDatabase.insert(data);
 
         mDatabaseManager.removeUnusedMetadata();
@@ -391,7 +374,7 @@ public final class DatabaseManagerTest {
         TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
 
         // Check removed device report metadata changed to null
-        verify(mAdapterService).onMetadataChanged(mTestDevice2, 0, null);
+        verify(mAdapterService).onMetadataChanged(mDevice2, 0, null);
 
         List<Metadata> list = mDatabase.load();
 
@@ -400,7 +383,7 @@ public final class DatabaseManagerTest {
 
         // Check whether the device is in database
         Metadata checkData = list.get(0);
-        assertThat(checkData.getAddress()).isEqualTo(mTestDevice1.getAddress());
+        assertThat(checkData.getAddress()).isEqualTo(mDevice1.getAddress());
 
         if (Flags.factoryResetAtBluetoothStart()) {
             return;
@@ -414,47 +397,46 @@ public final class DatabaseManagerTest {
 
     @Test
     public void testRemoveUnusedMetadata_WithMultiBondedDevices() {
-        // Insert three devices to database and cache, otherDevice1 and otherDevice2
-        // are in the bonded list
+        // Insert three devices to database and cache, mDevice1 and mDevice2 are in the bonded list
 
-        // Add metadata for mTestDevice1
-        Metadata testData = new Metadata(mTestDevice1.getAddress());
+        // Add metadata for mDevice1
+        Metadata testData = new Metadata(mDevice1.getAddress());
         testData.setCustomizedMeta(0, TEST_BYTE_ARRAY);
-        mDatabaseManager.mMetadataCache.put(mTestDevice1.getAddress(), testData);
+        mDatabaseManager.mMetadataCache.put(mDevice1.getAddress(), testData);
         mDatabase.insert(testData);
 
-        // Add metadata for mTestDevice2
-        Metadata otherData1 = new Metadata(mTestDevice2.getAddress());
+        // Add metadata for mDevice2
+        Metadata otherData1 = new Metadata(mDevice2.getAddress());
         otherData1.setCustomizedMeta(0, TEST_BYTE_ARRAY);
-        mDatabaseManager.mMetadataCache.put(mTestDevice2.getAddress(), otherData1);
+        mDatabaseManager.mMetadataCache.put(mDevice2.getAddress(), otherData1);
         mDatabase.insert(otherData1);
 
-        // Add metadata for mTestDevice3
-        Metadata otherData2 = new Metadata(mTestDevice3.getAddress());
+        // Add metadata for mDevice3
+        Metadata otherData2 = new Metadata(mDevice3.getAddress());
         otherData2.setCustomizedMeta(0, TEST_BYTE_ARRAY);
-        mDatabaseManager.mMetadataCache.put(mTestDevice3.getAddress(), otherData2);
+        mDatabaseManager.mMetadataCache.put(mDevice3.getAddress(), otherData2);
         mDatabase.insert(otherData2);
 
-        // Add mTestDevice2 mTestDevice3 to bonded devices
-        BluetoothDevice[] bondedDevices = {mTestDevice2, mTestDevice3};
+        // Add mDevice2 mDevice3 to bonded devices
+        BluetoothDevice[] bondedDevices = {mDevice2, mDevice3};
         doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
 
         mDatabaseManager.removeUnusedMetadata();
         TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
 
-        // Check mTestDevice1 report metadata changed to null
-        verify(mAdapterService).onMetadataChanged(mTestDevice1, 0, null);
+        // Check mDevice1 report metadata changed to null
+        verify(mAdapterService).onMetadataChanged(mDevice1, 0, null);
 
         // Check number of metadata in the database
         List<Metadata> list = mDatabase.load();
-        // mTestDevice2 and mTestDevice3 should still in database
+        // mDevice2 and mDevice3 should still in database
         assertThat(list).hasSize(2);
 
         // Check whether the devices are in the database
         Metadata checkData1 = list.get(0);
-        assertThat(checkData1.getAddress()).isEqualTo(mTestDevice3.getAddress());
+        assertThat(checkData1.getAddress()).isEqualTo(mDevice3.getAddress());
         Metadata checkData2 = list.get(1);
-        assertThat(checkData2.getAddress()).isEqualTo(mTestDevice2.getAddress());
+        assertThat(checkData2.getAddress()).isEqualTo(mDevice2.getAddress());
 
         if (Flags.factoryResetAtBluetoothStart()) {
             return;

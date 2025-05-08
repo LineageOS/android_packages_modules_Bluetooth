@@ -28,7 +28,7 @@ class PairTestBase(ABC, base_test.BaseTestClass):  # type: ignore[misc]
     devices: Optional[PandoraDevices] = None
 
     dut: PandoraDevice
-    ref: PandoraDevice
+    ref: BumblePandoraDevice
 
     @abstractmethod
     def _setup_devices(self):
@@ -36,7 +36,9 @@ class PairTestBase(ABC, base_test.BaseTestClass):  # type: ignore[misc]
 
     def setup_class(self) -> None:
         self.devices = PandoraDevices(self)
-        self.dut, self.ref, *_ = self.devices
+        self.dut, ref, *_ = self.devices
+        assert isinstance(ref, BumblePandoraDevice)
+        self.ref = ref
 
         self._setup_devices()
 

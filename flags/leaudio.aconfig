@@ -34,16 +34,6 @@ flag {
 }
 
 flag {
-    name: "run_ble_audio_ticks_in_worker_thread"
-    namespace: "bluetooth"
-    description: "Fix thread ownership issue in ble_audio_ticks"
-    bug: "325984257"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_allow_leaudio_only_devices"
     namespace: "bluetooth"
     description: "Enable Le Audio for LeAudio only devices"
@@ -354,6 +344,16 @@ flag {
     namespace: "bluetooth"
     description: "Change the data path dynamically"
     bug: "414773442"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_do_not_set_autoconnecting_on_connected_device"
+    namespace: "bluetooth"
+    description: "When `autoConnect` triggers, do not set CONNECTING_AUTOCONNECT for device that is already in CONNECTED state."
+    bug: "407958032"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
