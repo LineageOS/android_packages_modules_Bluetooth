@@ -192,6 +192,7 @@ android_library {
         "bluetooth-protos-lite",
         "bluetooth.change-ids",
         "com.android.obex",
+        "com.android.sysprop.bluetooth",
         "com.android.vcard",
         "guava",
         "libprotobuf-java-lite",

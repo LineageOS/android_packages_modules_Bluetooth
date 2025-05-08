@@ -20,6 +20,7 @@
 #include <avrcp.sysprop.h>
 #include <ble.sysprop.h>
 #include <bta.sysprop.h>
+#include <core.sysprop.h>
 #include <device_id.sysprop.h>
 #include <gap.sysprop.h>
 #include <hardware.sysprop.h>
