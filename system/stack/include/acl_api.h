@@ -131,43 +131,6 @@ tBTM_STATUS BTM_ReadRSSI(const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb);
 
 /*******************************************************************************
  *
- * Function         BTM_ReadFailedContactCounter
- *
- * Description      This function is called to read the failed contact counter.
- *                  The result is returned in the callback.
- *                  (tBTM_FAILED_CONTACT_COUNTER_RESULT)
- *
- * Returns          tBTM_STATUS::BTM_CMD_STARTED if command issued to controller.
- *                  tBTM_STATUS::BTM_NO_RESOURCES if memory couldn't be allocated to issue
- *                                   the command
- *                  BTM_UNKNOWN_ADDR if no active link with bd addr specified
- *                  tBTM_STATUS::BTM_BUSY if command is already in progress
- *                  tBTM_STATUS::BTM_UNKNOWN_ADDR if no active link with bd addr specified
- *
- ******************************************************************************/
-tBTM_STATUS BTM_ReadFailedContactCounter(const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb);
-
-/*******************************************************************************
- *
- * Function         BTM_ReadTxPower
- *
- * Description      This function is called to read the current connection
- *                  TX power of the connection. The TX power level results
- *                  are returned in the callback.
- *                  (tBTM_RSSI_RESULT)
- *
- * Returns          tBTM_STATUS::BTM_CMD_STARTED if command issued to controller.
- *                  tBTM_STATUS::BTM_NO_RESOURCES if memory couldn't be allocated to issue
- *                                   the command
- *                  tBTM_STATUS::BTM_UNKNOWN_ADDR if no active link with bd addr specified
- *                  tBTM_STATUS::BTM_BUSY if command is already in progress
- *
- ******************************************************************************/
-tBTM_STATUS BTM_ReadTxPower(const RawAddress& remote_bda, tBT_TRANSPORT transport,
-                            tBTM_CMPL_CB* p_cb);
-
-/*******************************************************************************
- *
  * Function         BTM_GetNumAclLinks
  *
  * Description      This function is called to count the number of

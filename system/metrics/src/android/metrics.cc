@@ -250,48 +250,6 @@ void LogMetricA2dpSessionMetricsEvent(const hci::Address& address, int64_t audio
 void LogMetricHfpPacketLossStats(const Address& /* address */, int /* num_decoded_frames */,
                                  double /* packet_loss_ratio */, uint16_t /* codec_type */) {}
 
-void LogMetricReadRssiResult(const Address& address, uint16_t handle, uint32_t cmd_status,
-                             int8_t rssi) {
-  int metric_id = 0;
-  if (!address.IsEmpty()) {
-    metric_id = MetricIdManager::GetInstance().AllocateId(address);
-  }
-  int ret = stats_write(BLUETOOTH_DEVICE_RSSI_REPORTED, byteField, handle, cmd_status, rssi,
-                        metric_id);
-  if (ret < 0) {
-    log::warn("Failed for {}, handle {}, status {}, rssi {} dBm, error {}", address, handle,
-              common::ToHexString(cmd_status), rssi, ret);
-  }
-}
-
-void LogMetricReadFailedContactCounterResult(const Address& address, uint16_t handle,
-                                             uint32_t cmd_status, int32_t failed_contact_counter) {
-  int metric_id = 0;
-  if (!address.IsEmpty()) {
-    metric_id = MetricIdManager::GetInstance().AllocateId(address);
-  }
-  int ret = stats_write(BLUETOOTH_DEVICE_FAILED_CONTACT_COUNTER_REPORTED, byteField, handle,
-                        cmd_status, failed_contact_counter, metric_id);
-  if (ret < 0) {
-    log::warn("Failed for {}, handle {}, status {}, failed_contact_counter {} packets, error {}",
-              address, handle, common::ToHexString(cmd_status), failed_contact_counter, ret);
-  }
-}
-
-void LogMetricReadTxPowerLevelResult(const Address& address, uint16_t handle, uint32_t cmd_status,
-                                     int32_t transmit_power_level) {
-  int metric_id = 0;
-  if (!address.IsEmpty()) {
-    metric_id = MetricIdManager::GetInstance().AllocateId(address);
-  }
-  int ret = stats_write(BLUETOOTH_DEVICE_TX_POWER_LEVEL_REPORTED, byteField, handle, cmd_status,
-                        transmit_power_level, metric_id);
-  if (ret < 0) {
-    log::warn("Failed for {}, handle {}, status {}, transmit_power_level {} packets, error {}",
-              address, handle, common::ToHexString(cmd_status), transmit_power_level, ret);
-  }
-}
-
 void LogMetricSmpPairingEvent(const Address& address, uint16_t smp_cmd,
                               android::bluetooth::DirectionEnum direction,
                               uint16_t smp_fail_reason) {

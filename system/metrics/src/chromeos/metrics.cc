@@ -107,15 +107,6 @@ void LogMetricHfpPacketLossStats(const Address& address, int num_decoded_frames,
           .Record();
 }
 
-void LogMetricReadRssiResult(const Address& address, uint16_t handle, uint32_t cmd_status,
-                             int8_t rssi) {}
-
-void LogMetricReadFailedContactCounterResult(const Address& address, uint16_t handle,
-                                             uint32_t cmd_status, int32_t failed_contact_counter) {}
-
-void LogMetricReadTxPowerLevelResult(const Address& address, uint16_t handle, uint32_t cmd_status,
-                                     int32_t transmit_power_level) {}
-
 void LogMetricRemoteVersionInfo(uint16_t handle, uint8_t status, uint8_t version,
                                 uint16_t manufacturer_name, uint16_t subversion) {}
 

@@ -68,7 +68,6 @@ typedef struct {
   void (*on_read_automatic_flush_timeout_complete)(uint16_t flush_timeout);
   void (*on_read_clock_complete)(uint32_t clock, uint16_t accuracy);
   void (*on_read_clock_offset_complete)(uint16_t clock_offset);
-  void (*on_read_failed_contact_counter_complete)(uint16_t failed_contact_counter);
   void (*on_read_link_policy_settings_complete)(uint16_t link_policy_settings);
   void (*on_read_link_quality_complete)(uint8_t link_quality);
   void (*on_read_link_supervision_timeout_complete)(uint16_t link_supervision_timeout);

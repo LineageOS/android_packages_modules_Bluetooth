@@ -196,8 +196,6 @@ void btsnd_hcic_write_voice_settings(uint16_t flags); /* Write Voice Settings */
 void btsnd_hcic_write_auto_flush_tout(uint16_t handle,
                                       uint16_t timeout); /* Write Retransmit Timeout */
 
-void btsnd_hcic_read_tx_power(uint16_t handle, uint8_t type); /* Read Tx Power */
-
 /* Write Link Supervision Timeout */
 void btsnd_hcic_write_link_super_tout(uint16_t handle, uint16_t timeout);
 /* Write Link Supervision Timeout */
@@ -209,7 +207,6 @@ void btsnd_hcic_write_cur_iac_lap(uint8_t num_cur_iac,
 void btsnd_hcic_read_rssi(uint16_t handle); /* Read RSSI */
 using ReadEncKeySizeCb = base::OnceCallback<void(uint8_t, uint16_t, uint8_t)>;
 void btsnd_hcic_read_encryption_key_size(uint16_t handle, ReadEncKeySizeCb cb);
-void btsnd_hcic_read_failed_contact_counter(uint16_t handle);
 void btsnd_hcic_enable_test_mode(void);            /* Enable Device Under Test Mode */
 void btsnd_hcic_write_pagescan_type(uint8_t type); /* Write Page Scan Type */
 void btsnd_hcic_write_inqscan_type(uint8_t type);  /* Write Inquiry Scan Type */
@@ -258,8 +255,6 @@ void btsnd_hcic_ble_write_adv_params(uint16_t adv_int_min, uint16_t adv_int_max,
                                      tBLE_ADDR_TYPE addr_type_own, tBLE_ADDR_TYPE addr_type_dir,
                                      const RawAddress& direct_bda, uint8_t channel_map,
                                      uint8_t adv_filter_policy);
-
-void btsnd_hcic_ble_read_adv_chnl_tx_power(void);
 
 void btsnd_hcic_ble_set_adv_data(uint8_t data_len, uint8_t* p_data);
 

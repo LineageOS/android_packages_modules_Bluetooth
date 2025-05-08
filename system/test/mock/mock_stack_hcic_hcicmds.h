@@ -255,15 +255,6 @@ struct btsnd_hcic_read_encryption_key_size {
 };
 extern struct btsnd_hcic_read_encryption_key_size btsnd_hcic_read_encryption_key_size;
 
-// Name: btsnd_hcic_read_failed_contact_counter
-// Params: uint16_t handle
-// Return: void
-struct btsnd_hcic_read_failed_contact_counter {
-  std::function<void(uint16_t handle)> body{[](uint16_t /* handle */) {}};
-  void operator()(uint16_t handle) { body(handle); }
-};
-extern struct btsnd_hcic_read_failed_contact_counter btsnd_hcic_read_failed_contact_counter;
-
 // Name: btsnd_hcic_read_local_oob_data
 // Params: void
 // Return: void
@@ -308,16 +299,6 @@ struct btsnd_hcic_read_rssi {
   void operator()(uint16_t handle) { body(handle); }
 };
 extern struct btsnd_hcic_read_rssi btsnd_hcic_read_rssi;
-
-// Name: btsnd_hcic_read_tx_power
-// Params: uint16_t handle, uint8_t type
-// Return: void
-struct btsnd_hcic_read_tx_power {
-  std::function<void(uint16_t handle, uint8_t type)> body{
-          [](uint16_t /* handle */, uint8_t /* type */) {}};
-  void operator()(uint16_t handle, uint8_t type) { body(handle, type); }
-};
-extern struct btsnd_hcic_read_tx_power btsnd_hcic_read_tx_power;
 
 // Name: btsnd_hcic_reject_conn
 // Params: const RawAddress& dest, uint8_t reason

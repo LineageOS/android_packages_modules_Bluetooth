@@ -108,17 +108,6 @@ void BTM_db_reset(void) {
     }
   }
 
-  if (btm_cb.devcb.p_failed_contact_counter_cmpl_cb) {
-    p_cb = btm_cb.devcb.p_failed_contact_counter_cmpl_cb;
-    btm_cb.devcb.p_failed_contact_counter_cmpl_cb = NULL;
-
-    if (p_cb) {
-      tBTM_FAILED_CONTACT_COUNTER_RESULT btm_failed_contact_counter_result;
-      btm_failed_contact_counter_result.status = tBTM_STATUS::BTM_DEV_RESET;
-      (*p_cb)(&btm_failed_contact_counter_result);
-    }
-  }
-
   if (btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb) {
     p_cb = btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb;
     btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb = NULL;
