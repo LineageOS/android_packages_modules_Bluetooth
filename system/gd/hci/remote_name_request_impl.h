@@ -16,44 +16,41 @@
 
 #pragma once
 
-#include <memory>
-
-#include "common/contextual_callback.h"
-#include "hci/hci_packets.h"
+#include "hci/acl_manager/acl_scheduler.h"
+#include "hci/hci_interface.h"
+#include "hci/remote_name_request.h"
 
 namespace bluetooth {
 namespace hci {
-
-// The RemoteNameRequestModule handles Remote Name Requests, which produce both Remote Name Request
-// Completed events, and Remote Host Supported Features Notification events.
-
-using CompletionCallback = common::ContextualOnceCallback<void(ErrorCode)>;
-using RemoteHostSupportedFeaturesCallback = common::ContextualOnceCallback<void(uint64_t)>;
-using RemoteNameCallback =
-        common::ContextualOnceCallback<void(ErrorCode, std::array<uint8_t, 248>)>;
 
 // Historical note: This class is intended to provide a shim at the *HCI* layer, so legacy Remote
 // Name Requests can interoperate with the GD ACL scheduler. Thus, we intentionally do not merge
 // identical requests, cache responses, or handle request timeouts - we leave this to our callers.
 // When GD clients start to use this module, richer functionality should be added.
-class RemoteNameRequestModule {
+class RemoteNameRequestModuleImpl : public RemoteNameRequestModule {
 public:
-  virtual ~RemoteNameRequestModule() = default;
+  RemoteNameRequestModuleImpl(os::Handler* handler, HciInterface* hci_interface,
+                              acl_manager::AclScheduler* acl_scheduler);
+  ~RemoteNameRequestModuleImpl();
 
   // Dispatch a Remote Name Request
-  virtual void StartRemoteNameRequest(
+  void StartRemoteNameRequest(
           Address address, std::unique_ptr<RemoteNameRequestBuilder> request,
           CompletionCallback on_completion,
           RemoteHostSupportedFeaturesCallback on_remote_host_supported_features_notification,
-          RemoteNameCallback on_remote_name_complete) = 0;
+          RemoteNameCallback on_remote_name_complete) override;
 
   // Cancel a Remote Name Request
-  virtual void CancelRemoteNameRequest(Address address) = 0;
+  void CancelRemoteNameRequest(Address address) override;
 
   // Due to controller bugs (b/184239841), an ACL connection completion is sometimes reported in
   // place of an RNR completion This method lets the ACL manager inform the RNR module if this
   // happens, since we don't get the appropriate HCI event.
-  virtual void ReportRemoteNameRequestCancellation(Address address) = 0;
+  void ReportRemoteNameRequestCancellation(Address address) override;
+
+private:
+  struct impl;
+  std::unique_ptr<impl> pimpl_;
 };
 
 }  // namespace hci

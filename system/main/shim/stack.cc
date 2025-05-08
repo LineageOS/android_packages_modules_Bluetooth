@@ -40,7 +40,7 @@
 #include "hci/le_advertising_manager_impl.h"
 #include "hci/le_scanning_manager_impl.h"
 #include "hci/msft.h"
-#include "hci/remote_name_request.h"
+#include "hci/remote_name_request_impl.h"
 #include "lpp/lpp_offload_manager.h"
 #include "main/shim/acl.h"
 #include "main/shim/acl_interface.h"
@@ -68,6 +68,7 @@ struct Stack::impl {
   Acl* acl_ = nullptr;
   std::shared_ptr<storage::StorageModule> storage_ = nullptr;
   std::shared_ptr<hal::SnoopLogger> snoop_logger_ = nullptr;
+  std::unique_ptr<hci::RemoteNameRequestModule> remote_name_request_ = nullptr;
   std::unique_ptr<hci::AclManagerImpl> acl_manager_ = nullptr;
   std::unique_ptr<hci::LeScanningManager> le_scanning_manager_ = nullptr;
   std::unique_ptr<hci::LeAdvertisingManager> le_advertising_manager_ = nullptr;
@@ -112,7 +113,6 @@ void Stack::StartEverything() {
 
     modules.add<hci::Controller>();
     modules.add<hci::acl_manager::AclScheduler>();
-    modules.add<hci::RemoteNameRequestModule>();
     modules.add<hci::MsftExtensionManager>();
 
     management_thread_ = new Thread("management_thread", Thread::Priority::NORMAL);
@@ -233,6 +233,12 @@ hal::SnoopLogger* Stack::GetSnoopLogger() const {
   return pimpl_->snoop_logger_.get();
 }
 
+hci::RemoteNameRequestModule* Stack::GetRemoteNameRequest() const {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  log::assert_that(is_running_, "assert failed: is_running_");
+  return pimpl_->remote_name_request_.get();
+}
+
 hci::AclManager* Stack::GetAclManager() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
@@ -291,12 +297,14 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
 
   auto acl_scheduler = static_cast<hci::acl_manager::AclScheduler*>(
           registry_.Get(&hci::acl_manager::AclScheduler::Factory));
-  auto remote_name_request = static_cast<hci::RemoteNameRequestModule*>(
-          registry_.Get(&hci::RemoteNameRequestModule::Factory));
+
+  log::info("Starting RemoteNameRequestModule");
+  pimpl_->remote_name_request_ = std::make_unique<hci::RemoteNameRequestModuleImpl>(
+          stack_handler_, hci_layer, acl_scheduler);
 
   log::info("Starting AclManagerImpl");
   pimpl_->acl_manager_ = std::make_unique<hci::AclManagerImpl>(
-          stack_handler_, hci_layer, controller, acl_scheduler, remote_name_request);
+          stack_handler_, hci_layer, controller, acl_scheduler, pimpl_->remote_name_request_.get());
 
   log::info("Starting LeScanningManagerImpl");
   pimpl_->le_scanning_manager_ = std::make_unique<hci::LeScanningManagerImpl>(
@@ -327,6 +335,9 @@ void Stack::handle_shut_down(std::promise<void> promise) {
 
   log::info("Stopping AclManagerImpl");
   pimpl_->acl_manager_.reset();
+
+  log::info("Stopping RemoteNameRequestModule");
+  pimpl_->remote_name_request_.reset();
 
   registry_.StopAll();
 
