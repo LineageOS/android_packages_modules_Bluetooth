@@ -22,7 +22,7 @@
 #include <unordered_map>
 
 #include "hci/acl_manager.h"
-#include "hci/controller.h"
+#include "hci/controller_interface.h"
 #include "hci/event_checkers.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"

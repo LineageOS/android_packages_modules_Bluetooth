@@ -31,7 +31,6 @@
 #include "hci/acl_manager/le_connection_management_callbacks_mock.h"
 #include "hci/address.h"
 #include "hci/class_of_device.h"
-#include "hci/controller.h"
 #include "hci/controller_mock.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_layer_fake.h"

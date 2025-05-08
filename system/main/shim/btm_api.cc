@@ -21,7 +21,6 @@
 #include <base/functional/callback.h>
 
 #include "hci/acl_manager.h"
-#include "hci/controller.h"
 #include "hci/controller_interface.h"
 #include "main/shim/acl.h"
 #include "main/shim/entry.h"
@@ -102,8 +101,8 @@ tBTM_STATUS bluetooth::shim::BTM_RestoreFilterAcceptList(
 }
 
 tBTM_STATUS bluetooth::shim::BTM_SetDefaultEventMaskExcept(uint64_t mask, uint64_t le_mask) {
-  uint64_t applied_mask = bluetooth::hci::Controller::kDefaultEventMask & ~(mask);
-  uint64_t applied_le_mask = bluetooth::hci::Controller::kDefaultLeEventMask & ~(le_mask);
+  uint64_t applied_mask = bluetooth::hci::ControllerInterface::kDefaultEventMask & ~(mask);
+  uint64_t applied_le_mask = bluetooth::hci::ControllerInterface::kDefaultLeEventMask & ~(le_mask);
   GetController()->SetEventMask(applied_mask);
   GetController()->LeSetEventMask(applied_le_mask);
   return tBTM_STATUS::BTM_SUCCESS;

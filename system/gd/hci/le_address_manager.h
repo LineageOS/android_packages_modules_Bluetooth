@@ -22,7 +22,7 @@
 
 #include "common/callback.h"
 #include "hci/address_with_type.h"
-#include "hci/controller.h"
+#include "hci/controller_interface.h"
 #include "hci/octets.h"
 #include "os/alarm.h"
 

@@ -31,15 +31,15 @@
 namespace bluetooth {
 namespace hci {
 
-class Controller : public ControllerInterface {
+class ControllerImpl : public ControllerInterface {
 public:
-  Controller(os::Handler* handler, hci::HciInterface* hci_interface);
-  Controller(const Controller&) = delete;
-  Controller& operator=(const Controller&) = delete;
+  ControllerImpl(os::Handler* handler, hci::HciInterface* hci_interface);
+  ControllerImpl(const ControllerImpl&) = delete;
+  ControllerImpl& operator=(const ControllerImpl&) = delete;
 
   void Dump(int fd) const override;
 
-  virtual ~Controller();
+  virtual ~ControllerImpl();
 
   virtual void RegisterCompletedAclPacketsCallback(CompletedAclPacketsCallback cb) override;
 
@@ -201,11 +201,6 @@ public:
   virtual void SetDabAudioBufferTime(uint16_t buffer_time_ms) override;
 
   virtual bool IsSupported(OpCode op_code) const override;
-
-  static constexpr uint64_t kDefaultEventMask = 0x3dbfffffffffffff;
-  static constexpr uint64_t kDefaultEventMaskPage2 = 0x2000000;
-  static constexpr uint64_t kDefaultLeEventMask = 0x000000074d02fe7f;
-  static constexpr uint64_t kLeCSEventMask = 0x0007f80000000000;
 
   static constexpr uint64_t kLeEventMask53 = 0x00000007ffffffff;
   static constexpr uint64_t kLeEventMask52 = 0x00000003ffffffff;

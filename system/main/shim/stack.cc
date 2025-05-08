@@ -33,7 +33,7 @@
 #include "hal/snoop_logger.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager_impl.h"
-#include "hci/controller.h"
+#include "hci/controller_impl.h"
 #include "hci/distance_measurement_manager_impl.h"
 #include "hci/hci_layer.h"
 #include "hci/le_advertising_manager_impl.h"
@@ -67,7 +67,7 @@ struct Stack::impl {
   Acl* acl_ = nullptr;
   std::shared_ptr<storage::StorageModule> storage_ = nullptr;
   std::shared_ptr<hal::SnoopLogger> snoop_logger_ = nullptr;
-  std::unique_ptr<hci::Controller> controller_ = nullptr;
+  std::unique_ptr<hci::ControllerInterface> controller_ = nullptr;
   std::unique_ptr<hci::acl_manager::AclScheduler> acl_scheduler_ = nullptr;
   std::unique_ptr<hci::RemoteNameRequestModule> remote_name_request_ = nullptr;
   std::unique_ptr<hci::AclManagerImpl> acl_manager_ = nullptr;
@@ -295,7 +295,7 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
   auto ranging_hal = static_cast<hal::RangingHal*>(registry_.Get(&hal::RangingHal::Factory));
 
   log::info("Starting Controller");
-  pimpl_->controller_ = std::make_unique<hci::Controller>(stack_handler_, hci_layer);
+  pimpl_->controller_ = std::make_unique<hci::ControllerImpl>(stack_handler_, hci_layer);
 
   log::info("Starting AclScheduler");
   pimpl_->acl_scheduler_ = std::make_unique<hci::acl_manager::AclScheduler>(stack_handler_);

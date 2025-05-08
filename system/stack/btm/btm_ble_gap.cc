@@ -42,7 +42,6 @@
 #include "bta/include/bta_api.h"
 #include "btif/include/btif_gatt.h"
 #include "common/time_util.h"
-#include "hci/controller.h"
 #include "hci/controller_interface.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/ble_scanner_interface_impl.h"

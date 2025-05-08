@@ -21,7 +21,6 @@
 
 #include <ctime>
 
-#include "hci/controller.h"
 #include "hci/octets.h"
 #include "include/macros.h"
 #include "os/rand.h"
