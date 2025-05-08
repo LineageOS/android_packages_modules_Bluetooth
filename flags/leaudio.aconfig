@@ -348,3 +348,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_do_not_set_autoconnecting_on_connected_device"
+    namespace: "bluetooth"
+    description: "When `autoConnect` triggers, do not set CONNECTING_AUTOCONNECT for device that is already in CONNECTED state."
+    bug: "407958032"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
