@@ -29,6 +29,7 @@
 #include "stack/include/port_api.h"
 #include "stack/include/rfcdefs.h"
 #include "stack/test/common/stack_test_packet_utils.h"
+#include "stack_rfcomm_test_utils.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_btif_config.h"
 #include "test/mock/mock_main_shim_entry.h"
@@ -37,7 +38,6 @@
 #include "test/mock/mock_stack_l2cap_api.h"
 #include "test/mock/mock_stack_l2cap_ble.h"
 #include "test/mock/mock_stack_l2cap_interface.h"
-#include "test/rfcomm/stack_rfcomm_test_utils.h"
 
 using ::testing::NiceMock;
 using ::testing::Unused;
@@ -77,21 +77,20 @@ public:
   NiceMock<bluetooth::rfcomm::MockRfcommCallback> mock_rfcomm_callback;
 
   FakeBtStack() {
-    ON_CALL(mock_l2cap_interface, L2CA_DataWrite)
-        .WillByDefault([](Unused, BT_HDR* hdr) {
-          osi_free(hdr);
-          return tL2CAP_DW_RESULT::SUCCESS;
-        });
-    ON_CALL(mock_l2cap_interface, L2CA_ConnectReq)
-        .WillByDefault([](Unused, Unused) { return kDummyCID; });
-    ON_CALL(mock_l2cap_interface, L2CA_DisconnectReq)
-        .WillByDefault([](Unused) { return true; });
+    ON_CALL(mock_l2cap_interface, L2CA_DataWrite).WillByDefault([](Unused, BT_HDR* hdr) {
+      osi_free(hdr);
+      return tL2CAP_DW_RESULT::SUCCESS;
+    });
+    ON_CALL(mock_l2cap_interface, L2CA_ConnectReq).WillByDefault([](Unused, Unused) {
+      return kDummyCID;
+    });
+    ON_CALL(mock_l2cap_interface, L2CA_DisconnectReq).WillByDefault([](Unused) { return true; });
     ON_CALL(mock_l2cap_interface, L2CA_Register)
-      .WillByDefault([](uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info, Unused, Unused,
-          Unused, Unused, Unused) {
-        appl_info = p_cb_info;
-        return psm;
-      });
+            .WillByDefault([](uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info, Unused, Unused,
+                              Unused, Unused, Unused) {
+              appl_info = p_cb_info;
+              return psm;
+            });
     bluetooth::testing::stack::l2cap::set_interface(&mock_l2cap_interface);
 
     rfcomm_callback = &mock_rfcomm_callback;
