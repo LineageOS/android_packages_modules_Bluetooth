@@ -15,21 +15,22 @@
  */
 #pragma once
 
+#include "hal/hci_hal.h"
+#include "hci/hci_interface.h"
 #include "hci/hci_packets.h"
 #include "hci/le_scanning_callback.h"
-#include "module.h"
 
 struct MsftAdvMonitor;
 
 namespace bluetooth {
 namespace hci {
 
-class MsftExtensionManager : public bluetooth::Module {
+class MsftExtensionManager {
 public:
-  MsftExtensionManager();
-
+  MsftExtensionManager(os::Handler* handler, hal::HciHal* hal, hci::HciInterface* hci_layer);
   MsftExtensionManager(const MsftExtensionManager&) = delete;
   MsftExtensionManager& operator=(const MsftExtensionManager&) = delete;
+  virtual ~MsftExtensionManager();
 
   using MsftAdvMonitorAddCallback =
           base::Callback<void(uint8_t /* monitor_handle */, ErrorCode /* status */)>;
@@ -41,17 +42,6 @@ public:
   void MsftAdvMonitorRemove(uint8_t monitor_handle, MsftAdvMonitorRemoveCallback cb);
   void MsftAdvMonitorEnable(bool enable, MsftAdvMonitorEnableCallback cb);
   void SetScanningCallback(ScanningCallback* callbacks);
-
-  static const ModuleFactory Factory;
-
-protected:
-  void ListDependencies(ModuleList* list) const override;
-
-  void Start() override;
-
-  void Stop() override;
-
-  std::string ToString() const override;
 
 private:
   struct impl;

@@ -65,7 +65,7 @@ storage::StorageModule* GetStorage() { return Stack::GetInstance()->GetStorage()
 hci::AclManager* GetAclManager() { return Stack::GetInstance()->GetAclManager(); }
 
 hci::MsftExtensionManager* GetMsftExtensionManager() {
-  return Stack::GetInstance()->GetInstance<hci::MsftExtensionManager>();
+  return Stack::GetInstance()->GetMsftExtensionManager();
 }
 
 bool is_gd_stack_started_up() { return Stack::GetInstance()->IsRunning(); }
