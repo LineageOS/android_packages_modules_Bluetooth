@@ -817,7 +817,8 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
           /* remove listening connection */
           bta_ag_remove_sco(p_scb, false);
 
-          if (p_scb == p_sco->p_curr_scb) {
+          if (!com::android::bluetooth::flags::sco_state_machine_update_in_codec_state() &&
+              p_scb == p_sco->p_curr_scb) {
             p_sco->p_curr_scb = nullptr;
           }
 
@@ -825,14 +826,31 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
           if (!bta_ag_other_scb_open(p_scb)) {
             p_sco->state = BTA_AG_SCO_SHUTDOWN_ST;
           } else {
-            /* just go back to listening */
-            p_sco->state = BTA_AG_SCO_LISTEN_ST;
+            if (com::android::bluetooth::flags::sco_state_machine_update_in_codec_state()) {
+              if (p_scb == p_sco->p_curr_scb) {
+                /* If SCO disconnected during codec negotiation, just go back to listening to allow
+                 * SCO reconnection */
+                p_sco->state = BTA_AG_SCO_LISTEN_ST;
+                p_sco->p_curr_scb = nullptr;
+              }
+            } else {
+              /* just go back to listening */
+              p_sco->state = BTA_AG_SCO_LISTEN_ST;
+            }
           }
           break;
 
         case BTA_AG_SCO_CLOSE_E:
-          /* sco open is not started yet. just go back to listening */
-          p_sco->state = BTA_AG_SCO_LISTEN_ST;
+          if (com::android::bluetooth::flags::sco_state_machine_update_in_codec_state()) {
+            if (p_scb == p_sco->p_curr_scb) {
+              /* sco open is not started yet. just go back to listening */
+              p_sco->state = BTA_AG_SCO_LISTEN_ST;
+              p_sco->p_curr_scb = nullptr;
+            }
+          } else {
+            /* sco open is not started yet. just go back to listening */
+            p_sco->state = BTA_AG_SCO_LISTEN_ST;
+          }
           break;
 
         case BTA_AG_SCO_CONN_CLOSE_E:
