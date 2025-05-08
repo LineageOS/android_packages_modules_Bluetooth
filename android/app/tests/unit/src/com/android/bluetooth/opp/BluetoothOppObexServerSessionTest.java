@@ -34,6 +34,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
 import android.app.NotificationManager;
+import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -78,6 +79,8 @@ public class BluetoothOppObexServerSessionTest {
     private final Context mTargetContext =
             InstrumentationRegistry.getInstrumentation().getContext();
     private final PowerManager mPowerManager = mTargetContext.getSystemService(PowerManager.class);
+    private final BluetoothManager mBluetoothManager =
+            mTargetContext.getSystemService(BluetoothManager.class);
 
     private BluetoothOppObexServerSession mServerSession;
     private SharedPreferences mPrefs;
@@ -89,6 +92,8 @@ public class BluetoothOppObexServerSessionTest {
 
         mockGetSystemService(mContext, Context.NOTIFICATION_SERVICE, NotificationManager.class);
         mockGetSystemService(mContext, Context.POWER_SERVICE, PowerManager.class, mPowerManager);
+        mockGetSystemService(
+                mContext, Context.BLUETOOTH_SERVICE, BluetoothManager.class, mBluetoothManager);
 
         doReturn(mTargetContext.getContentResolver()).when(mContext).getContentResolver();
         doReturn(mPrefs).when(mContext).getSharedPreferences(anyString(), anyInt());
@@ -337,11 +342,11 @@ public class BluetoothOppObexServerSessionTest {
         HeaderSet reply = new HeaderSet();
         request.setHeader(HeaderSet.TARGET, null);
         BluetoothOppManager bluetoothOppManager = mock(BluetoothOppManager.class);
-        BluetoothOppManager.setInstance(bluetoothOppManager);
+        BluetoothOppManager.setInstanceForTesting(bluetoothOppManager);
         doReturn(true).when(bluetoothOppManager).isAcceptListed(any());
 
         assertThat(mServerSession.onConnect(request, reply)).isEqualTo(ResponseCodes.OBEX_HTTP_OK);
-        BluetoothOppManager.setInstance(null);
+        BluetoothOppManager.setInstanceForTesting(null);
     }
 
     @Test
