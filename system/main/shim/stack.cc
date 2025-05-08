@@ -67,6 +67,7 @@ struct Stack::impl {
   Acl* acl_ = nullptr;
   std::shared_ptr<storage::StorageModule> storage_ = nullptr;
   std::shared_ptr<hal::SnoopLogger> snoop_logger_ = nullptr;
+  std::unique_ptr<hci::HciLayer> hci_layer_ = nullptr;
   std::unique_ptr<hci::Controller> controller_ = nullptr;
   std::unique_ptr<hci::acl_manager::AclScheduler> acl_scheduler_ = nullptr;
   std::unique_ptr<hci::RemoteNameRequestModule> remote_name_request_ = nullptr;
@@ -111,7 +112,6 @@ void Stack::StartEverything() {
 #endif
     modules.add<hal::HciHal>();
     modules.add<hal::RangingHal>();
-    modules.add<hci::HciLayer>();
 
     management_thread_ = new Thread("management_thread", Thread::Priority::NORMAL);
     management_handler_ = new Handler(management_thread_);
@@ -226,6 +226,12 @@ hal::SnoopLogger* Stack::GetSnoopLogger() const {
   return pimpl_->snoop_logger_.get();
 }
 
+hci::HciInterface* Stack::GetHciLayer() const {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  log::assert_that(is_running_, "assert failed: is_running_");
+  return pimpl_->hci_layer_.get();
+}
+
 hci::Controller* Stack::GetController() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
@@ -297,42 +303,45 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
   registry_.Start(modules, stack_thread_, stack_handler_);
 
   auto hci_hal = static_cast<hal::HciHal*>(registry_.Get(&hal::HciHal::Factory));
-  auto hci_layer = static_cast<hci::HciLayer*>(registry_.Get(&hci::HciLayer::Factory));
   auto ranging_hal = static_cast<hal::RangingHal*>(registry_.Get(&hal::RangingHal::Factory));
 
+  log::info("Starting HciLayer");
+  pimpl_->hci_layer_ = std::make_unique<hci::HciLayer>(stack_handler_, hci_hal);
+
   log::info("Starting Controller");
-  pimpl_->controller_ = std::make_unique<hci::ControllerImpl>(stack_handler_, hci_layer);
+  pimpl_->controller_ =
+          std::make_unique<hci::ControllerImpl>(stack_handler_, pimpl_->hci_layer_.get());
 
   log::info("Starting AclScheduler");
   pimpl_->acl_scheduler_ = std::make_unique<hci::acl_manager::AclScheduler>(stack_handler_);
 
   log::info("Starting RemoteNameRequestModule");
   pimpl_->remote_name_request_ = std::make_unique<hci::RemoteNameRequestModuleImpl>(
-          stack_handler_, hci_layer, pimpl_->acl_scheduler_.get());
+          stack_handler_, pimpl_->hci_layer_.get(), pimpl_->acl_scheduler_.get());
 
   log::info("Starting AclManagerImpl");
   pimpl_->acl_manager_ = std::make_unique<hci::AclManagerImpl>(
-          stack_handler_, hci_layer, pimpl_->controller_.get(), pimpl_->acl_scheduler_.get(),
-          pimpl_->remote_name_request_.get());
+          stack_handler_, pimpl_->hci_layer_.get(), pimpl_->controller_.get(),
+          pimpl_->acl_scheduler_.get(), pimpl_->remote_name_request_.get());
 
-  log::info("Staring MsftExtensionManager");
-  pimpl_->msft_extension_manager_ =
-          std::make_unique<hci::MsftExtensionManager>(stack_handler_, hci_hal, hci_layer);
+  log::info("Starting MsftExtensionManager");
+  pimpl_->msft_extension_manager_ = std::make_unique<hci::MsftExtensionManager>(
+          stack_handler_, hci_hal, pimpl_->hci_layer_.get());
 
   log::info("Starting LeScanningManagerImpl");
   pimpl_->le_scanning_manager_ = std::make_unique<hci::LeScanningManagerImpl>(
-          stack_handler_, hci_layer, pimpl_->controller_.get(),
+          stack_handler_, pimpl_->hci_layer_.get(), pimpl_->controller_.get(),
           pimpl_->acl_manager_->GetLeAddressManager(), pimpl_->storage_.get());
 
   log::info("Starting LeAdvertisingManagerImpl");
   pimpl_->le_advertising_manager_ = std::make_unique<hci::LeAdvertisingManagerImpl>(
-          stack_handler_, hci_layer, pimpl_->controller_.get(),
+          stack_handler_, pimpl_->hci_layer_.get(), pimpl_->controller_.get(),
           pimpl_->acl_manager_->GetLeAddressManager(), pimpl_->acl_manager_.get());
 
   log::info("Starting DistanceMeasurementManagerImpl");
   pimpl_->distance_measurement_manager_ = std::make_unique<hci::DistanceMeasurementManagerImpl>(
-          stack_handler_, hci_layer, pimpl_->controller_.get(), pimpl_->acl_manager_.get(),
-          ranging_hal);
+          stack_handler_, pimpl_->hci_layer_.get(), pimpl_->controller_.get(),
+          pimpl_->acl_manager_.get(), ranging_hal);
 
   promise.set_value();
 }
@@ -361,6 +370,9 @@ void Stack::handle_shut_down(std::promise<void> promise) {
 
   log::info("Stopping Controller");
   pimpl_->controller_.reset();
+
+  log::info("Stopping HCI");
+  pimpl_->hci_layer_.reset();
 
   registry_.StopAll();
 

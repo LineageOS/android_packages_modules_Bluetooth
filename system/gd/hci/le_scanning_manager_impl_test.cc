@@ -228,14 +228,12 @@ public:
 class LeScanningManagerTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
+    client_handler_ = fake_registry_.GetTestHandler();
+
+    test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
     test_controller_ = std::make_unique<TestController>();
-
-    fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
-    client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
-
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
-    test_le_address_manager_ = new TestLeAddressManager(
+    test_le_address_manager_ = std::make_unique<TestLeAddressManager>(
             common::Bind([](std::unique_ptr<CommandBuilder> /* command_packet */) {}),
             client_handler_, address, 0x3F, 0x3F, test_controller_.get());
 
@@ -247,14 +245,17 @@ protected:
     if (le_scanning_manager != nullptr) {
       fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     }
+    test_le_address_manager_.reset();
+    test_controller_.reset();
+    test_hci_layer_.reset();
     fake_registry_.StopAll();
   }
 
   void start_le_scanning_manager() {
-    fake_registry_.Start<HciLayer>(&thread_, fake_registry_.GetTestHandler());
+    test_hci_layer_ = std::make_unique<HciLayerFake>(fake_registry_.GetTestHandler());
     le_scanning_manager = new LeScanningManagerImpl(
-            fake_registry_.GetTestHandler(), test_hci_layer_, test_controller_.get(),
-            test_le_address_manager_, nullptr /* StorageModule */);
+            fake_registry_.GetTestHandler(), test_hci_layer_.get(), test_controller_.get(),
+            test_le_address_manager_.get(), nullptr /* StorageModule */);
     le_scanning_manager->RegisterScanningCallback(&mock_callbacks_);
     sync_client_handler();
   }
@@ -265,9 +266,9 @@ protected:
   }
 
   TestModuleRegistry fake_registry_;
-  HciLayerFake* test_hci_layer_ = nullptr;
+  std::unique_ptr<HciLayerFake> test_hci_layer_ = nullptr;
   std::unique_ptr<TestController> test_controller_ = nullptr;
-  TestLeAddressManager* test_le_address_manager_ = nullptr;
+  std::unique_ptr<TestLeAddressManager> test_le_address_manager_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
   LeScanningManagerImpl* le_scanning_manager = nullptr;
   os::Handler* client_handler_ = nullptr;
@@ -284,7 +285,6 @@ protected:
     test_controller_->AddSupported(OpCode::LE_BATCH_SCAN);
     test_controller_->SetBlePeriodicAdvertisingSyncTransferSenderSupport(true);
     start_le_scanning_manager();
-    ASSERT_TRUE(fake_registry_.IsStarted(&HciLayer::Factory));
 
     ASSERT_EQ(OpCode::LE_ADV_FILTER, test_hci_layer_->GetCommand().GetOpCode());
     test_hci_layer_->IncomingEvent(LeAdvFilterReadExtendedFeaturesCompleteBuilder::Create(
@@ -380,13 +380,11 @@ TEST_F(LeScanningManagerTest, legacy_adv_ind_report_with_scan_response) {
 
 TEST_F(LeScanningManagerTest, is_ad_type_filter_supported_false_test) {
   start_le_scanning_manager();
-  ASSERT_TRUE(fake_registry_.IsStarted(&HciLayer::Factory));
   ASSERT_FALSE(le_scanning_manager->IsAdTypeFilterSupported());
 }
 
 TEST_F(LeScanningManagerTest, scan_filter_add_ad_type_not_supported_test) {
   start_le_scanning_manager();
-  ASSERT_TRUE(fake_registry_.IsStarted(&HciLayer::Factory));
 
   std::vector<AdvertisingPacketContentFilterCommand> filters = {};
   filters.push_back(make_filter(hci::ApcfFilterType::AD_TYPE));

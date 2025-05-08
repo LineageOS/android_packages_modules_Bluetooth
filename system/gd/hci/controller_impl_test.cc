@@ -60,12 +60,14 @@ namespace {
 
 class HciLayerFakeForController : public HciLayerFake {
 public:
+  HciLayerFakeForController(os::Handler* handler) : HciLayerFake(handler) {}
+
   void EnqueueCommand(
           std::unique_ptr<CommandBuilder> command,
           common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) override {
-    GetHandler()->Post(common::BindOnce(&HciLayerFakeForController::HandleCommand,
-                                        common::Unretained(this), std::move(command),
-                                        std::move(on_complete)));
+    handler_->Post(common::BindOnce(&HciLayerFakeForController::HandleCommand,
+                                    common::Unretained(this), std::move(command),
+                                    std::move(on_complete)));
   }
 
   void EnqueueCommand(
@@ -286,19 +288,17 @@ class ControllerTest : public ::testing::Test {
 protected:
   void SetUp() override {
     feature_spec_version = feature_spec_version_;
-    test_hci_layer_ = new HciLayerFakeForController;
+    client_handler_ = fake_registry_.GetTestHandler();
+    test_hci_layer_ = std::make_unique<HciLayerFakeForController>(client_handler_);
     test_hci_layer_->vendor_capabilities_ = std::move(vendor_capabilities_);
     vendor_capabilities_.reset();
-    fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
-    client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
-    fake_registry_.Start<HciLayer>(&thread_, fake_registry_.GetTestHandler());
-    controller_ = std::make_unique<ControllerImpl>(client_handler_, test_hci_layer_);
+    controller_ = std::make_unique<ControllerImpl>(client_handler_, test_hci_layer_.get());
   }
 
   void TearDown() override { fake_registry_.StopAll(); }
 
   TestModuleRegistry fake_registry_;
-  HciLayerFakeForController* test_hci_layer_ = nullptr;
+  std::unique_ptr<HciLayerFakeForController> test_hci_layer_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
   std::unique_ptr<ControllerImpl> controller_ = nullptr;
   os::Handler* client_handler_ = nullptr;

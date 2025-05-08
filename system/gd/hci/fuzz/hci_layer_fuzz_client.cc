@@ -25,35 +25,31 @@ namespace fuzz {
 using bluetooth::fuzz::GetArbitraryBytes;
 using bluetooth::hci::AclView;
 
-const ModuleFactory HciLayerFuzzClient::Factory =
-        ModuleFactory([]() { return new HciLayerFuzzClient(); });
-
-void HciLayerFuzzClient::Start() {
-  hci_ = GetDependency<hci::HciLayer>();
-  aclDevNull_ = new os::fuzz::DevNullQueue<AclView>(hci_->GetAclQueueEnd(), GetHandler());
+HciLayerFuzzClient::HciLayerFuzzClient(os::Handler* handler, HciInterface* hci)
+    : handler_(handler), hci_(hci) {
+  aclDevNull_ = new os::fuzz::DevNullQueue<AclView>(hci_->GetAclQueueEnd(), handler_);
   aclDevNull_->Start();
-  aclInject_ = new os::fuzz::FuzzInjectQueue<AclBuilder>(hci_->GetAclQueueEnd(), GetHandler());
+  aclInject_ = new os::fuzz::FuzzInjectQueue<AclBuilder>(hci_->GetAclQueueEnd(), handler_);
 
   // Can't do security right now, due to the Encryption Change conflict between ACL manager &
   // security security_interface_ = hci_->GetSecurityInterface(common::Bind([](EventView){}),
-  // GetHandler());
-  le_security_interface_ = hci_->GetLeSecurityInterface(GetHandler()->Bind([](LeMetaEventView) {}));
+  // handler_);
+  le_security_interface_ = hci_->GetLeSecurityInterface(handler_->Bind([](LeMetaEventView) {}));
   acl_connection_interface_ = hci_->GetAclConnectionInterface(
-          GetHandler()->Bind([](EventView) {}), GetHandler()->Bind([](uint16_t, hci::ErrorCode) {}),
-          GetHandler()->Bind([](Address, ClassOfDevice) {}),
-          GetHandler()->Bind([](hci::ErrorCode, uint16_t, uint8_t, uint16_t, uint16_t) {}));
+          handler_->Bind([](EventView) {}), handler_->Bind([](uint16_t, hci::ErrorCode) {}),
+          handler_->Bind([](Address, ClassOfDevice) {}),
+          handler_->Bind([](hci::ErrorCode, uint16_t, uint8_t, uint16_t, uint16_t) {}));
   le_acl_connection_interface_ = hci_->GetLeAclConnectionInterface(
-          GetHandler()->Bind([](LeMetaEventView) {}),
-          GetHandler()->Bind([](uint16_t, hci::ErrorCode) {}),
-          GetHandler()->Bind([](hci::ErrorCode, uint16_t, uint8_t, uint16_t, uint16_t) {}));
+          handler_->Bind([](LeMetaEventView) {}), handler_->Bind([](uint16_t, hci::ErrorCode) {}),
+          handler_->Bind([](hci::ErrorCode, uint16_t, uint8_t, uint16_t, uint16_t) {}));
   le_advertising_interface_ =
-          hci_->GetLeAdvertisingInterface(GetHandler()->Bind([](LeMetaEventView) {}));
-  le_scanning_interface_ = hci_->GetLeScanningInterface(GetHandler()->Bind([](LeMetaEventView) {}));
+          hci_->GetLeAdvertisingInterface(handler_->Bind([](LeMetaEventView) {}));
+  le_scanning_interface_ = hci_->GetLeScanningInterface(handler_->Bind([](LeMetaEventView) {}));
   distance_measurement_interface_ =
-          hci_->GetDistanceMeasurementInterface(GetHandler()->Bind([](LeMetaEventView) {}));
+          hci_->GetDistanceMeasurementInterface(handler_->Bind([](LeMetaEventView) {}));
 }
 
-void HciLayerFuzzClient::Stop() {
+HciLayerFuzzClient::~HciLayerFuzzClient() {
   aclDevNull_->Stop();
   delete aclDevNull_;
   delete aclInject_;

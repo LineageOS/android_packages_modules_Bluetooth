@@ -236,8 +236,8 @@ protected:
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     thread_ = new Thread("thread", Thread::Priority::NORMAL);
     handler_ = new Handler(thread_);
-    hci_layer_ = new HciLayerFake();
 
+    hci_layer_ = std::make_unique<HciLayerFake>(handler_);
     controller_ = std::make_unique<TestController>();
     round_robin_scheduler_ = std::make_unique<RoundRobinScheduler>(handler_, controller_.get(),
                                                                    hci_queue_.GetUpEnd());
@@ -246,9 +246,9 @@ protected:
             handler_, common::Bind(&LeImplTest::HciDownEndDequeue, common::Unretained(this)));
 
     classic_impl_ =
-            std::make_unique<classic_impl>(hci_layer_, controller_.get(), handler_,
+            std::make_unique<classic_impl>(hci_layer_.get(), controller_.get(), handler_,
                                            round_robin_scheduler_.get(), false, nullptr, nullptr);
-    le_impl_ = std::make_unique<le_impl>(hci_layer_, controller_.get(), handler_,
+    le_impl_ = std::make_unique<le_impl>(hci_layer_.get(), controller_.get(), handler_,
                                          round_robin_scheduler_.get(), kCrashOnUnknownHandle,
                                          classic_impl_.get());
     le_impl_->handle_register_le_callbacks(&mock_le_connection_callbacks_, handler_);
@@ -360,7 +360,7 @@ protected:
 
     hci_queue_.GetDownEnd()->UnregisterDequeue();
 
-    delete hci_layer_;
+    hci_layer_.reset();
     round_robin_scheduler_.reset();
     controller_.reset();
 
@@ -417,7 +417,7 @@ protected:
 
   Thread* thread_;
   Handler* handler_;
-  HciLayerFake* hci_layer_{nullptr};
+  std::unique_ptr<HciLayerFake> hci_layer_;
   std::unique_ptr<classic_impl> classic_impl_;
   std::unique_ptr<TestController> controller_;
   std::unique_ptr<RoundRobinScheduler> round_robin_scheduler_{nullptr};
