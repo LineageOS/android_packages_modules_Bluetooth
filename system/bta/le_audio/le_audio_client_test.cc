@@ -3010,10 +3010,13 @@ protected:
                                   std::optional<AudioContexts> supp_snk = std::nullopt,
                                   std::optional<AudioContexts> supp_src = std::nullopt) {
     available_snk_context_types_ = avail_snk.value();
-    available_src_context_types_ = avail_src.value_or(avail_snk).value();
+    available_src_context_types_ =
+            avail_src.value_or(avail_snk & types::kLeAudioContextAllRemoteSource).value();
     supported_snk_context_types_ = supp_snk.value_or(avail_snk).value();
     supported_src_context_types_ =
-            supp_src.has_value() ? supp_src.value().value() : supported_snk_context_types_;
+            supp_src.has_value()
+                    ? supp_src.value().value()
+                    : supported_snk_context_types_ & types::kLeAudioContextAllRemoteSource.value();
   }
 
   bool empty_source_pack_ = false;
@@ -16310,6 +16313,9 @@ TEST_P(UnicastDsaTest, RequestConfigurationDsaReconfigure) {
   ASSERT_TRUE(requirements_capture.has_value());
   ASSERT_EQ(CodecManager::Flags::SPATIAL_AUDIO,
             requirements_capture->flags & CodecManager::Flags::SPATIAL_AUDIO);
+  // Make sure both direction PAC records are passed when spatial audio is requested
+  ASSERT_TRUE(requirements_capture->sink_pacs.has_value());
+  ASSERT_TRUE(requirements_capture->source_pacs.has_value());
 }
 
 INSTANTIATE_TEST_CASE_P(Test, UnicastDsaTest,

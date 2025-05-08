@@ -943,6 +943,10 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
   // determine the number of ASEs to activate.
   for (auto const& weak_dev_ptr : leAudioDevices_) {
     auto device = weak_dev_ptr.lock();
+    if (!device) {
+      log::warn("Device is not reachable");
+      continue;
+    }
     BidirectionalPair<bool> has_location = {false, false};
     BidirectionalPair<bool> has_direction = GetDirectionSupport(ctx_type);
 
@@ -1090,6 +1094,28 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
       break;
     default:
       break;
+  }
+
+  // Make sure to provide Headtracking PAC records if DSA back channel is expected
+  if ((new_req.flags & CodecManager::Flags::SPATIAL_AUDIO) && !new_req.source_pacs.has_value()) {
+    for (auto const& weak_dev_ptr : leAudioDevices_) {
+      auto device = weak_dev_ptr.lock();
+      if (!device) {
+        log::warn("Device is not reachable");
+        continue;
+      }
+
+      if (!device->src_pacs_.empty()) {
+        if (!new_req.source_pacs) {
+          new_req.source_pacs = std::vector<types::acs_ac_record>{};
+        }
+        for (auto& [_, pac_char] : device->src_pacs_) {
+          for (auto const& pac_record : pac_char) {
+            new_req.source_pacs->push_back(pac_record);
+          }
+        }
+      }
+    }
   }
 
   return new_req;
