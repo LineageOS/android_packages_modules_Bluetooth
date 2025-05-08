@@ -139,6 +139,8 @@ public:
   virtual std::vector<bluetooth::le_audio::btle_audio_codec_config_t>
   GetLocalAudioOutputCodecCapa();
   virtual std::vector<bluetooth::le_audio::btle_audio_codec_config_t> GetLocalAudioInputCodecCapa();
+  std::vector<bluetooth::le_audio::btle_audio_codec_config_t> GetRemoteAudioCodecCapa(
+          const bluetooth::le_audio::types::PublishedAudioCapabilities& pac) const;
 
   virtual void ConfigureDataPath(hci_data_direction_t direction, uint8_t dataPathId,
                                  std::vector<uint8_t> dataPathConfig) const;

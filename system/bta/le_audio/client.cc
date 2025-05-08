@@ -3816,10 +3816,8 @@ public:
     auto leAudioDevice = group->GetFirstDevice();
     callbacks_->OnAudioGroupSelectableCodecConf(
             group->group_id_,
-            bluetooth::le_audio::utils::GetRemoteBtLeAudioCodecConfigFromPac(
-                    leAudioDevice->src_pacs_),
-            bluetooth::le_audio::utils::GetRemoteBtLeAudioCodecConfigFromPac(
-                    leAudioDevice->snk_pacs_));
+            CodecManager::GetInstance()->GetRemoteAudioCodecCapa(leAudioDevice->src_pacs_),
+            CodecManager::GetInstance()->GetRemoteAudioCodecCapa(leAudioDevice->snk_pacs_));
   }
 
   void SendAudioGroupCurrentCodecConfigChanged(LeAudioDeviceGroup* group) {
