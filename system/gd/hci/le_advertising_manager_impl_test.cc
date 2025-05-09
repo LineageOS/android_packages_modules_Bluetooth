@@ -132,7 +132,7 @@ protected:
   void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
-    test_controller_ = new TestController;
+    test_controller_ = std::make_unique<TestController>();
     test_set_terminated_handler_ = new OnSetTerminatedReceiver;
 
     test_controller_->AddSupported(param_opcode_);
@@ -146,10 +146,10 @@ protected:
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
     test_le_address_manager_ = new TestLeAddressManager(
             common::Bind([](std::unique_ptr<CommandBuilder> /* command_packet */) {}),
-            client_handler_, address, 0x3F, 0x3F, test_controller_);
+            client_handler_, address, 0x3F, 0x3F, test_controller_.get());
 
     le_advertising_manager_ = new LeAdvertisingManagerImpl(
-            fake_registry_.GetTestHandler(), test_hci_layer_, test_controller_,
+            fake_registry_.GetTestHandler(), test_hci_layer_, test_controller_.get(),
             test_le_address_manager_, test_set_terminated_handler_);
     le_advertising_manager_->RegisterAdvertisingCallback(&mock_advertising_callback_);
   }
@@ -165,7 +165,7 @@ protected:
 
   TestModuleRegistry fake_registry_;
   HciLayerFake* test_hci_layer_ = nullptr;
-  TestController* test_controller_ = nullptr;
+  std::unique_ptr<TestController> test_controller_ = nullptr;
   OnAdvertisingSetTerminatedInterface* test_set_terminated_handler_ = nullptr;
   TestLeAddressManager* test_le_address_manager_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
