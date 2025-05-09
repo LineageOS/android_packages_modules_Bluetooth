@@ -26,6 +26,7 @@ import static org.mockito.Mockito.doReturn;
 import android.app.PendingIntent;
 import android.bluetooth.le.IScannerCallback;
 import android.content.AttributionSource;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Binder;
@@ -52,10 +53,6 @@ import java.util.UUID;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class ScannerMapTest {
-    private static final String APP_NAME = "com.android.what.a.name";
-    private static final int UID = 12345;
-    private static final int SCANNER_ID = 321;
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AttributionSource mAttributionSource;
@@ -65,6 +62,10 @@ public class ScannerMapTest {
     @Mock private IScannerCallback mMockScannerCallback;
 
     @Spy private BluetoothMethodProxy mMapMethodProxy = BluetoothMethodProxy.getInstance();
+
+    private static final String APP_NAME = "com.android.what.a.name";
+    private static final int UID = 12345;
+    private static final int SCANNER_ID = 321;
 
     @Before
     public void setUp() throws Exception {
@@ -81,12 +82,9 @@ public class ScannerMapTest {
     @Test
     public void getByMethodsWithPii() {
         ScannerMap scannerMap = new ScannerMap();
+        final Context context = InstrumentationRegistry.getInstrumentation().getContext();
         PendingIntent intent =
-                PendingIntent.getBroadcast(
-                        InstrumentationRegistry.getInstrumentation().getContext(),
-                        0,
-                        new Intent(),
-                        PendingIntent.FLAG_IMMUTABLE);
+                PendingIntent.getBroadcast(context, 0, new Intent(), PendingIntent.FLAG_IMMUTABLE);
         ScanController.PendingIntentInfo info =
                 new ScanController.PendingIntentInfo(intent, null, null, APP_NAME, UID);
         UUID uuid = UUID.randomUUID();
