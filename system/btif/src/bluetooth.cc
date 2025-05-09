@@ -404,6 +404,9 @@ int GetAdapterIndex() { return 0; }  // Unsupported outside of FLOSS
 
 static int init(bt_callbacks_t* callbacks, bool start_restricted, bool is_common_criteria_mode,
                 int config_compare_result, bool is_atv, const char* hci_instance_name) {
+  log::assert_that(callbacks != nullptr, "assert failed: callbacks != nullptr");
+  log::assert_that(hci_instance_name != nullptr, "assert failed: hci_instance_name != nullptr");
+
   log::info(
           "start restricted = {} ; common criteria mode = {}, config compare "
           "result = {} instance_name = {}",
