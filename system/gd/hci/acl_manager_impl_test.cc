@@ -31,7 +31,6 @@
 #include "hci/acl_manager/le_connection_management_callbacks_mock.h"
 #include "hci/address.h"
 #include "hci/class_of_device.h"
-#include "hci/controller.h"
 #include "hci/controller_mock.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_layer_fake.h"
@@ -102,7 +101,7 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
 protected:
   void SetUp() override {
     test_hci_layer_ = new HciLayerFake;     // Ownership is transferred to registry
-    test_controller_ = new TestController;  // Ownership is transferred to registry
+    test_controller_ = std::make_unique<TestController>();
 
     EXPECT_CALL(*test_controller_, GetMacAddress());
     EXPECT_CALL(*test_controller_, GetLeFilterAcceptListSize());
@@ -120,9 +119,9 @@ protected:
     fake_registry_.Start<HciLayer>(&thread_, client_handler_);
 
     test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
-    acl_manager_ =
-            std::make_unique<AclManagerImpl>(client_handler_, test_hci_layer_, test_controller_,
-                                             test_acl_scheduler_.get(), nullptr /* RNRModule */);
+    acl_manager_ = std::make_unique<AclManagerImpl>(
+            client_handler_, test_hci_layer_, test_controller_.get(), test_acl_scheduler_.get(),
+            nullptr /* RNRModule */);
 
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 
@@ -177,7 +176,7 @@ protected:
 
   TestModuleRegistry fake_registry_;
   HciLayerFake* test_hci_layer_ = nullptr;
-  TestController* test_controller_ = nullptr;
+  std::unique_ptr<TestController> test_controller_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
   os::Handler* handler_ = fake_registry_.GetTestHandler();
   std::unique_ptr<AclScheduler> test_acl_scheduler_ = nullptr;
@@ -1143,7 +1142,7 @@ class AclManagerWithResolvableAddressTest : public AclManagerNoCallbacksTest {
 protected:
   void SetUp() override {
     test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
-    test_controller_ = new TestController;
+    test_controller_ = std::make_unique<TestController>();
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
@@ -1155,9 +1154,9 @@ protected:
     fake_registry_.Start<HciLayer>(&thread_, client_handler_);
 
     test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
-    acl_manager_ =
-            std::make_unique<AclManagerImpl>(client_handler_, test_hci_layer_, test_controller_,
-                                             test_acl_scheduler_.get(), nullptr /* RNRModule */);
+    acl_manager_ = std::make_unique<AclManagerImpl>(
+            client_handler_, test_hci_layer_, test_controller_.get(), test_acl_scheduler_.get(),
+            nullptr /* RNRModule */);
 
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 

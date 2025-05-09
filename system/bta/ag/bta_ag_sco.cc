@@ -42,7 +42,7 @@
 #include "btm_status.h"
 #include "device/include/esco_parameters.h"
 #include "hardware/bt_hf.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/hci_packets.h"
 #include "hci_error_code.h"
 #include "hcidefs.h"

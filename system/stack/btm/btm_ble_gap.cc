@@ -43,7 +43,6 @@
 #include "btif/include/btif_gatt.h"
 #include "common/time_util.h"
 #include "hci/controller.h"
-#include "hci/controller_interface.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/ble_scanner_interface_impl.h"
 #include "main/shim/entry.h"
@@ -659,7 +658,7 @@ void BTM_BleReadControllerFeatures(tBTM_BLE_CTRL_FEATURES_CBACK* p_vsc_cback) {
   log::verbose("BTM_BleReadControllerFeatures");
 
   btm_cb.cmn_ble_vsc_cb.values_read = true;
-  bluetooth::hci::ControllerInterface::VendorCapabilities vendor_capabilities =
+  bluetooth::hci::Controller::VendorCapabilities vendor_capabilities =
           GetController()->GetVendorCapabilities();
 
   btm_cb.cmn_ble_vsc_cb.adv_inst_max = vendor_capabilities.max_advt_instances_;

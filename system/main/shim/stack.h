@@ -35,6 +35,10 @@ namespace hal {
 class SnoopLogger;
 }
 
+namespace hci {
+class MsftExtensionManager;
+}
+
 namespace storage {
 class StorageModule;
 }
@@ -73,9 +77,10 @@ public:
   virtual Acl* GetAcl() const;
   virtual storage::StorageModule* GetStorage() const;
   virtual hal::SnoopLogger* GetSnoopLogger() const;
-  virtual hci::ControllerInterface* GetController() const;
+  virtual hci::Controller* GetController() const;
   virtual hci::RemoteNameRequestModule* GetRemoteNameRequest() const;
   virtual hci::AclManager* GetAclManager() const;
+  virtual hci::MsftExtensionManager* GetMsftExtensionManager() const;
   virtual hci::LeScanningManager* GetLeScanningManager() const;
   virtual hci::LeAdvertisingManager* GetLeAdvertisingManager() const;
   virtual hci::DistanceMeasurementManager* GetDistanceMeasurementManager() const;

@@ -22,7 +22,7 @@
 
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_le_audio_api.h"
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sco.h"
 #include "stack/btm/internal/btm_api.h"
@@ -45,7 +45,7 @@ protected:
               return enh_esco_params_t{};
             };
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+            std::make_unique<bluetooth::hci::testing::MockController>();
   }
   void TearDown() override {
     test::mock::device_esco_parameters::esco_parameters_for_codec = {};

@@ -30,7 +30,7 @@
 #include <cstdint>
 
 #include "base/functional/bind.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "main/shim/entry.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/internal/btm_api.h"

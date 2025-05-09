@@ -46,7 +46,7 @@
 #include "btif/include/btif_dm.h"
 #include "btif/include/btif_gatt.h"
 #include "btif/include/btif_gatt_util.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "internal_include/bte_appl.h"
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"

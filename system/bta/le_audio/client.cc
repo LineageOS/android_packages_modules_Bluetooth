@@ -71,7 +71,7 @@
 #include "gmap_client.h"
 #include "gmap_server.h"
 #include "hardware/bt_le_audio.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci_error_code.h"
 #include "include/hardware/bt_gmap.h"
 #include "internal_include/bt_trace.h"

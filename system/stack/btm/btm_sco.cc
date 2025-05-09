@@ -38,7 +38,7 @@
 #include "common/bidi_queue.h"
 #include "device/include/device_iot_config.h"
 #include "hci/class_of_device.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 #include "hci/include/hci_layer.h"

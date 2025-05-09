@@ -24,7 +24,7 @@
 #include "common/bidi_queue.h"
 #include "common/multi_priority_queue.h"
 #include "hci/acl_manager/acl_connection.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/hci_packets.h"
 #include "os/handler.h"
 
@@ -34,7 +34,7 @@ namespace acl_manager {
 
 class RoundRobinScheduler {
 public:
-  RoundRobinScheduler(os::Handler* handler, ControllerInterface* controller,
+  RoundRobinScheduler(os::Handler* handler, Controller* controller,
                       common::BidiQueueEnd<AclBuilder, AclView>* hci_queue_end);
   ~RoundRobinScheduler();
 
@@ -72,7 +72,7 @@ private:
   void incoming_acl_credits(uint16_t handle, uint16_t credits);
 
   os::Handler* handler_ = nullptr;
-  ControllerInterface* controller_ = nullptr;
+  Controller* controller_ = nullptr;
   std::map<uint16_t, acl_queue_handler> acl_queue_handlers_;
   common::MultiPriorityQueue<packet_fragment, 2> fragments_to_send_;
   uint16_t max_acl_packet_credits_ = 0;

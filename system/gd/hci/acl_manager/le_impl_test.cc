@@ -236,17 +236,21 @@ protected:
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     thread_ = new Thread("thread", Thread::Priority::NORMAL);
     handler_ = new Handler(thread_);
-    controller_ = new TestController();
     hci_layer_ = new HciLayerFake();
 
-    round_robin_scheduler_ = new RoundRobinScheduler(handler_, controller_, hci_queue_.GetUpEnd());
+    controller_ = std::make_unique<TestController>();
+    round_robin_scheduler_ = std::make_unique<RoundRobinScheduler>(handler_, controller_.get(),
+                                                                   hci_queue_.GetUpEnd());
+
     hci_queue_.GetDownEnd()->RegisterDequeue(
             handler_, common::Bind(&LeImplTest::HciDownEndDequeue, common::Unretained(this)));
 
-    classic_impl_ = new classic_impl(hci_layer_, controller_, handler_, round_robin_scheduler_,
-                                     false, nullptr, nullptr);
-    le_impl_ = new le_impl(hci_layer_, controller_, handler_, round_robin_scheduler_,
-                           kCrashOnUnknownHandle, classic_impl_);
+    classic_impl_ =
+            std::make_unique<classic_impl>(hci_layer_, controller_.get(), handler_,
+                                           round_robin_scheduler_.get(), false, nullptr, nullptr);
+    le_impl_ = std::make_unique<le_impl>(hci_layer_, controller_.get(), handler_,
+                                         round_robin_scheduler_.get(), kCrashOnUnknownHandle,
+                                         classic_impl_.get());
     le_impl_->handle_register_le_callbacks(&mock_le_connection_callbacks_, handler_);
 
     Address address;
@@ -351,14 +355,14 @@ protected:
     }
 
     sync_handler();
-    delete le_impl_;
-    delete classic_impl_;
+    le_impl_.reset();
+    classic_impl_.reset();
 
     hci_queue_.GetDownEnd()->UnregisterDequeue();
 
     delete hci_layer_;
-    delete round_robin_scheduler_;
-    delete controller_;
+    round_robin_scheduler_.reset();
+    controller_.reset();
 
     handler_->Clear();
     delete handler_;
@@ -414,14 +418,14 @@ protected:
   Thread* thread_;
   Handler* handler_;
   HciLayerFake* hci_layer_{nullptr};
-  classic_impl* classic_impl_;
-  TestController* controller_;
-  RoundRobinScheduler* round_robin_scheduler_{nullptr};
+  std::unique_ptr<classic_impl> classic_impl_;
+  std::unique_ptr<TestController> controller_;
+  std::unique_ptr<RoundRobinScheduler> round_robin_scheduler_{nullptr};
 
   MockLeConnectionCallbacks mock_le_connection_callbacks_;
   MockLeConnectionManagementCallbacks connection_management_callbacks_;
 
-  struct le_impl* le_impl_;
+  std::unique_ptr<struct le_impl> le_impl_;
 };
 
 class LeImplRegisteredWithAddressManagerTest : public LeImplTest {
@@ -754,7 +758,7 @@ TEST_F(LeImplTest, DISABLED_register_with_address_manager__AddressPolicyNotSet) 
             handler->Post(common::BindOnce([](std::promise<void> promise) { promise.set_value(); },
                                            std::move(promise)));
           },
-          le_impl_, handler_, std::move(promise)));
+          le_impl_.get(), handler_, std::move(promise)));
 
   // Let |LeAddressManager::register_client| execute on handler
   auto status = future.wait_for(2s);
@@ -765,7 +769,7 @@ TEST_F(LeImplTest, DISABLED_register_with_address_manager__AddressPolicyNotSet) 
             ASSERT_TRUE(le_impl->address_manager_registered);
             ASSERT_TRUE(le_impl->pause_connection);
           },
-          le_impl_));
+          le_impl_.get()));
 
   std::promise<void> promise2;
   auto future2 = promise2.get_future();
@@ -778,7 +782,7 @@ TEST_F(LeImplTest, DISABLED_register_with_address_manager__AddressPolicyNotSet) 
             handler->Post(common::BindOnce([](std::promise<void> promise) { promise.set_value(); },
                                            std::move(promise)));
           },
-          le_impl_, handler_, std::move(promise2)));
+          le_impl_.get(), handler_, std::move(promise2)));
 
   // Let |LeAddressManager::unregister_client| execute on handler
   auto status2 = future2.wait_for(2s);
@@ -960,7 +964,7 @@ TEST_F(LeImplTest, DISABLED_add_device_to_resolving_list) {
   ASSERT_TRUE(le_impl_->address_manager_registered);
   ASSERT_TRUE(le_impl_->pause_connection);
 
-  le_impl_->le_address_manager_->AckPause(le_impl_);
+  le_impl_->le_address_manager_->AckPause(le_impl_.get());
   sync_handler();  // Allow |LeAddressManager::ack_pause| to complete
 
   {
@@ -1034,7 +1038,7 @@ TEST_F(LeImplTest, add_device_to_resolving_list__SupportsBlePrivacy) {
   ASSERT_TRUE(le_impl_->address_manager_registered);
   ASSERT_TRUE(le_impl_->pause_connection);
 
-  le_impl_->le_address_manager_->AckPause(le_impl_);
+  le_impl_->le_address_manager_->AckPause(le_impl_.get());
   sync_handler();  // Allow |LeAddressManager::ack_pause| to complete
 
   {

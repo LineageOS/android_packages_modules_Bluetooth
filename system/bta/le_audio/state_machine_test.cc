@@ -30,7 +30,7 @@
 #include "btm_api_mock.h"
 #include "client_parser.h"
 #include "fake_osi.h"
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "internal_include/stack_config.h"
 #include "le_audio/le_audio_types.h"
 #include "le_audio_set_configuration_provider.h"
@@ -269,7 +269,7 @@ protected:
     gatt::SetMockBtaGattQueue(&gatt_queue);
 
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+            std::make_unique<bluetooth::hci::testing::MockController>();
 
     overwrite_cis_status_idx_ = 0;
     use_cis_retry_cnt_ = false;
