@@ -34,7 +34,6 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.database.MatrixCursor;
 
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.intent.Intents;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
@@ -82,7 +81,8 @@ public class BluetoothOppNotificationTest {
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = spy(new ContextWrapper(ApplicationProvider.getApplicationContext()));
+        mTargetContext =
+                spy(new ContextWrapper(InstrumentationRegistry.getInstrumentation().getContext()));
         BluetoothMethodProxy.setInstanceForTesting(mMethodProxy);
 
         InstrumentationRegistry.getInstrumentation()

@@ -40,8 +40,8 @@ import android.content.Context;
 import android.database.MatrixCursor;
 import android.os.Looper;
 
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.MediumTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
@@ -64,7 +64,7 @@ public class BluetoothOppServiceTest {
     @Mock private AdapterService mAdapterService;
     @Mock private BluetoothMethodProxy mBluetoothMethodProxy;
 
-    private final Context mContext = ApplicationProvider.getApplicationContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
 
     private BluetoothOppService mService;
 

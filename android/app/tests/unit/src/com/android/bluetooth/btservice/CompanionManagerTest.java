@@ -31,8 +31,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.HandlerThread;
 
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.MediumTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.After;
@@ -52,7 +52,7 @@ public class CompanionManagerTest {
     @Mock private SharedPreferences mSharedPreferences;
     @Mock private SharedPreferences.Editor mEditor;
 
-    private final Context mContext = ApplicationProvider.getApplicationContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothDevice mDevice = getTestDevice(123);
 
     private CompanionManager mCompanionManager;
