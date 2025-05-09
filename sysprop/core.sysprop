@@ -97,3 +97,84 @@ prop {
     prop_name: "bluetooth.core.le.inquiry_scan_window"
 }
 
+# Whether LE Connection with initiating with only LE 1M PHY.
+# Set by vendors overlay, read at Bluetooth initialization
+prop {
+    api_name: "isGapLeConnOnlyInit1mPhyEnabled"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.gap.le.conn.only_init_1m_phy.enabled"
+}
+
+# ACL Link supervision timeout
+prop {
+    api_name: "getLinkSupervisionTimeout"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.acl.link_supervision_timeout"
+}
+
+# The following values are used to load default adapter parameters for BR/EDR.
+# The Bluetooth Core Specification should be consulted for the meaning and valid
+# domain of each of these values.
+
+# BR/EDR Page scan activity configuration
+prop {
+    api_name: "getClassicPageScanType"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.classic.page_scan_type"
+}
+
+prop {
+    api_name: "getClassicPageScanInterval"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.classic.page_scan_interval"
+}
+
+prop {
+    api_name: "getClassicPageScanWindow"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.classic.page_scan_window"
+}
+
+# BR/EDR Inquiry scan activity configuration
+prop {
+    api_name: "getClassicInquiryScanType"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.classic.inq_scan_type"
+}
+
+prop {
+    api_name: "getClassicInquiryScanInterval"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.classic.inq_scan_interval"
+}
+
+prop {
+    api_name: "getClassicInquiryScanWindow"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.classic.inq_scan_window"
+}
+
+# BR/EDR Page Timeout
+prop {
+    api_name: "getClassicPageTimeout"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.classic.page_timeout"
+}
