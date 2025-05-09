@@ -1472,6 +1472,8 @@ protected:
                                                                   GroupStreamStatus::STREAMING);
                         },
                         group->group_id_, base::Unretained(this->state_machine_callbacks_)));
+              } else {
+                group->ClearStreamingMetadataContexts();
               }
             });
 
@@ -7421,6 +7423,75 @@ TEST_F(UnicastTest, SpeakerStreamingAutonomousRelease) {
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStreamStatus(group_id, GroupStreamStatus::IDLE))
           .Times(1);
+
+  // Inject the IDLE state as if an autonomous release happened
+  ASSERT_NE(0lu, streaming_groups.count(group_id));
+  auto group = streaming_groups.at(group_id);
+  ASSERT_NE(group, nullptr);
+  for (LeAudioDevice* device = group->GetFirstDevice(); device != nullptr;
+       device = group->GetNextDevice(device)) {
+    for (auto& ase : device->ases_) {
+      ase.cis_state = types::CisState::IDLE;
+      ase.data_path_state = types::DataPathState::IDLE;
+      ase.state = types::AseState::BTA_LE_AUDIO_ASE_STATE_IDLE;
+      InjectCisDisconnected(group_id, ase.cis_conn_hdl);
+    }
+  }
+  // Verify no Data transfer after the autonomous release
+  TestAudioDataTransfer(group_id, 0 /* cis_count_out */, 0 /* cis_count_in */, 1920);
+
+  // Inject Releasing
+  state_machine_callbacks_->StatusReportCb(group->group_id_,
+                                           GroupStreamStatus::RELEASING_AUTONOMOUS);
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+}
+
+TEST_F(UnicastTest, SpeakerStreaming_RemovesAllAvaulebleContextTypes_thenAutonomousRelease) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  int group_id = bluetooth::groups::kGroupUnknown;
+
+  SetSampleDatabaseEarbudsValid(
+          1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+          codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt, default_channel_cnt, 0x0004,
+          /* source sample freq 16khz */ false /*add_csis*/, true /*add_cas*/, true /*add_pacs*/,
+          default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/, 0 /*rank*/);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::CONNECTED, test_address0))
+          .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
+          .WillOnce(DoAll(SaveArg<1>(&group_id)));
+
+  ConnectLeAudio(test_address0);
+  ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
+
+  // Start streaming
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+
+  StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
+
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_sink_hal_client_);
+  SyncOnMainLoop();
+
+  // Verify Data transfer on one audio source cis
+  TestAudioDataTransfer(group_id, 1 /* cis_count_out */, 0 /* cis_count_in */, 1920);
+  /* Simulate removes all available context types. Since device is streaming,
+   * there should be update containing streaming context type
+   */
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnAudioConf(_, _, _, _, static_cast<uint16_t>(LeAudioContextType::MEDIA)))
+          .Times(1);
+  InjectAvailableContextTypes(test_address0, 1, AudioContexts(), AudioContexts());
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+
+  EXPECT_CALL(mock_audio_hal_client_callbacks_, OnAudioConf(_, group_id, _, _, 0)).Times(1);
 
   // Inject the IDLE state as if an autonomous release happened
   ASSERT_NE(0lu, streaming_groups.count(group_id));

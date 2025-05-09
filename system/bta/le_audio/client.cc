@@ -6791,7 +6791,16 @@ public:
         log::warn("Group {} is doing autonomous release, make it inactive", group_id);
         if (group) {
           group->PrintDebugState();
-          groupSetAndNotifyInactive();
+          if (group->GetAvailableContexts().none()) {
+            log::info("group_id: {} autonomous release due to unavailable contexts.",
+                      group->group_id_);
+            /* This update will also make device inactive, but when available context will be back,
+             * it will bring device active again.
+             */
+            UpdateLocationsAndContextsAvailability(group, true);
+          } else {
+            groupSetAndNotifyInactive();
+          }
         }
         audio_sender_state_ = AudioState::IDLE;
         audio_receiver_state_ = AudioState::IDLE;
