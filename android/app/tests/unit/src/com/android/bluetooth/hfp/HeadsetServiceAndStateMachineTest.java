@@ -2032,6 +2032,111 @@ public class HeadsetServiceAndStateMachineTest {
         verifyActiveDeviceChangedIntent(null);
     }
 
+    @Test
+    @EnableFlags(Flags.FLAG_SEND_OK_CLCC_BEFORE_SLC)
+    public void testProcessSendClccResponse_rfcommNotCompleted() {
+        doReturn(true).when(mSystemInterface).listCurrentCalls(mHeadsetService);
+        BluetoothDevice device = getTestDevice(0);
+        doReturn(CONNECTION_POLICY_UNKNOWN)
+                .when(mDatabaseManager)
+                .getProfileConnectionPolicy(device, BluetoothProfile.HEADSET);
+        doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService).getBondState(eq(device));
+        // Make device bonded
+        mBondedDevices.add(device);
+        // Use connecting event to indicate that device is connecting
+        HeadsetStackEvent connectingEvent =
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED,
+                        HeadsetHalConstants.CONNECTION_STATE_CONNECTING,
+                        device);
+        mHeadsetService.messageFromNative(connectingEvent);
+        mTestLooper.dispatchAll();
+
+        verify(mObjectsFactory)
+                .makeStateMachine(
+                        device,
+                        mTestLooper.getLooper(),
+                        mHeadsetService,
+                        mAdapterService,
+                        mNativeInterface,
+                        mSystemInterface);
+        verify(mActiveDeviceManager)
+                .profileConnectionStateChanged(
+                        BluetoothProfile.HEADSET, device, STATE_DISCONNECTED, STATE_CONNECTING);
+        verify(mSilenceDeviceManager)
+                .hfpConnectionStateChanged(device, STATE_DISCONNECTED, STATE_CONNECTING);
+        assertThat(mHeadsetService.getConnectionState(device)).isEqualTo(STATE_CONNECTING);
+        assertThat(mHeadsetService.getDevicesMatchingConnectionStates(new int[] {STATE_CONNECTING}))
+                .containsExactly(device);
+
+        // Send EVENT_TYPE_AT_CLCC to generate CLCC_RSP_TIMEOUT message
+        HeadsetStackEvent atClccEvent =
+                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_AT_CLCC, device);
+        mHeadsetService.messageFromNative(atClccEvent);
+        mTestLooper.dispatchAll();
+
+        mHeadsetService.clccResponse(0, 0, 0, 0, false, "8225319000", 0);
+        mTestLooper.dispatchAll();
+
+        verify(mNativeInterface, times(0)).clccResponse(device, 0, 0, 0, 0, false, "8225319000", 0);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SEND_OK_CLCC_BEFORE_SLC)
+    public void testProcessSendClccResponse_rfcommCompleted() {
+        doReturn(true).when(mSystemInterface).listCurrentCalls(mHeadsetService);
+        BluetoothDevice device = getTestDevice(0);
+        doReturn(CONNECTION_POLICY_UNKNOWN)
+                .when(mDatabaseManager)
+                .getProfileConnectionPolicy(device, BluetoothProfile.HEADSET);
+        doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService).getBondState(eq(device));
+        // Make device bonded
+        mBondedDevices.add(device);
+        // Use connecting event to indicate that device is connecting
+        HeadsetStackEvent connectingEvent =
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED,
+                        HeadsetHalConstants.CONNECTION_STATE_CONNECTING,
+                        device);
+        mHeadsetService.messageFromNative(connectingEvent);
+        mTestLooper.dispatchAll();
+
+        HeadsetStackEvent rfcommConnectedEvent =
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED,
+                        HeadsetHalConstants.CONNECTION_STATE_CONNECTED,
+                        device);
+        mHeadsetService.messageFromNative(rfcommConnectedEvent);
+        mTestLooper.dispatchAll();
+        verify(mObjectsFactory)
+                .makeStateMachine(
+                        device,
+                        mTestLooper.getLooper(),
+                        mHeadsetService,
+                        mAdapterService,
+                        mNativeInterface,
+                        mSystemInterface);
+        verify(mActiveDeviceManager)
+                .profileConnectionStateChanged(
+                        BluetoothProfile.HEADSET, device, STATE_DISCONNECTED, STATE_CONNECTING);
+        verify(mSilenceDeviceManager)
+                .hfpConnectionStateChanged(device, STATE_DISCONNECTED, STATE_CONNECTING);
+        assertThat(mHeadsetService.getConnectionState(device)).isEqualTo(STATE_CONNECTING);
+        assertThat(mHeadsetService.getDevicesMatchingConnectionStates(new int[] {STATE_CONNECTING}))
+                .containsExactly(device);
+
+        // Send EVENT_TYPE_AT_CLCC to generate CLCC_RSP_TIMEOUT message
+        HeadsetStackEvent atClccEvent =
+                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_AT_CLCC, device);
+        mHeadsetService.messageFromNative(atClccEvent);
+        mTestLooper.dispatchAll();
+
+        mHeadsetService.clccResponse(0, 0, 0, 0, false, "8225319000", 0);
+        mTestLooper.dispatchAll();
+
+        verify(mNativeInterface).clccResponse(device, 0, 0, 0, 0, false, "8225319000", 0);
+    }
+
     private void connectTestDevice(BluetoothDevice device) {
         doReturn(CONNECTION_POLICY_UNKNOWN)
                 .when(mDatabaseManager)
