@@ -41,7 +41,7 @@
 #include "gatt/database_builder.h"
 #include "hardware/bt_gatt_types.h"
 #include "hardware/bt_le_audio.h"
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "internal_include/stack_config.h"
 #include "le_audio/codec_manager.h"
 #include "le_audio/gmap_client.h"
@@ -1591,7 +1591,7 @@ protected:
     init_delayed_message_loop_thread();
     reset_mock_function_count_map();
     hci::testing::mock_controller_ =
-            std::make_unique<NiceMock<bluetooth::hci::testing::MockControllerInterface>>();
+            std::make_unique<NiceMock<bluetooth::hci::testing::MockController>>();
     ON_CALL(*hci::testing::mock_controller_, SupportsBleConnectedIsochronousStreamCentral)
             .WillByDefault(Return(true));
     ON_CALL(*hci::testing::mock_controller_, SupportsBleConnectedIsochronousStreamPeripheral)

@@ -37,7 +37,7 @@
 #include "hci/acl_manager_mock.h"
 #include "hci/address.h"
 #include "hci/address_with_type.h"
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "hci/distance_measurement_manager_mock.h"
 #include "hci/include/packet_fragmenter.h"
 #include "hci/le_advertising_manager_mock.h"
@@ -327,7 +327,7 @@ protected:
     handler_ = new os::Handler(thread_);
 
     /* extern */ test::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+            std::make_unique<bluetooth::hci::testing::MockController>();
     /* extern */ test::mock_acl_manager_ =
             std::make_unique<bluetooth::hci::testing::MockAclManager>();
     /* extern */ test::mock_le_scanning_manager_ =

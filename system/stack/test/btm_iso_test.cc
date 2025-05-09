@@ -19,7 +19,7 @@
 #include <gtest/gtest.h>
 
 #include "btm_iso_api.h"
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "hci/hci_packets.h"
 #include "hci/include/hci_layer.h"
 #include "mock_hcic_layer.h"
@@ -135,7 +135,7 @@ protected:
     hcic::SetMockHcicInterface(&hcic_interface_);
     bluetooth::shim::testing::hci_layer_set_interface(&bluetooth::shim::interface);
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+            std::make_unique<bluetooth::hci::testing::MockController>();
 
     big_callbacks_.reset(new MockBigCallbacks());
     cig_callbacks_.reset(new MockCigCallbacks());

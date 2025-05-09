@@ -26,7 +26,7 @@
 #include "btif/include/stack_manager_t.h"
 #include "common/message_loop_thread.h"
 #include "hal/snoop_logger.h"
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/internal/btm_api.h"
@@ -123,7 +123,7 @@ public:
     GetInterfaceToProfiles()->profileSpecific_HACK->GetHearingAidDeviceCount = []() { return 1; };
 
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+            std::make_unique<bluetooth::hci::testing::MockController>();
     ON_CALL(*bluetooth::hci::testing::mock_controller_, GetLeSuggestedDefaultDataLength)
             .WillByDefault(Return(512));
     bluetooth::hci::LeBufferSize iso_size;
