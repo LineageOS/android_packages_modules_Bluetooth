@@ -79,6 +79,7 @@ protected:
 
   void TearDown() override {
     fake_registry_.SynchronizeHandler(client_handler_, timeout);
+    fake_registry_.SynchronizeHandler(client_handler_, timeout);
     remote_name_request_module_.reset();
     fake_registry_.SynchronizeHandler(client_handler_, timeout);
     test_acl_scheduler_.reset();
