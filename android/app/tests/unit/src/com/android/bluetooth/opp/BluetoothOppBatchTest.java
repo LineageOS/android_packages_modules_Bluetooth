@@ -74,7 +74,6 @@ public class BluetoothOppBatchTest {
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.setAdapterService(mAdapterService);
         doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
@@ -84,11 +83,6 @@ public class BluetoothOppBatchTest {
                 .getRemoteDevice(anyString());
         doReturn(mTargetContext.getContentResolver()).when(mAdapterService).getContentResolver();
         mBluetoothOppBatch = new BluetoothOppBatch(mAdapterService, mInitShareInfo);
-    }
-
-    @After
-    public void tearDown() {
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test
