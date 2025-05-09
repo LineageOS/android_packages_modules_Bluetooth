@@ -103,7 +103,7 @@ public class ImageTest {
                 });
 
         when(mMockContext.getContentResolver()).thenReturn(mTestContentResolver);
-        Util.sUriImagesSupport = true;
+        Util.UriImagesSupport.sValue = true;
     }
 
     @After
@@ -112,7 +112,7 @@ public class ImageTest {
         mTestBitmap = null;
         mTargetContext = null;
         mMockContext = null;
-        Util.sUriImagesSupport = false;
+        Util.UriImagesSupport.sValue = false;
     }
 
     private Bitmap loadImage(int resId) {
@@ -281,7 +281,7 @@ public class ImageTest {
      */
     @Test
     public void testCreateImageFromMediaMetadataWithArtUriDisabled() {
-        Util.sUriImagesSupport = false;
+        Util.UriImagesSupport.sValue = false;
         MediaMetadata metadata =
                 getMediaMetadataWithUri(MediaMetadata.METADATA_KEY_ART_URI, IMAGE_STRING_1);
         Image artwork = new Image(mMockContext, metadata);
@@ -296,7 +296,7 @@ public class ImageTest {
      */
     @Test
     public void testCreateImageFromMediaMetadataWithAlbumArtUriDisabled() {
-        Util.sUriImagesSupport = false;
+        Util.UriImagesSupport.sValue = false;
         MediaMetadata metadata =
                 getMediaMetadataWithUri(MediaMetadata.METADATA_KEY_ALBUM_ART_URI, IMAGE_STRING_1);
         Image artwork = new Image(mMockContext, metadata);
@@ -311,7 +311,7 @@ public class ImageTest {
      */
     @Test
     public void testCreateImageFromMediaMetadataWithDisplayIconUriDisabled() {
-        Util.sUriImagesSupport = false;
+        Util.UriImagesSupport.sValue = false;
         MediaMetadata metadata =
                 getMediaMetadataWithUri(
                         MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI, IMAGE_STRING_1);
@@ -453,7 +453,7 @@ public class ImageTest {
      */
     @Test
     public void testCreateImageFromBundleWithArtUriDisabled() {
-        Util.sUriImagesSupport = false;
+        Util.UriImagesSupport.sValue = false;
         Bundle bundle = getBundleWithUri(MediaMetadata.METADATA_KEY_ART_URI, IMAGE_STRING_1);
         Image artwork = new Image(mMockContext, bundle);
         assertThat(artwork.getImage()).isNull();
@@ -467,7 +467,7 @@ public class ImageTest {
      */
     @Test
     public void testCreateImageFromBundleWithAlbumArtUriDisabled() {
-        Util.sUriImagesSupport = false;
+        Util.UriImagesSupport.sValue = false;
         Bundle bundle = getBundleWithUri(MediaMetadata.METADATA_KEY_ALBUM_ART_URI, IMAGE_STRING_1);
         Image artwork = new Image(mMockContext, bundle);
         assertThat(artwork.getImage()).isNull();
@@ -481,7 +481,7 @@ public class ImageTest {
      */
     @Test
     public void testCreateImageFromBundleWithDisplayIconUriDisabled() {
-        Util.sUriImagesSupport = false;
+        Util.UriImagesSupport.sValue = false;
         Bundle bundle =
                 getBundleWithUri(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI, IMAGE_STRING_1);
         Image artwork = new Image(mMockContext, bundle);

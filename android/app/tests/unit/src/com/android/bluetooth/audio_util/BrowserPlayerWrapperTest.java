@@ -111,7 +111,7 @@ public class BrowserPlayerWrapperTest {
                 });
 
         when(mMockContext.getContentResolver()).thenReturn(mTestContentResolver);
-        Util.sUriImagesSupport = true;
+        Util.UriImagesSupport.sValue = true;
 
         // Set up Looper thread for the timeout handler
         mThread = new HandlerThread("MediaPlayerWrapperTestThread");
@@ -131,7 +131,7 @@ public class BrowserPlayerWrapperTest {
         mTestContentResolver = null;
         mTestBitmap = null;
         mTargetContext = null;
-        Util.sUriImagesSupport = false;
+        Util.UriImagesSupport.sValue = false;
     }
 
     private Bitmap loadImage(int resId) {
