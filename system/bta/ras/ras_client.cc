@@ -34,7 +34,7 @@
 #include "gatt/database.h"
 #include "gatt_api.h"
 #include "gattdefs.h"
-#include "gd/hci/controller_interface.h"
+#include "gd/hci/controller.h"
 #include "main/shim/entry.h"
 #include "osi/include/alarm.h"
 #include "stack/btm/btm_dev.h"

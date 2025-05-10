@@ -33,7 +33,7 @@
 #include "bta/le_audio/le_audio_types.h"
 #include "bta/le_audio/mock_codec_manager.h"
 #include "btif/include/btif_common.h"
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "stack/include/btm_iso_api.h"
 #include "stack/include/main_thread.h"
 #include "test/common/mock_functions.h"
@@ -292,7 +292,7 @@ protected:
     init_message_loop_thread();
 
     reset_mock_function_count_map();
-    mock_controller_ = std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+    mock_controller_ = std::make_unique<bluetooth::hci::testing::MockController>();
     ON_CALL(*mock_controller_, SupportsBleIsochronousBroadcaster).WillByDefault(Return(true));
 
     iso_manager_ = bluetooth::hci::IsoManager::GetInstance();

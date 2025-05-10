@@ -70,43 +70,43 @@ class RfcommTest(base_test.BaseTestClass):
         await asyncio.gather(self.dut.reset(), self.ref.reset())
 
         ref_server = Server(self.ref.device)
-        self.ref.rfcomm = RFCOMMService(self.ref.device, ref_server)
-        self.dut.rfcomm = RFCOMM(channel=self.dut.aio.channel)
+        self.ref_rfcomm = RFCOMMService(self.ref.device, ref_server)
+        self.dut_rfcomm = RFCOMM(channel=self.dut.aio.channel)
 
     @avatar.asynchronous
     async def test_client_connect_and_exchange_data(self) -> None:
         # dut is client, ref is server
         context = grpc.ServicerContext
-        server = await self.ref.rfcomm.StartServer(StartServerRequest(name=TEST_SERVER_NAME,
+        server = await self.ref_rfcomm.StartServer(StartServerRequest(name=TEST_SERVER_NAME,
                                                                       uuid=SERIAL_PORT_UUID),
                                                    context=context)
         # Convert StartServerResponse to its server
         server = server.server
-        rfc_dut_ref, rfc_ref_dut = await asyncio.gather(
-            self.dut.rfcomm.ConnectToServer(address=self.ref.address, uuid=SERIAL_PORT_UUID),
-            self.ref.rfcomm.AcceptConnection(request=AcceptConnectionRequest(server=server),
+        rfc_dut_ref_response, rfc_ref_dut_response = await asyncio.gather(
+            self.dut_rfcomm.ConnectToServer(address=self.ref.address, uuid=SERIAL_PORT_UUID),
+            self.ref_rfcomm.AcceptConnection(request=AcceptConnectionRequest(server=server),
                                              context=context))
         # Convert Responses to their corresponding RfcommConnection
-        rfc_dut_ref = rfc_dut_ref.connection
-        rfc_ref_dut = rfc_ref_dut.connection
+        rfc_dut_ref = rfc_dut_ref_response.connection
+        rfc_ref_dut = rfc_ref_dut_response.connection
 
         # Transmit data
         tx_data = b'Data from dut to ref'
-        await self.dut.rfcomm.Send(data=tx_data, connection=rfc_dut_ref)
-        ref_receive = await self.ref.rfcomm.Receive(request=RxRequest(connection=rfc_ref_dut),
+        await self.dut_rfcomm.Send(data=tx_data, connection=rfc_dut_ref)
+        ref_receive = await self.ref_rfcomm.Receive(request=RxRequest(connection=rfc_ref_dut),
                                                     context=context)
         assert_equal(ref_receive.data, tx_data)
 
         # Receive data
         rx_data = b'Data from ref to dut'
-        await self.ref.rfcomm.Send(request=TxRequest(connection=rfc_ref_dut, data=rx_data),
+        await self.ref_rfcomm.Send(request=TxRequest(connection=rfc_ref_dut, data=rx_data),
                                    context=context)
-        dut_receive = await self.dut.rfcomm.Receive(connection=rfc_dut_ref)
+        dut_receive = await self.dut_rfcomm.Receive(connection=rfc_dut_ref)
         assert_equal(dut_receive.data.rstrip(b'\x00'), rx_data)
 
         # Disconnect (from dut)
-        await self.dut.rfcomm.Disconnect(connection=rfc_dut_ref)
-        await self.ref.rfcomm.StopServer(request=StopServerRequest(server=server), context=context)
+        await self.dut_rfcomm.Disconnect(connection=rfc_dut_ref)
+        await self.ref_rfcomm.StopServer(request=StopServerRequest(server=server), context=context)
 
 
 if __name__ == '__main__':

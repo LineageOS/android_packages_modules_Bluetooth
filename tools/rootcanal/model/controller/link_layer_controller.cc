@@ -612,6 +612,38 @@ void LinkLayerController::IncomingLlPhyUpdateInd(model::packets::LinkLayerPacket
   connection.SetRxPhy(rx_phy);
 }
 
+// HCI LE Set Data Length (Vol 4, Part E § 7.8.33).
+ErrorCode LinkLayerController::LeSetDataLength(uint16_t connection_handle, uint16_t tx_octets,
+                                               uint16_t tx_time) {
+  // Note: no documented status code for this case.
+  if (!connections_.HasHandle(connection_handle) ||
+      connections_.GetPhyType(connection_handle) != Phy::Type::LOW_ENERGY) {
+    INFO(id_, "unknown or invalid connection handle");
+    return ErrorCode::UNKNOWN_CONNECTION;
+  }
+
+  // Note: no documented status code for this case.
+  if (tx_octets < 0x001B || tx_octets > 0x00FB) {
+    INFO(id_, "invalid TX_Octets parameter value: 0x{:x} is not in the range 0x1B .. 0xFB",
+         tx_octets);
+    return ErrorCode::INVALID_HCI_COMMAND_PARAMETERS;
+  }
+
+  // Note: no documented status code for this case.
+  if (tx_time < 0x0148 || tx_time > 0x4290) {
+    INFO(id_, "invalid TX_Time parameter value: 0x{:x} is not in the range 0x0148 .. 0x4290",
+         tx_time);
+    return ErrorCode::INVALID_HCI_COMMAND_PARAMETERS;
+  }
+
+  // As mentioned in the Core specification: the Controller may use smaller or
+  // larger values based on local information.
+  // For now the change is ignored and the LE Data Length Change event will
+  // not be generated.
+
+  return ErrorCode::SUCCESS;
+}
+
 // HCI LE Set Host Feature command (Vol 4, Part E § 7.8.115).
 ErrorCode LinkLayerController::LeSetHostFeature(uint8_t bit_number, uint8_t bit_value) {
   if (bit_number >= 64 || bit_value > 1) {
@@ -2115,39 +2147,6 @@ ErrorCode LinkLayerController::SendCommandToRemoteByHandle(OpCode opcode, pdl::p
   }
 }
 
-ErrorCode LinkLayerController::SendAclToRemote(bluetooth::hci::AclView acl_packet) {
-  uint16_t handle = acl_packet.GetHandle();
-  if (!connections_.HasHandle(handle)) {
-    return ErrorCode::UNKNOWN_CONNECTION;
-  }
-
-  AddressWithType my_address = connections_.GetOwnAddress(handle);
-  AddressWithType destination = connections_.GetAddress(handle);
-  Phy::Type phy = connections_.GetPhyType(handle);
-
-  auto acl_packet_payload = acl_packet.GetPayload();
-  auto acl = model::packets::AclBuilder::Create(
-          my_address.GetAddress(), destination.GetAddress(),
-          static_cast<uint8_t>(acl_packet.GetPacketBoundaryFlag()),
-          static_cast<uint8_t>(acl_packet.GetBroadcastFlag()),
-          std::vector(acl_packet_payload.begin(), acl_packet_payload.end()));
-
-  switch (phy) {
-    case Phy::Type::BR_EDR:
-      SendLinkLayerPacket(std::move(acl));
-      break;
-    case Phy::Type::LOW_ENERGY:
-      SendLeLinkLayerPacket(std::move(acl));
-      break;
-  }
-
-  ScheduleTask(kNoDelayMs, [this, handle]() {
-    send_event_(bluetooth::hci::NumberOfCompletedPacketsBuilder::Create(
-            {bluetooth::hci::CompletedPackets(handle, 1)}));
-  });
-  return ErrorCode::SUCCESS;
-}
-
 ErrorCode LinkLayerController::SendScoToRemote(bluetooth::hci::ScoView sco_packet) {
   uint16_t handle = sco_packet.GetHandle();
   if (!connections_.HasScoHandle(handle)) {
@@ -2391,24 +2390,9 @@ void LinkLayerController::IncomingAclPacket(model::packets::LinkLayerPacketView 
   // Update the RSSI for the local ACL connection.
   connections_.SetRssi(connection_handle, rssi);
 
-  // Send the packet to the host segmented according to the
-  // controller ACL data packet length.
-  size_t acl_buffer_size = properties_.acl_data_packet_length;
-  size_t offset = 0;
-
-  while (offset < acl_data.size()) {
-    size_t fragment_size = std::min(acl_buffer_size, acl_data.size() - offset);
-    std::vector<uint8_t> fragment(acl_data.begin() + offset,
-                                  acl_data.begin() + offset + fragment_size);
-
-    auto acl_packet = bluetooth::hci::AclBuilder::Create(connection_handle, packet_boundary_flag,
-                                                         broadcast_flag, std::move(fragment));
-
-    send_acl_(std::move(acl_packet));
-
-    packet_boundary_flag = bluetooth::hci::PacketBoundaryFlag::CONTINUING_FRAGMENT;
-    offset += fragment_size;
-  }
+  send_acl_(bluetooth::hci::AclBuilder::Create(
+          connection_handle, packet_boundary_flag, broadcast_flag,
+          std::vector<uint8_t>(acl_data.begin(), acl_data.end())));
 }
 
 void LinkLayerController::IncomingScoPacket(model::packets::LinkLayerPacketView incoming) {
@@ -3916,6 +3900,52 @@ void LinkLayerController::IncomingLeConnectedIsochronousPdu(LinkLayerPacketView 
                                    ? bluetooth::hci::IsoPacketBoundaryFlag::LAST_FRAGMENT
                                    : bluetooth::hci::IsoPacketBoundaryFlag::CONTINUATION_FRAGMENT;
   } while (remaining_size > 0);
+}
+
+void LinkLayerController::HandleAcl(bluetooth::hci::AclView acl) {
+  uint16_t connection_handle = acl.GetHandle();
+  auto pb_flag = acl.GetPacketBoundaryFlag();
+  auto bc_flag = acl.GetBroadcastFlag();
+
+  // TODO: Support Broadcast_Flag value of BR/EDR broadcast.
+  if (bc_flag != bluetooth::hci::BroadcastFlag::POINT_TO_POINT) {
+    FATAL("Received ACL HCI packet with Broadcast_flag set to unsupported value {}",
+          static_cast<int>(bc_flag));
+  }
+
+  // ACL HCI packets received with an unknown or invalid Connection Handle are
+  // immediately acknowledged and silently dropped.
+  if (!connections_.HasHandle(connection_handle)) {
+    DEBUG("Received ACL HCI packet with invalid ACL connection handle 0x{:x}", connection_handle);
+    ScheduleTask(kNoDelayMs, [this, connection_handle]() {
+      send_event_(bluetooth::hci::NumberOfCompletedPacketsBuilder::Create(
+              {bluetooth::hci::CompletedPackets(connection_handle, 1)}));
+    });
+    return;
+  }
+
+  AddressWithType source = connections_.GetOwnAddress(connection_handle);
+  AddressWithType destination = connections_.GetAddress(connection_handle);
+  Phy::Type phy = connections_.GetPhyType(connection_handle);
+
+  auto acl_payload = acl.GetPayload();
+  auto acl_packet = model::packets::AclBuilder::Create(
+          source.GetAddress(), destination.GetAddress(), static_cast<uint8_t>(pb_flag),
+          static_cast<uint8_t>(bc_flag), std::vector(acl_payload.begin(), acl_payload.end()));
+
+  switch (phy) {
+    case Phy::Type::BR_EDR:
+      SendLinkLayerPacket(std::move(acl_packet));
+      break;
+    case Phy::Type::LOW_ENERGY:
+      SendLeLinkLayerPacket(std::move(acl_packet));
+      break;
+  }
+
+  ScheduleTask(kNoDelayMs, [this, connection_handle]() {
+    send_event_(bluetooth::hci::NumberOfCompletedPacketsBuilder::Create(
+            {bluetooth::hci::CompletedPackets(connection_handle, 1)}));
+  });
 }
 
 void LinkLayerController::HandleIso(bluetooth::hci::IsoView iso) {

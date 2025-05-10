@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hci/le_advertising_manager.h"
+#include "hci/le_advertising_manager_impl.h"
 
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
@@ -29,10 +29,11 @@
 
 #include "common/bind.h"
 #include "hardware/ble_advertiser.h"
-#include "hci/acl_manager.h"
 #include "hci/address.h"
-#include "hci/controller.h"
+#include "hci/controller_mock.h"
 #include "hci/hci_layer_fake.h"
+#include "hci/le_address_manager.h"
+#include "hci/le_on_advertising_set_terminated_interface.h"
 #include "os/thread.h"
 #include "packet/raw_builder.h"
 
@@ -47,11 +48,11 @@ using namespace std::literals::chrono_literals;
 
 using packet::RawBuilder;
 
-using testing::_;
-using testing::InSequence;
-using testing::SaveArg;
+using ::testing::_;
+using ::testing::InSequence;
+using ::testing::SaveArg;
 
-class TestController : public Controller {
+class TestController : public testing::MockController {
 public:
   bool IsSupported(OpCode op_code) const override { return supported_opcodes_.count(op_code) == 1; }
 
@@ -73,11 +74,6 @@ public:
 
   uint8_t num_advertisers_{0};
   VendorCapabilities vendor_capabilities_;
-
-protected:
-  void Start() override {}
-  void Stop() override {}
-  void ListDependencies(ModuleList* /* list */) const {}
 
 private:
   std::set<OpCode> supported_opcodes_{};
@@ -127,43 +123,8 @@ public:
   TestClientState test_client_state_ = UNREGISTERED;
 };
 
-class TestAclManager : public AclManager {
-public:
-  LeAddressManager* GetLeAddressManager() override { return test_le_address_manager_.get(); }
-
-  void SetAddressPolicy(LeAddressManager::AddressPolicy address_policy) {
-    test_le_address_manager_->SetAddressPolicy(address_policy);
-  }
-
-protected:
-  void Start() override {
-    thread_ = std::make_unique<os::Thread>("thread", os::Thread::Priority::NORMAL);
-    handler_ = std::make_unique<os::Handler>(thread_.get());
-    Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
-    test_controller_ = std::make_unique<TestController>();
-    test_le_address_manager_ = std::make_unique<TestLeAddressManager>(
-            common::Bind(&TestAclManager::enqueue_command, common::Unretained(this)),
-            handler_.get(), address, 0x3F, 0x3F, test_controller_.get());
-  }
-
-  void Stop() override {
-    test_le_address_manager_.reset();
-    test_controller_.reset();
-    handler_->Clear();
-    handler_.reset();
-    thread_.reset();
-  }
-
-  void ListDependencies(ModuleList* /* list */) const {}
-
-  void SetRandomAddress(Address /* address */) {}
-
-  void enqueue_command(std::unique_ptr<CommandBuilder> /* command_packet */){};
-
-  std::unique_ptr<os::Thread> thread_;
-  std::unique_ptr<os::Handler> handler_;
-  std::unique_ptr<TestController> test_controller_;
-  std::unique_ptr<TestLeAddressManager> test_le_address_manager_;
+class OnSetTerminatedReceiver : public OnAdvertisingSetTerminatedInterface {
+  void OnAdvertisingSetTerminated(ErrorCode, uint16_t, uint8_t, hci::AddressWithType, bool) {}
 };
 
 class LeAdvertisingManagerTest : public ::testing::Test {
@@ -171,19 +132,25 @@ protected:
   void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
-    test_controller_ = new TestController;
-    test_acl_manager_ = new TestAclManager;
+    test_controller_ = std::make_unique<TestController>();
+    test_set_terminated_handler_ = new OnSetTerminatedReceiver;
+
     test_controller_->AddSupported(param_opcode_);
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
-    fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
-    fake_registry_.InjectTestModule(&AclManager::Factory, test_acl_manager_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
     test_controller_->num_advertisers_ = num_instances_;
     test_controller_->vendor_capabilities_.max_advt_instances_ = num_instances_;
     test_controller_->SetBleExtendedAdvertisingSupport(support_ble_extended_advertising_);
-    le_advertising_manager_ =
-            fake_registry_.Start<LeAdvertisingManager>(&thread_, fake_registry_.GetTestHandler());
+
+    Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
+    test_le_address_manager_ = new TestLeAddressManager(
+            common::Bind([](std::unique_ptr<CommandBuilder> /* command_packet */) {}),
+            client_handler_, address, 0x3F, 0x3F, test_controller_.get());
+
+    le_advertising_manager_ = new LeAdvertisingManagerImpl(
+            fake_registry_.GetTestHandler(), test_hci_layer_, test_controller_.get(),
+            test_le_address_manager_, test_set_terminated_handler_);
     le_advertising_manager_->RegisterAdvertisingCallback(&mock_advertising_callback_);
   }
 
@@ -191,17 +158,18 @@ protected:
     TEST_BT::provider_->reset_flags();
 
     sync_client_handler();
-    fake_registry_.SynchronizeModuleHandler(&LeAdvertisingManager::Factory,
-                                            std::chrono::milliseconds(20));
+    fake_registry_.SynchronizeHandler(fake_registry_.GetTestHandler(),
+                                      std::chrono::milliseconds(20));
     fake_registry_.StopAll();
   }
 
   TestModuleRegistry fake_registry_;
   HciLayerFake* test_hci_layer_ = nullptr;
-  TestController* test_controller_ = nullptr;
-  TestAclManager* test_acl_manager_ = nullptr;
+  std::unique_ptr<TestController> test_controller_ = nullptr;
+  OnAdvertisingSetTerminatedInterface* test_set_terminated_handler_ = nullptr;
+  TestLeAddressManager* test_le_address_manager_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
-  LeAdvertisingManager* le_advertising_manager_ = nullptr;
+  LeAdvertisingManagerImpl* le_advertising_manager_ = nullptr;
   os::Handler* client_handler_ = nullptr;
   OpCode param_opcode_{OpCode::LE_SET_ADVERTISING_PARAMETERS};
   uint8_t num_instances_ = 8;
@@ -294,7 +262,7 @@ protected:
     }
 
     sync_client_handler();
-    ASSERT_NE(LeAdvertisingManager::kInvalidId, advertiser_id_);
+    ASSERT_NE(LeAdvertisingManagerImpl::kInvalidId, advertiser_id_);
   }
 
   AdvertiserId advertiser_id_;
@@ -305,7 +273,8 @@ protected:
   void SetUp() override {
     param_opcode_ = OpCode::LE_MULTI_ADVT;
     LeAdvertisingManagerTest::SetUp();
-    test_acl_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS);
+    test_le_address_manager_->SetAddressPolicy(
+            LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS);
   }
 };
 
@@ -354,7 +323,7 @@ protected:
     }
 
     sync_client_handler();
-    ASSERT_NE(LeAdvertisingManager::kInvalidId, advertiser_id_);
+    ASSERT_NE(LeAdvertisingManagerImpl::kInvalidId, advertiser_id_);
   }
 
   AdvertiserId advertiser_id_;
@@ -380,7 +349,7 @@ protected:
     advertising_config.scan_response = gap_data;
     advertising_config.channel_map = 1;
 
-    test_acl_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS);
+    test_le_address_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS);
 
     EXPECT_CALL(
             mock_advertising_callback_,
@@ -407,7 +376,7 @@ protected:
     }
 
     sync_client_handler();
-    ASSERT_NE(LeAdvertisingManager::kInvalidId, advertiser_id_);
+    ASSERT_NE(LeAdvertisingManagerImpl::kInvalidId, advertiser_id_);
   }
 
   AdvertiserId advertiser_id_;
@@ -472,7 +441,7 @@ protected:
     }
 
     sync_client_handler();
-    ASSERT_NE(LeAdvertisingManager::kInvalidId, advertiser_id_);
+    ASSERT_NE(LeAdvertisingManagerImpl::kInvalidId, advertiser_id_);
   }
 
   AdvertiserId advertiser_id_;
@@ -531,7 +500,7 @@ TEST_F(LeAdvertisingManagerTest, create_advertiser_test) {
   sync_client_handler();
 
   // Disable the advertiser
-  ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
+  ASSERT_NE(LeAdvertisingManagerImpl::kInvalidId, id);
   le_advertising_manager_->RemoveAdvertiser(id);
   ASSERT_EQ(OpCode::LE_SET_ADVERTISING_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
 }
@@ -578,7 +547,7 @@ TEST_F(LeAndroidHciAdvertisingManagerTest, create_advertiser_test) {
   sync_client_handler();
 
   // Disable the advertiser
-  ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
+  ASSERT_NE(LeAdvertisingManagerImpl::kInvalidId, id);
   le_advertising_manager_->RemoveAdvertiser(id);
   ASSERT_EQ(OpCode::LE_MULTI_ADVT, test_hci_layer_->GetCommand().GetOpCode());
   test_hci_layer_->IncomingEvent(
@@ -614,7 +583,7 @@ TEST_F(LeAndroidHciAdvertisingManagerTest, create_advertiser_with_rpa_test) {
   }
 
   sync_client_handler();
-  ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
+  ASSERT_NE(LeAdvertisingManagerImpl::kInvalidId, id);
 }
 
 TEST_F(LeExtendedAdvertisingManagerTest, create_advertiser_test) {
@@ -663,7 +632,7 @@ TEST_F(LeExtendedAdvertisingManagerTest, create_advertiser_test) {
   sync_client_handler();
 
   // Remove the advertiser
-  ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
+  ASSERT_NE(LeAdvertisingManagerImpl::kInvalidId, id);
   le_advertising_manager_->RemoveAdvertiser(id);
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
   ASSERT_EQ(OpCode::LE_REMOVE_ADVERTISING_SET, test_hci_layer_->GetCommand().GetOpCode());
@@ -716,7 +685,7 @@ TEST_F(LeExtendedAdvertisingManagerTest, create_periodic_advertiser_test) {
   sync_client_handler();
 
   // Remove the advertiser
-  ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
+  ASSERT_NE(LeAdvertisingManagerImpl::kInvalidId, id);
   le_advertising_manager_->RemoveAdvertiser(id);
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
   ASSERT_EQ(OpCode::LE_SET_PERIODIC_ADVERTISING_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
@@ -768,7 +737,7 @@ TEST_F(LeExtendedAdvertisingManagerTest, create_advertiser_valid_max_251_ad_data
   sync_client_handler();
 
   // Remove the advertiser
-  ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
+  ASSERT_NE(LeAdvertisingManagerImpl::kInvalidId, id);
   le_advertising_manager_->RemoveAdvertiser(id);
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
   ASSERT_EQ(OpCode::LE_REMOVE_ADVERTISING_SET, test_hci_layer_->GetCommand().GetOpCode());
@@ -828,7 +797,7 @@ TEST_F(LeExtendedAdvertisingManagerTest,
   sync_client_handler();
 
   // Remove the advertiser
-  ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
+  ASSERT_NE(LeAdvertisingManagerImpl::kInvalidId, id);
   le_advertising_manager_->RemoveAdvertiser(id);
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
   ASSERT_EQ(OpCode::LE_REMOVE_ADVERTISING_SET, test_hci_layer_->GetCommand().GetOpCode());
@@ -866,9 +835,7 @@ TEST_F(LeExtendedAdvertisingManagerTest, create_advertiser_test_invalid_256_ad_d
 }
 
 TEST_F(LeExtendedAdvertisingManagerTest, ignore_on_pause_on_resume_after_unregistered) {
-  TestLeAddressManager* test_le_address_manager =
-          (TestLeAddressManager*)test_acl_manager_->GetLeAddressManager();
-  test_le_address_manager->ignore_unregister_for_testing = true;
+  test_le_address_manager_->ignore_unregister_for_testing = true;
 
   // Register LeAddressManager vai ExtendedCreateAdvertiser
   AdvertisingConfig advertising_config{};
@@ -916,21 +883,21 @@ TEST_F(LeExtendedAdvertisingManagerTest, ignore_on_pause_on_resume_after_unregis
   sync_client_handler();
 
   // Unregister LeAddressManager vai RemoveAdvertiser
-  ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
+  ASSERT_NE(LeAdvertisingManagerImpl::kInvalidId, id);
   le_advertising_manager_->RemoveAdvertiser(id);
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
   ASSERT_EQ(OpCode::LE_REMOVE_ADVERTISING_SET, test_hci_layer_->GetCommand().GetOpCode());
   sync_client_handler();
 
   // Unregistered client should ignore OnPause/OnResume
-  ASSERT_NE(test_le_address_manager->client_, nullptr);
-  ASSERT_EQ(test_le_address_manager->test_client_state_,
+  ASSERT_NE(test_le_address_manager_->client_, nullptr);
+  ASSERT_EQ(test_le_address_manager_->test_client_state_,
             TestLeAddressManager::TestClientState::UNREGISTERED);
-  test_le_address_manager->client_->OnPause();
-  ASSERT_EQ(test_le_address_manager->test_client_state_,
+  test_le_address_manager_->client_->OnPause();
+  ASSERT_EQ(test_le_address_manager_->test_client_state_,
             TestLeAddressManager::TestClientState::UNREGISTERED);
-  test_le_address_manager->client_->OnResume();
-  ASSERT_EQ(test_le_address_manager->test_client_state_,
+  test_le_address_manager_->client_->OnResume();
+  ASSERT_EQ(test_le_address_manager_->test_client_state_,
             TestLeAddressManager::TestClientState::UNREGISTERED);
 }
 
@@ -1625,7 +1592,6 @@ TEST_F(LeExtendedAdvertisingAPITest, disable_enable_periodic_advertiser_test) {
 
 TEST_F(LeExtendedAdvertisingAPITest, trigger_advertiser_callbacks_if_started_while_paused) {
   // arrange
-  auto test_le_address_manager = (TestLeAddressManager*)test_acl_manager_->GetLeAddressManager();
   auto id_promise = std::promise<uint8_t>{};
   auto id_future = id_promise.get_future();
   le_advertising_manager_->RegisterAdvertiser(client_handler_->BindOnce(
@@ -1638,7 +1604,7 @@ TEST_F(LeExtendedAdvertisingAPITest, trigger_advertiser_callbacks_if_started_whi
   auto status_promise = std::promise<ErrorCode>{};
   auto status_future = status_promise.get_future();
 
-  test_le_address_manager->client_->OnPause();
+  test_le_address_manager_->client_->OnPause();
 
   test_hci_layer_->GetCommand();
   test_hci_layer_->IncomingEvent(
@@ -1671,7 +1637,7 @@ TEST_F(LeExtendedAdvertisingAPITest, trigger_advertiser_callbacks_if_started_whi
 
   EXPECT_EQ(status_future.wait_for(std::chrono::milliseconds(100)), std::future_status::timeout);
 
-  test_le_address_manager->client_->OnResume();
+  test_le_address_manager_->client_->OnResume();
 
   test_hci_layer_->GetCommand();
   test_hci_layer_->IncomingEvent(
@@ -1685,7 +1651,6 @@ TEST_F(LeExtendedAdvertisingAPITest, trigger_advertiser_callbacks_if_started_whi
 
 TEST_F(LeExtendedAdvertisingAPITest, duration_maxevents_restored_on_resume) {
   // arrange
-  auto test_le_address_manager = (TestLeAddressManager*)test_acl_manager_->GetLeAddressManager();
   uint16_t duration = 1000;
   uint8_t max_extended_advertising_events = 100;
 
@@ -1699,14 +1664,14 @@ TEST_F(LeExtendedAdvertisingAPITest, duration_maxevents_restored_on_resume) {
   test_hci_layer_->IncomingEvent(
           LeSetExtendedAdvertisingEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
 
-  test_le_address_manager->client_->OnPause();
+  test_le_address_manager_->client_->OnPause();
   // verify advertising is disabled onPause
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
   test_hci_layer_->IncomingEvent(
           LeSetExtendedAdvertisingEnableCompleteBuilder::Create(1, ErrorCode::SUCCESS));
   sync_client_handler();
 
-  test_le_address_manager->client_->OnResume();
+  test_le_address_manager_->client_->OnResume();
   // verify advertising is reenabled onResume with correct parameters
   auto command = test_hci_layer_->GetCommand();
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE, command.GetOpCode());
@@ -1726,14 +1691,13 @@ TEST_F(LeExtendedAdvertisingAPITest, duration_maxevents_restored_on_resume) {
 
 TEST_F(LeExtendedAdvertisingAPITest, no_callbacks_on_pause) {
   // arrange
-  auto test_le_address_manager = (TestLeAddressManager*)test_acl_manager_->GetLeAddressManager();
 
   // expect
   EXPECT_CALL(mock_advertising_callback_, OnAdvertisingEnabled(_, _, _)).Times(0);
 
   // act
   log::info("pause");
-  test_le_address_manager->client_->OnPause();
+  test_le_address_manager_->client_->OnPause();
   test_hci_layer_->GetCommand();
   test_hci_layer_->IncomingEvent(
           LeSetExtendedAdvertisingEnableCompleteBuilder::Create(1, ErrorCode::SUCCESS));
@@ -1743,8 +1707,7 @@ TEST_F(LeExtendedAdvertisingAPITest, no_callbacks_on_pause) {
 
 TEST_F(LeExtendedAdvertisingAPITest, no_callbacks_on_resume) {
   // arrange
-  auto test_le_address_manager = (TestLeAddressManager*)test_acl_manager_->GetLeAddressManager();
-  test_le_address_manager->client_->OnPause();
+  test_le_address_manager_->client_->OnPause();
   test_hci_layer_->GetCommand();
   test_hci_layer_->IncomingEvent(
           LeSetExtendedAdvertisingEnableCompleteBuilder::Create(1, ErrorCode::SUCCESS));
@@ -1754,7 +1717,7 @@ TEST_F(LeExtendedAdvertisingAPITest, no_callbacks_on_resume) {
   EXPECT_CALL(mock_advertising_callback_, OnAdvertisingEnabled(_, _, _)).Times(0);
 
   // act
-  test_le_address_manager->client_->OnResume();
+  test_le_address_manager_->client_->OnResume();
   test_hci_layer_->GetCommand();
   test_hci_layer_->IncomingEvent(
           LeSetExtendedAdvertisingEnableCompleteBuilder::Create(1, ErrorCode::SUCCESS));
@@ -1764,7 +1727,8 @@ TEST_F(LeExtendedAdvertisingAPITest, no_callbacks_on_resume) {
 
 TEST_F(LeExtendedAdvertisingManagerTest, use_rpa) {
   // arrange: use RANDOM address policy
-  test_acl_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS);
+  test_le_address_manager_->SetAddressPolicy(
+          LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS);
 
   // act: start advertising set with RPA
   AdvertisingConfig config{};
@@ -1787,7 +1751,8 @@ TEST_F(LeExtendedAdvertisingManagerTest, use_rpa) {
 }
 
 TEST_F(LeExtendedAdvertisingManagerTest, use_non_resolvable_address) {
-  test_acl_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS);
+  test_le_address_manager_->SetAddressPolicy(
+          LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS);
 
   // start advertising set with NRPA
   AdvertisingConfig config{};
@@ -1819,7 +1784,7 @@ TEST_F(LeExtendedAdvertisingManagerTest, use_non_resolvable_address) {
 
 TEST_F(LeExtendedAdvertisingManagerTest, use_public_address_type_if_public_address_policy) {
   // arrange: use PUBLIC address policy
-  test_acl_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS);
+  test_le_address_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS);
 
   // act: start advertising set with RPA
   AdvertisingConfig config{};
@@ -1845,7 +1810,7 @@ TEST_F(LeExtendedAdvertisingManagerTest, use_nrpa_if_public_address_policy_non_c
   TEST_BT::provider_->nrpa_non_connectable_adv(true);
 
   // arrange: use PUBLIC address policy
-  test_acl_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS);
+  test_le_address_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS);
 
   // act: start non-connectable advertising set with RPA
   AdvertisingConfig config{};
@@ -1879,7 +1844,7 @@ TEST_F(LeExtendedAdvertisingManagerTest,
        use_public_if_requested_with_public_address_policy_non_connectable) {
   TEST_BT::provider_->nrpa_non_connectable_adv(true);
   // arrange: use PUBLIC address policy
-  test_acl_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS);
+  test_le_address_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS);
 
   // act: start non-connectable advertising set with PUBLIC
   AdvertisingConfig config{};

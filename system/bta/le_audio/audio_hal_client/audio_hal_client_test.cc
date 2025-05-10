@@ -450,8 +450,6 @@ TEST_F(LeAudioClientAudioTest, testLeAudioClientAudioSinkResume) {
 }
 
 TEST_F(LeAudioClientAudioTest, testAudioHalClientResumeStartSourceTask_workerEnabled) {
-  com::android::bluetooth::flags::provider_->run_ble_audio_ticks_in_worker_thread(true);
-
   const LeAudioCodecConfiguration codec_conf{
           .num_channels = LeAudioCodecConfiguration::kChannelNumberStereo,
           .sample_rate = LeAudioCodecConfiguration::kSampleRate16000,

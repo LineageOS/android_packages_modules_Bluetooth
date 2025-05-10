@@ -48,7 +48,7 @@ class DckGattService(TemplateService):
         )
         self.psm = self.l2cap_server.psm
 
-        def on_device_version_write(connection: Connection, value: bytes) -> None:
+        def on_device_version_write(connection: Connection | None, value: bytes) -> None:
             logger.info(f"--- DK Device Version Write: {value!r}")
             self.device_dk_version_value = value
 
@@ -71,7 +71,7 @@ class DckGattService(TemplateService):
                 DckGattService.UUID_DEVICE_DK_VERSION,
                 Characteristic.Properties.WRITE,
                 Characteristic.READ_REQUIRES_ENCRYPTION,
-                CharacteristicValue(write=on_device_version_write),  # type: ignore[no-untyped-call]
+                CharacteristicValue(write=on_device_version_write),
             ),
             Characteristic(
                 DckGattService.UUID_ANTENNA_IDENTIFIER,
@@ -81,7 +81,7 @@ class DckGattService(TemplateService):
             ),
         ]
 
-        super().__init__(characteristics)  # type: ignore[no-untyped-call]
+        super().__init__(characteristics)
 
     def __del__(self):
         if self.l2cap_server:
@@ -112,6 +112,6 @@ class DckService(DckServicer):
     def Register(self, request: Empty, context: grpc.ServicerContext) -> Empty:
         if self.dck_gatt_service is None:
             self.dck_gatt_service = DckGattService(self.device)
-            self.device.add_service(self.dck_gatt_service)  # type: ignore[no-untyped-call]
+            self.device.add_service(self.dck_gatt_service)
 
         return Empty()

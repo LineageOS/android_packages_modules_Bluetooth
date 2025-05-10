@@ -25,13 +25,12 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doReturn;
@@ -104,7 +103,8 @@ public class PhonePolicyTest {
 
     private final BluetoothDevice mDevice1 = getTestDevice(0);
     private final BluetoothDevice mDevice2 = getTestDevice(1);
-    private final BluetoothDevice mTestDevice = getRealDevice(0);
+    private final BluetoothDevice mDevice3 = getTestDevice(2);
+    private final BluetoothDevice mDevice4 = getTestDevice(3);
 
     private PhonePolicy mPhonePolicy;
     private boolean mOriginalDualModeState;
@@ -141,12 +141,7 @@ public class PhonePolicyTest {
         doReturn(Collections.emptyList()).when(mA2dpService).getConnectedDevices();
         doReturn(Collections.emptyList()).when(mHeadsetService).getConnectedDevices();
 
-        when(mAdapterService.getRemoteDevice(anyString()))
-                .thenAnswer(
-                        invocation -> {
-                            String address = invocation.getArgument(0);
-                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
-                        });
+        mockAdapterServiceGetRemoteDevice(mAdapterService, mDevice1, mDevice2, mDevice3, mDevice4);
 
         SystemProperties.mProperties = mProperties;
 
@@ -690,8 +685,8 @@ public class PhonePolicyTest {
         List<BluetoothDevice> connectionOrder = new ArrayList<>();
         connectionOrder.add(mDevice1);
         connectionOrder.add(mDevice2);
-        connectionOrder.add(getTestDevice(2));
-        connectionOrder.add(getTestDevice(3));
+        connectionOrder.add(mDevice3);
+        connectionOrder.add(mDevice4);
 
         doReturn(mDevice1).when(mDatabaseManager).getMostRecentlyConnectedA2dpDevice();
 
@@ -919,11 +914,8 @@ public class PhonePolicyTest {
         TestUtils.waitForLooperToFinishScheduledTask(db.getHandlerLooper());
 
         // Return a device that is HFP only
-
-        db.setConnection(mTestDevice, BluetoothProfile.HEADSET);
-        doReturn(CONNECTION_POLICY_ALLOWED)
-                .when(mHeadsetService)
-                .getConnectionPolicy(eq(mTestDevice));
+        db.setConnection(mDevice1, BluetoothProfile.HEADSET);
+        doReturn(CONNECTION_POLICY_ALLOWED).when(mHeadsetService).getConnectionPolicy(eq(mDevice1));
 
         // wait for all MSG_UPDATE_DATABASE
         TestUtils.waitForLooperToFinishScheduledTask(db.getHandlerLooper());
@@ -931,7 +923,7 @@ public class PhonePolicyTest {
         phonePolicy.autoConnect();
 
         // Check that we got a request to connect over HFP for each device
-        verify(mHeadsetService).connect(eq(mTestDevice));
+        verify(mHeadsetService).connect(eq(mDevice1));
     }
 
     @Test
@@ -953,9 +945,7 @@ public class PhonePolicyTest {
         db.start(mDatabase);
         TestUtils.waitForLooperToFinishScheduledTask(db.getHandlerLooper());
 
-        List<BluetoothDevice> devices =
-                List.of(getRealDevice(1), getRealDevice(2), getRealDevice(3));
-
+        List<BluetoothDevice> devices = List.of(mDevice1, mDevice2, mDevice3);
         for (BluetoothDevice device : devices) {
             db.setConnection(device, BluetoothProfile.HEADSET);
             doReturn(CONNECTION_POLICY_ALLOWED)
@@ -992,15 +982,13 @@ public class PhonePolicyTest {
         db.start(mDatabase);
         TestUtils.waitForLooperToFinishScheduledTask(db.getHandlerLooper());
 
-        BluetoothDevice deviceToDisconnect = getTestDevice(0);
+        BluetoothDevice deviceToDisconnect = mDevice1;
         db.setConnection(deviceToDisconnect, BluetoothProfile.HEADSET);
         doReturn(CONNECTION_POLICY_ALLOWED)
                 .when(mHeadsetService)
                 .getConnectionPolicy(eq(deviceToDisconnect));
 
-        List<BluetoothDevice> devices =
-                List.of(getRealDevice(1), getRealDevice(2), getRealDevice(3));
-
+        List<BluetoothDevice> devices = List.of(mDevice2, mDevice3, mDevice4);
         for (BluetoothDevice device : devices) {
             db.setConnection(device, BluetoothProfile.HEADSET);
             doReturn(CONNECTION_POLICY_ALLOWED)

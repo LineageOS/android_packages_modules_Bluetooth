@@ -529,78 +529,6 @@ public class GattService extends ProfileService {
                                 device, subrateFactor, latency, contNum, timeout, status));
     }
 
-    void onServerPhyUpdateFromNative(int connId, int txPhy, int rxPhy, int status) {
-        Log.d(TAG, "onServerPhyUpdate() - connId=" + connId + ", status=" + status);
-
-        BluetoothDevice device = mServerMap.deviceByConnId(connId);
-        if (device == null) {
-            return;
-        }
-
-        ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getByConnId(connId);
-        if (app == null) {
-            return;
-        }
-
-        callbackToApp(() -> app.callback.onPhyUpdate(device, txPhy, rxPhy, status));
-    }
-
-    void onServerPhyReadFromNative(
-            int serverIf, BluetoothDevice device, int txPhy, int rxPhy, int status) {
-        Log.d(TAG, "onServerPhyRead() - device=" + device + ", status=" + status);
-
-        Integer connId = mServerMap.connIdByDevice(serverIf, device);
-        if (connId == null) {
-            Log.d(TAG, "onServerPhyRead() - no connection to " + device);
-            return;
-        }
-
-        ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getByConnId(connId);
-        if (app == null) {
-            return;
-        }
-
-        callbackToApp(() -> app.callback.onPhyRead(device, txPhy, rxPhy, status));
-    }
-
-    void onServerConnUpdateFromNative(
-            int connId, int interval, int latency, int timeout, int status) {
-        Log.d(TAG, "onServerConnUpdate() - connId=" + connId + ", status=" + status);
-
-        BluetoothDevice device = mServerMap.deviceByConnId(connId);
-        if (device == null) {
-            return;
-        }
-
-        ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getByConnId(connId);
-        if (app == null) {
-            return;
-        }
-
-        callbackToApp(
-                () -> app.callback.onConnectionUpdated(device, interval, latency, timeout, status));
-    }
-
-    void onServerSubrateChangeFromNative(
-            int connId, int subrateFactor, int latency, int contNum, int timeout, int status) {
-        Log.d(TAG, "onServerSubrateChange() - connId=" + connId + ", status=" + status);
-
-        BluetoothDevice device = mServerMap.deviceByConnId(connId);
-        if (device == null) {
-            return;
-        }
-
-        ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getByConnId(connId);
-        if (app == null) {
-            return;
-        }
-
-        callbackToApp(
-                () ->
-                        app.callback.onSubrateChange(
-                                device, subrateFactor, latency, contNum, timeout, status));
-    }
-
     GattDbElement getSampleGattDbElement() {
         return new GattDbElement();
     }
@@ -1698,6 +1626,78 @@ public class GattService extends ProfileService {
                 BluetoothProfile.GATT_SERVER, device, serverIf, connectionState, -1);
     }
 
+    void onServerPhyUpdateFromNative(int connId, int txPhy, int rxPhy, int status) {
+        Log.d(TAG, "onServerPhyUpdate() - connId=" + connId + ", status=" + status);
+
+        BluetoothDevice device = mServerMap.deviceByConnId(connId);
+        if (device == null) {
+            return;
+        }
+
+        ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getByConnId(connId);
+        if (app == null) {
+            return;
+        }
+
+        callbackToApp(() -> app.callback.onPhyUpdate(device, txPhy, rxPhy, status));
+    }
+
+    void onServerPhyReadFromNative(
+            int serverIf, BluetoothDevice device, int txPhy, int rxPhy, int status) {
+        Log.d(TAG, "onServerPhyRead() - device=" + device + ", status=" + status);
+
+        Integer connId = mServerMap.connIdByDevice(serverIf, device);
+        if (connId == null) {
+            Log.d(TAG, "onServerPhyRead() - no connection to " + device);
+            return;
+        }
+
+        ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getByConnId(connId);
+        if (app == null) {
+            return;
+        }
+
+        callbackToApp(() -> app.callback.onPhyRead(device, txPhy, rxPhy, status));
+    }
+
+    void onServerConnUpdateFromNative(
+            int connId, int interval, int latency, int timeout, int status) {
+        Log.d(TAG, "onServerConnUpdate() - connId=" + connId + ", status=" + status);
+
+        BluetoothDevice device = mServerMap.deviceByConnId(connId);
+        if (device == null) {
+            return;
+        }
+
+        ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getByConnId(connId);
+        if (app == null) {
+            return;
+        }
+
+        callbackToApp(
+                () -> app.callback.onConnectionUpdated(device, interval, latency, timeout, status));
+    }
+
+    void onServerSubrateChangeFromNative(
+            int connId, int subrateFactor, int latency, int contNum, int timeout, int status) {
+        Log.d(TAG, "onServerSubrateChange() - connId=" + connId + ", status=" + status);
+
+        BluetoothDevice device = mServerMap.deviceByConnId(connId);
+        if (device == null) {
+            return;
+        }
+
+        ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getByConnId(connId);
+        if (app == null) {
+            return;
+        }
+
+        callbackToApp(
+                () ->
+                        app.callback.onSubrateChange(
+                                device, subrateFactor, latency, contNum, timeout, status));
+    }
+
     void onServerReadCharacteristicFromNative(
             BluetoothDevice device,
             int connId,
@@ -2336,6 +2336,10 @@ public class GattService extends ProfileService {
                             + ", appName: "
                             + app.packageName
                             + (app.attributionTag == null ? "" : ", tag: " + app.attributionTag));
+            List<ContextMap.Connection> clientConnections = mClientMap.getConnectionByApp(appId);
+            for (ContextMap.Connection connection : clientConnections) {
+                println(sb, "        " + connection);
+            }
         }
         sb.append("  Server:\n");
         for (Integer appId : mServerMap.getAllAppsIds()) {
@@ -2347,6 +2351,10 @@ public class GattService extends ProfileService {
                             + ", appName: "
                             + app.packageName
                             + (app.attributionTag == null ? "" : ", tag: " + app.attributionTag));
+            List<ContextMap.Connection> serverConnections = mServerMap.getConnectionByApp(appId);
+            for (ContextMap.Connection connection : serverConnections) {
+                println(sb, "        " + connection);
+            }
         }
         sb.append("\n\n");
     }

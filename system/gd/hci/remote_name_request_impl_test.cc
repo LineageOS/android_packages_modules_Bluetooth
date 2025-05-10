@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hci/remote_name_request.h"
+#include "hci/remote_name_request_impl.h"
 
 #include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
@@ -67,20 +67,22 @@ protected:
     test_hci_layer_ = new HciLayerFake;
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
 
-    fake_registry_.Start<RemoteNameRequestModule>(&thread_, fake_registry_.GetTestHandler());
-    ASSERT_TRUE(fake_registry_.IsStarted<RemoteNameRequestModule>());
-
-    client_handler_ = fake_registry_.GetTestModuleHandler(&RemoteNameRequestModule::Factory);
+    client_handler_ = fake_registry_.GetTestHandler();
     ASSERT_NE(client_handler_, nullptr);
 
-    remote_name_request_module_ = static_cast<RemoteNameRequestModule*>(
-            fake_registry_.GetModuleUnderTest(&RemoteNameRequestModule::Factory));
+    test_acl_scheduler_ = std::make_unique<hci::acl_manager::AclScheduler>(client_handler_);
+    remote_name_request_module_ = std::make_unique<RemoteNameRequestModuleImpl>(
+            client_handler_, test_hci_layer_, test_acl_scheduler_.get());
 
     ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   }
 
   void TearDown() override {
-    fake_registry_.SynchronizeModuleHandler(&RemoteNameRequestModule::Factory, timeout);
+    fake_registry_.SynchronizeHandler(client_handler_, timeout);
+    fake_registry_.SynchronizeHandler(client_handler_, timeout);
+    remote_name_request_module_.reset();
+    fake_registry_.SynchronizeHandler(client_handler_, timeout);
+    test_acl_scheduler_.reset();
     fake_registry_.StopAll();
   }
 
@@ -118,7 +120,8 @@ protected:
   TestModuleRegistry fake_registry_;
   os::Thread& thread_ = fake_registry_.GetTestThread();
   HciLayerFake* test_hci_layer_ = nullptr;
-  RemoteNameRequestModule* remote_name_request_module_ = nullptr;
+  std::unique_ptr<hci::acl_manager::AclScheduler> test_acl_scheduler_ = nullptr;
+  std::unique_ptr<RemoteNameRequestModuleImpl> remote_name_request_module_ = nullptr;
   os::Handler* client_handler_ = nullptr;
 };
 
@@ -658,7 +661,7 @@ TEST_F(RemoteNameRequestModuleTest, CancelJustWhenRNREventReturns) {
 
             promise2.set_value();
           },
-          remote_name_request_module_, test_hci_layer_, std::move(promise2)));
+          remote_name_request_module_.get(), test_hci_layer_, std::move(promise2)));
 
   future2.wait();
 }

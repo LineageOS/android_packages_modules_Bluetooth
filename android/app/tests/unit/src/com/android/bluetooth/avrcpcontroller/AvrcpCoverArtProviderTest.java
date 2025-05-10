@@ -18,24 +18,22 @@ package com.android.bluetooth.avrcpcontroller;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
+import android.content.Context;
 import android.net.Uri;
 
 import androidx.test.filters.SmallTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.TestUtils;
-import com.android.bluetooth.btservice.AdapterService;
-
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -50,30 +48,25 @@ import java.io.FileNotFoundException;
 public class AvrcpCoverArtProviderTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private AdapterService mAdapterService;
     @Mock private Uri mUri;
+    @Mock private Context mContext;
 
     private static final String TEST_MODE = "test_mode";
-
     private final BluetoothDevice mDevice = getTestDevice(48);
+    private final Context mTargetContext =
+            InstrumentationRegistry.getInstrumentation().getContext();
+    private final BluetoothManager mBluetoothManager =
+            mTargetContext.getSystemService(BluetoothManager.class);
 
     private AvrcpCoverArtProvider mArtProvider;
 
     @Before
     public void setUp() {
-        TestUtils.setAdapterService(mAdapterService);
-        when(mAdapterService.getRemoteDevice(anyString()))
-                .thenAnswer(
-                        invocation -> {
-                            String address = invocation.getArgument(0);
-                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
-                        });
-        mArtProvider = new AvrcpCoverArtProvider();
-    }
+        mockGetSystemService(
+                mContext, Context.BLUETOOTH_SERVICE, BluetoothManager.class, mBluetoothManager);
 
-    @After
-    public void tearDown() throws Exception {
-        TestUtils.clearAdapterService(mAdapterService);
+        mArtProvider = new AvrcpCoverArtProvider();
+        mArtProvider.attachInfo(mContext, null);
     }
 
     @Test

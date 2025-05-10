@@ -966,19 +966,6 @@ void btsnd_hcic_delete_stored_key(const RawAddress& bd_addr, bool delete_all_fla
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_read_name(void) {
-  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  uint8_t* pp = (uint8_t*)(p + 1);
-
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_READ_CMD;
-  p->offset = 0;
-
-  UINT16_TO_STREAM(pp, HCI_READ_LOCAL_NAME);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_READ_CMD);
-
-  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-}
-
 void btsnd_hcic_write_page_tout(uint16_t timeout) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
@@ -1098,22 +1085,6 @@ void btsnd_hcic_write_auto_flush_tout(uint16_t handle, uint16_t tout) {
 
   UINT16_TO_STREAM(pp, handle);
   UINT16_TO_STREAM(pp, tout);
-
-  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-}
-
-void btsnd_hcic_read_tx_power(uint16_t handle, uint8_t type) {
-  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  uint8_t* pp = (uint8_t*)(p + 1);
-
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_READ_TX_POWER;
-  p->offset = 0;
-
-  UINT16_TO_STREAM(pp, HCI_READ_TRANSMIT_POWER_LEVEL);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_READ_TX_POWER);
-
-  UINT16_TO_STREAM(pp, handle);
-  UINT8_TO_STREAM(pp, type);
 
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
@@ -1474,21 +1445,6 @@ void btsnd_hcic_read_encryption_key_size(uint16_t handle, ReadEncKeySizeCb cb) {
 
   btu_hcif_send_cmd_with_cb(HCI_READ_ENCR_KEY_SIZE, param, len,
                             base::Bind(&read_encryption_key_size_complete, base::Passed(&cb)));
-}
-
-void btsnd_hcic_read_failed_contact_counter(uint16_t handle) {
-  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  uint8_t* pp = (uint8_t*)(p + 1);
-
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_CMD_HANDLE;
-  p->offset = 0;
-
-  UINT16_TO_STREAM(pp, HCI_READ_FAILED_CONTACT_COUNTER);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_CMD_HANDLE);
-
-  UINT16_TO_STREAM(pp, handle);
-
-  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
 void btsnd_hcic_enable_test_mode(void) {

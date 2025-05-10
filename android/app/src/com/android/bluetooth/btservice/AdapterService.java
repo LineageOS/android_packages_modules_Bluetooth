@@ -35,6 +35,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.getProfileName;
 import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringConsumer;
+import static android.bluetooth.BluetoothUtils.logRemoteException;
 import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
 import static android.text.format.DateUtils.SECOND_IN_MILLIS;
@@ -270,6 +271,7 @@ public class AdapterService extends Service {
     private final Looper mLooper;
     private final AdapterServiceHandler mHandler;
 
+    private boolean mIsMediaProfileConnected;
     private int mStackReportedState;
     private long mTxTimeTotalMs;
     private long mRxTimeTotalMs;
@@ -294,7 +296,7 @@ public class AdapterService extends Service {
 
     private boolean mNativeAvailable;
     private boolean mCleaningUp;
-    private boolean mQuietmode = false;
+    private boolean mQuietMode = false;
     private final Map<String, CallerInfo> mBondAttemptCallerInfo = new HashMap<>();
 
     private BatteryStatsManager mBatteryStatsManager;
@@ -342,7 +344,9 @@ public class AdapterService extends Service {
     private volatile boolean mTestModeEnabled = false;
 
     /** Handlers for incoming service calls */
-    private AdapterServiceBinder mBinder;
+    private final AdapterServiceBinder mAdapterServiceBinder = new AdapterServiceBinder(this);
+
+    private final AdapterBinder mAdapterBinder = new AdapterBinder(this);
 
     private volatile int mScanMode;
 
@@ -604,7 +608,6 @@ public class AdapterService extends Service {
         mRemoteDevices = new RemoteDevices(this, mLooper);
         mAdapterProperties = new AdapterProperties(this, mRemoteDevices, mLooper);
         mAdapterStateMachine = new AdapterState(this, mLooper);
-        mBinder = new AdapterServiceBinder(this);
         mUserManager = requireNonNull(getSystemService(UserManager.class));
         mAppOps = requireNonNull(getSystemService(AppOpsManager.class));
         mPowerManager = requireNonNull(getSystemService(PowerManager.class));
@@ -614,8 +617,8 @@ public class AdapterService extends Service {
     }
 
     @SuppressLint("AndroidFrameworkRequiresPermission")
-    private void init() {
-        Log.d(TAG, "init()");
+    private void init(String hciInstanceName) {
+        Log.d(TAG, "init() instance = " + hciInstanceName);
 
         factoryResetIfNeeded();
         if (Flags.factoryResetAtBluetoothStart()) {
@@ -669,7 +672,8 @@ public class AdapterService extends Service {
                 mUserManager.isGuestUser(),
                 isCommonCriteriaMode,
                 configCompareResult,
-                isAtvDevice);
+                isAtvDevice,
+                hciInstanceName);
         mNativeAvailable = true;
         // Load the name and address
         mNativeInterface.getAdapterProperty(AbstractionLayer.BT_PROPERTY_BDADDR);
@@ -758,7 +762,7 @@ public class AdapterService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         Log.d(TAG, "onBind()");
-        return mBinder;
+        return mAdapterBinder;
     }
 
     @Override
@@ -2612,18 +2616,30 @@ public class AdapterService extends Service {
         return BluetoothAdapter.STATE_OFF;
     }
 
-    public synchronized void offToBleOn(boolean quietMode) {
+    /**
+     * Initialize AdapterService with necessary configuration parameters and progress AdapterService
+     * state from OFF to BLE ON.
+     *
+     * @param quietMode Enables or disables quiet mode
+     * @param hciInstanceName The hci instance name used to bind to the hardware
+     */
+    public synchronized void offToBleOn(boolean quietMode, String hciInstanceName) {
         // Enforce the user restriction for disallowing Bluetooth if it was set.
         if (mUserManager.hasUserRestrictionForUser(
                 UserManager.DISALLOW_BLUETOOTH, UserHandle.SYSTEM)) {
             Log.d(TAG, "offToBleOn() called when Bluetooth was disallowed");
             return;
         }
+        mQuietMode = quietMode;
         // The call to init must be done on the main thread
-        mHandler.post(() -> init());
+        mHandler.post(() -> init(hciInstanceName));
+        Log.i(
+                TAG,
+                "offToBleOn() - Enable called with quiet mode status =  "
+                        + mQuietMode
+                        + " hci_instance_name = "
+                        + hciInstanceName);
 
-        Log.i(TAG, "offToBleOn() - Enable called with quiet mode status =  " + quietMode);
-        mQuietmode = quietMode;
         mAdapterStateMachine.sendMessage(AdapterState.BLE_TURN_ON);
     }
 
@@ -2919,8 +2935,8 @@ public class AdapterService extends Service {
     }
 
     public boolean isQuietModeEnabled() {
-        Log.d(TAG, "isQuietModeEnabled() - Enabled = " + mQuietmode);
-        return mQuietmode;
+        Log.d(TAG, "isQuietModeEnabled() - Enabled = " + mQuietMode);
+        return mQuietMode;
     }
 
     public void updateUuids() {
@@ -3981,6 +3997,11 @@ public class AdapterService extends Service {
 
     void registerRemoteCallback(IBluetoothCallback callback) {
         mSystemServerCallbacks.register(callback);
+        try {
+            callback.setAdapterServiceBinder(mAdapterServiceBinder);
+        } catch (RemoteException e) {
+            logRemoteException(TAG, e);
+        }
     }
 
     void unregisterRemoteCallback(IBluetoothCallback callback) {
@@ -4251,6 +4272,15 @@ public class AdapterService extends Service {
         mPhonePolicy.ifPresent(
                 policy ->
                         policy.profileConnectionStateChanged(profile, device, fromState, toState));
+        if (!Flags.onewayMediaProfile()) {
+            return;
+        }
+        boolean mediaConnected = isMediaProfileConnected();
+        if (mIsMediaProfileConnected != mediaConnected) {
+            mIsMediaProfileConnected = mediaConnected;
+            broadcastToSystemServerCallbacks(
+                    "mediaConnected", (c) -> c.onMediaProfileConnectionChange(mediaConnected));
+        }
     }
 
     /** Handle Bluetooth app state when active device changes for a given {@code profile}. */

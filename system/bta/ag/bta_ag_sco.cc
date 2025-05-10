@@ -42,7 +42,7 @@
 #include "btm_status.h"
 #include "device/include/esco_parameters.h"
 #include "hardware/bt_hf.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/hci_packets.h"
 #include "hci_error_code.h"
 #include "hcidefs.h"
@@ -81,6 +81,7 @@ static void updateCodecParametersFromProviderInfo(tBTA_AG_UUID_CODEC esco_codec,
                                                   enh_esco_params_t& params);
 
 static bool sco_allowed = true;
+static bool is_sco_managed_by_audio = false;
 static bool hfp_software_datapath_enabled = false;
 static RawAddress active_device_addr = {};
 static std::unique_ptr<HfpInterface> hfp_client_interface;
@@ -682,9 +683,11 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
                p_scb->is_aptx_swb_codec,
                (p_scb->peer_codecs & BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK) != 0);
 
+  // if remote supports codec negotiation or AptX voice codec
   if (((p_scb->codec_updated || p_scb->codec_fallback) && (p_scb->features & BTA_AG_FEAT_CODEC) &&
        (p_scb->peer_features & BTA_AG_PEER_FEAT_CODEC)) ||
-      (aptx_voice)) {
+      (aptx_voice && (com::android::bluetooth::flags::qc_aptx_codec_negotiation() &&
+                      (p_scb->peer_codecs & BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK)))) {
     log::info("Starting codec negotiation");
     /* Change the power mode to Active until SCO open is completed. */
     bta_sys_busy(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
@@ -700,7 +703,8 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
       /* Send +QCS to the peer */
       bta_ag_send_qcs(p_scb);
     } else {
-      if (aptx_voice) {
+      if (aptx_voice && (com::android::bluetooth::flags::qc_aptx_codec_negotiation() &&
+                         (p_scb->peer_codecs & BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK))) {
         p_scb->sco_codec = BTM_SCO_CODEC_MSBC;
         p_scb->is_aptx_swb_codec = false;
       }
@@ -1609,13 +1613,15 @@ void bta_ag_set_sco_allowed(bool value) {
   log::verbose("{}", sco_allowed ? "sco now allowed" : "sco now not allowed");
 }
 
+void bta_ag_set_is_sco_managed_by_audio(bool value) {
+  is_sco_managed_by_audio = value;
+  log::verbose("sco managed by audio {}", is_sco_managed_by_audio);
+}
+
 bool bta_ag_is_sco_managed_by_audio() {
-  bool value = false;
-  if (com::android::bluetooth::flags::is_sco_managed_by_audio()) {
-    value = osi_property_get_bool("bluetooth.sco.managed_by_audio", false);
-    log::verbose("is_sco_managed_by_audio enabled={}", value);
-  }
-  return value;
+  // sys property is checked in the java layer
+  log::verbose("is_sco_managed_by_audio enabled={}", is_sco_managed_by_audio);
+  return is_sco_managed_by_audio;
 }
 
 void bta_ag_stream_suspended() {

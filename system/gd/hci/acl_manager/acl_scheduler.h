@@ -35,8 +35,12 @@ namespace acl_manager {
 //
 // However, it does not perform any actual HCI operations itself - it simply takes in callbacks, and
 // executes them at the appropriate time.
-class AclScheduler : public bluetooth::Module {
+class AclScheduler {
 public:
+  // TODO: there shouldbe SchedulerInterface that doesn't have constrcutor/destructor
+  AclScheduler(os::Handler* handler);
+  virtual ~AclScheduler();
+
   // Schedule an ACL Create Connection request
   void EnqueueOutgoingAclConnection(Address address,
                                     common::ContextualOnceCallback<void()> start_connection);
@@ -81,17 +85,6 @@ public:
 private:
   struct impl;
   std::unique_ptr<impl> pimpl_;
-
-protected:
-  void ListDependencies(ModuleList* list) const override;
-  void Start() override;
-  void Stop() override;
-  std::string ToString() const override { return std::string("AclSchedulerModule"); }
-
-public:
-  static const ModuleFactory Factory;
-  AclScheduler();
-  virtual ~AclScheduler();
 };
 
 }  // namespace acl_manager

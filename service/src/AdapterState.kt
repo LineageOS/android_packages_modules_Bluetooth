@@ -40,7 +40,9 @@ class BluetoothAdapterState {
 
     fun set(s: Int) = runBlocking {
         _uiState.emit(s)
-        IpcDataCache.invalidateCache(IPC_CACHE_MODULE_SYSTEM, GET_SYSTEM_STATE_API)
+        if (!disableCacheForTesting) {
+            IpcDataCache.invalidateCache(IPC_CACHE_MODULE_SYSTEM, GET_SYSTEM_STATE_API)
+        }
     }
 
     fun get(): Int = _uiState.replayCache.get(0)
@@ -55,4 +57,8 @@ class BluetoothAdapterState {
 
     suspend fun waitForState(timeout: Duration, vararg states: Int): Boolean =
         withTimeoutOrNull(timeout) { _uiState.filter { states.contains(it) }.first() } != null
+
+    companion object {
+        @JvmField var disableCacheForTesting = false
+    }
 }

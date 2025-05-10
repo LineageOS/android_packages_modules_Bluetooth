@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hci/le_scanning_manager.h"
+#include "hci/le_scanning_manager_impl.h"
 
 #include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
@@ -33,7 +33,7 @@
 #include "common/bind.h"
 #include "hci/acl_manager.h"
 #include "hci/address.h"
-#include "hci/controller.h"
+#include "hci/controller_mock.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_layer_fake.h"
 #include "hci/uuid.h"
@@ -125,7 +125,7 @@ namespace bluetooth {
 namespace hci {
 namespace {
 
-class TestController : public Controller {
+class TestController : public testing::MockController {
 public:
   bool IsSupported(OpCode op_code) const override { return supported_opcodes_.count(op_code) == 1; }
 
@@ -144,11 +144,6 @@ public:
   void SetBlePeriodicAdvertisingSyncTransferSenderSupport(bool support) {
     support_ble_periodic_advertising_sync_transfer_ = support;
   }
-
-protected:
-  void Start() override {}
-  void Stop() override {}
-  void ListDependencies(ModuleList* /* list */) const {}
 
 private:
   std::set<OpCode> supported_opcodes_{};
@@ -193,41 +188,6 @@ public:
   TestClientState test_client_state_ = UNREGISTERED;
 };
 
-class TestAclManager : public AclManager {
-public:
-  LeAddressManager* GetLeAddressManager() override { return test_le_address_manager_; }
-
-protected:
-  void Start() override {
-    thread_ = new os::Thread("thread", os::Thread::Priority::NORMAL);
-    handler_ = new os::Handler(thread_);
-    Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
-    test_controller_ = std::make_unique<TestController>();
-    test_le_address_manager_ = new TestLeAddressManager(
-            common::Bind(&TestAclManager::enqueue_command, common::Unretained(this)), handler_,
-            address, 0x3F, 0x3F, test_controller_.get());
-  }
-
-  void Stop() override {
-    delete test_le_address_manager_;
-    handler_->Clear();
-    delete handler_;
-    delete thread_;
-  }
-
-  void ListDependencies(ModuleList* /* list */) const {}
-
-  void SetRandomAddress(Address /* address */) {}
-
-  void enqueue_command(std::unique_ptr<CommandBuilder> /* command_packet */){};
-
-private:
-  os::Thread* thread_;
-  os::Handler* handler_;
-  std::unique_ptr<TestController> test_controller_;
-  TestLeAddressManager* test_le_address_manager_;
-};
-
 class MockCallbacks : public bluetooth::hci::ScanningCallback {
 public:
   MOCK_METHOD(void, OnScannerRegistered,
@@ -269,28 +229,32 @@ class LeScanningManagerTest : public ::testing::Test {
 protected:
   void SetUp() override {
     test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
-    test_controller_ = new TestController;
-    test_acl_manager_ = new TestAclManager;
+    test_controller_ = std::make_unique<TestController>();
+
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
-    fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
-    fake_registry_.InjectTestModule(&AclManager::Factory, test_acl_manager_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
+
+    Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
+    test_le_address_manager_ = new TestLeAddressManager(
+            common::Bind([](std::unique_ptr<CommandBuilder> /* command_packet */) {}),
+            client_handler_, address, 0x3F, 0x3F, test_controller_.get());
+
     ASSERT_TRUE(client_handler_ != nullptr);
   }
 
   void TearDown() override {
     sync_client_handler();
-    if (fake_registry_.IsStarted<LeScanningManager>()) {
-      fake_registry_.SynchronizeModuleHandler(&LeScanningManager::Factory,
-                                              std::chrono::milliseconds(20));
+    if (le_scanning_manager != nullptr) {
+      fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     }
     fake_registry_.StopAll();
   }
 
   void start_le_scanning_manager() {
-    fake_registry_.Start<LeScanningManager>(&thread_, fake_registry_.GetTestHandler());
-    le_scanning_manager = static_cast<LeScanningManager*>(
-            fake_registry_.GetModuleUnderTest(&LeScanningManager::Factory));
+    fake_registry_.Start<HciLayer>(&thread_, fake_registry_.GetTestHandler());
+    le_scanning_manager = new LeScanningManagerImpl(
+            fake_registry_.GetTestHandler(), test_hci_layer_, test_controller_.get(),
+            test_le_address_manager_, nullptr /* StorageModule */);
     le_scanning_manager->RegisterScanningCallback(&mock_callbacks_);
     sync_client_handler();
   }
@@ -302,10 +266,10 @@ protected:
 
   TestModuleRegistry fake_registry_;
   HciLayerFake* test_hci_layer_ = nullptr;
-  TestController* test_controller_ = nullptr;
-  TestAclManager* test_acl_manager_ = nullptr;
+  std::unique_ptr<TestController> test_controller_ = nullptr;
+  TestLeAddressManager* test_le_address_manager_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
-  LeScanningManager* le_scanning_manager = nullptr;
+  LeScanningManagerImpl* le_scanning_manager = nullptr;
   os::Handler* client_handler_ = nullptr;
 
   MockCallbacks mock_callbacks_;
@@ -480,7 +444,7 @@ TEST_F(LeScanningManagerAndroidHciTest, start_scan_test) {
 TEST_F(LeScanningManagerAndroidHciTest, is_ad_type_filter_supported_true_test) {
   sync_client_handler();
   client_handler_->Post(common::BindOnce(
-          [](LeScanningManager* le_scanning_manager) {
+          [](LeScanningManagerImpl* le_scanning_manager) {
             ASSERT_TRUE(le_scanning_manager->IsAdTypeFilterSupported());
           },
           le_scanning_manager));
@@ -614,7 +578,7 @@ TEST_F(LeScanningManagerAndroidHciTest, scan_filter_add_transport_discovery_data
 TEST_F(LeScanningManagerAndroidHciTest, scan_filter_add_ad_type_test) {
   sync_client_handler();
   client_handler_->Post(common::BindOnce(
-          [](LeScanningManager* le_scanning_manager) {
+          [](LeScanningManagerImpl* le_scanning_manager) {
             ASSERT_TRUE(le_scanning_manager->IsAdTypeFilterSupported());
           },
           le_scanning_manager));
@@ -767,9 +731,6 @@ TEST_F(LeScanningManagerExtendedTest, start_scan_test) {
 }
 
 TEST_F(LeScanningManagerExtendedTest, start_scan_on_resume_conflict_test) {
-  TestLeAddressManager* test_le_address_manager =
-          (TestLeAddressManager*)test_acl_manager_->GetLeAddressManager();
-
   // Enable scan
   le_scanning_manager->Scan(true);
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS, test_hci_layer_->GetCommand().GetOpCode());
@@ -781,7 +742,7 @@ TEST_F(LeScanningManagerExtendedTest, start_scan_on_resume_conflict_test) {
   sync_client_handler();
 
   // Pause scan
-  test_le_address_manager->client_->OnPause();
+  test_le_address_manager_->client_->OnPause();
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
   test_hci_layer_->IncomingEvent(
           LeSetExtendedScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
@@ -800,15 +761,12 @@ TEST_F(LeScanningManagerExtendedTest, start_scan_on_resume_conflict_test) {
           LeSetExtendedScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
 
   // Ensure there is no double enable commands on resume
-  test_le_address_manager->client_->OnResume();
+  test_le_address_manager_->client_->OnResume();
   sync_client_handler();
   test_hci_layer_->AssertNoQueuedCommand();
 }
 
 TEST_F(LeScanningManagerExtendedTest, on_pause_on_resume_test) {
-  TestLeAddressManager* test_le_address_manager =
-          (TestLeAddressManager*)test_acl_manager_->GetLeAddressManager();
-
   // Enable scan
   le_scanning_manager->Scan(true);
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS, test_hci_layer_->GetCommand().GetOpCode());
@@ -820,13 +778,13 @@ TEST_F(LeScanningManagerExtendedTest, on_pause_on_resume_test) {
   sync_client_handler();
 
   // Pause scan
-  test_le_address_manager->client_->OnPause();
+  test_le_address_manager_->client_->OnPause();
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
   test_hci_layer_->IncomingEvent(
           LeSetExtendedScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
 
   // Ensure scan is resumed (enabled)
-  test_le_address_manager->client_->OnResume();
+  test_le_address_manager_->client_->OnResume();
   if (com::android::bluetooth::flags::configure_scan_on_resume()) {
     ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS, test_hci_layer_->GetCommand().GetOpCode());
     test_hci_layer_->IncomingEvent(
@@ -838,9 +796,7 @@ TEST_F(LeScanningManagerExtendedTest, on_pause_on_resume_test) {
 }
 
 TEST_F(LeScanningManagerExtendedTest, ignore_on_pause_on_resume_after_unregistered) {
-  TestLeAddressManager* test_le_address_manager =
-          (TestLeAddressManager*)test_acl_manager_->GetLeAddressManager();
-  test_le_address_manager->ignore_unregister_for_testing = true;
+  test_le_address_manager_->ignore_unregister_for_testing = true;
 
   // Register LeAddressManager
   le_scanning_manager->Scan(true);
@@ -860,14 +816,14 @@ TEST_F(LeScanningManagerExtendedTest, ignore_on_pause_on_resume_after_unregister
   sync_client_handler();
 
   // Unregistered client should ignore OnPause/OnResume
-  ASSERT_NE(test_le_address_manager->client_, nullptr);
-  ASSERT_EQ(test_le_address_manager->test_client_state_,
+  ASSERT_NE(test_le_address_manager_->client_, nullptr);
+  ASSERT_EQ(test_le_address_manager_->test_client_state_,
             TestLeAddressManager::TestClientState::UNREGISTERED);
-  test_le_address_manager->client_->OnPause();
-  ASSERT_EQ(test_le_address_manager->test_client_state_,
+  test_le_address_manager_->client_->OnPause();
+  ASSERT_EQ(test_le_address_manager_->test_client_state_,
             TestLeAddressManager::TestClientState::UNREGISTERED);
-  test_le_address_manager->client_->OnResume();
-  ASSERT_EQ(test_le_address_manager->test_client_state_,
+  test_le_address_manager_->client_->OnResume();
+  ASSERT_EQ(test_le_address_manager_->test_client_state_,
             TestLeAddressManager::TestClientState::UNREGISTERED);
 }
 

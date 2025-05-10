@@ -39,6 +39,7 @@ import com.android.server.bluetooth.airplane.initialize
 import com.android.server.bluetooth.airplane.isOn
 import com.android.server.bluetooth.airplane.isOnOverrode
 import com.android.server.bluetooth.airplane.notifyUserToggledBluetooth
+import com.android.server.bluetooth.airplane.setIsMediaProfileConnected
 import com.android.server.bluetooth.test.disableMode
 import com.android.server.bluetooth.test.disableSensitive
 import com.android.server.bluetooth.test.enableMode
@@ -83,6 +84,7 @@ class ModeListenerTest() {
         enableSensitive()
         disableMode()
 
+        setIsMediaProfileConnected(false)
         isMediaProfileConnected = false
         mode = ArrayList()
         notification = ArrayList()
@@ -288,6 +290,7 @@ class ModeListenerTest() {
         initializeAirplane()
 
         state.set(BluetoothAdapter.STATE_ON)
+        setIsMediaProfileConnected(true)
         isMediaProfileConnected = true
 
         enableMode()
@@ -325,6 +328,7 @@ class ModeListenerTest() {
 
         state.set(BluetoothAdapter.STATE_ON)
         Settings.Global.putInt(resolver, APM_ENHANCEMENT, 0)
+        setIsMediaProfileConnected(true)
         isMediaProfileConnected = true
 
         enableMode()
@@ -404,6 +408,7 @@ class ModeListenerTest() {
         initializeAirplane()
 
         state.set(BluetoothAdapter.STATE_ON)
+        setIsMediaProfileConnected(true)
         isMediaProfileConnected = true
 
         repeat(30) {

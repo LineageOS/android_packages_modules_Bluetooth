@@ -65,7 +65,7 @@ public class BluetoothOppPreferenceTest {
         BluetoothMethodProxy.setInstanceForTesting(null);
         BluetoothOppUtility.sSendFileMap.clear();
         mContext.getSharedPreferences(OPP_PREFERENCE_FILE, 0).edit().clear().apply();
-        BluetoothOppManager.sInstance = null;
+        BluetoothOppManager.setInstanceForTesting(null);
     }
 
     @Test

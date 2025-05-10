@@ -55,13 +55,10 @@ struct btsnd_hcic_park_mode btsnd_hcic_park_mode;
 struct btsnd_hcic_pin_code_neg_reply btsnd_hcic_pin_code_neg_reply;
 struct btsnd_hcic_pin_code_req_reply btsnd_hcic_pin_code_req_reply;
 struct btsnd_hcic_read_encryption_key_size btsnd_hcic_read_encryption_key_size;
-struct btsnd_hcic_read_failed_contact_counter btsnd_hcic_read_failed_contact_counter;
 struct btsnd_hcic_read_local_oob_data btsnd_hcic_read_local_oob_data;
 struct btsnd_hcic_read_local_oob_extended_data btsnd_hcic_read_local_oob_extended_data;
-struct btsnd_hcic_read_name btsnd_hcic_read_name;
 struct btsnd_hcic_read_rmt_clk_offset btsnd_hcic_read_rmt_clk_offset;
 struct btsnd_hcic_read_rssi btsnd_hcic_read_rssi;
-struct btsnd_hcic_read_tx_power btsnd_hcic_read_tx_power;
 struct btsnd_hcic_reject_conn btsnd_hcic_reject_conn;
 struct btsnd_hcic_reject_esco_conn btsnd_hcic_reject_esco_conn;
 struct btsnd_hcic_rem_oob_neg_reply btsnd_hcic_rem_oob_neg_reply;
@@ -190,10 +187,6 @@ void btsnd_hcic_read_encryption_key_size(uint16_t handle, ReadEncKeySizeCb cb) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hcicmds::btsnd_hcic_read_encryption_key_size(handle, std::move(cb));
 }
-void btsnd_hcic_read_failed_contact_counter(uint16_t handle) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hcicmds::btsnd_hcic_read_failed_contact_counter(handle);
-}
 void btsnd_hcic_read_local_oob_data(void) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hcicmds::btsnd_hcic_read_local_oob_data();
@@ -202,10 +195,6 @@ void btsnd_hcic_read_local_oob_extended_data(void) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hcicmds::btsnd_hcic_read_local_oob_extended_data();
 }
-void btsnd_hcic_read_name(void) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hcicmds::btsnd_hcic_read_name();
-}
 void btsnd_hcic_read_rmt_clk_offset(uint16_t handle) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hcicmds::btsnd_hcic_read_rmt_clk_offset(handle);
@@ -213,10 +202,6 @@ void btsnd_hcic_read_rmt_clk_offset(uint16_t handle) {
 void btsnd_hcic_read_rssi(uint16_t handle) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hcicmds::btsnd_hcic_read_rssi(handle);
-}
-void btsnd_hcic_read_tx_power(uint16_t handle, uint8_t type) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hcicmds::btsnd_hcic_read_tx_power(handle, type);
 }
 void btsnd_hcic_reject_conn(const RawAddress& dest, uint8_t reason) {
   inc_func_call_count(__func__);

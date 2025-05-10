@@ -20,8 +20,7 @@ import logging
 from avatar import BumblePandoraDevice, PandoraDevice, PandoraDevices
 import pandora_services as bumble_server
 from bumble.gatt import (Characteristic, Service, GATT_VOLUME_CONTROL_SERVICE,
-                         GATT_AUDIO_INPUT_CONTROL_SERVICE, GATT_PRIMARY_SERVICE_ATTRIBUTE_TYPE,
-                         GATT_SECONDARY_SERVICE_ATTRIBUTE_TYPE, UUID)
+                         GATT_AUDIO_INPUT_CONTROL_SERVICE)
 from bumble.l2cap import L2CAP_Control_Frame
 from bumble.pairing import PairingConfig
 from pandora_services.gatt import GATTService
@@ -322,10 +321,11 @@ class GattTest(base_test.BaseTestClass):  # type: ignore[misc]
             service for service in services if service.uuid == PRIMARY_SERVICE_UUID
         ]
         assert len(filtered_services) == 1
-        primary_service = filtered_services[0]
+        discovered_primary_service = filtered_services[0]
 
         included_services_uuids = [
-            included_service.uuid for included_service in primary_service.included_services
+            included_service.uuid
+            for included_service in discovered_primary_service.included_services
         ]
         assert_in(INCLUDED_SERVICE_UUID, included_services_uuids)
 

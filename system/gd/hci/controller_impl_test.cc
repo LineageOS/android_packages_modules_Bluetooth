@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hci/controller.h"
+#include "hci/controller_impl.h"
 
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
@@ -71,13 +71,13 @@ public:
   void EnqueueCommand(
           std::unique_ptr<CommandBuilder> /* command */,
           common::ContextualOnceCallback<void(CommandStatusView)> /* on_status */) override {
-    FAIL() << "Controller properties should not generate Command Status";
+    FAIL() << "ControllerImpl properties should not generate Command Status";
   }
 
   void EnqueueCommand(std::unique_ptr<CommandBuilder> /* command */,
                       common::ContextualOnceCallback<void(
                               CommandStatusOrCompleteView)> /* on_status_or_complete */) override {
-    FAIL() << "Controller properties should not generate Command Status";
+    FAIL() << "ControllerImpl properties should not generate Command Status";
   }
 
   void HandleCommand(std::unique_ptr<CommandBuilder> command_builder,
@@ -291,8 +291,8 @@ protected:
     vendor_capabilities_.reset();
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
-    fake_registry_.Start<Controller>(&thread_, fake_registry_.GetTestHandler());
-    controller_ = static_cast<Controller*>(fake_registry_.GetModuleUnderTest(&Controller::Factory));
+    fake_registry_.Start<HciLayer>(&thread_, fake_registry_.GetTestHandler());
+    controller_ = std::make_unique<ControllerImpl>(client_handler_, test_hci_layer_);
   }
 
   void TearDown() override { fake_registry_.StopAll(); }
@@ -300,7 +300,7 @@ protected:
   TestModuleRegistry fake_registry_;
   HciLayerFakeForController* test_hci_layer_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
-  Controller* controller_ = nullptr;
+  std::unique_ptr<ControllerImpl> controller_ = nullptr;
   os::Handler* client_handler_ = nullptr;
   uint16_t feature_spec_version_ = 98;
   std::unique_ptr<EventBuilder> vendor_capabilities_ = nullptr;

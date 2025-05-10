@@ -16,6 +16,7 @@ import asyncio
 import grpc
 import logging
 
+from bumble import core
 from bumble.att import Attribute
 from bumble.core import ProtocolError
 from bumble.device import Connection as BumbleConnection, Device, Peer
@@ -245,7 +246,7 @@ class GATTService(GATTServicer):
         })()
 
         try:
-            characteristics = await peer.read_characteristics_by_uuid(request.uuid,
+            characteristics = await peer.read_characteristics_by_uuid(core.UUID(request.uuid),
                                                                       service_mock)  # type: ignore
 
             return ReadCharacteristicsFromUuidResponse(characteristics_read=[

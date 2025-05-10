@@ -42,16 +42,6 @@ flag {
 }
 
 flag {
-    name: "donot_update_sec_flags_on_csrk_save"
-    namespace: "bluetooth"
-    description: "Updating sec flags while saving csrk info can cause setting securith level wrongly as security level might have not determined at that time"
-    bug: "379109304"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "ignore_auth_req_when_collision_timer_active"
     namespace: "bluetooth"
     description: "Ignore authentication request when collision timer is still active"

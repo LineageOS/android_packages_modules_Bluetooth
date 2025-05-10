@@ -71,7 +71,7 @@ class BleConnectionManager : public testing::Test {
     /* extern */ test::mock_acl_manager_ =
             std::make_unique<bluetooth::hci::testing::MockAclManager>();
     /* extern */ test::mock_controller_ =
-            std::make_unique<testing::NiceMock<bluetooth::hci::testing::MockControllerInterface>>();
+            std::make_unique<testing::NiceMock<bluetooth::hci::testing::MockController>>();
     ON_CALL(*test::mock_controller_, GetLeFilterAcceptListSize()).WillByDefault(Return(16));
 
     auto alarm_mock = AlarmMock::Get();

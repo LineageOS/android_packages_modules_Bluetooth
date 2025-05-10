@@ -13,6 +13,9 @@
 # limitations under the License.
 
 import asyncio
+
+import bumble.avdtp
+import bumble.device
 import avatar
 import bumble
 import dataclasses
@@ -61,12 +64,12 @@ from bumble.l2cap import (
     L2CAP_Connection_Response,
 )
 from bumble.pairing import PairingDelegate
+from pandora_services import utils
 from google.protobuf import empty_pb2
-from mobly import base_test, test_runner
+from mobly import base_test, test_runner, signals
 from mobly.asserts import assert_equal  # type: ignore
 from mobly.asserts import assert_greater_equal  # type: ignore
 from mobly.asserts import assert_in  # type: ignore
-from mobly.asserts import assert_is_not_none  # type: ignore
 from mobly.asserts import assert_less_equal  # type: ignore
 from mobly.asserts import assert_raises  # type: ignore
 from mobly.asserts import fail  # type: ignore
@@ -91,7 +94,7 @@ AUDIO_SIGNAL_SINE_DURATION = 0.1
 MAX_INT16 = 2**15 - 1
 
 
-async def initiate_pairing(device, address) -> Connection:
+async def initiate_pairing(device: PandoraDevice, address: bytes) -> Connection:
     """Connect and pair a remote device."""
 
     result = await device.aio.host.Connect(address=address)
@@ -104,7 +107,7 @@ async def initiate_pairing(device, address) -> Connection:
     return connection
 
 
-async def accept_pairing(device, address) -> Connection:
+async def accept_pairing(device: PandoraDevice, address: bytes) -> Connection:
     """Accept connection and pairing from a remote device."""
 
     result = await device.aio.host.WaitConnection(address=address)
@@ -117,10 +120,10 @@ async def accept_pairing(device, address) -> Connection:
     return connection
 
 
-async def open_source(device, connection) -> Source:
+async def open_source(a2dp_service: A2DP, connection: Connection) -> Source:
     """Initiate AVDTP connection from Android device."""
 
-    result = await device.a2dp.OpenSource(connection=connection)
+    result = await a2dp_service.OpenSource(connection=connection)
     source = result.source
     assert source
 
@@ -204,18 +207,20 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
     # pandora devices.
     dut: PandoraDevice
-    ref1: PandoraDevice
-    ref2: PandoraDevice
+    ref1: BumblePandoraDevice
+    ref2: BumblePandoraDevice
 
     @avatar.asynchronous
     async def setup_class(self) -> None:
         self.devices = PandoraDevices(self)
-        self.dut, self.ref1, self.ref2, *_ = self.devices
+        self.dut, ref1, ref2, *_ = self.devices
 
-        if not isinstance(self.ref1, BumblePandoraDevice):
+        if not isinstance(ref1, BumblePandoraDevice):
             raise signals.TestAbortClass('Test require Bumble as reference device(s)')
-        if not isinstance(self.ref2, BumblePandoraDevice):
+        if not isinstance(ref2, BumblePandoraDevice):
             raise signals.TestAbortClass('Test require Bumble as reference device(s)')
+        self.ref1 = ref1
+        self.ref2 = ref2
 
         # Enable BR/EDR mode and SSP for Bumble devices.
         for device in self.devices:
@@ -233,26 +238,26 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
     async def setup_test(self) -> None:
         await asyncio.gather(self.dut.reset(), self.ref1.reset(), self.ref2.reset())
 
-        self.dut.a2dp = A2DP(channel=self.dut.aio.channel)
+        self.dut_a2dp = A2DP(channel=self.dut.aio.channel)
 
         handle = 0x00010001
         self.ref1.device.sdp_service_records = {handle: make_audio_sink_service_sdp_records(handle)}
         self.ref2.device.sdp_service_records = {handle: make_audio_sink_service_sdp_records(handle)}
 
-        self.ref1.a2dp = Listener.for_device(self.ref1.device)
-        self.ref2.a2dp = Listener.for_device(self.ref2.device)
-        self.ref1.a2dp_sink = None
-        self.ref2.a2dp_sink = None
+        self.ref1_a2dp = Listener.for_device(self.ref1.device)
+        self.ref2_a2dp = Listener.for_device(self.ref2.device)
+        self.ref1_a2dp_sink: bumble.avdtp.LocalSink | None = None
+        self.ref2_a2dp_sink: bumble.avdtp.LocalSink | None = None
 
-        def on_ref1_avdtp_connection(server):
-            self.ref1.a2dp_sink = server.add_sink(sbc_codec_capabilities())
+        def on_ref1_avdtp_connection(server: bumble.avdtp.Protocol):
+            self.ref1_a2dp_sink = server.add_sink(sbc_codec_capabilities())
 
-        def on_ref2_avdtp_connection(server):
-            self.ref2.a2dp_sink = server.add_sink(sbc_codec_capabilities())
-            self.ref2.a2dp_sink = server.add_sink(aac_codec_capabilities())
+        def on_ref2_avdtp_connection(server: bumble.avdtp.Protocol):
+            self.ref2_a2dp_sink = server.add_sink(sbc_codec_capabilities())
+            self.ref2_a2dp_sink = server.add_sink(aac_codec_capabilities())
 
-        self.ref1.a2dp.on('connection', on_ref1_avdtp_connection)
-        self.ref2.a2dp.on('connection', on_ref2_avdtp_connection)
+        self.ref1_a2dp.on('connection', on_ref1_avdtp_connection)
+        self.ref2_a2dp.on('connection', on_ref2_avdtp_connection)
 
     @avatar.asynchronous
     async def test_connect_and_stream(self) -> None:
@@ -273,21 +278,20 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         )
 
         # Connect AVDTP to RD1.
-        dut_ref1_source = await open_source(self.dut, dut_ref1)
-        assert_is_not_none(self.ref1.a2dp_sink)
-        assert_is_not_none(self.ref1.a2dp_sink.stream)
-        assert_in(self.ref1.a2dp_sink.stream.state, [AVDTP_OPEN_STATE, AVDTP_STREAMING_STATE])
+        dut_ref1_source = await open_source(self.dut_a2dp, dut_ref1)
+        assert self.ref1_a2dp_sink is not None and self.ref1_a2dp_sink.stream is not None
+        assert_in(self.ref1_a2dp_sink.stream.state, [AVDTP_OPEN_STATE, AVDTP_STREAMING_STATE])
 
         # Start streaming to RD1.
-        await self.dut.a2dp.Start(source=dut_ref1_source)
+        await self.dut_a2dp.Start(source=dut_ref1_source)
 
         generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
-        await self.dut.a2dp.PlaybackAudio(generated_audio)
-        assert_equal(self.ref1.a2dp_sink.stream.state, AVDTP_STREAMING_STATE)
+        await self.dut_a2dp.PlaybackAudio(generated_audio)
+        assert_equal(self.ref1_a2dp_sink.stream.state, AVDTP_STREAMING_STATE)
 
         # Stop streaming to RD1.
-        await self.dut.a2dp.Suspend(source=dut_ref1_source)
-        assert_equal(self.ref1.a2dp_sink.stream.state, AVDTP_OPEN_STATE)
+        await self.dut_a2dp.Suspend(source=dut_ref1_source)
+        assert_equal(self.ref1_a2dp_sink.stream.state, AVDTP_OPEN_STATE)
 
     @avatar.asynchronous
     async def test_signaling_channel_and_streaming(self) -> None:
@@ -306,6 +310,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         )
 
         connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+        assert connection is not None, "Unable to find connection!"
         channel = SignalingChannel.accept(connection)
 
         seid_information = [
@@ -322,19 +327,19 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         _, dut_ref1_source = await asyncio.gather(
             channel.accept_open_stream(seid_information=seid_information,
                                        service_capabilities=acceptor_service_capabilities),
-            open_source(self.dut, dut_ref1))
+            open_source(self.dut_a2dp, dut_ref1))
 
         # Start streaming to RD1.
-        await asyncio.gather(self.dut.a2dp.Start(source=dut_ref1_source), channel.accept_start())
+        await asyncio.gather(self.dut_a2dp.Start(source=dut_ref1_source), channel.accept_start())
 
         # Verify that audio is received on the transport channel.
         generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
         await asyncio.gather(
-            self.dut.a2dp.PlaybackAudio(generated_audio),
+            self.dut_a2dp.PlaybackAudio(generated_audio),
             channel.receive_audio_data(test_log_path=self.log_path, filename="sbc", duration_s=2.0))
 
         # Stop streaming to RD1.
-        await asyncio.gather(self.dut.a2dp.Suspend(source=dut_ref1_source),
+        await asyncio.gather(self.dut_a2dp.Suspend(source=dut_ref1_source),
                              channel.accept_suspend(timeout=8.0))
 
     @avatar.asynchronous
@@ -357,14 +362,15 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         def on_avdtp_connection(server):
             nonlocal avdtp_future
-            self.ref1.a2dp_sink = server.add_sink(sbc_codec_capabilities())
-            self.ref1.log.info(f'Sink: {self.ref1.a2dp_sink}')
+            self.ref1_a2dp_sink = server.add_sink(sbc_codec_capabilities())
+            self.ref1.log.info(f'Sink: {self.ref1_a2dp_sink}')
             avdtp_future.set_result(None)
 
-        self.ref1.a2dp.on('connection', on_avdtp_connection)
+        self.ref1_a2dp.on('connection', on_avdtp_connection)
 
         # Retrieve Bumble connection object from Pandora connection token
         connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+        assert connection is not None, "Unable to find connection!"
 
         # Open AVCTP L2CAP channel
         avctp = await connection.create_l2cap_channel(spec=ClassicChannelSpec(AVCTP_PSM))
@@ -388,13 +394,12 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         )
 
         # Connect AVDTP to RD2.
-        dut_ref2_source = await open_source(self.dut, dut_ref2)
-        assert_is_not_none(self.ref2.a2dp_sink)
-        assert_is_not_none(self.ref2.a2dp_sink.stream)
-        assert_in(self.ref2.a2dp_sink.stream.state, [AVDTP_OPEN_STATE, AVDTP_STREAMING_STATE])
+        dut_ref2_source = await open_source(self.dut_a2dp, dut_ref2)
+        assert self.ref2_a2dp_sink is not None and self.ref2_a2dp_sink.stream is not None
+        assert_in(self.ref2_a2dp_sink.stream.state, [AVDTP_OPEN_STATE, AVDTP_STREAMING_STATE])
 
         # Get current codec status
-        configurationResponse = await self.dut.a2dp.GetConfiguration(connection=dut_ref2)
+        configurationResponse = await self.dut_a2dp.GetConfiguration(connection=dut_ref2)
         logger.info(f"Current codec configuration: {configurationResponse.configuration}")
         assert configurationResponse.configuration.id.HasField('mpeg_aac')
 
@@ -405,12 +410,12 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # Set new codec
         logger.info(f"Switching to codec: {new_configuration}")
-        result = await self.dut.a2dp.SetConfiguration(connection=dut_ref2,
+        result = await self.dut_a2dp.SetConfiguration(connection=dut_ref2,
                                                       configuration=new_configuration)
         assert result.success
 
         # Get current codec status
-        configurationResponse = await self.dut.a2dp.GetConfiguration(connection=dut_ref2)
+        configurationResponse = await self.dut_a2dp.GetConfiguration(connection=dut_ref2)
         logger.info(f"Current codec configuration: {configurationResponse.configuration}")
         assert configurationResponse.configuration.id.HasField('sbc')
 
@@ -429,13 +434,12 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         )
 
         # Connect AVDTP to RD2.
-        dut_ref2_source = await open_source(self.dut, dut_ref2)
-        assert_is_not_none(self.ref2.a2dp_sink)
-        assert_is_not_none(self.ref2.a2dp_sink.stream)
-        assert_in(self.ref2.a2dp_sink.stream.state, [AVDTP_OPEN_STATE, AVDTP_STREAMING_STATE])
+        dut_ref2_source = await open_source(self.dut_a2dp, dut_ref2)
+        assert self.ref2_a2dp_sink is not None and self.ref2_a2dp_sink.stream is not None
+        assert_in(self.ref2_a2dp_sink.stream.state, [AVDTP_OPEN_STATE, AVDTP_STREAMING_STATE])
 
         # Get current codec status
-        configurationResponse = await self.dut.a2dp.GetConfiguration(connection=dut_ref2)
+        configurationResponse = await self.dut_a2dp.GetConfiguration(connection=dut_ref2)
         logger.info(f"Current codec configuration: {configurationResponse.configuration}")
         assert configurationResponse.configuration.id.HasField('mpeg_aac')
 
@@ -446,12 +450,12 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # Set new codec
         logger.info(f"Switching to codec: {new_configuration}")
-        result = await self.dut.a2dp.SetConfiguration(connection=dut_ref2,
+        result = await self.dut_a2dp.SetConfiguration(connection=dut_ref2,
                                                       configuration=new_configuration)
         assert result.success == False
 
         # Get current codec status, assure it did not change
-        configurationResponse = await self.dut.a2dp.GetConfiguration(connection=dut_ref2)
+        configurationResponse = await self.dut_a2dp.GetConfiguration(connection=dut_ref2)
         logger.info(f"Current codec configuration: {configurationResponse.configuration}")
         assert configurationResponse.configuration.id.HasField('mpeg_aac')
 
@@ -464,13 +468,12 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         )
 
         # Connect AVDTP to RD2.
-        dut_ref2_source = await open_source(self.dut, dut_ref2)
-        assert_is_not_none(self.ref2.a2dp_sink)
-        assert_is_not_none(self.ref2.a2dp_sink.stream)
-        assert_in(self.ref2.a2dp_sink.stream.state, [AVDTP_OPEN_STATE, AVDTP_STREAMING_STATE])
+        dut_ref2_source = await open_source(self.dut_a2dp, dut_ref2)
+        assert self.ref2_a2dp_sink is not None and self.ref2_a2dp_sink.stream is not None
+        assert_in(self.ref2_a2dp_sink.stream.state, [AVDTP_OPEN_STATE, AVDTP_STREAMING_STATE])
 
         # Get current codec status
-        configurationResponse = await self.dut.a2dp.GetConfiguration(connection=dut_ref2)
+        configurationResponse = await self.dut_a2dp.GetConfiguration(connection=dut_ref2)
         logger.info(f"Current codec configuration: {configurationResponse.configuration}")
         assert configurationResponse.configuration.id.HasField('mpeg_aac')
 
@@ -481,12 +484,12 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # Set new codec
         logger.info(f"Switching to codec: {new_configuration}")
-        result = await self.dut.a2dp.SetConfiguration(connection=dut_ref2,
+        result = await self.dut_a2dp.SetConfiguration(connection=dut_ref2,
                                                       configuration=new_configuration)
         assert result.success == False
 
         # Get current codec status, assure it did not change
-        configurationResponse = await self.dut.a2dp.GetConfiguration(connection=dut_ref2)
+        configurationResponse = await self.dut_a2dp.GetConfiguration(connection=dut_ref2)
         logger.info(f"Current codec configuration: {configurationResponse.configuration}")
         assert configurationResponse.configuration.id.HasField('mpeg_aac')
 
@@ -508,6 +511,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         )
 
         connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+        assert connection is not None, "Unable to find connection!"
         channel = SignalingChannel.accept(connection)
 
         # Connect AVDTP to RD1.
@@ -521,20 +525,20 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                                                service_category=ServiceCategory.MEDIA_CODEC,
                                                media_codec_specific_information_elements=bytearray(
                                                    [255, 255, 2, 53]))
-                                       ]), open_source(self.dut, dut_ref1))
+                                       ]), open_source(self.dut_a2dp, dut_ref1))
 
         # Start streaming to RD1.
-        await asyncio.gather(self.dut.a2dp.Start(source=dut_ref1_source), channel.accept_start())
+        await asyncio.gather(self.dut_a2dp.Start(source=dut_ref1_source), channel.accept_start())
 
         generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
-        await self.dut.a2dp.PlaybackAudio(generated_audio)
+        await self.dut_a2dp.PlaybackAudio(generated_audio)
 
         # Verify that at least one audio frame is received on the transport channel.
         await channel.expect_media(timeout=5.0)
 
         # Stop streaming to RD1.
         _, cmd = await asyncio.gather(
-            self.dut.a2dp.Suspend(source=dut_ref1_source),
+            self.dut_a2dp.Suspend(source=dut_ref1_source),
             channel.expect_signal(SuspendCommand(transaction_label=ANY, acp_seid=ANY), timeout=8.0))
 
         # Simulate AVDTP_BAD_STATE response.
@@ -574,6 +578,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # Retrieve Bumble connection object from Pandora connection token
         connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+        assert connection is not None, "Unable to find connection!"
         assert connection is not None
 
         channel = await connection.create_l2cap_channel(spec=ClassicChannelSpec(psm=AVDTP_PSM))
@@ -623,18 +628,18 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         @dataclasses.dataclass
         class L2capConfigurationRequest:
-            connection: Optional[Connection] = None
+            connection: Optional[bumble.device.Connection] = None
             cid: Optional[int] = None
             request: Optional[L2CAP_Configure_Request] = None
 
-        global pending_configuration_request
-        pending_configuration_request = L2capConfigurationRequest()
+        pending_configuration_request: L2capConfigurationRequest | None = L2capConfigurationRequest(
+        )
 
         class TestChannelManager(ChannelManager):
 
             def __init__(
                 self,
-                device: BumblePandoraDevice,
+                device: bumble.device.Device,
             ) -> None:
                 super().__init__(
                     device.l2cap_channel_manager.extended_features,
@@ -645,9 +650,9 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                 self.register_fixed_channel(bumble.att.ATT_CID, device.on_gatt_pdu)
                 self.host = device.host
 
-            def on_l2cap_connection_request(self, connection: Connection, cid: int,
+            def on_l2cap_connection_request(self, connection: bumble.device.Connection, cid: int,
                                             request) -> None:
-                global pending_configuration_request
+                nonlocal pending_configuration_request
                 if request.psm == AVDTP_PSM and pending_configuration_request is not None:
                     logger.info("<< 4. RD1 rejects AVDTP connection request from DUT >>")
                     self.send_control_frame(
@@ -666,6 +671,9 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                     chan_connection = pending_configuration_request.connection
                     chan_cid = pending_configuration_request.cid
                     chan_request = pending_configuration_request.request
+                    assert chan_connection is not None
+                    assert chan_cid is not None
+                    assert chan_request is not None
                     pending_configuration_request = None
                     super().on_control_frame(connection=chan_connection,
                                              cid=chan_cid,
@@ -684,7 +692,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                 logger.info("<< 2. RD1 connected DUT, configuration postponed >>")
 
             def on_configure_request(self, request) -> None:
-                global pending_configuration_request
+                nonlocal pending_configuration_request
                 if pending_configuration_request is not None:
                     logger.info("<< 3. Block RD1 until DUT tries AVDTP channel connection >>")
                     pending_configuration_request.connection = self.connection
@@ -704,6 +712,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # Retrieve Bumble connection object from Pandora connection token
         connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+        assert connection is not None, "Unable to find connection!"
         # Find a free CID for a new channel
         connection_channels = self.ref1.device.l2cap_channel_manager.channels.setdefault(
             connection.handle, {})
@@ -750,7 +759,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         class TestClassicChannel(ClassicChannel):
 
-            def test_connect(self, connection: Connection, cid: int,
+            def test_connect(self, connection: bumble.device.Connection, cid: int,
                              request: L2CAP_Connection_Request) -> None:
                 assert self.state == self.State.CLOSED
 
@@ -782,7 +791,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
             def __init__(
                 self,
-                device: BumblePandoraDevice,
+                device: bumble.device.Device,
             ) -> None:
                 super().__init__(
                     device.l2cap_channel_manager.extended_features,
@@ -793,7 +802,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                 self.register_fixed_channel(bumble.att.ATT_CID, device.on_gatt_pdu)
                 self.host = device.host
 
-            def on_l2cap_connection_request(self, connection: Connection, cid: int,
+            def on_l2cap_connection_request(self, connection: bumble.device.Connection, cid: int,
                                             request: L2CAP_Connection_Request) -> None:
                 if (request.psm == AVDTP_PSM):
                     logger.info(
@@ -837,7 +846,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         self.ref1.device.l2cap_channel_manager = TestChannelManager(self.ref1.device)
 
         # Create listener on RD1 for initial incoming AVDT connection from DUT
-        self.ref1.a2dp = Listener.for_device(self.ref1.device)
+        self.ref1_a2dp = Listener.for_device(self.ref1.device)
 
         logger.info("<< 1. RD1 waits for connection request from DUT >>")
 
@@ -882,7 +891,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         ]
 
         # Start waiting for DUT A2DP source configured and connected
-        wait_source = self.dut.a2dp.WaitSource(connection=dut_ref1)
+        wait_source = self.dut_a2dp.WaitSource(connection=dut_ref1)
 
         # Open stream
         stream = Stream(protocol, sink, remote_source)
@@ -919,6 +928,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         )
 
         connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+        assert connection is not None, "Unable to find connection!"
         channel = SignalingChannel.accept(connection)
 
         async def accept_open(channel: SignalingChannel):
@@ -951,19 +961,19 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # Connect AVDTP to RD1.
         _, dut_ref1_source = await asyncio.gather(accept_open(channel),
-                                                  open_source(self.dut, dut_ref1))
+                                                  open_source(self.dut_a2dp, dut_ref1))
 
         # Start streaming to RD1.
-        await asyncio.gather(self.dut.a2dp.Start(source=dut_ref1_source), channel.accept_start())
+        await asyncio.gather(self.dut_a2dp.Start(source=dut_ref1_source), channel.accept_start())
 
         generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
-        await self.dut.a2dp.PlaybackAudio(generated_audio)
+        await self.dut_a2dp.PlaybackAudio(generated_audio)
 
         # Verify that at least one audio frame is received on the transport channel.
         await channel.expect_media(timeout=5.0)
 
         # Stop streaming to RD1.
-        await asyncio.gather(self.dut.a2dp.Suspend(source=dut_ref1_source),
+        await asyncio.gather(self.dut_a2dp.Suspend(source=dut_ref1_source),
                              channel.accept_suspend(timeout=8.0))
 
     @avatar.asynchronous
@@ -990,6 +1000,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         )
 
         connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+        assert connection is not None, "Unable to find connection!"
         channel = SignalingChannel.accept(connection)
 
         async def accept_open(channel: SignalingChannel):
@@ -1024,19 +1035,19 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # Connect AVDTP to RD1.
         _, dut_ref1_source = await asyncio.gather(accept_open(channel),
-                                                  open_source(self.dut, dut_ref1))
+                                                  open_source(self.dut_a2dp, dut_ref1))
 
         # Start streaming to RD1.
-        await asyncio.gather(self.dut.a2dp.Start(source=dut_ref1_source), channel.accept_start())
+        await asyncio.gather(self.dut_a2dp.Start(source=dut_ref1_source), channel.accept_start())
 
         generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
-        await self.dut.a2dp.PlaybackAudio(generated_audio)
+        await self.dut_a2dp.PlaybackAudio(generated_audio)
 
         # Verify that at least one audio frame is received on the transport channel.
         await channel.expect_media(timeout=5.0)
 
         # Stop streaming to RD1.
-        await asyncio.gather(self.dut.a2dp.Suspend(source=dut_ref1_source),
+        await asyncio.gather(self.dut_a2dp.Suspend(source=dut_ref1_source),
                              channel.accept_suspend(timeout=8.0))
 
     @avatar.asynchronous
@@ -1073,6 +1084,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
             return wrapper
 
         connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+        assert connection is not None, "Unable to find connection!"
         channel = SignalingChannel.accept(connection)
 
         seid_information = [
@@ -1089,14 +1101,15 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         _, dut_ref1_source = await asyncio.gather(
             channel.accept_open_stream(seid_information=seid_information,
                                        service_capabilities=acceptor_service_capabilities),
-            open_source(self.dut, dut_ref1))
+            open_source(self.dut_a2dp, dut_ref1))
 
-        channel.signaling_channel.on_disconnection_request = catch_on_disconnection_request(
+        assert channel.signaling_channel is not None
+        channel.signaling_channel.on_disconnection_request = catch_on_disconnection_request(  # type: ignore[method-assign]
             channel.signaling_channel.on_disconnection_request.__get__(
                 channel.signaling_channel, ClassicChannel))
 
         # Start streaming to RD1.
-        self.dut.a2dp.Start(source=dut_ref1_source)
+        self.dut_a2dp.Start(source=dut_ref1_source)
 
         # Expect AVDT Start on RD1.
         await channel.expect_signal(StartCommand(transaction_label=ANY, acp_seid=ANY))
@@ -1121,6 +1134,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # 2. Initiate AVDT RD1 -> DUT
         connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+        assert connection is not None, "Unable to find connection!"
         await SignalingChannel.initiate(connection)
 
         # 3. Disconnect ACL RD1 -> DUT
@@ -1152,6 +1166,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         )
 
         connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+        assert connection is not None, "Unable to find connection!"
         channel = SignalingChannel.accept(connection)
 
         async def accept_open_stream_with_aac(channel: SignalingChannel):
@@ -1217,14 +1232,14 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # Connect AVDTP to RD1.
         _, dut_ref1_source = await asyncio.gather(accept_open_stream_with_aac(channel),
-                                                  open_source(self.dut, dut_ref1))
+                                                  open_source(self.dut_a2dp, dut_ref1))
 
         # Start streaming to RD1.
-        await asyncio.gather(self.dut.a2dp.Start(source=dut_ref1_source), channel.accept_start())
+        await asyncio.gather(self.dut_a2dp.Start(source=dut_ref1_source), channel.accept_start())
 
         # Verify that audio is received on the transport channel.
         generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
-        self.dut.a2dp.PlaybackAudio(generated_audio)
+        self.dut_a2dp.PlaybackAudio(generated_audio)
         logger.info(f"Receive AAC audio data.")
         await channel.receive_audio_data(test_log_path=self.log_path,
                                          filename="aac",
@@ -1232,7 +1247,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         logger.info(f"Finished receiving AAC audio data.")
 
         # Get current codec status
-        configurationResponse = await self.dut.a2dp.GetConfiguration(connection=dut_ref1)
+        configurationResponse = await self.dut_a2dp.GetConfiguration(connection=dut_ref1)
         logger.info(f"Current codec configuration: {configurationResponse.configuration}")
         assert configurationResponse.configuration.id.HasField('mpeg_aac')
 
@@ -1269,11 +1284,11 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         # Set new codec
         logger.info(f"Switching to codec: {new_configuration}")
         await asyncio.gather(
-            self.dut.a2dp.SetConfiguration(connection=dut_ref1, configuration=new_configuration),
+            self.dut_a2dp.SetConfiguration(connection=dut_ref1, configuration=new_configuration),
             handle_reconfiguration(channel))
 
         # Get current codec status
-        configurationResponse = await self.dut.a2dp.GetConfiguration(connection=dut_ref1)
+        configurationResponse = await self.dut_a2dp.GetConfiguration(connection=dut_ref1)
         logger.info(f"Current codec configuration: {configurationResponse.configuration}")
         assert configurationResponse.configuration.id.HasField('sbc')
 
@@ -1284,7 +1299,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         logger.info(f"Finished receiving SBC audio data.")
 
         # # Stop streaming to RD1.
-        await asyncio.gather(self.dut.a2dp.Suspend(source=dut_ref1_source),
+        await asyncio.gather(self.dut_a2dp.Suspend(source=dut_ref1_source),
                              channel.accept_suspend(timeout=8.0))
 
 

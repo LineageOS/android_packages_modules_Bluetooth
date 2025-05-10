@@ -31,6 +31,7 @@ std::mutex parameter_mutex;
 std::string config_file_path;
 std::string snoop_log_file_path;
 std::string snooz_log_file_path;
+std::string hci_instance_name;
 std::string sysprops_file_path;
 }  // namespace
 
@@ -123,6 +124,15 @@ void ParameterProvider::SetCommonCriteriaMode(bool /* enable */) {}
 int ParameterProvider::GetCommonCriteriaConfigCompareResult() { return 0b11; }
 
 void ParameterProvider::SetCommonCriteriaConfigCompareResult(int /* result */) {}
+
+void ParameterProvider::SetHciInstanceName(const std::string& name) { hci_instance_name = name; }
+
+std::string ParameterProvider::GetHciInstanceName() {
+  if (!hci_instance_name.empty()) {
+    return hci_instance_name;
+  }
+  return "default";
+}
 
 }  // namespace os
 }  // namespace bluetooth

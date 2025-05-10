@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hci/acl_manager.h"
+#include "hci/acl_manager_impl.h"
 
 #include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
@@ -23,15 +23,17 @@
 #include <chrono>
 #include <deque>
 #include <future>
+#include <memory>
 
 #include "common/bind.h"
 #include "hci/acl_manager/le_connection_management_callbacks_mock.h"
 #include "hci/address.h"
 #include "hci/address_with_type.h"
 #include "hci/class_of_device.h"
-#include "hci/controller.h"
+#include "hci/controller_mock.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_layer_fake.h"
+#include "hci/remote_name_request_mock.h"
 #include "os/thread.h"
 #include "packet/raw_builder.h"
 #include "test/mock/mock_main_shim_entry.h"
@@ -81,7 +83,7 @@ std::unique_ptr<BasePacketBuilder> NextPayload(uint16_t handle) {
   return std::move(payload);
 }
 
-class TestController : public Controller {
+class TestController : public testing::MockController {
 public:
   uint16_t GetAclPacketLength() const override { return acl_buffer_length_; }
 
@@ -95,11 +97,6 @@ public:
     le_buffer_size.le_data_packet_length_ = 32;
     return le_buffer_size;
   }
-
-protected:
-  void Start() override {}
-  void Stop() override {}
-  void ListDependencies(ModuleList* /* list */) const {}
 
 private:
   uint16_t acl_buffer_length_ = 1024;
@@ -152,9 +149,8 @@ class AclManagerBaseTest : public ::testing::Test {
 protected:
   void SetUp() override {
     test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
-    test_controller_ = new TestController;
+    test_controller_ = std::make_unique<TestController>();
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
-    fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
     bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(
@@ -162,13 +158,23 @@ protected:
                     ? client_handler_
                     : new os::Handler(&thread_));
     bluetooth::hci::testing::mock_storage_->Start();
-    fake_registry_.Start<AclManager>(&thread_, fake_registry_.GetTestHandler());
+    fake_registry_.Start<HciLayer>(&thread_, client_handler_);
+
+    test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
+    test_rnr_ = std::make_unique<RemoteNameRequestModuleMock>();
+    acl_manager_ = std::make_unique<AclManagerImpl>(client_handler_, test_hci_layer_,
+                                                    test_controller_.get(),
+                                                    test_acl_scheduler_.get(), test_rnr_.get());
   }
 
   void TearDown() override {
     delete bluetooth::hci::testing::mock_storage_;
     bluetooth::hci::testing::mock_storage_ = nullptr;
-    fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
+    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
+    fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
+    acl_manager_.reset();
+    test_rnr_.reset();
+    test_acl_scheduler_.reset();
     fake_registry_.StopAll();
   }
 
@@ -182,11 +188,13 @@ protected:
   }
 
   HciLayerFake* test_hci_layer_ = nullptr;
-  TestController* test_controller_ = nullptr;
+  std::unique_ptr<TestController> test_controller_ = nullptr;
 
   TestModuleRegistry fake_registry_;
   os::Thread& thread_ = fake_registry_.GetTestThread();
-  AclManager* acl_manager_ = nullptr;
+  std::unique_ptr<AclScheduler> test_acl_scheduler_ = nullptr;
+  std::unique_ptr<RemoteNameRequestModule> test_rnr_ = nullptr;
+  std::unique_ptr<AclManagerImpl> acl_manager_ = nullptr;
   os::Handler* client_handler_ = nullptr;
 };
 
@@ -194,9 +202,6 @@ class AclManagerNoCallbacksTest : public AclManagerBaseTest {
 protected:
   void SetUp() override {
     AclManagerBaseTest::SetUp();
-
-    acl_manager_ =
-            static_cast<AclManager*>(fake_registry_.GetModuleUnderTest(&AclManager::Factory));
 
     local_address_with_type_ =
             AddressWithType(Address::FromString(kLocalRandomAddressString).value(),
@@ -243,7 +248,7 @@ protected:
 
   void TearDown() override {
     fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
+    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
     {
       std::promise<void> promise;
@@ -322,8 +327,9 @@ protected:
 
   void TearDown() override {
     fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
+    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     fake_registry_.StopAll();
+    AclManagerWithCallbacksTest::TearDown();
   }
 
   uint16_t handle_;
@@ -420,7 +426,7 @@ protected:
 
   void TearDown() override {
     fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
+    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     fake_registry_.StopAll();
   }
 
@@ -444,14 +450,14 @@ class AclManagerWithResolvableAddressTest : public AclManagerWithCallbacksTest {
 protected:
   void SetUp() override {
     test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
-    test_controller_ = new TestController;
+    test_controller_ = std::make_unique<TestController>();
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
-    fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
-    fake_registry_.Start<AclManager>(&thread_, fake_registry_.GetTestHandler());
-    acl_manager_ =
-            static_cast<AclManager*>(fake_registry_.GetModuleUnderTest(&AclManager::Factory));
+    acl_manager_ = std::make_unique<AclManagerImpl>(
+            client_handler_, test_hci_layer_, test_controller_.get(), nullptr /* AclScheduler */,
+            nullptr /* RNRModule */);
+
     hci::Address address;
     Address::FromString("D0:05:04:03:02:01", address);
     hci::AddressWithType address_with_type(address, hci::AddressType::RANDOM_DEVICE_ADDRESS);

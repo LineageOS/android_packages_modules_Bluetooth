@@ -20,7 +20,7 @@
 #include <gtest/gtest.h>
 #include <sys/socket.h>
 
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/internal/btm_api.h"
@@ -51,7 +51,7 @@ class StackL2capTest : public ::testing::Test {
 protected:
   void SetUp() override {
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+            std::make_unique<bluetooth::hci::testing::MockController>();
     ON_CALL(*bluetooth::hci::testing::mock_controller_, GetNumAclPacketBuffers)
             .WillByDefault(Return(kAclBufferCountClassic));
     bluetooth::hci::LeBufferSize le_sizes;

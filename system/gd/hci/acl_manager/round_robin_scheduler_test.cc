@@ -20,7 +20,7 @@
 
 #include "common/bidi_queue.h"
 #include "common/callback.h"
-#include "hci/controller.h"
+#include "hci/controller_mock.h"
 #include "hci/hci_packets.h"
 #include "os/handler.h"
 #include "packet/raw_builder.h"
@@ -37,7 +37,7 @@ namespace hci {
 namespace acl_manager {
 namespace {
 
-class TestController : public Controller {
+class TestController : public testing::MockController {
 public:
   uint16_t GetNumAclPacketBuffers() const { return max_acl_packet_credits_; }
 
@@ -74,8 +74,9 @@ public:
   void SetUp() override {
     thread_ = new Thread("thread", Thread::Priority::NORMAL);
     handler_ = new Handler(thread_);
-    controller_ = new TestController();
-    round_robin_scheduler_ = new RoundRobinScheduler(handler_, controller_, hci_queue_.GetUpEnd());
+    controller_ = std::make_unique<TestController>();
+    round_robin_scheduler_ = std::make_unique<RoundRobinScheduler>(handler_, controller_.get(),
+                                                                   hci_queue_.GetUpEnd());
     hci_queue_.GetDownEnd()->RegisterDequeue(
             handler_,
             common::Bind(&RoundRobinSchedulerTest::HciDownEndDequeue, common::Unretained(this)));
@@ -83,8 +84,8 @@ public:
 
   void TearDown() override {
     hci_queue_.GetDownEnd()->UnregisterDequeue();
-    delete round_robin_scheduler_;
-    delete controller_;
+    round_robin_scheduler_.reset();
+    controller_.reset();
     handler_->Clear();
     delete handler_;
     delete thread_;
@@ -157,8 +158,8 @@ public:
   BidiQueue<AclView, AclBuilder> hci_queue_{3};
   Thread* thread_;
   Handler* handler_;
-  TestController* controller_;
-  RoundRobinScheduler* round_robin_scheduler_;
+  std::unique_ptr<TestController> controller_;
+  std::unique_ptr<RoundRobinScheduler> round_robin_scheduler_;
   std::queue<AclView> sent_acl_packets_;
   uint16_t packet_count_;
   std::unique_ptr<std::promise<void>> packet_promise_;

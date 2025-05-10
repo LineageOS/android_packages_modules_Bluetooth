@@ -32,29 +32,12 @@
 #include "stack/rnr/remote_name_request.h"
 #include "types/raw_address.h"
 
-constexpr size_t kMaxLogSize = 255;
+using TimestampedStringCircularBuffer = bluetooth::common::TimestampedStringCircularBuffer;
+
 constexpr size_t kBtmLogHistoryBufferSize = 200;
 constexpr size_t kMaxInquiryScanHistory = 10;
 
 extern bluetooth::common::TimestamperInMilliseconds timestamper_in_milliseconds;
-
-class TimestampedStringCircularBuffer
-    : public bluetooth::common::TimestampedCircularBuffer<std::string> {
-public:
-  explicit TimestampedStringCircularBuffer(size_t size)
-      : bluetooth::common::TimestampedCircularBuffer<std::string>(size) {}
-
-  void Push(const std::string& s) {
-    bluetooth::common::TimestampedCircularBuffer<std::string>::Push(s.substr(0, kMaxLogSize));
-  }
-
-  template <typename... Args>
-  void Push(Args... args) {
-    char buf[kMaxLogSize];
-    std::snprintf(buf, sizeof(buf), args...);
-    bluetooth::common::TimestampedCircularBuffer<std::string>::Push(std::string(buf));
-  }
-};
 
 /* Define a structure to hold all the BTM data
  */
@@ -69,18 +52,10 @@ typedef struct tBTM_DEVCB {
   tBTM_CMPL_CB* p_rssi_cmpl_cb; /* Callback function to be called when  */
                                 /* read RSSI function completes */
 
-  alarm_t* read_failed_contact_counter_timer;     /* Read Failed Contact Counter */
-                                                  /* timer */
-  tBTM_CMPL_CB* p_failed_contact_counter_cmpl_cb; /* Callback function to be */
-  /* called when read Failed Contact Counter function completes */
-
   alarm_t* read_automatic_flush_timeout_timer;     /* Read Automatic Flush Timeout */
                                                    /* timer */
   tBTM_CMPL_CB* p_automatic_flush_timeout_cmpl_cb; /* Callback function to be */
   /* called when read Automatic Flush Timeout function completes */
-
-  alarm_t* read_tx_power_timer;     /* Read tx power timer */
-  tBTM_CMPL_CB* p_tx_power_cmpl_cb; /* Callback function to be called       */
 
   DEV_CLASS dev_class; /* Local device class                   */
 
@@ -91,16 +66,12 @@ typedef struct tBTM_DEVCB {
 
   void Init() {
     read_rssi_timer = alarm_new("btm.read_rssi_timer");
-    read_failed_contact_counter_timer = alarm_new("btm.read_failed_contact_counter_timer");
     read_automatic_flush_timeout_timer = alarm_new("btm.read_automatic_flush_timeout_timer");
-    read_tx_power_timer = alarm_new("btm.read_tx_power_timer");
   }
 
   void Free() {
     alarm_free(read_rssi_timer);
-    alarm_free(read_failed_contact_counter_timer);
     alarm_free(read_automatic_flush_timeout_timer);
-    alarm_free(read_tx_power_timer);
   }
 } tBTM_DEVCB;
 

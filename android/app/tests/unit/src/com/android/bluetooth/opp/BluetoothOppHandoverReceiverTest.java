@@ -83,18 +83,18 @@ public class BluetoothOppHandoverReceiverTest {
         intent.putExtra(Intent.EXTRA_STREAM, uri);
         intent.setType("text/plain");
 
-        BluetoothOppManager spyManager = spy(new BluetoothOppManager());
-        BluetoothOppManager.setInstance(spyManager);
+        BluetoothOppManager spyManager = spy(new BluetoothOppManager(mContext));
+        BluetoothOppManager.setInstanceForTesting(spyManager);
         new BluetoothOppHandoverReceiver().onReceive(mContext, intent);
 
         verify(spyManager, timeout(3_000)).startTransfer(any());
 
         // this will run BluetoothOppManager#startTransfer, which will then make
         // InsertShareInfoThread insert into content resolver
-        verify(mCallProxy, timeout(3_000).times(1))
+        verify(mCallProxy, timeout(3_000))
                 .contentResolverInsert(
                         any(), eq(BluetoothShare.CONTENT_URI), nullable(ContentValues.class));
-        BluetoothOppManager.setInstance(null);
+        BluetoothOppManager.setInstanceForTesting(null);
     }
 
     @Test
@@ -111,8 +111,8 @@ public class BluetoothOppHandoverReceiverTest {
         intent.putExtra(Intent.EXTRA_STREAM, uris);
         intent.setType("text/plain");
 
-        BluetoothOppManager spyManager = spy(new BluetoothOppManager());
-        BluetoothOppManager.setInstance(spyManager);
+        BluetoothOppManager spyManager = spy(new BluetoothOppManager(mContext));
+        BluetoothOppManager.setInstanceForTesting(spyManager);
         new BluetoothOppHandoverReceiver().onReceive(mContext, intent);
 
         verify(spyManager, timeout(3_000)).startTransfer(any());
@@ -122,7 +122,7 @@ public class BluetoothOppHandoverReceiverTest {
         verify(mCallProxy, timeout(3_000).times(3))
                 .contentResolverInsert(
                         any(), eq(BluetoothShare.CONTENT_URI), nullable(ContentValues.class));
-        BluetoothOppManager.setInstance(null);
+        BluetoothOppManager.setInstanceForTesting(null);
     }
 
     @Test

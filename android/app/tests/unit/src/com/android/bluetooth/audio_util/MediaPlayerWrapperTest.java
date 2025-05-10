@@ -60,7 +60,8 @@ import java.util.List;
 public class MediaPlayerWrapperTest {
     private static final int MSG_TIMEOUT = 0;
 
-    private Resources mTestResources;
+    private final Resources mTestResources = TestUtils.getTestApplicationResources();
+
     private HandlerThread mThread;
     private MediaMetadata.Builder mTestMetadata;
     private ArrayList<MediaDescription.Builder> mTestQueue;
@@ -90,13 +91,8 @@ public class MediaPlayerWrapperTest {
 
     @Before
     public void setUp() {
-
-        mTestResources =
-                TestUtils.getTestApplicationResources(
-                        InstrumentationRegistry.getInstrumentation().getContext());
         mTestBitmap = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
-
-        Util.sUriImagesSupport = true;
+        Util.UriImagesSupport.sValue = true;
 
         // Set up Looper thread for the timeout handler
         mThread = new HandlerThread("MediaPlayerWrapperTestThread");
@@ -155,7 +151,7 @@ public class MediaPlayerWrapperTest {
         if (mThread != null) {
             mThread.quitSafely();
         }
-        Util.sUriImagesSupport = false;
+        Util.UriImagesSupport.sValue = false;
     }
 
     private Bitmap loadImage(int resId) {

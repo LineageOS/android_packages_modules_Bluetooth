@@ -63,6 +63,7 @@ import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfpclient.HeadsetClientService;
 import com.android.bluetooth.hfpclient.HeadsetClientStateMachine;
 import com.android.bluetooth.le_audio.LeAudioService;
@@ -206,6 +207,7 @@ public class HeadsetService extends ProfileService {
         mMaxHeadsetConnections = mAdapterService.getMaxConnectedAudioDevices();
         // Add 1 to allow a pending device to be connecting or disconnecting
         mNativeInterface.init(mMaxHeadsetConnections + 1, isInbandRingingEnabled());
+        mNativeInterface.setIsScoManagedByAudio(mSystemInterface.isScoManagedByAudioEnabled());
         enableSwbCodec(
                 HeadsetHalConstants.BTHF_SWB_CODEC_VENDOR_APTX, mIsAptXSwbEnabled, mActiveDevice);
         // Step 6: Register Audio Device callback
@@ -756,6 +758,12 @@ public class HeadsetService extends ProfileService {
                 mVoiceRecognitionStarted = false;
                 return false;
             }
+
+            if (Flags.voiceRecognitionFixes() && !isVoiceRecognitionSupported(device)) {
+                Log.w(TAG, "voice recognition not supported on the device");
+                return false;
+            }
+
             if (!isAudioModeIdle()) {
                 Log.w(
                         TAG,
@@ -905,6 +913,31 @@ public class HeadsetService extends ProfileService {
             }
             if (!mVoiceRecognitionStarted) {
                 Log.w(TAG, "stopVoiceRecognition: voice recognition was not started");
+                if (Flags.voiceRecognitionFixes()) {
+                    if (mVoiceRecognitionTimeoutEvent != null) {
+                        if (!mVoiceRecognitionTimeoutEvent.mVoiceRecognitionDevice.equals(device)) {
+                            // TODO(b/79660380): Workaround when target device != requesting device
+                            Log.w(
+                                    TAG,
+                                    "stopVoiceRecognition: device "
+                                            + device
+                                            + " is not the same as requesting device "
+                                            + mVoiceRecognitionTimeoutEvent
+                                                    .mVoiceRecognitionDevice);
+                        }
+                        mStateMachinesThreadHandler.removeCallbacks(mVoiceRecognitionTimeoutEvent);
+                        mVoiceRecognitionTimeoutEvent = null;
+                        if (mSystemInterface.getVoiceRecognitionWakeLock().isHeld()) {
+                            try {
+                                mSystemInterface.getVoiceRecognitionWakeLock().release();
+                            } catch (RuntimeException e) {
+                                Log.d(TAG, "non properly release getVoiceRecognitionWakeLock", e);
+                            }
+                        }
+                    }
+                    stateMachine.sendMessage(
+                            HeadsetStateMachine.VOICE_RECOGNITION_RESULT, 0 /* fail */, 0, device);
+                }
                 return false;
             }
             mVoiceRecognitionStarted = false;
@@ -2430,6 +2463,7 @@ public class HeadsetService extends ProfileService {
         logD("isAptXSwbPmEnabled: " + mIsAptXSwbPmEnabled);
         return mIsAptXSwbPmEnabled;
     }
+
     void processAtBcc(BluetoothDevice device) {
         synchronized (mStateMachines) {
             if (!device.equals(mActiveDevice)) {

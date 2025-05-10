@@ -19,6 +19,8 @@
 #include <bluetooth/log.h>
 #include <stdint.h>
 
+#include <map>
+
 #include "common/bidi_queue.h"
 #include "common/multi_priority_queue.h"
 #include "hci/acl_manager/acl_connection.h"

@@ -35,6 +35,7 @@ package com.android.bluetooth.opp;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.content.ContentResolver;
@@ -54,6 +55,7 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
+import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -69,98 +71,67 @@ import java.util.List;
 public class BluetoothOppManager {
     private static final String TAG = BluetoothOppManager.class.getSimpleName();
 
-    @VisibleForTesting static BluetoothOppManager sInstance;
-
-    /** Used when obtaining a reference to the singleton instance. */
-    private static final Object INSTANCE_LOCK = new Object();
-
-    private boolean mInitialized;
-
-    private Context mContext;
-
-    private BluetoothAdapter mAdapter;
-
-    @VisibleForTesting String mMimeTypeOfSendingFile;
-
-    @VisibleForTesting String mUriOfSendingFile;
-
-    @VisibleForTesting String mMimeTypeOfSendingFiles;
-
-    @VisibleForTesting List<Uri> mUrisOfSendingFiles;
-
-    private boolean mIsHandoverInitiated;
-
     @VisibleForTesting static final String OPP_PREFERENCE_FILE = "OPPMGR";
 
     private static final String SENDING_FLAG = "SENDINGFLAG";
-
     private static final String MIME_TYPE = "MIMETYPE";
-
     private static final String FILE_URI = "FILE_URI";
-
     private static final String MIME_TYPE_MULTIPLE = "MIMETYPE_MULTIPLE";
-
     private static final String FILE_URIS = "FILE_URIS";
-
     private static final String MULTIPLE_FLAG = "MULTIPLE_FLAG";
-
     private static final String ARRAYLIST_ITEM_SEPARATOR = ";";
+
+    private static final int ACCEPTLIST_DURATION_MS = 15000;
 
     @VisibleForTesting static final int ALLOWED_INSERT_SHARE_THREAD_NUMBER = 3;
 
-    // used to judge if need continue sending process after received a
-    // ENABLED_ACTION
-    public boolean mSendingFlag;
+    private static final Object INSTANCE_LOCK = new Object();
 
-    public boolean mMultipleFlag;
-
-    private int mFileNumInBatch;
-
-    private int mInsertShareThreadNum = 0;
+    @GuardedBy("INSTANCE_LOCK")
+    private static BluetoothOppManager sInstance;
 
     // A list of devices that may send files over OPP to this device
     // without user confirmation. Used for connection handover from forex NFC.
     private final List<Pair<String, Long>> mAcceptlist = new ArrayList<Pair<String, Long>>();
 
-    // The time for which the acceptlist entries remain valid.
-    private static final int ACCEPTLIST_DURATION_MS = 15000;
+    private final Context mContext;
+    private final BluetoothAdapter mAdapter;
+
+    public boolean mSendingFlag; // used to continue sending process after received a ENABLED_ACTION
+    public boolean mMultipleFlag;
+
+    @VisibleForTesting String mMimeTypeOfSendingFile;
+    @VisibleForTesting String mUriOfSendingFile;
+    @VisibleForTesting String mMimeTypeOfSendingFiles;
+    @VisibleForTesting List<Uri> mUrisOfSendingFiles;
+
+    private int mInsertShareThreadNum = 0;
+    private boolean mIsHandoverInitiated;
+    private int mFileNumInBatch;
 
     /** Get singleton instance. */
     public static BluetoothOppManager getInstance(Context context) {
         synchronized (INSTANCE_LOCK) {
             if (sInstance == null) {
-                sInstance = new BluetoothOppManager();
+                sInstance = new BluetoothOppManager(context);
             }
-            sInstance.init(context);
-
             return sInstance;
         }
     }
 
     /** Set Singleton instance. Intended for testing purpose */
     @VisibleForTesting
-    static void setInstance(BluetoothOppManager instance) {
-        sInstance = instance;
+    static void setInstanceForTesting(BluetoothOppManager instance) {
+        synchronized (INSTANCE_LOCK) {
+            sInstance = instance;
+        }
     }
 
-    /** init */
-    private boolean init(Context context) {
-        if (mInitialized) {
-            return true;
-        }
-        mInitialized = true;
-
+    BluetoothOppManager(Context context) {
         mContext = context;
+        mAdapter = mContext.getSystemService(BluetoothManager.class).getAdapter();
 
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (mAdapter == null) {
-            Log.v(TAG, "BLUETOOTH_SERVICE is not started! ");
-        }
-
-        // Restore data from preference
-        restoreApplicationData();
-
-        return true;
+        restoreApplicationData(); // Restore data from preference
     }
 
     private void cleanupAcceptlist() {

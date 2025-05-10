@@ -32,7 +32,9 @@
 
 package com.android.bluetooth.opp;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -44,7 +46,6 @@ import android.widget.ImageView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
 
-import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.R;
 
 import java.util.Date;
@@ -90,10 +91,10 @@ public class BluetoothOppTransferAdapter extends ResourceCursorAdapter {
 
         // target device
         tv = (TextView) view.findViewById(R.id.targetdevice);
-        AdapterService adapterService = AdapterService.getAdapterService();
+        BluetoothAdapter adapter = mContext.getSystemService(BluetoothManager.class).getAdapter();
         int destinationColumnId = cursor.getColumnIndexOrThrow(BluetoothShare.DESTINATION);
         BluetoothDevice remoteDevice =
-                adapterService.getRemoteDevice(cursor.getString(destinationColumnId));
+                adapter.getRemoteDevice(cursor.getString(destinationColumnId));
         String deviceName = BluetoothOppManager.getInstance(context).getDeviceName(remoteDevice);
         tv.setText(deviceName);
 

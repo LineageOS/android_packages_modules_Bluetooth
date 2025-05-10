@@ -30,7 +30,7 @@
 #include "bta/ras/ras_types.h"
 #include "btm_ble_api_types.h"
 #include "gatt_api.h"
-#include "gd/hci/controller_interface.h"
+#include "gd/hci/controller.h"
 #include "gd/os/rand.h"
 #include "hardware/bt_common_types.h"
 #include "main/shim/entry.h"

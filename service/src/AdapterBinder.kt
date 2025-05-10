@@ -16,7 +16,7 @@
 
 package com.android.server.bluetooth
 
-import android.bluetooth.IBluetooth
+import android.bluetooth.IAdapter
 import android.bluetooth.IBluetoothCallback
 import android.content.AttributionSource
 import android.os.IBinder
@@ -24,7 +24,8 @@ import android.os.RemoteException
 
 class AdapterBinder(rawBinder: IBinder) {
     private val TAG = "AdapterBinder"
-    val adapterBinder: IBluetooth = IBluetooth.Stub.asInterface(rawBinder)
+    val adapterBinder: IAdapter = IAdapter.Stub.asInterface(rawBinder)
+    var adapterServiceBinder: IBinder? = null
     private val createdAt = System.currentTimeMillis()
 
     override fun toString(): String =
@@ -40,18 +41,8 @@ class AdapterBinder(rawBinder: IBinder) {
     }
 
     @Throws(RemoteException::class)
-    fun offToBleOn(quietMode: Boolean, source: AttributionSource) {
-        adapterBinder.offToBleOn(quietMode, source)
-    }
-
-    @Throws(RemoteException::class)
-    fun getAddress(source: AttributionSource): String? {
-        return adapterBinder.getAddress(source)
-    }
-
-    @Throws(RemoteException::class)
-    fun getName(source: AttributionSource): String? {
-        return adapterBinder.getName(source)
+    fun offToBleOn(quietMode: Boolean, hciInstanceName: String, source: AttributionSource) {
+        adapterBinder.offToBleOn(quietMode, hciInstanceName, source)
     }
 
     @Throws(RemoteException::class)

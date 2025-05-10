@@ -127,8 +127,8 @@ import java.util.UUID;
 public class ScanManagerTest {
     private static final String TAG = ScanManagerTest.class.getSimpleName();
 
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private AdapterService mAdapterService;
     @Mock private BluetoothAdapterProxy mBluetoothAdapterProxy;
@@ -161,8 +161,7 @@ public class ScanManagerTest {
                     SCAN_MODE_LOW_LATENCY, SCAN_MODE_LOW_LATENCY,
                     SCAN_MODE_AMBIENT_DISCOVERY, SCAN_MODE_AMBIENT_DISCOVERY);
 
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
+    private final FakeTimeProvider mTimeProvider = new FakeTimeProvider();
 
     private AppScanStats mMockAppScanStats;
     private MockContentResolver mMockContentResolver;
@@ -170,7 +169,6 @@ public class ScanManagerTest {
     private ScanManager mScanManager;
     private TestLooper mLooper;
     private long mScanReportDelay;
-    private FakeTimeProvider mTimeProvider;
     private InOrder mInOrder;
     private int mClientId;
 
@@ -199,7 +197,9 @@ public class ScanManagerTest {
         doReturn(DEFAULT_TOTAL_NUM_OF_TRACKABLE_ADVERTISEMENTS)
                 .when(mAdapterService)
                 .getTotalNumOfTrackableAdvertisements();
-        doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();
+
+        final Context context = InstrumentationRegistry.getInstrumentation().getContext();
+        doReturn(context.getResources()).when(mAdapterService).getResources();
 
         TestUtils.mockGetSystemService(
                 mAdapterService, Context.LOCATION_SERVICE, LocationManager.class, mLocationManager);
@@ -211,12 +211,12 @@ public class ScanManagerTest {
                 mAdapterService,
                 Context.DISPLAY_SERVICE,
                 DisplayManager.class,
-                mTargetContext.getSystemService(DisplayManager.class));
+                context.getSystemService(DisplayManager.class));
         TestUtils.mockGetSystemService(
                 mAdapterService, Context.BATTERY_STATS_SERVICE, BatteryStatsManager.class);
         TestUtils.mockGetSystemService(mAdapterService, Context.ALARM_SERVICE, AlarmManager.class);
 
-        mMockContentResolver = new MockContentResolver(mTargetContext);
+        mMockContentResolver = new MockContentResolver(context);
         mMockContentResolver.addProvider(
                 Settings.AUTHORITY,
                 new MockContentProvider() {
@@ -240,11 +240,10 @@ public class ScanManagerTest {
         MetricsLogger.setInstanceForTesting(mMetricsLogger);
         mInOrder = inOrder(mMetricsLogger);
 
-        doReturn(mTargetContext.getUser()).when(mAdapterService).getUser();
-        doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
+        doReturn(context.getUser()).when(mAdapterService).getUser();
+        doReturn(context.getPackageName()).when(mAdapterService).getPackageName();
 
         mClientId = 0;
-        mTimeProvider = new FakeTimeProvider();
         mLooper = new TestLooper();
         mScanManager =
                 new ScanManager(

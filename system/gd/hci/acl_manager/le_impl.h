@@ -36,7 +36,7 @@
 #include "hci/acl_manager/le_connection_management_callbacks.h"
 #include "hci/acl_manager/round_robin_scheduler.h"
 #include "hci/controller.h"
-#include "hci/hci_layer.h"
+#include "hci/hci_interface.h"
 #include "hci/hci_packets.h"
 #include "hci/le_address_manager.h"
 #include "macros.h"
@@ -136,7 +136,7 @@ struct le_acl_connection {
 };
 
 struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
-  le_impl(HciLayer* hci_layer, Controller* controller, os::Handler* handler,
+  le_impl(HciInterface* hci_layer, Controller* controller, os::Handler* handler,
           RoundRobinScheduler* round_robin_scheduler, bool crash_on_unknown_handle,
           classic_impl* classic_impl)
       : hci_layer_(hci_layer),
@@ -1328,7 +1328,7 @@ public:
 
   void set_system_suspend_state(bool suspended) { system_suspend_ = suspended; }
 
-  HciLayer* hci_layer_ = nullptr;
+  HciInterface* hci_layer_ = nullptr;
   Controller* controller_ = nullptr;
   os::Handler* handler_ = nullptr;
   RoundRobinScheduler* round_robin_scheduler_ = nullptr;

@@ -33,7 +33,7 @@
 #include "acl_api_types.h"
 #include "btm_sec_cb.h"
 #include "btm_sec_int_types.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/entry.h"
 #include "stack/btm/btm_int_types.h"
@@ -105,17 +105,6 @@ void BTM_db_reset(void) {
       tBTM_RSSI_RESULT btm_rssi_result;
       btm_rssi_result.status = tBTM_STATUS::BTM_DEV_RESET;
       (*p_cb)(&btm_rssi_result);
-    }
-  }
-
-  if (btm_cb.devcb.p_failed_contact_counter_cmpl_cb) {
-    p_cb = btm_cb.devcb.p_failed_contact_counter_cmpl_cb;
-    btm_cb.devcb.p_failed_contact_counter_cmpl_cb = NULL;
-
-    if (p_cb) {
-      tBTM_FAILED_CONTACT_COUNTER_RESULT btm_failed_contact_counter_result;
-      btm_failed_contact_counter_result.status = tBTM_STATUS::BTM_DEV_RESET;
-      (*p_cb)(&btm_failed_contact_counter_result);
     }
   }
 

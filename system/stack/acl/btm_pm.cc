@@ -37,7 +37,7 @@
 #include <unordered_map>
 
 #include "device/include/interop.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
 #include "main/shim/entry.h"

@@ -39,10 +39,8 @@ android_test {
         "platform-compat-test-rules",
         "platform-parametric-runner-lib",
         "platform-test-annotations",
-
-        // Linking source to test the working copy, not the on-device copy.
-        // Use 'pre-jarjar' so that we can reference symbols before renaming.
         "service-bluetooth-pre-jarjar",
+        "service-bluetooth.change-ids",
         "truth",
     ],
 
@@ -50,8 +48,9 @@ android_test {
         "android.test.base.stubs.system",
         "android.test.mock.stubs.system",
         "android.test.runner.stubs.system",
-        "service-bluetooth.change-ids",
+        "framework-permission-s.stubs.module_lib",
     ],
+
     jni_libs: [
         // these are needed for Extended Mockito
         "libdexmakerjvmtiagent",
@@ -64,5 +63,6 @@ android_test {
         "mts-bt",
     ],
 
+    sdk_version: "system_server_current",
     min_sdk_version: "36",
 }

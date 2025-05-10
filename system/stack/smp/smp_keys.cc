@@ -32,7 +32,7 @@
 #include <cstring>
 
 #include "crypto_toolbox/crypto_toolbox.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "main/shim/entry.h"
 #include "p_256_ecc_pp.h"
 #include "smp_int.h"

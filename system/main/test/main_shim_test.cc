@@ -30,7 +30,6 @@
 
 #include "btif/include/btif_hh.h"
 #include "hal/hci_hal.h"
-#include "hci/acl_manager.h"
 #include "hci/acl_manager/classic_acl_connection.h"
 #include "hci/acl_manager/connection_management_callbacks.h"
 #include "hci/acl_manager/le_acl_connection.h"
@@ -38,7 +37,7 @@
 #include "hci/acl_manager_mock.h"
 #include "hci/address.h"
 #include "hci/address_with_type.h"
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "hci/distance_measurement_manager_mock.h"
 #include "hci/include/packet_fragmenter.h"
 #include "hci/le_advertising_manager_mock.h"
@@ -83,8 +82,6 @@ tL2C_CB l2cb;
 tBTM_CB btm_cb;
 tBTM_SEC_CB btm_sec_cb;
 btif_hh_cb_t btif_hh_cb;
-
-struct bluetooth::hci::LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback {};
 
 namespace {
 const hci::Address kAddress = {{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}};
@@ -179,7 +176,6 @@ shim::acl_interface_t acl_interface{
         .link.classic.on_sniff_subrating = nullptr,
         .link.classic.on_read_clock_complete = nullptr,
         .link.classic.on_read_clock_offset_complete = nullptr,
-        .link.classic.on_read_failed_contact_counter_complete = nullptr,
         .link.classic.on_read_link_policy_settings_complete = nullptr,
         .link.classic.on_read_link_quality_complete = nullptr,
         .link.classic.on_read_link_supervision_timeout_complete = nullptr,
@@ -322,7 +318,6 @@ const ModuleFactory HciHal::Factory = ModuleFactory([]() { return nullptr; });
 }  // namespace bluetooth
 
 class MainShimTest : public testing::Test {
-public:
 protected:
   void SetUp() override {
     main_thread_start_up();
@@ -332,7 +327,7 @@ protected:
     handler_ = new os::Handler(thread_);
 
     /* extern */ test::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+            std::make_unique<bluetooth::hci::testing::MockController>();
     /* extern */ test::mock_acl_manager_ =
             std::make_unique<bluetooth::hci::testing::MockAclManager>();
     /* extern */ test::mock_le_scanning_manager_ =

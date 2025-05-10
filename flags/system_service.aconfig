@@ -42,6 +42,26 @@ flag {
 }
 
 flag {
+    name: "limit_user_switch_propagation"
+    namespace: "bluetooth"
+    description: "Do not change the foreground user without restarting the stack"
+    bug: "416313818"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "oneway_media_profile"
+    namespace: "bluetooth"
+    description: "remove non-oneway call to check if media profile are connected"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+    bug: "416087818"
+}
+
+flag {
     name: "publish_binder_on_start"
     namespace: "bluetooth"
     description: "As mentioned in SystemService.java, binder should be published during onStart"
@@ -76,4 +96,11 @@ flag {
     metadata {
         purpose: PURPOSE_BUGFIX
     }
+}
+
+flag {
+    name: "watch_device_override_airplane_mode"
+    namespace: "bluetooth"
+    description: "If there is a watch connected, keep Bluetooth on"
+    bug: "416092966"
 }

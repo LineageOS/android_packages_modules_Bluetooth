@@ -34,7 +34,7 @@
 #include "btif/include/core_callbacks.h"
 #include "btif/include/stack_manager_t.h"
 #include "common/le_conn_params.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/hci_interface.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"

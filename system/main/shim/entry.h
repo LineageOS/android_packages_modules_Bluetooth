@@ -38,7 +38,7 @@ class SnoopLogger;
 }
 
 namespace hci {
-class ControllerInterface;
+class Controller;
 class HciInterface;
 class AclManager;
 class RemoteNameRequestModule;
@@ -62,7 +62,7 @@ namespace shim {
  * within the stack. */
 os::Handler* GetGdShimHandler();
 hci::LeAdvertisingManager* GetAdvertising();
-bluetooth::hci::ControllerInterface* GetController();
+bluetooth::hci::Controller* GetController();
 hci::HciInterface* GetHciLayer();
 hci::RemoteNameRequestModule* GetRemoteNameRequest();
 hci::DistanceMeasurementManager* GetDistanceMeasurementManager();

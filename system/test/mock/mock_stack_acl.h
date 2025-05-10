@@ -232,33 +232,6 @@ struct btm_acl_for_bda {
   }
 };
 extern struct btm_acl_for_bda btm_acl_for_bda;
-// Name: BTM_ReadFailedContactCounter
-// Params: const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb
-// Returns: tBTM_STATUS
-struct BTM_ReadFailedContactCounter {
-  std::function<tBTM_STATUS(const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb)> body{
-          [](const RawAddress& /* remote_bda */, tBTM_CMPL_CB* /* p_cb */) {
-            return tBTM_STATUS::BTM_SUCCESS;
-          }};
-  tBTM_STATUS operator()(const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb) {
-    return body(remote_bda, p_cb);
-  }
-};
-extern struct BTM_ReadFailedContactCounter BTM_ReadFailedContactCounter;
-// Name: BTM_ReadTxPower
-// Params: const RawAddress& remote_bda, tBT_TRANSPORT transport,
-// tBTM_CMPL_CB* p_cb Returns: tBTM_STATUS
-struct BTM_ReadTxPower {
-  std::function<tBTM_STATUS(const RawAddress& remote_bda, tBT_TRANSPORT transport,
-                            tBTM_CMPL_CB* p_cb)>
-          body{[](const RawAddress& /* remote_bda */, tBT_TRANSPORT /* transport */,
-                  tBTM_CMPL_CB* /* p_cb */) { return tBTM_STATUS::BTM_SUCCESS; }};
-  tBTM_STATUS operator()(const RawAddress& remote_bda, tBT_TRANSPORT transport,
-                         tBTM_CMPL_CB* p_cb) {
-    return body(remote_bda, transport, p_cb);
-  }
-};
-extern struct BTM_ReadTxPower BTM_ReadTxPower;
 // Name: BTM_SetLinkSuperTout
 // Params: const RawAddress& remote_bda, uint16_t timeout
 // Returns: tBTM_STATUS
@@ -582,14 +555,6 @@ struct btm_read_automatic_flush_timeout_complete {
   void operator()(uint8_t* p) { body(p); }
 };
 extern struct btm_read_automatic_flush_timeout_complete btm_read_automatic_flush_timeout_complete;
-// Name: btm_read_failed_contact_counter_complete
-// Params: uint8_t* p
-// Returns: void
-struct btm_read_failed_contact_counter_complete {
-  std::function<void(uint8_t* p)> body{[](uint8_t* /* p */) { ; }};
-  void operator()(uint8_t* p) { body(p); }
-};
-extern struct btm_read_failed_contact_counter_complete btm_read_failed_contact_counter_complete;
 // Name: btm_read_remote_ext_features_complete
 // Params: uint16_t handle, uint8_t page_num, uint8_t max_page, uint8_t*
 // features Returns: void
@@ -643,15 +608,6 @@ struct btm_read_rssi_complete {
   void operator()(uint8_t* p, uint16_t evt_len) { body(p, evt_len); }
 };
 extern struct btm_read_rssi_complete btm_read_rssi_complete;
-// Name: btm_read_tx_power_complete
-// Params: uint8_t* p, bool is_ble
-// Returns: void
-struct btm_read_tx_power_complete {
-  std::function<void(uint8_t* p, uint16_t evt_len, bool is_ble)> body{
-          [](uint8_t* /* p */, uint16_t /* evt_len */, bool /* is_ble */) { ; }};
-  void operator()(uint8_t* p, uint16_t evt_len, bool is_ble) { body(p, evt_len, is_ble); }
-};
-extern struct btm_read_tx_power_complete btm_read_tx_power_complete;
 // Name: btm_rejectlist_role_change_device
 // Params: const RawAddress& bd_addr, uint8_t hci_status
 // Returns: void

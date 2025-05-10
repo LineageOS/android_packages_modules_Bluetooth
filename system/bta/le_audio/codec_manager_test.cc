@@ -22,7 +22,7 @@
 
 #include "audio_hal_client/audio_hal_client.h"
 #include "audio_hal_interface/le_audio_software.h"
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "hci/hci_packets.h"
 #include "internal_include/stack_config.h"
 #include "le_audio/gmap_client.h"
@@ -307,7 +307,7 @@ public:
     bluetooth::legacy::hci::testing::SetMock(legacy_hci_mock_);
 
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<NiceMock<bluetooth::hci::testing::MockControllerInterface>>();
+            std::make_unique<NiceMock<bluetooth::hci::testing::MockController>>();
     ON_CALL(*bluetooth::hci::testing::mock_controller_, SupportsBleIsochronousBroadcaster)
             .WillByDefault(Return(true));
     ON_CALL(*bluetooth::hci::testing::mock_controller_, IsSupported(OpCode::CONFIGURE_DATA_PATH))

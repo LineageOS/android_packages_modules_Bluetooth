@@ -25,7 +25,6 @@ import android.os.Parcel;
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -139,20 +138,9 @@ public class BluetoothActivityEnergyInfoTest {
 
     @Test
     public void toString_ThrowsNoExceptions() {
-        long timestamp = 10000;
-        int stackState = BT_STACK_STATE_INVALID;
-        long txTime = 100;
-        long rxTime = 200;
-        long idleTime = 300;
-        long energyUsed = 10;
-        BluetoothActivityEnergyInfo info =
-                new BluetoothActivityEnergyInfo(
-                        timestamp, stackState, txTime, rxTime, idleTime, energyUsed);
-
-        try {
-            String infoString = info.toString();
-        } catch (Exception e) {
-            Assert.fail("Should throw a RuntimeException");
-        }
+        assertThat(
+                        new BluetoothActivityEnergyInfo(100, BT_STACK_STATE_INVALID, 10, 20, 30, 10)
+                                .toString())
+                .isNotEmpty();
     }
 }

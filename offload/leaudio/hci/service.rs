@@ -48,9 +48,19 @@ impl Service {
         LazyLock::force(&SERVICE);
     }
 
-    pub(crate) fn reset(arbiter: Weak<Arbiter>) {
+    pub(crate) fn reset() {
         let mut state = SERVICE.state.lock().unwrap();
-        *state = State { arbiter, ..Default::default() }
+        if let Some(callbacks) = &state.callbacks {
+            for &handle in state.streams.keys() {
+                let _ = callbacks.stopStream(handle.into());
+            }
+        }
+        state.streams.clear();
+    }
+
+    pub(crate) fn set_arbiter(arbiter: Weak<Arbiter>) {
+        let mut state = SERVICE.state.lock().unwrap();
+        state.arbiter = arbiter;
     }
 
     pub(crate) fn start_stream(handle: u16, config: StreamConfiguration) {

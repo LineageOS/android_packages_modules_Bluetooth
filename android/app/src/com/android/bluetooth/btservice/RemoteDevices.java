@@ -710,11 +710,19 @@ public class RemoteDevices {
                     mUuidsBrEdr = null;
                     mUuidsLe = null;
                     mAlias = null;
-                } else if (newBondState == BluetoothDevice.BOND_BONDED
-                        && getBondingInitiator() == BONDING_INITIATOR_NONE) {
-                    // Device bonded but not initiated locally. This may happen if remote device
-                    // initiated bonded or bonded device was loaded on BT restart.
-                    setBondingInitiatedLocally(false);
+                } else if (newBondState == BluetoothDevice.BOND_BONDED) {
+                    if (getBondingInitiator() == BONDING_INITIATOR_NONE) {
+                        // Device bonded but not initiated locally. This may happen if remote device
+                        // initiated bonded or bonded device was loaded on BT restart.
+                        setBondingInitiatedLocally(false);
+                    }
+
+                    // Identity address of the bonded device may not be provided by the native
+                    // stack if it is same as the pseudo address.
+                    if (Flags.alwaysSetIdentityAddr() && mIdentityAddress == null) {
+                        mIdentityAddress = mDevice.getAddress();
+                        mIdentityAddressType = mDevice.getAddressType();
+                    }
                 }
             }
         }

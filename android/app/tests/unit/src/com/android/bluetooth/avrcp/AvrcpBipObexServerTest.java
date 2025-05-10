@@ -27,7 +27,6 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
@@ -102,7 +101,7 @@ public class AvrcpBipObexServerTest {
     private static final String IMAGE_HANDLE_UNSTORED = "0000256";
     private static final String IMAGE_HANDLE_INVALID = "abc1234"; // no non-numeric characters
 
-    private Resources mTestResources;
+    private final Resources mTestResources = TestUtils.getTestApplicationResources();
     private CoverArt mCoverArt;
 
     private AvrcpCoverArtService mAvrcpCoverArtService = null;
@@ -116,10 +115,6 @@ public class AvrcpBipObexServerTest {
 
     @Before
     public void setUp() throws Exception {
-        mTestResources =
-                TestUtils.getTestApplicationResources(
-                        InstrumentationRegistry.getInstrumentation().getContext());
-
         mCoverArt = loadCoverArt(com.android.bluetooth.tests.R.raw.image_200_200);
 
         mAvrcpCoverArtService = mock(AvrcpCoverArtService.class);
@@ -141,7 +136,6 @@ public class AvrcpBipObexServerTest {
         mCallback = null;
         mAvrcpCoverArtService = null;
         mCoverArt = null;
-        mTestResources = null;
     }
 
     private CoverArt loadCoverArt(int resId) {

@@ -63,6 +63,11 @@ std::shared_ptr<HciBackend> HciBackend::CreateAidl() {
   return backend;
 }
 
+std::shared_ptr<HciBackend> HciBackend::CreateAidl(const std::string& /* instance_name */) {
+  backend = std::make_shared<TestBackend>();
+  return backend;
+}
+
 std::shared_ptr<HciBackend> HciBackend::CreateHidl(
         [[maybe_unused]] ::bluetooth::os::Handler* handler) {
   backend = std::make_shared<TestBackend>();

@@ -26,7 +26,7 @@
 #include "btm_api_mock.h"
 #include "device_groups.h"
 #include "hardware/bt_le_audio.h"
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "le_audio/le_audio_utils.h"
 #include "le_audio_set_configuration_provider.h"
 #include "le_audio_types.h"
@@ -516,7 +516,7 @@ protected:
     bluetooth::manager::SetMockBtmInterface(&btm_interface_);
 
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<NiceMock<bluetooth::hci::testing::MockControllerInterface>>();
+            std::make_unique<NiceMock<bluetooth::hci::testing::MockController>>();
 
     auto codec_location = ::bluetooth::le_audio::types::CodecLocation::HOST;
     bluetooth::le_audio::AudioSetConfigurationProvider::Initialize(codec_location);

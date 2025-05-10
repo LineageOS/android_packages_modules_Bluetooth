@@ -24,8 +24,8 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -106,8 +106,7 @@ public class HeadsetServiceTest {
     private static final int ASYNC_CALL_TIMEOUT_MILLIS = 250;
     private static final String TEST_PHONE_NUMBER = "1234567890";
 
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
     private final HashMap<BluetoothDevice, HeadsetStateMachine> mStateMachines = new HashMap<>();
 
     private HeadsetService mHeadsetService;
@@ -115,9 +114,9 @@ public class HeadsetServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
-        doReturn(mTargetContext.getPackageManager()).when(mAdapterService).getPackageManager();
-        doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();
+        doReturn(mContext.getPackageName()).when(mAdapterService).getPackageName();
+        doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
+        doReturn(mContext.getResources()).when(mAdapterService).getResources();
 
         HeadsetObjectsFactory.setInstanceForTesting(mObjectsFactory);
         doReturn(MAX_HEADSET_CONNECTIONS).when(mAdapterService).getMaxConnectedAudioDevices();
@@ -163,14 +162,15 @@ public class HeadsetServiceTest {
         // Mock methods in HeadsetObjectsFactory
         doAnswer(
                         invocation -> {
-                            assertThat(mCurrentDevice).isNotNull();
+                            BluetoothDevice device = invocation.getArgument(0);
+                            assertThat(device).isNotNull();
                             final HeadsetStateMachine stateMachine =
                                     mock(HeadsetStateMachine.class);
                             doReturn(STATE_DISCONNECTED).when(stateMachine).getConnectionState();
                             doReturn(BluetoothHeadset.STATE_AUDIO_DISCONNECTED)
                                     .when(stateMachine)
                                     .getAudioState();
-                            mStateMachines.put(mCurrentDevice, stateMachine);
+                            mStateMachines.put(device, stateMachine);
                             return stateMachine;
                         })
                 .when(mObjectsFactory)
@@ -1062,17 +1062,15 @@ public class HeadsetServiceTest {
         when(mDatabaseManager.getProfileConnectionPolicy(
                         any(BluetoothDevice.class), eq(BluetoothProfile.HEADSET)))
                 .thenReturn(CONNECTION_POLICY_UNKNOWN);
-        for (int i = 0; i < 2; i++) {
-            mCurrentDevice = getRealDevice(i);
-            assertThat(mHeadsetService.connect(mCurrentDevice)).isTrue();
-            when(mStateMachines.get(mCurrentDevice).getDevice()).thenReturn(mCurrentDevice);
-            when(mStateMachines.get(mCurrentDevice).getConnectionState())
-                    .thenReturn(STATE_CONNECTED);
-            when(mStateMachines.get(mCurrentDevice).setSilenceDevice(anyBoolean()))
-                    .thenReturn(true);
+        mCurrentDevice = getTestDevice(0);
+        BluetoothDevice otherDevice = getTestDevice(1);
+        mockAdapterServiceGetRemoteDevice(mAdapterService, mCurrentDevice, otherDevice);
+        for (BluetoothDevice device : List.of(mCurrentDevice, otherDevice)) {
+            assertThat(mHeadsetService.connect(device)).isTrue();
+            doReturn(device).when(mStateMachines.get(device)).getDevice();
+            doReturn(STATE_CONNECTED).when(mStateMachines.get(device)).getConnectionState();
+            doReturn(true).when(mStateMachines.get(device)).setSilenceDevice(anyBoolean());
         }
-        mCurrentDevice = getRealDevice(0);
-        BluetoothDevice otherDevice = getRealDevice(1);
 
         // Test whether active device been removed after enable silence mode.
         assertThat(mHeadsetService.setActiveDevice(mCurrentDevice)).isTrue();

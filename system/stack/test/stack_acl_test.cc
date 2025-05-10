@@ -18,7 +18,7 @@
 
 #include <cstdint>
 
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "stack/acl/acl.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/internal/btm_api.h"
@@ -50,7 +50,7 @@ protected:
   void SetUp() override {
     reset_mock_function_count_map();
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+            std::make_unique<bluetooth::hci::testing::MockController>();
   }
   void TearDown() override { bluetooth::hci::testing::mock_controller_.reset(); }
 

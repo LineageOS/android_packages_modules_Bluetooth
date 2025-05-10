@@ -21,7 +21,7 @@
 
 #include <vector>
 
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "main/shim/entry.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/hcimsgs.h"

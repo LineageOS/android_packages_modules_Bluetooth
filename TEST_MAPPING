@@ -45,7 +45,7 @@
       "name": "net_test_stack_ad_parser"
     },
     // go/a-unit-tests tests
-    // Thoses test run on the host in the CI automatically.
+    // These tests run on the host in the CI automatically.
     // Run the one that are available on the device on the
     // device as well
     {
@@ -59,9 +59,6 @@
     },
     {
       "name": "bluetooth_hh_test"
-    },
-    {
-      "name": "bluetooth_le_audio_codec_manager_test"
     },
     {
       "name": "bluetooth_packet_parser_test"
@@ -268,7 +265,7 @@
       "name": "net_test_stack_ad_parser"
     },
     // go/a-unit-tests tests
-    // Thoses test run on the host in the CI automatically.
+    // These tests run on the host in the CI automatically.
     // Run the one that are available on the device on the
     // device as well
     {
@@ -282,9 +279,6 @@
     },
     {
       "name": "bluetooth_hh_test"
-    },
-    {
-      "name": "bluetooth_le_audio_codec_manager_test"
     },
     {
       "name": "bluetooth_packet_parser_test"
@@ -499,7 +493,7 @@
       "name": "net_test_stack_ad_parser"
     },
     // go/a-unit-tests tests
-    // Thoses test run on the host in the CI automatically.
+    // These tests run on the host in the CI automatically.
     // Run the one that are available on the device on the
     // device as well
     {

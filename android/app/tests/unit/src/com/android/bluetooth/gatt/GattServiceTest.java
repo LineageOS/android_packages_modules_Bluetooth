@@ -20,6 +20,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -34,10 +35,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.app.ActivityManager;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothStatusCodes;
@@ -109,10 +108,10 @@ public class GattServiceTest {
     private static final int SERVER_CONN_ID = 84;
     private static final int CLIENT_CONN_ID = 42;
 
-    private final BluetoothDevice mDevice = getTestDevice(109);
     private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
     private final CompanionDeviceManager mCompanionDeviceManager =
             mContext.getSystemService(CompanionDeviceManager.class);
+    private final BluetoothDevice mDevice = getTestDevice(109);
 
     private MockContentResolver mMockContentResolver;
 
@@ -182,12 +181,7 @@ public class GattServiceTest {
         mService.mReliableQueue = mReliableQueue;
         mService.mServerMap = mServerMap;
 
-        when(mAdapterService.getRemoteDevice(anyString()))
-                .thenAnswer(
-                        invocation -> {
-                            String address = invocation.getArgument(0);
-                            return BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
-                        });
+        mockAdapterServiceGetRemoteDevice(mAdapterService, mDevice);
     }
 
     @After

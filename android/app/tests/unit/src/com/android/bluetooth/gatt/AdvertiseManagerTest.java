@@ -28,12 +28,12 @@ import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertisingSetParameters;
 import android.bluetooth.le.IAdvertisingSetCallback;
 import android.bluetooth.le.PeriodicAdvertisingParameters;
+import android.content.AttributionSource;
 import android.os.IBinder;
 import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
@@ -58,14 +58,11 @@ public class AdvertiseManagerTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Rule public final SetFlagsRule mSetFlagsRule;
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private AdapterService mAdapterService;
-
     @Mock private AdvertiserMap mAdvertiserMap;
-
     @Mock private AdvertiseManagerNativeInterface mNativeInterface;
-
     @Mock private IAdvertisingSetCallback mCallback;
-
     @Mock private IBinder mBinder;
 
     private AdvertiseManager mAdvertiseManager;
@@ -111,7 +108,7 @@ public class AdvertiseManagerTest {
                 maxExtAdvEvents,
                 null,
                 mCallback,
-                InstrumentationRegistry.getInstrumentation().getContext().getAttributionSource());
+                mAttributionSource);
 
         mAdvertiserId = mAdvertiseManager.mTempRegistrationId;
     }

@@ -41,7 +41,7 @@ class SecurityManagerImpl;
 }
 
 namespace hci {
-class AclManager;
+class AclManagerImpl;
 }
 
 namespace storage {
@@ -129,7 +129,7 @@ protected:
   std::string ToString() const override;
 
   friend shim::BtifConfigInterface;
-  friend hci::AclManager;
+  friend hci::AclManagerImpl;
   friend security::internal::SecurityManagerImpl;
   // For unit test only
   ConfigCache* GetMemoryOnlyConfigCache();

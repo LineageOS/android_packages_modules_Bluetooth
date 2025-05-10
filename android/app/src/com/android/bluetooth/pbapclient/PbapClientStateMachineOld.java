@@ -66,7 +66,6 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
@@ -116,6 +115,7 @@ class PbapClientStateMachineOld extends StateMachine {
     private final State mConnected;
     private final State mDisconnecting;
 
+    private final AdapterService mAdapterService;
     // mCurrentDevice may only be changed in Disconnected State.
     private final BluetoothDevice mCurrentDevice;
     private final PbapClientService mService;
@@ -128,17 +128,22 @@ class PbapClientStateMachineOld extends StateMachine {
     private int mMostRecentState = STATE_DISCONNECTED;
 
     PbapClientStateMachineOld(
-            PbapClientService svc, BluetoothDevice device, HandlerThread handlerThread) {
-        this(svc, device, null, handlerThread);
+            AdapterService adapterService,
+            PbapClientService svc,
+            BluetoothDevice device,
+            HandlerThread handlerThread) {
+        this(adapterService, svc, device, null, handlerThread);
     }
 
     @VisibleForTesting
     PbapClientStateMachineOld(
+            AdapterService adapterService,
             PbapClientService svc,
             BluetoothDevice device,
             PbapClientConnectionHandler connectionHandler,
             HandlerThread handlerThread) {
         super(TAG, handlerThread.getLooper());
+        mAdapterService = adapterService;
         mSmHandlerThread = handlerThread;
 
         if (Flags.pbapClientStorageRefactor()) {
@@ -404,11 +409,8 @@ class PbapClientStateMachineOld extends StateMachine {
             return;
         }
         Log.d(TAG, "Connection state " + device + ": " + prevState + "->" + state);
-        AdapterService adapterService = AdapterService.getAdapterService();
-        if (adapterService != null) {
-            adapterService.updateProfileConnectionAdapterProperties(
-                    device, BluetoothProfile.PBAP_CLIENT, state, prevState);
-        }
+        mAdapterService.updateProfileConnectionAdapterProperties(
+                device, BluetoothProfile.PBAP_CLIENT, state, prevState);
         Intent intent = new Intent(BluetoothPbapClient.ACTION_CONNECTION_STATE_CHANGED);
         intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
         intent.putExtra(BluetoothProfile.EXTRA_STATE, state);

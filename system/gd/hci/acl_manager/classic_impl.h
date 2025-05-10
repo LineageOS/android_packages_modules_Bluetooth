@@ -31,7 +31,7 @@
 #include "hci/class_of_device.h"
 #include "hci/controller.h"
 #include "hci/event_checkers.h"
-#include "hci/hci_layer.h"
+#include "hci/hci_interface.h"
 #include "hci/remote_name_request.h"
 
 namespace bluetooth {
@@ -50,7 +50,7 @@ struct acl_connection {
 };
 
 struct classic_impl {
-  classic_impl(HciLayer* hci_layer, Controller* controller, os::Handler* handler,
+  classic_impl(HciInterface* hci_layer, Controller* controller, os::Handler* handler,
                RoundRobinScheduler* round_robin_scheduler, bool crash_on_unknown_handle,
                AclScheduler* acl_scheduler, RemoteNameRequestModule* remote_name_request_module)
       : hci_layer_(hci_layer),
@@ -750,7 +750,7 @@ public:
     promise.set_value();
   }
 
-  HciLayer* hci_layer_ = nullptr;
+  HciInterface* hci_layer_ = nullptr;
   Controller* controller_ = nullptr;
   RoundRobinScheduler* round_robin_scheduler_ = nullptr;
   AclScheduler* acl_scheduler_ = nullptr;

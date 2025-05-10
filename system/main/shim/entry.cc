@@ -19,7 +19,6 @@
 #include "hal/snoop_logger.h"
 #include "hci/acl_manager.h"
 #include "hci/controller.h"
-#include "hci/controller_interface.h"
 #include "hci/distance_measurement_manager.h"
 #include "hci/hci_layer.h"
 #include "hci/le_advertising_manager.h"
@@ -38,25 +37,21 @@ namespace shim {
 os::Handler* GetGdShimHandler() { return Stack::GetInstance()->GetHandler(); }
 
 hci::LeAdvertisingManager* GetAdvertising() {
-  return Stack::GetInstance()->GetInstance<hci::LeAdvertisingManager>();
+  return Stack::GetInstance()->GetLeAdvertisingManager();
 }
 
-hci::ControllerInterface* GetController() {
-  return Stack::GetInstance()->GetInstance<hci::Controller>();
-}
+hci::Controller* GetController() { return Stack::GetInstance()->GetController(); }
 
 hci::HciInterface* GetHciLayer() { return Stack::GetInstance()->GetInstance<hci::HciLayer>(); }
 
 hci::RemoteNameRequestModule* GetRemoteNameRequest() {
-  return Stack::GetInstance()->GetInstance<hci::RemoteNameRequestModule>();
+  return Stack::GetInstance()->GetRemoteNameRequest();
 }
 
-hci::LeScanningManager* GetScanning() {
-  return Stack::GetInstance()->GetInstance<hci::LeScanningManager>();
-}
+hci::LeScanningManager* GetScanning() { return Stack::GetInstance()->GetLeScanningManager(); }
 
 hci::DistanceMeasurementManager* GetDistanceMeasurementManager() {
-  return Stack::GetInstance()->GetInstance<hci::DistanceMeasurementManager>();
+  return Stack::GetInstance()->GetDistanceMeasurementManager();
 }
 
 hal::SnoopLogger* GetSnoopLogger() { return Stack::GetInstance()->GetSnoopLogger(); }
@@ -67,10 +62,10 @@ lpp::LppOffloadInterface* GetLppOffloadManager() {
 
 storage::StorageModule* GetStorage() { return Stack::GetInstance()->GetStorage(); }
 
-hci::AclManager* GetAclManager() { return Stack::GetInstance()->GetInstance<hci::AclManager>(); }
+hci::AclManager* GetAclManager() { return Stack::GetInstance()->GetAclManager(); }
 
 hci::MsftExtensionManager* GetMsftExtensionManager() {
-  return Stack::GetInstance()->GetInstance<hci::MsftExtensionManager>();
+  return Stack::GetInstance()->GetMsftExtensionManager();
 }
 
 bool is_gd_stack_started_up() { return Stack::GetInstance()->IsRunning(); }

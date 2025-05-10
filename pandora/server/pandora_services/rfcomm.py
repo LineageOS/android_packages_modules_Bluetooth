@@ -11,20 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Dict, Optional
+from typing import Optional
 
 from bumble import core
 from bumble.device import Device
 from bumble.hci import Address
-from bumble.rfcomm import (
-    Client,
-    DLC,
-    make_service_sdp_records,
-    find_rfcomm_channel_with_uuid,
-    Server,
-)
+from bumble import rfcomm
 from pandora_services import utils
 import grpc
 from pandora.rfcomm_grpc_aio import RFCOMMServicer
@@ -53,18 +49,19 @@ FIRST_SERVICE_RECORD_HANDLE = 0x00010010
 class RFCOMMService(RFCOMMServicer):
     device: Device
 
-    def __init__(self, device: Device, server: Server) -> None:
+    def __init__(self, device: Device, server: rfcomm.Server) -> None:
         super().__init__()
         self.server = server
         self.device = device
-        self.server_ports = {}  # key = channel, value = ServerInstance
-        self.connections = {}  # key = id, value = dlc
+        self.server_ports: dict[int, RFCOMMService.ServerPort] = {
+        }  # key = channel, value = ServerInstance
+        self.connections: dict[int, RFCOMMService.Connection] = {}  # key = id, value = dlc
         self.next_conn_id = 1
         self.next_scn = 7
 
     class Connection:
 
-        client: Optional[Client]
+        client: Optional[rfcomm.Client]
 
         def __init__(self, dlc, client=None):
             self.dlc = dlc
@@ -101,9 +98,10 @@ class RFCOMMService(RFCOMMServicer):
         if acl_connection is None:
             acl_connection = await self.device.connect(address, transport=0)  # BR/EDR transport
 
-        channel = await find_rfcomm_channel_with_uuid(acl_connection, request.uuid)
+        channel = await rfcomm.find_rfcomm_channel_with_uuid(acl_connection, request.uuid)
+        assert channel is not None
 
-        client = Client(acl_connection)
+        client = rfcomm.Client(acl_connection)
         mux = await client.start()
         assert mux is not None
 
@@ -130,7 +128,7 @@ class RFCOMMService(RFCOMMServicer):
         open_channel = self.server.listen(acceptor=server_port.acceptor, channel=self.next_scn)
         self.next_scn += 1
         handle = FIRST_SERVICE_RECORD_HANDLE + open_channel
-        self.device.sdp_service_records[handle] = make_service_sdp_records(
+        self.device.sdp_service_records[handle] = rfcomm.make_service_sdp_records(
             handle, open_channel, uuid)
         self.server_ports[open_channel] = server_port
         return StartServerResponse(server=ServerId(id=open_channel))

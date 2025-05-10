@@ -112,3 +112,23 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "downgrade_to_basic_mode_on_no_info_resp"
+    namespace: "bluetooth"
+    description: "Downgrade L2cap mode to basic on info response timeout"
+    bug: "416031394"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "donot_pm_classic_on_le_traffic"
+    namespace: "bluetooth"
+    description: "Donot exit the sniff on classic link if on LE only traffic"
+    bug: "416266693"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

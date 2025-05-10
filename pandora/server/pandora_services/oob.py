@@ -26,7 +26,7 @@ class OOBService(OOBServicer):
         })
         self.device = device
 
-    def configure_oob_pairing(self, peer_oob: OobSharedData) -> str:
+    def configure_oob_pairing(self, peer_oob: OobSharedData | None) -> str:
         our_oob_context = OobContext()
         share_oob = our_oob_context.share().__str__()
         self.log.debug(f"Local oob data: {share_oob}")
