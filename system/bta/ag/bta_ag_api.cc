@@ -236,6 +236,10 @@ void BTA_AgSetScoAllowed(bool value) {
   do_in_main_thread(base::BindOnce(&bta_ag_set_sco_allowed, value));
 }
 
+void BTA_AgSetIsScoManagedByAudio(bool value) {
+  do_in_main_thread(base::BindOnce(&bta_ag_set_is_sco_managed_by_audio, value));
+}
+
 void BTA_AgSetActiveDevice(const RawAddress& active_device_addr) {
   if (active_device_addr.IsEmpty()) {
     do_in_main_thread(base::BindOnce(&bta_clear_active_device));
