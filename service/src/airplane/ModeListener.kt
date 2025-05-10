@@ -282,7 +282,10 @@ private class AirplaneMetricSession(
             setUserSettingsSecure(userContext, APM_USER_TOGGLED_BLUETOOTH, 1)
 
             if (isBluetoothOn) {
+                Log.i(TAG, "Enhancement Mode will keep Bluetooth ON when toggling Airplane")
                 sendAirplaneModeNotification(APM_BT_ENABLED_NOTIFICATION)
+            } else {
+                Log.i(TAG, "Enhancement Mode will turn Bluetooth OFF when toggling Airplane")
             }
         }
     }
