@@ -107,7 +107,7 @@ public class BondStateMachineTest {
                 new AdapterProperties(mAdapterService, mRemoteDevices, mHandlerThread.getLooper());
         mAdapterProperties.init();
         mBondStateMachine =
-                BondStateMachine.make(
+                new BondStateMachine(
                         mAdapterService,
                         mHandlerThread.getLooper(),
                         mAdapterProperties,

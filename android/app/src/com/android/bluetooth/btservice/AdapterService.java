@@ -1012,7 +1012,9 @@ public class AdapterService extends Service {
 
         Log.d(TAG, "bleOnProcessStart() - Make Bond State Machine");
         mBondStateMachine =
-                BondStateMachine.make(this, mLooper, mAdapterProperties, mRemoteDevices);
+                Flags.bondStateMachineLooper()
+                        ? new BondStateMachine(this, mLooper, mAdapterProperties, mRemoteDevices)
+                        : new BondStateMachine(this, mAdapterProperties, mRemoteDevices);
 
         mNativeInterface.getCallbacks().init(mBondStateMachine, mRemoteDevices);
 
