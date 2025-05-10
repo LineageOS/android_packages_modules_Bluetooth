@@ -209,6 +209,7 @@ public class BluetoothManagerServiceTest {
                         IBluetoothManager.GET_SYSTEM_STATE_API,
                         IBluetoothManager.GET_SYSTEM_STATE_API,
                         new ServerQuery());
+        BluetoothAdapterState.disableCacheForTesting = true;
         IpcDataCache.setCacheTestMode(true);
         testCache.disableForCurrentProcess();
         // Mock these functions so security errors won't throw
@@ -285,6 +286,7 @@ public class BluetoothManagerServiceTest {
     @After
     public void tearDown() {
         IpcDataCache.setCacheTestMode(false);
+        BluetoothAdapterState.disableCacheForTesting = false;
     }
 
     private void endTest() {
