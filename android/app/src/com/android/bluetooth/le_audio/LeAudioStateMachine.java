@@ -109,18 +109,8 @@ final class LeAudioStateMachine extends StateMachine {
         addState(mConnected);
 
         setInitialState(mDisconnected);
-    }
 
-    static LeAudioStateMachine make(
-            BluetoothDevice device,
-            LeAudioService svc,
-            LeAudioNativeInterface nativeInterface,
-            Looper looper) {
-        Log.i(TAG, "make for device");
-        LeAudioStateMachine LeAudioSm =
-                new LeAudioStateMachine(device, svc, nativeInterface, looper);
-        LeAudioSm.start();
-        return LeAudioSm;
+        start();
     }
 
     public void doQuit() {

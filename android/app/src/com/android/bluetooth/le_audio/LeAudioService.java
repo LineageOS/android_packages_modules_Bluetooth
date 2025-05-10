@@ -4098,7 +4098,7 @@ public class LeAudioService extends ProfileService {
         Log.d(TAG, "Creating a new state machine for " + device);
 
         sm =
-                LeAudioStateMachine.make(
+                new LeAudioStateMachine(
                         device, this, mNativeInterface, mStateMachinesThread.getLooper());
         descriptor.mStateMachine = sm;
         return sm;
