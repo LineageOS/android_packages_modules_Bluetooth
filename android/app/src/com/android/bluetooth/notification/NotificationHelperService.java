@@ -23,6 +23,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.IBinder;
@@ -199,5 +200,14 @@ public class NotificationHelperService extends Service {
                         + (" now=" + now)
                         + (" savedDate=" + savedDate));
         return true;
+    }
+
+    /** Clean notifications persistent parameters */
+    public static void factoryReset(ContentResolver resolver) {
+        for (String countKey : NOTIFICATION_MAP.keySet()) {
+            final String dateKey = countKey + "_date";
+            Settings.Secure.putInt(resolver, countKey, 0);
+            Settings.Secure.putString(resolver, dateKey, "");
+        }
     }
 }
