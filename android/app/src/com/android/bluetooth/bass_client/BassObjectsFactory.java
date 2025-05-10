@@ -76,7 +76,14 @@ public class BassObjectsFactory {
             BassClientService svc,
             AdapterService adapterService,
             Looper looper) {
-        return BassClientStateMachine.make(device, svc, adapterService, looper);
+        if (!BassClientPeriodicAdvertisingManager
+                .initializePeriodicAdvertisingManagerOnDefaultAdapter()) {
+            Log.e(TAG, "Failed to initialize Periodic Advertising Manager on Default Adapter");
+            return null;
+        }
+
+        return new BassClientStateMachine(
+                device, svc, adapterService, looper, BassConstants.CONNECT_TIMEOUT_MS);
     }
 
     /**
