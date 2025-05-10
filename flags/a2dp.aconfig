@@ -108,3 +108,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "a2dp_disconnect_reason_api"
+    namespace: "bluetooth"
+    description: "Define the extra parameter DISCONNECTED_REASON for a2dp.CONNECTION_STATE_CHANGED intent"
+    bug: "416778270"
+}
