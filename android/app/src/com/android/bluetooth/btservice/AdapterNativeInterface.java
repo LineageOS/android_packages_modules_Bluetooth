@@ -257,25 +257,8 @@ public class AdapterNativeInterface {
         metadataChangedNative(Utils.getBytesFromAddress(device.getAddress()), key, value);
     }
 
-    boolean interopMatchAddr(String featureName, String address) {
-        return interopMatchAddrNative(featureName, address);
-    }
-
-    boolean interopMatchName(String featureName, String name) {
-        return interopMatchNameNative(featureName, name);
-    }
-
     boolean interopMatchAddrOrName(String featureName, String address) {
         return interopMatchAddrOrNameNative(featureName, address);
-    }
-
-    void interopDatabaseAddRemoveAddr(
-            boolean doAdd, String featureName, String address, int length) {
-        interopDatabaseAddRemoveAddrNative(doAdd, featureName, address, length);
-    }
-
-    void interopDatabaseAddRemoveName(boolean doAdd, String featureName, String name) {
-        interopDatabaseAddRemoveNameNative(doAdd, featureName, name);
     }
 
     int getRemotePbapPceVersion(String address) {
@@ -437,10 +420,6 @@ public class AdapterNativeInterface {
     private native boolean allowLowLatencyAudioNative(boolean allowed, byte[] address);
 
     private native void metadataChangedNative(byte[] address, int key, byte[] value);
-
-    private native boolean interopMatchAddrNative(String featureName, String address);
-
-    private native boolean interopMatchNameNative(String featureName, String name);
 
     private native boolean interopMatchAddrOrNameNative(String featureName, String address);
 
