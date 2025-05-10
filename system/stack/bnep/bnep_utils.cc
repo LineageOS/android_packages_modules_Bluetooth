@@ -30,7 +30,7 @@
 
 #include "bnep_api.h"
 #include "bnep_int.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "internal_include/bt_target.h"
 #include "l2cap_types.h"
 #include "main/shim/entry.h"

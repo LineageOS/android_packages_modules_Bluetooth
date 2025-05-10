@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "common/callback.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/hci_interface.h"
 #include "hci/hci_packets.h"
 #include "hci/le_address_manager.h"
@@ -43,8 +43,7 @@ public:
   static constexpr FragmentPreference kFragment_preference =
           FragmentPreference::CONTROLLER_SHOULD_NOT;
   LeAdvertisingManagerImpl(os::Handler* handler, hci::HciInterface* hci_layer,
-                           hci::ControllerInterface* controller,
-                           hci::LeAddressManager* le_address_manager,
+                           hci::Controller* controller, hci::LeAddressManager* le_address_manager,
                            hci::OnAdvertisingSetTerminatedInterface* on_set_terminated);
   LeAdvertisingManagerImpl(const LeAdvertisingManagerImpl&) = delete;
   LeAdvertisingManagerImpl& operator=(const LeAdvertisingManagerImpl&) = delete;

@@ -40,7 +40,7 @@
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_ag_swb_aptx.h"
 #include "btm_status.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"
 #include "osi/include/properties.h"
@@ -121,6 +121,15 @@ struct bta_ag_is_sco_managed_by_audio {
   bool operator()() { return body(); }
 };
 extern struct bta_ag_is_sco_managed_by_audio bta_ag_is_sco_managed_by_audio;
+
+// Name: bta_ag_set_is_sco_managed_by_audio
+// Params: bool
+// Return: void
+struct bta_ag_set_is_sco_managed_by_audio {
+  std::function<void(bool value)> body{[](bool /* value */) {}};
+  void operator()(bool value) { body(value); }
+};
+extern struct bta_ag_set_is_sco_managed_by_audio bta_ag_set_is_sco_managed_by_audio;
 
 // Name: bta_ag_sco_close
 // Params: tBTA_AG_SCB* p_scb, const tBTA_AG_DATA&

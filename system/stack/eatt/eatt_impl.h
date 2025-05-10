@@ -25,7 +25,7 @@
 #include <utility>
 #include <vector>
 
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "include/bind_helpers.h"
 #include "internal_include/stack_config.h"
 #include "main/shim/entry.h"

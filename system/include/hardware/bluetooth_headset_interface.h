@@ -270,6 +270,14 @@ public:
   virtual bt_status_t SetActiveDevice(RawAddress* active_device_addr) = 0;
 
   /**
+   * Set whether we will use the new SCO Management path based on the java flag value/sys prop
+   *
+   * @param value true to allow, false to disallow
+   * @return BT_STATUS_SUCCESS on success
+   */
+  virtual bt_status_t SetIsScoManagedByAudio(bool value) = 0;
+
+  /**
    * Trigger a debug dump of the Headset Profile
    */
   virtual bt_status_t DebugDump() = 0;

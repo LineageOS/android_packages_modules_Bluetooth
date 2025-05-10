@@ -39,7 +39,6 @@ import android.service.media.MediaBrowserService;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.uiautomator.UiDevice;
 
@@ -63,40 +62,6 @@ public class TestUtils {
     private static final String TAG = Utils.TAG_PREFIX_BLUETOOTH + TestUtils.class.getSimpleName();
 
     private static String sSystemScreenOffTimeout = "10000";
-
-    /**
-     * Set the return value of {@link AdapterService#getAdapterService()} to a test specified value
-     *
-     * @param adapterService the designated {@link AdapterService} in test, must not be null, can be
-     *     mocked or spied
-     */
-    public static void setAdapterService(AdapterService adapterService) {
-        assertWithMessage(
-                        "AdapterService.getAdapterService() must be null before setting another"
-                                + " AdapterService")
-                .that(AdapterService.getAdapterService())
-                .isNull();
-        assertThat(adapterService).isNotNull();
-        // We cannot mock AdapterService.getAdapterService() with Mockito.
-        // Hence we need to set AdapterService.sAdapterService field.
-        AdapterService.setAdapterService(adapterService);
-    }
-
-    /**
-     * Clear the return value of {@link AdapterService#getAdapterService()} to null
-     *
-     * @param adapterService the {@link AdapterService} used when calling {@link
-     *     TestUtils#setAdapterService(AdapterService)}
-     */
-    public static void clearAdapterService(AdapterService adapterService) {
-        assertWithMessage(
-                        "AdapterService.getAdapterService() must return the same object as the"
-                                + " supplied adapterService in this method")
-                .that(adapterService)
-                .isSameInstanceAs(AdapterService.getAdapterService());
-        assertThat(adapterService).isNotNull();
-        AdapterService.clearAdapterService(adapterService);
-    }
 
     /** Helper function to mock getSystemService calls */
     public static <T> void mockGetSystemService(
@@ -183,7 +148,8 @@ public class TestUtils {
 
     public static Resources getTestApplicationResources() {
         try {
-            return ApplicationProvider.getApplicationContext()
+            return InstrumentationRegistry.getInstrumentation()
+                    .getContext()
                     .getPackageManager()
                     .getResourcesForApplication("com.android.bluetooth.tests");
         } catch (PackageManager.NameNotFoundException e) {

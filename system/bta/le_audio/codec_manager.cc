@@ -44,7 +44,7 @@
 #include "gmap_client.h"
 #include "gmap_server.h"
 #include "hardware/bt_le_audio.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/hci_packets.h"
 #include "le_audio/le_audio_types.h"
 #include "le_audio_set_configuration_provider.h"

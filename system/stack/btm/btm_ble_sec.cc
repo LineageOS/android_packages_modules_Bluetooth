@@ -30,7 +30,7 @@
 #include "btif/include/btif_storage.h"
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "device/include/interop.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
@@ -995,13 +995,6 @@ void btm_sec_save_le_key(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
         p_rec->sec_rec.ble_keys.counter = p_keys->pcsrk_key.counter;
         p_rec->sec_rec.ble_keys.key_type |= BTM_LE_KEY_PCSRK;
         p_rec->sec_rec.sec_flags |= BTM_SEC_LE_LINK_KEY_KNOWN;
-        if (!com::android::bluetooth::flags::donot_update_sec_flags_on_csrk_save()) {
-          if (p_keys->pcsrk_key.sec_level == SMP_SEC_AUTHENTICATED) {
-            p_rec->sec_rec.sec_flags |= BTM_SEC_LE_LINK_KEY_AUTHED;
-          } else {
-            p_rec->sec_rec.sec_flags &= ~BTM_SEC_LE_LINK_KEY_AUTHED;
-          }
-        }
 
         log::verbose(
                 "BTM_LE_KEY_PCSRK key_type=0x{:x} sec_flags=0x{:x} "

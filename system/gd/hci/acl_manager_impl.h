@@ -25,7 +25,7 @@
 #include "hci/acl_manager/le_connection_callbacks.h"
 #include "hci/address.h"
 #include "hci/address_with_type.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/hci_interface.h"
 #include "hci/hci_packets.h"
 #include "hci/le_address_manager.h"
@@ -50,7 +50,7 @@ class AclManagerImpl : public AclManager, public hci::OnAdvertisingSetTerminated
   friend bool bluetooth::shim::L2CA_SetAclPriority(uint16_t, bool);
 
 public:
-  AclManagerImpl(os::Handler* handler, HciInterface* hci_interface, ControllerInterface* controller,
+  AclManagerImpl(os::Handler* handler, HciInterface* hci_interface, Controller* controller,
                  acl_manager::AclScheduler* acl_scheduler,
                  RemoteNameRequestModule* remote_name_request_module);
   AclManagerImpl(const AclManagerImpl&) = delete;

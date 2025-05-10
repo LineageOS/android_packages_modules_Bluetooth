@@ -86,7 +86,6 @@ public class BluetoothOppTransferTest {
     public void setUp() throws Exception {
         mockGetSystemService(mContext, Context.NOTIFICATION_SERVICE, NotificationManager.class);
 
-        TestUtils.setAdapterService(mAdapterService);
         doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
@@ -136,7 +135,6 @@ public class BluetoothOppTransferTest {
     @After
     public void tearDown() throws Exception {
         BluetoothMethodProxy.setInstanceForTesting(null);
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test

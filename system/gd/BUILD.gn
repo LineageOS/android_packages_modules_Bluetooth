@@ -62,7 +62,7 @@ static_library("libbluetooth_gd") {
     "hci/acl_manager/le_acl_connection.cc",
     "hci/acl_manager/round_robin_scheduler.cc",
     "hci/channel_sounding/cs_metrics.cc",
-    "hci/controller.cc",
+    "hci/controller_impl.cc",
     "hci/distance_measurement_manager_impl.cc",
     "hci/hci_layer.cc",
     "hci/hci_metrics_logging.cc",

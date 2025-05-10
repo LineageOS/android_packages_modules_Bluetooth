@@ -157,7 +157,7 @@ struct BatchScanConfig {
 };
 
 struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
-  impl(os::Handler* handler, hci::HciInterface* hci_layer, hci::ControllerInterface* controller,
+  impl(os::Handler* handler, hci::HciInterface* hci_layer, hci::Controller* controller,
        hci::LeAddressManager* le_address_manager, storage::StorageModule* storage_module) {
     handler_ = handler;
     hci_layer_ = hci_layer;
@@ -1618,7 +1618,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
 
   os::Handler* handler_;
   HciInterface* hci_layer_;
-  ControllerInterface* controller_;
+  Controller* controller_;
   AclManager* acl_manager_;
   ScanApiType api_type_;
   storage::StorageModule* storage_module_;
@@ -1655,7 +1655,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
 };
 
 LeScanningManagerImpl::LeScanningManagerImpl(os::Handler* handler, hci::HciInterface* hci_layer,
-                                             hci::ControllerInterface* controller,
+                                             hci::Controller* controller,
                                              hci::LeAddressManager* le_address_manager,
                                              storage::StorageModule* storage_module) {
   pimpl_ = std::make_unique<impl>(handler, hci_layer, controller, le_address_manager,

@@ -39,7 +39,7 @@
 #include "common/bind.h"
 #include "common/contextual_callback.h"
 #include "common/postable_context.h"
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "hci/hci_layer_mock.h"
 #include "include/hardware/bluetooth.h"
 #include "include/hardware/bt_av.h"
@@ -209,7 +209,7 @@ protected:
   void SetUp() override {
     callback_map_.clear();
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+            std::make_unique<bluetooth::hci::testing::MockController>();
     bluetooth::testing::set_hal_cbacks(&callbacks);
     auto promise = std::promise<void>();
     auto future = promise.get_future();

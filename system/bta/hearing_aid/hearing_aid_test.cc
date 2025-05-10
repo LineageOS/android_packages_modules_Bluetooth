@@ -36,7 +36,7 @@
 #include "btm_api_mock.h"
 #include "gatt/database_builder.h"
 #include "hardware/bt_gatt_types.h"
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_status.h"
 #include "test/common/mock_functions.h"
@@ -228,7 +228,7 @@ protected:
     gatt::SetMockBtaGattQueue(&gatt_queue);
     callbacks.reset(new MockHearingAidCallbacks());
     bluetooth::hci::testing::mock_controller_ =
-        std::make_unique<NiceMock<bluetooth::hci::testing::MockControllerInterface>>();
+            std::make_unique<NiceMock<bluetooth::hci::testing::MockController>>();
     bluetooth::testing::stack::l2cap::set_interface(&mock_stack_l2cap_interface_);
     bluetooth::testing::stack::gap_conn::set_interface(&mock_stack_gap_conn_interface_);
 

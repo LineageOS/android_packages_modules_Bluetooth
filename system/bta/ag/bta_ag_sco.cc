@@ -42,7 +42,7 @@
 #include "btm_status.h"
 #include "device/include/esco_parameters.h"
 #include "hardware/bt_hf.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/hci_packets.h"
 #include "hci_error_code.h"
 #include "hcidefs.h"
@@ -81,6 +81,7 @@ static void updateCodecParametersFromProviderInfo(tBTA_AG_UUID_CODEC esco_codec,
                                                   enh_esco_params_t& params);
 
 static bool sco_allowed = true;
+static bool is_sco_managed_by_audio = false;
 static bool hfp_software_datapath_enabled = false;
 static RawAddress active_device_addr = {};
 static std::unique_ptr<HfpInterface> hfp_client_interface;
@@ -1612,13 +1613,15 @@ void bta_ag_set_sco_allowed(bool value) {
   log::verbose("{}", sco_allowed ? "sco now allowed" : "sco now not allowed");
 }
 
+void bta_ag_set_is_sco_managed_by_audio(bool value) {
+  is_sco_managed_by_audio = value;
+  log::verbose("sco managed by audio {}", is_sco_managed_by_audio);
+}
+
 bool bta_ag_is_sco_managed_by_audio() {
-  bool value = false;
-  if (com::android::bluetooth::flags::is_sco_managed_by_audio()) {
-    value = osi_property_get_bool("bluetooth.sco.managed_by_audio", false);
-    log::verbose("is_sco_managed_by_audio enabled={}", value);
-  }
-  return value;
+  // sys property is checked in the java layer
+  log::verbose("is_sco_managed_by_audio enabled={}", is_sco_managed_by_audio);
+  return is_sco_managed_by_audio;
 }
 
 void bta_ag_stream_suspended() {

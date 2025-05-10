@@ -31,7 +31,7 @@
 #include "btm_sec_cb.h"
 #include "btm_sec_int_types.h"
 #include "hci/acl_manager.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"

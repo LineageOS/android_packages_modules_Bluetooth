@@ -18,7 +18,7 @@
 
 #include <cstdint>
 
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/btm_status.h"
@@ -50,7 +50,7 @@ class StackBtmPowerMode : public testing::Test {
 protected:
   void SetUp() override {
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+            std::make_unique<bluetooth::hci::testing::MockController>();
     ON_CALL(*bluetooth::hci::testing::mock_controller_, SupportsSniffMode)
             .WillByDefault(Return(true));
     power_mode_callback_queue.clear();

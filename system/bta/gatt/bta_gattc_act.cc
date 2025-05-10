@@ -33,7 +33,7 @@
 #include "bta/include/bta_api.h"
 #include "btif/include/btif_debug_conn.h"
 #include "hardware/bt_gatt_types.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"

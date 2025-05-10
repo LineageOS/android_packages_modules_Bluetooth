@@ -22,7 +22,6 @@
 
 #include "hci/acl_manager.h"
 #include "hci/controller.h"
-#include "hci/controller_interface.h"
 #include "main/shim/acl.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"

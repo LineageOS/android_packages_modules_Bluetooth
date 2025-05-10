@@ -33,7 +33,7 @@
 #include "hal/snoop_logger.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager_impl.h"
-#include "hci/controller.h"
+#include "hci/controller_impl.h"
 #include "hci/distance_measurement_manager_impl.h"
 #include "hci/hci_layer.h"
 #include "hci/le_advertising_manager_impl.h"
@@ -72,6 +72,7 @@ struct Stack::impl {
   std::unique_ptr<hci::RemoteNameRequestModule> remote_name_request_ = nullptr;
   std::unique_ptr<hci::AclManagerImpl> acl_manager_ = nullptr;
   std::unique_ptr<hci::LeScanningManager> le_scanning_manager_ = nullptr;
+  std::unique_ptr<hci::MsftExtensionManager> msft_extension_manager_ = nullptr;
   std::unique_ptr<hci::LeAdvertisingManager> le_advertising_manager_ = nullptr;
   std::unique_ptr<hci::DistanceMeasurementManager> distance_measurement_manager_ = nullptr;
 };
@@ -111,8 +112,6 @@ void Stack::StartEverything() {
     modules.add<hal::HciHal>();
     modules.add<hal::RangingHal>();
     modules.add<hci::HciLayer>();
-
-    modules.add<hci::MsftExtensionManager>();
 
     management_thread_ = new Thread("management_thread", Thread::Priority::NORMAL);
     management_handler_ = new Handler(management_thread_);
@@ -227,7 +226,7 @@ hal::SnoopLogger* Stack::GetSnoopLogger() const {
   return pimpl_->snoop_logger_.get();
 }
 
-hci::ControllerInterface* Stack::GetController() const {
+hci::Controller* Stack::GetController() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
   return pimpl_->controller_.get();
@@ -243,6 +242,12 @@ hci::AclManager* Stack::GetAclManager() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
   return pimpl_->acl_manager_.get();
+}
+
+hci::MsftExtensionManager* Stack::GetMsftExtensionManager() const {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  log::assert_that(is_running_, "assert failed: is_running_");
+  return pimpl_->msft_extension_manager_.get();
 }
 
 hci::LeScanningManager* Stack::GetLeScanningManager() const {
@@ -291,11 +296,12 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
   pimpl_->snoop_logger_->Start();
   registry_.Start(modules, stack_thread_, stack_handler_);
 
+  auto hci_hal = static_cast<hal::HciHal*>(registry_.Get(&hal::HciHal::Factory));
   auto hci_layer = static_cast<hci::HciLayer*>(registry_.Get(&hci::HciLayer::Factory));
   auto ranging_hal = static_cast<hal::RangingHal*>(registry_.Get(&hal::RangingHal::Factory));
 
   log::info("Starting Controller");
-  pimpl_->controller_ = std::make_unique<hci::Controller>(stack_handler_, hci_layer);
+  pimpl_->controller_ = std::make_unique<hci::ControllerImpl>(stack_handler_, hci_layer);
 
   log::info("Starting AclScheduler");
   pimpl_->acl_scheduler_ = std::make_unique<hci::acl_manager::AclScheduler>(stack_handler_);
@@ -308,6 +314,10 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
   pimpl_->acl_manager_ = std::make_unique<hci::AclManagerImpl>(
           stack_handler_, hci_layer, pimpl_->controller_.get(), pimpl_->acl_scheduler_.get(),
           pimpl_->remote_name_request_.get());
+
+  log::info("Staring MsftExtensionManager");
+  pimpl_->msft_extension_manager_ =
+          std::make_unique<hci::MsftExtensionManager>(stack_handler_, hci_hal, hci_layer);
 
   log::info("Starting LeScanningManagerImpl");
   pimpl_->le_scanning_manager_ = std::make_unique<hci::LeScanningManagerImpl>(
@@ -336,6 +346,9 @@ void Stack::handle_shut_down(std::promise<void> promise) {
 
   log::info("Stopping LeScanningManagerImpl");
   pimpl_->le_scanning_manager_.reset();
+
+  log::info("Stopping MsftExtensionManager");
+  pimpl_->msft_extension_manager_.reset();
 
   log::info("Stopping AclManagerImpl");
   pimpl_->acl_manager_.reset();

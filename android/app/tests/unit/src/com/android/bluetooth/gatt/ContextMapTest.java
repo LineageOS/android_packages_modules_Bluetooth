@@ -26,10 +26,10 @@ import static org.mockito.Mockito.doReturn;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.IBluetoothGattCallback;
+import android.content.AttributionSource;
 import android.content.pm.PackageManager;
 
 import androidx.test.filters.SmallTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.ServiceTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
@@ -52,6 +52,7 @@ public class ContextMapTest {
     @Rule public final ServiceTestRule mServiceRule = new ServiceTestRule();
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private AdapterService mAdapterService;
     @Mock private IBluetoothGattCallback mMockCallback;
     @Mock private PackageManager mMockPackageManager;
@@ -157,23 +158,9 @@ public class ContextMapTest {
 
     private ContextMap<IBluetoothGattCallback> getMapWithAppAndConnection() {
         ContextMap<IBluetoothGattCallback> contextMap = new ContextMap<>();
-        App app =
-                contextMap.add(
-                        RANDOM_UUID1,
-                        mMockCallback,
-                        mAdapterService,
-                        InstrumentationRegistry.getInstrumentation()
-                                .getContext()
-                                .getAttributionSource());
+        App app = contextMap.add(RANDOM_UUID1, mMockCallback, mAdapterService, mAttributionSource);
         app.id = APP_ID1;
-        app =
-                contextMap.add(
-                        RANDOM_UUID2,
-                        mMockCallback,
-                        mAdapterService,
-                        InstrumentationRegistry.getInstrumentation()
-                                .getContext()
-                                .getAttributionSource());
+        app = contextMap.add(RANDOM_UUID2, mMockCallback, mAdapterService, mAttributionSource);
         app.id = APP_ID2;
 
         contextMap.addConnection(APP_ID1, CONN_ID1, mDevice1);

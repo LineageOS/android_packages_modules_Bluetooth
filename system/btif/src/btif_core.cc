@@ -51,7 +51,7 @@
 #include "btif/include/stack_manager_t.h"
 #include "common/message_loop_thread.h"
 #include "device/include/device_iot_config.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "internal_include/bt_target.h"
 #include "lpp/lpp_offload_interface.h"
 #include "main/shim/entry.h"

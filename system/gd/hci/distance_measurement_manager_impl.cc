@@ -30,7 +30,7 @@
 #include "common/strings.h"
 #include "hal/ranging_hal.h"
 #include "hci/acl_manager.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/distance_measurement_interface.h"
 #include "hci/event_checkers.h"
 #include "hci/hci_interface.h"
@@ -318,7 +318,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
             ranging_result.velocity_meters_per_second_, DistanceMeasurementMethod::METHOD_CS);
   }
 
-  impl(os::Handler* handler, hci::HciInterface* hci_layer, hci::ControllerInterface* controller,
+  impl(os::Handler* handler, hci::HciInterface* hci_layer, hci::Controller* controller,
        hci::AclManager* acl_manager, hal::RangingHal* ranging_hal) {
     handler_ = handler;
     controller_ = controller;
@@ -2869,7 +2869,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
 
   os::Handler* handler_ = nullptr;
   hal::RangingHal* ranging_hal_ = nullptr;
-  hci::ControllerInterface* controller_ = nullptr;
+  hci::Controller* controller_ = nullptr;
   hci::HciInterface* hci_layer_ = nullptr;
   hci::AclManager* acl_manager_ = nullptr;
   hci::DistanceMeasurementInterface* distance_measurement_interface_ = nullptr;
@@ -2899,7 +2899,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
 
 DistanceMeasurementManagerImpl::DistanceMeasurementManagerImpl(os::Handler* handler,
                                                                hci::HciInterface* hci_layer,
-                                                               hci::ControllerInterface* controller,
+                                                               hci::Controller* controller,
                                                                hci::AclManager* acl_manager,
                                                                hal::RangingHal* ranging_hal) {
   pimpl_ = std::make_unique<impl>(handler, hci_layer, controller, acl_manager, ranging_hal);

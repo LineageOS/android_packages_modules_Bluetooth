@@ -37,7 +37,7 @@
 
 #include "btif/include/btif_dm.h"
 #include "common/time_util.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/event_checkers.h"
 #include "hci/hci_interface.h"
 #include "internal_include/bt_target.h"

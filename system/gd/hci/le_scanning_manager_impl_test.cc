@@ -155,7 +155,7 @@ class TestLeAddressManager : public LeAddressManager {
 public:
   TestLeAddressManager(common::Callback<void(std::unique_ptr<CommandBuilder>)> enqueue_command,
                        os::Handler* handler, Address public_address, uint8_t accept_list_size,
-                       uint8_t resolving_list_size, ControllerInterface* controller)
+                       uint8_t resolving_list_size, Controller* controller)
       : LeAddressManager(enqueue_command, handler, public_address, accept_list_size,
                          resolving_list_size, controller) {}
 
@@ -229,7 +229,7 @@ class LeScanningManagerTest : public ::testing::Test {
 protected:
   void SetUp() override {
     test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
-    test_controller_ = new TestController;
+    test_controller_ = std::make_unique<TestController>();
 
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
@@ -237,7 +237,7 @@ protected:
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
     test_le_address_manager_ = new TestLeAddressManager(
             common::Bind([](std::unique_ptr<CommandBuilder> /* command_packet */) {}),
-            client_handler_, address, 0x3F, 0x3F, test_controller_);
+            client_handler_, address, 0x3F, 0x3F, test_controller_.get());
 
     ASSERT_TRUE(client_handler_ != nullptr);
   }
@@ -253,7 +253,7 @@ protected:
   void start_le_scanning_manager() {
     fake_registry_.Start<HciLayer>(&thread_, fake_registry_.GetTestHandler());
     le_scanning_manager = new LeScanningManagerImpl(
-            fake_registry_.GetTestHandler(), test_hci_layer_, test_controller_,
+            fake_registry_.GetTestHandler(), test_hci_layer_, test_controller_.get(),
             test_le_address_manager_, nullptr /* StorageModule */);
     le_scanning_manager->RegisterScanningCallback(&mock_callbacks_);
     sync_client_handler();
@@ -266,7 +266,7 @@ protected:
 
   TestModuleRegistry fake_registry_;
   HciLayerFake* test_hci_layer_ = nullptr;
-  TestController* test_controller_ = nullptr;
+  std::unique_ptr<TestController> test_controller_ = nullptr;
   TestLeAddressManager* test_le_address_manager_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
   LeScanningManagerImpl* le_scanning_manager = nullptr;

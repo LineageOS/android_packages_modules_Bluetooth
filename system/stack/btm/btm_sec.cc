@@ -45,7 +45,7 @@
 #include "common/time_util.h"
 #include "device/include/device_iot_config.h"
 #include "device/include/interop.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/entry.h"

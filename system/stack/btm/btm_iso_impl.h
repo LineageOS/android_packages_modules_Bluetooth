@@ -28,7 +28,7 @@
 #include "btm_dev.h"
 #include "btm_iso_api.h"
 #include "common/time_util.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/include/hci_layer.h"
 #include "internal_include/stack_config.h"
 #include "main/shim/entry.h"

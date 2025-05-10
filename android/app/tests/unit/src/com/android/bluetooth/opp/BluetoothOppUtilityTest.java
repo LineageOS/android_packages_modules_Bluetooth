@@ -45,7 +45,7 @@ import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.provider.Settings;
 
-import androidx.test.core.app.ApplicationProvider;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
@@ -78,7 +78,7 @@ public class BluetoothOppUtilityTest {
             Uri.parse("content://com.android.bluetooth.opp/btopp/0123455343467");
     private static final Uri INCORRECT_FORMAT_URI = Uri.parse("www.google.com");
 
-    private final Context mContext = ApplicationProvider.getApplicationContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
 
     @Before
     public void setUp() throws Exception {

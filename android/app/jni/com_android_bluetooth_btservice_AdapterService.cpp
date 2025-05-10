@@ -1042,10 +1042,15 @@ static bool initNative(JNIEnv* env, jobject obj, jboolean isGuest, jboolean isCo
   }
 
   const char* nativeHciInstanceName = env->GetStringUTFChars(hciInstanceName, nullptr);
+  if (!nativeHciInstanceName) {
+    return JNI_FALSE;
+  }
 
   int ret = sBluetoothInterface->init(&sBluetoothCallbacks, isGuest == JNI_TRUE ? 1 : 0,
                                       isCommonCriteriaMode == JNI_TRUE ? 1 : 0, configCompareResult,
                                       isAtvDevice == JNI_TRUE ? 1 : 0, nativeHciInstanceName);
+
+  env->ReleaseStringUTFChars(hciInstanceName, nativeHciInstanceName);
 
   if (ret != BT_STATUS_SUCCESS) {
     log::error("Error while setting the callbacks: {}", ret);

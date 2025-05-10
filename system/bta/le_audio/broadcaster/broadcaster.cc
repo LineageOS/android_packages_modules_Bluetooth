@@ -46,7 +46,7 @@
 #include "common/strings.h"
 #include "hardware/ble_advertiser.h"
 #include "hardware/bt_le_audio.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "internal_include/stack_config.h"

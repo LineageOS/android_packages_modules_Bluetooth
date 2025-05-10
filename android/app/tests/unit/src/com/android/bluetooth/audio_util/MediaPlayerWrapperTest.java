@@ -92,7 +92,7 @@ public class MediaPlayerWrapperTest {
     @Before
     public void setUp() {
         mTestBitmap = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
-        Util.sUriImagesSupport = true;
+        Util.UriImagesSupport.sValue = true;
 
         // Set up Looper thread for the timeout handler
         mThread = new HandlerThread("MediaPlayerWrapperTestThread");
@@ -151,7 +151,7 @@ public class MediaPlayerWrapperTest {
         if (mThread != null) {
             mThread.quitSafely();
         }
-        Util.sUriImagesSupport = false;
+        Util.UriImagesSupport.sValue = false;
     }
 
     private Bitmap loadImage(int resId) {

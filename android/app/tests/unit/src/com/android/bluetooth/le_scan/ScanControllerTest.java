@@ -54,8 +54,8 @@ import android.os.WorkSource;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.SmallTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
@@ -107,7 +107,6 @@ public class ScanControllerTest {
     private static final int TEST_ACTION = 1;
     private static final int TEST_CLIENT_IF = 2;
 
-    private final Context mContext = ApplicationProvider.getApplicationContext();
     private final BluetoothDevice mDevice = getTestDevice(89);
 
     private CompanionManager mBtCompanionManager;
@@ -133,8 +132,9 @@ public class ScanControllerTest {
                 .when(mPeriodicScanManager)
                 .doOnScanThread(any());
         doReturn(mResources).when(mAdapterService).getResources();
-        doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
-        doReturn(mContext.getSharedPreferences("ScanControllerTest", Context.MODE_PRIVATE))
+        final Context context = InstrumentationRegistry.getInstrumentation().getContext();
+        doReturn(context.getPackageManager()).when(mAdapterService).getPackageManager();
+        doReturn(context.getSharedPreferences("ScanControllerTest", Context.MODE_PRIVATE))
                 .when(mAdapterService)
                 .getSharedPreferences(anyString(), anyInt());
 

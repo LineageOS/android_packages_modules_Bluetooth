@@ -123,7 +123,7 @@ bluetooth::storage::StorageModule* bluetooth::shim::GetStorage() { return s_Stor
 
 bluetooth::os::Handler* bluetooth::shim::GetGdShimHandler() { return nullptr; }
 bluetooth::hci::LeAdvertisingManager* bluetooth::shim::GetAdvertising() { return nullptr; }
-bluetooth::hci::ControllerInterface* bluetooth::shim::GetController() { return nullptr; }
+bluetooth::hci::Controller* bluetooth::shim::GetController() { return nullptr; }
 bluetooth::hci::HciInterface* bluetooth::shim::GetHciLayer() { return nullptr; }
 bluetooth::hci::RemoteNameRequestModule* bluetooth::shim::GetRemoteNameRequest() { return nullptr; }
 bluetooth::hci::LeScanningManager* bluetooth::shim::GetScanning() { return nullptr; }

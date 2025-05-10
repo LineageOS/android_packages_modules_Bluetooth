@@ -56,7 +56,6 @@ import androidx.room.Room;
 import androidx.room.testing.MigrationTestHelper;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory;
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
@@ -105,7 +104,7 @@ public final class DatabaseManagerTest {
     private static final int MAX_META_ID = 16;
     private static final byte[] TEST_BYTE_ARRAY = "TEST_VALUE".getBytes();
 
-    private final Context mContext = ApplicationProvider.getApplicationContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothDevice mDevice1 = getTestDevice(54);
     private final BluetoothDevice mDevice2 = getTestDevice(55);
     private final BluetoothDevice mDevice3 = getTestDevice(56);

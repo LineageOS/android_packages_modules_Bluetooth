@@ -60,7 +60,7 @@
 #include "gattdefs.h"
 #include "hardware/bt_gatt_types.h"
 #include "hardware/bt_hearing_aid.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "internal_include/bt_trace.h"
 #include "l2cap_types.h"
 #include "main/shim/entry.h"

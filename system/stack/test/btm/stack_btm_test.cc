@@ -21,7 +21,7 @@
 #include <iostream>
 #include <sstream>
 
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "hci/hci_layer_mock.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int_types.h"
@@ -63,7 +63,7 @@ protected:
   void SetUp() override {
     BtmWithMocksTest::SetUp();
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+            std::make_unique<bluetooth::hci::testing::MockController>();
   }
   void TearDown() override {
     bluetooth::hci::testing::mock_controller_.reset();
