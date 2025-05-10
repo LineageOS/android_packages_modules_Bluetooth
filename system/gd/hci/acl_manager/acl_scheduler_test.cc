@@ -52,20 +52,16 @@ MATCHER(IsSet, "Future is set") {
 class AclSchedulerTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    fake_registry_.Start<AclScheduler>(&thread_, fake_registry_.GetTestHandler());
-    ASSERT_TRUE(fake_registry_.IsStarted<AclScheduler>());
-
-    client_handler_ = fake_registry_.GetTestModuleHandler(&AclScheduler::Factory);
+    client_handler_ = fake_registry_.GetTestHandler();
     ASSERT_NE(client_handler_, nullptr);
 
-    acl_scheduler_ =
-            static_cast<AclScheduler*>(fake_registry_.GetModuleUnderTest(&AclScheduler::Factory));
+    acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
 
     ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   }
 
   void TearDown() override {
-    fake_registry_.SynchronizeModuleHandler(&AclScheduler::Factory, timeout);
+    fake_registry_.SynchronizeHandler(client_handler_, timeout);
     fake_registry_.StopAll();
   }
 
@@ -99,7 +95,7 @@ protected:
 
   TestModuleRegistry fake_registry_;
   os::Thread& thread_ = fake_registry_.GetTestThread();
-  AclScheduler* acl_scheduler_ = nullptr;
+  std::unique_ptr<AclScheduler> acl_scheduler_ = nullptr;
   os::Handler* client_handler_ = nullptr;
 };
 

@@ -339,7 +339,8 @@ protected:
   }
 };
 
-TEST_F(BtaAgScoTest, codec_negotiate__aptx_state_on) {
+TEST_F_WITH_FLAGS(BtaAgScoTest, codec_negotiate__aptx_state_on,
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT, qc_aptx_codec_negotiation))) {
   tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
   p_scb->app_id = 0;
   p_scb->peer_addr = addr;
@@ -358,7 +359,8 @@ TEST_F(BtaAgScoTest, codec_negotiate__aptx_state_on) {
   ASSERT_TRUE(enable_aptx_voice_property(false));
 }
 
-TEST_F(BtaAgScoTest, codec_negotiate__aptx_state_off) {
+TEST_F_WITH_FLAGS(BtaAgScoTest, codec_negotiate__aptx_state_off,
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT, qc_aptx_codec_negotiation))) {
   tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
   p_scb->app_id = 0;
   p_scb->peer_addr = addr;

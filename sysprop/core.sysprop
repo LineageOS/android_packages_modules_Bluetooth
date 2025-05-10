@@ -1,0 +1,99 @@
+module: "android.sysprop.bluetooth.Core"
+owner: Platform
+
+prop {
+    api_name: "getLeVendorCapabilitiesEnabled"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.vendor_capabilities.enabled"
+}
+
+prop {
+    api_name: "le_rpa_offload"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.rpa_offload"
+}
+
+prop {
+    api_name: "isMsftHciExtEnabled"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.use_msft_hci_ext"
+}
+
+prop {
+    api_name: "getLeDirectConnectionTimeout"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.direct_connection_timeout"
+}
+
+prop {
+    api_name: "getLeConnectionScanIntervalFast"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.connection_scan_interval_fast"
+}
+
+prop {
+    api_name: "getLeConnectionScanWindowFast"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.connection_scan_window_fast"
+}
+
+prop {
+    api_name: "getLeConnectionScanWindow2mFast"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.connection_scan_window_2m_fast"
+}
+
+prop {
+    api_name: "getLeConnectionScanWindowCodedFast"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.connection_scan_window_coded_fast"
+}
+
+prop {
+    api_name: "getLeConnectionScanIntervalSlow"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.connection_scan_interval_slow"
+}
+
+prop {
+    api_name: "getLeConnectionScanWindowSlow"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.connection_scan_window_slow"
+}
+
+prop {
+    api_name: "getLeInquiryScanInterval"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.inquiry_scan_interval"
+}
+
+prop {
+    api_name: "getLeInquiryScanWindow"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.inquiry_scan_window"
+}
+

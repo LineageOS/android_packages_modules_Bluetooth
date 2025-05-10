@@ -19,7 +19,7 @@
 #include <stdint.h>
 
 #include "fuzz/helpers.h"
-#include "hci/acl_manager.h"
+#include "hci/acl_manager_impl.h"
 #include "hci/fuzz/fuzz_hci_layer.h"
 #include "hci/hci_layer.h"
 #include "module.h"
@@ -27,7 +27,7 @@
 
 using bluetooth::FuzzTestModuleRegistry;
 using bluetooth::fuzz::GetArbitraryBytes;
-using bluetooth::hci::AclManager;
+using bluetooth::hci::AclManagerImpl;
 using bluetooth::hci::HciLayer;
 using bluetooth::hci::fuzz::FuzzHciLayer;
 using bluetooth::os::fake_timer::fake_timerfd_advance;
@@ -47,7 +47,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   static FuzzTestModuleRegistry moduleRegistry = FuzzTestModuleRegistry();
   FuzzHciLayer* fuzzHci = moduleRegistry.Inject<FuzzHciLayer>(&HciLayer::Factory);
   fuzzHci->TurnOnAutoReply(&dataProvider);
-  moduleRegistry.Start<AclManager>();
+  std::unique_ptr<AclManagerImpl> acl_manager = std::make_unique<AclManagerImpl>(
+          moduleRegistry.GetTestHandler(), fuzzHci, nullptr, nullptr, nullptr);
   fuzzHci->TurnOffAutoReply();
   uint64_t totalAdvanceTime = 0;
 

@@ -18,6 +18,7 @@ package com.android.bluetooth.opp;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -33,6 +34,7 @@ import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothDevicePicker;
+import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -73,15 +75,20 @@ public class BluetoothOppReceiverTest {
 
     private final Context mTargetContext =
             InstrumentationRegistry.getInstrumentation().getContext();
-    private SharedPreferences mPrefs;
+    private final BluetoothManager mBluetoothManager =
+            mTargetContext.getSystemService(BluetoothManager.class);
 
-    BluetoothOppReceiver mReceiver;
+    private SharedPreferences mPrefs;
+    private BluetoothOppReceiver mReceiver;
 
     @Before
     public void setUp() throws Exception {
         doReturn(mTargetContext.getContentResolver()).when(mContext).getContentResolver();
         doReturn(mTargetContext.getResources()).when(mContext).getResources();
         doReturn("").when(mContext).getString(anyInt(), any());
+
+        mockGetSystemService(
+                mContext, Context.BLUETOOTH_SERVICE, BluetoothManager.class, mBluetoothManager);
 
         mTargetContext.deleteSharedPreferences(TEST_PREF);
         mPrefs = mTargetContext.getSharedPreferences(TEST_PREF, Context.MODE_PRIVATE);
@@ -116,7 +123,7 @@ public class BluetoothOppReceiverTest {
         }
 
         BluetoothOppManager bluetoothOppManager = spy(BluetoothOppManager.getInstance(mContext));
-        BluetoothOppManager.setInstance(bluetoothOppManager);
+        BluetoothOppManager.setInstanceForTesting(bluetoothOppManager);
         BluetoothDevice device = getTestDevice(43);
         Intent intent = new Intent();
         intent.setAction(BluetoothDevicePicker.ACTION_DEVICE_SELECTED);
@@ -125,7 +132,7 @@ public class BluetoothOppReceiverTest {
         doNothing().when(bluetoothOppManager).startTransfer(eq(device));
         mReceiver.onReceive(mContext, intent);
         verify(bluetoothOppManager).startTransfer(eq(device));
-        BluetoothOppManager.setInstance(null);
+        BluetoothOppManager.setInstanceForTesting(null);
     }
 
     @Test

@@ -900,16 +900,8 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p, uint16_t 
       btm_read_rssi_complete(p, evt_len);
       break;
 
-    case HCI_READ_FAILED_CONTACT_COUNTER:
-      btm_read_failed_contact_counter_complete(p);
-      break;
-
     case HCI_READ_AUTOMATIC_FLUSH_TIMEOUT:
       btm_read_automatic_flush_timeout_complete(p);
-      break;
-
-    case HCI_READ_TRANSMIT_POWER_LEVEL:
-      btm_read_tx_power_complete(p, evt_len, false);
       break;
 
     case HCI_CREATE_CONNECTION_CANCEL:
@@ -925,10 +917,6 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p, uint16_t 
       break;
 
     case HCI_READ_INQ_TX_POWER_LEVEL:
-      break;
-
-    case HCI_BLE_READ_ADV_CHNL_TX_POWER:
-      btm_read_tx_power_complete(p, evt_len, true);
       break;
 
     case HCI_BLE_WRITE_ADV_ENABLE:

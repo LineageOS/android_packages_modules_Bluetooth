@@ -28,7 +28,7 @@
 
 #include "hci/controller_interface.h"
 #include "hci/event_checkers.h"
-#include "hci/hci_layer.h"
+#include "hci/hci_interface.h"
 #include "os/system_properties.h"
 #include "stack/include/hcidefs.h"
 #if TARGET_FLOSS
@@ -52,13 +52,15 @@ static const std::string kPropertyRpaOffload = "bluetooth.core.le.rpa_offload";
 using os::Handler;
 
 struct Controller::impl {
-  impl(Controller& module) : module_(module) {}
-
-  void Start(hci::HciLayer* hci) {
+  Handler* handler_;
+  impl(Controller& module, Handler* handler, hci::HciInterface* hci) : module_(module) {
     hci_ = hci;
-    Handler* handler = module_.GetHandler();
+    handler_ = handler;
+  }
+
+  void Start() {
     hci_->RegisterEventHandler(EventCode::NUMBER_OF_COMPLETED_PACKETS,
-                               handler->BindOn(this, &Controller::impl::NumberOfCompletedPackets));
+                               handler_->BindOn(this, &Controller::impl::NumberOfCompletedPackets));
 
     set_event_mask(kDefaultEventMask);
     set_event_mask_page_2(kDefaultEventMaskPage2);
@@ -66,23 +68,24 @@ struct Controller::impl {
     write_le_host_support(Enable::ENABLED, Enable::DISABLED);
     hci_->EnqueueCommand(
             ReadLocalNameBuilder::Create(),
-            handler->BindOnceOn(this, &Controller::impl::read_local_name_complete_handler));
+            handler_->BindOnceOn(this, &Controller::impl::read_local_name_complete_handler));
     hci_->EnqueueCommand(
             ReadLocalVersionInformationBuilder::Create(),
-            handler->BindOnceOn(
+            handler_->BindOnceOn(
                     this, &Controller::impl::read_local_version_information_complete_handler));
     hci_->EnqueueCommand(
             ReadLocalSupportedCommandsBuilder::Create(),
-            handler->BindOnceOn(this,
-                                &Controller::impl::read_local_supported_commands_complete_handler));
+            handler_->BindOnceOn(
+                    this, &Controller::impl::read_local_supported_commands_complete_handler));
 
     hci_->EnqueueCommand(
             LeReadLocalSupportedFeaturesBuilder::Create(),
-            handler->BindOnceOn(this, &Controller::impl::le_read_local_supported_features_handler));
+            handler_->BindOnceOn(this,
+                                 &Controller::impl::le_read_local_supported_features_handler));
 
     hci_->EnqueueCommand(
             LeReadSupportedStatesBuilder::Create(),
-            handler->BindOnceOn(this, &Controller::impl::le_read_supported_states_handler));
+            handler_->BindOnceOn(this, &Controller::impl::le_read_supported_states_handler));
 
     // Wait for all extended features read
     std::promise<void> features_promise;
@@ -90,9 +93,9 @@ struct Controller::impl {
 
     hci_->EnqueueCommand(
             ReadLocalExtendedFeaturesBuilder::Create(0x00),
-            handler->BindOnceOn(this,
-                                &Controller::impl::read_local_extended_features_complete_handler,
-                                std::move(features_promise)));
+            handler_->BindOnceOn(this,
+                                 &Controller::impl::read_local_extended_features_complete_handler,
+                                 std::move(features_promise)));
     features_future.wait();
 
     if (com::android::bluetooth::flags::channel_sounding_in_stack() &&
@@ -106,7 +109,7 @@ struct Controller::impl {
 
     hci_->EnqueueCommand(
             ReadBufferSizeBuilder::Create(),
-            handler->BindOnceOn(this, &Controller::impl::read_buffer_size_complete_handler));
+            handler_->BindOnceOn(this, &Controller::impl::read_buffer_size_complete_handler));
 
     if (is_supported(OpCode::SET_MIN_ENCRYPTION_KEY_SIZE)) {
       uint8_t min_key_size =
@@ -116,33 +119,34 @@ struct Controller::impl {
                                 kMaxEncryptionKeySize);
       hci_->EnqueueCommand(
               SetMinEncryptionKeySizeBuilder::Create(min_key_size),
-              handler->BindOnceOn(this, &Controller::impl::set_min_encryption_key_size_handler));
+              handler_->BindOnceOn(this, &Controller::impl::set_min_encryption_key_size_handler));
     }
 
     if (is_supported(OpCode::LE_READ_BUFFER_SIZE_V2)) {
       hci_->EnqueueCommand(
               LeReadBufferSizeV2Builder::Create(),
-              handler->BindOnceOn(this, &Controller::impl::le_read_buffer_size_v2_handler));
+              handler_->BindOnceOn(this, &Controller::impl::le_read_buffer_size_v2_handler));
     } else {
       hci_->EnqueueCommand(
               LeReadBufferSizeV1Builder::Create(),
-              handler->BindOnceOn(this, &Controller::impl::le_read_buffer_size_handler));
+              handler_->BindOnceOn(this, &Controller::impl::le_read_buffer_size_handler));
     }
 
     if (is_supported(OpCode::READ_LOCAL_SUPPORTED_CODECS_V1)) {
       hci_->EnqueueCommand(
               ReadLocalSupportedCodecsV1Builder::Create(),
-              handler->BindOnceOn(this, &Controller::impl::read_local_supported_codecs_v1_handler));
+              handler_->BindOnceOn(this,
+                                   &Controller::impl::read_local_supported_codecs_v1_handler));
     }
 
     hci_->EnqueueCommand(
             LeReadFilterAcceptListSizeBuilder::Create(),
-            handler->BindOnceOn(this, &Controller::impl::le_read_accept_list_size_handler));
+            handler_->BindOnceOn(this, &Controller::impl::le_read_accept_list_size_handler));
 
     if (is_supported(OpCode::LE_READ_RESOLVING_LIST_SIZE) && module_.SupportsBlePrivacy()) {
       hci_->EnqueueCommand(
               LeReadResolvingListSizeBuilder::Create(),
-              handler->BindOnceOn(this, &Controller::impl::le_read_resolving_list_size_handler));
+              handler_->BindOnceOn(this, &Controller::impl::le_read_resolving_list_size_handler));
     } else {
       log::info("LE_READ_RESOLVING_LIST_SIZE not supported, defaulting to 0");
       le_resolving_list_size_ = 0;
@@ -152,7 +156,7 @@ struct Controller::impl {
         module_.SupportsBleDataPacketLengthExtension()) {
       hci_->EnqueueCommand(
               LeReadMaximumDataLengthBuilder::Create(),
-              handler->BindOnceOn(this, &Controller::impl::le_read_maximum_data_length_handler));
+              handler_->BindOnceOn(this, &Controller::impl::le_read_maximum_data_length_handler));
     } else {
       log::info("LE_READ_MAXIMUM_DATA_LENGTH not supported, defaulting to 0");
       le_maximum_data_length_.supported_max_rx_octets_ = 0;
@@ -166,7 +170,7 @@ struct Controller::impl {
     if (module_.SupportsSecureConnections()) {
       hci_->EnqueueCommand(
               WriteSecureConnectionsHostSupportBuilder::Create(Enable::ENABLED),
-              handler->BindOnceOn(
+              handler_->BindOnceOn(
                       this,
                       &Controller::impl::write_secure_connections_host_support_complete_handler));
     }
@@ -174,7 +178,7 @@ struct Controller::impl {
         module_.SupportsBleDataPacketLengthExtension()) {
       hci_->EnqueueCommand(
               LeReadSuggestedDefaultDataLengthBuilder::Create(),
-              handler->BindOnceOn(
+              handler_->BindOnceOn(
                       this, &Controller::impl::le_read_suggested_default_data_length_handler));
     } else {
       log::info("LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH not supported, defaulting to 27 (0x1B)");
@@ -185,7 +189,7 @@ struct Controller::impl {
         module_.SupportsBleExtendedAdvertising()) {
       hci_->EnqueueCommand(
               LeReadMaximumAdvertisingDataLengthBuilder::Create(),
-              handler->BindOnceOn(
+              handler_->BindOnceOn(
                       this, &Controller::impl::le_read_maximum_advertising_data_length_handler));
     } else {
       log::info("LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH not supported, defaulting to 31 (0x1F)");
@@ -196,7 +200,7 @@ struct Controller::impl {
         module_.SupportsBleExtendedAdvertising()) {
       hci_->EnqueueCommand(
               LeReadNumberOfSupportedAdvertisingSetsBuilder::Create(),
-              handler->BindOnceOn(
+              handler_->BindOnceOn(
                       this,
                       &Controller::impl::le_read_number_of_supported_advertising_sets_handler));
     } else {
@@ -208,7 +212,7 @@ struct Controller::impl {
         module_.SupportsBlePeriodicAdvertising()) {
       hci_->EnqueueCommand(
               LeReadPeriodicAdvertiserListSizeBuilder::Create(),
-              handler->BindOnceOn(
+              handler_->BindOnceOn(
                       this, &Controller::impl::le_read_periodic_advertiser_list_size_handler));
     } else {
       log::info("LE_READ_PERIODIC_ADVERTISER_LIST_SIZE not supported, defaulting to 0");
@@ -219,14 +223,14 @@ struct Controller::impl {
       hci_->EnqueueCommand(
               LeSetHostFeatureBuilder::Create(LeHostFeatureBits::CONNECTED_ISO_STREAM_HOST_SUPPORT,
                                               Enable::ENABLED),
-              handler->BindOnceOn(this, &Controller::impl::le_set_host_feature_handler));
+              handler_->BindOnceOn(this, &Controller::impl::le_set_host_feature_handler));
     }
 
     if (is_supported(OpCode::LE_SET_HOST_FEATURE) && module_.SupportsBleConnectionSubrating()) {
       hci_->EnqueueCommand(
               LeSetHostFeatureBuilder::Create(LeHostFeatureBits::CONNECTION_SUBRATING_HOST_SUPPORT,
                                               Enable::ENABLED),
-              handler->BindOnceOn(this, &Controller::impl::le_set_host_feature_handler));
+              handler_->BindOnceOn(this, &Controller::impl::le_set_host_feature_handler));
     }
 
     if (com::android::bluetooth::flags::channel_sounding_in_stack() &&
@@ -234,13 +238,13 @@ struct Controller::impl {
       hci_->EnqueueCommand(
               LeSetHostFeatureBuilder::Create(LeHostFeatureBits::CHANNEL_SOUNDING_HOST_SUPPORT,
                                               Enable::ENABLED),
-              handler->BindOnceOn(this, &Controller::impl::le_set_host_feature_handler));
+              handler_->BindOnceOn(this, &Controller::impl::le_set_host_feature_handler));
     }
 
     if (is_supported(OpCode::READ_DEFAULT_ERRONEOUS_DATA_REPORTING)) {
       hci_->EnqueueCommand(
               ReadDefaultErroneousDataReportingBuilder::Create(),
-              handler->BindOnceOn(
+              handler_->BindOnceOn(
                       this, &Controller::impl::read_default_erroneous_data_reporting_handler));
     }
 
@@ -252,8 +256,8 @@ struct Controller::impl {
       auto vendor_future = vendor_promise.get_future();
       hci_->EnqueueCommand(
               LeGetVendorCapabilitiesBuilder::Create(),
-              handler->BindOnceOn(this, &Controller::impl::le_get_vendor_capabilities_handler,
-                                  std::move(vendor_promise)));
+              handler_->BindOnceOn(this, &Controller::impl::le_get_vendor_capabilities_handler,
+                                   std::move(vendor_promise)));
       vendor_future.wait();
     } else {
       vendor_capabilities_.is_supported_ = 0x00;
@@ -264,12 +268,12 @@ struct Controller::impl {
     auto future = promise.get_future();
     hci_->EnqueueCommand(
             ReadBdAddrBuilder::Create(),
-            handler->BindOnceOn(this, &Controller::impl::read_controller_mac_address_handler,
-                                std::move(promise)));
+            handler_->BindOnceOn(this, &Controller::impl::read_controller_mac_address_handler,
+                                 std::move(promise)));
     future.wait();
   }
 
-  void Stop() { hci_ = nullptr; }
+  ~impl() { hci_ = nullptr; }
 
   void NumberOfCompletedPackets(EventView event) {
     if (!acl_credits_callback_) {
@@ -382,9 +386,9 @@ struct Controller::impl {
       page_number++;
       hci_->EnqueueCommand(
               ReadLocalExtendedFeaturesBuilder::Create(page_number),
-              module_.GetHandler()->BindOnceOn(
-                      this, &Controller::impl::read_local_extended_features_complete_handler,
-                      std::move(promise)));
+              handler_->BindOnceOn(this,
+                                   &Controller::impl::read_local_extended_features_complete_handler,
+                                   std::move(promise)));
     } else {
       promise.set_value();
     }
@@ -499,7 +503,7 @@ struct Controller::impl {
               WriteDefaultErroneousDataReportingBuilder::Create(Enable::ENABLED);
       hci_->EnqueueCommand(
               std::move(packet),
-              module_.GetHandler()->BindOnceOn(
+              handler_->BindOnceOn(
                       this, &Controller::impl::write_default_erroneous_data_reporting_handler));
     }
   }
@@ -705,9 +709,9 @@ struct Controller::impl {
     if (vendor_capabilities_.dynamic_audio_buffer_support_) {
       hci_->EnqueueCommand(
               DabGetAudioBufferTimeCapabilityBuilder::Create(),
-              module_.GetHandler()->BindOnceOn(
-                      this, &Controller::impl::le_get_dynamic_audio_buffer_support_handler,
-                      std::move(vendor_promise)));
+              handler_->BindOnceOn(this,
+                                   &Controller::impl::le_get_dynamic_audio_buffer_support_handler,
+                                   std::move(vendor_promise)));
       return;
     }
 
@@ -763,21 +767,21 @@ struct Controller::impl {
   void set_controller_dab_audio_buffer_time(uint16_t buffer_time_ms) {
     hci_->EnqueueCommand(
             DabSetAudioBufferTimeBuilder::Create(buffer_time_ms),
-            module_.GetHandler()->BindOnceOn(
-                    this, &Controller::impl::set_controller_dab_audio_buffer_time_complete));
+            handler_->BindOnceOn(this,
+                                 &Controller::impl::set_controller_dab_audio_buffer_time_complete));
   }
 
   void set_event_mask(uint64_t event_mask) {
     std::unique_ptr<SetEventMaskBuilder> packet = SetEventMaskBuilder::Create(event_mask);
     hci_->EnqueueCommand(std::move(packet),
-                         module_.GetHandler()->BindOnce(check_complete<SetEventMaskCompleteView>));
+                         handler_->BindOnce(check_complete<SetEventMaskCompleteView>));
   }
 
   void set_event_mask_page_2(uint64_t event_mask_page_2) {
     std::unique_ptr<SetEventMaskPage2Builder> packet =
             SetEventMaskPage2Builder::Create(event_mask_page_2);
-    hci_->EnqueueCommand(std::move(packet), module_.GetHandler()->BindOnce(
-                                                    check_complete<SetEventMaskPage2CompleteView>));
+    hci_->EnqueueCommand(std::move(packet),
+                         handler_->BindOnce(check_complete<SetEventMaskPage2CompleteView>));
   }
 
   void write_le_host_support(Enable enable, Enable deprecated_host_bit) {
@@ -787,30 +791,26 @@ struct Controller::impl {
     }
     std::unique_ptr<WriteLeHostSupportBuilder> packet =
             WriteLeHostSupportBuilder::Create(enable, deprecated_host_bit);
-    hci_->EnqueueCommand(
-            std::move(packet),
-            module_.GetHandler()->BindOnce(check_complete<WriteLeHostSupportCompleteView>));
+    hci_->EnqueueCommand(std::move(packet),
+                         handler_->BindOnce(check_complete<WriteLeHostSupportCompleteView>));
   }
 
   void write_simple_pairing_mode(Enable enable) {
     std::unique_ptr<WriteSimplePairingModeBuilder> packet =
             WriteSimplePairingModeBuilder::Create(enable);
-    hci_->EnqueueCommand(
-            std::move(packet),
-            module_.GetHandler()->BindOnce(check_complete<WriteSimplePairingModeCompleteView>));
+    hci_->EnqueueCommand(std::move(packet),
+                         handler_->BindOnce(check_complete<WriteSimplePairingModeCompleteView>));
   }
 
   void reset() {
     std::unique_ptr<ResetBuilder> packet = ResetBuilder::Create();
-    hci_->EnqueueCommand(std::move(packet),
-                         module_.GetHandler()->BindOnce(check_complete<ResetCompleteView>));
+    hci_->EnqueueCommand(std::move(packet), handler_->BindOnce(check_complete<ResetCompleteView>));
   }
 
   void le_rand(LeRandCallback cb) {
     std::unique_ptr<LeRandBuilder> packet = LeRandBuilder::Create();
-    hci_->EnqueueCommand(
-            std::move(packet),
-            module_.GetHandler()->BindOnceOn(this, &Controller::impl::le_rand_cb, std::move(cb)));
+    hci_->EnqueueCommand(std::move(packet),
+                         handler_->BindOnceOn(this, &Controller::impl::le_rand_cb, std::move(cb)));
   }
 
   void le_rand_cb(LeRandCallback cb, CommandCompleteView view) {
@@ -822,8 +822,8 @@ struct Controller::impl {
   }
 
   void set_event_filter(std::unique_ptr<SetEventFilterBuilder> packet) {
-    hci_->EnqueueCommand(std::move(packet), module_.GetHandler()->BindOnce(
-                                                    check_complete<SetEventFilterCompleteView>));
+    hci_->EnqueueCommand(std::move(packet),
+                         handler_->BindOnce(check_complete<SetEventFilterCompleteView>));
   }
 
   void write_local_name(std::string local_name) {
@@ -834,8 +834,8 @@ struct Controller::impl {
     std::copy(std::begin(local_name), std::end(local_name), std::begin(local_name_array));
 
     std::unique_ptr<WriteLocalNameBuilder> packet = WriteLocalNameBuilder::Create(local_name_array);
-    hci_->EnqueueCommand(std::move(packet), module_.GetHandler()->BindOnce(
-                                                    check_complete<WriteLocalNameCompleteView>));
+    hci_->EnqueueCommand(std::move(packet),
+                         handler_->BindOnce(check_complete<WriteLocalNameCompleteView>));
   }
 
   void host_buffer_size(uint16_t host_acl_data_packet_length,
@@ -845,14 +845,14 @@ struct Controller::impl {
     std::unique_ptr<HostBufferSizeBuilder> packet = HostBufferSizeBuilder::Create(
             host_acl_data_packet_length, host_synchronous_data_packet_length,
             host_total_num_acl_data_packets, host_total_num_synchronous_data_packets);
-    hci_->EnqueueCommand(std::move(packet), module_.GetHandler()->BindOnce(
-                                                    check_complete<HostBufferSizeCompleteView>));
+    hci_->EnqueueCommand(std::move(packet),
+                         handler_->BindOnce(check_complete<HostBufferSizeCompleteView>));
   }
 
   void le_set_event_mask(uint64_t le_event_mask) {
     std::unique_ptr<LeSetEventMaskBuilder> packet = LeSetEventMaskBuilder::Create(le_event_mask);
-    hci_->EnqueueCommand(std::move(packet), module_.GetHandler()->BindOnce(
-                                                    check_complete<LeSetEventMaskCompleteView>));
+    hci_->EnqueueCommand(std::move(packet),
+                         handler_->BindOnce(check_complete<LeSetEventMaskCompleteView>));
   }
 
 #define OP_CODE_MAPPING(name)                                                     \
@@ -1238,7 +1238,7 @@ struct Controller::impl {
 
   Controller& module_;
 
-  HciLayer* hci_;
+  HciInterface* hci_;
 
   CompletedAclPacketsCallback acl_credits_callback_{};
   CompletedAclPacketsCallback acl_monitor_credits_callback_{};
@@ -1269,24 +1269,20 @@ struct Controller::impl {
   std::array<DynamicAudioBufferCodecCapability, 32> dab_codec_capabilities_{};
 };  // namespace hci
 
-Controller::Controller() : impl_(std::make_unique<impl>(*this)) {}
-
-Controller::~Controller() = default;
-
 void Controller::RegisterCompletedAclPacketsCallback(CompletedAclPacketsCallback cb) {
-  CallOn(impl_.get(), &impl::register_completed_acl_packets_callback, cb);
+  impl_->handler_->CallOn(impl_.get(), &impl::register_completed_acl_packets_callback, cb);
 }
 
 void Controller::UnregisterCompletedAclPacketsCallback() {
-  CallOn(impl_.get(), &impl::unregister_completed_acl_packets_callback);
+  impl_->handler_->CallOn(impl_.get(), &impl::unregister_completed_acl_packets_callback);
 }
 
 void Controller::RegisterCompletedMonitorAclPacketsCallback(CompletedAclPacketsCallback cb) {
-  CallOn(impl_.get(), &impl::register_completed_monitor_acl_packets_callback, cb);
+  impl_->handler_->CallOn(impl_.get(), &impl::register_completed_monitor_acl_packets_callback, cb);
 }
 
 void Controller::UnregisterCompletedMonitorAclPacketsCallback() {
-  CallOn(impl_.get(), &impl::unregister_completed_monitor_acl_packets_callback);
+  impl_->handler_->CallOn(impl_.get(), &impl::unregister_completed_monitor_acl_packets_callback);
 }
 
 std::string Controller::GetLocalName() const { return impl_->local_name_; }
@@ -1397,22 +1393,24 @@ uint16_t Controller::GetNumScoPacketBuffers() const { return impl_->sco_buffers_
 Address Controller::GetMacAddress() const { return impl_->mac_address_; }
 
 void Controller::SetEventMask(uint64_t event_mask) {
-  CallOn(impl_.get(), &impl::set_event_mask, event_mask);
+  impl_->handler_->CallOn(impl_.get(), &impl::set_event_mask, event_mask);
 }
 
-void Controller::Reset() { CallOn(impl_.get(), &impl::reset); }
+void Controller::Reset() { impl_->handler_->CallOn(impl_.get(), &impl::reset); }
 
-void Controller::LeRand(LeRandCallback cb) { CallOn(impl_.get(), &impl::le_rand, std::move(cb)); }
+void Controller::LeRand(LeRandCallback cb) {
+  impl_->handler_->CallOn(impl_.get(), &impl::le_rand, std::move(cb));
+}
 
 void Controller::SetEventFilterClearAll() {
   std::unique_ptr<SetEventFilterClearAllBuilder> packet = SetEventFilterClearAllBuilder::Create();
-  CallOn(impl_.get(), &impl::set_event_filter, std::move(packet));
+  impl_->handler_->CallOn(impl_.get(), &impl::set_event_filter, std::move(packet));
 }
 
 void Controller::SetEventFilterInquiryResultAllDevices() {
   std::unique_ptr<SetEventFilterInquiryResultAllDevicesBuilder> packet =
           SetEventFilterInquiryResultAllDevicesBuilder::Create();
-  CallOn(impl_.get(), &impl::set_event_filter, std::move(packet));
+  impl_->handler_->CallOn(impl_.get(), &impl::set_event_filter, std::move(packet));
 }
 
 void Controller::SetEventFilterInquiryResultClassOfDevice(ClassOfDevice class_of_device,
@@ -1420,19 +1418,19 @@ void Controller::SetEventFilterInquiryResultClassOfDevice(ClassOfDevice class_of
   std::unique_ptr<SetEventFilterInquiryResultClassOfDeviceBuilder> packet =
           SetEventFilterInquiryResultClassOfDeviceBuilder::Create(class_of_device,
                                                                   class_of_device_mask);
-  CallOn(impl_.get(), &impl::set_event_filter, std::move(packet));
+  impl_->handler_->CallOn(impl_.get(), &impl::set_event_filter, std::move(packet));
 }
 
 void Controller::SetEventFilterInquiryResultAddress(Address address) {
   std::unique_ptr<SetEventFilterInquiryResultAddressBuilder> packet =
           SetEventFilterInquiryResultAddressBuilder::Create(address);
-  CallOn(impl_.get(), &impl::set_event_filter, std::move(packet));
+  impl_->handler_->CallOn(impl_.get(), &impl::set_event_filter, std::move(packet));
 }
 
 void Controller::SetEventFilterConnectionSetupAllDevices(AutoAcceptFlag auto_accept_flag) {
   std::unique_ptr<SetEventFilterConnectionSetupAllDevicesBuilder> packet =
           SetEventFilterConnectionSetupAllDevicesBuilder::Create(auto_accept_flag);
-  CallOn(impl_.get(), &impl::set_event_filter, std::move(packet));
+  impl_->handler_->CallOn(impl_.get(), &impl::set_event_filter, std::move(packet));
 }
 
 void Controller::SetEventFilterConnectionSetupClassOfDevice(ClassOfDevice class_of_device,
@@ -1441,32 +1439,32 @@ void Controller::SetEventFilterConnectionSetupClassOfDevice(ClassOfDevice class_
   std::unique_ptr<SetEventFilterConnectionSetupClassOfDeviceBuilder> packet =
           SetEventFilterConnectionSetupClassOfDeviceBuilder::Create(
                   class_of_device, class_of_device_mask, auto_accept_flag);
-  CallOn(impl_.get(), &impl::set_event_filter, std::move(packet));
+  impl_->handler_->CallOn(impl_.get(), &impl::set_event_filter, std::move(packet));
 }
 
 void Controller::SetEventFilterConnectionSetupAddress(Address address,
                                                       AutoAcceptFlag auto_accept_flag) {
   std::unique_ptr<SetEventFilterConnectionSetupAddressBuilder> packet =
           SetEventFilterConnectionSetupAddressBuilder::Create(address, auto_accept_flag);
-  CallOn(impl_.get(), &impl::set_event_filter, std::move(packet));
+  impl_->handler_->CallOn(impl_.get(), &impl::set_event_filter, std::move(packet));
 }
 
 void Controller::WriteLocalName(std::string local_name) {
   impl_->local_name_ = local_name;
-  CallOn(impl_.get(), &impl::write_local_name, local_name);
+  impl_->handler_->CallOn(impl_.get(), &impl::write_local_name, local_name);
 }
 
 void Controller::HostBufferSize(uint16_t host_acl_data_packet_length,
                                 uint8_t host_synchronous_data_packet_length,
                                 uint16_t host_total_num_acl_data_packets,
                                 uint16_t host_total_num_synchronous_data_packets) {
-  CallOn(impl_.get(), &impl::host_buffer_size, host_acl_data_packet_length,
-         host_synchronous_data_packet_length, host_total_num_acl_data_packets,
-         host_total_num_synchronous_data_packets);
+  impl_->handler_->CallOn(impl_.get(), &impl::host_buffer_size, host_acl_data_packet_length,
+                          host_synchronous_data_packet_length, host_total_num_acl_data_packets,
+                          host_total_num_synchronous_data_packets);
 }
 
 void Controller::LeSetEventMask(uint64_t le_event_mask) {
-  CallOn(impl_.get(), &impl::le_set_event_mask, le_event_mask);
+  impl_->handler_->CallOn(impl_.get(), &impl::le_set_event_mask, le_event_mask);
 }
 
 LeBufferSize Controller::GetLeBufferSize() const { return impl_->le_buffer_size_; }
@@ -1553,20 +1551,15 @@ bool Controller::IsRpaGenerationSupported(void) const {
   return rpa_supported;
 }
 
-const ModuleFactory Controller::Factory = ModuleFactory([]() { return new Controller(); });
-
-void Controller::ListDependencies(ModuleList* list) const {
-  list->add<hci::HciLayer>();
-#if TARGET_FLOSS
-  list->add<sysprops::SyspropsModule>();
-#endif
+Controller::Controller(Handler* handler, hci::HciInterface* hci_interface) {
+  // TODO: controller calls constructor that calls methods that depends on impl_, so Start() method
+  // had to be separated.
+  //  We should get rid of pimpl and move content of Start into constructor.
+  impl_ = std::make_unique<Controller::impl>((*this), handler, hci_interface);
+  impl_->Start();
 }
 
-void Controller::Start() { impl_->Start(GetDependency<hci::HciLayer>()); }
-
-void Controller::Stop() { impl_->Stop(); }
-
-std::string Controller::ToString() const { return "Controller"; }
+Controller::~Controller() = default;
 
 template <typename OutputT>
 void Controller::impl::dump(OutputT&& out) const {

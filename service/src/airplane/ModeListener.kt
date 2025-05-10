@@ -27,6 +27,7 @@ import android.os.Looper
 import android.provider.Settings
 import android.widget.Toast
 import com.android.bluetooth.BluetoothStatsLog
+import com.android.bluetooth.flags.Flags
 import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
 import com.android.server.bluetooth.initializeRadioModeListener
@@ -92,7 +93,12 @@ public fun initialize(
                 isOn = newMode
                 val previousMode = isOnOverrode
                 val isBluetoothOn = state.oneOf(STATE_ON, STATE_TURNING_ON, STATE_TURNING_OFF)
-                val isMediaConnected = isBluetoothOn && mediaCallback()
+                val isMediaConnected =
+                    if (Flags.onewayMediaProfile()) {
+                        isMediaProfileConnected
+                    } else {
+                        isBluetoothOn && mediaCallback()
+                    }
 
                 isOnOverrode =
                     airplaneModeValueOverride(
@@ -161,9 +167,14 @@ public fun notifyUserToggledBluetooth(
     AirplaneMetricSession.notifyUserToggledBluetooth(resolver, userContext, isBluetoothOn)
 }
 
+public fun setIsMediaProfileConnected(connected: Boolean) {
+    isMediaProfileConnected = connected
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////// PRIVATE METHODS /////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+private var isMediaProfileConnected = false
 
 private fun airplaneModeValueOverride(
     resolver: ContentResolver,
@@ -299,7 +310,7 @@ private class AirplaneMetricSession(
             isBluetoothOn: Boolean,
             sendAirplaneModeNotification: (state: String) -> Unit,
             getUser: () -> Context,
-            isMediaProfileConnected: Boolean,
+            isMediaConnected: Boolean,
             startTime: TimeMark,
         ) {
             if (isAirplaneModeOn) {
@@ -307,7 +318,7 @@ private class AirplaneMetricSession(
                     AirplaneMetricSession(
                         isBluetoothOn,
                         sendAirplaneModeNotification,
-                        isMediaProfileConnected,
+                        isMediaConnected,
                         startTime,
                     )
             } else {

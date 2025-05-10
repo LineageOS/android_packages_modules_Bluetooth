@@ -56,9 +56,6 @@ void LogMetricSocketConnectionState(const Address& address, int port, int type,
 
 void LogMetricHciTimeoutEvent(uint32_t hci_cmd) {}
 
-void LogMetricA2dpAudioUnderrunEvent(const Address& address, uint64_t encoding_interval_millis,
-                                     int num_missing_pcm_bytes) {}
-
 void LogMetricA2dpAudioOverrunEvent(const Address& address, uint64_t encoding_interval_millis,
                                     int num_dropped_buffers, int num_dropped_encoded_frames,
                                     int num_dropped_encoded_bytes) {
@@ -107,15 +104,6 @@ void LogMetricHfpPacketLossStats(const Address& address, int num_decoded_frames,
           .Record();
 }
 
-void LogMetricReadRssiResult(const Address& address, uint16_t handle, uint32_t cmd_status,
-                             int8_t rssi) {}
-
-void LogMetricReadFailedContactCounterResult(const Address& address, uint16_t handle,
-                                             uint32_t cmd_status, int32_t failed_contact_counter) {}
-
-void LogMetricReadTxPowerLevelResult(const Address& address, uint16_t handle, uint32_t cmd_status,
-                                     int32_t transmit_power_level) {}
-
 void LogMetricRemoteVersionInfo(uint16_t handle, uint8_t status, uint8_t version,
                                 uint16_t manufacturer_name, uint16_t subversion) {}
 
@@ -142,12 +130,7 @@ void LogMetricSmpPairingEvent(const Address& address, uint16_t smp_cmd,
 void LogMetricA2dpPlaybackEvent(const Address& address, int playback_state, int audio_coding_mode) {
 }
 
-void LogMetricA2dpSessionMetricsEvent(const hci::Address& address, int64_t audio_duration_ms,
-                                      int media_timer_min_ms, int media_timer_max_ms,
-                                      int media_timer_avg_ms, int total_scheduling_count,
-                                      int buffer_overruns_max_count, int buffer_overruns_total,
-                                      float buffer_underruns_average, int buffer_underruns_count,
-                                      int64_t codec_index, bool is_a2dp_offload) {
+void LogA2dpSessionReported(const hci::Address& address, const A2dpSsession& session) {
   std::string boot_id;
   std::string addr_string;
 
@@ -158,24 +141,26 @@ void LogMetricA2dpSessionMetricsEvent(const hci::Address& address, int64_t audio
   addr_string = address.ToString();
 
   log::debug("A2dpSessionMetrics: {}, {}, {}, {}, {}, {}, {}, {}, {}, {:f}, {}, {}, {}", boot_id,
-             address, audio_duration_ms, media_timer_min_ms, media_timer_max_ms, media_timer_avg_ms,
-             total_scheduling_count, buffer_overruns_max_count, buffer_overruns_total,
-             buffer_underruns_average, buffer_underruns_count, codec_index, is_a2dp_offload);
+             address, session.audio_duration_ms, session.media_timer_min_ms,
+             session.media_timer_max_ms, session.media_timer_avg_ms, session.total_scheduling_count,
+             session.buffer_overruns_max_count, session.buffer_overruns_total,
+             session.buffer_underruns_average, session.buffer_underruns_count, session.codec_index,
+             session.is_a2dp_offload);
 
   ::metrics::structured::events::bluetooth::BluetoothA2dpSession()
           .SetBootId(boot_id)
           .SetDeviceId(addr_string)
-          .SetAudioDuration(audio_duration_ms)
-          .SetMediaTimerMin(media_timer_min_ms)
-          .SetMediaTimerMax(media_timer_max_ms)
-          .SetMediaTimerAvg(media_timer_avg_ms)
-          .SetTotalSchedulingCount(total_scheduling_count)
-          .SetBufferOverrunsMaxCount(buffer_overruns_max_count)
-          .SetBufferOverrunsTotal(buffer_overruns_total)
-          .SetBufferUnderrunsAvg(buffer_underruns_average)
-          .SetBufferUnderrunsCount(buffer_underruns_count)
-          .SetCodecIndex(codec_index)
-          .SetIsA2dpOffload(is_a2dp_offload)
+          .SetAudioDuration(session.audio_duration_ms)
+          .SetMediaTimerMin(session.media_timer_min_ms)
+          .SetMediaTimerMax(session.media_timer_max_ms)
+          .SetMediaTimerAvg(session.media_timer_avg_ms)
+          .SetTotalSchedulingCount(session.total_scheduling_count)
+          .SetBufferOverrunsMaxCount(session.buffer_overruns_max_count)
+          .SetBufferOverrunsTotal(session.buffer_overruns_total)
+          .SetBufferUnderrunsAvg(session.buffer_underruns_average)
+          .SetBufferUnderrunsCount(session.buffer_underruns_count)
+          .SetCodecIndex(session.codec_index)
+          .SetIsA2dpOffload(session.is_a2dp_offload)
           .Record();
 }
 

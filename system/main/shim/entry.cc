@@ -18,7 +18,6 @@
 
 #include "hal/snoop_logger.h"
 #include "hci/acl_manager.h"
-#include "hci/controller.h"
 #include "hci/controller_interface.h"
 #include "hci/distance_measurement_manager.h"
 #include "hci/hci_layer.h"
@@ -41,14 +40,12 @@ hci::LeAdvertisingManager* GetAdvertising() {
   return Stack::GetInstance()->GetLeAdvertisingManager();
 }
 
-hci::ControllerInterface* GetController() {
-  return Stack::GetInstance()->GetInstance<hci::Controller>();
-}
+hci::ControllerInterface* GetController() { return Stack::GetInstance()->GetController(); }
 
 hci::HciInterface* GetHciLayer() { return Stack::GetInstance()->GetInstance<hci::HciLayer>(); }
 
 hci::RemoteNameRequestModule* GetRemoteNameRequest() {
-  return Stack::GetInstance()->GetInstance<hci::RemoteNameRequestModule>();
+  return Stack::GetInstance()->GetRemoteNameRequest();
 }
 
 hci::LeScanningManager* GetScanning() { return Stack::GetInstance()->GetLeScanningManager(); }
@@ -65,7 +62,7 @@ lpp::LppOffloadInterface* GetLppOffloadManager() {
 
 storage::StorageModule* GetStorage() { return Stack::GetInstance()->GetStorage(); }
 
-hci::AclManager* GetAclManager() { return Stack::GetInstance()->GetInstance<hci::AclManager>(); }
+hci::AclManager* GetAclManager() { return Stack::GetInstance()->GetAclManager(); }
 
 hci::MsftExtensionManager* GetMsftExtensionManager() {
   return Stack::GetInstance()->GetInstance<hci::MsftExtensionManager>();

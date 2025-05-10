@@ -30,7 +30,6 @@
 
 #include "btif/include/btif_hh.h"
 #include "hal/hci_hal.h"
-#include "hci/acl_manager.h"
 #include "hci/acl_manager/classic_acl_connection.h"
 #include "hci/acl_manager/connection_management_callbacks.h"
 #include "hci/acl_manager/le_acl_connection.h"
@@ -177,7 +176,6 @@ shim::acl_interface_t acl_interface{
         .link.classic.on_sniff_subrating = nullptr,
         .link.classic.on_read_clock_complete = nullptr,
         .link.classic.on_read_clock_offset_complete = nullptr,
-        .link.classic.on_read_failed_contact_counter_complete = nullptr,
         .link.classic.on_read_link_policy_settings_complete = nullptr,
         .link.classic.on_read_link_quality_complete = nullptr,
         .link.classic.on_read_link_supervision_timeout_complete = nullptr,
@@ -320,7 +318,6 @@ const ModuleFactory HciHal::Factory = ModuleFactory([]() { return nullptr; });
 }  // namespace bluetooth
 
 class MainShimTest : public testing::Test {
-public:
 protected:
   void SetUp() override {
     main_thread_start_up();

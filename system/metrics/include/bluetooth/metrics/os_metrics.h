@@ -97,17 +97,6 @@ void LogMetricRemoteVersionInfo(uint16_t handle, uint8_t status, uint8_t version
                                 uint16_t manufacturer_name, uint16_t subversion);
 
 /**
- * Log A2DP audio buffer underrun event
- *
- * @param address A2DP device associated with this event
- * @param encoding_interval_millis encoding interval in milliseconds
- * @param num_missing_pcm_bytes number of PCM bytes that cannot be read from
- *                              the source
- */
-void LogMetricA2dpAudioUnderrunEvent(const hci::Address& address, uint64_t encoding_interval_millis,
-                                     int num_missing_pcm_bytes);
-
-/**
  * Log A2DP audio buffer overrun event
  *
  * @param address A2DP device associated with this event
@@ -132,31 +121,27 @@ void LogMetricA2dpAudioOverrunEvent(const hci::Address& address, uint64_t encodi
 void LogMetricA2dpPlaybackEvent(const hci::Address& address, int playback_state,
                                 int audio_coding_mode);
 
+struct A2dpSession {
+  int64_t codec_index = -1;
+  bool is_a2dp_offload = false;
+  int64_t audio_duration_ms = -1;
+  int32_t media_timer_min_ms = -1;
+  int32_t media_timer_max_ms = -1;
+  int32_t media_timer_avg_ms = -1;
+  int64_t total_scheduling_count = -1;
+  int32_t buffer_overruns_max_count = -1;
+  int32_t buffer_overruns_total = -1;
+  float buffer_underruns_average = -1;
+  int32_t buffer_underruns_count = -1;
+};
+
 /**
  * Log A2DP audio session metrics
  *
- * @param address A2DP device associated with this session
- * @param audio_duration_ms duration of the A2DP session
- * @param media_timer_min_ms min time interval for the media timer
- * @param media_timer_max_ms max time interval for the media timer
- * @param media_timer_avg_ms avg time interval for the media timer
- * @param total_scheduling_count total scheduling count
- * @param buffer_overruns_max_count max count of Tx queue messages dropped
-                                    caused by buffer overruns
- * @param buffer_overruns_total total count of Tx queue messages dropped
-                                caused by buffer overruns
- * @param buffer_underruns_average  avg number of bytes short in buffer
-                                    underruns
- * @param buffer_underruns_count count of buffer underruns
- * @param codec_index A2DP codec index (SBC=0, AAC=1, etc...)
- * @param is_a2dp_offload if A2DP is offload
+ * @param address  A2DP device associated with this session
+ * @param session  Statistics of the reported session.
  */
-void LogMetricA2dpSessionMetricsEvent(const hci::Address& address, int64_t audio_duration_ms,
-                                      int media_timer_min_ms, int media_timer_max_ms,
-                                      int media_timer_avg_ms, int total_scheduling_count,
-                                      int buffer_overruns_max_count, int buffer_overruns_total,
-                                      float buffer_underruns_average, int buffer_underruns_count,
-                                      int64_t codec_index, bool is_a2dp_offload);
+void LogA2dpSessionReported(const hci::Address& address, const A2dpSession& session);
 
 /**
  * Log HFP audio capture packet loss statistics
@@ -168,44 +153,6 @@ void LogMetricA2dpSessionMetricsEvent(const hci::Address& address, int64_t audio
  */
 void LogMetricHfpPacketLossStats(const hci::Address& address, int num_decoded_frames,
                                  double packet_loss_ratio, uint16_t codec_id);
-
-/**
- * Log read RSSI result
- *
- * @param address device associated with this event
- * @param handle connection handle of this event,
- *               {@link kUnknownConnectionHandle} if unknown
- * @param cmd_status command status from read RSSI command
- * @param rssi rssi value in dBm
- */
-void LogMetricReadRssiResult(const hci::Address& address, uint16_t handle, uint32_t cmd_status,
-                             int8_t rssi);
-
-/**
- * Log failed contact counter report
- *
- * @param address device associated with this event
- * @param handle connection handle of this event,
- *               {@link kUnknownConnectionHandle} if unknown
- * @param cmd_status command status from read failed contact counter command
- * @param failed_contact_counter Number of consecutive failed contacts for a
- *                               connection corresponding to the Handle
- */
-void LogMetricReadFailedContactCounterResult(const hci::Address& address, uint16_t handle,
-                                             uint32_t cmd_status, int32_t failed_contact_counter);
-
-/**
- * Log transmit power level for a particular device after read
- *
- * @param address device associated with this event
- * @param handle connection handle of this event,
- *               {@link kUnknownConnectionHandle} if unknown
- * @param cmd_status command status from read failed contact counter command
- * @param transmit_power_level transmit power level for connection to this
- *                             device
- */
-void LogMetricReadTxPowerLevelResult(const hci::Address& address, uint16_t handle,
-                                     uint32_t cmd_status, int32_t transmit_power_level);
 
 /**
  * Logs when there is an event related to Bluetooth Security Manager Protocol

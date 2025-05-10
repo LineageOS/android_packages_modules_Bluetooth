@@ -16,133 +16,87 @@
 
 #pragma once
 
-#include <functional>
-#include <future>
-#include <memory>
-
 #include "hci/acl_manager/connection_callbacks.h"
 #include "hci/acl_manager/le_connection_callbacks.h"
 #include "hci/address.h"
 #include "hci/address_with_type.h"
 #include "hci/hci_packets.h"
 #include "hci/le_address_manager.h"
-#include "hci/le_on_advertising_set_terminated_interface.h"
-#include "module.h"
 #include "os/handler.h"
 
 namespace bluetooth {
-namespace shim {
-namespace legacy {
-class Acl;
-}  // namespace legacy
-
-class Btm;
-bool L2CA_SetAclPriority(uint16_t, bool);
-}  // namespace shim
-
 namespace hci {
 
-class AclManager : public Module, public OnAdvertisingSetTerminatedInterface {
-  friend class bluetooth::shim::legacy::Acl;
-  friend bool bluetooth::shim::L2CA_SetAclPriority(uint16_t, bool);
-
+class AclManager {
 public:
-  AclManager();
-  AclManager(const AclManager&) = delete;
-  AclManager& operator=(const AclManager&) = delete;
+  virtual ~AclManager() = default;
 
-  // NOTE: It is necessary to forward declare a default destructor that
-  // overrides the base class one, because "struct impl" is forwarded declared
-  // in .cc and compiler needs a concrete definition of "struct impl" when
-  // compiling AclManager's destructor. Hence we need to forward declare the
-  // destructor for AclManager to delay compiling AclManager's destructor until
-  // it starts linking the .cc file.
-  ~AclManager();
-
-  void Dump(int fd) const;
+  virtual void Dump(int /*fd*/) const = 0;
 
   // Should register only once when user module starts.
   // Generates OnConnectSuccess when an incoming connection is established.
-  virtual void RegisterCallbacks(acl_manager::ConnectionCallbacks* callbacks, os::Handler* handler);
+  virtual void RegisterCallbacks(acl_manager::ConnectionCallbacks* callbacks,
+                                 os::Handler* handler) = 0;
   virtual void UnregisterCallbacks(acl_manager::ConnectionCallbacks* callbacks,
-                                   std::promise<void> promise);
+                                   std::promise<void> promise) = 0;
 
   // Should register only once when user module starts.
   virtual void RegisterLeCallbacks(acl_manager::LeConnectionCallbacks* callbacks,
-                                   os::Handler* handler);
+                                   os::Handler* handler) = 0;
   virtual void UnregisterLeCallbacks(acl_manager::LeConnectionCallbacks* callbacks,
-                                     std::promise<void> promise);
+                                     std::promise<void> promise) = 0;
 
   // Generates OnConnectSuccess if connected, or OnConnectFail otherwise
-  virtual void CreateConnection(Address address);
+  virtual void CreateConnection(Address address) = 0;
 
   // Generates OnLeConnectSuccess if connected, or OnLeConnectFail otherwise
   virtual void CreateLeConnection(AddressWithType address_with_type, bool is_direct,
-                                  bool prefer_relax_mode);
+                                  bool prefer_relax_mode) = 0;
 
-  virtual void SetPrivacyPolicyForInitiatorAddress(LeAddressManager::AddressPolicy address_policy,
-                                                   AddressWithType fixed_address,
-                                                   std::chrono::milliseconds minimum_rotation_time,
-                                                   std::chrono::milliseconds maximum_rotation_time);
+  virtual void SetPrivacyPolicyForInitiatorAddress(
+          LeAddressManager::AddressPolicy address_policy, AddressWithType fixed_address,
+          std::chrono::milliseconds minimum_rotation_time,
+          std::chrono::milliseconds maximum_rotation_time) = 0;
 
   // TODO(jpawlowski): remove once we have config file abstraction in cert tests
   virtual void SetPrivacyPolicyForInitiatorAddressForTest(
           LeAddressManager::AddressPolicy address_policy, AddressWithType fixed_address,
           Octet16 rotation_irk, std::chrono::milliseconds minimum_rotation_time,
-          std::chrono::milliseconds maximum_rotation_time);
+          std::chrono::milliseconds maximum_rotation_time) = 0;
 
   // Generates OnConnectFail with error code "terminated by local host 0x16" if
   // cancelled, or OnConnectSuccess if not successfully cancelled and already
   // connected
-  virtual void CancelConnect(Address address);
-  virtual void RemoveFromBackgroundList(AddressWithType address_with_type);
+  virtual void CancelConnect(Address address) = 0;
+  virtual void RemoveFromBackgroundList(AddressWithType address_with_type) = 0;
 
-  virtual void CancelLeConnect(AddressWithType address_with_type);
+  virtual void CancelLeConnect(AddressWithType address_with_type) = 0;
 
-  virtual void ClearFilterAcceptList();
+  virtual void ClearFilterAcceptList() = 0;
 
   virtual void AddDeviceToResolvingList(AddressWithType address_with_type,
                                         const std::array<uint8_t, 16>& peer_irk,
-                                        const std::array<uint8_t, 16>& local_irk);
-  virtual void RemoveDeviceFromResolvingList(AddressWithType address_with_type);
-  virtual void ClearResolvingList();
+                                        const std::array<uint8_t, 16>& local_irk) = 0;
+  virtual void RemoveDeviceFromResolvingList(AddressWithType address_with_type) = 0;
+  virtual void ClearResolvingList() = 0;
 
-  virtual void CentralLinkKey(KeyFlag key_flag);
-  virtual void SwitchRole(Address address, Role role);
-  virtual uint16_t ReadDefaultLinkPolicySettings();
-  virtual void WriteDefaultLinkPolicySettings(uint16_t default_link_policy_settings);
+  virtual void CentralLinkKey(KeyFlag key_flag) = 0;
+  virtual void SwitchRole(Address address, Role role) = 0;
+  virtual uint16_t ReadDefaultLinkPolicySettings() = 0;
+  virtual void WriteDefaultLinkPolicySettings(uint16_t default_link_policy_settings) = 0;
 
   // Callback from Advertising Manager to notify the advitiser (local) address
-  void OnAdvertisingSetTerminated(ErrorCode status, uint16_t conn_handle, uint8_t adv_set_id,
-                                  hci::AddressWithType adv_address, bool is_discoverable) override;
+  virtual void OnAdvertisingSetTerminated(ErrorCode status, uint16_t conn_handle,
+                                          uint8_t adv_set_id, hci::AddressWithType adv_address,
+                                          bool is_discoverable) = 0;
 
-  virtual LeAddressManager* GetLeAddressManager();
+  virtual LeAddressManager* GetLeAddressManager() = 0;
 
   // Virtual ACL disconnect emitted during suspend.
-  virtual void OnClassicSuspendInitiatedDisconnect(uint16_t handle, ErrorCode reason);
-  virtual void OnLeSuspendInitiatedDisconnect(uint16_t handle, ErrorCode reason);
-  virtual void SetSystemSuspendState(bool suspended);
-
-  virtual Address HACK_GetLeAddress(uint16_t connection_handle);
-
-  static const ModuleFactory Factory;
-
-protected:
-  void ListDependencies(ModuleList* list) const override;
-
-  void Start() override;
-  void Stop() override;
-
-  std::string ToString() const override;
-
-private:
-  virtual uint16_t HACK_GetHandle(const Address address);
-  virtual uint16_t HACK_GetLeHandle(const Address address);
-
-  virtual void HACK_SetAclTxPriority(uint8_t handle, bool high_priority);
-
-  struct impl;
-  std::unique_ptr<impl> pimpl_;
+  virtual void OnClassicSuspendInitiatedDisconnect(uint16_t handle, ErrorCode reason) = 0;
+  virtual void OnLeSuspendInitiatedDisconnect(uint16_t handle, ErrorCode reason) = 0;
+  virtual void SetSystemSuspendState(bool suspended) = 0;
+  virtual Address HACK_GetLeAddress(uint16_t connection_handle) = 0;
 };
 
 }  // namespace hci

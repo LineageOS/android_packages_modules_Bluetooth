@@ -61,25 +61,6 @@ static constexpr uint16_t kMinProcedureInterval = 0x01;
 namespace bluetooth {
 namespace hci {
 namespace {
-class TestController : public testing::MockController {
-protected:
-  void Start() override {}
-  void Stop() override {}
-  void ListDependencies(ModuleList* /* list */) const override {}
-};
-
-class TestAclManager : public testing::MockAclManager {
-public:
-  Address HACK_GetLeAddress(uint16_t /*connection_handle*/) override { return target_address_; }
-
-protected:
-  void Start() override {}
-  void Stop() override {}
-  void ListDependencies(ModuleList* /* list */) const override {}
-
-public:
-  Address target_address_;
-};
 
 struct CsReadCapabilitiesCompleteEvent {
   ErrorCode error_code = ErrorCode::SUCCESS;
@@ -203,8 +184,8 @@ struct StartMeasurementParameters {
 struct CsModule {
   TestModuleRegistry fake_registry_;
   HciLayerFake* test_hci_layer_ = nullptr;
-  TestController* mock_controller_ = nullptr;
-  TestAclManager* mock_acl_manager_ = nullptr;
+  testing::MockController* mock_controller_ = nullptr;
+  testing::MockAclManager* mock_acl_manager_ = nullptr;
   hal::testing::MockRangingHal* mock_ranging_hal_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
   os::Handler* client_handler_ = nullptr;
@@ -218,13 +199,11 @@ struct CsModule {
 
   void Start() {
     test_hci_layer_ = new HciLayerFake;                    // Ownership is transferred to registry
-    mock_controller_ = new TestController;                 // Ownership is transferred to registry
+    mock_controller_ = new testing::MockController;        // Ownership is transferred to registry
     mock_ranging_hal_ = new hal::testing::MockRangingHal;  // Ownership is transferred to registry
-    mock_acl_manager_ = new TestAclManager;                // Ownership is transferred to registry
+    mock_acl_manager_ = new testing::MockAclManager;       // Ownership is transferred to registry
     fake_registry_.InjectTestModule(&hal::RangingHal::Factory, mock_ranging_hal_);
-    fake_registry_.InjectTestModule(&Controller::Factory, mock_controller_);
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
-    fake_registry_.InjectTestModule(&AclManager::Factory, mock_acl_manager_);
 
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
@@ -234,7 +213,7 @@ struct CsModule {
     EXPECT_CALL(*mock_ranging_hal_, GetRangingHalVersion).WillRepeatedly(Return(hal::V_2));
 
     fake_registry_.Start<hal::RangingHal>(&thread_, handler_);
-    fake_registry_.Start<AclManager>(&thread_, handler_);
+    fake_registry_.Start<HciLayer>(&thread_, handler_);
 
     handler_ = fake_registry_.GetTestHandler();
     dm_manager_ = new DistanceMeasurementManagerImpl(handler_, test_hci_layer_, mock_controller_,
@@ -1315,17 +1294,19 @@ TEST_F(DistanceMeasurementManagerTest, complete_mode2_procedure) {
   cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
   uint16_t procedure_counter = 0;
 
-  CsSubeventResultEvent req_subevent_result_1;
-  req_subevent_result_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
-  req_subevent_result_1.subevent_done_status = CsSubeventDoneStatus::PARTIAL_RESULTS;
-  req_subevent_result_1.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::INITIATOR);
+  CsSubeventResultEvent req_subevent_result_1_1;
+  req_subevent_result_1_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  req_subevent_result_1_1.subevent_done_status = CsSubeventDoneStatus::PARTIAL_RESULTS;
+  req_subevent_result_1_1.result_data_structures =
+          CsModule::GetSubeventMode2Data(CsRole::INITIATOR);
   cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
-          params.connection_handle, procedure_counter, req_subevent_result_1));
-  req_subevent_result_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
-  req_subevent_result_1.subevent_done_status = CsSubeventDoneStatus::ALL_RESULTS_COMPLETE;
-  req_subevent_result_1.result_data_structures = CsModule::GetSubeventContinueMode2Data();
+          params.connection_handle, procedure_counter, req_subevent_result_1_1));
+  CsSubeventResultEvent req_subevent_result_1_2;
+  req_subevent_result_1_2.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  req_subevent_result_1_2.subevent_done_status = CsSubeventDoneStatus::ALL_RESULTS_COMPLETE;
+  req_subevent_result_1_2.result_data_structures = CsModule::GetSubeventContinueMode2Data();
   cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultContinueEvent(
-          params.connection_handle, req_subevent_result_1));
+          params.connection_handle, req_subevent_result_1_2));
 
   CsSubeventResultEvent req_subevent_result_2;
   req_subevent_result_2.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::INITIATOR);
@@ -1345,11 +1326,19 @@ TEST_F(DistanceMeasurementManagerTest, complete_mode2_procedure) {
                                       bool /*is_last*/, std::vector<uint8_t> raw_data) {
             segment_data_1 = std::move(raw_data);
           });
-  CsSubeventResultEvent resp_subevent_result_1;
-  resp_subevent_result_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
-  resp_subevent_result_1.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::REFLECTOR);
+  CsSubeventResultEvent resp_subevent_result_1_1;
+  resp_subevent_result_1_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  resp_subevent_result_1_1.subevent_done_status = CsSubeventDoneStatus::PARTIAL_RESULTS;
+  resp_subevent_result_1_1.result_data_structures =
+          CsModule::GetSubeventMode2Data(CsRole::REFLECTOR);
   cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
-          params.connection_handle, procedure_counter, resp_subevent_result_1));
+          params.connection_handle, procedure_counter, resp_subevent_result_1_1));
+  CsSubeventResultEvent resp_subevent_result_1_2;
+  resp_subevent_result_1_2.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  resp_subevent_result_1_2.subevent_done_status = CsSubeventDoneStatus::ALL_RESULTS_COMPLETE;
+  resp_subevent_result_1_2.result_data_structures = CsModule::GetSubeventContinueMode2Data();
+  cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultContinueEvent(
+          params.connection_handle, resp_subevent_result_1_2));
   CsSubeventResultEvent resp_subevent_result_2;
   resp_subevent_result_2.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::REFLECTOR);
   cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
@@ -1360,6 +1349,7 @@ TEST_F(DistanceMeasurementManagerTest, complete_mode2_procedure) {
   EXPECT_CALL(
           *cs_requester_.mock_ranging_hal_,
           WriteProcedureData(params.connection_handle, CsRole::INITIATOR, _, procedure_counter));
+
   cs_requester_.dm_manager_->HandleRemoteData(params.responder_addr, params.connection_handle,
                                               segment_data_1);
 
@@ -1640,7 +1630,8 @@ TEST_F(DistanceMeasurementManagerTest, get_rssi_result_success) {
 
   cs_requester_.sync_client_handler();
   uint8_t rssi = 10;  // dBm
-  cs_requester_.mock_acl_manager_->target_address_ = params.responder_addr;
+  ON_CALL(*cs_requester_.mock_acl_manager_, HACK_GetLeAddress(_))
+          .WillByDefault(Return(params.responder_addr));
   auto future = cs_requester_.fake_timer_advance(params.interval);
   future.wait_for(kTimeout);
 
