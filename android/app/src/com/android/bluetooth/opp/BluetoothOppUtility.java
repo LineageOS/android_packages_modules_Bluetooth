@@ -35,6 +35,7 @@ package com.android.bluetooth.opp;
 import android.app.NotificationManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.content.ActivityNotFoundException;
@@ -116,7 +117,7 @@ public class BluetoothOppUtility {
     }
 
     public static void fillRecord(Context context, Cursor cursor, BluetoothOppTransferInfo info) {
-        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        BluetoothAdapter adapter = context.getSystemService(BluetoothManager.class).getAdapter();
         info.mID = cursor.getInt(cursor.getColumnIndexOrThrow(BluetoothShare._ID));
         info.mStatus = cursor.getInt(cursor.getColumnIndexOrThrow(BluetoothShare.STATUS));
         info.mDirection = cursor.getInt(cursor.getColumnIndexOrThrow(BluetoothShare.DIRECTION));

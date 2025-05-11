@@ -35,6 +35,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
 import android.app.NotificationManager;
+import android.bluetooth.BluetoothManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.MatrixCursor;
@@ -98,7 +99,12 @@ public class BluetoothOppServiceTest {
             Looper.prepare();
         }
 
+        final BluetoothManager manager = mContext.getSystemService(BluetoothManager.class);
+        assertThat(manager).isNotNull();
+        doReturn(manager).when(mAdapterService).getSystemService(BluetoothManager.class);
+
         BluetoothOppPreference oppPreference = BluetoothOppPreference.getInstance(mContext);
+
         mService = new BluetoothOppService(mAdapterService, oppPreference);
         mService.setAvailable(true);
 
