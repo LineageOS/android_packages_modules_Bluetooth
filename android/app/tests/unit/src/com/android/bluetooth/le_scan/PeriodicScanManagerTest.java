@@ -62,7 +62,6 @@ public class PeriodicScanManagerTest {
     @Mock private IPeriodicAdvertisingCallback mCallback;
     @Mock private IBinder mBinder;
 
-    private BluetoothAdapter mAdapter;
     private PeriodicScanManager mPeriodicScanManager;
     private BluetoothDevice mDevice;
     private ScanResult mScanResult;
@@ -73,15 +72,19 @@ public class PeriodicScanManagerTest {
     @Before
     public void setUp() throws Exception {
         PeriodicScanNativeInterface.setInstance(mPeriodicScanNativeInterface);
-        mPeriodicScanManager =
-                new PeriodicScanManager(mAdapterService, new TestLooper().getLooper());
 
         final Context context = InstrumentationRegistry.getInstrumentation().getContext();
-        BluetoothManager manager = context.getSystemService(BluetoothManager.class);
+        final BluetoothManager manager = context.getSystemService(BluetoothManager.class);
         assertThat(manager).isNotNull();
-        mAdapter = manager.getAdapter();
+        final BluetoothAdapter adapter = manager.getAdapter();
+        assertThat(adapter).isNotNull();
+        doReturn(manager).when(mAdapterService).getSystemService(BluetoothManager.class);
+
+        final TestLooper looper = new TestLooper();
+        mPeriodicScanManager = new PeriodicScanManager(mAdapterService, looper.getLooper());
+
         mDevice =
-                mAdapter.getRemoteLeDevice(
+                adapter.getRemoteLeDevice(
                         REMOTE_DEVICE_ADDRESS, BluetoothDevice.ADDRESS_TYPE_RANDOM);
 
         mScanResult = new ScanResult(mDevice, 0, 0, 0, 0, 0, 0, 0, null, 0);

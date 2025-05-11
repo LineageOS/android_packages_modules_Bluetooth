@@ -39,6 +39,7 @@ import static org.mockito.Mockito.verify;
 import android.app.ActivityManager;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.IBluetoothGattCallback;
 import android.bluetooth.IBluetoothGattServerCallback;
@@ -173,6 +174,10 @@ public class GattServiceTest {
 
         mBtCompanionManager = new CompanionManager(mAdapterService, null);
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
+
+        final BluetoothManager manager = mContext.getSystemService(BluetoothManager.class);
+        assertThat(manager).isNotNull();
+        doReturn(manager).when(mAdapterService).getSystemService(BluetoothManager.class);
 
         AdvertiseManagerNativeInterface.setInstance(mAdvertiseManagerNativeInterface);
         mService = new GattService(mAdapterService);
