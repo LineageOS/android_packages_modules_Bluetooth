@@ -1,6 +1,6 @@
 //! This library provides helper functions to parse info from advertising data.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use bt_topshim::bindings::root::bluetooth::Uuid;
 
@@ -58,35 +58,37 @@ pub fn extract_flags(bytes: &[u8]) -> u8 {
 
 // Helper function to extract service uuids (128bit) from advertising data
 pub fn extract_service_uuids(bytes: &[u8]) -> Vec<Uuid> {
-    iterate_adv_data(bytes, COMPLETE_LIST_16_BIT_SERVICE_UUIDS)
-        .flat_map(|slice| slice.chunks(2))
-        .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok())
-        .chain(
-            iterate_adv_data(bytes, COMPLETE_LIST_32_BIT_SERVICE_UUIDS)
-                .flat_map(|slice| slice.chunks(4))
-                .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
-        )
-        .chain(
-            iterate_adv_data(bytes, COMPLETE_LIST_128_BIT_SERVICE_UUIDS)
-                .flat_map(|slice| slice.chunks(16))
-                .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
-        )
-        .chain(
-            iterate_adv_data(bytes, INCOMPLETE_LIST_16_BIT_SERVICE_UUIDS)
-                .flat_map(|slice| slice.chunks(2))
-                .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
-        )
-        .chain(
-            iterate_adv_data(bytes, INCOMPLETE_LIST_32_BIT_SERVICE_UUIDS)
-                .flat_map(|slice| slice.chunks(4))
-                .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
-        )
-        .chain(
-            iterate_adv_data(bytes, INCOMPLETE_LIST_128_BIT_SERVICE_UUIDS)
-                .flat_map(|slice| slice.chunks(16))
-                .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
-        )
-        .collect()
+    let collected_uuids: HashSet<Uuid> =
+        iterate_adv_data(bytes, COMPLETE_LIST_16_BIT_SERVICE_UUIDS)
+            .flat_map(|slice| slice.chunks(2))
+            .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok())
+            .chain(
+                iterate_adv_data(bytes, COMPLETE_LIST_32_BIT_SERVICE_UUIDS)
+                    .flat_map(|slice| slice.chunks(4))
+                    .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
+            )
+            .chain(
+                iterate_adv_data(bytes, COMPLETE_LIST_128_BIT_SERVICE_UUIDS)
+                    .flat_map(|slice| slice.chunks(16))
+                    .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
+            )
+            .chain(
+                iterate_adv_data(bytes, INCOMPLETE_LIST_16_BIT_SERVICE_UUIDS)
+                    .flat_map(|slice| slice.chunks(2))
+                    .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
+            )
+            .chain(
+                iterate_adv_data(bytes, INCOMPLETE_LIST_32_BIT_SERVICE_UUIDS)
+                    .flat_map(|slice| slice.chunks(4))
+                    .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
+            )
+            .chain(
+                iterate_adv_data(bytes, INCOMPLETE_LIST_128_BIT_SERVICE_UUIDS)
+                    .flat_map(|slice| slice.chunks(16))
+                    .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
+            )
+            .collect();
+    collected_uuids.into_iter().collect()
 }
 
 // Helper function to extract name from advertising data
