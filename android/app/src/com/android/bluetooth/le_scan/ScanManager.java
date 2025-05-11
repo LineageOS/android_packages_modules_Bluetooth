@@ -571,7 +571,7 @@ public class ScanManager {
         }
 
         private static boolean isFilteredScan(ScanClient client) {
-            if ((client.mFilters == null) || client.mFilters.isEmpty()) {
+            if (client.mFilters.isEmpty()) {
                 return false;
             }
 
@@ -1499,7 +1499,7 @@ public class ScanManager {
         if (!isExemptFromScanTimeout(client)
                 && (client.mStats.isEmpty() || client.mStats.get().isScanningTooLong())) {
             Log.d(TAG, "regularScanTimeout - client scan time was too long");
-            if (client.mFilters == null || client.mFilters.isEmpty()) {
+            if (client.mFilters.isEmpty()) {
                 Log.w(
                         TAG,
                         "Moving unfiltered scan client to opportunistic scan (scannerId "
@@ -1749,7 +1749,7 @@ public class ScanManager {
         if (client == null) {
             return true;
         }
-        if (client.mFilters == null || client.mFilters.isEmpty()) {
+        if (client.mFilters.isEmpty()) {
             return true;
         }
         if (client.mFilters.size() > mFilterIndexStack.size()) {
@@ -2018,7 +2018,6 @@ public class ScanManager {
         }
 
         if (client == null
-                || client.mFilters == null
                 || client.mFilters.isEmpty()
                 || client.mFilters.size() > mFilterIndexStack.size()) {
             // Use all-pass filter

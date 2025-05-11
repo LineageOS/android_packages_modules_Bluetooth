@@ -100,8 +100,7 @@ class BatchScanThrottler {
         for (ScanClient client : batchClients) {
             if (client.mSettings.getReportDelayMillis() > 0) {
                 long clientIntervalMillis = client.mSettings.getReportDelayMillis();
-                if ((client.mFilters == null || client.mFilters.isEmpty())
-                        && clientIntervalMillis < unfilteredFloor) {
+                if (client.mFilters.isEmpty() && clientIntervalMillis < unfilteredFloor) {
                     clientIntervalMillis = unfilteredFloor;
                 }
                 intervalMillis = Math.min(intervalMillis, clientIntervalMillis);

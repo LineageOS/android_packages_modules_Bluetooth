@@ -599,7 +599,7 @@ public class ScanController {
                 return false;
             }
         }
-        if (client.mFilters == null || client.mFilters.isEmpty()) {
+        if (client.mFilters.isEmpty()) {
             // TODO: Do we really wanna return true here?
             return true;
         }
@@ -811,7 +811,7 @@ public class ScanController {
 
         List<ScanResult> permittedResults = permittedResults(client, allResults);
 
-        if (client.mFilters == null || client.mFilters.isEmpty()) {
+        if (client.mFilters.isEmpty()) {
             sendBatchScanResults(app, client, permittedResults);
             return;
         }
