@@ -81,6 +81,10 @@ impl OpusEncoder {
         //         by `opus_encoder_create()`.
         unsafe { Self::set_complexity(st, opus_config.complexity) };
 
+        // SAFETY: The encoder state `st` points to a valid instance allocated above
+        //         by `opus_encoder_create()`.
+        unsafe { Self::set_qext(st, config.sample_rate > 48000) };
+
         Self {
             st,
             channels,
@@ -99,20 +103,20 @@ impl OpusEncoder {
     }
 
     unsafe fn set_bitrate(st: *mut c_void, value: usize) {
-        const OPUS_SET_BITRATE_REQUEST: c_int = 4002;
+        const SET_BITRATE_REQUEST: c_int = 4002;
         // SAFETY: The encoder state `st` points to a valid instance, as required by this
         //         function; The first argument of the variable argument list is interpreted
         //         as int32_t, as defined by the `OPUS_SET_BITRATE()` macro.
-        let result = unsafe { opus_encoder_ctl(st, OPUS_SET_BITRATE_REQUEST, value as i32) };
+        let result = unsafe { opus_encoder_ctl(st, SET_BITRATE_REQUEST, value as i32) };
         assert_eq!(result, 0, "Failed to set bitrate to {}, with error: {}", value, result);
     }
 
     unsafe fn set_vbr(st: *mut c_void, value: bool) {
-        const OPUS_SET_VBR_REQUEST: c_int = 4006;
+        const SET_VBR_REQUEST: c_int = 4006;
         // SAFETY: The encoder state `st` points to a valid instance, as required by this
         //         function; The first argument of the variable argument list is interpreted
         //         as int32_t, as defined by the `OPUS_SET_VBR()` macro.
-        let result = unsafe { opus_encoder_ctl(st, OPUS_SET_VBR_REQUEST, value as i32) };
+        let result = unsafe { opus_encoder_ctl(st, SET_VBR_REQUEST, value as i32) };
         assert_eq!(result, 0, "Failed to set VBR to {}, with error: {}", value, result);
     }
 
@@ -123,6 +127,15 @@ impl OpusEncoder {
         //         as int32_t, as defined by the `OPUS_SET_COMPLEXITY()` macro.
         let result = unsafe { opus_encoder_ctl(st, SET_COMPLEXITY_REQUEST, value) };
         assert_eq!(result, 0, "Failed to set complexity to {}, with error: {}", value, result);
+    }
+
+    unsafe fn set_qext(st: *mut c_void, value: bool) {
+        const SET_QEXT_REQUEST: c_int = 4054;
+        // SAFETY: The encoder state `st` points to a valid instance, as required by this
+        //         function; The first argument of the variable argument list is interpreted
+        //         as int32_t, as defined by the `OPUS_SET_QEXT()` macro.
+        let result = unsafe { opus_encoder_ctl(st, SET_QEXT_REQUEST, value as i32) };
+        assert_eq!(result, 0, "Failed to set qext to {}, with error: {}", value, result);
     }
 }
 

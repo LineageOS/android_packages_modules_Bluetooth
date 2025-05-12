@@ -2136,10 +2136,14 @@ public class ScanManager {
     private final DisplayManager.DisplayListener mDisplayListener =
             new DisplayManager.DisplayListener() {
                 @Override
-                public void onDisplayAdded(int displayId) {}
+                public void onDisplayAdded(int displayId) {
+                    onDisplayChanged(displayId);
+                }
 
                 @Override
-                public void onDisplayRemoved(int displayId) {}
+                public void onDisplayRemoved(int displayId) {
+                    onDisplayChanged(displayId);
+                }
 
                 @Override
                 public void onDisplayChanged(int displayId) {
