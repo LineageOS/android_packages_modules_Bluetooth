@@ -8194,6 +8194,7 @@ TEST_F(StateMachineTest, StartStreamBidirectional_DisableAndEnableSource) {
               StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::STREAMING))
           .Times(0);
 
+  enabled_directions_ = bluetooth::le_audio::types::kLeAudioDirectionSink;
   LeAudioGroupStateMachine::Get()->DisableStreamingDirection(
           group, bluetooth::le_audio::types::kLeAudioDirectionSource);
 
@@ -8207,6 +8208,7 @@ TEST_F(StateMachineTest, StartStreamBidirectional_DisableAndEnableSource) {
   EXPECT_CALL(mock_callbacks_,
               StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::STREAMING))
           .Times(2);
+  enabled_directions_ = bluetooth::le_audio::types::kLeAudioDirectionBoth;
   LeAudioGroupStateMachine::Get()->EnableStreamingDirection(
           group, bluetooth::le_audio::types::kLeAudioDirectionSource);
 
@@ -8290,6 +8292,89 @@ TEST_F(StateMachineTest, StartStreamBidirectional_QuickDisableAndEnableSink) {
           group, bluetooth::le_audio::types::kLeAudioDirectionSink);
 
   testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+}
+
+TEST_F(StateMachineTest, StartStreamBidirectional_QuickDisableAndEnableSource) {
+  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
+  const auto context_type = kContextTypeLive;
+  const auto leaudio_group_id = 6;
+  const auto num_devices = 2;
+  enabled_directions_ = bluetooth::le_audio::types::kLeAudioDirectionBoth;
+
+  /* Scenario:
+   * 1. Start Streaming bidirectional scenario for Live
+   * 2. Disable Remote Source Directions
+   * 3. Quick Enable Remote Source Directions
+   */
+
+  // Prepare multiple fake connected devices in a group
+  auto* group = PrepareSingleTestDeviceGroup(leaudio_group_id, context_type, num_devices);
+  ASSERT_EQ(group->Size(), num_devices);
+
+  PrepareConfigureCodecHandler(group, 0, true);
+  PrepareConfigureQosHandler(group);
+  PrepareEnableHandler(group);
+  PrepareDisableHandler(group);
+  PrepareReleaseHandler(group);
+  PrepareReceiverStartReadyHandler(group);
+  PrepareReceiverStopReady(group);
+
+  InjectInitialIdleNotification(group);
+
+  auto* leAudioDevice = group->GetFirstDevice();
+  auto expected_devices_written = 0;
+  while (leAudioDevice) {
+    /* Three Writes:
+     * 1. Codec configure
+     * 2: Codec QoS
+     * 3: Enabling Both Directions;
+     * 4. Receiver Start Ready
+     * 5. Disable Source
+     * 6. ReceiverStopReady
+     * 7, Enable Source
+     * 8. ReceiverStartReady
+     */
+    EXPECT_CALL(gatt_queue,
+                WriteCharacteristic(leAudioDevice->conn_id_, leAudioDevice->ctp_hdls_.val_hdl, _,
+                                    GATT_WRITE_NO_RSP, _, _))
+            .Times(8);
+    expected_devices_written++;
+    leAudioDevice = group->GetNextDevice(leAudioDevice);
+  }
+  ASSERT_EQ(expected_devices_written, num_devices);
+
+  // validate group status. Times 2 is only because this unitest does not support mainloop.
+  EXPECT_CALL(mock_callbacks_,
+              StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::STREAMING));
+
+  log::info("Start the configuration and stream LIVE content");
+  LeAudioGroupStateMachine::Get()->StartStream(group, context_type,
+                                               {.sink = types::AudioContexts(context_type),
+                                                .source = types::AudioContexts(context_type)});
+
+  testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+
+  log::debug("Make sure both directions are configured");
+  auto group_config = group->GetActiveConfiguration();
+  ASSERT_NE(group_config, nullptr);
+  auto [sink_is_enabled, source_is_enabled] = group_config->getDirections();
+  ASSERT_TRUE(sink_is_enabled);
+  ASSERT_TRUE(source_is_enabled);
+
+  log::debug("Make sure all directions are enabled");
+  ASSERT_EQ(group->GetActiveEnabledDirections(), bluetooth::le_audio::types::kLeAudioDirectionBoth);
+
+  log::debug("Disable and quick enable Remote Source");
+  /* Note, times(2) should be solved in b/415122157 */
+  EXPECT_CALL(mock_callbacks_,
+              StatusReportCb(leaudio_group_id, bluetooth::le_audio::GroupStreamStatus::STREAMING))
+          .Times(2);
+
+  LeAudioGroupStateMachine::Get()->DisableStreamingDirection(
+          group, bluetooth::le_audio::types::kLeAudioDirectionSource);
+
+  testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+  testing::Mock::VerifyAndClearExpectations(&gatt_queue);
 }
 
 TEST_F(StateMachineTest, StartStreamAfterConfigure) {
