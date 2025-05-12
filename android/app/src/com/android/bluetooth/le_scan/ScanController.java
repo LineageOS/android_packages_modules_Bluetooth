@@ -27,6 +27,7 @@ import android.app.AppOpsManager;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothUtils;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.IPeriodicAdvertisingCallback;
@@ -118,8 +119,8 @@ public class ScanController {
     private final Map<Integer, Integer> mFilterIndexToMsftAdvMonitorMap = new HashMap<>();
     private final Object mTestModeLock = new Object();
 
-    private final BluetoothAdapter mAdapter;
     private final AdapterService mAdapterService;
+    private final BluetoothAdapter mAdapter;
     private final String mExposureNotificationPackage;
     private final Predicate<ScanResult> mLocationDenylistPredicate;
     private final Looper mMainLooper;
@@ -134,9 +135,9 @@ public class ScanController {
     private ScannerMap mScannerMap = new ScannerMap();
     private Handler mTestModeHandler;
 
-    public ScanController(AdapterService adapterService) {
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
-        mAdapterService = requireNonNull(adapterService);
+    public ScanController(AdapterService service) {
+        mAdapterService = requireNonNull(service);
+        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mExposureNotificationPackage =
                 mAdapterService.getString(R.string.exposure_notification_package);
         mLocationDenylistPredicate =
@@ -157,7 +158,7 @@ public class ScanController {
                     }
                     return false;
                 };
-        mMainLooper = adapterService.getMainLooper();
+        mMainLooper = mAdapterService.getMainLooper();
         mBinder = new ScanBinder(mAdapterService, this);
         mScanThread = new HandlerThread("BluetoothScanManager");
         mScanThread.start();

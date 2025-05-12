@@ -18,8 +18,11 @@ package com.android.bluetooth.le_scan;
 
 import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringRunnable;
 
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.IPeriodicAdvertisingCallback;
 import android.bluetooth.le.PeriodicAdvertisingReport;
 import android.bluetooth.le.ScanRecord;
@@ -62,7 +65,7 @@ public class PeriodicScanManager {
     private final Map<IBinder, SyncTransferInfo> mSyncTransfers =
             Collections.synchronizedMap(new HashMap<>());
 
-    private final AdapterService mService;
+    private final AdapterService mAdapterService;
     private final BluetoothAdapter mAdapter;
     private final PeriodicScanNativeInterface mNativeInterface;
     private final Handler mHandler;
@@ -72,8 +75,8 @@ public class PeriodicScanManager {
     /** Constructor of {@link PeriodicScanManager}. */
     PeriodicScanManager(AdapterService service, Looper looper) {
         Log.d(TAG, "Periodic Scan Manager created");
-        mService = service;
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
+        mAdapterService = requireNonNull(service);
+        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mNativeInterface = PeriodicScanNativeInterface.getInstance();
         mNativeInterface.init(this);
         mHandler = new Handler(looper);
@@ -357,7 +360,7 @@ public class PeriodicScanManager {
             mSyncTransfers.remove(entry);
             IPeriodicAdvertisingCallback callback = entry.getValue().callback;
             try {
-                callback.onSyncTransferred(mService.getRemoteDevice(bda), status);
+                callback.onSyncTransferred(mAdapterService.getRemoteDevice(bda), status);
             } catch (RemoteException e) {
                 throw new IllegalArgumentException("Can't find callback for sync transfer");
             }
