@@ -5066,32 +5066,8 @@ public class AdapterService extends Service {
         }
     }
 
-    public boolean interopMatchAddr(InteropFeature feature, String address) {
-        return mNativeInterface.interopMatchAddr(feature.name(), address);
-    }
-
-    public boolean interopMatchName(InteropFeature feature, String name) {
-        return mNativeInterface.interopMatchName(feature.name(), name);
-    }
-
     public boolean interopMatchAddrOrName(InteropFeature feature, String address) {
         return mNativeInterface.interopMatchAddrOrName(feature.name(), address);
-    }
-
-    public void interopDatabaseAddAddr(InteropFeature feature, String address, int length) {
-        mNativeInterface.interopDatabaseAddRemoveAddr(true, feature.name(), address, length);
-    }
-
-    public void interopDatabaseRemoveAddr(InteropFeature feature, String address) {
-        mNativeInterface.interopDatabaseAddRemoveAddr(false, feature.name(), address, 0);
-    }
-
-    public void interopDatabaseAddName(InteropFeature feature, String name) {
-        mNativeInterface.interopDatabaseAddRemoveName(true, feature.name(), name);
-    }
-
-    public void interopDatabaseRemoveName(InteropFeature feature, String name) {
-        mNativeInterface.interopDatabaseAddRemoveName(false, feature.name(), name);
     }
 
     /**
