@@ -1602,92 +1602,90 @@ public class RemoteDevices {
     // TODO: remove when key_missing_public flag is deleted
     @SuppressLint("AndroidFrameworkRequiresPermission")
     void keyMissingCallback(byte[] address) {
-        BluetoothDevice bluetoothDevice = getDevice(address);
-        if (bluetoothDevice == null) {
+        BluetoothDevice device = getDevice(address);
+        if (device == null) {
             errorLog(
                     "keyMissingCallback: device is NULL, address="
                             + Utils.getRedactedAddressStringFromByte(address));
             return;
         }
-        Log.i(TAG, "keyMissingCallback device: " + bluetoothDevice);
 
-        if (getBondState(bluetoothDevice) == BluetoothDevice.BOND_BONDED) {
-            Intent intent =
-                    new Intent(BluetoothDevice.ACTION_KEY_MISSING)
-                            .putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice)
-                            .addFlags(
-                                    Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
-                                            | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
+        if (getBondState(device) != BluetoothDevice.BOND_BONDED) {
+            errorLog("keyMissingCallback: device is not bonded, address=" + device);
+            return;
+        }
 
-            // Log transition to key missing state, if the key missing count is 0 which indicates
-            //  that the device is bonded until now.
-            if (mAdapterService.getDatabase().getKeyMissingCount(bluetoothDevice) == 0) {
-                MetricsLogger.getInstance()
-                        .logBluetoothEvent(
-                                bluetoothDevice,
-                                BluetoothStatsLog
-                                        .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__TRANSITION,
-                                BluetoothStatsLog
-                                        .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__BOND_BONDED_TO_ACTION_KEY_MISSING,
-                                0);
+        Log.i(TAG, "keyMissingCallback device: " + device);
+        Intent intent =
+                new Intent(BluetoothDevice.ACTION_KEY_MISSING)
+                        .putExtra(BluetoothDevice.EXTRA_DEVICE, device)
+                        .addFlags(
+                                Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
+                                        | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
+
+        // Log transition to key missing state, if the key missing count is 0 which indicates
+        // that the device is bonded until now.
+        if (mAdapterService.getDatabase().getKeyMissingCount(device) == 0) {
+            MetricsLogger.getInstance()
+                    .logBluetoothEvent(
+                            device,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__TRANSITION,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__BOND_BONDED_TO_ACTION_KEY_MISSING,
+                            0);
+        }
+
+        // Bond loss detected, add to the count.
+        mAdapterService.getDatabase().updateKeyMissingCount(device, true);
+
+        // Some apps are not able to handle the key missing broadcast, so we need to remove
+        // the bond to prevent them from misbehaving.
+        // TODO (b/402854328): Remove when the misbehaving apps are updated
+        if (bondLossIopFixNeeded(device)) {
+            DeviceProperties deviceProperties = getDeviceProperties(device);
+            if (deviceProperties == null) {
+                return;
             }
-
-            // Bond loss detected, add to the count.
-            mAdapterService.getDatabase().updateKeyMissingCount(bluetoothDevice, true);
-
-            // Some apps are not able to handle the key missing broadcast, so we need to remove
-            // the bond to prevent them from misbehaving.
-            // TODO (b/402854328): Remove when the misbehaving apps are updated
-            if (bondLossIopFixNeeded(bluetoothDevice)) {
-                DeviceProperties deviceProperties = getDeviceProperties(bluetoothDevice);
-                if (deviceProperties == null) {
-                    return;
-                }
-                String[] packages = deviceProperties.getPackages();
-                if (packages.length == 0) {
-                    return;
-                }
-
-                Log.w(
-                        TAG,
-                        "Removing "
-                                + bluetoothDevice
-                                + " on behalf of: "
-                                + Arrays.toString(packages));
-                bluetoothDevice.removeBond();
-            }
-
-            if (Flags.keyMissingPublic()) {
-                mAdapterService.sendOrderedBroadcast(
-                        intent,
-                        BLUETOOTH_CONNECT,
-                        Utils.getTempBroadcastOptions().toBundle(),
-                        null /* resultReceiver */,
-                        null /* scheduler */,
-                        Activity.RESULT_OK /* initialCode */,
-                        null /* initialData */,
-                        null /* initialExtras */);
+            String[] packages = deviceProperties.getPackages();
+            if (packages.length == 0) {
                 return;
             }
 
-            if (Flags.keyMissingAsOrderedBroadcast()
-                    && android.os.Flags.orderedBroadcastMultiplePermissions()) {
-                mAdapterService.sendOrderedBroadcastMultiplePermissions(
-                        intent,
-                        new String[] {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
-                        null /* receiverAppOp */,
-                        null /* resultReceiver */,
-                        null /* scheduler */,
-                        Activity.RESULT_OK /* initialCode */,
-                        null /* initialData */,
-                        null /* initialExtras */,
-                        Utils.getTempBroadcastOptions().toBundle());
-            } else {
-                mAdapterService.sendBroadcastMultiplePermissions(
-                        intent,
-                        new String[] {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
-                        Utils.getTempBroadcastOptions());
-            }
+            Log.w(TAG, "Removing " + device + " on behalf of: " + Arrays.toString(packages));
+            device.removeBond();
+        }
+
+        if (Flags.keyMissingPublic()) {
+            mAdapterService.sendOrderedBroadcast(
+                    intent,
+                    BLUETOOTH_CONNECT,
+                    Utils.getTempBroadcastOptions().toBundle(),
+                    null /* resultReceiver */,
+                    null /* scheduler */,
+                    Activity.RESULT_OK /* initialCode */,
+                    null /* initialData */,
+                    null /* initialExtras */);
+            return;
+        }
+
+        if (Flags.keyMissingAsOrderedBroadcast()
+                && android.os.Flags.orderedBroadcastMultiplePermissions()) {
+            mAdapterService.sendOrderedBroadcastMultiplePermissions(
+                    intent,
+                    new String[] {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
+                    null /* receiverAppOp */,
+                    null /* resultReceiver */,
+                    null /* scheduler */,
+                    Activity.RESULT_OK /* initialCode */,
+                    null /* initialData */,
+                    null /* initialExtras */,
+                    Utils.getTempBroadcastOptions().toBundle());
+        } else {
+            mAdapterService.sendBroadcastMultiplePermissions(
+                    intent,
+                    new String[] {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
+                    Utils.getTempBroadcastOptions());
         }
     }
 
