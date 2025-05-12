@@ -32,7 +32,6 @@ import android.content.ContentProviderClient;
 import android.content.Context;
 import android.database.MatrixCursor;
 import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.RemoteException;
 
@@ -53,13 +52,22 @@ import org.mockito.Spy;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapObexServerTest {
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
+    @Mock private Context mContext;
+    @Mock private BluetoothMapService mMapService;
+    @Mock private ContentProviderClient mProviderClient;
+    @Mock private BluetoothMapContentObserver mObserver;
+    @Mock private ColorDrawable mColorDrawable;
+
+    @Spy private BluetoothMethodProxy mMapMethodProxy = BluetoothMethodProxy.getInstance();
+
     private static final int TEST_MAS_ID = 1;
     private static final boolean TEST_ENABLE_SMS_MMS = true;
     private static final String TEST_NAME = "test_name";
     private static final String TEST_PACKAGE_NAME = "test.package.name";
     private static final String TEST_ID = "1111";
     private static final String TEST_PROVIDER_AUTHORITY = "test.project.provider";
-    private static final Drawable TEST_DRAWABLE = new ColorDrawable();
     private static final BluetoothMapUtils.TYPE TEST_TYPE = BluetoothMapUtils.TYPE.IM;
     private static final String TEST_UCI = "uci";
     private static final String TEST_UCI_PREFIX = "uci_prefix";
@@ -68,14 +76,6 @@ public class BluetoothMapObexServerTest {
     private BluetoothMapMasInstance mMasInstance;
     private BluetoothMapObexServer mObexServer;
     private BluetoothMapAppParams mParams;
-
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
-    @Mock private Context mContext;
-    @Mock private BluetoothMapService mMapService;
-    @Mock private ContentProviderClient mProviderClient;
-    @Mock private BluetoothMapContentObserver mObserver;
-    @Spy private BluetoothMethodProxy mMapMethodProxy = BluetoothMethodProxy.getInstance();
 
     @Before
     public void setUp() throws Exception {
@@ -89,7 +89,7 @@ public class BluetoothMapObexServerTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -111,7 +111,7 @@ public class BluetoothMapObexServerTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         BluetoothMapUtils.TYPE.EMAIL,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -240,7 +240,7 @@ public class BluetoothMapObexServerTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         BluetoothMapUtils.TYPE.EMAIL,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -267,7 +267,7 @@ public class BluetoothMapObexServerTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         BluetoothMapUtils.TYPE.IM,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
