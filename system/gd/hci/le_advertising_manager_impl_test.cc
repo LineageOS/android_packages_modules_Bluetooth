@@ -72,6 +72,8 @@ public:
 
   VendorCapabilities GetVendorCapabilities() const override { return vendor_capabilities_; }
 
+  bool IsRpaGenerationSupported() const override { return true; }
+
   uint8_t num_advertisers_{0};
   VendorCapabilities vendor_capabilities_;
 
@@ -1747,7 +1749,8 @@ TEST_F(LeExtendedAdvertisingManagerTest, use_rpa) {
   auto set_parameters_command =
           LeSetExtendedAdvertisingParametersView::Create(LeAdvertisingCommandView::Create(command));
   ASSERT_TRUE(set_parameters_command.IsValid());
-  EXPECT_EQ(set_parameters_command.GetOwnAddressType(), OwnAddressType::RANDOM_DEVICE_ADDRESS);
+  EXPECT_EQ(set_parameters_command.GetOwnAddressType(),
+            OwnAddressType::RESOLVABLE_OR_RANDOM_ADDRESS);
 }
 
 TEST_F(LeExtendedAdvertisingManagerTest, use_non_resolvable_address) {
