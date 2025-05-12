@@ -192,6 +192,8 @@ class BassClientStateMachine extends StateMachine {
         } finally {
             Binder.restoreCallingIdentity(token);
         }
+
+        start();
     }
 
     private static class LeAudioBroadcastSyncStats {
@@ -280,26 +282,6 @@ class BassClientStateMachine extends StateMachine {
                             latencyBisSyncedMs,
                             mSyncStatus);
         }
-    }
-
-    static BassClientStateMachine make(
-            BluetoothDevice device,
-            BassClientService svc,
-            AdapterService adapterService,
-            Looper looper) {
-        Log.d(TAG, "make for device " + device);
-
-        if (!BassClientPeriodicAdvertisingManager
-                .initializePeriodicAdvertisingManagerOnDefaultAdapter()) {
-            Log.e(TAG, "Failed to initialize Periodic Advertising Manager on Default Adapter");
-            return null;
-        }
-
-        BassClientStateMachine bassClientSm =
-                new BassClientStateMachine(
-                        device, svc, adapterService, looper, BassConstants.CONNECT_TIMEOUT_MS);
-        bassClientSm.start();
-        return bassClientSm;
     }
 
     static void destroy(BassClientStateMachine stateMachine) {
