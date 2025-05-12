@@ -77,7 +77,7 @@ public class HeadsetObjectsFactory {
             AdapterService adapterService,
             HeadsetNativeInterface nativeInterface,
             HeadsetSystemInterface systemInterface) {
-        return HeadsetStateMachine.make(
+        return new HeadsetStateMachine(
                 device, looper, headsetService, adapterService, nativeInterface, systemInterface);
     }
 

@@ -192,7 +192,7 @@ class HeadsetStateMachine extends StateMachine {
     @VisibleForTesting
     static final String HFP_VOLUME_CONTROL_ENABLED = "bluetooth.hfp_volume_control.enabled";
 
-    private HeadsetStateMachine(
+    HeadsetStateMachine(
             BluetoothDevice device,
             Looper looper,
             HeadsetService headsetService,
@@ -236,26 +236,9 @@ class HeadsetStateMachine extends StateMachine {
         addState(mAudioConnecting);
         addState(mAudioDisconnecting);
         setInitialState(mDisconnected);
-    }
 
-    static HeadsetStateMachine make(
-            BluetoothDevice device,
-            Looper looper,
-            HeadsetService headsetService,
-            AdapterService adapterService,
-            HeadsetNativeInterface nativeInterface,
-            HeadsetSystemInterface systemInterface) {
-        HeadsetStateMachine stateMachine =
-                new HeadsetStateMachine(
-                        device,
-                        looper,
-                        headsetService,
-                        adapterService,
-                        nativeInterface,
-                        systemInterface);
-        stateMachine.start();
-        Log.i(TAG, "Created state machine " + stateMachine + " for " + device);
-        return stateMachine;
+        start();
+        Log.i(TAG, "Created state machine " + this + " for " + device);
     }
 
     static void destroy(HeadsetStateMachine stateMachine) {
