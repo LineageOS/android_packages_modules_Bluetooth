@@ -38,6 +38,7 @@ import android.annotation.SuppressLint;
 import android.app.NotificationManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSocket;
@@ -222,19 +223,17 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
 
     private OppConnectionReceiver mBluetoothReceiver;
 
-    public BluetoothOppTransfer(
-            Context context, BluetoothOppBatch batch, BluetoothOppObexSession session) {
+    BluetoothOppTransfer(Context context, BluetoothOppBatch batch) {
+        this(context, batch, null);
+    }
 
+    BluetoothOppTransfer(
+            Context context, BluetoothOppBatch batch, BluetoothOppObexSession session) {
         mContext = context;
         mBatch = requireNonNull(batch);
         mSession = session;
-
         mBatch.registerListener(this);
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
-    }
-
-    public BluetoothOppTransfer(Context context, BluetoothOppBatch batch) {
-        this(context, batch, null);
+        mAdapter = mContext.getSystemService(BluetoothManager.class).getAdapter();
     }
 
     public int getBatchId() {
