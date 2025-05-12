@@ -1985,10 +1985,12 @@ class BluetoothManagerService {
                         + (" prevState=" + nameForState(prevState))
                         + (" newState=" + nameForState(newState)));
         // Send broadcast message to everyone else
-        Intent intent = new Intent(action);
-        intent.putExtra(BluetoothAdapter.EXTRA_PREVIOUS_STATE, prevState);
-        intent.putExtra(BluetoothAdapter.EXTRA_STATE, newState);
-        intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
+        Intent intent =
+                new Intent(action)
+                        .putExtra(BluetoothAdapter.EXTRA_PREVIOUS_STATE, prevState)
+                        .putExtra(BluetoothAdapter.EXTRA_STATE, newState)
+                        .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT)
+                        .addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
         mContext.sendBroadcastAsUser(
                 intent, UserHandle.ALL, null, getTempAllowlistBroadcastOptions());
     }
