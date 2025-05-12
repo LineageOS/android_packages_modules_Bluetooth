@@ -17,6 +17,7 @@ package com.android.bluetooth.map;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSocket;
@@ -68,6 +69,8 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
     static final int SDP_MAP_MAS_FEATURES_1_3 = 0x000603FF;
     static final int SDP_MAP_MAS_FEATURES_1_4 = 0x000603FF;
 
+    private final BluetoothAdapter mAdapter;
+
     private ServerSession mServerSession = null;
     // The handle to the socket registration with SDP
     private ObexServerSockets mServerSockets = null;
@@ -75,8 +78,6 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
 
     // The actual incoming connection handle
     private BluetoothSocket mConnSocket = null;
-    // The remote connected device
-    private BluetoothAdapter mAdapter;
 
     private volatile boolean mShutdown = false; // Used to interrupt socket accept thread
     private volatile boolean mAcceptNewConnections = false;
@@ -101,9 +102,7 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
     private Map<Long, Msg> mMsgListMsg = null;
 
     private Map<String, BluetoothMapConvoContactElement> mContactList;
-
     private Map<Long, BluetoothMapConvoListingElement> mSmsMmsConvoList = new HashMap<>();
-
     private Map<Long, BluetoothMapConvoListingElement> mImEmailConvoList = new HashMap<>();
 
     private int mRemoteFeatureMask = BluetoothMapUtils.MAP_FEATURE_DEFAULT_BITMASK;
@@ -114,23 +113,22 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
     public static final String TYPE_IM_STR = "IM";
 
     /** Create a e-mail MAS instance */
-    public BluetoothMapMasInstance(
+    BluetoothMapMasInstance(
             BluetoothMapService mapService,
-            Context context,
             BluetoothMapAccountItem account,
             int masId,
             boolean enableSmsMms) {
         mObjectInstanceId = sInstanceCounter++;
         mMapService = mapService;
         mServiceHandler = mapService.getHandler();
-        mContext = context;
+        mContext = mapService;
+        mAdapter = mContext.getSystemService(BluetoothManager.class).getAdapter();
         mAccount = account;
         if (account != null) {
             mBaseUri = account.mBase_uri;
         }
         mMasInstanceId = masId;
         mEnableSmsMms = enableSmsMms;
-        init();
     }
 
     private void removeSdpRecord() {
@@ -152,10 +150,6 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
     @Override
     public String toString() {
         return "MasId: " + mMasInstanceId + " Uri:" + mBaseUri + " SMS/MMS:" + mEnableSmsMms;
-    }
-
-    private void init() {
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
     }
 
     /**
