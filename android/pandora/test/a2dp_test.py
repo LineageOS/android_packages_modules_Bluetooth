@@ -943,6 +943,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                 DelayReportingCapability()
             ]
 
+            await channel.wait_signaling_channel_connected()
             await channel.accept_discover(seid_information)
             await channel.accept_get_all_capabilities(acceptor_service_capabilities)
             await channel.accept_set_configuration(expected_configuration=[
@@ -1015,6 +1016,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                 DelayReportingCapability()
             ]
 
+            await channel.wait_signaling_channel_connected()
             await channel.accept_discover(seid_information)
             await channel.accept_get_all_capabilities(acceptor_service_capabilities)
             await channel.accept_set_configuration(expected_configuration=[
@@ -1224,6 +1226,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                     media_codec_specific_information_elements=ANY)
             ]
 
+            await channel.wait_signaling_channel_connected()
             await channel.accept_discover(seid_information)
             await channel.accept_get_all_capabilities(acceptor_service_capabilities_sbc)
             await channel.accept_get_all_capabilities(acceptor_service_capabilities_aac)
