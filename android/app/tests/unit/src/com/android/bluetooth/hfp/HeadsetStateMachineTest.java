@@ -24,6 +24,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static android.media.audio.Flags.FLAG_DEPRECATE_STREAM_BT_SCO;
+import static android.media.audio.Flags.FLAG_SCO_MANAGED_BY_AUDIO;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
@@ -108,7 +109,7 @@ public class HeadsetStateMachineTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.allCombinationsOf(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO);
+        return FlagsParameterization.allCombinationsOf(FLAG_SCO_MANAGED_BY_AUDIO);
     }
 
     public HeadsetStateMachineTest(FlagsParameterization flags) {
@@ -572,7 +573,7 @@ public class HeadsetStateMachineTest {
      * ScoManagedByAudioEnabled
      */
     @Test
-    @EnableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
+    @EnableFlags(FLAG_SCO_MANAGED_BY_AUDIO)
     public void testStateTransition_ConnectedToAudioConnecting_ConnectAudio_ScoManagedByAudio() {
         doReturn(true).when(mSystemInterface).isScoManagedByAudioEnabled();
 
@@ -2062,7 +2063,7 @@ public class HeadsetStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_IS_SCO_MANAGED_BY_AUDIO)
+    @EnableFlags(FLAG_SCO_MANAGED_BY_AUDIO)
     public void testSetAudioParameters_isScoManagedByAudio() {
         doReturn(true).when(mSystemInterface).isScoManagedByAudioEnabled();
 
