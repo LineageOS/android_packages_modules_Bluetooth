@@ -403,19 +403,19 @@
 /* Category Wearable Audio Device [15:6] 0x025 */
 #define APPEARANCE_TO_COD_WEARABLE_AUDIO_DEVICE(X)                                              \
   X(BLE_APPEARANCE_GENERIC_WEARABLE_AUDIO_DEVICE, 0x0940,                                       \
-    (COD_SERVICE_AUDIO | COD_SERVICE_RENDERING) >> 8, (COD_MAJOR_AUDIO | COD_SERVICE_LE_AUDIO), \
+    (COD_SERVICE_AUDIO | COD_SERVICE_RENDERING), (COD_MAJOR_AUDIO | COD_SERVICE_LE_AUDIO), \
     COD_MAJOR_AUDIO_MINOR_WEARABLE_HEADSET)                                                        \
   X(BLE_APPEARANCE_WEARABLE_AUDIO_DEVICE_EARBUD, 0x0941,                                        \
-    (COD_SERVICE_AUDIO | COD_SERVICE_RENDERING) >> 8, (COD_MAJOR_AUDIO | COD_SERVICE_LE_AUDIO), \
+    (COD_SERVICE_AUDIO | COD_SERVICE_RENDERING), (COD_MAJOR_AUDIO | COD_SERVICE_LE_AUDIO), \
     COD_MAJOR_AUDIO_MINOR_WEARABLE_HEADSET)                                                        \
   X(BLE_APPEARANCE_WEARABLE_AUDIO_DEVICE_HEADSET, 0x0942,                                       \
-    (COD_SERVICE_AUDIO | COD_SERVICE_RENDERING) >> 8, (COD_MAJOR_AUDIO | COD_SERVICE_LE_AUDIO), \
+    (COD_SERVICE_AUDIO | COD_SERVICE_RENDERING), (COD_MAJOR_AUDIO | COD_SERVICE_LE_AUDIO), \
     COD_MAJOR_AUDIO_MINOR_WEARABLE_HEADSET)                                                        \
   X(BLE_APPEARANCE_WEARABLE_AUDIO_DEVICE_HEADPHONES, 0x0943,                                    \
-    (COD_SERVICE_AUDIO | COD_SERVICE_RENDERING) >> 8, (COD_MAJOR_AUDIO | COD_SERVICE_LE_AUDIO), \
+    (COD_SERVICE_AUDIO | COD_SERVICE_RENDERING), (COD_MAJOR_AUDIO | COD_SERVICE_LE_AUDIO), \
     COD_MAJOR_AUDIO_MINOR_WEARABLE_HEADSET)                                                        \
   X(BLE_APPEARANCE_WEARABLE_AUDIO_DEVICE_NECK_BAND, 0x0944,                                     \
-    (COD_SERVICE_AUDIO | COD_SERVICE_RENDERING) >> 8, (COD_MAJOR_AUDIO | COD_SERVICE_LE_AUDIO), \
+    (COD_SERVICE_AUDIO | COD_SERVICE_RENDERING), (COD_MAJOR_AUDIO | COD_SERVICE_LE_AUDIO), \
     COD_MAJOR_AUDIO_MINOR_WEARABLE_HEADSET)
 
 /* Category Aircraft [15:6] 0x026 */
@@ -551,9 +551,12 @@
 #define GENERATE_BLE_APPEARANCE_DEFINITIONS(_appearance, _value, _service, _major, _minor) \
   constexpr uint16_t _appearance = _value;
 
+// Adds the BLE appearance definitions to the COD case statement
+// `_service` values were deduced by basing BIT_X to BIT_8, values as per
+// BT-spec assigned-numbers, now shifting the values to the right by 8 bits.
 #define ADD_APPEARANCE_TO_COD_CASE(_appearance, _value, _service, _major, _minor) \
   case _appearance:                                                               \
-    return DEV_CLASS{_service, _major, _minor};
+    return DEV_CLASS{(_service >> 8), _major, _minor};
 
 // Generate the actual definition for each appearance.
 APPEARANCE_TO_COD(GENERATE_BLE_APPEARANCE_DEFINITIONS)
