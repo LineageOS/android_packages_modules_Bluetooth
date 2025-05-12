@@ -52,7 +52,6 @@
 #include "sdp_callback.h"
 #include "sdp_status.h"
 #include "sdpdefs.h"
-#include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/main_thread.h"
@@ -231,7 +230,7 @@ bool bta_ag_add_record(uint16_t service_uuid, const char* p_service_name, uint8_
       features |= BTA_AG_FEAT_WBS_SUPPORT;
     }
     // check property for SWB support
-    if (hfp_hal_interface::get_swb_supported()) {
+    if (bta_ag_get_swb_supported()) {
       features |= BTA_AG_FEAT_SWB_SUPPORT;
     }
 

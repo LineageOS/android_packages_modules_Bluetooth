@@ -339,19 +339,16 @@ cc_defaults {
         "btstack_fuzzer_default",
         "fluoride_defaults",
     ],
-    include_dirs: [
-        "packages/modules/Bluetooth/system/stack/btm",
-    ],
     srcs: [
         ":LegacyStackSdp",
         ":SdpFuzzerSources",
         ":TestCommonMockFunctions",
         ":TestFakeOsi",
+        ":TestMockBtaAg",
         ":TestMockBtif",
         ":TestMockDevice",
         ":TestMockMainShim",
         ":TestMockStackA2dp",
-        ":TestMockStackBtm",
         ":TestMockStackL2cap",
     ],
     static_libs: [

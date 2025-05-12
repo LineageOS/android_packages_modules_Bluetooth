@@ -32,7 +32,6 @@
 #include "hardware/bluetooth.h"
 #include "hardware/bt_hf.h"
 #include "osi/include/alarm.h"
-#include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/btm_api_types.h"
 
 using namespace bluetooth;
@@ -47,7 +46,7 @@ static bool get_lc3_swb_codec_status(RawAddress bd_addr) {
   uint16_t p_scb_idx = bta_ag_idx_by_bdaddr(&bd_addr);
   tBTA_AG_SCB* p_scb = bta_ag_scb_by_idx(p_scb_idx);
   if (p_scb != NULL) {
-    return hfp_hal_interface::get_swb_supported() && (p_scb->peer_codecs & BTM_SCO_CODEC_LC3) &&
+    return bta_ag_get_swb_supported() && (p_scb->peer_codecs & BTM_SCO_CODEC_LC3) &&
            !(p_scb->disabled_codecs & BTM_SCO_CODEC_LC3);
   }
   return false;
