@@ -1,2 +1,2 @@
 # MessageQueue-related classes
-per-file TestLooper.java = mfasheh@google.com, shayba@google.com
+per-file TestLooper.java = file:platform/frameworks/base:/MESSAGE_QUEUE_OWNERS
