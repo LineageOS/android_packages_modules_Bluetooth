@@ -125,6 +125,8 @@ public:
   virtual std::unique_ptr<::bluetooth::le_audio::types::AudioSetConfiguration> GetCodecConfig(
           const UnicastConfigurationRequirements& requirements,
           UnicastConfigurationProvider provider);
+  virtual void UpdateSelectedCodecConfig(
+          const ::bluetooth::le_audio::types::AudioSetConfiguration& config) const;
   virtual bool CheckCodecConfigIsBiDirSwb(
           const ::bluetooth::le_audio::types::AudioSetConfiguration& config) const;
   virtual bool CheckCodecConfigIsDualBiDirSwb(

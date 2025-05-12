@@ -8840,6 +8840,8 @@ TEST_F(UnicastTest, UpdateActiveAudioConfigForLocalSinkSource) {
   EXPECT_CALL(*mock_le_audio_sink_hal_client_, UpdateAudioConfigToHal(_)).Times(1);
   EXPECT_CALL(*mock_le_audio_source_hal_client_, UpdateAudioConfigToHal(_)).Times(1);
 
+  EXPECT_CALL(*mock_codec_manager_, UpdateSelectedCodecConfig(_)).Times(1);
+
   /* Expect one update per direction - 2 in total for voice communication usage */
   EXPECT_CALL(*mock_codec_manager_, UpdateActiveAudioConfig(_, _, _))
           .WillRepeatedly([&](const types::BidirectionalPair<stream_parameters>& stream_params,
@@ -8898,6 +8900,8 @@ TEST_F(UnicastTest, UpdateActiveAudioConfigForLocalSinkSourceLateJoin) {
   // Start streaming - expect HAL being notified by both directions config change
   EXPECT_CALL(*mock_le_audio_sink_hal_client_, UpdateAudioConfigToHal(_)).Times(1);
   EXPECT_CALL(*mock_le_audio_source_hal_client_, UpdateAudioConfigToHal(_)).Times(1);
+
+  EXPECT_CALL(*mock_codec_manager_, UpdateSelectedCodecConfig(_)).Times(1);
 
   /* Expect one update per direction - 2 in total for voice communication usage */
   EXPECT_CALL(*mock_codec_manager_, UpdateActiveAudioConfig(_, _, _))
@@ -9008,6 +9012,9 @@ TEST_F(UnicastTest, UpdateActiveAudioConfigForLocalSource) {
   // Start streaming
   EXPECT_CALL(*mock_le_audio_source_hal_client_, UpdateAudioConfigToHal(_)).Times(1);
   EXPECT_CALL(*mock_le_audio_sink_hal_client_, UpdateAudioConfigToHal(_)).Times(0);
+
+  EXPECT_CALL(*mock_codec_manager_, UpdateSelectedCodecConfig(_)).Times(1);
+
   EXPECT_CALL(*mock_codec_manager_, UpdateActiveAudioConfig(_, _, _))
           .Times(1)
           .WillOnce([](const types::BidirectionalPair<stream_parameters>& stream_params,
