@@ -103,7 +103,7 @@ public:
   void SetUp() override {
     thread_ = new Thread("thread", Thread::Priority::NORMAL);
     handler_ = new Handler(thread_);
-    hci_layer_ = new HciLayerFake();
+    hci_layer_ = std::make_unique<HciLayerFake>(handler_);
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
     controller_ = std::make_unique<TestController>();
     le_address_manager_ = new LeAddressManager(
@@ -123,7 +123,7 @@ public:
   void TearDown() override {
     sync_handler(handler_);
     delete le_address_manager_;
-    delete hci_layer_;
+    hci_layer_.reset();
     handler_->Clear();
     delete handler_;
     delete thread_;
@@ -144,7 +144,7 @@ public:
 
   Thread* thread_;
   Handler* handler_;
-  HciLayerFake* hci_layer_ = nullptr;
+  std::unique_ptr<HciLayerFake> hci_layer_ = nullptr;
   std::unique_ptr<TestController> controller_;
   LeAddressManager* le_address_manager_;
   std::vector<std::unique_ptr<RotatorClient>> clients;
@@ -223,7 +223,7 @@ public:
   void SetUp() override {
     thread_ = new Thread("thread", Thread::Priority::NORMAL);
     handler_ = new Handler(thread_);
-    hci_layer_ = new HciLayerFake();
+    hci_layer_ = std::make_unique<HciLayerFake>(handler_);
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
     controller_ = std::make_unique<TestController>();
     le_address_manager_ = new LeAddressManager(
@@ -257,7 +257,7 @@ public:
     le_address_manager_->Unregister(clients[0].get());
     sync_handler(handler_);
     delete le_address_manager_;
-    delete hci_layer_;
+    hci_layer_.reset();
     handler_->Clear();
     delete handler_;
     delete thread_;

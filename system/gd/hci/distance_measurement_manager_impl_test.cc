@@ -30,7 +30,6 @@
 #include "hci/address.h"
 #include "hci/controller_mock.h"
 #include "hci/distance_measurement_manager_mock.h"
-#include "hci/hci_layer.h"
 #include "hci/hci_layer_fake.h"
 #include "metrics/mock/metrics_mock.h"
 #include "module.h"
@@ -182,7 +181,7 @@ struct StartMeasurementParameters {
 
 struct CsModule {
   TestModuleRegistry fake_registry_;
-  HciLayerFake* test_hci_layer_ = nullptr;
+  std::unique_ptr<HciLayerFake> test_hci_layer_ = nullptr;
   testing::MockController* mock_controller_ = nullptr;
   testing::MockAclManager* mock_acl_manager_ = nullptr;
   hal::testing::MockRangingHal* mock_ranging_hal_ = nullptr;
@@ -197,14 +196,12 @@ struct CsModule {
   bool remote_capabilities_complete_done_ = false;
 
   void Start() {
-    test_hci_layer_ = new HciLayerFake;                    // Ownership is transferred to registry
     mock_controller_ = new testing::MockController;        // Ownership is transferred to registry
     mock_ranging_hal_ = new hal::testing::MockRangingHal;  // Ownership is transferred to registry
     mock_acl_manager_ = new testing::MockAclManager;       // Ownership is transferred to registry
     fake_registry_.InjectTestModule(&hal::RangingHal::Factory, mock_ranging_hal_);
-    fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
 
-    client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
+    client_handler_ = fake_registry_.GetTestModuleHandler(&hal::RangingHal::Factory);
     ASSERT_NE(client_handler_, nullptr);
 
     EXPECT_CALL(*mock_controller_, SupportsBleChannelSounding()).WillOnce(Return(true));
@@ -212,11 +209,12 @@ struct CsModule {
     EXPECT_CALL(*mock_ranging_hal_, GetRangingHalVersion).WillRepeatedly(Return(hal::V_2));
 
     fake_registry_.Start<hal::RangingHal>(&thread_, handler_);
-    fake_registry_.Start<HciLayer>(&thread_, handler_);
 
     handler_ = fake_registry_.GetTestHandler();
-    dm_manager_ = new DistanceMeasurementManagerImpl(handler_, test_hci_layer_, mock_controller_,
-                                                     mock_acl_manager_, mock_ranging_hal_);
+    test_hci_layer_ = std::make_unique<HciLayerFake>(handler_);
+    dm_manager_ =
+            new DistanceMeasurementManagerImpl(handler_, test_hci_layer_.get(), mock_controller_,
+                                               mock_acl_manager_, mock_ranging_hal_);
 
     test_hci_layer_->GetCommand(OpCode::LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES);
 

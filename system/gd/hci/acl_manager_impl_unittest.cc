@@ -148,21 +148,19 @@ public:
 class AclManagerBaseTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
-    test_controller_ = std::make_unique<TestController>();
-    fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
-    client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
+    client_handler_ = fake_registry_.GetTestHandler();
     ASSERT_NE(client_handler_, nullptr);
     bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(
             com::android::bluetooth::flags::same_handler_for_all_modules()
                     ? client_handler_
                     : new os::Handler(&thread_));
     bluetooth::hci::testing::mock_storage_->Start();
-    fake_registry_.Start<HciLayer>(&thread_, client_handler_);
 
+    test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
+    test_controller_ = std::make_unique<TestController>();
     test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
     test_rnr_ = std::make_unique<RemoteNameRequestModuleMock>();
-    acl_manager_ = std::make_unique<AclManagerImpl>(client_handler_, test_hci_layer_,
+    acl_manager_ = std::make_unique<AclManagerImpl>(client_handler_, test_hci_layer_.get(),
                                                     test_controller_.get(),
                                                     test_acl_scheduler_.get(), test_rnr_.get());
   }
@@ -171,10 +169,12 @@ protected:
     delete bluetooth::hci::testing::mock_storage_;
     bluetooth::hci::testing::mock_storage_ = nullptr;
     fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
+    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     acl_manager_.reset();
     test_rnr_.reset();
     test_acl_scheduler_.reset();
+    test_controller_.reset();
+    test_hci_layer_.reset();
     fake_registry_.StopAll();
   }
 
@@ -187,7 +187,7 @@ protected:
     ASSERT_EQ(future_status, std::future_status::ready);
   }
 
-  HciLayerFake* test_hci_layer_ = nullptr;
+  std::unique_ptr<HciLayerFake> test_hci_layer_ = nullptr;
   std::unique_ptr<TestController> test_controller_ = nullptr;
 
   TestModuleRegistry fake_registry_;
@@ -247,9 +247,9 @@ protected:
   }
 
   void TearDown() override {
-    fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
     fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
+    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
+    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     {
       std::promise<void> promise;
       auto future = promise.get_future();
@@ -326,7 +326,7 @@ protected:
   }
 
   void TearDown() override {
-    fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
+    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     fake_registry_.StopAll();
     AclManagerWithCallbacksTest::TearDown();
@@ -425,7 +425,7 @@ protected:
   }
 
   void TearDown() override {
-    fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
+    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     fake_registry_.StopAll();
   }
@@ -449,14 +449,13 @@ protected:
 class AclManagerWithResolvableAddressTest : public AclManagerWithCallbacksTest {
 protected:
   void SetUp() override {
-    test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
-    test_controller_ = std::make_unique<TestController>();
-    fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
-    client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
+    client_handler_ = fake_registry_.GetTestHandler();
     ASSERT_NE(client_handler_, nullptr);
+    test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
+    test_controller_ = std::make_unique<TestController>();
     acl_manager_ = std::make_unique<AclManagerImpl>(
-            client_handler_, test_hci_layer_, test_controller_.get(), nullptr /* AclScheduler */,
-            nullptr /* RNRModule */);
+            client_handler_, test_hci_layer_.get(), test_controller_.get(),
+            nullptr /* AclScheduler */, nullptr /* RNRModule */);
 
     hci::Address address;
     Address::FromString("D0:05:04:03:02:01", address);
