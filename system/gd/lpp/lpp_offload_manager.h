@@ -18,16 +18,15 @@
 #include <bluetooth/log.h>
 
 #include <memory>
-#include <string>
 
 #include "lpp_offload_interface.h"
-#include "module.h"
 
 namespace bluetooth::lpp {
 
-class LppOffloadManager : public bluetooth::Module, public LppOffloadInterface {
+/* Low Power Processor Offload Manager*/
+class LppOffloadManager : public LppOffloadInterface {
 public:
-  LppOffloadManager();
+  LppOffloadManager(os::Handler* handler, hal::SocketHal* socket_hal);
 
   LppOffloadManager(const LppOffloadManager&) = delete;
 
@@ -42,17 +41,6 @@ public:
   bool SocketOpened(const hal::SocketContext& context) override;
 
   void SocketClosed(uint64_t socket_id) override;
-
-  static const ModuleFactory Factory;
-
-protected:
-  void ListDependencies(ModuleList* list) const override;
-
-  void Start() override;
-
-  void Stop() override;
-
-  std::string ToString() const override;
 
 private:
   struct impl;

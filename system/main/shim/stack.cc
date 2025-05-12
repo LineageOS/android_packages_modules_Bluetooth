@@ -69,6 +69,7 @@ struct Stack::impl {
   Acl* acl_ = nullptr;
   std::shared_ptr<storage::StorageModule> storage_ = nullptr;
   std::shared_ptr<hal::SnoopLogger> snoop_logger_ = nullptr;
+  std::unique_ptr<lpp::LppOffloadManager> lpp_offload_manager_ = nullptr;
   std::unique_ptr<hal::LinkClocker> link_clocker_ = nullptr;
   std::unique_ptr<hal::HciHal> hci_hal_ = nullptr;
   std::unique_ptr<hal::RangingHal> ranging_hal_ = nullptr;
@@ -111,8 +112,8 @@ void Stack::StartEverything() {
 #if TARGET_FLOSS
     modules.add<sysprops::SyspropsModule>();
 #else
-    if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3286716
-      modules.add<lpp::LppOffloadManager>();
+    if (com::android::bluetooth::flags::socket_settings_api()) {
+      modules.add<hal::SocketHal>();
     }
 #endif
 
@@ -228,6 +229,12 @@ hal::SnoopLogger* Stack::GetSnoopLogger() const {
   return pimpl_->snoop_logger_.get();
 }
 
+lpp::LppOffloadInterface* Stack::GetLppOffloadInterface() const {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  log::assert_that(is_running_, "assert failed: is_running_");
+  return pimpl_->lpp_offload_manager_.get();
+}
+
 hci::HciInterface* Stack::GetHciLayer() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
@@ -303,6 +310,15 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
   pimpl_->storage_->Start();
   pimpl_->snoop_logger_->Start();
   registry_.Start(modules, stack_thread_, stack_handler_);
+
+#ifndef TARGET_FLOSS
+  if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3286716
+    auto socket_hal = static_cast<hal::SocketHal*>(registry_.Get(&hal::SocketHal::Factory));
+    log::info("Starting LppOffloadManager");
+    pimpl_->lpp_offload_manager_ =
+            std::make_unique<lpp::LppOffloadManager>(stack_handler_, socket_hal);
+  }
+#endif
 
   log::info("Starting LinkClocker");
   pimpl_->link_clocker_ = std::make_unique<hal::LinkClocker>();
@@ -391,6 +407,11 @@ void Stack::handle_shut_down(std::promise<void> promise) {
 
   log::info("Stopping LinkClocker");
   pimpl_->link_clocker_.reset();
+
+  if (pimpl_->lpp_offload_manager_) {
+    log::info("Stopping LppOffloadManager");
+    pimpl_->lpp_offload_manager_.reset();
+  }
 
   registry_.StopAll();
 

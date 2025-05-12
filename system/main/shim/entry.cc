@@ -57,7 +57,7 @@ hci::DistanceMeasurementManager* GetDistanceMeasurementManager() {
 hal::SnoopLogger* GetSnoopLogger() { return Stack::GetInstance()->GetSnoopLogger(); }
 
 lpp::LppOffloadInterface* GetLppOffloadManager() {
-  return Stack::GetInstance()->GetInstance<lpp::LppOffloadManager>();
+  return Stack::GetInstance()->GetLppOffloadInterface();
 }
 
 storage::StorageModule* GetStorage() { return Stack::GetInstance()->GetStorage(); }
