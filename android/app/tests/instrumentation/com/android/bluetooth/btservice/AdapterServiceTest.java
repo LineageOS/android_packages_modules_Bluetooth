@@ -104,6 +104,31 @@ import java.util.List;
 public class AdapterServiceTest {
     private static final String TAG = AdapterServiceTest.class.getSimpleName();
 
+    @Rule public final MockitoRule mockitoRule = MockitoJUnit.rule();
+    @Rule public final SetFlagsRule mSetFlagsRule;
+
+    @Mock private Context mMockContext;
+    @Mock private ApplicationInfo mMockApplicationInfo;
+    @Mock private LeAudioService mMockLeAudioService;
+    @Mock private Resources mMockResources;
+    @Mock private ProfileService mMockGattService;
+    @Mock private ProfileService mMockService;
+    @Mock private ProfileService mMockService2;
+    @Mock private IBluetoothCallback mIBluetoothCallback;
+    @Mock private Binder mBinder;
+    @Mock private MetricsLogger mMockMetricsLogger;
+    @Mock private AdapterNativeInterface mNativeInterface;
+    @Mock private BluetoothKeystoreNativeInterface mKeystoreNativeInterface;
+    @Mock private BluetoothQualityReportNativeInterface mQualityNativeInterface;
+    @Mock private BluetoothHciVendorSpecificNativeInterface mHciVendorSpecificNativeInterface;
+    @Mock private SdpManagerNativeInterface mSdpNativeInterface;
+    @Mock private AdvertiseManagerNativeInterface mAdvertiseNativeInterface;
+    @Mock private DistanceMeasurementNativeInterface mDistanceNativeInterface;
+    @Mock private GattNativeInterface mGattNativeInterface;
+    @Mock private PeriodicScanNativeInterface mPeriodicNativeInterface;
+    @Mock private ScanNativeInterface mScanNativeInterface;
+    @Mock private JniCallbacks mJniCallbacks;
+
     private static final int MESSAGE_PROFILE_SERVICE_STATE_CHANGED = 1;
     private static final int MESSAGE_PROFILE_SERVICE_REGISTERED = 2;
     private static final int MESSAGE_PROFILE_SERVICE_UNREGISTERED = 3;
@@ -123,32 +148,6 @@ public class AdapterServiceTest {
             mSetProfileServiceStateCounter++;
         }
     }
-
-    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
-
-    private @Mock Context mMockContext;
-    private @Mock ApplicationInfo mMockApplicationInfo;
-    private @Mock LeAudioService mMockLeAudioService;
-    private @Mock Resources mMockResources;
-    private @Mock ProfileService mMockGattService;
-    private @Mock ProfileService mMockService;
-    private @Mock ProfileService mMockService2;
-    private @Mock IBluetoothCallback mIBluetoothCallback;
-    private @Mock Binder mBinder;
-    private @Mock MetricsLogger mMockMetricsLogger;
-    private @Mock AdapterNativeInterface mNativeInterface;
-    private @Mock BluetoothKeystoreNativeInterface mKeystoreNativeInterface;
-    private @Mock BluetoothQualityReportNativeInterface mQualityNativeInterface;
-    private @Mock BluetoothHciVendorSpecificNativeInterface mHciVendorSpecificNativeInterface;
-    private @Mock SdpManagerNativeInterface mSdpNativeInterface;
-    private @Mock AdvertiseManagerNativeInterface mAdvertiseNativeInterface;
-    private @Mock DistanceMeasurementNativeInterface mDistanceNativeInterface;
-    private @Mock GattNativeInterface mGattNativeInterface;
-    private @Mock PeriodicScanNativeInterface mPeriodicNativeInterface;
-    private @Mock ScanNativeInterface mScanNativeInterface;
-    private @Mock JniCallbacks mJniCallbacks;
-
-    @Rule public final SetFlagsRule mSetFlagsRule;
 
     // SystemService that are not mocked
     private BluetoothManager mBluetoothManager;

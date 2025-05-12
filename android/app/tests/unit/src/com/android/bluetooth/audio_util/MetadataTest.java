@@ -54,13 +54,11 @@ import java.io.InputStream;
 /** Test cases for {@link Metadata}. */
 @RunWith(AndroidJUnit4.class)
 public class MetadataTest {
-    private Context mTargetContext;
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    private @Mock Context mMockContext;
+    @Mock private Context mMockContext;
+
     private final Resources mTestResources = TestUtils.getTestApplicationResources();
-    private MockContentResolver mTestContentResolver;
 
     private static final String TEST_AUTHORITY = "com.android.bluetooth.avrcp.test";
     private static final Uri TEST_CONTENT_URI =
@@ -82,8 +80,10 @@ public class MetadataTest {
     private static final String SONG_NUM_TRACKS = "15";
     private static final String SONG_GENRE = "BT Music";
     private static final String SONG_DURATION = "5000";
-    private Image mSongImage = null; /* to be set to Image(mTestBitmap) once context is set */
 
+    private Context mTargetContext;
+    private MockContentResolver mTestContentResolver;
+    private Image mSongImage = null; /* to be set to Image(mTestBitmap) once context is set */
     private Bitmap mTestBitmap = null;
 
     @Before
