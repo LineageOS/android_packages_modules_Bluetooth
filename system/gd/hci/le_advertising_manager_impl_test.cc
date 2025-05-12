@@ -34,6 +34,7 @@
 #include "hci/hci_layer_fake.h"
 #include "hci/le_address_manager.h"
 #include "hci/le_on_advertising_set_terminated_interface.h"
+#include "module.h"
 #include "os/thread.h"
 #include "packet/raw_builder.h"
 

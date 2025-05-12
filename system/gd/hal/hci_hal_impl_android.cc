@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "hci_hal_impl_android.h"
+
 #include <android_bluetooth_sysprop.h>
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
@@ -129,89 +131,66 @@ private:
   SnoopLogger* btsnoop_logger_;
 };
 
-class HciHalImpl : public HciHal {
-public:
-  void registerIncomingPacketCallback(HciHalCallbacks* callback) override {
-    callbacks_->SetCallback(callback);
+void HciHalImpl::registerIncomingPacketCallback(HciHalCallbacks* callback) {
+  callbacks_->SetCallback(callback);
+}
+
+void HciHalImpl::unregisterIncomingPacketCallback() { callbacks_->ResetCallback(); }
+
+void HciHalImpl::sendHciCommand(HciPacket packet) {
+  btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::CMD);
+  backend_->sendHciCommand(packet);
+}
+
+void HciHalImpl::sendAclData(HciPacket packet) {
+  btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::ACL);
+  backend_->sendAclData(packet);
+}
+
+void HciHalImpl::sendScoData(HciPacket packet) {
+  btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::SCO);
+  backend_->sendScoData(packet);
+}
+
+void HciHalImpl::sendIsoData(HciPacket packet) {
+  btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::ISO);
+  backend_->sendIsoData(packet);
+}
+
+uint16_t HciHalImpl::getMsftOpcode() {
+  if (com::android::bluetooth::flags::le_scan_msft_support()) {
+    return android::sysprop::bluetooth::Hci::msft_vendor_opcode().value_or(0);
+  }
+  return 0;
+}
+
+HciHalImpl::HciHalImpl(os::Handler* handler, LinkClocker* link_clocker, SnoopLogger* btsnoop_logger)
+    : link_clocker_(link_clocker), btsnoop_logger_(btsnoop_logger) {
+  common::StopWatch stop_watch(__func__);
+  log::assert_that(backend_ == nullptr,
+                   "Start can't be called more than once before Stop is called.");
+
+  if (com::android::bluetooth::flags::hci_instance_name_use_injected()) {
+    backend_ = HciBackend::CreateAidl(bluetooth::os::ParameterProvider::GetHciInstanceName());
+  } else {
+    backend_ = HciBackend::CreateAidl();
+  }
+  if (!backend_) {
+    backend_ = HciBackend::CreateHidl(handler);
   }
 
-  void unregisterIncomingPacketCallback() override { callbacks_->ResetCallback(); }
+  log::assert_that(backend_ != nullptr, "No backend available");
 
-  void sendHciCommand(HciPacket packet) override {
-    btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING,
-                             SnoopLogger::PacketType::CMD);
-    backend_->sendHciCommand(packet);
-  }
+  callbacks_ = std::make_shared<HciCallbacksImpl>(btsnoop_logger_, link_clocker_);
 
-  void sendAclData(HciPacket packet) override {
-    btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING,
-                             SnoopLogger::PacketType::ACL);
-    backend_->sendAclData(packet);
-  }
+  backend_->initialize(callbacks_);
+  callbacks_->init_promise->get_future().wait();
+}
 
-  void sendScoData(HciPacket packet) override {
-    btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING,
-                             SnoopLogger::PacketType::SCO);
-    backend_->sendScoData(packet);
-  }
-
-  void sendIsoData(HciPacket packet) override {
-    btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING,
-                             SnoopLogger::PacketType::ISO);
-    backend_->sendIsoData(packet);
-  }
-
-  uint16_t getMsftOpcode() override {
-    if (com::android::bluetooth::flags::le_scan_msft_support()) {
-      return android::sysprop::bluetooth::Hci::msft_vendor_opcode().value_or(0);
-    }
-    return 0;
-  }
-
-protected:
-  void ListDependencies(ModuleList* list) const override { list->add<LinkClocker>(); }
-
-  void Start() override {
-    common::StopWatch stop_watch(__func__);
-    log::assert_that(backend_ == nullptr,
-                     "Start can't be called more than once before Stop is called.");
-
-    link_clocker_ = GetDependency<LinkClocker>();
-    btsnoop_logger_ = shim::GetSnoopLogger();
-
-    if (com::android::bluetooth::flags::hci_instance_name_use_injected()) {
-      backend_ = HciBackend::CreateAidl(bluetooth::os::ParameterProvider::GetHciInstanceName());
-    } else {
-      backend_ = HciBackend::CreateAidl();
-    }
-    if (!backend_) {
-      backend_ = HciBackend::CreateHidl(GetHandler());
-    }
-
-    log::assert_that(backend_ != nullptr, "No backend available");
-
-    callbacks_ = std::make_shared<HciCallbacksImpl>(btsnoop_logger_, link_clocker_);
-
-    backend_->initialize(callbacks_);
-    callbacks_->init_promise->get_future().wait();
-  }
-
-  void Stop() override {
-    backend_.reset();
-    callbacks_.reset();
-    btsnoop_logger_ = nullptr;
-    link_clocker_ = nullptr;
-  }
-
-  std::string ToString() const override { return std::string("HciHal"); }
-
-private:
-  std::shared_ptr<HciCallbacksImpl> callbacks_;
-  std::shared_ptr<HciBackend> backend_;
-  SnoopLogger* btsnoop_logger_ = nullptr;
-  LinkClocker* link_clocker_ = nullptr;
-};
-
-const ModuleFactory HciHal::Factory = ModuleFactory([]() { return new HciHalImpl(); });
-
+HciHalImpl::~HciHalImpl() {
+  backend_.reset();
+  callbacks_.reset();
+  btsnoop_logger_ = nullptr;
+  link_clocker_ = nullptr;
+}
 }  // namespace bluetooth::hal

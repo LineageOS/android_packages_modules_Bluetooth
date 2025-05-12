@@ -38,9 +38,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   FuzzedDataProvider dataProvider(data, size);
 
   static FuzzTestModuleRegistry moduleRegistry = FuzzTestModuleRegistry();
-  FuzzHciHal* fuzzHal = moduleRegistry.Inject<FuzzHciHal>(&HciHal::Factory);
+  std::unique_ptr<FuzzHciHal> fuzzHal = std::make_unique<FuzzHciHal>();
   std::unique_ptr<HciInterface> hciLayer =
-          std::make_unique<HciLayer>(moduleRegistry.GetTestHandler(), fuzzHal);
+          std::make_unique<HciLayer>(moduleRegistry.GetTestHandler(), fuzzHal.get());
   std::unique_ptr<HciLayerFuzzClient> fuzzClient =
           std::make_unique<HciLayerFuzzClient>(moduleRegistry.GetTestHandler(), hciLayer.get());
 
@@ -58,6 +58,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   fuzzClient.reset();
   hciLayer.reset();
+  fuzzHal.reset();
   moduleRegistry.WaitForIdleAndStopAll();
   fake_timerfd_reset();
   return 0;

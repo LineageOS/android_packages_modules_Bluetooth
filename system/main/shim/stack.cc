@@ -29,7 +29,8 @@
 #include <string>
 
 #include "common/strings.h"
-#include "hal/hci_hal.h"
+#include "hal/hci_hal_impl.h"
+#include "hal/link_clocker.h"
 #include "hal/ranging_hal_impl.h"
 #include "hal/snoop_logger.h"
 #include "hci/acl_manager/acl_scheduler.h"
@@ -68,6 +69,7 @@ struct Stack::impl {
   Acl* acl_ = nullptr;
   std::shared_ptr<storage::StorageModule> storage_ = nullptr;
   std::shared_ptr<hal::SnoopLogger> snoop_logger_ = nullptr;
+  std::unique_ptr<hal::HciHal> hci_hal_ = nullptr;
   std::unique_ptr<hal::RangingHal> ranging_hal_ = nullptr;
   std::unique_ptr<hci::HciLayer> hci_layer_ = nullptr;
   std::unique_ptr<hci::Controller> controller_ = nullptr;
@@ -112,7 +114,7 @@ void Stack::StartEverything() {
       modules.add<lpp::LppOffloadManager>();
     }
 #endif
-    modules.add<hal::HciHal>();
+    modules.add<hal::LinkClocker>();
 
     management_thread_ = new Thread("management_thread", Thread::Priority::NORMAL);
     management_handler_ = new Handler(management_thread_);
@@ -142,8 +144,7 @@ void Stack::StartEverything() {
     log::info("Successfully toggled Gd stack");
 
     // Make sure the leaf modules are started
-    log::assert_that(GetInstance<hal::HciHal>() != nullptr,
-                     "assert failed: GetInstance<hal::HciHal>() != nullptr");
+    log::assert_that(pimpl_->hci_hal_ != nullptr, "assert failed pimpl_->hci_hal_ != nullptr");
 
     pimpl_->acl_ = new Acl(stack_handler_, GetAclInterface());
 
@@ -303,13 +304,17 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
   pimpl_->snoop_logger_->Start();
   registry_.Start(modules, stack_thread_, stack_handler_);
 
-  auto hci_hal = static_cast<hal::HciHal*>(registry_.Get(&hal::HciHal::Factory));
+  auto link_clocker = static_cast<hal::LinkClocker*>(registry_.Get(&hal::LinkClocker::Factory));
+
+  log::info("Starting HciHal");
+  pimpl_->hci_hal_ = std::make_unique<hal::HciHalImpl>(stack_handler_, link_clocker,
+                                                       pimpl_->snoop_logger_.get());
 
   log::info("Starting RangingHal");
   pimpl_->ranging_hal_ = std::make_unique<hal::RangingHalImpl>();
 
   log::info("Starting HciLayer");
-  pimpl_->hci_layer_ = std::make_unique<hci::HciLayer>(stack_handler_, hci_hal);
+  pimpl_->hci_layer_ = std::make_unique<hci::HciLayer>(stack_handler_, pimpl_->hci_hal_.get());
 
   log::info("Starting Controller");
   pimpl_->controller_ =
@@ -329,7 +334,7 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
 
   log::info("Starting MsftExtensionManager");
   pimpl_->msft_extension_manager_ = std::make_unique<hci::MsftExtensionManager>(
-          stack_handler_, hci_hal, pimpl_->hci_layer_.get());
+          stack_handler_, pimpl_->hci_hal_.get(), pimpl_->hci_layer_.get());
 
   log::info("Starting LeScanningManagerImpl");
   pimpl_->le_scanning_manager_ = std::make_unique<hci::LeScanningManagerImpl>(
@@ -379,6 +384,9 @@ void Stack::handle_shut_down(std::promise<void> promise) {
 
   log::info("Stopping RangingHal");
   pimpl_->ranging_hal_.reset();
+
+  log::info("Stopping HciHal");
+  pimpl_->hci_hal_.reset();
 
   registry_.StopAll();
 

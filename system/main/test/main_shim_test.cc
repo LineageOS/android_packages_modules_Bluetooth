@@ -311,10 +311,6 @@ extern os::Handler* mock_handler_;
 }  // namespace testing
 }  // namespace shim
 
-namespace hal {
-const ModuleFactory HciHal::Factory = ModuleFactory([]() { return nullptr; });
-}  // namespace hal
-
 }  // namespace bluetooth
 
 class MainShimTest : public testing::Test {
