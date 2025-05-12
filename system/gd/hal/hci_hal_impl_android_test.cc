@@ -84,9 +84,9 @@ protected:
   void SetUp() override {
     thread_ = new Thread("test_thread", Thread::Priority::NORMAL);
     handler_ = new os::Handler(thread_);
-    auto link_clocker = fake_registry_.Start<LinkClocker>(thread_, handler_);
 
-    hal = std::make_unique<HciHalImpl>(handler_, link_clocker, nullptr /* snoop_logger */);
+    link_clocker = std::make_unique<LinkClocker>();
+    hal = std::make_unique<HciHalImpl>(handler_, link_clocker.get(), nullptr /* snoop_logger */);
   }
 
   void TearDown() override {
@@ -95,11 +95,12 @@ protected:
       handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
     }
     hal.reset();
-    fake_registry_.StopAll();
+    link_clocker.reset();
     delete handler_;
     delete thread_;
   }
 
+  std::unique_ptr<LinkClocker> link_clocker;
   std::unique_ptr<HciHal> hal;
 
 private:

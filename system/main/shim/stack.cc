@@ -69,6 +69,7 @@ struct Stack::impl {
   Acl* acl_ = nullptr;
   std::shared_ptr<storage::StorageModule> storage_ = nullptr;
   std::shared_ptr<hal::SnoopLogger> snoop_logger_ = nullptr;
+  std::unique_ptr<hal::LinkClocker> link_clocker_ = nullptr;
   std::unique_ptr<hal::HciHal> hci_hal_ = nullptr;
   std::unique_ptr<hal::RangingHal> ranging_hal_ = nullptr;
   std::unique_ptr<hci::HciLayer> hci_layer_ = nullptr;
@@ -114,7 +115,6 @@ void Stack::StartEverything() {
       modules.add<lpp::LppOffloadManager>();
     }
 #endif
-    modules.add<hal::LinkClocker>();
 
     management_thread_ = new Thread("management_thread", Thread::Priority::NORMAL);
     management_handler_ = new Handler(management_thread_);
@@ -304,10 +304,11 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
   pimpl_->snoop_logger_->Start();
   registry_.Start(modules, stack_thread_, stack_handler_);
 
-  auto link_clocker = static_cast<hal::LinkClocker*>(registry_.Get(&hal::LinkClocker::Factory));
+  log::info("Starting LinkClocker");
+  pimpl_->link_clocker_ = std::make_unique<hal::LinkClocker>();
 
   log::info("Starting HciHal");
-  pimpl_->hci_hal_ = std::make_unique<hal::HciHalImpl>(stack_handler_, link_clocker,
+  pimpl_->hci_hal_ = std::make_unique<hal::HciHalImpl>(stack_handler_, pimpl_->link_clocker_.get(),
                                                        pimpl_->snoop_logger_.get());
 
   log::info("Starting RangingHal");
@@ -387,6 +388,9 @@ void Stack::handle_shut_down(std::promise<void> promise) {
 
   log::info("Stopping HciHal");
   pimpl_->hci_hal_.reset();
+
+  log::info("Stopping LinkClocker");
+  pimpl_->link_clocker_.reset();
 
   registry_.StopAll();
 

@@ -34,7 +34,6 @@
 
 #include "com_android_bluetooth_flags.h"
 #include "hal/hci_hal_host_rootcanal_config.h"
-#include "hal/link_clocker.h"
 #include "hal/serialize_packet.h"
 #include "module.h"  // ModuleRegistry
 #include "os/thread.h"
@@ -148,7 +147,6 @@ protected:
 
     HciHalHostRootcanalConfig::Get()->SetPort(kTestPort);
     fake_server_ = new FakeRootcanalDesktopHciServer;
-    auto link_clocker = fake_registry_.Start<hal::LinkClocker>(thread_, handler_);
 
     hal_ = std::make_unique<HciHalImpl>();
     hal_->registerIncomingPacketCallback(&callbacks_);
