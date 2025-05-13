@@ -1451,7 +1451,7 @@ public class HeadsetClientStateMachine extends StateMachine {
                         break;
                     }
 
-                    // Called only for Mute/Un-mute - Mic volume change is not allowed.
+                // Called only for Mute/Un-mute - Mic volume change is not allowed.
                 case SET_MIC_VOLUME:
                     break;
                 case SET_SPEAKER_VOLUME:
@@ -1817,8 +1817,8 @@ public class HeadsetClientStateMachine extends StateMachine {
 
             switch (state) {
                 case HeadsetClientHalConstants.AUDIO_STATE_CONNECTED,
-                        HeadsetClientHalConstants.AUDIO_STATE_CONNECTED_LC3,
-                        HeadsetClientHalConstants.AUDIO_STATE_CONNECTED_MSBC:
+                HeadsetClientHalConstants.AUDIO_STATE_CONNECTED_LC3,
+                HeadsetClientHalConstants.AUDIO_STATE_CONNECTED_MSBC:
                     mAudioSWB = state == HeadsetClientHalConstants.AUDIO_STATE_CONNECTED_LC3;
                     mAudioWbs = state == HeadsetClientHalConstants.AUDIO_STATE_CONNECTED_MSBC;
                     debug("mAudioRouteAllowed=" + mAudioRouteAllowed);
@@ -1925,8 +1925,8 @@ public class HeadsetClientStateMachine extends StateMachine {
             debug("Disconnecting: Process message: " + message.what);
 
             switch (message.what) {
-                    // Deferring messages as state machine objects are meant to be reused and after
-                    // disconnect is complete we want honor other message requests
+                // Deferring messages as state machine objects are meant to be reused and after
+                // disconnect is complete we want honor other message requests
                 case CONNECT:
                 case CONNECT_AUDIO:
                 case DISCONNECT:
@@ -2016,10 +2016,10 @@ public class HeadsetClientStateMachine extends StateMachine {
                         break;
                     }
                     deferMessage(message);
-                    /*
-                     * fall through - disconnect audio first then expect
-                     * deferred DISCONNECT message in Connected state
-                     */
+                /*
+                 * fall through - disconnect audio first then expect
+                 * deferred DISCONNECT message in Connected state
+                 */
                 case DISCONNECT_AUDIO:
                     /*
                      * just disconnect audio and wait for

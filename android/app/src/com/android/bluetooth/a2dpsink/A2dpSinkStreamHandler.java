@@ -140,23 +140,23 @@ public class A2dpSinkStreamHandler extends Handler {
                     requestAudioFocusIfNone();
                 }
             }
-                // Audio stream has stopped, maintain focus but stop avrcp updates.
+            // Audio stream has stopped, maintain focus but stop avrcp updates.
             case SRC_STR_STOP -> {}
-                // Local play command, gain focus and start avrcp updates.
+            // Local play command, gain focus and start avrcp updates.
             case SNK_PLAY -> requestAudioFocusIfNone();
-                // Local pause command, maintain focus but stop avrcp updates.
+            // Local pause command, maintain focus but stop avrcp updates.
             case SNK_PAUSE -> mStreamAvailable = false;
-                // Remote play command.
+            // Remote play command.
             case SRC_PLAY -> {
                 mStreamAvailable = true;
                 if (isIotDevice() || isTvDevice() || shouldRequestFocus()) {
                     requestAudioFocusIfNone();
                 }
             }
-                // Remote pause command, stop avrcp updates.
+            // Remote pause command, stop avrcp updates.
             case SRC_PAUSE -> mStreamAvailable = false;
             case REQUEST_FOCUS -> requestAudioFocusIfNone();
-                // Remote device has disconnected, restore everything to default state.
+            // Remote device has disconnected, restore everything to default state.
             case DISCONNECT -> mStreamAvailable = false;
 
             case AUDIO_FOCUS_CHANGE -> {
@@ -170,10 +170,10 @@ public class A2dpSinkStreamHandler extends Handler {
                 mAudioFocus = focusChangeCode;
                 // message.obj is the newly granted audio focus.
                 switch (mAudioFocus) {
-                        // Begin playing audio
+                    // Begin playing audio
                     case AudioManager.AUDIOFOCUS_GAIN -> startFluorideStreaming();
 
-                        // Make the volume duck.
+                    // Make the volume duck.
                     case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
                         int duckPercent =
                                 mContext.getResources()
@@ -187,9 +187,9 @@ public class A2dpSinkStreamHandler extends Handler {
                         setFluorideAudioTrackGain(duckRatio);
                     }
 
-                        // Temporary loss of focus. Set gain to zero.
+                    // Temporary loss of focus. Set gain to zero.
                     case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> setFluorideAudioTrackGain(0);
-                        // Permanent loss of focus probably due to another audio app, abandon focus
+                    // Permanent loss of focus probably due to another audio app, abandon focus
                     case AudioManager.AUDIOFOCUS_LOSS -> abandonAudioFocus();
                     default -> {} // Nothing to do
                 }

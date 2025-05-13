@@ -831,8 +831,8 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
         private static boolean isWiredAudioHeadset(AudioDeviceInfo deviceInfo) {
             return switch (deviceInfo.getType()) {
                 case AudioDeviceInfo.TYPE_WIRED_HEADSET,
-                                AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
-                                AudioDeviceInfo.TYPE_USB_HEADSET ->
+                        AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
+                        AudioDeviceInfo.TYPE_USB_HEADSET ->
                         true;
                 default -> false;
             };

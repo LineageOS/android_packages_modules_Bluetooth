@@ -431,7 +431,7 @@ class AvrcpControllerStateMachine extends StateMachine {
                     transitionTo(mConnecting);
                 }
                 case CLEANUP -> mService.removeStateMachine(AvrcpControllerStateMachine.this);
-                    // Wait until we're connected to process this
+                // Wait until we're connected to process this
                 case ACTIVE_DEVICE_CHANGE -> deferMessage(message);
                 default -> {} // Nothing to do
             }

@@ -2884,7 +2884,7 @@ public class BluetoothMapContentObserver {
         return switch (type) {
             case TYPE.EMAIL ->
                     setEmailMessageStatusDelete(mCurrentFolder, uriStr, handle, statusValue);
-                // TODO: to do when deleting IM message
+            // TODO: to do when deleting IM message
             case TYPE.IM -> {
                 Log.d(TAG, "setMessageStatusDeleted: IM not handled");
                 yield false;

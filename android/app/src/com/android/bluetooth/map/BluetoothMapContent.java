@@ -3540,7 +3540,7 @@ public class BluetoothMapContent {
             case 1 -> BluetoothMapContract.FOLDER_NAME_INBOX;
             case 2 -> BluetoothMapContract.FOLDER_NAME_SENT;
             case 3 -> BluetoothMapContract.FOLDER_NAME_DRAFT;
-                // Just name outbox, failed and queued "outbox"
+            // Just name outbox, failed and queued "outbox"
             case 4, 5, 6 -> BluetoothMapContract.FOLDER_NAME_OUTBOX;
             default -> "";
         };

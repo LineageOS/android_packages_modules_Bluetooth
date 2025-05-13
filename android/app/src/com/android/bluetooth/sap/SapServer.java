@@ -443,7 +443,7 @@ public class SapServer extends Thread implements Handler.Callback {
                                     sendClientMessage(errorReply);
                                     msg = null;
                                 }
-                                // Fall through
+                            // Fall through
                             default:
                                 /* Remaining cases just needs to be forwarded to the RIL unless
                                 we are

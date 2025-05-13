@@ -674,7 +674,7 @@ class HeadsetStateMachine extends StateMachine {
                 case HeadsetHalConstants.CONNECTION_STATE_DISCONNECTED:
                     stateLogW("ignore DISCONNECTED event");
                     break;
-                    // Both events result in Connecting state as SLC establishment is still required
+                // Both events result in Connecting state as SLC establishment is still required
                 case HeadsetHalConstants.CONNECTION_STATE_CONNECTED:
                 case HeadsetHalConstants.CONNECTION_STATE_CONNECTING:
                     if (mHeadsetService.okToAcceptConnection(mDevice, false)) {
@@ -821,7 +821,7 @@ class HeadsetStateMachine extends StateMachine {
                         case HeadsetStackEvent.EVENT_TYPE_BIND:
                             processAtBind(event.valueString, event.device);
                             break;
-                            // Unexpected AT commands, we only handle them for comparability reasons
+                        // Unexpected AT commands, we only handle them for comparability reasons
                         case HeadsetStackEvent.EVENT_TYPE_VR_STATE_CHANGED:
                             stateLogW(
                                     "Unexpected VR event, device="

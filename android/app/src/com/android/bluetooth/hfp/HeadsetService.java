@@ -380,20 +380,20 @@ public class HeadsetService extends ProfileService {
                 switch (stackEvent.valueInt) {
                     case HeadsetHalConstants.CONNECTION_STATE_CONNECTED,
                             HeadsetHalConstants.CONNECTION_STATE_CONNECTING -> {
-                            // Create new state machine if none is found
-                            if (stateMachine == null) {
-                                stateMachine =
-                                        HeadsetObjectsFactory.getInstance()
-                                                .makeStateMachine(
-                                                        stackEvent.device,
-                                                        mStateMachinesLooper,
-                                                        this,
-                                                        mAdapterService,
-                                                        mNativeInterface,
-                                                        mSystemInterface);
-                                mStateMachines.put(stackEvent.device, stateMachine);
-                            }
+                        // Create new state machine if none is found
+                        if (stateMachine == null) {
+                            stateMachine =
+                                    HeadsetObjectsFactory.getInstance()
+                                            .makeStateMachine(
+                                                    stackEvent.device,
+                                                    mStateMachinesLooper,
+                                                    this,
+                                                    mAdapterService,
+                                                    mNativeInterface,
+                                                    mSystemInterface);
+                            mStateMachines.put(stackEvent.device, stateMachine);
                         }
+                    }
                     default -> {} // Nothing to do
                 }
             }
@@ -842,7 +842,6 @@ public class HeadsetService extends ProfileService {
                         Binder.getCallingUid());
             }
         }
-
 
         if (mSystemInterface.isScoManagedByAudioEnabled()) {
             if (startScoViaAudioManager(device)) {

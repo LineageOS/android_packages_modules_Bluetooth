@@ -655,8 +655,8 @@ class AppScanStats {
             case ScanSettings.SCAN_MODE_LOW_POWER -> LOW_POWER_WEIGHT;
             case ScanSettings.SCAN_MODE_LOW_LATENCY -> LOW_LATENCY_WEIGHT;
             case ScanSettings.SCAN_MODE_BALANCED,
-                            ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY,
-                            ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED ->
+                    ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY,
+                    ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED ->
                     BALANCED_WEIGHT;
             default -> LOW_POWER_WEIGHT;
         };

@@ -18,7 +18,6 @@ package com.android.bluetooth.avrcp;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.SharedPreferences;

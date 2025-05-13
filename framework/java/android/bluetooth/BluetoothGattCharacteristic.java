@@ -591,14 +591,14 @@ public class BluetoothGattCharacteristic implements Parcelable {
         switch (formatType) {
             case FORMAT_SINT8:
                 value = intToSignedBits(value, 8);
-                // Fall-through intended
+            // Fall-through intended
             case FORMAT_UINT8:
                 mValue[offset] = (byte) (value & 0xFF);
                 break;
 
             case FORMAT_SINT16:
                 value = intToSignedBits(value, 16);
-                // Fall-through intended
+            // Fall-through intended
             case FORMAT_UINT16:
                 mValue[offset++] = (byte) (value & 0xFF);
                 mValue[offset] = (byte) ((value >> 8) & 0xFF);
@@ -606,7 +606,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
 
             case FORMAT_SINT32:
                 value = intToSignedBits(value, 32);
-                // Fall-through intended
+            // Fall-through intended
             case FORMAT_UINT32:
                 mValue[offset++] = (byte) (value & 0xFF);
                 mValue[offset++] = (byte) ((value >> 8) & 0xFF);

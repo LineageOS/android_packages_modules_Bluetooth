@@ -389,7 +389,7 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
                 if (Flags.leaudioAddOpusHiResCodecType()) {
                     return "Opus Hi-Res";
                 }
-                // Fall-through intended
+            // Fall-through intended
             default:
                 if (Flags.leaudioAddOpusCodecType()) {
                     if (mCodecType == SOURCE_CODEC_TYPE_OPUS) {

@@ -3796,7 +3796,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *
      * @return number of times {@link ACTION_KEY_MISSING} intent is thrown for this device since
      *     last successful encrypted connection
-     *
      * @hide
      */
     @RequiresPermission(BLUETOOTH_CONNECT)

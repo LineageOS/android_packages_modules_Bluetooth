@@ -276,7 +276,7 @@ public final class DistanceMeasurementParams implements Parcelable {
         public @NonNull Builder setFrequency(@ReportFrequency int frequency) {
             if (!List.of(REPORT_FREQUENCY_LOW, REPORT_FREQUENCY_MEDIUM, REPORT_FREQUENCY_HIGH)
                     .contains(frequency)) {
-                    throw new IllegalArgumentException("unknown frequency " + frequency);
+                throw new IllegalArgumentException("unknown frequency " + frequency);
             }
             mFrequency = frequency;
             return this;
@@ -296,7 +296,7 @@ public final class DistanceMeasurementParams implements Parcelable {
                             DISTANCE_MEASUREMENT_METHOD_RSSI,
                             DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING)
                     .contains(methodId)) {
-                    throw new IllegalArgumentException("unknown method id " + methodId);
+                throw new IllegalArgumentException("unknown method id " + methodId);
             }
             mMethodId = methodId;
             return this;
