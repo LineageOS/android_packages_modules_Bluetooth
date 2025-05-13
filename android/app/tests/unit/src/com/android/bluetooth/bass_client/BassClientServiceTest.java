@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.bass_client;
 
+import static android.bluetooth.BluetoothDevice.ADDRESS_TYPE_PUBLIC;
+import static android.bluetooth.BluetoothDevice.ADDRESS_TYPE_RANDOM;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
@@ -29,6 +31,7 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockContextGetBluetoothManager;
 
@@ -53,7 +56,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.BroadcastOptions;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothLeAudio;
@@ -172,22 +174,19 @@ public class BassClientServiceTest {
 
     private final HashMap<BluetoothDevice, BassClientStateMachine> mStateMachines = new HashMap<>();
 
-    private final BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     private final BluetoothDevice mCurrentDevice = getTestDevice(0);
     private final BluetoothDevice mCurrentDevice1 = getTestDevice(1);
 
-    private BassClientService mBassClientService;
-
     private final BluetoothDevice mSourceDevice =
-            mBluetoothAdapter.getRemoteLeDevice(
-                    "00:11:22:33:44:55", BluetoothDevice.ADDRESS_TYPE_RANDOM);
+            getRealDevice("00:11:22:33:44:55", ADDRESS_TYPE_RANDOM);
     private final BluetoothDevice mSourceDevice2 =
-            mBluetoothAdapter.getRemoteLeDevice(
-                    "00:11:22:33:44:66", BluetoothDevice.ADDRESS_TYPE_RANDOM);
+            getRealDevice("00:11:22:33:44:66", ADDRESS_TYPE_RANDOM);
     private final BluetoothLeBroadcastMetadata mBroadcastMetadata1 =
             createBroadcastMetadata(TEST_BROADCAST_ID);
     private final BluetoothLeBroadcastMetadata mBroadcastMetadata2 =
             createBroadcastMetadata(TEST_BROADCAST_ID_2);
+
+    private BassClientService mBassClientService;
     private ArgumentCaptor<ScanCallback> mCallbackCaptor;
     private ArgumentCaptor<IScannerCallback> mBassScanCallbackCaptor;
 
@@ -230,7 +229,7 @@ public class BassClientServiceTest {
         BluetoothLeBroadcastMetadata.Builder builder =
                 new BluetoothLeBroadcastMetadata.Builder()
                         .setEncrypted(false)
-                        .setSourceDevice(mSourceDevice, BluetoothDevice.ADDRESS_TYPE_RANDOM)
+                        .setSourceDevice(mSourceDevice, ADDRESS_TYPE_RANDOM)
                         .setSourceAdvertisingSid(TEST_ADVERTISER_SID)
                         .setBroadcastId(broadcastId)
                         .setBroadcastCode(null)
@@ -246,9 +245,8 @@ public class BassClientServiceTest {
                 new BluetoothLeBroadcastMetadata.Builder()
                         .setEncrypted(false)
                         .setSourceDevice(
-                                mBluetoothAdapter.getRemoteLeDevice(
-                                        "00:00:00:00:00:00", BluetoothDevice.ADDRESS_TYPE_RANDOM),
-                                BluetoothDevice.ADDRESS_TYPE_RANDOM)
+                                getRealDevice("00:00:00:00:00:00", ADDRESS_TYPE_RANDOM),
+                                ADDRESS_TYPE_RANDOM)
                         .setSourceAdvertisingSid(TEST_ADVERTISER_SID)
                         .setBroadcastId(0)
                         .setBroadcastCode(null)
@@ -747,21 +745,11 @@ public class BassClientServiceTest {
     @Test
     public void testNotRemovingCachedBroadcastOnFailEstablishWithoutScanning()
             throws RemoteException {
-        final BluetoothDevice device1 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:11", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device2 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:22", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device3 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:33", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device4 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:44", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device5 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:55", BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device1 = getRealDevice("00:11:22:33:44:11", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device2 = getRealDevice("00:11:22:33:44:22", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device3 = getRealDevice("00:11:22:33:44:33", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device4 = getRealDevice("00:11:22:33:44:44", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device5 = getRealDevice("00:11:22:33:44:55", ADDRESS_TYPE_RANDOM);
         final int handle1 = 0;
         final int handle2 = 1;
         final int handle3 = 2;
@@ -795,7 +783,7 @@ public class BassClientServiceTest {
         BluetoothLeBroadcastMetadata.Builder builder =
                 new BluetoothLeBroadcastMetadata.Builder()
                         .setEncrypted(false)
-                        .setSourceDevice(device1, BluetoothDevice.ADDRESS_TYPE_RANDOM)
+                        .setSourceDevice(device1, ADDRESS_TYPE_RANDOM)
                         .setSourceAdvertisingSid(TEST_ADVERTISER_SID)
                         .setBroadcastId(broadcastId1)
                         .setBroadcastCode(null)
@@ -1351,9 +1339,8 @@ public class BassClientServiceTest {
                     if (e.getSourceId() != sourceId) return e;
                     return new BluetoothLeBroadcastReceiveState(
                             sourceId,
-                            BluetoothDevice.ADDRESS_TYPE_PUBLIC,
-                            mBluetoothAdapter.getRemoteLeDevice(
-                                    "00:00:00:00:00:00", BluetoothDevice.ADDRESS_TYPE_PUBLIC),
+                            ADDRESS_TYPE_PUBLIC,
+                            getRealDevice("00:00:00:00:00:00", ADDRESS_TYPE_PUBLIC),
                             0,
                             0,
                             BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
@@ -1666,7 +1653,7 @@ public class BassClientServiceTest {
         }
     }
 
-    private void verifyModifyMessageAndInjectSourceModfified() {
+    private void verifyModifyMessageAndInjectSourceModified() {
         for (BassClientStateMachine sm : mStateMachines.values()) {
             ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
             verify(sm, atLeast(1)).sendMessage(messageCaptor.capture());
@@ -2509,21 +2496,11 @@ public class BassClientServiceTest {
 
     @Test
     public void testSelectSource_queueAndRemoveAfterMaxLimit() {
-        final BluetoothDevice device1 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:11", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device2 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:22", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device3 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:33", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device4 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:44", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device5 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:55", BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device1 = getRealDevice("00:11:22:33:44:11", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device2 = getRealDevice("00:11:22:33:44:22", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device3 = getRealDevice("00:11:22:33:44:33", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device4 = getRealDevice("00:11:22:33:44:44", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device5 = getRealDevice("00:11:22:33:44:55", ADDRESS_TYPE_RANDOM);
         final int handle1 = 0;
         final int handle2 = 1;
         final int handle3 = 2;
@@ -2704,21 +2681,11 @@ public class BassClientServiceTest {
 
     @Test
     public void testSelectSource_removeAfterMaxLimit_notSyncedToAnySink() {
-        final BluetoothDevice device1 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:11", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device2 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:22", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device3 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:33", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device4 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:44", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device5 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:55", BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device1 = getRealDevice("00:11:22:33:44:11", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device2 = getRealDevice("00:11:22:33:44:22", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device3 = getRealDevice("00:11:22:33:44:33", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device4 = getRealDevice("00:11:22:33:44:44", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device5 = getRealDevice("00:11:22:33:44:55", ADDRESS_TYPE_RANDOM);
         final int handle1 = 0;
         final int handle2 = 1;
         final int handle3 = 2;
@@ -2795,21 +2762,11 @@ public class BassClientServiceTest {
 
     @Test
     public void testSelectSource_removeAfterMaxLimit_firstIfAllSyncedToSinks() {
-        final BluetoothDevice device1 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:11", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device2 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:22", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device3 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:33", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device4 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:44", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device5 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:55", BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device1 = getRealDevice("00:11:22:33:44:11", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device2 = getRealDevice("00:11:22:33:44:22", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device3 = getRealDevice("00:11:22:33:44:33", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device4 = getRealDevice("00:11:22:33:44:44", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device5 = getRealDevice("00:11:22:33:44:55", ADDRESS_TYPE_RANDOM);
         final int handle1 = 0;
         final int handle2 = 1;
         final int handle3 = 2;
@@ -2925,21 +2882,11 @@ public class BassClientServiceTest {
 
     @Test
     public void testAddSourceToUnsyncedSource_causesSyncBeforeAddingSource() {
-        final BluetoothDevice device1 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:11", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device2 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:22", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device3 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:33", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device4 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:44", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device5 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:55", BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device1 = getRealDevice("00:11:22:33:44:11", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device2 = getRealDevice("00:11:22:33:44:22", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device3 = getRealDevice("00:11:22:33:44:33", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device4 = getRealDevice("00:11:22:33:44:44", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device5 = getRealDevice("00:11:22:33:44:55", ADDRESS_TYPE_RANDOM);
         final int handle1 = 0;
         final int handle2 = 1;
         final int handle3 = 2;
@@ -2995,7 +2942,7 @@ public class BassClientServiceTest {
         BluetoothLeBroadcastMetadata.Builder builder =
                 new BluetoothLeBroadcastMetadata.Builder()
                         .setEncrypted(false)
-                        .setSourceDevice(device1, BluetoothDevice.ADDRESS_TYPE_RANDOM)
+                        .setSourceDevice(device1, ADDRESS_TYPE_RANDOM)
                         .setSourceAdvertisingSid(TEST_ADVERTISER_SID)
                         .setBroadcastId(broadcastId1)
                         .setBroadcastCode(null)
@@ -3133,27 +3080,13 @@ public class BassClientServiceTest {
 
     @Test
     public void testSelectSource_orderOfSyncRegisteringByPriorityAndRssi() {
-        final BluetoothDevice device1 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:11", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device2 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:22", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device3 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:33", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device4 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:44", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device5 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:55", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device6 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:66", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device7 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:77", BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device1 = getRealDevice("00:11:22:33:44:11", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device2 = getRealDevice("00:11:22:33:44:22", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device3 = getRealDevice("00:11:22:33:44:33", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device4 = getRealDevice("00:11:22:33:44:44", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device5 = getRealDevice("00:11:22:33:44:55", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device6 = getRealDevice("00:11:22:33:44:66", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device7 = getRealDevice("00:11:22:33:44:77", ADDRESS_TYPE_RANDOM);
         final int broadcastId1 = 1111;
         final int broadcastId2 = 2222;
         final int broadcastId3 = 3333;
@@ -3379,15 +3312,9 @@ public class BassClientServiceTest {
 
     @Test
     public void testSelectSource_orderOfSyncRegisteringByRssiAndFailsCounter() {
-        final BluetoothDevice device1 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:11", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device2 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:22", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device3 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:33", BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device1 = getRealDevice("00:11:22:33:44:11", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device2 = getRealDevice("00:11:22:33:44:22", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device3 = getRealDevice("00:11:22:33:44:33", ADDRESS_TYPE_RANDOM);
         final int broadcastId1 = 1111;
         final int broadcastId2 = 2222;
         final int broadcastId3 = 3333;
@@ -3604,7 +3531,7 @@ public class BassClientServiceTest {
                 .isNull();
         PeriodicAdvertisementResult paResult =
                 mBassClientService.getPeriodicAdvertisementResult(mSourceDevice, testBroadcastId);
-        assertThat(paResult.getAddressType()).isEqualTo(BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        assertThat(paResult.getAddressType()).isEqualTo(ADDRESS_TYPE_RANDOM);
         assertThat(paResult.getSyncHandle()).isEqualTo(testSyncHandle);
         assertThat(paResult.getAdvSid()).isEqualTo(testAdvertiserSid);
         assertThat(paResult.getAdvInterval()).isEqualTo(testAdvInterval);
@@ -3659,7 +3586,7 @@ public class BassClientServiceTest {
                 .isNull();
         PeriodicAdvertisementResult paResult =
                 mBassClientService.getPeriodicAdvertisementResult(mSourceDevice, testBroadcastId1);
-        assertThat(paResult.getAddressType()).isEqualTo(BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        assertThat(paResult.getAddressType()).isEqualTo(ADDRESS_TYPE_RANDOM);
         assertThat(paResult.getSyncHandle()).isEqualTo(testSyncHandle);
         assertThat(paResult.getAdvSid()).isEqualTo(testAdvertiserSid1);
         assertThat(paResult.getAdvInterval()).isEqualTo(testAdvInterval1);
@@ -3695,7 +3622,7 @@ public class BassClientServiceTest {
                 .isNull();
         paResult =
                 mBassClientService.getPeriodicAdvertisementResult(mSourceDevice, testBroadcastId2);
-        expect.that(paResult.getAddressType()).isEqualTo(BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        expect.that(paResult.getAddressType()).isEqualTo(ADDRESS_TYPE_RANDOM);
         expect.that(paResult.getSyncHandle()).isEqualTo(testSyncHandle);
         expect.that(paResult.getAdvSid()).isEqualTo(testAdvertiserSid2);
         expect.that(paResult.getAdvInterval()).isEqualTo(testAdvInterval2);
@@ -3859,7 +3786,7 @@ public class BassClientServiceTest {
                 3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
 
         /* Imitate broadcast source stop, sink notify about loosing BIS sync */
-        verifyModifyMessageAndInjectSourceModfified();
+        verifyModifyMessageAndInjectSourceModified();
 
         assertThat(mStateMachines).hasSize(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
@@ -4849,21 +4776,11 @@ public class BassClientServiceTest {
 
     @Test
     public void monitorBroadcastAfterSyncMaxLimit() throws RemoteException {
-        final BluetoothDevice device1 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:11", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device2 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:22", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device3 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:33", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device4 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:44", BluetoothDevice.ADDRESS_TYPE_RANDOM);
-        final BluetoothDevice device5 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:55", BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device1 = getRealDevice("00:11:22:33:44:11", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device2 = getRealDevice("00:11:22:33:44:22", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device3 = getRealDevice("00:11:22:33:44:33", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device4 = getRealDevice("00:11:22:33:44:44", ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device5 = getRealDevice("00:11:22:33:44:55", ADDRESS_TYPE_RANDOM);
         final int handle1 = 0;
         final int handle2 = 1;
         final int handle3 = 2;
@@ -5125,7 +5042,7 @@ public class BassClientServiceTest {
         BluetoothLeBroadcastMetadata.Builder builder =
                 new BluetoothLeBroadcastMetadata.Builder()
                         .setEncrypted(false)
-                        .setSourceDevice(mSourceDevice2, BluetoothDevice.ADDRESS_TYPE_RANDOM)
+                        .setSourceDevice(mSourceDevice2, ADDRESS_TYPE_RANDOM)
                         .setSourceAdvertisingSid(TEST_ADVERTISER_SID)
                         .setBroadcastId(TEST_BROADCAST_ID_2)
                         .setBroadcastCode(null)
@@ -5203,7 +5120,7 @@ public class BassClientServiceTest {
         // Suspend receivers, SUSPENDED_BY_HOST
         mBassClientService.suspendReceiversSourceSynchronization(TEST_BROADCAST_ID);
         verifyStopBroadcastMonitoringWithUnsync();
-        verifyModifyMessageAndInjectSourceModfified();
+        verifyModifyMessageAndInjectSourceModified();
         checkNoResumeSynchronizationByBig();
         checkResumeSynchronizationByHost();
     }
@@ -5215,7 +5132,7 @@ public class BassClientServiceTest {
         // Suspend receivers, SUSPENDED_BY_HOST
         mBassClientService.suspendReceiversSourceSynchronization(TEST_BROADCAST_ID);
         verifyStopBroadcastMonitoringWithoutUnsync();
-        verifyModifyMessageAndInjectSourceModfified();
+        verifyModifyMessageAndInjectSourceModified();
         checkNoResumeSynchronizationByBig();
         checkResumeSynchronizationByHost();
     }
@@ -5227,7 +5144,7 @@ public class BassClientServiceTest {
         // Suspend all receivers, SUSPENDED_BY_HOST
         mBassClientService.suspendAllReceiversSourceSynchronization();
         verifyStopBroadcastMonitoringWithUnsync();
-        verifyModifyMessageAndInjectSourceModfified();
+        verifyModifyMessageAndInjectSourceModified();
         checkNoResumeSynchronizationByBig();
         checkResumeSynchronizationByHost();
     }
@@ -5239,7 +5156,7 @@ public class BassClientServiceTest {
         // Suspend all receivers, SUSPENDED_BY_HOST
         mBassClientService.suspendAllReceiversSourceSynchronization();
         verifyStopBroadcastMonitoringWithoutUnsync();
-        verifyModifyMessageAndInjectSourceModfified();
+        verifyModifyMessageAndInjectSourceModified();
         checkNoResumeSynchronizationByBig();
         checkResumeSynchronizationByHost();
     }
@@ -5508,7 +5425,7 @@ public class BassClientServiceTest {
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
         verifyStopBroadcastMonitoringWithUnsync();
-        verifyModifyMessageAndInjectSourceModfified();
+        verifyModifyMessageAndInjectSourceModified();
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
@@ -5531,7 +5448,7 @@ public class BassClientServiceTest {
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
         verifyStopBroadcastMonitoringWithoutUnsync();
-        verifyModifyMessageAndInjectSourceModfified();
+        verifyModifyMessageAndInjectSourceModified();
         checkNoResumeSynchronizationByBig();
 
         /* Unicast finished streaming */
@@ -5571,8 +5488,7 @@ public class BassClientServiceTest {
 
         // Scan and add add sync to pending
         final BluetoothDevice sourceDevice3 =
-                mBluetoothAdapter.getRemoteLeDevice(
-                        "00:11:22:33:44:11", BluetoothDevice.ADDRESS_TYPE_RANDOM);
+                getRealDevice("00:11:22:33:44:11", ADDRESS_TYPE_RANDOM);
         onScanResult(sourceDevice3, TEST_BROADCAST_ID + 2);
         mInOrderMethodProxy
                 .verify(mMethodProxy)
@@ -6089,7 +6005,7 @@ public class BassClientServiceTest {
 
         // Suspend all receivers, SUSPENDED_BY_HOST
         mBassClientService.suspendAllReceiversSourceSynchronization();
-        verifyModifyMessageAndInjectSourceModfified();
+        verifyModifyMessageAndInjectSourceModified();
 
         // Start searching sources sync to paused broadcaster and remain cache
         startSearchingForSources();
@@ -6327,7 +6243,7 @@ public class BassClientServiceTest {
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
         checkNotAllowBroadcastMonitoring();
-        verifyModifyMessageAndInjectSourceModfified();
+        verifyModifyMessageAndInjectSourceModified();
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
@@ -6350,7 +6266,7 @@ public class BassClientServiceTest {
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
         checkNotAllowBroadcastMonitoring();
-        verifyModifyMessageAndInjectSourceModfified();
+        verifyModifyMessageAndInjectSourceModified();
 
         /* Unicast finished streaming */
         mBassClientService.handleUnicastSourceStreamStatusChange(
@@ -7006,7 +6922,7 @@ public class BassClientServiceTest {
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
-        verifyModifyMessageAndInjectSourceModfified();
+        verifyModifyMessageAndInjectSourceModified();
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
         }
@@ -7168,7 +7084,7 @@ public class BassClientServiceTest {
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
-        verifyModifyMessageAndInjectSourceModfified();
+        verifyModifyMessageAndInjectSourceModified();
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
         }
@@ -7197,7 +7113,7 @@ public class BassClientServiceTest {
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
-        verifyModifyMessageAndInjectSourceModfified();
+        verifyModifyMessageAndInjectSourceModified();
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
         }
@@ -7289,7 +7205,7 @@ public class BassClientServiceTest {
         /* Unicast would like to stream */
         mBassClientService.handleUnicastSourceStreamStatusChange(
                 3 /* STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE */);
-        verifyModifyMessageAndInjectSourceModfified();
+        verifyModifyMessageAndInjectSourceModified();
         for (BassClientStateMachine sm : mStateMachines.values()) {
             clearInvocations(sm);
         }
@@ -7465,7 +7381,7 @@ public class BassClientServiceTest {
         checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
         checkNoTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_OOR_MONITOR_TIMEOUT);
 
-        // Resmue
+        // Resume
         mBassClientService.resumeReceiversSourceSynchronization();
         mInOrderMethodProxy
                 .verify(mMethodProxy)
