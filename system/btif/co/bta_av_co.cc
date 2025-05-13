@@ -1046,9 +1046,8 @@ BtaAvCoSep* BtaAvCo::SelectProviderCodecConfiguration(
   log::assert_that(p_sink != nullptr, "Unable to find the selected codec config");
 
   // Identify the selected codec.
-  auto* codec_config =
-          reinterpret_cast<A2dpCodecConfigExt*>(p_peer->GetCodecs()->findSourceCodecConfig(
-                  provider_codec_config.codec_parameters.codec_type));
+  auto* codec_config = reinterpret_cast<A2dpCodecConfigExt*>(
+          p_peer->GetCodecs()->findSourceCodecConfig(provider_codec_config.codec_config));
   log::assert_that(codec_config != nullptr, "Unable to find the selected codec config");
 
   // Update the vendor codec parameters and codec configuration.
