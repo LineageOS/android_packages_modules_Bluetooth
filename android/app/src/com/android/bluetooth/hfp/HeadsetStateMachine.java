@@ -2849,15 +2849,12 @@ class HeadsetStateMachine extends StateMachine {
     }
 
     private static int getConnectionStateFromAudioState(int audioState) {
-        switch (audioState) {
-            case BluetoothHeadset.STATE_AUDIO_CONNECTED:
-                return BluetoothAdapter.STATE_CONNECTED;
-            case BluetoothHeadset.STATE_AUDIO_CONNECTING:
-                return BluetoothAdapter.STATE_CONNECTING;
-            case BluetoothHeadset.STATE_AUDIO_DISCONNECTED:
-                return BluetoothAdapter.STATE_DISCONNECTED;
-        }
-        return BluetoothAdapter.STATE_DISCONNECTED;
+        return switch (audioState) {
+            case BluetoothHeadset.STATE_AUDIO_CONNECTED -> BluetoothAdapter.STATE_CONNECTED;
+            case BluetoothHeadset.STATE_AUDIO_CONNECTING -> BluetoothAdapter.STATE_CONNECTING;
+            case BluetoothHeadset.STATE_AUDIO_DISCONNECTED -> BluetoothAdapter.STATE_DISCONNECTED;
+            default -> BluetoothAdapter.STATE_DISCONNECTED;
+        };
     }
 
     private static String getMessageName(int what) {

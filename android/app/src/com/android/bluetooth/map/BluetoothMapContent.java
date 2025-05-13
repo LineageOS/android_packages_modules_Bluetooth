@@ -3536,19 +3536,14 @@ public class BluetoothMapContent {
             return BluetoothMapContract.FOLDER_NAME_DELETED;
         }
 
-        switch (type) {
-            case 1:
-                return BluetoothMapContract.FOLDER_NAME_INBOX;
-            case 2:
-                return BluetoothMapContract.FOLDER_NAME_SENT;
-            case 3:
-                return BluetoothMapContract.FOLDER_NAME_DRAFT;
-            case 4: // Just name outbox, failed and queued "outbox"
-            case 5:
-            case 6:
-                return BluetoothMapContract.FOLDER_NAME_OUTBOX;
-        }
-        return "";
+        return switch (type) {
+            case 1 -> BluetoothMapContract.FOLDER_NAME_INBOX;
+            case 2 -> BluetoothMapContract.FOLDER_NAME_SENT;
+            case 3 -> BluetoothMapContract.FOLDER_NAME_DRAFT;
+                // Just name outbox, failed and queued "outbox"
+            case 4, 5, 6 -> BluetoothMapContract.FOLDER_NAME_OUTBOX;
+            default -> "";
+        };
     }
 
     public byte[] getMessage(
@@ -3746,24 +3741,23 @@ public class BluetoothMapContent {
                     }
                     Integer type = c.getInt(c.getColumnIndex(Mms.Addr.TYPE));
                     switch (type) {
-                        case MMS_FROM:
+                        case MMS_FROM -> {
                             contactName = setVCardFromPhoneNumber(message, address, true);
                             message.addFrom(contactName, address);
-                            break;
-                        case MMS_TO:
+                        }
+                        case MMS_TO -> {
                             contactName = setVCardFromPhoneNumber(message, address, false);
                             message.addTo(contactName, address);
-                            break;
-                        case MMS_CC:
+                        }
+                        case MMS_CC -> {
                             contactName = setVCardFromPhoneNumber(message, address, false);
                             message.addCc(contactName, address);
-                            break;
-                        case MMS_BCC:
+                        }
+                        case MMS_BCC -> {
                             contactName = setVCardFromPhoneNumber(message, address, false);
                             message.addBcc(contactName, address);
-                            break;
-                        default:
-                            break;
+                        }
+                        default -> {}
                     }
                 } while (c.moveToNext());
             }

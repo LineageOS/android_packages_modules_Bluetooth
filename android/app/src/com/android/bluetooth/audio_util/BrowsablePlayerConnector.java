@@ -129,8 +129,7 @@ public class BrowsablePlayerConnector extends Handler {
     public void handleMessage(Message msg) {
         Log.d(TAG, "Received a message: msg.what=" + msg.what);
         switch (msg.what) {
-            case MSG_GET_FOLDER_ITEMS_CB:
-                {
+            case MSG_GET_FOLDER_ITEMS_CB -> {
                     int status = msg.arg1;
                     int results_size = msg.arg2;
                     BrowsedPlayerWrapper wrapper = (BrowsedPlayerWrapper) msg.obj;
@@ -149,11 +148,8 @@ public class BrowsablePlayerConnector extends Handler {
                                         + wrapper.getPackageName());
                         mResults.add(wrapper);
                     }
-                    break;
                 }
-
-            case MSG_CONNECT_CB:
-                {
+            case MSG_CONNECT_CB -> {
                     BrowsedPlayerWrapper wrapper = (BrowsedPlayerWrapper) msg.obj;
 
                     if (msg.arg1 != BrowsedPlayerWrapper.STATUS_SUCCESS) {
@@ -180,15 +176,12 @@ public class BrowsablePlayerConnector extends Handler {
                                                 wrapper)
                                         .sendToTarget();
                             });
-                    break;
                 }
-
-            case MSG_TIMEOUT:
-                {
+            case MSG_TIMEOUT -> {
                     Log.v(TAG, "Timed out waiting for players");
                     removePendingPlayers();
-                    break;
                 }
+            default -> {} // Nothing to do
         }
 
         if (mPendingPlayers.size() == 0) {

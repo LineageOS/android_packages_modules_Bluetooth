@@ -20,7 +20,6 @@ import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHE
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static android.bluetooth.le.ScanSettings.getScanModeString;
 
@@ -442,45 +441,21 @@ public class ScanManager {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case MSG_START_BLE_SCAN:
-                    handleStartScan((ScanClient) msg.obj);
-                    break;
-                case MSG_STOP_BLE_SCAN:
-                    handleStopScan((ScanClient) msg.obj);
-                    break;
-                case MSG_FLUSH_BATCH_RESULTS:
-                    handleFlushBatchResults((ScanClient) msg.obj);
-                    break;
-                case MSG_SCAN_TIMEOUT:
-                    regularScanTimeout((ScanClient) msg.obj);
-                    break;
-                case MSG_SUSPEND_SCANS:
-                    handleSuspendScans();
-                    break;
-                case MSG_RESUME_SCANS:
-                    handleResumeScans();
-                    break;
-                case MSG_SCREEN_OFF:
-                    handleScreenOff();
-                    break;
-                case MSG_SCREEN_ON:
-                    handleScreenOn();
-                    break;
-                case MSG_REVERT_SCAN_MODE_UPGRADE:
-                    handleRevertScanModeUpgrade((ScanClient) msg.obj);
-                    break;
-                case MSG_IMPORTANCE_CHANGE:
-                    handleImportanceChange((UidImportance) msg.obj);
-                    break;
-                case MSG_START_CONNECTING:
-                    handleConnectingState();
-                    break;
-                case MSG_STOP_CONNECTING:
-                    handleClearConnectingState();
-                    break;
-                default:
+                case MSG_START_BLE_SCAN -> handleStartScan((ScanClient) msg.obj);
+                case MSG_STOP_BLE_SCAN -> handleStopScan((ScanClient) msg.obj);
+                case MSG_FLUSH_BATCH_RESULTS -> handleFlushBatchResults((ScanClient) msg.obj);
+                case MSG_SCAN_TIMEOUT -> regularScanTimeout((ScanClient) msg.obj);
+                case MSG_SUSPEND_SCANS -> handleSuspendScans();
+                case MSG_RESUME_SCANS -> handleResumeScans();
+                case MSG_SCREEN_OFF -> handleScreenOff();
+                case MSG_SCREEN_ON -> handleScreenOn();
+                case MSG_REVERT_SCAN_MODE_UPGRADE ->
+                        handleRevertScanModeUpgrade((ScanClient) msg.obj);
+                case MSG_IMPORTANCE_CHANGE -> handleImportanceChange((UidImportance) msg.obj);
+                case MSG_START_CONNECTING -> handleConnectingState();
+                case MSG_STOP_CONNECTING -> handleClearConnectingState();
                     // Shouldn't happen.
-                    Log.e(TAG, "received an unknown message : " + msg.what);
+                default -> Log.e(TAG, "received an unknown message : " + msg.what);
             }
         }
 
@@ -791,19 +766,16 @@ public class ScanManager {
                 // The following codes are effectively only for services
                 // Apps are either already or will be soon handled by handleImportanceChange().
                 switch (client.mScanModeApp) {
-                    case ScanSettings.SCAN_MODE_LOW_POWER:
-                        updatedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF;
-                        break;
-                    case ScanSettings.SCAN_MODE_BALANCED:
-                    case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY:
-                        updatedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED;
-                        break;
-                    case ScanSettings.SCAN_MODE_LOW_LATENCY:
-                        updatedScanMode = ScanSettings.SCAN_MODE_LOW_LATENCY;
-                        break;
-                    case ScanSettings.SCAN_MODE_OPPORTUNISTIC:
-                    default:
+                    case ScanSettings.SCAN_MODE_LOW_POWER ->
+                            updatedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF;
+                    case ScanSettings.SCAN_MODE_BALANCED,
+                                    ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY ->
+                            updatedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED;
+                    case ScanSettings.SCAN_MODE_LOW_LATENCY ->
+                            updatedScanMode = ScanSettings.SCAN_MODE_LOW_LATENCY;
+                    default -> {
                         return false;
+                    }
                 }
             }
             Log.d(
@@ -1959,31 +1931,27 @@ public class ScanManager {
         if (settings == null) {
             return 0;
         }
-        int val = 0;
         int maxTotalTrackableAdvertisements =
                 mAdapterService.getTotalNumOfTrackableAdvertisements();
         // controller based onfound onlost resources are scarce commodity; the
         // assignment of filters to num of beacons to track is configurable based
         // on hw capabilities. Apps give an intent and allocation of onfound
         // resources or failure there of is done based on availability - FCFS model
-        switch (settings.getNumOfMatches()) {
-            case ScanSettings.MATCH_NUM_ONE_ADVERTISEMENT:
-                val = 1;
-                break;
-            case ScanSettings.MATCH_NUM_FEW_ADVERTISEMENT:
-                val = 2;
-                break;
-            case ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT:
-                val = maxTotalTrackableAdvertisements / 2;
+        return switch (settings.getNumOfMatches()) {
+            case ScanSettings.MATCH_NUM_ONE_ADVERTISEMENT -> 1;
+            case ScanSettings.MATCH_NUM_FEW_ADVERTISEMENT -> 2;
+            case ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT -> {
                 if (Flags.changeDefaultTrackableAdvNumber()) {
-                    val = maxTotalTrackableAdvertisements / 4;
+                    yield maxTotalTrackableAdvertisements / 4;
+                } else {
+                    yield maxTotalTrackableAdvertisements / 2;
                 }
-                break;
-            default:
-                val = 1;
+            }
+            default -> {
                 Log.d(TAG, "Invalid setting for getNumOfMatches() " + settings.getNumOfMatches());
-        }
-        return val;
+                yield 1;
+            }
+        };
     }
 
     private boolean manageAllocationOfTrackingAdvertisement(
@@ -2186,7 +2154,7 @@ public class ScanManager {
 
     private boolean updateCountersAndCheckForConnectingState(int state, int prevState) {
         switch (prevState) {
-            case STATE_CONNECTING:
+            case STATE_CONNECTING -> {
                 if (mProfilesConnecting > 0) {
                     mProfilesConnecting--;
                 } else {
@@ -2194,8 +2162,8 @@ public class ScanManager {
                     throw new IllegalStateException(
                             "Invalid state transition, " + prevState + " -> " + state);
                 }
-                break;
-            case STATE_CONNECTED:
+            }
+            case STATE_CONNECTED -> {
                 if (mProfilesConnected > 0) {
                     mProfilesConnected--;
                 } else {
@@ -2203,8 +2171,8 @@ public class ScanManager {
                     throw new IllegalStateException(
                             "Invalid state transition, " + prevState + " -> " + state);
                 }
-                break;
-            case STATE_DISCONNECTING:
+            }
+            case STATE_DISCONNECTING -> {
                 if (mProfilesDisconnecting > 0) {
                     mProfilesDisconnecting--;
                 } else {
@@ -2212,21 +2180,14 @@ public class ScanManager {
                     throw new IllegalStateException(
                             "Invalid state transition, " + prevState + " -> " + state);
                 }
-                break;
+            }
+            default -> {} // Nothing to do
         }
         switch (state) {
-            case STATE_CONNECTING:
-                mProfilesConnecting++;
-                break;
-            case STATE_CONNECTED:
-                mProfilesConnected++;
-                break;
-            case STATE_DISCONNECTING:
-                mProfilesDisconnecting++;
-                break;
-            case STATE_DISCONNECTED:
-                break;
-            default:
+            case STATE_CONNECTING -> mProfilesConnecting++;
+            case STATE_CONNECTED -> mProfilesConnected++;
+            case STATE_DISCONNECTING -> mProfilesDisconnecting++;
+            default -> {} // Nothing to do
         }
         Log.d(
                 TAG,

@@ -124,8 +124,7 @@ public class HidDeviceService extends ProfileService {
             Log.d(TAG, "handleMessage(): msg.what=" + msg.what);
 
             switch (msg.what) {
-                case MESSAGE_APPLICATION_STATE_CHANGED:
-                    {
+                case MESSAGE_APPLICATION_STATE_CHANGED -> {
                         BluetoothDevice device = msg.obj != null ? (BluetoothDevice) msg.obj : null;
                         boolean success = (msg.arg1 != 0);
 
@@ -185,12 +184,8 @@ public class HidDeviceService extends ProfileService {
                         if (!success) {
                             mCallback = null;
                         }
-
-                        break;
                     }
-
-                case MESSAGE_CONNECT_STATE_CHANGED:
-                    {
+                case MESSAGE_CONNECT_STATE_CHANGED -> {
                         BluetoothDevice device = (BluetoothDevice) msg.obj;
                         int halState = msg.arg1;
                         int state = convertHalState(halState);
@@ -210,10 +205,8 @@ public class HidDeviceService extends ProfileService {
                                     TAG,
                                     e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                         }
-                        break;
                     }
-
-                case MESSAGE_GET_REPORT:
+                case MESSAGE_GET_REPORT -> {
                     byte type = (byte) msg.arg1;
                     byte id = (byte) msg.arg2;
                     int bufferSize = msg.obj == null ? 0 : ((Integer) msg.obj).intValue();
@@ -225,10 +218,8 @@ public class HidDeviceService extends ProfileService {
                     } catch (RemoteException e) {
                         Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                     }
-                    break;
-
-                case MESSAGE_SET_REPORT:
-                    {
+                }
+                case MESSAGE_SET_REPORT -> {
                         byte reportType = (byte) msg.arg1;
                         byte reportId = (byte) msg.arg2;
                         byte[] data = ((ByteBuffer) msg.obj).array();
@@ -242,10 +233,8 @@ public class HidDeviceService extends ProfileService {
                                     TAG,
                                     e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                         }
-                        break;
                     }
-
-                case MESSAGE_SET_PROTOCOL:
+                case MESSAGE_SET_PROTOCOL -> {
                     byte protocol = (byte) msg.arg1;
 
                     try {
@@ -255,9 +244,8 @@ public class HidDeviceService extends ProfileService {
                     } catch (RemoteException e) {
                         Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                     }
-                    break;
-
-                case MESSAGE_INTR_DATA:
+                }
+                case MESSAGE_INTR_DATA -> {
                     byte reportId = (byte) msg.arg1;
                     byte[] data = ((ByteBuffer) msg.obj).array();
 
@@ -268,9 +256,8 @@ public class HidDeviceService extends ProfileService {
                     } catch (RemoteException e) {
                         Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                     }
-                    break;
-
-                case MESSAGE_VC_UNPLUG:
+                }
+                case MESSAGE_VC_UNPLUG -> {
                     try {
                         if (mCallback != null) {
                             mCallback.onVirtualCableUnplug(mHidDevice);
@@ -279,16 +266,16 @@ public class HidDeviceService extends ProfileService {
                         Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                     }
                     mHidDevice = null;
-                    break;
-
-                case MESSAGE_IMPORTANCE_CHANGE:
+                }
+                case MESSAGE_IMPORTANCE_CHANGE -> {
                     int importance = msg.arg1;
                     int uid = msg.arg2;
                     if (importance > FOREGROUND_IMPORTANCE_CUTOFF
                             && uid >= Process.FIRST_APPLICATION_UID) {
                         unregisterAppUid(uid);
                     }
-                    break;
+                }
+                default -> {} // Nothing to do
             }
         }
     }

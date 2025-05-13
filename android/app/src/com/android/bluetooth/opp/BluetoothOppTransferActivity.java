@@ -359,7 +359,7 @@ public class BluetoothOppTransferActivity extends AlertActivity
     @Override
     public void onClick(DialogInterface dialog, int which) {
         switch (which) {
-            case DialogInterface.BUTTON_POSITIVE:
+            case DialogInterface.BUTTON_POSITIVE -> {
                 if (mWhichDialog == DIALOG_RECEIVE_COMPLETE_SUCCESS) {
                     // "Open" - open receive file
                     BluetoothOppUtility.openReceivedFile(
@@ -378,9 +378,8 @@ public class BluetoothOppTransferActivity extends AlertActivity
                     BluetoothOppUtility.updateVisibilityToHidden(this, mUri);
                     getSystemService(NotificationManager.class).cancel(mTransInfo.mID);
                 }
-                break;
-
-            case DialogInterface.BUTTON_NEGATIVE:
+            }
+            case DialogInterface.BUTTON_NEGATIVE -> {
                 if (mWhichDialog == DIALOG_RECEIVE_ONGOING || mWhichDialog == DIALOG_SEND_ONGOING) {
                     // "Stop" button
                     this.getContentResolver().delete(mUri, null, null);
@@ -395,10 +394,10 @@ public class BluetoothOppTransferActivity extends AlertActivity
 
                     getSystemService(NotificationManager.class).cancel(mTransInfo.mID);
                 } else if (mWhichDialog == DIALOG_SEND_COMPLETE_FAIL) {
-
                     BluetoothOppUtility.updateVisibilityToHidden(this, mUri);
                 }
-                break;
+            }
+            default -> {} // Nothing to do
         }
         finish();
     }

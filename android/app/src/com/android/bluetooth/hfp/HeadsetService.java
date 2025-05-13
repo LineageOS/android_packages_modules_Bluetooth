@@ -378,9 +378,8 @@ public class HeadsetService extends ProfileService {
             HeadsetStateMachine stateMachine = mStateMachines.get(stackEvent.device);
             if (stackEvent.type == HeadsetStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED) {
                 switch (stackEvent.valueInt) {
-                    case HeadsetHalConstants.CONNECTION_STATE_CONNECTED:
-                    case HeadsetHalConstants.CONNECTION_STATE_CONNECTING:
-                        {
+                    case HeadsetHalConstants.CONNECTION_STATE_CONNECTED,
+                            HeadsetHalConstants.CONNECTION_STATE_CONNECTING -> {
                             // Create new state machine if none is found
                             if (stateMachine == null) {
                                 stateMachine =
@@ -394,8 +393,8 @@ public class HeadsetService extends ProfileService {
                                                         mSystemInterface);
                                 mStateMachines.put(stackEvent.device, stateMachine);
                             }
-                            break;
                         }
+                    default -> {} // Nothing to do
                 }
             }
             if (stateMachine == null) {

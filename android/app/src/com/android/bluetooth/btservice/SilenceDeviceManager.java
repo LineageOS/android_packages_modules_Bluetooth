@@ -269,16 +269,17 @@ public class SilenceDeviceManager {
                         + ", profile:"
                         + BluetoothProfile.getProfileName(profile));
         switch (profile) {
-            case BluetoothProfile.A2DP:
+            case BluetoothProfile.A2DP -> {
                 if (!mA2dpConnectedDevices.contains(device)) {
                     mA2dpConnectedDevices.add(device);
                 }
-                break;
-            case BluetoothProfile.HEADSET:
+            }
+            case BluetoothProfile.HEADSET -> {
                 if (!mHfpConnectedDevices.contains(device)) {
                     mHfpConnectedDevices.add(device);
                 }
-                break;
+            }
+            default -> {} // Nothing to do
         }
     }
 
@@ -290,16 +291,17 @@ public class SilenceDeviceManager {
                         + ", profile:"
                         + BluetoothProfile.getProfileName(profile));
         switch (profile) {
-            case BluetoothProfile.A2DP:
+            case BluetoothProfile.A2DP -> {
                 if (mA2dpConnectedDevices.contains(device)) {
                     mA2dpConnectedDevices.remove(device);
                 }
-                break;
-            case BluetoothProfile.HEADSET:
+            }
+            case BluetoothProfile.HEADSET -> {
                 if (mHfpConnectedDevices.contains(device)) {
                     mHfpConnectedDevices.remove(device);
                 }
-                break;
+            }
+            default -> {} // Nothing to do
         }
     }
 

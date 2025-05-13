@@ -2872,7 +2872,6 @@ public class BluetoothMapContentObserver {
             BluetoothMapFolderElement mCurrentFolder,
             String uriStr,
             int statusValue) {
-        boolean res = false;
         Log.d(
                 TAG,
                 "setMessageStatusDeleted: handle "
@@ -2882,27 +2881,34 @@ public class BluetoothMapContentObserver {
                         + " value "
                         + statusValue);
 
-        if (type == TYPE.EMAIL) {
-            res = setEmailMessageStatusDelete(mCurrentFolder, uriStr, handle, statusValue);
-        } else if (type == TYPE.IM) {
-            // TODO: to do when deleting IM message
-            Log.d(TAG, "setMessageStatusDeleted: IM not handled");
-        } else {
-            if (statusValue == BluetoothMapAppParams.STATUS_VALUE_YES) {
-                if (type == TYPE.SMS_GSM || type == TYPE.SMS_CDMA) {
-                    res = deleteMessageSms(handle);
-                } else if (type == TYPE.MMS) {
-                    res = deleteMessageMms(handle);
-                }
-            } else if (statusValue == BluetoothMapAppParams.STATUS_VALUE_NO) {
-                if (type == TYPE.SMS_GSM || type == TYPE.SMS_CDMA) {
-                    res = unDeleteMessageSms(handle);
-                } else if (type == TYPE.MMS) {
-                    res = unDeleteMessageMms(handle);
+        return switch (type) {
+            case TYPE.EMAIL ->
+                    setEmailMessageStatusDelete(mCurrentFolder, uriStr, handle, statusValue);
+                // TODO: to do when deleting IM message
+            case TYPE.IM -> {
+                Log.d(TAG, "setMessageStatusDeleted: IM not handled");
+                yield false;
+            }
+            case TYPE.SMS_GSM, TYPE.SMS_CDMA -> {
+                if (statusValue == BluetoothMapAppParams.STATUS_VALUE_YES) {
+                    yield deleteMessageSms(handle);
+                } else if (statusValue == BluetoothMapAppParams.STATUS_VALUE_NO) {
+                    yield unDeleteMessageSms(handle);
+                } else {
+                    yield false;
                 }
             }
-        }
-        return res;
+            case TYPE.MMS -> {
+                if (statusValue == BluetoothMapAppParams.STATUS_VALUE_YES) {
+                    yield deleteMessageMms(handle);
+                } else if (statusValue == BluetoothMapAppParams.STATUS_VALUE_NO) {
+                    yield unDeleteMessageMms(handle);
+                } else {
+                    yield false;
+                }
+            }
+            case TYPE.NONE -> false;
+        };
     }
 
     /**

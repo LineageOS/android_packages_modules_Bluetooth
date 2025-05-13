@@ -3925,18 +3925,17 @@ public final class BluetoothAdapter {
         for (int i = 0; i < ADDRESS_LENGTH; i++) {
             char c = address.charAt(i);
             switch (i % 3) {
-                case 0:
-                case 1:
-                    if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F')) {
-                        // hex character, OK
-                        break;
+                case 0, 1 -> {
+                    if ((c < '0' || c > '9') && (c < 'A' || c > 'F')) {
+                        return false;
                     }
-                    return false;
-                case 2:
-                    if (c == ':') {
-                        break; // OK
+                }
+                case 2 -> {
+                    if (c != ':') {
+                        return false;
                     }
-                    return false;
+                }
+                default -> {} // Nothing to do
             }
         }
         return true;

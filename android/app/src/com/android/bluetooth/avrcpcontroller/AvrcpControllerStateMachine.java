@@ -425,20 +425,15 @@ class AvrcpControllerStateMachine extends StateMachine {
         public boolean processMessage(Message message) {
             debug("Disconnected: processMessage " + eventToString(message.what));
             switch (message.what) {
-                case MESSAGE_PROCESS_RECEIVED_COVER_ART_PSM:
-                    mCoverArtPsm = message.arg1;
-                    break;
-                case CONNECT:
+                case MESSAGE_PROCESS_RECEIVED_COVER_ART_PSM -> mCoverArtPsm = message.arg1;
+                case CONNECT -> {
                     debug("Connect");
                     transitionTo(mConnecting);
-                    break;
-                case CLEANUP:
-                    mService.removeStateMachine(AvrcpControllerStateMachine.this);
-                    break;
-                case ACTIVE_DEVICE_CHANGE:
+                }
+                case CLEANUP -> mService.removeStateMachine(AvrcpControllerStateMachine.this);
                     // Wait until we're connected to process this
-                    deferMessage(message);
-                    break;
+                case ACTIVE_DEVICE_CHANGE -> deferMessage(message);
+                default -> {} // Nothing to do
             }
             return true;
         }
@@ -474,7 +469,7 @@ class AvrcpControllerStateMachine extends StateMachine {
         public boolean processMessage(Message msg) {
             debug("Connected: processMessage " + eventToString(msg.what));
             switch (msg.what) {
-                case ACTIVE_DEVICE_CHANGE:
+                case ACTIVE_DEVICE_CHANGE -> {
                     int state = msg.arg1;
                     if (state == AvrcpControllerService.DEVICE_STATE_ACTIVE) {
                         BluetoothMediaBrowserService.onAddressedPlayerChanged(mSessionCallbacks);
@@ -499,14 +494,13 @@ class AvrcpControllerStateMachine extends StateMachine {
                                 MSG_AVRCP_PASSTHRU, AvrcpControllerService.PASS_THRU_CMD_ID_PAUSE);
                         mShouldSendPlayOnFocusRecovery = false;
                     }
-                    return true;
-
-                case AUDIO_FOCUS_STATE_CHANGE:
+                }
+                case AUDIO_FOCUS_STATE_CHANGE -> {
                     int newState = msg.arg1;
                     debug("Connected: Audio focus changed -> " + newState);
                     BluetoothMediaBrowserService.onAudioFocusStateChanged(newState);
                     switch (newState) {
-                        case AudioManager.AUDIOFOCUS_GAIN:
+                        case AudioManager.AUDIOFOCUS_GAIN -> {
                             // Begin playing audio again if we paused the remote
                             if (mShouldSendPlayOnFocusRecovery) {
                                 debug("Connected: Regained focus, establishing play status");
@@ -515,9 +509,8 @@ class AvrcpControllerStateMachine extends StateMachine {
                                         AvrcpControllerService.PASS_THRU_CMD_ID_PLAY);
                             }
                             mShouldSendPlayOnFocusRecovery = false;
-                            break;
-
-                        case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                        }
+                        case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
                             // Temporary loss of focus. Send a courtesy pause if we are playing and
                             // note we should recover
                             if (mAddressedPlayer.getPlaybackState().getState()
@@ -530,9 +523,8 @@ class AvrcpControllerStateMachine extends StateMachine {
                                         AvrcpControllerService.PASS_THRU_CMD_ID_PAUSE);
                                 mShouldSendPlayOnFocusRecovery = true;
                             }
-                            break;
-
-                        case AudioManager.AUDIOFOCUS_LOSS:
+                        }
+                        case AudioManager.AUDIOFOCUS_LOSS -> {
                             // Permanent loss of focus probably due to another audio app. Send a
                             // courtesy pause
                             debug("Connected: Lost focus, send a courtesy pause");
@@ -543,47 +535,29 @@ class AvrcpControllerStateMachine extends StateMachine {
                                         AvrcpControllerService.PASS_THRU_CMD_ID_PAUSE);
                             }
                             mShouldSendPlayOnFocusRecovery = false;
-                            break;
+                        }
+                        default -> {} // Nothing to do
                     }
-                    return true;
-
-                case MESSAGE_PROCESS_SET_ABS_VOL_CMD:
+                }
+                case MESSAGE_PROCESS_SET_ABS_VOL_CMD -> {
                     removeMessages(MESSAGE_INTERNAL_ABS_VOL_TIMEOUT);
                     sendMessageDelayed(MESSAGE_INTERNAL_ABS_VOL_TIMEOUT, ABS_VOL_TIMEOUT_MILLIS);
                     handleAbsVolumeRequest(msg.arg1, msg.arg2);
-                    return true;
-
-                case MESSAGE_PROCESS_REGISTER_ABS_VOL_NOTIFICATION:
+                }
+                case MESSAGE_PROCESS_REGISTER_ABS_VOL_NOTIFICATION -> {
                     mVolumeNotificationLabel = msg.arg1;
                     mNativeInterface.sendRegisterAbsVolRsp(
                             mDeviceAddress,
                             NOTIFICATION_RSP_TYPE_INTERIM,
                             getAbsVolume(),
                             mVolumeNotificationLabel);
-                    return true;
-
-                case MESSAGE_GET_FOLDER_ITEMS:
-                    transitionTo(mGetFolderList);
-                    return true;
-
-                case MESSAGE_PLAY_ITEM:
-                    // Set Addressed Player
-                    processPlayItem((BrowseTree.BrowseNode) msg.obj);
-                    return true;
-
-                case MSG_AVRCP_PASSTHRU:
-                    passThru(msg.arg1);
-                    return true;
-
-                case MSG_AVRCP_SET_REPEAT:
-                    setRepeat(msg.arg1);
-                    return true;
-
-                case MSG_AVRCP_SET_SHUFFLE:
-                    setShuffle(msg.arg1);
-                    return true;
-
-                case MESSAGE_PROCESS_TRACK_CHANGED:
+                }
+                case MESSAGE_GET_FOLDER_ITEMS -> transitionTo(mGetFolderList);
+                case MESSAGE_PLAY_ITEM -> processPlayItem((BrowseTree.BrowseNode) msg.obj);
+                case MSG_AVRCP_PASSTHRU -> passThru(msg.arg1);
+                case MSG_AVRCP_SET_REPEAT -> setRepeat(msg.arg1);
+                case MSG_AVRCP_SET_SHUFFLE -> setShuffle(msg.arg1);
+                case MESSAGE_PROCESS_TRACK_CHANGED -> {
                     AvrcpItem track = (AvrcpItem) msg.obj;
                     AvrcpItem previousTrack = mAddressedPlayer.getCurrentTrack();
                     downloadImageIfNeeded(track);
@@ -597,9 +571,8 @@ class AvrcpControllerStateMachine extends StateMachine {
                         removeUnusedArtwork(previousTrack.getCoverArtUuid());
                         removeUnusedArtworkFromBrowseTree();
                     }
-                    return true;
-
-                case MESSAGE_PROCESS_PLAY_STATUS_CHANGED:
+                }
+                case MESSAGE_PROCESS_PLAY_STATUS_CHANGED -> {
                     debug(
                             "Connected: Playback status = "
                                     + AvrcpControllerUtils.playbackStateToString(msg.arg1));
@@ -631,16 +604,14 @@ class AvrcpControllerStateMachine extends StateMachine {
                                     AvrcpControllerService.PASS_THRU_CMD_ID_PAUSE);
                         }
                     }
-                    return true;
-
-                case MESSAGE_PROCESS_PLAY_POS_CHANGED:
+                }
+                case MESSAGE_PROCESS_PLAY_POS_CHANGED -> {
                     if (msg.arg2 != -1) {
                         mAddressedPlayer.setPlayTime(msg.arg2);
                         notifyPlaybackStateChanged(mAddressedPlayer.getPlaybackState());
                     }
-                    return true;
-
-                case MESSAGE_PROCESS_ADDRESSED_PLAYER_CHANGED:
+                }
+                case MESSAGE_PROCESS_ADDRESSED_PLAYER_CHANGED -> {
                     int oldAddressedPlayerId = mAddressedPlayerId;
                     mAddressedPlayerId = msg.arg1;
                     debug(
@@ -694,30 +665,23 @@ class AvrcpControllerStateMachine extends StateMachine {
                     mNativeInterface.getPlaybackState(mDeviceAddress);
                     requestContents(mBrowseTree.mNowPlayingNode);
                     debug("Connected: AddressedPlayer = " + mAddressedPlayer);
-                    return true;
-
-                case MESSAGE_PROCESS_SUPPORTED_APPLICATION_SETTINGS:
+                }
+                case MESSAGE_PROCESS_SUPPORTED_APPLICATION_SETTINGS -> {
                     mAddressedPlayer.setSupportedPlayerApplicationSettings(
                             (PlayerApplicationSettings) msg.obj);
                     notifyPlaybackStateChanged(mAddressedPlayer.getPlaybackState());
-                    return true;
-
-                case MESSAGE_PROCESS_CURRENT_APPLICATION_SETTINGS:
+                }
+                case MESSAGE_PROCESS_CURRENT_APPLICATION_SETTINGS -> {
                     mAddressedPlayer.setCurrentPlayerApplicationSettings(
                             (PlayerApplicationSettings) msg.obj);
                     notifyPlaybackStateChanged(mAddressedPlayer.getPlaybackState());
-                    return true;
-
-                case MESSAGE_PROCESS_AVAILABLE_PLAYER_CHANGED:
-                    processAvailablePlayerChanged();
-                    return true;
-
-                case MESSAGE_PROCESS_RECEIVED_COVER_ART_PSM:
+                }
+                case MESSAGE_PROCESS_AVAILABLE_PLAYER_CHANGED -> processAvailablePlayerChanged();
+                case MESSAGE_PROCESS_RECEIVED_COVER_ART_PSM -> {
                     mCoverArtPsm = msg.arg1;
                     connectCoverArt();
-                    return true;
-
-                case MESSAGE_PROCESS_IMAGE_DOWNLOADED:
+                }
+                case MESSAGE_PROCESS_IMAGE_DOWNLOADED -> {
                     AvrcpCoverArtManager.DownloadEvent event =
                             (AvrcpCoverArtManager.DownloadEvent) msg.obj;
                     String uuid = event.uuid();
@@ -744,16 +708,13 @@ class AvrcpControllerStateMachine extends StateMachine {
                         removeUnusedArtwork(uuid);
                         removeUnusedArtworkFromBrowseTree();
                     }
-
-                    return true;
-
-                case DISCONNECT:
-                    transitionTo(mDisconnecting);
-                    return true;
-
-                default:
+                }
+                case DISCONNECT -> transitionTo(mDisconnecting);
+                default -> {
                     return super.processMessage(msg);
+                }
             }
+            return true;
         }
 
         private void processPlayItem(BrowseTree.BrowseNode node) {
@@ -880,7 +841,7 @@ class AvrcpControllerStateMachine extends StateMachine {
         public boolean processMessage(Message msg) {
             debug("GetFolderList: processMessage " + eventToString(msg.what));
             switch (msg.what) {
-                case MESSAGE_PROCESS_GET_FOLDER_ITEMS:
+                case MESSAGE_PROCESS_GET_FOLDER_ITEMS -> {
                     ArrayList<AvrcpItem> folderList = (ArrayList<AvrcpItem>) msg.obj;
                     int endIndicator = mBrowseNode.getExpectedChildren() - 1;
                     debug("GetFolderList: End " + endIndicator + " received " + folderList.size());
@@ -915,15 +876,14 @@ class AvrcpControllerStateMachine extends StateMachine {
                         removeMessages(MESSAGE_INTERNAL_CMD_TIMEOUT);
                         sendMessageDelayed(MESSAGE_INTERNAL_CMD_TIMEOUT, CMD_TIMEOUT_MILLIS);
                     }
-                    break;
-                case MESSAGE_PROCESS_SET_BROWSED_PLAYER:
+                }
+                case MESSAGE_PROCESS_SET_BROWSED_PLAYER -> {
                     mBrowseTree.setCurrentBrowsedPlayer(mNextStep.getID(), msg.arg1, msg.arg2);
                     removeMessages(MESSAGE_INTERNAL_CMD_TIMEOUT);
                     sendMessageDelayed(MESSAGE_INTERNAL_CMD_TIMEOUT, CMD_TIMEOUT_MILLIS);
                     navigateToFolderOrRetrieve(mBrowseNode);
-                    break;
-
-                case MESSAGE_PROCESS_FOLDER_PATH:
+                }
+                case MESSAGE_PROCESS_FOLDER_PATH -> {
                     mBrowseTree.setCurrentBrowsedFolder(mNextStep.getID());
                     mBrowseTree.getCurrentBrowsedFolder().setExpectedChildren(msg.arg1);
 
@@ -938,9 +898,8 @@ class AvrcpControllerStateMachine extends StateMachine {
                         sendMessageDelayed(MESSAGE_INTERNAL_CMD_TIMEOUT, CMD_TIMEOUT_MILLIS);
                         navigateToFolderOrRetrieve(mBrowseNode);
                     }
-                    break;
-
-                case MESSAGE_PROCESS_GET_PLAYER_ITEMS:
+                }
+                case MESSAGE_PROCESS_GET_PLAYER_ITEMS -> {
                     debug("GetFolderList: Received new available player items");
                     BrowseTree.BrowseNode rootNode = mBrowseTree.mRootNode;
 
@@ -1001,23 +960,20 @@ class AvrcpControllerStateMachine extends StateMachine {
                         notifyNodeChanged(rootNode);
                     }
                     transitionTo(mConnected);
-                    break;
-
-                case MESSAGE_INTERNAL_CMD_TIMEOUT:
+                }
+                case MESSAGE_INTERNAL_CMD_TIMEOUT -> {
                     // We have timed out to execute the request, we should simply send
                     // whatever listing we have gotten until now.
                     warn("GetFolderList: Timeout waiting for download, node=" + mBrowseNode);
                     transitionTo(mConnected);
-                    break;
-
-                case MESSAGE_PROCESS_GET_FOLDER_ITEMS_OUT_OF_RANGE:
+                }
+                case MESSAGE_PROCESS_GET_FOLDER_ITEMS_OUT_OF_RANGE -> {
                     // If we have gotten an error for OUT OF RANGE we have
                     // already sent all the items to the client hence simply
                     // transition to Connected state here.
                     transitionTo(mConnected);
-                    break;
-
-                case MESSAGE_GET_FOLDER_ITEMS:
+                }
+                case MESSAGE_GET_FOLDER_ITEMS -> {
                     BrowseTree.BrowseNode requested = (BrowseTree.BrowseNode) msg.obj;
                     if (!mBrowseNode.equals(requested) || requested.isNowPlaying()) {
                         if (shouldAbort(mBrowseNode.getScope(), requested.getScope())) {
@@ -1032,14 +988,15 @@ class AvrcpControllerStateMachine extends StateMachine {
                     } else {
                         debug("GetFolderList: Ignore request, node=" + requested);
                     }
-                    break;
+                }
 
-                default:
+                default -> {
                     // All of these messages should be handled by parent state immediately.
                     debug(
                             "GetFolderList: Passing message to parent state, type="
                                     + eventToString(msg.what));
                     return false;
+                }
             }
             return true;
         }
@@ -1080,17 +1037,17 @@ class AvrcpControllerStateMachine extends StateMachine {
                             + target.getExpectedChildren()
                             + ")");
             switch (target.getScope()) {
-                case AvrcpControllerService.BROWSE_SCOPE_PLAYER_LIST:
-                    mNativeInterface.getPlayerList(mDeviceAddress, start, end);
-                    break;
-                case AvrcpControllerService.BROWSE_SCOPE_NOW_PLAYING:
-                    mNativeInterface.getNowPlayingList(mDeviceAddress, start, end);
-                    break;
-                case AvrcpControllerService.BROWSE_SCOPE_VFS:
-                    mNativeInterface.getFolderList(mDeviceAddress, start, end);
-                    break;
-                default:
-                    error("GetFolderList: Scope " + target.getScope() + " cannot be handled here.");
+                case AvrcpControllerService.BROWSE_SCOPE_PLAYER_LIST ->
+                        mNativeInterface.getPlayerList(mDeviceAddress, start, end);
+                case AvrcpControllerService.BROWSE_SCOPE_NOW_PLAYING ->
+                        mNativeInterface.getNowPlayingList(mDeviceAddress, start, end);
+                case AvrcpControllerService.BROWSE_SCOPE_VFS ->
+                        mNativeInterface.getFolderList(mDeviceAddress, start, end);
+                default ->
+                        error(
+                                "GetFolderList: Scope "
+                                        + target.getScope()
+                                        + " cannot be handled here.");
             }
         }
 

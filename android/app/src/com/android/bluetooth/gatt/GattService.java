@@ -2289,7 +2289,7 @@ public class GattService extends ProfileService {
         }
         List<HandleMap.Entry> entries = mHandleMap.getEntries();
         for (HandleMap.Entry entry : entries) {
-            if (entry.mType != HandleMap.TYPE_SERVICE
+            if (entry.mType != HandleMap.Type.SERVICE
                     || entry.mServerIf != serverIf
                     || !entry.mStarted) {
                 continue;
@@ -2310,7 +2310,7 @@ public class GattService extends ProfileService {
         List<Integer> handleList = new ArrayList<>();
         List<HandleMap.Entry> entries = mHandleMap.getEntries();
         for (HandleMap.Entry entry : entries) {
-            if (entry.mType != HandleMap.TYPE_SERVICE || entry.mServerIf != serverIf) {
+            if (entry.mType != HandleMap.Type.SERVICE || entry.mServerIf != serverIf) {
                 continue;
             }
             handleList.add(entry.mHandle);

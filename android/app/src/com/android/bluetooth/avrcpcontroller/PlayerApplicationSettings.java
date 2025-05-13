@@ -120,25 +120,20 @@ class PlayerApplicationSettings {
     @VisibleForTesting
     static int mapAttribIdValtoAvrcpPlayerSetting(byte attribId, byte attribVal) {
         if (attribId == REPEAT_STATUS) {
-            switch (attribVal) {
-                case JNI_REPEAT_STATUS_ALL_TRACK_REPEAT:
-                    return PlaybackStateCompat.REPEAT_MODE_ALL;
-                case JNI_REPEAT_STATUS_GROUP_REPEAT:
-                    return PlaybackStateCompat.REPEAT_MODE_GROUP;
-                case JNI_REPEAT_STATUS_OFF:
-                    return PlaybackStateCompat.REPEAT_MODE_NONE;
-                case JNI_REPEAT_STATUS_SINGLE_TRACK_REPEAT:
-                    return PlaybackStateCompat.REPEAT_MODE_ONE;
-            }
+            return switch (attribVal) {
+                case JNI_REPEAT_STATUS_ALL_TRACK_REPEAT -> PlaybackStateCompat.REPEAT_MODE_ALL;
+                case JNI_REPEAT_STATUS_GROUP_REPEAT -> PlaybackStateCompat.REPEAT_MODE_GROUP;
+                case JNI_REPEAT_STATUS_OFF -> PlaybackStateCompat.REPEAT_MODE_NONE;
+                case JNI_REPEAT_STATUS_SINGLE_TRACK_REPEAT -> PlaybackStateCompat.REPEAT_MODE_ONE;
+                default -> JNI_STATUS_INVALID;
+            };
         } else if (attribId == SHUFFLE_STATUS) {
-            switch (attribVal) {
-                case JNI_SHUFFLE_STATUS_ALL_TRACK_SHUFFLE:
-                    return PlaybackStateCompat.SHUFFLE_MODE_ALL;
-                case JNI_SHUFFLE_STATUS_GROUP_SHUFFLE:
-                    return PlaybackStateCompat.SHUFFLE_MODE_GROUP;
-                case JNI_SHUFFLE_STATUS_OFF:
-                    return PlaybackStateCompat.SHUFFLE_MODE_NONE;
-            }
+            return switch (attribVal) {
+                case JNI_SHUFFLE_STATUS_ALL_TRACK_SHUFFLE -> PlaybackStateCompat.SHUFFLE_MODE_ALL;
+                case JNI_SHUFFLE_STATUS_GROUP_SHUFFLE -> PlaybackStateCompat.SHUFFLE_MODE_GROUP;
+                case JNI_SHUFFLE_STATUS_OFF -> PlaybackStateCompat.SHUFFLE_MODE_NONE;
+                default -> JNI_STATUS_INVALID;
+            };
         }
         return JNI_STATUS_INVALID;
     }
@@ -146,25 +141,20 @@ class PlayerApplicationSettings {
     // Convert an AVRCP Setting/Value pair into the native equivalent value;
     static byte mapAvrcpPlayerSettingsToBTattribVal(int mSetting, int mSettingVal) {
         if (mSetting == REPEAT_STATUS) {
-            switch (mSettingVal) {
-                case PlaybackStateCompat.REPEAT_MODE_NONE:
-                    return JNI_REPEAT_STATUS_OFF;
-                case PlaybackStateCompat.REPEAT_MODE_ONE:
-                    return JNI_REPEAT_STATUS_SINGLE_TRACK_REPEAT;
-                case PlaybackStateCompat.REPEAT_MODE_ALL:
-                    return JNI_REPEAT_STATUS_ALL_TRACK_REPEAT;
-                case PlaybackStateCompat.REPEAT_MODE_GROUP:
-                    return JNI_REPEAT_STATUS_GROUP_REPEAT;
-            }
+            return switch (mSettingVal) {
+                case PlaybackStateCompat.REPEAT_MODE_NONE -> JNI_REPEAT_STATUS_OFF;
+                case PlaybackStateCompat.REPEAT_MODE_ONE -> JNI_REPEAT_STATUS_SINGLE_TRACK_REPEAT;
+                case PlaybackStateCompat.REPEAT_MODE_ALL -> JNI_REPEAT_STATUS_ALL_TRACK_REPEAT;
+                case PlaybackStateCompat.REPEAT_MODE_GROUP -> JNI_REPEAT_STATUS_GROUP_REPEAT;
+                default -> JNI_STATUS_INVALID;
+            };
         } else if (mSetting == SHUFFLE_STATUS) {
-            switch (mSettingVal) {
-                case PlaybackStateCompat.SHUFFLE_MODE_NONE:
-                    return JNI_SHUFFLE_STATUS_OFF;
-                case PlaybackStateCompat.SHUFFLE_MODE_ALL:
-                    return JNI_SHUFFLE_STATUS_ALL_TRACK_SHUFFLE;
-                case PlaybackStateCompat.SHUFFLE_MODE_GROUP:
-                    return JNI_SHUFFLE_STATUS_GROUP_SHUFFLE;
-            }
+            return switch (mSettingVal) {
+                case PlaybackStateCompat.SHUFFLE_MODE_NONE -> JNI_SHUFFLE_STATUS_OFF;
+                case PlaybackStateCompat.SHUFFLE_MODE_ALL -> JNI_SHUFFLE_STATUS_ALL_TRACK_SHUFFLE;
+                case PlaybackStateCompat.SHUFFLE_MODE_GROUP -> JNI_SHUFFLE_STATUS_GROUP_SHUFFLE;
+                default -> JNI_STATUS_INVALID;
+            };
         }
         return JNI_STATUS_INVALID;
     }

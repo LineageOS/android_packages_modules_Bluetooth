@@ -253,14 +253,14 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case SOCKET_ERROR_RETRY:
+                case SOCKET_ERROR_RETRY -> {
                     BluetoothDevice device = (BluetoothDevice) msg.obj;
                     synchronized (INSTANCE_LOCK) {
                         mConnectThread = new SocketConnectThread(device, true);
                         mConnectThread.start();
                     }
-                    break;
-                case TRANSPORT_ERROR:
+                }
+                case TRANSPORT_ERROR -> {
                     /*
                      * RFCOMM connect fail is for outbound share only! Mark batch
                      * failed, and all shares in batch failed
@@ -271,9 +271,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                     }
                     markBatchFailed(BluetoothShare.STATUS_CONNECTION_ERROR);
                     mBatch.mStatus = Constants.BATCH_STATUS_FAILED;
-
-                    break;
-                case TRANSPORT_CONNECTED:
+                }
+                case TRANSPORT_CONNECTED -> {
                     /*
                      * RFCOMM connected is for outbound share only! Create
                      * BluetoothOppObexClientSession and start it
@@ -284,9 +283,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                     }
                     mTransport = (ObexTransport) msg.obj;
                     startObexSession();
-
-                    break;
-                case BluetoothOppObexSession.MSG_SHARE_COMPLETE:
+                }
+                case BluetoothOppObexSession.MSG_SHARE_COMPLETE -> {
                     /*
                      * Put next share if available,or finish the transfer.
                      * For outbound session, call session.addShare() to send next file,
@@ -314,8 +312,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                             mSession.stop();
                         }
                     }
-                    break;
-                case BluetoothOppObexSession.MSG_SESSION_COMPLETE:
+                }
+                case BluetoothOppObexSession.MSG_SESSION_COMPLETE -> {
                     /*
                      * Handle session completed status Set batch status to
                      * finished
@@ -328,9 +326,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                      * trigger content provider again to know batch status change
                      */
                     tickShareStatus(info1);
-                    break;
-
-                case BluetoothOppObexSession.MSG_SESSION_ERROR:
+                }
+                case BluetoothOppObexSession.MSG_SESSION_ERROR -> {
                     /* Handle the error state of an Obex session */
                     Log.v(TAG, "receive MSG_SESSION_ERROR for batch " + mBatch.mId);
                     cleanUp();
@@ -351,9 +348,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                                 6);
                         Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                     }
-                    break;
-
-                case BluetoothOppObexSession.MSG_SHARE_INTERRUPTED:
+                }
+                case BluetoothOppObexSession.MSG_SHARE_INTERRUPTED -> {
                     Log.v(TAG, "receive MSG_SHARE_INTERRUPTED for batch " + mBatch.mId);
                     BluetoothOppShareInfo info3 = (BluetoothOppShareInfo) msg.obj;
                     if (mBatch.mDirection == BluetoothShare.DIRECTION_OUTBOUND) {
@@ -381,9 +377,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                         }
                         tickShareStatus(mCurrentShare);
                     }
-                    break;
-
-                case BluetoothOppObexSession.MSG_CONNECT_TIMEOUT:
+                }
+                case BluetoothOppObexSession.MSG_CONNECT_TIMEOUT -> {
                     Log.v(TAG, "receive MSG_CONNECT_TIMEOUT for batch " + mBatch.mId);
                     /* for outbound transfer, the block point is BluetoothSocket.write()
                      * The only way to unblock is to tear down lower transport
@@ -421,7 +416,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
 
                         markShareTimeout(mCurrentShare);
                     }
-                    break;
+                }
+                default -> {} // Nothing to do
             }
         }
     }

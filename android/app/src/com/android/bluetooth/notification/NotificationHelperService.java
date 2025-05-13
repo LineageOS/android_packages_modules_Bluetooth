@@ -86,10 +86,8 @@ public class NotificationHelperService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        switch (intent.getAction()) {
-            case NOTIFICATION_ACTION -> {
-                sendToggleNotification(intent.getStringExtra(NOTIFICATION_EXTRA));
-            }
+        if (NOTIFICATION_ACTION.equals(intent.getAction())) {
+            sendToggleNotification(intent.getStringExtra(NOTIFICATION_EXTRA));
         }
         return Service.START_NOT_STICKY;
     }

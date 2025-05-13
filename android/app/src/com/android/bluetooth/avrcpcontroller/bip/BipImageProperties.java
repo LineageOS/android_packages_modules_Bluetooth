@@ -167,8 +167,7 @@ public class BipImageProperties {
             xpp.setInput(inputStream, "utf-8");
             int event = xpp.getEventType();
             while (event != XmlPullParser.END_DOCUMENT) {
-                switch (event) {
-                    case XmlPullParser.START_TAG:
+                if (event == XmlPullParser.START_TAG) {
                         String tag = xpp.getName();
                         if (tag.equals("image-properties")) {
                             mVersion = xpp.getAttributeValue(null, "version");
@@ -199,9 +198,6 @@ public class BipImageProperties {
                         } else {
                             Log.w(TAG, "Unrecognized tag in x-bt/img-properties object: " + tag);
                         }
-                        break;
-                    case XmlPullParser.END_TAG:
-                        break;
                 }
                 event = xpp.next();
             }
@@ -280,15 +276,14 @@ public class BipImageProperties {
 
         BipPixel pixel = format.getPixel();
         if (pixel == null) return false;
-        switch (pixel.getType()) {
-            case BipPixel.TYPE_FIXED:
-                return pixel.getMaxWidth() == 200 && pixel.getMaxHeight() == 200;
-            case BipPixel.TYPE_RESIZE_MODIFIED_ASPECT_RATIO:
-                return pixel.getMaxWidth() >= 200 && pixel.getMaxHeight() >= 200;
-            case BipPixel.TYPE_RESIZE_FIXED_ASPECT_RATIO:
-                return pixel.getMaxWidth() == pixel.getMaxHeight() && pixel.getMaxWidth() >= 200;
-        }
-        return false;
+        return switch (pixel.getType()) {
+            case BipPixel.TYPE_FIXED -> pixel.getMaxWidth() == 200 && pixel.getMaxHeight() == 200;
+            case BipPixel.TYPE_RESIZE_MODIFIED_ASPECT_RATIO ->
+                    pixel.getMaxWidth() >= 200 && pixel.getMaxHeight() >= 200;
+            case BipPixel.TYPE_RESIZE_FIXED_ASPECT_RATIO ->
+                    pixel.getMaxWidth() == pixel.getMaxHeight() && pixel.getMaxWidth() >= 200;
+            default -> false;
+        };
     }
 
     private void addAttachment(BipAttachmentFormat format) {

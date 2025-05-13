@@ -373,7 +373,7 @@ class PbapClientObexClient {
         public void handleMessage(Message msg) {
             debug("Handling Message, type=" + messageToString(msg.what));
             switch (msg.what) {
-                case MSG_CONNECT:
+                case MSG_CONNECT -> {
                     if (getConnectionState() != STATE_DISCONNECTED) {
                         warn("Cannot connect, device not disconnected");
                         return;
@@ -427,9 +427,8 @@ class PbapClientObexClient {
                     }
 
                     setConnectionState(STATE_CONNECTED);
-                    break;
-
-                case MSG_DISCONNECT:
+                }
+                case MSG_DISCONNECT -> {
                     removeCallbacksAndMessages(null);
 
                     if (getConnectionState() != STATE_CONNECTED) {
@@ -454,18 +453,15 @@ class PbapClientObexClient {
                     mChannelId.set(RFCOMM_INVALID_CHANNEL_ID);
 
                     setConnectionState(STATE_DISCONNECTED);
-                    break;
-
-                case MSG_REQUEST:
+                }
+                case MSG_REQUEST -> {
                     if (isConnected()) {
                         executeRequest((PbapClientRequest) msg.obj, mObexSession);
                     } else {
                         warn("Cannot issue request. Not connected");
                     }
-                    break;
-
-                default:
-                    warn("Received unexpected message, id=" + messageToString(msg.what));
+                }
+                default -> warn("Received unexpected message, id=" + messageToString(msg.what));
             }
         }
     }
@@ -570,18 +566,18 @@ class PbapClientObexClient {
 
         debug("Notifying caller of request result - " + request.toString());
         switch (type) {
-            case PbapClientRequest.TYPE_PULL_PHONEBOOK_METADATA:
+            case PbapClientRequest.TYPE_PULL_PHONEBOOK_METADATA -> {
                 phonebook = ((RequestPullPhonebookMetadata) request).getPhonebook();
                 PbapPhonebookMetadata metadata =
                         ((RequestPullPhonebookMetadata) request).getMetadata();
                 mCallback.onGetPhonebookMetadataComplete(responseCode, phonebook, metadata);
-                break;
-
-            case PbapClientRequest.TYPE_PULL_PHONEBOOK:
+            }
+            case PbapClientRequest.TYPE_PULL_PHONEBOOK -> {
                 phonebook = ((RequestPullPhonebook) request).getPhonebook();
                 PbapPhonebook contacts = ((RequestPullPhonebook) request).getContacts();
                 mCallback.onPhonebookContactsDownloaded(responseCode, phonebook, contacts);
-                break;
+            }
+            default -> {} // Nothing to do
         }
     }
 

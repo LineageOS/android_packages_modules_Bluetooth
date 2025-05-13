@@ -3470,8 +3470,8 @@ public class LeAudioService extends ProfileService {
                     int groupId = deviceDescriptor.mGroupId;
                     LeAudioGroupDescriptor descriptor = mGroupDescriptorsView.get(groupId);
                     switch (stackEvent.valueInt1) {
-                        case LeAudioStackEvent.CONNECTION_STATE_DISCONNECTING:
-                        case LeAudioStackEvent.CONNECTION_STATE_DISCONNECTED:
+                        case LeAudioStackEvent.CONNECTION_STATE_DISCONNECTING,
+                                LeAudioStackEvent.CONNECTION_STATE_DISCONNECTED -> {
                             deviceDescriptor.mAclConnected = false;
 
                             if (isScannerNeeded()) {
@@ -3491,9 +3491,9 @@ public class LeAudioService extends ProfileService {
                                 descriptor.mLostLeadDeviceWhileStreaming = device;
                                 return;
                             }
-                            break;
-                        case LeAudioStackEvent.CONNECTION_STATE_CONNECTED:
-                        case LeAudioStackEvent.CONNECTION_STATE_CONNECTING:
+                        }
+                        case LeAudioStackEvent.CONNECTION_STATE_CONNECTED,
+                                LeAudioStackEvent.CONNECTION_STATE_CONNECTING -> {
                             deviceDescriptor.mAclConnected = true;
                             if (descriptor != null
                                     && Objects.equals(
@@ -3503,20 +3503,20 @@ public class LeAudioService extends ProfileService {
                                 /* Try to connect other devices from the group */
                                 connectSet(device);
                             }
-                            break;
+                        }
+                        default -> {} // Nothing to do
                     }
                 } else {
                     /* state machine does not exist yet */
                     switch (stackEvent.valueInt1) {
-                        case LeAudioStackEvent.CONNECTION_STATE_CONNECTED:
-                        case LeAudioStackEvent.CONNECTION_STATE_CONNECTING:
+                        case LeAudioStackEvent.CONNECTION_STATE_CONNECTED,
+                                LeAudioStackEvent.CONNECTION_STATE_CONNECTING -> {
                             deviceDescriptor.mAclConnected = true;
                             sm = getOrCreateStateMachine(device);
                             /* Incoming connection try to connect other devices from the group */
                             connectSet(device);
-                            break;
-                        default:
-                            break;
+                        }
+                        default -> {} // Nothing to do
                     }
 
                     if (sm == null) {

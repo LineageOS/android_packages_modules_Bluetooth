@@ -215,11 +215,9 @@ public class DistanceMeasurementManager {
                         this, appUid, params, address, uuid, interval, callback);
 
         switch (params.getMethodId()) {
-            case DISTANCE_MEASUREMENT_METHOD_AUTO:
-            case DISTANCE_MEASUREMENT_METHOD_RSSI:
-                startRssiTracker(tracker);
-                break;
-            case DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING:
+            case DISTANCE_MEASUREMENT_METHOD_AUTO, DISTANCE_MEASUREMENT_METHOD_RSSI ->
+                    startRssiTracker(tracker);
+            case DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING -> {
                 if (!mHasChannelSoundingFeature
                         || !mAdapterService.isLeChannelSoundingSupported()) {
                     Log.e(TAG, "Channel Sounding is not supported.");
@@ -239,10 +237,12 @@ public class DistanceMeasurementManager {
                     return;
                 }
                 startCsTracker(tracker);
-                break;
-            default:
-                invokeStartFail(
-                        callback, params.getDevice(), BluetoothStatusCodes.ERROR_BAD_PARAMETERS);
+            }
+            default ->
+                    invokeStartFail(
+                            callback,
+                            params.getDevice(),
+                            BluetoothStatusCodes.ERROR_BAD_PARAMETERS);
         }
     }
 
@@ -418,29 +418,32 @@ public class DistanceMeasurementManager {
     /** Convert frequency into interval in ms */
     private static int getIntervalValue(int frequency, int method) {
         switch (method) {
-            case DISTANCE_MEASUREMENT_METHOD_AUTO:
-            case DISTANCE_MEASUREMENT_METHOD_RSSI:
-                switch (frequency) {
-                    case DistanceMeasurementParams.REPORT_FREQUENCY_LOW:
-                        return RSSI_LOW_FREQUENCY_INTERVAL_MS;
-                    case DistanceMeasurementParams.REPORT_FREQUENCY_MEDIUM:
-                        return RSSI_MEDIUM_FREQUENCY_INTERVAL_MS;
-                    case DistanceMeasurementParams.REPORT_FREQUENCY_HIGH:
-                        return RSSI_HIGH_FREQUENCY_INTERVAL_MS;
-                }
-                break;
-            case DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING:
-                switch (frequency) {
-                    case DistanceMeasurementParams.REPORT_FREQUENCY_LOW:
-                        return CS_LOW_FREQUENCY_INTERVAL_MS;
-                    case DistanceMeasurementParams.REPORT_FREQUENCY_MEDIUM:
-                        return CS_MEDIUM_FREQUENCY_INTERVAL_MS;
-                    case DistanceMeasurementParams.REPORT_FREQUENCY_HIGH:
-                        return CS_HIGH_FREQUENCY_INTERVAL_MS;
-                }
-                break;
-            default:
-                Log.w(TAG, "getFrequencyValue fail frequency:" + frequency + ", method:" + method);
+            case DISTANCE_MEASUREMENT_METHOD_AUTO, DISTANCE_MEASUREMENT_METHOD_RSSI -> {
+                return switch (frequency) {
+                    case DistanceMeasurementParams.REPORT_FREQUENCY_LOW ->
+                            RSSI_LOW_FREQUENCY_INTERVAL_MS;
+                    case DistanceMeasurementParams.REPORT_FREQUENCY_MEDIUM ->
+                            RSSI_MEDIUM_FREQUENCY_INTERVAL_MS;
+                    case DistanceMeasurementParams.REPORT_FREQUENCY_HIGH ->
+                            RSSI_HIGH_FREQUENCY_INTERVAL_MS;
+                    default -> -1;
+                };
+            }
+            case DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING -> {
+                return switch (frequency) {
+                    case DistanceMeasurementParams.REPORT_FREQUENCY_LOW ->
+                            CS_LOW_FREQUENCY_INTERVAL_MS;
+                    case DistanceMeasurementParams.REPORT_FREQUENCY_MEDIUM ->
+                            CS_MEDIUM_FREQUENCY_INTERVAL_MS;
+                    case DistanceMeasurementParams.REPORT_FREQUENCY_HIGH ->
+                            CS_HIGH_FREQUENCY_INTERVAL_MS;
+                    default -> -1;
+                };
+            }
+            default ->
+                    Log.w(
+                            TAG,
+                            "getFrequencyValue fail frequency:" + frequency + ", method:" + method);
         }
         return -1;
     }
@@ -454,14 +457,9 @@ public class DistanceMeasurementManager {
                         + ", method:"
                         + method);
         switch (method) {
-            case DISTANCE_MEASUREMENT_METHOD_RSSI:
-                handleRssiStarted(address);
-                break;
-            case DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING:
-                handleCsStarted(address);
-                break;
-            default:
-                Log.w(TAG, "onDistanceMeasurementResult: invalid method " + method);
+            case DISTANCE_MEASUREMENT_METHOD_RSSI -> handleRssiStarted(address);
+            case DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING -> handleCsStarted(address);
+            default -> Log.w(TAG, "onDistanceMeasurementResult: invalid method " + method);
         }
     }
 
@@ -513,14 +511,9 @@ public class DistanceMeasurementManager {
                         + ", method:"
                         + method);
         switch (method) {
-            case DISTANCE_MEASUREMENT_METHOD_RSSI:
-                handleRssiStopped(address, reason);
-                break;
-            case DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING:
-                handleCsStopped(address, reason);
-                break;
-            default:
-                Log.w(TAG, "onDistanceMeasurementStopped: invalid method " + method);
+            case DISTANCE_MEASUREMENT_METHOD_RSSI -> handleRssiStopped(address, reason);
+            case DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING -> handleCsStopped(address, reason);
+            default -> Log.w(TAG, "onDistanceMeasurementStopped: invalid method " + method);
         }
     }
 
@@ -585,10 +578,8 @@ public class DistanceMeasurementManager {
                         .setMeasurementTimestampNanos(elapsedRealtimeNanos);
 
         switch (method) {
-            case DISTANCE_MEASUREMENT_METHOD_RSSI:
-                handleRssiResult(address, builder.build());
-                break;
-            case DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING:
+            case DISTANCE_MEASUREMENT_METHOD_RSSI -> handleRssiResult(address, builder.build());
+            case DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING -> {
                 if (azimuthAngle != INVALID_AZIMUTH_ANGLE_DEGREE) {
                     builder.setAzimuthAngle(azimuthAngle);
                     builder.setErrorAzimuthAngle(errorAzimuthAngle);
@@ -608,9 +599,8 @@ public class DistanceMeasurementManager {
                 }
                 builder.setDetectedAttackLevel(detectedAttackLevel);
                 handleCsResult(address, builder.build());
-                break;
-            default:
-                Log.w(TAG, "onDistanceMeasurementResult: invalid method " + method);
+            }
+            default -> Log.w(TAG, "onDistanceMeasurementResult: invalid method " + method);
         }
     }
 

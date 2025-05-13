@@ -95,8 +95,7 @@ public class DatabaseManager {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case MSG_LOAD_DATABASE:
-                    {
+                case MSG_LOAD_DATABASE -> {
                         synchronized (mDatabaseLock) {
                             List<Metadata> list;
                             try {
@@ -111,31 +110,25 @@ public class DatabaseManager {
                             compactLastConnectionTime(list);
                             cacheMetadata(list);
                         }
-                        break;
                     }
-                case MSG_UPDATE_DATABASE:
-                    {
+                case MSG_UPDATE_DATABASE -> {
                         Metadata data = (Metadata) msg.obj;
                         synchronized (mDatabaseLock) {
                             mDatabase.insert(data);
                         }
-                        break;
                     }
-                case MSG_DELETE_DATABASE:
-                    {
+                case MSG_DELETE_DATABASE -> {
                         String address = (String) msg.obj;
                         synchronized (mDatabaseLock) {
                             mDatabase.delete(address);
                         }
-                        break;
                     }
-                case MSG_CLEAR_DATABASE:
-                    {
+                case MSG_CLEAR_DATABASE -> {
                         synchronized (mDatabaseLock) {
                             mDatabase.deleteAll();
                         }
-                        break;
                     }
+                default -> {} // Nothing to do
             }
         }
     }

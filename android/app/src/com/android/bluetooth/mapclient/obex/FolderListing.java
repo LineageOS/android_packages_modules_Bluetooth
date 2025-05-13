@@ -43,17 +43,14 @@ class FolderListing {
 
             int event = xpp.getEventType();
             while (event != XmlPullParser.END_DOCUMENT) {
-                switch (event) {
-                    case XmlPullParser.START_TAG:
+                if (event == XmlPullParser.START_TAG) {
                         if (xpp.getName().equals("folder")) {
                             mFolders.add(xpp.getAttributeValue(null, "name"));
                         }
-                        break;
                 }
 
                 event = xpp.next();
             }
-
         } catch (XmlPullParserException e) {
             Log.e(TAG, "XML parser error when parsing XML", e);
         } catch (IOException e) {
