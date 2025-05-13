@@ -146,4 +146,44 @@ void convertCodecParameters(const CodecParameters& aidl_params,
   stack_params->bits_per_sample = convertBitsPerSample(aidl_params.bitdepth);
 }
 
+std::optional<CodecId> convertCodecId(::bluetooth::a2dp::CodecId codec_id) {
+  uint16_t codec_specific_id = 0;
+  uint16_t vendor_id = 0;
+  CodecId id;
+
+  uint8_t codec_type = static_cast<uint8_t>(codec_id);
+  switch (codec_type) {
+    case A2DP_MEDIA_CT_SBC:
+      codec_specific_id = static_cast<uint16_t>(::bluetooth::a2dp::CodecId::SBC);
+      break;
+    case A2DP_MEDIA_CT_AAC:
+      codec_specific_id = static_cast<uint16_t>(::bluetooth::a2dp::CodecId::AAC);
+      break;
+    case A2DP_MEDIA_CT_NON_A2DP:
+      codec_specific_id = static_cast<uint16_t>(static_cast<uint64_t>(codec_id) >> 24);
+      vendor_id = static_cast<uint16_t>(static_cast<uint64_t>(codec_id) >> 8);
+      break;
+    default:
+      log::error("unknown codec_type {}", codec_type);
+      return std::nullopt;
+  }
+
+  if (vendor_id == 0) {
+    switch (codec_id) {
+      case ::bluetooth::a2dp::CodecId::SBC:
+      case ::bluetooth::a2dp::CodecId::AAC:
+        id = CodecId::make<CodecId::a2dp>(static_cast<CodecId::A2dp>(codec_specific_id));
+        break;
+      default:
+        log::error("unknown codec_specific_id {}", codec_specific_id);
+        return std::nullopt;
+    }
+  } else {
+    id = CodecId::make<CodecId::vendor>(
+            CodecId::Vendor({.id = (int32_t)vendor_id, .codecId = codec_specific_id}));
+  }
+
+  return std::make_optional<CodecId>(id);
+}
+
 }  // namespace bluetooth::audio::aidl::a2dp

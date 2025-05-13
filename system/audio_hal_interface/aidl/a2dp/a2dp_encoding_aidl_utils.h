@@ -42,4 +42,7 @@ void convertCodecParameters(
         const ::aidl::android::hardware::bluetooth::audio::CodecParameters& aidl_params,
         btav_a2dp_codec_config_t* stack_params);
 
+std::optional<::aidl::android::hardware::bluetooth::audio::CodecId> convertCodecId(
+        bluetooth::a2dp::CodecId codec_id);
+
 }  // namespace bluetooth::audio::aidl::a2dp

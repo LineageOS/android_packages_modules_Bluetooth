@@ -147,3 +147,48 @@ TEST_F(A2dpEncodingAidlUtilsTest, StackCodecCapabilitiesCore) {
 
   ASSERT_FALSE(convertCodecCapabilities(core, capabilities, codec_info));
 }
+
+TEST_F(A2dpEncodingAidlUtilsTest, AidlCodecId) {
+  // Stack known codecs
+  CodecId sbc =
+          CodecId::make<CodecId::a2dp>(static_cast<CodecId::A2dp>(::bluetooth::a2dp::CodecId::SBC));
+  CodecId aac =
+          CodecId::make<CodecId::a2dp>(static_cast<CodecId::A2dp>(::bluetooth::a2dp::CodecId::AAC));
+  CodecId aptx = CodecId::make<CodecId::vendor>(CodecId::Vendor(
+          {.id = (int32_t)A2DP_APTX_VENDOR_ID, .codecId = A2DP_APTX_CODEC_ID_BLUETOOTH}));
+  CodecId aptx_hd = CodecId::make<CodecId::vendor>(CodecId::Vendor(
+          {.id = (int32_t)A2DP_APTX_HD_VENDOR_ID, .codecId = A2DP_APTX_HD_CODEC_ID_BLUETOOTH}));
+  CodecId ldac = CodecId::make<CodecId::vendor>(
+          CodecId::Vendor({.id = (int32_t)A2DP_LDAC_VENDOR_ID, .codecId = A2DP_LDAC_CODEC_ID}));
+  CodecId opus = CodecId::make<CodecId::vendor>(
+          CodecId::Vendor({.id = (int32_t)A2DP_OPUS_VENDOR_ID, .codecId = A2DP_OPUS_CODEC_ID}));
+
+  // Vendor unknown codec
+  uint32_t foobar_vendor_id = 0x1234;
+  uint16_t foobar_codec_id = 0x4321;
+  ::bluetooth::a2dp::CodecId foobar_codec = static_cast<::bluetooth::a2dp::CodecId>(
+          ::bluetooth::a2dp::VendorCodecId(foobar_vendor_id, foobar_codec_id));
+  CodecId foobar = CodecId::make<CodecId::vendor>(
+          CodecId::Vendor({.id = (int32_t)foobar_vendor_id, .codecId = foobar_codec_id}));
+
+  std::vector<CodecId> aidl_codecs = {sbc, aac, aptx, aptx_hd, ldac, opus, foobar};
+  std::vector<::bluetooth::a2dp::CodecId> stack_codecs = {::bluetooth::a2dp::CodecId::SBC,
+                                                          ::bluetooth::a2dp::CodecId::AAC,
+                                                          ::bluetooth::a2dp::CodecId::APTX,
+                                                          ::bluetooth::a2dp::CodecId::APTX_HD,
+                                                          ::bluetooth::a2dp::CodecId::LDAC,
+                                                          ::bluetooth::a2dp::CodecId::OPUS,
+                                                          foobar_codec};
+
+  for (size_t i = 0; i < stack_codecs.size(); i++) {
+    bluetooth::log::info("stack codec: {}", ::bluetooth::a2dp::CodecIdToString(stack_codecs[i]));
+    auto result = convertCodecId(stack_codecs[i]);
+    ASSERT_TRUE(result.has_value());
+    bluetooth::log::info("result codec: {}, expected codec: {}", result.value().toString(),
+                         aidl_codecs[i].toString());
+    ASSERT_EQ(result.value(), aidl_codecs[i]);
+  }
+
+  auto result = convertCodecId(static_cast<::bluetooth::a2dp::CodecId>(0x1234));
+  ASSERT_EQ(result, std::nullopt);
+}
