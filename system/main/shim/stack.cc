@@ -33,6 +33,7 @@
 #include "hal/link_clocker.h"
 #include "hal/ranging_hal_impl.h"
 #include "hal/snoop_logger.h"
+#include "hal/socket_hal_impl.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager_impl.h"
 #include "hci/controller_impl.h"
@@ -69,6 +70,7 @@ struct Stack::impl {
   Acl* acl_ = nullptr;
   std::shared_ptr<storage::StorageModule> storage_ = nullptr;
   std::shared_ptr<hal::SnoopLogger> snoop_logger_ = nullptr;
+  std::unique_ptr<hal::SocketHal> socket_hal_ = nullptr;
   std::unique_ptr<lpp::LppOffloadManager> lpp_offload_manager_ = nullptr;
   std::unique_ptr<hal::LinkClocker> link_clocker_ = nullptr;
   std::unique_ptr<hal::HciHal> hci_hal_ = nullptr;
@@ -111,10 +113,6 @@ void Stack::StartEverything() {
 
 #if TARGET_FLOSS
     modules.add<sysprops::SyspropsModule>();
-#else
-    if (com::android::bluetooth::flags::socket_settings_api()) {
-      modules.add<hal::SocketHal>();
-    }
 #endif
 
     management_thread_ = new Thread("management_thread", Thread::Priority::NORMAL);
@@ -313,10 +311,12 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
 
 #ifndef TARGET_FLOSS
   if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3286716
-    auto socket_hal = static_cast<hal::SocketHal*>(registry_.Get(&hal::SocketHal::Factory));
+    log::info("Starting SocketHal");
+    pimpl_->socket_hal_ = std::make_unique<hal::SocketHalImpl>();
+
     log::info("Starting LppOffloadManager");
     pimpl_->lpp_offload_manager_ =
-            std::make_unique<lpp::LppOffloadManager>(stack_handler_, socket_hal);
+            std::make_unique<lpp::LppOffloadManager>(stack_handler_, pimpl_->socket_hal_.get());
   }
 #endif
 
@@ -411,6 +411,11 @@ void Stack::handle_shut_down(std::promise<void> promise) {
   if (pimpl_->lpp_offload_manager_) {
     log::info("Stopping LppOffloadManager");
     pimpl_->lpp_offload_manager_.reset();
+  }
+
+  if (pimpl_->socket_hal_) {
+    log::info("Stopping SocketHal");
+    pimpl_->socket_hal_.reset();
   }
 
   registry_.StopAll();
