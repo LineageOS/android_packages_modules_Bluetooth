@@ -17,6 +17,7 @@
 package com.android.bluetooth.opp;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.mockContextGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -34,7 +35,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
 import android.app.NotificationManager;
-import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -79,8 +79,6 @@ public class BluetoothOppObexServerSessionTest {
     private final Context mTargetContext =
             InstrumentationRegistry.getInstrumentation().getContext();
     private final PowerManager mPowerManager = mTargetContext.getSystemService(PowerManager.class);
-    private final BluetoothManager mBluetoothManager =
-            mTargetContext.getSystemService(BluetoothManager.class);
 
     private BluetoothOppObexServerSession mServerSession;
     private SharedPreferences mPrefs;
@@ -92,8 +90,7 @@ public class BluetoothOppObexServerSessionTest {
 
         mockGetSystemService(mContext, Context.NOTIFICATION_SERVICE, NotificationManager.class);
         mockGetSystemService(mContext, Context.POWER_SERVICE, PowerManager.class, mPowerManager);
-        mockGetSystemService(
-                mContext, Context.BLUETOOTH_SERVICE, BluetoothManager.class, mBluetoothManager);
+        mockContextGetBluetoothManager(mContext);
 
         doReturn(mTargetContext.getContentResolver()).when(mContext).getContentResolver();
         doReturn(mPrefs).when(mContext).getSharedPreferences(anyString(), anyInt());

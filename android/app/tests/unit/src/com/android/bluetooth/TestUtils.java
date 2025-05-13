@@ -63,6 +63,10 @@ public class TestUtils {
 
     private static String sSystemScreenOffTimeout = "10000";
 
+    private static Context getContext() {
+        return InstrumentationRegistry.getInstrumentation().getContext();
+    }
+
     /** Helper function to mock getSystemService calls */
     public static <T> void mockGetSystemService(
             Context ctx, String serviceName, Class<T> serviceClass, T mockService) {
@@ -89,6 +93,13 @@ public class TestUtils {
             final String address = device.getAddress();
             doReturn(device).when(adapterService).getRemoteDevice(address);
         }
+    }
+
+    /** Helper function to ensure the mocked Context returns {@link BluetoothManager} */
+    public static void mockContextGetBluetoothManager(Context context) {
+        final var manager = getContext().getSystemService(BluetoothManager.class);
+        assertThat(manager).isNotNull();
+        doReturn(manager).when(context).getSystemService(BluetoothManager.class);
     }
 
     /**
@@ -137,8 +148,7 @@ public class TestUtils {
     public static BluetoothDevice getRealDevice(@NonNull String address) {
         assertThat(BluetoothAdapter.checkBluetoothAddress(address)).isTrue();
         BluetoothDevice testDevice =
-                InstrumentationRegistry.getInstrumentation()
-                        .getContext()
+                getContext()
                         .getSystemService(BluetoothManager.class)
                         .getAdapter()
                         .getRemoteDevice(address);
@@ -148,8 +158,7 @@ public class TestUtils {
 
     public static Resources getTestApplicationResources() {
         try {
-            return InstrumentationRegistry.getInstrumentation()
-                    .getContext()
+            return getContext()
                     .getPackageManager()
                     .getResourcesForApplication("com.android.bluetooth.tests");
         } catch (PackageManager.NameNotFoundException e) {
@@ -169,6 +178,66 @@ public class TestUtils {
                 () -> {
                     // do nothing, just need to make sure looper finishes current task
                 });
+    }
+
+    /**
+     * Run synchronously a runnable action on a looper. The method will return after the action has
+     * been execution to completion.
+     *
+     * <p>Example:
+     *
+     * <pre>{@code
+     * TestUtils.runOnMainSync(new Runnable() {
+     *       public void run() {
+     *           assertThat(mA2dpService.stop()).isTrue();
+     *       }
+     *   });
+     * }</pre>
+     *
+     * @param looper the looper used to run the action
+     * @param action the action to run
+     */
+    private static void runOnLooperSync(Looper looper, Runnable action) {
+        if (Looper.myLooper() == looper) {
+            // requested thread is the same as the current thread. call directly.
+            action.run();
+        } else {
+            Handler handler = new Handler(looper);
+            SyncRunnable sr = new SyncRunnable(action);
+            handler.post(sr);
+            sr.waitForComplete();
+        }
+    }
+
+    /** Helper class used to run synchronously a runnable action on a looper. */
+    private static final class SyncRunnable implements Runnable {
+        private final Runnable mTarget;
+        private volatile boolean mComplete = false;
+
+        SyncRunnable(Runnable target) {
+            mTarget = target;
+        }
+
+        @Override
+        public void run() {
+            mTarget.run();
+            synchronized (this) {
+                mComplete = true;
+                notifyAll();
+            }
+        }
+
+        public void waitForComplete() {
+            synchronized (this) {
+                while (!mComplete) {
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                        Log.w(TAG, "waitForComplete got interrupted", e);
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -227,35 +296,6 @@ public class TestUtils {
         // Ensure we are not Idle to begin with so the idle handler will run
         waitForLooperToFinishScheduledTask(looper);
         idle.waitForIdle();
-    }
-
-    /**
-     * Run synchronously a runnable action on a looper. The method will return after the action has
-     * been execution to completion.
-     *
-     * <p>Example:
-     *
-     * <pre>{@code
-     * TestUtils.runOnMainSync(new Runnable() {
-     *       public void run() {
-     *           assertThat(mA2dpService.stop()).isTrue();
-     *       }
-     *   });
-     * }</pre>
-     *
-     * @param looper the looper used to run the action
-     * @param action the action to run
-     */
-    private static void runOnLooperSync(Looper looper, Runnable action) {
-        if (Looper.myLooper() == looper) {
-            // requested thread is the same as the current thread. call directly.
-            action.run();
-        } else {
-            Handler handler = new Handler(looper);
-            SyncRunnable sr = new SyncRunnable(action);
-            handler.post(sr);
-            sr.waitForComplete();
-        }
     }
 
     /**
@@ -365,37 +405,6 @@ public class TestUtils {
                     Mockito.framework().clearInlineMocks();
                 }
             };
-        }
-    }
-
-    /** Helper class used to run synchronously a runnable action on a looper. */
-    private static final class SyncRunnable implements Runnable {
-        private final Runnable mTarget;
-        private volatile boolean mComplete = false;
-
-        SyncRunnable(Runnable target) {
-            mTarget = target;
-        }
-
-        @Override
-        public void run() {
-            mTarget.run();
-            synchronized (this) {
-                mComplete = true;
-                notifyAll();
-            }
-        }
-
-        public void waitForComplete() {
-            synchronized (this) {
-                while (!mComplete) {
-                    try {
-                        wait();
-                    } catch (InterruptedException e) {
-                        Log.w(TAG, "waitForComplete got interrupted", e);
-                    }
-                }
-            }
         }
     }
 

@@ -21,6 +21,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
+import static com.android.bluetooth.TestUtils.mockContextGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -39,7 +40,6 @@ import static org.mockito.Mockito.verify;
 import android.app.ActivityManager;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.IBluetoothGattCallback;
 import android.bluetooth.IBluetoothGattServerCallback;
@@ -175,9 +175,7 @@ public class GattServiceTest {
         mBtCompanionManager = new CompanionManager(mAdapterService, null);
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
 
-        final BluetoothManager manager = mContext.getSystemService(BluetoothManager.class);
-        assertThat(manager).isNotNull();
-        doReturn(manager).when(mAdapterService).getSystemService(BluetoothManager.class);
+        mockContextGetBluetoothManager(mAdapterService);
 
         AdvertiseManagerNativeInterface.setInstance(mAdvertiseManagerNativeInterface);
         mService = new GattService(mAdapterService);
