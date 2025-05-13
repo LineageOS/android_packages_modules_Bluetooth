@@ -1248,6 +1248,9 @@ impl BluetoothInterface {
         let (guest_mode, is_common_criteria_mode, config_compare_result, is_atv) =
             (false, false, 0, false);
 
+        let hci_instance_name = std::ffi::CString::new("default").unwrap();
+        let hci_instance_name_ptr = LTCheckedPtr::from(&hci_instance_name);
+
         ccall!(self, set_adapter_index, hci_index);
         let init = ccall!(
             self,
@@ -1256,7 +1259,8 @@ impl BluetoothInterface {
             guest_mode,
             is_common_criteria_mode,
             config_compare_result,
-            is_atv
+            is_atv,
+            hci_instance_name_ptr.into()
         );
 
         self.is_init = init == 0;
