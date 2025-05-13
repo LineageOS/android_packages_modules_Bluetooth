@@ -289,7 +289,9 @@ final class HapClientStateMachine extends StateMachine {
             Log.d(TAG, mStateLog + "processMessage: " + messageWhatToString(message.what));
 
             switch (message.what) {
-                case MESSAGE_CONNECT -> deferMessage(message);
+                case MESSAGE_CONNECT -> {
+                    Log.w(TAG, "Connecting: CONNECT ignored: " + mDevice);
+                }
                 case MESSAGE_CONNECT_TIMEOUT -> {
                     Log.w(TAG, mStateLog + "connection timeout");
                     mNativeInterface.disconnectHapClient(mDevice);
