@@ -70,6 +70,9 @@ struct Stack::impl {
   Acl* acl_ = nullptr;
   std::shared_ptr<storage::StorageModule> storage_ = nullptr;
   std::shared_ptr<hal::SnoopLogger> snoop_logger_ = nullptr;
+#if TARGET_FLOSS
+  std::unique_ptr<sysprops::SyspropsModule> sysprops_module_ = nullptr;
+#endif
   std::unique_ptr<hal::SocketHal> socket_hal_ = nullptr;
   std::unique_ptr<lpp::LppOffloadManager> lpp_offload_manager_ = nullptr;
   std::unique_ptr<hal::LinkClocker> link_clocker_ = nullptr;
@@ -110,10 +113,6 @@ void Stack::StartEverything() {
       pimpl_->storage_ = std::make_shared<storage::StorageModule>(new Handler(stack_thread_));
       pimpl_->snoop_logger_ = std::make_shared<hal::SnoopLogger>(new Handler(stack_thread_));
     }
-
-#if TARGET_FLOSS
-    modules.add<sysprops::SyspropsModule>();
-#endif
 
     management_thread_ = new Thread("management_thread", Thread::Priority::NORMAL);
     management_handler_ = new Handler(management_thread_);
@@ -309,7 +308,10 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
   pimpl_->snoop_logger_->Start();
   registry_.Start(modules, stack_thread_, stack_handler_);
 
-#ifndef TARGET_FLOSS
+#if TARGET_FLOSS
+  log::info("Starting SyspropsModule");
+  pimpl_->sysprops_module = std::make_unique<sysprops::SyspropsModule>();
+#else
   if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3286716
     log::info("Starting SocketHal");
     pimpl_->socket_hal_ = std::make_unique<hal::SocketHalImpl>();
@@ -417,6 +419,11 @@ void Stack::handle_shut_down(std::promise<void> promise) {
     log::info("Stopping SocketHal");
     pimpl_->socket_hal_.reset();
   }
+
+#if TARGET_FLOSS
+  log::info("Stopping SyspropsModule");
+  pimpl_->sysprops_module_.reset();
+#endif
 
   registry_.StopAll();
 
