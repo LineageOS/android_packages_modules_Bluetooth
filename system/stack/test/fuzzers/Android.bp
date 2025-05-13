@@ -61,7 +61,6 @@ cc_defaults {
         "libbtif",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
-        "libexpresslog",
         "libflags_rust_cpp_bridge",
         "libg722codec",
         "libgmock",
@@ -69,8 +68,6 @@ cc_defaults {
         "liblc3",
         "libopus",
         "libosi",
-        "libstatslog_express",
-        "libtextclassifier_hash_static",
         "libudrv-uipc",
     ],
     shared_libs: [

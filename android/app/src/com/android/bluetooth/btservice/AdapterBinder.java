@@ -28,7 +28,6 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
-import com.android.modules.expresslog.Counter;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
@@ -78,7 +77,6 @@ class AdapterBinder extends IAdapter.Stub {
         // Bluetooth cannot be killed on the main thread; it is in a deadLock.
         // Trying to recover by killing the Bluetooth from the binder thread.
         // This is bad :(
-        Counter.logIncrement("bluetooth.value_kill_from_binder_thread");
         Log.wtf(TAG, "Failed to kill Bluetooth using its main thread. Trying from binder");
         killAction.run();
     }
