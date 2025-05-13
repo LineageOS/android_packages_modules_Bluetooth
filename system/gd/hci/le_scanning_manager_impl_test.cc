@@ -37,6 +37,7 @@
 #include "hci/hci_layer.h"
 #include "hci/hci_layer_fake.h"
 #include "hci/uuid.h"
+#include "module.h"
 #include "os/thread.h"
 #include "packet/raw_builder.h"
 

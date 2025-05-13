@@ -25,7 +25,7 @@
 #include <vector>
 
 #include "hci/address.h"
-#include "module.h"
+#include "os/handler.h"
 #include "storage/config_cache.h"
 #include "storage/device.h"
 #include "storage/mutation.h"
@@ -46,7 +46,7 @@ class AclManagerImpl;
 
 namespace storage {
 
-class StorageModule : public bluetooth::Module {
+class StorageModule {
 public:
   static const std::string kInfoSection;
   static const std::string kFileSourceProperty;
@@ -60,11 +60,19 @@ public:
   StorageModule(const StorageModule&) = delete;
   StorageModule& operator=(const StorageModule&) = delete;
 
-  ~StorageModule();
-  static const ModuleFactory Factory;
+  // Create the storage module where:
+  // - config_file_path is the path to the config file on disk
+  // - config_save_delay is the duration after which to dump config to disk after SaveDelayed() is
+  // called
+  // - temp_devices_capacity is the number of temporary, typically unpaired devices to hold in a
+  // memory based LRU
+  // - is_restricted_mode and is_single_user_mode are flags from upper layer
+  /* For tests only */
+  StorageModule(os::Handler* handler, std::string config_file_path,
+                std::chrono::milliseconds config_save_delay, size_t temp_devices_capacity,
+                bool is_restricted_mode, bool is_single_user_mode);
 
-  void Start() override;
-  void Stop() override;
+  ~StorageModule();
 
   // Methods to access the storage layer via Device abstraction
   // - Devices will be lazily created when methods below are called. Hence, no std::optional<> nor
@@ -125,9 +133,6 @@ public:
   Mutation Modify();
 
 protected:
-  void ListDependencies(ModuleList* list) const override;
-  std::string ToString() const override;
-
   friend shim::BtifConfigInterface;
   friend hci::AclManagerImpl;
   friend security::internal::SecurityManagerImpl;
@@ -142,17 +147,6 @@ protected:
   void SaveImmediately();
   // remove all content in this config cache, restore it to the state after the explicit constructor
   void Clear();
-
-  // Create the storage module where:
-  // - config_file_path is the path to the config file on disk
-  // - config_save_delay is the duration after which to dump config to disk after SaveDelayed() is
-  // called
-  // - temp_devices_capacity is the number of temporary, typically unpaired devices to hold in a
-  // memory based LRU
-  // - is_restricted_mode and is_single_user_mode are flags from upper layer
-  StorageModule(os::Handler* handler, std::string config_file_path,
-                std::chrono::milliseconds config_save_delay, size_t temp_devices_capacity,
-                bool is_restricted_mode, bool is_single_user_mode);
 
   void SetProperty(std::string section, std::string property, std::string value);
 
@@ -192,6 +186,7 @@ private:
   struct impl;
   mutable std::recursive_mutex mutex_;
   std::unique_ptr<impl> pimpl_;
+  os::Handler* handler_;
   std::string config_file_path_;
   std::string config_backup_path_;
   std::chrono::milliseconds config_save_delay_;

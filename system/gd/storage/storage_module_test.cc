@@ -64,9 +64,6 @@ protected:
 
     DeleteConfigFiles();
     ASSERT_FALSE(std::filesystem::exists(temp_config_));
-
-    storage_ = new StorageModule(handler_, temp_config_.string(), kTestConfigSaveDelay,
-                                 kTestTempDevicesCapacity, false, false);
   }
 
   void TearDown() override {
@@ -74,12 +71,11 @@ protected:
     handler_->Clear();
     handler_->WaitUntilStopped(200ms);
     thread_->Stop();
-    delete storage_;
+    storage_.reset();
     delete handler_;
     delete thread_;
     handler_ = nullptr;
     thread_ = nullptr;
-    storage_ = nullptr;
   }
 
   void DeleteConfigFiles() {
@@ -119,14 +115,16 @@ protected:
 
   bluetooth::os::Thread* thread_;
   bluetooth::os::Handler* handler_;
-  StorageModule* storage_;
+  std::unique_ptr<StorageModule> storage_;
   std::filesystem::path temp_dir_;
   std::filesystem::path temp_config_;
 };
 
 TEST_F(StorageModuleTest, empty_config_no_op_test) {
-  storage_->Start();
-  storage_->Stop();
+  storage_ = std::unique_ptr<StorageModule>(
+          new StorageModule(handler_, temp_config_.string(), kTestConfigSaveDelay,
+                            kTestTempDevicesCapacity, false, false));
+  storage_.reset();
 
   // Verify states after test
   ASSERT_TRUE(std::filesystem::exists(temp_config_));
@@ -162,8 +160,9 @@ static const std::string kReadTestConfig =
 TEST_F(StorageModuleTest, read_existing_config_test) {
   ASSERT_TRUE(bluetooth::os::WriteToFile(temp_config_.string(), kReadTestConfig));
 
-  // Set up
-  storage_->Start();
+  storage_ = std::unique_ptr<StorageModule>(
+          new StorageModule(handler_, temp_config_.string(), kTestConfigSaveDelay,
+                            kTestTempDevicesCapacity, false, false));
 
   // Test
   ASSERT_TRUE(HasSection("Metrics"));
@@ -171,7 +170,7 @@ TEST_F(StorageModuleTest, read_existing_config_test) {
   ASSERT_THAT(GetProperty(StorageModule::kAdapterSection, BTIF_STORAGE_KEY_ADDRESS),
               Optional(StrEq("01:02:03:ab:cd:ef")));
 
-  storage_->Stop();
+  storage_.reset();
 
   // Verify states after test
   ASSERT_TRUE(std::filesystem::exists(temp_config_));
@@ -186,8 +185,9 @@ TEST_F(StorageModuleTest, save_config_test) {
   // Prepare config file
   ASSERT_TRUE(bluetooth::os::WriteToFile(temp_config_.string(), kReadTestConfig));
 
-  // Set up
-  storage_->Start();
+  storage_ = std::unique_ptr<StorageModule>(
+          new StorageModule(handler_, temp_config_.string(), kTestConfigSaveDelay,
+                            kTestTempDevicesCapacity, false, false));
 
   // Test
   // Change a property
@@ -218,7 +218,7 @@ TEST_F(StorageModuleTest, save_config_test) {
   ASSERT_FALSE(config->HasSection("01:02:03:ab:cd:ea"));
 
   // Tear down
-  storage_->Stop();
+  storage_.reset();
 
   // Verify states after test
   ASSERT_TRUE(std::filesystem::exists(temp_config_));
@@ -228,22 +228,24 @@ TEST_F(StorageModuleTest, get_bonded_devices_test) {
   // Prepare config file
   ASSERT_TRUE(bluetooth::os::WriteToFile(temp_config_.string(), kReadTestConfig));
 
-  // Set up
-  storage_->Start();
+  storage_ = std::unique_ptr<StorageModule>(
+          new StorageModule(handler_, temp_config_.string(), kTestConfigSaveDelay,
+                            kTestTempDevicesCapacity, false, false));
 
   ASSERT_EQ(storage_->GetBondedDevices().size(), 1u);
   auto address = Address::FromString("01:02:03:ab:cd:ea");
   ASSERT_EQ(address, storage_->GetBondedDevices()[0].GetAddress());
 
-  storage_->Stop();
+  storage_.reset();
 }
 
 TEST_F(StorageModuleTest, unchanged_config_causes_no_write) {
   // Prepare config file
   ASSERT_TRUE(bluetooth::os::WriteToFile(temp_config_.string(), kReadTestConfig));
 
-  // Set up
-  storage_->Start();
+  storage_ = std::unique_ptr<StorageModule>(
+          new StorageModule(handler_, temp_config_.string(), kTestConfigSaveDelay,
+                            kTestTempDevicesCapacity, false, false));
 
   ASSERT_EQ(storage_->GetBondedDevices().size(), 1u);
   auto address = Address::FromString("01:02:03:ab:cd:ea");
@@ -253,7 +255,7 @@ TEST_F(StorageModuleTest, unchanged_config_causes_no_write) {
   DeleteConfigFiles();
 
   // Tear down
-  storage_->Stop();
+  storage_.reset();
 
   ASSERT_FALSE(std::filesystem::exists(temp_config_));
 }
@@ -262,8 +264,9 @@ TEST_F(StorageModuleTest, changed_config_causes_a_write) {
   // Prepare config file
   ASSERT_TRUE(bluetooth::os::WriteToFile(temp_config_.string(), kReadTestConfig));
 
-  // Set up
-  storage_->Start();
+  storage_ = std::unique_ptr<StorageModule>(
+          new StorageModule(handler_, temp_config_.string(), kTestConfigSaveDelay,
+                            kTestTempDevicesCapacity, false, false));
 
   // Remove the file after it was read, so we can check if it was written with exists()
   DeleteConfigFiles();
@@ -274,14 +277,16 @@ TEST_F(StorageModuleTest, changed_config_causes_a_write) {
   ASSERT_TRUE(WaitForReactorIdle(std::chrono::milliseconds(1)));
 
   // Tear down
-  storage_->Stop();
+  storage_.reset();
 
   ASSERT_TRUE(std::filesystem::exists(temp_config_));
 }
 
 TEST_F(StorageModuleTest, no_config_causes_a_write) {
-  storage_->Start();
-  storage_->Stop();
+  storage_ = std::unique_ptr<StorageModule>(
+          new StorageModule(handler_, temp_config_.string(), kTestConfigSaveDelay,
+                            kTestTempDevicesCapacity, false, false));
+  storage_.reset();
 
   ASSERT_TRUE(std::filesystem::exists(temp_config_));
 }

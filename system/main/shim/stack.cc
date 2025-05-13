@@ -304,8 +304,6 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
     pimpl_->snoop_logger_ = std::make_shared<hal::SnoopLogger>(new Handler(stack_thread_));
   }
 
-  pimpl_->storage_->Start();
-
   registry_.Start(modules, stack_thread_, stack_handler_);
 
 #if TARGET_FLOSS
@@ -428,8 +426,6 @@ void Stack::handle_shut_down(std::promise<void> promise) {
   registry_.StopAll();
 
   pimpl_->snoop_logger_.reset();
-
-  pimpl_->storage_->Stop();
   pimpl_->storage_.reset();
 
   promise.set_value();

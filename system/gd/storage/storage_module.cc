@@ -62,6 +62,17 @@ const std::string StorageModule::kTimeCreatedFormat = "%Y-%m-%d %H:%M:%S";
 
 const std::string StorageModule::kAdapterSection = BTIF_STORAGE_SECTION_ADAPTER;
 
+struct StorageModule::impl {
+  explicit impl(Handler* handler, ConfigCache cache, size_t in_memory_cache_size_limit)
+      : config_save_alarm_(handler),
+        cache_(std::move(cache)),
+        memory_only_cache_(in_memory_cache_size_limit, {}) {}
+  Alarm config_save_alarm_;
+  ConfigCache cache_;
+  ConfigCache memory_only_cache_;
+  bool has_pending_config_save_ = false;
+};
+
 StorageModule::StorageModule()
     : StorageModule(nullptr, os::ParameterProvider::ConfigFilePath(), kDefaultConfigSaveDelay,
                     kDefaultTempDeviceCapacity, false, false) {}
@@ -74,7 +85,7 @@ StorageModule::StorageModule(os::Handler* handler, std::string config_file_path,
                              std::chrono::milliseconds config_save_delay,
                              size_t temp_devices_capacity, bool is_restricted_mode,
                              bool is_single_user_mode)
-    : Module(handler),
+    : handler_(handler),
       config_file_path_(std::move(config_file_path)),
       config_save_delay_(config_save_delay),
       temp_devices_capacity_(temp_devices_capacity),
@@ -85,30 +96,63 @@ StorageModule::StorageModule(os::Handler* handler, std::string config_file_path,
                    "overwhelming the "
                    "disk",
                    config_save_delay_.count(), kMinConfigSaveDelay.count());
+
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  if (os::GetSystemProperty(kFactoryResetProperty) == "true") {
+    log::info("{} is true, delete config files", kFactoryResetProperty);
+    LegacyConfigFile::FromPath(config_file_path_).Delete();
+    os::SetSystemProperty(kFactoryResetProperty, "false");
+  }
+  if (!is_config_checksum_pass(kConfigFileComparePass)) {
+    LegacyConfigFile::FromPath(config_file_path_).Delete();
+  }
+  auto config = LegacyConfigFile::FromPath(config_file_path_).Read(temp_devices_capacity_);
+  bool save_needed = false;
+  if (!config || !config->HasSection(kAdapterSection)) {
+    log::warn("Failed to load config at {}; creating new empty ones", config_file_path_);
+    config.emplace(temp_devices_capacity_, Device::kLinkKeyProperties);
+
+    // Set config file creation timestamp
+    std::stringstream ss;
+    auto now = std::chrono::system_clock::now();
+    auto now_time_t = std::chrono::system_clock::to_time_t(now);
+    ss << std::put_time(std::localtime(&now_time_t), kTimeCreatedFormat.c_str());
+    config->SetProperty(kInfoSection, kTimeCreatedProperty, ss.str());
+    save_needed = true;
+  }
+  pimpl_ = std::make_unique<impl>(handler_, std::move(config.value()), temp_devices_capacity_);
+  pimpl_->cache_.SetPersistentConfigChangedCallback(
+          [this] { handler_->CallOn(this, &StorageModule::SaveDelayed); });
+
+  pimpl_->cache_.FixDeviceTypeInconsistencies();
+  if (bluetooth::os::ParameterProvider::GetBtKeystoreInterface() != nullptr) {
+    bluetooth::os::ParameterProvider::GetBtKeystoreInterface()
+            ->ConvertEncryptOrDecryptKeyIfNeeded();
+  }
+
+  if (save_needed) {
+    SaveDelayed();
+  }
 }
 
 StorageModule::~StorageModule() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-
+  log::assert_that(pimpl_ != nullptr, "StorageModule is not started");
+  if (pimpl_->has_pending_config_save_) {
+    // Save pending changes before stopping the module.
+    SaveImmediately();
+  }
+  if (bluetooth::os::ParameterProvider::GetBtKeystoreInterface() != nullptr) {
+    bluetooth::os::ParameterProvider::GetBtKeystoreInterface()->clear_map();
+  }
   pimpl_.reset();
 
   if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
-    GetHandler()->Clear();
-    GetHandler()->WaitUntilStopped(std::chrono::milliseconds(2000));
-    delete GetHandler();
+    handler_->Clear();
+    handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
+    delete handler_;
   }
 }
-
-struct StorageModule::impl {
-  explicit impl(Handler* handler, ConfigCache cache, size_t in_memory_cache_size_limit)
-      : config_save_alarm_(handler),
-        cache_(std::move(cache)),
-        memory_only_cache_(in_memory_cache_size_limit, {}) {}
-  Alarm config_save_alarm_;
-  ConfigCache cache_;
-  ConfigCache memory_only_cache_;
-  bool has_pending_config_save_ = false;
-};
 
 Mutation StorageModule::Modify() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -153,62 +197,6 @@ void StorageModule::Clear() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   pimpl_->cache_.Clear();
 }
-
-void StorageModule::ListDependencies(ModuleList* /*list*/) const {}
-
-void StorageModule::Start() {
-  std::lock_guard<std::recursive_mutex> lock(mutex_);
-  if (os::GetSystemProperty(kFactoryResetProperty) == "true") {
-    log::info("{} is true, delete config files", kFactoryResetProperty);
-    LegacyConfigFile::FromPath(config_file_path_).Delete();
-    os::SetSystemProperty(kFactoryResetProperty, "false");
-  }
-  if (!is_config_checksum_pass(kConfigFileComparePass)) {
-    LegacyConfigFile::FromPath(config_file_path_).Delete();
-  }
-  auto config = LegacyConfigFile::FromPath(config_file_path_).Read(temp_devices_capacity_);
-  bool save_needed = false;
-  if (!config || !config->HasSection(kAdapterSection)) {
-    log::warn("Failed to load config at {}; creating new empty ones", config_file_path_);
-    config.emplace(temp_devices_capacity_, Device::kLinkKeyProperties);
-
-    // Set config file creation timestamp
-    std::stringstream ss;
-    auto now = std::chrono::system_clock::now();
-    auto now_time_t = std::chrono::system_clock::to_time_t(now);
-    ss << std::put_time(std::localtime(&now_time_t), kTimeCreatedFormat.c_str());
-    config->SetProperty(kInfoSection, kTimeCreatedProperty, ss.str());
-    save_needed = true;
-  }
-  pimpl_ = std::make_unique<impl>(GetHandler(), std::move(config.value()), temp_devices_capacity_);
-  pimpl_->cache_.SetPersistentConfigChangedCallback(
-          [this] { this->CallOn(this, &StorageModule::SaveDelayed); });
-
-  pimpl_->cache_.FixDeviceTypeInconsistencies();
-  if (bluetooth::os::ParameterProvider::GetBtKeystoreInterface() != nullptr) {
-    bluetooth::os::ParameterProvider::GetBtKeystoreInterface()
-            ->ConvertEncryptOrDecryptKeyIfNeeded();
-  }
-
-  if (save_needed) {
-    SaveDelayed();
-  }
-}
-
-void StorageModule::Stop() {
-  std::lock_guard<std::recursive_mutex> lock(mutex_);
-  log::assert_that(pimpl_ != nullptr, "StorageModule is not started");
-  if (pimpl_->has_pending_config_save_) {
-    // Save pending changes before stopping the module.
-    SaveImmediately();
-  }
-  if (bluetooth::os::ParameterProvider::GetBtKeystoreInterface() != nullptr) {
-    bluetooth::os::ParameterProvider::GetBtKeystoreInterface()->clear_map();
-  }
-  pimpl_.reset();
-}
-
-std::string StorageModule::ToString() const { return "Storage Module"; }
 
 Device StorageModule::GetDeviceByLegacyKey(hci::Address legacy_key_address) {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
