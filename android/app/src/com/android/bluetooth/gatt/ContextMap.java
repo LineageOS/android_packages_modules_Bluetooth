@@ -16,6 +16,7 @@
 
 package com.android.bluetooth.gatt;
 
+import static com.android.bluetooth.Utils.transportToString;
 import static com.android.bluetooth.util.AttributionSourceUtil.getLastAttributionTag;
 
 import android.annotation.Nullable;
@@ -58,9 +59,10 @@ public class ContextMap<C extends IInterface> {
     private static final int MAX_LAST_RECORDS = 5;
 
     /** Connection class helps map connection IDs to devices. */
-    record Connection(int connId, BluetoothDevice device, int appId, long startTime) {
-        Connection(int connId, BluetoothDevice device, int appId) {
-            this(connId, device, appId, SystemClock.elapsedRealtime());
+    record Connection(
+            int connId, BluetoothDevice device, int transport, int appId, long startTime) {
+        Connection(int connId, BluetoothDevice device, int transport, int appId) {
+            this(connId, device, transport, appId, SystemClock.elapsedRealtime());
         }
 
         @Override
@@ -71,6 +73,8 @@ public class ContextMap<C extends IInterface> {
                     .append(connId)
                     .append(", device: ")
                     .append(device)
+                    .append(", transport: ")
+                    .append(transportToString(transport))
                     .append(", app_id: ")
                     .append(appId)
                     .append(">");
@@ -284,11 +288,11 @@ public class ContextMap<C extends IInterface> {
     }
 
     /** Add a new connection for a given application ID. */
-    void addConnection(int id, int connId, BluetoothDevice device) {
+    void addConnection(int id, int connId, int transport, BluetoothDevice device) {
         synchronized (mConnectionsLock) {
             App entry = getById(id);
             if (entry != null) {
-                mConnections.add(new Connection(connId, device, id));
+                mConnections.add(new Connection(connId, device, transport, id));
             }
         }
     }

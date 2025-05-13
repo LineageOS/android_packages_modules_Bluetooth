@@ -255,9 +255,10 @@ public final class Utils {
         };
     }
 
+    /** Convert a BluetoothDevice transport constant to a string for printing in debug lines */
     public static String transportToString(int transport) {
         return switch (transport) {
-            case BluetoothDevice.TRANSPORT_BREDR -> "BREDR";
+            case BluetoothDevice.TRANSPORT_BREDR -> "BR/EDR";
             case BluetoothDevice.TRANSPORT_LE -> "LE";
             default -> "Unknown transport (" + transport + ")";
         };

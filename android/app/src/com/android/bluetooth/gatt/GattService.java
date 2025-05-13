@@ -23,6 +23,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.Utils.callbackToApp;
 import static com.android.bluetooth.Utils.checkCallerTargetSdk;
+import static com.android.bluetooth.Utils.transportToString;
 import static com.android.bluetooth.util.AttributionSourceUtil.getLastAttributionTag;
 
 import static java.util.Objects.requireNonNull;
@@ -339,19 +340,21 @@ public class GattService extends ProfileService {
         callbackToApp(() -> app.callback.onClientRegistered(status));
     }
 
-    void onConnectedFromNative(int clientIf, int connId, int status, BluetoothDevice device) {
+    void onConnectedFromNative(
+            int clientIf, int connId, int transport, int status, BluetoothDevice device) {
         Log.d(
                 TAG,
                 "onConnected() -"
                         + (" clientIf=" + clientIf)
-                        + (", connId=" + connId)
-                        + (", status=" + status)
-                        + (", device=" + device));
+                        + (" connId=" + connId)
+                        + (" transport=" + transportToString(transport))
+                        + (" status=" + status)
+                        + (" device=" + device));
         int connectionState = BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTED;
         if (status != 0) {
             mAdapterService.notifyGattClientConnectFailed(clientIf, device);
         } else {
-            mClientMap.addConnection(clientIf, connId, device);
+            mClientMap.addConnection(clientIf, connId, transport, device);
 
             // Allow one writeCharacteristic operation at a time for each connected remote device.
             synchronized (mPermits) {
@@ -378,13 +381,14 @@ public class GattService extends ProfileService {
                         app.uid);
     }
 
-    void onDisconnectedFromNative(int clientIf, int connId, int status, BluetoothDevice device) {
+    void onDisconnectedFromNative(
+            int clientIf, int connId, int transport, int status, BluetoothDevice device) {
         Log.d(
                 TAG,
-                "onDisconnected() -"
-                        + (" clientIf=" + clientIf)
+                "onDisconnected() - "
+                        + ("clientIf=" + clientIf)
                         + (", connId=" + connId)
-                        + (", status=" + status)
+                        + (", transport=" + transportToString(transport))
                         + (", device=" + device));
         mClientMap.removeConnection(clientIf, connId);
         mAdapterService.notifyGattClientDisconnect(clientIf, device);
@@ -1590,13 +1594,15 @@ public class GattService extends ProfileService {
     }
 
     void onClientConnectedFromNative(
-            BluetoothDevice device, boolean connected, int connId, int serverIf) {
+            BluetoothDevice device, int transport, boolean connected, int connId, int serverIf) {
         Log.d(
                 TAG,
                 "onClientConnected() connId="
                         + connId
                         + ", device="
                         + device
+                        + ", transport="
+                        + transportToString(transport)
                         + ", connected="
                         + connected);
 
@@ -1606,7 +1612,7 @@ public class GattService extends ProfileService {
         }
         int connectionState;
         if (connected) {
-            mServerMap.addConnection(serverIf, connId, device);
+            mServerMap.addConnection(serverIf, connId, transport, device);
             connectionState = BluetoothProtoEnums.CONNECTION_STATE_CONNECTED;
         } else {
             mServerMap.removeConnection(serverIf, connId);

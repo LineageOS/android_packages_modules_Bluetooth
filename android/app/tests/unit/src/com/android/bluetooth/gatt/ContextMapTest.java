@@ -163,8 +163,8 @@ public class ContextMapTest {
         app = contextMap.add(RANDOM_UUID2, mMockCallback, mAdapterService, mAttributionSource);
         app.id = APP_ID2;
 
-        contextMap.addConnection(APP_ID1, CONN_ID1, mDevice1);
-        contextMap.addConnection(APP_ID2, CONN_ID2, mDevice2);
+        contextMap.addConnection(APP_ID1, CONN_ID1, BluetoothDevice.TRANSPORT_LE, mDevice1);
+        contextMap.addConnection(APP_ID2, CONN_ID2, BluetoothDevice.TRANSPORT_BREDR, mDevice2);
         assertThat(contextMap.getConnectedMap()).isNotEmpty();
         assertThat(contextMap.getAllAppsIds()).isNotEmpty();
         return contextMap;
