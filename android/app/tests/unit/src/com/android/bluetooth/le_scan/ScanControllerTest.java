@@ -22,6 +22,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
+import static com.android.bluetooth.TestUtils.mockContextGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -38,7 +39,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.IPeriodicAdvertisingCallback;
 import android.bluetooth.le.IScannerCallback;
@@ -147,9 +147,7 @@ public class ScanControllerTest {
         mBtCompanionManager = new CompanionManager(mAdapterService, null);
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
 
-        final BluetoothManager manager = context.getSystemService(BluetoothManager.class);
-        assertThat(manager).isNotNull();
-        doReturn(manager).when(mAdapterService).getSystemService(BluetoothManager.class);
+        mockContextGetBluetoothManager(mAdapterService);
 
         mScanController = new ScanController(mAdapterService);
         mScanController.setScannerMap(mScannerMap);

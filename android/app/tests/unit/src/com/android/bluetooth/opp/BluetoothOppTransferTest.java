@@ -19,6 +19,7 @@ package com.android.bluetooth.opp;
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockContextGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.opp.BluetoothOppTransfer.TRANSPORT_CONNECTED;
 import static com.android.bluetooth.opp.BluetoothOppTransfer.TRANSPORT_ERROR;
@@ -37,7 +38,6 @@ import static org.mockito.Mockito.verify;
 
 import android.app.NotificationManager;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothUuid;
 import android.content.ContentValues;
 import android.content.Context;
@@ -49,7 +49,6 @@ import android.os.Message;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
@@ -129,10 +128,7 @@ public class BluetoothOppTransferTest {
                         123456789,
                         false);
         mBluetoothOppBatch = new BluetoothOppBatch(mAdapterService, mInitShareInfo);
-        final Context context = InstrumentationRegistry.getInstrumentation().getContext();
-        final BluetoothManager manager = context.getSystemService(BluetoothManager.class);
-        assertThat(manager).isNotNull();
-        doReturn(manager).when(mMockContext).getSystemService(BluetoothManager.class);
+        mockContextGetBluetoothManager(mMockContext);
         mTransfer = new BluetoothOppTransfer(mMockContext, mBluetoothOppBatch, mSession);
         mEventHandler = mTransfer.new EventHandler(Looper.getMainLooper());
     }
