@@ -823,10 +823,11 @@ public class GattService extends ProfileService {
         }
     }
 
-    public void unregAll(AttributionSource source) {
+    public void unregAll() {
         for (IBluetoothGattCallback appId : mClientMap.getAllAppsCallbackId()) {
             Log.d(TAG, "unreg:" + appId);
-            unregisterClient(appId, source, ContextMap.RemoveReason.REASON_UNREGISTER_ALL);
+            unregisterClient(
+                    appId, getAttributionSource(), ContextMap.RemoveReason.REASON_UNREGISTER_ALL);
         }
         for (IBluetoothGattServerCallback appId : mServerMap.getAllAppsCallbackId()) {
             Log.d(TAG, "unreg:" + appId);

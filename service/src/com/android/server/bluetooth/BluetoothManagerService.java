@@ -807,7 +807,7 @@ class BluetoothManagerService {
             return;
         }
         try {
-            mAdapter.setForegroundUserId(userId, mContext.getAttributionSource());
+            mAdapter.setForegroundUserId(userId);
         } catch (RemoteException e) {
             Log.e(TAG, "Unable to set foreground user id", e);
         }
@@ -883,7 +883,7 @@ class BluetoothManagerService {
         if (!mState.oneOf(STATE_ON)) {
             return false;
         }
-        return mAdapter.isMediaProfileConnected(mContext.getAttributionSource());
+        return mAdapter.isMediaProfileConnected();
     }
 
     // Disable ble scan only mode.
@@ -1085,7 +1085,7 @@ class BluetoothManagerService {
             // Need to stay at BLE ON. Disconnect all Gatt connections
             Log.i(TAG, "sendBrEdrDownCallback: Staying in BLE_ON");
             try {
-                mAdapter.unregAllGattClient(mContext.getAttributionSource());
+                mAdapter.unregAllGattClient();
             } catch (RemoteException e) {
                 Log.e(TAG, "sendBrEdrDownCallback: failed to call unregAllGattClient()", e);
             }
@@ -1220,7 +1220,7 @@ class BluetoothManagerService {
         long currentTimeMs = System.currentTimeMillis();
 
         try {
-            mAdapter.unregisterCallback(mBluetoothCallback, mContext.getAttributionSource());
+            mAdapter.unregisterCallback(mBluetoothCallback);
         } catch (RemoteException e) {
             Log.e(TAG, "unbindAndFinish(): Unable to unregister BluetoothCallback", e);
         }
@@ -1477,8 +1477,7 @@ class BluetoothManagerService {
                     propagateForegroundUserId(ActivityManager.getCurrentUser());
 
                     try {
-                        mAdapter.registerCallback(
-                                mBluetoothCallback, mContext.getAttributionSource());
+                        mAdapter.registerCallback(mBluetoothCallback);
                     } catch (RemoteException e) {
                         Log.e(TAG, "Unable to register BluetoothCallback", e);
                     }
@@ -1649,7 +1648,7 @@ class BluetoothManagerService {
 
         private void restartForNewUser(UserHandle unusedNewUser) {
             try {
-                mAdapter.unregisterCallback(mBluetoothCallback, mContext.getAttributionSource());
+                mAdapter.unregisterCallback(mBluetoothCallback);
             } catch (RemoteException e) {
                 Log.e(TAG, "Unable to unregister", e);
             }
@@ -1928,7 +1927,7 @@ class BluetoothManagerService {
         }
         Log.d(TAG, "offToBleOn: Sending request hciInstanceName " + hciInstanceName);
         try {
-            mAdapter.offToBleOn(mQuietEnable, hciInstanceName, mContext.getAttributionSource());
+            mAdapter.offToBleOn(mQuietEnable, hciInstanceName);
         } catch (RemoteException e) {
             Log.e(TAG, "Unable to call offToBleOn()", e);
         }
@@ -1942,7 +1941,7 @@ class BluetoothManagerService {
         }
         Log.d(TAG, "onToBleOn: Sending request");
         try {
-            mAdapter.onToBleOn(mContext.getAttributionSource());
+            mAdapter.onToBleOn();
         } catch (RemoteException e) {
             Log.e(TAG, "Unable to call onToBleOn()", e);
         }
@@ -1956,7 +1955,7 @@ class BluetoothManagerService {
         }
         Log.d(TAG, "bleOnToOn: sending request");
         try {
-            mAdapter.bleOnToOn(mContext.getAttributionSource());
+            mAdapter.bleOnToOn();
         } catch (RemoteException e) {
             Log.e(TAG, "Unable to call bleOnToOn()", e);
         }
@@ -1970,7 +1969,7 @@ class BluetoothManagerService {
         }
         Log.d(TAG, "bleOnToOff: Sending request");
         try {
-            mAdapter.bleOnToOff(mContext.getAttributionSource());
+            mAdapter.bleOnToOff();
         } catch (RemoteException e) {
             Log.e(TAG, "Unable to call bleOnToOff()", e);
         }
@@ -2113,7 +2112,7 @@ class BluetoothManagerService {
 
         if (mAdapter != null) {
             try {
-                mAdapter.unregisterCallback(mBluetoothCallback, mContext.getAttributionSource());
+                mAdapter.unregisterCallback(mBluetoothCallback);
             } catch (RemoteException e) {
                 Log.e(TAG, "Unable to unregister", e);
             }

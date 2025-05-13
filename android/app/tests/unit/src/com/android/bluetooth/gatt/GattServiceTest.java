@@ -670,7 +670,7 @@ public class GattServiceTest {
         callbacks.add(callback);
         doReturn(callbacks).when(mClientMap).getAllAppsCallbackId();
 
-        mService.unregAll(mAttributionSource);
+        mService.unregAll();
         verify(mClientMap).remove(appId, ContextMap.RemoveReason.REASON_UNREGISTER_ALL);
         verify(mNativeInterface).gattClientUnregisterApp(appId);
     }
