@@ -27,7 +27,7 @@ from pandora.gatt_pb2 import PRIMARY
 from bumble.att import UUID
 from bumble.gatt import GATT_VOLUME_CONTROL_SERVICE, GATT_AUDIO_INPUT_CONTROL_SERVICE
 from bumble.profiles.aics import AICSService
-from bumble.profiles.vcp import VolumeControlService
+from bumble.profiles.vcs import VolumeControlService
 
 
 class AicsTest(base_test.BaseTestClass):

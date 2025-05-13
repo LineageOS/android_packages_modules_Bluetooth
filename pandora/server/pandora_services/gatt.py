@@ -289,7 +289,7 @@ class GATTService(GATTServicer):
 
         serviceUUID = request.service.uuid
         characteristics = [
-            Characteristic(
+            Characteristic[bytes](
                 properties=Characteristic.Properties(characteristicParam.properties),
                 permissions=Attribute.Permissions(characteristicParam.permissions),
                 uuid=characteristicParam.uuid,
