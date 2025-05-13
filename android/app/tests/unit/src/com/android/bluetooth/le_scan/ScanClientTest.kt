@@ -39,6 +39,12 @@ class ScanClientTest {
     }
 
     @Test
+    fun constructor_emptyFilters() {
+        val scanClientEmptyFilters = ScanClient(1)
+        assertThat(scanClientEmptyFilters.mFilters).isEmpty()
+    }
+
+    @Test
     fun constructor_withFilters() {
         val filters = listOf(ScanFilter.Builder().build())
         val scanSettings = ScanSettings.Builder().build()
