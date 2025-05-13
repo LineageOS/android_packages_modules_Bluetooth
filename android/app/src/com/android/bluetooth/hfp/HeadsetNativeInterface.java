@@ -18,7 +18,6 @@ package com.android.bluetooth.hfp;
 
 import static java.util.Objects.requireNonNull;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
@@ -34,11 +33,8 @@ import com.android.internal.annotations.GuardedBy;
 public class HeadsetNativeInterface {
     private static final String TAG = HeadsetNativeInterface.class.getSimpleName();
 
-    private final BluetoothAdapter mAdapter = BluetoothAdapter.getDefaultAdapter();
-
     @GuardedBy("INSTANCE_LOCK")
     private static HeadsetNativeInterface sInstance;
-
     private static final Object INSTANCE_LOCK = new Object();
 
     private final AdapterService mAdapterService;
