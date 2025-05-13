@@ -6066,6 +6066,17 @@ public:
       return false;
     }
 
+    auto unspecified = AudioContexts(LeAudioContextType::UNSPECIFIED);
+    auto uninitialized = AudioContexts();
+    auto bidirectional_contexts = get_bidirectional(remote_contexts);
+    if (com::android::bluetooth::flags::leaudio_use_context_type_manager() &&
+        (bidirectional_contexts == unspecified || bidirectional_contexts == uninitialized) &&
+        !audioContextTypeManager_->IsAnyMetadataSet()) {
+      log::info("group_id: {} Skip updating the metadata to sink={}, source={}", group->group_id_,
+                ToString(remote_contexts.sink), ToString(remote_contexts.source));
+      return true;
+    }
+
     log::info("group_id: {} Updating the metadata to sink={}, source={}", group->group_id_,
               ToString(remote_contexts.sink), ToString(remote_contexts.source));
 
