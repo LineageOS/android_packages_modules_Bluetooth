@@ -31,7 +31,6 @@
 #include "hal/snoop_logger_socket_thread.h"
 #include "hal/syscall_wrapper_impl.h"
 #include "hci/hci_packets.h"
-#include "module.h"
 #include "os/repeating_alarm.h"
 
 namespace bluetooth {
@@ -141,10 +140,8 @@ private:
   profile_type_t current_profile;
 };
 
-class SnoopLogger : public ::bluetooth::Module {
+class SnoopLogger {
 public:
-  static const ModuleFactory Factory;
-
   static const std::string kBtSnoopMaxPacketsPerFileProperty;
   static const std::string kRoBuildType;
   static const std::string kBtSnoopLogModeProperty;
@@ -196,14 +193,9 @@ public:
   };
 
   SnoopLogger(os::Handler* handler);
-  ~SnoopLogger() {
-    if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
-      alarm_.reset();
-      GetHandler()->Clear();
-      GetHandler()->WaitUntilStopped(std::chrono::milliseconds(2000));
-      delete GetHandler();
-    }
-  }
+  ~SnoopLogger();
+
+  os::Handler* GetHandler();
 
   // Returns the maximum number of packets per file
   // Changes to this value is only effective after restarting Bluetooth
@@ -235,8 +227,6 @@ public:
     OUTGOING,
   };
 
-  void Start() override;
-  void Stop() override;
   void Capture(const HciPacket& packet, Direction direction, PacketType type);
 
   // Set a L2CAP channel as acceptlisted, allowing packets with that L2CAP CID
@@ -283,9 +273,6 @@ public:
 
   SnoopLoggerSocketThread const* GetSocketThread() { return snoop_logger_socket_thread_.get(); }
 
-  // Some tests require access to the handler.
-  using Module::GetHandler;
-
 protected:
   // Packet type length
   static const size_t PACKET_TYPE_LENGTH;
@@ -294,9 +281,6 @@ protected:
   static const uint32_t L2CAP_HEADER_SIZE;
   // Max packet data size when headersfiltered option enabled
   static const size_t MAX_HCI_ACL_LEN;
-
-  void ListDependencies(ModuleList* /*list*/) const override {}
-  std::string ToString() const override { return std::string("SnoopLogger"); }
 
   SnoopLogger(os::Handler* handler, std::string snoop_log_path, std::string snooz_log_path,
               size_t max_packets_per_file, size_t max_packets_per_buffer,
@@ -343,6 +327,7 @@ protected:
 #endif  // __ANDROID__
 
 private:
+  os::Handler* handler_;
   std::string btsnoop_mode_;
   std::string snoop_log_path_;
   std::string snooz_log_path_;

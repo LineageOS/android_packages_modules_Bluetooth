@@ -541,7 +541,7 @@ SnoopLogger::SnoopLogger(os::Handler* handler, std::string snoop_log_path,
                          const std::chrono::milliseconds snooz_log_life_time,
                          const std::chrono::milliseconds snooz_log_delete_alarm_interval,
                          bool snoop_log_persists, int port)
-    : Module(handler),
+    : handler_(handler),
       btsnoop_mode_(btsnoop_mode),
       snoop_log_path_(std::move(snoop_log_path)),
       snooz_log_path_(std::move(snooz_log_path)),
@@ -578,7 +578,44 @@ SnoopLogger::SnoopLogger(os::Handler* handler, std::string snoop_log_path,
   socket_ = nullptr;
   // Add ".filtered" extension if necessary
   snoop_log_path_ = get_btsnoop_log_path(snoop_log_path_, btsnoop_mode_ == kBtSnoopLogModeFiltered);
+
+  std::lock_guard<std::recursive_mutex> lock(file_mutex_);
+  if (btsnoop_mode_ != kBtSnoopLogModeDisabled && btsnoop_mode_ != kBtSnoopLogModeKernel) {
+    OpenNextSnoopLogFile();
+
+    if (btsnoop_mode_ == kBtSnoopLogModeFiltered) {
+      EnableFilters();
+    }
+
+    if (is_debug_build()) {
+      // Cf b/375056207: The implementation must pass a security review
+      // in order to enable the snoop logger socket in user builds.
+      auto snoop_logger_socket = std::make_unique<SnoopLoggerSocket>(
+              &syscall_if, SnoopLoggerSocket::kLocalHost, port_);
+      snoop_logger_socket_thread_ =
+              std::make_unique<SnoopLoggerSocketThread>(std::move(snoop_logger_socket));
+      auto thread_started_future = snoop_logger_socket_thread_->Start();
+      thread_started_future.wait();
+      if (thread_started_future.get()) {
+        RegisterSocket(snoop_logger_socket_thread_.get());
+      } else {
+        snoop_logger_socket_thread_->Stop();
+        snoop_logger_socket_thread_.reset();
+        snoop_logger_socket_thread_ = nullptr;
+      }
+    }
+  }
+
+#ifdef __ANDROID__
+  SnoopLoggerTracing::InitializePerfetto();
+#endif  // __ANDROID__
+
+  alarm_ = std::make_unique<os::RepeatingAlarm>(handler_);
+  alarm_->Schedule(common::Bind(&delete_old_btsnooz_files, snooz_log_path_, snooz_log_life_time_),
+                   snooz_log_delete_alarm_interval_);
 }
+
+os::Handler* SnoopLogger::GetHandler() { return handler_; }
 
 void SnoopLogger::CloseCurrentSnoopLogFile() {
   std::lock_guard<std::recursive_mutex> lock(file_mutex_);
@@ -1344,44 +1381,7 @@ void SnoopLogger::DumpSnoozLogToFile() {
   }
 }
 
-void SnoopLogger::Start() {
-  std::lock_guard<std::recursive_mutex> lock(file_mutex_);
-  if (btsnoop_mode_ != kBtSnoopLogModeDisabled && btsnoop_mode_ != kBtSnoopLogModeKernel) {
-    OpenNextSnoopLogFile();
-
-    if (btsnoop_mode_ == kBtSnoopLogModeFiltered) {
-      EnableFilters();
-    }
-
-    if (is_debug_build()) {
-      // Cf b/375056207: The implementation must pass a security review
-      // in order to enable the snoop logger socket in user builds.
-      auto snoop_logger_socket = std::make_unique<SnoopLoggerSocket>(
-              &syscall_if, SnoopLoggerSocket::kLocalHost, port_);
-      snoop_logger_socket_thread_ =
-              std::make_unique<SnoopLoggerSocketThread>(std::move(snoop_logger_socket));
-      auto thread_started_future = snoop_logger_socket_thread_->Start();
-      thread_started_future.wait();
-      if (thread_started_future.get()) {
-        RegisterSocket(snoop_logger_socket_thread_.get());
-      } else {
-        snoop_logger_socket_thread_->Stop();
-        snoop_logger_socket_thread_.reset();
-        snoop_logger_socket_thread_ = nullptr;
-      }
-    }
-  }
-
-#ifdef __ANDROID__
-  SnoopLoggerTracing::InitializePerfetto();
-#endif  // __ANDROID__
-
-  alarm_ = std::make_unique<os::RepeatingAlarm>(GetHandler());
-  alarm_->Schedule(common::Bind(&delete_old_btsnooz_files, snooz_log_path_, snooz_log_life_time_),
-                   snooz_log_delete_alarm_interval_);
-}
-
-void SnoopLogger::Stop() {
+SnoopLogger::~SnoopLogger() {
   std::lock_guard<std::recursive_mutex> lock(file_mutex_);
   log::debug("Closing btsnoop log data at {}", snoop_log_path_);
   CloseCurrentSnoopLogFile();
@@ -1400,9 +1400,16 @@ void SnoopLogger::Stop() {
   // Cancel the alarm
   alarm_->Cancel();
   alarm_.reset();
+
   // delete any existing snooz logs
   if (!snoop_log_persists) {
     delete_btsnoop_files(snooz_log_path_);
+  }
+
+  if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+    handler_->Clear();
+    handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
+    delete handler_;
   }
 }
 

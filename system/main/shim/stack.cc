@@ -106,14 +106,6 @@ void Stack::StartEverything() {
     stack_thread_ = new os::Thread("gd_stack_thread", os::Thread::Priority::REAL_TIME);
     stack_handler_ = new os::Handler(stack_thread_);
 
-    if (com::android::bluetooth::flags::same_handler_for_all_modules()) {
-      pimpl_->storage_ = std::make_shared<storage::StorageModule>(stack_handler_);
-      pimpl_->snoop_logger_ = std::make_shared<hal::SnoopLogger>(stack_handler_);
-    } else {
-      pimpl_->storage_ = std::make_shared<storage::StorageModule>(new Handler(stack_thread_));
-      pimpl_->snoop_logger_ = std::make_shared<hal::SnoopLogger>(new Handler(stack_thread_));
-    }
-
     management_thread_ = new Thread("management_thread", Thread::Priority::NORMAL);
     management_handler_ = new Handler(management_thread_);
 
@@ -304,8 +296,16 @@ void Stack::Dump(int fd, std::promise<void> promise) const {
 }
 
 void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
+  if (com::android::bluetooth::flags::same_handler_for_all_modules()) {
+    pimpl_->storage_ = std::make_shared<storage::StorageModule>(stack_handler_);
+    pimpl_->snoop_logger_ = std::make_shared<hal::SnoopLogger>(stack_handler_);
+  } else {
+    pimpl_->storage_ = std::make_shared<storage::StorageModule>(new Handler(stack_thread_));
+    pimpl_->snoop_logger_ = std::make_shared<hal::SnoopLogger>(new Handler(stack_thread_));
+  }
+
   pimpl_->storage_->Start();
-  pimpl_->snoop_logger_->Start();
+
   registry_.Start(modules, stack_thread_, stack_handler_);
 
 #if TARGET_FLOSS
@@ -427,10 +427,9 @@ void Stack::handle_shut_down(std::promise<void> promise) {
 
   registry_.StopAll();
 
-  pimpl_->snoop_logger_->Stop();
-  pimpl_->storage_->Stop();
-
   pimpl_->snoop_logger_.reset();
+
+  pimpl_->storage_->Stop();
   pimpl_->storage_.reset();
 
   promise.set_value();
