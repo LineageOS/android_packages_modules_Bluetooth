@@ -152,6 +152,14 @@ A2dpCodecConfig* BtaAvCo::GetPeerCurrentCodec(const RawAddress& peer_address) {
   return peer->GetCodecs()->getCurrentCodecConfig();
 }
 
+bool BtaAvCo::ProcessAudioInit(btav_a2dp_codec_index_t codec_index, AvdtpSepConfig* p_cfg) {
+  if (::bluetooth::audio::a2dp::provider::supports_codec(codec_index)) {
+    return ::bluetooth::audio::a2dp::provider::codec_info(codec_index, nullptr, p_cfg->codec_info,
+                                                          nullptr);
+  }
+  return A2DP_InitCodecConfig(codec_index, p_cfg);
+}
+
 void BtaAvCo::ProcessDiscoveryResult(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_address,
                                      uint8_t num_seps, uint8_t num_sinks, uint8_t num_sources,
                                      uint16_t uuid_local) {
@@ -1382,7 +1390,7 @@ A2dpCodecConfig* bta_av_get_a2dp_peer_current_codec(const RawAddress& peer_addre
 }
 
 bool bta_av_co_audio_init(btav_a2dp_codec_index_t codec_index, AvdtpSepConfig* p_cfg) {
-  return A2DP_InitCodecConfig(codec_index, p_cfg);
+  return bta_av_co_cb.ProcessAudioInit(codec_index, p_cfg);
 }
 
 void bta_av_co_audio_disc_res(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_address,
