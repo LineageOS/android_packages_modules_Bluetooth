@@ -20,13 +20,18 @@ import static com.android.bluetooth.TestUtils.MockitoRule;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
+import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.graphics.drawable.ColorDrawable;
 
 import androidx.test.filters.SmallTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
+
+import com.android.bluetooth.TestUtils.MockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -40,7 +45,6 @@ import org.mockito.Mock;
 public class BluetoothMapMasInstanceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private Context mContext;
     @Mock private BluetoothMapService mMapService;
 
     private static final int TEST_MAS_ID = 1;
@@ -72,9 +76,14 @@ public class BluetoothMapMasInstanceTest {
 
     @Test
     public void toString_returnsInfo() {
+        final Context context = InstrumentationRegistry.getInstrumentation().getContext();
+        final BluetoothManager manager = context.getSystemService(BluetoothManager.class);
+        assertThat(manager).isNotNull();
+        doReturn(manager).when(mMapService).getSystemService(BluetoothManager.class);
+
         BluetoothMapMasInstance instance =
                 new BluetoothMapMasInstance(
-                        mMapService, mContext, mAccountItem, TEST_MAS_ID, TEST_ENABLE_SMS_MMS);
+                        mMapService, mAccountItem, TEST_MAS_ID, TEST_ENABLE_SMS_MMS);
 
         String expected =
                 "MasId: "

@@ -28,6 +28,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import android.bluetooth.BluetoothManager;
 import android.content.ContentProviderClient;
 import android.content.Context;
 import android.database.MatrixCursor;
@@ -36,9 +37,11 @@ import android.os.Bundle;
 import android.os.RemoteException;
 
 import androidx.test.filters.SmallTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.bluetooth.TestUtils.MockitoRule;
 import com.android.obex.ResponseCodes;
 
 import org.junit.Before;
@@ -54,7 +57,7 @@ import org.mockito.Spy;
 public class BluetoothMapObexServerTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private Context mContext;
+    @Mock private Context mMockContext;
     @Mock private BluetoothMapService mMapService;
     @Mock private ContentProviderClient mProviderClient;
     @Mock private BluetoothMapContentObserver mObserver;
@@ -83,6 +86,7 @@ public class BluetoothMapObexServerTest {
         doReturn(mProviderClient)
                 .when(mMapMethodProxy)
                 .contentResolverAcquireUnstableContentProviderClient(any(), any());
+
         mAccountItem =
                 BluetoothMapAccountItem.create(
                         TEST_ID,
@@ -93,13 +97,24 @@ public class BluetoothMapObexServerTest {
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
+
+        final Context context = InstrumentationRegistry.getInstrumentation().getContext();
+        final BluetoothManager manager = context.getSystemService(BluetoothManager.class);
+        assertThat(manager).isNotNull();
+        doReturn(manager).when(mMapService).getSystemService(BluetoothManager.class);
+
         mMasInstance =
                 new BluetoothMapMasInstance(
-                        mMapService, mContext, mAccountItem, TEST_MAS_ID, TEST_ENABLE_SMS_MMS);
+                        mMapService, mAccountItem, TEST_MAS_ID, TEST_ENABLE_SMS_MMS);
         mParams = new BluetoothMapAppParams();
         mObexServer =
                 new BluetoothMapObexServer(
-                        null, mContext, mObserver, mMasInstance, mAccountItem, TEST_ENABLE_SMS_MMS);
+                        null,
+                        mMockContext,
+                        mObserver,
+                        mMasInstance,
+                        mAccountItem,
+                        TEST_ENABLE_SMS_MMS);
     }
 
     @Test
@@ -118,7 +133,7 @@ public class BluetoothMapObexServerTest {
         BluetoothMapObexServer obexServer =
                 new BluetoothMapObexServer(
                         null,
-                        mContext,
+                        mMockContext,
                         mObserver,
                         mMasInstance,
                         accountItemWithTypeEmail,
@@ -219,7 +234,8 @@ public class BluetoothMapObexServerTest {
     @Test
     public void setMsgTypeFilterParams_withAccountNull_andOverwriteTrue() throws Exception {
         BluetoothMapObexServer obexServer =
-                new BluetoothMapObexServer(null, mContext, mObserver, mMasInstance, null, false);
+                new BluetoothMapObexServer(
+                        null, mMockContext, mObserver, mMasInstance, null, false);
 
         obexServer.setMsgTypeFilterParams(mParams, true);
 
@@ -247,7 +263,7 @@ public class BluetoothMapObexServerTest {
         BluetoothMapObexServer obexServer =
                 new BluetoothMapObexServer(
                         null,
-                        mContext,
+                        mMockContext,
                         mObserver,
                         mMasInstance,
                         accountItemWithTypeEmail,
@@ -274,7 +290,7 @@ public class BluetoothMapObexServerTest {
         BluetoothMapObexServer obexServer =
                 new BluetoothMapObexServer(
                         null,
-                        mContext,
+                        mMockContext,
                         mObserver,
                         mMasInstance,
                         accountItemWithTypeIm,
