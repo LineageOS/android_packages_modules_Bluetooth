@@ -75,6 +75,9 @@ public:
               GetLocalAudioOutputCodecCapa, ());
   MOCK_METHOD((std::vector<bluetooth::le_audio::btle_audio_codec_config_t>),
               GetLocalAudioInputCodecCapa, ());
+  MOCK_METHOD((std::vector<bluetooth::le_audio::btle_audio_codec_config_t>),
+               GetRemoteAudioCodecCapa,
+              (const bluetooth::le_audio::types::PublishedAudioCapabilities& pacs), (const));
   MOCK_METHOD((void), UpdateBroadcastConnHandle,
               (const std::vector<uint16_t>& conn_handle,
                std::function<void(const ::bluetooth::le_audio::broadcast_offload_config& config)>

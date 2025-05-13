@@ -16093,6 +16093,8 @@ static std::vector<types::AseConfiguration> GetVendorAseConfigurationsForRequire
 TEST_F(UnicastTest, RequestConfigurationOpusHiRes) {
   com::android::bluetooth::flags::provider_->leaudio_set_codec_config_preference(true);
 
+  EXPECT_CALL(*mock_codec_manager_, GetRemoteAudioCodecCapa(_)).Times(AtLeast(1));
+
   auto const test_audio_context = LeAudioContextType::MEDIA;
   int group_id = 2;
   TestSetupRemoteDevices(group_id);
