@@ -32,6 +32,7 @@ import com.android.server.bluetooth.Timer
 import com.android.server.bluetooth.USER_SETTINGS_KEY
 import com.android.server.bluetooth.airplane.isOnOverrode as isAirplaneModeOn
 import com.android.server.bluetooth.airplane.test.ModeListenerTest as AirplaneListener
+import com.android.server.bluetooth.factoryResetAutoOn
 import com.android.server.bluetooth.isUserEnabled
 import com.android.server.bluetooth.isUserSupported
 import com.android.server.bluetooth.notifyBluetoothOn
@@ -85,7 +86,7 @@ class AutoOnFeatureTest {
         callback_count = 0
         timer?.cancel()
         timer = null
-        restoreSavedTimer()
+        resetSavedTimer()
     }
 
     private fun setupTimer() {
@@ -111,7 +112,7 @@ class AutoOnFeatureTest {
         shadowOf(looper).idle()
     }
 
-    private fun restoreSavedTimer() {
+    private fun resetSavedTimer() {
         Settings.Secure.putString(resolver, Timer.STORAGE_KEY, null)
         shadowOf(looper).idle()
     }
@@ -474,6 +475,37 @@ class AutoOnFeatureTest {
         expect.that(timer).isNotNull()
         expect.that(callback_count).isEqualTo(0)
         expectStorageTime()
+    }
+
+    @Test
+    fun factoryReset_whenTimerIsRunning_isCancelledAndOff() {
+        setupTimer()
+
+        factoryResetAutoOn(context)
+
+        expectNoStorageTime()
+        expect.that(timer).isNull()
+        expect.that(callback_count).isEqualTo(0)
+    }
+
+    @Test
+    fun factoryReset_whenNoTimer_isCancelledAndOff() {
+        factoryResetAutoOn(context)
+
+        expectNoStorageTime()
+        expect.that(timer).isNull()
+        expect.that(callback_count).isEqualTo(0)
+    }
+
+    @Test
+    fun factoryReset_whenTimerDisabled_isCancelledAndOff() {
+        disableUserSettings()
+        factoryResetAutoOn(context)
+
+        assertThat(isUserEnabled(context)).isFalse()
+        expectNoStorageTime()
+        expect.that(timer).isNull()
+        expect.that(callback_count).isEqualTo(0)
     }
 
     companion object {
