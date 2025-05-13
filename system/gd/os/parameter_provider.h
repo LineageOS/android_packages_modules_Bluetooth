@@ -28,17 +28,11 @@ public:
   // Return the path to config file for storage module
   static std::string ConfigFilePath();
 
-  static void OverrideConfigFilePath(const std::string& path);
-
   // Return the path to the default snoop log file location
   static std::string SnoopLogFilePath();
 
-  static void OverrideSnoopLogFilePath(const std::string& path);
-
   // Return the path to the default snooz log file location
   static std::string SnoozLogFilePath();
-
-  static void OverrideSnoozLogFilePath(const std::string& path);
 
   // Return the path to the default sysprops file
   static std::string SyspropsFilePath();
