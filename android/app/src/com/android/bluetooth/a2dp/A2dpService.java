@@ -126,8 +126,9 @@ public class A2dpService extends ProfileService {
                                         adapterService,
                                         new A2dpNativeCallback(adapterService, this)));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
-        mAudioManager = requireNonNull(getSystemService(AudioManager.class));
-        mCompanionDeviceManager = requireNonNull(getSystemService(CompanionDeviceManager.class));
+        mAudioManager = requireNonNull(mAdapterService.getSystemService(AudioManager.class));
+        mCompanionDeviceManager =
+                requireNonNull(mAdapterService.getSystemService(CompanionDeviceManager.class));
         mLooper = requireNonNull(looper);
         mHandler = new Handler(mLooper);
 

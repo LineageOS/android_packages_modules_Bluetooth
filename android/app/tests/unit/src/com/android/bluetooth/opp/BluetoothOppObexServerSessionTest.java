@@ -88,8 +88,8 @@ public class BluetoothOppObexServerSessionTest {
         mPrefs = mTargetContext.getSharedPreferences(TEST_PREF, Context.MODE_PRIVATE);
         mPrefs.edit().clear().apply();
 
-        mockGetSystemService(mContext, Context.NOTIFICATION_SERVICE, NotificationManager.class);
-        mockGetSystemService(mContext, Context.POWER_SERVICE, PowerManager.class, mPowerManager);
+        mockGetSystemService(mContext, NotificationManager.class);
+        mockGetSystemService(mContext, PowerManager.class, mPowerManager);
         mockContextGetBluetoothManager(mContext);
 
         doReturn(mTargetContext.getContentResolver()).when(mContext).getContentResolver();

@@ -81,8 +81,8 @@ public class RemoteDevices {
     // Maximum number of device properties to remember
     private static final int MAX_DEVICE_QUEUE_SIZE = 200;
 
+    private final AdapterService mAdapterService;
     private final BluetoothAdapter mAdapter;
-    private AdapterService mAdapterService;
     private final ArrayList<BluetoothDevice> mSdpTracker;
     private final Object mObject = new Object();
 
@@ -151,24 +151,11 @@ public class RemoteDevices {
      * Predicate that tests if the given {@link BluetoothDevice} is well-known to be used for
      * physical location.
      */
-    private final Predicate<BluetoothDevice> mLocationDenylistPredicate =
-            (device) -> {
-                final MacAddress parsedAddress = MacAddress.fromString(device.getAddress());
-                if (mAdapterService.getLocationDenylistMac().test(parsedAddress.toByteArray())) {
-                    Log.v(TAG, "Skipping device matching denylist: " + device);
-                    return true;
-                }
-                final String name = Utils.getName(device);
-                if (mAdapterService.getLocationDenylistName().test(name)) {
-                    Log.v(TAG, "Skipping name matching denylist: " + name);
-                    return true;
-                }
-                return false;
-            };
+    private final Predicate<BluetoothDevice> mLocationDenylistPredicate;
 
     RemoteDevices(AdapterService service, Looper looper) {
-        mAdapter = service.getSystemService(BluetoothManager.class).getAdapter();
         mAdapterService = service;
+        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mSdpTracker = new ArrayList<>();
         mDevices = new LinkedHashMap<>(MAX_DEVICE_QUEUE_SIZE);
         mDualDevicesMap = new HashMap<>();
@@ -180,6 +167,22 @@ public class RemoteDevices {
         } else {
             mWatchConnectionStateListener = null;
         }
+        mLocationDenylistPredicate =
+                (device) -> {
+                    final MacAddress parsedAddress = MacAddress.fromString(device.getAddress());
+                    if (mAdapterService
+                            .getLocationDenylistMac()
+                            .test(parsedAddress.toByteArray())) {
+                        Log.v(TAG, "Skipping device matching denylist: " + device);
+                        return true;
+                    }
+                    final String name = Utils.getName(device);
+                    if (mAdapterService.getLocationDenylistName().test(name)) {
+                        Log.v(TAG, "Skipping name matching denylist: " + name);
+                        return true;
+                    }
+                    return false;
+                };
     }
 
     /**

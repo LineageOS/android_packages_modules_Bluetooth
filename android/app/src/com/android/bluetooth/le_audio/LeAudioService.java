@@ -255,7 +255,7 @@ public class LeAudioService extends ProfileService {
         mNativeInterface = requireNonNull(nativeInterface);
         mAdapterService = requireNonNull(adapterService);
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
-        mAudioManager = requireNonNull(getSystemService(AudioManager.class));
+        mAudioManager = requireNonNull(mAdapterService.getSystemService(AudioManager.class));
 
         // Start handler thread for state machines
         mStateMachinesThread = new HandlerThread("LeAudioService.StateMachines");

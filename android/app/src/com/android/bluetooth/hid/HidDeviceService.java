@@ -104,7 +104,7 @@ public class HidDeviceService extends ProfileService {
                 requireNonNullElseGet(
                         nativeInterface, () -> new HidDeviceNativeInterface(adapterService));
         mHidDeviceNativeInterface.init();
-        mActivityManager = requireNonNull(getSystemService(ActivityManager.class));
+        mActivityManager = requireNonNull(mAdapterService.getSystemService(ActivityManager.class));
         mActivityManager.addOnUidImportanceListener(
                 mUidImportanceListener, FOREGROUND_IMPORTANCE_CUTOFF);
         setHidDeviceService(this);

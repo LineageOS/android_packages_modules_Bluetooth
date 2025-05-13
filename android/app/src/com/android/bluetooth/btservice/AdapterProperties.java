@@ -40,7 +40,6 @@ import android.bluetooth.BluetoothSap;
 import android.bluetooth.BluetoothUtils;
 import android.bluetooth.BufferConstraint;
 import android.bluetooth.BufferConstraints;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -149,9 +148,9 @@ class AdapterProperties {
     private final Object mObject = new Object();
 
     AdapterProperties(AdapterService service, RemoteDevices remoteDevices, Looper looper) {
-        mAdapter = ((Context) service).getSystemService(BluetoothManager.class).getAdapter();
-        mRemoteDevices = remoteDevices;
         mService = service;
+        mAdapter = mService.getSystemService(BluetoothManager.class).getAdapter();
+        mRemoteDevices = remoteDevices;
         mHandler = new Handler(looper);
         invalidateBluetoothCaches();
     }
@@ -608,7 +607,6 @@ class AdapterProperties {
     boolean isDiscovering() {
         return mDiscovering;
     }
-
 
     void updateOnProfileConnectionChanged(
             BluetoothDevice device, int profile, int newState, int prevState) {

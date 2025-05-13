@@ -201,20 +201,17 @@ public class ScanManagerTest {
         final Context context = InstrumentationRegistry.getInstrumentation().getContext();
         doReturn(context.getResources()).when(mAdapterService).getResources();
 
-        TestUtils.mockGetSystemService(
-                mAdapterService, Context.LOCATION_SERVICE, LocationManager.class, mLocationManager);
+        TestUtils.mockGetSystemService(mAdapterService, LocationManager.class, mLocationManager);
         doReturn(true).when(mLocationManager).isLocationEnabled();
 
         // DisplayManager and BatteryStatsManager are final and cannot be mocked with regular
         // mockito, so just return real implementation
         TestUtils.mockGetSystemService(
                 mAdapterService,
-                Context.DISPLAY_SERVICE,
                 DisplayManager.class,
                 context.getSystemService(DisplayManager.class));
-        TestUtils.mockGetSystemService(
-                mAdapterService, Context.BATTERY_STATS_SERVICE, BatteryStatsManager.class);
-        TestUtils.mockGetSystemService(mAdapterService, Context.ALARM_SERVICE, AlarmManager.class);
+        TestUtils.mockGetSystemService(mAdapterService, BatteryStatsManager.class);
+        TestUtils.mockGetSystemService(mAdapterService, AlarmManager.class);
 
         mMockContentResolver = new MockContentResolver(context);
         mMockContentResolver.addProvider(

@@ -125,9 +125,9 @@ public class HidHostService extends ProfileService {
     public static final int STATE_ACCEPTING = STATE_DISCONNECTING + 1;
 
     public HidHostService(AdapterService adapterService) {
-        super(adapterService);
+        super(requireNonNull(adapterService));
 
-        mAdapterService = requireNonNull(adapterService);
+        mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface = requireNonNull(HidHostNativeInterface.getInstance());
 

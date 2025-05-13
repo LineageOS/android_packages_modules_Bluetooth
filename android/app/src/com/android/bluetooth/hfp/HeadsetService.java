@@ -194,7 +194,8 @@ public class HeadsetService extends ProfileService {
         setComponentAvailable(HFP_AG_IN_CALL_SERVICE, true);
 
         // Step 3: Initialize system interface
-        mSystemInterface = HeadsetObjectsFactory.getInstance().makeSystemInterface(this);
+        mSystemInterface =
+                HeadsetObjectsFactory.getInstance().makeSystemInterface(mAdapterService, this);
         // Step 4: Initialize native interface
         mIsAptXSwbEnabled =
                 SystemProperties.getBoolean("bluetooth.hfp.codec_aptx_voice.enabled", false);
@@ -843,7 +844,6 @@ public class HeadsetService extends ProfileService {
                         Binder.getCallingUid());
             }
         }
-
 
         if (mSystemInterface.isScoManagedByAudioEnabled()) {
             if (startScoViaAudioManager(device)) {

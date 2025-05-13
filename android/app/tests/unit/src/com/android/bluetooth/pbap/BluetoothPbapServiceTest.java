@@ -99,9 +99,7 @@ public class BluetoothPbapServiceTest {
         doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
         doReturn(mTargetContext.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(mMockContentResolver).when(mAdapterService).getContentResolver();
-        UserManager manager =
-                TestUtils.mockGetSystemService(
-                        mAdapterService, Context.USER_SERVICE, UserManager.class);
+        UserManager manager = TestUtils.mockGetSystemService(mAdapterService, UserManager.class);
         doReturn(List.of()).when(manager).getAllProfiles();
 
         mTestLooper = new TestLooper();

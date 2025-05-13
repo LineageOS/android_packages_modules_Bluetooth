@@ -162,15 +162,10 @@ public class GattServiceTest {
         doReturn(mResources).when(mAdapterService).getResources();
         doReturn(mMockContentResolver).when(mAdapterService).getContentResolver();
 
+        TestUtils.mockGetSystemService(mAdapterService, LocationManager.class);
+        TestUtils.mockGetSystemService(mAdapterService, ActivityManager.class);
         TestUtils.mockGetSystemService(
-                mAdapterService, Context.LOCATION_SERVICE, LocationManager.class);
-        TestUtils.mockGetSystemService(
-                mAdapterService, Context.ACTIVITY_SERVICE, ActivityManager.class);
-        TestUtils.mockGetSystemService(
-                mAdapterService,
-                Context.COMPANION_DEVICE_SERVICE,
-                CompanionDeviceManager.class,
-                mCompanionDeviceManager);
+                mAdapterService, CompanionDeviceManager.class, mCompanionDeviceManager);
 
         mBtCompanionManager = new CompanionManager(mAdapterService, null);
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();

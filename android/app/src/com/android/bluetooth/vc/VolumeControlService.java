@@ -130,7 +130,7 @@ public class VolumeControlService extends ProfileService {
                         () ->
                                 new VolumeControlNativeInterface(
                                         new VolumeControlNativeCallback(adapterService, this)));
-        mAudioManager = requireNonNull(getSystemService(AudioManager.class));
+        mAudioManager = requireNonNull(mAdapterService.getSystemService(AudioManager.class));
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
             mStateMachinesThread = new HandlerThread("VolumeControlService.StateMachines");
