@@ -186,6 +186,9 @@ class AdapterBinder extends IAdapter.Stub {
 
     @Override
     public void setForegroundUserId(int userId) {
+        if (Flags.limitUserSwitchPropagation()) {
+            throw new IllegalStateException("limitUserSwitchPropagation is activated");
+        }
         AdapterService service = getService();
         if (service == null) {
             return;
