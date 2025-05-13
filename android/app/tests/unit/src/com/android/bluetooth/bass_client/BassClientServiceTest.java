@@ -30,6 +30,7 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockContextGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -294,6 +295,7 @@ public class BassClientServiceTest {
                 .when(mAdapterService)
                 .getBondedDevices();
         doReturn(mScanController).when(mAdapterService).getBluetoothScanController();
+        mockContextGetBluetoothManager(mAdapterService);
 
         // Mock methods in BassObjectsFactory
         doAnswer(

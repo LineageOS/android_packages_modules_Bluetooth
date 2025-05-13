@@ -43,6 +43,7 @@ import android.bluetooth.BluetoothLeBroadcastChannel;
 import android.bluetooth.BluetoothLeBroadcastMetadata;
 import android.bluetooth.BluetoothLeBroadcastReceiveState;
 import android.bluetooth.BluetoothLeBroadcastSubgroup;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUuid;
@@ -174,7 +175,7 @@ public class BassClientService extends ProfileService {
 
     private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
-    private final BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+    private final BluetoothAdapter mAdapter;
     private final Handler mHandler;
     private final HandlerThread mStateMachinesThread;
     private final HandlerThread mCallbackHandlerThread;
@@ -479,8 +480,7 @@ public class BassClientService extends ProfileService {
         super(requireNonNull(adapterService));
         mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
-        requireNonNull(mBluetoothAdapter);
-
+        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
         mStateMachinesThread = new HandlerThread("BassClientService.StateMachines");
         mStateMachinesThread.start();
@@ -1883,8 +1883,7 @@ public class BassClientService extends ProfileService {
             if (!leaudioBassScanWithInternalScanController()) {
                 if (mBluetoothLeScannerWrapper == null) {
                     mBluetoothLeScannerWrapper =
-                            BassObjectsFactory.getInstance()
-                                    .getBluetoothLeScannerWrapper(mBluetoothAdapter);
+                            BassObjectsFactory.getInstance().getBluetoothLeScannerWrapper(mAdapter);
                 }
                 if (mBluetoothLeScannerWrapper == null) {
                     Log.e(TAG, "startLeScan: cannot get BluetoothLeScanner");
