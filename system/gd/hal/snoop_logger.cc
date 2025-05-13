@@ -1314,6 +1314,13 @@ void SnoopLogger::DumpSnoozLogToFile() {
     log::info("Previous log file \"{}\" does not exist, skip renaming", snooz_log_path_);
   }
 
+#ifdef __ANDROID__
+  if (com::android::bluetooth::flags::snoop_logger_recreate_logs_directory() &&
+      !create_log_directories()) {
+    log::error("Could not recreate log directory");
+  }
+#endif  // __ANDROID__
+
   mode_t prevmask = umask(0);
   // do not use std::ios::app as we want override the existing file
   std::ofstream btsnooz_ostream(snooz_log_path_, std::ios::binary | std::ios::out);
