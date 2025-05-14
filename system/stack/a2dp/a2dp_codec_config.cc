@@ -1633,6 +1633,10 @@ bool A2DP_InitCodecConfig(btav_a2dp_codec_index_t codec_index, AvdtpSepConfig* p
 }
 
 std::string A2DP_CodecInfoString(const uint8_t* p_codec_info) {
+  if (std::all_of(p_codec_info, p_codec_info + AVDT_CODEC_SIZE,
+                  [](uint8_t byte) { return byte == 0; })) {
+    return "Codec info is empty";
+  }
   tA2DP_CODEC_TYPE codec_type = A2DP_GetCodecType(p_codec_info);
 
   switch (codec_type) {
