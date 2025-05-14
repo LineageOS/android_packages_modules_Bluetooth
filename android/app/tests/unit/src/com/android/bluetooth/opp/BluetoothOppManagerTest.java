@@ -145,29 +145,6 @@ public class BluetoothOppManagerTest {
     }
 
     @Test
-    public void isAcceptedList_inAcceptList_returnsTrue() {
-        BluetoothOppManager bluetoothOppManager = BluetoothOppManager.getInstance(mContext);
-        String address1 = "AA:BB:CC:DD:EE:FF";
-        String address2 = "00:11:22:33:44:55";
-
-        bluetoothOppManager.addToAcceptlist(address1);
-        bluetoothOppManager.addToAcceptlist(address2);
-        assertThat(bluetoothOppManager.isAcceptListed(address1)).isTrue();
-        assertThat(bluetoothOppManager.isAcceptListed(address2)).isTrue();
-    }
-
-    @Test
-    public void isAcceptedList_notInAcceptList_returnsFalse() {
-        BluetoothOppManager bluetoothOppManager = BluetoothOppManager.getInstance(mContext);
-        String address = "01:23:45:67:89:AB";
-
-        assertThat(bluetoothOppManager.isAcceptListed(address)).isFalse();
-
-        bluetoothOppManager.addToAcceptlist(address);
-        assertThat(bluetoothOppManager.isAcceptListed(address)).isTrue();
-    }
-
-    @Test
     public void startTransfer_withMultipleUris_contentResolverInsertMultipleTimes() {
         BluetoothOppManager bluetoothOppManager = BluetoothOppManager.getInstance(mContext);
         bluetoothOppManager.saveSendingFileInfo(

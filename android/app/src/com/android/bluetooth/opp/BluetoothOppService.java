@@ -99,8 +99,6 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
     // Normally we would dynamically define and create these but they need to be manifest receivers
     // because they rely on explicit intents. Explicit intents don't work with dynamic receivers.
     private static final String OPP_RECEIVER = BluetoothOppReceiver.class.getCanonicalName();
-    private static final String OPP_HANDOFF_RECEIVER =
-            BluetoothOppHandoverReceiver.class.getCanonicalName();
 
     private static final byte[] SUPPORTED_OPP_FORMAT = {
         0x01 /* vCard 2.1 */,
@@ -232,7 +230,6 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         setComponentAvailable(TRANSFER_ACTIVITY, true);
         setComponentAvailable(TRANSFER_HISTORY_ACTIVITY, true);
         setComponentAvailable(OPP_RECEIVER, true);
-        setComponentAvailable(OPP_HANDOFF_RECEIVER, true);
 
         final ContentResolver contentResolver = getContentResolver();
         new Thread("trimDatabase") {
@@ -279,7 +276,6 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         setComponentAvailable(TRANSFER_ACTIVITY, false);
         setComponentAvailable(TRANSFER_HISTORY_ACTIVITY, false);
         setComponentAvailable(OPP_RECEIVER, false);
-        setComponentAvailable(OPP_HANDOFF_RECEIVER, false);
 
         mBatches.clear();
         mShares.clear();
