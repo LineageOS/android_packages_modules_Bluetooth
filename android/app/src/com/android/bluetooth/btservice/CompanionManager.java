@@ -20,6 +20,7 @@ import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.SystemProperties;
@@ -46,9 +47,6 @@ import java.util.Set;
 public class CompanionManager {
     private static final String TAG =
             Utils.TAG_PREFIX_BLUETOOTH + CompanionManager.class.getSimpleName();
-
-    private BluetoothDevice mCompanionDevice;
-    private int mCompanionType;
 
     private final int[] mGattConnHighPrimary;
     private final int[] mGattConnBalancePrimary;
@@ -90,12 +88,17 @@ public class CompanionManager {
     static final String PROPERTY_SUFFIX_PRIMARY = ".primary";
     static final String PROPERTY_SUFFIX_SECONDARY = ".secondary";
 
-    private final AdapterService mAdapterService;
-    private final BluetoothAdapter mAdapter = BluetoothAdapter.getDefaultAdapter();
     private final Set<BluetoothDevice> mMetadataListeningDevices = new HashSet<>();
+
+    private final AdapterService mAdapterService;
+    private final BluetoothAdapter mAdapter;
+
+    private BluetoothDevice mCompanionDevice;
+    private int mCompanionType;
 
     public CompanionManager(AdapterService service, ServiceFactory factory) {
         mAdapterService = service;
+        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
 
         mGattConnHighDefault =
                 new int[] {

@@ -28,6 +28,7 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.OobData;
 import android.content.Intent;
@@ -83,9 +84,9 @@ final class BondStateMachine extends StateMachine {
 
     static int sPendingUuidUpdateTimeoutMillis = 3000; // 3s
 
-    private AdapterService mAdapterService;
-    private AdapterProperties mAdapterProperties;
-    private RemoteDevices mRemoteDevices;
+    private final AdapterService mAdapterService;
+    private final AdapterProperties mAdapterProperties;
+    private final RemoteDevices mRemoteDevices;
     private final BluetoothAdapter mAdapter;
 
     private final PendingCommandState mPendingCommandState = new PendingCommandState();
@@ -108,10 +109,10 @@ final class BondStateMachine extends StateMachine {
         super("BondStateMachine:", looper);
         addState(mStableState);
         addState(mPendingCommandState);
-        mRemoteDevices = remoteDevices;
         mAdapterService = service;
+        mRemoteDevices = remoteDevices;
         mAdapterProperties = prop;
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
+        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         setInitialState(mStableState);
 
         start();
@@ -121,10 +122,10 @@ final class BondStateMachine extends StateMachine {
         super("BondStateMachine:");
         addState(mStableState);
         addState(mPendingCommandState);
-        mRemoteDevices = remoteDevices;
         mAdapterService = service;
+        mRemoteDevices = remoteDevices;
         mAdapterProperties = prop;
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
+        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         setInitialState(mStableState);
 
         start();
@@ -132,17 +133,6 @@ final class BondStateMachine extends StateMachine {
 
     public synchronized void doQuit() {
         quitNow();
-    }
-
-    private void cleanup() {
-        mAdapterService = null;
-        mRemoteDevices = null;
-        mAdapterProperties = null;
-    }
-
-    @Override
-    protected void onQuitting() {
-        cleanup();
     }
 
     private class StableState extends State {
