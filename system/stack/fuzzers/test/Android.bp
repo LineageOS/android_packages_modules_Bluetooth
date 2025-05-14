@@ -62,6 +62,11 @@ filegroup {
 }
 
 filegroup {
+    name: "avrc-fuzzer-corpus",
+    srcs: ["data/avrc_corpus.zip"],
+}
+
+filegroup {
     name: "bnep-fuzzer-corpus",
     srcs: ["data/bnep_corpus.zip"],
 }
@@ -116,6 +121,19 @@ cc_test {
     data: [":smp-fuzzer-corpus"],
     srcs: [
         "smp_fuzzer_validation_test.cc",
+    ],
+}
+
+cc_test {
+    name: "avrc-fuzzer-validation-test",
+    defaults: [
+        "_fuzzer_validation_test_default",
+        "avrc_fuzzer_default",
+    ],
+    host_supported: false, // Seems to fail on ASAN-ized host build but not hwasan-ized device.
+    data: [":avrc-fuzzer-corpus"],
+    srcs: [
+        "avrc_fuzzer_validation_test.cc",
     ],
 }
 
