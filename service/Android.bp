@@ -37,6 +37,7 @@ java_library {
     defaults: ["service-bluetooth-buildflags"],
     installable: false,
     srcs: [
+        ":Bluetooth-binder-aidl-for-service",
         ":statslog-bluetooth-java-gen",
         "src/**/*.java",
         "src/ActiveLog.kt",
@@ -54,8 +55,8 @@ java_library {
     ],
 
     libs: [
+        "PlatformProperties",
         "framework-annotations-lib",
-        "framework-bluetooth-pre-jarjar",
         "framework-configinfrastructure.stubs.module_lib",
         "framework-permission-s.stubs.module_lib",
         "framework-statsd.stubs.module_lib",
@@ -137,6 +138,7 @@ android_robolectric_test {
     instrumentation_for: "ServiceBluetoothFakeTestApp",
 
     srcs: [
+        ":Bluetooth-binder-aidl-for-service",
         ":statslog-bluetooth-java-gen",
         "src/ActiveLog.kt",
         "src/ActiveLogTest.kt",
@@ -179,7 +181,7 @@ android_robolectric_test {
     ],
 
     libs: [
-        "framework-bluetooth.stubs.module_lib",
+        "framework-annotations-lib",
         "framework-statsd.stubs.module_lib",
     ],
 

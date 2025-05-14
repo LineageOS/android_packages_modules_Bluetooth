@@ -20,11 +20,11 @@ package com.android.server.bluetooth
 
 import android.app.AlarmManager
 import android.app.BroadcastOptions
-import android.bluetooth.BluetoothAdapter.ACTION_AUTO_ON_STATE_CHANGED
-import android.bluetooth.BluetoothAdapter.AUTO_ON_STATE_DISABLED
-import android.bluetooth.BluetoothAdapter.AUTO_ON_STATE_ENABLED
-import android.bluetooth.BluetoothAdapter.EXTRA_AUTO_ON_STATE
-import android.bluetooth.BluetoothAdapter.STATE_ON
+import android.bluetooth.IBluetoothManager.ACTION_AUTO_ON_STATE_CHANGED
+import android.bluetooth.IBluetoothManager.AUTO_ON_STATE_DISABLED
+import android.bluetooth.IBluetoothManager.AUTO_ON_STATE_ENABLED
+import android.bluetooth.IBluetoothManager.EXTRA_AUTO_ON_STATE
+import android.bluetooth.State
 import android.content.BroadcastReceiver
 import android.content.ContentResolver
 import android.content.Context
@@ -61,7 +61,7 @@ public fun resetAutoOnTimerForUser(
         Log.d(TAG, "Not Enabled for current user: ${context.getUser()}")
         return
     }
-    if (state.oneOf(STATE_ON)) {
+    if (state.oneOf(State.ON)) {
         Log.d(TAG, "Bluetooth already in ${state}, no need for timer")
         return
     }
