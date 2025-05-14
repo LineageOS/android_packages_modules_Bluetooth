@@ -64,64 +64,56 @@ public final class DistanceMeasurementResult implements Parcelable {
      *
      * @hide
      */
-    @SystemApi
-    public static final int NADM_ATTACK_IS_EXTREMELY_UNLIKELY = 0;
+    @SystemApi public static final int NADM_ATTACK_IS_EXTREMELY_UNLIKELY = 0;
 
     /**
      * Attack is very unlikely.
      *
      * @hide
      */
-    @SystemApi
-    public static final int NADM_ATTACK_IS_VERY_UNLIKELY = 1;
+    @SystemApi public static final int NADM_ATTACK_IS_VERY_UNLIKELY = 1;
 
     /**
      * Attack is unlikely.
      *
      * @hide
      */
-    @SystemApi
-    public static final int NADM_ATTACK_IS_UNLIKELY = 2;
+    @SystemApi public static final int NADM_ATTACK_IS_UNLIKELY = 2;
 
     /**
      * Attack is possible.
      *
      * @hide
      */
-    @SystemApi
-    public static final int NADM_ATTACK_IS_POSSIBLE = 3;
+    @SystemApi public static final int NADM_ATTACK_IS_POSSIBLE = 3;
 
     /**
      * Attack is likely.
      *
      * @hide
      */
-    @SystemApi
-    public static final int NADM_ATTACK_IS_LIKELY = 4;
+    @SystemApi public static final int NADM_ATTACK_IS_LIKELY = 4;
 
     /**
      * Attack is very likely.
      *
      * @hide
      */
-    @SystemApi
-    public static final int NADM_ATTACK_IS_VERY_LIKELY = 5;
+    @SystemApi public static final int NADM_ATTACK_IS_VERY_LIKELY = 5;
 
     /**
      * Attack is extremely likely.
      *
      * @hide
      */
-    @SystemApi
-    public static final int NADM_ATTACK_IS_EXTREMELY_LIKELY = 6;
+    @SystemApi public static final int NADM_ATTACK_IS_EXTREMELY_LIKELY = 6;
 
     /**
      * Unknown NADM, if a device is unable to determine a NADM value, then it shall report this.
      *
      * @hide
      */
-    @SystemApi
-    public static final int NADM_UNKNOWN = 0xFF;
+    @SystemApi public static final int NADM_UNKNOWN = 0xFF;
 
     private final double mMeters;
     private final double mErrorMeters;

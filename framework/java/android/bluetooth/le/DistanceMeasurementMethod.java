@@ -74,8 +74,7 @@ public final class DistanceMeasurementMethod implements Parcelable {
      *
      * @hide
      */
-    @SystemApi
-    public static final int DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING = 2;
+    @SystemApi public static final int DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING = 2;
 
     private DistanceMeasurementMethod(
             int id, boolean isAzimuthAngleSupported, boolean isAltitudeAngleSupported) {
@@ -223,7 +222,7 @@ public final class DistanceMeasurementMethod implements Parcelable {
                             DISTANCE_MEASUREMENT_METHOD_RSSI,
                             DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING)
                     .contains(id)) {
-                    throw new IllegalArgumentException("unknown method id " + id);
+                throw new IllegalArgumentException("unknown method id " + id);
             }
             mId = id;
         }

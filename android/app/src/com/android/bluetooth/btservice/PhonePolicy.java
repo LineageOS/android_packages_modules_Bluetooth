@@ -647,6 +647,7 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                 case BluetoothProfile.HEADSET -> mHeadsetRetrySet.remove(device);
                 case BluetoothProfile.CSIP_SET_COORDINATOR ->
                         handleLeAudioOnlyDeviceAfterCsipConnect(device);
+                default -> {} // Nothing to do
             }
             connectOtherProfile(device);
         } else if (nextState == STATE_DISCONNECTED) {

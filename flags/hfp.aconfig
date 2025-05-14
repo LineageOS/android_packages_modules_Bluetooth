@@ -9,14 +9,6 @@ flag {
 }
 
 flag {
-    name: "is_sco_managed_by_audio"
-    namespace: "bluetooth"
-    description: "start and stop of the SCO is managed by Audio instead of Bluetooth"
-    bug: "315234036"
-}
-
-
-flag {
     name: "hfp_software_datapath"
     namespace: "bluetooth"
     description: "enable HFP software decode/encode data path"
@@ -58,16 +50,6 @@ flag {
     namespace: "bluetooth"
     description: "Flag to ignore connect state notification from Native to Java layer when already connected"
     bug: "346679106"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "choose_wrong_hfp_codec_in_specific_config"
-    namespace: "bluetooth"
-    description: "Flag to fix codec selection in nego when the peer device only support NB and SWB."
-    bug: "354070098"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

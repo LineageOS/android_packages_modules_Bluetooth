@@ -41,6 +41,7 @@ import com.android.server.bluetooth.airplane.isOn
 import com.android.server.bluetooth.airplane.isOnOverrode
 import com.android.server.bluetooth.airplane.notifyUserToggledBluetooth
 import com.android.server.bluetooth.airplane.setIsMediaProfileConnected
+import com.android.server.bluetooth.airplane.setWatchConnectionState
 import com.android.server.bluetooth.test.disableMode
 import com.android.server.bluetooth.test.disableSensitive
 import com.android.server.bluetooth.test.enableMode
@@ -85,6 +86,7 @@ class ModeListenerTest() {
         enableSensitive()
         disableMode()
 
+        setWatchConnectionState(false)
         setIsMediaProfileConnected(false)
         isMediaProfileConnected = false
         mode = ArrayList()
@@ -310,6 +312,19 @@ class ModeListenerTest() {
     }
 
     @Test
+    fun triggerOverride_whenWatchDeviceIsConnected_staysOn() {
+        initializeAirplane()
+
+        state.set(BluetoothAdapter.STATE_ON)
+        setWatchConnectionState(true)
+
+        enableMode()
+
+        assertThat(isOnOverrode).isFalse()
+        assertThat(mode).isEmpty()
+    }
+
+    @Test
     fun triggerOverride_whenApmEnhancementNotTrigger_turnOff() {
         initializeAirplane()
 
@@ -331,6 +346,21 @@ class ModeListenerTest() {
         Settings.Global.putInt(resolver, APM_ENHANCEMENT, 0)
         setIsMediaProfileConnected(true)
         isMediaProfileConnected = true
+
+        enableMode()
+
+        assertThat(isOnOverrode).isFalse()
+        assertThat(isOn).isTrue()
+        assertThat(mode).isEmpty()
+    }
+
+    @Test
+    fun triggerOverride_whenApmEnhancementNotTriggerButWatchDevice_staysOn() {
+        initializeAirplane()
+
+        state.set(BluetoothAdapter.STATE_ON)
+        Settings.Global.putInt(resolver, APM_ENHANCEMENT, 0)
+        setWatchConnectionState(true)
 
         enableMode()
 

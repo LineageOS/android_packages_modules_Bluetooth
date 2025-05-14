@@ -206,7 +206,7 @@ public class PanService extends ProfileService {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case MESSAGE_CONNECT:
+                case MESSAGE_CONNECT -> {
                     BluetoothDevice connectDevice = (BluetoothDevice) msg.obj;
                     if (!mNativeInterface.connect(
                             Utils.getByteBrEdrAddress(mAdapterService, connectDevice))) {
@@ -223,8 +223,8 @@ public class PanService extends ProfileService {
                                 BluetoothPan.LOCAL_PANU_ROLE,
                                 BluetoothPan.REMOTE_NAP_ROLE);
                     }
-                    break;
-                case MESSAGE_DISCONNECT:
+                }
+                case MESSAGE_DISCONNECT -> {
                     BluetoothDevice disconnectDevice = (BluetoothDevice) msg.obj;
                     if (!mNativeInterface.disconnect(
                             Utils.getByteBrEdrAddress(mAdapterService, disconnectDevice))) {
@@ -241,8 +241,8 @@ public class PanService extends ProfileService {
                                 BluetoothPan.LOCAL_PANU_ROLE,
                                 BluetoothPan.REMOTE_NAP_ROLE);
                     }
-                    break;
-                case MESSAGE_CONNECT_STATE_CHANGED:
+                }
+                case MESSAGE_CONNECT_STATE_CHANGED -> {
                     ConnectState cs = (ConnectState) msg.obj;
                     final BluetoothDevice device = mAdapterService.getDeviceFromByte(cs.addr);
                     // TBD get iface from the msg
@@ -258,7 +258,8 @@ public class PanService extends ProfileService {
                             cs.state,
                             cs.local_role,
                             cs.remote_role);
-                    break;
+                }
+                default -> {} // Nothing to do
             }
         }
     }

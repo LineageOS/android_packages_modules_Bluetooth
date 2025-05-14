@@ -36,7 +36,6 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
@@ -204,6 +203,7 @@ class A2dpSinkStateMachine extends StateMachine {
                 }
                 case STATE_CONNECTED -> transitionTo(mConnected);
                 case STATE_DISCONNECTED -> sendMessage(CLEANUP);
+                default -> {} // Nothing to do
             }
         }
     }
@@ -252,6 +252,7 @@ class A2dpSinkStateMachine extends StateMachine {
             switch (event.mState) {
                 case STATE_CONNECTED -> transitionTo(mConnected);
                 case STATE_DISCONNECTED -> transitionTo(mDisconnected);
+                default -> {} // Nothing to do
             }
         }
 
@@ -290,6 +291,7 @@ class A2dpSinkStateMachine extends StateMachine {
                     switch (event.mState) {
                         case STATE_DISCONNECTING -> transitionTo(mDisconnecting);
                         case STATE_DISCONNECTED -> transitionTo(mDisconnected);
+                        default -> {} // Nothing to do
                     }
                 }
                 case StackEvent.EVENT_TYPE_AUDIO_CONFIG_CHANGED -> {
@@ -299,6 +301,7 @@ class A2dpSinkStateMachine extends StateMachine {
                                     event.mChannelCount,
                                     AudioFormat.ENCODING_PCM_16BIT);
                 }
+                default -> {} // Nothing to do
             }
         }
     }

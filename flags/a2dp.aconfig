@@ -115,3 +115,13 @@ flag {
     description: "Define the extra parameter DISCONNECTED_REASON for a2dp.CONNECTION_STATE_CHANGED intent"
     bug: "416778270"
 }
+
+flag {
+    name: "a2dp_sbc_underflow_recovery"
+    namespace: "bluetooth"
+    description: "Reset the SBC feeding counter to the limiting size"
+    bug: "417543022"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

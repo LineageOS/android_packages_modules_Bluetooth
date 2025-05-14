@@ -724,16 +724,6 @@ A2dpCodecConfig* A2dpCodecs::findSourceCodecConfig(const uint8_t* p_codec_info) 
   return iter->second;
 }
 
-A2dpCodecConfig* A2dpCodecs::findSourceCodecConfig(btav_a2dp_codec_index_t codec_index) {
-  std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
-
-  auto iter = indexed_codecs_.find(codec_index);
-  if (iter == indexed_codecs_.end()) {
-    return nullptr;
-  }
-  return iter->second;
-}
-
 A2dpCodecConfig* A2dpCodecs::findSinkCodecConfig(const uint8_t* p_codec_info) {
   std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
   btav_a2dp_codec_index_t codec_index = A2DP_SinkCodecIndex(p_codec_info);
@@ -954,24 +944,14 @@ tA2DP_STATUS A2dpCodecs::setCodecOtaConfig(const uint8_t* p_ota_codec_config,
   // Check whether the codec config for the same codec is explicitly configured
   // by user configuration. If yes, then the OTA codec configuration is
   // ignored.
-  codec_type = A2DP_SourceCodecIndex(p_ota_codec_config);
-  if (codec_type == BTAV_A2DP_CODEC_INDEX_MAX) {
-    log::warn("ignoring peer OTA codec configuration: invalid codec");
-    goto fail;  // Invalid codec
-  } else {
-    auto iter = indexed_codecs_.find(codec_type);
-    if (iter == indexed_codecs_.end()) {
-      log::warn("cannot find codec configuration for peer OTA codec {}",
-                A2DP_CodecName(p_ota_codec_config));
-      status = A2DP_NOT_SUPPORTED_CODEC_TYPE;
-      goto fail;
-    }
-    a2dp_codec_config = iter->second;
-  }
+  a2dp_codec_config = findSourceCodecConfig(p_ota_codec_config);
   if (a2dp_codec_config == nullptr) {
+    log::warn("cannot find codec configuration for peer OTA codec {}",
+              A2DP_CodecName(p_ota_codec_config));
     status = A2DP_NOT_SUPPORTED_CODEC_TYPE;
     goto fail;
   }
+
   codec_user_config = a2dp_codec_config->getCodecUserConfig();
   if (!A2dpCodecConfig::isCodecConfigEmpty(codec_user_config)) {
     log::warn(
@@ -1633,6 +1613,10 @@ bool A2DP_InitCodecConfig(btav_a2dp_codec_index_t codec_index, AvdtpSepConfig* p
 }
 
 std::string A2DP_CodecInfoString(const uint8_t* p_codec_info) {
+  if (std::all_of(p_codec_info, p_codec_info + AVDT_CODEC_SIZE,
+                  [](uint8_t byte) { return byte == 0; })) {
+    return "Codec info is empty";
+  }
   tA2DP_CODEC_TYPE codec_type = A2DP_GetCodecType(p_codec_info);
 
   switch (codec_type) {

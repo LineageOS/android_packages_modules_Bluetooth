@@ -277,7 +277,7 @@ public class BluetoothProxy {
                                             svc_data.hapStateMutable.postValue(toState);
                                             break;
                                         }
-                                        // Hidden API
+                                    // Hidden API
                                     case "android.bluetooth.action.HAP_DEVICE_AVAILABLE":
                                         {
                                             final int features =

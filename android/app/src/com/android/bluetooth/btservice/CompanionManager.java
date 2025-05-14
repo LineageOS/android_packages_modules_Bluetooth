@@ -309,14 +309,9 @@ public class CompanionManager {
                 return;
             }
             switch (state) {
-                case BluetoothDevice.BOND_BONDING:
-                    registerMetadataListener(device);
-                    break;
-                case BluetoothDevice.BOND_NONE:
-                    removeMetadataListener(device);
-                    break;
-                default:
-                    break;
+                case BluetoothDevice.BOND_BONDING -> registerMetadataListener(device);
+                case BluetoothDevice.BOND_NONE -> removeMetadataListener(device);
+                default -> {} // Nothing to do
             }
         }
     }
@@ -407,34 +402,27 @@ public class CompanionManager {
     }
 
     private int getGattConnParameterPrimary(int type, int priority) {
-        switch (priority) {
-            case BluetoothGatt.CONNECTION_PRIORITY_HIGH:
-                return mGattConnHighPrimary[type];
-            case BluetoothGatt.CONNECTION_PRIORITY_LOW_POWER:
-                return mGattConnLowPrimary[type];
-        }
-        return mGattConnBalancePrimary[type];
+        return switch (priority) {
+            case BluetoothGatt.CONNECTION_PRIORITY_HIGH -> mGattConnHighPrimary[type];
+            case BluetoothGatt.CONNECTION_PRIORITY_LOW_POWER -> mGattConnLowPrimary[type];
+            default -> mGattConnBalancePrimary[type];
+        };
     }
 
     private int getGattConnParameterSecondary(int type, int priority) {
-        switch (priority) {
-            case BluetoothGatt.CONNECTION_PRIORITY_HIGH:
-                return mGattConnHighSecondary[type];
-            case BluetoothGatt.CONNECTION_PRIORITY_LOW_POWER:
-                return mGattConnLowSecondary[type];
-        }
-        return mGattConnBalanceSecondary[type];
+        return switch (priority) {
+            case BluetoothGatt.CONNECTION_PRIORITY_HIGH -> mGattConnHighSecondary[type];
+            case BluetoothGatt.CONNECTION_PRIORITY_LOW_POWER -> mGattConnLowSecondary[type];
+            default -> mGattConnBalanceSecondary[type];
+        };
     }
 
     private int getGattConnParameterDefault(int type, int mode) {
-        switch (mode) {
-            case BluetoothGatt.CONNECTION_PRIORITY_HIGH:
-                return mGattConnHighDefault[type];
-            case BluetoothGatt.CONNECTION_PRIORITY_LOW_POWER:
-                return mGattConnLowDefault[type];
-            case BluetoothGatt.CONNECTION_PRIORITY_DCK:
-                return mGattConnDckDefault[type];
-        }
-        return mGattConnBalanceDefault[type];
+        return switch (mode) {
+            case BluetoothGatt.CONNECTION_PRIORITY_HIGH -> mGattConnHighDefault[type];
+            case BluetoothGatt.CONNECTION_PRIORITY_LOW_POWER -> mGattConnLowDefault[type];
+            case BluetoothGatt.CONNECTION_PRIORITY_DCK -> mGattConnDckDefault[type];
+            default -> mGattConnBalanceDefault[type];
+        };
     }
 }

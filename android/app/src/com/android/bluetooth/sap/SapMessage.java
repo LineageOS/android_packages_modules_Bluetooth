@@ -872,11 +872,11 @@ public class SapMessage {
     private void createUnsolicited(MsgHeader msg)
             throws IOException, InvalidProtocolBufferMicroException {
         switch (msg.getId()) {
-                // TODO:
-                //        Not sure when we use these?        case RIL_UNSOL_RIL_CONNECTED:
-                //            if(VERBOSE) Log.i(TAG, "RIL_UNSOL_RIL_CONNECTED received, ignoring");
-                //            msgType = ID_RIL_UNSOL_CONNECTED;
-                //            break;
+            // TODO:
+            //        Not sure when we use these?        case RIL_UNSOL_RIL_CONNECTED:
+            //            if(VERBOSE) Log.i(TAG, "RIL_UNSOL_RIL_CONNECTED received, ignoring");
+            //            msgType = ID_RIL_UNSOL_CONNECTED;
+            //            break;
             case SapApi.RIL_SIM_SAP_STATUS:
                 {
                     Log.v(TAG, "RIL_SIM_SAP_STATUS_IND received");

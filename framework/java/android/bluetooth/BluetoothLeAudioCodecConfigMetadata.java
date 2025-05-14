@@ -400,7 +400,7 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
                     && sampleRate != SAMPLE_RATE_176400
                     && sampleRate != SAMPLE_RATE_192000
                     && sampleRate != SAMPLE_RATE_384000) {
-                        throw new IllegalArgumentException("Invalid sample rate " + sampleRate);
+                throw new IllegalArgumentException("Invalid sample rate " + sampleRate);
             }
             mSampleRate = sampleRate;
             return this;

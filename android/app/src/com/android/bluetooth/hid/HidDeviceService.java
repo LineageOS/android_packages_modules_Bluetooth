@@ -124,96 +124,84 @@ public class HidDeviceService extends ProfileService {
             Log.d(TAG, "handleMessage(): msg.what=" + msg.what);
 
             switch (msg.what) {
-                case MESSAGE_APPLICATION_STATE_CHANGED:
-                    {
-                        BluetoothDevice device = msg.obj != null ? (BluetoothDevice) msg.obj : null;
-                        boolean success = (msg.arg1 != 0);
+                case MESSAGE_APPLICATION_STATE_CHANGED -> {
+                    BluetoothDevice device = msg.obj != null ? (BluetoothDevice) msg.obj : null;
+                    boolean success = (msg.arg1 != 0);
 
-                        if (success) {
-                            Log.d(TAG, "App registered, set device to: " + device);
-                            mHidDevice = device;
+                    if (success) {
+                        Log.d(TAG, "App registered, set device to: " + device);
+                        mHidDevice = device;
+                    } else {
+                        mHidDevice = null;
+                    }
+
+                    try {
+                        if (mCallback != null) {
+                            mCallback.onAppStatusChanged(device, success);
                         } else {
-                            mHidDevice = null;
+                            break;
                         }
-
-                        try {
-                            if (mCallback != null) {
-                                mCallback.onAppStatusChanged(device, success);
-                            } else {
-                                break;
-                            }
-                        } catch (RemoteException e) {
-                            Log.e(
-                                    TAG,
-                                    e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-                        }
-
-                        if (success) {
-                            mDeathRcpt =
-                                    new BluetoothHidDeviceDeathRecipient(HidDeviceService.this);
-                            if (mCallback != null) {
-                                IBinder binder = mCallback.asBinder();
-                                try {
-                                    binder.linkToDeath(mDeathRcpt, 0);
-                                    Log.i(TAG, "IBinder.linkToDeath() ok");
-                                } catch (RemoteException e) {
-                                    Log.e(
-                                            TAG,
-                                            e.toString()
-                                                    + "\n"
-                                                    + Log.getStackTraceString(new Throwable()));
-                                }
-                            }
-                        } else if (mDeathRcpt != null) {
-                            if (mCallback != null) {
-                                IBinder binder = mCallback.asBinder();
-                                try {
-                                    binder.unlinkToDeath(mDeathRcpt, 0);
-                                    Log.i(TAG, "IBinder.unlinkToDeath() ok");
-                                } catch (NoSuchElementException e) {
-                                    Log.e(
-                                            TAG,
-                                            e.toString()
-                                                    + "\n"
-                                                    + Log.getStackTraceString(new Throwable()));
-                                }
-                                mDeathRcpt.cleanup();
-                                mDeathRcpt = null;
-                            }
-                        }
-
-                        if (!success) {
-                            mCallback = null;
-                        }
-
-                        break;
+                    } catch (RemoteException e) {
+                        Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                     }
 
-                case MESSAGE_CONNECT_STATE_CHANGED:
-                    {
-                        BluetoothDevice device = (BluetoothDevice) msg.obj;
-                        int halState = msg.arg1;
-                        int state = convertHalState(halState);
-
-                        if (state != BluetoothHidDevice.STATE_DISCONNECTED) {
-                            mHidDevice = device;
-                        }
-
-                        setAndBroadcastConnectionState(device, state);
-
-                        try {
-                            if (mCallback != null) {
-                                mCallback.onConnectionStateChanged(device, state);
+                    if (success) {
+                        mDeathRcpt = new BluetoothHidDeviceDeathRecipient(HidDeviceService.this);
+                        if (mCallback != null) {
+                            IBinder binder = mCallback.asBinder();
+                            try {
+                                binder.linkToDeath(mDeathRcpt, 0);
+                                Log.i(TAG, "IBinder.linkToDeath() ok");
+                            } catch (RemoteException e) {
+                                Log.e(
+                                        TAG,
+                                        e.toString()
+                                                + "\n"
+                                                + Log.getStackTraceString(new Throwable()));
                             }
-                        } catch (RemoteException e) {
-                            Log.e(
-                                    TAG,
-                                    e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                         }
-                        break;
+                    } else if (mDeathRcpt != null) {
+                        if (mCallback != null) {
+                            IBinder binder = mCallback.asBinder();
+                            try {
+                                binder.unlinkToDeath(mDeathRcpt, 0);
+                                Log.i(TAG, "IBinder.unlinkToDeath() ok");
+                            } catch (NoSuchElementException e) {
+                                Log.e(
+                                        TAG,
+                                        e.toString()
+                                                + "\n"
+                                                + Log.getStackTraceString(new Throwable()));
+                            }
+                            mDeathRcpt.cleanup();
+                            mDeathRcpt = null;
+                        }
                     }
 
-                case MESSAGE_GET_REPORT:
+                    if (!success) {
+                        mCallback = null;
+                    }
+                }
+                case MESSAGE_CONNECT_STATE_CHANGED -> {
+                    BluetoothDevice device = (BluetoothDevice) msg.obj;
+                    int halState = msg.arg1;
+                    int state = convertHalState(halState);
+
+                    if (state != BluetoothHidDevice.STATE_DISCONNECTED) {
+                        mHidDevice = device;
+                    }
+
+                    setAndBroadcastConnectionState(device, state);
+
+                    try {
+                        if (mCallback != null) {
+                            mCallback.onConnectionStateChanged(device, state);
+                        }
+                    } catch (RemoteException e) {
+                        Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                    }
+                }
+                case MESSAGE_GET_REPORT -> {
                     byte type = (byte) msg.arg1;
                     byte id = (byte) msg.arg2;
                     int bufferSize = msg.obj == null ? 0 : ((Integer) msg.obj).intValue();
@@ -225,27 +213,21 @@ public class HidDeviceService extends ProfileService {
                     } catch (RemoteException e) {
                         Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                     }
-                    break;
+                }
+                case MESSAGE_SET_REPORT -> {
+                    byte reportType = (byte) msg.arg1;
+                    byte reportId = (byte) msg.arg2;
+                    byte[] data = ((ByteBuffer) msg.obj).array();
 
-                case MESSAGE_SET_REPORT:
-                    {
-                        byte reportType = (byte) msg.arg1;
-                        byte reportId = (byte) msg.arg2;
-                        byte[] data = ((ByteBuffer) msg.obj).array();
-
-                        try {
-                            if (mCallback != null) {
-                                mCallback.onSetReport(mHidDevice, reportType, reportId, data);
-                            }
-                        } catch (RemoteException e) {
-                            Log.e(
-                                    TAG,
-                                    e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+                    try {
+                        if (mCallback != null) {
+                            mCallback.onSetReport(mHidDevice, reportType, reportId, data);
                         }
-                        break;
+                    } catch (RemoteException e) {
+                        Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                     }
-
-                case MESSAGE_SET_PROTOCOL:
+                }
+                case MESSAGE_SET_PROTOCOL -> {
                     byte protocol = (byte) msg.arg1;
 
                     try {
@@ -255,9 +237,8 @@ public class HidDeviceService extends ProfileService {
                     } catch (RemoteException e) {
                         Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                     }
-                    break;
-
-                case MESSAGE_INTR_DATA:
+                }
+                case MESSAGE_INTR_DATA -> {
                     byte reportId = (byte) msg.arg1;
                     byte[] data = ((ByteBuffer) msg.obj).array();
 
@@ -268,9 +249,8 @@ public class HidDeviceService extends ProfileService {
                     } catch (RemoteException e) {
                         Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                     }
-                    break;
-
-                case MESSAGE_VC_UNPLUG:
+                }
+                case MESSAGE_VC_UNPLUG -> {
                     try {
                         if (mCallback != null) {
                             mCallback.onVirtualCableUnplug(mHidDevice);
@@ -279,16 +259,16 @@ public class HidDeviceService extends ProfileService {
                         Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                     }
                     mHidDevice = null;
-                    break;
-
-                case MESSAGE_IMPORTANCE_CHANGE:
+                }
+                case MESSAGE_IMPORTANCE_CHANGE -> {
                     int importance = msg.arg1;
                     int uid = msg.arg2;
                     if (importance > FOREGROUND_IMPORTANCE_CUTOFF
                             && uid >= Process.FIRST_APPLICATION_UID) {
                         unregisterAppUid(uid);
                     }
-                    break;
+                }
+                default -> {} // Nothing to do
             }
         }
     }

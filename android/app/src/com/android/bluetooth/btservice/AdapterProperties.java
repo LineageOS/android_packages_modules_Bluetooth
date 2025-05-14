@@ -609,7 +609,6 @@ class AdapterProperties {
         return mDiscovering;
     }
 
-
     void updateOnProfileConnectionChanged(
             BluetoothDevice device, int profile, int newState, int prevState) {
         String logInfo =
@@ -699,7 +698,7 @@ class AdapterProperties {
 
     private boolean updateCountersAndCheckForConnectionStateChange(int state, int prevState) {
         switch (prevState) {
-            case STATE_CONNECTING:
+            case STATE_CONNECTING -> {
                 if (mProfilesConnecting > 0) {
                     mProfilesConnecting--;
                 } else {
@@ -707,9 +706,8 @@ class AdapterProperties {
                     throw new IllegalStateException(
                             "Invalid state transition, " + prevState + " -> " + state);
                 }
-                break;
-
-            case STATE_CONNECTED:
+            }
+            case STATE_CONNECTED -> {
                 if (mProfilesConnected > 0) {
                     mProfilesConnected--;
                 } else {
@@ -717,9 +715,8 @@ class AdapterProperties {
                     throw new IllegalStateException(
                             "Invalid state transition, " + prevState + " -> " + state);
                 }
-                break;
-
-            case STATE_DISCONNECTING:
+            }
+            case STATE_DISCONNECTING -> {
                 if (mProfilesDisconnecting > 0) {
                     mProfilesDisconnecting--;
                 } else {
@@ -727,7 +724,8 @@ class AdapterProperties {
                     throw new IllegalStateException(
                             "Invalid state transition, " + prevState + " -> " + state);
                 }
-                break;
+            }
+            default -> {} // Nothing to do
         }
 
         return switch (state) {
@@ -810,7 +808,7 @@ class AdapterProperties {
             infoLog("adapterPropertyChangedCallback with type:" + type + " len:" + val.length);
             synchronized (mObject) {
                 switch (type) {
-                    case AbstractionLayer.BT_PROPERTY_BDNAME:
+                    case AbstractionLayer.BT_PROPERTY_BDNAME -> {
                         String name = new String(val);
                         if (name.equals(mName)) {
                             debugLog("Name already set: " + mName);
@@ -818,8 +816,8 @@ class AdapterProperties {
                         }
                         mName = name;
                         mService.updateAdapterName(mName);
-                        break;
-                    case AbstractionLayer.BT_PROPERTY_BDADDR:
+                    }
+                    case AbstractionLayer.BT_PROPERTY_BDADDR -> {
                         if (Arrays.equals(mAddress, val)) {
                             debugLog("Address already set");
                             break;
@@ -827,8 +825,8 @@ class AdapterProperties {
                         mAddress = val;
                         String address = Utils.getAddressStringFromByte(mAddress);
                         mService.updateAdapterAddress(address);
-                        break;
-                    case AbstractionLayer.BT_PROPERTY_CLASS_OF_DEVICE:
+                    }
+                    case AbstractionLayer.BT_PROPERTY_CLASS_OF_DEVICE -> {
                         if (val == null || val.length != 3) {
                             debugLog("Invalid BT CoD value from stack.");
                             return;
@@ -839,33 +837,25 @@ class AdapterProperties {
                             mBluetoothClass = new BluetoothClass(bluetoothClass);
                         }
                         debugLog("BT Class:" + mBluetoothClass);
-                        break;
-                    case AbstractionLayer.BT_PROPERTY_UUIDS:
+                    }
+                    case AbstractionLayer.BT_PROPERTY_UUIDS -> {
                         mUuids = Utils.byteArrayToUuid(val);
-                        break;
-                    case AbstractionLayer.BT_PROPERTY_ADAPTER_BONDED_DEVICES:
-                        updateBondedDevices(val);
-                        break;
-                    case AbstractionLayer.BT_PROPERTY_ADAPTER_DISCOVERABLE_TIMEOUT:
+                    }
+                    case AbstractionLayer.BT_PROPERTY_ADAPTER_BONDED_DEVICES ->
+                            updateBondedDevices(val);
+                    case AbstractionLayer.BT_PROPERTY_ADAPTER_DISCOVERABLE_TIMEOUT -> {
                         mDiscoverableTimeout = Utils.byteArrayToInt(val, 0);
                         debugLog("Discoverable Timeout:" + mDiscoverableTimeout);
-                        break;
-
-                    case AbstractionLayer.BT_PROPERTY_LOCAL_LE_FEATURES:
+                    }
+                    case AbstractionLayer.BT_PROPERTY_LOCAL_LE_FEATURES -> {
                         updateFeatureSupport(val);
                         mService.updateLeAudioProfileServiceState();
-                        break;
-
-                    case AbstractionLayer.BT_PROPERTY_DYNAMIC_AUDIO_BUFFER:
-                        updateDynamicAudioBufferSupport(val);
-                        break;
-
-                    case AbstractionLayer.BT_PROPERTY_LPP_OFFLOAD_FEATURES:
-                        updateLppOffloadFeatureSupport(val);
-                        break;
-
-                    default:
-                        Log.e(TAG, "Property change not handled in Java land:" + type);
+                    }
+                    case AbstractionLayer.BT_PROPERTY_DYNAMIC_AUDIO_BUFFER ->
+                            updateDynamicAudioBufferSupport(val);
+                    case AbstractionLayer.BT_PROPERTY_LPP_OFFLOAD_FEATURES ->
+                            updateLppOffloadFeatureSupport(val);
+                    default -> Log.e(TAG, "Property change not handled in Java land:" + type);
                 }
             }
         }

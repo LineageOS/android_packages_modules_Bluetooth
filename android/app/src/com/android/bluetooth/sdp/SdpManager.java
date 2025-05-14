@@ -182,13 +182,14 @@ public class SdpManager {
                     @Override
                     public void handleMessage(Message msg) {
                         switch (msg.what) {
-                            case MESSAGE_SDP_INTENT:
+                            case MESSAGE_SDP_INTENT -> {
                                 SdpSearchInstance msgObj = (SdpSearchInstance) msg.obj;
                                 Log.w(TAG, "Search timed out for UUID " + msgObj.getUuid());
                                 synchronized (TRACKER_LOCK) {
                                     sendSdpIntent(msgObj, null, false);
                                 }
-                                break;
+                            }
+                            default -> {} // Nothing to do
                         }
                     }
                 };

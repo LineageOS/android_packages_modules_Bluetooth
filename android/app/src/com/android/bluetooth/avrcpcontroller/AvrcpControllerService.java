@@ -423,12 +423,9 @@ public class AvrcpControllerService extends ProfileService {
         // commands get routed to the correct device
         synchronized (mActiveDeviceLock) {
             switch (state) {
-                case AudioManager.AUDIOFOCUS_GAIN:
-                    BluetoothMediaBrowserService.setActive(true);
-                    break;
-                case AudioManager.AUDIOFOCUS_LOSS:
-                    BluetoothMediaBrowserService.setActive(false);
-                    break;
+                case AudioManager.AUDIOFOCUS_GAIN -> BluetoothMediaBrowserService.setActive(true);
+                case AudioManager.AUDIOFOCUS_LOSS -> BluetoothMediaBrowserService.setActive(false);
+                default -> {} // Nothing to do
             }
             BluetoothDevice device = getActiveDevice();
             if (device == null) {

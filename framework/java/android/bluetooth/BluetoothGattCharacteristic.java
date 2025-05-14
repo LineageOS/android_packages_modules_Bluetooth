@@ -475,35 +475,32 @@ public class BluetoothGattCharacteristic implements Parcelable {
      */
     @Deprecated
     public Integer getIntValue(int formatType, int offset) {
-        if ((offset + getTypeLen(formatType)) > mValue.length) return null;
-
-        switch (formatType) {
-            case FORMAT_UINT8:
-                return unsignedByteToInt(mValue[offset]);
-
-            case FORMAT_UINT16:
-                return unsignedBytesToInt(mValue[offset], mValue[offset + 1]);
-
-            case FORMAT_UINT32:
-                return unsignedBytesToInt(
-                        mValue[offset], mValue[offset + 1], mValue[offset + 2], mValue[offset + 3]);
-            case FORMAT_SINT8:
-                return unsignedToSigned(unsignedByteToInt(mValue[offset]), 8);
-
-            case FORMAT_SINT16:
-                return unsignedToSigned(unsignedBytesToInt(mValue[offset], mValue[offset + 1]), 16);
-
-            case FORMAT_SINT32:
-                return unsignedToSigned(
-                        unsignedBytesToInt(
-                                mValue[offset],
-                                mValue[offset + 1],
-                                mValue[offset + 2],
-                                mValue[offset + 3]),
-                        32);
+        if ((offset + getTypeLen(formatType)) > mValue.length) {
+            return null;
         }
 
-        return null;
+        return switch (formatType) {
+            case FORMAT_UINT8 -> unsignedByteToInt(mValue[offset]);
+            case FORMAT_UINT16 -> unsignedBytesToInt(mValue[offset], mValue[offset + 1]);
+            case FORMAT_UINT32 ->
+                    unsignedBytesToInt(
+                            mValue[offset],
+                            mValue[offset + 1],
+                            mValue[offset + 2],
+                            mValue[offset + 3]);
+            case FORMAT_SINT8 -> unsignedToSigned(unsignedByteToInt(mValue[offset]), 8);
+            case FORMAT_SINT16 ->
+                    unsignedToSigned(unsignedBytesToInt(mValue[offset], mValue[offset + 1]), 16);
+            case FORMAT_SINT32 ->
+                    unsignedToSigned(
+                            unsignedBytesToInt(
+                                    mValue[offset],
+                                    mValue[offset + 1],
+                                    mValue[offset + 2],
+                                    mValue[offset + 3]),
+                            32);
+            default -> null;
+        };
     }
 
     /**
@@ -520,18 +517,20 @@ public class BluetoothGattCharacteristic implements Parcelable {
      */
     @Deprecated
     public Float getFloatValue(int formatType, int offset) {
-        if ((offset + getTypeLen(formatType)) > mValue.length) return null;
-
-        switch (formatType) {
-            case FORMAT_SFLOAT:
-                return bytesToFloat(mValue[offset], mValue[offset + 1]);
-
-            case FORMAT_FLOAT:
-                return bytesToFloat(
-                        mValue[offset], mValue[offset + 1], mValue[offset + 2], mValue[offset + 3]);
+        if ((offset + getTypeLen(formatType)) > mValue.length) {
+            return null;
         }
 
-        return null;
+        return switch (formatType) {
+            case FORMAT_SFLOAT -> bytesToFloat(mValue[offset], mValue[offset + 1]);
+            case FORMAT_FLOAT ->
+                    bytesToFloat(
+                            mValue[offset],
+                            mValue[offset + 1],
+                            mValue[offset + 2],
+                            mValue[offset + 3]);
+            default -> null;
+        };
     }
 
     /**
@@ -592,14 +591,14 @@ public class BluetoothGattCharacteristic implements Parcelable {
         switch (formatType) {
             case FORMAT_SINT8:
                 value = intToSignedBits(value, 8);
-                // Fall-through intended
+            // Fall-through intended
             case FORMAT_UINT8:
                 mValue[offset] = (byte) (value & 0xFF);
                 break;
 
             case FORMAT_SINT16:
                 value = intToSignedBits(value, 16);
-                // Fall-through intended
+            // Fall-through intended
             case FORMAT_UINT16:
                 mValue[offset++] = (byte) (value & 0xFF);
                 mValue[offset] = (byte) ((value >> 8) & 0xFF);
@@ -607,7 +606,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
 
             case FORMAT_SINT32:
                 value = intToSignedBits(value, 32);
-                // Fall-through intended
+            // Fall-through intended
             case FORMAT_UINT32:
                 mValue[offset++] = (byte) (value & 0xFF);
                 mValue[offset++] = (byte) ((value >> 8) & 0xFF);

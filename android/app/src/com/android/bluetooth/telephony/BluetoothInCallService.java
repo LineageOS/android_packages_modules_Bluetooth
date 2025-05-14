@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.telephony;
 
-
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
@@ -397,9 +396,7 @@ public class BluetoothInCallService extends InCallService {
 
     @VisibleForTesting
     BluetoothInCallService(
-            Context context,
-            CallInfo callInfo,
-            BluetoothLeCallControlProxy leCallControl) {
+            Context context, CallInfo callInfo, BluetoothLeCallControlProxy leCallControl) {
         this(callInfo);
         mBluetoothLeCallControl = leCallControl;
         attachBaseContext(context);
@@ -493,48 +490,36 @@ public class BluetoothInCallService extends InCallService {
         synchronized (LOCK) {
             Log.i(TAG, "getBearerTechnology");
             // Get the network name from telephony.
-            int dataNetworkType = mTelephonyManager.getDataNetworkType();
-            switch (dataNetworkType) {
-                case TelephonyManager.NETWORK_TYPE_UNKNOWN:
-                case TelephonyManager.NETWORK_TYPE_GSM:
-                    return BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_GSM;
-
-                case TelephonyManager.NETWORK_TYPE_GPRS:
-                    return BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_2G;
-
-                case TelephonyManager.NETWORK_TYPE_EDGE:
-                case TelephonyManager.NETWORK_TYPE_EVDO_0:
-                case TelephonyManager.NETWORK_TYPE_EVDO_A:
-                case TelephonyManager.NETWORK_TYPE_HSDPA:
-                case TelephonyManager.NETWORK_TYPE_HSUPA:
-                case TelephonyManager.NETWORK_TYPE_HSPA:
-                case TelephonyManager.NETWORK_TYPE_IDEN:
-                case TelephonyManager.NETWORK_TYPE_EVDO_B:
-                    return BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_3G;
-
-                case TelephonyManager.NETWORK_TYPE_UMTS:
-                case TelephonyManager.NETWORK_TYPE_TD_SCDMA:
-                    return BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_WCDMA;
-
-                case TelephonyManager.NETWORK_TYPE_LTE:
-                    return BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_LTE;
-
-                case TelephonyManager.NETWORK_TYPE_EHRPD:
-                case TelephonyManager.NETWORK_TYPE_CDMA:
-                case TelephonyManager.NETWORK_TYPE_1xRTT:
-                    return BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_CDMA;
-
-                case TelephonyManager.NETWORK_TYPE_HSPAP:
-                    return BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_4G;
-
-                case TelephonyManager.NETWORK_TYPE_IWLAN:
-                    return BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_WIFI;
-
-                case TelephonyManager.NETWORK_TYPE_NR:
-                    return BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_5G;
-            }
-
-            return BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_GSM;
+            return switch (mTelephonyManager.getDataNetworkType()) {
+                case TelephonyManager.NETWORK_TYPE_UNKNOWN, TelephonyManager.NETWORK_TYPE_GSM ->
+                        BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_GSM;
+                case TelephonyManager.NETWORK_TYPE_GPRS ->
+                        BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_2G;
+                case TelephonyManager.NETWORK_TYPE_EDGE,
+                        TelephonyManager.NETWORK_TYPE_EVDO_0,
+                        TelephonyManager.NETWORK_TYPE_EVDO_A,
+                        TelephonyManager.NETWORK_TYPE_HSDPA,
+                        TelephonyManager.NETWORK_TYPE_HSUPA,
+                        TelephonyManager.NETWORK_TYPE_HSPA,
+                        TelephonyManager.NETWORK_TYPE_IDEN,
+                        TelephonyManager.NETWORK_TYPE_EVDO_B ->
+                        BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_3G;
+                case TelephonyManager.NETWORK_TYPE_UMTS, TelephonyManager.NETWORK_TYPE_TD_SCDMA ->
+                        BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_WCDMA;
+                case TelephonyManager.NETWORK_TYPE_LTE ->
+                        BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_LTE;
+                case TelephonyManager.NETWORK_TYPE_EHRPD,
+                        TelephonyManager.NETWORK_TYPE_CDMA,
+                        TelephonyManager.NETWORK_TYPE_1xRTT ->
+                        BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_CDMA;
+                case TelephonyManager.NETWORK_TYPE_HSPAP ->
+                        BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_4G;
+                case TelephonyManager.NETWORK_TYPE_IWLAN ->
+                        BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_WIFI;
+                case TelephonyManager.NETWORK_TYPE_NR ->
+                        BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_5G;
+                default -> BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_GSM;
+            };
         }
     }
 
@@ -1392,9 +1377,9 @@ public class BluetoothInCallService extends InCallService {
                     CallState.IDLE;
 
             case Call.STATE_CONNECTING,
-                            Call.STATE_SELECT_PHONE_ACCOUNT,
-                            Call.STATE_DIALING,
-                            Call.STATE_PULLING_CALL ->
+                    Call.STATE_SELECT_PHONE_ACCOUNT,
+                    Call.STATE_DIALING,
+                    Call.STATE_PULLING_CALL ->
                     // Yes, this is correctly returning ALERTING.
                     // "Dialing" for BT means that we have sent information to the service provider
                     // to place the BluetoothCall but there is no confirmation that the

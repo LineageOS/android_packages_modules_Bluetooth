@@ -303,15 +303,13 @@ public class A2dpService extends ProfileService {
         synchronized (mStateMachines) {
             for (A2dpStateMachine sm : mStateMachines.values()) {
                 switch (sm.getConnectionState()) {
-                    case STATE_CONNECTING:
-                    case STATE_CONNECTED:
+                    case STATE_CONNECTING, STATE_CONNECTED -> {
                         if (Objects.equals(device, sm.getDevice())) {
                             return true; // Already connected or accounted for
                         }
                         connected++;
-                        break;
-                    default:
-                        break;
+                    }
+                    default -> {} // Nothing to do
                 }
             }
         }
@@ -887,6 +885,7 @@ public class A2dpService extends ProfileService {
                             }
                             sm = getOrCreateStateMachine(device);
                         }
+                        default -> {} // Nothing to do
                     }
                 }
             }
@@ -1220,16 +1219,13 @@ public class A2dpService extends ProfileService {
         if (supportsOptional) {
             int enabled = getOptionalCodecsEnabled(device);
             switch (enabled) {
-                case BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN:
-                    // Enable optional codec by default.
+                case BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED -> enableOptionalCodecs(device);
+                case BluetoothA2dp.OPTIONAL_CODECS_PREF_DISABLED -> disableOptionalCodecs(device);
+                // OPTIONAL_CODECS_PREF_UNKNOWN Enable optional codec by default.
+                default -> {
                     setOptionalCodecsEnabled(device, BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED);
-                    // Fall through intended
-                case BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED:
                     enableOptionalCodecs(device);
-                    break;
-                case BluetoothA2dp.OPTIONAL_CODECS_PREF_DISABLED:
-                    disableOptionalCodecs(device);
-                    break;
+                }
             }
         }
     }

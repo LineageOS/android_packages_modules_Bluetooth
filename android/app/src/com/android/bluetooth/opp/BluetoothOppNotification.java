@@ -229,7 +229,7 @@ class BluetoothOppNotification {
                 @Override
                 public void handleMessage(Message msg) {
                     switch (msg.what) {
-                        case NOTIFY:
+                        case NOTIFY -> {
                             synchronized (BluetoothOppNotification.this) {
                                 if (mPendingUpdate > 0 && mUpdateNotificationThread == null) {
                                     Log.v(TAG, "new notify thread!");
@@ -243,8 +243,9 @@ class BluetoothOppNotification {
                                     mHandler.sendMessageDelayed(
                                             mHandler.obtainMessage(NOTIFY), 1000);
                                 }
-                                break;
                             }
+                        }
+                        default -> {} // Nothing to do
                     }
                 }
             };

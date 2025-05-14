@@ -139,7 +139,7 @@ public class BluetoothPbapVcardManager {
         int size =
                 switch (type) {
                     case BluetoothPbapObexServer.ContentType.PHONEBOOK,
-                                    BluetoothPbapObexServer.ContentType.FAVORITES ->
+                            BluetoothPbapObexServer.ContentType.FAVORITES ->
                             getContactsSize(type);
                     case BluetoothPbapObexServer.ContentType.SIM_PHONEBOOK ->
                             vCardSimManager.getSIMContactsSize();

@@ -129,66 +129,54 @@ public class BrowsablePlayerConnector extends Handler {
     public void handleMessage(Message msg) {
         Log.d(TAG, "Received a message: msg.what=" + msg.what);
         switch (msg.what) {
-            case MSG_GET_FOLDER_ITEMS_CB:
-                {
-                    int status = msg.arg1;
-                    int results_size = msg.arg2;
-                    BrowsedPlayerWrapper wrapper = (BrowsedPlayerWrapper) msg.obj;
+            case MSG_GET_FOLDER_ITEMS_CB -> {
+                int status = msg.arg1;
+                int results_size = msg.arg2;
+                BrowsedPlayerWrapper wrapper = (BrowsedPlayerWrapper) msg.obj;
 
+                // If we failed to remove the wrapper from the pending set, that
+                // means a timeout occurred and the callback was triggered afterwards
+                // or the connector was cleaned up.
+                if (!mPendingPlayers.remove(wrapper)) {
+                    return;
+                }
+
+                if (status == BrowsedPlayerWrapper.STATUS_SUCCESS && results_size != 0) {
+                    Log.i(
+                            TAG,
+                            "Successfully added package to results: " + wrapper.getPackageName());
+                    mResults.add(wrapper);
+                }
+            }
+            case MSG_CONNECT_CB -> {
+                BrowsedPlayerWrapper wrapper = (BrowsedPlayerWrapper) msg.obj;
+
+                if (msg.arg1 != BrowsedPlayerWrapper.STATUS_SUCCESS) {
+                    Log.i(TAG, wrapper.getPackageName() + " is not browsable");
                     // If we failed to remove the wrapper from the pending set, that
                     // means a timeout occurred and the callback was triggered afterwards
-                    // or the connector was cleaned up.
                     if (!mPendingPlayers.remove(wrapper)) {
                         return;
                     }
-
-                    if (status == BrowsedPlayerWrapper.STATUS_SUCCESS && results_size != 0) {
-                        Log.i(
-                                TAG,
-                                "Successfully added package to results: "
-                                        + wrapper.getPackageName());
-                        mResults.add(wrapper);
-                    }
                     break;
                 }
 
-            case MSG_CONNECT_CB:
-                {
-                    BrowsedPlayerWrapper wrapper = (BrowsedPlayerWrapper) msg.obj;
-
-                    if (msg.arg1 != BrowsedPlayerWrapper.STATUS_SUCCESS) {
-                        Log.i(TAG, wrapper.getPackageName() + " is not browsable");
-                        // If we failed to remove the wrapper from the pending set, that
-                        // means a timeout occurred and the callback was triggered afterwards
-                        if (!mPendingPlayers.remove(wrapper)) {
-                            return;
-                        }
-                        break;
-                    }
-
-                    // Check to see if the root folder has any items
-                    Log.i(TAG, "Checking root contents for " + wrapper.getPackageName());
-                    wrapper.getFolderItems(
-                            wrapper.getRootId(),
-                            (int status, String mediaId, List<ListItem> results) -> {
-                                // Send the response as a message so that it is properly
-                                // synchronized
-                                obtainMessage(
-                                                MSG_GET_FOLDER_ITEMS_CB,
-                                                status,
-                                                results.size(),
-                                                wrapper)
-                                        .sendToTarget();
-                            });
-                    break;
-                }
-
-            case MSG_TIMEOUT:
-                {
-                    Log.v(TAG, "Timed out waiting for players");
-                    removePendingPlayers();
-                    break;
-                }
+                // Check to see if the root folder has any items
+                Log.i(TAG, "Checking root contents for " + wrapper.getPackageName());
+                wrapper.getFolderItems(
+                        wrapper.getRootId(),
+                        (int status, String mediaId, List<ListItem> results) -> {
+                            // Send the response as a message so that it is properly
+                            // synchronized
+                            obtainMessage(MSG_GET_FOLDER_ITEMS_CB, status, results.size(), wrapper)
+                                    .sendToTarget();
+                        });
+            }
+            case MSG_TIMEOUT -> {
+                Log.v(TAG, "Timed out waiting for players");
+                removePendingPlayers();
+            }
+            default -> {} // Nothing to do
         }
 
         if (mPendingPlayers.size() == 0) {

@@ -322,57 +322,25 @@ public class HidHostService extends ProfileService {
                     Log.v(TAG, "handleMessage(): msg.what=" + msg.what);
 
                     switch (msg.what) {
-                        case MESSAGE_CONNECT:
-                            handleMessageConnect(msg);
-                            break;
-                        case MESSAGE_DISCONNECT:
-                            handleMessageDisconnect(msg);
-                            break;
-                        case MESSAGE_CONNECT_STATE_CHANGED:
-                            handleMessageConnectStateChanged(msg);
-                            break;
-                        case MESSAGE_GET_PROTOCOL_MODE:
-                            handleMessageGetProtocolMode(msg);
-                            break;
-                        case MESSAGE_ON_GET_PROTOCOL_MODE:
-                            handleMessageOnGetProtocolMode(msg);
-                            break;
-                        case MESSAGE_VIRTUAL_UNPLUG:
-                            handleMessageVirtualUnplug(msg);
-                            break;
-                        case MESSAGE_SET_PROTOCOL_MODE:
-                            handleMessageSetProtocolMode(msg);
-                            break;
-                        case MESSAGE_GET_REPORT:
-                            handleMessageGetReport(msg);
-                            break;
-                        case MESSAGE_ON_GET_REPORT:
-                            handleMessageOnGetReport(msg);
-                            break;
-                        case MESSAGE_ON_HANDSHAKE:
-                            handleMessageOnHandshake(msg);
-                            break;
-                        case MESSAGE_SET_REPORT:
-                            handleMessageSetReport(msg);
-                            break;
-                        case MESSAGE_ON_VIRTUAL_UNPLUG:
-                            handleMessageOnVirtualUnplug(msg);
-                            break;
-                        case MESSAGE_GET_IDLE_TIME:
-                            handleMessageGetIdleTime(msg);
-                            break;
-                        case MESSAGE_ON_GET_IDLE_TIME:
-                            handleMessageOnGetIdleTime(msg);
-                            break;
-                        case MESSAGE_SET_IDLE_TIME:
-                            handleMessageSetIdleTime(msg);
-                            break;
-                        case MESSAGE_SET_PREFERRED_TRANSPORT:
-                            handleMessageSetPreferredTransport(msg);
-                            break;
-                        case MESSAGE_SEND_DATA:
-                            handleMessageSendData(msg);
-                            break;
+                        case MESSAGE_CONNECT -> handleMessageConnect(msg);
+                        case MESSAGE_DISCONNECT -> handleMessageDisconnect(msg);
+                        case MESSAGE_CONNECT_STATE_CHANGED -> handleMessageConnectStateChanged(msg);
+                        case MESSAGE_GET_PROTOCOL_MODE -> handleMessageGetProtocolMode(msg);
+                        case MESSAGE_ON_GET_PROTOCOL_MODE -> handleMessageOnGetProtocolMode(msg);
+                        case MESSAGE_VIRTUAL_UNPLUG -> handleMessageVirtualUnplug(msg);
+                        case MESSAGE_SET_PROTOCOL_MODE -> handleMessageSetProtocolMode(msg);
+                        case MESSAGE_GET_REPORT -> handleMessageGetReport(msg);
+                        case MESSAGE_ON_GET_REPORT -> handleMessageOnGetReport(msg);
+                        case MESSAGE_ON_HANDSHAKE -> handleMessageOnHandshake(msg);
+                        case MESSAGE_SET_REPORT -> handleMessageSetReport(msg);
+                        case MESSAGE_ON_VIRTUAL_UNPLUG -> handleMessageOnVirtualUnplug(msg);
+                        case MESSAGE_GET_IDLE_TIME -> handleMessageGetIdleTime(msg);
+                        case MESSAGE_ON_GET_IDLE_TIME -> handleMessageOnGetIdleTime(msg);
+                        case MESSAGE_SET_IDLE_TIME -> handleMessageSetIdleTime(msg);
+                        case MESSAGE_SET_PREFERRED_TRANSPORT ->
+                                handleMessageSetPreferredTransport(msg);
+                        case MESSAGE_SEND_DATA -> handleMessageSendData(msg);
+                        default -> {} // Nothing to do
                     }
                 }
             };

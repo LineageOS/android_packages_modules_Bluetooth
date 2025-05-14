@@ -136,6 +136,14 @@ CodecManager::GetLocalAudioInputCodecCapa() {
   return pimpl_->GetLocalAudioInputCodecCapa();
 }
 
+std::vector<bluetooth::le_audio::btle_audio_codec_config_t> CodecManager::GetRemoteAudioCodecCapa(
+        const bluetooth::le_audio::types::PublishedAudioCapabilities& pacs) const {
+  if (!pimpl_) {
+    return std::vector<bluetooth::le_audio::btle_audio_codec_config_t>{};
+  }
+  return pimpl_->GetRemoteAudioCodecCapa(pacs);
+}
+
 void CodecManager::UpdateBroadcastConnHandle(
         const std::vector<uint16_t>& conn_handle,
         std::function<void(const ::bluetooth::le_audio::broadcast_offload_config& config)>

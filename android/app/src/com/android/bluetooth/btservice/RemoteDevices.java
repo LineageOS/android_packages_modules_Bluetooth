@@ -94,6 +94,7 @@ public class RemoteDevices {
 
     private final LinkedHashMap<String, DeviceProperties> mDevices;
     private final HashMap<String, String> mDualDevicesMap;
+    private final WatchConnectionStateListener mWatchConnectionStateListener;
 
     /**
      * Bluetooth HFP v1.8 specifies the Battery Charge indicator of AG can take values from {@code
@@ -126,7 +127,7 @@ public class RemoteDevices {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case MESSAGE_UUID_INTENT:
+                case MESSAGE_UUID_INTENT -> {
                     BluetoothDevice device = (BluetoothDevice) msg.obj;
                     if (device != null) {
                         boolean success = (msg.arg1 == MESSAGE_UUID_STATUS_SUCCESS);
@@ -141,7 +142,8 @@ public class RemoteDevices {
                         MetricsLogger.getInstance()
                                 .cacheCount(BluetoothProtoEnums.SDP_NOT_SENDING_DELAYED_UUID, 1);
                     }
-                    break;
+                }
+                default -> {} // Nothing to do
             }
         }
     }
@@ -173,6 +175,12 @@ public class RemoteDevices {
         mDualDevicesMap = new HashMap<>();
         mHandler = new RemoteDevicesHandler(looper);
         mMainHandler = new Handler(Looper.getMainLooper());
+        if (Flags.watchDeviceOverrideAirplaneMode()) {
+            mWatchConnectionStateListener =
+                    new WatchConnectionStateListener(mAdapterService, looper);
+        } else {
+            mWatchConnectionStateListener = null;
+        }
     }
 
     /**
@@ -456,20 +464,17 @@ public class RemoteDevices {
              * #define BLE_ADDR_PUBLIC 0x00
              * #define BLE_ADDR_RANDOM 0x01
              */
-            int addressType = BluetoothDevice.ADDRESS_TYPE_UNKNOWN;
-            switch (identityAddressType) {
-                case 0x00:
-                    addressType = BluetoothDevice.ADDRESS_TYPE_PUBLIC;
-                    break;
-                case 0x01:
-                    addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
-                    break;
-                default:
-                    errorLog(
-                            "Unexpected identity address type received from native: "
-                                    + identityAddressType);
-                    break;
-            }
+            final int addressType =
+                    switch (identityAddressType) {
+                        case 0x00 -> BluetoothDevice.ADDRESS_TYPE_PUBLIC;
+                        case 0x01 -> BluetoothDevice.ADDRESS_TYPE_RANDOM;
+                        default -> {
+                            errorLog(
+                                    "Unexpected identity address type received from native: "
+                                            + identityAddressType);
+                            yield BluetoothDevice.ADDRESS_TYPE_UNKNOWN;
+                        }
+                    };
             synchronized (mObject) {
                 this.mIdentityAddressType = addressType;
             }
@@ -1104,7 +1109,7 @@ public class RemoteDevices {
             synchronized (mObject) {
                 debugLog("Update property, device=" + bdDevice + ", type: " + type);
                 switch (type) {
-                    case AbstractionLayer.BT_PROPERTY_BDNAME:
+                    case AbstractionLayer.BT_PROPERTY_BDNAME -> {
                         final String newName = new String(val);
                         if (newName.equals(deviceProperties.getName())) {
                             debugLog("Skip name update for " + bdDevice);
@@ -1124,16 +1129,16 @@ public class RemoteDevices {
                                 BLUETOOTH_CONNECT,
                                 Utils.getTempBroadcastOptions().toBundle());
                         debugLog("Remote device name is: " + deviceProperties.getName());
-                        break;
-                    case AbstractionLayer.BT_PROPERTY_REMOTE_FRIENDLY_NAME:
+                    }
+                    case AbstractionLayer.BT_PROPERTY_REMOTE_FRIENDLY_NAME -> {
                         deviceProperties.setAlias(bdDevice, new String(val));
                         debugLog("Remote device alias is: " + deviceProperties.getAlias());
-                        break;
-                    case AbstractionLayer.BT_PROPERTY_BDADDR:
-                        debugLog(
-                                "Remote Address is:" + Utils.getRedactedAddressStringFromByte(val));
-                        break;
-                    case AbstractionLayer.BT_PROPERTY_CLASS_OF_DEVICE:
+                    }
+                    case AbstractionLayer.BT_PROPERTY_BDADDR ->
+                            debugLog(
+                                    "Remote Address is:"
+                                            + Utils.getRedactedAddressStringFromByte(val));
+                    case AbstractionLayer.BT_PROPERTY_CLASS_OF_DEVICE -> {
                         final int newBluetoothClass = Utils.byteArrayToInt(val);
                         if (newBluetoothClass == deviceProperties.getBluetoothClass()) {
                             debugLog(
@@ -1159,9 +1164,9 @@ public class RemoteDevices {
                                         + bdDevice
                                         + ", cod=0x"
                                         + Integer.toHexString(newBluetoothClass));
-                        break;
-                    case AbstractionLayer.BT_PROPERTY_UUIDS:
-                    case AbstractionLayer.BT_PROPERTY_UUIDS_LE:
+                    }
+                    case AbstractionLayer.BT_PROPERTY_UUIDS,
+                            AbstractionLayer.BT_PROPERTY_UUIDS_LE -> {
                         if (type == AbstractionLayer.BT_PROPERTY_UUIDS) {
                             final ParcelUuid[] newUuids = Utils.byteArrayToUuid(val);
                             if (areUuidsEqual(newUuids, deviceProperties.getUuidsBrEdr())) {
@@ -1184,29 +1189,25 @@ public class RemoteDevices {
                             deviceProperties.setUuidsLe(newUuidsLe);
                         }
                         uuids_updated = true;
-                        break;
-                    case AbstractionLayer.BT_PROPERTY_TYPE_OF_DEVICE:
+                    }
+                    case AbstractionLayer.BT_PROPERTY_TYPE_OF_DEVICE -> {
                         if (deviceProperties.isConsolidated()) {
                             break;
                         }
                         // The device type from hal layer, defined in bluetooth.h,
                         // matches the type defined in BluetoothDevice.java
                         deviceProperties.setDeviceType(Utils.byteArrayToInt(val));
-                        break;
-                    case AbstractionLayer.BT_PROPERTY_REMOTE_RSSI:
-                        // RSSI from hal is in one byte
-                        deviceProperties.setRssi(val[0]);
-                        break;
-                    case AbstractionLayer.BT_PROPERTY_REMOTE_IS_COORDINATED_SET_MEMBER:
-                        deviceProperties.setIsCoordinatedSetMember(val[0] != 0);
-                        break;
-                    case AbstractionLayer.BT_PROPERTY_REMOTE_ASHA_CAPABILITY:
-                        deviceProperties.setAshaCapability(val[0]);
-                        break;
-                    case AbstractionLayer.BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID:
-                        deviceProperties.setAshaTruncatedHiSyncId(val[0]);
-                        break;
-                    case AbstractionLayer.BT_PROPERTY_REMOTE_MODEL_NUM:
+                    }
+                    // RSSI from hal is in one byte
+                    case AbstractionLayer.BT_PROPERTY_REMOTE_RSSI ->
+                            deviceProperties.setRssi(val[0]);
+                    case AbstractionLayer.BT_PROPERTY_REMOTE_IS_COORDINATED_SET_MEMBER ->
+                            deviceProperties.setIsCoordinatedSetMember(val[0] != 0);
+                    case AbstractionLayer.BT_PROPERTY_REMOTE_ASHA_CAPABILITY ->
+                            deviceProperties.setAshaCapability(val[0]);
+                    case AbstractionLayer.BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID ->
+                            deviceProperties.setAshaTruncatedHiSyncId(val[0]);
+                    case AbstractionLayer.BT_PROPERTY_REMOTE_MODEL_NUM -> {
                         final String modelName = new String(val);
                         debugLog("Remote device model name: " + modelName);
                         deviceProperties.setModelName(modelName);
@@ -1224,7 +1225,8 @@ public class RemoteDevices {
                                 0,
                                 0,
                                 0);
-                        break;
+                    }
+                    default -> {} // Nothing to do
                 }
             }
         }
@@ -1521,6 +1523,9 @@ public class RemoteDevices {
         RemoteExceptionIgnoringConsumer<IBluetoothConnectionCallback> connectionChangeConsumer;
         if (connectionState == BluetoothAdapter.STATE_CONNECTED) {
             connectionChangeConsumer = cb -> cb.onDeviceConnected(device);
+            if (Flags.watchDeviceOverrideAirplaneMode()) {
+                mWatchConnectionStateListener.connectedDevice(device);
+            }
         } else {
             final int disconnectReason;
             if (hciReason == 0x16 /* HCI_ERR_CONN_CAUSE_LOCAL_HOST */
@@ -1541,6 +1546,9 @@ public class RemoteDevices {
                             cb.onDeviceDisconnected(
                                     device,
                                     AdapterService.hciToAndroidDisconnectReason(disconnectReason));
+            if (Flags.watchDeviceOverrideAirplaneMode()) {
+                mWatchConnectionStateListener.disconnectedDevice(device);
+            }
         }
 
         mAdapterService.aclStateChangeBroadcastCallback(connectionChangeConsumer);
@@ -1910,15 +1918,14 @@ public class RemoteDevices {
             }
         }
 
-        int batteryPercent = BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
-        switch (cmd) {
-            case BluetoothHeadset.VENDOR_SPECIFIC_HEADSET_EVENT_XEVENT:
-                batteryPercent = getBatteryLevelFromXEventVsc(args);
-                break;
-            case BluetoothHeadset.VENDOR_SPECIFIC_HEADSET_EVENT_IPHONEACCEV:
-                batteryPercent = getBatteryLevelFromAppleBatteryVsc(args);
-                break;
-        }
+        final int batteryPercent =
+                switch (cmd) {
+                    case BluetoothHeadset.VENDOR_SPECIFIC_HEADSET_EVENT_XEVENT ->
+                            getBatteryLevelFromXEventVsc(args);
+                    case BluetoothHeadset.VENDOR_SPECIFIC_HEADSET_EVENT_IPHONEACCEV ->
+                            getBatteryLevelFromAppleBatteryVsc(args);
+                    default -> BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
+                };
         if (batteryPercent != BluetoothDevice.BATTERY_LEVEL_UNKNOWN) {
             updateBatteryLevel(device, batteryPercent, /* isBas= */ false);
             infoLog(

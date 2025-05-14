@@ -358,8 +358,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      *
      * @hide
      */
-    @SystemApi
-    public static final int RSSI_UNKNOWN = 0x7F;
+    @SystemApi public static final int RSSI_UNKNOWN = 0x7F;
 
     /**
      * Get the Received Signal Strength Indication (RSSI) value of this Broadcast Source.

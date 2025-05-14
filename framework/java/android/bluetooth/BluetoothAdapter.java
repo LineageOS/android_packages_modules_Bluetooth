@@ -775,16 +775,14 @@ public final class BluetoothAdapter {
      *
      * @hide
      */
-    @SystemApi
-    public static final int AUTO_ON_STATE_DISABLED = 1;
+    @SystemApi public static final int AUTO_ON_STATE_DISABLED = 1;
 
     /**
      * Indicates the AutoOn feature is ON.
      *
      * @hide
      */
-    @SystemApi
-    public static final int AUTO_ON_STATE_ENABLED = 2;
+    @SystemApi public static final int AUTO_ON_STATE_ENABLED = 2;
 
     /**
      * Audio mode representing output only.
@@ -2327,6 +2325,7 @@ public final class BluetoothAdapter {
                         throw e.rethrowAsRuntimeException();
                     }
                 }
+
                 @RequiresNoPermission
                 @Override
                 public boolean shouldBypassCache(IBluetooth serviceQuery) {
@@ -2849,6 +2848,7 @@ public final class BluetoothAdapter {
                                 throw e.rethrowAsRuntimeException();
                             }
                         }
+
                         @RequiresNoPermission
                         @Override
                         public boolean shouldBypassCache(IBluetooth serviceQuery) {
@@ -3922,18 +3922,17 @@ public final class BluetoothAdapter {
         for (int i = 0; i < ADDRESS_LENGTH; i++) {
             char c = address.charAt(i);
             switch (i % 3) {
-                case 0:
-                case 1:
-                    if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F')) {
-                        // hex character, OK
-                        break;
+                case 0, 1 -> {
+                    if ((c < '0' || c > '9') && (c < 'A' || c > 'F')) {
+                        return false;
                     }
-                    return false;
-                case 2:
-                    if (c == ':') {
-                        break; // OK
+                }
+                case 2 -> {
+                    if (c != ':') {
+                        return false;
                     }
-                    return false;
+                }
+                default -> {} // Nothing to do
             }
         }
         return true;
@@ -5546,8 +5545,8 @@ public final class BluetoothAdapter {
         /**
          * Invoked when an event is received.
          *
-         * @param code The vendor-specific event Code. The first octet of the event parameters
-         *     of a vendor-specific event (Bluetooth Core Specification Vol 4, Part E, 5.4.3).
+         * @param code The vendor-specific event Code. The first octet of the event parameters of a
+         *     vendor-specific event (Bluetooth Core Specification Vol 4, Part E, 5.4.3).
          * @param data from 0 to 254 Bytes.
          */
         void onEvent(@IntRange(from = 0x00, to = 0xfe) int code, @NonNull byte[] data);

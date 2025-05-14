@@ -129,6 +129,7 @@ class Btsnoop:
 
     packets: List[Packet]
     acl_connections: List[AclConnection]
+    le_acl_connections: List[AclConnection]
 
     def __init__(self, data: Optional[bytes], data_last: Optional[bytes]):
         def take(iterable, n):
@@ -183,16 +184,16 @@ class Btsnoop:
                         remote_names[bd_addr] = remote_name.decode("utf-8")
 
         self.acl_connections = []
+        self.le_acl_connections = []
         active_acl_connections = dict()
-        active_le_acl_connections = set()
 
         for packet in self.packets:
 
             if packet.idc == Idc.COMMAND:
-                op_code = struct.unpack("<H", packet.payload[:2])
+                (op_code,) = struct.unpack("<H", packet.payload[:2])
 
                 if op_code == OpCode.RESET:
-                    for acl_connection in active_acl_connections:
+                    for acl_connection in active_acl_connections.values():
                         acl_connection.disconnected = packet
                     active_acl_connections = dict()
 
@@ -206,10 +207,8 @@ class Btsnoop:
                     )
 
                     if status == 0 and link_type == 1:
-                        if connection_handle in active_acl_connections:
-                            print(f"oops {connection_handle:x} {packet.number}")
+                        assert connection_handle not in active_acl_connections, f"oops {connection_handle:x} {packet.number}"
 
-                        assert connection_handle not in active_acl_connections
                         acl_connection = AclConnection(
                             self,
                             connection_handle,
@@ -228,8 +227,6 @@ class Btsnoop:
                     if acl_connection := active_acl_connections.get(connection_handle):
                         acl_connection.disconnected = packet
                         del active_acl_connections[connection_handle]
-                    elif connection_handle in active_le_acl_connections:
-                        active_le_acl_connections.remove(connection_handle)
 
                 elif event_code == EventCode.LE_META_EVENT and (
                     subevent_code == SubEventCode.CONNECTION_COMPLETE
@@ -240,7 +237,18 @@ class Btsnoop:
                     )
 
                     if status == 0:
-                        active_le_acl_connections.add(connection_handle)
+                        assert connection_handle not in active_acl_connections, f"oops {connection_handle:x} {packet.number}"
+
+                        bd_addr = 0
+                        acl_connection = AclConnection(
+                            self,
+                            connection_handle,
+                            bd_addr=bd_addr,
+                            connected=packet,
+                            remote_name=remote_names.get(bd_addr),
+                        )
+                        active_acl_connections[connection_handle] = acl_connection
+                        self.le_acl_connections.append(acl_connection)
 
             elif packet.idc == Idc.ACL_DATA:
                 (connection_handle,) = struct.unpack("<H", packet.payload[:2])
@@ -248,8 +256,6 @@ class Btsnoop:
 
                 if acl_connection := active_acl_connections.get(connection_handle):
                     acl_connection.append(packet)
-                elif connection_handle in active_le_acl_connections:
-                    pass
                 else:
                     acl_connection = AclConnection(self, connection_handle)
                     acl_connection.append(packet)

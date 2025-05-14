@@ -667,10 +667,7 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
   // In Skullcandy JIB case, which indicate WBS and codec negotiation support,
   // but no Transparent Synchronous Data support, using mSBC codec can result
   // SCO setup fail by Firmware reject.
-  if (!HCI_LMP_TRANSPNT_SUPPORTED(p_rem_feat) ||
-      !(sdp_wbs_support ||
-        (com::android::bluetooth::flags::choose_wrong_hfp_codec_in_specific_config() &&
-         sdp_swb_support)) ||
+  if (!HCI_LMP_TRANSPNT_SUPPORTED(p_rem_feat) || !(sdp_wbs_support || sdp_swb_support) ||
       !(p_scb->peer_features & BTA_AG_PEER_FEAT_CODEC)) {
     log::info("Assume CVSD by default due to mask mismatch");
     p_scb->sco_codec = BTM_SCO_CODEC_CVSD;
