@@ -26,6 +26,7 @@ import static org.mockito.Mockito.mock;
 import android.annotation.IntRange;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothDevice.AddressType;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
@@ -146,12 +147,27 @@ public class TestUtils {
      * @return {@link BluetoothDevice} test device for the device address.
      */
     public static BluetoothDevice getRealDevice(@NonNull String address) {
+        return getDevice(address, BluetoothDevice.ADDRESS_TYPE_PUBLIC);
+    }
+
+    /**
+     * Create a test device.
+     *
+     * @param address the test device address string.
+     * @param type Bluetooth address type
+     * @return {@link BluetoothDevice} test device for the device address.
+     */
+    public static BluetoothDevice getRealDevice(@NonNull String address, @AddressType int type) {
+        return getDevice(address, type);
+    }
+
+    private static BluetoothDevice getDevice(String address, @AddressType int type) {
         assertThat(BluetoothAdapter.checkBluetoothAddress(address)).isTrue();
         BluetoothDevice testDevice =
                 getContext()
                         .getSystemService(BluetoothManager.class)
                         .getAdapter()
-                        .getRemoteDevice(address);
+                        .getRemoteLeDevice(address, type);
         assertThat(testDevice).isNotNull();
         return testDevice;
     }
