@@ -284,21 +284,12 @@ class AppScanStats {
                     settings.getCallbackType() == ScanSettings.CALLBACK_TYPE_ALL_MATCHES
                             && settings.getReportDelayMillis() != 0;
             switch (scan.scanMode) {
-                case ScanSettings.SCAN_MODE_OPPORTUNISTIC:
-                    mOppScan++;
-                    break;
-                case ScanSettings.SCAN_MODE_LOW_POWER:
-                    mLowPowerScan++;
-                    break;
-                case ScanSettings.SCAN_MODE_BALANCED:
-                    mBalancedScan++;
-                    break;
-                case ScanSettings.SCAN_MODE_LOW_LATENCY:
-                    mLowLatencyScan++;
-                    break;
-                case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY:
-                    mAmbientDiscoveryScan++;
-                    break;
+                case ScanSettings.SCAN_MODE_OPPORTUNISTIC -> mOppScan++;
+                case ScanSettings.SCAN_MODE_LOW_POWER -> mLowPowerScan++;
+                case ScanSettings.SCAN_MODE_BALANCED -> mBalancedScan++;
+                case ScanSettings.SCAN_MODE_LOW_LATENCY -> mLowLatencyScan++;
+                case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY -> mAmbientDiscoveryScan++;
+                default -> {} // Nothing to do
             }
         }
 
@@ -353,21 +344,13 @@ class AppScanStats {
         long activeDuration = scanDuration - scan.suspendDuration;
         mTotalActiveTime += activeDuration;
         switch (scan.scanMode) {
-            case ScanSettings.SCAN_MODE_OPPORTUNISTIC:
-                mOppScanTime += activeDuration;
-                break;
-            case ScanSettings.SCAN_MODE_LOW_POWER:
-                mLowPowerScanTime += activeDuration;
-                break;
-            case ScanSettings.SCAN_MODE_BALANCED:
-                mBalancedScanTime += activeDuration;
-                break;
-            case ScanSettings.SCAN_MODE_LOW_LATENCY:
-                mLowLatencyScanTime += activeDuration;
-                break;
-            case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY:
-                mAmbientDiscoveryScanTime += activeDuration;
-                break;
+            case ScanSettings.SCAN_MODE_OPPORTUNISTIC -> mOppScanTime += activeDuration;
+            case ScanSettings.SCAN_MODE_LOW_POWER -> mLowPowerScanTime += activeDuration;
+            case ScanSettings.SCAN_MODE_BALANCED -> mBalancedScanTime += activeDuration;
+            case ScanSettings.SCAN_MODE_LOW_LATENCY -> mLowLatencyScanTime += activeDuration;
+            case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY ->
+                    mAmbientDiscoveryScanTime += activeDuration;
+            default -> {} // Nothing to do
         }
 
         // Inform battery stats of any results it might be missing on scan stop
@@ -937,21 +920,13 @@ class AppScanStats {
             activeDuration = scanDuration - scan.suspendDuration - suspendDuration;
             totalActiveTime += activeDuration;
             switch (scan.scanMode) {
-                case ScanSettings.SCAN_MODE_OPPORTUNISTIC:
-                    oppScanTime += activeDuration;
-                    break;
-                case ScanSettings.SCAN_MODE_LOW_POWER:
-                    lowPowerScanTime += activeDuration;
-                    break;
-                case ScanSettings.SCAN_MODE_BALANCED:
-                    balancedScanTime += activeDuration;
-                    break;
-                case ScanSettings.SCAN_MODE_LOW_LATENCY:
-                    lowLatencyScanTime += activeDuration;
-                    break;
-                case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY:
-                    ambientDiscoveryScan += activeDuration;
-                    break;
+                case ScanSettings.SCAN_MODE_OPPORTUNISTIC -> oppScanTime += activeDuration;
+                case ScanSettings.SCAN_MODE_LOW_POWER -> lowPowerScanTime += activeDuration;
+                case ScanSettings.SCAN_MODE_BALANCED -> balancedScanTime += activeDuration;
+                case ScanSettings.SCAN_MODE_LOW_LATENCY -> lowLatencyScanTime += activeDuration;
+                case ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY ->
+                        ambientDiscoveryScan += activeDuration;
+                default -> {} // Nothing to do
             }
         }
 

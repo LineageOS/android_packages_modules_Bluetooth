@@ -3320,15 +3320,10 @@ public class LeAudioServiceTest {
         int mask = 0;
         for (int profile : profiles) {
             switch (profile) {
-                case BluetoothProfile.LE_CALL_CONTROL:
-                    mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_CG;
-                    break;
-                case BluetoothProfile.MCP_SERVER:
-                    mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_UMS;
-                    break;
-                case BluetoothProfile.LE_AUDIO_BROADCAST:
-                    mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_BMS;
-                    break;
+                case BluetoothProfile.LE_CALL_CONTROL -> mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_CG;
+                case BluetoothProfile.MCP_SERVER -> mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_UMS;
+                case BluetoothProfile.LE_AUDIO_BROADCAST -> mask |= LeAudioTmapGattServer.TMAP_ROLE_FLAG_BMS;
+                default -> {} // Nothing to do
             }
         }
         return mask;

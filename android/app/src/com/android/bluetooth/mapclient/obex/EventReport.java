@@ -97,8 +97,7 @@ public class EventReport {
 
             int event = xpp.getEventType();
             while (event != XmlPullParser.END_DOCUMENT) {
-                switch (event) {
-                    case XmlPullParser.START_TAG:
+                if (event == XmlPullParser.START_TAG) {
                         if (xpp.getName().equals("event")) {
                             HashMap<String, String> attrs = new HashMap<String, String>();
 
@@ -111,7 +110,6 @@ public class EventReport {
                             // return immediately, only one event should be here
                             return ev;
                         }
-                        break;
                 }
 
                 event = xpp.next();

@@ -316,16 +316,14 @@ public class BluetoothMapSmsPdu {
         }
 
         private int gsmSubmitGetTpUdlOffset() {
-            switch (((mData[0] & 0xff) & (0x08 | 0x04)) >> 2) {
-                case 0: // Not TP-VP present
-                    return gsmSubmitGetTpPidOffset() + 2;
-                case 1: // TP-VP relative format
-                    return gsmSubmitGetTpPidOffset() + 2 + 1;
-                case 2: // TP-VP enhanced format
-                case 3: // TP-VP absolute format
-                    break;
-            }
-            return gsmSubmitGetTpPidOffset() + 2 + 7;
+            return switch (((mData[0] & 0xff) & (0x08 | 0x04)) >> 2) {
+                    // Not TP-VP present
+                case 0 -> gsmSubmitGetTpPidOffset() + 2;
+                    // TP-VP relative format
+                case 1 -> gsmSubmitGetTpPidOffset() + 2 + 1;
+                    // TP-VP enhanced format, TP-VP absolute format
+                default /* case 2, 3 */ -> gsmSubmitGetTpPidOffset() + 2 + 7;
+            };
         }
 
         private int gsmSubmitGetTpUdOffset() {
@@ -688,30 +686,28 @@ public class BluetoothMapSmsPdu {
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                         4);
             } else {
-                switch ((dataCodingScheme >> 2) & 0x3) {
-                    case 0: // GSM 7 bit default alphabet
-                        encodingType = SmsConstants.ENCODING_7BIT;
-                        break;
+                encodingType =
+                        switch ((dataCodingScheme >> 2) & 0x3) {
+                                // GSM 7 bit default alphabet
+                            case 0 -> SmsConstants.ENCODING_7BIT;
+                                // UCS 2 (16bit)
+                            case 2 -> SmsConstants.ENCODING_16BIT;
 
-                    case 2: // UCS 2 (16bit)
-                        encodingType = SmsConstants.ENCODING_16BIT;
-                        break;
-
-                    case 1: // 8 bit data
-                    case 3: // reserved
-                        Log.w(
-                                TAG,
-                                "1 - Unsupported SMS data coding scheme "
-                                        + (dataCodingScheme & 0xff));
-                        ContentProfileErrorReportUtils.report(
-                                BluetoothProfile.MAP,
-                                BluetoothProtoEnums.BLUETOOTH_MAP_SMS_PDU,
-                                BluetoothStatsLog
-                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
-                                5);
-                        encodingType = SmsConstants.ENCODING_8BIT;
-                        break;
-                }
+                                // 8 bit data, reserved
+                            default -> { // case 1,3
+                                Log.w(
+                                        TAG,
+                                        "1 - Unsupported SMS data coding scheme "
+                                                + (dataCodingScheme & 0xff));
+                                ContentProfileErrorReportUtils.report(
+                                        BluetoothProfile.MAP,
+                                        BluetoothProtoEnums.BLUETOOTH_MAP_SMS_PDU,
+                                        BluetoothStatsLog
+                                                .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                        5);
+                                yield SmsConstants.ENCODING_8BIT;
+                            }
+                        };
             }
         } else if ((dataCodingScheme & 0xf0) == 0xf0) {
             userDataCompressed = false;
@@ -769,8 +765,7 @@ public class BluetoothMapSmsPdu {
 
         try {
             switch (encodingType) {
-                case SmsConstants.ENCODING_UNKNOWN:
-                case SmsConstants.ENCODING_8BIT:
+                case SmsConstants.ENCODING_UNKNOWN, SmsConstants.ENCODING_8BIT -> {
                     Log.w(TAG, "Unknown encoding type: " + encodingType);
                     ContentProfileErrorReportUtils.report(
                             BluetoothProfile.MAP,
@@ -779,9 +774,8 @@ public class BluetoothMapSmsPdu {
                                     .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                             8);
                     messageBody = null;
-                    break;
-
-                case SmsConstants.ENCODING_7BIT:
+                }
+                case SmsConstants.ENCODING_7BIT -> {
                     messageBody =
                             GsmAlphabet.gsm7BitPackedToString(
                                     pdu.getData(),
@@ -791,10 +785,8 @@ public class BluetoothMapSmsPdu {
                                     pdu.getLanguageTable(),
                                     pdu.getLanguageShiftTable());
                     Log.i(TAG, "Decoded as 7BIT: " + messageBody);
-
-                    break;
-
-                case SmsConstants.ENCODING_16BIT:
+                }
+                case SmsConstants.ENCODING_16BIT -> {
                     messageBody =
                             new String(
                                     pdu.getData(),
@@ -802,9 +794,8 @@ public class BluetoothMapSmsPdu {
                                     pdu.getUserDataMsgSize(),
                                     "utf-16");
                     Log.i(TAG, "Decoded as 16BIT: " + messageBody);
-                    break;
-
-                case SmsConstants.ENCODING_KSC5601:
+                }
+                case SmsConstants.ENCODING_KSC5601 -> {
                     messageBody =
                             new String(
                                     pdu.getData(),
@@ -812,7 +803,8 @@ public class BluetoothMapSmsPdu {
                                     pdu.getUserDataMsgSize(),
                                     "KSC5601");
                     Log.i(TAG, "Decoded as KSC5601: " + messageBody);
-                    break;
+                }
+                default -> {} // Nothing to do
             }
         } catch (UnsupportedEncodingException e) {
             ContentProfileErrorReportUtils.report(
@@ -835,14 +827,9 @@ public class BluetoothMapSmsPdu {
             int id = inStream.read();
             int length = inStream.read();
             switch (id) {
-                case ELT_ID_NATIONAL_LANGUAGE_SINGLE_SHIFT:
-                    tableValue[1] = inStream.read();
-                    break;
-                case ELT_ID_NATIONAL_LANGUAGE_LOCKING_SHIFT:
-                    tableValue[0] = inStream.read();
-                    break;
-                default:
-                    inStream.skip(length);
+                case ELT_ID_NATIONAL_LANGUAGE_SINGLE_SHIFT -> tableValue[1] = inStream.read();
+                case ELT_ID_NATIONAL_LANGUAGE_LOCKING_SHIFT -> tableValue[0] = inStream.read();
+                default -> inStream.skip(length);
             }
         }
         return tableValue;

@@ -327,42 +327,34 @@ public class AvrcpItem {
             for (int i = 0; i < attributeCount; i++) {
                 Log.d(TAG, attrIds[i] + " = " + attrMap[i]);
                 switch (attrIds[i]) {
-                    case MEDIA_ATTRIBUTE_TITLE:
-                        mAvrcpItem.mTitle = attrMap[i];
-                        break;
-                    case MEDIA_ATTRIBUTE_ARTIST_NAME:
-                        mAvrcpItem.mArtistName = attrMap[i];
-                        break;
-                    case MEDIA_ATTRIBUTE_ALBUM_NAME:
-                        mAvrcpItem.mAlbumName = attrMap[i];
-                        break;
-                    case MEDIA_ATTRIBUTE_TRACK_NUMBER:
+                    case MEDIA_ATTRIBUTE_TITLE -> mAvrcpItem.mTitle = attrMap[i];
+                    case MEDIA_ATTRIBUTE_ARTIST_NAME -> mAvrcpItem.mArtistName = attrMap[i];
+                    case MEDIA_ATTRIBUTE_ALBUM_NAME -> mAvrcpItem.mAlbumName = attrMap[i];
+                    case MEDIA_ATTRIBUTE_TRACK_NUMBER -> {
                         try {
                             mAvrcpItem.mTrackNumber = Long.valueOf(attrMap[i]);
                         } catch (java.lang.NumberFormatException e) {
                             // If Track Number doesn't parse, leave it unset
                         }
-                        break;
-                    case MEDIA_ATTRIBUTE_TOTAL_TRACK_NUMBER:
+                    }
+                    case MEDIA_ATTRIBUTE_TOTAL_TRACK_NUMBER -> {
                         try {
                             mAvrcpItem.mTotalNumberOfTracks = Long.valueOf(attrMap[i]);
                         } catch (java.lang.NumberFormatException e) {
                             // If Total Track Number doesn't parse, leave it unset
                         }
-                        break;
-                    case MEDIA_ATTRIBUTE_GENRE:
-                        mAvrcpItem.mGenre = attrMap[i];
-                        break;
-                    case MEDIA_ATTRIBUTE_PLAYING_TIME:
+                    }
+                    case MEDIA_ATTRIBUTE_GENRE -> mAvrcpItem.mGenre = attrMap[i];
+                    case MEDIA_ATTRIBUTE_PLAYING_TIME -> {
                         try {
                             mAvrcpItem.mPlayingTime = Long.valueOf(attrMap[i]);
                         } catch (java.lang.NumberFormatException e) {
                             // If Playing Time doesn't parse, leave it unset
                         }
-                        break;
-                    case MEDIA_ATTRIBUTE_COVER_ART_HANDLE:
-                        mAvrcpItem.mCoverArtHandle = parseImageHandle(attrMap[i]);
-                        break;
+                    }
+                    case MEDIA_ATTRIBUTE_COVER_ART_HANDLE ->
+                            mAvrcpItem.mCoverArtHandle = parseImageHandle(attrMap[i]);
+                    default -> {} // Nothing to do
                 }
             }
             return this;

@@ -424,14 +424,14 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
 
         long actions = getCurrentPlayerSupportedActions();
         switch (request.opcode()) {
-            case Request.Opcodes.PLAY:
+            case Request.Opcodes.PLAY -> {
                 if ((actions & PlaybackState.ACTION_PLAY) != 0
                         || (actions & PlaybackState.ACTION_PLAY_PAUSE) != 0) {
                     mMediaPlayerList.getActivePlayer().playCurrent();
                     status = Request.Results.SUCCESS;
                 }
-                break;
-            case Request.Opcodes.PAUSE:
+            }
+            case Request.Opcodes.PAUSE -> {
                 if ((actions & PlaybackState.ACTION_PAUSE) != 0
                         || (actions & PlaybackState.ACTION_PLAY_PAUSE) != 0) {
                     // Notice: Pause may function as Pause/Play toggle switch when triggered on
@@ -441,39 +441,39 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
                     }
                     status = Request.Results.SUCCESS;
                 }
-                break;
-            case Request.Opcodes.STOP:
+            }
+            case Request.Opcodes.STOP -> {
                 if ((actions & PlaybackState.ACTION_STOP) != 0) {
                     mMediaPlayerList.getActivePlayer().seekTo(0);
                     mMediaPlayerList.getActivePlayer().stopCurrent();
                     status = Request.Results.SUCCESS;
                 }
-                break;
-            case Request.Opcodes.PREVIOUS_TRACK:
+            }
+            case Request.Opcodes.PREVIOUS_TRACK -> {
                 if ((actions & PlaybackState.ACTION_SKIP_TO_PREVIOUS) != 0) {
                     mMediaPlayerList.getActivePlayer().skipToPrevious();
                     status = Request.Results.SUCCESS;
                 }
-                break;
-            case Request.Opcodes.NEXT_TRACK:
+            }
+            case Request.Opcodes.NEXT_TRACK -> {
                 if ((actions & PlaybackState.ACTION_SKIP_TO_NEXT) != 0) {
                     mMediaPlayerList.getActivePlayer().skipToNext();
                     status = Request.Results.SUCCESS;
                 }
-                break;
-            case Request.Opcodes.FAST_REWIND:
+            }
+            case Request.Opcodes.FAST_REWIND -> {
                 if ((actions & PlaybackState.ACTION_REWIND) != 0) {
                     mMediaPlayerList.getActivePlayer().rewind();
                     status = Request.Results.SUCCESS;
                 }
-                break;
-            case Request.Opcodes.FAST_FORWARD:
+            }
+            case Request.Opcodes.FAST_FORWARD -> {
                 if ((actions & PlaybackState.ACTION_FAST_FORWARD) != 0) {
                     mMediaPlayerList.getActivePlayer().fastForward();
                     status = Request.Results.SUCCESS;
                 }
-                break;
-            case Request.Opcodes.MOVE_RELATIVE:
+            }
+            case Request.Opcodes.MOVE_RELATIVE -> {
                 if ((actions & PlaybackState.ACTION_SEEK_TO) != 0) {
                     long requested_offset_ms = request.arg();
                     long current_pos_ms = getLatestTrackPosition();
@@ -492,7 +492,8 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
                         status = Request.Results.SUCCESS;
                     }
                 }
-                break;
+            }
+            default -> {} // Nothing to do
         }
 
         // These LE Audio opcodes can't be mapped to Android media session actions:

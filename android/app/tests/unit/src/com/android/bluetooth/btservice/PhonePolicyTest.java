@@ -1304,6 +1304,7 @@ public class PhonePolicyTest {
                     doReturn(nextState).when(mA2dpService).getConnectionState(device);
             case BluetoothProfile.HEADSET ->
                     doReturn(nextState).when(mHeadsetService).getConnectionState(device);
+            default -> {} // Nothing to do
         }
         mPhonePolicy.profileConnectionStateChanged(profileId, device, prevState, nextState);
         mLooper.dispatchAll();

@@ -184,10 +184,11 @@ public class BipImageDescriptor {
             xpp.setInput(inputStream, "utf-8");
             int event = xpp.getEventType();
             while (event != XmlPullParser.END_DOCUMENT) {
-                switch (event) {
-                    case XmlPullParser.START_TAG:
+                if (event == XmlPullParser.START_TAG) {
                         String tag = xpp.getName();
-                        if (tag.equals("image")) {
+                    if (!tag.equals("image")) {
+                        Log.w(TAG, "Unrecognized tag in x-bt/img-Description object: " + tag);
+                    } else {
                             mEncoding = new BipEncoding(xpp.getAttributeValue(null, "encoding"));
                             mPixel = new BipPixel(xpp.getAttributeValue(null, "pixel"));
                             mSize = parseInt(xpp.getAttributeValue(null, "size"));
@@ -195,12 +196,7 @@ public class BipImageDescriptor {
                             mTransformation =
                                     new BipTransformation(
                                             xpp.getAttributeValue(null, "transformation"));
-                        } else {
-                            Log.w(TAG, "Unrecognized tag in x-bt/img-Description object: " + tag);
                         }
-                        break;
-                    case XmlPullParser.END_TAG:
-                        break;
                 }
                 event = xpp.next();
             }

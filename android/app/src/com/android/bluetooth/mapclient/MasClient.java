@@ -230,23 +230,22 @@ public class MasClient {
         public void handleMessage(Message msg) {
             MasClient inst = mInst.get();
             switch (msg.what) {
-                case CONNECT:
+                case CONNECT -> {
                     if (!inst.mConnected) {
                         inst.connect();
                     }
-                    break;
-
-                case DISCONNECT:
+                }
+                case DISCONNECT -> {
                     if (inst.mConnected) {
                         inst.disconnect();
                     }
-                    break;
-
-                case REQUEST:
+                }
+                case REQUEST -> {
                     if (inst.mConnected) {
                         inst.executeRequest((Request) msg.obj);
                     }
-                    break;
+                }
+                default -> {} // Nothing to do
             }
         }
     }

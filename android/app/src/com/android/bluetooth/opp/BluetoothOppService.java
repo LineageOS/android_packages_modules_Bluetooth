@@ -369,15 +369,13 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                 @Override
                 public void handleMessage(Message msg) {
                     switch (msg.what) {
-                        case STOP_LISTENER:
-                            stopInternal();
-                            break;
-                        case START_LISTENER:
+                        case STOP_LISTENER -> stopInternal();
+                        case START_LISTENER -> {
                             if (mAdapterService.isEnabled()) {
                                 startSocketListener();
                             }
-                            break;
-                        case MEDIA_SCANNED:
+                        }
+                        case MEDIA_SCANNED -> {
                             Log.v(
                                     TAG,
                                     "Update mInfo.id "
@@ -396,8 +394,8 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                             synchronized (BluetoothOppService.this) {
                                 mMediaScanInProgress = false;
                             }
-                            break;
-                        case MEDIA_SCANNED_FAILED:
+                        }
+                        case MEDIA_SCANNED_FAILED -> {
                             Log.v(TAG, "Update mInfo.id " + msg.arg1 + " for MEDIA_SCANNED_FAILED");
                             ContentValues updateValues1 = new ContentValues();
                             Uri contentUri1 =
@@ -409,8 +407,8 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                             synchronized (BluetoothOppService.this) {
                                 mMediaScanInProgress = false;
                             }
-                            break;
-                        case MSG_INCOMING_BTOPP_CONNECTION:
+                        }
+                        case MSG_INCOMING_BTOPP_CONNECTION -> {
                             Log.d(TAG, "Get incoming connection");
                             ObexTransport transport = (ObexTransport) msg.obj;
 
@@ -452,8 +450,8 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                                     mHandler.sendMessageDelayed(msg1, 1000);
                                 }
                             }
-                            break;
-                        case MSG_INCOMING_CONNECTION_RETRY:
+                        }
+                        case MSG_INCOMING_CONNECTION_RETRY -> {
                             if (mBatches.size() == 0) {
                                 Log.i(TAG, "Start Obex Server");
                                 createServerSession(mPendingConnection);
@@ -492,7 +490,8 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                                     mHandler.sendMessageDelayed(msg2, 1000);
                                 }
                             }
-                            break;
+                        }
+                        default -> {} // Nothing to do
                     }
                 }
             };
@@ -622,7 +621,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                     if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
                         switch (intent.getIntExtra(
                                 BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)) {
-                            case BluetoothAdapter.STATE_ON:
+                            case BluetoothAdapter.STATE_ON -> {
                                 Log.v(TAG, "Bluetooth state changed: STATE_ON");
                                 startListener();
                                 // If this is within a sending process, continue the handle
@@ -650,11 +649,8 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                                         context.startActivity(in1);
                                     }
                                 }
-
-                                break;
-                            case BluetoothAdapter.STATE_TURNING_OFF:
-                                Log.v(TAG, "Bluetooth state changed: STATE_TURNING_OFF");
-                                break;
+                            }
+                            default -> {} // Nothing to do
                         }
                     }
                 }

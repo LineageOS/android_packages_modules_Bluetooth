@@ -45,8 +45,7 @@ class MessagesListing {
 
             int event = xpp.getEventType();
             while (event != XmlPullParser.END_DOCUMENT) {
-                switch (event) {
-                    case XmlPullParser.START_TAG:
+                if (event == XmlPullParser.START_TAG) {
                         if (xpp.getName().equals("msg")) {
 
                             Map<String, String> attrs = new HashMap<>();
@@ -63,7 +62,6 @@ class MessagesListing {
                                 Log.w(TAG, "Invalid <msg/>");
                             }
                         }
-                        break;
                 }
 
                 event = xpp.next();

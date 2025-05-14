@@ -106,10 +106,12 @@ class BluetoothPbapUtils {
 
     @VisibleForTesting static HashSet<String> sContactSet = new HashSet<>();
 
-    @VisibleForTesting static final String TYPE_NAME = "name";
-    @VisibleForTesting static final String TYPE_PHONE = "phone";
-    @VisibleForTesting static final String TYPE_EMAIL = "email";
-    @VisibleForTesting static final String TYPE_ADDRESS = "address";
+    enum ContactFieldType {
+        NAME,
+        PHONE,
+        EMAIL,
+        ADDRESS
+    }
 
     private static boolean hasFilter(byte[] filter) {
         return filter != null && filter.length > 0;
@@ -408,24 +410,14 @@ class BluetoothPbapUtils {
                     // fetch all updated contacts and compare with cached copy of contacts
                     int indexData = dataCursor.getColumnIndex(Data.DATA1);
                     int indexMimeType = dataCursor.getColumnIndex(Data.MIMETYPE);
-                    String data;
-                    String mimeType;
                     while (dataCursor.moveToNext()) {
-                        data = dataCursor.getString(indexData);
-                        mimeType = dataCursor.getString(indexMimeType);
-                        switch (mimeType) {
-                            case Email.CONTENT_ITEM_TYPE:
-                                emailTmp.add(data);
-                                break;
-                            case Phone.CONTENT_ITEM_TYPE:
-                                phoneTmp.add(data);
-                                break;
-                            case StructuredPostal.CONTENT_ITEM_TYPE:
-                                addressTmp.add(data);
-                                break;
-                            case StructuredName.CONTENT_ITEM_TYPE:
-                                nameTmp = data;
-                                break;
+                        String data = dataCursor.getString(indexData);
+                        switch (dataCursor.getString(indexMimeType)) {
+                            case Email.CONTENT_ITEM_TYPE -> emailTmp.add(data);
+                            case Phone.CONTENT_ITEM_TYPE -> phoneTmp.add(data);
+                            case StructuredPostal.CONTENT_ITEM_TYPE -> addressTmp.add(data);
+                            case StructuredName.CONTENT_ITEM_TYPE -> nameTmp = data;
+                            default -> {} // Nothing to do
                         }
                     }
                 }
@@ -543,7 +535,6 @@ class BluetoothPbapUtils {
             int indexCId = c.getColumnIndex(Data.CONTACT_ID);
             int indexData = c.getColumnIndex(Data.DATA1);
             int indexMimeType = c.getColumnIndex(Data.MIMETYPE);
-            String contactId, data, mimeType;
 
             while (c.moveToNext()) {
                 if (c.isNull(indexCId)) {
@@ -556,27 +547,27 @@ class BluetoothPbapUtils {
                             3);
                     continue;
                 }
-                contactId = c.getString(indexCId);
-                data = c.getString(indexData);
-                mimeType = c.getString(indexMimeType);
+                String contactId = c.getString(indexCId);
+                String data = c.getString(indexData);
                 /* fetch phone/email/address/name information of the contact */
-                switch (mimeType) {
-                    case Phone.CONTENT_ITEM_TYPE:
-                        setContactFields(TYPE_PHONE, contactId, data);
+                switch (c.getString(indexMimeType)) {
+                    case Phone.CONTENT_ITEM_TYPE -> {
+                        setContactFields(ContactFieldType.PHONE, contactId, data);
                         currentSvcFieldCount++;
-                        break;
-                    case Email.CONTENT_ITEM_TYPE:
-                        setContactFields(TYPE_EMAIL, contactId, data);
+                    }
+                    case Email.CONTENT_ITEM_TYPE -> {
+                        setContactFields(ContactFieldType.EMAIL, contactId, data);
                         currentSvcFieldCount++;
-                        break;
-                    case StructuredPostal.CONTENT_ITEM_TYPE:
-                        setContactFields(TYPE_ADDRESS, contactId, data);
+                    }
+                    case StructuredPostal.CONTENT_ITEM_TYPE -> {
+                        setContactFields(ContactFieldType.ADDRESS, contactId, data);
                         currentSvcFieldCount++;
-                        break;
-                    case StructuredName.CONTENT_ITEM_TYPE:
-                        setContactFields(TYPE_NAME, contactId, data);
+                    }
+                    case StructuredName.CONTENT_ITEM_TYPE -> {
+                        setContactFields(ContactFieldType.NAME, contactId, data);
                         currentSvcFieldCount++;
-                        break;
+                    }
+                    default -> {} // Nothing to do
                 }
                 sContactSet.add(contactId);
                 currentTotalFields++;
@@ -621,7 +612,7 @@ class BluetoothPbapUtils {
      * contactsFieldData - List of field data for phone/email/address.
      * contactId - Contact ID, data1 - field value from data table for phone/email/address*/
     @VisibleForTesting
-    static void setContactFields(String fieldType, String contactId, String data) {
+    static void setContactFields(ContactFieldType fieldType, String contactId, String data) {
         ContactData cData = null;
         if (sContactDataset.containsKey(contactId)) {
             cData = sContactDataset.get(contactId);
@@ -631,18 +622,10 @@ class BluetoothPbapUtils {
         }
 
         switch (fieldType) {
-            case TYPE_NAME:
-                cData.mName = data;
-                break;
-            case TYPE_PHONE:
-                cData.mPhone.add(data);
-                break;
-            case TYPE_EMAIL:
-                cData.mEmail.add(data);
-                break;
-            case TYPE_ADDRESS:
-                cData.mAddress.add(data);
-                break;
+            case ContactFieldType.NAME -> cData.mName = data;
+            case ContactFieldType.PHONE -> cData.mPhone.add(data);
+            case ContactFieldType.EMAIL -> cData.mEmail.add(data);
+            case ContactFieldType.ADDRESS -> cData.mAddress.add(data);
         }
         sContactDataset.put(contactId, cData);
     }

@@ -196,7 +196,7 @@ public class RequestTest {
                 HeaderSet request = op.getReceivedHeader();
                 String type = (String) request.getHeader(HeaderSet.TYPE);
                 switch (type) {
-                    case TYPE_GET_FOLDER_LISTING:
+                    case TYPE_GET_FOLDER_LISTING -> {
                         op.sendHeaders(replyHeaders);
                         outputStream = op.openOutputStream();
                         BluetoothMapFolderElement root =
@@ -205,21 +205,25 @@ public class RequestTest {
                         outputStream.write(root.encode(/*offset*/ 0, /*count*/ 1));
                         outputStream.close();
                         return ResponseCodes.OBEX_HTTP_OK;
+                    }
 
-                    case TYPE_MESSAGE:
+                    case TYPE_MESSAGE -> {
                         op.sendHeaders(replyHeaders);
                         outputStream = op.openOutputStream();
                         outputStream.write(SIMPLE_MMS_MESSAGE.getBytes());
                         outputStream.close();
                         return ResponseCodes.OBEX_HTTP_OK;
+                    }
 
-                    case TYPE_GET_MESSAGE_LISTING:
+                    case TYPE_GET_MESSAGE_LISTING -> {
                         outAppParams.setNewMessage(1);
                         outAppParams.setMseTime(TEST_TIME.getTime());
                         replyHeaders.setHeader(
                                 HeaderSet.APPLICATION_PARAMETER, outAppParams.encodeParams());
                         op.sendHeaders(replyHeaders);
                         return ResponseCodes.OBEX_HTTP_OK;
+                    }
+                    default -> {} // Nothing to do
                 }
             } catch (Exception e) {
                 return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
@@ -240,7 +244,7 @@ public class RequestTest {
                     return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
                 }
                 switch (type) {
-                    case TYPE_SET_MESSAGE_STATUS:
+                    case TYPE_SET_MESSAGE_STATUS -> {
                         if (appParams.getStatusIndicator() != TEST_STATUS_INDICATOR) {
                             return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
                         }
@@ -248,18 +252,22 @@ public class RequestTest {
                             return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
                         }
                         return ResponseCodes.OBEX_HTTP_OK;
+                    }
 
-                    case TYPE_SET_NOTIFICATION_REGISTRATION:
+                    case TYPE_SET_NOTIFICATION_REGISTRATION -> {
                         if (appParams.getNotificationStatus() != 1) {
                             return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
                         }
                         return ResponseCodes.OBEX_HTTP_OK;
+                    }
 
-                    case TYPE_MESSAGE:
+                    case TYPE_MESSAGE -> {
                         HeaderSet replyHeaders = new HeaderSet();
                         replyHeaders.setHeader(HeaderSet.NAME, HANDLE);
                         op.sendHeaders(replyHeaders);
                         return ResponseCodes.OBEX_HTTP_OK;
+                    }
+                    default -> {} // Nothing to do
                 }
             } catch (Exception e) {
                 return ResponseCodes.OBEX_HTTP_BAD_REQUEST;

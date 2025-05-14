@@ -668,15 +668,20 @@ class MapClientContent {
     private List<MessageDumpElement> getRecentMessagesFromFolder(Folder folder) {
         final Uri smsUri;
         final Uri mmsUri;
-        if (folder == Folder.INBOX) {
+
+        switch (folder) {
+            case Folder.INBOX -> {
             smsUri = Sms.Inbox.CONTENT_URI;
             mmsUri = Mms.Inbox.CONTENT_URI;
-        } else if (folder == Folder.SENT) {
+            }
+            case Folder.SENT -> {
             smsUri = Sms.Sent.CONTENT_URI;
             mmsUri = Mms.Sent.CONTENT_URI;
-        } else {
+            }
+            default -> { // Folder.UNKNOWN
             warn("getRecentMessagesFromFolder: Failed, unsupported folder=" + folder);
             return null;
+            }
         }
 
         List<MessageDumpElement> messages = new ArrayList<>();

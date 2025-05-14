@@ -333,26 +333,11 @@ public final class BluetoothServerSocket implements Closeable {
         StringBuilder sb = new StringBuilder();
         sb.append("ServerSocket: Type: ");
         switch (mSocket.getConnectionType()) {
-            case BluetoothSocket.TYPE_RFCOMM:
-                {
-                    sb.append("TYPE_RFCOMM");
-                    break;
-                }
-            case BluetoothSocket.TYPE_L2CAP:
-                {
-                    sb.append("TYPE_L2CAP");
-                    break;
-                }
-            case BluetoothSocket.TYPE_L2CAP_LE:
-                {
-                    sb.append("TYPE_L2CAP_LE");
-                    break;
-                }
-            case BluetoothSocket.TYPE_SCO:
-                {
-                    sb.append("TYPE_SCO");
-                    break;
-                }
+            case BluetoothSocket.TYPE_RFCOMM -> sb.append("TYPE_RFCOMM");
+            case BluetoothSocket.TYPE_L2CAP -> sb.append("TYPE_L2CAP");
+            case BluetoothSocket.TYPE_L2CAP_LE -> sb.append("TYPE_L2CAP_LE");
+            case BluetoothSocket.TYPE_SCO -> sb.append("TYPE_SCO");
+            default -> {} // Nothing to do
         }
         sb.append(" Channel: ").append(mChannel);
         return sb.toString();

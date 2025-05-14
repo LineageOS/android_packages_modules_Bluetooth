@@ -240,24 +240,13 @@ public class A2dpCodecConfigTest {
         BluetoothCodecConfig[] codecConfigs = mA2dpCodecConfig.codecConfigPriorities();
         for (BluetoothCodecConfig config : codecConfigs) {
             switch (config.getCodecType()) {
-                case BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC:
-                    assertThat(config.getCodecPriority()).isEqualTo(SBC_PRIORITY_DEFAULT);
-                    break;
-                case BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC:
-                    assertThat(config.getCodecPriority()).isEqualTo(AAC_PRIORITY_DEFAULT);
-                    break;
-                case BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX:
-                    assertThat(config.getCodecPriority()).isEqualTo(APTX_PRIORITY_DEFAULT);
-                    break;
-                case BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD:
-                    assertThat(config.getCodecPriority()).isEqualTo(APTX_HD_PRIORITY_DEFAULT);
-                    break;
-                case BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC:
-                    assertThat(config.getCodecPriority()).isEqualTo(LDAC_PRIORITY_DEFAULT);
-                    break;
-                case BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS:
-                    assertThat(config.getCodecPriority()).isEqualTo(OPUS_PRIORITY_DEFAULT);
-                    break;
+                case BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC -> assertThat(config.getCodecPriority()).isEqualTo(SBC_PRIORITY_DEFAULT);
+                case BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC -> assertThat(config.getCodecPriority()).isEqualTo(AAC_PRIORITY_DEFAULT);
+                case BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX -> assertThat(config.getCodecPriority()).isEqualTo(APTX_PRIORITY_DEFAULT);
+                case BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD -> assertThat(config.getCodecPriority()).isEqualTo(APTX_HD_PRIORITY_DEFAULT);
+                case BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC -> assertThat(config.getCodecPriority()).isEqualTo(LDAC_PRIORITY_DEFAULT);
+                case BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS -> assertThat(config.getCodecPriority()).isEqualTo(OPUS_PRIORITY_DEFAULT);
+                default -> {} // Nothing to do
             }
         }
     }

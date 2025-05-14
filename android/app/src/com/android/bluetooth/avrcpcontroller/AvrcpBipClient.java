@@ -374,17 +374,18 @@ public class AvrcpBipClient {
 
         debug("Notifying caller of request complete - " + request.toString());
         switch (type) {
-            case BipRequest.TYPE_GET_IMAGE_PROPERTIES:
+            case BipRequest.TYPE_GET_IMAGE_PROPERTIES -> {
                 imageHandle = ((RequestGetImageProperties) request).getImageHandle();
                 BipImageProperties properties =
                         ((RequestGetImageProperties) request).getImageProperties();
                 mCallback.onGetImagePropertiesComplete(responseCode, imageHandle, properties);
-                break;
-            case BipRequest.TYPE_GET_IMAGE:
+            }
+            case BipRequest.TYPE_GET_IMAGE -> {
                 imageHandle = ((RequestGetImage) request).getImageHandle();
                 BipImage image = ((RequestGetImage) request).getImage();
                 mCallback.onGetImageComplete(responseCode, imageHandle, image);
-                break;
+            }
+            default -> {} // Nothing to do
         }
     }
 
@@ -401,29 +402,27 @@ public class AvrcpBipClient {
         public void handleMessage(Message msg) {
             AvrcpBipClient inst = mInst.get();
             switch (msg.what) {
-                case CONNECT:
+                case CONNECT -> {
                     if (!inst.isConnected()) {
                         inst.connect();
                     }
-                    break;
-
-                case DISCONNECT:
+                }
+                case DISCONNECT -> {
                     if (inst.isConnected()) {
                         inst.disconnect();
                     }
-                    break;
-
-                case REFRESH_OBEX_SESSION:
+                }
+                case REFRESH_OBEX_SESSION -> {
                     if (inst.isConnected()) {
                         inst.refreshObexSession();
                     }
-                    break;
-
-                case REQUEST:
+                }
+                case REQUEST -> {
                     if (inst.isConnected()) {
                         inst.executeRequest((BipRequest) msg.obj);
                     }
-                    break;
+                }
+                default -> {} // Nothing to do
             }
         }
     }
