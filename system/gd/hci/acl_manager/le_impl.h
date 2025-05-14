@@ -737,6 +737,12 @@ public:
 
   void add_device_to_accept_list(AddressWithType address_with_type) {
     metrics::LogMetricLeDeviceInAcceptList(address_with_type.GetAddress(), true /* is_add */);
+
+    if (address_with_type.GetAddress().IsEmpty()) {
+      log::warn("Address is empty, return");
+      return;
+    }
+
     if (connections.alreadyConnected(address_with_type)) {
       log::info("Device already connected, return");
       return;
