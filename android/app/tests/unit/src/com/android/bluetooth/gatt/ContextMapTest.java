@@ -158,9 +158,9 @@ public class ContextMapTest {
 
     private ContextMap<IBluetoothGattCallback> getMapWithAppAndConnection() {
         ContextMap<IBluetoothGattCallback> contextMap = new ContextMap<>();
-        App app = contextMap.add(RANDOM_UUID1, mMockCallback, mAdapterService, mAttributionSource);
+        App app = contextMap.add(RANDOM_UUID1, mMockCallback, BluetoothDevice.TRANSPORT_LE, mAdapterService, mAttributionSource);
         app.id = APP_ID1;
-        app = contextMap.add(RANDOM_UUID2, mMockCallback, mAdapterService, mAttributionSource);
+        app = contextMap.add(RANDOM_UUID2, mMockCallback, BluetoothDevice.TRANSPORT_LE, mAdapterService, mAttributionSource);
         app.id = APP_ID2;
 
         contextMap.addConnection(APP_ID1, CONN_ID1, BluetoothDevice.TRANSPORT_LE, mDevice1);

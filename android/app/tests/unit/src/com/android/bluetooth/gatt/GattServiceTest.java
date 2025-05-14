@@ -439,8 +439,9 @@ public class GattServiceTest {
         UUID uuid = UUID.randomUUID();
         IBluetoothGattCallback callback = mock(IBluetoothGattCallback.class);
         boolean eattSupport = true;
+        int transport = BluetoothDevice.TRANSPORT_LE;
 
-        mService.registerClient(uuid, callback, eattSupport, mAttributionSource);
+        mService.registerClient(uuid, callback, eattSupport, transport, mAttributionSource);
         verify(mNativeInterface)
                 .gattClientRegisterApp(
                         uuid.getLeastSignificantBits(),
@@ -454,9 +455,11 @@ public class GattServiceTest {
         doReturn(GattService.GATT_CLIENT_LIMIT_PER_APP).when(mClientMap).countByAppUid(anyInt());
         UUID uuid = UUID.randomUUID();
         IBluetoothGattCallback callback = mock(IBluetoothGattCallback.class);
+        boolean eattSupport = true;
+        int transport = BluetoothDevice.TRANSPORT_LE;
 
-        mService.registerClient(uuid, callback, /* eattSupport= */ true, mAttributionSource);
-        verify(mClientMap, never()).add(any(), any(), any(), any());
+        mService.registerClient(uuid, callback, eattSupport, transport, mAttributionSource);
+        verify(mClientMap, never()).add(any(), any(), anyInt(), any(), any());
         verify(mNativeInterface, never())
                 .gattClientRegisterApp(anyLong(), anyLong(), any(), anyBoolean());
     }

@@ -889,6 +889,7 @@ public class GattService extends ProfileService {
             UUID uuid,
             IBluetoothGattCallback callback,
             boolean eattSupport,
+            int transport,
             AttributionSource source) {
         if (mClientMap.countByAppUid(Binder.getCallingUid()) >= GATT_CLIENT_LIMIT_PER_APP) {
             Log.w(TAG, "registerClient() - failed due to too many clients");
@@ -906,8 +907,13 @@ public class GattService extends ProfileService {
             name = name + "[" + tag + "]";
         }
 
-        Log.d(TAG, "registerClient() - UUID=" + uuid + " name=" + name);
-        mClientMap.add(uuid, callback, this, source);
+        Log.d(
+                TAG,
+                "registerClient() -"
+                        + (" UUID=" + uuid)
+                        + (" name=" + name)
+                        + (" transport=" + transportToString(transport)));
+        mClientMap.add(uuid, callback, transport, this, source);
 
         mNativeInterface.gattClientRegisterApp(
                 uuid.getLeastSignificantBits(), uuid.getMostSignificantBits(), name, eattSupport);
@@ -957,6 +963,7 @@ public class GattService extends ProfileService {
                 TAG,
                 "clientConnect() -"
                         + (" device=" + device)
+                        + (", transport=" + transportToString(transport))
                         + (", addressType=" + addressType)
                         + (", isDirect=" + isDirect)
                         + (", opportunistic=" + opportunistic)
@@ -1994,9 +2001,25 @@ public class GattService extends ProfileService {
             UUID uuid,
             IBluetoothGattServerCallback callback,
             boolean eattSupport,
+            int transport,
             AttributionSource source) {
-        Log.d(TAG, "registerServer() - UUID=" + uuid);
-        mServerMap.add(uuid, callback, this, source);
+        String name = source.getPackageName();
+        String tag = getLastAttributionTag(source);
+        String myPackage = AttributionSource.myAttributionSource().getPackageName();
+        if (myPackage.equals(name) && tag != null) {
+            /* For servers created by Bluetooth stack, use just tag as name */
+            name = tag;
+        } else if (tag != null) {
+            name = name + "[" + tag + "]";
+        }
+
+        Log.d(
+                TAG,
+                "registerServer() -"
+                        + (" UUID=" + uuid)
+                        + (" name=" + name)
+                        + (" transport=" + transportToString(transport)));
+        mServerMap.add(uuid, callback, transport, this, source);
         mNativeInterface.gattServerRegisterApp(
                 uuid.getLeastSignificantBits(), uuid.getMostSignificantBits(), eattSupport);
     }
@@ -2032,7 +2055,11 @@ public class GattService extends ProfileService {
             return;
         }
         int serverIf = serverApp.id;
-        Log.d(TAG, "serverConnect() - device=" + device);
+        Log.d(
+                TAG,
+                "serverConnect() -"
+                        + (" device=" + device)
+                        + (" transport=" + transportToString(transport)));
 
         logServerForegroundInfo(source.getUid(), isDirect);
 
@@ -2398,6 +2425,7 @@ public class GattService extends ProfileService {
                             + appId
                             + ", appName: "
                             + app.packageName
+                            + (", transport: " + transportToString(app.transport))
                             + (app.attributionTag == null ? "" : ", tag: " + app.attributionTag));
             List<ContextMap.Connection> clientConnections = mClientMap.getConnectionByApp(appId);
             for (ContextMap.Connection connection : clientConnections) {
@@ -2413,6 +2441,7 @@ public class GattService extends ProfileService {
                             + appId
                             + ", appName: "
                             + app.packageName
+                            + (", transport: " + transportToString(app.transport))
                             + (app.attributionTag == null ? "" : ", tag: " + app.attributionTag));
             List<ContextMap.Connection> serverConnections = mServerMap.getConnectionByApp(appId);
             for (ContextMap.Connection connection : serverConnections) {
