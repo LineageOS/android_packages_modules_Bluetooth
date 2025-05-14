@@ -75,9 +75,9 @@ from mobly.asserts import assert_raises  # type: ignore
 from mobly.asserts import fail  # type: ignore
 from pandora.a2dp_grpc_aio import A2DP
 from pandora.a2dp_pb2 import STEREO, CodecId, CodecParameters, Configuration, PlaybackAudioRequest, Source
-from pandora.host_pb2 import Connection
+from pandora.host_pb2 import Connection, ConnectResponse
 from pandora.security_pb2 import LEVEL2
-from typing import AsyncIterator, Optional
+from typing import AsyncIterator, Awaitable, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -1282,6 +1282,158 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         # # Stop streaming to RD1.
         await asyncio.gather(self.dut_a2dp.Suspend(source=dut_ref1_source),
                              channel.accept_suspend(timeout=8.0))
+
+    @avatar.asynchronous
+    async def test_delay_report_after_full_codec_reconfiguration(self) -> None:
+        """Test if AOSP properly sets configuration when the peer device supports/doesn't support
+           delay report service capability.
+
+        1. Connect, pair, open AVDTP and disconnect with remote REF1 - delay report supported by REF1
+        2. Connect, open AVDTP and disconnect with remote REF1 - delay report not supported by REF1
+        3. Connect, open AVDTP and disconnect with remote REF1 - delay report supported by REF1
+        4. Connect and open AVDTP with remote REF1 - delay report not supported by REF1
+        5. Reconfigure codec AAC to SBC - delay report not supported by both codecs
+        6. Connect, open AVDTP and disconnect with remote REF1 - delay report supported by REF1
+        """
+
+        seid_information = [
+            SeidInformation(acp_seid=0x01, tsep=Tsep.SINK, media_type=AVDTP_AUDIO_MEDIA_TYPE),
+            SeidInformation(acp_seid=0x02, tsep=Tsep.SINK, media_type=AVDTP_AUDIO_MEDIA_TYPE)
+        ]
+
+        async def connect_and_pair() -> tuple[SignalingChannel, Connection, Connection]:
+            logger.info("connect ACL and pair")
+            # Connect and pair RD1.
+            dut_ref1, ref1_dut = await asyncio.gather(
+                initiate_pairing(self.dut, self.ref1.address),
+                accept_pairing(self.ref1, self.dut.address),
+            )
+            logger.info("connect signaling channel")
+            connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+            assert connection is not None, "Unable to find connection!"
+            channel = SignalingChannel.accept(connection)
+            return channel, dut_ref1, ref1_dut
+
+        async def reconnect() -> tuple[SignalingChannel, Awaitable[ConnectResponse], Connection]:
+            logger.info("connect ACL")
+            connect_awaitable = self.dut.aio.host.Connect(address=self.ref1.address)
+            result = await self.ref1.aio.host.WaitConnection(address=self.dut.address)
+            ref1_dut = result.connection
+            assert ref1_dut
+            logger.info("connect signaling channel")
+            connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+            assert connection is not None, "Unable to find connection!"
+            channel = SignalingChannel.accept(connection)
+            return channel, connect_awaitable, ref1_dut
+
+        async def disconnect(dut_ref1: Connection, ref1_dut: Connection):
+            logger.info("disconnect ACL")
+            await self.dut.aio.host.Disconnect(connection=dut_ref1)
+            await self.ref1.aio.host.WaitDisconnection(connection=ref1_dut, timeout=5)
+            logger.info("disconnected ACL")
+
+        async def accept_open_with_delay_report(channel: SignalingChannel):
+            sbc_capabilities = sbc_service_capabilites()
+            sbc_capabilities.append(DelayReportingCapability())
+            aac_capabilities = aac_service_capabilites()
+            aac_capabilities.append(DelayReportingCapability())
+            logger.info("connect_with_delay_report: waiting for channel to be established")
+            await channel.wait_signaling_channel_connected()
+            logger.info("connect_with_delay_report: waiting for discover")
+            await channel.accept_discover(seid_information)
+            logger.info("connect_with_delay_report: waiting for accept_get_all_capabilities")
+            await channel.accept_get_all_capabilities(sbc_capabilities)
+            logger.info("connect_with_delay_report: waiting for accept_get_all_capabilities")
+            await channel.accept_get_all_capabilities(aac_capabilities)
+            logger.info("connect_with_delay_report: waiting for accept_set_configuration")
+            await channel.accept_set_configuration(expected_configuration=[
+                MediaTransportCapability(), ANY,
+                DelayReportingCapability()
+            ])
+            logger.info("connect_with_delay_report: initiate delay report")
+            await channel.initiate_delay_report()
+            logger.info("connect_with_delay_report: waiting for accept_open")
+            await channel.accept_open()
+
+        async def accept_open_without_delay_report(channel: SignalingChannel):
+            logger.info("connect_without_delay_report: waiting for channel to be established")
+            await channel.wait_signaling_channel_connected()
+            logger.info("connect_without_delay_report: waiting for discover")
+            await channel.accept_discover(seid_information)
+            logger.info("connect_without_delay_report: waiting for accept_get_all_capabilities")
+            await channel.accept_get_all_capabilities(sbc_service_capabilites())
+            logger.info("connect_without_delay_report: waiting for accept_get_all_capabilities")
+            await channel.accept_get_all_capabilities(aac_service_capabilites())
+            logger.info("connect_without_delay_report: waiting for accept_set_configuration")
+            await channel.accept_set_configuration(
+                expected_configuration=[MediaTransportCapability(), ANY])
+            logger.info("connect_without_delay_report: waiting for accept_open")
+            await channel.accept_open()
+
+        async def handle_reconfiguration(channel: SignalingChannel):
+            logger.info("handle_reconfiguration: waiting for close")
+            await channel.accept_close()
+            acceptor_configuration_sbc = [MediaTransportCapability(), ANY]
+            logger.info("handle_reconfiguration: waiting for set configuration")
+            await channel.accept_set_configuration(
+                expected_configuration=[MediaTransportCapability(), ANY])
+            logger.info("handle_reconfiguration: waiting for open")
+            await channel.accept_open()
+
+        # 1. Validate connection with remote supporting delay report
+        channel, dut_ref1, ref1_dut = await connect_and_pair()
+        logger.info("channel: %s, dut_ref1: %s, ref1_dut: %s", channel, dut_ref1, ref1_dut)
+        await asyncio.gather(accept_open_with_delay_report(channel),
+                             open_source(self.dut_a2dp, dut_ref1))
+        await disconnect(dut_ref1, ref1_dut)
+
+        # 2. Validate connection with remote not supporting delay report
+        channel, connect_awaitable, ref1_dut = await reconnect()
+        await accept_open_without_delay_report(channel)
+        result = await connect_awaitable
+        assert result.connection is not None, "connection is None!"
+        await disconnect(result.connection, ref1_dut)
+
+        # 3. Validate connection with remote supporting delay report
+        channel, connect_awaitable, ref1_dut = await reconnect()
+        await accept_open_with_delay_report(channel)
+        result = await connect_awaitable
+        assert result.connection is not None, "connection is None!"
+        await disconnect(result.connection, ref1_dut)
+
+        # 4. Connect with remote device not supporting delay report
+        channel, connect_awaitable, ref1_dut = await reconnect()
+        await accept_open_without_delay_report(channel)
+        result = await connect_awaitable
+        assert result.connection is not None, "connection is None!"
+        dut_ref1 = result.connection
+
+        # 5. Reconfigure codec AAC to SBC (delay report not supported)
+        configurationResponse = await self.dut_a2dp.GetConfiguration(connection=dut_ref1)
+        logger.info("Current codec configuration: %s", configurationResponse.configuration)
+        assert configurationResponse.configuration.id.HasField('mpeg_aac')
+
+        new_configuration = Configuration(id=CodecId(sbc=empty_pb2.Empty()),
+                                          parameters=CodecParameters(channel_mode=STEREO,
+                                                                     sampling_frequency_hz=44100,
+                                                                     bit_depth=16))
+
+        logger.info("Switching to codec: %s", new_configuration)
+        await asyncio.gather(
+            self.dut_a2dp.SetConfiguration(connection=dut_ref1, configuration=new_configuration),
+            handle_reconfiguration(channel))
+
+        configurationResponse = await self.dut_a2dp.GetConfiguration(connection=dut_ref1)
+        logger.info("Current codec configuration: %s", configurationResponse.configuration)
+        assert configurationResponse.configuration.id.HasField('sbc')
+        await disconnect(dut_ref1, ref1_dut)
+
+        # 6. Connect to remote supporting delay report
+        channel, connect_awaitable, ref1_dut = await reconnect()
+        await accept_open_with_delay_report(channel)
+        result = await connect_awaitable
+        assert result.connection is not None, "connection is None!"
+        await disconnect(result.connection, ref1_dut)
 
 
 if __name__ == '__main__':

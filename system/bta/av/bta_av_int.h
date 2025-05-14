@@ -488,6 +488,7 @@ public:
   list_t* a2dp_list;       /* used for audio channels only */
   tBTA_AV_Q_INFO q_info;
   tAVDT_SEP_INFO sep_info[BTA_AV_NUM_SEPS]; /* stream discovery results */
+  AvdtpSepConfig default_sep_cfg;           /* local default SEP configuration */
   AvdtpSepConfig cfg;                       /* local SEP configuration */
   alarm_t* avrc_ct_timer;                   /* delay timer for AVRC CT */
   alarm_t* link_signalling_timer;
