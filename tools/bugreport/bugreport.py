@@ -13,6 +13,7 @@ from typing import List, Optional, Set
 
 from btsnoop import Btsnoop
 import analyzers.a2dp
+import analyzers.asha
 
 
 class Bugreport:
@@ -42,6 +43,11 @@ def run_a2dp(bugreport: Bugreport, args: argparse.Namespace):
         analyzers.a2dp.plot_acl_connection(acl_connection, **vars(args))
 
 
+def run_asha(bugreport: Bugreport, args: argparse.Namespace):
+    for acl_connection in bugreport.btsnoop_hci.le_acl_connections:
+        analyzers.asha.plot_acl_connection(acl_connection, **vars(args))
+
+
 def run(args: argparse.Namespace):
     bugreport = Bugreport(args.path)
     args.func(bugreport, args)
@@ -59,6 +65,11 @@ def main():
     a2dp.add_argument("--stream-cid", type=lambda x: int(x,0), help="override the stream CID")
     a2dp.add_argument("--codec-type", type=str, help="override the codec type")
     a2dp.add_argument("--sampling-frequency", type=int, help="override the sampling frequency")
+
+    asha = subparsers.add_parser('asha', description='Extract ASHA profile information')
+    asha.set_defaults(func=run_asha)
+    asha.add_argument("path", type=Path, help="path to the bugreport file")
+    asha.add_argument("--psm", type=lambda x: int(x,0), help="override the stream PSM")
 
     args = parser.parse_args()
     run(args)
