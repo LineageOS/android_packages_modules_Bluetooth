@@ -114,9 +114,8 @@ import java.util.concurrent.TimeoutException;
 @RunWith(TestParameterInjector.class)
 public class PairingTest {
     private static final String TAG = PairingTest.class.getSimpleName();
-
+    private static final int DEVICE_NAME_MAX = 26;
     private static final Duration BOND_INTENT_TIMEOUT = Duration.ofSeconds(10);
-    private static final String CF_NAME = "Cuttlefish";
     private static final int TEST_DELAY_MS = 1000;
     private static final int TEST_PSM = 5;
     private static final int TIMEOUT_ADVERTISING_MS = 1000;
@@ -134,6 +133,7 @@ public class PairingTest {
             InstrumentationRegistry.getInstrumentation().getTargetContext();
     private static final BluetoothAdapter sAdapter =
             sTargetContext.getSystemService(BluetoothManager.class).getAdapter();
+    private static String sDeviceName;
 
     @Rule(order = 0)
     public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
@@ -176,6 +176,12 @@ public class PairingTest {
                 sAdapter.getRemoteLeDevice(
                         Utils.BUMBLE_RANDOM_ADDRESS, BluetoothDevice.ADDRESS_TYPE_RANDOM);
 
+        String devName = sAdapter.getName();
+        // Limit the device name to maximum Le Advertise data
+        sDeviceName =
+                (devName.length() > DEVICE_NAME_MAX)
+                        ? devName.substring(0, DEVICE_NAME_MAX)
+                        : devName;
         /*
          * Note: Since there was no IntentReceiver registered, passing the instance as
          *  NULL in removeBond(). But, if there is an instance already present, that
@@ -699,10 +705,6 @@ public class PairingTest {
                 new IntentReceiver.Builder(sTargetContext, BluetoothDevice.ACTION_ACL_DISCONNECTED)
                         .build();
 
-        String deviceName = sAdapter.getName();
-        // set adapter name for verification
-        sAdapter.setName(CF_NAME);
-
         testStep_BondLePeripheral(intentReceiver);
         assertThat(sAdapter.getBondedDevices()).contains(mRemoteLeDevice);
 
@@ -724,8 +726,6 @@ public class PairingTest {
 
         assertThat(sAdapter.getBondedDevices()).contains(mRemoteLeDevice);
 
-        // revert adapter name
-        sAdapter.setName(deviceName);
         intentReceiver.close();
     }
 
@@ -1038,9 +1038,6 @@ public class PairingTest {
                 new IntentReceiver.Builder(sTargetContext, BluetoothDevice.ACTION_ACL_DISCONNECTED)
                         .build();
 
-        String deviceName = sAdapter.getName();
-        // set adapter name for verification
-        sAdapter.setName(CF_NAME);
         testStep_Advertise(OwnAddressType.PUBLIC);
         testStep_temporaryBond(intentReceiver);
         ConnectLEResponse leConn =
@@ -1056,13 +1053,15 @@ public class PairingTest {
                 hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
+        if (mBumbleDevice.isConnected()) {
+            // Disconnect Bumble
+            assertThat(mBumbleDevice.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
 
         intentReceiver.verifyReceivedOrdered(
                 hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
-        // revert adapter name
-        sAdapter.setName(deviceName);
+        }
         // delete keys at  bumble side
         mBumble.hostBlocking().factoryReset(Empty.getDefaultInstance());
         // Read fresh address
@@ -1102,9 +1101,6 @@ public class PairingTest {
                 new IntentReceiver.Builder(sTargetContext, BluetoothDevice.ACTION_ACL_DISCONNECTED)
                         .build();
 
-        String deviceName = sAdapter.getName();
-        // set adapter name for verification
-        sAdapter.setName(CF_NAME);
         testStep_Advertise(OwnAddressType.PUBLIC);
         testStep_temporaryBond(intentReceiver);
         ConnectLEResponse leConn =
@@ -1121,12 +1117,14 @@ public class PairingTest {
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
 
+        if (mBumbleDevice.isConnected()) {
+            // Disconnect Bumble
+            assertThat(mBumbleDevice.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
         intentReceiver.verifyReceivedOrdered(
                 hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
-        // revert adapter name
-        sAdapter.setName(deviceName);
+        }
         // delete keys at  bumble side
         mBumble.hostBlocking().factoryReset(Empty.getDefaultInstance());
         // Read fresh address
@@ -1944,9 +1942,9 @@ public class PairingTest {
                         (ownAddressType == OwnAddressType.RANDOM)
                                 ? scanningResponse.getRandom()
                                 : scanningResponse.getPublic();
-                if (scanningResponse.getData().getCompleteLocalName().equals(CF_NAME)
-                        || scanningResponse.getData().getShortenedLocalName().contains(CF_NAME)) {
-                    Log.i(TAG, "Device: found " + CF_NAME);
+                if (scanningResponse.getData().getCompleteLocalName().equals(sDeviceName)
+                        || scanningResponse.getData().getShortenedLocalName().equals(sDeviceName)) {
+                    Log.i(TAG, "Device: found " + sDeviceName);
                     break;
                 }
             }
