@@ -1198,7 +1198,7 @@ public class RemoteDevices {
                         // matches the type defined in BluetoothDevice.java
                         deviceProperties.setDeviceType(Utils.byteArrayToInt(val));
                     }
-                        // RSSI from hal is in one byte
+                    // RSSI from hal is in one byte
                     case AbstractionLayer.BT_PROPERTY_REMOTE_RSSI ->
                             deviceProperties.setRssi(val[0]);
                     case AbstractionLayer.BT_PROPERTY_REMOTE_IS_COORDINATED_SET_MEMBER ->

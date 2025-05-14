@@ -253,7 +253,7 @@ public final class ChannelSoundingParams implements Parcelable {
         public @NonNull Builder setSightType(@SightType int sightType) {
             if (!List.of(SIGHT_TYPE_UNKNOWN, SIGHT_TYPE_LINE_OF_SIGHT, SIGHT_TYPE_NON_LINE_OF_SIGHT)
                     .contains(sightType)) {
-                    throw new IllegalArgumentException("unknown sight type " + sightType);
+                throw new IllegalArgumentException("unknown sight type " + sightType);
             }
             mSightType = sightType;
             return this;
@@ -270,7 +270,7 @@ public final class ChannelSoundingParams implements Parcelable {
         public @NonNull Builder setLocationType(@LocationType int locationType) {
             if (!List.of(LOCATION_TYPE_UNKNOWN, LOCATION_TYPE_INDOOR, LOCATION_TYPE_OUTDOOR)
                     .contains(locationType)) {
-                    throw new IllegalArgumentException("unknown location type " + locationType);
+                throw new IllegalArgumentException("unknown location type " + locationType);
             }
             mLocationType = locationType;
             return this;

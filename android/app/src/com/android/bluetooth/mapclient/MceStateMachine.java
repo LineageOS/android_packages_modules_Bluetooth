@@ -883,14 +883,14 @@ class MceStateMachine extends StateMachine {
                                     DOWNLOAD_ATTACHMENTS));
                     break;
                 case DELIVERY_FAILURE:
-                    // fall through
+                // fall through
                 case SENDING_FAILURE:
                     if (!Flags.handleDeliverySendingFailureEvents()) {
                         break;
                     }
-                    // fall through
+                // fall through
                 case DELIVERY_SUCCESS:
-                    // fall through
+                // fall through
                 case SENDING_SUCCESS:
                     notifySentMessageStatus(event.getHandle(), event.getType());
                     break;
@@ -1013,32 +1013,29 @@ class MceStateMachine extends StateMachine {
             RequestSetMessageStatus.StatusIndicator status = request.getStatusIndicator();
             switch (status) {
                 case READ -> {
-                        Intent intent =
-                                new Intent(BluetoothMapClient.ACTION_MESSAGE_READ_STATUS_CHANGED);
-                        intent.putExtra(
-                                BluetoothMapClient.EXTRA_MESSAGE_READ_STATUS,
-                                request.getValue() == RequestSetMessageStatus.STATUS_YES
-                                        ? true
-                                        : false);
-                        intent.putExtra(
-                                BluetoothMapClient.EXTRA_MESSAGE_HANDLE, request.getHandle());
-                        intent.putExtra(BluetoothMapClient.EXTRA_RESULT_CODE, result);
-                        mService.sendBroadcast(intent, BLUETOOTH_CONNECT);
-                    }
+                    Intent intent =
+                            new Intent(BluetoothMapClient.ACTION_MESSAGE_READ_STATUS_CHANGED);
+                    intent.putExtra(
+                            BluetoothMapClient.EXTRA_MESSAGE_READ_STATUS,
+                            request.getValue() == RequestSetMessageStatus.STATUS_YES
+                                    ? true
+                                    : false);
+                    intent.putExtra(BluetoothMapClient.EXTRA_MESSAGE_HANDLE, request.getHandle());
+                    intent.putExtra(BluetoothMapClient.EXTRA_RESULT_CODE, result);
+                    mService.sendBroadcast(intent, BLUETOOTH_CONNECT);
+                }
                 case DELETED -> {
-                        Intent intent =
-                                new Intent(
-                                        BluetoothMapClient.ACTION_MESSAGE_DELETED_STATUS_CHANGED);
-                        intent.putExtra(
-                                BluetoothMapClient.EXTRA_MESSAGE_DELETED_STATUS,
-                                request.getValue() == RequestSetMessageStatus.STATUS_YES
-                                        ? true
-                                        : false);
-                        intent.putExtra(
-                                BluetoothMapClient.EXTRA_MESSAGE_HANDLE, request.getHandle());
-                        intent.putExtra(BluetoothMapClient.EXTRA_RESULT_CODE, result);
-                        mService.sendBroadcast(intent, BLUETOOTH_CONNECT);
-                    }
+                    Intent intent =
+                            new Intent(BluetoothMapClient.ACTION_MESSAGE_DELETED_STATUS_CHANGED);
+                    intent.putExtra(
+                            BluetoothMapClient.EXTRA_MESSAGE_DELETED_STATUS,
+                            request.getValue() == RequestSetMessageStatus.STATUS_YES
+                                    ? true
+                                    : false);
+                    intent.putExtra(BluetoothMapClient.EXTRA_MESSAGE_HANDLE, request.getHandle());
+                    intent.putExtra(BluetoothMapClient.EXTRA_RESULT_CODE, result);
+                    mService.sendBroadcast(intent, BLUETOOTH_CONNECT);
+                }
             }
         }
 

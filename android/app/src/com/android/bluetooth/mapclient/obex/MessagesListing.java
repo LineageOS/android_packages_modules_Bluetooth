@@ -46,22 +46,22 @@ class MessagesListing {
             int event = xpp.getEventType();
             while (event != XmlPullParser.END_DOCUMENT) {
                 if (event == XmlPullParser.START_TAG) {
-                        if (xpp.getName().equals("msg")) {
+                    if (xpp.getName().equals("msg")) {
 
-                            Map<String, String> attrs = new HashMap<>();
+                        Map<String, String> attrs = new HashMap<>();
 
-                            for (int i = 0; i < xpp.getAttributeCount(); i++) {
-                                attrs.put(xpp.getAttributeName(i), xpp.getAttributeValue(i));
-                            }
-
-                            try {
-                                Message msg = new Message(attrs);
-                                mMessages.add(msg);
-                            } catch (IllegalArgumentException e) {
-                                /* TODO: provide something more useful here */
-                                Log.w(TAG, "Invalid <msg/>");
-                            }
+                        for (int i = 0; i < xpp.getAttributeCount(); i++) {
+                            attrs.put(xpp.getAttributeName(i), xpp.getAttributeValue(i));
                         }
+
+                        try {
+                            Message msg = new Message(attrs);
+                            mMessages.add(msg);
+                        } catch (IllegalArgumentException e) {
+                            /* TODO: provide something more useful here */
+                            Log.w(TAG, "Invalid <msg/>");
+                        }
+                    }
                 }
 
                 event = xpp.next();

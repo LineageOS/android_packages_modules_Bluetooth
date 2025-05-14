@@ -321,9 +321,9 @@ public final class BluetoothClass implements Parcelable {
             // match on some other class bits.
             return switch (getDeviceClass()) {
                 case Device.AUDIO_VIDEO_HIFI_AUDIO,
-                                Device.AUDIO_VIDEO_HEADPHONES,
-                                Device.AUDIO_VIDEO_LOUDSPEAKER,
-                                Device.AUDIO_VIDEO_CAR_AUDIO ->
+                        Device.AUDIO_VIDEO_HEADPHONES,
+                        Device.AUDIO_VIDEO_LOUDSPEAKER,
+                        Device.AUDIO_VIDEO_CAR_AUDIO ->
                         true;
                 default -> false;
             };
@@ -336,8 +336,8 @@ public final class BluetoothClass implements Parcelable {
             // match on some other class bits.
             return switch (getDeviceClass()) {
                 case Device.AUDIO_VIDEO_HIFI_AUDIO,
-                                Device.AUDIO_VIDEO_SET_TOP_BOX,
-                                Device.AUDIO_VIDEO_VCR ->
+                        Device.AUDIO_VIDEO_SET_TOP_BOX,
+                        Device.AUDIO_VIDEO_VCR ->
                         true;
                 default -> false;
             };
@@ -350,8 +350,8 @@ public final class BluetoothClass implements Parcelable {
             // Just in case they forgot the render service class
             return switch (getDeviceClass()) {
                 case Device.AUDIO_VIDEO_HANDSFREE,
-                                Device.AUDIO_VIDEO_WEARABLE_HEADSET,
-                                Device.AUDIO_VIDEO_CAR_AUDIO ->
+                        Device.AUDIO_VIDEO_WEARABLE_HEADSET,
+                        Device.AUDIO_VIDEO_CAR_AUDIO ->
                         true;
                 default -> false;
             };
@@ -362,18 +362,18 @@ public final class BluetoothClass implements Parcelable {
 
             return switch (getDeviceClass()) {
                 case Device.COMPUTER_UNCATEGORIZED,
-                                Device.COMPUTER_DESKTOP,
-                                Device.COMPUTER_SERVER,
-                                Device.COMPUTER_LAPTOP,
-                                Device.COMPUTER_HANDHELD_PC_PDA,
-                                Device.COMPUTER_PALM_SIZE_PC_PDA,
-                                Device.COMPUTER_WEARABLE,
-                                Device.PHONE_UNCATEGORIZED,
-                                Device.PHONE_CELLULAR,
-                                Device.PHONE_CORDLESS,
-                                Device.PHONE_SMART,
-                                Device.PHONE_MODEM_OR_GATEWAY,
-                                Device.PHONE_ISDN ->
+                        Device.COMPUTER_DESKTOP,
+                        Device.COMPUTER_SERVER,
+                        Device.COMPUTER_LAPTOP,
+                        Device.COMPUTER_HANDHELD_PC_PDA,
+                        Device.COMPUTER_PALM_SIZE_PC_PDA,
+                        Device.COMPUTER_WEARABLE,
+                        Device.PHONE_UNCATEGORIZED,
+                        Device.PHONE_CELLULAR,
+                        Device.PHONE_CORDLESS,
+                        Device.PHONE_SMART,
+                        Device.PHONE_MODEM_OR_GATEWAY,
+                        Device.PHONE_ISDN ->
                         true;
                 default -> false;
             };

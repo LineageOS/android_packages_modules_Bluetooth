@@ -44,9 +44,9 @@ class FolderListing {
             int event = xpp.getEventType();
             while (event != XmlPullParser.END_DOCUMENT) {
                 if (event == XmlPullParser.START_TAG) {
-                        if (xpp.getName().equals("folder")) {
-                            mFolders.add(xpp.getAttributeValue(null, "name"));
-                        }
+                    if (xpp.getName().equals("folder")) {
+                        mFolders.add(xpp.getAttributeValue(null, "name"));
+                    }
                 }
 
                 event = xpp.next();

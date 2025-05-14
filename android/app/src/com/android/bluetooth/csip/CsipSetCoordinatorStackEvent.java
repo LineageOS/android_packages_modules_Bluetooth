@@ -112,8 +112,8 @@ public class CsipSetCoordinatorStackEvent {
         return switch (evType) {
             case EVENT_TYPE_CONNECTION_STATE_CHANGED -> connectionStateToString(value);
             case EVENT_TYPE_DEVICE_AVAILABLE,
-                            EVENT_TYPE_GROUP_LOCK_CHANGED,
-                            EVENT_TYPE_SET_MEMBER_AVAILABLE ->
+                    EVENT_TYPE_GROUP_LOCK_CHANGED,
+                    EVENT_TYPE_SET_MEMBER_AVAILABLE ->
                     "group id: " + value;
             default -> "<unused>";
         };

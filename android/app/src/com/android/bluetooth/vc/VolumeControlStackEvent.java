@@ -84,8 +84,8 @@ public class VolumeControlStackEvent {
             case EVENT_TYPE_VOLUME_STATE_CHANGED -> "{group_id:" + value + "}";
             case EVENT_TYPE_DEVICE_AVAILABLE -> "{group_id:" + value + "}";
             case EVENT_TYPE_EXT_AUDIO_OUT_VOL_OFFSET_CHANGED,
-                            EVENT_TYPE_EXT_AUDIO_OUT_LOCATION_CHANGED,
-                            EVENT_TYPE_EXT_AUDIO_OUT_DESCRIPTION_CHANGED ->
+                    EVENT_TYPE_EXT_AUDIO_OUT_LOCATION_CHANGED,
+                    EVENT_TYPE_EXT_AUDIO_OUT_DESCRIPTION_CHANGED ->
                     "{ext output id:" + value + "}";
             default -> Integer.toString(value);
         };

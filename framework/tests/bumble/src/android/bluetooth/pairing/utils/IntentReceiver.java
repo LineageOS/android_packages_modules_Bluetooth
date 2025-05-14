@@ -48,22 +48,17 @@ import java.util.Deque;
 import java.util.Iterator;
 
 /**
- * IntentReceiver helps in managing the Intents received through the Broadcast
- *  receiver, with specific intent actions registered.
- *  It uses Builder pattern for instance creation, and also allows setting up
- *  a custom listener's onReceive().
+ * IntentReceiver helps in managing the Intents received through the Broadcast receiver, with
+ * specific intent actions registered. It uses Builder pattern for instance creation, and also
+ * allows setting up a custom listener's onReceive().
  *
- * Use the following way to create an instance of the IntentReceiver.
- *      IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
- *          BluetoothDevice.ACTION_1,
- *          BluetoothDevice.ACTION_2)
- *          .setIntentListener(--) // optional
- *          .setIntentTimeout(--)  // optional
- *          .build();
+ * <p>Use the following way to create an instance of the IntentReceiver. IntentReceiver
+ * intentReceiver = new IntentReceiver.Builder(sTargetContext, BluetoothDevice.ACTION_1,
+ * BluetoothDevice.ACTION_2) .setIntentListener(--) // optional .setIntentTimeout(--) // optional
+ * .build();
  *
- * Ordered and unordered verification mechanisms are also provided through public methods.
+ * <p>Ordered and unordered verification mechanisms are also provided through public methods.
  */
-
 public class IntentReceiver {
     private static final String TAG = IntentReceiver.class.getSimpleName();
 
@@ -78,15 +73,16 @@ public class IntentReceiver {
     }
 
     @Mock private BroadcastReceiver mReceiver;
+
     /** To verify the received intents in-order */
     private final InOrder mInOrder;
+
     private final Deque<Builder> mDqBuilder;
     private final Context mContext;
 
     /**
-     * Creates an Intent receiver from the builder instance
-     * Note: This is a private constructor, so always prepare IntentReceiver's
-     *  instance through Builder().
+     * Creates an Intent receiver from the builder instance Note: This is a private constructor, so
+     * always prepare IntentReceiver's instance through Builder().
      *
      * @param builder Pre-built builder instance
      */
@@ -111,11 +107,9 @@ public class IntentReceiver {
     }
 
     /**
-     * Builder class which helps in avoiding overloading constructors (as the class grows)
-     * Usage:
-     *      new IntentReceiver.Builder(ARGS)
-     *      .setterMethods() **Optional calls, as these are default params
-     *      .build();
+     * Builder class which helps in avoiding overloading constructors (as the class grows) Usage:
+     * new IntentReceiver.Builder(ARGS) .setterMethods() **Optional calls, as these are default
+     * params .build();
      */
     public static class Builder {
         private final Context mContext;
@@ -128,9 +122,8 @@ public class IntentReceiver {
         private IntentFilter mIntentFilter;
 
         /**
-         * Private default constructor to avoid creation of Builder default
-         *  instance directly as we need some instance variables to be initiated
-         *  with user defined values.
+         * Private default constructor to avoid creation of Builder default instance directly as we
+         * need some instance variables to be initiated with user defined values.
          */
         private Builder() {
             mContext = null;
@@ -144,8 +137,10 @@ public class IntentReceiver {
          */
         public Builder(@NonNull Context context, String... intentStrings) {
             mContext = context;
-            mIntentStrings = requireNonNull(intentStrings,
-                "IntentReceiver.Builder(): Intent string cannot be null");
+            mIntentStrings =
+                    requireNonNull(
+                            intentStrings,
+                            "IntentReceiver.Builder(): Intent string cannot be null");
 
             if (mIntentStrings.length == 0) {
                 throw new RuntimeException("IntentReceiver.Builder(): No intents to register");
@@ -169,8 +164,8 @@ public class IntentReceiver {
         }
 
         /**
-         * Builds and returns the IntentReceiver object with all the passed,
-         *  and default params supplied to Builder().
+         * Builds and returns the IntentReceiver object with all the passed, and default params
+         * supplied to Builder().
          */
         public IntentReceiver build() {
             return new IntentReceiver(this);
@@ -217,19 +212,17 @@ public class IntentReceiver {
     }
 
     /**
-     * This function will make sure that the instance is properly cleared
-     *  based on the registered actions.
-     * Note: This function MUST be called before returning from the caller function,
-     *  as this either unregisters the latest registered actions, or free resources.
+     * This function will make sure that the instance is properly cleared based on the registered
+     * actions. Note: This function MUST be called before returning from the caller function, as
+     * this either unregisters the latest registered actions, or free resources.
      */
     public void close() {
         Log.d(TAG, "close(): " + mDqBuilder.size());
 
         /* More than 1 Builders are present in deque */
-        if(mDqBuilder.size() > 1) {
+        if (mDqBuilder.size() > 1) {
             rollbackBuilder();
-        }
-        else {
+        } else {
             // Only 1 builder remaining, safely close this instance.
             verifyNoMoreInteractions();
             teardown();
@@ -241,14 +234,11 @@ public class IntentReceiver {
      *
      * @param parentIntentReceiver Parent IntentReceiver instance
      * @param builder New builder instance
-     *
-     * Note: This is a helper function to be used in testStep functions where properties
-     *  are updated in the new builder instance, and then pushed to the parent instance.
+     *     <p>Note: This is a helper function to be used in testStep functions where properties are
+     *     updated in the new builder instance, and then pushed to the parent instance.
      */
-    public static IntentReceiver update(
-        IntentReceiver parentIntentReceiver, Builder builder) {
-        if(parentIntentReceiver == null)
-            return builder.build();
+    public static IntentReceiver update(IntentReceiver parentIntentReceiver, Builder builder) {
+        if (parentIntentReceiver == null) return builder.build();
 
         parentIntentReceiver.updateBuilder(builder);
         return parentIntentReceiver;
@@ -259,45 +249,44 @@ public class IntentReceiver {
     /** Registers the listener for the received intents, and perform a custom logic as required */
     private void setupListener() {
         doAnswer(
-                inv -> {
-                    Log.d(
-                            TAG,
-                            "onReceive(): intent=" +
-                                Arrays.toString(inv.getArguments()));
+                        inv -> {
+                            Log.d(
+                                    TAG,
+                                    "onReceive(): intent=" + Arrays.toString(inv.getArguments()));
 
-                    if (mDqBuilder.peekFirst().mIntentListener == null) return null;
+                            if (mDqBuilder.peekFirst().mIntentListener == null) return null;
 
-                    Intent intent = inv.getArgument(1);
+                            Intent intent = inv.getArgument(1);
 
-                    /* Custom `onReceive` will be provided by the caller */
-                    mDqBuilder.peekFirst().mIntentListener.onReceive(intent);
-                    return null;
-                })
-            .when(mReceiver)
-            .onReceive(any(), any());
+                            /* Custom `onReceive` will be provided by the caller */
+                            mDqBuilder.peekFirst().mIntentListener.onReceive(intent);
+                            return null;
+                        })
+                .when(mReceiver)
+                .onReceive(any(), any());
     }
 
     /**
-     * Registers the latest intent filter which is at the deque.peekFirst()
-     * Note: The mDqBuilder must not be empty here.
+     * Registers the latest intent filter which is at the deque.peekFirst() Note: The mDqBuilder
+     * must not be empty here.
      */
     private void registerReceiver() {
         IntentFilter intentFilter;
         /* ArrayDeque should not be empty at all while registering a receiver */
         assertThat(mDqBuilder.isEmpty()).isFalse();
 
-        intentFilter = (IntentFilter)mDqBuilder.peekFirst().mIntentFilter;
-        Log.d(TAG, "registerReceiver(): Registering for intents: " +
-            getActionsFromIntentFilter(intentFilter));
+        intentFilter = (IntentFilter) mDqBuilder.peekFirst().mIntentFilter;
+        Log.d(
+                TAG,
+                "registerReceiver(): Registering for intents: "
+                        + getActionsFromIntentFilter(intentFilter));
         mContext.registerReceiver(mReceiver, intentFilter);
     }
 
     /**
-     * Unregisters the receiver from the list of active receivers.
-     * Also, we can now re-use the same receiver, or register a new
-     *  receiver with the same or different intent filter, the old
-     *  registration is no longer valid.
-     *  Source: Intents and intent filters (Android Developers)
+     * Unregisters the receiver from the list of active receivers. Also, we can now re-use the same
+     * receiver, or register a new receiver with the same or different intent filter, the old
+     * registration is no longer valid. Source: Intents and intent filters (Android Developers)
      */
     private void unregisterReceiver() {
         Log.d(TAG, "unregisterReceiver()");
@@ -311,10 +300,8 @@ public class IntentReceiver {
     }
 
     /**
-     * Registers the new actions passed as argument.
-     * 1. Unregister the Builder.
-     * 2. Pops a new Builder to roll-back to the old one.
-     * 3. Registers the old Builder.
+     * Registers the new actions passed as argument. 1. Unregister the Builder. 2. Pops a new
+     * Builder to roll-back to the old one. 3. Registers the old Builder.
      */
     private void rollbackBuilder() {
         assertThat(mDqBuilder.isEmpty()).isFalse();
@@ -346,8 +333,8 @@ public class IntentReceiver {
     /**
      * Helper function to perform the setup for the IntentReceiver instance
      *
-     * This is a helper function to perform the setup for the IntentReceiver instance,
-     *  which includes setting up the listener, and registering the receiver, etc.
+     * <p>This is a helper function to perform the setup for the IntentReceiver instance, which
+     * includes setting up the listener, and registering the receiver, etc.
      */
     private void setup() {
         setupListener();

@@ -91,7 +91,6 @@ public class BluetoothPbapCallLogComposer implements AutoCloseable {
     private static final String VCARD_PROPERTY_CALLTYPE_OUTGOING = "DIALED";
     private static final String VCARD_PROPERTY_CALLTYPE_MISSED = "MISSED";
 
-
     private final Context mContext;
     private Cursor mCursor;
 

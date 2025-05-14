@@ -454,7 +454,7 @@ public class ScanManager {
                 case MSG_IMPORTANCE_CHANGE -> handleImportanceChange((UidImportance) msg.obj);
                 case MSG_START_CONNECTING -> handleConnectingState();
                 case MSG_STOP_CONNECTING -> handleClearConnectingState();
-                    // Shouldn't happen.
+                // Shouldn't happen.
                 default -> Log.e(TAG, "received an unknown message : " + msg.what);
             }
         }
@@ -769,7 +769,7 @@ public class ScanManager {
                     case ScanSettings.SCAN_MODE_LOW_POWER ->
                             updatedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF;
                     case ScanSettings.SCAN_MODE_BALANCED,
-                                    ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY ->
+                            ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY ->
                             updatedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED;
                     case ScanSettings.SCAN_MODE_LOW_LATENCY ->
                             updatedScanMode = ScanSettings.SCAN_MODE_LOW_LATENCY;

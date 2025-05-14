@@ -671,16 +671,16 @@ class MapClientContent {
 
         switch (folder) {
             case Folder.INBOX -> {
-            smsUri = Sms.Inbox.CONTENT_URI;
-            mmsUri = Mms.Inbox.CONTENT_URI;
+                smsUri = Sms.Inbox.CONTENT_URI;
+                mmsUri = Mms.Inbox.CONTENT_URI;
             }
             case Folder.SENT -> {
-            smsUri = Sms.Sent.CONTENT_URI;
-            mmsUri = Mms.Sent.CONTENT_URI;
+                smsUri = Sms.Sent.CONTENT_URI;
+                mmsUri = Mms.Sent.CONTENT_URI;
             }
             default -> { // Folder.UNKNOWN
-            warn("getRecentMessagesFromFolder: Failed, unsupported folder=" + folder);
-            return null;
+                warn("getRecentMessagesFromFolder: Failed, unsupported folder=" + folder);
+                return null;
             }
         }
 

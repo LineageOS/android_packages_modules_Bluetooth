@@ -121,19 +121,13 @@ public class PairingWithDiscoveryTest {
                     case BluetoothDevice.ACTION_FOUND:
                         BluetoothDevice device =
                                 intent.getParcelableExtra(
-                                        BluetoothDevice.EXTRA_DEVICE,
-                                        BluetoothDevice.class);
+                                        BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
                         String deviceName =
-                                String.valueOf(
-                                        intent.getStringExtra(BluetoothDevice.EXTRA_NAME));
-                        Log.i(
-                                TAG,
-                                "Discovered device: "
-                                        + device
-                                        + " with name: "
-                                        + deviceName);
-                        if (deviceName != null && BUMBLE_DEVICE_NAME.equals(deviceName) &&
-                                mDeviceFound != null) {
+                                String.valueOf(intent.getStringExtra(BluetoothDevice.EXTRA_NAME));
+                        Log.i(TAG, "Discovered device: " + device + " with name: " + deviceName);
+                        if (deviceName != null
+                                && BUMBLE_DEVICE_NAME.equals(deviceName)
+                                && mDeviceFound != null) {
                             mDeviceFound.complete(device);
                         }
                         break;
@@ -156,7 +150,7 @@ public class PairingWithDiscoveryTest {
         for (BluetoothDevice device : mAdapter.getBondedDevices()) {
             removeBond(device);
         }
-   }
+    }
 
     @After
     public void tearDown() throws Exception {
@@ -202,8 +196,8 @@ public class PairingWithDiscoveryTest {
         mBumble.hostBlocking()
                 .setDiscoverabilityMode(
                         SetDiscoverabilityModeRequest.newBuilder()
-                        .setMode(DiscoverabilityMode.NOT_DISCOVERABLE)
-                        .build());
+                                .setMode(DiscoverabilityMode.NOT_DISCOVERABLE)
+                                .build());
 
         // Make Bumble Non connectable over BR/EDR
         SetConnectabilityModeRequest request =
@@ -214,14 +208,15 @@ public class PairingWithDiscoveryTest {
 
         // Start LE advertisement from Bumble
         AdvertiseRequest.Builder requestBuilder =
-                AdvertiseRequest.newBuilder().setLegacy(true)
-                .setConnectable(true)
-                .setOwnAddressType(OwnAddressType.PUBLIC);
+                AdvertiseRequest.newBuilder()
+                        .setLegacy(true)
+                        .setConnectable(true)
+                        .setOwnAddressType(OwnAddressType.PUBLIC);
 
         HostProto.DataTypes.Builder dataTypeBuilder = HostProto.DataTypes.newBuilder();
         dataTypeBuilder.setCompleteLocalName(BUMBLE_DEVICE_NAME);
         dataTypeBuilder.setIncludeCompleteLocalName(true);
-        //Set LE AD Flags to be LE General discoverable, also supports dual mode
+        // Set LE AD Flags to be LE General discoverable, also supports dual mode
         dataTypeBuilder.setLeDiscoverabilityModeValue(LE_GENERAL_DISCOVERABLE);
         requestBuilder.setData(dataTypeBuilder.build());
 
@@ -234,8 +229,7 @@ public class PairingWithDiscoveryTest {
 
         StreamObserver<PairingEventAnswer> pairingEventAnswerObserver =
                 mBumble.security()
-                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(),
-                            TimeUnit.MILLISECONDS)
+                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
                         .onPairing(mPairingEventStreamObserver);
 
         // Start pairing from Android with Auto transport
@@ -262,8 +256,7 @@ public class PairingWithDiscoveryTest {
         PairingEvent pairingEvent = mPairingEventStreamObserver.iterator().next();
         assertThat(pairingEvent.hasJustWorks()).isTrue();
         pairingEventAnswerObserver.onNext(
-                PairingEventAnswer.newBuilder().setEvent(pairingEvent)
-                        .setConfirm(true).build());
+                PairingEventAnswer.newBuilder().setEvent(pairingEvent).setConfirm(true).build());
 
         // Ensure that pairing succeeds
         verifyIntentReceived(
@@ -308,8 +301,8 @@ public class PairingWithDiscoveryTest {
         mBumble.hostBlocking()
                 .setDiscoverabilityMode(
                         SetDiscoverabilityModeRequest.newBuilder()
-                        .setMode(DiscoverabilityMode.DISCOVERABLE_GENERAL)
-                        .build());
+                                .setMode(DiscoverabilityMode.DISCOVERABLE_GENERAL)
+                                .build());
 
         SetConnectabilityModeRequest request =
                 SetConnectabilityModeRequest.newBuilder()
@@ -322,8 +315,7 @@ public class PairingWithDiscoveryTest {
 
         StreamObserver<PairingEventAnswer> pairingEventAnswerObserver =
                 mBumble.security()
-                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(),
-                            TimeUnit.MILLISECONDS)
+                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
                         .onPairing(mPairingEventStreamObserver);
 
         // Start pairing from Android with Auto transport
@@ -418,7 +410,7 @@ public class PairingWithDiscoveryTest {
         mContext.unregisterReceiver(mReceiver);
     }
 
-     /**
+    /**
      * Helper function to add reference count to registered intent actions
      *
      * @param actions new intent actions to add. If the array is empty, it is a no-op.

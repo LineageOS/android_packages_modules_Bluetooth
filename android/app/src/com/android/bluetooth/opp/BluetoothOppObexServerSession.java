@@ -50,7 +50,6 @@ import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothObexTransport;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.HeaderSet;

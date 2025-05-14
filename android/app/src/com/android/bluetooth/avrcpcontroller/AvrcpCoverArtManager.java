@@ -365,10 +365,10 @@ class AvrcpCoverArtManager {
         }
         BipImageDescriptor.Builder builder = new BipImageDescriptor.Builder();
         switch (mDownloadScheme) {
-                // BIP Specification says a blank/null descriptor signals to pull the native format
+            // BIP Specification says a blank/null descriptor signals to pull the native format
             case SCHEME_NATIVE:
                 return null;
-                // AVRCP 1.6.2 defined "thumbnail" size is guaranteed so we'll do that for now
+            // AVRCP 1.6.2 defined "thumbnail" size is guaranteed so we'll do that for now
             case SCHEME_THUMBNAIL:
             default:
                 builder.setEncoding(BipEncoding.JPEG);

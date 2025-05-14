@@ -96,38 +96,38 @@ public class DatabaseManager {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case MSG_LOAD_DATABASE -> {
-                        synchronized (mDatabaseLock) {
-                            List<Metadata> list;
-                            try {
-                                list = mDatabase.load();
-                            } catch (IllegalStateException e) {
-                                Log.e(TAG, "Unable to open database: " + e);
-                                mDatabase =
-                                        MetadataDatabase.createDatabaseWithoutMigration(
-                                                mAdapterService);
-                                list = mDatabase.load();
-                            }
-                            compactLastConnectionTime(list);
-                            cacheMetadata(list);
+                    synchronized (mDatabaseLock) {
+                        List<Metadata> list;
+                        try {
+                            list = mDatabase.load();
+                        } catch (IllegalStateException e) {
+                            Log.e(TAG, "Unable to open database: " + e);
+                            mDatabase =
+                                    MetadataDatabase.createDatabaseWithoutMigration(
+                                            mAdapterService);
+                            list = mDatabase.load();
                         }
+                        compactLastConnectionTime(list);
+                        cacheMetadata(list);
                     }
+                }
                 case MSG_UPDATE_DATABASE -> {
-                        Metadata data = (Metadata) msg.obj;
-                        synchronized (mDatabaseLock) {
-                            mDatabase.insert(data);
-                        }
+                    Metadata data = (Metadata) msg.obj;
+                    synchronized (mDatabaseLock) {
+                        mDatabase.insert(data);
                     }
+                }
                 case MSG_DELETE_DATABASE -> {
-                        String address = (String) msg.obj;
-                        synchronized (mDatabaseLock) {
-                            mDatabase.delete(address);
-                        }
+                    String address = (String) msg.obj;
+                    synchronized (mDatabaseLock) {
+                        mDatabase.delete(address);
                     }
+                }
                 case MSG_CLEAR_DATABASE -> {
-                        synchronized (mDatabaseLock) {
-                            mDatabase.deleteAll();
-                        }
+                    synchronized (mDatabaseLock) {
+                        mDatabase.deleteAll();
                     }
+                }
                 default -> {} // Nothing to do
             }
         }

@@ -319,7 +319,7 @@ public class AtPhonebook {
                 mNativeInterface.atResponseString(remoteDevice, atCommandResponse);
                 mNativeInterface.atResponseCode(remoteDevice, atCommandResult, atCommandErrorCode);
                 break;
-                // Read PhoneBook Entries
+            // Read PhoneBook Entries
             case TYPE_READ:
             case TYPE_SET: // Set & read
                 // Phone Book Read Request

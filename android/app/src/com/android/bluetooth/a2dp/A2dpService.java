@@ -1221,7 +1221,7 @@ public class A2dpService extends ProfileService {
             switch (enabled) {
                 case BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED -> enableOptionalCodecs(device);
                 case BluetoothA2dp.OPTIONAL_CODECS_PREF_DISABLED -> disableOptionalCodecs(device);
-                    // OPTIONAL_CODECS_PREF_UNKNOWN Enable optional codec by default.
+                // OPTIONAL_CODECS_PREF_UNKNOWN Enable optional codec by default.
                 default -> {
                     setOptionalCodecsEnabled(device, BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED);
                     enableOptionalCodecs(device);

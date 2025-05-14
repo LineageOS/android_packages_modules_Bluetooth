@@ -82,11 +82,7 @@ public class PbapPhonebook {
         mListStartOffset = 0;
     }
 
-    PbapPhonebook(
-            String phonebook,
-            byte format,
-            int listStartOffset,
-            InputStream inputStream)
+    PbapPhonebook(String phonebook, byte format, int listStartOffset, InputStream inputStream)
             throws IOException {
         if (format != FORMAT_VCARD_21 && format != FORMAT_VCARD_30) {
             throw new IllegalArgumentException("Unsupported vCard version.");

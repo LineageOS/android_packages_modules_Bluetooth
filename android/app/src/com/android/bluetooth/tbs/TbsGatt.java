@@ -76,6 +76,7 @@ public class TbsGatt {
     @VisibleForTesting static final UUID UUID_TERMINATION_REASON = makeUuid("2BC0");
     @VisibleForTesting static final UUID UUID_INCOMING_CALL = makeUuid("2BC1");
     @VisibleForTesting static final UUID UUID_CALL_FRIENDLY_NAME = makeUuid("2BC2");
+
     @VisibleForTesting
     static final UUID UUID_CLIENT_CHARACTERISTIC_CONFIGURATION = makeUuid("2902");
 
@@ -1123,9 +1124,8 @@ public class TbsGatt {
                         + ", characteristic= "
                         + (charUuid != null ? tbsUuidToString(charUuid) : "UNKNOWN"));
 
-
         switch (op.operation()) {
-                /* Allow not yet authorized devices to subscribe for notifications */
+            /* Allow not yet authorized devices to subscribe for notifications */
             case READ_DESCRIPTOR -> {
                 byte[] value = getCccBytes(device, op.descriptor().getCharacteristic().getUuid());
                 final int status;
@@ -1173,19 +1173,19 @@ public class TbsGatt {
                 onUnauthorizedCharRead(device, op);
             }
             case WRITE_CHARACTERISTIC -> {
-        synchronized (mPendingGattOperationsLock) {
-            List<GattOpContext> operations = mPendingGattOperations.get(device);
-            if (operations == null) {
-                operations = new ArrayList<>();
-                mPendingGattOperations.put(device, operations);
-            }
+                synchronized (mPendingGattOperationsLock) {
+                    List<GattOpContext> operations = mPendingGattOperations.get(device);
+                    if (operations == null) {
+                        operations = new ArrayList<>();
+                        mPendingGattOperations.put(device, operations);
+                    }
 
-            operations.add(op);
-            // Send authorization request for each device only for it's first GATT request
-            if (operations.size() == 1) {
-                mTbsService.onDeviceUnauthorized(device);
-            }
-        }
+                    operations.add(op);
+                    // Send authorization request for each device only for it's first GATT request
+                    if (operations.size() == 1) {
+                        mTbsService.onDeviceUnauthorized(device);
+                    }
+                }
             }
         }
     }

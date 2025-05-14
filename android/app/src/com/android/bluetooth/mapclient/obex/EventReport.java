@@ -98,18 +98,18 @@ public class EventReport {
             int event = xpp.getEventType();
             while (event != XmlPullParser.END_DOCUMENT) {
                 if (event == XmlPullParser.START_TAG) {
-                        if (xpp.getName().equals("event")) {
-                            HashMap<String, String> attrs = new HashMap<String, String>();
+                    if (xpp.getName().equals("event")) {
+                        HashMap<String, String> attrs = new HashMap<String, String>();
 
-                            for (int i = 0; i < xpp.getAttributeCount(); i++) {
-                                attrs.put(xpp.getAttributeName(i), xpp.getAttributeValue(i));
-                            }
-
-                            ev = new EventReport(attrs);
-
-                            // return immediately, only one event should be here
-                            return ev;
+                        for (int i = 0; i < xpp.getAttributeCount(); i++) {
+                            attrs.put(xpp.getAttributeName(i), xpp.getAttributeValue(i));
                         }
+
+                        ev = new EventReport(attrs);
+
+                        // return immediately, only one event should be here
+                        return ev;
+                    }
                 }
 
                 event = xpp.next();

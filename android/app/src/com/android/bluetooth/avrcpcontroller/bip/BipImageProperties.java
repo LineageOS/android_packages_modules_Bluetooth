@@ -168,36 +168,36 @@ public class BipImageProperties {
             int event = xpp.getEventType();
             while (event != XmlPullParser.END_DOCUMENT) {
                 if (event == XmlPullParser.START_TAG) {
-                        String tag = xpp.getName();
-                        if (tag.equals("image-properties")) {
-                            mVersion = xpp.getAttributeValue(null, "version");
-                            mImageHandle = xpp.getAttributeValue(null, "handle");
-                            mFriendlyName = xpp.getAttributeValue(null, "friendly-name");
-                        } else if (tag.equals("native")) {
-                            String encoding = xpp.getAttributeValue(null, "encoding");
-                            String pixel = xpp.getAttributeValue(null, "pixel");
-                            String size = xpp.getAttributeValue(null, "size");
-                            addNativeFormat(BipImageFormat.parseNative(encoding, pixel, size));
-                        } else if (tag.equals("variant")) {
-                            String encoding = xpp.getAttributeValue(null, "encoding");
-                            String pixel = xpp.getAttributeValue(null, "pixel");
-                            String maxSize = xpp.getAttributeValue(null, "maxsize");
-                            String trans = xpp.getAttributeValue(null, "transformation");
-                            addVariantFormat(
-                                    BipImageFormat.parseVariant(encoding, pixel, maxSize, trans));
-                        } else if (tag.equals("attachment")) {
-                            String contentType = xpp.getAttributeValue(null, "content-type");
-                            String name = xpp.getAttributeValue(null, "name");
-                            String charset = xpp.getAttributeValue(null, "charset");
-                            String size = xpp.getAttributeValue(null, "size");
-                            String created = xpp.getAttributeValue(null, "created");
-                            String modified = xpp.getAttributeValue(null, "modified");
-                            addAttachment(
-                                    new BipAttachmentFormat(
-                                            contentType, charset, name, size, created, modified));
-                        } else {
-                            Log.w(TAG, "Unrecognized tag in x-bt/img-properties object: " + tag);
-                        }
+                    String tag = xpp.getName();
+                    if (tag.equals("image-properties")) {
+                        mVersion = xpp.getAttributeValue(null, "version");
+                        mImageHandle = xpp.getAttributeValue(null, "handle");
+                        mFriendlyName = xpp.getAttributeValue(null, "friendly-name");
+                    } else if (tag.equals("native")) {
+                        String encoding = xpp.getAttributeValue(null, "encoding");
+                        String pixel = xpp.getAttributeValue(null, "pixel");
+                        String size = xpp.getAttributeValue(null, "size");
+                        addNativeFormat(BipImageFormat.parseNative(encoding, pixel, size));
+                    } else if (tag.equals("variant")) {
+                        String encoding = xpp.getAttributeValue(null, "encoding");
+                        String pixel = xpp.getAttributeValue(null, "pixel");
+                        String maxSize = xpp.getAttributeValue(null, "maxsize");
+                        String trans = xpp.getAttributeValue(null, "transformation");
+                        addVariantFormat(
+                                BipImageFormat.parseVariant(encoding, pixel, maxSize, trans));
+                    } else if (tag.equals("attachment")) {
+                        String contentType = xpp.getAttributeValue(null, "content-type");
+                        String name = xpp.getAttributeValue(null, "name");
+                        String charset = xpp.getAttributeValue(null, "charset");
+                        String size = xpp.getAttributeValue(null, "size");
+                        String created = xpp.getAttributeValue(null, "created");
+                        String modified = xpp.getAttributeValue(null, "modified");
+                        addAttachment(
+                                new BipAttachmentFormat(
+                                        contentType, charset, name, size, created, modified));
+                    } else {
+                        Log.w(TAG, "Unrecognized tag in x-bt/img-properties object: " + tag);
+                    }
                 }
                 event = xpp.next();
             }

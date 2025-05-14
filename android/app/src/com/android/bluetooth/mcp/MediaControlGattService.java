@@ -533,7 +533,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                         + (charUuid != null ? mcsUuidToString(charUuid) : "UNKNOWN"));
 
         switch (op.operation()) {
-                /* Allow not yet authorized devices to subscribe for notifications */
+            /* Allow not yet authorized devices to subscribe for notifications */
             case READ_DESCRIPTOR -> {
                 if (op.offset() > 1) {
                     mBluetoothGattServer.sendResponse(
@@ -581,19 +581,19 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                 onUnauthorizedCharRead(device, op);
             }
             case WRITE_CHARACTERISTIC -> {
-        synchronized (mPendingGattOperations) {
-            List<GattOpContext> operations = mPendingGattOperations.get(device);
-            if (operations == null) {
-                operations = new ArrayList<>();
-                mPendingGattOperations.put(device, operations);
-            }
+                synchronized (mPendingGattOperations) {
+                    List<GattOpContext> operations = mPendingGattOperations.get(device);
+                    if (operations == null) {
+                        operations = new ArrayList<>();
+                        mPendingGattOperations.put(device, operations);
+                    }
 
-            operations.add(op);
-            // Send authorization request for each device only for it's first GATT request
-            if (operations.size() == 1) {
-                mMcpService.onDeviceUnauthorized(device);
-            }
-        }
+                    operations.add(op);
+                    // Send authorization request for each device only for it's first GATT request
+                    if (operations.size() == 1) {
+                        mMcpService.onDeviceUnauthorized(device);
+                    }
+                }
             }
         }
     }
@@ -1259,9 +1259,9 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     private static int getMediaControlPointRequestPayloadLength(int opcode) {
         return switch (opcode) {
             case Request.Opcodes.MOVE_RELATIVE,
-                            Request.Opcodes.GOTO_SEGMENT,
-                            Request.Opcodes.GOTO_TRACK,
-                            Request.Opcodes.GOTO_GROUP ->
+                    Request.Opcodes.GOTO_SEGMENT,
+                    Request.Opcodes.GOTO_TRACK,
+                    Request.Opcodes.GOTO_GROUP ->
                     4;
             default -> 0;
         };

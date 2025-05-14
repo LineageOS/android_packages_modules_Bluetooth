@@ -775,16 +775,14 @@ public final class BluetoothAdapter {
      *
      * @hide
      */
-    @SystemApi
-    public static final int AUTO_ON_STATE_DISABLED = 1;
+    @SystemApi public static final int AUTO_ON_STATE_DISABLED = 1;
 
     /**
      * Indicates the AutoOn feature is ON.
      *
      * @hide
      */
-    @SystemApi
-    public static final int AUTO_ON_STATE_ENABLED = 2;
+    @SystemApi public static final int AUTO_ON_STATE_ENABLED = 2;
 
     /**
      * Audio mode representing output only.
@@ -2327,6 +2325,7 @@ public final class BluetoothAdapter {
                         throw e.rethrowAsRuntimeException();
                     }
                 }
+
                 @RequiresNoPermission
                 @Override
                 public boolean shouldBypassCache(IBluetooth serviceQuery) {
@@ -2849,6 +2848,7 @@ public final class BluetoothAdapter {
                                 throw e.rethrowAsRuntimeException();
                             }
                         }
+
                         @RequiresNoPermission
                         @Override
                         public boolean shouldBypassCache(IBluetooth serviceQuery) {
@@ -5545,8 +5545,8 @@ public final class BluetoothAdapter {
         /**
          * Invoked when an event is received.
          *
-         * @param code The vendor-specific event Code. The first octet of the event parameters
-         *     of a vendor-specific event (Bluetooth Core Specification Vol 4, Part E, 5.4.3).
+         * @param code The vendor-specific event Code. The first octet of the event parameters of a
+         *     vendor-specific event (Bluetooth Core Specification Vol 4, Part E, 5.4.3).
          * @param data from 0 to 254 Bytes.
          */
         void onEvent(@IntRange(from = 0x00, to = 0xfe) int code, @NonNull byte[] data);

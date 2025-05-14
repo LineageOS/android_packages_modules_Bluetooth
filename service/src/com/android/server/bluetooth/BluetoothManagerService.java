@@ -1587,8 +1587,8 @@ class BluetoothManagerService {
                 }
                 case MESSAGE_RESTART_BLUETOOTH_SERVICE -> handleRestartMessage();
 
-                    // TODO(b/286082382): Timeout should be more than a log. We should at least call
-                    // context.unbindService, eventually log a metric with it
+                // TODO(b/286082382): Timeout should be more than a log. We should at least call
+                // context.unbindService, eventually log a metric with it
                 case MESSAGE_TIMEOUT_BIND -> Log.e(TAG, "MESSAGE_TIMEOUT_BIND");
 
                 case MESSAGE_USER_SWITCHED -> {

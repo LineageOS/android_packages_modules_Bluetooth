@@ -879,7 +879,7 @@ class PbapClientStateMachine extends StateMachine {
         switch (mCurrentState) {
             case STATE_CONNECTED:
                 onConnectionStateChanged(STATE_DISCONNECTING);
-                // intentional fallthrough-- we want to broadcast both state changes
+            // intentional fallthrough-- we want to broadcast both state changes
             case STATE_CONNECTING:
             case STATE_DISCONNECTING:
                 onConnectionStateChanged(STATE_DISCONNECTED);

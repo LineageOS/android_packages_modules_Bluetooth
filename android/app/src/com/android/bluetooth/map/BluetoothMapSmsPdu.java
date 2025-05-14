@@ -317,11 +317,11 @@ public class BluetoothMapSmsPdu {
 
         private int gsmSubmitGetTpUdlOffset() {
             return switch (((mData[0] & 0xff) & (0x08 | 0x04)) >> 2) {
-                    // Not TP-VP present
+                // Not TP-VP present
                 case 0 -> gsmSubmitGetTpPidOffset() + 2;
-                    // TP-VP relative format
+                // TP-VP relative format
                 case 1 -> gsmSubmitGetTpPidOffset() + 2 + 1;
-                    // TP-VP enhanced format, TP-VP absolute format
+                // TP-VP enhanced format, TP-VP absolute format
                 default /* case 2, 3 */ -> gsmSubmitGetTpPidOffset() + 2 + 7;
             };
         }
@@ -688,12 +688,12 @@ public class BluetoothMapSmsPdu {
             } else {
                 encodingType =
                         switch ((dataCodingScheme >> 2) & 0x3) {
-                                // GSM 7 bit default alphabet
+                            // GSM 7 bit default alphabet
                             case 0 -> SmsConstants.ENCODING_7BIT;
-                                // UCS 2 (16bit)
+                            // UCS 2 (16bit)
                             case 2 -> SmsConstants.ENCODING_16BIT;
 
-                                // 8 bit data, reserved
+                            // 8 bit data, reserved
                             default -> { // case 1,3
                                 Log.w(
                                         TAG,

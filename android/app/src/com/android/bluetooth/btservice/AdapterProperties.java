@@ -609,7 +609,6 @@ class AdapterProperties {
         return mDiscovering;
     }
 
-
     void updateOnProfileConnectionChanged(
             BluetoothDevice device, int profile, int newState, int prevState) {
         String logInfo =
