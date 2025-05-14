@@ -94,6 +94,7 @@ public class RemoteDevices {
 
     private final LinkedHashMap<String, DeviceProperties> mDevices;
     private final HashMap<String, String> mDualDevicesMap;
+    private final WatchConnectionStateListener mWatchConnectionStateListener;
 
     /**
      * Bluetooth HFP v1.8 specifies the Battery Charge indicator of AG can take values from {@code
@@ -173,6 +174,12 @@ public class RemoteDevices {
         mDualDevicesMap = new HashMap<>();
         mHandler = new RemoteDevicesHandler(looper);
         mMainHandler = new Handler(Looper.getMainLooper());
+        if (Flags.watchDeviceOverrideAirplaneMode()) {
+            mWatchConnectionStateListener =
+                    new WatchConnectionStateListener(mAdapterService, looper);
+        } else {
+            mWatchConnectionStateListener = null;
+        }
     }
 
     /**
@@ -1521,6 +1528,9 @@ public class RemoteDevices {
         RemoteExceptionIgnoringConsumer<IBluetoothConnectionCallback> connectionChangeConsumer;
         if (connectionState == BluetoothAdapter.STATE_CONNECTED) {
             connectionChangeConsumer = cb -> cb.onDeviceConnected(device);
+            if (Flags.watchDeviceOverrideAirplaneMode()) {
+                mWatchConnectionStateListener.connectedDevice(device);
+            }
         } else {
             final int disconnectReason;
             if (hciReason == 0x16 /* HCI_ERR_CONN_CAUSE_LOCAL_HOST */
@@ -1541,6 +1551,9 @@ public class RemoteDevices {
                             cb.onDeviceDisconnected(
                                     device,
                                     AdapterService.hciToAndroidDisconnectReason(disconnectReason));
+            if (Flags.watchDeviceOverrideAirplaneMode()) {
+                mWatchConnectionStateListener.disconnectedDevice(device);
+            }
         }
 
         mAdapterService.aclStateChangeBroadcastCallback(connectionChangeConsumer);

@@ -2397,7 +2397,7 @@ public class HeadsetService extends ProfileService {
         List<BluetoothDevice> fallbackCandidates = getConnectedDevices();
         List<BluetoothDevice> uninterestedCandidates = new ArrayList<>();
         for (BluetoothDevice device : fallbackCandidates) {
-            if (Utils.isWatch(mAdapterService, device)) {
+            if (Utils.remoteDeviceIsWatch(mAdapterService, device)) {
                 uninterestedCandidates.add(device);
             }
         }

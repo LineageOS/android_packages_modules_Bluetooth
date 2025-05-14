@@ -1217,6 +1217,11 @@ public class AdapterService extends Service {
         mSystemServerCallbacks.finishBroadcast();
     }
 
+    void updateWatchConnection(boolean connected) {
+        broadcastToSystemServerCallbacks(
+                "updateWatchConnection", (c) -> c.onWatchConnectionChange(connected));
+    }
+
     void updateAdapterName(String name) {
         broadcastToSystemServerCallbacks(
                 "updateAdapterName(" + name + ")", (c) -> c.onAdapterNameChange(name));

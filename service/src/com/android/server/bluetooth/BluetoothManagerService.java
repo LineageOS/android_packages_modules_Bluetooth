@@ -248,6 +248,11 @@ class BluetoothManagerService {
                 }
 
                 @Override
+                public void onWatchConnectionChange(boolean connected) {
+                    mHandler.post(() -> AirplaneModeListener.setWatchConnectionState(connected));
+                }
+
+                @Override
                 public void setAdapterServiceBinder(IBinder adapterServiceBinder) {
                     mHandler.post(
                             () -> {
@@ -2053,6 +2058,7 @@ class BluetoothManagerService {
         if (prevState == STATE_ON) {
             autoOnSetupTimer();
             AirplaneModeListener.setIsMediaProfileConnected(false);
+            AirplaneModeListener.setWatchConnectionState(false);
         }
 
         // Notify all proxy objects first of adapter state change
