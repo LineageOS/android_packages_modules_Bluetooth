@@ -32,6 +32,18 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.PandoraDevice;
 import android.bluetooth.StreamObserverSpliterator;
+import android.bluetooth.Utils;
+import android.bluetooth.le.AdvertiseData;
+import android.bluetooth.le.AdvertisingSetCallback;
+import android.bluetooth.le.AdvertisingSetParameters;
+import android.bluetooth.le.BluetoothLeAdvertiser;
+import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
+import android.bluetooth.pairing.utils.IntentReceiver;
+import android.bluetooth.test_utils.BlockingBluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -46,6 +58,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.android.bluetooth.flags.Flags;
 import com.android.compatibility.common.util.AdoptShellPermissionsRule;
+
+import com.google.protobuf.ByteString;
 
 import io.grpc.stub.StreamObserver;
 
@@ -76,6 +90,8 @@ import pandora.SecurityProto.PairingEventAnswer;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -106,9 +122,13 @@ public class PairingWithDiscoveryTest {
     @Rule(order = 2)
     public final PandoraDevice mBumble = new PandoraDevice();
 
+    private final BluetoothLeScanner mLeScanner = mAdapter.getBluetoothLeScanner();
+
     private BluetoothDevice mBumbleDevice;
+    private BluetoothDevice mRemoteLeDevice;
     private InOrder mInOrder = null;
     private CompletableFuture<BluetoothDevice> mDeviceFound;
+    private String mCfName;
     @Mock private BroadcastReceiver mReceiver;
 
     @SuppressLint("MissingPermission")
@@ -144,8 +164,12 @@ public class PairingWithDiscoveryTest {
         doAnswer(mIntentHandler).when(mReceiver).onReceive(any(), any());
 
         mInOrder = inOrder(mReceiver);
+        mCfName = mAdapter.getName();
 
         mBumbleDevice = mBumble.getRemoteDevice();
+        mRemoteLeDevice =
+                mAdapter.getRemoteLeDevice(
+                        Utils.BUMBLE_RANDOM_ADDRESS, BluetoothDevice.ADDRESS_TYPE_RANDOM);
 
         for (BluetoothDevice device : mAdapter.getBondedDevices()) {
             removeBond(device);
@@ -356,6 +380,469 @@ public class PairingWithDiscoveryTest {
                 BluetoothDevice.ACTION_PAIRING_REQUEST);
     }
 
+    /**
+     * Test the address type reported for a discovered remote Bluetooth device.
+     *
+     * <p>Prerequisites:
+     *
+     * <ol>
+     *   <li>Bluetooth is enabled on both Android and Bumble.
+     *   <li>Bumble is not bonded with Android.
+     * </ol>
+     *
+     * <p>Steps:
+     *
+     * <ol>
+     *   <li>Bumble starts advertising with its own address type set to {@link
+     *       OwnAddressType#PUBLIC}.
+     *   <li>Android starts scanning for Bluetooth devices.
+     *   <li>Android receives a {@link BluetoothDevice#ACTION_FOUND} intent for Bumble.
+     *   <li>The address type of the discovered {@link BluetoothDevice} is verified to be {@link
+     *       BluetoothDevice#ADDRESS_TYPE_PUBLIC}.
+     *   <li>Android cancels the discovery process.
+     * </ol>
+     *
+     * <p>Expectation:
+     *
+     * <ul>
+     *   <li>The {@link BluetoothDevice} object received in the {@link BluetoothDevice#ACTION_FOUND}
+     *       intent reflects the address type with which Bumble was advertising.
+     * </ul>
+     */
+    @Test
+    public void testAddressType_AtDeviceDiscovery_typePublic() throws Exception {
+        registerIntentActions(BluetoothDevice.ACTION_FOUND);
+        mDeviceFound = new CompletableFuture<>();
+
+        // Start advertising from bumble side with address type PUBLIC
+        mBumble.hostBlocking()
+                .advertise(
+                        AdvertiseRequest.newBuilder()
+                                .setLegacy(true)
+                                .setConnectable(true)
+                                .setOwnAddressType(OwnAddressType.PUBLIC)
+                                .build());
+        mBumble.hostBlocking()
+                .setDiscoverabilityMode(
+                        SetDiscoverabilityModeRequest.newBuilder()
+                                .setMode(DiscoverabilityMode.DISCOVERABLE_GENERAL)
+                                .build());
+        // Start device discovery from android
+        assertThat(mAdapter.startDiscovery()).isTrue();
+        // Verify device to be discovered
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_FOUND),
+                hasExtra(BluetoothDevice.EXTRA_NAME, BUMBLE_DEVICE_NAME));
+
+        BluetoothDevice device =
+                mDeviceFound
+                        .completeOnTimeout(null, DISCOVERY_TIMEOUT, TimeUnit.MILLISECONDS)
+                        .join();
+        // Verify address
+        assertThat(device.getAddress()).isEqualTo(mBumbleDevice.getAddress());
+        // Verify address type
+        assertThat(device.getAddressType()).isEqualTo(BluetoothDevice.ADDRESS_TYPE_PUBLIC);
+        // Cancel discovery
+        assertThat(mAdapter.cancelDiscovery()).isTrue();
+
+        unregisterIntentActions(BluetoothDevice.ACTION_FOUND);
+    }
+
+    /**
+     * Test the address type reported for a discovered remote Bluetooth device.
+     *
+     * <p>Prerequisites:
+     *
+     * <ol>
+     *   <li>Bluetooth is enabled on both Android and Bumble.
+     *   <li>Bumble is not bonded with Android.
+     * </ol>
+     *
+     * <p>Steps:
+     *
+     * <ol>
+     *   <li>Bumble starts advertising again with its own address type set to {@link
+     *       OwnAddressType#RANDOM}.
+     *   <li>Android starts scanning for Bluetooth devices.
+     *   <li>Android receives a {@link BluetoothDevice#ACTION_FOUND} intent for Bumble.
+     *   <li>The address type of the newly discovered {@link BluetoothDevice} is verified to be
+     *       {@link BluetoothDevice#ADDRESS_TYPE_RANDOM}.
+     *   <li>Android cancels the discovery process.
+     * </ol>
+     *
+     * <p>Expectation:
+     *
+     * <ul>
+     *   <li>The {@link BluetoothDevice} object received in the {@link BluetoothDevice#ACTION_FOUND}
+     *       intent reflects the address type with which Bumble was advertising.
+     * </ul>
+     */
+    @Test
+    public void testAddressType_AtDeviceDiscovery_typeRandom() throws Exception {
+        CompletableFuture<ScanResult> future = new CompletableFuture<>();
+        // LE Scan setting
+        ScanSettings scanSettings =
+                new ScanSettings.Builder()
+                        .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                        .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+                        .build();
+        // LE Scan filter
+        ScanFilter scanFilter = new ScanFilter.Builder().build();
+        // LE Scan result callback
+        ScanCallback scanCallback =
+                new ScanCallback() {
+                    @Override
+                    public void onScanResult(int callbackType, ScanResult result) {
+                        Log.d(TAG, "onScanResult: result=" + result);
+                        assertThat(result).isNotNull();
+                        assertThat(result.getDevice()).isNotNull();
+                        if (Utils.BUMBLE_RANDOM_ADDRESS.equals(result.getDevice().getAddress())) {
+                            future.complete(result);
+                        }
+                    }
+
+                    @Override
+                    public void onScanFailed(int errorCode) {
+                        Log.d(TAG, "onScanFailed: errorCode=" + errorCode);
+                        future.complete(null);
+                    }
+                };
+        // Start advertising from bumble side with address type RANDOM
+        mBumble.hostBlocking()
+                .advertise(
+                        AdvertiseRequest.newBuilder()
+                                .setLegacy(true)
+                                .setConnectable(true)
+                                .setOwnAddressType(OwnAddressType.RANDOM)
+                                .build());
+        // Make Bumble discoverable
+        mBumble.hostBlocking()
+                .setDiscoverabilityMode(
+                        SetDiscoverabilityModeRequest.newBuilder()
+                                .setMode(DiscoverabilityMode.DISCOVERABLE_GENERAL)
+                                .build());
+        // Start LE scanning
+        mLeScanner.startScan(List.of(scanFilter), scanSettings, scanCallback);
+        // Wait for the LE scan completion
+        ScanResult result =
+                future.completeOnTimeout(null, DISCOVERY_TIMEOUT, TimeUnit.MILLISECONDS).join();
+        // Stop LE Scan
+        mLeScanner.stopScan(scanCallback);
+        // Verify that the result list is not empty
+        assertThat(result).isNotNull();
+        // Get the first device from the list
+        BluetoothDevice leDevice = result.getDevice();
+        // Verify address
+        assertThat(leDevice.getAddress()).isEqualTo(Utils.BUMBLE_RANDOM_ADDRESS);
+        // Verify address type
+        assertThat(leDevice.getAddressType()).isEqualTo(BluetoothDevice.ADDRESS_TYPE_RANDOM);
+    }
+
+    /**
+     * Test the address type reported upon receiving a connection from a remote device.
+     *
+     * <p>Prerequisites:
+     *
+     * <ol>
+     *   <li>Bumble is discoverable.
+     *   <li>Android Bluetooth is enabled.
+     * </ol>
+     *
+     * <p>Steps:
+     *
+     * <ol>
+     *   <li>Android registers an intent listener for ACL connection events.
+     *   <li>Bumble initiates a connection to the Android device.
+     *   <li>Android receives the connection.
+     * </ol>
+     *
+     * <p>Expectation:
+     *
+     * <ul>
+     *   <li>The address type of the connected device is {@link
+     *       BluetoothDevice#ADDRESS_TYPE_PUBLIC}.
+     * </ul>
+     */
+    @Test
+    @RequiresFlagsEnabled({Flags.FLAG_RETAIN_ADDRESS_TYPE})
+    public void testAddressType_AtConnectionFromRemote_typePublic() throws Exception {
+        registerIntentActions(
+                BluetoothDevice.ACTION_ACL_CONNECTED, BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        // Connect to android from bumble
+        HostProto.ConnectResponse conn =
+                mBumble.hostBlocking()
+                        .connect(
+                                HostProto.ConnectRequest.newBuilder()
+                                        .setAddress(
+                                                ByteString.copyFrom(
+                                                        Utils.addressBytesFromString(
+                                                                mAdapter.getAddress())))
+                                        .build());
+        assertThat(conn.hasConnection()).isTrue();
+        // Verify ACL connection
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+
+        assertThat(mBumbleDevice.getAddressType()).isEqualTo(BluetoothDevice.ADDRESS_TYPE_PUBLIC);
+
+        // Disconnect from bumble
+        mBumble.hostBlocking()
+                .disconnect(
+                        HostProto.DisconnectRequest.newBuilder()
+                                .setConnection(conn.getConnection())
+                                .build());
+
+        // Verify ACL disconnection
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+
+        unregisterIntentActions(
+                BluetoothDevice.ACTION_ACL_CONNECTED, BluetoothDevice.ACTION_ACL_DISCONNECTED);
+    }
+
+    /**
+     * Test the address type reported upon receiving a connection from a remote device with a random
+     * address.
+     *
+     * <p>Prerequisites:
+     *
+     * <ol>
+     *   <li>Android Bluetooth is enabled.
+     * </ol>
+     *
+     * <p>Steps:
+     *
+     * <ol>
+     *   <li>Android registers an intent listener for ACL connection events.
+     *   <li>Bumble's address type is set to random.
+     *   <li>Bumble initiates a connection to the Android device.
+     *   <li>Android receives the connection.
+     * </ol>
+     *
+     * <p>Expectation:
+     *
+     * <ul>
+     *   <li>The address type of the connected device is {@link
+     *       BluetoothDevice#ADDRESS_TYPE_RANDOM}.
+     * </ul>
+     */
+    @Test
+    @RequiresFlagsEnabled({Flags.FLAG_RETAIN_ADDRESS_TYPE})
+    public void testAddressType_AtConnectionFromRemote_typeRandom() throws Exception {
+        registerIntentActions(
+                BluetoothDevice.ACTION_ACL_CONNECTED, BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        testStep_Advertise(OwnAddressType.RANDOM);
+        // Scan for LE advertisement from DUT
+        ByteString deviceAddr = ByteString.EMPTY;
+        String deviceName = "";
+        Iterator<HostProto.ScanningResponse> scanningResponseIterator =
+                mBumble.hostBlocking().scan(HostProto.ScanRequest.newBuilder().build());
+        // Wait till the DUT is discovered by Bumble
+        while (true) {
+            if (scanningResponseIterator.hasNext()) {
+                HostProto.ScanningResponse scanningResponse = scanningResponseIterator.next();
+                deviceAddr = scanningResponse.getRandom();
+                deviceName = scanningResponse.getData().getCompleteLocalName();
+                if (deviceName.contains(mCfName)) {
+                    break;
+                }
+            }
+        }
+        // Check if DUT address is not empty
+        assertThat(deviceAddr.isEmpty()).isFalse();
+        // Create LE connection from REF side
+        HostProto.ConnectLEResponse leConn =
+                mBumble.hostBlocking()
+                        .connectLE(
+                                HostProto.ConnectLERequest.newBuilder()
+                                        .setOwnAddressType(HostProto.OwnAddressType.RANDOM)
+                                        .setRandom(deviceAddr)
+                                        .build());
+        // Verify that connection response has connection
+        assertThat(leConn.hasConnection()).isTrue();
+        // Verify ACL connection
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mRemoteLeDevice),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE));
+
+        // Verify address type
+        assertThat(mRemoteLeDevice.getAddressType()).isEqualTo(BluetoothDevice.ADDRESS_TYPE_RANDOM);
+
+        // Disconnect from bumble
+        mBumble.hostBlocking()
+                .disconnect(
+                        HostProto.DisconnectRequest.newBuilder()
+                                .setConnection(leConn.getConnection())
+                                .build());
+        // Verify ACL disconnection
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mRemoteLeDevice),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE));
+
+        unregisterIntentActions(
+                BluetoothDevice.ACTION_ACL_CONNECTED, BluetoothDevice.ACTION_ACL_DISCONNECTED);
+    }
+
+    /**
+     * Test the address type of a bonded device after a Bluetooth restart.
+     *
+     * <p>Prerequisites:
+     *
+     * <ol>
+     *   <li>Android Bluetooth is enabled.
+     *   <li>Bumble and Android are bonded over BR/EDR.
+     * </ol>
+     *
+     * <p>Steps:
+     *
+     * <ol>
+     *   <li>Bond Bumble and Android using the {@link
+     *       #testStep_Bond(IntentReceiver,BluetoothDevice,int)} helper method.
+     *   <li>Restart the Bluetooth adapter using the {@link #testStep_restartBt()} helper method.
+     * </ol>
+     *
+     * <p>Expectation:
+     *
+     * <ul>
+     *   <li>The set of bonded devices still contains the Bumble device after the restart.
+     *   <li>The address type of the bonded Bumble device is {@link
+     *       BluetoothDevice#ADDRESS_TYPE_PUBLIC}.
+     * </ul>
+     */
+    @Test
+    @RequiresFlagsEnabled({Flags.FLAG_RETAIN_ADDRESS_TYPE})
+    public void testAddressType_onBluetoothOnOff_typePublic() throws Exception {
+        IntentReceiver intentReceiver =
+                new IntentReceiver.Builder(
+                                mContext,
+                                BluetoothDevice.ACTION_ACL_CONNECTED,
+                                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                                BluetoothDevice.ACTION_PAIRING_REQUEST)
+                        .build();
+        // Create Bond over classic
+        testStep_Bond(intentReceiver, mBumbleDevice, BluetoothDevice.TRANSPORT_BREDR);
+        // Verify address type
+        assertThat(mBumbleDevice.getAddressType()).isEqualTo(BluetoothDevice.ADDRESS_TYPE_PUBLIC);
+        // Restart Bluetooth
+        testStep_restartBt();
+        // Verify address type after restart
+        assertThat(mAdapter.getBondedDevices()).contains(mBumbleDevice);
+        assertThat(mBumbleDevice.getAddressType()).isEqualTo(BluetoothDevice.ADDRESS_TYPE_PUBLIC);
+
+        intentReceiver.close();
+    }
+
+    /**
+     * Test the address type of a bonded device with a random address after a Bluetooth restart.
+     *
+     * <p>Prerequisites:
+     *
+     * <ol>
+     *   <li>Android Bluetooth is enabled.
+     *   <li>Bumble and Android are bonded over BR/EDR.
+     *   <li>Bumble is configured to use a random address.
+     * </ol>
+     *
+     * <p>Steps:
+     *
+     * <ol>
+     *   <li>Scan for Bumble device with RANDOM address.
+     *   <li>Create bond with Bumble
+     *   <li>Restart the Bluetooth adapter using the {@link #testStep_restartBt()} helper method.
+     *   <li>Get the {@link BluetoothDevice} object for the bonded Bumble device.
+     * </ol>
+     *
+     * <p>Expectation:
+     *
+     * <ul>
+     *   <li>The address type of the bonded Bumble device is {@link
+     *       BluetoothDevice#ADDRESS_TYPE_RANDOM}.
+     * </ul>
+     */
+    @Test
+    @RequiresFlagsEnabled({Flags.FLAG_RETAIN_ADDRESS_TYPE})
+    public void testAddressType_onBluetoothOnOff_typeRandom() throws Exception {
+        IntentReceiver intentReceiver =
+                new IntentReceiver.Builder(
+                                mContext,
+                                BluetoothDevice.ACTION_ACL_CONNECTED,
+                                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                                BluetoothDevice.ACTION_PAIRING_REQUEST)
+                        .build();
+        // Start advertising from bumble side with address type RANDOM
+        CompletableFuture<ScanResult> future = new CompletableFuture<>();
+        // LE Scan setting
+        ScanSettings scanSettings =
+                new ScanSettings.Builder()
+                        .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                        .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+                        .build();
+        // LE Scan filter
+        ScanFilter scanFilter = new ScanFilter.Builder().build();
+        // LE Scan result callback
+        ScanCallback scanCallback =
+                new ScanCallback() {
+                    @Override
+                    public void onScanResult(int callbackType, ScanResult result) {
+                        Log.d(TAG, "onScanResult: result=" + result);
+                        assertThat(result).isNotNull();
+                        assertThat(result.getDevice()).isNotNull();
+                        if (Utils.BUMBLE_RANDOM_ADDRESS.equals(result.getDevice().getAddress())) {
+                            future.complete(result);
+                        }
+                    }
+
+                    @Override
+                    public void onScanFailed(int errorCode) {
+                        Log.d(TAG, "onScanFailed: errorCode=" + errorCode);
+                        future.complete(null);
+                    }
+                };
+        // Start advertising from bumble side with address type RANDOM
+        mBumble.hostBlocking()
+                .advertise(
+                        AdvertiseRequest.newBuilder()
+                                .setLegacy(true)
+                                .setConnectable(true)
+                                .setOwnAddressType(OwnAddressType.RANDOM)
+                                .build());
+        // Make Bumble discoverable
+        mBumble.hostBlocking()
+                .setDiscoverabilityMode(
+                        SetDiscoverabilityModeRequest.newBuilder()
+                                .setMode(DiscoverabilityMode.DISCOVERABLE_GENERAL)
+                                .build());
+        // Start LE scanning
+        mLeScanner.startScan(List.of(scanFilter), scanSettings, scanCallback);
+        // Wait for the LE scan completion
+        ScanResult result =
+                future.completeOnTimeout(null, DISCOVERY_TIMEOUT, TimeUnit.MILLISECONDS).join();
+        // Stop LE Scan
+        mLeScanner.stopScan(scanCallback);
+        // Verify that the result list is not empty
+        assertThat(result).isNotNull();
+        // Get the first device from the list
+        BluetoothDevice leDevice = result.getDevice();
+        // Create Bond over classic
+        testStep_Bond(intentReceiver, leDevice, BluetoothDevice.TRANSPORT_LE);
+        // Verify the address type
+        assertThat(leDevice.getAddressType()).isEqualTo(BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        // Restart Bluetooth
+        testStep_restartBt();
+        // Verify address type after restart
+        assertThat(mAdapter.getBondedDevices()).contains(leDevice);
+        // Verify the address type
+        assertThat(leDevice.getAddressType()).isEqualTo(BluetoothDevice.ADDRESS_TYPE_RANDOM);
+
+        intentReceiver.close();
+    }
+
     /** Helper/testStep functions go here */
     /**
      * Helper function to start device discovery
@@ -389,6 +876,81 @@ public class PairingWithDiscoveryTest {
         assertThat(mAdapter.cancelDiscovery()).isTrue();
 
         unregisterIntentActions(BluetoothDevice.ACTION_FOUND);
+    }
+
+    private void testStep_Bond(
+            IntentReceiver parentIntentReceiver, BluetoothDevice device, int transport) {
+        IntentReceiver intentReceiver =
+                IntentReceiver.update(
+                        parentIntentReceiver,
+                        new IntentReceiver.Builder(
+                                mContext,
+                                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                                BluetoothDevice.ACTION_ACL_CONNECTED,
+                                BluetoothDevice.ACTION_PAIRING_REQUEST));
+
+        StreamObserver<PairingEventAnswer> pairingEventAnswerObserver =
+                mBumble.security()
+                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
+                        .onPairing(mPairingEventStreamObserver);
+        // Create bond
+        assertThat(device.createBond(transport)).isTrue();
+
+        intentReceiver.verifyReceived(
+                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDING));
+        intentReceiver.verifyReceivedOrdered(
+                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, transport));
+
+        intentReceiver.verifyReceived(
+                hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+                hasExtra(
+                        BluetoothDevice.EXTRA_PAIRING_VARIANT,
+                        BluetoothDevice.PAIRING_VARIANT_CONSENT));
+
+        // Approve pairing from Android
+        assertThat(device.setPairingConfirmation(true)).isTrue();
+
+        PairingEvent pairingEvent = mPairingEventStreamObserver.iterator().next();
+        assertThat(pairingEvent.hasJustWorks()).isTrue();
+        pairingEventAnswerObserver.onNext(
+                PairingEventAnswer.newBuilder().setEvent(pairingEvent).setConfirm(true).build());
+
+        // Ensure that pairing succeeds
+        intentReceiver.verifyReceivedOrdered(
+                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
+
+        intentReceiver.close();
+    }
+
+    private void testStep_Advertise(OwnAddressType ownAddressType) {
+        // Start advertising
+        int addrType =
+                (ownAddressType == OwnAddressType.RANDOM)
+                        ? AdvertisingSetParameters.ADDRESS_TYPE_RANDOM
+                        : AdvertisingSetParameters.ADDRESS_TYPE_PUBLIC;
+        BluetoothLeAdvertiser leAdvertiser = mAdapter.getBluetoothLeAdvertiser();
+        AdvertisingSetParameters parameters =
+                new AdvertisingSetParameters.Builder()
+                        .setOwnAddressType(addrType)
+                        .setConnectable(true)
+                        .build();
+        AdvertiseData advertiseData =
+                new AdvertiseData.Builder().setIncludeDeviceName(true).build();
+        AdvertisingSetCallback advertisingSetCallback = new AdvertisingSetCallback() {};
+        leAdvertiser.startAdvertisingSet(
+                parameters, advertiseData, null, null, null, 0, 0, advertisingSetCallback);
+    }
+
+    private static void testStep_restartBt() {
+        assertThat(BlockingBluetoothAdapter.disable(true)).isTrue();
+        assertThat(BlockingBluetoothAdapter.enable()).isTrue();
     }
 
     @SafeVarargs
