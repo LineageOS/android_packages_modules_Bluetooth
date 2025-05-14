@@ -4254,10 +4254,7 @@ public class BassClientService extends ProfileService {
         if (leaudioBisSyncControl()) {
             message.arg2 = BassConstants.FLAG_SYNC_PA; // Use no preference BIS sync
         } else {
-            message.arg2 =
-                    BassUtils.isPastConfigEnabled()
-                            ? BassConstants.PA_SYNC_PAST_AVAILABLE
-                            : BassConstants.PA_SYNC_PAST_NOT_AVAILABLE;
+            message.arg2 = BassConstants.PA_SYNC_PAST_AVAILABLE;
         }
         message.obj = metadata;
         stateMachine.sendMessage(message);

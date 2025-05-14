@@ -152,7 +152,6 @@ class BassClientStateMachine extends StateMachine {
     private BluetoothLeBroadcastMetadata mSetBroadcastPINMetadata = null;
     @VisibleForTesting boolean mSetBroadcastCodePending = false;
     private final Map<Integer, Boolean> mPendingRemove = new HashMap();
-    private boolean mDefPAS = false;
     private boolean mForceSB = false;
     @VisibleForTesting byte mNextSourceId = 0;
     private boolean mAllowReconnect = false;
@@ -183,7 +182,6 @@ class BassClientStateMachine extends StateMachine {
             mIsAllowedList =
                     DeviceConfig.getBoolean(
                             DeviceConfig.NAMESPACE_BLUETOOTH, "persist.vendor.service.bt.wl", true);
-            mDefPAS = BassUtils.isPastConfigEnabled();
             mForceSB =
                     DeviceConfig.getBoolean(
                             DeviceConfig.NAMESPACE_BLUETOOTH,
@@ -1622,7 +1620,8 @@ class BassClientStateMachine extends StateMachine {
         return bisSync;
     }
 
-    private byte[] convertMetadataToAddSourceByteArray(BluetoothLeBroadcastMetadata metaData) {
+    private static byte[] convertMetadataToAddSourceByteArray(
+            BluetoothLeBroadcastMetadata metaData) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         BluetoothDevice advSource = metaData.getSourceDevice();
 
@@ -1646,11 +1645,7 @@ class BassClientStateMachine extends StateMachine {
         stream.write((metaData.getBroadcastId() & 0x0000000000FF0000) >>> 16);
 
         // PA_Sync
-        stream.write(
-                (byte)
-                        (mDefPAS
-                                ? BassConstants.PA_SYNC_PAST_AVAILABLE
-                                : BassConstants.PA_SYNC_PAST_NOT_AVAILABLE));
+        stream.write((byte) BassConstants.PA_SYNC_PAST_AVAILABLE);
 
         // PA_Interval
         stream.write((metaData.getPaSyncInterval() & 0x00000000000000FF));
@@ -1798,11 +1793,7 @@ class BassClientStateMachine extends StateMachine {
         res[offset++] = (byte) sourceId;
         // PA_Sync
         if (paSync) {
-            res[offset++] =
-                    (byte)
-                            (mDefPAS
-                                    ? BassConstants.PA_SYNC_PAST_AVAILABLE
-                                    : BassConstants.PA_SYNC_PAST_NOT_AVAILABLE);
+            res[offset++] = (byte) BassConstants.PA_SYNC_PAST_AVAILABLE;
         } else {
             res[offset++] = (byte) BassConstants.PA_SYNC_DO_NOT_SYNC;
         }
