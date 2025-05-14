@@ -1659,7 +1659,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * @return Bluetooth hardware address as string
      */
     public String getAddress() {
-        if (DBG) Log.d(TAG, "getAddress: mAddress=" + this);
         return mAddress;
     }
 
@@ -1670,7 +1669,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * @return Bluetooth address type
      */
     public @AddressType int getAddressType() {
-        if (DBG) Log.d(TAG, "mAddressType: " + mAddressType);
         return mAddressType;
     }
 
