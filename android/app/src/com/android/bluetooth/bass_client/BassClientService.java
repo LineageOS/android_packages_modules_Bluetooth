@@ -50,6 +50,7 @@ import android.bluetooth.BluetoothUuid;
 import android.bluetooth.IBluetoothLeBroadcastAssistantCallback;
 import android.bluetooth.le.IScannerCallback;
 import android.bluetooth.le.PeriodicAdvertisingCallback;
+import android.bluetooth.le.PeriodicAdvertisingManager;
 import android.bluetooth.le.PeriodicAdvertisingReport;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
@@ -176,6 +177,7 @@ public class BassClientService extends ProfileService {
     private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final BluetoothAdapter mAdapter;
+    private final PeriodicAdvertisingManager mPeriodicAdvertisingManager;
     private final Handler mHandler;
     private final HandlerThread mStateMachinesThread;
     private final HandlerThread mCallbackHandlerThread;
@@ -481,6 +483,7 @@ public class BassClientService extends ProfileService {
         mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
+        mPeriodicAdvertisingManager = mAdapter.getPeriodicAdvertisingManager();
         mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
         mStateMachinesThread = new HandlerThread("BassClientService.StateMachines");
         mStateMachinesThread.start();
@@ -1872,13 +1875,6 @@ public class BassClientService extends ProfileService {
     public void startSearchingForSources(List<ScanFilter> filters) {
         Log.d(TAG, "startSearchingForSources with filters: " + filters);
 
-        if (!BluetoothMethodProxy.getInstance()
-                .initializePeriodicAdvertisingManagerOnDefaultAdapter()) {
-            Log.e(TAG, "Failed to initialize Periodic Advertising Manager on Default Adapter");
-            mCallbacks.notifySearchStartFailed(BluetoothStatusCodes.ERROR_UNKNOWN);
-            return;
-        }
-
         synchronized (mSearchScanCallbackLock) {
             if (!leaudioBassScanWithInternalScanController()) {
                 if (mBluetoothLeScannerWrapper == null) {
@@ -2682,8 +2678,7 @@ public class BassClientService extends ProfileService {
                 try {
                     BluetoothMethodProxy.getInstance()
                             .periodicAdvertisingManagerUnregisterSync(
-                                    BassClientPeriodicAdvertisingManager
-                                            .getPeriodicAdvertisingManager(),
+                                    mPeriodicAdvertisingManager,
                                     mPeriodicAdvCallbacksMap.get(syncHandle));
                 } catch (IllegalArgumentException ex) {
                     Log.e(TAG, "unregisterSync:IllegalArgumentException");
@@ -2861,8 +2856,7 @@ public class BassClientService extends ProfileService {
             try {
                 BluetoothMethodProxy.getInstance()
                         .periodicAdvertisingManagerRegisterSync(
-                                BassClientPeriodicAdvertisingManager
-                                        .getPeriodicAdvertisingManager(),
+                                mPeriodicAdvertisingManager,
                                 scanRes,
                                 0,
                                 BassConstants.PSYNC_TIMEOUT,
