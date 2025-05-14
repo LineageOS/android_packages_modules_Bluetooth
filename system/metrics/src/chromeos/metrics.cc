@@ -130,7 +130,7 @@ void LogMetricSmpPairingEvent(const Address& address, uint16_t smp_cmd,
 void LogMetricA2dpPlaybackEvent(const Address& address, int playback_state, int audio_coding_mode) {
 }
 
-void LogA2dpSessionReported(const hci::Address& address, const A2dpSsession& session) {
+void LogA2dpSessionReported(const hci::Address& address, const A2dpSession& session) {
   std::string boot_id;
   std::string addr_string;
 

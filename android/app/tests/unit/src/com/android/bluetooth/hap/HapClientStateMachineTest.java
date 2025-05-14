@@ -135,6 +135,20 @@ public class HapClientStateMachineTest {
     }
 
     @Test
+    public void connect_whenConnecting_connectionTimeout() {
+        sendAndDispatchMessage(MESSAGE_CONNECT);
+        verifyConnectionStateIntent(STATE_CONNECTING, STATE_DISCONNECTED);
+        assertThat(mStateMachine.getCurrentState())
+            .isInstanceOf(HapClientStateMachine.Connecting.class);
+
+        sendAndDispatchMessage(MESSAGE_CONNECT);
+        mLooper.moveTimeForward(CONNECT_TIMEOUT.toMillis());
+        mLooper.dispatchAll();
+
+        verifyConnectionStateIntent(STATE_DISCONNECTED, STATE_CONNECTING);
+    }
+
+    @Test
     public void incomingConnect_whenTimeOut_isDisconnectedAndInAcceptList() {
         generateConnectionMessageFromNative(STATE_CONNECTING, STATE_DISCONNECTED);
         assertThat(mStateMachine.getCurrentState())

@@ -259,7 +259,8 @@ static void btgattc_register_app_cb(int status, int clientIf, const Uuid& app_uu
                                UUID_PARAMS(app_uuid));
 }
 
-static void btgattc_open_cb(int conn_id, int status, int clientIf, const RawAddress& bda) {
+static void btgattc_open_cb(int conn_id, int status, int clientIf, int transport,
+                            const RawAddress& bda) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mCallbacksObj) {
@@ -267,11 +268,12 @@ static void btgattc_open_cb(int conn_id, int status, int clientIf, const RawAddr
   }
 
   ScopedLocalRef<jstring> address(sCallbackEnv.get(), bdaddr2newjstr(sCallbackEnv.get(), &bda));
-  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnected, clientIf, conn_id, status,
-                               address.get());
+  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnected, clientIf, conn_id, transport,
+                               status, address.get());
 }
 
-static void btgattc_close_cb(int conn_id, int status, int clientIf, const RawAddress& bda) {
+static void btgattc_close_cb(int conn_id, int status, int clientIf, int transport,
+                             const RawAddress& bda) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mCallbacksObj) {
@@ -279,8 +281,8 @@ static void btgattc_close_cb(int conn_id, int status, int clientIf, const RawAdd
   }
 
   ScopedLocalRef<jstring> address(sCallbackEnv.get(), bdaddr2newjstr(sCallbackEnv.get(), &bda));
-  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onDisconnected, clientIf, conn_id, status,
-                               address.get());
+  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onDisconnected, clientIf, conn_id, transport,
+                               status, address.get());
 }
 
 static void btgattc_register_for_notification_cb(int conn_id, int registered, int status,
@@ -590,7 +592,7 @@ static void btgatts_register_app_cb(int status, int server_if, const Uuid& uuid)
                                UUID_PARAMS(uuid));
 }
 
-static void btgatts_connection_cb(int conn_id, int server_if, int connected,
+static void btgatts_connection_cb(int conn_id, int server_if, int transport, int connected,
                                   const RawAddress& bda) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
@@ -599,8 +601,8 @@ static void btgatts_connection_cb(int conn_id, int server_if, int connected,
   }
 
   ScopedLocalRef<jstring> address(sCallbackEnv.get(), bdaddr2newjstr(sCallbackEnv.get(), &bda));
-  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onClientConnected, address.get(), connected,
-                               conn_id, server_if);
+  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onClientConnected, address.get(), transport,
+                               connected, conn_id, server_if);
 }
 
 static void btgatts_service_added_cb(int status, int server_if, const btgatt_db_element_t* service,
@@ -2982,8 +2984,8 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
   const JNIJavaMethod javaMethods[] = {
           // Client callbacks
           {"onClientRegistered", "(IIJJ)V", &method_onClientRegistered},
-          {"onConnected", "(IIILjava/lang/String;)V", &method_onConnected},
-          {"onDisconnected", "(IIILjava/lang/String;)V", &method_onDisconnected},
+          {"onConnected", "(IIIILjava/lang/String;)V", &method_onConnected},
+          {"onDisconnected", "(IIIILjava/lang/String;)V", &method_onDisconnected},
           {"onReadCharacteristic", "(III[B)V", &method_onReadCharacteristic},
           {"onWriteCharacteristic", "(III[B)V", &method_onWriteCharacteristic},
           {"onExecuteCompleted", "(II)V", &method_onExecuteCompleted},
@@ -3005,7 +3007,7 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
 
           // Server callbacks
           {"onServerRegistered", "(IIJJ)V", &method_onServerRegistered},
-          {"onClientConnected", "(Ljava/lang/String;ZII)V", &method_onClientConnected},
+          {"onClientConnected", "(Ljava/lang/String;IZII)V", &method_onClientConnected},
           {"onServiceAdded", "(IILjava/util/List;)V", &method_onServiceAdded},
           {"onServiceStopped", "(III)V", &method_onServiceStopped},
           {"onServiceDeleted", "(III)V", &method_onServiceDeleted},

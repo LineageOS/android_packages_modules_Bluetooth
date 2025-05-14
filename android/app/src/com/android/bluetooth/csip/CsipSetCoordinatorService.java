@@ -873,7 +873,7 @@ public class CsipSetCoordinatorService extends ProfileService {
 
             Log.d(TAG, "Creating a new state machine for " + device);
             sm =
-                    CsipSetCoordinatorStateMachine.make(
+                    new CsipSetCoordinatorStateMachine(
                             device, this, mNativeInterface, mStateMachinesLooper);
             mStateMachines.put(device, sm);
             return sm;

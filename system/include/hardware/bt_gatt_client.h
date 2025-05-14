@@ -94,10 +94,12 @@ typedef void (*register_client_callback)(int status, int client_if,
                                          const bluetooth::Uuid& app_uuid);
 
 /** GATT open callback invoked in response to open */
-typedef void (*connect_callback)(int conn_id, int status, int client_if, const RawAddress& bda);
+typedef void (*connect_callback)(int conn_id, int status, int client_if, int transport,
+                                 const RawAddress& bda);
 
 /** Callback invoked in response to close */
-typedef void (*disconnect_callback)(int conn_id, int status, int client_if, const RawAddress& bda);
+typedef void (*disconnect_callback)(int conn_id, int status, int client_if, int transport,
+                                    const RawAddress& bda);
 
 /** Callback invoked in response to (de)register_for_notification */
 typedef void (*register_for_notification_callback)(int conn_id, int registered, int status,

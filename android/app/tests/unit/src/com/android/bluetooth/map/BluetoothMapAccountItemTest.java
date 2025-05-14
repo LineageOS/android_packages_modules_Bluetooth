@@ -16,24 +16,30 @@
 
 package com.android.bluetooth.map;
 
+import static com.android.bluetooth.TestUtils.MockitoRule;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 
 import androidx.test.runner.AndroidJUnit4;
 
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 
 /** Test cases for {@link BluetoothMapAccountItem}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapAccountItemTest {
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
+    @Mock private ColorDrawable mColorDrawable;
+
     private static final String TEST_NAME = "test_name";
     private static final String TEST_PACKAGE_NAME = "test.package.name";
     private static final String TEST_ID = "1111";
     private static final String TEST_PROVIDER_AUTHORITY = "test.project.provider";
-    private static final Drawable TEST_DRAWABLE = new ColorDrawable();
     private static final BluetoothMapUtils.TYPE TEST_TYPE = BluetoothMapUtils.TYPE.EMAIL;
     private static final String TEST_UCI = "uci";
     private static final String TEST_UCI_PREFIX = "uci_prefix";
@@ -46,7 +52,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -55,7 +61,7 @@ public class BluetoothMapAccountItemTest {
         assertThat(accountItem.getName()).isEqualTo(TEST_NAME);
         assertThat(accountItem.getPackageName()).isEqualTo(TEST_PACKAGE_NAME);
         assertThat(accountItem.getProviderAuthority()).isEqualTo(TEST_PROVIDER_AUTHORITY);
-        assertThat(accountItem.getIcon()).isEqualTo(TEST_DRAWABLE);
+        assertThat(accountItem.getIcon()).isEqualTo(mColorDrawable);
         assertThat(accountItem.getType()).isEqualTo(TEST_TYPE);
         assertThat(accountItem.getUci()).isEqualTo(TEST_UCI);
         assertThat(accountItem.getUciPrefix()).isEqualTo(TEST_UCI_PREFIX);
@@ -69,14 +75,14 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE);
         assertThat(accountItem.getId()).isNull();
         assertThat(accountItem.getAccountId()).isEqualTo(-1);
         assertThat(accountItem.getName()).isEqualTo(TEST_NAME);
         assertThat(accountItem.getPackageName()).isEqualTo(TEST_PACKAGE_NAME);
         assertThat(accountItem.getProviderAuthority()).isEqualTo(TEST_PROVIDER_AUTHORITY);
-        assertThat(accountItem.getIcon()).isEqualTo(TEST_DRAWABLE);
+        assertThat(accountItem.getIcon()).isEqualTo(mColorDrawable);
         assertThat(accountItem.getType()).isEqualTo(TEST_TYPE);
         assertThat(accountItem.getUci()).isNull();
         assertThat(accountItem.getUciPrefix()).isNull();
@@ -90,7 +96,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -101,7 +107,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         null);
@@ -112,7 +118,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         null,
                         null);
@@ -130,7 +136,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -141,7 +147,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         BluetoothMapUtils.TYPE.MMS);
 
         assertThat(accountItem.equals(accountItemWithDifferentType)).isFalse();
@@ -156,7 +162,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -167,7 +173,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE);
 
         assertThat(accountItem.equals(accountItemWithoutUciData)).isTrue();
@@ -182,7 +188,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -198,7 +204,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -215,7 +221,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -232,7 +238,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -242,7 +248,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -259,7 +265,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -269,7 +275,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -285,7 +291,7 @@ public class BluetoothMapAccountItemTest {
                         /* name= */ null,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -295,7 +301,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -312,7 +318,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -322,7 +328,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME_DIFFERENT,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -338,7 +344,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         /* package_name= */ null,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -348,7 +354,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -365,7 +371,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -375,7 +381,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME_DIFFERENT,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -391,7 +397,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         /* provider_authority= */ null,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -401,7 +407,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -418,7 +424,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -428,7 +434,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY_DIFFERENT,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -444,7 +450,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         /* type= */ null,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -454,7 +460,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -479,7 +485,7 @@ public class BluetoothMapAccountItemTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);

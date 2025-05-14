@@ -80,7 +80,7 @@ public class LeAudioStateMachineTest {
         // Override the timeout value to speed up the test
         LeAudioStateMachine.sConnectTimeoutMs = 1000; // 1s
         mLeAudioStateMachine =
-                LeAudioStateMachine.make(
+                new LeAudioStateMachine(
                         mDevice,
                         mLeAudioService,
                         mLeAudioNativeInterface,

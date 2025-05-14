@@ -72,7 +72,7 @@ static_library("libbluetooth_gd") {
     "hci/le_scanning_reassembler.cc",
     "hci/link_key.cc",
     "hci/msft.cc",
-    "hci/remote_name_request.cc",
+    "hci/remote_name_request_impl.cc",
     "hci/uuid.cc",
     "lpp/lpp_offload_manager.cc",
     "module.cc",

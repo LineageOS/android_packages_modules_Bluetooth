@@ -17,7 +17,7 @@
 package com.android.bluetooth.btservice;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.mockGetSystemService;
+import static com.android.bluetooth.TestUtils.mockContextGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -29,7 +29,6 @@ import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
-import android.content.Context;
 import android.os.HandlerThread;
 
 import androidx.test.filters.MediumTest;
@@ -52,11 +51,6 @@ public class AdapterPropertiesTest {
     private static final byte[] TEST_BT_ADDR_BYTES = {00, 11, 22, 33, 44, 55};
     private static final byte[] TEST_BT_ADDR_BYTES_2 = {00, 11, 22, 33, 44, 66};
 
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
-    private final BluetoothManager mBluetoothManager =
-            mTargetContext.getSystemService(BluetoothManager.class);
-
     private AdapterProperties mAdapterProperties;
     private RemoteDevices mRemoteDevices;
     private HandlerThread mHandlerThread;
@@ -72,11 +66,7 @@ public class AdapterPropertiesTest {
         mHandlerThread = new HandlerThread("RemoteDevicesTestHandlerThread");
         mHandlerThread.start();
 
-        mockGetSystemService(
-                mAdapterService,
-                Context.BLUETOOTH_SERVICE,
-                BluetoothManager.class,
-                mBluetoothManager);
+        mockContextGetBluetoothManager(mAdapterService);
 
         when(mAdapterService.getIdentityAddress(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES)))
                 .thenReturn(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES));

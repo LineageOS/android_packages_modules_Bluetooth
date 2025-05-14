@@ -35,7 +35,6 @@ import android.os.Looper
 import android.os.SystemClock
 import android.provider.Settings
 import androidx.annotation.VisibleForTesting
-import com.android.modules.expresslog.Counter
 import com.android.server.bluetooth.airplane.hasUserToggledApm as hasUserToggledApm
 import com.android.server.bluetooth.airplane.isOnOverrode as isAirplaneModeOn
 import com.android.server.bluetooth.satellite.isOn as isSatelliteModeOn
@@ -101,11 +100,8 @@ public fun notifyBluetoothOn(context: Context) {
 
     if (!isFeatureSupportedForUser(context.contentResolver)) {
         val defaultFeatureValue = true
-        if (!setFeatureEnabledForUserUnchecked(context, defaultFeatureValue)) {
-            Log.e(TAG, "Failed to set feature to its default value ${defaultFeatureValue}")
-        } else {
-            Log.i(TAG, "Feature was set to its default value ${defaultFeatureValue}")
-        }
+        setFeatureEnabledForUserUnchecked(context, defaultFeatureValue)
+        Log.i(TAG, "Feature was set to its default value ${defaultFeatureValue}")
     } else {
         // When Bluetooth turned on state, any saved time will be obsolete.
         // This happen only when the phone reboot while Bluetooth is ON
@@ -136,14 +132,15 @@ public fun setUserEnabled(
         Log.i(TAG, "setUserEnabled: Nothing to do, feature is already enabled")
         return
     }
-    if (!setFeatureEnabledForUserUnchecked(context, status)) {
-        throw IllegalStateException("AutoOnFeature database failure for user: ${context.getUser()}")
-    }
-    Counter.logIncrement(
-        if (status) "bluetooth.value_auto_on_enabled" else "bluetooth.value_auto_on_disabled"
-    )
+    setFeatureEnabledForUserUnchecked(context, status)
     Timer.resetStorage(context.contentResolver)
     resetAutoOnTimerForUser(looper, context, state, callback_on)
+}
+
+public fun factoryResetAutoOn(context: Context) {
+    Settings.Secure.putInt(context.contentResolver, USER_SETTINGS_KEY, 0)
+    timer?.cancel()
+    timer = null
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -288,22 +285,18 @@ private fun isFeatureSupportedForUser(resolver: ContentResolver): Boolean {
  *
  * @return whether the auto on feature is enabled for this user
  */
-private fun setFeatureEnabledForUserUnchecked(context: Context, status: Boolean): Boolean {
-    val ret =
-        Settings.Secure.putInt(context.contentResolver, USER_SETTINGS_KEY, if (status) 1 else 0)
-    if (ret) {
-        context.sendBroadcast(
-            Intent(ACTION_AUTO_ON_STATE_CHANGED)
-                .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY)
-                .putExtra(
-                    EXTRA_AUTO_ON_STATE,
-                    if (status) AUTO_ON_STATE_ENABLED else AUTO_ON_STATE_DISABLED,
-                ),
-            android.Manifest.permission.BLUETOOTH_PRIVILEGED,
-            BroadcastOptions.makeBasic()
-                .setDeferralPolicy(BroadcastOptions.DEFERRAL_POLICY_UNTIL_ACTIVE)
-                .toBundle(),
-        )
-    }
-    return ret
+private fun setFeatureEnabledForUserUnchecked(context: Context, status: Boolean) {
+    Settings.Secure.putInt(context.contentResolver, USER_SETTINGS_KEY, if (status) 1 else 0)
+    context.sendBroadcast(
+        Intent(ACTION_AUTO_ON_STATE_CHANGED)
+            .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY)
+            .putExtra(
+                EXTRA_AUTO_ON_STATE,
+                if (status) AUTO_ON_STATE_ENABLED else AUTO_ON_STATE_DISABLED,
+            ),
+        android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+        BroadcastOptions.makeBasic()
+            .setDeferralPolicy(BroadcastOptions.DEFERRAL_POLICY_UNTIL_ACTIVE)
+            .toBundle(),
+    )
 }

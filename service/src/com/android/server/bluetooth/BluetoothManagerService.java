@@ -78,8 +78,6 @@ import android.sysprop.BluetoothProperties;
 
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.modules.expresslog.Counter;
-import com.android.modules.expresslog.Histogram;
 import com.android.server.bluetooth.airplane.AirplaneModeListener;
 import com.android.server.bluetooth.satellite.SatelliteModeListener;
 
@@ -320,6 +318,11 @@ class BluetoothManagerService {
 
     @VisibleForTesting
     boolean factoryReset(int count) {
+        if (Flags.factoryResetClearAdditionalData()) {
+            AutoOnFeature.factoryResetAutoOn(mCurrentUserContext);
+            AirplaneModeListener.factoryReset(mContentResolver, mCurrentUserContext);
+            setBtHciSnoopLogMode(BluetoothAdapter.BT_SNOOP_LOG_MODE_DISABLED);
+        }
         if (count == 10 || mState.oneOf(STATE_OFF)) {
             Log.e(TAG, "factoryReset(" + count + "): Set property to retry when Bluetooth start");
             BluetoothProperties.factory_reset(true);
@@ -614,10 +617,6 @@ class BluetoothManagerService {
                 }
             };
 
-    private final Histogram mShutdownLatencyHistogram =
-            new Histogram(
-                    "bluetooth.value_shutdown_latency", new Histogram.UniformOptions(50, 0, 3000));
-
     BluetoothManagerService(
             @NonNull Context context, @NonNull Looper looper, @NonNull String hciInstanceName) {
         mContext = requireNonNull(context, "Context cannot be null");
@@ -659,7 +658,9 @@ class BluetoothManagerService {
 
         IntentFilter filterUser = new IntentFilter();
         filterUser.addAction(UserManager.ACTION_USER_RESTRICTIONS_CHANGED);
-        filterUser.addAction(Intent.ACTION_USER_SWITCHED);
+        if (!Flags.limitUserSwitchPropagation()) {
+            filterUser.addAction(Intent.ACTION_USER_SWITCHED);
+        }
         filterUser.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         mContext.registerReceiverForAllUsers(
                 new BroadcastReceiver() {
@@ -667,6 +668,10 @@ class BluetoothManagerService {
                     public void onReceive(Context context, Intent intent) {
                         switch (intent.getAction()) {
                             case Intent.ACTION_USER_SWITCHED:
+                                if (Flags.limitUserSwitchPropagation()) {
+                                    throw new IllegalStateException(
+                                            "limitUserSwitchPropagation is activated");
+                                }
                                 int foregroundUserId =
                                         intent.getIntExtra(Intent.EXTRA_USER_HANDLE, 0);
                                 propagateForegroundUserId(foregroundUserId);
@@ -710,9 +715,6 @@ class BluetoothManagerService {
         mDeviceConfigAllowAutoOn =
                 SystemProperties.getBoolean("bluetooth.server.automatic_turn_on", false);
         Log.d(TAG, "AutoOnFeature property=" + mDeviceConfigAllowAutoOn);
-        if (mDeviceConfigAllowAutoOn) {
-            Counter.logIncrement("bluetooth.value_auto_on_supported");
-        }
     }
 
     private Unit onBleScanDisabled() {
@@ -807,7 +809,7 @@ class BluetoothManagerService {
             return;
         }
         try {
-            mAdapter.setForegroundUserId(userId, mContext.getAttributionSource());
+            mAdapter.setForegroundUserId(userId);
         } catch (RemoteException e) {
             Log.e(TAG, "Unable to set foreground user id", e);
         }
@@ -883,7 +885,7 @@ class BluetoothManagerService {
         if (!mState.oneOf(STATE_ON)) {
             return false;
         }
-        return mAdapter.isMediaProfileConnected(mContext.getAttributionSource());
+        return mAdapter.isMediaProfileConnected();
     }
 
     // Disable ble scan only mode.
@@ -1085,7 +1087,7 @@ class BluetoothManagerService {
             // Need to stay at BLE ON. Disconnect all Gatt connections
             Log.i(TAG, "sendBrEdrDownCallback: Staying in BLE_ON");
             try {
-                mAdapter.unregAllGattClient(mContext.getAttributionSource());
+                mAdapter.unregAllGattClient();
             } catch (RemoteException e) {
                 Log.e(TAG, "sendBrEdrDownCallback: failed to call unregAllGattClient()", e);
             }
@@ -1100,7 +1102,6 @@ class BluetoothManagerService {
             Log.d(TAG, "Bluetooth is not allowed, preventing AutoOn");
             return Unit.INSTANCE;
         }
-        Counter.logIncrement("bluetooth.value_auto_on_triggered");
         sendToggleNotification("auto_on_bt_enabled_notification");
         enable("BluetoothSystemServer/AutoOn");
         return Unit.INSTANCE;
@@ -1217,10 +1218,9 @@ class BluetoothManagerService {
             // mAdapter can be null when Bluetooth crashed and sent SERVICE_DISCONNECTED
             return;
         }
-        long currentTimeMs = System.currentTimeMillis();
 
         try {
-            mAdapter.unregisterCallback(mBluetoothCallback, mContext.getAttributionSource());
+            mAdapter.unregisterCallback(mBluetoothCallback);
         } catch (RemoteException e) {
             Log.e(TAG, "unbindAndFinish(): Unable to unregister BluetoothCallback", e);
         }
@@ -1232,9 +1232,6 @@ class BluetoothManagerService {
         mContext.unbindService(mConnection);
 
         killBluetoothProcess(mAdapter, deathNotifier);
-
-        long timeSpentForShutdown = System.currentTimeMillis() - currentTimeMs;
-        mShutdownLatencyHistogram.logSample((float) timeSpentForShutdown);
 
         // TODO: b/356931756 - Remove sleep
         Log.d(TAG, "Force sleep 100 ms for propagating Bluetooth app death");
@@ -1474,11 +1471,12 @@ class BluetoothManagerService {
 
                     mAdapter = BluetoothServerProxy.getInstance().createAdapterBinder(service);
 
-                    propagateForegroundUserId(ActivityManager.getCurrentUser());
+                    if (!Flags.limitUserSwitchPropagation()) {
+                        propagateForegroundUserId(ActivityManager.getCurrentUser());
+                    }
 
                     try {
-                        mAdapter.registerCallback(
-                                mBluetoothCallback, mContext.getAttributionSource());
+                        mAdapter.registerCallback(mBluetoothCallback);
                     } catch (RemoteException e) {
                         Log.e(TAG, "Unable to register BluetoothCallback", e);
                     }
@@ -1649,7 +1647,7 @@ class BluetoothManagerService {
 
         private void restartForNewUser(UserHandle unusedNewUser) {
             try {
-                mAdapter.unregisterCallback(mBluetoothCallback, mContext.getAttributionSource());
+                mAdapter.unregisterCallback(mBluetoothCallback);
             } catch (RemoteException e) {
                 Log.e(TAG, "Unable to unregister", e);
             }
@@ -1804,7 +1802,26 @@ class BluetoothManagerService {
         handleEnable();
     }
 
+    private void bindToAdapterForCurrentUser() {
+        requireNonNull(mCurrentUser, "There is no user to start for.");
+        int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
+        Intent intent = new Intent(IAdapter.class.getName());
+        intent.setComponent(resolveSystemService(intent));
+
+        Log.d(TAG, "Start binding to the Bluetooth service with intent=" + intent);
+        if (!mContext.bindServiceAsUser(intent, mConnection, flags, mCurrentUser)) {
+            Log.e(TAG, "Fail to bind to intent=" + intent);
+            mContext.unbindService(mConnection);
+            return;
+        }
+        mHandler.sendEmptyMessageDelayed(MESSAGE_TIMEOUT_BIND, TIMEOUT_BIND_MS);
+    }
+
     private void bindToAdapter() {
+        if (Flags.limitUserSwitchPropagation()) {
+            bindToAdapterForCurrentUser();
+            return;
+        }
         UserHandle user = UserHandle.CURRENT;
         int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
         Intent intent = new Intent(IAdapter.class.getName());
@@ -1928,7 +1945,7 @@ class BluetoothManagerService {
         }
         Log.d(TAG, "offToBleOn: Sending request hciInstanceName " + hciInstanceName);
         try {
-            mAdapter.offToBleOn(mQuietEnable, hciInstanceName, mContext.getAttributionSource());
+            mAdapter.offToBleOn(mQuietEnable, hciInstanceName);
         } catch (RemoteException e) {
             Log.e(TAG, "Unable to call offToBleOn()", e);
         }
@@ -1942,7 +1959,7 @@ class BluetoothManagerService {
         }
         Log.d(TAG, "onToBleOn: Sending request");
         try {
-            mAdapter.onToBleOn(mContext.getAttributionSource());
+            mAdapter.onToBleOn();
         } catch (RemoteException e) {
             Log.e(TAG, "Unable to call onToBleOn()", e);
         }
@@ -1956,7 +1973,7 @@ class BluetoothManagerService {
         }
         Log.d(TAG, "bleOnToOn: sending request");
         try {
-            mAdapter.bleOnToOn(mContext.getAttributionSource());
+            mAdapter.bleOnToOn();
         } catch (RemoteException e) {
             Log.e(TAG, "Unable to call bleOnToOn()", e);
         }
@@ -1970,7 +1987,7 @@ class BluetoothManagerService {
         }
         Log.d(TAG, "bleOnToOff: Sending request");
         try {
-            mAdapter.bleOnToOff(mContext.getAttributionSource());
+            mAdapter.bleOnToOff();
         } catch (RemoteException e) {
             Log.e(TAG, "Unable to call bleOnToOff()", e);
         }
@@ -2113,7 +2130,7 @@ class BluetoothManagerService {
 
         if (mAdapter != null) {
             try {
-                mAdapter.unregisterCallback(mBluetoothCallback, mContext.getAttributionSource());
+                mAdapter.unregisterCallback(mBluetoothCallback);
             } catch (RemoteException e) {
                 Log.e(TAG, "Unable to unregister", e);
             }

@@ -90,10 +90,7 @@ cc_library {
                 "src/android/metrics.cc",
             ],
             whole_static_libs: [
-                "libexpresslog",
                 "libstatslog_bt",
-                "libstatslog_express",
-                "libtextclassifier_hash_static",
             ],
             shared_libs: [
                 "libstatssocket",

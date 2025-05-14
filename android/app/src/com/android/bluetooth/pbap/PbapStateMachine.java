@@ -102,7 +102,7 @@ public class PbapStateMachine extends StateMachine {
     private ServerSession mServerSession;
     private final int mNotificationId;
 
-    private PbapStateMachine(
+    PbapStateMachine(
             @NonNull BluetoothPbapService service,
             Looper looper,
             AdapterService adapterService,
@@ -127,27 +127,8 @@ public class PbapStateMachine extends StateMachine {
         addState(mWaitingForAuth);
         addState(mConnected);
         setInitialState(mWaitingForAuth);
-    }
 
-    static PbapStateMachine make(
-            BluetoothPbapService service,
-            Looper looper,
-            AdapterService adapterService,
-            BluetoothDevice device,
-            BluetoothSocket connSocket,
-            Handler pbapHandler,
-            int notificationId) {
-        PbapStateMachine stateMachine =
-                new PbapStateMachine(
-                        service,
-                        looper,
-                        adapterService,
-                        device,
-                        connSocket,
-                        pbapHandler,
-                        notificationId);
-        stateMachine.start();
-        return stateMachine;
+        start();
     }
 
     BluetoothDevice getRemoteDevice() {

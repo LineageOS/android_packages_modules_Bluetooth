@@ -6,6 +6,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothSap;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -60,6 +61,8 @@ public class SapServer extends Thread implements Handler.Callback {
 
     @VisibleForTesting SAP_STATE mState = SAP_STATE.DISCONNECTED;
 
+    private final BluetoothAdapter mAdapter;
+
     private Context mContext = null;
     /* RFCOMM socket I/O streams */
     private BufferedOutputStream mRfcommOut = null;
@@ -111,9 +114,10 @@ public class SapServer extends Thread implements Handler.Callback {
      * @param inStream The socket input stream
      * @param outStream The socket output stream
      */
-    public SapServer(
+    SapServer(
             Handler serviceHandler, Context context, InputStream inStream, OutputStream outStream) {
         mContext = context;
+        mAdapter = mContext.getSystemService(BluetoothManager.class).getAdapter();
         mSapServiceHandler = serviceHandler;
 
         /* Open in- and output streams */
@@ -484,8 +488,7 @@ public class SapServer extends Thread implements Handler.Callback {
             /* TODO: Change to the needed Exception types when done testing */
             Log.w(TAG, e);
         } finally {
-            BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-            int state = (adapter != null) ? adapter.getState() : -1;
+            int state = mAdapter.getState();
             if (state != BluetoothAdapter.STATE_ON) {
                 Log.d(TAG, "BT State :" + state);
                 mDeinitSignal.countDown();

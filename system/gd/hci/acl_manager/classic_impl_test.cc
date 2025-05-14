@@ -148,7 +148,7 @@ protected:
   void SetUp() override {
     thread_ = new Thread("thread", Thread::Priority::NORMAL);
     handler_ = new Handler(thread_);
-    hci_layer_ = new HciLayerFake();
+    hci_layer_ = new HciLayerFake(handler_);
     controller_ = new testing::MockController();
 
     EXPECT_CALL(*controller_, GetNumAclPacketBuffers);

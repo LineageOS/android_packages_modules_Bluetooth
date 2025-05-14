@@ -87,17 +87,17 @@ protected:
   void SetUp() override {
     hal_ = new hal::TestHciHal();
     fake_registry_.InjectTestModule(&hal::HciHal::Factory, hal_);
-    fake_registry_.Start<HciLayer>(&fake_registry_.GetTestThread(),
-                                   fake_registry_.GetTestHandler());
-    hci_ = static_cast<HciLayer*>(fake_registry_.GetModuleUnderTest(&HciLayer::Factory));
-    hci_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
-    ASSERT_TRUE(fake_registry_.IsStarted<HciLayer>());
+    fake_registry_.Start<hal::HciHal>(&fake_registry_.GetTestThread(),
+                                      fake_registry_.GetTestHandler());
+    hci_handler_ = fake_registry_.GetTestHandler();
+    hci_ = std::make_unique<HciLayer>(hci_handler_, hal_);
     ::testing::FLAGS_gtest_death_test_style = "threadsafe";
     sync_handler();
   }
 
   void TearDown() override {
-    fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
+    fake_registry_.SynchronizeHandler(hci_handler_, std::chrono::milliseconds(20));
+    hci_.reset();
     fake_registry_.StopAll();
   }
 
@@ -123,7 +123,7 @@ protected:
   }
 
   hal::TestHciHal* hal_ = nullptr;
-  HciLayer* hci_ = nullptr;
+  std::unique_ptr<HciLayer> hci_ = nullptr;
   os::Handler* hci_handler_ = nullptr;
   TestModuleRegistry fake_registry_;
 };

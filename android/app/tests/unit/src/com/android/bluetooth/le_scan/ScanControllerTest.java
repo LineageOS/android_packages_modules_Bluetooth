@@ -22,6 +22,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
+import static com.android.bluetooth.TestUtils.mockContextGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -132,6 +133,7 @@ public class ScanControllerTest {
                 .when(mPeriodicScanManager)
                 .doOnScanThread(any());
         doReturn(mResources).when(mAdapterService).getResources();
+
         final Context context = InstrumentationRegistry.getInstrumentation().getContext();
         doReturn(context.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(context.getSharedPreferences("ScanControllerTest", Context.MODE_PRIVATE))
@@ -144,6 +146,8 @@ public class ScanControllerTest {
 
         mBtCompanionManager = new CompanionManager(mAdapterService, null);
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
+
+        mockContextGetBluetoothManager(mAdapterService);
 
         mScanController = new ScanController(mAdapterService);
         mScanController.setScannerMap(mScannerMap);

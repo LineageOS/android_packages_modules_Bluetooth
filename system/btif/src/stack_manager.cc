@@ -371,7 +371,11 @@ static void event_shut_down_stack(ProfileStopCallback stopProfiles) {
   future_await(local_hack_future);
 
   gatt_free();
-  sdp_free();
+  if (com::android::bluetooth::flags::call_sdp_free_in_main_thread()) {
+    do_in_main_thread(base::BindOnce(sdp_free));
+  } else {
+    sdp_free();
+  }
   l2c_free();
   get_btm_client_interface().lifecycle.btm_ble_free();
 

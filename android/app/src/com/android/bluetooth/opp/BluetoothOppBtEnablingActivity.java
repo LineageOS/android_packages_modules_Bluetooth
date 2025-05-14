@@ -36,6 +36,7 @@ import static android.view.WindowManager.LayoutParams.SYSTEM_FLAG_HIDE_NON_SYSTE
 
 import android.bluetooth.AlertActivity;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -67,8 +68,8 @@ public class BluetoothOppBtEnablingActivity extends AlertActivity {
         super.onCreate(savedInstanceState);
 
         getWindow().addSystemFlags(SYSTEM_FLAG_HIDE_NON_SYSTEM_OVERLAY_WINDOWS);
-        // If BT is already enabled jus return.
-        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        // If BT is already enabled just return.
+        BluetoothAdapter adapter = getSystemService(BluetoothManager.class).getAdapter();
         if (BluetoothMethodProxy.getInstance().bluetoothAdapterIsEnabled(adapter)) {
             finish();
             return;

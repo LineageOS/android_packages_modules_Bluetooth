@@ -53,17 +53,17 @@ import java.util.ArrayList;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class MediaPlayerListTest {
-    private MediaPlayerList mMediaPlayerList;
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
+    @Mock private Context mMockContext;
+    @Mock private MediaPlayerList.MediaUpdateCallback mMediaUpdateCallback;
+    @Mock private MediaController mMockController;
+    @Mock private MediaPlayerWrapper mMockPlayerWrapper;
 
     private @Captor ArgumentCaptor<MediaPlayerWrapper.Callback> mPlayerWrapperCb;
     private @Captor ArgumentCaptor<MediaData> mMediaUpdateData;
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    private @Mock Context mMockContext;
-    private @Mock MediaPlayerList.MediaUpdateCallback mMediaUpdateCallback;
-    private @Mock MediaController mMockController;
-    private @Mock MediaPlayerWrapper mMockPlayerWrapper;
-
+    private MediaPlayerList mMediaPlayerList;
     private MediaPlayerWrapper.Callback mActivePlayerCallback;
     private MediaSessionManager mMediaSessionManager;
 

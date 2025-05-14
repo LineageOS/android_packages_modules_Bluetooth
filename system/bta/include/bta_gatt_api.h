@@ -179,6 +179,7 @@ typedef struct {
   tGATT_STATUS status;
   tGATT_IF client_if;
   RawAddress remote_bda;
+  tBT_TRANSPORT transport;
   tGATT_DISCONN_REASON reason;
 } tBTA_GATTC_CLOSE;
 

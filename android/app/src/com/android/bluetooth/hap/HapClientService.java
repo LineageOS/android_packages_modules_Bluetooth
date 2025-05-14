@@ -435,10 +435,12 @@ public class HapClientService extends ProfileService {
                             + " : Remote does not have Hearing Access Service UUID");
             return false;
         }
+
         synchronized (mStateMachines) {
             HapClientStateMachine smConnect = getOrCreateStateMachine(device);
             if (smConnect == null) {
                 Log.e(TAG, "Cannot connect to " + device + " : no state machine");
+                return false;
             }
             smConnect.sendMessage(HapClientStateMachine.MESSAGE_CONNECT);
         }

@@ -21,6 +21,7 @@ import android.bluetooth.le.ScanSettings;
 import android.os.Binder;
 import android.os.UserHandle;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -63,7 +64,7 @@ class ScanClient {
         mScannerId = scannerId;
         mSettings = settings;
         mScanModeApp = settings.getScanMode();
-        mFilters = filters;
+        mFilters = (filters == null) ? Collections.emptyList() : filters;
         mAppUid = appUid;
     }
 

@@ -29,11 +29,14 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Looper;
 
 import androidx.test.filters.MediumTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.AdapterService;
@@ -66,6 +69,11 @@ public class SapServiceTest {
         if (Looper.myLooper() == null) {
             Looper.prepare();
         }
+
+        final Context context = InstrumentationRegistry.getInstrumentation().getContext();
+        final BluetoothManager manager = context.getSystemService(BluetoothManager.class);
+        assertThat(manager).isNotNull();
+        doReturn(manager).when(mAdapterService).getSystemService(BluetoothManager.class);
 
         mService = new SapService(mAdapterService);
         mService.setAvailable(true);

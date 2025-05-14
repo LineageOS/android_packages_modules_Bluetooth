@@ -171,9 +171,17 @@ public fun setIsMediaProfileConnected(connected: Boolean) {
     isMediaProfileConnected = connected
 }
 
+public fun factoryReset(resolver: ContentResolver, userContext: Context) {
+    Settings.Global.putInt(resolver, APM_ENHANCEMENT, DEFAULT_APM_ENHANCEMENT_STATE)
+    Settings.Global.putInt(resolver, ToastNotification.TOAST_COUNT, 0)
+    setUserSettingsSecure(userContext, BLUETOOTH_APM_STATE, 0)
+    setUserSettingsSecure(userContext, APM_USER_TOGGLED_BLUETOOTH, 0)
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////// PRIVATE METHODS /////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
 private var isMediaProfileConnected = false
 
 private fun airplaneModeValueOverride(
@@ -221,7 +229,7 @@ private fun airplaneModeValueOverride(
 
 internal class ToastNotification private constructor() {
     companion object {
-        private const val TOAST_COUNT = "bluetooth_airplane_toast_count"
+        internal const val TOAST_COUNT = "bluetooth_airplane_toast_count"
         internal const val MAX_TOAST_COUNT = 10
 
         private fun userNeedToBeNotified(resolver: ContentResolver): Boolean {

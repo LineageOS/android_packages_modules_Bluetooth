@@ -35,6 +35,7 @@ import com.android.server.bluetooth.airplane.APM_USER_TOGGLED_BLUETOOTH
 import com.android.server.bluetooth.airplane.APM_WIFI_BT_NOTIFICATION
 import com.android.server.bluetooth.airplane.BLUETOOTH_APM_STATE
 import com.android.server.bluetooth.airplane.WIFI_APM_STATE
+import com.android.server.bluetooth.airplane.factoryReset
 import com.android.server.bluetooth.airplane.initialize
 import com.android.server.bluetooth.airplane.isOn
 import com.android.server.bluetooth.airplane.isOnOverrode
@@ -425,6 +426,29 @@ class ModeListenerTest() {
     }
 
     @Test
+    fun showToast_afterFactoryReset_stopNotifyWhenMaxToastReached() {
+        initializeAirplane()
+
+        state.set(BluetoothAdapter.STATE_ON)
+        isMediaProfileConnected = true
+
+        repeat(30) {
+            enableMode()
+            disableMode()
+        }
+
+        factoryReset(resolver, userContext)
+
+        repeat(30) {
+            enableMode()
+            disableMode()
+        }
+
+        assertThat(ShadowToast.shownToastCount())
+            .isEqualTo(com.android.server.bluetooth.airplane.ToastNotification.MAX_TOAST_COUNT * 2)
+    }
+
+    @Test
     fun userToggleBluetooth_whenNoSession_nothingHappen() {
         initializeAirplane()
 
@@ -549,6 +573,25 @@ class ModeListenerTest() {
     fun initialize_firstTime_apmSettingIsSet() {
         initializeAirplane()
         assertThat(Settings.Global.getInt(resolver, APM_ENHANCEMENT, 0)).isEqualTo(1)
+    }
+
+    @Test
+    fun initialize_afterFactoryReset_apmSettingIsReset() {
+        val settingValue = 42
+        Settings.Global.putInt(resolver, APM_ENHANCEMENT, settingValue)
+        Settings.Secure.putInt(userContext.contentResolver, APM_USER_TOGGLED_BLUETOOTH, 1)
+        Settings.Secure.putInt(userContext.contentResolver, BLUETOOTH_APM_STATE, 1)
+
+        factoryReset(resolver, userContext)
+
+        initializeAirplane()
+        assertThat(Settings.Global.getInt(resolver, APM_ENHANCEMENT, 0)).isEqualTo(1)
+        assertThat(
+                Settings.Secure.getInt(userContext.contentResolver, APM_USER_TOGGLED_BLUETOOTH, 0)
+            )
+            .isEqualTo(0)
+        assertThat(Settings.Secure.getInt(userContext.contentResolver, BLUETOOTH_APM_STATE, 0))
+            .isEqualTo(0)
     }
 
     @Test

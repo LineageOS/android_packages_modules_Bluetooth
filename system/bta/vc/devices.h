@@ -78,7 +78,8 @@ public:
         volume_control_point_handle(0),
         volume_flags_handle(0),
         volume_flags_ccc_handle(0),
-        device_ready(false) {}
+        device_ready(false),
+        requests_initiated(false) {}
 
   ~VolumeControlDevice() = default;
 
@@ -101,8 +102,10 @@ public:
            << "    change_counter: " << +change_counter << "\n"
            << "    flags: " << +flags << "\n"
            << "    device ready: " << device_ready << "\n"
+           << "    group_id: " << group_id << "\n"
            << "    connecting_actively: " << connecting_actively << "\n"
            << "    is encrypted: " << IsEncryptionEnabled() << "\n"
+           << "    GATT operations initiated: " << requests_initiated << "\n"
            << "    GATT operations pending: " << handles_pending.size() << "\n";
 
     dprintf(fd, "%s", stream.str().c_str());
@@ -156,11 +159,11 @@ public:
 
 private:
   /*
-   * This is used to track the pending GATT operation handles. Once the list is
-   * empty the device is assumed ready and connected. We are doing it because we
-   * want to make sure all the required characteristics and descriptors are
-   * available on server side.
+   * This is used to track the pending GATT operation handles. Once the operations are requested
+   * and list is empty the device is assumed ready and connected. We are doing it because we want
+   * to make sure all the required characteristics and descriptors are available on server side.
    */
+  bool requests_initiated;
   std::unordered_set<uint16_t> handles_pending;
 
   uint16_t find_ccc_handle(uint16_t chrc_handle);

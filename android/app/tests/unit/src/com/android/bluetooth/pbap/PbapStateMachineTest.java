@@ -74,7 +74,7 @@ public class PbapStateMachineTest {
         mHandler = new Handler(mLooper.getLooper());
 
         mStateMachine =
-                PbapStateMachine.make(
+                new PbapStateMachine(
                         mBluetoothPbapService,
                         mLooper.getLooper(),
                         mAdapterService,

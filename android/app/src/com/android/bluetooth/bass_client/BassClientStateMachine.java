@@ -40,6 +40,7 @@ import android.bluetooth.BluetoothLeBroadcastChannel;
 import android.bluetooth.BluetoothLeBroadcastMetadata;
 import android.bluetooth.BluetoothLeBroadcastReceiveState;
 import android.bluetooth.BluetoothLeBroadcastSubgroup;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.le.PeriodicAdvertisingCallback;
@@ -130,6 +131,9 @@ class BassClientStateMachine extends StateMachine {
     private final Map<Integer, LeAudioBroadcastSyncStats> mBroadcastSyncStats =
             new LinkedHashMap<>();
 
+    private final AdapterService mAdapterService;
+    private final BluetoothAdapter mAdapter;
+
     @VisibleForTesting
     final List<BluetoothGattCharacteristic> mBroadcastCharacteristics =
             new ArrayList<BluetoothGattCharacteristic>();
@@ -141,7 +145,6 @@ class BassClientStateMachine extends StateMachine {
     @VisibleForTesting boolean mMTUChangeRequested = false;
     @VisibleForTesting boolean mDiscoveryInitiated = false;
     @VisibleForTesting BassClientService mService;
-    AdapterService mAdapterService;
     @VisibleForTesting BluetoothGattCharacteristic mBroadcastScanControlPoint;
     private boolean mBassStateReady = false;
     @VisibleForTesting int mNumOfBroadcastReceiverStates = 0;
@@ -172,6 +175,7 @@ class BassClientStateMachine extends StateMachine {
         mDevice = device;
         mService = svc;
         mAdapterService = adapterService;
+        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mConnectTimeoutMs = connectTimeoutMs;
         addState(mDisconnected);
         addState(mConnected);
@@ -192,6 +196,8 @@ class BassClientStateMachine extends StateMachine {
         } finally {
             Binder.restoreCallingIdentity(token);
         }
+
+        start();
     }
 
     private static class LeAudioBroadcastSyncStats {
@@ -280,26 +286,6 @@ class BassClientStateMachine extends StateMachine {
                             latencyBisSyncedMs,
                             mSyncStatus);
         }
-    }
-
-    static BassClientStateMachine make(
-            BluetoothDevice device,
-            BassClientService svc,
-            AdapterService adapterService,
-            Looper looper) {
-        Log.d(TAG, "make for device " + device);
-
-        if (!BassClientPeriodicAdvertisingManager
-                .initializePeriodicAdvertisingManagerOnDefaultAdapter()) {
-            Log.e(TAG, "Failed to initialize Periodic Advertising Manager on Default Adapter");
-            return null;
-        }
-
-        BassClientStateMachine bassClientSm =
-                new BassClientStateMachine(
-                        device, svc, adapterService, looper, BassConstants.CONNECT_TIMEOUT_MS);
-        bassClientSm.start();
-        return bassClientSm;
     }
 
     static void destroy(BassClientStateMachine stateMachine) {
@@ -761,9 +747,7 @@ class BassClientStateMachine extends StateMachine {
                     receiverState[BassConstants.BCAST_RCVR_STATE_SRC_ADDR_TYPE_IDX];
             Utils.reverse(sourceAddress);
             String address = Utils.getAddressStringFromByte(sourceAddress);
-            BluetoothDevice device =
-                    BluetoothAdapter.getDefaultAdapter()
-                            .getRemoteLeDevice(address, sourceAddressType);
+            BluetoothDevice device = mAdapter.getRemoteLeDevice(address, sourceAddressType);
             byte sourceAdvSid = receiverState[BassConstants.BCAST_RCVR_STATE_SRC_ADV_SID_IDX];
             recvState =
                     new BluetoothLeBroadcastReceiveState(
@@ -980,9 +964,7 @@ class BassClientStateMachine extends StateMachine {
                     receiverState[BassConstants.BCAST_RCVR_STATE_SRC_ADDR_TYPE_IDX];
             Utils.reverse(sourceAddress);
             String address = Utils.getAddressStringFromByte(sourceAddress);
-            BluetoothDevice device =
-                    BluetoothAdapter.getDefaultAdapter()
-                            .getRemoteLeDevice(address, sourceAddressType);
+            BluetoothDevice device = mAdapter.getRemoteLeDevice(address, sourceAddressType);
             byte sourceAdvSid = receiverState[BassConstants.BCAST_RCVR_STATE_SRC_ADV_SID_IDX];
             recvState =
                     new BluetoothLeBroadcastReceiveState(

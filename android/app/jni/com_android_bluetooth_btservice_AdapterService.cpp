@@ -1947,71 +1947,6 @@ static void metadataChangedNative(JNIEnv* env, jobject /* obj */, jbyteArray add
   return;
 }
 
-static jboolean interopMatchAddrNative(JNIEnv* env, jclass /* clazz */, jstring feature_name,
-                                       jstring address) {
-  log::verbose("");
-
-  if (!sBluetoothInterface) {
-    log::warn("sBluetoothInterface is null.");
-    return JNI_FALSE;
-  }
-
-  const char* tmp_addr = env->GetStringUTFChars(address, NULL);
-  if (!tmp_addr) {
-    log::warn("address is null.");
-    return JNI_FALSE;
-  }
-  RawAddress bdaddr;
-  bool success = RawAddress::FromString(tmp_addr, bdaddr);
-
-  env->ReleaseStringUTFChars(address, tmp_addr);
-
-  if (!success) {
-    log::warn("address is invalid.");
-    return JNI_FALSE;
-  }
-
-  const char* feature_name_str = env->GetStringUTFChars(feature_name, NULL);
-  if (!feature_name_str) {
-    log::warn("feature name is null.");
-    return JNI_FALSE;
-  }
-
-  bool matched = sBluetoothInterface->interop_match_addr(feature_name_str, &bdaddr);
-  env->ReleaseStringUTFChars(feature_name, feature_name_str);
-
-  return matched ? JNI_TRUE : JNI_FALSE;
-}
-
-static jboolean interopMatchNameNative(JNIEnv* env, jclass /* clazz */, jstring feature_name,
-                                       jstring name) {
-  log::verbose("");
-
-  if (!sBluetoothInterface) {
-    log::warn("sBluetoothInterface is null.");
-    return JNI_FALSE;
-  }
-
-  const char* feature_name_str = env->GetStringUTFChars(feature_name, NULL);
-  if (!feature_name_str) {
-    log::warn("feature name is null.");
-    return JNI_FALSE;
-  }
-
-  const char* name_str = env->GetStringUTFChars(name, NULL);
-  if (!name_str) {
-    log::warn("name is null.");
-    env->ReleaseStringUTFChars(feature_name, feature_name_str);
-    return JNI_FALSE;
-  }
-
-  bool matched = sBluetoothInterface->interop_match_name(feature_name_str, name_str);
-  env->ReleaseStringUTFChars(feature_name, feature_name_str);
-  env->ReleaseStringUTFChars(name, name_str);
-
-  return matched ? JNI_TRUE : JNI_FALSE;
-}
-
 static jboolean interopMatchAddrOrNameNative(JNIEnv* env, jclass /* clazz */, jstring feature_name,
                                              jstring address) {
   log::verbose("");
@@ -2310,10 +2245,6 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
           {"allowLowLatencyAudioNative", "(Z[B)Z",
            reinterpret_cast<void*>(allowLowLatencyAudioNative)},
           {"metadataChangedNative", "([BI[B)V", reinterpret_cast<void*>(metadataChangedNative)},
-          {"interopMatchAddrNative", "(Ljava/lang/String;Ljava/lang/String;)Z",
-           reinterpret_cast<void*>(interopMatchAddrNative)},
-          {"interopMatchNameNative", "(Ljava/lang/String;Ljava/lang/String;)Z",
-           reinterpret_cast<void*>(interopMatchNameNative)},
           {"interopMatchAddrOrNameNative", "(Ljava/lang/String;Ljava/lang/String;)Z",
            reinterpret_cast<void*>(interopMatchAddrOrNameNative)},
           {"interopDatabaseAddRemoveAddrNative", "(ZLjava/lang/String;Ljava/lang/String;I)V",

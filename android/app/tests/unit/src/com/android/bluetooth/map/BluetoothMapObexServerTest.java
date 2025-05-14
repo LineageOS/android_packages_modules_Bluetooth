@@ -28,18 +28,20 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import android.bluetooth.BluetoothManager;
 import android.content.ContentProviderClient;
 import android.content.Context;
 import android.database.MatrixCursor;
 import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.RemoteException;
 
 import androidx.test.filters.SmallTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.bluetooth.TestUtils.MockitoRule;
 import com.android.obex.ResponseCodes;
 
 import org.junit.Before;
@@ -53,13 +55,22 @@ import org.mockito.Spy;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapObexServerTest {
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
+    @Mock private Context mMockContext;
+    @Mock private BluetoothMapService mMapService;
+    @Mock private ContentProviderClient mProviderClient;
+    @Mock private BluetoothMapContentObserver mObserver;
+    @Mock private ColorDrawable mColorDrawable;
+
+    @Spy private BluetoothMethodProxy mMapMethodProxy = BluetoothMethodProxy.getInstance();
+
     private static final int TEST_MAS_ID = 1;
     private static final boolean TEST_ENABLE_SMS_MMS = true;
     private static final String TEST_NAME = "test_name";
     private static final String TEST_PACKAGE_NAME = "test.package.name";
     private static final String TEST_ID = "1111";
     private static final String TEST_PROVIDER_AUTHORITY = "test.project.provider";
-    private static final Drawable TEST_DRAWABLE = new ColorDrawable();
     private static final BluetoothMapUtils.TYPE TEST_TYPE = BluetoothMapUtils.TYPE.IM;
     private static final String TEST_UCI = "uci";
     private static final String TEST_UCI_PREFIX = "uci_prefix";
@@ -69,37 +80,41 @@ public class BluetoothMapObexServerTest {
     private BluetoothMapObexServer mObexServer;
     private BluetoothMapAppParams mParams;
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
-    @Mock private Context mContext;
-    @Mock private BluetoothMapService mMapService;
-    @Mock private ContentProviderClient mProviderClient;
-    @Mock private BluetoothMapContentObserver mObserver;
-    @Spy private BluetoothMethodProxy mMapMethodProxy = BluetoothMethodProxy.getInstance();
-
     @Before
     public void setUp() throws Exception {
         BluetoothMethodProxy.setInstanceForTesting(mMapMethodProxy);
         doReturn(mProviderClient)
                 .when(mMapMethodProxy)
                 .contentResolverAcquireUnstableContentProviderClient(any(), any());
+
         mAccountItem =
                 BluetoothMapAccountItem.create(
                         TEST_ID,
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
+
+        final Context context = InstrumentationRegistry.getInstrumentation().getContext();
+        final BluetoothManager manager = context.getSystemService(BluetoothManager.class);
+        assertThat(manager).isNotNull();
+        doReturn(manager).when(mMapService).getSystemService(BluetoothManager.class);
+
         mMasInstance =
                 new BluetoothMapMasInstance(
-                        mMapService, mContext, mAccountItem, TEST_MAS_ID, TEST_ENABLE_SMS_MMS);
+                        mMapService, mAccountItem, TEST_MAS_ID, TEST_ENABLE_SMS_MMS);
         mParams = new BluetoothMapAppParams();
         mObexServer =
                 new BluetoothMapObexServer(
-                        null, mContext, mObserver, mMasInstance, mAccountItem, TEST_ENABLE_SMS_MMS);
+                        null,
+                        mMockContext,
+                        mObserver,
+                        mMasInstance,
+                        mAccountItem,
+                        TEST_ENABLE_SMS_MMS);
     }
 
     @Test
@@ -111,14 +126,14 @@ public class BluetoothMapObexServerTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         BluetoothMapUtils.TYPE.EMAIL,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
         BluetoothMapObexServer obexServer =
                 new BluetoothMapObexServer(
                         null,
-                        mContext,
+                        mMockContext,
                         mObserver,
                         mMasInstance,
                         accountItemWithTypeEmail,
@@ -219,7 +234,8 @@ public class BluetoothMapObexServerTest {
     @Test
     public void setMsgTypeFilterParams_withAccountNull_andOverwriteTrue() throws Exception {
         BluetoothMapObexServer obexServer =
-                new BluetoothMapObexServer(null, mContext, mObserver, mMasInstance, null, false);
+                new BluetoothMapObexServer(
+                        null, mMockContext, mObserver, mMasInstance, null, false);
 
         obexServer.setMsgTypeFilterParams(mParams, true);
 
@@ -240,14 +256,14 @@ public class BluetoothMapObexServerTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         BluetoothMapUtils.TYPE.EMAIL,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
         BluetoothMapObexServer obexServer =
                 new BluetoothMapObexServer(
                         null,
-                        mContext,
+                        mMockContext,
                         mObserver,
                         mMasInstance,
                         accountItemWithTypeEmail,
@@ -267,14 +283,14 @@ public class BluetoothMapObexServerTest {
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        mColorDrawable,
                         BluetoothMapUtils.TYPE.IM,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
         BluetoothMapObexServer obexServer =
                 new BluetoothMapObexServer(
                         null,
-                        mContext,
+                        mMockContext,
                         mObserver,
                         mMasInstance,
                         accountItemWithTypeIm,

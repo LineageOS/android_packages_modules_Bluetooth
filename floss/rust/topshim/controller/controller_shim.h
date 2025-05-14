@@ -18,7 +18,7 @@
 
 #include <memory>
 
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "main/shim/entry.h"
 #include "rust/cxx.h"
 #include "types/raw_address.h"
@@ -37,7 +37,7 @@ public:
   uint64_t get_ble_local_supported_features() const;
 
 private:
-  const hci::ControllerInterface* controller_;
+  const hci::Controller* controller_;
 };
 
 std::unique_ptr<ControllerIntf> GetControllerInterface();

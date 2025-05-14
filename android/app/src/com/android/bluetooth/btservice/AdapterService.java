@@ -147,6 +147,7 @@ import com.android.bluetooth.le_scan.ScanManager;
 import com.android.bluetooth.map.BluetoothMapService;
 import com.android.bluetooth.mapclient.MapClientService;
 import com.android.bluetooth.mcp.McpService;
+import com.android.bluetooth.notification.NotificationHelperService;
 import com.android.bluetooth.opp.BluetoothOppService;
 import com.android.bluetooth.pan.PanService;
 import com.android.bluetooth.pbap.BluetoothPbapService;
@@ -1012,7 +1013,9 @@ public class AdapterService extends Service {
 
         Log.d(TAG, "bleOnProcessStart() - Make Bond State Machine");
         mBondStateMachine =
-                BondStateMachine.make(this, mLooper, mAdapterProperties, mRemoteDevices);
+                Flags.bondStateMachineLooper()
+                        ? new BondStateMachine(this, mLooper, mAdapterProperties, mRemoteDevices)
+                        : new BondStateMachine(this, mAdapterProperties, mRemoteDevices);
 
         mNativeInterface.getCallbacks().init(mBondStateMachine, mRemoteDevices);
 
@@ -4046,6 +4049,10 @@ public class AdapterService extends Service {
         recursivelyDeleteDirectory(getDataDir(), false);
         recursivelyDeleteDirectory(Paths.get("/data/misc/bluedroid/").toFile(), false);
         recursivelyDeleteDirectory(Paths.get("/data/misc/bluetooth/").toFile(), false);
+
+        if (Flags.factoryResetClearAdditionalData()) {
+            NotificationHelperService.factoryReset(getContentResolver());
+        }
         Log.i(TAG, "factoryResetIfNeeded(): Completed");
     }
 
@@ -4177,9 +4184,9 @@ public class AdapterService extends Service {
         return mGattService == null ? null : mGattService.getDistanceMeasurement();
     }
 
-    void unregAllGattClient(AttributionSource source) {
+    void unregAllGattClient() {
         if (mGattService != null) {
-            mGattService.unregAll(source);
+            mGattService.unregAll();
         }
     }
 
@@ -5066,32 +5073,8 @@ public class AdapterService extends Service {
         }
     }
 
-    public boolean interopMatchAddr(InteropFeature feature, String address) {
-        return mNativeInterface.interopMatchAddr(feature.name(), address);
-    }
-
-    public boolean interopMatchName(InteropFeature feature, String name) {
-        return mNativeInterface.interopMatchName(feature.name(), name);
-    }
-
     public boolean interopMatchAddrOrName(InteropFeature feature, String address) {
         return mNativeInterface.interopMatchAddrOrName(feature.name(), address);
-    }
-
-    public void interopDatabaseAddAddr(InteropFeature feature, String address, int length) {
-        mNativeInterface.interopDatabaseAddRemoveAddr(true, feature.name(), address, length);
-    }
-
-    public void interopDatabaseRemoveAddr(InteropFeature feature, String address) {
-        mNativeInterface.interopDatabaseAddRemoveAddr(false, feature.name(), address, 0);
-    }
-
-    public void interopDatabaseAddName(InteropFeature feature, String name) {
-        mNativeInterface.interopDatabaseAddRemoveName(true, feature.name(), name);
-    }
-
-    public void interopDatabaseRemoveName(InteropFeature feature, String name) {
-        mNativeInterface.interopDatabaseAddRemoveName(false, feature.name(), name);
     }
 
     /**
