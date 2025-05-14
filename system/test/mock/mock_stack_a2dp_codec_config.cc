@@ -40,10 +40,6 @@ A2dpCodecConfig* A2dpCodecs::findSourceCodecConfig(const uint8_t* /* p_codec_inf
   inc_func_call_count(__func__);
   return nullptr;
 }
-A2dpCodecConfig* A2dpCodecs::findSourceCodecConfig(btav_a2dp_codec_index_t /* codec_index */) {
-  inc_func_call_count(__func__);
-  return nullptr;
-}
 A2dpCodecConfig::A2dpCodecConfig(btav_a2dp_codec_index_t codec_index,
                                  bluetooth::a2dp::CodecId codec_id, const std::string& name,
                                  btav_a2dp_codec_priority_t codec_priority)
