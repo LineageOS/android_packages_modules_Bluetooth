@@ -59,7 +59,6 @@ import android.util.Log;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.BluetoothAdapterProxy;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.util.NumberUtils;
@@ -167,10 +166,7 @@ public class ScanController {
         var scanObjectsFactory = ScanObjectsFactory.getInstance();
         mScanManager =
                 scanObjectsFactory.createScanManager(
-                        mAdapterService,
-                        this,
-                        BluetoothAdapterProxy.getInstance(),
-                        mScanThread.getLooper());
+                        mAdapterService, this, mScanThread.getLooper());
         mPeriodicScanManager =
                 scanObjectsFactory.createPeriodicScanManager(
                         mAdapterService, mScanThread.getLooper());

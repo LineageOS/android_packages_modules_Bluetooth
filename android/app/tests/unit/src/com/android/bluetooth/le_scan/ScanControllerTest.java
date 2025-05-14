@@ -119,9 +119,7 @@ public class ScanControllerTest {
         ScanObjectsFactory.setInstanceForTesting(mScanObjectsFactory);
 
         doReturn(mNativeInterface).when(mGattObjectsFactory).getNativeInterface();
-        doReturn(mScanManager)
-                .when(mScanObjectsFactory)
-                .createScanManager(any(), any(), any(), any());
+        doReturn(mScanManager).when(mScanObjectsFactory).createScanManager(any(), any(), any());
         doReturn(mPeriodicScanManager)
                 .when(mScanObjectsFactory)
                 .createPeriodicScanManager(any(), any());
