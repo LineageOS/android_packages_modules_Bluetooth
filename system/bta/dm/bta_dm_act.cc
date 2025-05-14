@@ -206,15 +206,18 @@ static void bta_dm_init_cb(void) {
  *
  ******************************************************************************/
 static void bta_dm_deinit_cb(void) {
-  /*
-   * TODO: Should alarm_free() the bta_dm_cb timers during graceful
-   * shutdown.
-   */
   alarm_free(bta_dm_cb.disable_timer);
   alarm_free(bta_dm_cb.switch_delay_timer);
+  if (com::android::bluetooth::flags::set_ptr_null_after_free()) {
+    bta_dm_cb.switch_delay_timer = nullptr;
+    bta_dm_cb.disable_timer = nullptr;
+  }
   for (size_t i = 0; i < BTA_DM_NUM_PM_TIMER; i++) {
     for (size_t j = 0; j < BTA_DM_PM_MODE_TIMER_MAX; j++) {
       alarm_free(bta_dm_cb.pm_timer[i].timer[j]);
+      if (com::android::bluetooth::flags::set_ptr_null_after_free()) {
+        bta_dm_cb.pm_timer[i].timer[j] = nullptr;
+      }
     }
   }
   bta_dm_cb.pending_removals.clear();
