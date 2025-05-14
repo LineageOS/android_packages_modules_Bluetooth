@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "common/message_loop_thread.h"
+#include "hci/controller_mock.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_status.h"
@@ -28,6 +29,7 @@
 #include "stack/smp/smp_int.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_btif_config.h"
+#include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_stack_acl.h"
 #include "test/mock/mock_stack_btm_dev.h"
 #include "test/mock/mock_stack_l2cap_api.h"
@@ -109,11 +111,23 @@ public:
               return true;
             });
     bluetooth::testing::stack::l2cap::set_interface(&mock_l2cap_interface);
+
+    bluetooth::hci::testing::mock_controller_ =
+            std::make_unique<bluetooth::hci::testing::MockController>();
+    ON_CALL(*bluetooth::hci::testing::mock_controller_, LeRand)
+            .WillByDefault([](bluetooth::hci::LeRandCallback cb) { cb(0x1234); });
+
     main_thread_ptr = new bluetooth::common::MessageLoopThread("smp_fuzz_main_thread");
     main_thread_ptr->StartUp();
   }
 
   ~FakeBtStack() {
+    // Shut down before deallocations to clear out any work to avoid use after frees.
+    main_thread_ptr->ShutDown();
+
+    delete main_thread_ptr;
+    main_thread_ptr = nullptr;
+
     test::mock::stack_acl::BTM_ReadConnectionAddr = {};
     test::mock::stack_acl::BTM_ReadRemoteConnectionAddr = {};
 
@@ -122,9 +136,8 @@ public:
     test::mock::stack_l2cap_ble::L2CA_GetBleConnRole = {};
 
     bluetooth::testing::stack::l2cap::reset_interface();
-    main_thread_ptr->ShutDown();
-    delete main_thread_ptr;
-    main_thread_ptr = nullptr;
+
+    bluetooth::hci::testing::mock_controller_.reset();
   }
 };
 

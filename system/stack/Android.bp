@@ -508,8 +508,16 @@ cc_fuzz {
     ],
 }
 
-cc_fuzz {
-    name: "smp-fuzzer",
+filegroup {
+    name: "SmpFuzzerSources",
+    srcs: [
+        "fuzzers/smp_fuzzer.cc",
+        "smp/*.cc", // add other sources files  (p256 related) under smp into this test
+    ],
+}
+
+cc_defaults {
+    name: "smp_fuzzer_default",
     defaults: [
         "btstack_fuzzer_default",
         "fluoride_defaults",
@@ -521,6 +529,7 @@ cc_fuzz {
     ],
     srcs: [
         ":BluetoothPacketSources",
+        ":SmpFuzzerSources",
         ":TestCommonMockFunctions",
         ":TestCommonStackConfig",
         ":TestFakeOsi",
@@ -533,8 +542,6 @@ cc_fuzz {
         ":TestMockStackBtm",
         ":TestMockStackHcic",
         ":TestMockStackL2cap",
-        "fuzzers/smp_fuzzer.cc",
-        "smp/*.cc", // add other sources files  (p256 related) under smp into this test
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",
@@ -553,6 +560,14 @@ cc_fuzz {
         "libbluetooth_smp_pdl",
         "libbt-common",
         "libevent",
+    ],
+}
+
+cc_fuzz {
+    name: "smp-fuzzer",
+    team: "trendy_team_bluetooth",
+    defaults: [
+        "smp_fuzzer_default",
     ],
 }
 
