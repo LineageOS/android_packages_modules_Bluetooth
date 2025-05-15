@@ -147,7 +147,8 @@ public class AvrcpTargetService extends ProfileService {
             Log.e(TAG, "Please use AVRCP version 1.6 to enable cover art");
             mAvrcpCoverArtService = null;
         } else {
-            AvrcpCoverArtService coverArtService = new AvrcpCoverArtService(mNativeInterface);
+            AvrcpCoverArtService coverArtService =
+                    new AvrcpCoverArtService(adapterService, mNativeInterface);
             if (coverArtService.start()) {
                 mAvrcpCoverArtService = coverArtService;
             } else {

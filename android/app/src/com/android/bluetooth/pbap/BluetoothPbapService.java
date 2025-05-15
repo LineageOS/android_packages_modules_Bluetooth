@@ -517,7 +517,8 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
 
             switch (msg.what) {
                 case START_LISTENER:
-                    mServerSockets = ObexServerSockets.create(BluetoothPbapService.this);
+                    mServerSockets =
+                            ObexServerSockets.create(mAdapterService, BluetoothPbapService.this);
                     if (mServerSockets == null) {
                         Log.w(TAG, "ObexServerSockets.create() returned null");
                         ContentProfileErrorReportUtils.report(

@@ -26,6 +26,7 @@ import com.android.bluetooth.BluetoothObexTransport;
 import com.android.bluetooth.IObexConnectionHandler;
 import com.android.bluetooth.ObexServerSockets;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.obex.ServerSession;
 
@@ -39,6 +40,7 @@ public class MnsService {
     private static final int MNS_VERSION = 0x0104; // MAP version 1.4
 
     private final SocketAcceptor mAcceptThread = new SocketAcceptor();
+
     private final MapClientService mMapClientService;
 
     private ObexServerSockets mServerSockets;
@@ -46,10 +48,10 @@ public class MnsService {
     private volatile boolean mShutdown = false; // Used to interrupt socket accept thread
     private int mSdpHandle = -1;
 
-    MnsService(MapClientService service) {
+    MnsService(AdapterService adapterService, MapClientService service) {
         Log.v(TAG, "MnsService()");
         mMapClientService = service;
-        mServerSockets = ObexServerSockets.create(mAcceptThread);
+        mServerSockets = ObexServerSockets.create(adapterService, mAcceptThread);
         SdpManagerNativeInterface nativeInterface = SdpManagerNativeInterface.getInstance();
         if (!nativeInterface.isAvailable()) {
             Log.e(TAG, "SdpManagerNativeInterface is not available");
