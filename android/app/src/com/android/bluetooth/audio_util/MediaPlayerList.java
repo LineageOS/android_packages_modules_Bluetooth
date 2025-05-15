@@ -109,6 +109,7 @@ public class MediaPlayerList {
     private int mAddressedPlayerId = NO_ACTIVE_PLAYER;
 
     private MediaUpdateCallback mCallback;
+
     private boolean mAudioPlaybackIsActive = false;
 
     private BrowsablePlayerConnector mBrowsablePlayerConnector;
@@ -299,7 +300,6 @@ public class MediaPlayerList {
     }
 
     public void cleanup() {
-        mCallback = null;
         mContext.unregisterReceiver(mPackageChangedBroadcastReceiver);
 
         mActivePlayerId = NO_ACTIVE_PLAYER;
