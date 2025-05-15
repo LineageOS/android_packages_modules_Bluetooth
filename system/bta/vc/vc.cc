@@ -651,7 +651,7 @@ public:
 
     bluetooth::log::verbose("{}, data:{}", device->address, base::HexEncode(value, len));
     bluetooth::log::info(
-            "{} id={:#x}gain_setting {:#x}, mute: {:#x}, mode: {:#x}, change_counter: {}",
+            "{} id={:#x} gain_setting={:#x}, mute={:#x}, mode={:#x}, change_counter={}",
             device->address, input->id, input->gain_setting, input->mute, input->gain_mode,
             input->change_counter);
 
@@ -1511,7 +1511,8 @@ public:
   void SetExtAudioInGainSetting(const RawAddress& address, uint8_t ext_input_id,
                                 int8_t gain_setting) override {
     std::vector<uint8_t> arg({(uint8_t)gain_setting});
-    bluetooth::log::info("{}, input_id={:#x}", address, ext_input_id);
+    bluetooth::log::info("{}, input_id={:#x} gain_setting={:#x}", address, ext_input_id,
+                         gain_setting);
 
     VolumeControlDevice* device = volume_control_devices_.FindByAddress(address);
     if (!device) {
