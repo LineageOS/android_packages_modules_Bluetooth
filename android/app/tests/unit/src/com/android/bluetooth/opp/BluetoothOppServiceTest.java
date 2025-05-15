@@ -71,8 +71,7 @@ public class BluetoothOppServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        mockGetSystemService(
-                mAdapterService, Context.NOTIFICATION_SERVICE, NotificationManager.class);
+        mockGetSystemService(mAdapterService, NotificationManager.class);
         doReturn(mContext.getPackageName()).when(mAdapterService).getPackageName();
         doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(mContext.getResources()).when(mAdapterService).getResources();

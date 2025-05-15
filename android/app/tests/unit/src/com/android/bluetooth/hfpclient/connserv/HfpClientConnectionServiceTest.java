@@ -37,7 +37,6 @@ import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
@@ -116,10 +115,7 @@ public class HfpClientConnectionServiceTest {
                 .getBoolean(R.bool.hfp_client_connection_service_support_emergency_call);
 
         mockGetSystemService(
-                mHfpClientConnectionService,
-                Context.TELECOM_SERVICE,
-                TelecomManager.class,
-                mMockTelecomManager);
+                mHfpClientConnectionService, TelecomManager.class, mMockTelecomManager);
         doReturn(getPhoneAccount(mDevice)).when(mMockTelecomManager).getPhoneAccount(any());
 
         mockContextGetBluetoothManager(mHfpClientConnectionService);

@@ -34,7 +34,6 @@ import static org.mockito.Mockito.verify;
 
 import android.app.BroadcastOptions;
 import android.bluetooth.BluetoothDevice;
-import android.content.Context;
 import android.content.Intent;
 import android.os.HandlerThread;
 import android.os.UserManager;
@@ -77,7 +76,7 @@ public class PbapClientStateMachineOldTest {
 
     @Before
     public void setUp() {
-        mockGetSystemService(mMockPbapClientService, Context.USER_SERVICE, UserManager.class);
+        mockGetSystemService(mMockPbapClientService, UserManager.class);
 
         doCallRealMethod().when(mMockHandler).obtainMessage(anyInt(), any());
         doCallRealMethod().when(mMockHandler).obtainMessage(anyInt());

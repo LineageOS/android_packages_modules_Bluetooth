@@ -29,6 +29,7 @@
 #include <utility>
 #include <vector>
 
+#include "android_bluetooth_sysprop.h"
 #include "audio_hal_client/audio_hal_client.h"
 #include "audio_set_configurations_generated.h"
 #include "audio_set_scenarios_generated.h"
@@ -55,11 +56,17 @@ static const std::vector<std::pair<const char* /*schema*/, const char* /*content
                                "audio_set_configurations.bfbs",
                                "/apex/com.android.bt/etc/bluetooth/le_audio/"
                                "audio_set_configurations.json"}};
+
 static const std::vector<std::pair<const char* /*schema*/, const char* /*content*/>>
-        kLeAudioSetScenarios = {{"/apex/com.android.bt/etc/bluetooth/"
-                                 "le_audio/audio_set_scenarios.bfbs",
-                                 "/apex/com.android.bt/etc/bluetooth/"
-                                 "le_audio/audio_set_scenarios.json"}};
+        kLeAudioSetScenarios = {{"/apex/com.android.bt/etc/bluetooth/le_audio/"
+                                 "audio_set_scenarios.bfbs",
+                                 "/apex/com.android.bt/etc/bluetooth/le_audio/"
+                                 "audio_set_scenarios.json"}};
+static const std::vector<std::pair<const char* /*schema*/, const char* /*content*/>>
+        kLeAudioTestSetScenarios = {{"/apex/com.android.bt/etc/bluetooth/le_audio/"
+                                     "audio_set_scenarios.bfbs",
+                                     "/apex/com.android.bt/etc/bluetooth/le_audio/"
+                                     "audio_set_scenarios_test.json"}};
 #elif defined(TARGET_FLOSS)
 static const std::vector<std::pair<const char* /*schema*/, const char* /*content*/>>
         kLeAudioSetConfigs = {{"/etc/bluetooth/le_audio/audio_set_configurations.bfbs",
@@ -67,11 +74,16 @@ static const std::vector<std::pair<const char* /*schema*/, const char* /*content
 static const std::vector<std::pair<const char* /*schema*/, const char* /*content*/>>
         kLeAudioSetScenarios = {{"/etc/bluetooth/le_audio/audio_set_scenarios.bfbs",
                                  "/etc/bluetooth/le_audio/audio_set_scenarios.json"}};
+static const std::vector<std::pair<const char* /*schema*/, const char* /*content*/>>
+        kLeAudioTestSetScenarios = {{"/etc/bluetooth/le_audio/audio_set_scenarios.bfbs",
+                                     "/etc/bluetooth/le_audio/audio_set_scenarios_test.json"}};
 #else
 static const std::vector<std::pair<const char* /*schema*/, const char* /*content*/>>
         kLeAudioSetConfigs = {{"audio_set_configurations.bfbs", "audio_set_configurations.json"}};
 static const std::vector<std::pair<const char* /*schema*/, const char* /*content*/>>
         kLeAudioSetScenarios = {{"audio_set_scenarios.bfbs", "audio_set_scenarios.json"}};
+static const std::vector<std::pair<const char* /*schema*/, const char* /*content*/>>
+        kLeAudioTestSetScenarios = {{"audio_set_scenarios.bfbs", "audio_set_scenarios_test.json"}};
 #endif
 
 /** Provides a set configurations for the given context type */
@@ -79,7 +91,15 @@ struct AudioSetConfigurationProviderJson {
   static constexpr auto kDefaultScenario = "Media";
 
   AudioSetConfigurationProviderJson(types::CodecLocation location) {
-    log::assert_that(LoadContent(kLeAudioSetConfigs, kLeAudioSetScenarios, location),
+    bool is_gmap_supported_in_software_datapath =
+            android::sysprop::bluetooth::LeAudio::is_gmap_supported_in_software_datapath().value_or(
+                    false);
+    const auto& selected_scenarios = is_gmap_supported_in_software_datapath
+                                             ? kLeAudioTestSetScenarios
+                                             : kLeAudioSetScenarios;
+    log::info("Using set scenarios: {}", selected_scenarios.back().second);
+
+    log::assert_that(LoadContent(kLeAudioSetConfigs, selected_scenarios, location),
                      ": Unable to load le audio set configuration files.");
   }
 
@@ -451,6 +471,7 @@ private:
   }
 
   bool LoadScenariosFromFiles(const char* schema_file, const char* content_file) {
+    log::debug(": Loading scenarios from file: {}, {}", content_file, schema_file);
     flatbuffers::Parser scenarios_parser_;
     std::string scenarios_schema_binary_content;
     bool ok = flatbuffers::LoadFile(schema_file, true, &scenarios_schema_binary_content);
@@ -513,13 +534,17 @@ private:
           std::vector<std::pair<const char* /*schema*/, const char* /*content*/>> scenario_files,
           types::CodecLocation location) {
     for (auto [schema, content] : config_files) {
+      log::debug("Loading configs from files. Schema: {}, content: {}.", schema, content);
       if (!LoadConfigurationsFromFiles(schema, content, location)) {
+        log::error("Error loading configs. Schema: {}, content: {}.", schema, content);
         return false;
       }
     }
 
     for (auto [schema, content] : scenario_files) {
+      log::debug("Loading scenarios from files. Schema: {}, content: {}.", schema, content);
       if (!LoadScenariosFromFiles(schema, content)) {
+        log::error("Error loading scenarios. Schema: {}, content: {}.", schema, content);
         return false;
       }
     }

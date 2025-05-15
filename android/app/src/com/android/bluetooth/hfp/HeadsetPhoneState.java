@@ -20,7 +20,6 @@ import static java.util.Objects.requireNonNull;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
-import android.content.Context;
 import android.os.Handler;
 import android.telephony.PhoneStateListener;
 import android.telephony.ServiceState;
@@ -31,6 +30,7 @@ import android.telephony.SubscriptionManager.OnSubscriptionsChangedListener;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Collections;
@@ -46,6 +46,7 @@ import java.util.concurrent.Executor;
 public class HeadsetPhoneState {
     private static final String TAG = HeadsetPhoneState.class.getSimpleName();
 
+    private final AdapterService mAdapterService;
     private final HeadsetService mHeadsetService;
     private final TelephonyManager mTelephonyManager;
     private final SubscriptionManager mSubscriptionManager;
@@ -79,13 +80,15 @@ public class HeadsetPhoneState {
                     .build();
     private final Object mPhoneStateListenerLock = new Object();
 
-    HeadsetPhoneState(HeadsetService headsetService) {
+    HeadsetPhoneState(AdapterService adapterService, HeadsetService headsetService) {
+        mAdapterService = requireNonNull(adapterService);
         mHeadsetService = requireNonNull(headsetService);
-        Context ctx = headsetService;
-        mTelephonyManager = requireNonNull(ctx.getSystemService(TelephonyManager.class));
+        mTelephonyManager =
+                requireNonNull(mAdapterService.getSystemService(TelephonyManager.class));
         // Register for SubscriptionInfo list changes which is guaranteed to invoke
         // onSubscriptionInfoChanged and which in turns calls loadInBackground.
-        mSubscriptionManager = requireNonNull(ctx.getSystemService(SubscriptionManager.class));
+        mSubscriptionManager =
+                requireNonNull(mAdapterService.getSystemService(SubscriptionManager.class));
 
         // Initialize subscription on the handler thread
         mHandler = new Handler(headsetService.getStateMachinesThreadLooper());

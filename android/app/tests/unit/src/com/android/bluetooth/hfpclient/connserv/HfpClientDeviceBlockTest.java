@@ -74,7 +74,7 @@ public class HfpClientDeviceBlockTest {
         when(mConnServ.getApplicationContext()).thenReturn(mApplicationContext);
         when(mConnServ.getPackageName()).thenReturn(TEST_PACKAGE);
 
-        mockGetSystemService(mConnServ, Context.TELECOM_SERVICE, TelecomManager.class);
+        mockGetSystemService(mConnServ, TelecomManager.class);
 
         when(mHeadsetClientService.isAvailable()).thenReturn(true);
         HeadsetClientService.setHeadsetClientService(mHeadsetClientService);

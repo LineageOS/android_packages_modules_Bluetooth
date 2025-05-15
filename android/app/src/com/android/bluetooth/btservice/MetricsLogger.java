@@ -422,7 +422,7 @@ public class MetricsLogger {
     protected void scheduleDrains() {
         Log.i(TAG, "setCounterMetricsAlarm()");
         if (mAlarmManager == null) {
-            mAlarmManager = ((Context) mAdapterService).getSystemService(AlarmManager.class);
+            mAlarmManager = mAdapterService.getSystemService(AlarmManager.class);
         }
         mAlarmManager.set(
                 AlarmManager.ELAPSED_REALTIME_WAKEUP,

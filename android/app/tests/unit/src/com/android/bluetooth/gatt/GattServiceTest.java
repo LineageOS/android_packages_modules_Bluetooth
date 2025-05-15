@@ -22,6 +22,7 @@ import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
 import static com.android.bluetooth.TestUtils.mockContextGetBluetoothManager;
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -59,7 +60,6 @@ import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.TestUtils.MockitoRule;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
@@ -149,9 +149,7 @@ public class GattServiceTest {
         doReturn(mDistanceMeasurementManager)
                 .when(mGattObjectsFactory)
                 .createDistanceMeasurementManager(any(), any());
-        doReturn(mScanManager)
-                .when(mScanObjectsFactory)
-                .createScanManager(any(), any(), any(), any());
+        doReturn(mScanManager).when(mScanObjectsFactory).createScanManager(any(), any(), any());
         doReturn(mPeriodicScanManager)
                 .when(mScanObjectsFactory)
                 .createPeriodicScanManager(any(), any());
@@ -162,20 +160,14 @@ public class GattServiceTest {
         doReturn(mResources).when(mAdapterService).getResources();
         doReturn(mMockContentResolver).when(mAdapterService).getContentResolver();
 
-        TestUtils.mockGetSystemService(
-                mAdapterService, Context.LOCATION_SERVICE, LocationManager.class);
-        TestUtils.mockGetSystemService(
-                mAdapterService, Context.ACTIVITY_SERVICE, ActivityManager.class);
-        TestUtils.mockGetSystemService(
-                mAdapterService,
-                Context.COMPANION_DEVICE_SERVICE,
-                CompanionDeviceManager.class,
-                mCompanionDeviceManager);
+        mockContextGetBluetoothManager(mAdapterService);
+        mockGetSystemService(mAdapterService, LocationManager.class);
+        mockGetSystemService(mAdapterService, ActivityManager.class);
+        mockGetSystemService(
+                mAdapterService, CompanionDeviceManager.class, mCompanionDeviceManager);
 
         mBtCompanionManager = new CompanionManager(mAdapterService, null);
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
-
-        mockContextGetBluetoothManager(mAdapterService);
 
         AdvertiseManagerNativeInterface.setInstance(mAdvertiseManagerNativeInterface);
         mService = new GattService(mAdapterService);

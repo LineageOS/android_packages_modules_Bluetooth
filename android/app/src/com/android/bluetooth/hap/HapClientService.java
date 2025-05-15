@@ -129,8 +129,8 @@ public class HapClientService extends ProfileService {
             AdapterService adapterService,
             Looper looper,
             HapClientNativeInterface nativeInterface) {
-        super(adapterService);
-        mAdapterService = requireNonNull(adapterService);
+        super(requireNonNull(adapterService));
+        mAdapterService = adapterService;
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,

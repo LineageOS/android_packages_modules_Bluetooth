@@ -86,12 +86,8 @@ public class MediaPlayerListTest {
                         .getContext()
                         .getSystemService(MediaSessionManager.class);
         PackageManager mockPackageManager = mock(PackageManager.class);
-        mockGetSystemService(
-                mMockContext,
-                Context.MEDIA_SESSION_SERVICE,
-                MediaSessionManager.class,
-                mMediaSessionManager);
-        mockGetSystemService(mMockContext, Context.AUDIO_SERVICE, AudioManager.class);
+        mockGetSystemService(mMockContext, MediaSessionManager.class, mMediaSessionManager);
+        mockGetSystemService(mMockContext, AudioManager.class);
 
         when(mMockContext.registerReceiver(any(), any())).thenReturn(null);
         when(mMockContext.getApplicationContext()).thenReturn(mMockContext);

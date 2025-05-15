@@ -51,6 +51,9 @@ public:
               (::bluetooth::le_audio::LeAudioSourceAudioHalClient * source_broadcast_client,
                bool is_active));
 
+  MOCK_METHOD((void), UpdateSelectedCodecConfig,
+              (const ::bluetooth::le_audio::types::AudioSetConfiguration& config), (const));
+
   MOCK_METHOD((void), UpdateActiveAudioConfig,
               (const bluetooth::le_audio::types::BidirectionalPair<
                        bluetooth::le_audio::stream_parameters>& stream_params,

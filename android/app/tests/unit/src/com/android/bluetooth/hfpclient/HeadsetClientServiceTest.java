@@ -20,6 +20,7 @@ import static android.content.pm.PackageManager.FEATURE_WATCH;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.hfpclient.HeadsetClientService.MAX_HFP_SCO_VOICE_CALL_VOLUME;
 import static com.android.bluetooth.hfpclient.HeadsetClientService.MIN_HFP_SCO_VOICE_CALL_VOLUME;
 
@@ -35,7 +36,6 @@ import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSinkAudioPolicy;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
@@ -44,7 +44,6 @@ import android.os.BatteryManager;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -82,14 +81,10 @@ public class HeadsetClientServiceTest {
 
     private AudioManager mMockAudioManager;
 
-    <T> T mockGetSystemService(String serviceName, Class<T> serviceClass) {
-        return TestUtils.mockGetSystemService(mAdapterService, serviceName, serviceClass);
-    }
-
     @Before
     public void setUp() throws Exception {
-        mMockAudioManager = mockGetSystemService(Context.AUDIO_SERVICE, AudioManager.class);
-        mockGetSystemService(Context.BATTERY_SERVICE, BatteryManager.class);
+        mMockAudioManager = mockGetSystemService(mAdapterService, AudioManager.class);
+        mockGetSystemService(mAdapterService, BatteryManager.class);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
         HeadsetClientNativeInterface.setInstance(mNativeInterface);

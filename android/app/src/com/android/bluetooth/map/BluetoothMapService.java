@@ -190,8 +190,10 @@ public class BluetoothMapService extends ProfileService {
         registerReceiver(mMapReceiver, filterMessageSent);
         mAppObserver = new BluetoothMapAppObserver(this, this);
 
-        mSmsCapable = requireNonNull(getSystemService(TelephonyManager.class)).isSmsCapable();
-        mAlarmManager = requireNonNull(getSystemService(AlarmManager.class));
+        mSmsCapable =
+                requireNonNull(mAdapterService.getSystemService(TelephonyManager.class))
+                        .isSmsCapable();
+        mAlarmManager = requireNonNull(mAdapterService.getSystemService(AlarmManager.class));
 
         mEnabledAccounts = mAppObserver.getEnabledAccountItems();
         createMasInstances(); // Uses mEnabledAccounts
@@ -263,7 +265,7 @@ public class BluetoothMapService extends ProfileService {
 
         // Acquire the wakeLock before starting Obex transaction thread
         if (mWakeLock == null) {
-            PowerManager pm = getSystemService(PowerManager.class);
+            PowerManager pm = mAdapterService.getSystemService(PowerManager.class);
             mWakeLock =
                     pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "StartingObexMapTransaction");
             mWakeLock.setReferenceCounted(false);
@@ -442,7 +444,7 @@ public class BluetoothMapService extends ProfileService {
                 case MSG_ACQUIRE_WAKE_LOCK:
                     Log.v(TAG, "Acquire Wake Lock request message");
                     if (mWakeLock == null) {
-                        PowerManager pm = getSystemService(PowerManager.class);
+                        PowerManager pm = mAdapterService.getSystemService(PowerManager.class);
                         mWakeLock =
                                 pm.newWakeLock(
                                         PowerManager.PARTIAL_WAKE_LOCK,

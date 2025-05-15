@@ -41,7 +41,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
 import android.companion.CompanionDeviceManager;
-import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.BluetoothProfileConnectionInfo;
@@ -124,13 +123,9 @@ public class A2dpServiceTest {
         mInOrder = inOrder(mAdapterService);
         mLooper = new TestLooper();
 
+        TestUtils.mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
         TestUtils.mockGetSystemService(
-                mAdapterService, Context.AUDIO_SERVICE, AudioManager.class, mAudioManager);
-        TestUtils.mockGetSystemService(
-                mAdapterService,
-                Context.COMPANION_DEVICE_SERVICE,
-                CompanionDeviceManager.class,
-                mCompanionDeviceManager);
+                mAdapterService, CompanionDeviceManager.class, mCompanionDeviceManager);
         doReturn(InstrumentationRegistry.getInstrumentation().getContext().getResources())
                 .when(mAdapterService)
                 .getResources();

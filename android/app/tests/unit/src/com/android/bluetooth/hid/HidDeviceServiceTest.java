@@ -48,7 +48,6 @@ import android.bluetooth.BluetoothHidDevice;
 import android.bluetooth.BluetoothHidDeviceAppSdpSettings;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.IBluetoothHidDeviceCallback;
-import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Binder;
@@ -105,7 +104,7 @@ public class HidDeviceServiceTest {
             Looper.prepare();
         }
 
-        mockGetSystemService(mAdapterService, Context.ACTIVITY_SERVICE, ActivityManager.class);
+        mockGetSystemService(mAdapterService, ActivityManager.class);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         doReturn(mBinder).when(mCallback).asBinder();
 

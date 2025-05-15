@@ -206,7 +206,7 @@ public class HeadsetServiceAndStateMachineTest {
                 .when(mObjectsFactory)
                 .makeStateMachine(any(), any(), any(), any(), any(), any());
         // Mock methods in HeadsetObjectsFactory
-        doReturn(mSystemInterface).when(mObjectsFactory).makeSystemInterface(any());
+        doReturn(mSystemInterface).when(mObjectsFactory).makeSystemInterface(any(), any());
 
         mTestLooper = new TestLooper();
 
@@ -214,7 +214,7 @@ public class HeadsetServiceAndStateMachineTest {
                 new HeadsetService(mAdapterService, mNativeInterface, mTestLooper.getLooper());
         mHeadsetService.setAvailable(true);
 
-        verify(mObjectsFactory).makeSystemInterface(mHeadsetService);
+        verify(mObjectsFactory).makeSystemInterface(mAdapterService, mHeadsetService);
         verify(mNativeInterface).init(MAX_HEADSET_CONNECTIONS + 1, true /* inband ringtone */);
         verify(mNativeInterface).setIsScoManagedByAudio(scoManagedByAudio());
 

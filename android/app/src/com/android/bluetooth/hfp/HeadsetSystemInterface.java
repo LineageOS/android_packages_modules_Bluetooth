@@ -33,6 +33,7 @@ import android.telecom.TelecomManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.telephony.BluetoothInCallService;
 
 import java.util.List;
@@ -44,6 +45,7 @@ import java.util.List;
 class HeadsetSystemInterface {
     private static final String TAG = HeadsetSystemInterface.class.getSimpleName();
 
+    private final AdapterService mAdapterService;
     private final HeadsetService mHeadsetService;
     private final AudioManager mAudioManager;
     private final HeadsetPhoneState mHeadsetPhoneState;
@@ -56,19 +58,20 @@ class HeadsetSystemInterface {
     private boolean mIsScoManagedByAudioEnabled =
             SystemProperties.getBoolean(ENABLE_SCO_MANAGED_BY_AUDIO, false);
 
-    HeadsetSystemInterface(HeadsetService headsetService) {
+    HeadsetSystemInterface(AdapterService adapterService, HeadsetService headsetService) {
         if (headsetService == null) {
             Log.wtf(TAG, "HeadsetService parameter is null");
         }
+        mAdapterService = adapterService;
         mHeadsetService = headsetService;
-        mAudioManager = mHeadsetService.getSystemService(AudioManager.class);
-        PowerManager powerManager = mHeadsetService.getSystemService(PowerManager.class);
+        mAudioManager = mAdapterService.getSystemService(AudioManager.class);
+        PowerManager powerManager = mAdapterService.getSystemService(PowerManager.class);
         mVoiceRecognitionWakeLock =
                 powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG + ":VoiceRecognition");
         mVoiceRecognitionWakeLock.setReferenceCounted(false);
-        mHeadsetPhoneState = new com.android.bluetooth.hfp.HeadsetPhoneState(mHeadsetService);
-        mTelephonyManager = mHeadsetService.getSystemService(TelephonyManager.class);
-        mTelecomManager = mHeadsetService.getSystemService(TelecomManager.class);
+        mHeadsetPhoneState = new HeadsetPhoneState(mAdapterService, mHeadsetService);
+        mTelephonyManager = mAdapterService.getSystemService(TelephonyManager.class);
+        mTelecomManager = mAdapterService.getSystemService(TelecomManager.class);
     }
 
     private static BluetoothInCallService getBluetoothInCallServiceInstance() {

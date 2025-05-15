@@ -574,8 +574,8 @@ impl From<u8> for AdvertisingStatus {
 #[derive(Debug)]
 pub enum GattClientCallbacks {
     RegisterClient(GattStatus, i32, Uuid),
-    Connect(i32, GattStatus, i32, RawAddress),
-    Disconnect(i32, GattStatus, i32, RawAddress),
+    Connect(i32, GattStatus, i32, i32, RawAddress),
+    Disconnect(i32, GattStatus, i32, i32, RawAddress),
     RegisterForNotification(i32, i32, GattStatus, u16),
     Notify(i32, BtGattNotifyParams),
     ReadCharacteristic(i32, GattStatus, BtGattReadParams),
@@ -596,7 +596,7 @@ pub enum GattClientCallbacks {
 #[derive(Debug)]
 pub enum GattServerCallbacks {
     RegisterServer(GattStatus, i32, Uuid),
-    Connection(i32, i32, i32, RawAddress),
+    Connection(i32, i32, i32, i32, RawAddress),
     ServiceAdded(GattStatus, i32, Vec<BtGattDbElement>, usize),
     ServiceStopped(GattStatus, i32, i32),
     ServiceDeleted(GattStatus, i32, i32),
@@ -649,16 +649,16 @@ cb_variant!(
 cb_variant!(
     GattClientCb,
     gc_open_cb -> GattClientCallbacks::Connect,
-    i32, i32 -> GattStatus, i32, *const RawAddress, {
-        let _3 = unsafe { *_3 };
+    i32, i32 -> GattStatus, i32, i32, *const RawAddress, {
+        let _4 = unsafe { *_4 };
     }
 );
 
 cb_variant!(
     GattClientCb,
     gc_close_cb -> GattClientCallbacks::Disconnect,
-    i32, i32 -> GattStatus, i32, *const RawAddress, {
-        let _3 = unsafe { *_3 };
+    i32, i32 -> GattStatus, i32, i32, *const RawAddress, {
+        let _4 = unsafe { *_4 };
     }
 );
 
@@ -772,8 +772,8 @@ cb_variant!(
 cb_variant!(
     GattServerCb,
     gs_connection_cb -> GattServerCallbacks::Connection,
-    i32, i32, i32, *const RawAddress, {
-        let _3 = unsafe { *_3 };
+    i32, i32, i32, i32, *const RawAddress, {
+        let _4 = unsafe { *_4 };
     }
 );
 

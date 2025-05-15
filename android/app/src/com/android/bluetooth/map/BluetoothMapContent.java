@@ -3634,6 +3634,10 @@ public class BluetoothMapContent {
             }
         }
 
+        if (contactName == null) {
+            contactName = phone;
+        }
+
         if (incoming) {
             Log.v(TAG, "Adding originator for phone:" + phone);
             // Use version 3.0 as we only have a formatted name

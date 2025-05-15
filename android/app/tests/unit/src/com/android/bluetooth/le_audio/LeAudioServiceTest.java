@@ -224,8 +224,7 @@ public class LeAudioServiceTest {
     @Before
     public void setUp() throws Exception {
         mInOrder = inOrder(mAdapterService);
-        mockGetSystemService(
-                mAdapterService, Context.AUDIO_SERVICE, AudioManager.class, mAudioManager);
+        mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
         doReturn(mAdapterService).when(mAdapterService).getApplicationContext();
         doReturn(mAdapterService).when(mAdapterService).createContextAsUser(any(), anyInt());
         doReturn(mTargetContext.getContentResolver()).when(mAdapterService).getContentResolver();
@@ -242,8 +241,7 @@ public class LeAudioServiceTest {
                 .getBondedDevices();
         doReturn(mGattService).when(mAdapterService).getBluetoothGattService();
         doReturn(mScanController).when(mAdapterService).getBluetoothScanController();
-        mockGetSystemService(
-                mAdapterService, Context.AUDIO_SERVICE, AudioManager.class, mAudioManager);
+        mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
         doAnswer(invocation -> mBondedDevices.toArray(new BluetoothDevice[] {}))
                 .when(mAdapterService)
                 .getBondedDevices();
@@ -3047,14 +3045,16 @@ public class LeAudioServiceTest {
                         any(BluetoothProfileConnectionInfo.class));
     }
 
-    /**
-     * Test the group is activated once the available contexts are back.
-     *
-     * <p>Scenario: 1. Have a group of 2 devices. The available contexts are non-zero. The group
-     * shall be active at this point. 2. All group devices are disconnected. 3. Group devices are
-     * reconnected. The available contexts are zero. 4. The available contexts are updated with
-     * non-zero value. Group becomes active.
-     */
+    //
+    // Test the group is activated once the available contexts are back.
+    //
+    // Scenario:
+    //  1. Have a group of 2 devices. The available contexts are non-zero.
+    //     The group shall be active at this point.
+    //  2. All group devices are disconnected.
+    //  3. Group devices are reconnected. The available contexts are zero.
+    //  4. The available contexts are updated with non-zero value. Group becomes active.
+    //
     @Test
     public void testActivateDeviceWhenAvailableContextAreBack_Scenario3() {
         int groupId = 1;

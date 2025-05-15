@@ -28,6 +28,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.PandoraDevice;
 import android.bluetooth.Utils;
 import android.bluetooth.test_utils.EnableBluetoothRule;
@@ -144,9 +145,12 @@ public class ServiceDiscoveryTest {
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
 
         // Wait for GATT service discovery to complete on Android
-        verifyIntentReceived(hasAction(BluetoothDevice.ACTION_UUID));
-
-        verifyIntentReceived(
+        verifyIntentReceivedUnordered(hasAction(BluetoothDevice.ACTION_UUID));
+        if (mBumbleDevice.isConnected()) {
+            // Disconnect Bumble
+            assertThat(mBumbleDevice.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
+        }
+        verifyIntentReceivedUnordered(
                 hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
 
@@ -211,7 +215,11 @@ public class ServiceDiscoveryTest {
                 hasAction(BluetoothDevice.ACTION_UUID),
                 hasExtra(BluetoothDevice.EXTRA_UUID, Matchers.hasItemInArray(BATTERY_UUID)));
 
-        verifyIntentReceived(
+        if (mBumbleDevice.isConnected()) {
+            // Disconnect Bumble
+            assertThat(mBumbleDevice.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
+        }
+        verifyIntentReceivedUnordered(
                 hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE));
 

@@ -87,8 +87,7 @@ public class BluetoothOppReceiverTest {
         doReturn(mTargetContext.getResources()).when(mContext).getResources();
         doReturn("").when(mContext).getString(anyInt(), any());
 
-        mockGetSystemService(
-                mContext, Context.BLUETOOTH_SERVICE, BluetoothManager.class, mBluetoothManager);
+        mockGetSystemService(mContext, BluetoothManager.class, mBluetoothManager);
 
         mTargetContext.deleteSharedPreferences(TEST_PREF);
         mPrefs = mTargetContext.getSharedPreferences(TEST_PREF, Context.MODE_PRIVATE);

@@ -47,18 +47,22 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.Iterator;
 
-/**
- * IntentReceiver helps in managing the Intents received through the Broadcast receiver, with
- * specific intent actions registered. It uses Builder pattern for instance creation, and also
- * allows setting up a custom listener's onReceive().
- *
- * <p>Use the following way to create an instance of the IntentReceiver. IntentReceiver
- * intentReceiver = new IntentReceiver.Builder(sTargetContext, BluetoothDevice.ACTION_1,
- * BluetoothDevice.ACTION_2) .setIntentListener(--) // optional .setIntentTimeout(--) // optional
- * .build();
- *
- * <p>Ordered and unordered verification mechanisms are also provided through public methods.
- */
+//
+// IntentReceiver helps in managing the Intents received through the Broadcast
+//  receiver, with specific intent actions registered.
+//  It uses Builder pattern for instance creation, and also allows setting up
+//  a custom listener's onReceive().
+//
+// Use the following way to create an instance of the IntentReceiver.
+//      IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
+//          BluetoothDevice.ACTION_1,
+//          BluetoothDevice.ACTION_2)
+//          .setIntentListener(--) // optional
+//          .setIntentTimeout(--)  // optional
+//          .build();
+//
+// Ordered and unordered verification mechanisms are also provided through public methods.
+//
 public class IntentReceiver {
     private static final String TAG = IntentReceiver.class.getSimpleName();
 
@@ -106,11 +110,13 @@ public class IntentReceiver {
         mDqBuilder = null;
     }
 
-    /**
-     * Builder class which helps in avoiding overloading constructors (as the class grows) Usage:
-     * new IntentReceiver.Builder(ARGS) .setterMethods() **Optional calls, as these are default
-     * params .build();
-     */
+    //
+    // Builder class which helps in avoiding overloading constructors (as the class grows)
+    // Usage:
+    //      new IntentReceiver.Builder(ARGS)
+    //      .setterMethods() **Optional calls, as these are default params
+    //      .build();
+    //
     public static class Builder {
         private final Context mContext;
 
@@ -283,11 +289,13 @@ public class IntentReceiver {
         mContext.registerReceiver(mReceiver, intentFilter);
     }
 
-    /**
-     * Unregisters the receiver from the list of active receivers. Also, we can now re-use the same
-     * receiver, or register a new receiver with the same or different intent filter, the old
-     * registration is no longer valid. Source: Intents and intent filters (Android Developers)
-     */
+    //
+    // Unregisters the receiver from the list of active receivers.
+    // Also, we can now re-use the same receiver, or register a new
+    //  receiver with the same or different intent filter, the old
+    //  registration is no longer valid.
+    //  Source: Intents and intent filters (Android Developers)
+    //
     private void unregisterReceiver() {
         Log.d(TAG, "unregisterReceiver()");
         mContext.unregisterReceiver(mReceiver);
@@ -299,10 +307,12 @@ public class IntentReceiver {
         Mockito.verifyNoMoreInteractions(mReceiver);
     }
 
-    /**
-     * Registers the new actions passed as argument. 1. Unregister the Builder. 2. Pops a new
-     * Builder to roll-back to the old one. 3. Registers the old Builder.
-     */
+    //
+    // Registers the new actions passed as argument.
+    // 1. Unregister the Builder.
+    // 2. Pops a new Builder to roll-back to the old one.
+    // 3. Registers the old Builder.
+    //
     private void rollbackBuilder() {
         assertThat(mDqBuilder.isEmpty()).isFalse();
 

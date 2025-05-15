@@ -54,7 +54,6 @@ import android.bluetooth.BluetoothUuid;
 import android.bluetooth.BluetoothVolumeControl;
 import android.bluetooth.IBluetoothVolumeControlCallback;
 import android.content.AttributionSource;
-import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.os.Binder;
@@ -160,8 +159,7 @@ public class VolumeControlServiceTest {
         doReturn(CALL_MAX_VOL)
                 .when(mAudioManager)
                 .getStreamMaxVolume(eq(AudioManager.STREAM_VOICE_CALL));
-        TestUtils.mockGetSystemService(
-                mAdapterService, Context.AUDIO_SERVICE, AudioManager.class, mAudioManager);
+        TestUtils.mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
 
         mInOrder = inOrder(mAdapterService);
         mLooper = new TestLooper();

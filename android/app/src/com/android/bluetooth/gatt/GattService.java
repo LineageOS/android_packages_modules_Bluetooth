@@ -171,9 +171,10 @@ public class GattService extends ProfileService {
     public GattService(AdapterService adapterService) {
         super(requireNonNull(adapterService));
         mAdapterService = adapterService;
-        mActivityManager = requireNonNull(getSystemService(ActivityManager.class));
+        mActivityManager = requireNonNull(mAdapterService.getSystemService(ActivityManager.class));
         mPackageManager = requireNonNull(mAdapterService.getPackageManager());
-        mCompanionDeviceManager = requireNonNull(getSystemService(CompanionDeviceManager.class));
+        mCompanionDeviceManager =
+                requireNonNull(mAdapterService.getSystemService(CompanionDeviceManager.class));
 
         Settings.Global.putInt(
                 getContentResolver(), "bluetooth_sanitized_exposure_notification_supported", 1);

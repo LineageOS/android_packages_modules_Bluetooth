@@ -265,7 +265,6 @@ public class BassClientServiceTest {
         BassObjectsFactory.setInstanceForTesting(mObjectsFactory);
         BluetoothMethodProxy.setInstanceForTesting(mMethodProxy);
 
-        doReturn(true).when(mMethodProxy).initializePeriodicAdvertisingManagerOnDefaultAdapter();
         doNothing()
                 .when(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(

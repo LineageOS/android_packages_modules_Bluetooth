@@ -108,11 +108,6 @@ public:
 
     for (const auto& entry : sink_metadata) {
       auto track = entry.base;
-      if (track.source == AUDIO_SOURCE_INVALID) {
-        log::debug("AUDIO_SOURCE_INVALID");
-        continue;
-      }
-
       LeAudioContextType track_context;
 
       log::debug(
@@ -121,20 +116,33 @@ public:
               audioSourceToStr(track.source), track.source, track.gain, track.dest_device,
               track.dest_device_address);
 
-      if (track.source == AUDIO_SOURCE_MIC) {
-        track_context = LeAudioContextType::LIVE;
-      } else if (track.source == AUDIO_SOURCE_VOICE_COMMUNICATION) {
-        track_context = LeAudioContextType::CONVERSATIONAL;
-      } else {
-        /* Fallback to voice assistant
-         * This will handle also a case when the device is
-         * AUDIO_SOURCE_VOICE_RECOGNITION
-         */
-        track_context = LeAudioContextType::VOICEASSISTANTS;
-        log::warn(
-                "Could not match the recording track type to group available "
-                "context. Using context {}.",
-                ToString(track_context));
+      switch (track.source) {
+        case AUDIO_SOURCE_VOICE_CALL:
+        case AUDIO_SOURCE_VOICE_COMMUNICATION:
+          track_context = LeAudioContextType::CONVERSATIONAL;
+          break;
+        case AUDIO_SOURCE_VOICE_PERFORMANCE:
+          track_context = LeAudioContextType::GAME;
+          break;
+        case AUDIO_SOURCE_VOICE_RECOGNITION:
+          track_context = LeAudioContextType::VOICEASSISTANTS;
+          break;
+        case AUDIO_SOURCE_REMOTE_SUBMIX:
+        case AUDIO_SOURCE_CAMCORDER:
+        case AUDIO_SOURCE_MIC:
+        case AUDIO_SOURCE_VOICE_UPLINK:
+        case AUDIO_SOURCE_VOICE_DOWNLINK:
+        case AUDIO_SOURCE_UNPROCESSED:
+        case AUDIO_SOURCE_ECHO_REFERENCE:
+        case AUDIO_SOURCE_FM_TUNER:
+        case AUDIO_SOURCE_HOTWORD:
+        case AUDIO_SOURCE_DEFAULT:
+        case AUDIO_SOURCE_ULTRASOUND:
+          track_context = LeAudioContextType::LIVE;
+          break;
+        case AUDIO_SOURCE_INVALID:
+          log::debug("AUDIO_SOURCE_INVALID");
+          continue;
       }
 
       local_decoding_context_types_.set(track_context);

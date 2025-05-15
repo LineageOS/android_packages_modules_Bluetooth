@@ -295,7 +295,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
 
         // acquire the wakeLock before start SAP transaction thread
         if (mWakeLock == null) {
-            PowerManager pm = getSystemService(PowerManager.class);
+            PowerManager pm = mAdapterService.getSystemService(PowerManager.class);
             mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "StartingSapTransaction");
             mWakeLock.setReferenceCounted(false);
             mWakeLock.acquire();
@@ -488,7 +488,8 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
                         case MSG_ACQUIRE_WAKE_LOCK:
                             Log.v(TAG, "Acquire Wake Lock request message");
                             if (mWakeLock == null) {
-                                PowerManager pm = getSystemService(PowerManager.class);
+                                PowerManager pm =
+                                        mAdapterService.getSystemService(PowerManager.class);
                                 mWakeLock =
                                         pm.newWakeLock(
                                                 PowerManager.PARTIAL_WAKE_LOCK,

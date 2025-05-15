@@ -94,8 +94,7 @@ public class PbapClientAccountManagerTest {
                         .getAdapter();
         assertThat(mAdapter).isNotNull();
 
-        TestUtils.mockGetSystemService(
-                mMockContext, Context.ACCOUNT_SERVICE, AccountManager.class, mMockAccountManager);
+        TestUtils.mockGetSystemService(mMockContext, AccountManager.class, mMockAccountManager);
         setAvailableAccounts(new Account[] {});
         setAccountVisibility(AccountManager.VISIBILITY_NOT_VISIBLE);
         doReturn(true)
@@ -104,8 +103,7 @@ public class PbapClientAccountManagerTest {
                         any(Account.class), nullable(String.class), nullable(Bundle.class));
         doReturn(true).when(mMockAccountManager).removeAccountExplicitly(any(Account.class));
 
-        TestUtils.mockGetSystemService(
-                mMockContext, Context.USER_SERVICE, UserManager.class, mMockUserManager);
+        TestUtils.mockGetSystemService(mMockContext, UserManager.class, mMockUserManager);
         doReturn("").when(mMockContext).getPackageName();
         doReturn(false).when(mMockUserManager).isUserUnlocked();
 

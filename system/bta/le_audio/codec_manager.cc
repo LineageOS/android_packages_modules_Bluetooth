@@ -343,6 +343,61 @@ public:
     }
   }
 
+  void UpdateAudioConfigToHal(const ::bluetooth::le_audio::stream_config& config,
+                              uint8_t remote_direction) const {
+    if ((remote_direction & bluetooth::le_audio::types::kLeAudioDirectionSink) &&
+        unicast_local_source_hal_client) {
+      unicast_local_source_hal_client->UpdateAudioConfigToHal(config);
+    }
+    if ((remote_direction & bluetooth::le_audio::types::kLeAudioDirectionSource) &&
+        unicast_local_sink_hal_client) {
+      unicast_local_sink_hal_client->UpdateAudioConfigToHal(config);
+    }
+  }
+
+  void UpdateSelectedCodecConfig(
+          const ::bluetooth::le_audio::types::AudioSetConfiguration& audio_set_conf) const {
+    if (GetCodecLocation() != bluetooth::le_audio::types::CodecLocation::ADSP) {
+      return;
+    }
+
+    log::debug("");
+
+    if (!com::android::bluetooth::flags::leaudio_add_opus_hi_res_codec_type()) {
+      log::verbose("Skipped due to disabled `leaudio_add_opus_hi_res_codec_type` flag.");
+      return;
+    }
+
+    // Since `offloader_stream_maps` may not be populated yet due to CISes not yet being allocated
+    // for the audio channels, we can send only the codec information now and update the stream map
+    // later, when the CISes are
+    for (auto remote_direction : {bluetooth::le_audio::types::kLeAudioDirectionSink,
+                                  bluetooth::le_audio::types::kLeAudioDirectionSource}) {
+      auto const& configs = audio_set_conf.confs.get(remote_direction);
+      if (configs.empty()) {
+        continue;
+      }
+
+      bluetooth::le_audio::stream_config config;
+      for (auto const& ase_cfg : configs) {
+        log::debug("Update before session resumes. Freq:{}",
+                   ase_cfg.codec.GetSamplingFrequencyHz());
+
+        // Currently there is no CISes bound to the channels yet - send only the codec information
+        const uint8_t stream_handle = 0;
+        const auto channel_allocation =
+                AdjustAllocationForOffloader(ase_cfg.codec.GetAudioChannelAllocation());
+        bluetooth::le_audio::stream_map_info map_info(stream_handle, channel_allocation, false);
+
+        map_info.codec_config = ase_cfg.codec;
+        config.stream_map.push_back(map_info);
+        config.sampling_frequency_hz = ase_cfg.codec.GetSamplingFrequencyHz();
+      }
+
+      UpdateAudioConfigToHal(config, remote_direction);
+    }
+  }
+
   bool UpdateActiveUnicastAudioHalClient(LeAudioSourceAudioHalClient* source_unicast_client,
                                          LeAudioSinkAudioHalClient* sink_unicast_client,
                                          bool is_active) {
@@ -1481,6 +1536,13 @@ std::unique_ptr<AudioSetConfiguration> CodecManager::GetCodecConfig(
   }
 
   return nullptr;
+}
+
+void CodecManager::UpdateSelectedCodecConfig(
+        const ::bluetooth::le_audio::types::AudioSetConfiguration& config) const {
+  if (pimpl_->IsRunning()) {
+    pimpl_->codec_manager_impl_->UpdateSelectedCodecConfig(config);
+  }
 }
 
 bool CodecManager::CheckCodecConfigIsBiDirSwb(const types::AudioSetConfiguration& config) const {

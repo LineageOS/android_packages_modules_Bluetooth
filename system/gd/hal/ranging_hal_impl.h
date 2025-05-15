@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,8 @@
 
 #pragma once
 
-#include <a2dp.sysprop.h>
-#include <avrcp.sysprop.h>
-#include <ble.sysprop.h>
-#include <bta.sysprop.h>
-#include <core.sysprop.h>
-#include <device_id.sysprop.h>
-#include <gap.sysprop.h>
-#include <hardware.sysprop.h>
-#include <hci.sysprop.h>
-#include <hfp.sysprop.h>
-#include <le_audio.sysprop.h>
+#ifdef __ANDROID__
+#include "ranging_hal_impl_android.h"
+#else
+#include "ranging_hal_impl_host.h"
+#endif

@@ -22,7 +22,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanSettings;
-import android.content.Context;
 import android.os.BatteryStatsManager;
 import android.os.WorkSource;
 
@@ -60,10 +59,7 @@ public class AppScanStatsTest {
     @Before
     public void setUp() {
         TestUtils.mockGetSystemService(
-                mAdapterService,
-                Context.BATTERY_STATS_SERVICE,
-                BatteryStatsManager.class,
-                mBatteryStatsManager);
+                mAdapterService, BatteryStatsManager.class, mBatteryStatsManager);
     }
 
     @Test
