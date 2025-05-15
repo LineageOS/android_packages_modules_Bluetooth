@@ -126,10 +126,14 @@ struct LeAudioCCallbacks {
  * streams, as specified by the `num_iso_streams` entries of the `iso_streams` table.
  * When not NULL, the `handle` returned shall be passed of the first parameter
  * of other functions acting on this stream.
+ * The `anchor_delay_us` indicates the delay (in micro-seconds) from the read of a PCM frame
+ * to the isochronous anchor point of the transmission. This is precisely the configurable
+ * latency until the input PCM reaches the air.
  * In case of error, a NULL value is returned.
  */
 void *swoff_leaudio_setup(const IsoStream iso_streams[], size_t num_iso_streams,
-                          const AudioConfig *audio, const LeAudioCCallbacks *callbacks);
+                          const AudioConfig *audio, unsigned anchor_delay_us,
+                          const LeAudioCCallbacks *callbacks);
 
 /**
  * Free a non NULL `handle` returned by `swoff_leaudio_setup()`.
@@ -163,14 +167,14 @@ public:
 class LeAudioStream {
 public:
   LeAudioStream(const std::vector<IsoStream> iso_streams, const AudioConfig &audio_config,
-                std::shared_ptr<LeAudioCallbacks> callbacks) {
+                std::shared_ptr<LeAudioCallbacks> callbacks, unsigned anchor_delay_us = 30000) {
     LeAudioCCallbacks callbacks_c{
             .handle = callbacks.get(),
             .start = [](void *instance) { static_cast<LeAudioCallbacks *>(instance)->start(); },
             .stop = [](void *instance) { static_cast<LeAudioCallbacks *>(instance)->stop(); },
     };
     handle_ = swoff_leaudio_setup(iso_streams.data(), iso_streams.size(), &audio_config,
-                                  &callbacks_c);
+                                  anchor_delay_us, &callbacks_c);
     if (!handle_) {
       abort();
     }
