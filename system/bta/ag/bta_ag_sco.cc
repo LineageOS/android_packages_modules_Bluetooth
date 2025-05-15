@@ -88,6 +88,7 @@ static HfpInterface::Offload* hfp_offload_interface;
 static HfpInterface::Encode* hfp_encode_interface;
 static HfpInterface::Decode* hfp_decode_interface;
 static std::unordered_map<tBTA_AG_UUID_CODEC, ::hfp::sco_config> sco_config_map;
+// Remove when sco_managed_by_audio_remove_hfp_hal is shipped
 static std::unordered_map<tBTA_AG_UUID_CODEC, esco_coding_format_t> codec_coding_format_map{
         {tBTA_AG_UUID_CODEC::UUID_CODEC_LC3, ESCO_CODING_FORMAT_LC3},
         {tBTA_AG_UUID_CODEC::UUID_CODEC_MSBC, ESCO_CODING_FORMAT_MSBC},
@@ -605,9 +606,16 @@ static void updateCodecParametersFromProviderInfo(tBTA_AG_UUID_CODEC esco_codec,
     if (!sco_config_it->second.useControllerCodec) {
       log::debug("use DSP Codec instead of controller codec");
 
-      esco_coding_format_t codingFormat = codec_coding_format_map[esco_codec];
-      params.input_coding_format.coding_format = codingFormat;
-      params.output_coding_format.coding_format = codingFormat;
+      if (com::android::bluetooth::flags::sco_managed_by_audio_remove_hfp_hal()) {
+        params.input_coding_format.coding_format = ESCO_CODING_FORMAT_TRANSPNT;
+        params.output_coding_format.coding_format = ESCO_CODING_FORMAT_TRANSPNT;
+        params.transmit_coding_format.coding_format = ESCO_CODING_FORMAT_TRANSPNT;
+        params.receive_coding_format.coding_format = ESCO_CODING_FORMAT_TRANSPNT;
+      } else {
+        esco_coding_format_t codingFormat = codec_coding_format_map[esco_codec];
+        params.input_coding_format.coding_format = codingFormat;
+        params.output_coding_format.coding_format = codingFormat;
+      }
       params.input_bandwidth = TXRX_64KBITS_RATE;
       params.output_bandwidth = TXRX_64KBITS_RATE;
     }
@@ -1704,6 +1712,31 @@ void bta_ag_api_set_active_device(const RawAddress& new_active_device) {
         if (active_device_addr.IsEmpty()) {
           hfp_encode_interface->StartSession();
           hfp_decode_interface->StartSession();
+          if (com::android::bluetooth::flags::sco_managed_by_audio_remove_hfp_hal()) {
+            // Software path implies support of mSBC and LC3; And CVSD is mandatory in HFP.
+            sco_config_map = std::unordered_map<tBTA_AG_UUID_CODEC, ::hfp::sco_config>{
+                    // CVSD encoding/decoding is always done by controller, while sending packets
+                    // over HCI is also allowed.
+                    {tBTA_AG_UUID_CODEC::UUID_CODEC_CVSD,
+                     {
+                             .inputDataPath = ESCO_DATA_PATH_HCI,
+                             .outputDataPath = ESCO_DATA_PATH_HCI,
+                             .useControllerCodec = true,
+                     }},
+                    {tBTA_AG_UUID_CODEC::UUID_CODEC_MSBC,
+                     {
+                             .inputDataPath = ESCO_DATA_PATH_HCI,
+                             .outputDataPath = ESCO_DATA_PATH_HCI,
+                             .useControllerCodec = false,
+                     }},
+                    {tBTA_AG_UUID_CODEC::UUID_CODEC_LC3,
+                     {
+                             .inputDataPath = ESCO_DATA_PATH_HCI,
+                             .outputDataPath = ESCO_DATA_PATH_HCI,
+                             .useControllerCodec = false,
+                     }},
+            };
+          }
         }
       }
     } else {  // Initialize and start HFP offloading
