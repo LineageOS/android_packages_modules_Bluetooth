@@ -442,6 +442,18 @@ struct CsModule {
     return results;
   }
 
+  static std::vector<LeCsResultDataStructure> GetInvalidSubeventMode2Data(CsRole role) {
+    std::vector<LeCsResultDataStructure> results;
+    uint8_t channel = 1;
+    results.emplace_back(0, channel++, GetMode0Data(role));
+    // Invalid antenna_permutation_index
+    std::vector<uint8_t> mode2_data = GetMode2Data(
+            /*num_antenna_path=*/2, /*antenna_permutation_index=*/19);
+    results.emplace_back(2, channel++, mode2_data);
+    results.emplace_back(2, channel++, mode2_data);
+    return results;
+  }
+
   static std::vector<LeCsResultDataStructure> GetSubeventContinueMode2Data() {
     std::vector<LeCsResultDataStructure> results;
     uint8_t channel = 10;
@@ -1343,6 +1355,81 @@ TEST_F(DistanceMeasurementManagerTest, complete_mode2_procedure) {
   EXPECT_CALL(
           *cs_requester_.mock_ranging_hal_,
           WriteProcedureData(params.connection_handle, CsRole::INITIATOR, _, procedure_counter));
+
+  cs_requester_.dm_manager_->HandleRemoteData(params.responder_addr, params.connection_handle,
+                                              segment_data_1);
+
+  cs_requester_.sync_client_handler();
+  cs_responder.Stop();
+}
+
+TEST_F(DistanceMeasurementManagerTest, invalid_mode2_procedure) {
+  StartMeasurementParameters params;
+  EXPECT_CALL(*cs_requester_.mock_ranging_hal_,
+              UpdateConnInterval(params.connection_handle, kConnInterval));
+  EXPECT_CALL(*cs_requester_.mock_ranging_hal_,
+              UpdateChannelSoundingConfig(params.connection_handle, _, _, _, kConnInterval));
+  EXPECT_CALL(*cs_requester_.mock_ranging_hal_,
+              UpdateProcedureEnableConfig(params.connection_handle, _));
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+  uint16_t procedure_counter = 0;
+
+  CsSubeventResultEvent req_subevent_result_1_1;
+  req_subevent_result_1_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  req_subevent_result_1_1.subevent_done_status = CsSubeventDoneStatus::PARTIAL_RESULTS;
+  req_subevent_result_1_1.result_data_structures =
+          CsModule::GetSubeventMode2Data(CsRole::INITIATOR);
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, req_subevent_result_1_1));
+  CsSubeventResultEvent req_subevent_result_1_2;
+  req_subevent_result_1_2.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  req_subevent_result_1_2.subevent_done_status = CsSubeventDoneStatus::ALL_RESULTS_COMPLETE;
+  req_subevent_result_1_2.result_data_structures = CsModule::GetSubeventContinueMode2Data();
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultContinueEvent(
+          params.connection_handle, req_subevent_result_1_2));
+
+  CsSubeventResultEvent req_subevent_result_2;
+  req_subevent_result_2.result_data_structures =
+          CsModule::GetInvalidSubeventMode2Data(CsRole::INITIATOR);
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, req_subevent_result_2));
+  cs_requester_.sync_client_handler();
+  // construct responder data
+  log::info("start responder");
+  CsModule cs_responder;
+  cs_responder.Start();
+  cs_responder.RespondTillProcedureEnableComplete(params);
+  cs_responder.dm_manager_->HandleMtuChanged(params.connection_handle, 517);
+  std::vector<uint8_t> segment_data_1;
+  EXPECT_CALL(cs_responder.mock_dm_callbacks_,
+              OnRasFragmentReady(params.requester_addr, procedure_counter, /*is_last=*/true, _))
+          .WillOnce([&segment_data_1](Address /*address*/, uint16_t /*procedure_counter*/,
+                                      bool /*is_last*/, std::vector<uint8_t> raw_data) {
+            segment_data_1 = std::move(raw_data);
+          });
+  CsSubeventResultEvent resp_subevent_result_1_1;
+  resp_subevent_result_1_1.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  resp_subevent_result_1_1.subevent_done_status = CsSubeventDoneStatus::PARTIAL_RESULTS;
+  resp_subevent_result_1_1.result_data_structures =
+          CsModule::GetSubeventMode2Data(CsRole::REFLECTOR);
+  cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, resp_subevent_result_1_1));
+  CsSubeventResultEvent resp_subevent_result_1_2;
+  resp_subevent_result_1_2.procedure_done_status = CsProcedureDoneStatus::PARTIAL_RESULTS;
+  resp_subevent_result_1_2.subevent_done_status = CsSubeventDoneStatus::ALL_RESULTS_COMPLETE;
+  resp_subevent_result_1_2.result_data_structures = CsModule::GetSubeventContinueMode2Data();
+  cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultContinueEvent(
+          params.connection_handle, resp_subevent_result_1_2));
+  CsSubeventResultEvent resp_subevent_result_2;
+  resp_subevent_result_2.result_data_structures = CsModule::GetSubeventMode2Data(CsRole::REFLECTOR);
+  cs_responder.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetSubeventResultEvent(
+          params.connection_handle, procedure_counter, resp_subevent_result_2));
+  cs_responder.sync_client_handler();
+
+  // send responder data
+  EXPECT_CALL(*cs_requester_.mock_ranging_hal_,
+              WriteProcedureData(params.connection_handle, CsRole::INITIATOR, _, procedure_counter))
+          .Times(0);
 
   cs_requester_.dm_manager_->HandleRemoteData(params.responder_addr, params.connection_handle,
                                               segment_data_1);
