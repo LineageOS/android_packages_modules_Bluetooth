@@ -140,8 +140,7 @@ public class ScanControllerTest {
                 .when(mAdapterService)
                 .getSharedPreferences(anyString(), anyInt());
 
-        TestUtils.mockGetSystemService(
-                mAdapterService, Context.LOCATION_SERVICE, LocationManager.class);
+        TestUtils.mockGetSystemService(mAdapterService, LocationManager.class);
         mockAdapterServiceGetRemoteDevice(mAdapterService, mDevice);
 
         mBtCompanionManager = new CompanionManager(mAdapterService, null);

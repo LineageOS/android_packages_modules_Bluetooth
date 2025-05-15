@@ -377,8 +377,7 @@ public class BluetoothMapContentTest {
 
     @Test
     public void setFilterInfo() {
-        mockGetSystemService(
-                mContext, Context.TELEPHONY_SERVICE, TelephonyManager.class, mTelephonyManager);
+        mockGetSystemService(mContext, TelephonyManager.class, mTelephonyManager);
         when(mTelephonyManager.getPhoneType()).thenReturn(TelephonyManager.PHONE_TYPE_GSM);
 
         mContent.setFilterInfo(mInfo);

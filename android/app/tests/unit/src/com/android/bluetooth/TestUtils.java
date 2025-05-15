@@ -62,25 +62,19 @@ import java.util.stream.IntStream;
 public class TestUtils {
     private static final String TAG = Utils.TAG_PREFIX_BLUETOOTH + TestUtils.class.getSimpleName();
 
-    private static String sSystemScreenOffTimeout = "10000";
-
     private static Context getContext() {
         return InstrumentationRegistry.getInstrumentation().getContext();
     }
 
     /** Helper function to mock getSystemService calls */
-    public static <T> void mockGetSystemService(
-            Context ctx, String serviceName, Class<T> serviceClass, T mockService) {
-        doReturn(mockService).when(ctx).getSystemService(eq(serviceClass));
-        doReturn(mockService).when(ctx).getSystemService(eq(serviceName));
-        doReturn(serviceName).when(ctx).getSystemServiceName(eq(serviceClass));
+    public static <T> void mockGetSystemService(Context context, Class<T> serviceClass, T service) {
+        doReturn(service).when(context).getSystemService(eq(serviceClass));
     }
 
     /** Helper function to mock getSystemService calls */
-    public static <T> T mockGetSystemService(
-            Context ctx, String serviceName, Class<T> serviceClass) {
+    public static <T> T mockGetSystemService(Context context, Class<T> serviceClass) {
         T mockedService = mock(serviceClass);
-        mockGetSystemService(ctx, serviceName, serviceClass, mockedService);
+        mockGetSystemService(context, serviceClass, mockedService);
         return mockedService;
     }
 
@@ -327,6 +321,8 @@ public class TestUtils {
         intent.setAction(MediaBrowserService.SERVICE_INTERFACE);
         return intent;
     }
+
+    private static String sSystemScreenOffTimeout = "10000";
 
     public static void setUpUiTest() throws Exception {
         final UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());

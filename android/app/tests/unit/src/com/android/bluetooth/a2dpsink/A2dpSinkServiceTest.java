@@ -33,7 +33,6 @@ import static org.mockito.Mockito.*;
 import android.bluetooth.BluetoothAudioConfig;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
-import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 
@@ -81,7 +80,7 @@ public class A2dpSinkServiceTest {
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
         doReturn(1).when(mAdapterService).getMaxConnectedAudioDevices();
-        TestUtils.mockGetSystemService(mAdapterService, Context.AUDIO_SERVICE, AudioManager.class);
+        TestUtils.mockGetSystemService(mAdapterService, AudioManager.class);
 
         doReturn(true).when(mDatabaseManager).setProfileConnectionPolicy(any(), anyInt(), anyInt());
 

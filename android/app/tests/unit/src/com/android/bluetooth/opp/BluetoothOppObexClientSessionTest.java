@@ -76,8 +76,8 @@ public class BluetoothOppObexClientSessionTest {
 
     @Before
     public void setUp() throws IOException {
-        mockGetSystemService(mContext, Context.NOTIFICATION_SERVICE, NotificationManager.class);
-        mockGetSystemService(mContext, Context.POWER_SERVICE, PowerManager.class, mPowerManager);
+        mockGetSystemService(mContext, NotificationManager.class);
+        mockGetSystemService(mContext, PowerManager.class, mPowerManager);
 
         mClientSession = new BluetoothOppObexClientSession(mContext, mTransport);
 

@@ -112,7 +112,7 @@ public class HearingAidService extends ProfileService {
             mStateMachinesLooper = looper;
         }
         mNativeInterface = requireNonNull(nativeInterface);
-        mAudioManager = requireNonNull(getSystemService(AudioManager.class));
+        mAudioManager = requireNonNull(mAdapterService.getSystemService(AudioManager.class));
 
         setHearingAidService(this);
         mNativeInterface.init();

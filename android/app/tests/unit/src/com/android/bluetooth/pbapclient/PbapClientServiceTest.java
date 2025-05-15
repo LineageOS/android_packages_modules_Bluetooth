@@ -156,11 +156,9 @@ public class PbapClientServiceTest {
                 .when(mAccountManager)
                 .getAccountVisibility(any(Account.class), anyString());
         doReturn(new Account[] {}).when(mAccountManager).getAccountsByType(eq(Utils.ACCOUNT_TYPE));
-        TestUtils.mockGetSystemService(
-                mAdapterService, Context.ACCOUNT_SERVICE, AccountManager.class, mAccountManager);
+        TestUtils.mockGetSystemService(mAdapterService, AccountManager.class, mAccountManager);
 
-        TestUtils.mockGetSystemService(
-                mAdapterService, Context.USER_SERVICE, UserManager.class, mUserManager);
+        TestUtils.mockGetSystemService(mAdapterService, UserManager.class, mUserManager);
 
         // new for mock storage
         doAnswer(

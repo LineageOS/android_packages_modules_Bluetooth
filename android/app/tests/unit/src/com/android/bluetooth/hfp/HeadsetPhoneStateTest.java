@@ -18,13 +18,13 @@ package com.android.bluetooth.hfp;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static org.junit.Assume.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import android.bluetooth.BluetoothDevice;
-import android.content.Context;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.telephony.PhoneStateListener;
@@ -35,7 +35,7 @@ import android.telephony.TelephonyManager;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.After;
 import org.junit.Before;
@@ -50,9 +50,11 @@ import org.mockito.Mock;
 public class HeadsetPhoneStateTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AdapterService mAdapterService;
     @Mock private HeadsetService mHeadsetService;
     @Mock private TelephonyManager mTelephonyManager;
     @Mock private SubscriptionManager mSubscriptionManager;
+
     private HeadsetPhoneState mHeadsetPhoneState;
     private HandlerThread mHandlerThread;
     private boolean testIsRunning;
@@ -67,21 +69,14 @@ public class HeadsetPhoneStateTest {
         if (Looper.myLooper() == null) {
             Looper.prepare();
         }
-        TestUtils.mockGetSystemService(
-                mHeadsetService,
-                Context.TELEPHONY_SUBSCRIPTION_SERVICE,
-                SubscriptionManager.class,
-                mSubscriptionManager);
+        mockGetSystemService(mAdapterService, SubscriptionManager.class, mSubscriptionManager);
         doReturn(mTelephonyManager).when(mTelephonyManager).createForSubscriptionId(anyInt());
-        TestUtils.mockGetSystemService(
-                mHeadsetService,
-                Context.TELEPHONY_SERVICE,
-                TelephonyManager.class,
-                mTelephonyManager);
+        mockGetSystemService(mAdapterService, TelephonyManager.class, mTelephonyManager);
+
         mHandlerThread = new HandlerThread("HeadsetStateMachineTestHandlerThread");
         mHandlerThread.start();
         when(mHeadsetService.getStateMachinesThreadLooper()).thenReturn(mHandlerThread.getLooper());
-        mHeadsetPhoneState = new HeadsetPhoneState(mHeadsetService);
+        mHeadsetPhoneState = new HeadsetPhoneState(mAdapterService, mHeadsetService);
     }
 
     @After

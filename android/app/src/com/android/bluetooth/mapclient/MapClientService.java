@@ -90,7 +90,7 @@ public class MapClientService extends ProfileService {
         }
 
         removeUncleanAccounts();
-        MapClientContent.clearAllContent(this);
+        MapClientContent.clearAllContent(mAdapterService);
         setMapClientService(this);
     }
 

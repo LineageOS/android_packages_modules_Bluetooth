@@ -69,18 +69,10 @@ import java.util.stream.Collectors;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class ProfileServiceTest {
-    private static final int NUM_REPEATS = 5;
-
-    @Spy
-    private AdapterService mAdapterService =
-            new AdapterService(InstrumentationRegistry.getInstrumentation().getContext());
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private TelephonyManager mMockTelephonyManager;
-
-    private int[] mProfiles;
 
     @Mock private A2dpSinkNativeInterface mA2dpSinkNativeInterface;
     @Mock private AvrcpNativeInterface mAvrcpNativeInterface;
@@ -91,6 +83,14 @@ public class ProfileServiceTest {
     @Mock private SdpManagerNativeInterface mSdpManagerNativeInterface;
     @Mock private HidHostNativeInterface mHidHostNativeInterface;
     @Mock private LeAudioNativeInterface mLeAudioInterface;
+
+    @Spy
+    private AdapterService mAdapterService =
+            new AdapterService(InstrumentationRegistry.getInstrumentation().getContext());
+
+    private static final int NUM_REPEATS = 5;
+
+    private int[] mProfiles;
 
     private void setProfileState(int profile, int state) {
         FutureTask task =
@@ -143,10 +143,7 @@ public class ProfileServiceTest {
         doReturn(false).when(mAdapterService).pbapPseDynamicVersionUpgradeIsEnabled();
 
         TestUtils.mockGetSystemService(
-                mAdapterService,
-                "Context.TELEPHONY_SERVICE",
-                TelephonyManager.class,
-                mMockTelephonyManager);
+                mAdapterService, TelephonyManager.class, mMockTelephonyManager);
 
         mProfiles =
                 Arrays.stream(Config.getSupportedProfiles())

@@ -80,8 +80,8 @@ public class EventTest {
         // Functions that get called when BluetoothMapContentObserver is created
         when(mockUserService.isUserUnlocked()).thenReturn(true);
         when(mockContext.getContentResolver()).thenReturn(mockResolver);
-        mockGetSystemService(mockContext, Context.TELEPHONY_SERVICE, TelephonyManager.class);
-        mockGetSystemService(mockContext, Context.USER_SERVICE, UserManager.class, mockUserService);
+        mockGetSystemService(mockContext, TelephonyManager.class);
+        mockGetSystemService(mockContext, UserManager.class, mockUserService);
         mObserver = new BluetoothMapContentObserver(mockContext, null, mockMas, null, true);
         mEvent = mObserver.new Event(TEST_EVENT_TYPE, TEST_HANDLE, TEST_FOLDER, TEST_TYPE);
     }

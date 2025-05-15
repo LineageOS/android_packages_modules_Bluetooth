@@ -217,8 +217,7 @@ public class LeAudioBroadcastServiceTest {
         MetricsLogger.setInstanceForTesting(mMetricsLogger);
 
         LeAudioBroadcasterNativeInterface.setInstance(mLeAudioBroadcasterNativeInterface);
-        mockGetSystemService(
-                mAdapterService, Context.AUDIO_SERVICE, AudioManager.class, mAudioManager);
+        mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
 
         mService = new LeAudioService(mAdapterService, mLeAudioNativeInterface);
         mService.setAvailable(true);

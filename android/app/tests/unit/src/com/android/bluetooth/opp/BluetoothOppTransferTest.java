@@ -84,7 +84,7 @@ public class BluetoothOppTransferTest {
 
     @Before
     public void setUp() throws Exception {
-        mockGetSystemService(mMockContext, Context.NOTIFICATION_SERVICE, NotificationManager.class);
+        mockGetSystemService(mMockContext, NotificationManager.class);
 
         doAnswer(
                         invocation -> {
