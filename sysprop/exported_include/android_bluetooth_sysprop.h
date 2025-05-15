@@ -26,3 +26,4 @@
 #include <hardware.sysprop.h>
 #include <hci.sysprop.h>
 #include <hfp.sysprop.h>
+#include <le_audio.sysprop.h>

@@ -45,6 +45,7 @@ apex {
         "audio_set_configurations_json",
         "audio_set_scenarios_bfbs",
         "audio_set_scenarios_json",
+        "audio_set_scenarios_test_json",
         "bt_did.conf",
         "bt_stack.conf",
         "interop_database.conf",
