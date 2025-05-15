@@ -26,6 +26,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static com.android.bluetooth.Utils.joinUninterruptibly;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.app.Activity;
 import android.app.Notification;
@@ -150,7 +151,6 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
     private final BluetoothPbapContentObserver mContactChangeObserver =
             new BluetoothPbapContentObserver();
 
-    private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final NotificationManager mNotificationManager;
     private final PbapHandler mSessionStatusHandler;
@@ -173,17 +173,16 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
     private static BluetoothPbapService sBluetoothPbapService;
 
     public BluetoothPbapService(AdapterService adapterService) {
-        this(
-                requireNonNull(adapterService),
-                adapterService.getSystemService(NotificationManager.class));
+        this(requireNonNull(adapterService), null);
     }
 
     @VisibleForTesting
     BluetoothPbapService(AdapterService adapterService, NotificationManager notificationManager) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
-        mNotificationManager = requireNonNull(notificationManager);
+        mNotificationManager =
+                requireNonNullElseGet(
+                        notificationManager, () -> obtainSystemService(NotificationManager.class));
 
         IntentFilter userFilter = new IntentFilter();
         userFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
@@ -360,7 +359,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
                         return;
                     }
                     Log.d(TAG, "Got " + action + " to userId " + userId);
-                    UserManager userManager = mAdapterService.getSystemService(UserManager.class);
+                    UserManager userManager = obtainSystemService(UserManager.class);
                     if (userManager.isUserUnlocked(UserHandle.of(userId))) {
                         sendUpdateRequest();
                     }
@@ -549,7 +548,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
                     break;
                 case MSG_ACQUIRE_WAKE_LOCK:
                     if (mWakeLock == null) {
-                        PowerManager pm = mAdapterService.getSystemService(PowerManager.class);
+                        PowerManager pm = obtainSystemService(PowerManager.class);
                         mWakeLock =
                                 pm.newWakeLock(
                                         PowerManager.PARTIAL_WAKE_LOCK,
@@ -913,7 +912,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
     }
 
     private void getLocalTelephonyDetails() {
-        TelephonyManager tm = mAdapterService.getSystemService(TelephonyManager.class);
+        TelephonyManager tm = obtainSystemService(TelephonyManager.class);
         if (tm != null) {
             sLocalPhoneNum = tm.getLine1Number();
             sLocalPhoneName = this.getString(R.string.localPhoneName);

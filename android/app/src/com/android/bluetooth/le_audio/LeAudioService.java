@@ -175,7 +175,6 @@ public class LeAudioService extends ProfileService {
     private final ArrayDeque<BluetoothLeBroadcastSettings> mCreateBroadcastQueue =
             new ArrayDeque<>();
 
-    private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final LeAudioNativeInterface mNativeInterface;
     private final HandlerThread mStateMachinesThread;
@@ -253,9 +252,8 @@ public class LeAudioService extends ProfileService {
     LeAudioService(AdapterService adapterService, LeAudioNativeInterface nativeInterface) {
         super(requireNonNull(adapterService));
         mNativeInterface = requireNonNull(nativeInterface);
-        mAdapterService = requireNonNull(adapterService);
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
-        mAudioManager = requireNonNull(mAdapterService.getSystemService(AudioManager.class));
+        mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
 
         // Start handler thread for state machines
         mStateMachinesThread = new HandlerThread("LeAudioService.StateMachines");

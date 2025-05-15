@@ -91,7 +91,6 @@ public class AvrcpTargetServiceTest {
         mLooper.startAutoDispatch();
 
         mockGetSystemService(mMockAdapterService, AudioManager.class, mMockAudioManager);
-
         mockGetSystemService(mMockAdapterService, MediaSessionManager.class, mMediaSessionManager);
 
         doReturn(mLooper.getNewExecutor()).when(mMockAdapterService).getMainExecutor();
@@ -153,8 +152,7 @@ public class AvrcpTargetServiceTest {
     @Test
     public void testServiceInstance() {
         AvrcpVolumeManager volumeManager =
-                new AvrcpVolumeManager(
-                        mMockAdapterService, mMockAudioManager, mMockNativeInterface);
+                new AvrcpVolumeManager(mMockAdapterService, mMockNativeInterface);
         AvrcpTargetService service =
                 new AvrcpTargetService(
                         mMockAdapterService,
