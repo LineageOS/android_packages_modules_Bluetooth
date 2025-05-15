@@ -2388,9 +2388,16 @@ public class GattService extends ProfileService {
         }
 
         if (requestContext == null && requestData == null) {
-            List<ContextMap.Connection> connections =
-                    mServerMap.getConnectionsByDevice(serverIf, device);
-            connId = connections.isEmpty() ? 0 : connections.get(0).connId();
+            if (Flags.gattMultiBearerTransactions()) {
+                Log.w(
+                        TAG,
+                        "sendResponse(" + callback + "): no record of request we're responding to");
+                return;
+            } else {
+                List<ContextMap.Connection> connections =
+                        mServerMap.getConnectionsByDevice(serverIf, device);
+                connId = connections.isEmpty() ? 0 : connections.get(0).connId();
+            }
         }
 
         mNativeInterface.gattServerSendResponse(
