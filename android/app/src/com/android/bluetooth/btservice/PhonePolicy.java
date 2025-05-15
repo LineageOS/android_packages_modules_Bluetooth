@@ -679,12 +679,22 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
          */
         for (BluetoothDevice dev : groupDevices) {
             if (leAudio.get().getConnectionPolicy(dev) != CONNECTION_POLICY_ALLOWED) {
-                /* Setting LeAudio service as allowed is sufficient,
-                 * because other LeAudio services e.g. VC will
-                 * be enabled by LeAudio service automatically.
-                 */
-                Log.d(TAG, log + "...." + dev);
-                leAudio.get().setConnectionPolicy(dev, CONNECTION_POLICY_ALLOWED);
+                int bondState = mAdapterService.getBondState(dev);
+                if (bondState != BluetoothDevice.BOND_BONDED) {
+                    Log.w(
+                            TAG,
+                            log
+                                    + "member"
+                                    + dev
+                                    + " not bonded, do not set LEA policy to ALLOWED.");
+                } else {
+                    /* Setting LeAudio service as allowed is sufficient,
+                     * because other LeAudio services e.g. VC will
+                     * be enabled by LeAudio service automatically.
+                     */
+                    Log.d(TAG, log + "...." + dev);
+                    leAudio.get().setConnectionPolicy(dev, CONNECTION_POLICY_ALLOWED);
+                }
             }
         }
     }
