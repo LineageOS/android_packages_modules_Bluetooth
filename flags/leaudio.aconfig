@@ -358,3 +358,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "dsa_configure_first_cis"
+    namespace: "bluetooth"
+    description: "Configure only the first CIS for DSA"
+    bug: "417561299"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
