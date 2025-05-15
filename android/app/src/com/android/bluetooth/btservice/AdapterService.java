@@ -63,6 +63,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothDevice.BluetoothAddress;
 import android.bluetooth.BluetoothFrameworkInitializer;
 import android.bluetooth.BluetoothLeAudio;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothMap;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothQualityReport;
@@ -271,6 +272,8 @@ public class AdapterService extends Service {
 
     private final Looper mLooper;
     private final AdapterServiceHandler mHandler;
+    private final SilenceDeviceManager mSilenceDeviceManager;
+    private final DatabaseManager mDatabaseManager;
 
     private boolean mIsMediaProfileConnected;
     private int mStackReportedState;
@@ -310,8 +313,6 @@ public class AdapterService extends Service {
     private Optional<PhonePolicy> mPhonePolicy = Optional.empty();
 
     private ActiveDeviceManager mActiveDeviceManager;
-    private final DatabaseManager mDatabaseManager;
-    private final SilenceDeviceManager mSilenceDeviceManager;
     private CompanionManager mBtCompanionManager;
     private AppOpsManager mAppOps;
 
@@ -643,7 +644,7 @@ public class AdapterService extends Service {
         MetricsLogger.getInstance().init(this, mRemoteDevices);
 
         clearDiscoveringPackages();
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
+        mAdapter = requireNonNull(getSystemService(BluetoothManager.class).getAdapter());
         boolean isCommonCriteriaMode =
                 requireNonNull(getSystemService(DevicePolicyManager.class))
                         .isCommonCriteriaModeEnabled(null);
@@ -2741,6 +2742,10 @@ public class AdapterService extends Service {
         return null;
     }
 
+    public BluetoothDevice getRemoteDevice(String address) {
+        return getRemoteDevice(address, BluetoothDevice.ADDRESS_TYPE_PUBLIC);
+    }
+
     public BluetoothDevice getRemoteDevice(String address, int addressType) {
         if (!BluetoothAdapter.checkBluetoothAddress(address)) {
             throw new IllegalArgumentException(address + " is not a valid Bluetooth address");
@@ -2752,19 +2757,15 @@ public class AdapterService extends Service {
         if (device == null) {
             // BluetoothAdapter.getRemoteLeDevice() is same as BluetoothAdapter.getRemoteDevice()
             // with the specific address type.
-            device = BluetoothAdapter.getDefaultAdapter().getRemoteLeDevice(address, addressType);
+            device = mAdapter.getRemoteLeDevice(address, addressType);
         }
         return device;
-    }
-
-    public BluetoothDevice getRemoteDevice(String address) {
-        return getRemoteDevice(address, BluetoothDevice.ADDRESS_TYPE_PUBLIC);
     }
 
     public BluetoothDevice getDeviceFromByte(byte[] address) {
         BluetoothDevice device = mRemoteDevices.getDevice(address);
         if (device == null) {
-            device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+            device = mAdapter.getRemoteDevice(address);
         }
         return device;
     }

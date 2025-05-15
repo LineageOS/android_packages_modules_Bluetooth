@@ -895,7 +895,7 @@ public class AdapterServiceTest {
 
     @Test
     public void testAddressConsolidation() {
-        // Create device properties
+        doEnable(false); // Need BluetoothAdapter for mAdapterService.getRemoteDevice
         RemoteDevices remoteDevices = mAdapterService.getRemoteDevices();
         remoteDevices.addDeviceProperties(Utils.getBytesFromAddress((TEST_BT_ADDR_1)));
 
@@ -913,6 +913,7 @@ public class AdapterServiceTest {
     @Test
     @EnableFlags(Flags.FLAG_IDENTITY_ADDRESS_TYPE_API)
     public void testIdentityAddressType() {
+        doEnable(false); // Need BluetoothAdapter for mAdapterService.getRemoteDevice
         RemoteDevices remoteDevices = mAdapterService.getRemoteDevices();
         remoteDevices.addDeviceProperties(Utils.getBytesFromAddress((TEST_BT_ADDR_1)));
 
@@ -943,6 +944,7 @@ public class AdapterServiceTest {
 
     @Test
     public void testIdentityAddressNullIfUnknown() {
+        doEnable(false); // Need BluetoothAdapter for mAdapterService.getRemoteDevice
         BluetoothDevice device = getTestDevice(0);
 
         assertThat(mAdapterService.getByteIdentityAddress(device)).isNull();
