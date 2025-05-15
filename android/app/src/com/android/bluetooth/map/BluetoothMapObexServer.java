@@ -103,10 +103,11 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
 
     private static final int MAS_INSTANCE_INFORMATION_LENGTH = 200;
 
+    private final Context mContext;
+
     private BluetoothMapFolderElement mCurrentFolder;
     private BluetoothMapContentObserver mObserver = null;
     private Handler mCallback = null;
-    private final Context mContext;
     private boolean mIsAborted = false;
     BluetoothMapContent mOutContent;
     private String mBaseUriString = null;
@@ -126,16 +127,16 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
     private ContentProviderClient mProviderClient = null;
 
     public BluetoothMapObexServer(
-            Handler callback,
             Context context,
+            Handler callback,
             BluetoothMapContentObserver observer,
             BluetoothMapMasInstance mas,
             BluetoothMapAccountItem account,
             boolean enableSmsMms)
             throws RemoteException {
         super();
-        mCallback = callback;
         mContext = context;
+        mCallback = callback;
         mObserver = observer;
         mEnableSmsMms = enableSmsMms;
         mAccount = account;

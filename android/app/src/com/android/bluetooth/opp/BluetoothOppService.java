@@ -504,7 +504,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
     private void startSocketListener() {
         Log.d(TAG, "start Socket Listeners");
         stopListeners();
-        mServerSocket = ObexServerSockets.createInsecure(this);
+        mServerSocket = ObexServerSockets.createInsecure(mAdapterService, this);
         acceptNewConnections();
         SdpManagerNativeInterface nativeInterface = SdpManagerNativeInterface.getInstance();
         if (!nativeInterface.isAvailable()) {

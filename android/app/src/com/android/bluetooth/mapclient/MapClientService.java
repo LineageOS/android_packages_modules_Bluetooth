@@ -76,7 +76,7 @@ public class MapClientService extends ProfileService {
         super(requireNonNull(adapterService));
         mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(adapterService.getDatabase());
-        mMnsServer = requireNonNullElseGet(mnsServer, () -> new MnsService(this));
+        mMnsServer = requireNonNullElseGet(mnsServer, () -> new MnsService(mAdapterService, this));
 
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));

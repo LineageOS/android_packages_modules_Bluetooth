@@ -32,6 +32,7 @@ import com.android.bluetooth.BluetoothObexTransport;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.IObexConnectionHandler;
 import com.android.bluetooth.ObexServerSockets;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.map.BluetoothMapContentObserver.Msg;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
@@ -69,6 +70,7 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
     static final int SDP_MAP_MAS_FEATURES_1_3 = 0x000603FF;
     static final int SDP_MAP_MAS_FEATURES_1_4 = 0x000603FF;
 
+    private final AdapterService mAdapterService;
     private final BluetoothAdapter mAdapter;
 
     private ServerSession mServerSession = null;
@@ -84,7 +86,6 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
 
     private Handler mServiceHandler = null; // MAP service message handler
     private BluetoothMapService mMapService = null; // Handle to the outer MAP service
-    private Context mContext = null; // MAP service context
     private BluetoothMnsObexClient mMnsClient = null; // Shared MAP MNS client
     private BluetoothMapAccountItem mAccount = null; //
     private String mBaseUri = null; // Client base URI for this instance
@@ -114,15 +115,16 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
 
     /** Create a e-mail MAS instance */
     BluetoothMapMasInstance(
+            AdapterService adapterService,
             BluetoothMapService mapService,
             BluetoothMapAccountItem account,
             int masId,
             boolean enableSmsMms) {
+        mAdapterService = adapterService;
         mObjectInstanceId = sInstanceCounter++;
         mMapService = mapService;
         mServiceHandler = mapService.getHandler();
-        mContext = mapService;
-        mAdapter = mContext.getSystemService(BluetoothManager.class).getAdapter();
+        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mAccount = account;
         if (account != null) {
             mBaseUri = account.mBase_uri;
@@ -276,8 +278,7 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
         if (mServerSockets != null) {
             mAcceptNewConnections = true;
         } else {
-
-            mServerSockets = ObexServerSockets.create(this);
+            mServerSockets = ObexServerSockets.create(mAdapterService, this);
             mAcceptNewConnections = true;
 
             if (mServerSockets == null) {
@@ -387,11 +388,16 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
             mMnsClient = mnsClient;
             mObserver =
                     new BluetoothMapContentObserver(
-                            mContext, mMnsClient, this, mAccount, mEnableSmsMms);
+                            mAdapterService, mMnsClient, this, mAccount, mEnableSmsMms);
             mObserver.init();
             mMapServer =
                     new BluetoothMapObexServer(
-                            mServiceHandler, mContext, mObserver, this, mAccount, mEnableSmsMms);
+                            mAdapterService,
+                            mServiceHandler,
+                            mObserver,
+                            this,
+                            mAccount,
+                            mEnableSmsMms);
             mMapServer.setRemoteFeatureMask(mRemoteFeatureMask);
             // setup transport
             BluetoothObexTransport transport = new BluetoothObexTransport(mConnSocket);
