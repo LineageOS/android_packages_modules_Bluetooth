@@ -445,6 +445,7 @@ cc_test {
         "hci/remote_name_request_impl_test.cc",
         "hci/uuid_unittest.cc",
         "os/handler_unittest.cc",
+        "os/parameter_provider_test.cc",
         "os/system_properties_common_test.cc",
         "storage/classic_device_test.cc",
         "storage/config_cache_helper_test.cc",
