@@ -30,6 +30,7 @@
 
 #include "common/strings.h"
 #include "hal/hci_hal.h"
+#include "hal/ranging_hal_impl.h"
 #include "hal/snoop_logger.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager_impl.h"
@@ -67,6 +68,7 @@ struct Stack::impl {
   Acl* acl_ = nullptr;
   std::shared_ptr<storage::StorageModule> storage_ = nullptr;
   std::shared_ptr<hal::SnoopLogger> snoop_logger_ = nullptr;
+  std::unique_ptr<hal::RangingHal> ranging_hal_ = nullptr;
   std::unique_ptr<hci::HciLayer> hci_layer_ = nullptr;
   std::unique_ptr<hci::Controller> controller_ = nullptr;
   std::unique_ptr<hci::acl_manager::AclScheduler> acl_scheduler_ = nullptr;
@@ -111,7 +113,6 @@ void Stack::StartEverything() {
     }
 #endif
     modules.add<hal::HciHal>();
-    modules.add<hal::RangingHal>();
 
     management_thread_ = new Thread("management_thread", Thread::Priority::NORMAL);
     management_handler_ = new Handler(management_thread_);
@@ -303,7 +304,9 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
   registry_.Start(modules, stack_thread_, stack_handler_);
 
   auto hci_hal = static_cast<hal::HciHal*>(registry_.Get(&hal::HciHal::Factory));
-  auto ranging_hal = static_cast<hal::RangingHal*>(registry_.Get(&hal::RangingHal::Factory));
+
+  log::info("Starting RangingHal");
+  pimpl_->ranging_hal_ = std::make_unique<hal::RangingHalImpl>();
 
   log::info("Starting HciLayer");
   pimpl_->hci_layer_ = std::make_unique<hci::HciLayer>(stack_handler_, hci_hal);
@@ -341,7 +344,7 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
   log::info("Starting DistanceMeasurementManagerImpl");
   pimpl_->distance_measurement_manager_ = std::make_unique<hci::DistanceMeasurementManagerImpl>(
           stack_handler_, pimpl_->hci_layer_.get(), pimpl_->controller_.get(),
-          pimpl_->acl_manager_.get(), ranging_hal);
+          pimpl_->acl_manager_.get(), pimpl_->ranging_hal_.get());
 
   promise.set_value();
 }
@@ -373,6 +376,9 @@ void Stack::handle_shut_down(std::promise<void> promise) {
 
   log::info("Stopping HCI");
   pimpl_->hci_layer_.reset();
+
+  log::info("Stopping RangingHal");
+  pimpl_->ranging_hal_.reset();
 
   registry_.StopAll();
 

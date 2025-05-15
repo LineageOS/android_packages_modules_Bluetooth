@@ -182,9 +182,9 @@ struct StartMeasurementParameters {
 struct CsModule {
   TestModuleRegistry fake_registry_;
   std::unique_ptr<HciLayerFake> test_hci_layer_ = nullptr;
-  testing::MockController* mock_controller_ = nullptr;
-  testing::MockAclManager* mock_acl_manager_ = nullptr;
-  hal::testing::MockRangingHal* mock_ranging_hal_ = nullptr;
+  std::unique_ptr<testing::MockController> mock_controller_ = nullptr;
+  std::unique_ptr<testing::MockAclManager> mock_acl_manager_ = nullptr;
+  std::unique_ptr<hal::testing::MockRangingHal> mock_ranging_hal_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
   os::Handler* client_handler_ = nullptr;
   os::Handler* handler_ = nullptr;
@@ -196,25 +196,22 @@ struct CsModule {
   bool remote_capabilities_complete_done_ = false;
 
   void Start() {
-    mock_controller_ = new testing::MockController;        // Ownership is transferred to registry
-    mock_ranging_hal_ = new hal::testing::MockRangingHal;  // Ownership is transferred to registry
-    mock_acl_manager_ = new testing::MockAclManager;       // Ownership is transferred to registry
-    fake_registry_.InjectTestModule(&hal::RangingHal::Factory, mock_ranging_hal_);
-
-    client_handler_ = fake_registry_.GetTestModuleHandler(&hal::RangingHal::Factory);
+    client_handler_ = fake_registry_.GetTestHandler();
     ASSERT_NE(client_handler_, nullptr);
+
+    mock_controller_ = std::make_unique<testing::MockController>();
+    mock_ranging_hal_ = std::make_unique<hal::testing::MockRangingHal>();
+    mock_acl_manager_ = std::make_unique<testing::MockAclManager>();
 
     EXPECT_CALL(*mock_controller_, SupportsBleChannelSounding()).WillOnce(Return(true));
     EXPECT_CALL(*mock_ranging_hal_, IsBound()).Times(AtLeast(1)).WillRepeatedly(Return(true));
     EXPECT_CALL(*mock_ranging_hal_, GetRangingHalVersion).WillRepeatedly(Return(hal::V_2));
 
-    fake_registry_.Start<hal::RangingHal>(&thread_, handler_);
-
     handler_ = fake_registry_.GetTestHandler();
     test_hci_layer_ = std::make_unique<HciLayerFake>(handler_);
-    dm_manager_ =
-            new DistanceMeasurementManagerImpl(handler_, test_hci_layer_.get(), mock_controller_,
-                                               mock_acl_manager_, mock_ranging_hal_);
+    dm_manager_ = new DistanceMeasurementManagerImpl(
+            handler_, test_hci_layer_.get(), mock_controller_.get(), mock_acl_manager_.get(),
+            mock_ranging_hal_.get());
 
     test_hci_layer_->GetCommand(OpCode::LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES);
 

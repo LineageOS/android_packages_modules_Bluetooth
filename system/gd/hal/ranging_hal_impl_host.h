@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-// AIDL uses syslog.h, so these defines conflict with log/log.h
-#undef LOG_DEBUG
-#undef LOG_INFO
-#undef LOG_WARNING
+#pragma once
 
 #include "ranging_hal.h"
 
-namespace bluetooth {
-namespace hal {
-
-class RangingHalHost : public RangingHal {
+namespace bluetooth::hal {
+class RangingHalImpl : public RangingHal {
 public:
   bool IsBound() override { return false; }
-  RangingHalVersion GetRangingHalVersion() { return V_UNKNOWN; }
+  RangingHalVersion GetRangingHalVersion() override { return V_UNKNOWN; }
   void RegisterCallback(RangingHalCallback* /* callback */) override {}
   std::vector<VendorSpecificCharacteristic> GetVendorSpecificCharacteristics() override {
     std::vector<VendorSpecificCharacteristic> vendor_specific_characteristics = {};
@@ -63,19 +58,6 @@ public:
   void UpdateConnInterval(uint16_t /* connection_handle */, uint16_t /* conn_interval */) override {
   }
 
-  bool IsAbortedProcedureRequired(uint16_t /*connection_handle*/) { return false; }
-
-protected:
-  void ListDependencies(ModuleList* /*list*/) const {}
-
-  void Start() override {}
-
-  void Stop() override {}
-
-  std::string ToString() const override { return std::string("RangingHalHost"); }
+  bool IsAbortedProcedureRequired(uint16_t /*connection_handle*/) override { return false; }
 };
-
-const ModuleFactory RangingHal::Factory = ModuleFactory([]() { return new RangingHalHost(); });
-
-}  // namespace hal
-}  // namespace bluetooth
+}  // namespace bluetooth::hal
