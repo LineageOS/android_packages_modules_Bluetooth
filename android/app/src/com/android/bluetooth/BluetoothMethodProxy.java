@@ -157,13 +157,6 @@ public class BluetoothMethodProxy {
         return adapter.isEnabled();
     }
 
-    /**
-     * Proxies {@link BluetoothAdapter#getRemoteLeDevice(String, int)} on default Bluetooth Adapter.
-     */
-    public BluetoothDevice getDefaultAdapterRemoteLeDevice(String address, int addressType) {
-        return BluetoothAdapter.getDefaultAdapter().getRemoteLeDevice(address, addressType);
-    }
-
     /** Proxies {@link ContentResolver#openFileDescriptor(Uri, String)}. */
     public ParcelFileDescriptor contentResolverOpenFileDescriptor(
             ContentResolver contentResolver, final Uri uri, final String mode)

@@ -23,7 +23,6 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.BluetoothAdapterProxy;
 
 /** Factory class for object initialization to help with unit testing */
 public class ScanObjectsFactory {
@@ -70,17 +69,12 @@ public class ScanObjectsFactory {
      *
      * @param service an AdapterService instance
      * @param controller a ScanController instance
-     * @param bluetoothAdapterProxy a bluetoothAdapterProxy instance
      * @param looper the looper to be used for processing messages
      * @return the created ScanManager instance
      */
     public ScanManager createScanManager(
-            AdapterService service,
-            ScanController controller,
-            BluetoothAdapterProxy bluetoothAdapterProxy,
-            Looper looper) {
-        return new ScanManager(
-                service, controller, bluetoothAdapterProxy, looper, getSystemClock());
+            AdapterService service, ScanController controller, Looper looper) {
+        return new ScanManager(service, controller, looper, getSystemClock());
     }
 
     /**

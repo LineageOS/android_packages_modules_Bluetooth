@@ -26,7 +26,9 @@ import static android.bluetooth.le.ScanSettings.getScanModeString;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
@@ -54,7 +56,6 @@ import androidx.annotation.Nullable;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.Utils.TimeProvider;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.BluetoothAdapterProxy;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.util.SystemProperties;
 import com.android.internal.annotations.GuardedBy;
@@ -179,8 +180,9 @@ public class ScanManager {
     private final MsftAdvMonitorMergedPatternList mMsftAdvMonitorMergedPatternList =
             new MsftAdvMonitorMergedPatternList();
 
-    private final ScanController mScanController;
     private final AdapterService mAdapterService;
+    private final BluetoothAdapter mAdapter;
+    private final ScanController mScanController;
     private final TimeProvider mTimeProvider;
     private final ScanNativeInterface mNativeInterface;
     private final AlarmManager mAlarmManager;
@@ -188,7 +190,6 @@ public class ScanManager {
     private final DisplayManager mDisplayManager;
     private final ActivityManager mActivityManager;
     private final LocationManager mLocationManager;
-    private final BluetoothAdapterProxy mBluetoothAdapterProxy;
     private final BatchScanThrottler mBatchScanThrottler;
     // Whether or not MSFT-based scanning hardware offload is available on this device
     private final boolean mIsMsftSupported;
@@ -216,11 +217,11 @@ public class ScanManager {
     ScanManager(
             AdapterService adapterService,
             ScanController scanController,
-            BluetoothAdapterProxy bluetoothAdapterProxy,
             Looper looper,
             TimeProvider timeProvider) {
-        mScanController = scanController;
         mAdapterService = adapterService;
+        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
+        mScanController = scanController;
         mTimeProvider = timeProvider;
         mNativeInterface = ScanObjectsFactory.getInstance().getScanNativeInterface();
         mNativeInterface.init(scanController);
@@ -258,7 +259,6 @@ public class ScanManager {
         mDisplayManager = mAdapterService.getSystemService(DisplayManager.class);
         mActivityManager = mAdapterService.getSystemService(ActivityManager.class);
         mLocationManager = mAdapterService.getSystemService(LocationManager.class);
-        mBluetoothAdapterProxy = bluetoothAdapterProxy;
         mIsConnecting = false;
         mPriorityMap.put(ScanSettings.SCAN_MODE_OPPORTUNISTIC, 0);
         mPriorityMap.put(ScanSettings.SCAN_MODE_SCREEN_OFF, 1);
@@ -394,11 +394,7 @@ public class ScanManager {
     }
 
     private boolean isFilteringSupported() {
-        if (mBluetoothAdapterProxy == null) {
-            Log.e(TAG, "mBluetoothAdapterProxy is null");
-            return false;
-        }
-        return mBluetoothAdapterProxy.isOffloadedScanFilteringSupported();
+        return mAdapter.isOffloadedFilteringSupported();
     }
 
     boolean isAutoBatchScanClientEnabled(ScanClient client) {
