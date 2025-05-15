@@ -3835,6 +3835,11 @@ public:
       return;
     }
 
+    /* Send the initial codec info to the BT Audio HAL before it even resumes and CISes are created
+     * Note: This will allow the BT Audio HAL to prepare to the appriopriate coding offloading.
+     */
+    CodecManager::GetInstance()->UpdateSelectedCodecConfig(*audio_set_conf);
+
     bluetooth::le_audio::btle_audio_codec_config_t input_config{};
     bluetooth::le_audio::utils::fillStreamParamsToBtLeAudioCodecConfig(audio_set_conf->confs.source,
                                                                        input_config);
