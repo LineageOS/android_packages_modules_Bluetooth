@@ -137,11 +137,12 @@ struct le_acl_connection {
 
 struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
   le_impl(HciInterface* hci_layer, Controller* controller, os::Handler* handler,
-          RoundRobinScheduler* round_robin_scheduler, bool crash_on_unknown_handle,
-          classic_impl* classic_impl)
+          RoundRobinScheduler* round_robin_scheduler, storage::StorageModule* storage_module,
+          bool crash_on_unknown_handle, classic_impl* classic_impl)
       : hci_layer_(hci_layer),
         controller_(controller),
-        round_robin_scheduler_(round_robin_scheduler) {
+        round_robin_scheduler_(round_robin_scheduler),
+        storage_module_(storage_module) {
     hci_layer_ = hci_layer;
     controller_ = controller;
     handler_ = handler;
@@ -999,15 +1000,14 @@ public:
     if (accept_list.empty()) {
       return false;
     }
-    storage::StorageModule* storage_module = shim::GetStorage();
-    if (storage_module == nullptr) {
+    if (storage_module_ == nullptr) {
       log::warn("storage module is null");
       return false;
     }
     // If found ASCS/BASS UUID in database cache, it is a lea device and reconnection scenario
     for (auto it = accept_list.begin(); it != accept_list.end(); ++it) {
       std::optional<std::vector<hci::Uuid>> uuids =
-              storage_module->GetDeviceByLegacyKey(it->GetAddress()).GetServiceUuidsLe();
+              storage_module_->GetDeviceByLegacyKey(it->GetAddress()).GetServiceUuidsLe();
       if (!uuids.has_value() ||
           std::find_if(uuids->begin(), uuids->end(), [](const hci::Uuid& uuid) {
             return (uuid == UUID_ASCS) || (uuid == UUID_BASS);
@@ -1332,6 +1332,7 @@ public:
   Controller* controller_ = nullptr;
   os::Handler* handler_ = nullptr;
   RoundRobinScheduler* round_robin_scheduler_ = nullptr;
+  storage::StorageModule* storage_module_ = nullptr;
   LeAddressManager* le_address_manager_ = nullptr;
   LeAclConnectionInterface* le_acl_connection_interface_ = nullptr;
   classic_impl* classic_impl_ = nullptr;

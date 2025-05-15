@@ -157,9 +157,9 @@ protected:
     test_controller_ = std::make_unique<TestController>();
     test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
     test_rnr_ = std::make_unique<RemoteNameRequestModuleMock>();
-    acl_manager_ = std::make_unique<AclManagerImpl>(client_handler_, test_hci_layer_.get(),
-                                                    test_controller_.get(),
-                                                    test_acl_scheduler_.get(), test_rnr_.get());
+    acl_manager_ = std::make_unique<AclManagerImpl>(
+            client_handler_, test_hci_layer_.get(), test_controller_.get(),
+            test_acl_scheduler_.get(), test_rnr_.get(), bluetooth::hci::testing::mock_storage_);
   }
 
   void TearDown() override {
@@ -457,7 +457,8 @@ protected:
     test_controller_ = std::make_unique<TestController>();
     acl_manager_ = std::make_unique<AclManagerImpl>(
             client_handler_, test_hci_layer_.get(), test_controller_.get(),
-            nullptr /* AclScheduler */, nullptr /* RNRModule */);
+            nullptr /* AclScheduler */, nullptr /* RNRModule */,
+            bluetooth::hci::testing::mock_storage_);
 
     hci::Address address;
     Address::FromString("D0:05:04:03:02:01", address);

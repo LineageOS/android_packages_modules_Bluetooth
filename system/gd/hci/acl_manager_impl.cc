@@ -56,13 +56,15 @@ constexpr std::chrono::seconds kWaitBeforeDroppingUnknownAcl{1};
 
 AclManagerImpl::AclManagerImpl(os::Handler* handler, HciInterface* hci, Controller* controller,
                                AclScheduler* acl_scheduler,
-                               RemoteNameRequestModule* remote_name_request_module)
+                               RemoteNameRequestModule* remote_name_request_module,
+                               storage::StorageModule* storage_module)
     : handler_(handler),
+      storage_module_(storage_module),
       round_robin_scheduler_(handler_, controller, hci->GetAclQueueEnd()),
       classic_impl_(hci, controller, handler_, &round_robin_scheduler_, crash_on_unknown_handle,
                     acl_scheduler, remote_name_request_module),
-      le_impl_(hci, controller, handler_, &round_robin_scheduler_, crash_on_unknown_handle,
-               &classic_impl_) {
+      le_impl_(hci, controller, handler_, &round_robin_scheduler_, storage_module,
+               crash_on_unknown_handle, &classic_impl_) {
   hci_queue_end_ = hci->GetAclQueueEnd();
   hci_queue_end_->RegisterDequeue(
           handler_, common::Bind(&AclManagerImpl::dequeue_and_route_acl_packet_to_connection,
@@ -185,8 +187,8 @@ void AclManagerImpl::SetPrivacyPolicyForInitiatorAddress(
         std::chrono::milliseconds minimum_rotation_time,
         std::chrono::milliseconds maximum_rotation_time) {
   Octet16 rotation_irk{};
-  auto irk_prop = shim::GetStorage()->GetProperty(BTIF_STORAGE_SECTION_ADAPTER,
-                                                  BTIF_STORAGE_KEY_LE_LOCAL_KEY_IRK);
+  auto irk_prop = storage_module_->GetProperty(BTIF_STORAGE_SECTION_ADAPTER,
+                                               BTIF_STORAGE_KEY_LE_LOCAL_KEY_IRK);
   if (irk_prop.has_value()) {
     auto irk = common::ByteArray<16>::FromString(irk_prop.value());
     if (irk.has_value()) {

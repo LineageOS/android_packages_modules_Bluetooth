@@ -50,7 +50,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   std::unique_ptr<FuzzHciLayer> fuzzHci = std::make_unique<FuzzHciLayer>(&client_handler_);
   fuzzHci->TurnOnAutoReply(&dataProvider);
   std::unique_ptr<AclManagerImpl> acl_manager = std::make_unique<AclManagerImpl>(
-          &client_handler_, fuzzHci.get(), nullptr, nullptr, nullptr);
+          &client_handler_, fuzzHci.get(), nullptr, nullptr, nullptr, nullptr);
   fuzzHci->TurnOffAutoReply();
   uint64_t totalAdvanceTime = 0;
 
