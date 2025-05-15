@@ -1880,17 +1880,23 @@ public class GattService extends ProfileService {
             return;
         }
 
-        mHandleMap.addRequest(connId, transId, handle);
+        int requestId = transId;
+        if (Flags.gattMultiBearerTransactions()) {
+            requestId = mHandleMap.addRequestContext(entry.mServerIf, connId, transId, handle);
+        } else {
+            mHandleMap.addRequest(connId, transId, handle);
+        }
 
         ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getById(entry.mServerIf);
         if (app == null) {
             return;
         }
 
+        final int requestIdFinal = requestId;
         callbackToApp(
                 () ->
                         app.callback.onCharacteristicReadRequest(
-                                device, transId, offset, isLong, handle));
+                                device, requestIdFinal, offset, isLong, handle));
     }
 
     void onServerReadDescriptorFromNative(
@@ -1914,17 +1920,23 @@ public class GattService extends ProfileService {
             return;
         }
 
-        mHandleMap.addRequest(connId, transId, handle);
+        int requestId = transId;
+        if (Flags.gattMultiBearerTransactions()) {
+            requestId = mHandleMap.addRequestContext(entry.mServerIf, connId, transId, handle);
+        } else {
+            mHandleMap.addRequest(connId, transId, handle);
+        }
 
         ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getById(entry.mServerIf);
         if (app == null) {
             return;
         }
 
+        final int requestIdFinal = requestId;
         callbackToApp(
                 () ->
                         app.callback.onDescriptorReadRequest(
-                                device, transId, offset, isLong, handle));
+                                device, requestIdFinal, offset, isLong, handle));
     }
 
     void onServerWriteCharacteristicFromNative(
@@ -1952,17 +1964,30 @@ public class GattService extends ProfileService {
             return;
         }
 
-        mHandleMap.addRequest(connId, transId, handle);
+        int requestId = transId;
+        if (Flags.gattMultiBearerTransactions()) {
+            requestId = mHandleMap.addRequestContext(entry.mServerIf, connId, transId, handle);
+        } else {
+            mHandleMap.addRequest(connId, transId, handle);
+        }
 
         ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getById(entry.mServerIf);
         if (app == null) {
             return;
         }
 
+        final int requestIdFinal = requestId;
         callbackToApp(
                 () ->
                         app.callback.onCharacteristicWriteRequest(
-                                device, transId, offset, length, isPrep, needRsp, handle, data));
+                                device,
+                                requestIdFinal,
+                                offset,
+                                length,
+                                isPrep,
+                                needRsp,
+                                handle,
+                                data));
     }
 
     void onServerWriteDescriptorFromNative(
@@ -1990,17 +2015,30 @@ public class GattService extends ProfileService {
             return;
         }
 
-        mHandleMap.addRequest(connId, transId, handle);
+        int requestId = transId;
+        if (Flags.gattMultiBearerTransactions()) {
+            requestId = mHandleMap.addRequestContext(entry.mServerIf, connId, transId, handle);
+        } else {
+            mHandleMap.addRequest(connId, transId, handle);
+        }
 
         ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getById(entry.mServerIf);
         if (app == null) {
             return;
         }
 
+        final int requestIdFinal = requestId;
         callbackToApp(
                 () ->
                         app.callback.onDescriptorWriteRequest(
-                                device, transId, offset, length, isPrep, needRsp, handle, data));
+                                device,
+                                requestIdFinal,
+                                offset,
+                                length,
+                                isPrep,
+                                needRsp,
+                                handle,
+                                data));
     }
 
     void onExecuteWriteFromNative(BluetoothDevice device, int connId, int transId, int execWrite) {
@@ -2328,20 +2366,41 @@ public class GattService extends ProfileService {
 
         int handle = 0;
         int connId = 0;
+        int transId = -1;
 
-        HandleMap.RequestData requestData = mHandleMap.getRequestDataByRequestId(requestId);
-        if (requestData != null) {
-            handle = requestData.handle();
-            connId = requestData.connId();
+        HandleMap.RequestContext requestContext = null;
+        HandleMap.RequestData requestData = null;
+
+        if (Flags.gattMultiBearerTransactions()) {
+            requestContext = mHandleMap.getRequestContext(serverIf, requestId);
+            if (requestContext != null) {
+                connId = requestContext.connId();
+                transId = requestContext.transactionId();
+                handle = requestContext.handle();
+            }
         } else {
+            transId = requestId;
+            requestData = mHandleMap.getRequestDataByRequestId(requestId);
+            if (requestData != null) {
+                handle = requestData.handle();
+                connId = requestData.connId();
+            }
+        }
+
+        if (requestContext == null && requestData == null) {
             List<ContextMap.Connection> connections =
                     mServerMap.getConnectionsByDevice(serverIf, device);
             connId = connections.isEmpty() ? 0 : connections.get(0).connId();
         }
 
         mNativeInterface.gattServerSendResponse(
-                serverIf, connId, requestId, (byte) status, handle, offset, value, (byte) 0);
-        mHandleMap.deleteRequest(requestId);
+                serverIf, connId, transId, (byte) status, handle, offset, value, (byte) 0);
+
+        if (Flags.gattMultiBearerTransactions()) {
+            mHandleMap.deleteRequestContext(serverIf, requestId);
+        } else {
+            mHandleMap.deleteRequest(requestId);
+        }
     }
 
     int sendNotification(
