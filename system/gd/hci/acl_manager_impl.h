@@ -21,8 +21,11 @@
 
 #include "hci/acl_manager.h"
 #include "hci/acl_manager/acl_scheduler.h"
+#include "hci/acl_manager/classic_impl.h"
 #include "hci/acl_manager/connection_callbacks.h"
 #include "hci/acl_manager/le_connection_callbacks.h"
+#include "hci/acl_manager/le_impl.h"
+#include "hci/acl_manager/round_robin_scheduler.h"
 #include "hci/address.h"
 #include "hci/address_with_type.h"
 #include "hci/controller.h"
@@ -136,8 +139,25 @@ private:
 
   void HACK_SetAclTxPriority(uint8_t handle, bool high_priority);
 
-  struct impl;
-  std::unique_ptr<impl> pimpl_;
+  template <typename OutputT>
+  void dump(OutputT&& out) const;
+
+  void retry_unknown_acl(bool timed_out);
+  void on_unknown_acl_timer();
+  void dequeue_and_route_acl_packet_to_connection();
+
+  os::Handler* handler_ = nullptr;
+
+  acl_manager::RoundRobinScheduler round_robin_scheduler_;
+
+  std::unique_ptr<os::Alarm> unknown_acl_alarm_;
+  std::vector<AclView> waiting_packets_;
+
+  acl_manager::classic_impl classic_impl_;
+  acl_manager::le_impl le_impl_;
+
+  common::BidiQueueEnd<AclBuilder, AclView>* hci_queue_end_ = nullptr;
+  uint16_t default_link_policy_settings_ = 0xffff;
 };
 
 }  // namespace hci
