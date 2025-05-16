@@ -20,7 +20,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
+import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -59,7 +59,7 @@ public class HearingAidNativeInterfaceTest {
 
     @Before
     public void setUp() throws Exception {
-        mockAdapterServiceGetRemoteDevice(mAdapterService, mDevice);
+        mockGetRemoteDevice(mAdapterService, mDevice);
         when(mService.isAvailable()).thenReturn(true);
         HearingAidService.setHearingAidService(mService);
         mNativeInterface = HearingAidNativeInterface.getInstance(mAdapterService);

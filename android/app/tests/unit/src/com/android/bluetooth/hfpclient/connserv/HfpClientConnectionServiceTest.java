@@ -22,7 +22,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getRealDevice;
-import static com.android.bluetooth.TestUtils.mockContextGetBluetoothManager;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -118,7 +118,7 @@ public class HfpClientConnectionServiceTest {
                 mHfpClientConnectionService, TelecomManager.class, mMockTelecomManager);
         doReturn(getPhoneAccount(mDevice)).when(mMockTelecomManager).getPhoneAccount(any());
 
-        mockContextGetBluetoothManager(mHfpClientConnectionService);
+        mockGetBluetoothManager(mHfpClientConnectionService);
     }
 
     private void createService() {

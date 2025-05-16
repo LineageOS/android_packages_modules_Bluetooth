@@ -20,8 +20,8 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
-import static com.android.bluetooth.TestUtils.mockContextGetBluetoothManager;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
+import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -160,7 +160,7 @@ public class GattServiceTest {
         doReturn(mResources).when(mAdapterService).getResources();
         doReturn(mMockContentResolver).when(mAdapterService).getContentResolver();
 
-        mockContextGetBluetoothManager(mAdapterService);
+        mockGetBluetoothManager(mAdapterService);
         mockGetSystemService(mAdapterService, LocationManager.class);
         mockGetSystemService(mAdapterService, ActivityManager.class);
         mockGetSystemService(
@@ -176,7 +176,7 @@ public class GattServiceTest {
         mService.mReliableQueue = mReliableQueue;
         mService.mServerMap = mServerMap;
 
-        mockAdapterServiceGetRemoteDevice(mAdapterService, mDevice);
+        mockGetRemoteDevice(mAdapterService, mDevice);
     }
 
     @After
