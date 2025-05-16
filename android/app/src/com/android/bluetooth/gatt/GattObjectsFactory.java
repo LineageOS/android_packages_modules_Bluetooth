@@ -58,10 +58,6 @@ public class GattObjectsFactory {
         }
     }
 
-    public GattNativeInterface getNativeInterface() {
-        return GattNativeInterface.getInstance();
-    }
-
     public DistanceMeasurementManager createDistanceMeasurementManager(
             AdapterService adapterService, Looper looper) {
         return new DistanceMeasurementManager(adapterService, looper);

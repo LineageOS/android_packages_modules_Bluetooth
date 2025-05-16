@@ -137,6 +137,7 @@ import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.btservice.storage.MetadataDatabase;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.gatt.GattNativeInterface;
 import com.android.bluetooth.gatt.GattService;
 import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.hearingaid.HearingAidService;
@@ -283,6 +284,7 @@ public class AdapterService extends Service {
     private final Looper mLooper;
     private final AdapterServiceHandler mHandler;
     private final AdapterNativeInterface mNativeInterface;
+    private final GattNativeInterface mGattNativeInterface;
     private final SilenceDeviceManager mSilenceDeviceManager;
     private final DatabaseManager mDatabaseManager;
     private final ServiceFactory mServiceFactory;
@@ -388,24 +390,35 @@ public class AdapterService extends Service {
 
     // Keep a constructor for ActivityThread.handleCreateService
     AdapterService() {
-        this(Looper.getMainLooper(), new AdapterNativeInterface());
+        this(Looper.getMainLooper(), new AdapterNativeInterface(), null);
     }
 
     @VisibleForTesting
-    public AdapterService(Context ctx, AdapterNativeInterface nativeInterface) {
-        this(Looper.getMainLooper(), ctx, nativeInterface);
+    public AdapterService(
+            Context ctx,
+            AdapterNativeInterface nativeInterface,
+            GattNativeInterface gattNativeInterface) {
+        this(Looper.getMainLooper(), ctx, nativeInterface, gattNativeInterface);
     }
 
     @VisibleForTesting
-    AdapterService(Looper looper, Context ctx, AdapterNativeInterface nativeInterface) {
-        this(looper, nativeInterface);
+    AdapterService(
+            Looper looper,
+            Context ctx,
+            AdapterNativeInterface nativeInterface,
+            GattNativeInterface gattNativeInterface) {
+        this(looper, nativeInterface, gattNativeInterface);
         attachBaseContext(ctx);
     }
 
-    private AdapterService(Looper looper, AdapterNativeInterface nativeInterface) {
+    private AdapterService(
+            Looper looper,
+            AdapterNativeInterface nativeInterface,
+            GattNativeInterface gattNativeInterface) {
         mLooper = requireNonNull(looper);
         mHandler = new AdapterServiceHandler(mLooper);
         mNativeInterface = requireNonNull(nativeInterface);
+        mGattNativeInterface = gattNativeInterface;
         mServiceFactory = new ServiceFactory();
         mSilenceDeviceManager = new SilenceDeviceManager(this, mServiceFactory, mLooper);
         mDatabaseManager = new DatabaseManager(this);
@@ -1152,7 +1165,7 @@ public class AdapterService extends Service {
 
     private void startGattProfileService() {
         Log.i(TAG, "startGattProfileService() called");
-        mGattService = new GattService(this);
+        mGattService = new GattService(this, mGattNativeInterface);
 
         mStartedProfiles.put(BluetoothProfile.GATT, mGattService);
         addProfile(mGattService);

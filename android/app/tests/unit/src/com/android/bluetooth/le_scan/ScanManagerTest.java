@@ -100,7 +100,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.gatt.GattNativeInterface;
 import com.android.bluetooth.gatt.GattObjectsFactory;
 
 import com.google.testing.junit.testparameterinjector.TestParameter;
@@ -138,7 +137,6 @@ public class ScanManagerTest {
     @Mock private AdapterService mAdapterService;
     @Mock private BluetoothManager mBluetoothManager;
     @Mock private BluetoothAdapter mAdapter;
-    @Mock private GattNativeInterface mNativeInterface;
     @Mock private LocationManager mLocationManager;
     @Mock private MetricsLogger mMetricsLogger;
     @Mock private ScanNativeInterface mScanNativeInterface;
@@ -223,7 +221,6 @@ public class ScanManagerTest {
         doReturn(true).when(mAdapter).isOffloadedFilteringSupported();
 
         GattObjectsFactory.setInstanceForTesting(mGattObjectsFactory);
-        doReturn(mNativeInterface).when(mGattObjectsFactory).getNativeInterface();
         // Mock JNI callback in ScanNativeInterface
         doReturn(true).when(mScanNativeInterface).waitForCallback(anyInt());
 

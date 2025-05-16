@@ -61,7 +61,6 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.gatt.GattNativeInterface;
 import com.android.bluetooth.gatt.GattObjectsFactory;
 
 import com.google.protobuf.ByteString;
@@ -94,7 +93,6 @@ public class ScanControllerTest {
     @Mock private AttributionSource mAttributionSource;
     @Mock private GattObjectsFactory mGattObjectsFactory;
     @Mock private AdapterService mAdapterService;
-    @Mock private GattNativeInterface mNativeInterface;
     @Mock private PeriodicScanManager mPeriodicScanManager;
     @Mock private Resources mResources;
     @Mock private ScanManager mScanManager;
@@ -114,7 +112,6 @@ public class ScanControllerTest {
     public void setUp() throws Exception {
         GattObjectsFactory.setInstanceForTesting(mGattObjectsFactory);
 
-        doReturn(mNativeInterface).when(mGattObjectsFactory).getNativeInterface();
         doAnswer(
                         invocation -> {
                             ((Runnable) invocation.getArgument(0)).run();

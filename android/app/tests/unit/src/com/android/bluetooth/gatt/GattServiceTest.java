@@ -152,7 +152,6 @@ public class GattServiceTest {
         ContextMap<IBluetoothGattCallback>.App serverApp = mock(ContextMap.App.class);
         serverApp.id = SERVER_IF;
         doReturn(serverApp).when(mServerMap).getByCallbackId(mGattServerCallback);
-        doReturn(mNativeInterface).when(mGattObjectsFactory).getNativeInterface();
         doReturn(mDistanceMeasurementManager)
                 .when(mGattObjectsFactory)
                 .createDistanceMeasurementManager(any(), any());
@@ -173,7 +172,7 @@ public class GattServiceTest {
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
 
         AdvertiseManagerNativeInterface.setInstance(mAdvertiseManagerNativeInterface);
-        mService = new GattService(mAdapterService, mScanController);
+        mService = new GattService(mAdapterService, mNativeInterface, mScanController);
 
         mService.mClientMap = mClientMap;
         mService.mReliableQueue = mReliableQueue;
@@ -193,7 +192,7 @@ public class GattServiceTest {
     public void testServiceUpAndDown() throws Exception {
         for (int i = 0; i < 3; i++) {
             mService.cleanup();
-            mService = new GattService(mAdapterService, mScanController);
+            mService = new GattService(mAdapterService, mNativeInterface, mScanController);
         }
     }
 
