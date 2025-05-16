@@ -35,7 +35,7 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
+import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -133,7 +133,7 @@ public class CsipSetCoordinatorServiceTest {
                         mAdapterService, mLooper.getLooper(), mNativeInterface, mServiceFactory);
         mService.setAvailable(true);
 
-        mockAdapterServiceGetRemoteDevice(mAdapterService, mDevice1, mDevice2, mDevice3);
+        mockGetRemoteDevice(mAdapterService, mDevice1, mDevice2, mDevice3);
     }
 
     @After

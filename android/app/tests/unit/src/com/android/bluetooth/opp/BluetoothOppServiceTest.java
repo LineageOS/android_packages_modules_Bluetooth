@@ -18,7 +18,7 @@ package com.android.bluetooth.opp;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockContextGetBluetoothManager;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.opp.BluetoothOppService.WHERE_INVISIBLE_UNCONFIRMED;
 
@@ -98,7 +98,7 @@ public class BluetoothOppServiceTest {
             Looper.prepare();
         }
 
-        mockContextGetBluetoothManager(mAdapterService);
+        mockGetBluetoothManager(mAdapterService);
 
         BluetoothOppPreference oppPreference = BluetoothOppPreference.getInstance(mContext);
 

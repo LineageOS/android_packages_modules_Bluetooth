@@ -19,7 +19,7 @@ package com.android.bluetooth.opp;
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockContextGetBluetoothManager;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.opp.BluetoothOppTransfer.TRANSPORT_CONNECTED;
 import static com.android.bluetooth.opp.BluetoothOppTransfer.TRANSPORT_ERROR;
@@ -128,7 +128,7 @@ public class BluetoothOppTransferTest {
                         123456789,
                         false);
         mBluetoothOppBatch = new BluetoothOppBatch(mAdapterService, mInitShareInfo);
-        mockContextGetBluetoothManager(mMockContext);
+        mockGetBluetoothManager(mMockContext);
         mTransfer = new BluetoothOppTransfer(mMockContext, mBluetoothOppBatch, mSession);
         mEventHandler = mTransfer.new EventHandler(Looper.getMainLooper());
     }

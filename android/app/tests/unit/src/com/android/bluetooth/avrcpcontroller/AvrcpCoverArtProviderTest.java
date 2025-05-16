@@ -18,7 +18,7 @@ package com.android.bluetooth.avrcpcontroller;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockContextGetBluetoothManager;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -56,7 +56,7 @@ public class AvrcpCoverArtProviderTest {
 
     @Before
     public void setUp() {
-        mockContextGetBluetoothManager(mContext);
+        mockGetBluetoothManager(mContext);
 
         mArtProvider = new AvrcpCoverArtProvider();
         mArtProvider.attachInfo(mContext, null);
