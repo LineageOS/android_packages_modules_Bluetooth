@@ -21,11 +21,13 @@ import android.bluetooth.BluetoothAdapter
 import android.content.ContentResolver
 import android.content.Context
 import android.content.res.Resources
-import android.os.IpcDataCache
 import android.os.Looper
 import android.os.UserHandle
+import android.platform.test.flag.junit.FlagsParameterization
+import android.platform.test.flag.junit.SetFlagsRule
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
+import com.android.bluetooth.flags.Flags
 import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
 import com.android.server.bluetooth.airplane.APM_BT_ENABLED_NOTIFICATION
@@ -57,12 +59,14 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
+import org.robolectric.ParameterizedRobolectricTestRunner
+import org.robolectric.ParameterizedRobolectricTestRunner.Parameters
 import org.robolectric.shadows.ShadowToast
 
-@RunWith(RobolectricTestRunner::class)
+@RunWith(ParameterizedRobolectricTestRunner::class)
 @kotlin.time.ExperimentalTime
-class ModeListenerTest() {
+class ModeListenerTest(flags: FlagsWrapper) {
+    @get:Rule val mSetFlagsRule: SetFlagsRule = SetFlagsRule(flags.flags)
 
     @get:Rule val testName = TestName()
 
@@ -460,6 +464,7 @@ class ModeListenerTest() {
         initializeAirplane()
 
         state.set(BluetoothAdapter.STATE_ON)
+        setIsMediaProfileConnected(true)
         isMediaProfileConnected = true
 
         repeat(30) {
@@ -670,13 +675,34 @@ class ModeListenerTest() {
         @BeforeClass
         @JvmStatic
         fun beforeClass() {
-            IpcDataCache.setTestMode(true)
+            BluetoothAdapterState.disableCacheForTesting = true
+            // IpcDataCache.setTestMode(true) // Doesn't work with parametric robolectric runner
         }
 
         @AfterClass
         @JvmStatic
         fun afterClass() {
-            IpcDataCache.setTestMode(false)
+            BluetoothAdapterState.disableCacheForTesting = false
+            // IpcDataCache.setTestMode(false) // Doesn't work with parametric robolectric runner
+        }
+
+        // Helps tests readability by removing the common prefix in the bluetooth flags name
+        class FlagsWrapper(internal val flags: FlagsParameterization) {
+            private val PREFIX = "com.android.bluetooth.flags."
+
+            override fun toString(): String {
+                return flags.mOverrides.entries
+                    .sortedBy { it.key }
+                    .joinToString(",") { "${it.key.removePrefix(PREFIX)}=${it.value}" }
+            }
+        }
+
+        @JvmStatic
+        @Parameters(name = "{0}")
+        fun getParams(): List<FlagsWrapper> {
+            return FlagsParameterization.progressionOf(Flags.FLAG_ONEWAY_MEDIA_PROFILE).map {
+                FlagsWrapper(it)
+            }
         }
     }
 }
