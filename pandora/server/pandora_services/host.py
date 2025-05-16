@@ -339,10 +339,18 @@ class HostService(HostServicer):
         if interval_range := request.interval_range:
             advertising_parameters.primary_advertising_interval_max += int(interval_range)
 
+        random_address: Address | None = None
+
+        if request.random_address:
+            # Need to reverse bytes order since Bumble Address is using MSB.
+            addr_bytes = bytes(reversed(request.random_address))
+            random_address = Address(addr_bytes)
+
         advertising_set = await self.device.create_advertising_set(
             advertising_parameters=advertising_parameters,
             advertising_data=advertising_data,
             scan_response_data=scan_response_data,
+            random_address=random_address,
         )
 
         connections: asyncio.Queue[bumble.device.Connection] = asyncio.Queue()
