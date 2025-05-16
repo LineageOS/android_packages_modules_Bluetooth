@@ -84,6 +84,5 @@ void TestHciHal::InjectEvent(std::unique_ptr<packet::BasePacketBuilder> event) {
   callbacks->hciEventReceived(view);
 }
 
-const ModuleFactory TestHciHal::Factory = ModuleFactory([]() { return new TestHciHal(); });
 }  // namespace hal
 }  // namespace bluetooth

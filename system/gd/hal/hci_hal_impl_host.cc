@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hal/hci_hal_host.h"
+#include "hal/hci_hal_impl_host.h"
 
 #include <bluetooth/log.h>
 #include <netdb.h>
@@ -234,7 +234,7 @@ int ConnectToSocket() {
 namespace bluetooth {
 namespace hal {
 
-class HciHalHost : public HciHal {
+class HciHalImpl : public HciHal {
 public:
   void registerIncomingPacketCallback(HciHalCallbacks* callback) override {
     std::lock_guard<std::mutex> lock(api_mutex_);
@@ -308,10 +308,8 @@ public:
     return os::Management::getInstance().getVendorSpecificCode(MGMT_VS_OPCODE_MSFT);
   }
 
-protected:
-  void ListDependencies(ModuleList* list) const { list->add<LinkClocker>(); }
-
-  void Start() override {
+  HciHalImpl(LinkClocker* link_clocker, SnoopLogger* snoop_logger)
+      : link_clocker_(link_clocker), btsnoop_logger_(snoop_logger) {
     std::lock_guard<std::mutex> lock(api_mutex_);
     log::assert_that(sock_fd_ == INVALID_FD, "assert failed: sock_fd_ == INVALID_FD");
     sock_fd_ = ConnectToSocket();
@@ -324,16 +322,17 @@ protected:
     }
 
     reactable_ = hci_incoming_thread_.GetReactor()->Register(
-            sock_fd_, common::Bind(&HciHalHost::incoming_packet_received, common::Unretained(this)),
-            common::Bind(&HciHalHost::send_packet_ready, common::Unretained(this)));
+            sock_fd_, common::Bind(&HciHalImpl::incoming_packet_received, common::Unretained(this)),
+            common::Bind(&HciHalImpl::send_packet_ready, common::Unretained(this)));
     hci_incoming_thread_.GetReactor()->ModifyRegistration(reactable_,
                                                           os::Reactor::REACT_ON_READ_ONLY);
-    link_clocker_ = GetDependency<LinkClocker>();
-    btsnoop_logger_ = shim::GetSnoopLogger();
     log::info("HAL opened successfully");
   }
 
-  void Stop() override {
+  HciHalImpl(os::Handler*, LinkClocker* link_clocker, SnoopLogger* btsnoop_logger)
+      : HciHalImpl(link_clocker, btsnoop_logger) {}
+
+  ~HciHalImpl() {
     std::lock_guard<std::mutex> lock(api_mutex_);
     log::info("HAL is closing");
     if (reactable_ != nullptr) {
@@ -359,8 +358,6 @@ protected:
     log::info("HAL is closed");
   }
 
-  std::string ToString() const override { return std::string("HciHalHost"); }
-
 private:
   // Held when APIs are called, NOT to be held during callbacks
   std::mutex api_mutex_;
@@ -371,8 +368,8 @@ private:
           bluetooth::os::Thread("hci_incoming_thread", bluetooth::os::Thread::Priority::NORMAL);
   bluetooth::os::Reactor::Reactable* reactable_ = nullptr;
   std::queue<std::vector<uint8_t>> hci_outgoing_queue_;
-  SnoopLogger* btsnoop_logger_ = nullptr;
   LinkClocker* link_clocker_ = nullptr;
+  SnoopLogger* btsnoop_logger_ = nullptr;
 
   void write_to_fd(HciPacket packet) {
     // TODO(chromeos-bt-team@): replace this with new queue when it's ready
@@ -530,8 +527,6 @@ private:
     memset(buf, 0, kBufSize);
   }
 };
-
-const ModuleFactory HciHal::Factory = ModuleFactory([]() { return new HciHalHost(); });
 
 }  // namespace hal
 }  // namespace bluetooth

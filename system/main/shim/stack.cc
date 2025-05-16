@@ -29,7 +29,8 @@
 #include <string>
 
 #include "common/strings.h"
-#include "hal/hci_hal.h"
+#include "hal/hci_hal_impl.h"
+#include "hal/link_clocker.h"
 #include "hal/ranging_hal_impl.h"
 #include "hal/snoop_logger.h"
 #include "hci/acl_manager/acl_scheduler.h"
@@ -68,6 +69,9 @@ struct Stack::impl {
   Acl* acl_ = nullptr;
   std::shared_ptr<storage::StorageModule> storage_ = nullptr;
   std::shared_ptr<hal::SnoopLogger> snoop_logger_ = nullptr;
+  std::unique_ptr<lpp::LppOffloadManager> lpp_offload_manager_ = nullptr;
+  std::unique_ptr<hal::LinkClocker> link_clocker_ = nullptr;
+  std::unique_ptr<hal::HciHal> hci_hal_ = nullptr;
   std::unique_ptr<hal::RangingHal> ranging_hal_ = nullptr;
   std::unique_ptr<hci::HciLayer> hci_layer_ = nullptr;
   std::unique_ptr<hci::Controller> controller_ = nullptr;
@@ -108,11 +112,10 @@ void Stack::StartEverything() {
 #if TARGET_FLOSS
     modules.add<sysprops::SyspropsModule>();
 #else
-    if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3286716
-      modules.add<lpp::LppOffloadManager>();
+    if (com::android::bluetooth::flags::socket_settings_api()) {
+      modules.add<hal::SocketHal>();
     }
 #endif
-    modules.add<hal::HciHal>();
 
     management_thread_ = new Thread("management_thread", Thread::Priority::NORMAL);
     management_handler_ = new Handler(management_thread_);
@@ -142,8 +145,7 @@ void Stack::StartEverything() {
     log::info("Successfully toggled Gd stack");
 
     // Make sure the leaf modules are started
-    log::assert_that(GetInstance<hal::HciHal>() != nullptr,
-                     "assert failed: GetInstance<hal::HciHal>() != nullptr");
+    log::assert_that(pimpl_->hci_hal_ != nullptr, "assert failed pimpl_->hci_hal_ != nullptr");
 
     pimpl_->acl_ = new Acl(stack_handler_, GetAclInterface());
 
@@ -227,6 +229,12 @@ hal::SnoopLogger* Stack::GetSnoopLogger() const {
   return pimpl_->snoop_logger_.get();
 }
 
+lpp::LppOffloadInterface* Stack::GetLppOffloadInterface() const {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  log::assert_that(is_running_, "assert failed: is_running_");
+  return pimpl_->lpp_offload_manager_.get();
+}
+
 hci::HciInterface* Stack::GetHciLayer() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
@@ -303,13 +311,27 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
   pimpl_->snoop_logger_->Start();
   registry_.Start(modules, stack_thread_, stack_handler_);
 
-  auto hci_hal = static_cast<hal::HciHal*>(registry_.Get(&hal::HciHal::Factory));
+#ifndef TARGET_FLOSS
+  if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3286716
+    auto socket_hal = static_cast<hal::SocketHal*>(registry_.Get(&hal::SocketHal::Factory));
+    log::info("Starting LppOffloadManager");
+    pimpl_->lpp_offload_manager_ =
+            std::make_unique<lpp::LppOffloadManager>(stack_handler_, socket_hal);
+  }
+#endif
+
+  log::info("Starting LinkClocker");
+  pimpl_->link_clocker_ = std::make_unique<hal::LinkClocker>();
+
+  log::info("Starting HciHal");
+  pimpl_->hci_hal_ = std::make_unique<hal::HciHalImpl>(stack_handler_, pimpl_->link_clocker_.get(),
+                                                       pimpl_->snoop_logger_.get());
 
   log::info("Starting RangingHal");
   pimpl_->ranging_hal_ = std::make_unique<hal::RangingHalImpl>();
 
   log::info("Starting HciLayer");
-  pimpl_->hci_layer_ = std::make_unique<hci::HciLayer>(stack_handler_, hci_hal);
+  pimpl_->hci_layer_ = std::make_unique<hci::HciLayer>(stack_handler_, pimpl_->hci_hal_.get());
 
   log::info("Starting Controller");
   pimpl_->controller_ =
@@ -329,7 +351,7 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
 
   log::info("Starting MsftExtensionManager");
   pimpl_->msft_extension_manager_ = std::make_unique<hci::MsftExtensionManager>(
-          stack_handler_, hci_hal, pimpl_->hci_layer_.get());
+          stack_handler_, pimpl_->hci_hal_.get(), pimpl_->hci_layer_.get());
 
   log::info("Starting LeScanningManagerImpl");
   pimpl_->le_scanning_manager_ = std::make_unique<hci::LeScanningManagerImpl>(
@@ -379,6 +401,17 @@ void Stack::handle_shut_down(std::promise<void> promise) {
 
   log::info("Stopping RangingHal");
   pimpl_->ranging_hal_.reset();
+
+  log::info("Stopping HciHal");
+  pimpl_->hci_hal_.reset();
+
+  log::info("Stopping LinkClocker");
+  pimpl_->link_clocker_.reset();
+
+  if (pimpl_->lpp_offload_manager_) {
+    log::info("Stopping LppOffloadManager");
+    pimpl_->lpp_offload_manager_.reset();
+  }
 
   registry_.StopAll();
 

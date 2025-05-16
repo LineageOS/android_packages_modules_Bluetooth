@@ -57,8 +57,8 @@ cc_defaults {
         },
         host: {
             srcs: [
-                "hal/hci_hal_host_rootcanal.cc",
                 "hal/socket_hal_host.cc",
+                "hal/hci_hal_impl_host_rootcanal.cc",
                 "os/host/parameter_provider.cc",
                 "os/host/system_properties.cc",
                 "os/host/wakelock_native.cc",
@@ -69,7 +69,7 @@ cc_defaults {
             srcs: [
                 "hal/hci_backend_aidl.cc",
                 "hal/hci_backend_hidl.cc",
-                "hal/hci_hal_android.cc",
+                "hal/hci_hal_impl_android.cc",
                 "hal/ranging_hal_impl_android.cc",
                 "hal/socket_hal_android.cc",
                 "os/android/parameter_provider.cc",
@@ -320,13 +320,13 @@ cc_test {
         },
         host: {
             srcs: [
-                "hal/hci_hal_host_test.cc",
+                "hal/hci_hal_impl_host_rootcanal_test.cc",
                 "sysprops/sysprops_module_test.cc",
             ],
         },
         android: {
             srcs: [
-                "hal/hci_hal_android_test.cc",
+                "hal/hci_hal_impl_android_test.cc",
                 "os/android/wakelock_native_test.cc",
             ],
             static_libs: [

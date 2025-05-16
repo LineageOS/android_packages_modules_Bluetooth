@@ -111,8 +111,6 @@ void FuzzHciHal::injectIsoData(std::vector<uint8_t> data) {
   callbacks_->isoDataReceived(data);
 }
 
-const ModuleFactory FuzzHciHal::Factory = ModuleFactory([]() { return new FuzzHciHal(); });
-
 }  // namespace fuzz
 }  // namespace hal
 }  // namespace bluetooth

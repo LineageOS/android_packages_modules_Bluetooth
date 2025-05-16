@@ -18,6 +18,7 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 
+#include <map>
 #include <vector>
 
 #include "fuzz/helpers.h"

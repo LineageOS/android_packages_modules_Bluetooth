@@ -199,18 +199,15 @@ public:
       counting_bytes.push_back(i);
       counting_down_bytes.push_back(~i);
     }
-    hal = new hal::TestHciHal();
-    fake_registry_.InjectTestModule(&hal::HciHal::Factory, hal);
-    fake_registry_.Start<hal::HciHal>(&fake_registry_.GetTestThread(),
-                                      fake_registry_.GetTestHandler());
 
+    hal = std::make_unique<hal::TestHciHal>();
     bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(
             com::android::bluetooth::flags::same_handler_for_all_modules()
                     ? fake_registry_.GetTestHandler()
                     : new os::Handler(&fake_registry_.GetTestThread()));
     bluetooth::hci::testing::mock_storage_->Start();
 
-    hci = std::make_unique<HciLayer>(fake_registry_.GetTestHandler(), hal);
+    hci = std::make_unique<HciLayer>(fake_registry_.GetTestHandler(), hal.get());
     upper = std::make_unique<DependsOnHci>(fake_registry_.GetTestHandler(), hci.get());
 
     // Verify that reset was received
@@ -233,6 +230,7 @@ public:
                                       std::chrono::milliseconds(20));
     upper.reset();
     hci.reset();
+    hal.reset();
     fake_registry_.StopAll();
   }
 
@@ -245,7 +243,7 @@ public:
   }
 
   std::unique_ptr<DependsOnHci> upper = nullptr;
-  hal::TestHciHal* hal = nullptr;
+  std::unique_ptr<hal::TestHciHal> hal = nullptr;
   std::unique_ptr<HciLayer> hci = nullptr;
   TestModuleRegistry fake_registry_;
 };
