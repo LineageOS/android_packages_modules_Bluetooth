@@ -10,3 +10,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "support_passive_scanning"
+    namespace: "bluetooth"
+    description: "Support passive scannign by delivering adv packet w/o scan response"
+    bug: "414501027"
+}
