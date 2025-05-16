@@ -471,7 +471,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
 
   /* Other security process is in progress */
   if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE) {
-    log::error("BTM_SecBond: already busy in state: {}",
+    log::error("already busy in state: {}",
                btm_pair_state_descr(btm_sec_cb.pairing_state));
     return tBTM_STATUS::BTM_WRONG_MODE;
   }
@@ -495,7 +495,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
        (p_dev_rec->sec_rec.sec_flags & BTM_SEC_AUTHENTICATED)) ||
       ((p_dev_rec->ble_hci_handle != HCI_INVALID_HANDLE) && transport == BT_TRANSPORT_LE &&
        (p_dev_rec->sec_rec.sec_flags & BTM_SEC_LE_AUTHENTICATED))) {
-    log::warn("BTM_SecBond -> Already Paired");
+    log::warn("Already Paired");
     return tBTM_STATUS::BTM_SUCCESS;
   }
 
@@ -548,7 +548,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
     }
   }
 
-  log::verbose("BTM_SecBond: Remote sm4: 0x{:x}  HCI Handle: 0x{:04x}", p_dev_rec->sm4,
+  log::verbose("Remote sm4: 0x{:x}  HCI Handle: 0x{:04x}", p_dev_rec->sm4,
                p_dev_rec->hci_handle);
 
   /* If connection already exists... */
