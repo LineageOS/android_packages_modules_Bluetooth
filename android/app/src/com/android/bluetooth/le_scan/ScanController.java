@@ -618,7 +618,7 @@ public class ScanController {
             return;
         }
         client.mAppDied = true;
-        client.mStats.ifPresent(stats -> stats.isAppDead = true);
+        client.mStats.ifPresent(stats -> stats.mIsAppDead = true);
         stopScan(client.mScannerId);
     }
 
