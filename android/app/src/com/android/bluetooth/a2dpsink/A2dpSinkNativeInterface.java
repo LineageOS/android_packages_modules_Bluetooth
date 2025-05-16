@@ -23,8 +23,6 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.internal.annotations.GuardedBy;
-import com.android.internal.annotations.VisibleForTesting;
 
 /** A2DP Sink Native Interface to/from JNI. */
 public class A2dpSinkNativeInterface {
@@ -32,31 +30,8 @@ public class A2dpSinkNativeInterface {
 
     private final AdapterService mAdapterService;
 
-    @GuardedBy("INSTANCE_LOCK")
-    private static A2dpSinkNativeInterface sInstance;
-
-    private static final Object INSTANCE_LOCK = new Object();
-
-    private A2dpSinkNativeInterface(AdapterService adapterService) {
+    A2dpSinkNativeInterface(AdapterService adapterService) {
         mAdapterService = requireNonNull(adapterService);
-    }
-
-    /** Get singleton instance. */
-    public static A2dpSinkNativeInterface getInstance(AdapterService adapterService) {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new A2dpSinkNativeInterface(adapterService);
-            }
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    public static void setInstance(A2dpSinkNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
     }
 
     /**

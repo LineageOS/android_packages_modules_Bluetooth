@@ -38,7 +38,6 @@ import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.a2dpsink.A2dpSinkNativeInterface;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.hearingaid.HearingAidNativeInterface;
@@ -73,7 +72,6 @@ public class ProfileServiceTest {
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private TelephonyManager mMockTelephonyManager;
 
-    @Mock private A2dpSinkNativeInterface mA2dpSinkNativeInterface;
     @Mock private AvrcpControllerNativeInterface mAvrcpControllerNativeInterface;
     @Mock private HeadsetNativeInterface mHeadsetNativeInterface;
     @Mock private HearingAidNativeInterface mHearingAidNativeInterface;
@@ -164,7 +162,6 @@ public class ProfileServiceTest {
                         .filter(profile -> !allDisabled.contains(profile))
                         .toArray();
 
-        A2dpSinkNativeInterface.setInstance(mA2dpSinkNativeInterface);
         AvrcpControllerNativeInterface.setInstance(mAvrcpControllerNativeInterface);
         HeadsetNativeInterface.setInstance(mHeadsetNativeInterface);
         HearingAidNativeInterface.setInstance(mHearingAidNativeInterface);
@@ -175,7 +172,6 @@ public class ProfileServiceTest {
     @After
     public void tearDown()
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        A2dpSinkNativeInterface.setInstance(null);
         AvrcpControllerNativeInterface.setInstance(null);
         HeadsetNativeInterface.setInstance(null);
         HearingAidNativeInterface.setInstance(null);
