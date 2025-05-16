@@ -30,6 +30,7 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.AdapterService;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,6 +55,11 @@ public class AvrcpControllerNativeInterfaceTest {
         final BluetoothDevice device = getTestDevice(REMOTE_DEVICE_ADDRESS);
         mockGetRemoteDevice(mAdapterService, device);
         mNativeInterface = AvrcpControllerNativeInterface.getInstance(mAdapterService);
+    }
+
+    @After
+    public void tearDown() {
+        AvrcpControllerNativeInterface.setInstance(null);
     }
 
     @Test

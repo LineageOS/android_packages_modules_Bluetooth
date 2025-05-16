@@ -68,6 +68,7 @@ public class HearingAidNativeInterfaceTest {
     @After
     public void tearDown() throws Exception {
         HearingAidService.setHearingAidService(null);
+        HearingAidNativeInterface.setInstance(null);
     }
 
     @Test
