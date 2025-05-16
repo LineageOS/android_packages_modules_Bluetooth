@@ -25,7 +25,6 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.RequiresPermission;
 import android.app.ActivityManager;
@@ -74,10 +73,10 @@ public class HidDeviceService extends ProfileService {
 
     private static HidDeviceService sHidDeviceService;
 
-    private final HidDeviceServiceHandler mHandler;
     private final DatabaseManager mDatabaseManager;
+    private final HidDeviceServiceHandler mHandler;
+    private final HidDeviceNativeInterface mNativeInterface;
     private final ActivityManager mActivityManager;
-    private final HidDeviceNativeInterface mHidDeviceNativeInterface;
 
     private BluetoothDevice mHidDevice;
     private int mHidDeviceState = BluetoothHidDevice.STATE_DISCONNECTED;
@@ -86,7 +85,7 @@ public class HidDeviceService extends ProfileService {
     private BluetoothHidDeviceDeathRecipient mDeathRcpt;
 
     public HidDeviceService(AdapterService adapterService) {
-        this(adapterService, Looper.getMainLooper(), null);
+        this(adapterService, Looper.getMainLooper(), new HidDeviceNativeInterface(adapterService));
     }
 
     @VisibleForTesting
@@ -96,12 +95,9 @@ public class HidDeviceService extends ProfileService {
             HidDeviceNativeInterface nativeInterface) {
         super(requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
-
         mHandler = new HidDeviceServiceHandler(requireNonNull(looper));
-        mHidDeviceNativeInterface =
-                requireNonNullElseGet(
-                        nativeInterface, () -> new HidDeviceNativeInterface(adapterService));
-        mHidDeviceNativeInterface.init();
+        mNativeInterface = requireNonNull(nativeInterface);
+        mNativeInterface.init();
         mActivityManager = requireNonNull(obtainSystemService(ActivityManager.class));
         mActivityManager.addOnUidImportanceListener(
                 mUidImportanceListener, FOREGROUND_IMPORTANCE_CUTOFF);
@@ -343,7 +339,7 @@ public class HidDeviceService extends ProfileService {
         mUserUid = callingUid;
         mCallback = callback;
 
-        return mHidDeviceNativeInterface.registerApp(
+        return mNativeInterface.registerApp(
                 sdp.getName(),
                 sdp.getDescription(),
                 sdp.getProvider(),
@@ -383,7 +379,7 @@ public class HidDeviceService extends ProfileService {
 
         if (mUserUid != 0 && (uid == mUserUid || uid < Process.FIRST_APPLICATION_UID)) {
             mUserUid = 0;
-            return mHidDeviceNativeInterface.unregisterApp();
+            return mNativeInterface.unregisterApp();
         }
         Log.d(TAG, "unregisterAppUid(): caller UID doesn't match user UID");
         return false;
@@ -392,9 +388,7 @@ public class HidDeviceService extends ProfileService {
     synchronized boolean sendReport(BluetoothDevice device, int id, byte[] data) {
         Log.d(TAG, "sendReport(): device=" + device + " id=" + id);
 
-        return checkDevice(device)
-                && checkCallingUid()
-                && mHidDeviceNativeInterface.sendReport(id, data);
+        return checkDevice(device) && checkCallingUid() && mNativeInterface.sendReport(id, data);
     }
 
     synchronized boolean replyReport(BluetoothDevice device, byte type, byte id, byte[] data) {
@@ -402,13 +396,13 @@ public class HidDeviceService extends ProfileService {
 
         return checkDevice(device)
                 && checkCallingUid()
-                && mHidDeviceNativeInterface.replyReport(type, id, data);
+                && mNativeInterface.replyReport(type, id, data);
     }
 
     synchronized boolean unplug(BluetoothDevice device) {
         Log.d(TAG, "unplug(): device=" + device);
 
-        return checkDevice(device) && checkCallingUid() && mHidDeviceNativeInterface.unplug();
+        return checkDevice(device) && checkCallingUid() && mNativeInterface.unplug();
     }
 
     /**
@@ -420,7 +414,7 @@ public class HidDeviceService extends ProfileService {
     public synchronized boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect(): device=" + device);
 
-        return checkCallingUid() && mHidDeviceNativeInterface.connect(device);
+        return checkCallingUid() && mNativeInterface.connect(device);
     }
 
     /**
@@ -437,7 +431,7 @@ public class HidDeviceService extends ProfileService {
             Log.w(TAG, "disconnect(): caller UID doesn't match user UID");
             return false;
         }
-        return checkDevice(device) && mHidDeviceNativeInterface.disconnect();
+        return checkDevice(device) && mNativeInterface.disconnect();
     }
 
     /**
@@ -493,9 +487,7 @@ public class HidDeviceService extends ProfileService {
     synchronized boolean reportError(BluetoothDevice device, byte error) {
         Log.d(TAG, "reportError(): device=" + device + " error=" + error);
 
-        return checkDevice(device)
-                && checkCallingUid()
-                && mHidDeviceNativeInterface.reportError(error);
+        return checkDevice(device) && checkCallingUid() && mNativeInterface.reportError(error);
     }
 
     synchronized String getUserAppName() {
@@ -516,7 +508,7 @@ public class HidDeviceService extends ProfileService {
         }
 
         setHidDeviceService(null);
-        mHidDeviceNativeInterface.cleanup();
+        mNativeInterface.cleanup();
         mActivityManager.removeOnUidImportanceListener(mUidImportanceListener);
     }
 
