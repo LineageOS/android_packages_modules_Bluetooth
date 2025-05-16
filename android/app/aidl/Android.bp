@@ -68,3 +68,12 @@ filegroup {
         "android/bluetooth/le/IScannerCallback.aidl",
     ],
 }
+
+filegroup {
+    name: "Bluetooth-binder-aidl-for-service",
+    srcs: [
+        "android/bluetooth/IAdapter.aidl",
+        "android/bluetooth/IBluetoothCallback.aidl",
+        "android/bluetooth/State.aidl",
+    ],
+}
