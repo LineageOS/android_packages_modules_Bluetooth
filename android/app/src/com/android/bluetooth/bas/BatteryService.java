@@ -55,7 +55,6 @@ public class BatteryService extends ProfileService {
 
     private static BatteryService sBatteryService;
 
-    private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final HandlerThread mStateMachinesThread;
     private final Looper mStateMachinesLooper;
@@ -71,7 +70,6 @@ public class BatteryService extends ProfileService {
     @VisibleForTesting
     BatteryService(AdapterService adapterService, Looper looper) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new Handler(requireNonNull(looper));
 

@@ -70,7 +70,6 @@ public class PbapClientService extends ProfileService {
     final Map<BluetoothDevice, PbapClientStateMachineOld> mPbapClientStateMachineOldMap =
             new ConcurrentHashMap<>();
 
-    private final AdapterService mAdapterService;
     private final PbapClientContactsStorage mPbapClientContactsStorage;
     private final PbapClientAccountManager mPbapClientAccountManager;
     private final DatabaseManager mDatabaseManager;
@@ -117,7 +116,6 @@ public class PbapClientService extends ProfileService {
 
     public PbapClientService(AdapterService adapterService) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new Handler(Looper.getMainLooper());
 
@@ -147,7 +145,6 @@ public class PbapClientService extends ProfileService {
             PbapClientContactsStorage storage,
             Map<BluetoothDevice, PbapClientStateMachine> deviceMap) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new Handler(Looper.getMainLooper());
 
@@ -725,7 +722,6 @@ public class PbapClientService extends ProfileService {
     @VisibleForTesting
     PbapClientService(AdapterService adapterService, PbapClientAccountManager accountManager) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new Handler(Looper.getMainLooper());
 

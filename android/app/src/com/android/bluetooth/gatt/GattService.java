@@ -158,7 +158,6 @@ public class GattService extends ProfileService {
      */
     private final HashMap<BluetoothDevice, Integer> mPermits = new HashMap<>();
 
-    private final AdapterService mAdapterService;
     private final ActivityManager mActivityManager;
     private final PackageManager mPackageManager;
     private final CompanionDeviceManager mCompanionDeviceManager;
@@ -170,11 +169,9 @@ public class GattService extends ProfileService {
 
     public GattService(AdapterService adapterService) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
-        mActivityManager = requireNonNull(mAdapterService.getSystemService(ActivityManager.class));
+        mActivityManager = requireNonNull(obtainSystemService(ActivityManager.class));
         mPackageManager = requireNonNull(mAdapterService.getPackageManager());
-        mCompanionDeviceManager =
-                requireNonNull(mAdapterService.getSystemService(CompanionDeviceManager.class));
+        mCompanionDeviceManager = requireNonNull(obtainSystemService(CompanionDeviceManager.class));
 
         Settings.Global.putInt(
                 getContentResolver(), "bluetooth_sanitized_exposure_notification_supported", 1);

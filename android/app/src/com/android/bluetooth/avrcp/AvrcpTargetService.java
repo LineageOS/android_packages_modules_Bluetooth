@@ -19,6 +19,7 @@ package com.android.bluetooth.avrcp;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.NonNull;
 import android.bluetooth.BluetoothDevice;
@@ -102,11 +103,10 @@ public class AvrcpTargetService extends ProfileService {
     public AvrcpTargetService(AdapterService adapterService) {
         this(
                 requireNonNull(adapterService),
-                adapterService.getSystemService(AudioManager.class),
+                null,
                 AvrcpNativeInterface.getInstance(adapterService),
                 new AvrcpVolumeManager(
                         requireNonNull(adapterService),
-                        adapterService.getSystemService(AudioManager.class),
                         AvrcpNativeInterface.getInstance(adapterService)),
                 Looper.myLooper());
     }
@@ -119,7 +119,8 @@ public class AvrcpTargetService extends ProfileService {
             AvrcpVolumeManager volumeManager,
             Looper looper) {
         super(requireNonNull(adapterService));
-        mAudioManager = requireNonNull(audioManager);
+        mAudioManager =
+                requireNonNullElseGet(audioManager, () -> obtainSystemService(AudioManager.class));
         mNativeInterface = requireNonNull(nativeInterface);
 
         mMediaPlayerList = new MediaPlayerList(adapterService, looper);
@@ -138,7 +139,7 @@ public class AvrcpTargetService extends ProfileService {
         mAvrcpVersion = AvrcpVersion.getCurrentSystemPropertiesValue();
         mVolumeManager = requireNonNull(volumeManager);
 
-        UserManager userManager = getApplicationContext().getSystemService(UserManager.class);
+        UserManager userManager = obtainSystemService(UserManager.class);
         if (userManager.isUserUnlocked()) {
             mMediaPlayerList.init(new ListCallback());
         }

@@ -100,7 +100,6 @@ public class HidHostService extends ProfileService {
     private final Map<BluetoothDevice, InputDevice> mInputDevices =
             Collections.synchronizedMap(new HashMap<>());
 
-    private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final HidHostNativeInterface mNativeInterface;
 
@@ -126,11 +125,8 @@ public class HidHostService extends ProfileService {
 
     public HidHostService(AdapterService adapterService) {
         super(requireNonNull(adapterService));
-
-        mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface = requireNonNull(HidHostNativeInterface.getInstance());
-
         mNativeInterface.init(this);
         setHidHostService(this);
     }

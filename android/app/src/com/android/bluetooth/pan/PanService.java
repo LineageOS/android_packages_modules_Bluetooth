@@ -76,7 +76,6 @@ public class PanService extends ProfileService {
             new ConcurrentHashMap<>();
 
     private final Map<String, IBluetoothPanCallback> mBluetoothTetheringCallbacks = new HashMap<>();
-    private final AdapterService mAdapterService;
     private final PanNativeInterface mNativeInterface;
     private final DatabaseManager mDatabaseManager;
     private final TetheringManager mTetheringManager;
@@ -113,13 +112,11 @@ public class PanService extends ProfileService {
     @VisibleForTesting
     PanService(AdapterService adapterService, PanNativeInterface nativeInterface, Looper looper) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(nativeInterface, () -> new PanNativeInterface(this));
-        mUserManager = requireNonNull(mAdapterService.getSystemService(UserManager.class));
-        mTetheringManager =
-                requireNonNull(mAdapterService.getSystemService(TetheringManager.class));
+        mUserManager = requireNonNull(obtainSystemService(UserManager.class));
+        mTetheringManager = requireNonNull(obtainSystemService(TetheringManager.class));
         mHandler = new PanServiceHandler(looper);
 
         int maxPanDevice;
@@ -302,7 +299,7 @@ public class PanService extends ProfileService {
             IBluetoothPanCallback callback, int id, int callerUid, boolean value) {
         Log.d(TAG, "setBluetoothTethering: " + value + ", mTetherOn: " + mTetherOn);
 
-        UserManager um = mAdapterService.getSystemService(UserManager.class);
+        UserManager um = obtainSystemService(UserManager.class);
         if (um.hasUserRestriction(UserManager.DISALLOW_CONFIG_TETHERING) && value) {
             throw new SecurityException("DISALLOW_CONFIG_TETHERING is enabled for this user.");
         }

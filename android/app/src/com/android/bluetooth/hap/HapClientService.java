@@ -79,7 +79,6 @@ public class HapClientService extends ProfileService {
     private final Map<BluetoothDevice, Integer> mDeviceCurrentPresetMap = new HashMap<>();
     private final Map<BluetoothDevice, Integer> mDeviceFeaturesMap = new HashMap<>();
     private final Map<BluetoothDevice, List<BluetoothHapPresetInfo>> mPresetsMap = new HashMap<>();
-    private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final Handler mHandler;
     private final Looper mStateMachinesLooper;
@@ -130,7 +129,6 @@ public class HapClientService extends ProfileService {
             Looper looper,
             HapClientNativeInterface nativeInterface) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,

@@ -97,7 +97,6 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
             "com.android.bluetooth.sap.USER_CONFIRM_TIMEOUT";
     private static final int USER_CONFIRM_TIMEOUT_VALUE = 25000;
 
-    private final AdapterService mAdapterService;
     private final BluetoothAdapter mAdapter;
 
     private PowerManager.WakeLock mWakeLock = null;
@@ -122,8 +121,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
 
     public SapService(AdapterService adapterService) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
-        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
+        mAdapter = obtainSystemService(BluetoothManager.class).getAdapter();
         BluetoothSap.invalidateBluetoothGetConnectionStateCache();
 
         IntentFilter filter = new IntentFilter();
@@ -295,7 +293,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
 
         // acquire the wakeLock before start SAP transaction thread
         if (mWakeLock == null) {
-            PowerManager pm = mAdapterService.getSystemService(PowerManager.class);
+            PowerManager pm = obtainSystemService(PowerManager.class);
             mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "StartingSapTransaction");
             mWakeLock.setReferenceCounted(false);
             mWakeLock.acquire();
@@ -488,8 +486,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
                         case MSG_ACQUIRE_WAKE_LOCK:
                             Log.v(TAG, "Acquire Wake Lock request message");
                             if (mWakeLock == null) {
-                                PowerManager pm =
-                                        mAdapterService.getSystemService(PowerManager.class);
+                                PowerManager pm = obtainSystemService(PowerManager.class);
                                 mWakeLock =
                                         pm.newWakeLock(
                                                 PowerManager.PARTIAL_WAKE_LOCK,
@@ -737,7 +734,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
     private void cancelUserTimeoutAlarm() {
         Log.d(TAG, "cancelUserTimeOutAlarm()");
         if (mAlarmManager == null) {
-            mAlarmManager = this.getSystemService(AlarmManager.class);
+            mAlarmManager = obtainSystemService(AlarmManager.class);
         }
         if (mRemoveTimeoutMsg) {
             Intent timeoutIntent = new Intent(USER_CONFIRM_TIMEOUT_ACTION);
