@@ -87,12 +87,10 @@ public class HeadsetClientServiceTest {
         mockGetSystemService(mAdapterService, BatteryManager.class);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
-        HeadsetClientNativeInterface.setInstance(mNativeInterface);
     }
 
     @After
     public void tearDown() throws Exception {
-        HeadsetClientNativeInterface.setInstance(null);
         stopServiceIfStarted();
     }
 
@@ -170,7 +168,7 @@ public class HeadsetClientServiceTest {
         doReturn(false).when(packageManager).hasSystemFeature(FEATURE_WATCH);
         doReturn(packageManager).when(mAdapterService).getPackageManager();
 
-        HeadsetClientService service = new HeadsetClientService(mAdapterService);
+        HeadsetClientService service = new HeadsetClientService(mAdapterService, mNativeInterface);
 
         verify(mAdapterService).startService(any(Intent.class));
 
@@ -184,7 +182,7 @@ public class HeadsetClientServiceTest {
         doReturn(true).when(packageManager).hasSystemFeature(FEATURE_WATCH);
         doReturn(packageManager).when(mAdapterService).getPackageManager();
 
-        HeadsetClientService service = new HeadsetClientService(mAdapterService);
+        HeadsetClientService service = new HeadsetClientService(mAdapterService, mNativeInterface);
 
         verify(mAdapterService, never()).startService(any(Intent.class));
 
@@ -207,7 +205,7 @@ public class HeadsetClientServiceTest {
         doReturn(amMax).when(mMockAudioManager).getStreamMaxVolume(anyInt());
         doReturn(amMin).when(mMockAudioManager).getStreamMinVolume(anyInt());
 
-        HeadsetClientService service = new HeadsetClientService(mAdapterService);
+        HeadsetClientService service = new HeadsetClientService(mAdapterService, mNativeInterface);
 
         for (int i = amMin; i <= amMax; i++) {
             // Collect AM to HF conversion
@@ -236,7 +234,7 @@ public class HeadsetClientServiceTest {
         doReturn(amMax).when(mMockAudioManager).getStreamMaxVolume(anyInt());
         doReturn(amMin).when(mMockAudioManager).getStreamMinVolume(anyInt());
 
-        HeadsetClientService service = new HeadsetClientService(mAdapterService);
+        HeadsetClientService service = new HeadsetClientService(mAdapterService, mNativeInterface);
 
         for (int i = MIN_HFP_SCO_VOICE_CALL_VOLUME; i <= MAX_HFP_SCO_VOICE_CALL_VOLUME; i++) {
             // Collect HF to AM conversion
@@ -250,7 +248,7 @@ public class HeadsetClientServiceTest {
     }
 
     private void startService() throws Exception {
-        mService = new HeadsetClientService(mAdapterService);
+        mService = new HeadsetClientService(mAdapterService, mNativeInterface);
         mService.setAvailable(true);
         mIsHeadsetClientServiceStarted = true;
     }
