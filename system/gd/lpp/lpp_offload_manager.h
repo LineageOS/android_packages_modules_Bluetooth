@@ -15,11 +15,11 @@
  */
 #pragma once
 
-#include <bluetooth/log.h>
-
 #include <memory>
 
+#include "hal/socket_hal.h"
 #include "lpp_offload_interface.h"
+#include "os/handler.h"
 
 namespace bluetooth::lpp {
 
