@@ -28,7 +28,6 @@
 #include <thread>
 
 #include "common/bind.h"
-#include "module.h"
 #include "os/fake_timer/fake_timerfd.h"
 #include "os/files.h"
 #include "storage/config_cache.h"

@@ -31,7 +31,6 @@
 #include "main/shim/entry.h"
 #include "main/shim/shim.h"
 #include "main/shim/stack.h"
-#include "module.h"
 #include "stack/include/bt_dev_class.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "storage/storage_module.h"
