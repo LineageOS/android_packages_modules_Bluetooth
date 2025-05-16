@@ -40,3 +40,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "rfcomm_fix_bta_ag_rfc_acp_open_error"
+    namespace: "bluetooth"
+    description: "Properly handle bta_ag_rfc_acp_open when check connection fail"
+    bug: "417997444"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
