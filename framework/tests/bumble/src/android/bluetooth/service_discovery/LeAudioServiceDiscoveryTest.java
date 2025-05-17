@@ -60,6 +60,10 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.hamcrest.MockitoHamcrest;
 
+import pandora.BumbleConfigProto.IoCapability;
+import pandora.BumbleConfigProto.KeyDistribution;
+import pandora.BumbleConfigProto.OverrideRequest;
+import pandora.BumbleConfigProto.PairingConfig;
 import pandora.GattProto;
 import pandora.HostProto.AdvertiseRequest;
 import pandora.HostProto.DiscoverabilityMode;
@@ -108,6 +112,26 @@ public class LeAudioServiceDiscoveryTest {
         mInOrder = inOrder(mReceiver);
         mBumbleDevice = mBumble.getRemoteDevice();
         mHost = new Host(mTargetContext);
+        mBumble.bumbleConfigBlocking()
+                .override(
+                        OverrideRequest.newBuilder()
+                                .setIoCapability(IoCapability.NO_OUTPUT_NO_INPUT)
+                                .setPairingConfig(
+                                        PairingConfig.newBuilder()
+                                                .setSc(true)
+                                                .setMitm(true)
+                                                .setBonding(true)
+                                                .setIdentityAddressType(OwnAddressType.PUBLIC)
+                                                .build())
+                                .addInitiatorKeyDistribution(KeyDistribution.ENCRYPTION_KEY)
+                                .addInitiatorKeyDistribution(KeyDistribution.IDENTITY_KEY)
+                                .addInitiatorKeyDistribution(KeyDistribution.SIGNING_KEY)
+                                .addInitiatorKeyDistribution(KeyDistribution.LINK_KEY)
+                                .addResponderKeyDistribution(KeyDistribution.ENCRYPTION_KEY)
+                                .addResponderKeyDistribution(KeyDistribution.IDENTITY_KEY)
+                                .addResponderKeyDistribution(KeyDistribution.SIGNING_KEY)
+                                .addResponderKeyDistribution(KeyDistribution.LINK_KEY)
+                                .build());
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
@@ -125,6 +149,96 @@ public class LeAudioServiceDiscoveryTest {
             mHost.removeBondAndVerify(mBumbleDevice);
         }
         mHost.close();
+    }
+
+    /**
+     * Ensure that successful service discovery results on both Transport for LE Audio capable
+     * device
+     *
+     * <p>Prerequisites:
+     *
+     * <ol>
+     *   <li>Bumble and Android are not bonded
+     *   <li>Bumble has LE Audio service in addition to GAP and GATT services
+     * </ol>
+     *
+     * <p>Steps:
+     *
+     * <ol>
+     *   <li>Bumble is discoverable and connectable on both Transport
+     *   <li>Android creates the Bond
+     *   <li>Android starts service discovery on both Transport
+     * </ol>
+     *
+     * Expectation: ACTION_UUID intent is received and The ACTION_UUID intent has both LE and
+     * Classic services
+     */
+    @Test
+    public void testServiceDiscoveryWithPublicAddr() {
+
+        // Register Battery and Le Audio services on Bumble
+        mBumble.gattBlocking()
+                .registerService(
+                        GattProto.RegisterServiceRequest.newBuilder()
+                                .setService(
+                                        GattProto.GattServiceParams.newBuilder()
+                                                .setUuid(BATTERY_UUID.toString())
+                                                .build())
+                                .build());
+        mBumble.gattBlocking()
+                .registerService(
+                        GattProto.RegisterServiceRequest.newBuilder()
+                                .setService(
+                                        GattProto.GattServiceParams.newBuilder()
+                                                .setUuid(LEAUDIO_UUID.toString())
+                                                .build())
+                                .build());
+
+        // Make Bumble connectable
+        mBumble.hostBlocking()
+                .advertise(
+                        AdvertiseRequest.newBuilder()
+                                .setLegacy(true)
+                                .setConnectable(true)
+                                .setOwnAddressType(OwnAddressType.PUBLIC)
+                                .build());
+        // Make Bumble discoverable over BR/EDR
+        mBumble.hostBlocking()
+                .setDiscoverabilityMode(
+                        SetDiscoverabilityModeRequest.newBuilder()
+                                .setMode(DiscoverabilityMode.DISCOVERABLE_GENERAL)
+                                .build());
+        // Start Discovery
+        assertThat(mAdapter.startDiscovery()).isTrue();
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_FOUND),
+                hasExtra(BluetoothDevice.EXTRA_NAME, Utils.BUMBLE_DEVICE_NAME),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
+        assertThat(mAdapter.cancelDiscovery()).isTrue();
+
+        // Create Bond
+        mHost.createBondAndVerify(mBumbleDevice);
+
+        // Verify  ACL connection on LE transport first and then Classic transport
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE));
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+
+        // Verify both LE and Classic Services
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_UUID),
+                hasExtra(
+                        BluetoothDevice.EXTRA_UUID,
+                        Matchers.allOf(
+                                Matchers.hasItemInArray(BluetoothUuid.HFP),
+                                Matchers.hasItemInArray(BluetoothUuid.A2DP_SOURCE),
+                                Matchers.hasItemInArray(BluetoothUuid.A2DP_SINK),
+                                Matchers.hasItemInArray(BluetoothUuid.AVRCP),
+                                Matchers.hasItemInArray(BluetoothUuid.LE_AUDIO),
+                                Matchers.hasItemInArray(BluetoothUuid.BATTERY))));
     }
 
     /**

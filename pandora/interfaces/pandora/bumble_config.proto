@@ -55,6 +55,6 @@ enum KeyDistribution {
 message OverrideRequest {
     IoCapability io_capability = 1;
     PairingConfig pairing_config = 2;
-    KeyDistribution initiator_key_distribution = 3;
-    KeyDistribution responder_key_distribution = 4;
+    repeated KeyDistribution initiator_key_distribution = 3;
+    repeated KeyDistribution responder_key_distribution = 4;
 }
