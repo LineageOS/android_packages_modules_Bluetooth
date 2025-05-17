@@ -145,14 +145,15 @@ public class ScanController {
     private volatile boolean mTestModeEnabled = false;
     private Handler mTestModeHandler;
 
-    public ScanController(AdapterService service) {
-        this(service, null, null, new ScannerMap(), null, getSystemClock());
+    public ScanController(AdapterService service, ScanNativeInterface scanNativeInterface) {
+        this(service, null, scanNativeInterface, null, new ScannerMap(), null, getSystemClock());
     }
 
     @VisibleForTesting
     ScanController(
             AdapterService service,
             ScanManager scanManager,
+            ScanNativeInterface scanNativeInterface,
             PeriodicScanManager periodicScanManager,
             ScannerMap scannerMap,
             @Nullable Looper looper,
@@ -197,7 +198,13 @@ public class ScanController {
         mScanManager =
                 requireNonNullElseGet(
                         scanManager,
-                        () -> new ScanManager(mAdapterService, this, mScanLooper, timeProvider));
+                        () ->
+                                new ScanManager(
+                                        mAdapterService,
+                                        this,
+                                        scanNativeInterface,
+                                        mScanLooper,
+                                        timeProvider));
         mPeriodicScanManager =
                 requireNonNullElseGet(
                         periodicScanManager, () -> new PeriodicScanManager(mAdapterService, this));

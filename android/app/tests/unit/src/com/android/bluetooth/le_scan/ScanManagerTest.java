@@ -242,9 +242,9 @@ public class ScanManagerTest {
                 new ScanManager(
                         mAdapterService,
                         mScanController,
+                        mScanNativeInterface,
                         mLooper.getLooper(),
-                        mTimeProvider,
-                        mScanNativeInterface);
+                        mTimeProvider);
 
         mScanReportDelay = DEFAULT_BATCH_SCAN_REPORT_DELAY_MS;
         mMockAppScanStats =
@@ -2122,9 +2122,9 @@ public class ScanManagerTest {
                 new ScanManager(
                         mAdapterService,
                         mScanController,
+                        mScanNativeInterface,
                         mLooper.getLooper(),
-                        mTimeProvider,
-                        mScanNativeInterface);
+                        mTimeProvider);
 
         // Turn on screen
         setScreenOn(true);
@@ -2179,15 +2179,14 @@ public class ScanManagerTest {
 
         mockSystemPropertyGet(MSFT_HCI_EXT_ENABLED, true);
 
-        // Create new ScanManager since sysprop and MSFT support are only checked when
-        // ScanManager is created
+        // Create new ScanManager since sysprop and MSFT support are only on ScanManager creation
         mScanManager =
                 new ScanManager(
                         mAdapterService,
                         mScanController,
+                        mScanNativeInterface,
                         mLooper.getLooper(),
-                        mTimeProvider,
-                        mScanNativeInterface);
+                        mTimeProvider);
 
         // Turn on screen
         setScreenOn(true);

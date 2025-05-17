@@ -150,6 +150,7 @@ import com.android.bluetooth.hid.HidHostService;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.le_scan.ScanController;
 import com.android.bluetooth.le_scan.ScanManager;
+import com.android.bluetooth.le_scan.ScanNativeInterface;
 import com.android.bluetooth.map.BluetoothMapService;
 import com.android.bluetooth.mapclient.MapClientService;
 import com.android.bluetooth.mcp.McpService;
@@ -297,6 +298,7 @@ public class AdapterService extends Service {
     private final BluetoothQualityReportNativeInterface mBluetoothQualityReportNativeInterface;
     private final BluetoothHciVendorSpecificNativeInterface
             mBluetoothHciVendorSpecificNativeInterface;
+    private final ScanNativeInterface mScanNativeInterface;
     private final GattNativeInterface mGattNativeInterface;
     private final AdvertiseManagerNativeInterface mAdvertiseManagerNativeInterface;
     private final DistanceMeasurementNativeInterface mDistanceMeasurementNativeInterface;
@@ -394,6 +396,7 @@ public class AdapterService extends Service {
                 null,
                 null,
                 null,
+                null,
                 null);
     }
 
@@ -405,6 +408,7 @@ public class AdapterService extends Service {
             BluetoothKeystoreNativeInterface bluetoothKeystoreNativeInterface,
             BluetoothQualityReportNativeInterface bluetoothQualityReportNativeInterface,
             BluetoothHciVendorSpecificNativeInterface bluetoothHciVendorSpecificNativeInterface,
+            ScanNativeInterface scanNativeInterface,
             GattNativeInterface gattNativeInterface,
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
             DistanceMeasurementNativeInterface distanceMeasurementNativeInterface,
@@ -415,6 +419,7 @@ public class AdapterService extends Service {
                 bluetoothKeystoreNativeInterface,
                 bluetoothQualityReportNativeInterface,
                 bluetoothHciVendorSpecificNativeInterface,
+                scanNativeInterface,
                 gattNativeInterface,
                 advertiseManagerNativeInterface,
                 distanceMeasurementNativeInterface,
@@ -428,6 +433,7 @@ public class AdapterService extends Service {
             BluetoothKeystoreNativeInterface bluetoothKeystoreNativeInterface,
             BluetoothQualityReportNativeInterface bluetoothQualityReportNativeInterface,
             BluetoothHciVendorSpecificNativeInterface bluetoothHciVendorSpecificNativeInterface,
+            ScanNativeInterface scanNativeInterface,
             GattNativeInterface gattNativeInterface,
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
             DistanceMeasurementNativeInterface distanceMeasurementNativeInterface,
@@ -446,6 +452,7 @@ public class AdapterService extends Service {
                         () ->
                                 new BluetoothHciVendorSpecificNativeInterface(
                                         mBluetoothHciVendorSpecificDispatcher));
+        mScanNativeInterface = scanNativeInterface;
         mGattNativeInterface = gattNativeInterface;
         mAdvertiseManagerNativeInterface = advertiseManagerNativeInterface;
         mDistanceMeasurementNativeInterface = distanceMeasurementNativeInterface;
@@ -1152,7 +1159,7 @@ public class AdapterService extends Service {
 
     private void startScanController() {
         Log.i(TAG, "startScanController() called");
-        mScanController = new ScanController(this);
+        mScanController = new ScanController(this, mScanNativeInterface);
         mNativeInterface.enable();
     }
 

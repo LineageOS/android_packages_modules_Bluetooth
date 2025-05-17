@@ -18,48 +18,21 @@ package com.android.bluetooth.le_scan;
 
 import android.annotation.Nullable;
 import android.os.RemoteException;
-import android.util.Log;
-
-import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /** BLE Scan Native Interface to/from JNI. */
 public class ScanNativeInterface {
-    private static final String TAG = ScanNativeInterface.class.getSimpleName();
-
-    private static ScanNativeInterface sInterface;
+    private final ScanController mScanController;
 
     private CountDownLatch mLatch = new CountDownLatch(1);
-    @Nullable private ScanController mScanController;
 
-    private ScanNativeInterface() {}
-
-    /**
-     * This class is a singleton because native library should only be loaded once
-     *
-     * @return default instance
-     */
-    public static ScanNativeInterface getInstance() {
-        synchronized (ScanNativeInterface.class) {
-            if (sInterface == null) {
-                sInterface = new ScanNativeInterface();
-            }
-        }
-        return sInterface;
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    public static void setInstance(ScanNativeInterface instance) {
-        synchronized (ScanNativeInterface.class) {
-            sInterface = instance;
-        }
-    }
-
-    void init(ScanController scanController) {
+    ScanNativeInterface(ScanController scanController) {
         mScanController = scanController;
+    }
+
+    void init() {
         initializeNative();
     }
 
@@ -297,10 +270,6 @@ public class ScanNativeInterface {
             int periodicAdvInt,
             byte[] advData,
             String originalAddress) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
         mScanController.onScanResult(
                 eventType,
                 addressType,
@@ -317,69 +286,37 @@ public class ScanNativeInterface {
 
     void onScannerRegistered(int status, int scannerId, long uuidLsb, long uuidMsb)
             throws RemoteException {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
         mScanController.onScannerRegistered(status, scannerId, uuidLsb, uuidMsb);
     }
 
     void onScanFilterEnableDisabled(int action, int status, int clientIf) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
         mScanController.onScanFilterEnableDisabled(action, status, clientIf);
     }
 
     void onScanFilterParamsConfigured(int action, int status, int clientIf, int availableSpace) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
         mScanController.onScanFilterParamsConfigured(action, status, clientIf, availableSpace);
     }
 
     void onScanFilterConfig(
             int action, int status, int clientIf, int filterType, int availableSpace) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
         mScanController.onScanFilterConfig(action, status, clientIf, filterType, availableSpace);
     }
 
     void onBatchScanStorageConfigured(int status, int clientIf) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
         mScanController.onBatchScanStorageConfigured(status, clientIf);
     }
 
     void onBatchScanStartStopped(int startStopAction, int status, int clientIf) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
         mScanController.onBatchScanStartStopped(startStopAction, status, clientIf);
     }
 
     void onBatchScanReports(
             int status, int scannerId, int reportType, int numRecords, byte[] recordData)
             throws RemoteException {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
         mScanController.onBatchScanReports(status, scannerId, reportType, numRecords, recordData);
     }
 
     void onBatchScanThresholdCrossed(int clientIf) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
         mScanController.onBatchScanThresholdCrossed(clientIf);
     }
 
@@ -398,10 +335,6 @@ public class ScanNativeInterface {
             int txPower,
             int rssiValue,
             int timeStamp) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return null;
-        }
         return mScanController.createOnTrackAdvFoundLostObject(
                 clientIf,
                 advPacketLen,
@@ -419,42 +352,22 @@ public class ScanNativeInterface {
     }
 
     void onTrackAdvFoundLost(AdvtFilterOnFoundOnLostInfo trackingInfo) throws RemoteException {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
         mScanController.onTrackAdvFoundLost(trackingInfo);
     }
 
     void onScanParamSetupCompleted(int status, int scannerId) throws RemoteException {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
         mScanController.onScanParamSetupCompleted(status, scannerId);
     }
 
     void onMsftAdvMonitorAdd(int filter_index, int monitor_handle, int status) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
         mScanController.onMsftAdvMonitorAdd(filter_index, monitor_handle, status);
     }
 
     void onMsftAdvMonitorRemove(int filter_index, int status) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
         mScanController.onMsftAdvMonitorRemove(filter_index, status);
     }
 
     void onMsftAdvMonitorEnable(int status) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
         mScanController.onMsftAdvMonitorEnable(status);
     }
 }

@@ -24,6 +24,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static android.bluetooth.le.ScanSettings.getScanModeString;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.app.ActivityManager;
 import android.app.AlarmManager;
@@ -197,8 +198,8 @@ public class ScanManager {
     private final AdapterService mAdapterService;
     private final BluetoothAdapter mAdapter;
     private final ScanController mScanController;
-    private final TimeProvider mTimeProvider;
     private final ScanNativeInterface mNativeInterface;
+    private final TimeProvider mTimeProvider;
     private final AlarmManager mAlarmManager;
     private final PendingIntent mBatchScanIntervalIntent;
     private final DisplayManager mDisplayManager;
@@ -243,24 +244,17 @@ public class ScanManager {
     ScanManager(
             AdapterService service,
             ScanController scanController,
+            ScanNativeInterface nativeInterface,
             Looper looper,
             TimeProvider timeProvider) {
-        this(service, scanController, looper, timeProvider, ScanNativeInterface.getInstance());
-    }
-
-    @VisibleForTesting
-    ScanManager(
-            AdapterService service,
-            ScanController scanController,
-            Looper looper,
-            TimeProvider timeProvider,
-            ScanNativeInterface nativeInterface) {
         mAdapterService = requireNonNull(service);
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mScanController = scanController;
+        mNativeInterface =
+                requireNonNullElseGet(
+                        nativeInterface, () -> new ScanNativeInterface(mScanController));
+        mNativeInterface.init();
         mTimeProvider = timeProvider;
-        mNativeInterface = requireNonNull(nativeInterface);
-        mNativeInterface.init(scanController);
         mAlarmManager = mAdapterService.getSystemService(AlarmManager.class);
         Intent batchIntent = new Intent(ACTION_REFRESH_BATCHED_SCAN, null);
         mBatchScanIntervalIntent =
