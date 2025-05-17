@@ -102,7 +102,7 @@ public class PbapStateMachine extends StateMachine {
     private ServerSession mServerSession;
     private final int mNotificationId;
 
-    private PbapStateMachine(
+    PbapStateMachine(
             @NonNull BluetoothPbapService service,
             Looper looper,
             AdapterService adapterService,
@@ -127,27 +127,8 @@ public class PbapStateMachine extends StateMachine {
         addState(mWaitingForAuth);
         addState(mConnected);
         setInitialState(mWaitingForAuth);
-    }
 
-    static PbapStateMachine make(
-            BluetoothPbapService service,
-            Looper looper,
-            AdapterService adapterService,
-            BluetoothDevice device,
-            BluetoothSocket connSocket,
-            Handler pbapHandler,
-            int notificationId) {
-        PbapStateMachine stateMachine =
-                new PbapStateMachine(
-                        service,
-                        looper,
-                        adapterService,
-                        device,
-                        connSocket,
-                        pbapHandler,
-                        notificationId);
-        stateMachine.start();
-        return stateMachine;
+        start();
     }
 
     BluetoothDevice getRemoteDevice() {
@@ -262,24 +243,22 @@ public class PbapStateMachine extends StateMachine {
         @Override
         public boolean processMessage(Message message) {
             switch (message.what) {
-                case REQUEST_PERMISSION:
-                    mService.checkOrGetPhonebookPermission(PbapStateMachine.this);
-                    break;
-                case AUTHORIZED:
-                    transitionTo(mConnected);
-                    break;
-                case REJECTED:
+                case REQUEST_PERMISSION ->
+                        mService.checkOrGetPhonebookPermission(PbapStateMachine.this);
+                case AUTHORIZED -> transitionTo(mConnected);
+                case REJECTED -> {
                     rejectConnection();
                     transitionTo(mFinished);
-                    break;
-                case DISCONNECT:
+                }
+                case DISCONNECT -> {
                     mServiceHandler.removeMessages(
                             BluetoothPbapService.USER_TIMEOUT, PbapStateMachine.this);
                     mServiceHandler
                             .obtainMessage(BluetoothPbapService.USER_TIMEOUT, PbapStateMachine.this)
                             .sendToTarget();
                     transitionTo(mFinished);
-                    break;
+                }
+                default -> {} // Nothing to do
             }
             return HANDLED;
         }
@@ -368,25 +347,20 @@ public class PbapStateMachine extends StateMachine {
         @Override
         public boolean processMessage(Message message) {
             switch (message.what) {
-                case DISCONNECT:
-                    stopObexServerSession();
-                    break;
-                case CREATE_NOTIFICATION:
-                    createPbapNotification();
-                    break;
-                case REMOVE_NOTIFICATION:
+                case DISCONNECT -> stopObexServerSession();
+                case CREATE_NOTIFICATION -> createPbapNotification();
+                case REMOVE_NOTIFICATION -> {
                     Intent i = new Intent(BluetoothPbapService.USER_CONFIRM_TIMEOUT_ACTION);
                     mService.sendBroadcast(i);
                     notifyAuthCancelled();
                     removePbapNotification(mNotificationId);
-                    break;
-                case AUTH_KEY_INPUT:
+                }
+                case AUTH_KEY_INPUT -> {
                     String key = (String) message.obj;
                     notifyAuthKeyInput(key);
-                    break;
-                case AUTH_CANCELLED:
-                    notifyAuthCancelled();
-                    break;
+                }
+                case AUTH_CANCELLED -> notifyAuthCancelled();
+                default -> {} // Nothing to do
             }
             return HANDLED;
         }

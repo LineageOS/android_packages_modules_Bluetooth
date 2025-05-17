@@ -20,7 +20,9 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
+import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -58,7 +60,6 @@ import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.TestUtils.MockitoRule;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
@@ -148,9 +149,7 @@ public class GattServiceTest {
         doReturn(mDistanceMeasurementManager)
                 .when(mGattObjectsFactory)
                 .createDistanceMeasurementManager(any(), any());
-        doReturn(mScanManager)
-                .when(mScanObjectsFactory)
-                .createScanManager(any(), any(), any(), any());
+        doReturn(mScanManager).when(mScanObjectsFactory).createScanManager(any(), any(), any());
         doReturn(mPeriodicScanManager)
                 .when(mScanObjectsFactory)
                 .createPeriodicScanManager(any(), any());
@@ -161,15 +160,11 @@ public class GattServiceTest {
         doReturn(mResources).when(mAdapterService).getResources();
         doReturn(mMockContentResolver).when(mAdapterService).getContentResolver();
 
-        TestUtils.mockGetSystemService(
-                mAdapterService, Context.LOCATION_SERVICE, LocationManager.class);
-        TestUtils.mockGetSystemService(
-                mAdapterService, Context.ACTIVITY_SERVICE, ActivityManager.class);
-        TestUtils.mockGetSystemService(
-                mAdapterService,
-                Context.COMPANION_DEVICE_SERVICE,
-                CompanionDeviceManager.class,
-                mCompanionDeviceManager);
+        mockGetBluetoothManager(mAdapterService);
+        mockGetSystemService(mAdapterService, LocationManager.class);
+        mockGetSystemService(mAdapterService, ActivityManager.class);
+        mockGetSystemService(
+                mAdapterService, CompanionDeviceManager.class, mCompanionDeviceManager);
 
         mBtCompanionManager = new CompanionManager(mAdapterService, null);
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
@@ -181,7 +176,7 @@ public class GattServiceTest {
         mService.mReliableQueue = mReliableQueue;
         mService.mServerMap = mServerMap;
 
-        mockAdapterServiceGetRemoteDevice(mAdapterService, mDevice);
+        mockGetRemoteDevice(mAdapterService, mDevice);
     }
 
     @After
@@ -322,7 +317,7 @@ public class GattServiceTest {
                         0,
                         false);
         mService.onConnectedFromNative(
-                CLIENT_IF, 0, BluetoothGatt.GATT_CONNECTION_TIMEOUT, mDevice);
+                CLIENT_IF, 0, transport, BluetoothGatt.GATT_CONNECTION_TIMEOUT, mDevice);
         verify(mAdapterService).notifyGattClientConnectFailed(anyInt(), any());
     }
 
@@ -364,7 +359,8 @@ public class GattServiceTest {
                         phy,
                         0,
                         false);
-        mService.onConnectedFromNative(CLIENT_IF, 15, BluetoothGatt.GATT_SUCCESS, mDevice);
+        mService.onConnectedFromNative(
+                CLIENT_IF, 15, transport, BluetoothGatt.GATT_SUCCESS, mDevice);
         mService.clientDisconnect(mGattCallback, mDevice, mAttributionSource);
 
         verify(mAdapterService).notifyGattClientDisconnect(anyInt(), any());
@@ -408,8 +404,9 @@ public class GattServiceTest {
                         phy,
                         0,
                         false);
-        mService.onConnectedFromNative(CLIENT_IF, 15, BluetoothGatt.GATT_SUCCESS, mDevice);
-        mService.onDisconnectedFromNative(CLIENT_IF, 15, 1, mDevice);
+        mService.onConnectedFromNative(
+                CLIENT_IF, 15, transport, BluetoothGatt.GATT_SUCCESS, mDevice);
+        mService.onDisconnectedFromNative(CLIENT_IF, 15, transport, 1, mDevice);
 
         verify(mAdapterService).notifyGattClientDisconnect(anyInt(), any());
     }
@@ -665,7 +662,7 @@ public class GattServiceTest {
         callbacks.add(callback);
         doReturn(callbacks).when(mClientMap).getAllAppsCallbackId();
 
-        mService.unregAll(mAttributionSource);
+        mService.unregAll();
         verify(mClientMap).remove(appId, ContextMap.RemoveReason.REASON_UNREGISTER_ALL);
         verify(mNativeInterface).gattClientUnregisterApp(appId);
     }
@@ -710,7 +707,11 @@ public class GattServiceTest {
         assertThat(mService.mRestrictedHandles.get(CLIENT_CONN_ID)).doesNotContain(randomChar.id);
 
         mService.onDisconnectedFromNative(
-                CLIENT_IF, CLIENT_CONN_ID, BluetoothGatt.GATT_SUCCESS, mDevice);
+                CLIENT_IF,
+                CLIENT_CONN_ID,
+                BluetoothDevice.TRANSPORT_LE,
+                BluetoothGatt.GATT_SUCCESS,
+                mDevice);
         assertThat(mService.mRestrictedHandles).doesNotContainKey(CLIENT_CONN_ID);
     }
 }

@@ -22,6 +22,7 @@
 #include <com_android_bluetooth_flags.h>
 
 #include "abstract_message_loop.h"
+#include "array_utils.h"
 #include "avrcp_common.h"
 #include "btif/include/btif_av.h"
 #include "internal_include/stack_config.h"
@@ -745,8 +746,8 @@ void Device::AddressedPlayerNotificationResponse(uint8_t label, bool interim,
 void Device::RejectNotification() {
   log::verbose("");
   Notification* rejectNotification[] = {&play_status_changed_, &track_changed_, &play_pos_changed_,
-                                        &now_playing_changed_};
-  for (int i = 0; i < 4; i++) {
+                                        &now_playing_changed_, &player_setting_changed_};
+  for (uint8_t i = 0; i < ARRAY_SIZE(rejectNotification); i++) {
     uint8_t label = rejectNotification[i]->second;
     auto response = RejectBuilder::MakeBuilder(CommandPdu::REGISTER_NOTIFICATION,
                                                Status::ADDRESSED_PLAYER_CHANGED);

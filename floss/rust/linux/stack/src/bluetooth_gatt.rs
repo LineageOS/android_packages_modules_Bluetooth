@@ -2736,10 +2736,24 @@ pub(crate) trait BtifGattClientCallbacks {
     fn register_client_cb(&mut self, status: GattStatus, client_id: i32, app_uuid: Uuid);
 
     #[btif_callback(Connect)]
-    fn connect_cb(&mut self, conn_id: i32, status: GattStatus, client_id: i32, addr: RawAddress);
+    fn connect_cb(
+        &mut self,
+        conn_id: i32,
+        status: GattStatus,
+        client_id: i32,
+        transport: i32,
+        addr: RawAddress,
+    );
 
     #[btif_callback(Disconnect)]
-    fn disconnect_cb(&mut self, conn_id: i32, status: GattStatus, client_id: i32, addr: RawAddress);
+    fn disconnect_cb(
+        &mut self,
+        conn_id: i32,
+        status: GattStatus,
+        client_id: i32,
+        transport: i32,
+        addr: RawAddress,
+    );
 
     #[btif_callback(RegisterForNotification)]
     fn register_for_notification_cb(
@@ -2847,7 +2861,14 @@ impl BtifGattClientCallbacks for BluetoothGatt {
     }
 
     #[log_cb_args]
-    fn connect_cb(&mut self, conn_id: i32, status: GattStatus, client_id: i32, addr: RawAddress) {
+    fn connect_cb(
+        &mut self,
+        conn_id: i32,
+        status: GattStatus,
+        client_id: i32,
+        _transport: i32,
+        addr: RawAddress,
+    ) {
         if status == GattStatus::Success {
             self.context_map.add_connection(client_id, conn_id, &addr);
         }
@@ -2864,6 +2885,7 @@ impl BtifGattClientCallbacks for BluetoothGatt {
         conn_id: i32,
         status: GattStatus,
         client_id: i32,
+        _transport: i32,
         addr: RawAddress,
     ) {
         let Some(client) = self.context_map.get_by_client_id(client_id) else { return };
@@ -3116,7 +3138,14 @@ pub(crate) trait BtifGattServerCallbacks {
     fn register_server_cb(&mut self, status: GattStatus, server_id: i32, app_uuid: Uuid);
 
     #[btif_callback(Connection)]
-    fn connection_cb(&mut self, conn_id: i32, server_id: i32, connected: i32, addr: RawAddress);
+    fn connection_cb(
+        &mut self,
+        conn_id: i32,
+        server_id: i32,
+        transport: i32,
+        connected: i32,
+        addr: RawAddress,
+    );
 
     #[btif_callback(ServiceAdded)]
     fn service_added_cb(
@@ -3254,7 +3283,14 @@ impl BtifGattServerCallbacks for BluetoothGatt {
     }
 
     #[log_cb_args]
-    fn connection_cb(&mut self, conn_id: i32, server_id: i32, connected: i32, addr: RawAddress) {
+    fn connection_cb(
+        &mut self,
+        conn_id: i32,
+        server_id: i32,
+        _transport: i32,
+        connected: i32,
+        addr: RawAddress,
+    ) {
         let is_connected = connected != 0;
         if is_connected {
             self.server_context_map.add_connection(server_id, conn_id, &addr);

@@ -1451,7 +1451,7 @@ public class HeadsetClientStateMachine extends StateMachine {
                         break;
                     }
 
-                    // Called only for Mute/Un-mute - Mic volume change is not allowed.
+                // Called only for Mute/Un-mute - Mic volume change is not allowed.
                 case SET_MIC_VOLUME:
                     break;
                 case SET_SPEAKER_VOLUME:
@@ -1817,8 +1817,8 @@ public class HeadsetClientStateMachine extends StateMachine {
 
             switch (state) {
                 case HeadsetClientHalConstants.AUDIO_STATE_CONNECTED,
-                        HeadsetClientHalConstants.AUDIO_STATE_CONNECTED_LC3,
-                        HeadsetClientHalConstants.AUDIO_STATE_CONNECTED_MSBC:
+                HeadsetClientHalConstants.AUDIO_STATE_CONNECTED_LC3,
+                HeadsetClientHalConstants.AUDIO_STATE_CONNECTED_MSBC:
                     mAudioSWB = state == HeadsetClientHalConstants.AUDIO_STATE_CONNECTED_LC3;
                     mAudioWbs = state == HeadsetClientHalConstants.AUDIO_STATE_CONNECTED_MSBC;
                     debug("mAudioRouteAllowed=" + mAudioRouteAllowed);
@@ -1925,8 +1925,8 @@ public class HeadsetClientStateMachine extends StateMachine {
             debug("Disconnecting: Process message: " + message.what);
 
             switch (message.what) {
-                    // Deferring messages as state machine objects are meant to be reused and after
-                    // disconnect is complete we want honor other message requests
+                // Deferring messages as state machine objects are meant to be reused and after
+                // disconnect is complete we want honor other message requests
                 case CONNECT:
                 case CONNECT_AUDIO:
                 case DISCONNECT:
@@ -2016,10 +2016,10 @@ public class HeadsetClientStateMachine extends StateMachine {
                         break;
                     }
                     deferMessage(message);
-                    /*
-                     * fall through - disconnect audio first then expect
-                     * deferred DISCONNECT message in Connected state
-                     */
+                /*
+                 * fall through - disconnect audio first then expect
+                 * deferred DISCONNECT message in Connected state
+                 */
                 case DISCONNECT_AUDIO:
                     /*
                      * just disconnect audio and wait for
@@ -2384,15 +2384,13 @@ public class HeadsetClientStateMachine extends StateMachine {
 
     @VisibleForTesting
     static int getConnectionStateFromAudioState(int audioState) {
-        switch (audioState) {
-            case BluetoothHeadsetClient.STATE_AUDIO_CONNECTED:
-                return BluetoothAdapter.STATE_CONNECTED;
-            case BluetoothHeadsetClient.STATE_AUDIO_CONNECTING:
-                return BluetoothAdapter.STATE_CONNECTING;
-            case BluetoothHeadsetClient.STATE_AUDIO_DISCONNECTED:
-                return BluetoothAdapter.STATE_DISCONNECTED;
-        }
-        return BluetoothAdapter.STATE_DISCONNECTED;
+        return switch (audioState) {
+            case BluetoothHeadsetClient.STATE_AUDIO_CONNECTED -> BluetoothAdapter.STATE_CONNECTED;
+            case BluetoothHeadsetClient.STATE_AUDIO_CONNECTING -> BluetoothAdapter.STATE_CONNECTING;
+            case BluetoothHeadsetClient.STATE_AUDIO_DISCONNECTED ->
+                    BluetoothAdapter.STATE_DISCONNECTED;
+            default -> BluetoothAdapter.STATE_DISCONNECTED;
+        };
     }
 
     private void debug(String message) {

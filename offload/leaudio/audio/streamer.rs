@@ -14,17 +14,18 @@
 
 use crate::codec::{self, CodecConfig, Encode, PcmFrame};
 use crate::ffi::{CAudioConfig, CIsoStream};
-use std::cmp::min;
+use std::cmp::{max, min};
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Condvar, Mutex, MutexGuard};
+use std::sync::{Arc, Condvar, Mutex, MutexGuard, RwLock, Weak};
 use std::thread::{self, sleep, JoinHandle};
 use std::time::{Duration, Instant};
 
 pub struct Streamer<Cb: Callbacks> {
     state: Mutex<State>,
-    iso: Arc<Mutex<IsoState>>,
+    iso: Arc<RwLock<IsoState>>,
     audio: AudioConfig,
+    anchor_delay: Duration,
     callbacks: Arc<Cb>,
 }
 
@@ -52,16 +53,22 @@ struct IsoState {
 struct IsoStream {
     handle: u16,
     channels: usize,
-    active: bool,
+    t0: Option<Instant>,
+    drift_us: i64,
 }
 
 enum State {
     Idle,
-    Running { fifo: Arc<Fifo>, _worker: Worker },
+    Running { fifo: Weak<Fifo>, _worker: Worker },
 }
 
 impl<Cb: Callbacks> Streamer<Cb> {
-    pub fn new(iso: &[CIsoStream], audio: &CAudioConfig, callbacks: Cb) -> Result<Self, String> {
+    pub fn new(
+        iso: &[CIsoStream],
+        audio: &CAudioConfig,
+        anchor_delay: Duration,
+        callbacks: Cb,
+    ) -> Result<Self, String> {
         let iso = IsoState::from(iso)?;
         let channels_by_stream = match iso.streams().count() {
             1 => iso.streams[0].channels,
@@ -77,19 +84,28 @@ impl<Cb: Callbacks> Streamer<Cb> {
 
         Ok(Self {
             state: Mutex::new(State::Idle),
-            iso: Arc::new(Mutex::new(iso)),
+            iso: Arc::new(RwLock::new(iso)),
             callbacks: Arc::new(callbacks),
             audio,
+            anchor_delay,
         })
     }
 
-    pub fn enable(&self, handle: u16, max_sdu_size: usize, sdu_interval_us: u32) {
+    pub fn enable(
+        &self,
+        handle: u16,
+        t0: Instant,
+        link_feedback: bool,
+        sdu_interval_us: u32,
+        max_sdu_size: usize,
+    ) {
+        let mut state = self.state.lock().unwrap();
+
         {
-            let mut iso = self.iso.lock().unwrap();
-            iso.enable(handle);
+            let mut iso = self.iso.write().unwrap();
+            iso.enable(handle, t0);
         }
 
-        let mut state = self.state.lock().unwrap();
         if matches!(*state, State::Idle) {
             if self.audio.frame_duration_us != sdu_interval_us {
                 log::error!(
@@ -108,12 +124,13 @@ impl<Cb: Callbacks> Streamer<Cb> {
 
             let cb_clone = self.callbacks.clone();
             *state = State::Running {
-                fifo: fifo.clone(),
+                fifo: Arc::downgrade(&fifo),
                 _worker: Worker::new(
                     self.iso.clone(),
                     fifo,
                     max_sdu_size,
                     self.audio,
+                    if link_feedback { self.anchor_delay } else { Duration::ZERO },
                     move |hdl, sn, data| cb_clone.send(hdl, sn, data),
                 ),
             };
@@ -122,31 +139,38 @@ impl<Cb: Callbacks> Streamer<Cb> {
     }
 
     pub fn disable(&self, handle: u16) {
+        let mut state = self.state.lock().unwrap();
+
         let active = {
-            let mut iso = self.iso.lock().unwrap();
+            let mut iso = self.iso.write().unwrap();
             iso.disable(handle);
             iso.active()
         };
 
         if !active {
-            let mut state = self.state.lock().unwrap();
-            self.callbacks.stop();
             *state = State::Idle;
+            self.callbacks.stop();
         }
+    }
+
+    pub fn anchor(&self, handle: u16, sn: i64, drift: i64) {
+        let mut iso = self.iso.write().unwrap();
+        iso.anchor(handle, sn, drift);
     }
 
     pub fn write(&self, chunk: &[u8]) -> Result<usize, String> {
-        match *self.state.lock().unwrap() {
-            State::Running { ref fifo, .. } => Ok(fifo.write(chunk)),
-            _ => Err("ISO stream(s) is not running".to_string()),
-        }
-    }
-}
-
-impl<Cb: Callbacks> Drop for Streamer<Cb> {
-    fn drop(&mut self) {
-        if let State::Running { .. } = *self.state.lock().unwrap() {
-            self.callbacks.stop()
+        let fifo = {
+            let state = self.state.lock().unwrap();
+            if let State::Running { ref fifo, .. } = *state {
+                fifo.upgrade()
+            } else {
+                None
+            }
+        };
+        if let Some(fifo) = fifo {
+            Ok(fifo.write(chunk))
+        } else {
+            Err("ISO stream(s) is not running".to_string())
         }
     }
 }
@@ -181,7 +205,7 @@ impl IsoState {
             streams[idx] = IsoStream {
                 handle: s.handle,
                 channels: s.channel_allocation.count_ones() as usize,
-                active: false,
+                ..Default::default()
             }
         }
 
@@ -197,18 +221,24 @@ impl IsoState {
     }
 
     fn active(&self) -> bool {
-        self.streams.iter().any(|s| s.active)
+        self.streams.iter().any(|s| s.t0.is_some())
     }
 
-    fn enable(&mut self, handle: u16) {
+    fn enable(&mut self, handle: u16, t0: Instant) {
         if let Some(s) = self.streams.iter_mut().find(|s| s.handle == handle) {
-            s.active = true;
+            s.t0 = Some(t0);
         };
     }
 
     fn disable(&mut self, handle: u16) {
         if let Some(s) = self.streams.iter_mut().find(|s| s.handle == handle) {
-            s.active = false;
+            s.t0 = None;
+        };
+    }
+
+    fn anchor(&mut self, handle: u16, _sn: i64, drift_us: i64) {
+        if let Some(s) = self.streams.iter_mut().find(|s| s.handle == handle) {
+            s.drift_us = drift_us;
         };
     }
 }
@@ -218,110 +248,66 @@ struct Worker {
     halt: Arc<AtomicBool>,
 }
 
-struct WorkerThread<F> {
-    fifo: Arc<Fifo>,
-    underrun: usize,
-    audio: AudioConfig,
-    frame_len: usize,
-    max_sdu_size: usize,
-    streams: [Option<WorkerStream>; 2],
-    send: F,
-}
-
-struct WorkerStream {
-    sn0: u64,
-    encoder: Box<dyn Encode>,
-}
-
 impl Worker {
     fn new<F>(
-        iso: Arc<Mutex<IsoState>>,
+        iso: Arc<RwLock<IsoState>>,
         fifo: Arc<Fifo>,
         max_sdu_size: usize,
         audio: AudioConfig,
+        anchor_delay: Duration,
         send: F,
     ) -> Self
     where
         F: Fn(u16, u16, &[u8]) + Send + 'static,
     {
-        let halt = Arc::new(AtomicBool::new(false));
+        let sample_rate = audio.sample_rate;
+        let frame_duration_us = audio.frame_duration_us;
+        let frame_len = ((sample_rate as u64 * frame_duration_us as u64) / 1_000_000) as usize;
 
+        let halt = Arc::new(AtomicBool::new(false));
         let halt_clone = halt.clone();
         let thread = thread::spawn(move || {
-            let mut worker = WorkerThread::new(fifo, audio, max_sdu_size, send);
-            let mut clocker = Clocker::new(audio.frame_duration_us);
+            let min_delay = min(Duration::from_millis(10), anchor_delay);
+            let mut worker = WorkerThread::new(audio, max_sdu_size, send);
+            let mut clocker = Clocker::new(audio.frame_duration_us, min_delay, anchor_delay);
+            let mut underrun = 0;
 
             log::info!("Streaming started");
 
-            loop {
+            while !halt_clone.load(Ordering::Relaxed) {
+                let iso_snapshot = { *iso.read().unwrap() };
                 let now = Instant::now();
-                let (deadline, sequence_number) = clocker.deadline(now);
+                let Some((deadline, seq_nums)) = clocker.deadline(iso_snapshot, now) else {
+                    break;
+                };
+
                 sleep(deadline - now);
 
-                if halt_clone.load(Ordering::Relaxed) {
-                    break;
+                let timeout = anchor_delay - min_delay - (now - deadline);
+                let Some(frame) = fifo.get(frame_len, timeout) else {
+                    if underrun == 0 {
+                        log::warn!("PCM underrun starts");
+                    } else if underrun % (1_000_000 / frame_duration_us) == 0 {
+                        log::warn!("PCM underrun: {} SDU starved", underrun);
+                    }
+                    underrun += 1;
+                    continue;
+                };
+                if underrun > 0 {
+                    log::warn!("PCM underrun ends: {} SDU starved", underrun);
+                    underrun = 0;
                 }
 
-                let iso_snapshot = { *iso.lock().unwrap() };
-                worker.schedule(iso_snapshot, sequence_number);
+                worker.run(frame, iso_snapshot, seq_nums);
             }
 
-            if worker.underrun > 0 {
-                log::warn!("PCM underrun ends: {} SDU starved before stopped", worker.underrun);
+            if underrun > 0 {
+                log::warn!("PCM underrun ends: {} SDU starved before stopped", underrun);
             }
             log::info!("Streaming stopped");
         });
 
         Self { thread: Some(thread), halt }
-    }
-}
-
-impl<F> WorkerThread<F>
-where
-    F: Fn(u16, u16, &[u8]),
-{
-    fn new(fifo: Arc<Fifo>, audio: AudioConfig, max_sdu_size: usize, send: F) -> Self {
-        let sample_rate = audio.sample_rate;
-        let frame_duration_us = audio.frame_duration_us;
-        let frame_len = ((sample_rate as u64 * frame_duration_us as u64) / 1_000_000) as usize;
-        Self { fifo, underrun: 0, audio, frame_len, max_sdu_size, streams: [None, None], send }
-    }
-
-    fn schedule(&mut self, iso: IsoState, sequence_number: u64) {
-        let Some(frame) = self.fifo.get(self.frame_len) else {
-            if self.underrun == 0 {
-                log::warn!("PCM underrun starts");
-            }
-            self.underrun += 1;
-            return;
-        };
-        if self.underrun > 0 {
-            log::warn!("PCM underrun ends: {} SDU starved", self.underrun);
-            self.underrun = 0;
-        }
-
-        for (i, iso) in iso.streams.iter().enumerate() {
-            if !iso.active {
-                self.streams[i] = None;
-                continue;
-            }
-            let stream = self.streams[i].get_or_insert_with(|| WorkerStream {
-                sn0: sequence_number,
-                encoder: codec::new_encoder(&self.audio, iso.channels, self.max_sdu_size),
-            });
-
-            let pcm = match iso.channels {
-                0 => continue,
-                1 => PcmFrame::from_fifo(&frame).channel(i),
-                2.. => PcmFrame::from_fifo(&frame),
-            };
-
-            (self.send)(
-                iso.handle,
-                (sequence_number - stream.sn0) as u16,
-                &stream.encoder.encode(&pcm),
-            );
-        }
     }
 }
 
@@ -333,30 +319,91 @@ impl Drop for Worker {
     }
 }
 
+struct WorkerThread<F> {
+    audio: AudioConfig,
+    max_sdu_size: usize,
+    encoders: [Option<Box<dyn Encode>>; 2],
+    send: F,
+}
+
+impl<F> WorkerThread<F>
+where
+    F: Fn(u16, u16, &[u8]),
+{
+    fn new(audio: AudioConfig, max_sdu_size: usize, send: F) -> Self {
+        Self { audio, max_sdu_size, encoders: [None, None], send }
+    }
+
+    fn run(&mut self, frame: FifoFrame, iso: IsoState, seq_nums: [Option<u64>; 2]) {
+        for (i, (iso, sn)) in iso.streams.iter().zip(seq_nums).enumerate() {
+            let Some(sn) = sn else {
+                self.encoders[i] = None;
+                continue;
+            };
+
+            let encoder = self.encoders[i].get_or_insert_with(|| {
+                codec::new_encoder(&self.audio, iso.channels, self.max_sdu_size)
+            });
+
+            let pcm = match iso.channels {
+                0 => continue,
+                1 => PcmFrame::from_fifo(&frame).channel(i),
+                2.. => PcmFrame::from_fifo(&frame),
+            };
+
+            (self.send)(iso.handle, sn as u16, &encoder.encode(&pcm));
+        }
+    }
+}
+
 struct Clocker {
-    t0: Instant,
-    sequence_number: u64,
-    interval_us: u64,
+    seq_nums: [Option<u64>; 2],
+    interval_us: u32,
+    min_delay: Duration,
+    anchor_delay: Duration,
 }
 
 impl Clocker {
-    fn new(interval_us: u32) -> Self {
-        Self { t0: Instant::now(), sequence_number: 0, interval_us: interval_us as u64 }
+    fn new(interval_us: u32, min_delay: Duration, anchor_delay: Duration) -> Self {
+        Self { seq_nums: [None; 2], interval_us, min_delay, anchor_delay }
     }
 
-    fn deadline(&mut self, now: Instant) -> (Instant, u64) {
-        self.sequence_number += 1;
+    fn deadline(&mut self, iso: IsoState, now: Instant) -> Option<(Instant, [Option<u64>; 2])> {
+        let (i_ref, s_ref) = iso.streams.iter().enumerate().find(|(_, &s)| s.t0.is_some())?;
+        let interval_us = self.interval_us as u64;
 
-        let mut deadline = self.t0 + Duration::from_micros(self.sequence_number * self.interval_us);
-        if deadline < now {
-            let gap = ((now - deadline).as_micros() as u64).div_ceil(self.interval_us);
-            log::error!("Real-time loss: {} packet(s) skipped", gap);
+        let mut sn_ref = match self.seq_nums[i_ref] {
+            None => 0,
+            Some(n) => n + 1,
+        };
+        let pos_ref_us = sn_ref as i64 * interval_us as i64 + s_ref.drift_us;
 
-            self.sequence_number += gap;
-            deadline += Duration::from_micros(gap * self.interval_us);
+        let t0_ref = s_ref.t0.unwrap();
+        let pos_ref = t0_ref + Duration::from_micros(max(pos_ref_us, 0) as u64);
+        let mut deadline = pos_ref - self.anchor_delay;
+
+        if now > pos_ref - self.min_delay {
+            let gap = ((now - deadline).as_micros() as u64).div_ceil(interval_us);
+            if self.seq_nums[i_ref].is_some() {
+                log::warn!("Real-time loss: {} packet(s) skipped", gap);
+            }
+
+            sn_ref += gap;
+            deadline += Duration::from_micros(gap * interval_us);
         }
 
-        (deadline, self.sequence_number)
+        self.seq_nums[i_ref] = Some(sn_ref);
+        for (i, &s) in iso.streams.iter().enumerate() {
+            self.seq_nums[i] = s.t0.map(|t0| {
+                if t0_ref > t0 {
+                    sn_ref + ((t0_ref - t0).as_micros() as u64 + interval_us / 2) / interval_us
+                } else {
+                    sn_ref - ((t0 - t0_ref).as_micros() as u64 + interval_us / 2) / interval_us
+                }
+            });
+        }
+
+        Some((deadline, self.seq_nums))
     }
 }
 
@@ -364,7 +411,8 @@ struct Fifo {
     channels: usize,
     bitdepth: usize,
     queue: Mutex<VecDeque<u8>>,
-    cvar: Condvar,
+    cvar_rd: Condvar,
+    cvar_wr: Condvar,
 }
 
 pub struct FifoFrame<'a> {
@@ -383,32 +431,38 @@ impl Fifo {
             channels: 2,
             bitdepth,
             queue: Mutex::new(VecDeque::with_capacity(capacity)),
-            cvar: Condvar::new(),
+            cvar_rd: Condvar::new(),
+            cvar_wr: Condvar::new(),
         }
     }
 
-    fn get(&self, length: usize) -> Option<FifoFrame> {
-        let mut queue = self.queue.lock().unwrap();
+    fn get(&self, length: usize, timeout: Duration) -> Option<FifoFrame> {
+        let queue = self.queue.lock().unwrap();
+        if queue.capacity() == 0 {
+            return None;
+        }
 
+        let cvar = &self.cvar_rd;
         let size = self.channels * length * (self.bitdepth / 8);
-        if queue.len() < size {
+        let (queue, result) = cvar.wait_timeout_while(queue, timeout, |q| q.len() < size).unwrap();
+        if result.timed_out() {
             None
         } else {
-            queue.make_contiguous();
             Some(FifoFrame {
                 channels: self.channels,
                 bitdepth: self.bitdepth,
                 length,
                 queue,
-                cvar: &self.cvar,
+                cvar: &self.cvar_wr,
             })
         }
     }
 
     pub fn write(&self, mut chunk: &[u8]) -> usize {
         let write_len = chunk.len();
+
         let mut queue = self.queue.lock().unwrap();
-        let cvar = &self.cvar;
+        let cvar = &self.cvar_wr;
 
         while !chunk.is_empty() {
             queue =
@@ -420,6 +474,8 @@ impl Fifo {
 
             let len = min(chunk.len(), queue.capacity() - queue.len());
             queue.extend(&chunk[..len]);
+            self.cvar_rd.notify_one();
+
             chunk = &chunk[len..];
         }
 
@@ -432,7 +488,7 @@ impl Drop for Fifo {
         let mut queue = self.queue.lock().unwrap();
         queue.clear();
         queue.shrink_to_fit();
-        self.cvar.notify_one();
+        self.cvar_wr.notify_one();
     }
 }
 

@@ -79,7 +79,6 @@ public class HapClientService extends ProfileService {
     private final Map<BluetoothDevice, Integer> mDeviceCurrentPresetMap = new HashMap<>();
     private final Map<BluetoothDevice, Integer> mDeviceFeaturesMap = new HashMap<>();
     private final Map<BluetoothDevice, List<BluetoothHapPresetInfo>> mPresetsMap = new HashMap<>();
-    private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final Handler mHandler;
     private final Looper mStateMachinesLooper;
@@ -129,8 +128,7 @@ public class HapClientService extends ProfileService {
             AdapterService adapterService,
             Looper looper,
             HapClientNativeInterface nativeInterface) {
-        super(adapterService);
-        mAdapterService = requireNonNull(adapterService);
+        super(requireNonNull(adapterService));
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,
@@ -435,10 +433,12 @@ public class HapClientService extends ProfileService {
                             + " : Remote does not have Hearing Access Service UUID");
             return false;
         }
+
         synchronized (mStateMachines) {
             HapClientStateMachine smConnect = getOrCreateStateMachine(device);
             if (smConnect == null) {
                 Log.e(TAG, "Cannot connect to " + device + " : no state machine");
+                return false;
             }
             smConnect.sendMessage(HapClientStateMachine.MESSAGE_CONNECT);
         }

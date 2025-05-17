@@ -102,6 +102,4 @@ void LinkClocker::OnHciEvent(const HciPacket& packet) {
   (*g_read_clock_handler).OnEvent(timestamp_us, bt_clock << 4);
 }
 
-const ModuleFactory LinkClocker::Factory = ModuleFactory([]() { return new LinkClocker(); });
-
 }  // namespace bluetooth::hal

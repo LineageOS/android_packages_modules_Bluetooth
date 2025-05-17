@@ -20,6 +20,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -99,9 +100,7 @@ public class BluetoothPbapServiceTest {
         doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
         doReturn(mTargetContext.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(mMockContentResolver).when(mAdapterService).getContentResolver();
-        UserManager manager =
-                TestUtils.mockGetSystemService(
-                        mAdapterService, Context.USER_SERVICE, UserManager.class);
+        UserManager manager = TestUtils.mockGetSystemService(mAdapterService, UserManager.class);
         doReturn(List.of()).when(manager).getAllProfiles();
 
         mTestLooper = new TestLooper();
@@ -111,6 +110,7 @@ public class BluetoothPbapServiceTest {
         doNothing().when(mMethodProxy).threadStart(any());
         mTestLooper.startAutoDispatch();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        mockGetBluetoothManager(mAdapterService);
         mService = new BluetoothPbapService(mAdapterService, mNotificationManager);
         mService.setAvailable(true);
 

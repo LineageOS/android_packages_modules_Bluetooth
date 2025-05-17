@@ -179,7 +179,7 @@ static void bta_dm_inq_results_cb(tBTM_INQ_RESULTS* p_inq, const uint8_t* p_eir,
 
   result.inq_res.bd_addr = p_inq->remote_bd_addr;
 
-  // Pass the original address to GattService#onScanResult
+  // Pass the original address to ScanController#onScanResult
   result.inq_res.original_bda = p_inq->original_bda;
 
   result.inq_res.dev_class = p_inq->dev_class;
@@ -208,6 +208,8 @@ static void bta_dm_inq_results_cb(tBTM_INQ_RESULTS* p_inq, const uint8_t* p_eir,
   }
 
   if (bta_dm_search_cb.p_device_search_cback) {
+    log::debug("Inquiry results callback from BTM, bda={}, original_bda={}", result.inq_res.bd_addr,
+               result.inq_res.original_bda);
     bta_dm_search_cb.p_device_search_cback(BTA_DM_INQ_RES_EVT, &result);
   }
 

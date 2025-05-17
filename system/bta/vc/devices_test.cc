@@ -611,7 +611,48 @@ TEST_F(VolumeControlDeviceTest, test_enqueue_initial_requests) {
   Mock::VerifyAndClearExpectations(&gatt_interface);
 }
 
-TEST_F(VolumeControlDeviceTest, test_device_ready_group_first) {
+TEST_F(VolumeControlDeviceTest, test_device_ready_group_first_no_handles_requested) {
+  SetSampleDatabase1();
+
+  device->group_id = 5;  // Set by VolumeControl in verify_device_ready
+  device->VerifyReady();
+  ASSERT_EQ(false, device->device_ready);
+
+  // grab all the handles requested
+  std::vector<uint16_t> requested_handles;
+  ON_CALL(gatt_queue, WriteDescriptor(_, _, _, _, _, _))
+          .WillByDefault(Invoke(
+                  [&requested_handles](
+                          uint16_t /*conn_id*/, uint16_t handle, std::vector<uint8_t> /*value*/,
+                          tGATT_WRITE_TYPE /*write_type*/, GATT_WRITE_OP_CB /*cb*/,
+                          void* /*cb_data*/) -> void { requested_handles.push_back(handle); }));
+  ON_CALL(gatt_queue, ReadCharacteristic(_, _, _, _))
+          .WillByDefault(
+                  Invoke([&requested_handles](uint16_t /*conn_id*/, uint16_t handle,
+                                              GATT_READ_OP_CB /*cb*/, void* /*cb_data*/) -> void {
+                    requested_handles.push_back(handle);
+                  }));
+
+  auto chrc_read_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
+                         uint16_t /*len*/, uint8_t* /*value*/, void* /*data*/) {};
+  auto cccd_write_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
+                          uint16_t /*len*/, const uint8_t* /*value*/, void* /*data*/) {};
+  ASSERT_EQ(true, device->EnqueueInitialRequests(0x0001, chrc_read_cb, cccd_write_cb));
+  ASSERT_NE((size_t)0, requested_handles.size());
+
+  // indicate non-pending requests
+  ASSERT_EQ(false, device->device_ready);
+  device->VerifyReady(0xffff);
+
+  for (uint16_t handle : requested_handles) {
+    ASSERT_EQ(false, device->device_ready);
+    device->VerifyReady(handle);
+  }
+
+  ASSERT_EQ(true, device->device_ready);
+}
+
+TEST_F(VolumeControlDeviceTest, test_device_ready_group_first_handles_requested) {
   SetSampleDatabase1();
 
   // grab all the handles requested
@@ -637,6 +678,7 @@ TEST_F(VolumeControlDeviceTest, test_device_ready_group_first) {
   ASSERT_NE((size_t)0, requested_handles.size());
 
   device->group_id = 5;  // Set by VolumeControl in verify_device_ready
+  device->VerifyReady();
 
   // indicate non-pending requests
   ASSERT_EQ(false, device->device_ready);

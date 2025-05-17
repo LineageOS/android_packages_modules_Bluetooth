@@ -17,9 +17,7 @@
 
 package com.android.server.bluetooth.airplane
 
-import android.bluetooth.BluetoothAdapter.STATE_ON
-import android.bluetooth.BluetoothAdapter.STATE_TURNING_OFF
-import android.bluetooth.BluetoothAdapter.STATE_TURNING_ON
+import android.bluetooth.State
 import android.content.ContentResolver
 import android.content.Context
 import android.content.res.Resources
@@ -92,7 +90,7 @@ public fun initialize(
             fun(newMode: Boolean) {
                 isOn = newMode
                 val previousMode = isOnOverrode
-                val isBluetoothOn = state.oneOf(STATE_ON, STATE_TURNING_ON, STATE_TURNING_OFF)
+                val isBluetoothOn = state.oneOf(State.ON, State.TURNING_ON, State.TURNING_OFF)
                 val isMediaConnected =
                     if (Flags.onewayMediaProfile()) {
                         isMediaProfileConnected
@@ -125,7 +123,7 @@ public fun initialize(
                 if (previousMode == isOnOverrode) {
                     Log.d(TAG, "Ignore mode change to same state. $description")
                     return
-                } else if (isOnOverrode == false && state.oneOf(STATE_ON)) {
+                } else if (isOnOverrode == false && state.oneOf(State.ON)) {
                     Log.d(TAG, "Ignore mode change as Bluetooth is ON. $description")
                     return
                 }
@@ -171,10 +169,24 @@ public fun setIsMediaProfileConnected(connected: Boolean) {
     isMediaProfileConnected = connected
 }
 
+public fun setWatchConnectionState(connected: Boolean) {
+    watchConnectionState = connected
+}
+
+public fun factoryReset(resolver: ContentResolver, userContext: Context) {
+    Settings.Global.putInt(resolver, APM_ENHANCEMENT, DEFAULT_APM_ENHANCEMENT_STATE)
+    Settings.Global.putInt(resolver, ToastNotification.TOAST_COUNT, 0)
+    setUserSettingsSecure(userContext, BLUETOOTH_APM_STATE, 0)
+    setUserSettingsSecure(userContext, APM_USER_TOGGLED_BLUETOOTH, 0)
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////// PRIVATE METHODS /////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
 private var isMediaProfileConnected = false
+
+private var watchConnectionState = false
 
 private fun airplaneModeValueOverride(
     resolver: ContentResolver,
@@ -184,13 +196,13 @@ private fun airplaneModeValueOverride(
     getUser: () -> Context,
     isMediaConnected: Boolean,
 ): Boolean {
-    // Airplane mode is being disabled or bluetooth was not on: no override
+    // Airplane mode is being disabled or bluetooth was not ON: no override
     if (!currentAirplaneMode || currentBluetoothStatus == false) {
         return currentAirplaneMode
     }
-    // If "Airplane Enhancement Mode" is on and the user already used the feature …
+    // If "Airplane Enhancement Mode" is ON and the user already used the feature …
     if (isApmEnhancementEnabled(resolver) && hasUserToggledApm(getUser())) {
-        // … Staying on only depend on its last action in airplane mode
+        // … Staying ON only depend on its last action in airplane mode
         if (isBluetoothOnAPM(getUser)) {
             val isWifiOn = isWifiOnApm(resolver, getUser)
             sendAirplaneModeNotification?.invoke(
@@ -202,17 +214,21 @@ private fun airplaneModeValueOverride(
         Log.i(TAG, "Enhancement Mode: override and turns OFF")
         return true
     }
-    // … Else, staying on only depend on media profile being connected or not
+    // … Else, staying ON only depend on a media profile or a watch being connected or not
     //
     // Note: Once the "Airplane Enhancement Mode" has been used, media override no longer apply
     //       This has been done on purpose to avoid complexe scenario like:
-    //           1. User wants Bt off according to "Airplane Enhancement Mode"
-    //           2. User switches airplane while there is media => so Bt stays on
-    //           3. User turns airplane off, stops media and toggles airplane back on
-    //       Should we turn Bt off like asked initially ? Or keep it `on` like the toggle ?
+    //           1. User wants Bluetooth OFF according to "Airplane Enhancement Mode"
+    //           2. User switches airplane while there is media => so Bluetooth stays ON
+    //           3. User turns airplane OFF, stops media and toggles airplane back ON
+    //       Should we turn Bluetooth OFF like asked initially ? Or keep it ON like the toggle ?
     if (isMediaConnected) {
         Log.i(TAG, "Legacy Mode: override and stays ON since media profile are connected")
         ToastNotification.displayIfNeeded(resolver, getUser)
+        return false
+    }
+    if (watchConnectionState) {
+        Log.i(TAG, "Legacy Mode: override and stays ON due to watch connection")
         return false
     }
     Log.i(TAG, "Legacy Mode: no override, turns OFF")
@@ -221,7 +237,7 @@ private fun airplaneModeValueOverride(
 
 internal class ToastNotification private constructor() {
     companion object {
-        private const val TOAST_COUNT = "bluetooth_airplane_toast_count"
+        internal const val TOAST_COUNT = "bluetooth_airplane_toast_count"
         internal const val MAX_TOAST_COUNT = 10
 
         private fun userNeedToBeNotified(resolver: ContentResolver): Boolean {

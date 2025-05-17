@@ -49,6 +49,7 @@ import android.bluetooth.BluetoothHidDevice;
 import android.bluetooth.BluetoothHidHost;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.PandoraDevice;
 import android.bluetooth.VirtualOnly;
@@ -321,6 +322,7 @@ public class HidHostDualModeTest {
                     .isTrue();
         }
 
+        assertThat(mDevice.connect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
         // Have to use Hamcrest matchers instead of Mockito matchers in MockitoHamcrest context
         verifyConnectionState(mDevice, equalTo(TRANSPORT_BREDR), equalTo(STATE_CONNECTING));
         verifyConnectionState(mDevice, equalTo(TRANSPORT_BREDR), equalTo(STATE_CONNECTED));

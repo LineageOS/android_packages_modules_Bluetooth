@@ -21,11 +21,13 @@ import android.bluetooth.BluetoothAdapter
 import android.content.ContentResolver
 import android.content.Context
 import android.content.res.Resources
-import android.os.IpcDataCache
 import android.os.Looper
 import android.os.UserHandle
+import android.platform.test.flag.junit.FlagsParameterization
+import android.platform.test.flag.junit.SetFlagsRule
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
+import com.android.bluetooth.flags.Flags
 import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
 import com.android.server.bluetooth.airplane.APM_BT_ENABLED_NOTIFICATION
@@ -35,11 +37,13 @@ import com.android.server.bluetooth.airplane.APM_USER_TOGGLED_BLUETOOTH
 import com.android.server.bluetooth.airplane.APM_WIFI_BT_NOTIFICATION
 import com.android.server.bluetooth.airplane.BLUETOOTH_APM_STATE
 import com.android.server.bluetooth.airplane.WIFI_APM_STATE
+import com.android.server.bluetooth.airplane.factoryReset
 import com.android.server.bluetooth.airplane.initialize
 import com.android.server.bluetooth.airplane.isOn
 import com.android.server.bluetooth.airplane.isOnOverrode
 import com.android.server.bluetooth.airplane.notifyUserToggledBluetooth
 import com.android.server.bluetooth.airplane.setIsMediaProfileConnected
+import com.android.server.bluetooth.airplane.setWatchConnectionState
 import com.android.server.bluetooth.test.disableMode
 import com.android.server.bluetooth.test.disableSensitive
 import com.android.server.bluetooth.test.enableMode
@@ -55,12 +59,14 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
+import org.robolectric.ParameterizedRobolectricTestRunner
+import org.robolectric.ParameterizedRobolectricTestRunner.Parameters
 import org.robolectric.shadows.ShadowToast
 
-@RunWith(RobolectricTestRunner::class)
+@RunWith(ParameterizedRobolectricTestRunner::class)
 @kotlin.time.ExperimentalTime
-class ModeListenerTest() {
+class ModeListenerTest(flags: FlagsWrapper) {
+    @get:Rule val mSetFlagsRule: SetFlagsRule = SetFlagsRule(flags.flags)
 
     @get:Rule val testName = TestName()
 
@@ -84,6 +90,7 @@ class ModeListenerTest() {
         enableSensitive()
         disableMode()
 
+        setWatchConnectionState(false)
         setIsMediaProfileConnected(false)
         isMediaProfileConnected = false
         mode = ArrayList()
@@ -309,6 +316,19 @@ class ModeListenerTest() {
     }
 
     @Test
+    fun triggerOverride_whenWatchDeviceIsConnected_staysOn() {
+        initializeAirplane()
+
+        state.set(BluetoothAdapter.STATE_ON)
+        setWatchConnectionState(true)
+
+        enableMode()
+
+        assertThat(isOnOverrode).isFalse()
+        assertThat(mode).isEmpty()
+    }
+
+    @Test
     fun triggerOverride_whenApmEnhancementNotTrigger_turnOff() {
         initializeAirplane()
 
@@ -330,6 +350,21 @@ class ModeListenerTest() {
         Settings.Global.putInt(resolver, APM_ENHANCEMENT, 0)
         setIsMediaProfileConnected(true)
         isMediaProfileConnected = true
+
+        enableMode()
+
+        assertThat(isOnOverrode).isFalse()
+        assertThat(isOn).isTrue()
+        assertThat(mode).isEmpty()
+    }
+
+    @Test
+    fun triggerOverride_whenApmEnhancementNotTriggerButWatchDevice_staysOn() {
+        initializeAirplane()
+
+        state.set(BluetoothAdapter.STATE_ON)
+        Settings.Global.putInt(resolver, APM_ENHANCEMENT, 0)
+        setWatchConnectionState(true)
 
         enableMode()
 
@@ -422,6 +457,30 @@ class ModeListenerTest() {
 
         assertThat(ShadowToast.shownToastCount())
             .isEqualTo(com.android.server.bluetooth.airplane.ToastNotification.MAX_TOAST_COUNT)
+    }
+
+    @Test
+    fun showToast_afterFactoryReset_stopNotifyWhenMaxToastReached() {
+        initializeAirplane()
+
+        state.set(BluetoothAdapter.STATE_ON)
+        setIsMediaProfileConnected(true)
+        isMediaProfileConnected = true
+
+        repeat(30) {
+            enableMode()
+            disableMode()
+        }
+
+        factoryReset(resolver, userContext)
+
+        repeat(30) {
+            enableMode()
+            disableMode()
+        }
+
+        assertThat(ShadowToast.shownToastCount())
+            .isEqualTo(com.android.server.bluetooth.airplane.ToastNotification.MAX_TOAST_COUNT * 2)
     }
 
     @Test
@@ -552,6 +611,25 @@ class ModeListenerTest() {
     }
 
     @Test
+    fun initialize_afterFactoryReset_apmSettingIsReset() {
+        val settingValue = 42
+        Settings.Global.putInt(resolver, APM_ENHANCEMENT, settingValue)
+        Settings.Secure.putInt(userContext.contentResolver, APM_USER_TOGGLED_BLUETOOTH, 1)
+        Settings.Secure.putInt(userContext.contentResolver, BLUETOOTH_APM_STATE, 1)
+
+        factoryReset(resolver, userContext)
+
+        initializeAirplane()
+        assertThat(Settings.Global.getInt(resolver, APM_ENHANCEMENT, 0)).isEqualTo(1)
+        assertThat(
+                Settings.Secure.getInt(userContext.contentResolver, APM_USER_TOGGLED_BLUETOOTH, 0)
+            )
+            .isEqualTo(0)
+        assertThat(Settings.Secure.getInt(userContext.contentResolver, BLUETOOTH_APM_STATE, 0))
+            .isEqualTo(0)
+    }
+
+    @Test
     fun initialize_secondTime_apmSettingIsNotOverride() {
         val settingValue = 42
         Settings.Global.putInt(resolver, APM_ENHANCEMENT, settingValue)
@@ -597,13 +675,34 @@ class ModeListenerTest() {
         @BeforeClass
         @JvmStatic
         fun beforeClass() {
-            IpcDataCache.setTestMode(true)
+            BluetoothAdapterState.disableCacheForTesting = true
+            // IpcDataCache.setTestMode(true) // Doesn't work with parametric robolectric runner
         }
 
         @AfterClass
         @JvmStatic
         fun afterClass() {
-            IpcDataCache.setTestMode(false)
+            BluetoothAdapterState.disableCacheForTesting = false
+            // IpcDataCache.setTestMode(false) // Doesn't work with parametric robolectric runner
+        }
+
+        // Helps tests readability by removing the common prefix in the bluetooth flags name
+        class FlagsWrapper(internal val flags: FlagsParameterization) {
+            private val PREFIX = "com.android.bluetooth.flags."
+
+            override fun toString(): String {
+                return flags.mOverrides.entries
+                    .sortedBy { it.key }
+                    .joinToString(",") { "${it.key.removePrefix(PREFIX)}=${it.value}" }
+            }
+        }
+
+        @JvmStatic
+        @Parameters(name = "{0}")
+        fun getParams(): List<FlagsWrapper> {
+            return FlagsParameterization.progressionOf(Flags.FLAG_ONEWAY_MEDIA_PROFILE).map {
+                FlagsWrapper(it)
+            }
         }
     }
 }

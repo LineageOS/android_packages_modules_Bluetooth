@@ -1,6 +1,6 @@
 //! This library provides helper functions to parse info from advertising data.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use bt_topshim::bindings::root::bluetooth::Uuid;
 
@@ -58,35 +58,37 @@ pub fn extract_flags(bytes: &[u8]) -> u8 {
 
 // Helper function to extract service uuids (128bit) from advertising data
 pub fn extract_service_uuids(bytes: &[u8]) -> Vec<Uuid> {
-    iterate_adv_data(bytes, COMPLETE_LIST_16_BIT_SERVICE_UUIDS)
-        .flat_map(|slice| slice.chunks(2))
-        .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok())
-        .chain(
-            iterate_adv_data(bytes, COMPLETE_LIST_32_BIT_SERVICE_UUIDS)
-                .flat_map(|slice| slice.chunks(4))
-                .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
-        )
-        .chain(
-            iterate_adv_data(bytes, COMPLETE_LIST_128_BIT_SERVICE_UUIDS)
-                .flat_map(|slice| slice.chunks(16))
-                .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
-        )
-        .chain(
-            iterate_adv_data(bytes, INCOMPLETE_LIST_16_BIT_SERVICE_UUIDS)
-                .flat_map(|slice| slice.chunks(2))
-                .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
-        )
-        .chain(
-            iterate_adv_data(bytes, INCOMPLETE_LIST_32_BIT_SERVICE_UUIDS)
-                .flat_map(|slice| slice.chunks(4))
-                .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
-        )
-        .chain(
-            iterate_adv_data(bytes, INCOMPLETE_LIST_128_BIT_SERVICE_UUIDS)
-                .flat_map(|slice| slice.chunks(16))
-                .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
-        )
-        .collect()
+    let collected_uuids: HashSet<Uuid> =
+        iterate_adv_data(bytes, COMPLETE_LIST_16_BIT_SERVICE_UUIDS)
+            .flat_map(|slice| slice.chunks(2))
+            .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok())
+            .chain(
+                iterate_adv_data(bytes, COMPLETE_LIST_32_BIT_SERVICE_UUIDS)
+                    .flat_map(|slice| slice.chunks(4))
+                    .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
+            )
+            .chain(
+                iterate_adv_data(bytes, COMPLETE_LIST_128_BIT_SERVICE_UUIDS)
+                    .flat_map(|slice| slice.chunks(16))
+                    .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
+            )
+            .chain(
+                iterate_adv_data(bytes, INCOMPLETE_LIST_16_BIT_SERVICE_UUIDS)
+                    .flat_map(|slice| slice.chunks(2))
+                    .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
+            )
+            .chain(
+                iterate_adv_data(bytes, INCOMPLETE_LIST_32_BIT_SERVICE_UUIDS)
+                    .flat_map(|slice| slice.chunks(4))
+                    .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
+            )
+            .chain(
+                iterate_adv_data(bytes, INCOMPLETE_LIST_128_BIT_SERVICE_UUIDS)
+                    .flat_map(|slice| slice.chunks(16))
+                    .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
+            )
+            .collect();
+    collected_uuids.into_iter().collect()
 }
 
 // Helper function to extract name from advertising data
@@ -202,20 +204,19 @@ mod tests {
         let uuids = extract_service_uuids(payload.as_slice());
         assert_eq!(uuids.len(), 3);
         assert_eq!(
-            uuids[0],
-            Uuid::from([
-                0x0, 0x0, 0xFE, 0x2C, 0x0, 0x0, 0x10, 0x0, 0x80, 0x0, 0x0, 0x80, 0x5f, 0x9b, 0x34,
-                0xfb
+            HashSet::from_iter(uuids),
+            HashSet::from([
+                Uuid::from([
+                    0x0, 0x0, 0xFE, 0x2C, 0x0, 0x0, 0x10, 0x0, 0x80, 0x0, 0x0, 0x80, 0x5f, 0x9b,
+                    0x34, 0xfb
+                ]),
+                Uuid::from([
+                    0x5, 0x4, 0x3, 0x2, 0x0, 0x0, 0x10, 0x0, 0x80, 0x0, 0x0, 0x80, 0x5f, 0x9b,
+                    0x34, 0xfb
+                ]),
+                Uuid::from([15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]),
             ])
         );
-        assert_eq!(
-            uuids[1],
-            Uuid::from([
-                0x5, 0x4, 0x3, 0x2, 0x0, 0x0, 0x10, 0x0, 0x80, 0x0, 0x0, 0x80, 0x5f, 0x9b, 0x34,
-                0xfb
-            ])
-        );
-        assert_eq!(uuids[2], Uuid::from([15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]));
 
         let payload: Vec<u8> = vec![
             2,
@@ -253,20 +254,19 @@ mod tests {
         let uuids = extract_service_uuids(payload.as_slice());
         assert_eq!(uuids.len(), 3);
         assert_eq!(
-            uuids[0],
-            Uuid::from([
-                0x0, 0x0, 0xFE, 0x2C, 0x0, 0x0, 0x10, 0x0, 0x80, 0x0, 0x0, 0x80, 0x5f, 0x9b, 0x34,
-                0xfb
+            HashSet::from_iter(uuids),
+            HashSet::from([
+                Uuid::from([
+                    0x0, 0x0, 0xFE, 0x2C, 0x0, 0x0, 0x10, 0x0, 0x80, 0x0, 0x0, 0x80, 0x5f, 0x9b,
+                    0x34, 0xfb
+                ]),
+                Uuid::from([
+                    0x5, 0x4, 0x3, 0x2, 0x0, 0x0, 0x10, 0x0, 0x80, 0x0, 0x0, 0x80, 0x5f, 0x9b,
+                    0x34, 0xfb
+                ]),
+                Uuid::from([15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]),
             ])
         );
-        assert_eq!(
-            uuids[1],
-            Uuid::from([
-                0x5, 0x4, 0x3, 0x2, 0x0, 0x0, 0x10, 0x0, 0x80, 0x0, 0x0, 0x80, 0x5f, 0x9b, 0x34,
-                0xfb
-            ])
-        );
-        assert_eq!(uuids[2], Uuid::from([15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]));
     }
 
     #[test]

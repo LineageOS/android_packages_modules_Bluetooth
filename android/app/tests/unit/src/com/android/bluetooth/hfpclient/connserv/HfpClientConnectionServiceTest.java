@@ -22,6 +22,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getRealDevice;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -35,9 +36,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
@@ -49,7 +48,6 @@ import android.telecom.PhoneAccountHandle;
 import android.telecom.TelecomManager;
 
 import androidx.test.filters.MediumTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.R;
@@ -85,8 +83,6 @@ public class HfpClientConnectionServiceTest {
 
     @Before
     public void setUp() {
-        Context targetContext = InstrumentationRegistry.getInstrumentation().getContext();
-
         doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);
@@ -119,17 +115,10 @@ public class HfpClientConnectionServiceTest {
                 .getBoolean(R.bool.hfp_client_connection_service_support_emergency_call);
 
         mockGetSystemService(
-                mHfpClientConnectionService,
-                Context.TELECOM_SERVICE,
-                TelecomManager.class,
-                mMockTelecomManager);
+                mHfpClientConnectionService, TelecomManager.class, mMockTelecomManager);
         doReturn(getPhoneAccount(mDevice)).when(mMockTelecomManager).getPhoneAccount(any());
 
-        mockGetSystemService(
-                mHfpClientConnectionService,
-                Context.BLUETOOTH_SERVICE,
-                BluetoothManager.class,
-                targetContext.getSystemService(BluetoothManager.class));
+        mockGetBluetoothManager(mHfpClientConnectionService);
     }
 
     private void createService() {

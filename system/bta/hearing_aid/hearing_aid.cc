@@ -694,22 +694,27 @@ public:
     if (!success) {
       log::error("encryption failed: bd_addr={}", address);
       BTA_GATTC_Close(hearingDevice->conn_id);
-      if (hearingDevice->first_connection) {
+      if (hearingDevice->first_connection ||
+          com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
         callbacks->OnConnectionState(ConnectionState::DISCONNECTED, address);
       }
       return;
     }
 
     log::info("encryption successful: bd_addr={}", address);
-
-    if (hearingDevice->audio_control_point_handle && hearingDevice->audio_status_handle &&
-        hearingDevice->audio_status_ccc_handle && hearingDevice->volume_handle &&
-        hearingDevice->read_psm_handle) {
-      // Use cached data, jump to read PSM
-      ReadPSM(hearingDevice);
+    if (!com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
+      if (hearingDevice->audio_control_point_handle && hearingDevice->audio_status_handle &&
+          hearingDevice->audio_status_ccc_handle && hearingDevice->volume_handle &&
+          hearingDevice->read_psm_handle) {
+        // Use cached data, jump to read PSM
+        ReadPSM(hearingDevice);
+      } else {
+        log::info("starting service search request for ASHA: bd_addr={}", address);
+        hearingDevice->first_connection = true;
+        BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, HEARING_AID_UUID);
+      }
     } else {
       log::info("starting service search request for ASHA: bd_addr={}", address);
-      hearingDevice->first_connection = true;
       BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, HEARING_AID_UUID);
     }
   }
@@ -792,8 +797,9 @@ public:
       return;
     }
 
-    // Known device, nothing to do.
-    if (!hearingDevice->first_connection) {
+    if (!com::android::bluetooth::flags::continue_queued_command_after_discovery() &&
+        !hearingDevice->first_connection) {
+      // Known device, nothing to do.
       log::info("service discovery result ignored: bd_addr={}", hearingDevice->address);
       return;
     }
@@ -801,8 +807,8 @@ public:
     if (status != GATT_SUCCESS) {
       /* close connection and report service discovery complete with error */
       log::error("service discovery failed: bd_addr={} status={}", hearingDevice->address, status);
-
-      if (hearingDevice->first_connection) {
+      if (com::android::bluetooth::flags::continue_queued_command_after_discovery() ||
+          hearingDevice->first_connection) {
         callbacks->OnConnectionState(ConnectionState::DISCONNECTED, hearingDevice->address);
       }
       return;
@@ -929,6 +935,10 @@ public:
       log::warn("invalid data length (expected 17+ bytes): bd_addr={} len={}",
                 hearingDevice->address, len);
       return;
+    }
+
+    if (com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
+      hearingDevice->first_connection = true;
     }
 
     uint8_t capabilities;

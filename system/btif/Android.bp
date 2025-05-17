@@ -440,7 +440,6 @@ cc_test {
         ":TestMockBtaVc",
         ":TestMockBtcore",
         ":TestMockBtu",
-        ":TestMockHci",
         ":TestMockMainShim",
         ":TestMockMainShimDumpsys",
         ":TestMockMainShimEntry",
@@ -503,7 +502,6 @@ cc_test {
             shared_libs: [
                 "libaaudio",
                 "libbinder_ndk",
-                "libexpresslog",
                 "libstatssocket",
             ],
         },
@@ -560,7 +558,6 @@ cc_test {
         ":TestMockBtcore",
         ":TestMockBtu",
         ":TestMockFrameworks",
-        ":TestMockHci",
         ":TestMockMainShim",
         ":TestMockMainShimDumpsys",
         ":TestMockMainShimEntry",
@@ -625,7 +622,6 @@ cc_test {
             ],
             shared_libs: [
                 "libbinder_ndk",
-                "libexpresslog",
                 "libstatssocket",
             ],
         },

@@ -236,21 +236,20 @@ void HciLayerFake::InitEmptyCommand() {
 
 void HciLayerFake::IncomingAclData(uint16_t handle, std::unique_ptr<AclBuilder> acl_builder) {
   std::lock_guard lock(mutex_);
-  os::Handler* hci_handler = GetHandler();
   auto* queue_end = acl_queue_.GetDownEnd();
   std::promise<void> promise;
   auto future = promise.get_future();
   auto packet = GetPacketView(std::move(acl_builder));
   auto acl_view = AclView::Create(packet);
   queue_end->RegisterEnqueue(
-          hci_handler, common::Bind(
-                               [](decltype(queue_end) queue_end, uint16_t /* handle */,
-                                  AclView acl2, std::promise<void> promise) {
-                                 queue_end->UnregisterEnqueue();
-                                 promise.set_value();
-                                 return std::make_unique<AclView>(acl2);
-                               },
-                               queue_end, handle, acl_view, common::Passed(std::move(promise))));
+          handler_, common::Bind(
+                            [](decltype(queue_end) queue_end, uint16_t /* handle */, AclView acl2,
+                               std::promise<void> promise) {
+                              queue_end->UnregisterEnqueue();
+                              promise.set_value();
+                              return std::make_unique<AclView>(acl2);
+                            },
+                            queue_end, handle, acl_view, common::Passed(std::move(promise))));
   auto status = future.wait_for(std::chrono::milliseconds(1000));
   ASSERT_EQ(status, std::future_status::ready);
 }
@@ -282,7 +281,7 @@ BidiQueueEnd<AclBuilder, AclView>* HciLayerFake::GetAclQueueEnd() {
 }
 
 void HciLayerFake::Disconnect(uint16_t handle, ErrorCode reason) {
-  GetHandler()->Post(
+  handler_->Post(
           common::BindOnce(&HciLayerFake::do_disconnect, common::Unretained(this), handle, reason));
 }
 
@@ -290,13 +289,10 @@ void HciLayerFake::do_disconnect(uint16_t handle, ErrorCode reason) {
   HciLayer::Disconnect(handle, reason);
 }
 
-void HciLayerFake::ListDependencies(ModuleList* /* list */) const {}
-void HciLayerFake::Start() {
+HciLayerFake::HciLayerFake(os::Handler* handler) : HciLayer(handler), handler_(handler) {
   InitEmptyCommand();
-  os::Handler* handler = GetHandler();
   StartWithNoHalDependencies(handler);
 }
-void HciLayerFake::Stop() {}
 
 }  // namespace hci
 }  // namespace bluetooth

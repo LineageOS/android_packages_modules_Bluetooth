@@ -18,7 +18,8 @@ package com.android.bluetooth.btservice;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
+import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -60,7 +61,7 @@ public class CompanionManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        mockAdapterServiceGetRemoteDevice(mAdapterService, mDevice);
+        mockGetRemoteDevice(mAdapterService, mDevice);
         // Start handler thread for this test
         mHandlerThread = new HandlerThread("CompanionManagerTestHandlerThread");
         mHandlerThread.start();
@@ -74,6 +75,7 @@ public class CompanionManagerTest {
                         eq(CompanionManager.COMPANION_INFO), eq(Context.MODE_PRIVATE));
         // Use the resources in the instrumentation instead of the mocked AdapterService
         when(mAdapterService.getResources()).thenReturn(mContext.getResources());
+        mockGetBluetoothManager(mAdapterService);
 
         // Must be called to initialize services
         mCompanionManager = new CompanionManager(mAdapterService, null);

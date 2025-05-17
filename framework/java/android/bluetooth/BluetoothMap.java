@@ -274,9 +274,9 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
         // TODO optimize the rule
         return switch (btClass.getDeviceClass()) {
             case BluetoothClass.Device.COMPUTER_DESKTOP,
-                            BluetoothClass.Device.COMPUTER_LAPTOP,
-                            BluetoothClass.Device.COMPUTER_SERVER,
-                            BluetoothClass.Device.COMPUTER_UNCATEGORIZED ->
+                    BluetoothClass.Device.COMPUTER_LAPTOP,
+                    BluetoothClass.Device.COMPUTER_SERVER,
+                    BluetoothClass.Device.COMPUTER_UNCATEGORIZED ->
                     true;
             default -> false;
         };

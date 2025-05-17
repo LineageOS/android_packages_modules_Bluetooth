@@ -49,15 +49,22 @@ class BumbleConfigService(BumbleConfigServicer):
                 BasePairingDelegate.KeyDistribution.DISTRIBUTE_LINK_KEY,
             ][key]  # type: ignore
 
+        local_initiator_key_distribution = 0b0000
+        local_responder_key_distribution = 0b0000
+        for initiator_key_distribution in request.initiator_key_distribution:
+            local_initiator_key_distribution |= parseProtoKeyDistribution(
+                initiator_key_distribution)
+        for responder_key_distribution in request.responder_key_distribution:
+            local_responder_key_distribution |= parseProtoKeyDistribution(
+                responder_key_distribution)
+
         def pairing_config_factory(connection: BumbleConnection) -> PairingConfig:
             pairing_delegate = PairingDelegate(
                 connection=connection,
                 service=SecurityService(self.device, self.server_config),
                 io_capability=BasePairingDelegate.IoCapability(request.io_capability),
-                local_initiator_key_distribution=parseProtoKeyDistribution(
-                    request.initiator_key_distribution),
-                local_responder_key_distribution=parseProtoKeyDistribution(
-                    request.responder_key_distribution),
+                local_initiator_key_distribution=local_initiator_key_distribution,
+                local_responder_key_distribution=local_responder_key_distribution,
             )
 
             pc_req = request.pairing_config

@@ -67,7 +67,6 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.map.BluetoothMapbMessageMime;
@@ -443,29 +442,26 @@ class MceStateMachine extends StateMachine {
             RequestSetMessageStatus.StatusIndicator statusIndicator;
             byte value;
             switch (status) {
-                case BluetoothMapClient.UNREAD:
+                case BluetoothMapClient.UNREAD -> {
                     statusIndicator = RequestSetMessageStatus.StatusIndicator.READ;
                     value = RequestSetMessageStatus.STATUS_NO;
-                    break;
-
-                case BluetoothMapClient.READ:
+                }
+                case BluetoothMapClient.READ -> {
                     statusIndicator = RequestSetMessageStatus.StatusIndicator.READ;
                     value = RequestSetMessageStatus.STATUS_YES;
-                    break;
-
-                case BluetoothMapClient.UNDELETED:
+                }
+                case BluetoothMapClient.UNDELETED -> {
                     statusIndicator = RequestSetMessageStatus.StatusIndicator.DELETED;
                     value = RequestSetMessageStatus.STATUS_NO;
-                    break;
-
-                case BluetoothMapClient.DELETED:
+                }
+                case BluetoothMapClient.DELETED -> {
                     statusIndicator = RequestSetMessageStatus.StatusIndicator.DELETED;
                     value = RequestSetMessageStatus.STATUS_YES;
-                    break;
-
-                default:
+                }
+                default -> {
                     Log.e(TAG, "Invalid parameter for status" + status);
                     return false;
+                }
             }
             sendMessage(
                     MSG_SET_MESSAGE_STATUS,
@@ -572,7 +568,7 @@ class MceStateMachine extends StateMachine {
                             + getMessageName(message.what));
 
             switch (message.what) {
-                case MSG_MAS_SDP_DONE:
+                case MSG_MAS_SDP_DONE -> {
                     Log.i(TAG, Utils.getLoggableAddress(mDevice) + " [Connecting]: SDP Complete");
                     if (mMasClient == null) {
                         SdpMasRecord record = (SdpMasRecord) message.obj;
@@ -586,9 +582,8 @@ class MceStateMachine extends StateMachine {
                         mMasClient = new MasClient(mDevice, MceStateMachine.this, record);
                         setDefaultMessageType(record);
                     }
-                    break;
-
-                case MSG_MAS_SDP_UNSUCCESSFUL:
+                }
+                case MSG_MAS_SDP_UNSUCCESSFUL -> {
                     int sdpStatus = message.arg1;
                     Log.i(
                             TAG,
@@ -611,35 +606,25 @@ class MceStateMachine extends StateMachine {
                                         + " [Connecting]: SDP failed completely, disconnecting");
                         transitionTo(mDisconnecting);
                     }
-                    break;
-
-                case MSG_MAS_CONNECTED:
-                    transitionTo(mConnected);
-                    break;
-
-                case MSG_MAS_DISCONNECTED:
+                }
+                case MSG_MAS_DISCONNECTED -> {
                     if (mMasClient != null) {
                         mMasClient.shutdown();
                     }
                     transitionTo(mDisconnected);
-                    break;
+                }
+                case MSG_MAS_CONNECTED -> transitionTo(mConnected);
+                case MSG_CONNECTING_TIMEOUT -> transitionTo(mDisconnecting);
+                case MSG_CONNECT, MSG_DISCONNECT -> deferMessage(message);
 
-                case MSG_CONNECTING_TIMEOUT:
-                    transitionTo(mDisconnecting);
-                    break;
-
-                case MSG_CONNECT:
-                case MSG_DISCONNECT:
-                    deferMessage(message);
-                    break;
-
-                default:
+                default -> {
                     Log.w(
                             TAG,
                             Utils.getLoggableAddress(mDevice)
                                     + " [Connecting]: Unexpected message: "
                                     + getMessageName(message.what));
                     return NOT_HANDLED;
+                }
             }
             return HANDLED;
         }
@@ -703,41 +688,33 @@ class MceStateMachine extends StateMachine {
                             + " [Connected]: Received "
                             + getMessageName(message.what));
             switch (message.what) {
-                case MSG_DISCONNECT:
+                case MSG_DISCONNECT -> {
                     if (mDevice.equals(message.obj)) {
                         transitionTo(mDisconnecting);
                     }
-                    break;
-
-                case MSG_MAS_DISCONNECTED:
+                }
+                case MSG_MAS_DISCONNECTED -> {
                     deferMessage(message);
                     transitionTo(mDisconnecting);
-                    break;
-
-                case MSG_OUTBOUND_MESSAGE:
+                }
+                case MSG_OUTBOUND_MESSAGE -> {
                     mMasClient.makeRequest(
                             new RequestPushMessage(
                                     FOLDER_OUTBOX, (Bmessage) message.obj, null, false, false));
-                    break;
-
-                case MSG_INBOUND_MESSAGE:
+                }
+                case MSG_INBOUND_MESSAGE -> {
                     mMasClient.makeRequest(
                             new RequestGetMessage(
                                     (String) message.obj,
                                     MasClient.CharsetType.UTF_8,
                                     DOWNLOAD_ATTACHMENTS));
-                    break;
-
-                case MSG_NOTIFICATION:
+                }
+                case MSG_NOTIFICATION -> {
                     EventReport notification = (EventReport) message.obj;
                     processNotification(notification);
-                    break;
-
-                case MSG_GET_LISTING:
-                    mMasClient.makeRequest(new RequestGetFolderListing(0, 0));
-                    break;
-
-                case MSG_GET_MESSAGE_LISTING:
+                }
+                case MSG_GET_LISTING -> mMasClient.makeRequest(new RequestGetFolderListing(0, 0));
+                case MSG_GET_MESSAGE_LISTING -> {
                     // Get the 50 most recent messages from the last week
                     Calendar calendar = Calendar.getInstance();
                     calendar.add(Calendar.DATE, -7);
@@ -762,15 +739,13 @@ class MceStateMachine extends StateMachine {
                                     0,
                                     50,
                                     0));
-                    break;
-
-                case MSG_SET_MESSAGE_STATUS:
+                }
+                case MSG_SET_MESSAGE_STATUS -> {
                     if (message.obj instanceof RequestSetMessageStatus) {
                         mMasClient.makeRequest((RequestSetMessageStatus) message.obj);
                     }
-                    break;
-
-                case MSG_MAS_REQUEST_COMPLETED:
+                }
+                case MSG_MAS_REQUEST_COMPLETED -> {
                     if (message.obj instanceof RequestGetMessage) {
                         processInboundMessage((RequestGetMessage) message.obj);
                     } else if (message.obj instanceof RequestPushMessage) {
@@ -818,16 +793,14 @@ class MceStateMachine extends StateMachine {
                         processMessageListingForOwnNumber(
                                 (RequestGetMessagesListingForOwnNumber) message.obj);
                     }
-                    break;
-
-                case MSG_CONNECT:
+                }
+                case MSG_CONNECT -> {
                     if (!mDevice.equals(message.obj)) {
                         deferMessage(message);
                         transitionTo(mDisconnecting);
                     }
-                    break;
-
-                case MSG_SEARCH_OWN_NUMBER_TIMEOUT:
+                }
+                case MSG_SEARCH_OWN_NUMBER_TIMEOUT -> {
                     Log.w(TAG, "Timeout while searching for own phone number.");
                     // Abort any outstanding Request so it doesn't execute on MasClient
                     RequestGetMessagesListingForOwnNumber request =
@@ -845,15 +818,15 @@ class MceStateMachine extends StateMachine {
                     // proceed without it (i.e., register MCE for MNS and start download
                     // of existing messages from MSE).
                     notificationRegistrationAndStartDownloadMessages();
-                    break;
-
-                default:
+                }
+                default -> {
                     Log.w(
                             TAG,
                             Utils.getLoggableAddress(mDevice)
                                     + " [Connected]: Unexpected message: "
                                     + getMessageName(message.what));
                     return NOT_HANDLED;
+                }
             }
             return HANDLED;
         }
@@ -910,14 +883,14 @@ class MceStateMachine extends StateMachine {
                                     DOWNLOAD_ATTACHMENTS));
                     break;
                 case DELIVERY_FAILURE:
-                    // fall through
+                // fall through
                 case SENDING_FAILURE:
                     if (!Flags.handleDeliverySendingFailureEvents()) {
                         break;
                     }
-                    // fall through
+                // fall through
                 case DELIVERY_SUCCESS:
-                    // fall through
+                // fall through
                 case SENDING_SUCCESS:
                     notifySentMessageStatus(event.getHandle(), event.getType());
                     break;
@@ -1039,40 +1012,30 @@ class MceStateMachine extends StateMachine {
             }
             RequestSetMessageStatus.StatusIndicator status = request.getStatusIndicator();
             switch (status) {
-                case READ:
-                    {
-                        Intent intent =
-                                new Intent(BluetoothMapClient.ACTION_MESSAGE_READ_STATUS_CHANGED);
-                        intent.putExtra(
-                                BluetoothMapClient.EXTRA_MESSAGE_READ_STATUS,
-                                request.getValue() == RequestSetMessageStatus.STATUS_YES
-                                        ? true
-                                        : false);
-                        intent.putExtra(
-                                BluetoothMapClient.EXTRA_MESSAGE_HANDLE, request.getHandle());
-                        intent.putExtra(BluetoothMapClient.EXTRA_RESULT_CODE, result);
-                        mService.sendBroadcast(intent, BLUETOOTH_CONNECT);
-                        break;
-                    }
-                case DELETED:
-                    {
-                        Intent intent =
-                                new Intent(
-                                        BluetoothMapClient.ACTION_MESSAGE_DELETED_STATUS_CHANGED);
-                        intent.putExtra(
-                                BluetoothMapClient.EXTRA_MESSAGE_DELETED_STATUS,
-                                request.getValue() == RequestSetMessageStatus.STATUS_YES
-                                        ? true
-                                        : false);
-                        intent.putExtra(
-                                BluetoothMapClient.EXTRA_MESSAGE_HANDLE, request.getHandle());
-                        intent.putExtra(BluetoothMapClient.EXTRA_RESULT_CODE, result);
-                        mService.sendBroadcast(intent, BLUETOOTH_CONNECT);
-                        break;
-                    }
-                default:
-                    Log.e(TAG, "Unknown status indicator " + status);
-                    return;
+                case READ -> {
+                    Intent intent =
+                            new Intent(BluetoothMapClient.ACTION_MESSAGE_READ_STATUS_CHANGED);
+                    intent.putExtra(
+                            BluetoothMapClient.EXTRA_MESSAGE_READ_STATUS,
+                            request.getValue() == RequestSetMessageStatus.STATUS_YES
+                                    ? true
+                                    : false);
+                    intent.putExtra(BluetoothMapClient.EXTRA_MESSAGE_HANDLE, request.getHandle());
+                    intent.putExtra(BluetoothMapClient.EXTRA_RESULT_CODE, result);
+                    mService.sendBroadcast(intent, BLUETOOTH_CONNECT);
+                }
+                case DELETED -> {
+                    Intent intent =
+                            new Intent(BluetoothMapClient.ACTION_MESSAGE_DELETED_STATUS_CHANGED);
+                    intent.putExtra(
+                            BluetoothMapClient.EXTRA_MESSAGE_DELETED_STATUS,
+                            request.getValue() == RequestSetMessageStatus.STATUS_YES
+                                    ? true
+                                    : false);
+                    intent.putExtra(BluetoothMapClient.EXTRA_MESSAGE_HANDLE, request.getHandle());
+                    intent.putExtra(BluetoothMapClient.EXTRA_RESULT_CODE, result);
+                    mService.sendBroadcast(intent, BLUETOOTH_CONNECT);
+                }
             }
         }
 
@@ -1109,9 +1072,7 @@ class MceStateMachine extends StateMachine {
             }
 
             switch (message.getType()) {
-                case SMS_CDMA:
-                case SMS_GSM:
-                case MMS:
+                case SMS_CDMA, SMS_GSM, MMS -> {
                     Log.d(TAG, "Body: " + message.getBodyContent());
                     Log.d(TAG, message.toString());
                     Log.d(TAG, "Recipients" + message.getRecipients().toString());
@@ -1183,11 +1144,8 @@ class MceStateMachine extends StateMachine {
                         intent.setPackage(defaultMessagingPackage);
                         mService.sendBroadcast(intent, RECEIVE_SMS);
                     }
-                    break;
-                case EMAIL:
-                default:
-                    Log.e(TAG, "Received unhandled type" + message.getType().toString());
-                    break;
+                }
+                default -> Log.e(TAG, "Received unhandled type" + message.getType().toString());
             }
         }
 
@@ -1292,24 +1250,21 @@ class MceStateMachine extends StateMachine {
                             + " [Disconnecting]: Received "
                             + getMessageName(message.what));
             switch (message.what) {
-                case MSG_DISCONNECTING_TIMEOUT:
-                case MSG_MAS_DISCONNECTED:
+                case MSG_DISCONNECTING_TIMEOUT, MSG_MAS_DISCONNECTED -> {
                     mMasClient = null;
                     transitionTo(mDisconnected);
-                    break;
-
-                case MSG_CONNECT:
-                case MSG_DISCONNECT:
+                }
+                case MSG_CONNECT, MSG_DISCONNECT -> {
                     deferMessage(message);
-                    break;
-
-                default:
+                }
+                default -> {
                     Log.w(
                             TAG,
                             Utils.getLoggableAddress(mDevice)
                                     + " [Disconnecting]: Unexpected message: "
                                     + getMessageName(message.what));
                     return NOT_HANDLED;
+                }
             }
             return HANDLED;
         }
@@ -1327,40 +1282,24 @@ class MceStateMachine extends StateMachine {
     }
 
     private static String getMessageName(int what) {
-        switch (what) {
-            case MSG_MAS_CONNECTED:
-                return "MSG_MAS_CONNECTED";
-            case MSG_MAS_DISCONNECTED:
-                return "MSG_MAS_DISCONNECTED";
-            case MSG_MAS_REQUEST_COMPLETED:
-                return "MSG_MAS_REQUEST_COMPLETED";
-            case MSG_MAS_REQUEST_FAILED:
-                return "MSG_MAS_REQUEST_FAILED";
-            case MSG_MAS_SDP_DONE:
-                return "MSG_MAS_SDP_DONE";
-            case MSG_MAS_SDP_UNSUCCESSFUL:
-                return "MSG_MAS_SDP_UNSUCCESSFUL";
-            case MSG_OUTBOUND_MESSAGE:
-                return "MSG_OUTBOUND_MESSAGE";
-            case MSG_INBOUND_MESSAGE:
-                return "MSG_INBOUND_MESSAGE";
-            case MSG_NOTIFICATION:
-                return "MSG_NOTIFICATION";
-            case MSG_GET_LISTING:
-                return "MSG_GET_LISTING";
-            case MSG_GET_MESSAGE_LISTING:
-                return "MSG_GET_MESSAGE_LISTING";
-            case MSG_SET_MESSAGE_STATUS:
-                return "MSG_SET_MESSAGE_STATUS";
-            case MSG_CONNECT:
-                return "MSG_CONNECT";
-            case MSG_DISCONNECT:
-                return "MSG_DISCONNECT";
-            case MSG_CONNECTING_TIMEOUT:
-                return "MSG_CONNECTING_TIMEOUT";
-            case MSG_DISCONNECTING_TIMEOUT:
-                return "MSG_DISCONNECTING_TIMEOUT";
-        }
-        return "UNKNOWN";
+        return switch (what) {
+            case MSG_MAS_CONNECTED -> "MSG_MAS_CONNECTED";
+            case MSG_MAS_DISCONNECTED -> "MSG_MAS_DISCONNECTED";
+            case MSG_MAS_REQUEST_COMPLETED -> "MSG_MAS_REQUEST_COMPLETED";
+            case MSG_MAS_REQUEST_FAILED -> "MSG_MAS_REQUEST_FAILED";
+            case MSG_MAS_SDP_DONE -> "MSG_MAS_SDP_DONE";
+            case MSG_MAS_SDP_UNSUCCESSFUL -> "MSG_MAS_SDP_UNSUCCESSFUL";
+            case MSG_OUTBOUND_MESSAGE -> "MSG_OUTBOUND_MESSAGE";
+            case MSG_INBOUND_MESSAGE -> "MSG_INBOUND_MESSAGE";
+            case MSG_NOTIFICATION -> "MSG_NOTIFICATION";
+            case MSG_GET_LISTING -> "MSG_GET_LISTING";
+            case MSG_GET_MESSAGE_LISTING -> "MSG_GET_MESSAGE_LISTING";
+            case MSG_SET_MESSAGE_STATUS -> "MSG_SET_MESSAGE_STATUS";
+            case MSG_CONNECT -> "MSG_CONNECT";
+            case MSG_DISCONNECT -> "MSG_DISCONNECT";
+            case MSG_CONNECTING_TIMEOUT -> "MSG_CONNECTING_TIMEOUT";
+            case MSG_DISCONNECTING_TIMEOUT -> "MSG_DISCONNECTING_TIMEOUT";
+            default -> "UNKNOWN";
+        };
     }
 }

@@ -22,7 +22,7 @@ import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.RequiresPermission;
-import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.State;
 import android.content.AttributionSource;
 import android.os.Binder;
 import android.os.Process;
@@ -207,19 +207,18 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
                 printHelp(pw);
                 throw new IllegalArgumentException();
             }
-            switch (split[1]) {
-                case "STATE_OFF":
-                    return BluetoothAdapter.STATE_OFF;
-                case "STATE_ON":
-                    return BluetoothAdapter.STATE_ON;
-                default:
+            return switch (split[1]) {
+                case "STATE_OFF" -> State.OFF;
+                case "STATE_ON" -> State.ON;
+                default -> {
                     String msg = getName() + ": Invalid state value: " + split[1] + ". From: " + in;
                     Log.e(TAG, msg);
                     PrintWriter pw = getErrPrintWriter();
                     pw.println(TAG + ": " + msg);
                     printHelp(pw);
                     throw new IllegalArgumentException();
-            }
+                }
+            };
         }
 
         @Override

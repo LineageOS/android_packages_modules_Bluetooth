@@ -93,7 +93,7 @@ public class AvrcpControllerServiceTest {
         doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
         doReturn(mTargetContext.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();
-        mockGetSystemService(mAdapterService, Context.AUDIO_SERVICE, AudioManager.class);
+        mockGetSystemService(mAdapterService, AudioManager.class);
 
         mService = new AvrcpControllerService(mAdapterService, mNativeInterface);
         // Set a mock A2dpSinkService for audio focus calls

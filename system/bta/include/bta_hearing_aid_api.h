@@ -106,14 +106,13 @@ typedef enum {
 
 struct HearingDevice {
   RawAddress address;
-  /* This is true only during first connection to profile, until we store the
-   * device */
+  /*TODO: rename to stale_storage after continue_queued_command_after_discovery is released*/
   bool first_connection;
   bool service_changed_rcvd;
 
   /* we are making active attempt to connect to this device, 'direct connect'.
    */
-  bool connecting_actively;
+  bool connecting_actively = false;
 
   bool switch_to_background_connection_after_failure;
 
@@ -134,12 +133,12 @@ struct HearingDevice {
 
   tCONN_ID conn_id;
   uint16_t gap_handle;
-  uint16_t audio_control_point_handle;
-  uint16_t audio_status_handle;
-  uint16_t audio_status_ccc_handle;
-  uint16_t service_changed_ccc_handle;
-  uint16_t volume_handle;
-  uint16_t read_psm_handle;
+  uint16_t audio_control_point_handle = 0;
+  uint16_t audio_status_handle = 0;
+  uint16_t audio_status_ccc_handle = 0;
+  uint16_t service_changed_ccc_handle = 0;
+  uint16_t volume_handle = 0;
+  uint16_t read_psm_handle = 0;
 
   uint8_t capabilities;
   uint64_t hi_sync_id;
@@ -166,15 +165,18 @@ struct HearingDevice {
 
   int phy_update_retry_remain;
 
+  /*TODO: remove characteristic handles after continue_queued_command_after_discovery is released */
   HearingDevice(const RawAddress& address, uint8_t capabilities, uint16_t codecs,
                 uint16_t audio_control_point_handle, uint16_t audio_status_handle,
                 uint16_t audio_status_ccc_handle, uint16_t service_changed_ccc_handle,
                 uint16_t volume_handle, uint16_t read_psm_handle, uint64_t hiSyncId,
                 uint16_t render_delay, uint16_t preparation_delay)
       : address(address),
-        first_connection(false),
+        first_connection(
+                false),  // TODO: remove after continue_queued_command_after_discovery is released
         service_changed_rcvd(false),
-        connecting_actively(false),
+        connecting_actively(
+                false),  // TODO: remove after continue_queued_command_after_discovery is released
         switch_to_background_connection_after_failure(false),
         connection_update_status(NONE),
         accepting_audio(false),
@@ -197,6 +199,7 @@ struct HearingDevice {
         gap_opened(false),
         phy_update_retry_remain(kPhyUpdateRetryLimit) {}
 
+  // TODO: remove first_connection after continue_queued_command_after_discovery is released
   HearingDevice(const RawAddress& address, bool first_connection)
       : address(address),
         first_connection(first_connection),
@@ -207,6 +210,7 @@ struct HearingDevice {
         accepting_audio(false),
         conn_id(0),
         gap_handle(GAP_INVALID_HANDLE),
+        /* TODO: remove handles after continue_queued_command_after_discovery is released */
         audio_status_handle(0),
         audio_status_ccc_handle(0),
         service_changed_ccc_handle(0),

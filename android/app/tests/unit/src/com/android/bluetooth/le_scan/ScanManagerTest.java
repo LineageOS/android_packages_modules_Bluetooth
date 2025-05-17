@@ -34,6 +34,7 @@ import static android.bluetooth.le.ScanSettings.SCAN_MODE_SCREEN_OFF;
 import static android.bluetooth.le.ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS;
 import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_TIMEOUT_MILLIS;
 import static com.android.bluetooth.btservice.AdapterService.DeviceConfigListener.DEFAULT_SCAN_UPGRADE_DURATION_MILLIS;
@@ -62,6 +63,8 @@ import static org.mockito.Mockito.verify;
 
 import android.app.ActivityManager;
 import android.app.AlarmManager;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.le.ScanFilter;
@@ -93,7 +96,6 @@ import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.TestUtils.FakeTimeProvider;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.BluetoothAdapterProxy;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.GattNativeInterface;
@@ -131,7 +133,8 @@ public class ScanManagerTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private BluetoothAdapterProxy mBluetoothAdapterProxy;
+    @Mock private BluetoothManager mBluetoothManager;
+    @Mock private BluetoothAdapter mAdapter;
     @Mock private GattNativeInterface mNativeInterface;
     @Mock private LocationManager mLocationManager;
     @Mock private MetricsLogger mMetricsLogger;
@@ -201,20 +204,19 @@ public class ScanManagerTest {
         final Context context = InstrumentationRegistry.getInstrumentation().getContext();
         doReturn(context.getResources()).when(mAdapterService).getResources();
 
-        TestUtils.mockGetSystemService(
-                mAdapterService, Context.LOCATION_SERVICE, LocationManager.class, mLocationManager);
+        TestUtils.mockGetSystemService(mAdapterService, LocationManager.class, mLocationManager);
         doReturn(true).when(mLocationManager).isLocationEnabled();
 
         // DisplayManager and BatteryStatsManager are final and cannot be mocked with regular
         // mockito, so just return real implementation
         TestUtils.mockGetSystemService(
                 mAdapterService,
-                Context.DISPLAY_SERVICE,
                 DisplayManager.class,
                 context.getSystemService(DisplayManager.class));
-        TestUtils.mockGetSystemService(
-                mAdapterService, Context.BATTERY_STATS_SERVICE, BatteryStatsManager.class);
-        TestUtils.mockGetSystemService(mAdapterService, Context.ALARM_SERVICE, AlarmManager.class);
+        TestUtils.mockGetSystemService(mAdapterService, BatteryStatsManager.class);
+        TestUtils.mockGetSystemService(mAdapterService, AlarmManager.class);
+        mockGetSystemService(mAdapterService, BluetoothManager.class, mBluetoothManager);
+        doReturn(mAdapter).when(mBluetoothManager).getAdapter();
 
         mMockContentResolver = new MockContentResolver(context);
         mMockContentResolver.addProvider(
@@ -226,9 +228,8 @@ public class ScanManagerTest {
                     }
                 });
         doReturn(mMockContentResolver).when(mAdapterService).getContentResolver();
-        BluetoothAdapterProxy.setInstanceForTesting(mBluetoothAdapterProxy);
         // Needed to mock Native call/callback when hw offload scan filter is enabled
-        doReturn(true).when(mBluetoothAdapterProxy).isOffloadedScanFilteringSupported();
+        doReturn(true).when(mAdapter).isOffloadedFilteringSupported();
 
         GattObjectsFactory.setInstanceForTesting(mGattObjectsFactory);
         ScanObjectsFactory.setInstanceForTesting(mScanObjectsFactory);
@@ -247,11 +248,7 @@ public class ScanManagerTest {
         mLooper = new TestLooper();
         mScanManager =
                 new ScanManager(
-                        mAdapterService,
-                        mScanController,
-                        mBluetoothAdapterProxy,
-                        mLooper.getLooper(),
-                        mTimeProvider);
+                        mAdapterService, mScanController, mLooper.getLooper(), mTimeProvider);
 
         mScanReportDelay = DEFAULT_BATCH_SCAN_REPORT_DELAY_MS;
         mMockAppScanStats =
@@ -268,7 +265,6 @@ public class ScanManagerTest {
     @After
     public void tearDown() throws Exception {
         SystemProperties.mProperties = null;
-        BluetoothAdapterProxy.setInstanceForTesting(null);
         GattObjectsFactory.setInstanceForTesting(null);
         ScanObjectsFactory.setInstanceForTesting(null);
         MetricsLogger.setInstanceForTesting(null);
@@ -2067,7 +2063,7 @@ public class ScanManagerTest {
     @EnableFlags(Flags.FLAG_LE_SCAN_MSFT_SUPPORT)
     public void testMsftScan() {
         doReturn(true).when(mScanNativeInterface).gattClientIsMsftSupported();
-        doReturn(false).when(mBluetoothAdapterProxy).isOffloadedScanFilteringSupported();
+        doReturn(false).when(mAdapter).isOffloadedFilteringSupported();
 
         final boolean isFiltered = true;
         final ParcelUuid serviceUuid =
@@ -2081,11 +2077,7 @@ public class ScanManagerTest {
         // ScanManager is created
         mScanManager =
                 new ScanManager(
-                        mAdapterService,
-                        mScanController,
-                        mBluetoothAdapterProxy,
-                        mLooper.getLooper(),
-                        mTimeProvider);
+                        mAdapterService, mScanController, mLooper.getLooper(), mTimeProvider);
 
         // Turn on screen
         sendMessageWaitForProcessed(createScreenOnOffMessage(true));
@@ -2131,7 +2123,7 @@ public class ScanManagerTest {
     @EnableFlags(Flags.FLAG_LE_SCAN_MSFT_SUPPORT)
     public void testPreferApcfOverMsftScan() {
         doReturn(true).when(mScanNativeInterface).gattClientIsMsftSupported();
-        doReturn(true).when(mBluetoothAdapterProxy).isOffloadedScanFilteringSupported();
+        doReturn(true).when(mAdapter).isOffloadedFilteringSupported();
 
         final boolean isFiltered = true;
         final ParcelUuid serviceUuid =
@@ -2145,11 +2137,7 @@ public class ScanManagerTest {
         // ScanManager is created
         mScanManager =
                 new ScanManager(
-                        mAdapterService,
-                        mScanController,
-                        mBluetoothAdapterProxy,
-                        mLooper.getLooper(),
-                        mTimeProvider);
+                        mAdapterService, mScanController, mLooper.getLooper(), mTimeProvider);
 
         // Turn on screen
         sendMessageWaitForProcessed(createScreenOnOffMessage(true));

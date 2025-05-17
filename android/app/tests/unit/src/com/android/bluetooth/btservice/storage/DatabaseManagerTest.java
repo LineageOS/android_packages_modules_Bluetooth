@@ -23,7 +23,7 @@ import static android.bluetooth.BluetoothProfile.HEADSET;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
+import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -123,7 +123,7 @@ public final class DatabaseManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        mockAdapterServiceGetRemoteDevice(mAdapterService, mDevice1, mDevice2, mDevice3);
+        mockGetRemoteDevice(mAdapterService, mDevice1, mDevice2, mDevice3);
 
         // Create a memory database for DatabaseManager instead of use a real database.
         mDatabase = Room.inMemoryDatabaseBuilder(mContext, MetadataDatabase.class).build();

@@ -20,7 +20,7 @@
 #include "hci/acl_manager.h"
 #include "hci/controller.h"
 #include "hci/distance_measurement_manager.h"
-#include "hci/hci_layer.h"
+#include "hci/hci_interface.h"
 #include "hci/le_advertising_manager.h"
 #include "hci/le_scanning_manager.h"
 #include "hci/msft.h"
@@ -42,7 +42,7 @@ hci::LeAdvertisingManager* GetAdvertising() {
 
 hci::Controller* GetController() { return Stack::GetInstance()->GetController(); }
 
-hci::HciInterface* GetHciLayer() { return Stack::GetInstance()->GetInstance<hci::HciLayer>(); }
+hci::HciInterface* GetHciLayer() { return Stack::GetInstance()->GetHciLayer(); }
 
 hci::RemoteNameRequestModule* GetRemoteNameRequest() {
   return Stack::GetInstance()->GetRemoteNameRequest();
@@ -57,7 +57,7 @@ hci::DistanceMeasurementManager* GetDistanceMeasurementManager() {
 hal::SnoopLogger* GetSnoopLogger() { return Stack::GetInstance()->GetSnoopLogger(); }
 
 lpp::LppOffloadInterface* GetLppOffloadManager() {
-  return Stack::GetInstance()->GetInstance<lpp::LppOffloadManager>();
+  return Stack::GetInstance()->GetLppOffloadInterface();
 }
 
 storage::StorageModule* GetStorage() { return Stack::GetInstance()->GetStorage(); }

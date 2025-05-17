@@ -37,6 +37,7 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.util.BluetoothTrace;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -46,6 +47,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This object represents a connection over PBAP with a given remote device. It manages the account,
@@ -243,6 +245,8 @@ class PbapClientStateMachine extends StateMachine {
 
     private final Callback mCallback;
 
+    private final AtomicInteger mTraceCallCount = new AtomicInteger(0);
+
     PbapClientStateMachine(
             AdapterService adapterService,
             BluetoothDevice device,
@@ -372,6 +376,7 @@ class PbapClientStateMachine extends StateMachine {
     class Disconnected extends State {
         @Override
         public void enter() {
+            asyncTraceForTrackBeginForDevice(getName());
             debug("Disconnected: Enter, from=" + eventToString(getCurrentMessage().what));
             if (mCurrentState != STATE_DISCONNECTED) {
                 // Only broadcast a state change that came from something other than disconnected
@@ -399,11 +404,17 @@ class PbapClientStateMachine extends StateMachine {
             }
             return true;
         }
+
+        @Override
+        public void exit() {
+            asyncTraceForTrackEndForDevice();
+        }
     }
 
     class Connecting extends State {
         @Override
         public void enter() {
+            asyncTraceForTrackBeginForDevice(getName());
             debug("Connecting: Enter from=" + eventToString(getCurrentMessage().what));
             onConnectionStateChanged(STATE_CONNECTING);
 
@@ -508,7 +519,11 @@ class PbapClientStateMachine extends StateMachine {
 
         @Override
         public void exit() {
-            removeMessages(MSG_CONNECT_TIMEOUT);
+            try {
+                removeMessages(MSG_CONNECT_TIMEOUT);
+            } finally {
+                asyncTraceForTrackEndForDevice();
+            }
         }
     }
 
@@ -517,6 +532,7 @@ class PbapClientStateMachine extends StateMachine {
 
         @Override
         public void enter() {
+            asyncTraceForTrackBeginForDevice(getName());
             debug("Connected: Enter, from=" + eventToString(getCurrentMessage().what));
             if (mCurrentState != STATE_CONNECTING) {
                 return;
@@ -581,6 +597,11 @@ class PbapClientStateMachine extends StateMachine {
             }
             return HANDLED;
         }
+
+        @Override
+        public void exit() {
+            asyncTraceForTrackEndForDevice();
+        }
     }
 
     class Downloading extends State {
@@ -588,14 +609,15 @@ class PbapClientStateMachine extends StateMachine {
 
         @Override
         public void enter() {
-
+            asyncTraceForTrackBeginForDevice(getName());
             info("Downloading: Start download process");
 
             // Initialize our list of phonebooks to download based on supported repositories
             initializePhonebooksToDownload();
-
             String currentPhonebook = getCurrentPhonebook();
             if (currentPhonebook != null) {
+                asyncTraceForTrackBeginForDevice(
+                        "downloadPhonebookMetadata(phonebook=" + currentPhonebook + ")");
                 downloadPhonebookMetadata(currentPhonebook);
             } else {
                 warn("Downloading: no supported repositories to download");
@@ -614,6 +636,12 @@ class PbapClientStateMachine extends StateMachine {
                     break;
 
                 case MSG_PHONEBOOK_METADATA_RECEIVED:
+                    // The asyncTraceForTrackBeginForDevice and asyncTraceForTrackEndForDevice
+                    // methods must be called
+                    // within processMessage. This ensures that they are invoked in the proper order
+                    // on the state machine's message handler.
+                    asyncTraceForTrackEndForDevice(); // End trace slice for
+                    // downloadPhonebookMetadata().
                     PbapPhonebookMetadata metadata = (PbapPhonebookMetadata) message.obj;
                     phonebook = metadata.phonebook();
                     if (currentPhonebook != null && currentPhonebook.equals(phonebook)) {
@@ -624,12 +652,24 @@ class PbapClientStateMachine extends StateMachine {
 
                         // If phonebook has contacts, begin downloading them
                         if (metadata.size() > 0) {
+                            asyncTraceForTrackBeginForDevice(
+                                    "downloadPhonebook(" + phonebook + ")");
                             downloadPhonebook(currentPhonebook, 0, CONTACT_DOWNLOAD_BATCH_SIZE);
                         } else {
                             warn(
                                     "Downloading: no contacts for phonebook="
                                             + currentPhonebook
                                             + ", skipping");
+                            // In order to ensure thread safety asyncTraceForTrackBegin needs to be
+                            // called within processMessage. Placing this tracing method within
+                            // downloadPhonebookMetadata or other methods is unsafe as there is no
+                            // guarantee that it will always be called within processMessage.
+                            if (mPhonebooksToDownload.size() - 1 > 0) {
+                                asyncTraceForTrackBeginForDevice(
+                                        "downloadPhonebookMetadata(phonebook="
+                                                + mPhonebooksToDownload.get(1)
+                                                + ")");
+                            }
                             setNextPhonebookOrComplete();
                             break;
                         }
@@ -678,12 +718,28 @@ class PbapClientStateMachine extends StateMachine {
                                     "Downloading: contacts empty for phonebook="
                                             + phonebook
                                             + ", proceed to next phonebook");
+                            asyncTraceForTrackEndForDevice(); // End trace slice for
+                            // downloadPhonebook().
+                            if (mPhonebooksToDownload.size() - 1 > 0) {
+                                asyncTraceForTrackBeginForDevice(
+                                        "downloadPhonebookMetadata(phonebook="
+                                                + mPhonebooksToDownload.get(1)
+                                                + ")");
+                            }
                             setNextPhonebookOrComplete();
                             break;
                         }
 
                         if (totalContactDownloaded >= totalContactsExpected) {
                             info("Downloading: download complete, phonebook=" + phonebook);
+                            asyncTraceForTrackEndForDevice(); // End trace slice for
+                            // downloadPhonebook().
+                            if (mPhonebooksToDownload.size() - 1 > 0) {
+                                asyncTraceForTrackBeginForDevice(
+                                        "downloadPhonebookMetadata(phonebook="
+                                                + mPhonebooksToDownload.get(1)
+                                                + ")");
+                            }
                             setNextPhonebookOrComplete();
                         } else {
                             downloadPhonebook(
@@ -703,6 +759,11 @@ class PbapClientStateMachine extends StateMachine {
                     return NOT_HANDLED;
             }
             return HANDLED;
+        }
+
+        @Override
+        public void exit() {
+            asyncTraceForTrackEndForDevice();
         }
 
         /* Initialize our prioritized list of phonebooks we want to download */
@@ -818,6 +879,7 @@ class PbapClientStateMachine extends StateMachine {
     class Disconnecting extends State {
         @Override
         public void enter() {
+            asyncTraceForTrackBeginForDevice(getName());
             debug("Disconnecting: Enter, from=" + eventToString(getCurrentMessage().what));
             onConnectionStateChanged(STATE_DISCONNECTING);
 
@@ -860,10 +922,14 @@ class PbapClientStateMachine extends StateMachine {
 
         @Override
         public void exit() {
-            mContactsStorage.unregisterCallback(mStorageCallback);
+            try {
+                mContactsStorage.unregisterCallback(mStorageCallback);
 
-            // Always remove data as a last step
-            cleanup();
+                // Always remove data as a last step
+                cleanup();
+            } finally {
+                asyncTraceForTrackEndForDevice();
+            }
         }
     }
 
@@ -879,7 +945,7 @@ class PbapClientStateMachine extends StateMachine {
         switch (mCurrentState) {
             case STATE_CONNECTED:
                 onConnectionStateChanged(STATE_DISCONNECTING);
-                // intentional fallthrough-- we want to broadcast both state changes
+            // intentional fallthrough-- we want to broadcast both state changes
             case STATE_CONNECTING:
             case STATE_DISCONNECTING:
                 onConnectionStateChanged(STATE_DISCONNECTED);
@@ -996,6 +1062,32 @@ class PbapClientStateMachine extends StateMachine {
                             + contacts.getCountWithPhotoData());
             onPhonebookContactsReceived(contacts);
         }
+    }
+
+    // asyncTraceForTrackBegin for the current Bluetooth device.
+    // This should only be called invoked within a state's enter(), processMessage(), and exit()
+    // methods.
+    public void asyncTraceForTrackBeginForDevice(String methodName) {
+        mTraceCallCount.incrementAndGet();
+        BluetoothTrace.asyncTraceForTrackBegin(
+                TAG + " [" + mDevice + "]", methodName, mDevice.hashCode());
+    }
+
+    // asyncTraceForTrackEnd for the current Bluetooth device.
+    // This should only be called invoked within a state's enter(), processMessage(), and exit()
+    // methods.
+    public void asyncTraceForTrackEndForDevice() {
+        boolean shouldTrace =
+                mTraceCallCount.getAndUpdate(count -> count > 0 ? count - 1 : count) > 0;
+        if (!shouldTrace) {
+            debug(
+                    "asyncTraceForTrackEndForDevice for "
+                            + mDevice
+                            + " had no matching asyncTraceForTrackBeginForDevice or was called too"
+                            + " many times.");
+            return;
+        }
+        BluetoothTrace.asyncTraceForTrackEnd(TAG + " [" + mDevice + "]", mDevice.hashCode());
     }
 
     private static String eventToString(int message) {

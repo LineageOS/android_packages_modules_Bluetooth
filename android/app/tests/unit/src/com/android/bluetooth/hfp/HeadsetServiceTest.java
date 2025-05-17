@@ -25,7 +25,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
+import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -175,11 +175,11 @@ public class HeadsetServiceTest {
                         })
                 .when(mObjectsFactory)
                 .makeStateMachine(any(), any(), any(), any(), any(), any());
-        doReturn(mSystemInterface).when(mObjectsFactory).makeSystemInterface(any());
+        doReturn(mSystemInterface).when(mObjectsFactory).makeSystemInterface(any(), any());
         HeadsetNativeInterface.setInstance(mNativeInterface);
         mHeadsetService = new HeadsetService(mAdapterService, mNativeInterface);
         mHeadsetService.setAvailable(true);
-        verify(mObjectsFactory).makeSystemInterface(mHeadsetService);
+        verify(mObjectsFactory).makeSystemInterface(mAdapterService, mHeadsetService);
         mHeadsetService.setForceScoAudio(true);
     }
 
@@ -1064,7 +1064,7 @@ public class HeadsetServiceTest {
                 .thenReturn(CONNECTION_POLICY_UNKNOWN);
         mCurrentDevice = getTestDevice(0);
         BluetoothDevice otherDevice = getTestDevice(1);
-        mockAdapterServiceGetRemoteDevice(mAdapterService, mCurrentDevice, otherDevice);
+        mockGetRemoteDevice(mAdapterService, mCurrentDevice, otherDevice);
         for (BluetoothDevice device : List.of(mCurrentDevice, otherDevice)) {
             assertThat(mHeadsetService.connect(device)).isTrue();
             doReturn(device).when(mStateMachines.get(device)).getDevice();

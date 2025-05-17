@@ -88,14 +88,7 @@ import java.util.Set;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class HeadsetClientStateMachineTest {
-    private final BluetoothDevice mDevice = getTestDevice(42);
-
-    private TestHeadsetClientStateMachine mHeadsetClientStateMachine;
-    private InOrder mInOrder;
-    private TestLooper mTestLooper;
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private AdapterService mAdapterService;
@@ -106,6 +99,12 @@ public class HeadsetClientStateMachineTest {
     @Mock private RemoteDevices mRemoteDevices;
     @Mock private PackageManager mPackageManager;
     @Mock private HeadsetClientNativeInterface mNativeInterface;
+
+    private final BluetoothDevice mDevice = getTestDevice(42);
+
+    private TestHeadsetClientStateMachine mHeadsetClientStateMachine;
+    private InOrder mInOrder;
+    private TestLooper mTestLooper;
 
     @Before
     public void setUp() throws Exception {

@@ -637,7 +637,7 @@ def plot_tx_queue(ax, acl_connection: btsnoop.AclConnection):
                 if connection_handle == acl_connection.connection_handle:
                     for _ in range(0, num_completed_packets):
                         if tx_queue:
-                            acked = tx_queue.pop()
+                            acked = tx_queue.pop(0)
                             real_ts.append(acked.timestamp_us)
                             tx_delay.append(packet.timestamp_us - acked.timestamp_us)
                         else:

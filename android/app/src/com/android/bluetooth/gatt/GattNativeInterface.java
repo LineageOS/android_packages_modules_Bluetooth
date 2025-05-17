@@ -75,13 +75,15 @@ public class GattNativeInterface {
         mGattService.onClientRegisteredFromNative(status, clientIf, new UUID(uuidMsb, uuidLsb));
     }
 
-    void onConnected(int clientIf, int connId, int status, String address) throws RemoteException {
-        mGattService.onConnectedFromNative(clientIf, connId, status, getDevice(address));
+    void onConnected(int clientIf, int connId, int transport, int status, String address)
+            throws RemoteException {
+        mGattService.onConnectedFromNative(clientIf, connId, transport, status, getDevice(address));
     }
 
-    void onDisconnected(int clientIf, int connId, int status, String address)
+    void onDisconnected(int clientIf, int connId, int transport, int status, String address)
             throws RemoteException {
-        mGattService.onDisconnectedFromNative(clientIf, connId, status, getDevice(address));
+        mGattService.onDisconnectedFromNative(
+                clientIf, connId, transport, status, getDevice(address));
     }
 
     void onClientPhyUpdate(int connId, int txPhy, int rxPhy, int status) throws RemoteException {
@@ -202,9 +204,11 @@ public class GattNativeInterface {
         mGattService.onServiceDeletedFromNative(status, serverIf, srvcHandle);
     }
 
-    void onClientConnected(String address, boolean connected, int connId, int serverIf)
+    void onClientConnected(
+            String address, int transport, boolean connected, int connId, int serverIf)
             throws RemoteException {
-        mGattService.onClientConnectedFromNative(getDevice(address), connected, connId, serverIf);
+        mGattService.onClientConnectedFromNative(
+                getDevice(address), transport, connected, connId, serverIf);
     }
 
     void onServerReadCharacteristic(

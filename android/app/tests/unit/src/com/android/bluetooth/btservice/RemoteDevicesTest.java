@@ -10,7 +10,7 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockGetSystemService;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -23,7 +23,6 @@ import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.HandlerThread;
@@ -64,10 +63,6 @@ public class RemoteDevicesTest {
 
     @Mock private AdapterService mAdapterService;
 
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
-    private final BluetoothManager mBluetoothManager =
-            mTargetContext.getSystemService(BluetoothManager.class);
     private final BluetoothDevice mDevice = getTestDevice(43);
 
     private InOrder mInOrder;
@@ -84,12 +79,7 @@ public class RemoteDevicesTest {
                 InstrumentationRegistry.getInstrumentation()
                         .acquireLooperManager(mHandlerThread.getLooper());
 
-        mockGetSystemService(
-                mAdapterService,
-                Context.BLUETOOTH_SERVICE,
-                BluetoothManager.class,
-                mBluetoothManager);
-
+        mockGetBluetoothManager(mAdapterService);
         mRemoteDevices = new RemoteDevices(mAdapterService, mHandlerThread.getLooper());
         verify(mAdapterService).getSystemService(BluetoothManager.class);
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();

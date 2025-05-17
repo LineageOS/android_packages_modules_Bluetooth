@@ -18,6 +18,7 @@ package com.android.bluetooth.opp;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.opp.BluetoothOppService.WHERE_INVISIBLE_UNCONFIRMED;
 
@@ -70,8 +71,7 @@ public class BluetoothOppServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        mockGetSystemService(
-                mAdapterService, Context.NOTIFICATION_SERVICE, NotificationManager.class);
+        mockGetSystemService(mAdapterService, NotificationManager.class);
         doReturn(mContext.getPackageName()).when(mAdapterService).getPackageName();
         doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(mContext.getResources()).when(mAdapterService).getResources();
@@ -98,7 +98,10 @@ public class BluetoothOppServiceTest {
             Looper.prepare();
         }
 
+        mockGetBluetoothManager(mAdapterService);
+
         BluetoothOppPreference oppPreference = BluetoothOppPreference.getInstance(mContext);
+
         mService = new BluetoothOppService(mAdapterService, oppPreference);
         mService.setAvailable(true);
 

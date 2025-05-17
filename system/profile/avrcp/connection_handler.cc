@@ -296,13 +296,14 @@ void ConnectionHandler::InitiatorControlCb(uint8_t handle, uint8_t event, uint16
 
     case AVRC_CLOSE_IND_EVT: {
       log::info("Connection Closed Event");
+      std::lock_guard<std::recursive_mutex> lock(device_map_lock);
+      avrc_->Close(handle);
 
       if (device_map_.find(handle) == device_map_.end()) {
         log::warn("Connection Close received from device that doesn't exist");
         return;
       }
-      std::lock_guard<std::recursive_mutex> lock(device_map_lock);
-      avrc_->Close(handle);
+
       feature_map_.erase(device_map_[handle]->GetAddress());
       device_map_[handle]->DeviceDisconnected();
       device_map_.erase(handle);
@@ -409,18 +410,18 @@ void ConnectionHandler::AcceptorControlCb(uint8_t handle, uint8_t event, uint16_
 
     case AVRC_CLOSE_IND_EVT: {
       log::info("Connection Closed Event");
+      std::lock_guard<std::recursive_mutex> lock(device_map_lock);
+      avrc_->Close(handle);
 
       if (device_map_.find(handle) == device_map_.end()) {
         log::warn("Connection Close received from device that doesn't exist");
         return;
       }
       {
-        std::lock_guard<std::recursive_mutex> lock(device_map_lock);
         feature_map_.erase(device_map_[handle]->GetAddress());
         device_map_[handle]->DeviceDisconnected();
         device_map_.erase(handle);
       }
-      avrc_->Close(handle);
     } break;
 
     case AVRC_BROWSE_OPEN_IND_EVT: {

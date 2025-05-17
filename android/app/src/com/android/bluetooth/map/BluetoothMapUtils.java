@@ -278,39 +278,24 @@ public class BluetoothMapUtils {
      * @return String Formatted Map Handle
      */
     public static String getMapHandle(long cpHandle, TYPE messageType) {
-        String mapHandle = "-1";
         /* Avoid NPE for possible "null" value of messageType */
-        if (messageType != null) {
-            switch (messageType) {
-                case MMS:
-                    mapHandle = getLongAsString(cpHandle | HANDLE_TYPE_MMS_MASK);
-                    break;
-                case SMS_GSM:
-                    mapHandle = getLongAsString(cpHandle | HANDLE_TYPE_SMS_GSM_MASK);
-                    break;
-                case SMS_CDMA:
-                    mapHandle = getLongAsString(cpHandle | HANDLE_TYPE_SMS_CDMA_MASK);
-                    break;
-                case EMAIL:
-                    mapHandle = getLongAsString(cpHandle | HANDLE_TYPE_EMAIL_MASK);
-                    break;
-                case IM:
-                    mapHandle = getLongAsString(cpHandle | HANDLE_TYPE_IM_MASK);
-                    break;
-                case NONE:
-                    break;
-                default:
-                    throw new IllegalArgumentException("Message type not supported");
-            }
-        } else {
+        if (messageType == null) {
             Log.e(TAG, " Invalid messageType input");
             ContentProfileErrorReportUtils.report(
                     BluetoothProfile.MAP,
                     BluetoothProtoEnums.BLUETOOTH_MAP_UTILS,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
                     0);
+            return "-1";
         }
-        return mapHandle;
+        return switch (messageType) {
+            case MMS -> getLongAsString(cpHandle | HANDLE_TYPE_MMS_MASK);
+            case SMS_GSM -> getLongAsString(cpHandle | HANDLE_TYPE_SMS_GSM_MASK);
+            case SMS_CDMA -> getLongAsString(cpHandle | HANDLE_TYPE_SMS_CDMA_MASK);
+            case EMAIL -> getLongAsString(cpHandle | HANDLE_TYPE_EMAIL_MASK);
+            case IM -> getLongAsString(cpHandle | HANDLE_TYPE_IM_MASK);
+            case NONE -> "-1";
+        };
     }
 
     /**

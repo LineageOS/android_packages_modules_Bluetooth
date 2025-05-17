@@ -89,7 +89,6 @@ public class VolumeControlService extends ProfileService {
     final RemoteCallbackList<IBluetoothVolumeControlCallback> mCallbacks =
             new RemoteCallbackList<>();
 
-    private final AdapterService mAdapterService;
     private final AudioManager mAudioManager;
     private final DatabaseManager mDatabaseManager;
     private final Handler mHandler;
@@ -122,7 +121,6 @@ public class VolumeControlService extends ProfileService {
             Looper looper,
             VolumeControlNativeInterface nativeInterface) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(
@@ -130,7 +128,7 @@ public class VolumeControlService extends ProfileService {
                         () ->
                                 new VolumeControlNativeInterface(
                                         new VolumeControlNativeCallback(adapterService, this)));
-        mAudioManager = requireNonNull(getSystemService(AudioManager.class));
+        mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
             mStateMachinesThread = new HandlerThread("VolumeControlService.StateMachines");
@@ -1077,9 +1075,8 @@ public class VolumeControlService extends ProfileService {
         Log.d(TAG, "Volume mode:" + mode + "; Description: 0:normal, 1:ring, 2,3:call");
 
         return switch (mode) {
-            case AudioManager.MODE_IN_CALL, AudioManager.MODE_IN_COMMUNICATION -> {
-                yield AudioManager.STREAM_VOICE_CALL;
-            }
+            case AudioManager.MODE_IN_CALL, AudioManager.MODE_IN_COMMUNICATION ->
+                    AudioManager.STREAM_VOICE_CALL;
             case AudioManager.MODE_RINGTONE -> {
                 Log.d(TAG, " Update during ringtone applied to voice call");
                 yield AudioManager.STREAM_VOICE_CALL;
@@ -1421,15 +1418,15 @@ public class VolumeControlService extends ProfileService {
         // in the same order they were sent from the native code.
         synchronized (mStateMachines) {
             VolumeControlStateMachine sm = mStateMachines.get(stackEvent.device);
-            if (sm == null) {
-                if (stackEvent.type
-                        == VolumeControlStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED) {
-                    switch (stackEvent.valueInt1) {
-                        case STATE_CONNECTED, STATE_CONNECTING -> {
-                            sm = getOrCreateStateMachine(stackEvent.device);
-                        }
-                    }
-                }
+            if (sm == null
+                    && stackEvent.type
+                            == VolumeControlStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED) {
+                sm =
+                        switch (stackEvent.valueInt1) {
+                            case STATE_CONNECTED, STATE_CONNECTING ->
+                                    getOrCreateStateMachine(stackEvent.device);
+                            default -> null;
+                        };
             }
             if (sm != null) {
                 sm.sendMessage(VolumeControlStateMachine.MESSAGE_STACK_EVENT, stackEvent);

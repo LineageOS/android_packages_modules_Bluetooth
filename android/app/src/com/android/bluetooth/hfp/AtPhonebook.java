@@ -319,7 +319,7 @@ public class AtPhonebook {
                 mNativeInterface.atResponseString(remoteDevice, atCommandResponse);
                 mNativeInterface.atResponseCode(remoteDevice, atCommandResult, atCommandErrorCode);
                 break;
-                // Read PhoneBook Entries
+            // Read PhoneBook Entries
             case TYPE_READ:
             case TYPE_SET: // Set & read
                 // Phone Book Read Request
@@ -545,6 +545,8 @@ public class AtPhonebook {
                 || mCpbrIndex1 > pbr.cursor.getCount()) {
             atCommandResult = HeadsetHalConstants.AT_RESPONSE_OK;
             Log.e(TAG, "Invalid request or no results, returning");
+            pbr.cursor.close();
+            pbr.cursor = null;
             return atCommandResult;
         }
 
@@ -613,7 +615,9 @@ public class AtPhonebook {
             int regionType = PhoneNumberUtils.toaFromString(number);
 
             number = number.trim();
-            number = PhoneNumberUtils.stripSeparators(number);
+            number =
+                    PhoneNumberUtils.stripSeparators(
+                            PhoneNumberUtils.convertKeypadLettersToDigits(number));
             if (number.length() > 30) {
                 number = number.substring(0, 30);
             }
@@ -647,10 +651,8 @@ public class AtPhonebook {
                 break;
             }
         }
-        if (pbr.cursor != null) {
-            pbr.cursor.close();
-            pbr.cursor = null;
-        }
+        pbr.cursor.close();
+        pbr.cursor = null;
         return atCommandResult;
     }
 

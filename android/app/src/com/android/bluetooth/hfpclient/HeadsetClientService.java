@@ -79,7 +79,6 @@ public class HeadsetClientService extends ProfileService {
             new HashMap<>();
 
     private final HandlerThread mSmThread;
-    private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final AudioManager mAudioManager;
     private final HeadsetClientNativeInterface mNativeInterface;
@@ -90,18 +89,23 @@ public class HeadsetClientService extends ProfileService {
     private int mLastBatteryLevel = -1;
 
     public HeadsetClientService(AdapterService adapterService) {
+        this(adapterService, new HeadsetClientNativeInterface(adapterService));
+    }
+
+    @VisibleForTesting
+    HeadsetClientService(
+            AdapterService adapterService, HeadsetClientNativeInterface nativeInterface) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(adapterService.getDatabase());
-        mAudioManager = requireNonNull(getSystemService(AudioManager.class));
+        mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
         mMaxAmVcVol = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
         mMinAmVcVol = mAudioManager.getStreamMinVolume(AudioManager.STREAM_VOICE_CALL);
 
         // Setup the JNI service
-        mNativeInterface = HeadsetClientNativeInterface.getInstance(mAdapterService);
+        mNativeInterface = requireNonNull(nativeInterface);
         mNativeInterface.initialize();
 
-        mBatteryManager = getSystemService(BatteryManager.class);
+        mBatteryManager = obtainSystemService(BatteryManager.class);
 
         // start AudioManager in a known state
         mAudioManager.setHfpEnabled(false);

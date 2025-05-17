@@ -18,7 +18,7 @@ package com.android.bluetooth.avrcpcontroller;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockGetSystemService;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -26,12 +26,10 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.net.Uri;
 
 import androidx.test.filters.SmallTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.Before;
@@ -53,17 +51,12 @@ public class AvrcpCoverArtProviderTest {
 
     private static final String TEST_MODE = "test_mode";
     private final BluetoothDevice mDevice = getTestDevice(48);
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
-    private final BluetoothManager mBluetoothManager =
-            mTargetContext.getSystemService(BluetoothManager.class);
 
     private AvrcpCoverArtProvider mArtProvider;
 
     @Before
     public void setUp() {
-        mockGetSystemService(
-                mContext, Context.BLUETOOTH_SERVICE, BluetoothManager.class, mBluetoothManager);
+        mockGetBluetoothManager(mContext);
 
         mArtProvider = new AvrcpCoverArtProvider();
         mArtProvider.attachInfo(mContext, null);

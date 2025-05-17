@@ -48,7 +48,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHearingAid;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
-import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.BluetoothProfileConnectionInfo;
@@ -106,8 +105,7 @@ public class HearingAidServiceTest {
         mInOrder = inOrder(mAdapterService);
         mLooper = new TestLooper();
 
-        TestUtils.mockGetSystemService(
-                mAdapterService, Context.AUDIO_SERVICE, AudioManager.class, mAudioManager);
+        TestUtils.mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
 
         doReturn(CONNECTION_POLICY_ALLOWED)
                 .when(mDatabaseManager)

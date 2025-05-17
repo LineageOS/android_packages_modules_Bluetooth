@@ -18,7 +18,6 @@ package com.android.bluetooth.btservice;
 
 import android.annotation.SuppressLint;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
 import android.os.IBinder;
@@ -33,6 +32,7 @@ public abstract class ProfileService extends ContextWrapper {
         void cleanup();
     }
 
+    protected final AdapterService mAdapterService;
     private final IProfileServiceBinder mBinder;
     private final String mName;
     private boolean mAvailable = false;
@@ -71,8 +71,9 @@ public abstract class ProfileService extends ContextWrapper {
         mTestModeEnabled = testModeEnabled;
     }
 
-    protected ProfileService(Context ctx) {
-        super(ctx);
+    protected ProfileService(AdapterService adapterService) {
+        super(adapterService);
+        mAdapterService = adapterService;
         mName = getName();
         Log.d(mName, "Service created");
         mBinder = initBinder();
@@ -130,6 +131,10 @@ public abstract class ProfileService extends ContextWrapper {
                                 ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
                                 : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                         PackageManager.DONT_KILL_APP | PackageManager.SYNCHRONOUS);
+    }
+
+    protected <T> T obtainSystemService(Class<T> serviceClass) {
+        return mAdapterService.getSystemService(serviceClass);
     }
 
     /**

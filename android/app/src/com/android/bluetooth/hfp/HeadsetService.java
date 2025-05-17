@@ -125,7 +125,6 @@ public class HeadsetService extends ProfileService {
     // Timeout for state machine thread join, to prevent potential ANR.
     private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1000;
 
-    private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final HeadsetNativeInterface mNativeInterface;
     private final HashMap<BluetoothDevice, HeadsetStateMachine> mStateMachines = new HashMap<>();
@@ -176,7 +175,6 @@ public class HeadsetService extends ProfileService {
     HeadsetService(
             AdapterService adapterService, HeadsetNativeInterface nativeInterface, Looper looper) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface = requireNonNull(nativeInterface);
         if (looper != null) {
@@ -194,7 +192,8 @@ public class HeadsetService extends ProfileService {
         setComponentAvailable(HFP_AG_IN_CALL_SERVICE, true);
 
         // Step 3: Initialize system interface
-        mSystemInterface = HeadsetObjectsFactory.getInstance().makeSystemInterface(this);
+        mSystemInterface =
+                HeadsetObjectsFactory.getInstance().makeSystemInterface(mAdapterService, this);
         // Step 4: Initialize native interface
         mIsAptXSwbEnabled =
                 SystemProperties.getBoolean("bluetooth.hfp.codec_aptx_voice.enabled", false);
@@ -378,24 +377,23 @@ public class HeadsetService extends ProfileService {
             HeadsetStateMachine stateMachine = mStateMachines.get(stackEvent.device);
             if (stackEvent.type == HeadsetStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED) {
                 switch (stackEvent.valueInt) {
-                    case HeadsetHalConstants.CONNECTION_STATE_CONNECTED:
-                    case HeadsetHalConstants.CONNECTION_STATE_CONNECTING:
-                        {
-                            // Create new state machine if none is found
-                            if (stateMachine == null) {
-                                stateMachine =
-                                        HeadsetObjectsFactory.getInstance()
-                                                .makeStateMachine(
-                                                        stackEvent.device,
-                                                        mStateMachinesLooper,
-                                                        this,
-                                                        mAdapterService,
-                                                        mNativeInterface,
-                                                        mSystemInterface);
-                                mStateMachines.put(stackEvent.device, stateMachine);
-                            }
-                            break;
+                    case HeadsetHalConstants.CONNECTION_STATE_CONNECTED,
+                            HeadsetHalConstants.CONNECTION_STATE_CONNECTING -> {
+                        // Create new state machine if none is found
+                        if (stateMachine == null) {
+                            stateMachine =
+                                    HeadsetObjectsFactory.getInstance()
+                                            .makeStateMachine(
+                                                    stackEvent.device,
+                                                    mStateMachinesLooper,
+                                                    this,
+                                                    mAdapterService,
+                                                    mNativeInterface,
+                                                    mSystemInterface);
+                            mStateMachines.put(stackEvent.device, stateMachine);
                         }
+                    }
+                    default -> {} // Nothing to do
                 }
             }
             if (stateMachine == null) {
@@ -843,7 +841,6 @@ public class HeadsetService extends ProfileService {
                         Binder.getCallingUid());
             }
         }
-
 
         if (mSystemInterface.isScoManagedByAudioEnabled()) {
             if (startScoViaAudioManager(device)) {
@@ -2397,7 +2394,7 @@ public class HeadsetService extends ProfileService {
         List<BluetoothDevice> fallbackCandidates = getConnectedDevices();
         List<BluetoothDevice> uninterestedCandidates = new ArrayList<>();
         for (BluetoothDevice device : fallbackCandidates) {
-            if (Utils.isWatch(mAdapterService, device)) {
+            if (Utils.remoteDeviceIsWatch(mAdapterService, device)) {
                 uninterestedCandidates.add(device);
             }
         }

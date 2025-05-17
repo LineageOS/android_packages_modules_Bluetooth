@@ -176,7 +176,6 @@ android_library {
         "framework-tethering.stubs.module_lib",
         "framework-wifi.stubs.module_lib",
         "modules-utils-build",
-        "modules-utils-expresslog",
     ],
     static_libs: [
         "android.hardware.radio-V1.0-java",

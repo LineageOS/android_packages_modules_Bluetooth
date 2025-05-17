@@ -113,7 +113,7 @@ public class BipPixel {
 
         int typeHint = determinePixelType(pixel);
         switch (typeHint) {
-            case TYPE_FIXED:
+            case TYPE_FIXED -> {
                 Pattern fixed = Pattern.compile("^(\\d{1,5})\\*(\\d{1,5})$");
                 Matcher m1 = fixed.matcher(pixel);
                 if (m1.matches()) {
@@ -123,8 +123,8 @@ public class BipPixel {
                     minHeight = Integer.parseInt(m1.group(2));
                     maxHeight = Integer.parseInt(m1.group(2));
                 }
-                break;
-            case TYPE_RESIZE_MODIFIED_ASPECT_RATIO:
+            }
+            case TYPE_RESIZE_MODIFIED_ASPECT_RATIO -> {
                 Pattern modifiedRatio =
                         Pattern.compile("^(\\d{1,5})\\*(\\d{1,5})-(\\d{1,5})\\*(\\d{1,5})$");
                 Matcher m2 = modifiedRatio.matcher(pixel);
@@ -135,8 +135,8 @@ public class BipPixel {
                     maxWidth = Integer.parseInt(m2.group(3));
                     maxHeight = Integer.parseInt(m2.group(4));
                 }
-                break;
-            case TYPE_RESIZE_FIXED_ASPECT_RATIO:
+            }
+            case TYPE_RESIZE_FIXED_ASPECT_RATIO -> {
                 Pattern fixedRatio = Pattern.compile("^(\\d{1,5})\\*\\*-(\\d{1,5})\\*(\\d{1,5})$");
                 Matcher m3 = fixedRatio.matcher(pixel);
                 if (m3.matches()) {
@@ -146,9 +146,8 @@ public class BipPixel {
                     maxHeight = Integer.parseInt(m3.group(3));
                     minHeight = (minWidth * maxHeight) / maxWidth;
                 }
-                break;
-            default:
-                break;
+            }
+            default -> {}
         }
         if (type == TYPE_UNKNOWN) {
             throw new ParseException("Failed to determine type of '" + pixel + "'");
@@ -235,18 +234,12 @@ public class BipPixel {
 
     @Override
     public String toString() {
-        String s = null;
-        switch (mType) {
-            case TYPE_FIXED:
-                s = mMaxWidth + "*" + mMaxHeight;
-                break;
-            case TYPE_RESIZE_MODIFIED_ASPECT_RATIO:
-                s = mMinWidth + "*" + mMinHeight + "-" + mMaxWidth + "*" + mMaxHeight;
-                break;
-            case TYPE_RESIZE_FIXED_ASPECT_RATIO:
-                s = mMinWidth + "**-" + mMaxWidth + "*" + mMaxHeight;
-                break;
-        }
-        return s;
+        return switch (mType) {
+            case TYPE_FIXED -> mMaxWidth + "*" + mMaxHeight;
+            case TYPE_RESIZE_MODIFIED_ASPECT_RATIO ->
+                    mMinWidth + "*" + mMinHeight + "-" + mMaxWidth + "*" + mMaxHeight;
+            case TYPE_RESIZE_FIXED_ASPECT_RATIO -> mMinWidth + "**-" + mMaxWidth + "*" + mMaxHeight;
+            default -> null;
+        };
     }
 }

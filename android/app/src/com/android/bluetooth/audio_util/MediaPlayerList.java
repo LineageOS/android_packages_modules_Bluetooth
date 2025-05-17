@@ -109,6 +109,7 @@ public class MediaPlayerList {
     private int mAddressedPlayerId = NO_ACTIVE_PLAYER;
 
     private MediaUpdateCallback mCallback;
+
     private boolean mAudioPlaybackIsActive = false;
 
     private BrowsablePlayerConnector mBrowsablePlayerConnector;
@@ -190,9 +191,10 @@ public class MediaPlayerList {
         // If there were any active players and we don't already have one due to the Media
         // Framework Callbacks then set the highest priority one to active
         if (mActivePlayerId == 0 && mMediaPlayers.size() > 0) {
-            String packageName = (mMediaSessionManager != null)
-                    ? mMediaSessionManager.getMediaKeyEventSessionPackageName()
-                    : "";
+            String packageName =
+                    (mMediaSessionManager != null)
+                            ? mMediaSessionManager.getMediaKeyEventSessionPackageName()
+                            : "";
             if (!TextUtils.isEmpty(packageName) && haveMediaPlayer(packageName)) {
                 Log.i(TAG, "Set active player to MediaKeyEvent session = " + packageName);
                 setActivePlayer(mMediaPlayerIds.get(packageName));
@@ -298,7 +300,6 @@ public class MediaPlayerList {
     }
 
     public void cleanup() {
-        mCallback = null;
         mContext.unregisterReceiver(mPackageChangedBroadcastReceiver);
 
         mActivePlayerId = NO_ACTIVE_PLAYER;
@@ -1319,12 +1320,13 @@ public class MediaPlayerList {
                     AudioPlaybackConfiguration activeConfig = null;
                     for (AudioPlaybackConfiguration config : configs) {
                         if (config.isActive()
-                            && (((config.getAudioAttributes().getUsage()
-                                    == AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
-                                    && (config.getAudioAttributes().getContentType()
-                                        == AudioAttributes.CONTENT_TYPE_SPEECH))
-                                || config.getAudioAttributes().getUsage()
-                                    == AudioAttributes.USAGE_MEDIA)) {
+                                && (((config.getAudioAttributes().getUsage()
+                                                        == AudioAttributes
+                                                                .USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+                                                && (config.getAudioAttributes().getContentType()
+                                                        == AudioAttributes.CONTENT_TYPE_SPEECH))
+                                        || config.getAudioAttributes().getUsage()
+                                                == AudioAttributes.USAGE_MEDIA)) {
                             activeConfig = config;
                             isActive = true;
                         }

@@ -28,6 +28,7 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.OobData;
 import android.content.Intent;
@@ -44,7 +45,6 @@ import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.hfpclient.HeadsetClientService;
@@ -84,9 +84,9 @@ final class BondStateMachine extends StateMachine {
 
     static int sPendingUuidUpdateTimeoutMillis = 3000; // 3s
 
-    private AdapterService mAdapterService;
-    private AdapterProperties mAdapterProperties;
-    private RemoteDevices mRemoteDevices;
+    private final AdapterService mAdapterService;
+    private final AdapterProperties mAdapterProperties;
+    private final RemoteDevices mRemoteDevices;
     private final BluetoothAdapter mAdapter;
 
     private final PendingCommandState mPendingCommandState = new PendingCommandState();
@@ -101,7 +101,7 @@ final class BondStateMachine extends StateMachine {
 
     @VisibleForTesting Set<BluetoothDevice> mPendingBondedDevices = new HashSet<>();
 
-    private BondStateMachine(
+    BondStateMachine(
             AdapterService service,
             Looper looper,
             AdapterProperties prop,
@@ -109,52 +109,30 @@ final class BondStateMachine extends StateMachine {
         super("BondStateMachine:", looper);
         addState(mStableState);
         addState(mPendingCommandState);
-        mRemoteDevices = remoteDevices;
         mAdapterService = service;
+        mRemoteDevices = remoteDevices;
         mAdapterProperties = prop;
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
+        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         setInitialState(mStableState);
+
+        start();
     }
 
-    private BondStateMachine(
-            AdapterService service, AdapterProperties prop, RemoteDevices remoteDevices) {
+    BondStateMachine(AdapterService service, AdapterProperties prop, RemoteDevices remoteDevices) {
         super("BondStateMachine:");
         addState(mStableState);
         addState(mPendingCommandState);
-        mRemoteDevices = remoteDevices;
         mAdapterService = service;
+        mRemoteDevices = remoteDevices;
         mAdapterProperties = prop;
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
+        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         setInitialState(mStableState);
-    }
 
-    public static BondStateMachine make(
-            AdapterService service,
-            Looper looper,
-            AdapterProperties prop,
-            RemoteDevices remoteDevices) {
-        Log.d(TAG, "make");
-        BondStateMachine bsm =
-                Flags.bondStateMachineLooper()
-                        ? new BondStateMachine(service, looper, prop, remoteDevices)
-                        : new BondStateMachine(service, prop, remoteDevices);
-        bsm.start();
-        return bsm;
+        start();
     }
 
     public synchronized void doQuit() {
         quitNow();
-    }
-
-    private void cleanup() {
-        mAdapterService = null;
-        mRemoteDevices = null;
-        mAdapterProperties = null;
-    }
-
-    @Override
-    protected void onQuitting() {
-        cleanup();
     }
 
     private class StableState extends State {

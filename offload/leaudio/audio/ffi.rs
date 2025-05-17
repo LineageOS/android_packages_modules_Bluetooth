@@ -13,8 +13,9 @@
 // limitations under the License.
 
 use crate::client::Stream;
-use std::ffi::{c_int, c_void};
+use std::ffi::{c_int, c_uint, c_void};
 use std::slice;
+use std::time::Duration;
 
 #[cfg(feature = "lc3")]
 use crate::lc3::Lc3CConfig;
@@ -97,6 +98,7 @@ pub extern "C" fn swoff_leaudio_setup(
     iso_streams: *const CIsoStream,
     num_iso_streams: usize,
     audio: *const CAudioConfig,
+    anchor_delay_us: c_uint,
     callbacks: *const CCallbacks,
 ) -> *mut Stream {
     match Stream::new(
@@ -105,6 +107,7 @@ pub extern "C" fn swoff_leaudio_setup(
         unsafe { slice::from_raw_parts(iso_streams, num_iso_streams) },
         // SAFETY: `audio` points to a `CAudioConfig` structure, valid until this function returns.
         unsafe { audio.as_ref() }.unwrap(),
+        Duration::from_micros(anchor_delay_us.into()),
         // SAFETY: `callbacks` points to `CCallbacks`, valid until this function returns.
         unsafe { callbacks.as_ref() }.unwrap(),
     ) {
@@ -142,7 +145,7 @@ pub extern "C" fn swoff_leaudio_write(
     let result = match stream.write(unsafe { slice::from_raw_parts(data.cast(), len) }) {
         Ok(n) => n,
         Err(reason) => {
-            log::error!("Unable to write PCM data: {}", reason);
+            log::warn!("Unable to write PCM data: {}", reason);
             0
         }
     };

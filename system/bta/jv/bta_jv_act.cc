@@ -1023,13 +1023,11 @@ static void bta_jv_l2cap_client_cback(uint16_t gap_handle, uint16_t event, tGAP_
     case GAP_EVT_CONN_DATA_AVAIL:
       evt_data.data_ind.handle = gap_handle;
       /* Reset idle timer to avoid requesting sniff mode while receiving data */
-      if (com::android::bluetooth::flags::donot_pm_classic_on_le_traffic() &&
-          !GAP_IsTransportLe(gap_handle)) {
+      if (!GAP_IsTransportLe(gap_handle)) {
         bta_jv_pm_conn_busy(p_cb->p_pm_cb);
       }
       p_cb->p_cback(BTA_JV_L2CAP_DATA_IND_EVT, &evt_data, p_cb->l2cap_socket_id);
-      if (com::android::bluetooth::flags::donot_pm_classic_on_le_traffic() &&
-          !GAP_IsTransportLe(gap_handle)) {
+      if (!GAP_IsTransportLe(gap_handle)) {
         bta_jv_pm_conn_idle(p_cb->p_pm_cb);
       }
       break;
@@ -1208,13 +1206,11 @@ static void bta_jv_l2cap_server_cback(uint16_t gap_handle, uint16_t event, tGAP_
     case GAP_EVT_CONN_DATA_AVAIL:
       evt_data.data_ind.handle = gap_handle;
       /* Reset idle timer to avoid requesting sniff mode while receiving data */
-      if (com::android::bluetooth::flags::donot_pm_classic_on_le_traffic() &&
-          !GAP_IsTransportLe(gap_handle)) {
+      if (!GAP_IsTransportLe(gap_handle)) {
         bta_jv_pm_conn_busy(p_cb->p_pm_cb);
       }
       p_cb->p_cback(BTA_JV_L2CAP_DATA_IND_EVT, &evt_data, p_cb->l2cap_socket_id);
-      if (com::android::bluetooth::flags::donot_pm_classic_on_le_traffic() &&
-          !GAP_IsTransportLe(gap_handle)) {
+      if (!GAP_IsTransportLe(gap_handle)) {
         bta_jv_pm_conn_idle(p_cb->p_pm_cb);
       }
       break;

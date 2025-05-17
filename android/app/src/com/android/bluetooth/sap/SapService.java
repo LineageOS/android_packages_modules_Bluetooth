@@ -31,6 +31,7 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSap;
 import android.bluetooth.BluetoothServerSocket;
@@ -96,7 +97,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
             "com.android.bluetooth.sap.USER_CONFIRM_TIMEOUT";
     private static final int USER_CONFIRM_TIMEOUT_VALUE = 25000;
 
-    private final AdapterService mAdapterService;
+    private final BluetoothAdapter mAdapter;
 
     private PowerManager.WakeLock mWakeLock = null;
     private SocketAcceptThread mAcceptThread = null;
@@ -120,7 +121,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
 
     public SapService(AdapterService adapterService) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
+        mAdapter = obtainSystemService(BluetoothManager.class).getAdapter();
         BluetoothSap.invalidateBluetoothGetConnectionStateCache();
 
         IntentFilter filter = new IntentFilter();
@@ -189,11 +190,8 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
                 // TODO: Consider reusing the mServerSocket - it is indented to be reused
                 //       for multiple connections.
                 mServerSocket =
-                        BluetoothAdapter.getDefaultAdapter()
-                                .listenUsingRfcommOn(
-                                        BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP,
-                                        true,
-                                        true);
+                        mAdapter.listenUsingRfcommOn(
+                                BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP, true, true);
                 removeSdpRecord();
                 mSdpHandle =
                         SdpManagerNativeInterface.getInstance()
@@ -295,7 +293,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
 
         // acquire the wakeLock before start SAP transaction thread
         if (mWakeLock == null) {
-            PowerManager pm = getSystemService(PowerManager.class);
+            PowerManager pm = obtainSystemService(PowerManager.class);
             mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "StartingSapTransaction");
             mWakeLock.setReferenceCounted(false);
             mWakeLock.acquire();
@@ -305,7 +303,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
         mSapServer =
                 new SapServer(
                         mSessionStatusHandler,
-                        this,
+                        mAdapterService,
                         mConnSocket.getInputStream(),
                         mConnSocket.getOutputStream());
         mSapServer.start();
@@ -488,7 +486,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
                         case MSG_ACQUIRE_WAKE_LOCK:
                             Log.v(TAG, "Acquire Wake Lock request message");
                             if (mWakeLock == null) {
-                                PowerManager pm = getSystemService(PowerManager.class);
+                                PowerManager pm = obtainSystemService(PowerManager.class);
                                 mWakeLock =
                                         pm.newWakeLock(
                                                 PowerManager.PARTIAL_WAKE_LOCK,
@@ -736,7 +734,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
     private void cancelUserTimeoutAlarm() {
         Log.d(TAG, "cancelUserTimeOutAlarm()");
         if (mAlarmManager == null) {
-            mAlarmManager = this.getSystemService(AlarmManager.class);
+            mAlarmManager = obtainSystemService(AlarmManager.class);
         }
         if (mRemoveTimeoutMsg) {
             Intent timeoutIntent = new Intent(USER_CONFIRM_TIMEOUT_ACTION);

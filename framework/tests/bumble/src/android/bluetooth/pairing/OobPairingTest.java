@@ -183,22 +183,22 @@ public class OobPairingTest {
 
     /** All the test function goes here */
 
-    /**
-     * Process of writing a test function
-     *
-     * 1. Create an IntentReceiver object first with following way:
-     *      IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
-     *          BluetoothDevice.ACTION_1,
-     *          BluetoothDevice.ACTION_2)
-     *          .setIntentListener(--) // optional
-     *          .setIntentTimeout(--)  // optional
-     *          .build();
-     * 2. Use the intentReceiver instance for all Intent related verification, and pass
-     *     the same instance to all the helper/testStep functions which has similar Intent
-     *     requirements.
-     * 3. Once all the verification is done, call `intentReceiver.close()` before returning
-     *     from the function.
-     */
+    //
+    // Process of writing a test function
+    //
+    // 1. Create an IntentReceiver object first with following way:
+    //      IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
+    //          BluetoothDevice.ACTION_1,
+    //          BluetoothDevice.ACTION_2)
+    //          .setIntentListener(--) // optional
+    //          .setIntentTimeout(--)  // optional
+    //          .build();
+    // 2. Use the intentReceiver instance for all Intent related verification, and pass
+    //     the same instance to all the helper/testStep functions which has similar Intent
+    //     requirements.
+    // 3. Once all the verification is done, call `intentReceiver.close()` before returning
+    //     from the function.
+    //
 
     /**
      * Test OOB pairing: Configuration: Initiator: Locali, Local OOB: No, Remote OOB: Yes ,Secure
@@ -329,8 +329,8 @@ public class OobPairingTest {
     /**
      * Initiates pairing from Bumble
      *
-     * <p>Bumble starts scanning and selects first available device, then
-     *  connects to it and starts pairing.
+     * <p>Bumble starts scanning and selects first available device, then connects to it and starts
+     * pairing.
      */
     private void testStep_initiatePairingFromRemote() {
         ByteString deviceAddr;

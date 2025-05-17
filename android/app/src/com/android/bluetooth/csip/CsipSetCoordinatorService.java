@@ -78,7 +78,6 @@ public class CsipSetCoordinatorService extends ProfileService {
 
     private static CsipSetCoordinatorService sCsipSetCoordinatorService;
 
-    private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final Handler mHandler;
     private final HandlerThread mStateMachinesThread;
@@ -116,7 +115,6 @@ public class CsipSetCoordinatorService extends ProfileService {
             CsipSetCoordinatorNativeInterface nativeInterface,
             ServiceFactory serviceFactory) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(
@@ -873,7 +871,7 @@ public class CsipSetCoordinatorService extends ProfileService {
 
             Log.d(TAG, "Creating a new state machine for " + device);
             sm =
-                    CsipSetCoordinatorStateMachine.make(
+                    new CsipSetCoordinatorStateMachine(
                             device, this, mNativeInterface, mStateMachinesLooper);
             mStateMachines.put(device, sm);
             return sm;

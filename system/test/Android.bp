@@ -313,13 +313,6 @@ filegroup {
 }
 
 filegroup {
-    name: "TestMockHci",
-    srcs: [
-        "mock/mock_hci_*.cc",
-    ],
-}
-
-filegroup {
     name: "TestMockFrameworks",
     srcs: [
         "mock/mock_frameworks_*.cc",

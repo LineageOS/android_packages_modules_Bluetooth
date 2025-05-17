@@ -81,7 +81,6 @@ public class A2dpService extends ProfileService {
 
     private final A2dpNativeInterface mNativeInterface;
     private final A2dpCodecConfig mA2dpCodecConfig;
-    private final AdapterService mAdapterService;
     private final AudioManager mAudioManager;
     private final DatabaseManager mDatabaseManager;
     private final CompanionDeviceManager mCompanionDeviceManager;
@@ -117,7 +116,6 @@ public class A2dpService extends ProfileService {
     @VisibleForTesting
     A2dpService(AdapterService adapterService, A2dpNativeInterface nativeInterface, Looper looper) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,
@@ -126,8 +124,8 @@ public class A2dpService extends ProfileService {
                                         adapterService,
                                         new A2dpNativeCallback(adapterService, this)));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
-        mAudioManager = requireNonNull(getSystemService(AudioManager.class));
-        mCompanionDeviceManager = requireNonNull(getSystemService(CompanionDeviceManager.class));
+        mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
+        mCompanionDeviceManager = requireNonNull(obtainSystemService(CompanionDeviceManager.class));
         mLooper = requireNonNull(looper);
         mHandler = new Handler(mLooper);
 
@@ -303,15 +301,13 @@ public class A2dpService extends ProfileService {
         synchronized (mStateMachines) {
             for (A2dpStateMachine sm : mStateMachines.values()) {
                 switch (sm.getConnectionState()) {
-                    case STATE_CONNECTING:
-                    case STATE_CONNECTED:
+                    case STATE_CONNECTING, STATE_CONNECTED -> {
                         if (Objects.equals(device, sm.getDevice())) {
                             return true; // Already connected or accounted for
                         }
                         connected++;
-                        break;
-                    default:
-                        break;
+                    }
+                    default -> {} // Nothing to do
                 }
             }
         }
@@ -887,6 +883,7 @@ public class A2dpService extends ProfileService {
                             }
                             sm = getOrCreateStateMachine(device);
                         }
+                        default -> {} // Nothing to do
                     }
                 }
             }
@@ -1220,16 +1217,13 @@ public class A2dpService extends ProfileService {
         if (supportsOptional) {
             int enabled = getOptionalCodecsEnabled(device);
             switch (enabled) {
-                case BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN:
-                    // Enable optional codec by default.
+                case BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED -> enableOptionalCodecs(device);
+                case BluetoothA2dp.OPTIONAL_CODECS_PREF_DISABLED -> disableOptionalCodecs(device);
+                // OPTIONAL_CODECS_PREF_UNKNOWN Enable optional codec by default.
+                default -> {
                     setOptionalCodecsEnabled(device, BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED);
-                    // Fall through intended
-                case BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED:
                     enableOptionalCodecs(device);
-                    break;
-                case BluetoothA2dp.OPTIONAL_CODECS_PREF_DISABLED:
-                    disableOptionalCodecs(device);
-                    break;
+                }
             }
         }
     }

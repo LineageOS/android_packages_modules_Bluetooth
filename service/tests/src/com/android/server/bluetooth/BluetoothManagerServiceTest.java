@@ -414,7 +414,7 @@ public class BluetoothManagerServiceTest {
     private IBluetoothCallback captureBluetoothCallback() throws Exception {
         ArgumentCaptor<IBluetoothCallback> captor =
                 ArgumentCaptor.forClass(IBluetoothCallback.class);
-        mInOrder.verify(mAdapterBinder).registerCallback(captor.capture(), any());
+        mInOrder.verify(mAdapterBinder).registerCallback(captor.capture());
         assertThat(captor.getAllValues()).hasSize(1);
         return captor.getValue();
     }
@@ -424,7 +424,7 @@ public class BluetoothManagerServiceTest {
         acceptBluetoothBinding();
 
         IBluetoothCallback btCallback = captureBluetoothCallback();
-        mInOrder.verify(mAdapterBinder).offToBleOn(anyBoolean(), anyString(), any());
+        mInOrder.verify(mAdapterBinder).offToBleOn(anyBoolean(), anyString());
         verifyBleStateIntentSent(STATE_OFF, STATE_BLE_TURNING_ON);
         btCallback.setAdapterServiceBinder(mBinder);
         syncHandler(0); // To post setAdapterServiceBinder
@@ -442,7 +442,7 @@ public class BluetoothManagerServiceTest {
 
     private IBluetoothCallback transition_offToOn() throws Exception {
         IBluetoothCallback btCallback = transition_offToBleOn();
-        mInOrder.verify(mAdapterBinder).bleOnToOn(any());
+        mInOrder.verify(mAdapterBinder).bleOnToOn();
 
         // AdapterService go to turning_on and start all profile on its own
         btCallback.onBluetoothStateChange(STATE_BLE_ON, STATE_TURNING_ON);
@@ -459,7 +459,7 @@ public class BluetoothManagerServiceTest {
     }
 
     private void transition_onToBleOn(IBluetoothCallback btCallback) throws Exception {
-        mInOrder.verify(mAdapterBinder).onToBleOn(any());
+        mInOrder.verify(mAdapterBinder).onToBleOn();
 
         btCallback.onBluetoothStateChange(STATE_TURNING_OFF, STATE_BLE_ON);
         syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
@@ -467,7 +467,7 @@ public class BluetoothManagerServiceTest {
 
     private void transition_onToOff(IBluetoothCallback btCallback) throws Exception {
         transition_onToBleOn(btCallback);
-        mInOrder.verify(mAdapterBinder).bleOnToOff(any());
+        mInOrder.verify(mAdapterBinder).bleOnToOff();
 
         // When all the profile are started, adapterService consider it is ON
         btCallback.onBluetoothStateChange(STATE_BLE_TURNING_OFF, STATE_OFF);
@@ -494,7 +494,7 @@ public class BluetoothManagerServiceTest {
         btCallback.onBluetoothStateChange(STATE_BLE_TURNING_ON, STATE_BLE_ON);
         syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
 
-        mInOrder.verify(mAdapterBinder).bleOnToOn(any());
+        mInOrder.verify(mAdapterBinder).bleOnToOn();
 
         endTest();
     }
@@ -520,7 +520,7 @@ public class BluetoothManagerServiceTest {
         btCallback.onBluetoothStateChange(STATE_BLE_TURNING_ON, STATE_BLE_ON);
         syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
 
-        mInOrder.verify(mAdapterBinder).bleOnToOn(any());
+        mInOrder.verify(mAdapterBinder).bleOnToOn();
 
         endTest();
     }
@@ -535,7 +535,7 @@ public class BluetoothManagerServiceTest {
         transition_offToBleOn();
 
         // Check that there was no transition to STATE_ON
-        mInOrder.verify(mAdapterBinder, never()).bleOnToOn(any());
+        mInOrder.verify(mAdapterBinder, never()).bleOnToOn();
         assertThat(mManagerService.getState()).isEqualTo(STATE_BLE_ON);
 
         endTest();
@@ -566,7 +566,7 @@ public class BluetoothManagerServiceTest {
                 acceptBluetoothBinding();
 
         IBluetoothCallback btCallback = captureBluetoothCallback();
-        mInOrder.verify(mAdapterBinder).offToBleOn(anyBoolean(), anyString(), any());
+        mInOrder.verify(mAdapterBinder).offToBleOn(anyBoolean(), anyString());
         btCallback.onBluetoothStateChange(STATE_OFF, STATE_BLE_TURNING_ON);
         syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
         assertThat(mManagerService.getState()).isEqualTo(STATE_BLE_TURNING_ON);
@@ -699,7 +699,7 @@ public class BluetoothManagerServiceTest {
         mManagerService.onAirplaneModeChanged(false);
 
         transition_onToBleOn(btCallback);
-        mInOrder.verify(mAdapterBinder).bleOnToOff(any());
+        mInOrder.verify(mAdapterBinder).bleOnToOff();
         assertThat(mManagerService.getState()).isEqualTo(STATE_BLE_TURNING_OFF);
 
         // As soon as we left BLE_ON, generate a call from 3p app that request to turn on Bluetooth

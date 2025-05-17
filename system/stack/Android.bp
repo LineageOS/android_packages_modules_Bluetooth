@@ -324,8 +324,15 @@ cc_defaults {
     },
 }
 
-cc_fuzz {
-    name: "sdp-fuzzer",
+filegroup {
+    name: "SdpFuzzerSources",
+    srcs: [
+        "fuzzers/sdp_fuzzer.cc",
+    ],
+}
+
+cc_defaults {
+    name: "sdp_fuzzer_default",
     defaults: [
         "btstack_fuzzer_default",
         "fluoride_defaults",
@@ -335,6 +342,7 @@ cc_fuzz {
     ],
     srcs: [
         ":LegacyStackSdp",
+        ":SdpFuzzerSources",
         ":TestCommonMockFunctions",
         ":TestFakeOsi",
         ":TestMockBtif",
@@ -342,7 +350,6 @@ cc_fuzz {
         ":TestMockMainShim",
         ":TestMockStackBtm",
         ":TestMockStackL2cap",
-        "fuzzers/sdp_fuzzer.cc",
     ],
     static_libs: [
         "bluetooth_flags_c_lib",
@@ -354,6 +361,14 @@ cc_fuzz {
     shared_libs: [
         "libaconfig_storage_read_api_cc",
         "server_configurable_flags",
+    ],
+}
+
+cc_fuzz {
+    name: "sdp-fuzzer",
+    team: "trendy_team_bluetooth",
+    defaults: [
+        "sdp_fuzzer_default",
     ],
 }
 
@@ -424,8 +439,18 @@ cc_fuzz {
     ],
 }
 
-cc_fuzz {
-    name: "gatt-fuzzer",
+filegroup {
+    name: "GattFuzzerSources",
+    srcs: [
+        "ais/*.cc",
+        "eatt/*.cc",
+        "fuzzers/gatt_fuzzer.cc",
+        "gatt/*.cc",
+    ],
+}
+
+cc_defaults {
+    name: "gatt_fuzzer_default",
     defaults: [
         "btstack_fuzzer_default",
         "fluoride_defaults",
@@ -433,10 +458,12 @@ cc_fuzz {
     include_dirs: [
         "external/flatbuffers/include",
         "external/rust/android-crates-io/crates/quiche/deps/boringssl/src/include",
+        "packages/modules/Bluetooth/system/stack",
         "packages/modules/Bluetooth/system/stack/btm",
     ],
     srcs: [
         ":BluetoothPacketSources",
+        ":GattFuzzerSources",
         ":TestCommonMockFunctions",
         ":TestCommonStackConfig",
         ":TestFakeOsi",
@@ -453,10 +480,6 @@ cc_fuzz {
         ":TestMockStackHcic",
         ":TestMockStackL2cap",
         ":TestMockStackSdp",
-        "ais/*.cc",
-        "eatt/*.cc",
-        "fuzzers/gatt_fuzzer.cc",
-        "gatt/*.cc",
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",
@@ -474,6 +497,14 @@ cc_fuzz {
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
         "libbluetooth_smp_pdl",
+    ],
+}
+
+cc_fuzz {
+    name: "gatt-fuzzer",
+    team: "trendy_team_bluetooth",
+    defaults: [
+        "gatt_fuzzer_default",
     ],
 }
 
@@ -785,7 +816,6 @@ cc_test {
     ],
     srcs: [
         ":TestCommonMockFunctions",
-        ":TestMockHci",
         ":TestMockMainShim",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
@@ -1333,9 +1363,11 @@ cc_test {
         "libcrypto",
         "libcutils",
         "libprotobuf-cpp-lite",
+        "server_configurable_flags",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
+        "libaconfig_storage_read_api_cc",
         "libFraunhoferAAC",
         "libbase",
         "libbluetooth-types",
@@ -1852,7 +1884,6 @@ cc_test {
         ":TestCommonMockFunctions",
         ":TestMockBta",
         ":TestMockBtif",
-        ":TestMockHci",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
         ":TestMockStackAcl",
@@ -1928,7 +1959,6 @@ cc_test {
         ":TestCommonStackConfig",
         ":TestMockBta",
         ":TestMockBtif",
-        ":TestMockHci",
         ":TestMockMainShim",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
@@ -2028,7 +2058,6 @@ cc_test {
         ":TestCommonStackConfig",
         ":TestMockBta",
         ":TestMockBtif",
-        ":TestMockHci",
         ":TestMockJni",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
@@ -2126,7 +2155,6 @@ cc_test {
         ":TestMockBta",
         ":TestMockBtif",
         ":TestMockDevice",
-        ":TestMockHci",
         ":TestMockLegacyHciInterface",
         ":TestMockMainShim",
         ":TestMockMainShim",

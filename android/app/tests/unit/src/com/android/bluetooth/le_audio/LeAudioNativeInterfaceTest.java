@@ -68,6 +68,7 @@ public class LeAudioNativeInterfaceTest {
     @After
     public void tearDown() {
         LeAudioService.setLeAudioService(null);
+        LeAudioNativeInterface.setInstance(null);
     }
 
     @Test

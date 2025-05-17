@@ -40,9 +40,11 @@ import android.bluetooth.BluetoothLeBroadcastChannel;
 import android.bluetooth.BluetoothLeBroadcastMetadata;
 import android.bluetooth.BluetoothLeBroadcastReceiveState;
 import android.bluetooth.BluetoothLeBroadcastSubgroup;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.le.PeriodicAdvertisingCallback;
+import android.bluetooth.le.PeriodicAdvertisingManager;
 import android.content.AttributionSource;
 import android.content.Intent;
 import android.os.Binder;
@@ -130,6 +132,10 @@ class BassClientStateMachine extends StateMachine {
     private final Map<Integer, LeAudioBroadcastSyncStats> mBroadcastSyncStats =
             new LinkedHashMap<>();
 
+    private final AdapterService mAdapterService;
+    private final BluetoothAdapter mAdapter;
+    private final PeriodicAdvertisingManager mPeriodicAdvertisingManager;
+
     @VisibleForTesting
     final List<BluetoothGattCharacteristic> mBroadcastCharacteristics =
             new ArrayList<BluetoothGattCharacteristic>();
@@ -141,7 +147,6 @@ class BassClientStateMachine extends StateMachine {
     @VisibleForTesting boolean mMTUChangeRequested = false;
     @VisibleForTesting boolean mDiscoveryInitiated = false;
     @VisibleForTesting BassClientService mService;
-    AdapterService mAdapterService;
     @VisibleForTesting BluetoothGattCharacteristic mBroadcastScanControlPoint;
     private boolean mBassStateReady = false;
     @VisibleForTesting int mNumOfBroadcastReceiverStates = 0;
@@ -152,7 +157,6 @@ class BassClientStateMachine extends StateMachine {
     private BluetoothLeBroadcastMetadata mSetBroadcastPINMetadata = null;
     @VisibleForTesting boolean mSetBroadcastCodePending = false;
     private final Map<Integer, Boolean> mPendingRemove = new HashMap();
-    private boolean mDefPAS = false;
     private boolean mForceSB = false;
     @VisibleForTesting byte mNextSourceId = 0;
     private boolean mAllowReconnect = false;
@@ -172,6 +176,8 @@ class BassClientStateMachine extends StateMachine {
         mDevice = device;
         mService = svc;
         mAdapterService = adapterService;
+        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
+        mPeriodicAdvertisingManager = mAdapter.getPeriodicAdvertisingManager();
         mConnectTimeoutMs = connectTimeoutMs;
         addState(mDisconnected);
         addState(mConnected);
@@ -183,7 +189,6 @@ class BassClientStateMachine extends StateMachine {
             mIsAllowedList =
                     DeviceConfig.getBoolean(
                             DeviceConfig.NAMESPACE_BLUETOOTH, "persist.vendor.service.bt.wl", true);
-            mDefPAS = BassUtils.isPastConfigEnabled();
             mForceSB =
                     DeviceConfig.getBoolean(
                             DeviceConfig.NAMESPACE_BLUETOOTH,
@@ -192,6 +197,8 @@ class BassClientStateMachine extends StateMachine {
         } finally {
             Binder.restoreCallingIdentity(token);
         }
+
+        start();
     }
 
     private static class LeAudioBroadcastSyncStats {
@@ -280,26 +287,6 @@ class BassClientStateMachine extends StateMachine {
                             latencyBisSyncedMs,
                             mSyncStatus);
         }
-    }
-
-    static BassClientStateMachine make(
-            BluetoothDevice device,
-            BassClientService svc,
-            AdapterService adapterService,
-            Looper looper) {
-        Log.d(TAG, "make for device " + device);
-
-        if (!BassClientPeriodicAdvertisingManager
-                .initializePeriodicAdvertisingManagerOnDefaultAdapter()) {
-            Log.e(TAG, "Failed to initialize Periodic Advertising Manager on Default Adapter");
-            return null;
-        }
-
-        BassClientStateMachine bassClientSm =
-                new BassClientStateMachine(
-                        device, svc, adapterService, looper, BassConstants.CONNECT_TIMEOUT_MS);
-        bassClientSm.start();
-        return bassClientSm;
     }
 
     static void destroy(BassClientStateMachine stateMachine) {
@@ -465,8 +452,7 @@ class BassClientStateMachine extends StateMachine {
                                 + serviceData);
                 BluetoothMethodProxy.getInstance()
                         .periodicAdvertisingManagerTransferSetInfo(
-                                BassClientPeriodicAdvertisingManager
-                                        .getPeriodicAdvertisingManager(),
+                                mPeriodicAdvertisingManager,
                                 mDevice,
                                 serviceData,
                                 advHandle,
@@ -509,10 +495,7 @@ class BassClientStateMachine extends StateMachine {
                             + serviceData);
             BluetoothMethodProxy.getInstance()
                     .periodicAdvertisingManagerTransferSync(
-                            BassClientPeriodicAdvertisingManager.getPeriodicAdvertisingManager(),
-                            mDevice,
-                            serviceData,
-                            syncHandle);
+                            mPeriodicAdvertisingManager, mDevice, serviceData, syncHandle);
         } else {
             Log.e(
                     TAG,
@@ -761,9 +744,7 @@ class BassClientStateMachine extends StateMachine {
                     receiverState[BassConstants.BCAST_RCVR_STATE_SRC_ADDR_TYPE_IDX];
             Utils.reverse(sourceAddress);
             String address = Utils.getAddressStringFromByte(sourceAddress);
-            BluetoothDevice device =
-                    BluetoothAdapter.getDefaultAdapter()
-                            .getRemoteLeDevice(address, sourceAddressType);
+            BluetoothDevice device = mAdapter.getRemoteLeDevice(address, sourceAddressType);
             byte sourceAdvSid = receiverState[BassConstants.BCAST_RCVR_STATE_SRC_ADV_SID_IDX];
             recvState =
                     new BluetoothLeBroadcastReceiveState(
@@ -980,9 +961,7 @@ class BassClientStateMachine extends StateMachine {
                     receiverState[BassConstants.BCAST_RCVR_STATE_SRC_ADDR_TYPE_IDX];
             Utils.reverse(sourceAddress);
             String address = Utils.getAddressStringFromByte(sourceAddress);
-            BluetoothDevice device =
-                    BluetoothAdapter.getDefaultAdapter()
-                            .getRemoteLeDevice(address, sourceAddressType);
+            BluetoothDevice device = mAdapter.getRemoteLeDevice(address, sourceAddressType);
             byte sourceAdvSid = receiverState[BassConstants.BCAST_RCVR_STATE_SRC_ADV_SID_IDX];
             recvState =
                     new BluetoothLeBroadcastReceiveState(
@@ -1622,7 +1601,8 @@ class BassClientStateMachine extends StateMachine {
         return bisSync;
     }
 
-    private byte[] convertMetadataToAddSourceByteArray(BluetoothLeBroadcastMetadata metaData) {
+    private static byte[] convertMetadataToAddSourceByteArray(
+            BluetoothLeBroadcastMetadata metaData) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         BluetoothDevice advSource = metaData.getSourceDevice();
 
@@ -1646,11 +1626,7 @@ class BassClientStateMachine extends StateMachine {
         stream.write((metaData.getBroadcastId() & 0x0000000000FF0000) >>> 16);
 
         // PA_Sync
-        stream.write(
-                (byte)
-                        (mDefPAS
-                                ? BassConstants.PA_SYNC_PAST_AVAILABLE
-                                : BassConstants.PA_SYNC_PAST_NOT_AVAILABLE));
+        stream.write((byte) BassConstants.PA_SYNC_PAST_AVAILABLE);
 
         // PA_Interval
         stream.write((metaData.getPaSyncInterval() & 0x00000000000000FF));
@@ -1798,11 +1774,7 @@ class BassClientStateMachine extends StateMachine {
         res[offset++] = (byte) sourceId;
         // PA_Sync
         if (paSync) {
-            res[offset++] =
-                    (byte)
-                            (mDefPAS
-                                    ? BassConstants.PA_SYNC_PAST_AVAILABLE
-                                    : BassConstants.PA_SYNC_PAST_NOT_AVAILABLE);
+            res[offset++] = (byte) BassConstants.PA_SYNC_PAST_AVAILABLE;
         } else {
             res[offset++] = (byte) BassConstants.PA_SYNC_DO_NOT_SYNC;
         }
@@ -2283,7 +2255,7 @@ class BassClientStateMachine extends StateMachine {
                         int sourceId = message.arg1;
 
                         /* In case of source being synced PA or BIS, synchronization needs to be
-                         * stoped prior.
+                         * stopped prior.
                          */
                         if (isSyncedToTheSource(sourceId)) {
                             handleSourceSynchronizationChange(

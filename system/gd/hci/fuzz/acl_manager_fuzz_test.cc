@@ -45,10 +45,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   FuzzedDataProvider dataProvider(data, size);
 
   static FuzzTestModuleRegistry moduleRegistry = FuzzTestModuleRegistry();
-  FuzzHciLayer* fuzzHci = moduleRegistry.Inject<FuzzHciLayer>(&HciLayer::Factory);
+  std::unique_ptr<FuzzHciLayer> fuzzHci =
+          std::make_unique<FuzzHciLayer>(moduleRegistry.GetTestHandler());
   fuzzHci->TurnOnAutoReply(&dataProvider);
   std::unique_ptr<AclManagerImpl> acl_manager = std::make_unique<AclManagerImpl>(
-          moduleRegistry.GetTestHandler(), fuzzHci, nullptr, nullptr, nullptr);
+          moduleRegistry.GetTestHandler(), fuzzHci.get(), nullptr, nullptr, nullptr);
   fuzzHci->TurnOffAutoReply();
   uint64_t totalAdvanceTime = 0;
 
@@ -72,6 +73,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     }
   }
 
+  acl_manager.reset();
+  fuzzHci.reset();
   moduleRegistry.WaitForIdleAndStopAll();
   fake_timerfd_reset();
   return 0;

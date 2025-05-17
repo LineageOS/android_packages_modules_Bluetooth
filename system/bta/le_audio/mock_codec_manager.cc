@@ -75,6 +75,13 @@ bool CodecManager::UpdateActiveBroadcastAudioHalClient(
   return true;
 }
 
+void CodecManager::UpdateSelectedCodecConfig(
+        const ::bluetooth::le_audio::types::AudioSetConfiguration& config) const {
+  if (pimpl_) {
+    return pimpl_->UpdateSelectedCodecConfig(config);
+  }
+}
+
 void CodecManager::UpdateActiveAudioConfig(
         const types::BidirectionalPair<stream_parameters>& stream_params,
         std::function<void(const ::bluetooth::le_audio::stream_config& config, uint8_t direction)>
@@ -134,6 +141,14 @@ CodecManager::GetLocalAudioInputCodecCapa() {
     return std::vector<bluetooth::le_audio::btle_audio_codec_config_t>{};
   }
   return pimpl_->GetLocalAudioInputCodecCapa();
+}
+
+std::vector<bluetooth::le_audio::btle_audio_codec_config_t> CodecManager::GetRemoteAudioCodecCapa(
+        const bluetooth::le_audio::types::PublishedAudioCapabilities& pacs) const {
+  if (!pimpl_) {
+    return std::vector<bluetooth::le_audio::btle_audio_codec_config_t>{};
+  }
+  return pimpl_->GetRemoteAudioCodecCapa(pacs);
 }
 
 void CodecManager::UpdateBroadcastConnHandle(

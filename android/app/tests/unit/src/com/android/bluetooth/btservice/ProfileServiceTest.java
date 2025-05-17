@@ -44,7 +44,6 @@ import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.hearingaid.HearingAidNativeInterface;
 import com.android.bluetooth.hfp.HeadsetNativeInterface;
-import com.android.bluetooth.hfpclient.HeadsetClientNativeInterface;
 import com.android.bluetooth.hid.HidHostNativeInterface;
 import com.android.bluetooth.le_audio.LeAudioNativeInterface;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
@@ -69,28 +68,27 @@ import java.util.stream.Collectors;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class ProfileServiceTest {
-    private static final int NUM_REPEATS = 5;
-
-    @Spy
-    private AdapterService mAdapterService =
-            new AdapterService(InstrumentationRegistry.getInstrumentation().getContext());
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private TelephonyManager mMockTelephonyManager;
 
-    private int[] mProfiles;
-
     @Mock private A2dpSinkNativeInterface mA2dpSinkNativeInterface;
     @Mock private AvrcpNativeInterface mAvrcpNativeInterface;
     @Mock private AvrcpControllerNativeInterface mAvrcpControllerNativeInterface;
     @Mock private HeadsetNativeInterface mHeadsetNativeInterface;
-    @Mock private HeadsetClientNativeInterface mHeadsetClientNativeInterface;
     @Mock private HearingAidNativeInterface mHearingAidNativeInterface;
     @Mock private SdpManagerNativeInterface mSdpManagerNativeInterface;
     @Mock private HidHostNativeInterface mHidHostNativeInterface;
     @Mock private LeAudioNativeInterface mLeAudioInterface;
+
+    @Spy
+    private AdapterService mAdapterService =
+            new AdapterService(InstrumentationRegistry.getInstrumentation().getContext());
+
+    private static final int NUM_REPEATS = 5;
+
+    private int[] mProfiles;
 
     private void setProfileState(int profile, int state) {
         FutureTask task =
@@ -143,10 +141,7 @@ public class ProfileServiceTest {
         doReturn(false).when(mAdapterService).pbapPseDynamicVersionUpgradeIsEnabled();
 
         TestUtils.mockGetSystemService(
-                mAdapterService,
-                "Context.TELEPHONY_SERVICE",
-                TelephonyManager.class,
-                mMockTelephonyManager);
+                mAdapterService, TelephonyManager.class, mMockTelephonyManager);
 
         mProfiles =
                 Arrays.stream(Config.getSupportedProfiles())
@@ -165,7 +160,6 @@ public class ProfileServiceTest {
         AvrcpNativeInterface.setInstance(mAvrcpNativeInterface);
         AvrcpControllerNativeInterface.setInstance(mAvrcpControllerNativeInterface);
         HeadsetNativeInterface.setInstance(mHeadsetNativeInterface);
-        HeadsetClientNativeInterface.setInstance(mHeadsetClientNativeInterface);
         HearingAidNativeInterface.setInstance(mHearingAidNativeInterface);
         SdpManagerNativeInterface.setInstance(mSdpManagerNativeInterface);
         HidHostNativeInterface.setInstance(mHidHostNativeInterface);
@@ -179,7 +173,6 @@ public class ProfileServiceTest {
         AvrcpNativeInterface.setInstance(null);
         AvrcpControllerNativeInterface.setInstance(null);
         HeadsetNativeInterface.setInstance(null);
-        HeadsetClientNativeInterface.setInstance(null);
         HearingAidNativeInterface.setInstance(null);
         SdpManagerNativeInterface.setInstance(null);
         HidHostNativeInterface.setInstance(null);

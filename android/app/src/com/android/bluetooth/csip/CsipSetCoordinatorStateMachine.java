@@ -86,18 +86,8 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
         addState(mConnected);
 
         setInitialState(mDisconnected);
-    }
 
-    static CsipSetCoordinatorStateMachine make(
-            BluetoothDevice device,
-            CsipSetCoordinatorService svc,
-            CsipSetCoordinatorNativeInterface nativeInterface,
-            Looper looper) {
-        Log.i(TAG, "make for device " + device);
-        CsipSetCoordinatorStateMachine CsisSm =
-                new CsipSetCoordinatorStateMachine(device, svc, nativeInterface, looper);
-        CsisSm.start();
-        return CsisSm;
+        start();
     }
 
     @VisibleForTesting

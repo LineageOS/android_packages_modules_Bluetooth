@@ -68,7 +68,6 @@ public class HearingAidService extends ProfileService {
 
     private static HearingAidService sHearingAidService;
 
-    private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final HearingAidNativeInterface mNativeInterface;
     private final AudioManager mAudioManager;
@@ -99,7 +98,6 @@ public class HearingAidService extends ProfileService {
             Looper looper,
             HearingAidNativeInterface nativeInterface) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
@@ -112,7 +110,7 @@ public class HearingAidService extends ProfileService {
             mStateMachinesLooper = looper;
         }
         mNativeInterface = requireNonNull(nativeInterface);
-        mAudioManager = requireNonNull(getSystemService(AudioManager.class));
+        mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
 
         setHearingAidService(this);
         mNativeInterface.init();

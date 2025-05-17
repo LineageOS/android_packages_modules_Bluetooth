@@ -35,6 +35,8 @@ std::unique_ptr<BasePacketBuilder> NextPayload(uint16_t handle);
 
 class HciLayerFake : public HciLayer {
 public:
+  HciLayerFake(os::Handler* handler);
+
   void EnqueueCommand(std::unique_ptr<CommandBuilder> command,
                       common::ContextualOnceCallback<void(CommandStatusView)> on_status) override;
 
@@ -91,10 +93,7 @@ public:
 
   void Disconnect(uint16_t handle, ErrorCode reason) override;
 
-protected:
-  void ListDependencies(ModuleList* list) const override;
-  void Start() override;
-  void Stop() override;
+  os::Handler* handler_;
 
 private:
   void InitEmptyCommand() LOCKS_EXCLUDED(mutex_);

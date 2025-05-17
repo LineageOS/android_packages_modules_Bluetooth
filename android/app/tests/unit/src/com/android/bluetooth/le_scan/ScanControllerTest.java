@@ -21,7 +21,9 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
+import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -57,7 +59,6 @@ import android.platform.test.flag.junit.SetFlagsRule;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
-import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
 import com.android.bluetooth.flags.Flags;
@@ -118,9 +119,7 @@ public class ScanControllerTest {
         ScanObjectsFactory.setInstanceForTesting(mScanObjectsFactory);
 
         doReturn(mNativeInterface).when(mGattObjectsFactory).getNativeInterface();
-        doReturn(mScanManager)
-                .when(mScanObjectsFactory)
-                .createScanManager(any(), any(), any(), any());
+        doReturn(mScanManager).when(mScanObjectsFactory).createScanManager(any(), any(), any());
         doReturn(mPeriodicScanManager)
                 .when(mScanObjectsFactory)
                 .createPeriodicScanManager(any(), any());
@@ -132,15 +131,16 @@ public class ScanControllerTest {
                 .when(mPeriodicScanManager)
                 .doOnScanThread(any());
         doReturn(mResources).when(mAdapterService).getResources();
+
         final Context context = InstrumentationRegistry.getInstrumentation().getContext();
         doReturn(context.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(context.getSharedPreferences("ScanControllerTest", Context.MODE_PRIVATE))
                 .when(mAdapterService)
                 .getSharedPreferences(anyString(), anyInt());
 
-        TestUtils.mockGetSystemService(
-                mAdapterService, Context.LOCATION_SERVICE, LocationManager.class);
-        mockAdapterServiceGetRemoteDevice(mAdapterService, mDevice);
+        mockGetRemoteDevice(mAdapterService, mDevice);
+        mockGetBluetoothManager(mAdapterService);
+        mockGetSystemService(mAdapterService, LocationManager.class);
 
         mBtCompanionManager = new CompanionManager(mAdapterService, null);
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
@@ -294,7 +294,7 @@ public class ScanControllerTest {
         }
 
         final BluetoothDevice device = getTestDevice("02:00:00:00:00:00");
-        mockAdapterServiceGetRemoteDevice(mAdapterService, device);
+        mockGetRemoteDevice(mAdapterService, device);
 
         Set<ScanClient> scanClientSet = new HashSet<>();
         ScanClient scanClient = new ScanClient(TEST_SCANNER_ID);

@@ -29,7 +29,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.media.AudioDeviceCallback;
@@ -91,19 +90,13 @@ public class AvrcpTargetServiceTest {
         mLooper = new TestLooper();
         mLooper.startAutoDispatch();
 
-        mockGetSystemService(
-                mMockAdapterService, Context.AUDIO_SERVICE, AudioManager.class, mMockAudioManager);
-
-        mockGetSystemService(
-                mMockAdapterService,
-                Context.MEDIA_SESSION_SERVICE,
-                MediaSessionManager.class,
-                mMediaSessionManager);
+        mockGetSystemService(mMockAdapterService, AudioManager.class, mMockAudioManager);
+        mockGetSystemService(mMockAdapterService, MediaSessionManager.class, mMediaSessionManager);
 
         doReturn(mLooper.getNewExecutor()).when(mMockAdapterService).getMainExecutor();
 
         doReturn(mMockAdapterService).when(mMockAdapterService).getApplicationContext();
-        mockGetSystemService(mMockAdapterService, Context.USER_SERVICE, UserManager.class);
+        mockGetSystemService(mMockAdapterService, UserManager.class);
         doReturn(mMockResources).when(mMockAdapterService).getResources();
 
         doReturn(mMockSharedPreferencesEditor).when(mMockSharedPreferences).edit();
@@ -159,8 +152,7 @@ public class AvrcpTargetServiceTest {
     @Test
     public void testServiceInstance() {
         AvrcpVolumeManager volumeManager =
-                new AvrcpVolumeManager(
-                        mMockAdapterService, mMockAudioManager, mMockNativeInterface);
+                new AvrcpVolumeManager(mMockAdapterService, mMockNativeInterface);
         AvrcpTargetService service =
                 new AvrcpTargetService(
                         mMockAdapterService,

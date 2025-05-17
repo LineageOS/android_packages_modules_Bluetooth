@@ -139,7 +139,7 @@ public class BluetoothPbapVcardManager {
         int size =
                 switch (type) {
                     case BluetoothPbapObexServer.ContentType.PHONEBOOK,
-                                    BluetoothPbapObexServer.ContentType.FAVORITES ->
+                            BluetoothPbapObexServer.ContentType.FAVORITES ->
                             getContactsSize(type);
                     case BluetoothPbapObexServer.ContentType.SIM_PHONEBOOK ->
                             vCardSimManager.getSIMContactsSize();
@@ -367,7 +367,8 @@ public class BluetoothPbapVcardManager {
                     public String onValueReceived(
                             String rawValue, int type, String label, boolean isPrimary) {
                         String numberWithControlSequence =
-                                rawValue.replace(PhoneNumberUtils.PAUSE, 'p')
+                                convertAndStrip(rawValue)
+                                        .replace(PhoneNumberUtils.PAUSE, 'p')
                                         .replace(PhoneNumberUtils.WAIT, 'w');
                         return numberWithControlSequence;
                     }
@@ -881,7 +882,8 @@ public class BluetoothPbapVcardManager {
                             // (see RFC 3601)
                             // so use those when exporting phone numbers via vCard.
                             String numberWithControlSequence =
-                                    rawValue.replace(PhoneNumberUtils.PAUSE, 'p')
+                                    convertAndStrip(rawValue)
+                                            .replace(PhoneNumberUtils.PAUSE, 'p')
                                             .replace(PhoneNumberUtils.WAIT, 'w');
                             return numberWithControlSequence;
                         }
@@ -1485,5 +1487,11 @@ public class BluetoothPbapVcardManager {
             }
         }
         return false;
+    }
+
+    // Copy from PhoneNumberUtils.convertAndStrip
+    private static String convertAndStrip(String phoneNumber) {
+        return PhoneNumberUtils.stripSeparators(
+                PhoneNumberUtils.convertKeypadLettersToDigits(phoneNumber));
     }
 }

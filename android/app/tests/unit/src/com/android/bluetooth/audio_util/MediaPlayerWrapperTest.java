@@ -670,18 +670,22 @@ public class MediaPlayerWrapperTest {
             Collections.shuffle(callbackOrder);
             for (int j = 0; j < 3; j++) {
                 switch (callbackOrder.get(j)) {
-                    case 0: // Update Metadata
+                    // Update Metadata
+                    case 0 -> {
                         doReturn(m.build()).when(mMockController).getMetadata();
                         controllerCallbacks.onMetadataChanged(m.build());
-                        break;
-                    case 1: // Update PlaybackState
+                    }
+                    // Update PlaybackState
+                    case 1 -> {
                         doReturn(s.build()).when(mMockController).getPlaybackState();
                         controllerCallbacks.onPlaybackStateChanged(s.build());
-                        break;
-                    case 2: // Update Queue
+                    }
+                    // Update Queue
+                    case 2 -> {
                         doReturn(q).when(mMockController).getQueue();
                         controllerCallbacks.onQueueChanged(q);
-                        break;
+                    }
+                    default -> {} // Nothing to do
                 }
             }
 

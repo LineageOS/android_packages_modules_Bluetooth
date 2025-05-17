@@ -3817,10 +3817,8 @@ public:
     auto leAudioDevice = group->GetFirstDevice();
     callbacks_->OnAudioGroupSelectableCodecConf(
             group->group_id_,
-            bluetooth::le_audio::utils::GetRemoteBtLeAudioCodecConfigFromPac(
-                    leAudioDevice->src_pacs_),
-            bluetooth::le_audio::utils::GetRemoteBtLeAudioCodecConfigFromPac(
-                    leAudioDevice->snk_pacs_));
+            CodecManager::GetInstance()->GetRemoteAudioCodecCapa(leAudioDevice->src_pacs_),
+            CodecManager::GetInstance()->GetRemoteAudioCodecCapa(leAudioDevice->snk_pacs_));
   }
 
   void SendAudioGroupCurrentCodecConfigChanged(LeAudioDeviceGroup* group) {
@@ -3836,6 +3834,11 @@ public:
       log::warn("Stream configuration is not valid for group id {}", group->group_id_);
       return;
     }
+
+    /* Send the initial codec info to the BT Audio HAL before it even resumes and CISes are created
+     * Note: This will allow the BT Audio HAL to prepare to the appriopriate coding offloading.
+     */
+    CodecManager::GetInstance()->UpdateSelectedCodecConfig(*audio_set_conf);
 
     bluetooth::le_audio::btle_audio_codec_config_t input_config{};
     bluetooth::le_audio::utils::fillStreamParamsToBtLeAudioCodecConfig(audio_set_conf->confs.source,
@@ -6066,6 +6069,17 @@ public:
       return false;
     }
 
+    auto unspecified = AudioContexts(LeAudioContextType::UNSPECIFIED);
+    auto uninitialized = AudioContexts();
+    auto bidirectional_contexts = get_bidirectional(remote_contexts);
+    if (com::android::bluetooth::flags::leaudio_use_context_type_manager() &&
+        (bidirectional_contexts == unspecified || bidirectional_contexts == uninitialized) &&
+        !audioContextTypeManager_->IsAnyMetadataSet()) {
+      log::info("group_id: {} Skip updating the metadata to sink={}, source={}", group->group_id_,
+                ToString(remote_contexts.sink), ToString(remote_contexts.source));
+      return true;
+    }
+
     log::info("group_id: {} Updating the metadata to sink={}, source={}", group->group_id_,
               ToString(remote_contexts.sink), ToString(remote_contexts.source));
 
@@ -6791,7 +6805,16 @@ public:
         log::warn("Group {} is doing autonomous release, make it inactive", group_id);
         if (group) {
           group->PrintDebugState();
-          groupSetAndNotifyInactive();
+          if (group->GetAvailableContexts().none()) {
+            log::info("group_id: {} autonomous release due to unavailable contexts.",
+                      group->group_id_);
+            /* This update will also make device inactive, but when available context will be back,
+             * it will bring device active again.
+             */
+            UpdateLocationsAndContextsAvailability(group, true);
+          } else {
+            groupSetAndNotifyInactive();
+          }
         }
         audio_sender_state_ = AudioState::IDLE;
         audio_receiver_state_ = AudioState::IDLE;

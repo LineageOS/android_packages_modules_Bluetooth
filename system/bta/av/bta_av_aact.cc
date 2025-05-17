@@ -871,6 +871,7 @@ void bta_av_cleanup(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* /* p_data */) {
   p_scb->num_disc_snks = 0;
   p_scb->coll_mask = 0;
   p_scb->uuid_int = 0;
+  p_scb->cfg = p_scb->default_sep_cfg;
   alarm_cancel(p_scb->avrc_ct_timer);
   alarm_cancel(p_scb->link_signalling_timer);
   alarm_cancel(p_scb->accept_signalling_timer);
@@ -1670,50 +1671,51 @@ void bta_av_open_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_getcap_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
-  AvdtpSepConfig cfg = p_scb->cfg;
+  AvdtpSepConfig result_sep_cfg = p_scb->cfg;
   uint8_t media_type = A2DP_GetMediaType(p_scb->peer_cap.codec_info);
   tAVDT_SEP_INFO* p_info = &p_scb->sep_info[p_scb->sep_info_idx];
 
-  cfg.num_codec = 1;
-  cfg.num_protect = p_scb->peer_cap.num_protect;
-  memcpy(cfg.codec_info, p_scb->peer_cap.codec_info, AVDT_CODEC_SIZE);
-  memcpy(cfg.protect_info, p_scb->peer_cap.protect_info, AVDT_PROTECT_SIZE);
+  result_sep_cfg.num_codec = 1;
+  result_sep_cfg.num_protect = p_scb->peer_cap.num_protect;
+  memcpy(result_sep_cfg.codec_info, p_scb->peer_cap.codec_info, AVDT_CODEC_SIZE);
+  memcpy(result_sep_cfg.protect_info, p_scb->peer_cap.protect_info, AVDT_PROTECT_SIZE);
 
-  log::verbose("peer {} bta_handle:0x{:x} num_codec:{} psc_mask=0x{:x}", p_scb->PeerAddress(),
-               p_scb->hndl, p_scb->peer_cap.num_codec, p_scb->cfg.psc_mask);
-  log::verbose("media type 0x{:x}, 0x{:x}", media_type, p_scb->media_type);
-  log::verbose("codec: {}", A2DP_CodecInfoString(p_scb->cfg.codec_info));
+  log::verbose("peer addres: {}, bta_handle: 0x{:x}", p_scb->PeerAddress(), p_scb->hndl);
+  log::verbose("local psc_mask: 0x{:x}, remote psc_mask: 0x{:x}", p_scb->cfg.psc_mask,
+               p_scb->peer_cap.psc_mask);
+  log::verbose("current local codec cfg: {}", A2DP_CodecInfoString(p_scb->cfg.codec_info));
+
+  log::verbose("remote num_codec:{}", p_scb->peer_cap.num_codec);
+  log::verbose("local media_type: 0x{:x}, remote media_type: 0x{:x}", p_scb->media_type,
+               media_type);
 
   /* if codec present and we get a codec configuration */
   if ((p_scb->peer_cap.num_codec != 0) && (media_type == p_scb->media_type) &&
-      (p_scb->p_cos->getcfg(p_scb->hndl, p_scb->PeerAddress(), cfg.codec_info, &p_scb->sep_info_idx,
-                            p_info->seid, &cfg.num_protect, cfg.protect_info) == A2DP_SUCCESS)) {
-    /* UUID for which connection was initiatied */
-    uint16_t uuid_int = p_scb->uuid_int;
-
+      (p_scb->p_cos->getcfg(p_scb->hndl, p_scb->PeerAddress(), result_sep_cfg.codec_info,
+                            &p_scb->sep_info_idx, p_info->seid, &result_sep_cfg.num_protect,
+                            result_sep_cfg.protect_info) == A2DP_SUCCESS)) {
     /* save copy of codec configuration */
-    p_scb->cfg = cfg;
+    p_scb->cfg = result_sep_cfg;
 
-    log::verbose("result: sep_info_idx={}", p_scb->sep_info_idx);
-    log::verbose("codec: {}", A2DP_CodecInfoString(p_scb->cfg.codec_info));
+    log::info("peer addres: {}, bta_handle: 0x{:x}", p_scb->PeerAddress(), p_scb->hndl);
+    log::verbose("result sep_info_idx: {}", p_scb->sep_info_idx);
+    log::verbose("result codec cfg: {}", A2DP_CodecInfoString(p_scb->cfg.codec_info));
 
-    log::verbose("initiator UUID = 0x{:x}", uuid_int);
-    if (uuid_int == UUID_SERVCLASS_AUDIO_SOURCE) {
+    log::verbose("initiator UUID: 0x{:x}", p_scb->uuid_int);
+    if (p_scb->uuid_int == UUID_SERVCLASS_AUDIO_SOURCE) {
       bta_av_adjust_seps_idx(p_scb, bta_av_get_scb_handle(p_scb, AVDT_TSEP_SRC));
-    } else if (uuid_int == UUID_SERVCLASS_AUDIO_SINK) {
+    } else if (p_scb->uuid_int == UUID_SERVCLASS_AUDIO_SINK) {
       bta_av_adjust_seps_idx(p_scb, bta_av_get_scb_handle(p_scb, AVDT_TSEP_SNK));
     }
-    log::info("sep_idx={} avdt_handle={} bta_handle=0x{:x}", p_scb->sep_idx, p_scb->avdt_handle,
-              p_scb->hndl);
+    log::info("current sep_idx: {} avdt_handle: {}", p_scb->sep_idx, p_scb->avdt_handle);
 
     /* use only the services peer supports */
-    cfg.psc_mask &= p_scb->peer_cap.psc_mask;
-    p_scb->cur_psc_mask = cfg.psc_mask;
-    log::verbose("peer {} bta_handle:0x{:x} sep_idx:{} sep_info_idx:{} cur_psc_mask:0x{:x}",
-                 p_scb->PeerAddress(), p_scb->hndl, p_scb->sep_idx, p_scb->sep_info_idx,
-                 p_scb->cur_psc_mask);
+    result_sep_cfg.psc_mask &= p_scb->peer_cap.psc_mask;
+    p_scb->cur_psc_mask = result_sep_cfg.psc_mask;
+    log::verbose("result cur_psc_mask:0x{:x}, local psc_mask: 0x{:x}, remote psc_mask: 0x{:x}",
+                 p_scb->cur_psc_mask, p_scb->cfg.psc_mask, p_scb->peer_cap.psc_mask);
 
-    if ((uuid_int == UUID_SERVCLASS_AUDIO_SINK) &&
+    if ((p_scb->uuid_int == UUID_SERVCLASS_AUDIO_SINK) &&
         (p_scb->seps[p_scb->sep_idx].p_app_sink_data_cback != NULL)) {
       log::verbose("configure decoder for Sink connection");
       tBTA_AV_MEDIA av_sink_codec_info = {
@@ -1727,13 +1729,13 @@ void bta_av_getcap_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
               p_scb->PeerAddress(), BTA_AV_SINK_MEDIA_CFG_EVT, &av_sink_codec_info);
     }
 
-    if (uuid_int == UUID_SERVCLASS_AUDIO_SOURCE) {
-      A2DP_AdjustCodec(cfg.codec_info);
+    if (p_scb->uuid_int == UUID_SERVCLASS_AUDIO_SOURCE) {
+      A2DP_AdjustCodec(result_sep_cfg.codec_info);
     }
 
     /* open the stream */
     AVDT_OpenReq(p_scb->seps[p_scb->sep_idx].av_handle, p_scb->PeerAddress(), p_scb->hdi,
-                 p_scb->sep_info[p_scb->sep_info_idx].seid, &cfg);
+                 p_scb->sep_info[p_scb->sep_info_idx].seid, &result_sep_cfg);
   } else {
     /* try the next stream, if any */
     p_scb->sep_info_idx++;
@@ -1991,7 +1993,6 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_reconfig(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
-  AvdtpSepConfig* p_cfg;
   tBTA_AV_API_STOP stop = {};
   tBTA_AV_API_RCFG* p_rcfg = &p_data->api_reconfig;
 
@@ -1999,8 +2000,6 @@ void bta_av_reconfig(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
                p_scb->sep_info_idx);
 
   p_scb->num_recfg = 0;
-  /* store the new configuration in control block */
-  p_cfg = &p_scb->cfg;
 
   alarm_cancel(p_scb->avrc_ct_timer);
 
@@ -2014,11 +2013,14 @@ void bta_av_reconfig(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
                  std::format("{} => {}", A2DP_CodecName(p_scb->cfg.codec_info),
                              A2DP_CodecName(p_rcfg->codec_info)));
 
-  p_cfg->num_protect = p_rcfg->num_protect;
-  memcpy(p_cfg->codec_info, p_rcfg->codec_info, AVDT_CODEC_SIZE);
-  memcpy(p_cfg->protect_info, p_rcfg->p_protect_info, p_rcfg->num_protect);
+  p_scb->cfg.num_protect = p_rcfg->num_protect;
+  memcpy(p_scb->cfg.codec_info, p_rcfg->codec_info, AVDT_CODEC_SIZE);
+  memcpy(p_scb->cfg.protect_info, p_rcfg->p_protect_info, p_rcfg->num_protect);
   p_scb->rcfg_idx = p_rcfg->sep_info_idx;
-  p_cfg->psc_mask = p_scb->cur_psc_mask;
+  p_scb->cfg.psc_mask = p_scb->cur_psc_mask;
+  log::verbose("p_scb->cfg.psc_mask: {}", p_scb->cfg.psc_mask);
+  log::debug("p_scb->sep_info_idx={} p_scb->rcfg_idx={} p_rcfg->sep_info_idx={}",
+             p_scb->sep_info_idx, p_scb->rcfg_idx, p_rcfg->sep_info_idx);
 
   // If the requested SEP index is same as the current one, then we
   // can Suspend->Reconfigure->Start.
@@ -2042,7 +2044,7 @@ void bta_av_reconfig(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   } else {
     // Close the stream first, and then Configure it
     log::verbose("Close/Open started: {} state: {} num_protect: {}", p_scb->started, p_scb->state,
-                 p_cfg->num_protect);
+                 p_scb->cfg.num_protect);
     if (p_scb->started) {
       // Close->Configure->Open->Start
       if ((p_scb->rcfg_idx != p_scb->sep_info_idx) && p_scb->recfg_sup) {
@@ -2740,7 +2742,6 @@ void bta_av_rcfg_discntd(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* /*p_data*/) {
  ******************************************************************************/
 void bta_av_suspend_cont(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   uint8_t err_code = p_data->str_msg.msg.hdr.err_code;
-
   log::verbose("err_code={}", err_code);
 
   p_scb->started = false;

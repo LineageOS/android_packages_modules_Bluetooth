@@ -17,8 +17,7 @@
 #pragma once
 
 #include <cstdint>
-
-#include "module.h"
+#include <string>
 
 namespace bluetooth::hal {
 
@@ -171,10 +170,8 @@ public:
  * processor to handle packet reception, processing, and transmission independently. This offloading
  * process prevents the need to wake the main application processor, improving power efficiency.
  */
-class SocketHal : public ::bluetooth::Module {
+class SocketHal {
 public:
-  static const ModuleFactory Factory;
-
   virtual ~SocketHal() = default;
 
   /**

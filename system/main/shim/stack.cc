@@ -29,8 +29,11 @@
 #include <string>
 
 #include "common/strings.h"
-#include "hal/hci_hal.h"
+#include "hal/hci_hal_impl.h"
+#include "hal/link_clocker.h"
+#include "hal/ranging_hal_impl.h"
 #include "hal/snoop_logger.h"
+#include "hal/socket_hal_impl.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager_impl.h"
 #include "hci/controller_impl.h"
@@ -67,6 +70,15 @@ struct Stack::impl {
   Acl* acl_ = nullptr;
   std::shared_ptr<storage::StorageModule> storage_ = nullptr;
   std::shared_ptr<hal::SnoopLogger> snoop_logger_ = nullptr;
+#if TARGET_FLOSS
+  std::unique_ptr<sysprops::SyspropsModule> sysprops_module_ = nullptr;
+#endif
+  std::unique_ptr<hal::SocketHal> socket_hal_ = nullptr;
+  std::unique_ptr<lpp::LppOffloadManager> lpp_offload_manager_ = nullptr;
+  std::unique_ptr<hal::LinkClocker> link_clocker_ = nullptr;
+  std::unique_ptr<hal::HciHal> hci_hal_ = nullptr;
+  std::unique_ptr<hal::RangingHal> ranging_hal_ = nullptr;
+  std::unique_ptr<hci::HciLayer> hci_layer_ = nullptr;
   std::unique_ptr<hci::Controller> controller_ = nullptr;
   std::unique_ptr<hci::acl_manager::AclScheduler> acl_scheduler_ = nullptr;
   std::unique_ptr<hci::RemoteNameRequestModule> remote_name_request_ = nullptr;
@@ -102,17 +114,6 @@ void Stack::StartEverything() {
       pimpl_->snoop_logger_ = std::make_shared<hal::SnoopLogger>(new Handler(stack_thread_));
     }
 
-#if TARGET_FLOSS
-    modules.add<sysprops::SyspropsModule>();
-#else
-    if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3286716
-      modules.add<lpp::LppOffloadManager>();
-    }
-#endif
-    modules.add<hal::HciHal>();
-    modules.add<hal::RangingHal>();
-    modules.add<hci::HciLayer>();
-
     management_thread_ = new Thread("management_thread", Thread::Priority::NORMAL);
     management_handler_ = new Handler(management_thread_);
 
@@ -141,8 +142,7 @@ void Stack::StartEverything() {
     log::info("Successfully toggled Gd stack");
 
     // Make sure the leaf modules are started
-    log::assert_that(GetInstance<hal::HciHal>() != nullptr,
-                     "assert failed: GetInstance<hal::HciHal>() != nullptr");
+    log::assert_that(pimpl_->hci_hal_ != nullptr, "assert failed pimpl_->hci_hal_ != nullptr");
 
     pimpl_->acl_ = new Acl(stack_handler_, GetAclInterface());
 
@@ -226,6 +226,18 @@ hal::SnoopLogger* Stack::GetSnoopLogger() const {
   return pimpl_->snoop_logger_.get();
 }
 
+lpp::LppOffloadInterface* Stack::GetLppOffloadInterface() const {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  log::assert_that(is_running_, "assert failed: is_running_");
+  return pimpl_->lpp_offload_manager_.get();
+}
+
+hci::HciInterface* Stack::GetHciLayer() const {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  log::assert_that(is_running_, "assert failed: is_running_");
+  return pimpl_->hci_layer_.get();
+}
+
 hci::Controller* Stack::GetController() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
@@ -296,43 +308,67 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
   pimpl_->snoop_logger_->Start();
   registry_.Start(modules, stack_thread_, stack_handler_);
 
-  auto hci_hal = static_cast<hal::HciHal*>(registry_.Get(&hal::HciHal::Factory));
-  auto hci_layer = static_cast<hci::HciLayer*>(registry_.Get(&hci::HciLayer::Factory));
-  auto ranging_hal = static_cast<hal::RangingHal*>(registry_.Get(&hal::RangingHal::Factory));
+#if TARGET_FLOSS
+  log::info("Starting SyspropsModule");
+  pimpl_->sysprops_module = std::make_unique<sysprops::SyspropsModule>();
+#else
+  if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3286716
+    log::info("Starting SocketHal");
+    pimpl_->socket_hal_ = std::make_unique<hal::SocketHalImpl>();
+
+    log::info("Starting LppOffloadManager");
+    pimpl_->lpp_offload_manager_ =
+            std::make_unique<lpp::LppOffloadManager>(stack_handler_, pimpl_->socket_hal_.get());
+  }
+#endif
+
+  log::info("Starting LinkClocker");
+  pimpl_->link_clocker_ = std::make_unique<hal::LinkClocker>();
+
+  log::info("Starting HciHal");
+  pimpl_->hci_hal_ = std::make_unique<hal::HciHalImpl>(stack_handler_, pimpl_->link_clocker_.get(),
+                                                       pimpl_->snoop_logger_.get());
+
+  log::info("Starting RangingHal");
+  pimpl_->ranging_hal_ = std::make_unique<hal::RangingHalImpl>();
+
+  log::info("Starting HciLayer");
+  pimpl_->hci_layer_ = std::make_unique<hci::HciLayer>(stack_handler_, pimpl_->hci_hal_.get());
 
   log::info("Starting Controller");
-  pimpl_->controller_ = std::make_unique<hci::ControllerImpl>(stack_handler_, hci_layer);
+  pimpl_->controller_ =
+          std::make_unique<hci::ControllerImpl>(stack_handler_, pimpl_->hci_layer_.get());
 
   log::info("Starting AclScheduler");
   pimpl_->acl_scheduler_ = std::make_unique<hci::acl_manager::AclScheduler>(stack_handler_);
 
   log::info("Starting RemoteNameRequestModule");
   pimpl_->remote_name_request_ = std::make_unique<hci::RemoteNameRequestModuleImpl>(
-          stack_handler_, hci_layer, pimpl_->acl_scheduler_.get());
+          stack_handler_, pimpl_->hci_layer_.get(), pimpl_->acl_scheduler_.get());
 
   log::info("Starting AclManagerImpl");
   pimpl_->acl_manager_ = std::make_unique<hci::AclManagerImpl>(
-          stack_handler_, hci_layer, pimpl_->controller_.get(), pimpl_->acl_scheduler_.get(),
-          pimpl_->remote_name_request_.get());
+          stack_handler_, pimpl_->hci_layer_.get(), pimpl_->controller_.get(),
+          pimpl_->acl_scheduler_.get(), pimpl_->remote_name_request_.get());
 
-  log::info("Staring MsftExtensionManager");
-  pimpl_->msft_extension_manager_ =
-          std::make_unique<hci::MsftExtensionManager>(stack_handler_, hci_hal, hci_layer);
+  log::info("Starting MsftExtensionManager");
+  pimpl_->msft_extension_manager_ = std::make_unique<hci::MsftExtensionManager>(
+          stack_handler_, pimpl_->hci_hal_.get(), pimpl_->hci_layer_.get());
 
   log::info("Starting LeScanningManagerImpl");
   pimpl_->le_scanning_manager_ = std::make_unique<hci::LeScanningManagerImpl>(
-          stack_handler_, hci_layer, pimpl_->controller_.get(),
+          stack_handler_, pimpl_->hci_layer_.get(), pimpl_->controller_.get(),
           pimpl_->acl_manager_->GetLeAddressManager(), pimpl_->storage_.get());
 
   log::info("Starting LeAdvertisingManagerImpl");
   pimpl_->le_advertising_manager_ = std::make_unique<hci::LeAdvertisingManagerImpl>(
-          stack_handler_, hci_layer, pimpl_->controller_.get(),
+          stack_handler_, pimpl_->hci_layer_.get(), pimpl_->controller_.get(),
           pimpl_->acl_manager_->GetLeAddressManager(), pimpl_->acl_manager_.get());
 
   log::info("Starting DistanceMeasurementManagerImpl");
   pimpl_->distance_measurement_manager_ = std::make_unique<hci::DistanceMeasurementManagerImpl>(
-          stack_handler_, hci_layer, pimpl_->controller_.get(), pimpl_->acl_manager_.get(),
-          ranging_hal);
+          stack_handler_, pimpl_->hci_layer_.get(), pimpl_->controller_.get(),
+          pimpl_->acl_manager_.get(), pimpl_->ranging_hal_.get());
 
   promise.set_value();
 }
@@ -361,6 +397,33 @@ void Stack::handle_shut_down(std::promise<void> promise) {
 
   log::info("Stopping Controller");
   pimpl_->controller_.reset();
+
+  log::info("Stopping HCI");
+  pimpl_->hci_layer_.reset();
+
+  log::info("Stopping RangingHal");
+  pimpl_->ranging_hal_.reset();
+
+  log::info("Stopping HciHal");
+  pimpl_->hci_hal_.reset();
+
+  log::info("Stopping LinkClocker");
+  pimpl_->link_clocker_.reset();
+
+  if (pimpl_->lpp_offload_manager_) {
+    log::info("Stopping LppOffloadManager");
+    pimpl_->lpp_offload_manager_.reset();
+  }
+
+  if (pimpl_->socket_hal_) {
+    log::info("Stopping SocketHal");
+    pimpl_->socket_hal_.reset();
+  }
+
+#if TARGET_FLOSS
+  log::info("Stopping SyspropsModule");
+  pimpl_->sysprops_module_.reset();
+#endif
 
   registry_.StopAll();
 

@@ -200,18 +200,18 @@ public class LeAudioStackEvent {
                         default -> "UNKNOWN";
                     };
             case EVENT_TYPE_GROUP_NODE_STATUS_CHANGED,
-                            EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED,
-                            EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED,
-                            EVENT_TYPE_GROUP_STREAM_STATUS_CHANGED,
-                            EVENT_TYPE_GROUP_STATUS_CHANGED ->
+                    EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED,
+                    EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED,
+                    EVENT_TYPE_GROUP_STREAM_STATUS_CHANGED,
+                    EVENT_TYPE_GROUP_STATUS_CHANGED ->
                     "{group_id:" + Integer.toString(value) + "}";
-                // FIXME: It should have proper direction names here
+            // FIXME: It should have proper direction names here
             case EVENT_TYPE_AUDIO_CONF_CHANGED -> "{direction:" + value + "}";
             case EVENT_TYPE_SINK_AUDIO_LOCATION_AVAILABLE -> "{sink_audio_location:" + value + "}";
             case EVENT_TYPE_BROADCAST_CREATED,
-                            EVENT_TYPE_BROADCAST_DESTROYED,
-                            EVENT_TYPE_BROADCAST_METADATA_CHANGED,
-                            EVENT_TYPE_BROADCAST_STATE ->
+                    EVENT_TYPE_BROADCAST_DESTROYED,
+                    EVENT_TYPE_BROADCAST_METADATA_CHANGED,
+                    EVENT_TYPE_BROADCAST_STATE ->
                     "{broadcastId:" + value + "}";
             case EVENT_TYPE_HEALTH_BASED_GROUP_RECOMMENDATION -> "{group_id: " + value + "}";
             case EVENT_TYPE_HEALTH_BASED_DEV_RECOMMENDATION ->
@@ -281,7 +281,7 @@ public class LeAudioStackEvent {
 
     private static String eventTypeValue3ToString(int type, int value) {
         return switch (type) {
-                // FIXME: It should have proper location names here
+            // FIXME: It should have proper location names here
             case EVENT_TYPE_AUDIO_CONF_CHANGED -> "{snk_audio_loc:" + value + "}";
             default -> Integer.toString(value);
         };
@@ -289,7 +289,7 @@ public class LeAudioStackEvent {
 
     private static String eventTypeValue4ToString(int type, int value) {
         return switch (type) {
-                // FIXME: It should have proper location names here
+            // FIXME: It should have proper location names here
             case EVENT_TYPE_AUDIO_CONF_CHANGED -> "{src_audio_loc:" + value + "}";
             default -> Integer.toString(value);
         };

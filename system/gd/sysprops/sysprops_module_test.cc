@@ -25,6 +25,8 @@
 #include "os/parameter_provider.h"
 #include "os/system_properties.h"
 
+using bluetooth::sysprops::SyspropsModule;
+
 namespace testing {
 
 class SyspropsModuleTest : public Test {
@@ -39,7 +41,7 @@ protected:
 
   void TearDown() override {
     EXPECT_TRUE(bluetooth::os::ClearSystemPropertiesForHost());
-    test_registry_.StopAll();
+    sysprops_module.reset();
     DeleteConfigFiles();
   }
 
@@ -53,7 +55,7 @@ protected:
     }
   }
 
-  bluetooth::TestModuleRegistry test_registry_;
+  std::unique_ptr<SyspropsModule> sysprops_module = nullptr;
   std::filesystem::path temp_config_;
   std::filesystem::path temp_override_dir_;
 };
@@ -81,8 +83,7 @@ TEST_F(SyspropsModuleTest, parse_config_test) {
   EXPECT_THAT(bluetooth::os::GetSystemProperty(kIncorrectPrefixAflagName), std::nullopt);
 
   EXPECT_TRUE(bluetooth::os::WriteToFile(temp_config_.string(), kParseConfigTestConfig));
-  auto* sysprops_module = new bluetooth::sysprops::SyspropsModule();
-  test_registry_.InjectTestModule(&bluetooth::sysprops::SyspropsModule::Factory, sysprops_module);
+  sysprops_module = std::make_unique<bluetooth::sysprops::SyspropsModule>();
 
   EXPECT_THAT(bluetooth::os::GetSystemProperty(kSupportedSyspropName),
               Optional(StrEq(kSupportedSyspropValue)));
@@ -100,8 +101,7 @@ TEST_F(SyspropsModuleTest, empty_sysprops_file_path_test) {
   EXPECT_THAT(bluetooth::os::GetSystemProperty(kIncorrectPrefixAflagName), std::nullopt);
 
   bluetooth::os::ParameterProvider::OverrideSyspropsFilePath("");
-  auto* sysprops_module = new bluetooth::sysprops::SyspropsModule();
-  test_registry_.InjectTestModule(&bluetooth::sysprops::SyspropsModule::Factory, sysprops_module);
+  sysprops_module = std::make_unique<bluetooth::sysprops::SyspropsModule>();
 
   EXPECT_THAT(bluetooth::os::GetSystemProperty(kSupportedSyspropName), std::nullopt);
   EXPECT_THAT(bluetooth::os::GetSystemProperty(kUnsupportedSyspropName), std::nullopt);

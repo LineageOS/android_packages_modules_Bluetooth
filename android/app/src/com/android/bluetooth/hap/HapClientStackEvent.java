@@ -153,8 +153,8 @@ public class HapClientStackEvent {
     private static String eventTypeValueInt3ToString(int type, int value) {
         return switch (type) {
             case EVENT_TYPE_ON_PRESET_INFO,
-                            EVENT_TYPE_ON_PRESET_INFO_ERROR,
-                            EVENT_TYPE_ON_PRESET_NAME_SET_ERROR ->
+                    EVENT_TYPE_ON_PRESET_INFO_ERROR,
+                    EVENT_TYPE_ON_PRESET_NAME_SET_ERROR ->
                     "{groupId: " + value + "}";
             default -> "{unused: " + value + "}";
         };

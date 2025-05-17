@@ -28,8 +28,6 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.internal.annotations.GuardedBy;
-import com.android.internal.annotations.VisibleForTesting;
 
 /**
  * Defines native calls that are used by state machine/service to either send or receive messages
@@ -41,48 +39,18 @@ public class HeadsetClientNativeInterface {
 
     private final AdapterService mAdapterService;
 
-    @GuardedBy("INSTANCE_LOCK")
-    private static HeadsetClientNativeInterface sInstance;
-
-    private static final Object INSTANCE_LOCK = new Object();
-
-    @VisibleForTesting
     HeadsetClientNativeInterface(AdapterService adapterService) {
         mAdapterService = requireNonNull(adapterService);
     }
 
-    /**
-     * This class is a singleton because native library should only be loaded once
-     *
-     * @return default instance
-     */
-    public static HeadsetClientNativeInterface getInstance(AdapterService adapterService) {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new HeadsetClientNativeInterface(adapterService);
-            }
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    public static void setInstance(HeadsetClientNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
-    }
-
     // Native wrappers to help unit testing
     /** Initialize native stack */
-    @VisibleForTesting
-    public void initialize() {
+    void initialize() {
         initializeNative();
     }
 
     /** Close and clean up native stack */
-    @VisibleForTesting
-    public void cleanup() {
+    void cleanup() {
         cleanupNative();
     }
 
@@ -92,8 +60,7 @@ public class HeadsetClientNativeInterface {
      * @param device target device
      * @return True on success, False on failure
      */
-    @VisibleForTesting
-    public boolean connect(BluetoothDevice device) {
+    boolean connect(BluetoothDevice device) {
         return connectNative(getByteAddress(device));
     }
 
@@ -103,8 +70,7 @@ public class HeadsetClientNativeInterface {
      * @param device target device
      * @return True on success, False on failure
      */
-    @VisibleForTesting
-    public boolean disconnect(BluetoothDevice device) {
+    boolean disconnect(BluetoothDevice device) {
         return disconnectNative(getByteAddress(device));
     }
 
@@ -114,8 +80,7 @@ public class HeadsetClientNativeInterface {
      * @param device target device
      * @return True on success, False on failure
      */
-    @VisibleForTesting
-    public boolean connectAudio(BluetoothDevice device) {
+    boolean connectAudio(BluetoothDevice device) {
         return connectAudioNative(getByteAddress(device));
     }
 
@@ -125,7 +90,7 @@ public class HeadsetClientNativeInterface {
      * @param device target device
      * @return True on success, False on failure
      */
-    public boolean disconnectAudio(BluetoothDevice device) {
+    boolean disconnectAudio(BluetoothDevice device) {
         return disconnectAudioNative(getByteAddress(device));
     }
 
@@ -135,8 +100,7 @@ public class HeadsetClientNativeInterface {
      * @param device target device
      * @return True on success, False on failure
      */
-    @VisibleForTesting
-    public boolean startVoiceRecognition(BluetoothDevice device) {
+    boolean startVoiceRecognition(BluetoothDevice device) {
         return startVoiceRecognitionNative(getByteAddress(device));
     }
 
@@ -146,8 +110,7 @@ public class HeadsetClientNativeInterface {
      * @param device target device
      * @return True on success, False on failure
      */
-    @VisibleForTesting
-    public boolean stopVoiceRecognition(BluetoothDevice device) {
+    boolean stopVoiceRecognition(BluetoothDevice device) {
         return stopVoiceRecognitionNative(getByteAddress(device));
     }
 
@@ -159,8 +122,7 @@ public class HeadsetClientNativeInterface {
      * @param volume volume level
      * @return True on success, False on failure
      */
-    @VisibleForTesting
-    public boolean setVolume(BluetoothDevice device, int volumeType, int volume) {
+    boolean setVolume(BluetoothDevice device, int volumeType, int volume) {
         return setVolumeNative(getByteAddress(device), volumeType, volume);
     }
 
@@ -171,8 +133,7 @@ public class HeadsetClientNativeInterface {
      * @param number phone number to be dialed
      * @return True on success, False on failure
      */
-    @VisibleForTesting
-    public boolean dial(BluetoothDevice device, String number) {
+    boolean dial(BluetoothDevice device, String number) {
         return dialNative(getByteAddress(device), number);
     }
 
@@ -183,8 +144,7 @@ public class HeadsetClientNativeInterface {
      * @param location memory location
      * @return True on success, False on failure
      */
-    @VisibleForTesting
-    public boolean dialMemory(BluetoothDevice device, int location) {
+    boolean dialMemory(BluetoothDevice device, int location) {
         return dialMemoryNative(getByteAddress(device), location);
     }
 
@@ -196,8 +156,7 @@ public class HeadsetClientNativeInterface {
      * @param index call index
      * @return True on success, False on failure
      */
-    @VisibleForTesting
-    public boolean handleCallAction(BluetoothDevice device, int action, int index) {
+    boolean handleCallAction(BluetoothDevice device, int action, int index) {
         return handleCallActionNative(getByteAddress(device), action, index);
     }
 
@@ -207,8 +166,7 @@ public class HeadsetClientNativeInterface {
      * @param device target device
      * @return True on success, False on failure
      */
-    @VisibleForTesting
-    public boolean queryCurrentCalls(BluetoothDevice device) {
+    boolean queryCurrentCalls(BluetoothDevice device) {
         return queryCurrentCallsNative(getByteAddress(device));
     }
 
@@ -218,8 +176,7 @@ public class HeadsetClientNativeInterface {
      * @param device target device
      * @return True on success, False on failure
      */
-    @VisibleForTesting
-    public boolean queryCurrentOperatorName(BluetoothDevice device) {
+    boolean queryCurrentOperatorName(BluetoothDevice device) {
         return queryCurrentOperatorNameNative(getByteAddress(device));
     }
 
@@ -229,8 +186,7 @@ public class HeadsetClientNativeInterface {
      * @param device target device
      * @return True on success, False on failure
      */
-    @VisibleForTesting
-    public boolean retrieveSubscriberInfo(BluetoothDevice device) {
+    boolean retrieveSubscriberInfo(BluetoothDevice device) {
         return retrieveSubscriberInfoNative(getByteAddress(device));
     }
 
@@ -241,8 +197,7 @@ public class HeadsetClientNativeInterface {
      * @param code DTMF code
      * @return True on success, False on failure
      */
-    @VisibleForTesting
-    public boolean sendDtmf(BluetoothDevice device, byte code) {
+    boolean sendDtmf(BluetoothDevice device, byte code) {
         return sendDtmfNative(getByteAddress(device), code);
     }
 
@@ -252,8 +207,7 @@ public class HeadsetClientNativeInterface {
      * @param device target device
      * @return True on success, False on failure
      */
-    @VisibleForTesting
-    public boolean requestLastVoiceTagNumber(BluetoothDevice device) {
+    boolean requestLastVoiceTagNumber(BluetoothDevice device) {
         return requestLastVoiceTagNumberNative(getByteAddress(device));
     }
 
@@ -267,8 +221,7 @@ public class HeadsetClientNativeInterface {
      * @param arg other command specific arguments
      * @return True on success, False on failure
      */
-    @VisibleForTesting
-    public boolean sendATCmd(BluetoothDevice device, int atCmd, int val1, int val2, String arg) {
+    boolean sendATCmd(BluetoothDevice device, int atCmd, int val1, int val2, String arg) {
         return sendATCmdNative(getByteAddress(device), atCmd, val1, val2, arg);
     }
 
@@ -278,8 +231,7 @@ public class HeadsetClientNativeInterface {
      * @param cmd Android specific command string
      * @return True on success, False on failure
      */
-    @VisibleForTesting
-    public boolean sendAndroidAt(BluetoothDevice device, String cmd) {
+    boolean sendAndroidAt(BluetoothDevice device, String cmd) {
         if (device == null) {
             Log.w(TAG, "Don't need to send " + cmd + " because no remote device");
             return false;
@@ -340,7 +292,6 @@ public class HeadsetClientNativeInterface {
 
     // Callbacks from the native back into the java framework. All callbacks are routed via the
     // Service which will disambiguate which state machine the message should be routed through.
-    @VisibleForTesting
     void onConnectionStateChanged(int state, int peerFeat, int chldFeat, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt = state;
@@ -356,7 +307,6 @@ public class HeadsetClientNativeInterface {
         }
     }
 
-    @VisibleForTesting
     void onAudioStateChanged(int state, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED);
         event.valueInt = state;
@@ -373,7 +323,6 @@ public class HeadsetClientNativeInterface {
         }
     }
 
-    @VisibleForTesting
     void onVrStateChanged(int state, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_VR_STATE_CHANGED);
         event.valueInt = state;
@@ -390,7 +339,6 @@ public class HeadsetClientNativeInterface {
         }
     }
 
-    @VisibleForTesting
     void onNetworkState(int state, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_NETWORK_STATE);
         event.valueInt = state;
@@ -408,7 +356,6 @@ public class HeadsetClientNativeInterface {
         }
     }
 
-    @VisibleForTesting
     void onNetworkRoaming(int state, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_ROAMING_STATE);
         event.valueInt = state;
@@ -424,7 +371,6 @@ public class HeadsetClientNativeInterface {
         }
     }
 
-    @VisibleForTesting
     void onNetworkSignal(int signal, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_NETWORK_SIGNAL);
         event.valueInt = signal;
@@ -438,7 +384,6 @@ public class HeadsetClientNativeInterface {
         }
     }
 
-    @VisibleForTesting
     void onBatteryLevel(int level, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_BATTERY_LEVEL);
         event.valueInt = level;
@@ -452,7 +397,6 @@ public class HeadsetClientNativeInterface {
         }
     }
 
-    @VisibleForTesting
     void onCurrentOperator(String name, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_OPERATOR_NAME);
         event.valueString = name;
@@ -468,7 +412,6 @@ public class HeadsetClientNativeInterface {
         }
     }
 
-    @VisibleForTesting
     void onCall(int call, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_CALL);
         event.valueInt = call;
@@ -488,7 +431,6 @@ public class HeadsetClientNativeInterface {
      * <p>Values include: 0 - No current call is in setup 1 - Incoming call process ongoing 2 -
      * Outgoing call process ongoing 3 - Remote party being alerted for outgoing call
      */
-    @VisibleForTesting
     void onCallSetup(int callsetup, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_CALLSETUP);
         event.valueInt = callsetup;
@@ -509,7 +451,6 @@ public class HeadsetClientNativeInterface {
      * <p>Values include: 0 - No calls held 1 - Call is placed on hold or active/held calls swapped
      * (The AG has both an ACTIVE and HELD call) 2 - Call on hold, no active call
      */
-    @VisibleForTesting
     void onCallHeld(int callheld, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_CALLHELD);
         event.valueInt = callheld;
@@ -523,7 +464,6 @@ public class HeadsetClientNativeInterface {
         }
     }
 
-    @VisibleForTesting
     void onRespAndHold(int respAndHold, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_RESP_AND_HOLD);
         event.valueInt = respAndHold;
@@ -537,7 +477,6 @@ public class HeadsetClientNativeInterface {
         }
     }
 
-    @VisibleForTesting
     void onClip(String number, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_CLIP);
         event.valueString = number;
@@ -551,7 +490,6 @@ public class HeadsetClientNativeInterface {
         }
     }
 
-    @VisibleForTesting
     void onCallWaiting(String number, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_CALL_WAITING);
         event.valueString = number;
@@ -565,7 +503,6 @@ public class HeadsetClientNativeInterface {
         }
     }
 
-    @VisibleForTesting
     void onCurrentCalls(int index, int dir, int state, int mparty, String number, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_CURRENT_CALLS);
         event.valueInt = index;
@@ -583,7 +520,6 @@ public class HeadsetClientNativeInterface {
         }
     }
 
-    @VisibleForTesting
     void onVolumeChange(int type, int volume, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_VOLUME_CHANGED);
         event.valueInt = type;
@@ -598,7 +534,6 @@ public class HeadsetClientNativeInterface {
         }
     }
 
-    @VisibleForTesting
     void onCmdResult(int type, int cme, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_CMD_RESULT);
         event.valueInt = type;
@@ -613,7 +548,6 @@ public class HeadsetClientNativeInterface {
         }
     }
 
-    @VisibleForTesting
     void onSubscriberInfo(String number, int type, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_SUBSCRIBER_INFO);
         event.valueInt = type;
@@ -630,7 +564,6 @@ public class HeadsetClientNativeInterface {
         }
     }
 
-    @VisibleForTesting
     void onInBandRing(int inBand, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_IN_BAND_RINGTONE);
         event.valueInt = inBand;
@@ -644,12 +577,10 @@ public class HeadsetClientNativeInterface {
         }
     }
 
-    @VisibleForTesting
     void onLastVoiceTagNumber(String number, byte[] address) {
         Log.w(TAG, "onLastVoiceTagNumber not supported");
     }
 
-    @VisibleForTesting
     void onRingIndication(byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_RING_INDICATION);
         event.device = getDevice(address);
@@ -664,7 +595,6 @@ public class HeadsetClientNativeInterface {
         }
     }
 
-    @VisibleForTesting
     void onUnknownEvent(String eventString, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_UNKNOWN_EVENT);
         event.device = getDevice(address);

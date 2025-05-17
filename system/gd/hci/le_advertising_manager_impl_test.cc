@@ -34,6 +34,7 @@
 #include "hci/hci_layer_fake.h"
 #include "hci/le_address_manager.h"
 #include "hci/le_on_advertising_set_terminated_interface.h"
+#include "module.h"
 #include "os/thread.h"
 #include "packet/raw_builder.h"
 
@@ -71,6 +72,8 @@ public:
   }
 
   VendorCapabilities GetVendorCapabilities() const override { return vendor_capabilities_; }
+
+  bool IsRpaGenerationSupported() const override { return true; }
 
   uint8_t num_advertisers_{0};
   VendorCapabilities vendor_capabilities_;
@@ -131,26 +134,26 @@ class LeAdvertisingManagerTest : public ::testing::Test {
 protected:
   void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
-    test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
+    client_handler_ = fake_registry_.GetTestHandler();
+    test_hci_layer_ = std::make_unique<HciLayerFake>(
+            client_handler_);  // Ownership is transferred to registry
     test_controller_ = std::make_unique<TestController>();
     test_set_terminated_handler_ = new OnSetTerminatedReceiver;
 
     test_controller_->AddSupported(param_opcode_);
-    fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
-    client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
     test_controller_->num_advertisers_ = num_instances_;
     test_controller_->vendor_capabilities_.max_advt_instances_ = num_instances_;
     test_controller_->SetBleExtendedAdvertisingSupport(support_ble_extended_advertising_);
 
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
-    test_le_address_manager_ = new TestLeAddressManager(
+    test_le_address_manager_ = std::make_unique<TestLeAddressManager>(
             common::Bind([](std::unique_ptr<CommandBuilder> /* command_packet */) {}),
             client_handler_, address, 0x3F, 0x3F, test_controller_.get());
 
     le_advertising_manager_ = new LeAdvertisingManagerImpl(
-            fake_registry_.GetTestHandler(), test_hci_layer_, test_controller_.get(),
-            test_le_address_manager_, test_set_terminated_handler_);
+            fake_registry_.GetTestHandler(), test_hci_layer_.get(), test_controller_.get(),
+            test_le_address_manager_.get(), test_set_terminated_handler_);
     le_advertising_manager_->RegisterAdvertisingCallback(&mock_advertising_callback_);
   }
 
@@ -164,10 +167,10 @@ protected:
   }
 
   TestModuleRegistry fake_registry_;
-  HciLayerFake* test_hci_layer_ = nullptr;
+  std::unique_ptr<HciLayerFake> test_hci_layer_ = nullptr;
   std::unique_ptr<TestController> test_controller_ = nullptr;
   OnAdvertisingSetTerminatedInterface* test_set_terminated_handler_ = nullptr;
-  TestLeAddressManager* test_le_address_manager_ = nullptr;
+  std::unique_ptr<TestLeAddressManager> test_le_address_manager_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
   LeAdvertisingManagerImpl* le_advertising_manager_ = nullptr;
   os::Handler* client_handler_ = nullptr;
@@ -1747,7 +1750,8 @@ TEST_F(LeExtendedAdvertisingManagerTest, use_rpa) {
   auto set_parameters_command =
           LeSetExtendedAdvertisingParametersView::Create(LeAdvertisingCommandView::Create(command));
   ASSERT_TRUE(set_parameters_command.IsValid());
-  EXPECT_EQ(set_parameters_command.GetOwnAddressType(), OwnAddressType::RANDOM_DEVICE_ADDRESS);
+  EXPECT_EQ(set_parameters_command.GetOwnAddressType(),
+            OwnAddressType::RESOLVABLE_OR_RANDOM_ADDRESS);
 }
 
 TEST_F(LeExtendedAdvertisingManagerTest, use_non_resolvable_address) {

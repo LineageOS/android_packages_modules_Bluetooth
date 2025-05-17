@@ -100,7 +100,9 @@ public:
 class AclManagerNoCallbacksTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    test_hci_layer_ = new HciLayerFake;     // Ownership is transferred to registry
+    client_handler_ = fake_registry_.GetTestHandler();
+    ASSERT_NE(client_handler_, nullptr);
+    test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
     test_controller_ = std::make_unique<TestController>();
 
     EXPECT_CALL(*test_controller_, GetMacAddress());
@@ -108,20 +110,16 @@ protected:
     EXPECT_CALL(*test_controller_, GetLeResolvingListSize());
     EXPECT_CALL(*test_controller_, SupportsBlePrivacy());
 
-    fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
-    client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
-    ASSERT_NE(client_handler_, nullptr);
     bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(
             com::android::bluetooth::flags::same_handler_for_all_modules()
                     ? client_handler_
                     : new os::Handler(&thread_));
     bluetooth::hci::testing::mock_storage_->Start();
-    fake_registry_.Start<HciLayer>(&thread_, client_handler_);
 
     test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
     acl_manager_ = std::make_unique<AclManagerImpl>(
-            client_handler_, test_hci_layer_, test_controller_.get(), test_acl_scheduler_.get(),
-            nullptr /* RNRModule */);
+            client_handler_, test_hci_layer_.get(), test_controller_.get(),
+            test_acl_scheduler_.get(), nullptr /* RNRModule */);
 
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 
@@ -162,10 +160,13 @@ protected:
     connections_.clear();
     le_connections_.clear();
     fake_registry_.SynchronizeHandler(handler_, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
     fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     test_acl_scheduler_.reset();
+    fake_registry_.SynchronizeHandler(handler_, std::chrono::milliseconds(20));
+    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     acl_manager_.reset();
+    test_controller_.reset();
+    test_hci_layer_.reset();
     fake_registry_.StopAll();
   }
 
@@ -175,7 +176,7 @@ protected:
   }
 
   TestModuleRegistry fake_registry_;
-  HciLayerFake* test_hci_layer_ = nullptr;
+  std::unique_ptr<HciLayerFake> test_hci_layer_ = nullptr;
   std::unique_ptr<TestController> test_controller_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
   os::Handler* handler_ = fake_registry_.GetTestHandler();
@@ -279,7 +280,7 @@ protected:
     // is cleared after the AclConnectionInterface is deleted
     // through fake_registry_.
     connection_.reset();
-    fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
+    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     AclManagerTest::TearDown();
   }
 
@@ -414,7 +415,7 @@ protected:
     // is cleared after the AclConnectionInterface is deleted
     // through fake_registry_.
     connection_.reset();
-    fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
+    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
     AclManagerTest::TearDown();
   }
 
@@ -664,8 +665,8 @@ TEST_F(AclManagerWithLeConnectionTest, invoke_registered_callback_le_disconnect_
 TEST_F(AclManagerWithLeConnectionTest, invoke_registered_callback_le_queue_disconnect) {
   auto reason = ErrorCode::REMOTE_USER_TERMINATED_CONNECTION;
   test_hci_layer_->Disconnect(handle_, reason);
-  fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
-  fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
+  fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
+  fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
   fake_registry_.SynchronizeHandler(handler_, std::chrono::milliseconds(20));
 
   EXPECT_CALL(mock_le_connection_management_callbacks_, OnDisconnection(reason));
@@ -1141,22 +1142,21 @@ TEST_F(AclManagerWithConnectionTest, send_read_clock) {
 class AclManagerWithResolvableAddressTest : public AclManagerNoCallbacksTest {
 protected:
   void SetUp() override {
-    test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
-    test_controller_ = std::make_unique<TestController>();
-    fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
-    client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
+    client_handler_ = fake_registry_.GetTestHandler();
     ASSERT_NE(client_handler_, nullptr);
+
+    test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
+    test_controller_ = std::make_unique<TestController>();
     bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(
             com::android::bluetooth::flags::same_handler_for_all_modules()
                     ? client_handler_
                     : new os::Handler(&thread_));
     bluetooth::hci::testing::mock_storage_->Start();
-    fake_registry_.Start<HciLayer>(&thread_, client_handler_);
 
     test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
     acl_manager_ = std::make_unique<AclManagerImpl>(
-            client_handler_, test_hci_layer_, test_controller_.get(), test_acl_scheduler_.get(),
-            nullptr /* RNRModule */);
+            client_handler_, test_hci_layer_.get(), test_controller_.get(),
+            test_acl_scheduler_.get(), nullptr /* RNRModule */);
 
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 
@@ -1190,7 +1190,7 @@ TEST_F(AclManagerWithResolvableAddressTest, create_connection_cancel_fail) {
   GetConnectionManagementCommand(OpCode::LE_CREATE_CONNECTION);
   test_hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
 
-  fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
+  fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
   fake_registry_.SynchronizeHandler(handler_, std::chrono::milliseconds(20));
 
   Address remote2;

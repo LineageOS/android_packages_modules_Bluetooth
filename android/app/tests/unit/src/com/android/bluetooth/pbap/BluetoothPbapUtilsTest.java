@@ -158,12 +158,14 @@ public class BluetoothPbapUtilsTest {
     public void setContactFields() {
         String contactId = "1358923";
 
-        BluetoothPbapUtils.setContactFields(BluetoothPbapUtils.TYPE_NAME, contactId, "test_name");
-        BluetoothPbapUtils.setContactFields(BluetoothPbapUtils.TYPE_PHONE, contactId, "0123456789");
         BluetoothPbapUtils.setContactFields(
-                BluetoothPbapUtils.TYPE_EMAIL, contactId, "android@android.com");
+                BluetoothPbapUtils.ContactFieldType.NAME, contactId, "test_name");
         BluetoothPbapUtils.setContactFields(
-                BluetoothPbapUtils.TYPE_ADDRESS, contactId, "SomeAddress");
+                BluetoothPbapUtils.ContactFieldType.PHONE, contactId, "0123456789");
+        BluetoothPbapUtils.setContactFields(
+                BluetoothPbapUtils.ContactFieldType.EMAIL, contactId, "android@android.com");
+        BluetoothPbapUtils.setContactFields(
+                BluetoothPbapUtils.ContactFieldType.ADDRESS, contactId, "SomeAddress");
 
         assertThat(BluetoothPbapUtils.sContactDataset.get(contactId)).isNotNull();
     }
@@ -350,7 +352,9 @@ public class BluetoothPbapUtilsTest {
 
         BluetoothPbapUtils.sTotalContacts = 1;
         BluetoothPbapUtils.setContactFields(
-                BluetoothPbapUtils.TYPE_NAME, "id1", "test_previous_name_before_update");
+                BluetoothPbapUtils.ContactFieldType.NAME,
+                "id1",
+                "test_previous_name_before_update");
 
         BluetoothPbapUtils.updateSecondaryVersionCounter(mContext, null);
 

@@ -24,7 +24,6 @@ cc_library_static {
         "packages/modules/Bluetooth/system/btif/include",
         "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/stack/include",
-        "system/libhwbinder/include",
     ],
     apex_available: ["com.android.bt"],
     host_supported: true,

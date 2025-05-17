@@ -76,7 +76,6 @@ public class PanService extends ProfileService {
             new ConcurrentHashMap<>();
 
     private final Map<String, IBluetoothPanCallback> mBluetoothTetheringCallbacks = new HashMap<>();
-    private final AdapterService mAdapterService;
     private final PanNativeInterface mNativeInterface;
     private final DatabaseManager mDatabaseManager;
     private final TetheringManager mTetheringManager;
@@ -113,12 +112,11 @@ public class PanService extends ProfileService {
     @VisibleForTesting
     PanService(AdapterService adapterService, PanNativeInterface nativeInterface, Looper looper) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(nativeInterface, () -> new PanNativeInterface(this));
-        mUserManager = requireNonNull(getSystemService(UserManager.class));
-        mTetheringManager = requireNonNull(getSystemService(TetheringManager.class));
+        mUserManager = requireNonNull(obtainSystemService(UserManager.class));
+        mTetheringManager = requireNonNull(obtainSystemService(TetheringManager.class));
         mHandler = new PanServiceHandler(looper);
 
         int maxPanDevice;
@@ -206,7 +204,7 @@ public class PanService extends ProfileService {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case MESSAGE_CONNECT:
+                case MESSAGE_CONNECT -> {
                     BluetoothDevice connectDevice = (BluetoothDevice) msg.obj;
                     if (!mNativeInterface.connect(
                             Utils.getByteBrEdrAddress(mAdapterService, connectDevice))) {
@@ -223,8 +221,8 @@ public class PanService extends ProfileService {
                                 BluetoothPan.LOCAL_PANU_ROLE,
                                 BluetoothPan.REMOTE_NAP_ROLE);
                     }
-                    break;
-                case MESSAGE_DISCONNECT:
+                }
+                case MESSAGE_DISCONNECT -> {
                     BluetoothDevice disconnectDevice = (BluetoothDevice) msg.obj;
                     if (!mNativeInterface.disconnect(
                             Utils.getByteBrEdrAddress(mAdapterService, disconnectDevice))) {
@@ -241,8 +239,8 @@ public class PanService extends ProfileService {
                                 BluetoothPan.LOCAL_PANU_ROLE,
                                 BluetoothPan.REMOTE_NAP_ROLE);
                     }
-                    break;
-                case MESSAGE_CONNECT_STATE_CHANGED:
+                }
+                case MESSAGE_CONNECT_STATE_CHANGED -> {
                     ConnectState cs = (ConnectState) msg.obj;
                     final BluetoothDevice device = mAdapterService.getDeviceFromByte(cs.addr);
                     // TBD get iface from the msg
@@ -258,7 +256,8 @@ public class PanService extends ProfileService {
                             cs.state,
                             cs.local_role,
                             cs.remote_role);
-                    break;
+                }
+                default -> {} // Nothing to do
             }
         }
     }
@@ -300,7 +299,7 @@ public class PanService extends ProfileService {
             IBluetoothPanCallback callback, int id, int callerUid, boolean value) {
         Log.d(TAG, "setBluetoothTethering: " + value + ", mTetherOn: " + mTetherOn);
 
-        UserManager um = getSystemService(UserManager.class);
+        UserManager um = obtainSystemService(UserManager.class);
         if (um.hasUserRestriction(UserManager.DISALLOW_CONFIG_TETHERING) && value) {
             throw new SecurityException("DISALLOW_CONFIG_TETHERING is enabled for this user.");
         }

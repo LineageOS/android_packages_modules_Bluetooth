@@ -97,7 +97,6 @@ public class AvrcpControllerService extends ProfileService {
 
     private final Object mActiveDeviceLock = new Object();
 
-    private final AdapterService mAdapterService;
     private final AvrcpControllerNativeInterface mNativeInterface;
     private final AvrcpCoverArtManager mCoverArtManager;
     private final boolean mCoverArtEnabled;
@@ -141,7 +140,6 @@ public class AvrcpControllerService extends ProfileService {
     public AvrcpControllerService(
             AdapterService adapterService, AvrcpControllerNativeInterface nativeInterface) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mNativeInterface = requireNonNull(nativeInterface);
         mNativeInterface.init(this);
 
@@ -423,12 +421,9 @@ public class AvrcpControllerService extends ProfileService {
         // commands get routed to the correct device
         synchronized (mActiveDeviceLock) {
             switch (state) {
-                case AudioManager.AUDIOFOCUS_GAIN:
-                    BluetoothMediaBrowserService.setActive(true);
-                    break;
-                case AudioManager.AUDIOFOCUS_LOSS:
-                    BluetoothMediaBrowserService.setActive(false);
-                    break;
+                case AudioManager.AUDIOFOCUS_GAIN -> BluetoothMediaBrowserService.setActive(true);
+                case AudioManager.AUDIOFOCUS_LOSS -> BluetoothMediaBrowserService.setActive(false);
+                default -> {} // Nothing to do
             }
             BluetoothDevice device = getActiveDevice();
             if (device == null) {

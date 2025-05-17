@@ -77,7 +77,7 @@ public class HeadsetObjectsFactory {
             AdapterService adapterService,
             HeadsetNativeInterface nativeInterface,
             HeadsetSystemInterface systemInterface) {
-        return HeadsetStateMachine.make(
+        return new HeadsetStateMachine(
                 device, looper, headsetService, adapterService, nativeInterface, systemInterface);
     }
 
@@ -93,10 +93,12 @@ public class HeadsetObjectsFactory {
     /**
      * Get a system interface
      *
-     * @param service headset service
+     * @param adapterService the adapter service
+     * @param headsetService the headset service
      * @return a system interface
      */
-    public HeadsetSystemInterface makeSystemInterface(HeadsetService service) {
-        return new HeadsetSystemInterface(service);
+    public HeadsetSystemInterface makeSystemInterface(
+            AdapterService adapterService, HeadsetService headsetService) {
+        return new HeadsetSystemInterface(adapterService, headsetService);
     }
 }

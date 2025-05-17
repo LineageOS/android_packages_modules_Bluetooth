@@ -52,12 +52,13 @@ import java.io.InputStream;
 /** Test cases for {@link Image}. */
 @RunWith(AndroidJUnit4.class)
 public class ImageTest {
-    private Context mTargetContext;
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    private @Mock Context mMockContext;
+    @Mock private Context mMockContext;
+
     private final Resources mTestResources = TestUtils.getTestApplicationResources();
+
+    private Context mTargetContext;
     private MockContentResolver mTestContentResolver;
 
     private static final String TEST_AUTHORITY = "com.android.bluetooth.avrcp.test";

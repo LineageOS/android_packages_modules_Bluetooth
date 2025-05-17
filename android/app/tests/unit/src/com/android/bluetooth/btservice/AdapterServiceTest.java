@@ -144,20 +144,8 @@ public class AdapterServiceTest {
     private static final int MESSAGE_PROFILE_SERVICE_REGISTERED = 2;
     private static final int MESSAGE_PROFILE_SERVICE_UNREGISTERED = 3;
 
-    private MockAdapterService mAdapterService;
-
-    static class MockAdapterService extends AdapterService {
-        int mSetProfileServiceStateCounter = 0;
-
-        MockAdapterService(Looper looper, Context ctx) {
-            super(looper, ctx);
-        }
-
-        @Override
-        void setProfileServiceState(int profileId, int state) {
-            mSetProfileServiceStateCounter++;
-        }
-    }
+    private final BluetoothDevice mDevice1 = getTestDevice(0);
+    private final BluetoothDevice mDevice2 = getTestDevice(2);
 
     // SystemService that are not mocked
     private BluetoothManager mBluetoothManager;
@@ -173,8 +161,20 @@ public class AdapterServiceTest {
     private int mForegroundUserId;
     private TestLooper mLooper;
 
-    private final BluetoothDevice mDevice1 = getTestDevice(0);
-    private final BluetoothDevice mDevice2 = getTestDevice(2);
+    private MockAdapterService mAdapterService;
+
+    static class MockAdapterService extends AdapterService {
+        int mSetProfileServiceStateCounter = 0;
+
+        MockAdapterService(Looper looper, Context ctx) {
+            super(looper, ctx);
+        }
+
+        @Override
+        void setProfileServiceState(int profileId, int state) {
+            mSetProfileServiceStateCounter++;
+        }
+    }
 
     static void configureEnabledProfiles() {
         Log.e(TAG, "configureEnabledProfiles");
@@ -189,17 +189,9 @@ public class AdapterServiceTest {
         }
     }
 
-    <T> void mockGetSystemService(String serviceName, Class<T> serviceClass, T mockService) {
-        TestUtils.mockGetSystemService(mMockContext, serviceName, serviceClass, mockService);
-    }
-
-    <T> T mockGetSystemService(String serviceName, Class<T> serviceClass) {
-        return TestUtils.mockGetSystemService(mMockContext, serviceName, serviceClass);
-    }
-
     @Parameters(name = "{0}")
     public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.allCombinationsOf();
+        return FlagsParameterization.allCombinationsOf(Flags.FLAG_LIMIT_USER_SWITCH_PROPAGATION);
     }
 
     public AdapterServiceTest(FlagsParameterization flags) {
@@ -209,9 +201,6 @@ public class AdapterServiceTest {
     @Before
     public void setUp() throws PackageManager.NameNotFoundException {
         Log.e(TAG, "setUp()");
-
-        mLooper = new TestLooper();
-        final Handler handler = new Handler(mLooper.getLooper());
 
         doReturn(mJniCallbacks).when(mNativeInterface).getCallbacks();
         doReturn(true).when(mMockLeAudioService).isAvailable();
@@ -229,6 +218,8 @@ public class AdapterServiceTest {
         PeriodicScanNativeInterface.setInstance(mPeriodicNativeInterface);
         ScanNativeInterface.setInstance(mScanNativeInterface);
 
+        mLooper = new TestLooper();
+        final Handler handler = new Handler(mLooper.getLooper());
         // Post the creation of AdapterService since it rely on Looper.myLooper()
         handler.post(
                 () -> mAdapterService = new MockAdapterService(mLooper.getLooper(), mMockContext));
@@ -250,12 +241,6 @@ public class AdapterServiceTest {
                     }
                 });
 
-        mBluetoothManager = context.getSystemService(BluetoothManager.class);
-        mCompanionDeviceManager = context.getSystemService(CompanionDeviceManager.class);
-        mDisplayManager = context.getSystemService(DisplayManager.class);
-        mPermissionManager = context.getSystemService(PermissionManager.class);
-        mPowerManager = context.getSystemService(PowerManager.class);
-
         when(mMockContext.getCacheDir()).thenReturn(context.getCacheDir());
         when(mMockContext.getUser()).thenReturn(context.getUser());
         when(mMockContext.getPackageName()).thenReturn(context.getPackageName());
@@ -267,11 +252,16 @@ public class AdapterServiceTest {
         when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockContext.getPackageManager()).thenReturn(mMockPackageManager);
 
+        mBluetoothManager = context.getSystemService(BluetoothManager.class);
+        mCompanionDeviceManager = context.getSystemService(CompanionDeviceManager.class);
+        mDisplayManager = context.getSystemService(DisplayManager.class);
+        mPermissionManager = context.getSystemService(PermissionManager.class);
+        mPowerManager = context.getSystemService(PowerManager.class);
+
         mockGetSystemService(Context.ALARM_SERVICE, AlarmManager.class);
         mockGetSystemService(Context.APP_OPS_SERVICE, AppOpsManager.class);
         mockGetSystemService(Context.AUDIO_SERVICE, AudioManager.class);
         mockGetSystemService(Context.ACTIVITY_SERVICE, ActivityManager.class);
-
         DevicePolicyManager dpm =
                 mockGetSystemService(Context.DEVICE_POLICY_SERVICE, DevicePolicyManager.class);
         doReturn(false).when(dpm).isCommonCriteriaModeEnabled(any());
@@ -301,10 +291,12 @@ public class AdapterServiceTest {
                 .getDatabasePath(anyString());
 
         // Sets the foreground user id to match that of the tests (restored in tearDown)
-        mForegroundUserId = Utils.getForegroundUserId();
-        int callingUid = Binder.getCallingUid();
-        UserHandle callingUser = UserHandle.getUserHandleForUid(callingUid);
-        Utils.setForegroundUserId(callingUser.getIdentifier());
+        if (!Flags.limitUserSwitchPropagation()) {
+            mForegroundUserId = Utils.getForegroundUserId();
+            int callingUid = Binder.getCallingUid();
+            UserHandle callingUser = UserHandle.getUserHandleForUid(callingUid);
+            Utils.setForegroundUserId(callingUser.getIdentifier());
+        }
 
         when(mIBluetoothCallback.asBinder()).thenReturn(mBinder);
 
@@ -326,7 +318,9 @@ public class AdapterServiceTest {
         Log.e(TAG, "tearDown()");
 
         // Restores the foregroundUserId to the ID prior to the test setup
-        Utils.setForegroundUserId(mForegroundUserId);
+        if (!Flags.limitUserSwitchPropagation()) {
+            Utils.setForegroundUserId(mForegroundUserId);
+        }
 
         LeAudioService.setLeAudioService(null);
         mAdapterService.cleanup();
@@ -342,6 +336,18 @@ public class AdapterServiceTest {
         PeriodicScanNativeInterface.setInstance(null);
         ScanNativeInterface.setInstance(null);
         MetricsLogger.setInstanceForTesting(null);
+    }
+
+    private <T> T mockGetSystemService(String serviceName, Class<T> serviceClass) {
+        T mockedService = mock(serviceClass);
+        mockGetSystemService(serviceName, serviceClass, mockedService);
+        return mockedService;
+    }
+
+    private <T> void mockGetSystemService(String serviceName, Class<T> serviceClass, T service) {
+        doReturn(service).when(mMockContext).getSystemService(eq(serviceClass));
+        doReturn(service).when(mMockContext).getSystemService(eq(serviceName));
+        doReturn(serviceName).when(mMockContext).getSystemServiceName(eq(serviceClass));
     }
 
     private void syncHandler(int... what) {
@@ -889,7 +895,7 @@ public class AdapterServiceTest {
 
     @Test
     public void testAddressConsolidation() {
-        // Create device properties
+        doEnable(false); // Need BluetoothAdapter for mAdapterService.getRemoteDevice
         RemoteDevices remoteDevices = mAdapterService.getRemoteDevices();
         remoteDevices.addDeviceProperties(Utils.getBytesFromAddress((TEST_BT_ADDR_1)));
 
@@ -907,6 +913,7 @@ public class AdapterServiceTest {
     @Test
     @EnableFlags(Flags.FLAG_IDENTITY_ADDRESS_TYPE_API)
     public void testIdentityAddressType() {
+        doEnable(false); // Need BluetoothAdapter for mAdapterService.getRemoteDevice
         RemoteDevices remoteDevices = mAdapterService.getRemoteDevices();
         remoteDevices.addDeviceProperties(Utils.getBytesFromAddress((TEST_BT_ADDR_1)));
 
@@ -937,6 +944,7 @@ public class AdapterServiceTest {
 
     @Test
     public void testIdentityAddressNullIfUnknown() {
+        doEnable(false); // Need BluetoothAdapter for mAdapterService.getRemoteDevice
         BluetoothDevice device = getTestDevice(0);
 
         assertThat(mAdapterService.getByteIdentityAddress(device)).isNull();

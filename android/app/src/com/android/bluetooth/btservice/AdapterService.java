@@ -63,6 +63,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothDevice.BluetoothAddress;
 import android.bluetooth.BluetoothFrameworkInitializer;
 import android.bluetooth.BluetoothLeAudio;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothMap;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothQualityReport;
@@ -147,6 +148,7 @@ import com.android.bluetooth.le_scan.ScanManager;
 import com.android.bluetooth.map.BluetoothMapService;
 import com.android.bluetooth.mapclient.MapClientService;
 import com.android.bluetooth.mcp.McpService;
+import com.android.bluetooth.notification.NotificationHelperService;
 import com.android.bluetooth.opp.BluetoothOppService;
 import com.android.bluetooth.pan.PanService;
 import com.android.bluetooth.pbap.BluetoothPbapService;
@@ -270,6 +272,8 @@ public class AdapterService extends Service {
 
     private final Looper mLooper;
     private final AdapterServiceHandler mHandler;
+    private final SilenceDeviceManager mSilenceDeviceManager;
+    private final DatabaseManager mDatabaseManager;
 
     private boolean mIsMediaProfileConnected;
     private int mStackReportedState;
@@ -309,8 +313,6 @@ public class AdapterService extends Service {
     private Optional<PhonePolicy> mPhonePolicy = Optional.empty();
 
     private ActiveDeviceManager mActiveDeviceManager;
-    private final DatabaseManager mDatabaseManager;
-    private final SilenceDeviceManager mSilenceDeviceManager;
     private CompanionManager mBtCompanionManager;
     private AppOpsManager mAppOps;
 
@@ -470,19 +472,19 @@ public class AdapterService extends Service {
             Log.v(TAG, "handleMessage() - Message: " + msg.what);
 
             switch (msg.what) {
-                case MESSAGE_PROFILE_SERVICE_STATE_CHANGED:
+                case MESSAGE_PROFILE_SERVICE_STATE_CHANGED -> {
                     Log.v(TAG, "handleMessage() - MESSAGE_PROFILE_SERVICE_STATE_CHANGED");
                     processProfileServiceStateChanged((ProfileService) msg.obj, msg.arg1);
-                    break;
-                case MESSAGE_PROFILE_SERVICE_REGISTERED:
+                }
+                case MESSAGE_PROFILE_SERVICE_REGISTERED -> {
                     Log.v(TAG, "handleMessage() - MESSAGE_PROFILE_SERVICE_REGISTERED");
                     registerProfileService((ProfileService) msg.obj);
-                    break;
-                case MESSAGE_PROFILE_SERVICE_UNREGISTERED:
+                }
+                case MESSAGE_PROFILE_SERVICE_UNREGISTERED -> {
                     Log.v(TAG, "handleMessage() - MESSAGE_PROFILE_SERVICE_UNREGISTERED");
                     unregisterProfileService((ProfileService) msg.obj);
-                    break;
-                case MESSAGE_PREFERRED_AUDIO_PROFILES_AUDIO_FRAMEWORK_TIMEOUT:
+                }
+                case MESSAGE_PREFERRED_AUDIO_PROFILES_AUDIO_FRAMEWORK_TIMEOUT -> {
                     Log.e(
                             TAG,
                             "handleMessage() - "
@@ -502,7 +504,8 @@ public class AdapterService extends Service {
                                 request.preferences,
                                 BluetoothStatusCodes.ERROR_TIMEOUT);
                     }
-                    break;
+                }
+                default -> {} // Nothing to do
             }
         }
 
@@ -524,7 +527,7 @@ public class AdapterService extends Service {
 
         private void processProfileServiceStateChanged(ProfileService profile, int state) {
             switch (state) {
-                case BluetoothAdapter.STATE_ON:
+                case BluetoothAdapter.STATE_ON -> {
                     if (!mRegisteredProfiles.contains(profile)) {
                         Log.e(TAG, profile.getName() + " not registered (STATE_ON).");
                         return;
@@ -552,8 +555,8 @@ public class AdapterService extends Service {
                         mAdapterStateMachine.sendMessage(AdapterState.BREDR_STARTED);
                         mBtCompanionManager.loadCompanionInfo();
                     }
-                    break;
-                case BluetoothAdapter.STATE_OFF:
+                }
+                case BluetoothAdapter.STATE_OFF -> {
                     if (!mRegisteredProfiles.contains(profile)) {
                         Log.e(TAG, profile.getName() + " not registered (STATE_OFF).");
                         return;
@@ -581,9 +584,8 @@ public class AdapterService extends Service {
                             mNativeInterface.disable();
                         }
                     }
-                    break;
-                default:
-                    Log.e(TAG, "Unhandled profile state: " + state);
+                }
+                default -> Log.e(TAG, "Unhandled profile state: " + state);
             }
         }
     }
@@ -642,7 +644,7 @@ public class AdapterService extends Service {
         MetricsLogger.getInstance().init(this, mRemoteDevices);
 
         clearDiscoveringPackages();
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
+        mAdapter = requireNonNull(getSystemService(BluetoothManager.class).getAdapter());
         boolean isCommonCriteriaMode =
                 requireNonNull(getSystemService(DevicePolicyManager.class))
                         .isCommonCriteriaModeEnabled(null);
@@ -1012,7 +1014,9 @@ public class AdapterService extends Service {
 
         Log.d(TAG, "bleOnProcessStart() - Make Bond State Machine");
         mBondStateMachine =
-                BondStateMachine.make(this, mLooper, mAdapterProperties, mRemoteDevices);
+                Flags.bondStateMachineLooper()
+                        ? new BondStateMachine(this, mLooper, mAdapterProperties, mRemoteDevices)
+                        : new BondStateMachine(this, mAdapterProperties, mRemoteDevices);
 
         mNativeInterface.getCallbacks().init(mBondStateMachine, mRemoteDevices);
 
@@ -1212,6 +1216,11 @@ public class AdapterService extends Service {
             action.accept(mSystemServerCallbacks.getBroadcastItem(i));
         }
         mSystemServerCallbacks.finishBroadcast();
+    }
+
+    void updateWatchConnection(boolean connected) {
+        broadcastToSystemServerCallbacks(
+                "updateWatchConnection", (c) -> c.onWatchConnectionChange(connected));
     }
 
     void updateAdapterName(String name) {
@@ -2733,6 +2742,10 @@ public class AdapterService extends Service {
         return null;
     }
 
+    public BluetoothDevice getRemoteDevice(String address) {
+        return getRemoteDevice(address, BluetoothDevice.ADDRESS_TYPE_PUBLIC);
+    }
+
     public BluetoothDevice getRemoteDevice(String address, int addressType) {
         if (!BluetoothAdapter.checkBluetoothAddress(address)) {
             throw new IllegalArgumentException(address + " is not a valid Bluetooth address");
@@ -2744,19 +2757,15 @@ public class AdapterService extends Service {
         if (device == null) {
             // BluetoothAdapter.getRemoteLeDevice() is same as BluetoothAdapter.getRemoteDevice()
             // with the specific address type.
-            device = BluetoothAdapter.getDefaultAdapter().getRemoteLeDevice(address, addressType);
+            device = mAdapter.getRemoteLeDevice(address, addressType);
         }
         return device;
-    }
-
-    public BluetoothDevice getRemoteDevice(String address) {
-        return getRemoteDevice(address, BluetoothDevice.ADDRESS_TYPE_PUBLIC);
     }
 
     public BluetoothDevice getDeviceFromByte(byte[] address) {
         BluetoothDevice device = mRemoteDevices.getDevice(address);
         if (device == null) {
-            device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
+            device = mAdapter.getRemoteDevice(address);
         }
         return device;
     }
@@ -3387,7 +3396,7 @@ public class AdapterService extends Service {
         List<BluetoothDevice> activeDevices = new ArrayList<>();
 
         switch (profile) {
-            case BluetoothProfile.HEADSET:
+            case BluetoothProfile.HEADSET -> {
                 if (mHeadsetService == null) {
                     Log.e(TAG, "getActiveDevices: HeadsetService is null");
                 } else {
@@ -3397,8 +3406,8 @@ public class AdapterService extends Service {
                     }
                     Log.i(TAG, "getActiveDevices: Headset device: " + device);
                 }
-                break;
-            case BluetoothProfile.A2DP:
+            }
+            case BluetoothProfile.A2DP -> {
                 if (mA2dpService == null) {
                     Log.e(TAG, "getActiveDevices: A2dpService is null");
                 } else {
@@ -3408,8 +3417,8 @@ public class AdapterService extends Service {
                     }
                     Log.i(TAG, "getActiveDevices: A2dp device: " + device);
                 }
-                break;
-            case BluetoothProfile.HEARING_AID:
+            }
+            case BluetoothProfile.HEARING_AID -> {
                 if (mHearingAidService == null) {
                     Log.e(TAG, "getActiveDevices: HearingAidService is null");
                 } else {
@@ -3420,8 +3429,8 @@ public class AdapterService extends Service {
                                     + (" Left[" + activeDevices.get(0) + "] -")
                                     + (" Right[" + activeDevices.get(1) + "]"));
                 }
-                break;
-            case BluetoothProfile.LE_AUDIO:
+            }
+            case BluetoothProfile.LE_AUDIO -> {
                 if (mLeAudioService == null) {
                     Log.e(TAG, "getActiveDevices: LeAudioService is null");
                 } else {
@@ -3432,9 +3441,8 @@ public class AdapterService extends Service {
                                     + (" Lead[" + activeDevices.get(0) + "] -")
                                     + (" member_1[" + activeDevices.get(1) + "]"));
                 }
-                break;
-            default:
-                Log.e(TAG, "getActiveDevices: profile value is not valid");
+            }
+            default -> Log.e(TAG, "getActiveDevices: profile value is not valid");
         }
         return activeDevices;
     }
@@ -4046,6 +4054,10 @@ public class AdapterService extends Service {
         recursivelyDeleteDirectory(getDataDir(), false);
         recursivelyDeleteDirectory(Paths.get("/data/misc/bluedroid/").toFile(), false);
         recursivelyDeleteDirectory(Paths.get("/data/misc/bluetooth/").toFile(), false);
+
+        if (Flags.factoryResetClearAdditionalData()) {
+            NotificationHelperService.factoryReset(getContentResolver());
+        }
         Log.i(TAG, "factoryResetIfNeeded(): Completed");
     }
 
@@ -4177,9 +4189,9 @@ public class AdapterService extends Service {
         return mGattService == null ? null : mGattService.getDistanceMeasurement();
     }
 
-    void unregAllGattClient(AttributionSource source) {
+    void unregAllGattClient() {
         if (mGattService != null) {
-            mGattService.unregAll(source);
+            mGattService.unregAll();
         }
     }
 
@@ -4348,27 +4360,23 @@ public class AdapterService extends Service {
     }
 
     static int convertScanModeToHal(int mode) {
-        switch (mode) {
-            case SCAN_MODE_NONE:
-                return AbstractionLayer.BT_SCAN_MODE_NONE;
-            case SCAN_MODE_CONNECTABLE:
-                return AbstractionLayer.BT_SCAN_MODE_CONNECTABLE;
-            case SCAN_MODE_CONNECTABLE_DISCOVERABLE:
-                return AbstractionLayer.BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE;
-        }
-        return -1;
+        return switch (mode) {
+            case SCAN_MODE_NONE -> AbstractionLayer.BT_SCAN_MODE_NONE;
+            case SCAN_MODE_CONNECTABLE -> AbstractionLayer.BT_SCAN_MODE_CONNECTABLE;
+            case SCAN_MODE_CONNECTABLE_DISCOVERABLE ->
+                    AbstractionLayer.BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE;
+            default -> -1;
+        };
     }
 
     static int convertScanModeFromHal(int mode) {
-        switch (mode) {
-            case AbstractionLayer.BT_SCAN_MODE_NONE:
-                return SCAN_MODE_NONE;
-            case AbstractionLayer.BT_SCAN_MODE_CONNECTABLE:
-                return SCAN_MODE_CONNECTABLE;
-            case AbstractionLayer.BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE:
-                return SCAN_MODE_CONNECTABLE_DISCOVERABLE;
-        }
-        return -1;
+        return switch (mode) {
+            case AbstractionLayer.BT_SCAN_MODE_NONE -> SCAN_MODE_NONE;
+            case AbstractionLayer.BT_SCAN_MODE_CONNECTABLE -> SCAN_MODE_CONNECTABLE;
+            case AbstractionLayer.BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE ->
+                    SCAN_MODE_CONNECTABLE_DISCOVERABLE;
+            default -> -1;
+        };
     }
 
     // This function is called from JNI. It allows native code to acquire a single wake lock.
@@ -5066,32 +5074,8 @@ public class AdapterService extends Service {
         }
     }
 
-    public boolean interopMatchAddr(InteropFeature feature, String address) {
-        return mNativeInterface.interopMatchAddr(feature.name(), address);
-    }
-
-    public boolean interopMatchName(InteropFeature feature, String name) {
-        return mNativeInterface.interopMatchName(feature.name(), name);
-    }
-
     public boolean interopMatchAddrOrName(InteropFeature feature, String address) {
         return mNativeInterface.interopMatchAddrOrName(feature.name(), address);
-    }
-
-    public void interopDatabaseAddAddr(InteropFeature feature, String address, int length) {
-        mNativeInterface.interopDatabaseAddRemoveAddr(true, feature.name(), address, length);
-    }
-
-    public void interopDatabaseRemoveAddr(InteropFeature feature, String address) {
-        mNativeInterface.interopDatabaseAddRemoveAddr(false, feature.name(), address, 0);
-    }
-
-    public void interopDatabaseAddName(InteropFeature feature, String name) {
-        mNativeInterface.interopDatabaseAddRemoveName(true, feature.name(), name);
-    }
-
-    public void interopDatabaseRemoveName(InteropFeature feature, String name) {
-        mNativeInterface.interopDatabaseAddRemoveName(false, feature.name(), name);
     }
 
     /**

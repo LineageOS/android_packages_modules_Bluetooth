@@ -21,9 +21,11 @@
 
 #include "hci/acl_manager.h"
 #include "hci/distance_measurement_manager.h"
+#include "hci/hci_interface.h"
 #include "hci/le_advertising_manager.h"
 #include "hci/le_scanning_manager.h"
 #include "hci/remote_name_request.h"
+#include "lpp/lpp_offload_interface.h"
 #include "module.h"
 #include "os/handler.h"
 #include "os/thread.h"
@@ -77,6 +79,8 @@ public:
   virtual Acl* GetAcl() const;
   virtual storage::StorageModule* GetStorage() const;
   virtual hal::SnoopLogger* GetSnoopLogger() const;
+  virtual lpp::LppOffloadInterface* GetLppOffloadInterface() const;
+  virtual hci::HciInterface* GetHciLayer() const;
   virtual hci::Controller* GetController() const;
   virtual hci::RemoteNameRequestModule* GetRemoteNameRequest() const;
   virtual hci::AclManager* GetAclManager() const;

@@ -207,7 +207,7 @@ public class HidHeadTrackerTest {
         verifyIntentReceived(
                 hasAction(BluetoothDevice.ACTION_UUID),
                 hasExtra(BluetoothDevice.EXTRA_UUID, Matchers.hasItemInArray(HEADTRACKER_UUID)));
-
+        assertThat(mBumbleDevice.connect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
         verifyConnectionState(TRANSPORT_LE, STATE_CONNECTING);
         verifyConnectionState(TRANSPORT_LE, STATE_CONNECTED);
 
@@ -282,6 +282,7 @@ public class HidHeadTrackerTest {
                 hasAction(BluetoothDevice.ACTION_UUID),
                 hasExtra(BluetoothDevice.EXTRA_UUID, Matchers.hasItemInArray(HEADTRACKER_UUID)));
 
+        assertThat(mBumbleDevice.connect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
         verifyConnectionState(TRANSPORT_BREDR, STATE_CONNECTED);
         // Switch to LE Transport
         mHidService.setPreferredTransport(mBumbleDevice, TRANSPORT_LE);

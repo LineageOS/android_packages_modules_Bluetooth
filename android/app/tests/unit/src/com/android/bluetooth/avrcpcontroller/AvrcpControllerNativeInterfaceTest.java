@@ -18,7 +18,7 @@ package com.android.bluetooth.avrcpcontroller;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
+import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -30,6 +30,7 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.AdapterService;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -52,8 +53,13 @@ public class AvrcpControllerNativeInterfaceTest {
     @Before
     public void setUp() {
         final BluetoothDevice device = getTestDevice(REMOTE_DEVICE_ADDRESS);
-        mockAdapterServiceGetRemoteDevice(mAdapterService, device);
+        mockGetRemoteDevice(mAdapterService, device);
         mNativeInterface = AvrcpControllerNativeInterface.getInstance(mAdapterService);
+    }
+
+    @After
+    public void tearDown() {
+        AvrcpControllerNativeInterface.setInstance(null);
     }
 
     @Test

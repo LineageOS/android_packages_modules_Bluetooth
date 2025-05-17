@@ -16,7 +16,6 @@
 
 package android.bluetooth.cts;
 
-
 import static com.google.common.truth.Truth.assertThat;
 
 import android.bluetooth.BluetoothAdapter;
@@ -52,9 +51,9 @@ public class TestUtils extends android.bluetooth.test_utils.TestUtils {
             case BluetoothProfile.A2DP_SINK -> {
                 return BluetoothProperties.isProfileA2dpSinkEnabled().orElse(false);
             }
-                // Hidden profile
-                // case BluetoothProfile.AVRCP:
-                //     return BluetoothProperties.isProfileAvrcpTargetEnabled().orElse(false);
+            // Hidden profile
+            // case BluetoothProfile.AVRCP:
+            //     return BluetoothProperties.isProfileAvrcpTargetEnabled().orElse(false);
             case BluetoothProfile.AVRCP_CONTROLLER -> {
                 return BluetoothProperties.isProfileAvrcpControllerEnabled().orElse(false);
             }
@@ -99,18 +98,18 @@ public class TestUtils extends android.bluetooth.test_utils.TestUtils {
             case BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT -> {
                 return BluetoothProperties.isProfileBapBroadcastAssistEnabled().orElse(false);
             }
-                // Hidden profile
-                // case BluetoothProfile.LE_CALL_CONTROL:
-                //     return BluetoothProperties.isProfileCcpServerEnabled().orElse(false);
+            // Hidden profile
+            // case BluetoothProfile.LE_CALL_CONTROL:
+            //     return BluetoothProperties.isProfileCcpServerEnabled().orElse(false);
             case BluetoothProfile.MAP -> {
                 return BluetoothProperties.isProfileMapServerEnabled().orElse(false);
             }
             case BluetoothProfile.MAP_CLIENT -> {
                 return BluetoothProperties.isProfileMapClientEnabled().orElse(false);
             }
-                // Hidden profile
-                // case BluetoothProfile.MCP_SERVER:
-                //     return BluetoothProperties.isProfileMcpServerEnabled().orElse(false);
+            // Hidden profile
+            // case BluetoothProfile.MCP_SERVER:
+            //     return BluetoothProperties.isProfileMcpServerEnabled().orElse(false);
             case BluetoothProfile.OPP -> {
                 return BluetoothProperties.isProfileOppEnabled().orElse(false);
             }

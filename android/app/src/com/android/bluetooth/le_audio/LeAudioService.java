@@ -175,7 +175,6 @@ public class LeAudioService extends ProfileService {
     private final ArrayDeque<BluetoothLeBroadcastSettings> mCreateBroadcastQueue =
             new ArrayDeque<>();
 
-    private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final LeAudioNativeInterface mNativeInterface;
     private final HandlerThread mStateMachinesThread;
@@ -253,9 +252,8 @@ public class LeAudioService extends ProfileService {
     LeAudioService(AdapterService adapterService, LeAudioNativeInterface nativeInterface) {
         super(requireNonNull(adapterService));
         mNativeInterface = requireNonNull(nativeInterface);
-        mAdapterService = requireNonNull(adapterService);
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
-        mAudioManager = requireNonNull(getSystemService(AudioManager.class));
+        mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
 
         // Start handler thread for state machines
         mStateMachinesThread = new HandlerThread("LeAudioService.StateMachines");
@@ -3470,8 +3468,8 @@ public class LeAudioService extends ProfileService {
                     int groupId = deviceDescriptor.mGroupId;
                     LeAudioGroupDescriptor descriptor = mGroupDescriptorsView.get(groupId);
                     switch (stackEvent.valueInt1) {
-                        case LeAudioStackEvent.CONNECTION_STATE_DISCONNECTING:
-                        case LeAudioStackEvent.CONNECTION_STATE_DISCONNECTED:
+                        case LeAudioStackEvent.CONNECTION_STATE_DISCONNECTING,
+                                LeAudioStackEvent.CONNECTION_STATE_DISCONNECTED -> {
                             deviceDescriptor.mAclConnected = false;
 
                             if (isScannerNeeded()) {
@@ -3491,9 +3489,9 @@ public class LeAudioService extends ProfileService {
                                 descriptor.mLostLeadDeviceWhileStreaming = device;
                                 return;
                             }
-                            break;
-                        case LeAudioStackEvent.CONNECTION_STATE_CONNECTED:
-                        case LeAudioStackEvent.CONNECTION_STATE_CONNECTING:
+                        }
+                        case LeAudioStackEvent.CONNECTION_STATE_CONNECTED,
+                                LeAudioStackEvent.CONNECTION_STATE_CONNECTING -> {
                             deviceDescriptor.mAclConnected = true;
                             if (descriptor != null
                                     && Objects.equals(
@@ -3503,20 +3501,20 @@ public class LeAudioService extends ProfileService {
                                 /* Try to connect other devices from the group */
                                 connectSet(device);
                             }
-                            break;
+                        }
+                        default -> {} // Nothing to do
                     }
                 } else {
                     /* state machine does not exist yet */
                     switch (stackEvent.valueInt1) {
-                        case LeAudioStackEvent.CONNECTION_STATE_CONNECTED:
-                        case LeAudioStackEvent.CONNECTION_STATE_CONNECTING:
+                        case LeAudioStackEvent.CONNECTION_STATE_CONNECTED,
+                                LeAudioStackEvent.CONNECTION_STATE_CONNECTING -> {
                             deviceDescriptor.mAclConnected = true;
                             sm = getOrCreateStateMachine(device);
                             /* Incoming connection try to connect other devices from the group */
                             connectSet(device);
-                            break;
-                        default:
-                            break;
+                        }
+                        default -> {} // Nothing to do
                     }
 
                     if (sm == null) {
@@ -4098,7 +4096,7 @@ public class LeAudioService extends ProfileService {
         Log.d(TAG, "Creating a new state machine for " + device);
 
         sm =
-                LeAudioStateMachine.make(
+                new LeAudioStateMachine(
                         device, this, mNativeInterface, mStateMachinesThread.getLooper());
         descriptor.mStateMachine = sm;
         return sm;

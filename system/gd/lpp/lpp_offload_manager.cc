@@ -20,28 +20,16 @@
 #include <string>
 
 #include "hal/socket_hal.h"
-#include "module.h"
 #include "os/handler.h"
 #include "os/system_properties.h"
 
 namespace bluetooth::lpp {
 
-const ModuleFactory LppOffloadManager::Factory =
-        ModuleFactory([]() { return new LppOffloadManager(); });
-
 struct LppOffloadManager::impl {
-  ~impl() {}
-
-  void start(os::Handler* handler, hal::SocketHal* socket_hal) {
+  impl(os::Handler* handler, hal::SocketHal* socket_hal)
+      : handler_(handler), socket_hal_(socket_hal) {
     log::info("");
-    handler_ = handler;
-    socket_hal_ = socket_hal;
     socket_capabilities_ = socket_hal_->GetSocketCapabilities();
-  }
-
-  void stop() {
-    log::info("");
-    socket_capabilities_ = {};
   }
 
   bool register_socket_hal_callbacks(hal::SocketHalCallback* callbacks) {
@@ -69,17 +57,11 @@ struct LppOffloadManager::impl {
   hal::SocketCapabilities socket_capabilities_;
 };
 
-LppOffloadManager::LppOffloadManager() { pimpl_ = std::make_unique<impl>(); }
+LppOffloadManager::LppOffloadManager(os::Handler* handler, hal::SocketHal* socket_hal) {
+  pimpl_ = std::make_unique<impl>(handler, socket_hal);
+}
 
 LppOffloadManager::~LppOffloadManager() = default;
-
-void LppOffloadManager::ListDependencies(ModuleList* list) const { list->add<hal::SocketHal>(); }
-
-void LppOffloadManager::Start() { pimpl_->start(GetHandler(), GetDependency<hal::SocketHal>()); }
-
-void LppOffloadManager::Stop() { pimpl_->stop(); }
-
-std::string LppOffloadManager::ToString() const { return "Low Power Processor Offload Manager"; }
 
 bool LppOffloadManager::RegisterSocketHalCallback(hal::SocketHalCallback* callbacks) {
   return pimpl_->register_socket_hal_callbacks(callbacks);
@@ -94,7 +76,7 @@ bool LppOffloadManager::SocketOpened(const hal::SocketContext& context) {
 }
 
 void LppOffloadManager::SocketClosed(uint64_t socket_id) {
-  CallOn(pimpl_.get(), &impl::socket_closed, socket_id);
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::socket_closed, socket_id);
 }
 
 }  // namespace bluetooth::lpp

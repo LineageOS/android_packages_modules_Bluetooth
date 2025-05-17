@@ -43,7 +43,6 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.SdpMasRecord;
-import android.content.Context;
 import android.telephony.SubscriptionManager;
 
 import androidx.test.filters.MediumTest;
@@ -92,8 +91,7 @@ public class MapClientServiceTest {
                 .getProfileConnectionPolicy(any(), anyInt());
 
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        TestUtils.mockGetSystemService(
-                mAdapterService, Context.TELEPHONY_SUBSCRIPTION_SERVICE, SubscriptionManager.class);
+        TestUtils.mockGetSystemService(mAdapterService, SubscriptionManager.class);
 
         mTestLooper = new TestLooper();
 

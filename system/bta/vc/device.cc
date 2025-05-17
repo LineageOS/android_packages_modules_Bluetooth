@@ -79,6 +79,7 @@ void VolumeControlDevice::Disconnect(tGATT_IF gatt_if) {
 
   device_ready = false;
   group_id = bluetooth::groups::kGroupUnknown;
+  requests_initiated = false;
   handles_pending.clear();
 }
 
@@ -290,6 +291,7 @@ void VolumeControlDevice::ResetHandles(void) {
   known_service_handles_ = false;
   device_ready = false;
   group_id = bluetooth::groups::kGroupUnknown;
+  requests_initiated = false;
 
   // the handles are not valid, so discard pending GATT operations
   BtaGattQueue::Clean(connection_id);
@@ -399,6 +401,8 @@ bool VolumeControlDevice::EnqueueInitialRequests(tGATT_IF gatt_if, GATT_READ_OP_
     }
   }
 
+  requests_initiated = true;
+
   for (auto const& handles : hdls_to_subscribe) {
     log::debug("{}, handle={:#x}, ccc_handle={:#x}", address, handles.first, handles.second);
     if (!subscribe_for_notifications(gatt_if, handles.first, handles.second, cccd_write_cb)) {
@@ -490,12 +494,14 @@ void VolumeControlDevice::EnqueueRemainingRequests(tGATT_IF /*gatt_if*/,
 
 bool VolumeControlDevice::VerifyReady() {
   if (com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
-    device_ready = (handles_pending.size() == 0) && (group_id != bluetooth::groups::kGroupUnknown);
+    device_ready = requests_initiated && (handles_pending.size() == 0) &&
+                   (group_id != bluetooth::groups::kGroupUnknown);
   } else {
-    device_ready = handles_pending.size() == 0;
+    device_ready = requests_initiated && (handles_pending.size() == 0);
   }
 
-  log::debug("{}, handles_pending size={}, group_id={}", address, handles_pending.size(), group_id);
+  log::debug("{}, requests_initiated={}, handles_pending size={}, group_id={}", address,
+             requests_initiated, handles_pending.size(), group_id);
 
   return device_ready;
 }

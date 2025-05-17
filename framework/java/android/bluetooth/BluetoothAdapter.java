@@ -87,7 +87,6 @@ import android.util.Pair;
 
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
-import com.android.modules.expresslog.Counter;
 
 import java.io.IOException;
 import java.lang.annotation.Retention;
@@ -153,7 +152,7 @@ public final class BluetoothAdapter {
      *
      * @hide
      */
-    public static final String DEFAULT_MAC_ADDRESS = "02:00:00:00:00:00";
+    public static final String DEFAULT_MAC_ADDRESS = IBluetoothManager.DEFAULT_MAC_ADDRESS;
 
     /**
      * Sentinel error value for this class. Guaranteed to not equal any other integer constant in
@@ -175,23 +174,21 @@ public final class BluetoothAdapter {
      */
     @RequiresLegacyBluetoothPermission
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
-    public static final String ACTION_STATE_CHANGED =
-            "android.bluetooth.adapter.action.STATE_CHANGED";
+    public static final String ACTION_STATE_CHANGED = IBluetoothManager.ACTION_STATE_CHANGED;
 
     /**
      * Used as an int extra field in {@link #ACTION_STATE_CHANGED} intents to request the current
      * power state. Possible values are: {@link #STATE_OFF}, {@link #STATE_TURNING_ON}, {@link
      * #STATE_ON}, {@link #STATE_TURNING_OFF},
      */
-    public static final String EXTRA_STATE = "android.bluetooth.adapter.extra.STATE";
+    public static final String EXTRA_STATE = IBluetoothManager.EXTRA_STATE;
 
     /**
      * Used as an int extra field in {@link #ACTION_STATE_CHANGED} intents to request the previous
      * power state. Possible values are: {@link #STATE_OFF}, {@link #STATE_TURNING_ON}, {@link
      * #STATE_ON}, {@link #STATE_TURNING_OFF}
      */
-    public static final String EXTRA_PREVIOUS_STATE =
-            "android.bluetooth.adapter.extra.PREVIOUS_STATE";
+    public static final String EXTRA_PREVIOUS_STATE = IBluetoothManager.EXTRA_PREVIOUS_STATE;
 
     /** @hide */
     @IntDef(
@@ -484,7 +481,9 @@ public final class BluetoothAdapter {
      *
      * @hide
      */
-    @SystemApi public static final int BT_SNOOP_LOG_MODE_DISABLED = 0;
+    @SystemApi
+    public static final int BT_SNOOP_LOG_MODE_DISABLED =
+            IBluetoothManager.BT_SNOOP_LOG_MODE_DISABLED;
 
     /**
      * Used as parameter for {@link #setBluetoothHciSnoopLoggingMode}, indicates that the Bluetooth
@@ -495,7 +494,9 @@ public final class BluetoothAdapter {
      *
      * @hide
      */
-    @SystemApi public static final int BT_SNOOP_LOG_MODE_FILTERED = 1;
+    @SystemApi
+    public static final int BT_SNOOP_LOG_MODE_FILTERED =
+            IBluetoothManager.BT_SNOOP_LOG_MODE_FILTERED;
 
     /**
      * Used as parameter for {@link #setBluetoothHciSnoopLoggingMode}, indicates that the Bluetooth
@@ -505,7 +506,8 @@ public final class BluetoothAdapter {
      *
      * @hide
      */
-    @SystemApi public static final int BT_SNOOP_LOG_MODE_FULL = 2;
+    @SystemApi
+    public static final int BT_SNOOP_LOG_MODE_FULL = IBluetoothManager.BT_SNOOP_LOG_MODE_FULL;
 
     /** @hide */
     @IntDef(
@@ -601,13 +603,13 @@ public final class BluetoothAdapter {
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     public static final String ACTION_LOCAL_NAME_CHANGED =
-            "android.bluetooth.adapter.action.LOCAL_NAME_CHANGED";
+            IBluetoothManager.ACTION_LOCAL_NAME_CHANGED;
 
     /**
      * Used as a String extra field in {@link #ACTION_LOCAL_NAME_CHANGED} intents to request the
      * local Bluetooth name.
      */
-    public static final String EXTRA_LOCAL_NAME = "android.bluetooth.adapter.extra.LOCAL_NAME";
+    public static final String EXTRA_LOCAL_NAME = IBluetoothManager.EXTRA_LOCAL_NAME;
 
     /**
      * Intent used to broadcast the change in connection state of the local Bluetooth adapter to a
@@ -661,7 +663,7 @@ public final class BluetoothAdapter {
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     @SystemApi
     public static final String ACTION_BLE_STATE_CHANGED =
-            "android.bluetooth.adapter.action.BLE_STATE_CHANGED";
+            IBluetoothManager.ACTION_BLE_STATE_CHANGED;
 
     /**
      * Intent used to broadcast the change in the Bluetooth address of the local Bluetooth adapter.
@@ -759,7 +761,7 @@ public final class BluetoothAdapter {
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     @BroadcastBehavior(registeredOnly = true, protectedBroadcast = true)
     public static final String ACTION_AUTO_ON_STATE_CHANGED =
-            "android.bluetooth.action.AUTO_ON_STATE_CHANGED";
+            IBluetoothManager.ACTION_AUTO_ON_STATE_CHANGED;
 
     /**
      * Used as an int extra field in {@link #ACTION_AUTO_ON_STATE_CHANGED} intents.
@@ -769,7 +771,7 @@ public final class BluetoothAdapter {
      * @hide
      */
     @SystemApi
-    public static final String EXTRA_AUTO_ON_STATE = "android.bluetooth.extra.AUTO_ON_STATE";
+    public static final String EXTRA_AUTO_ON_STATE = IBluetoothManager.EXTRA_AUTO_ON_STATE;
 
     /**
      * Indicates the AutoOn feature is OFF.
@@ -777,7 +779,7 @@ public final class BluetoothAdapter {
      * @hide
      */
     @SystemApi
-    public static final int AUTO_ON_STATE_DISABLED = 1;
+    public static final int AUTO_ON_STATE_DISABLED = IBluetoothManager.AUTO_ON_STATE_DISABLED;
 
     /**
      * Indicates the AutoOn feature is ON.
@@ -785,7 +787,7 @@ public final class BluetoothAdapter {
      * @hide
      */
     @SystemApi
-    public static final int AUTO_ON_STATE_ENABLED = 2;
+    public static final int AUTO_ON_STATE_ENABLED = IBluetoothManager.AUTO_ON_STATE_ENABLED;
 
     /**
      * Audio mode representing output only.
@@ -2328,6 +2330,7 @@ public final class BluetoothAdapter {
                         throw e.rethrowAsRuntimeException();
                     }
                 }
+
                 @RequiresNoPermission
                 @Override
                 public boolean shouldBypassCache(IBluetooth serviceQuery) {
@@ -2850,6 +2853,7 @@ public final class BluetoothAdapter {
                                 throw e.rethrowAsRuntimeException();
                             }
                         }
+
                         @RequiresNoPermission
                         @Override
                         public boolean shouldBypassCache(IBluetooth serviceQuery) {
@@ -3535,8 +3539,6 @@ public final class BluetoothAdapter {
                             + proxy.getAdapter()
                             + " but expected "
                             + this);
-            Counter.logIncrementWithUid(
-                    "bluetooth.value_close_profile_proxy_adapter_mismatch", Process.myUid());
             proxy.getAdapter().closeProfileProxy(proxy);
             return;
         }
@@ -3925,18 +3927,17 @@ public final class BluetoothAdapter {
         for (int i = 0; i < ADDRESS_LENGTH; i++) {
             char c = address.charAt(i);
             switch (i % 3) {
-                case 0:
-                case 1:
-                    if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F')) {
-                        // hex character, OK
-                        break;
+                case 0, 1 -> {
+                    if ((c < '0' || c > '9') && (c < 'A' || c > 'F')) {
+                        return false;
                     }
-                    return false;
-                case 2:
-                    if (c == ':') {
-                        break; // OK
+                }
+                case 2 -> {
+                    if (c != ':') {
+                        return false;
                     }
-                    return false;
+                }
+                default -> {} // Nothing to do
             }
         }
         return true;
@@ -5549,8 +5550,8 @@ public final class BluetoothAdapter {
         /**
          * Invoked when an event is received.
          *
-         * @param code The vendor-specific event Code. The first octet of the event parameters
-         *     of a vendor-specific event (Bluetooth Core Specification Vol 4, Part E, 5.4.3).
+         * @param code The vendor-specific event Code. The first octet of the event parameters of a
+         *     vendor-specific event (Bluetooth Core Specification Vol 4, Part E, 5.4.3).
          * @param data from 0 to 254 Bytes.
          */
         void onEvent(@IntRange(from = 0x00, to = 0xfe) int code, @NonNull byte[] data);
