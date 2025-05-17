@@ -174,7 +174,6 @@ public class BassClientService extends ProfileService {
             new ConcurrentHashMap<>();
     private final BassScanCallbackWrapper mBassScanCallback = new BassScanCallbackWrapper();
 
-    private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final BluetoothAdapter mAdapter;
     private final PeriodicAdvertisingManager mPeriodicAdvertisingManager;
@@ -480,9 +479,8 @@ public class BassClientService extends ProfileService {
 
     public BassClientService(AdapterService adapterService) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
-        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
+        mAdapter = obtainSystemService(BluetoothManager.class).getAdapter();
         mPeriodicAdvertisingManager = mAdapter.getPeriodicAdvertisingManager();
         mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
         mStateMachinesThread = new HandlerThread("BassClientService.StateMachines");
@@ -4247,10 +4245,7 @@ public class BassClientService extends ProfileService {
         if (leaudioBisSyncControl()) {
             message.arg2 = BassConstants.FLAG_SYNC_PA; // Use no preference BIS sync
         } else {
-            message.arg2 =
-                    BassUtils.isPastConfigEnabled()
-                            ? BassConstants.PA_SYNC_PAST_AVAILABLE
-                            : BassConstants.PA_SYNC_PAST_NOT_AVAILABLE;
+            message.arg2 = BassConstants.PA_SYNC_PAST_AVAILABLE;
         }
         message.obj = metadata;
         stateMachine.sendMessage(message);

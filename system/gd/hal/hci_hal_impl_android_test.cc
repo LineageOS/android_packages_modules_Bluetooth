@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "hal/hci_hal_impl_android.h"
+
 #include <gtest/gtest.h>
 
 #include <chrono>
@@ -22,7 +24,8 @@
 
 #include "com_android_bluetooth_flags.h"
 #include "hal/hci_backend.h"
-#include "hal/hci_hal.h"
+#include "hal/link_clocker.h"
+#include "module.h"  // FakeRegistry
 #include "os/thread.h"
 
 using ::bluetooth::os::Thread;
@@ -81,7 +84,9 @@ protected:
   void SetUp() override {
     thread_ = new Thread("test_thread", Thread::Priority::NORMAL);
     handler_ = new os::Handler(thread_);
-    hal = fake_registry_.Start<HciHal>(thread_, handler_);
+
+    link_clocker = std::make_unique<LinkClocker>();
+    hal = std::make_unique<HciHalImpl>(handler_, link_clocker.get(), nullptr /* snoop_logger */);
   }
 
   void TearDown() override {
@@ -89,12 +94,14 @@ protected:
     if (com::android::bluetooth::flags::same_handler_for_all_modules()) {
       handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
     }
-    fake_registry_.StopAll();
+    hal.reset();
+    link_clocker.reset();
     delete handler_;
     delete thread_;
   }
 
-  HciHal* hal;
+  std::unique_ptr<LinkClocker> link_clocker;
+  std::unique_ptr<HciHal> hal;
 
 private:
   ModuleRegistry fake_registry_;

@@ -113,7 +113,6 @@ public class BluetoothMapService extends ProfileService {
 
     private final MapBroadcastReceiver mMapReceiver = new MapBroadcastReceiver();
 
-    private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final Handler mSessionStatusHandler;
     private final BluetoothMapAppObserver mAppObserver;
@@ -157,7 +156,6 @@ public class BluetoothMapService extends ProfileService {
         super(requireNonNull(adapterService));
         BluetoothMap.invalidateBluetoothGetConnectionStateCache();
 
-        mAdapterService = requireNonNull(adapterService);
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
 
         setComponentAvailable(MAP_FILE_PROVIDER, true);
@@ -190,10 +188,8 @@ public class BluetoothMapService extends ProfileService {
         registerReceiver(mMapReceiver, filterMessageSent);
         mAppObserver = new BluetoothMapAppObserver(this, this);
 
-        mSmsCapable =
-                requireNonNull(mAdapterService.getSystemService(TelephonyManager.class))
-                        .isSmsCapable();
-        mAlarmManager = requireNonNull(mAdapterService.getSystemService(AlarmManager.class));
+        mSmsCapable = requireNonNull(obtainSystemService(TelephonyManager.class)).isSmsCapable();
+        mAlarmManager = requireNonNull(obtainSystemService(AlarmManager.class));
 
         mEnabledAccounts = mAppObserver.getEnabledAccountItems();
         createMasInstances(); // Uses mEnabledAccounts
@@ -265,7 +261,7 @@ public class BluetoothMapService extends ProfileService {
 
         // Acquire the wakeLock before starting Obex transaction thread
         if (mWakeLock == null) {
-            PowerManager pm = mAdapterService.getSystemService(PowerManager.class);
+            PowerManager pm = obtainSystemService(PowerManager.class);
             mWakeLock =
                     pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "StartingObexMapTransaction");
             mWakeLock.setReferenceCounted(false);
@@ -444,7 +440,7 @@ public class BluetoothMapService extends ProfileService {
                 case MSG_ACQUIRE_WAKE_LOCK:
                     Log.v(TAG, "Acquire Wake Lock request message");
                     if (mWakeLock == null) {
-                        PowerManager pm = mAdapterService.getSystemService(PowerManager.class);
+                        PowerManager pm = obtainSystemService(PowerManager.class);
                         mWakeLock =
                                 pm.newWakeLock(
                                         PowerManager.PARTIAL_WAKE_LOCK,
@@ -787,7 +783,7 @@ public class BluetoothMapService extends ProfileService {
             Log.v(TAG, "  Adding account: " + account);
             int masId = getNextMasId();
             BluetoothMapMasInstance newInst =
-                    new BluetoothMapMasInstance(this, account, masId, false);
+                    new BluetoothMapMasInstance(mAdapterService, this, account, masId, false);
             mMasInstances.append(masId, newInst);
             mMasInstanceMap.put(account, newInst);
             // Start the new instance
@@ -849,7 +845,7 @@ public class BluetoothMapService extends ProfileService {
         if (mSmsCapable) {
             // Add the SMS/MMS instance
             BluetoothMapMasInstance smsMmsInst =
-                    new BluetoothMapMasInstance(this, null, masId, true);
+                    new BluetoothMapMasInstance(mAdapterService, this, null, masId, true);
             mMasInstances.append(masId, smsMmsInst);
             mMasInstanceMap.put(null, smsMmsInst);
             masId++;
@@ -858,7 +854,7 @@ public class BluetoothMapService extends ProfileService {
         // get list of accounts already set to be visible through MAP
         for (BluetoothMapAccountItem account : mEnabledAccounts) {
             BluetoothMapMasInstance newInst =
-                    new BluetoothMapMasInstance(this, account, masId, false);
+                    new BluetoothMapMasInstance(mAdapterService, this, account, masId, false);
             mMasInstances.append(masId, newInst);
             mMasInstanceMap.put(account, newInst);
             masId++;
@@ -974,7 +970,7 @@ public class BluetoothMapService extends ProfileService {
                 PendingIntent.getBroadcast(this, 0, timeoutIntent, PendingIntent.FLAG_IMMUTABLE);
         pIntent.cancel();
 
-        AlarmManager alarmManager = this.getSystemService(AlarmManager.class);
+        AlarmManager alarmManager = obtainSystemService(AlarmManager.class);
         alarmManager.cancel(pIntent);
         mRemoveTimeoutMsg = false;
     }

@@ -85,12 +85,9 @@ static std::chrono::milliseconds getHciTimeoutRestartMs() {
 class HciLayerTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    hal_ = new hal::TestHciHal();
-    fake_registry_.InjectTestModule(&hal::HciHal::Factory, hal_);
-    fake_registry_.Start<hal::HciHal>(&fake_registry_.GetTestThread(),
-                                      fake_registry_.GetTestHandler());
+    hal_ = std::make_unique<hal::TestHciHal>();
     hci_handler_ = fake_registry_.GetTestHandler();
-    hci_ = std::make_unique<HciLayer>(hci_handler_, hal_);
+    hci_ = std::make_unique<HciLayer>(hci_handler_, hal_.get());
     ::testing::FLAGS_gtest_death_test_style = "threadsafe";
     sync_handler();
   }
@@ -98,7 +95,7 @@ protected:
   void TearDown() override {
     fake_registry_.SynchronizeHandler(hci_handler_, std::chrono::milliseconds(20));
     hci_.reset();
-    fake_registry_.StopAll();
+    hal_.reset();
   }
 
   void FakeTimerAdvance(uint64_t ms) {
@@ -122,7 +119,7 @@ protected:
                      "assert failed: fake_registry_.GetTestThread().GetReactor()->WaitForIdle(2s)");
   }
 
-  hal::TestHciHal* hal_ = nullptr;
+  std::unique_ptr<hal::TestHciHal> hal_ = nullptr;
   std::unique_ptr<HciLayer> hci_ = nullptr;
   os::Handler* hci_handler_ = nullptr;
   TestModuleRegistry fake_registry_;

@@ -24,6 +24,7 @@ import com.android.bluetooth.BluetoothObexTransport;
 import com.android.bluetooth.IObexConnectionHandler;
 import com.android.bluetooth.ObexServerSockets;
 import com.android.bluetooth.audio_util.Image;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.obex.ServerSession;
 
 import java.io.IOException;
@@ -47,6 +48,7 @@ public class AvrcpCoverArtService {
      */
     private static final int MAX_TRANSMIT_PACKET_SIZE = 1024;
 
+    private final AdapterService mAdapterService;
     // Cover Art and Image Handle objects
     private final AvrcpCoverArtStorage mStorage;
 
@@ -63,7 +65,9 @@ public class AvrcpCoverArtService {
     private final AvrcpNativeInterface mNativeInterface;
 
     // The native interface must be a parameter here in order to be able to mock AvrcpTargetService
-    public AvrcpCoverArtService(AvrcpNativeInterface nativeInterface) {
+    public AvrcpCoverArtService(
+            AdapterService adapterService, AvrcpNativeInterface nativeInterface) {
+        mAdapterService = adapterService;
         mNativeInterface = nativeInterface;
         mAcceptThread = new SocketAcceptor();
         mStorage = new AvrcpCoverArtStorage(COVER_ART_STORAGE_MAX_ITEMS);
@@ -106,7 +110,7 @@ public class AvrcpCoverArtService {
     private boolean startBipServer() {
         debug("Starting BIP OBEX server");
         synchronized (mServerLock) {
-            mServerSockets = ObexServerSockets.create(mAcceptThread);
+            mServerSockets = ObexServerSockets.create(mAdapterService, mAcceptThread);
             if (mServerSockets == null) {
                 error("Failed to get a server socket. Can't setup cover art service");
                 return false;

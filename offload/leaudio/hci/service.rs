@@ -80,6 +80,24 @@ impl Service {
             let _ = callbacks.stopStream(handle.into());
         };
     }
+
+    pub(crate) fn link_feedback(
+        handle: u16,
+        sequence_number: u16,
+        anchor_point_delay: u16,
+        sdu_input_status: u16,
+    ) {
+        let state = SERVICE.state.lock().unwrap();
+        let Some(callbacks) = &state.callbacks else {
+            return;
+        };
+        let _ = callbacks.linkFeedback(
+            handle.into(),
+            sequence_number.into(),
+            anchor_point_delay.into(),
+            sdu_input_status.into(),
+        );
+    }
 }
 
 struct HciProxy {

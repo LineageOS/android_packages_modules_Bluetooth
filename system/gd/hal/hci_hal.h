@@ -18,8 +18,6 @@
 
 #include <vector>
 
-#include "module.h"
-
 namespace bluetooth {
 namespace hal {
 
@@ -65,10 +63,8 @@ public:
 // the stack and abstracts away power management, initialization, and other
 // implementation-specific details related to the hardware.
 // LINT.IfChange
-class HciHal : public ::bluetooth::Module {
+class HciHal {
 public:
-  static const ModuleFactory Factory;
-
   virtual ~HciHal() = default;
 
   // Register the callback for incoming packets. All incoming packets are dropped before

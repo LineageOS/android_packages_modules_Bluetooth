@@ -173,12 +173,9 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
      * <p>Fills {@code mVolumeMap} with content from {@link #getVolumeMap}, removing unbonded
      * devices if necessary.
      */
-    AvrcpVolumeManager(
-            AdapterService adapterService,
-            AudioManager audioManager,
-            AvrcpNativeInterface nativeInterface) {
+    AvrcpVolumeManager(AdapterService adapterService, AvrcpNativeInterface nativeInterface) {
         mAdapterService = adapterService;
-        mAudioManager = audioManager;
+        mAudioManager = mAdapterService.getSystemService(AudioManager.class);
         mNativeInterface = nativeInterface;
         mDeviceMaxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         mSafeMediaVolume = getSafeMediaVolume(adapterService, mDeviceMaxVolume);

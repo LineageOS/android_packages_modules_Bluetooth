@@ -75,7 +75,6 @@ public class HidDeviceService extends ProfileService {
     private static HidDeviceService sHidDeviceService;
 
     private final HidDeviceServiceHandler mHandler;
-    private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final ActivityManager mActivityManager;
     private final HidDeviceNativeInterface mHidDeviceNativeInterface;
@@ -96,7 +95,6 @@ public class HidDeviceService extends ProfileService {
             Looper looper,
             HidDeviceNativeInterface nativeInterface) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
 
         mHandler = new HidDeviceServiceHandler(requireNonNull(looper));
@@ -104,7 +102,7 @@ public class HidDeviceService extends ProfileService {
                 requireNonNullElseGet(
                         nativeInterface, () -> new HidDeviceNativeInterface(adapterService));
         mHidDeviceNativeInterface.init();
-        mActivityManager = requireNonNull(mAdapterService.getSystemService(ActivityManager.class));
+        mActivityManager = requireNonNull(obtainSystemService(ActivityManager.class));
         mActivityManager.addOnUidImportanceListener(
                 mUidImportanceListener, FOREGROUND_IMPORTANCE_CUTOFF);
         setHidDeviceService(this);

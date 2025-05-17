@@ -59,7 +59,6 @@ public class MapClientService extends ProfileService {
     private final Map<BluetoothDevice, MceStateMachine> mMapInstanceMap =
             new ConcurrentHashMap<>(1);
 
-    private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final MnsService mMnsServer;
     private final Looper mStateMachinesLooper;
@@ -74,9 +73,8 @@ public class MapClientService extends ProfileService {
     @VisibleForTesting
     MapClientService(AdapterService adapterService, Looper looper, MnsService mnsServer) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(adapterService.getDatabase());
-        mMnsServer = requireNonNullElseGet(mnsServer, () -> new MnsService(this));
+        mMnsServer = requireNonNullElseGet(mnsServer, () -> new MnsService(mAdapterService, this));
 
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));

@@ -32,6 +32,8 @@ pub enum Event {
     LeCreateBigComplete(LeCreateBigComplete),
     /// 7.7.65.28  LE Terminate BIG Complete
     LeTerminateBigComplete(LeTerminateBigComplete),
+    /// Vendor-specific LE ISO Link Feedback
+    LeIsoLinkFeedback(LeIsoLinkFeedback),
     /// Unknown Event
     Unknown(Code),
 }
@@ -47,6 +49,7 @@ impl Event {
             let mut r = Reader::new(r.get(len)?);
             let code = match code {
                 Code::LE_META => Code(Code::LE_META, Some(r.read_u8()?)),
+                Code::VS_META => Code(Code::VS_META, Some(r.read_u8()?)),
                 _ => Code(code, None),
             };
 
@@ -68,6 +71,7 @@ impl Event {
             LeCisEstablished::CODE => Self::LeCisEstablished(r.read()?),
             LeCreateBigComplete::CODE => Self::LeCreateBigComplete(r.read()?),
             LeTerminateBigComplete::CODE => Self::LeTerminateBigComplete(r.read()?),
+            LeIsoLinkFeedback::CODE => Self::LeIsoLinkFeedback(r.read()?),
             code => Self::Unknown(code),
         })
     }
@@ -93,6 +97,7 @@ pub struct Code(u8, Option<u8>);
 
 impl Code {
     const LE_META: u8 = 0x3e;
+    const VS_META: u8 = 0xff;
 }
 
 /// Define event Code
@@ -337,6 +342,34 @@ fn test_le_terminate_big_complete() {
     let Ok(Event::LeTerminateBigComplete(e)) = Event::from_bytes(&dump) else { panic!() };
     assert_eq!(e.big_handle, 0x00);
     assert_eq!(e.reason, 0x16);
+    assert_eq!(e.to_bytes(), &dump[..]);
+}
+
+
+// Vendor-specific LE ISO Link Feedback
+
+impl EventCode for LeIsoLinkFeedback {
+    const CODE: Code = Code(Code::VS_META, Some(0x5c));
+}
+
+#[derive(Debug, Read, Write, EventToBytes)]
+pub struct LeIsoLinkFeedback {
+    pub iso_handle: u16,
+    pub sequence_number: u16,
+    pub anchor_point_delay: u16,
+    pub in_status: u16,
+    pub tx_status: u16,
+}
+
+#[test]
+fn test_le_iso_link_feedback() {
+    let dump = [0xff, 0x0b, 0x5c, 0x60, 0x00, 0x28, 0x01, 0x25, 0x1c, 0x00, 0x00, 0x00, 0x00];
+    let Ok(Event::LeIsoLinkFeedback(e)) = Event::from_bytes(&dump) else { panic!() };
+    assert_eq!(e.iso_handle, 0x60);
+    assert_eq!(e.sequence_number, 0x128);
+    assert_eq!(e.anchor_point_delay, 7_205);
+    assert_eq!(e.in_status, 0);
+    assert_eq!(e.tx_status, 0);
     assert_eq!(e.to_bytes(), &dump[..]);
 }
 

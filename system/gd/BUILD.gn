@@ -99,9 +99,9 @@ static_library("libbluetooth_gd") {
   ]
 
   if (use.floss_rootcanal) {
-    sources += [ "hal/hci_hal_host_rootcanal.cc" ]
+    sources += [ "hal/hci_hal_impl_host_rootcanal.cc" ]
   } else {
-    sources += [ "hal/hci_hal_host.cc" ]
+    sources += [ "hal/hci_hal_impl_host.cc" ]
   }
 
   include_dirs = [ "." ]

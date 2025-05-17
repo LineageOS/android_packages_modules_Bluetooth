@@ -81,7 +81,6 @@ public class A2dpService extends ProfileService {
 
     private final A2dpNativeInterface mNativeInterface;
     private final A2dpCodecConfig mA2dpCodecConfig;
-    private final AdapterService mAdapterService;
     private final AudioManager mAudioManager;
     private final DatabaseManager mDatabaseManager;
     private final CompanionDeviceManager mCompanionDeviceManager;
@@ -117,7 +116,6 @@ public class A2dpService extends ProfileService {
     @VisibleForTesting
     A2dpService(AdapterService adapterService, A2dpNativeInterface nativeInterface, Looper looper) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,
@@ -126,9 +124,8 @@ public class A2dpService extends ProfileService {
                                         adapterService,
                                         new A2dpNativeCallback(adapterService, this)));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
-        mAudioManager = requireNonNull(mAdapterService.getSystemService(AudioManager.class));
-        mCompanionDeviceManager =
-                requireNonNull(mAdapterService.getSystemService(CompanionDeviceManager.class));
+        mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
+        mCompanionDeviceManager = requireNonNull(obtainSystemService(CompanionDeviceManager.class));
         mLooper = requireNonNull(looper);
         mHandler = new Handler(mLooper);
 

@@ -79,7 +79,6 @@ public class HeadsetClientService extends ProfileService {
             new HashMap<>();
 
     private final HandlerThread mSmThread;
-    private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final AudioManager mAudioManager;
     private final HeadsetClientNativeInterface mNativeInterface;
@@ -91,9 +90,8 @@ public class HeadsetClientService extends ProfileService {
 
     public HeadsetClientService(AdapterService adapterService) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(adapterService.getDatabase());
-        mAudioManager = requireNonNull(mAdapterService.getSystemService(AudioManager.class));
+        mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
         mMaxAmVcVol = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
         mMinAmVcVol = mAudioManager.getStreamMinVolume(AudioManager.STREAM_VOICE_CALL);
 
@@ -101,7 +99,7 @@ public class HeadsetClientService extends ProfileService {
         mNativeInterface = HeadsetClientNativeInterface.getInstance(mAdapterService);
         mNativeInterface.initialize();
 
-        mBatteryManager = mAdapterService.getSystemService(BatteryManager.class);
+        mBatteryManager = obtainSystemService(BatteryManager.class);
 
         // start AudioManager in a known state
         mAudioManager.setHfpEnabled(false);

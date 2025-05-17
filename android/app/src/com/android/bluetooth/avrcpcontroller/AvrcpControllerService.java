@@ -97,7 +97,6 @@ public class AvrcpControllerService extends ProfileService {
 
     private final Object mActiveDeviceLock = new Object();
 
-    private final AdapterService mAdapterService;
     private final AvrcpControllerNativeInterface mNativeInterface;
     private final AvrcpCoverArtManager mCoverArtManager;
     private final boolean mCoverArtEnabled;
@@ -141,7 +140,6 @@ public class AvrcpControllerService extends ProfileService {
     public AvrcpControllerService(
             AdapterService adapterService, AvrcpControllerNativeInterface nativeInterface) {
         super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
         mNativeInterface = requireNonNull(nativeInterface);
         mNativeInterface.init(this);
 
