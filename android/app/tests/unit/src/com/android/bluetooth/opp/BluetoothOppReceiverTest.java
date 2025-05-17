@@ -18,7 +18,7 @@ package com.android.bluetooth.opp;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockGetSystemService;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -34,7 +34,6 @@ import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothDevicePicker;
-import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -75,8 +74,6 @@ public class BluetoothOppReceiverTest {
 
     private final Context mTargetContext =
             InstrumentationRegistry.getInstrumentation().getContext();
-    private final BluetoothManager mBluetoothManager =
-            mTargetContext.getSystemService(BluetoothManager.class);
 
     private SharedPreferences mPrefs;
     private BluetoothOppReceiver mReceiver;
@@ -87,7 +84,7 @@ public class BluetoothOppReceiverTest {
         doReturn(mTargetContext.getResources()).when(mContext).getResources();
         doReturn("").when(mContext).getString(anyInt(), any());
 
-        mockGetSystemService(mContext, BluetoothManager.class, mBluetoothManager);
+        mockGetBluetoothManager(mContext);
 
         mTargetContext.deleteSharedPreferences(TEST_PREF);
         mPrefs = mTargetContext.getSharedPreferences(TEST_PREF, Context.MODE_PRIVATE);
