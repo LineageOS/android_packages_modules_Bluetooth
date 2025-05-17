@@ -56,7 +56,6 @@ struct bta_av_co_get_peer_params bta_av_co_get_peer_params;
 struct bta_av_co_get_scmst_info bta_av_co_get_scmst_info;
 struct bta_av_co_init bta_av_co_init;
 struct bta_av_co_is_supported_codec bta_av_co_is_supported_codec;
-struct bta_av_co_set_active_peer bta_av_co_set_active_peer;
 struct bta_av_co_set_codec_audio_config bta_av_co_set_codec_audio_config;
 struct bta_av_co_set_codec_user_config bta_av_co_set_codec_user_config;
 struct bta_av_get_a2dp_current_codec bta_av_get_a2dp_current_codec;
@@ -79,7 +78,6 @@ int bta_av_co_get_encoder_effective_frame_size::return_value = 0;
 const tA2DP_ENCODER_INTERFACE* bta_av_co_get_encoder_interface::return_value = nullptr;
 btav_a2dp_scmst_info_t bta_av_co_get_scmst_info::return_value = {};
 bool bta_av_co_is_supported_codec::return_value = false;
-bool bta_av_co_set_active_peer::return_value = false;
 bool bta_av_co_set_codec_audio_config::return_value = false;
 bool bta_av_co_set_codec_user_config::return_value = false;
 A2dpCodecConfig* bta_av_get_a2dp_current_codec::return_value = nullptr;
@@ -180,10 +178,6 @@ void bta_av_co_init(const std::vector<btav_a2dp_codec_config_t>& codec_prioritie
 bool bta_av_co_is_supported_codec(btav_a2dp_codec_index_t codec_index) {
   inc_func_call_count(__func__);
   return test::mock::btif_co_bta_av_co::bta_av_co_is_supported_codec(codec_index);
-}
-bool bta_av_co_set_active_peer(const RawAddress& peer_address) {
-  inc_func_call_count(__func__);
-  return test::mock::btif_co_bta_av_co::bta_av_co_set_active_peer(peer_address);
 }
 bool bta_av_co_set_codec_audio_config(const btav_a2dp_codec_config_t& codec_audio_config) {
   inc_func_call_count(__func__);
