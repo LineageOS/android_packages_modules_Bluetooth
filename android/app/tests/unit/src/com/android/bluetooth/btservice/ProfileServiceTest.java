@@ -19,6 +19,7 @@ package com.android.bluetooth.btservice;
 import static android.Manifest.permission.MEDIA_CONTENT_CONTROL;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -37,14 +38,12 @@ import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.a2dpsink.A2dpSinkNativeInterface;
 import com.android.bluetooth.avrcp.AvrcpNativeInterface;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.hearingaid.HearingAidNativeInterface;
 import com.android.bluetooth.hfp.HeadsetNativeInterface;
-import com.android.bluetooth.hid.HidHostNativeInterface;
 import com.android.bluetooth.le_audio.LeAudioNativeInterface;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 
@@ -61,6 +60,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
 
@@ -79,7 +79,6 @@ public class ProfileServiceTest {
     @Mock private HeadsetNativeInterface mHeadsetNativeInterface;
     @Mock private HearingAidNativeInterface mHearingAidNativeInterface;
     @Mock private SdpManagerNativeInterface mSdpManagerNativeInterface;
-    @Mock private HidHostNativeInterface mHidHostNativeInterface;
     @Mock private LeAudioNativeInterface mLeAudioInterface;
 
     @Spy
@@ -140,20 +139,23 @@ public class ProfileServiceTest {
         doReturn(false).when(mAdapterService).isA2dpOffloadEnabled();
         doReturn(false).when(mAdapterService).pbapPseDynamicVersionUpgradeIsEnabled();
 
-        TestUtils.mockGetSystemService(
-                mAdapterService, TelephonyManager.class, mMockTelephonyManager);
+        mockGetSystemService(mAdapterService, TelephonyManager.class, mMockTelephonyManager);
 
+        final Set<Integer> excludedProfiles =
+                Set.of(
+                        BluetoothProfile.HAP_CLIENT,
+                        BluetoothProfile.VOLUME_CONTROL,
+                        BluetoothProfile.CSIP_SET_COORDINATOR,
+                        BluetoothProfile.GATT,
+                        BluetoothProfile.HID_DEVICE,
+                        // HID_HOST is disabled because `mAdapterService` incorrectly starts the
+                        // original HidHostNativeInterface
+                        BluetoothProfile.HID_HOST,
+                        BluetoothProfile.PAN,
+                        BluetoothProfile.A2DP);
         mProfiles =
                 Arrays.stream(Config.getSupportedProfiles())
-                        .filter(
-                                profile ->
-                                        profile != BluetoothProfile.HAP_CLIENT
-                                                && profile != BluetoothProfile.VOLUME_CONTROL
-                                                && profile != BluetoothProfile.CSIP_SET_COORDINATOR
-                                                && profile != BluetoothProfile.GATT
-                                                && profile != BluetoothProfile.HID_DEVICE
-                                                && profile != BluetoothProfile.PAN
-                                                && profile != BluetoothProfile.A2DP)
+                        .filter(profile -> !excludedProfiles.contains(profile))
                         .toArray();
 
         A2dpSinkNativeInterface.setInstance(mA2dpSinkNativeInterface);
@@ -162,7 +164,6 @@ public class ProfileServiceTest {
         HeadsetNativeInterface.setInstance(mHeadsetNativeInterface);
         HearingAidNativeInterface.setInstance(mHearingAidNativeInterface);
         SdpManagerNativeInterface.setInstance(mSdpManagerNativeInterface);
-        HidHostNativeInterface.setInstance(mHidHostNativeInterface);
         LeAudioNativeInterface.setInstance(mLeAudioInterface);
     }
 
@@ -175,7 +176,6 @@ public class ProfileServiceTest {
         HeadsetNativeInterface.setInstance(null);
         HearingAidNativeInterface.setInstance(null);
         SdpManagerNativeInterface.setInstance(null);
-        HidHostNativeInterface.setInstance(null);
         LeAudioNativeInterface.setInstance(null);
         InstrumentationRegistry.getInstrumentation()
                 .getUiAutomation()
