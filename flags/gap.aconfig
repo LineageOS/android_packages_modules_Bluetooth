@@ -338,3 +338,13 @@ flag {
     description: "Add API for getting service UUIDs from BLE advertising data. go/get-service-uuids-from-advertising-data"
     bug: "389598210"
 }
+
+flag {
+    name: "handle_encryption_fail_before_sdp_when_paring"
+    namespace: "bluetooth"
+    description: "handle encryption failure before SDP when pairing cause no SDP records but bonded"
+    bug: "418212151"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
