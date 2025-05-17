@@ -21,15 +21,14 @@ import android.annotation.Nullable;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.media.AudioDeviceAttributes;
 import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
+import android.os.SystemProperties;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothEventLogger;
-import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.internal.annotations.VisibleForTesting;
@@ -61,6 +60,10 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
     // All volumes are stored at system volume values, not AVRCP values
     private static final String VOLUME_MAP = "bluetooth_volume_map";
     private static final String VOLUME_CHANGE_LOG_TITLE = "BTAudio Volume Events";
+
+    private static final String CONFIG_SAFE_MEDIA_VOLUME_PROP =
+            "bluetooth.avrcp.target.safe_media_volume.config";
+    private static final int CONFIG_SAFE_MEDIA_VOLUME_DEFAULT = 100;
 
     @VisibleForTesting static final int AVRCP_MAX_VOL = 127;
     private static final int STREAM_MUSIC = AudioManager.STREAM_MUSIC;
@@ -178,7 +181,9 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         mAudioManager = mAdapterService.getSystemService(AudioManager.class);
         mNativeInterface = nativeInterface;
         mDeviceMaxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        mSafeMediaVolume = getSafeMediaVolume(adapterService, mDeviceMaxVolume);
+        mSafeMediaVolume =
+                SystemProperties.getInt(
+                        CONFIG_SAFE_MEDIA_VOLUME_PROP, CONFIG_SAFE_MEDIA_VOLUME_DEFAULT);
 
         mNewDeviceVolume = mDeviceMaxVolume / 2;
 
@@ -203,14 +208,6 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
             }
         }
         volumeMapEditor.apply();
-    }
-
-    private static int getSafeMediaVolume(AdapterService adapterService, int deviceMaxVolume) {
-        try {
-            return adapterService.getResources().getInteger(R.integer.config_safe_media_volume);
-        } catch (Resources.NotFoundException resourceNotFound) {
-            return deviceMaxVolume;
-        }
     }
 
     /**

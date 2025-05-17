@@ -180,19 +180,4 @@
             https://support.google.com/pixelphone/answer/12639358
     </string>
 
-    <!-- Max remote volume that can be saved between reconnection -->
-    <integer name="config_safe_media_volume" translatable="false">100</integer>
-
-    <!-- Batch scan throttler configuration -->
-    <!-- Minimum batch trigger interval to check for batched results when the screen is off -->
-    <integer name="batch_scan_screen_off_minimum_delay_floor_ms">20000</integer>
-    <!-- Adjusted minimum report delay for unfiltered batch scan clients -->
-    <integer name="batch_scan_unfiltered_delay_floor_ms">20000</integer>
-    <!-- Adjusted minimum report delay for unfiltered batch scan clients when the screen is off -->
-    <integer name="batch_scan_unfiltered_screen_off_delay_floor_ms">60000</integer>
-    <!-- Start screen-off trigger interval throttling after the screen has been off for this period
-         of time. This allows the screen-on intervals to be used for a short period of time after
-         the screen has gone off, and avoids too much flipping between screen-off and screen-on
-         backoffs when the screen is off for a short period of time -->
-    <integer name="batch_scan_screen_off_delay_ms">60000</integer>
 </resources>

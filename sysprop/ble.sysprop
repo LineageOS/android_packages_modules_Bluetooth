@@ -56,3 +56,43 @@ prop {
     access: Readonly
     prop_name: "bluetooth.ble.iso_max_connection_interval"
 }
+
+# Minimum batch trigger interval to check for batched results when the screen is off
+prop {
+    api_name: "batch_scan_screen_off_minimum_delay_floor_ms"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.batch_scan.screen_off_minimum_delay_floor_ms.config"
+}
+
+# Adjusted minimum report delay for unfiltered batch scan clients
+prop {
+    api_name: "batch_scan_unfiltered_delay_floor_ms"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.batch_scan.unfiltered_delay_floor_ms.config"
+}
+
+# Adjusted minimum report delay for unfiltered batch scan clients when the screen is off
+prop {
+    api_name: "batch_scan_unfiltered_screen_off_delay_floor_ms"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.batch_scan.unfiltered_screen_off_delay_floor_ms.config"
+}
+
+# Start screen-off trigger interval throttling after the screen has been off for this period of
+# time. This allows the screen-on intervals to be used for a short period of time after the screen
+# has gone off, and avoids too much flipping between screen-off and screen-on backoffs when the
+# screen is off for a short period of time.
+prop {
+    api_name: "batch_scan_screen_off_delay_ms"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.batch_scan.screen_off_delay_ms.config"
+}
+
