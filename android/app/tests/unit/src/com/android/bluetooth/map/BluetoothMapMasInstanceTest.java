@@ -17,7 +17,7 @@
 package com.android.bluetooth.map;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.mockContextGetBluetoothManager;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -75,7 +75,7 @@ public class BluetoothMapMasInstanceTest {
 
     @Test
     public void toString_returnsInfo() {
-        mockContextGetBluetoothManager(mAdapterService);
+        mockGetBluetoothManager(mAdapterService);
 
         BluetoothMapMasInstance instance =
                 new BluetoothMapMasInstance(

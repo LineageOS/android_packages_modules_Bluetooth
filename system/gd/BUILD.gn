@@ -48,7 +48,6 @@ static_library("libbluetooth_gd") {
     "common/strings.cc",
     "common/utils.cc",
     "hal/link_clocker.cc",
-    "hal/ranging_hal_host.cc",
     "hal/snoop_logger.cc",
     "hal/snoop_logger_socket.cc",
     "hal/snoop_logger_socket_thread.cc",

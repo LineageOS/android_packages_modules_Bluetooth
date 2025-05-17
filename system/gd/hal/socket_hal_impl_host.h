@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#pragma once
+
 #include "hal/socket_hal.h"
 
 namespace bluetooth::hal {
 
-class SocketHalHost : public SocketHal {
+class SocketHalImpl : public SocketHal {
 protected:
-  void ListDependencies(ModuleList* /*list*/) const {}
-
-  void Start() override {}
-
-  void Stop() override { socket_hal_cb_ = nullptr; }
-
-  std::string ToString() const override { return std::string("SocketHalHost"); }
-
   hal::SocketCapabilities GetSocketCapabilities() const override { return {}; }
 
   bool RegisterCallback(hal::SocketHalCallback const* /*callback*/) override { return false; }
@@ -34,11 +29,6 @@ protected:
   bool Opened(const hal::SocketContext& /*context*/) const override { return false; }
 
   void Closed(uint64_t /*socket_id*/) const override {}
-
-private:
-  hal::SocketHalCallback* socket_hal_cb_;
 };
-
-const ModuleFactory SocketHal::Factory = ModuleFactory([]() { return new SocketHalHost(); });
 
 }  // namespace bluetooth::hal

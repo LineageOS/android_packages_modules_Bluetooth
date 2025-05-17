@@ -115,7 +115,7 @@ public class ScannerMap {
                         appName,
                         appScanStats);
         mApps.add(app);
-        appScanStats.isRegistered = true;
+        appScanStats.mIsRegistered = true;
         return app;
     }
 
@@ -326,7 +326,7 @@ public class ScannerMap {
                     Log.e(TAG, "Unable to unlink deathRecipient for app id " + mId);
                 }
             }
-            mAppScanStats.isRegistered = false;
+            mAppScanStats.mIsRegistered = false;
         }
     }
 }

@@ -66,12 +66,12 @@ public class TestUtils {
         return InstrumentationRegistry.getInstrumentation().getContext();
     }
 
-    /** Helper function to mock getSystemService calls */
+    /** Mocks {@link Context#getSystemService(Class)} to return a specific service instance. */
     public static <T> void mockGetSystemService(Context context, Class<T> serviceClass, T service) {
         doReturn(service).when(context).getSystemService(eq(serviceClass));
     }
 
-    /** Helper function to mock getSystemService calls */
+    /** Mocks {@link Context#getSystemService(Class)} to return a mock instance of the service. */
     public static <T> T mockGetSystemService(Context context, Class<T> serviceClass) {
         T mockedService = mock(serviceClass);
         mockGetSystemService(context, serviceClass, mockedService);
@@ -79,22 +79,25 @@ public class TestUtils {
     }
 
     /**
-     * Helper function to ensure the mocked AdapterService gets the same mocked BluetoothDevice
-     * object for the same address
+     * Mocks {@code Context.getSystemService(BluetoothManager.class)} to return the actual {@link
+     * BluetoothManager}.
      */
-    public static void mockAdapterServiceGetRemoteDevice(
+    public static void mockGetBluetoothManager(Context context) {
+        final var manager = getContext().getSystemService(BluetoothManager.class);
+        assertThat(manager).isNotNull();
+        doReturn(manager).when(context).getSystemService(BluetoothManager.class);
+    }
+
+    /**
+     * Mocks {@link AdapterService#getRemoteDevice(String)} to return the same {@link
+     * BluetoothDevice} object for the same address.
+     */
+    public static void mockGetRemoteDevice(
             AdapterService adapterService, BluetoothDevice... devices) {
         for (BluetoothDevice device : devices) {
             final String address = device.getAddress();
             doReturn(device).when(adapterService).getRemoteDevice(address);
         }
-    }
-
-    /** Helper function to ensure the mocked Context returns {@link BluetoothManager} */
-    public static void mockContextGetBluetoothManager(Context context) {
-        final var manager = getContext().getSystemService(BluetoothManager.class);
-        assertThat(manager).isNotNull();
-        doReturn(manager).when(context).getSystemService(BluetoothManager.class);
     }
 
     /**
@@ -314,10 +317,7 @@ public class TestUtils {
      * @return intent with the appropriate component & action set.
      */
     public static Intent prepareIntentToStartBluetoothBrowserMediaService() {
-        final Intent intent =
-                new Intent(
-                        InstrumentationRegistry.getInstrumentation().getContext(),
-                        BluetoothMediaBrowserService.class);
+        final Intent intent = new Intent(getContext(), BluetoothMediaBrowserService.class);
         intent.setAction(MediaBrowserService.SERVICE_INTERFACE);
         return intent;
     }

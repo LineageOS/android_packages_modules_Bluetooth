@@ -17,7 +17,7 @@
 package com.android.bluetooth.map;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.mockContextGetBluetoothManager;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -99,7 +99,7 @@ public class BluetoothMapObexServerTest {
                         TEST_UCI,
                         TEST_UCI_PREFIX);
 
-        mockContextGetBluetoothManager(mAdapterService);
+        mockGetBluetoothManager(mAdapterService);
 
         mMasInstance =
                 new BluetoothMapMasInstance(

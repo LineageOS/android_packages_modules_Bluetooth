@@ -20,7 +20,6 @@
 #include <string>
 
 #include "hal/socket_hal.h"
-#include "module.h"
 #include "os/handler.h"
 #include "os/system_properties.h"
 

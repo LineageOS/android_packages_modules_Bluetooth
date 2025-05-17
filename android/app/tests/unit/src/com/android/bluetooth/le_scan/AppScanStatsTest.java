@@ -94,7 +94,7 @@ public class AppScanStatsTest {
 
         appScanStats.recordScanStart(
                 settings, filters, isFilterScan, isCallbackScan, scannerId, "tag");
-        appScanStats.isRegistered = true;
+        appScanStats.mIsRegistered = true;
 
         StringBuilder stringBuilder = new StringBuilder();
         appScanStats.dumpToString(stringBuilder);

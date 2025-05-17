@@ -17,7 +17,7 @@
 package com.android.bluetooth.btservice;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.mockContextGetBluetoothManager;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -66,7 +66,7 @@ public class AdapterPropertiesTest {
         mHandlerThread = new HandlerThread("RemoteDevicesTestHandlerThread");
         mHandlerThread.start();
 
-        mockContextGetBluetoothManager(mAdapterService);
+        mockGetBluetoothManager(mAdapterService);
 
         when(mAdapterService.getIdentityAddress(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES)))
                 .thenReturn(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES));

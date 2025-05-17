@@ -26,6 +26,29 @@ import android.content.AttributionSource;
  */
 interface IBluetoothManager
 {
+    const String DEFAULT_MAC_ADDRESS = "02:00:00:00:00:00";
+
+    const String IPC_CACHE_MODULE_SYSTEM = "system_server"; // See IpcDataCache.MODULE_SYSTEM
+    const String GET_SYSTEM_STATE_API = "BluetoothAdapter_getSystemState";
+
+    const String ACTION_STATE_CHANGED = "android.bluetooth.adapter.action.STATE_CHANGED";
+    const String ACTION_BLE_STATE_CHANGED = "android.bluetooth.adapter.action.BLE_STATE_CHANGED";
+    const String EXTRA_STATE = "android.bluetooth.adapter.extra.STATE";
+    const String EXTRA_PREVIOUS_STATE = "android.bluetooth.adapter.extra.PREVIOUS_STATE";
+
+    const String ACTION_LOCAL_NAME_CHANGED = "android.bluetooth.adapter.action.LOCAL_NAME_CHANGED";
+    const String EXTRA_LOCAL_NAME = "android.bluetooth.adapter.extra.LOCAL_NAME";
+
+    const String ACTION_AUTO_ON_STATE_CHANGED = "android.bluetooth.action.AUTO_ON_STATE_CHANGED";
+    const String EXTRA_AUTO_ON_STATE = "android.bluetooth.extra.AUTO_ON_STATE";
+
+    const int AUTO_ON_STATE_DISABLED = 1;
+    const int AUTO_ON_STATE_ENABLED = 2;
+
+    const int BT_SNOOP_LOG_MODE_DISABLED = 0;
+    const int BT_SNOOP_LOG_MODE_FILTERED = 1;
+    const int BT_SNOOP_LOG_MODE_FULL = 2;
+
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     IBinder registerAdapter(in IBluetoothManagerCallback callback);
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
@@ -36,9 +59,6 @@ interface IBluetoothManager
     boolean enableNoAutoConnect(in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED}, conditional=true)")
     boolean disable(in AttributionSource attributionSource, boolean persist);
-
-    const String IPC_CACHE_MODULE_SYSTEM = "system_server"; // See IpcDataCache.MODULE_SYSTEM
-    const String GET_SYSTEM_STATE_API = "BluetoothAdapter_getSystemState";
 
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     int getState();

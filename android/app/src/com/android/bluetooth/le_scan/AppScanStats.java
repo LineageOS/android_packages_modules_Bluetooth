@@ -54,29 +54,28 @@ class AppScanStats {
     private static final String TAG = AppScanStats.class.getSimpleName();
 
     // Weight is the duty cycle of the scan mode
-    static final int OPPORTUNISTIC_WEIGHT = 0;
-    static final int SCREEN_OFF_LOW_POWER_WEIGHT = 5;
-    static final int LOW_POWER_WEIGHT = 10;
-    static final int AMBIENT_DISCOVERY_WEIGHT = 25;
-    static final int BALANCED_WEIGHT = 25;
-    static final int LOW_LATENCY_WEIGHT = 100;
+    private static final int OPPORTUNISTIC_WEIGHT = 0;
+    @VisibleForTesting static final int SCREEN_OFF_LOW_POWER_WEIGHT = 5;
+    @VisibleForTesting static final int LOW_POWER_WEIGHT = 10;
+    @VisibleForTesting static final int AMBIENT_DISCOVERY_WEIGHT = 25;
+    @VisibleForTesting static final int BALANCED_WEIGHT = 25;
+    @VisibleForTesting static final int LOW_LATENCY_WEIGHT = 100;
 
-    static final int LARGE_SCAN_TIME_GAP_MS = 24000;
-
-    static WorkSourceUtil sRadioScanWorkSourceUtil;
-    static int sRadioScanType;
-    static int sRadioScanMode;
-    static int sRadioScanWindowMs;
-    static int sRadioScanIntervalMs;
-    static boolean sIsRadioStarted = false;
-    static boolean sIsScreenOn = false;
-    static int sRadioScanAppImportance = IMPORTANCE_CACHED;
-    @Nullable static String sRadioScanAttributionTag;
+    private static final int LARGE_SCAN_TIME_GAP_MS = 24000;
 
     @GuardedBy("sLock")
-    static long sRadioStartTime = 0;
-
+    private static long sRadioStartTime = 0;
     private static final Object sLock = new Object();
+
+    private static WorkSourceUtil sRadioScanWorkSourceUtil;
+    private static int sRadioScanType;
+    private static int sRadioScanMode;
+    private static int sRadioScanWindowMs;
+    private static int sRadioScanIntervalMs;
+    private static boolean sIsRadioStarted = false;
+    private static boolean sIsScreenOn = false;
+    private static int sRadioScanAppImportance = IMPORTANCE_CACHED;
+    @Nullable private static String sRadioScanAttributionTag;
 
     private static class LastScan {
         public long duration;
@@ -139,21 +138,21 @@ class AppScanStats {
         }
     }
 
+    final String mAppName;
     private final List<LastScan> mLastScans = new ArrayList<>();
     private final Map<Integer, LastScan> mOngoingScans = new HashMap<>();
-
-    final String mAppName;
-    final ScannerMap mScannerMap; // Used to grab Apps
-    final BatteryStatsManager mBatteryStatsManager; // Used to keep track of scans and result stats
-    final ScanController mScanController; // Used to add scan event protos to be dumped later
-
     private final WorkSource mWorkSource; // Used for BatteryStatsManager
     private final WorkSourceUtil mWorkSourceUtil; // Used for BluetoothStatsLog
+    @VisibleForTesting final ScannerMap mScannerMap; // Used to grab Apps
     private final AdapterService mAdapterService;
+    // Used to keep track of scans and result stats
+    private final BatteryStatsManager mBatteryStatsManager;
+    // Used to add scan event protos to be dumped later
+    @VisibleForTesting final ScanController mScanController;
     private final TimeProvider mTimeProvider;
 
-    public boolean isAppDead = false;
-    public boolean isRegistered = false;
+    boolean mIsAppDead = false;
+    boolean mIsRegistered = false;
     private int mScansStarted = 0;
     private int mScansStopped = 0;
     private long mScanStartTime = 0;
@@ -390,7 +389,7 @@ class AppScanStats {
                 0 /* app_scan_duration_ms */,
                 mOngoingScans.size(),
                 sIsScreenOn,
-                isAppDead,
+                mIsAppDead,
                 mAppImportance,
                 scan.getAttributionTag());
         if (scan.isAutoBatchScan) {
@@ -422,7 +421,7 @@ class AppScanStats {
                 scan.duration,
                 mOngoingScans.size(),
                 sIsScreenOn,
-                isAppDead,
+                mIsAppDead,
                 mAppImportance,
                 scan.getAttributionTag());
         if (scan.isAutoBatchScan) {
@@ -520,23 +519,6 @@ class AppScanStats {
                 getAttributionTagFromScannerId(scannerId));
         MetricsLogger.getInstance()
                 .cacheCount(BluetoothProtoEnums.LE_SCAN_ABUSE_COUNT_HW_FILTER_NOT_AVAILABLE, 1);
-    }
-
-    synchronized void recordTrackingHwFilterNotAvailableCountMetrics(
-            int scannerId, long numOfTrackableAdv) {
-        BluetoothStatsLog.write(
-                BluetoothStatsLog.LE_SCAN_ABUSED,
-                mWorkSourceUtil.getUids(),
-                mWorkSourceUtil.getTags(),
-                convertScanType(getScanFromScannerId(scannerId)),
-                BluetoothStatsLog
-                        .LE_SCAN_ABUSED__LE_SCAN_ABUSE_REASON__REASON_TRACKING_HW_FILTER_NA,
-                numOfTrackableAdv,
-                getAttributionTagFromScannerId(scannerId));
-        MetricsLogger.getInstance()
-                .cacheCount(
-                        BluetoothProtoEnums.LE_SCAN_ABUSE_COUNT_TRACKING_HW_FILTER_NOT_AVAILABLE,
-                        1);
     }
 
     static void initScanRadioState() {
@@ -939,7 +921,7 @@ class AppScanStats {
                         / 100;
 
         sb.append("  ").append(mAppName);
-        if (isRegistered) {
+        if (mIsRegistered) {
             sb.append(" (Registered)");
         }
 
@@ -1101,7 +1083,7 @@ class AppScanStats {
             }
         }
 
-        if (isRegistered) {
+        if (mIsRegistered) {
             List<ScannerMap.ScannerApp> appEntries = mScannerMap.getByName(mAppName);
             for (ScannerMap.ScannerApp appEntry : appEntries) {
                 sb.append("\n  Application ID: ").append(appEntry.mId);

@@ -545,6 +545,8 @@ public class AtPhonebook {
                 || mCpbrIndex1 > pbr.cursor.getCount()) {
             atCommandResult = HeadsetHalConstants.AT_RESPONSE_OK;
             Log.e(TAG, "Invalid request or no results, returning");
+            pbr.cursor.close();
+            pbr.cursor = null;
             return atCommandResult;
         }
 
@@ -649,10 +651,8 @@ public class AtPhonebook {
                 break;
             }
         }
-        if (pbr.cursor != null) {
-            pbr.cursor.close();
-            pbr.cursor = null;
-        }
+        pbr.cursor.close();
+        pbr.cursor = null;
         return atCommandResult;
     }
 

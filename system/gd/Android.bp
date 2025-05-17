@@ -57,7 +57,6 @@ cc_defaults {
         },
         host: {
             srcs: [
-                "hal/socket_hal_host.cc",
                 "hal/hci_hal_impl_host_rootcanal.cc",
                 "os/host/parameter_provider.cc",
                 "os/host/system_properties.cc",
@@ -71,7 +70,7 @@ cc_defaults {
                 "hal/hci_backend_hidl.cc",
                 "hal/hci_hal_impl_android.cc",
                 "hal/ranging_hal_impl_android.cc",
-                "hal/socket_hal_android.cc",
+                "hal/socket_hal_impl_android.cc",
                 "os/android/parameter_provider.cc",
                 "os/android/system_properties.cc",
                 "os/android/wakelock_native.cc",

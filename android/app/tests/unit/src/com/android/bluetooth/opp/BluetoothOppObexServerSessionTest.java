@@ -17,7 +17,7 @@
 package com.android.bluetooth.opp;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.mockContextGetBluetoothManager;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -90,7 +90,7 @@ public class BluetoothOppObexServerSessionTest {
 
         mockGetSystemService(mContext, NotificationManager.class);
         mockGetSystemService(mContext, PowerManager.class, mPowerManager);
-        mockContextGetBluetoothManager(mContext);
+        mockGetBluetoothManager(mContext);
 
         doReturn(mTargetContext.getContentResolver()).when(mContext).getContentResolver();
         doReturn(mPrefs).when(mContext).getSharedPreferences(anyString(), anyInt());

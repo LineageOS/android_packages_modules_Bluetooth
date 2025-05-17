@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,28 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
 
 #ifdef __ANDROID__
-#error "sysprops_module is not supposed to be used on Android"
+#include "hal/socket_hal_impl_android.h"
+#else
+#include "hal/socket_hal_impl_host.h"
 #endif
-
-#include <string>
-
-namespace bluetooth {
-namespace sysprops {
-
-class SyspropsModule {
-public:
-  SyspropsModule();
-  SyspropsModule(const SyspropsModule&) = delete;
-  SyspropsModule& operator=(const SyspropsModule&) = delete;
-
-  ~SyspropsModule() = default;
-
-private:
-  void parse_config(std::string file_path);
-};
-
-}  // namespace sysprops
-}  // namespace bluetooth

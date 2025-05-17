@@ -29,7 +29,6 @@ import static java.util.Objects.requireNonNull;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.app.AppOpsManager;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.IBluetoothManager;
 import android.bluetooth.IBluetoothManagerCallback;
 import android.content.AttributionSource;
@@ -177,7 +176,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
         if (mContext.checkCallingOrSelfPermission(LOCAL_MAC_ADDRESS) != PERMISSION_GRANTED) {
             // TODO(b/280890575): Throws a SecurityException instead
             Log.w(TAG, "getAddress(): Client does not have LOCAL_MAC_ADDRESS permission");
-            return BluetoothAdapter.DEFAULT_MAC_ADDRESS;
+            return IBluetoothManager.DEFAULT_MAC_ADDRESS;
         }
 
         return mBluetoothManagerService.getAddress();

@@ -26,7 +26,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockAdapterServiceGetRemoteDevice;
+import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -141,7 +141,7 @@ public class PhonePolicyTest {
         doReturn(Collections.emptyList()).when(mA2dpService).getConnectedDevices();
         doReturn(Collections.emptyList()).when(mHeadsetService).getConnectedDevices();
 
-        mockAdapterServiceGetRemoteDevice(mAdapterService, mDevice1, mDevice2, mDevice3, mDevice4);
+        mockGetRemoteDevice(mAdapterService, mDevice1, mDevice2, mDevice3, mDevice4);
 
         SystemProperties.mProperties = mProperties;
 
