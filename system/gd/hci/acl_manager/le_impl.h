@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <android_bluetooth_sysprop.h>
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/metrics/os_metrics.h>
@@ -63,7 +64,7 @@ constexpr uint16_t kScanWindowFast = 0x0030;            /* 30 ms = 48 *0.625 */
 constexpr uint16_t kScanWindow2mFast = 0x0018;          /* 15 ms = 24 *0.625 */
 constexpr uint16_t kScanWindowCodedFast = 0x0018;       /* 15 ms = 24 *0.625 */
 constexpr uint16_t kScanIntervalSlow = 0x0800;          /* 1.28 s = 2048 *0.625 */
-constexpr uint16_t kScanWindowSlow = 0x0030;            /* 30 ms = 48 *0.625 */
+constexpr uint16_t kScanWindowSlow = 0x00C0;            /* 120 ms = 192 *0.625 */
 constexpr uint16_t kScanIntervalSystemSuspend = 0x0400; /* 640 ms = 1024 * 0.625 */
 constexpr uint16_t kScanWindowSystemSuspend = 0x0012;   /* 11.25ms = 18 * 0.625 */
 constexpr uint32_t kCreateConnectionTimeoutMs = 30 * 1000;

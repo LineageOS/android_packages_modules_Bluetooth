@@ -58,7 +58,7 @@ constexpr uint16_t kHciHandle = 123;
 constexpr uint16_t kScanIntervalFast = 0x0060;
 constexpr uint16_t kScanWindowFast = 0x0030;
 constexpr uint16_t kScanIntervalSlow = 0x0800;
-constexpr uint16_t kScanWindowSlow = 0x0030;
+constexpr uint16_t kScanWindowSlow = 0x00C0;
 const bluetooth::hci::AddressWithType empty_address_with_type = bluetooth::hci::AddressWithType();
 
 }  // namespace
