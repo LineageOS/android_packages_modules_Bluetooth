@@ -5450,6 +5450,10 @@ public:
 
     if (IsReconfigurationTimeoutRunning(group->group_id_)) {
       log::info("Skip it as group is reconfiguring");
+      if (com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+        auto [new_context_type, _] = audioContextTypeManager_->GetAudioContextsForTheGroup(group);
+        group->InvalidateCachedConfigurations(new_context_type);
+      }
       return;
     }
 

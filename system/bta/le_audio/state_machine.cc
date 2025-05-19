@@ -3427,6 +3427,7 @@ private:
         if (group->HaveAllActiveDevicesAsesTheSameState(
                     AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING)) {
           group->SetState(AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING);
+          group->ClearStreamingMetadataContexts();
         }
 
         bool remove_cig = (DisconnectCisIfNeeded(group, leAudioDevice, ase) == CIS_DISCONNECTED);
@@ -3449,6 +3450,7 @@ private:
           return;
         }
         group->SetState(AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING);
+        group->ClearStreamingMetadataContexts();
 
         if (remove_cig) {
           /* In the ENABLING state most probably there was no CISes created.
