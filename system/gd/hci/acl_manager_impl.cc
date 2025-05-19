@@ -29,7 +29,6 @@
 
 #include "common/bidi_queue.h"
 #include "common/byte_array.h"
-#include "main/shim/entry.h"
 #include "storage/config_keys.h"
 #include "storage/storage_module.h"
 

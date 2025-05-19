@@ -43,7 +43,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   std::unique_ptr<FuzzHciHal> fuzzHal = std::make_unique<FuzzHciHal>();
   std::unique_ptr<HciInterface> hciLayer =
-          std::make_unique<HciLayer>(&client_handler_, fuzzHal.get());
+          std::make_unique<HciLayer>(&client_handler_, fuzzHal.get(), nullptr /* storage */);
   std::unique_ptr<HciLayerFuzzClient> fuzzClient =
           std::make_unique<HciLayerFuzzClient>(&client_handler_, hciLayer.get());
 

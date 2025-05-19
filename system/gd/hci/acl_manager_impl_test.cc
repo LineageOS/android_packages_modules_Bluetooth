@@ -34,7 +34,6 @@
 #include "hci/controller_mock.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_layer_fake.h"
-#include "main/shim/entry.h"
 #include "os/fake_timer/fake_timerfd.h"
 #include "os/thread.h"
 #include "packet/raw_builder.h"
