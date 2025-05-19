@@ -97,7 +97,6 @@ Stack* Stack::GetInstance() {
 }
 
 void Stack::StartEverything() {
-  ModuleList modules;
   {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
     log::assert_that(!is_running_, "Gd stack already running");
@@ -117,8 +116,8 @@ void Stack::StartEverything() {
 
   std::promise<void> promise;
   auto future = promise.get_future();
-  management_handler_->Post(common::BindOnce(&Stack::handle_start_up, common::Unretained(this),
-                                             &modules, std::move(promise)));
+  management_handler_->Post(
+          common::BindOnce(&Stack::handle_start_up, common::Unretained(this), std::move(promise)));
   auto init_status = future.wait_for(
           std::chrono::milliseconds(get_gd_stack_timeout_ms(/* is_start = */ true)));
 
@@ -128,8 +127,7 @@ void Stack::StartEverything() {
 
     log::info("init_status == {}", int(init_status));
 
-    log::assert_that(init_status == std::future_status::ready,
-                     "Can't start stack, last instance: {}", registry_.last_instance_);
+    log::assert_that(init_status == std::future_status::ready, "Can't start stack");
 
     log::info("Successfully toggled Gd stack");
 
@@ -176,8 +174,7 @@ void Stack::Stop() {
   WakelockManager::Get().Release();
   WakelockManager::Get().CleanUp();
 
-  log::assert_that(stop_status == std::future_status::ready, "Can't stop stack, last instance: {}",
-                   registry_.last_instance_);
+  log::assert_that(stop_status == std::future_status::ready, "Can't stop stack");
 
   management_handler_->Clear();
   management_handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
@@ -295,7 +292,7 @@ void Stack::Dump(int fd, std::promise<void> promise) const {
   }
 }
 
-void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
+void Stack::handle_start_up(std::promise<void> promise) {
   if (com::android::bluetooth::flags::same_handler_for_all_modules()) {
     pimpl_->storage_ = std::make_shared<storage::StorageModule>(stack_handler_);
     pimpl_->snoop_logger_ = std::make_shared<hal::SnoopLogger>(stack_handler_);
@@ -303,8 +300,6 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
     pimpl_->storage_ = std::make_shared<storage::StorageModule>(new Handler(stack_thread_));
     pimpl_->snoop_logger_ = std::make_shared<hal::SnoopLogger>(new Handler(stack_thread_));
   }
-
-  registry_.Start(modules, stack_thread_, stack_handler_);
 
 #if TARGET_FLOSS
   log::info("Starting SyspropsModule");
@@ -422,8 +417,6 @@ void Stack::handle_shut_down(std::promise<void> promise) {
   log::info("Stopping SyspropsModule");
   pimpl_->sysprops_module_.reset();
 #endif
-
-  registry_.StopAll();
 
   pimpl_->snoop_logger_.reset();
   pimpl_->storage_.reset();

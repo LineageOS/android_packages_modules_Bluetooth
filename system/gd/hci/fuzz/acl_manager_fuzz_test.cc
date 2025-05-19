@@ -22,14 +22,14 @@
 #include "hci/acl_manager_impl.h"
 #include "hci/fuzz/fuzz_hci_layer.h"
 #include "hci/hci_layer.h"
-#include "module.h"
 #include "os/fake_timer/fake_timerfd.h"
 
-using bluetooth::FuzzTestModuleRegistry;
 using bluetooth::fuzz::GetArbitraryBytes;
 using bluetooth::hci::AclManagerImpl;
 using bluetooth::hci::HciLayer;
 using bluetooth::hci::fuzz::FuzzHciLayer;
+using bluetooth::os::Handler;
+using bluetooth::os::Thread;
 using bluetooth::os::fake_timer::fake_timerfd_advance;
 using bluetooth::os::fake_timer::fake_timerfd_cap_at;
 using bluetooth::os::fake_timer::fake_timerfd_reset;
@@ -44,12 +44,13 @@ constexpr int32_t kMaxTotalTimeAdvanced = 3000;
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   FuzzedDataProvider dataProvider(data, size);
 
-  static FuzzTestModuleRegistry moduleRegistry = FuzzTestModuleRegistry();
-  std::unique_ptr<FuzzHciLayer> fuzzHci =
-          std::make_unique<FuzzHciLayer>(moduleRegistry.GetTestHandler());
+  Thread thread_ = Thread("test_thread", Thread::Priority::NORMAL);
+  Handler client_handler_ = Handler(&thread_);
+
+  std::unique_ptr<FuzzHciLayer> fuzzHci = std::make_unique<FuzzHciLayer>(&client_handler_);
   fuzzHci->TurnOnAutoReply(&dataProvider);
   std::unique_ptr<AclManagerImpl> acl_manager = std::make_unique<AclManagerImpl>(
-          moduleRegistry.GetTestHandler(), fuzzHci.get(), nullptr, nullptr, nullptr);
+          &client_handler_, fuzzHci.get(), nullptr, nullptr, nullptr);
   fuzzHci->TurnOffAutoReply();
   uint64_t totalAdvanceTime = 0;
 
@@ -75,7 +76,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   acl_manager.reset();
   fuzzHci.reset();
-  moduleRegistry.WaitForIdleAndStopAll();
+
+  client_handler_.Clear();
+  client_handler_.WaitUntilStopped(bluetooth::kHandlerStopTimeout);
+
   fake_timerfd_reset();
   return 0;
 }

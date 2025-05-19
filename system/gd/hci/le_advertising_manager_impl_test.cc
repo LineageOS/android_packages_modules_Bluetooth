@@ -34,7 +34,6 @@
 #include "hci/hci_layer_fake.h"
 #include "hci/le_address_manager.h"
 #include "hci/le_on_advertising_set_terminated_interface.h"
-#include "module.h"
 #include "os/thread.h"
 #include "packet/raw_builder.h"
 
@@ -134,7 +133,9 @@ class LeAdvertisingManagerTest : public ::testing::Test {
 protected:
   void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
-    client_handler_ = fake_registry_.GetTestHandler();
+    thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
+    client_handler_ = new os::Handler(thread_);
+
     test_hci_layer_ = std::make_unique<HciLayerFake>(
             client_handler_);  // Ownership is transferred to registry
     test_controller_ = std::make_unique<TestController>();
@@ -152,7 +153,7 @@ protected:
             client_handler_, address, 0x3F, 0x3F, test_controller_.get());
 
     le_advertising_manager_ = new LeAdvertisingManagerImpl(
-            fake_registry_.GetTestHandler(), test_hci_layer_.get(), test_controller_.get(),
+            client_handler_, test_hci_layer_.get(), test_controller_.get(),
             test_le_address_manager_.get(), test_set_terminated_handler_);
     le_advertising_manager_->RegisterAdvertisingCallback(&mock_advertising_callback_);
   }
@@ -161,19 +162,23 @@ protected:
     TEST_BT::provider_->reset_flags();
 
     sync_client_handler();
-    fake_registry_.SynchronizeHandler(fake_registry_.GetTestHandler(),
-                                      std::chrono::milliseconds(20));
-    fake_registry_.StopAll();
+
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+
+    client_handler_->Clear();
+    client_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
+
+    delete client_handler_;
+    delete thread_;
   }
 
-  TestModuleRegistry fake_registry_;
+  os::Thread* thread_ = nullptr;
+  os::Handler* client_handler_ = nullptr;
   std::unique_ptr<HciLayerFake> test_hci_layer_ = nullptr;
   std::unique_ptr<TestController> test_controller_ = nullptr;
   OnAdvertisingSetTerminatedInterface* test_set_terminated_handler_ = nullptr;
   std::unique_ptr<TestLeAddressManager> test_le_address_manager_ = nullptr;
-  os::Thread& thread_ = fake_registry_.GetTestThread();
   LeAdvertisingManagerImpl* le_advertising_manager_ = nullptr;
-  os::Handler* client_handler_ = nullptr;
   OpCode param_opcode_{OpCode::LE_SET_ADVERTISING_PARAMETERS};
   uint8_t num_instances_ = 8;
   bool support_ble_extended_advertising_ = false;
@@ -188,7 +193,7 @@ protected:
   void on_set_terminated(ErrorCode /* error_code */, uint8_t, uint8_t) {}
 
   void sync_client_handler() {
-    log::assert_that(thread_.GetReactor()->WaitForIdle(2s),
+    log::assert_that(thread_->GetReactor()->WaitForIdle(2s),
                      "assert failed: thread_.GetReactor()->WaitForIdle(2s)");
   }
 

@@ -64,7 +64,8 @@ MATCHER_P(IsSetWithValue, matcher, "Future is not set with value") {
 class RemoteNameRequestModuleTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    client_handler_ = fake_registry_.GetTestHandler();
+    thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
+    client_handler_ = new os::Handler(thread_);
     ASSERT_NE(client_handler_, nullptr);
 
     test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
@@ -76,12 +77,17 @@ protected:
   }
 
   void TearDown() override {
-    fake_registry_.SynchronizeHandler(client_handler_, timeout);
-    fake_registry_.SynchronizeHandler(client_handler_, timeout);
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
     remote_name_request_module_.reset();
-    fake_registry_.SynchronizeHandler(client_handler_, timeout);
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
     test_acl_scheduler_.reset();
-    fake_registry_.StopAll();
+
+    client_handler_->Clear();
+    client_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
+
+    delete client_handler_;
+    delete thread_;
   }
 
   template <typename... T>
@@ -115,12 +121,11 @@ protected:
                                      std::move(promise));
   }
 
-  TestModuleRegistry fake_registry_;
-  os::Thread& thread_ = fake_registry_.GetTestThread();
+  os::Thread* thread_ = nullptr;
+  os::Handler* client_handler_ = nullptr;
   std::unique_ptr<HciLayerFake> test_hci_layer_ = nullptr;
   std::unique_ptr<hci::acl_manager::AclScheduler> test_acl_scheduler_ = nullptr;
   std::unique_ptr<RemoteNameRequestModuleImpl> remote_name_request_module_ = nullptr;
-  os::Handler* client_handler_ = nullptr;
 };
 
 TEST_F(RemoteNameRequestModuleTest, CorrectCommandSent) {
