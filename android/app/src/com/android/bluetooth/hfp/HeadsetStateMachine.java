@@ -42,6 +42,7 @@ import android.os.Build;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.PhoneStateListener;
@@ -56,7 +57,6 @@ import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.util.SystemProperties;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -70,12 +70,24 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Scanner;
 
-/**
- * A Bluetooth Handset StateMachine (Disconnected) | ^ CONNECT | | DISCONNECTED V | (Connecting)
- * (Disconnecting) | ^ CONNECTED | | DISCONNECT V | (Connected) | ^ CONNECT_AUDIO | |
- * AUDIO_DISCONNECTED V | (AudioConnecting) (AudioDisconnecting) | ^ AUDIO_CONNECTED | |
- * DISCONNECT_AUDIO V | (AudioOn)
- */
+//                        (Disconnected)
+//                           |      ^
+//                   CONNECT |      | DISCONNECTED
+//                           V      |
+//                  (Connecting)   (Disconnecting)
+//                           |      ^
+//                 CONNECTED |      | DISCONNECT
+//                           V      |
+//                          (Connected)
+//                           |      ^
+//             CONNECT_AUDIO |      | AUDIO_DISCONNECTED
+//                           V      |
+//             (AudioConnecting)   (AudioDisconnecting)
+//                           |      ^
+//           AUDIO_CONNECTED |      | DISCONNECT_AUDIO
+//                           V      |
+//                           (AudioOn)
+
 class HeadsetStateMachine extends StateMachine {
     private static final String TAG = HeadsetStateMachine.class.getSimpleName();
 

@@ -57,8 +57,11 @@ public class AdapterSuspend {
     private static final int DEVICE_STATE_LID_OPEN = 3;
     private static final int DEVICE_STATE_TABLET = 4;
 
+    @VisibleForTesting
     static final String BLUETOOTH_SUSPEND_DISCONNECT_ACL =
             "bluetooth.power.suspend.disconnect_acl.enabled";
+
+    @VisibleForTesting
     static final String BLUETOOTH_SUSPEND_SCAN_MODE_NONE =
             "bluetooth.power.suspend.scan_mode_none.enabled";
 
@@ -71,16 +74,6 @@ public class AdapterSuspend {
     private boolean mDisconnectAclOnSuspend;
     private boolean mScanModeNoneOnSuspend;
     private int mScanModeOnLastSuspend;
-
-    @VisibleForTesting
-    void setPropertyForTest(String key, boolean val) {
-        if (key.equals(BLUETOOTH_SUSPEND_DISCONNECT_ACL)) {
-            mDisconnectAclOnSuspend = val;
-        }
-        if (key.equals(BLUETOOTH_SUSPEND_SCAN_MODE_NONE)) {
-            mScanModeNoneOnSuspend = val;
-        }
-    }
 
     @VisibleForTesting
     void setLastScanModeForTest(int val) {
