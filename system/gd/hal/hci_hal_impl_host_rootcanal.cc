@@ -167,6 +167,8 @@ void HciHalImpl::sendIsoData(HciPacket data) {
   write_to_fd(packet);
 }
 
+uint16_t HciHalImpl::getMsftOpcode() { return 0; }
+
 HciHalImpl::HciHalImpl(os::Handler*, LinkClocker*, SnoopLogger* snoop_logger)
     : btsnoop_logger_(snoop_logger) {
   std::lock_guard<std::mutex> lock(api_mutex_);
