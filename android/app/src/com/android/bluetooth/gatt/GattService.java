@@ -52,6 +52,8 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.HandlerThread;
 import android.os.IBinder;
+import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
@@ -131,6 +133,12 @@ public class GattService extends ProfileService {
                             "com.google.android.apps.adm",
                             "channelsounding"));
 
+    // Remote RSSI read throttle time
+    private static final String RSSI_READ_THROTTLE_MS =
+            "bluetooth.ble.rssi_read_throttle_ms.config";
+
+    static final int RSSI_READ_THROTTLE_MS_DEFAULT = 75;
+    static final int RSSI_READ_THROTTLE_MS_MAX = 200;
     @VisibleForTesting static final int GATT_CLIENT_LIMIT_PER_APP = 32;
 
     /** This is only used when Flags.onlyStartScanDuringBleOn() is true. */
@@ -159,6 +167,13 @@ public class GattService extends ProfileService {
      */
     private final HashMap<BluetoothDevice, Integer> mPermits = new HashMap<>();
 
+    /** Record data class for RSSI caching */
+    record RssiCacheEntry(long readTimeStamp, int rssi) {}
+    ;
+
+    /** HashMap used for storing RSSI cache entries */
+    @VisibleForTesting final Map<String, RssiCacheEntry> mRssiCache = new HashMap<>();
+
     private final ActivityManager mActivityManager;
     private final PackageManager mPackageManager;
     private final CompanionDeviceManager mCompanionDeviceManager;
@@ -167,6 +182,7 @@ public class GattService extends ProfileService {
     private final AdvertiseManager mAdvertiseManager;
     @Nullable private final ScanController mScanController;
     private final DistanceMeasurementManager mDistanceMeasurementManager;
+    @VisibleForTesting int mRssiReadThrottleMs;
 
     public GattService(AdapterService adapterService) {
         this(adapterService, null);
@@ -191,6 +207,17 @@ public class GattService extends ProfileService {
         mHandlerThread.start();
 
         mAdvertiseManager = new AdvertiseManager(mAdapterService, mHandlerThread.getLooper());
+
+        mRssiReadThrottleMs =
+                SystemProperties.getInt(RSSI_READ_THROTTLE_MS, RSSI_READ_THROTTLE_MS_DEFAULT);
+        if (mRssiReadThrottleMs > RSSI_READ_THROTTLE_MS_MAX) {
+            Log.w(
+                    TAG,
+                    "RSSI read throttle ms exceeds max, clipping to max: "
+                            + RSSI_READ_THROTTLE_MS_MAX
+                            + "ms");
+            mRssiReadThrottleMs = RSSI_READ_THROTTLE_MS_MAX;
+        }
 
         if (!Flags.onlyStartScanDuringBleOn()) {
             mScanController =
@@ -242,6 +269,7 @@ public class GattService extends ProfileService {
         mRestrictedHandles.clear();
         mServerMap.clear();
         mHandleMap.clear();
+        mRssiCache.clear();
         mReliableQueue.clear();
         mNativeInterface.cleanup();
         mAdvertiseManager.cleanup();
@@ -754,6 +782,13 @@ public class GattService extends ProfileService {
         if (app == null) {
             return;
         }
+
+        if (Flags.readRssiThrottling() && status == BluetoothGatt.GATT_SUCCESS) {
+            Log.d(TAG, "onReadRemoteRssi() - putting timestamp and rssi into cache");
+            mRssiCache.put(
+                    device.getAddress(), new RssiCacheEntry(SystemClock.elapsedRealtime(), rssi));
+        }
+
         callbackToApp(() -> app.callback.onReadRemoteRssi(device, rssi, status));
     }
 
@@ -1360,6 +1395,20 @@ public class GattService extends ProfileService {
         }
         int clientIf = clientApp.id;
         Log.d(TAG, "readRemoteRssi() - device=" + device);
+
+        if (Flags.readRssiThrottling() && mRssiReadThrottleMs > 0) {
+            RssiCacheEntry entry = mRssiCache.get(device.getAddress());
+            if (entry != null
+                    && (SystemClock.elapsedRealtime() - entry.readTimeStamp)
+                            < mRssiReadThrottleMs) {
+                Log.d(TAG, "readRemoteRssi() - rssi value found in cache, returning to callback");
+                callbackToApp(
+                        () ->
+                                clientApp.callback.onReadRemoteRssi(
+                                        device, entry.rssi, BluetoothGatt.GATT_SUCCESS));
+                return;
+            }
+        }
         mNativeInterface.gattClientReadRemoteRssi(clientIf, device);
     }
 
