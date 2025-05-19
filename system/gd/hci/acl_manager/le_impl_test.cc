@@ -249,8 +249,8 @@ protected:
             std::make_unique<classic_impl>(hci_layer_.get(), controller_.get(), handler_,
                                            round_robin_scheduler_.get(), false, nullptr, nullptr);
     le_impl_ = std::make_unique<le_impl>(hci_layer_.get(), controller_.get(), handler_,
-                                         round_robin_scheduler_.get(), kCrashOnUnknownHandle,
-                                         classic_impl_.get());
+                                         round_robin_scheduler_.get(), nullptr /* storage */,
+                                         kCrashOnUnknownHandle, classic_impl_.get());
     le_impl_->handle_register_le_callbacks(&mock_le_connection_callbacks_, handler_);
 
     Address address;

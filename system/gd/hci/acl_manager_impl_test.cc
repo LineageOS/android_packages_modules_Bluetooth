@@ -116,7 +116,8 @@ protected:
     test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
     acl_manager_ = std::make_unique<AclManagerImpl>(
             client_handler_, test_hci_layer_.get(), test_controller_.get(),
-            test_acl_scheduler_.get(), nullptr /* RNRModule */);
+            test_acl_scheduler_.get(), nullptr /* RNRModule */,
+            bluetooth::hci::testing::mock_storage_);
 
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 
@@ -1153,7 +1154,8 @@ protected:
     test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
     acl_manager_ = std::make_unique<AclManagerImpl>(
             client_handler_, test_hci_layer_.get(), test_controller_.get(),
-            test_acl_scheduler_.get(), nullptr /* RNRModule */);
+            test_acl_scheduler_.get(), nullptr /* RNRModule */,
+            bluetooth::hci::testing::mock_storage_);
 
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 
