@@ -5114,7 +5114,7 @@ public:
       if (!ReconfigureOrUpdateRemote(group, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
         log::error("Unable to reconfigure group at this time, configuration_context_type_ = {}",
                    ToString(configuration_context_type_));
-        if (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING) {
+        if (group->IsReleasing()) {
           log::debug("Group is releasing, cancel streaming request and wait for release to end.");
           CancelLocalAudioSinkStreamingRequest();
           return;
