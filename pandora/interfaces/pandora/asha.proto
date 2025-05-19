@@ -24,6 +24,15 @@ import "pandora/host.proto";
 // Service to trigger Audio Streaming for Hearing Aid (ASHA) procedures.
 // ASHA uses connection-oriented L2CAP channels (CoC) and GATT.
 service Asha {
+  // Initiate the ASHA profile connection to the remote device.
+  rpc OpenSource(OpenSourceRequest) returns (google.protobuf.Empty);
+
+  // Wait for the ASHA profile connection to be opened with the remote device.
+  rpc WaitSource(WaitSourceRequest) returns (google.protobuf.Empty);
+
+  // Close the ASHA profile connection.
+  rpc Close(CloseRequest) returns (google.protobuf.Empty);
+
   // Register ASHA Service.
   rpc Register(RegisterRequest) returns (google.protobuf.Empty);
   // Capture Audio.
@@ -34,8 +43,24 @@ service Asha {
   rpc PlaybackAudio(stream PlaybackAudioRequest) returns (PlaybackAudioResponse);
   // Stop a started stream.
   rpc Stop(StopRequest) returns (StopResponse);
-  // Wait for ASHA device to be connected.
-  rpc WaitPeripheral(WaitPeripheralRequest) returns (WaitPeripheralResponse);
+}
+
+// Request for the `OpenSource` method.
+message OpenSourceRequest {
+  // The connection that will open the stream.
+  Connection connection = 1;
+}
+
+// Request for the `WaitSource` method.
+message WaitSourceRequest {
+  // The connection that is awaiting the stream.
+  Connection connection = 1;
+}
+
+// Request for the `Close` method.
+message CloseRequest {
+  // The connection that will be closed.
+  Connection connection = 1;
 }
 
 // Request of the `Register` method.
@@ -87,16 +112,3 @@ message StopRequest {
 
 // Response of the `Stop` method.
 message StopResponse {}
-
-// Request for the `WaitPeripheral` method.
-message WaitPeripheralRequest {
-  // The connection that is awaiting the stream.
-  Connection connection = 1;
-}
-
-// Response for the `WaitPeripheral` method.
-message WaitPeripheralResponse {
-  // Result of the `WaitPeripheral` call:
-  // - If successful: the connection to the ASHA device.
-  Connection connection = 1;
-}

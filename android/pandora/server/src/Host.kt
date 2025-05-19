@@ -21,7 +21,6 @@ import android.bluetooth.BluetoothAssignedNumbers
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothDevice.ADDRESS_TYPE_PUBLIC
 import android.bluetooth.BluetoothDevice.BOND_BONDED
-import android.bluetooth.BluetoothDevice.BOND_NONE
 import android.bluetooth.BluetoothDevice.TRANSPORT_BREDR
 import android.bluetooth.BluetoothDevice.TRANSPORT_LE
 import android.bluetooth.BluetoothManager
@@ -57,7 +56,6 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.callbackFlow
@@ -124,19 +122,21 @@ class Host(
         scope = CoroutineScope(Dispatchers.Default.limitedParallelism(1))
 
         // Add all intent actions to be listened.
-        val intentFilter = IntentFilter()
-        intentFilter.addAction(BluetoothAdapter.ACTION_BLE_STATE_CHANGED)
-        intentFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
-        intentFilter.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)
-        intentFilter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
-        intentFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
-        intentFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
-        intentFilter.addAction(BluetoothDevice.ACTION_FOUND)
+        val intentFilter =
+            IntentFilter().apply {
+                addAction(BluetoothAdapter.ACTION_BLE_STATE_CHANGED)
+                addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+                addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)
+                addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
+                addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
+                addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
+                addAction(BluetoothDevice.ACTION_FOUND)
+            }
 
         // Creates a shared flow of intents that can be used in all methods in the coroutine scope.
         // This flow is started eagerly to make sure that the broadcast receiver is registered
-        // before
-        // any function call. This flow is only cancelled when the corresponding scope is cancelled.
+        // before any function call. This flow is only cancelled when the corresponding scope is
+        // cancelled.
         flow = intentFlow(context, intentFilter, scope).shareIn(scope, SharingStarted.Eagerly)
     }
 
@@ -165,38 +165,34 @@ class Host(
         grpcUnary<Empty>(scope, responseObserver, timeout = 30) {
             Log.i(TAG, "factoryReset")
 
-            // remove bond for each device to avoid auto connection if remote resets faster
-            for (device in bluetoothAdapter.bondedDevices) {
-                device.removeBond()
-                Log.i(TAG, "wait for remove bond to complete : device=$device")
-                flow
-                    .filter { it.action == BluetoothDevice.ACTION_BOND_STATE_CHANGED }
-                    .filter { it.getBluetoothDeviceExtra() == device }
-                    .map {
-                        it.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothAdapter.ERROR)
-                    }
-                    .filter { it == BOND_NONE }
-                    .first()
+            // We use a fresh intent flow to make sure that obsolete state changed events
+            // are not accidentally caught by the filter when waiting for state ON.
+            val stateFlow =
+                intentFlow(context, IntentFilter(BluetoothAdapter.ACTION_BLE_STATE_CHANGED), scope)
+                    .shareIn(scope, SharingStarted.Eagerly)
+                    .map { it.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR) }
+
+            val wasEnabled = bluetoothAdapter.isEnabled
+
+            bluetoothAdapter.clearBluetooth()
+
+            // Factory resets places Bluetooth in the same state as it was before the API call.
+            // Bluetooth must be manually turned on if it was off before.
+            if (!wasEnabled) {
+                bluetoothAdapter.enable()
             }
 
-            val stateFlow =
-                flow
-                    .filter { it.getAction() == BluetoothAdapter.ACTION_BLE_STATE_CHANGED }
-                    .map { it.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR) }
+            stateFlow.filter { it == BluetoothAdapter.STATE_ON }.first()
 
             initiatedConnection.clear()
             waitedAclConnection.clear()
             waitedAclDisconnection.clear()
 
-            bluetoothAdapter.clearBluetooth()
-
-            stateFlow.filter { it == BluetoothAdapter.STATE_ON }.first()
-            // Delay to initialize the Bluetooth completely and to fix flakiness: b/266611263
-            delay(1000L)
-            Log.i(TAG, "Shutdown the gRPC Server")
+            // This is triggering a graceful shutdown; ongoing RPCs are allowed to complete
+            // but new connections are rejected.
+            Log.i(TAG, "shutting down the gRPC server")
             server.shutdown()
 
-            // The last expression is the return value.
             Empty.getDefaultInstance()
         }
     }
@@ -448,9 +444,9 @@ class Host(
                     ConnectLERequest.AddressCase.ADDRESS_NOT_SET ->
                         throw IllegalArgumentException("Request address field must be set")
                 }
-            Log.i(TAG, "connectLE: $address")
             val bluetoothDevice =
                 bluetoothAdapter.getRemoteLeDevice(address.decodeAsMacAddressToString(), type)
+            Log.i(TAG, "connectLE(${bluetoothDevice})")
             initiatedConnection.add(bluetoothDevice)
             GattInstance(bluetoothDevice, TRANSPORT_LE, context).waitForState(STATE_CONNECTED)
             ConnectLEResponse.newBuilder()

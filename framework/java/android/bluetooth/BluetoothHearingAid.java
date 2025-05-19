@@ -459,7 +459,6 @@ public final class BluetoothHearingAid implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     @BluetoothProfile.BtProfileState
     public int getConnectionState(@NonNull BluetoothDevice device) {
-        if (VDBG) Log.v(TAG, "getState(" + device + ")");
         final IBluetoothHearingAid service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
