@@ -69,7 +69,6 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanSettings;
-import android.content.Context;
 import android.hardware.display.DisplayManager;
 import android.location.LocationManager;
 import android.os.BatteryStatsManager;
@@ -201,23 +200,16 @@ public class ScanManagerTest {
                 .when(mAdapterService)
                 .getTotalNumOfTrackableAdvertisements();
 
-        final Context context = InstrumentationRegistry.getInstrumentation().getContext();
-        doReturn(context.getResources()).when(mAdapterService).getResources();
-
-        TestUtils.mockGetSystemService(mAdapterService, LocationManager.class, mLocationManager);
+        mockGetSystemService(mAdapterService, LocationManager.class, mLocationManager);
         doReturn(true).when(mLocationManager).isLocationEnabled();
-
-        // DisplayManager and BatteryStatsManager are final and cannot be mocked with regular
-        // mockito, so just return real implementation
-        TestUtils.mockGetSystemService(
-                mAdapterService,
-                DisplayManager.class,
-                context.getSystemService(DisplayManager.class));
-        TestUtils.mockGetSystemService(mAdapterService, BatteryStatsManager.class);
-        TestUtils.mockGetSystemService(mAdapterService, AlarmManager.class);
+        mockGetSystemService(mAdapterService, DisplayManager.class);
+        mockGetSystemService(mAdapterService, BatteryStatsManager.class);
+        mockGetSystemService(mAdapterService, AlarmManager.class);
         mockGetSystemService(mAdapterService, BluetoothManager.class, mBluetoothManager);
         doReturn(mAdapter).when(mBluetoothManager).getAdapter();
 
+        final var context = InstrumentationRegistry.getInstrumentation().getContext();
+        doReturn(context.getResources()).when(mAdapterService).getResources();
         mMockContentResolver = new MockContentResolver(context);
         mMockContentResolver.addProvider(
                 Settings.AUTHORITY,

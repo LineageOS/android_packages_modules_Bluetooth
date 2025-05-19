@@ -22,6 +22,7 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -29,14 +30,11 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Looper;
 
 import androidx.test.filters.MediumTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.AdapterService;
@@ -65,16 +63,10 @@ public class SapServiceTest {
     @Before
     public void setUp() {
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-
         if (Looper.myLooper() == null) {
             Looper.prepare();
         }
-
-        final Context context = InstrumentationRegistry.getInstrumentation().getContext();
-        final BluetoothManager manager = context.getSystemService(BluetoothManager.class);
-        assertThat(manager).isNotNull();
-        doReturn(manager).when(mAdapterService).getSystemService(BluetoothManager.class);
-
+        mockGetBluetoothManager(mAdapterService);
         mService = new SapService(mAdapterService);
         mService.setAvailable(true);
     }
