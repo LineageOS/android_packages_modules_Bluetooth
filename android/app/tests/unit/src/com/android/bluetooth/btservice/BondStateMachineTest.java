@@ -19,6 +19,7 @@ package com.android.bluetooth.btservice;
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -26,7 +27,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.*;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.HandlerThread;
@@ -173,21 +173,13 @@ public class BondStateMachineTest {
         mBondStateMachine.mPendingBondedDevices.clear();
 
         BluetoothDevice device1 =
-                InstrumentationRegistry.getInstrumentation()
-                        .getContext()
-                        .getSystemService(BluetoothManager.class)
-                        .getAdapter()
-                        .getRemoteLeDevice(
-                                Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES),
-                                BluetoothDevice.ADDRESS_TYPE_PUBLIC);
+                getRealDevice(
+                        Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES),
+                        BluetoothDevice.ADDRESS_TYPE_PUBLIC);
         BluetoothDevice device2 =
-                InstrumentationRegistry.getInstrumentation()
-                        .getContext()
-                        .getSystemService(BluetoothManager.class)
-                        .getAdapter()
-                        .getRemoteLeDevice(
-                                Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES_2),
-                                BluetoothDevice.ADDRESS_TYPE_RANDOM);
+                getRealDevice(
+                        Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES_2),
+                        BluetoothDevice.ADDRESS_TYPE_RANDOM);
 
         // The createBond() request for two devices with different address types.
         Message createBondMsg1 = mBondStateMachine.obtainMessage(BondStateMachine.CREATE_BOND);

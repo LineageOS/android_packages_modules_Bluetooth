@@ -228,7 +228,8 @@ public:
 class LeScanningManagerTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    client_handler_ = fake_registry_.GetTestHandler();
+    thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
+    client_handler_ = new os::Handler(thread_);
 
     test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
     test_controller_ = std::make_unique<TestController>();
@@ -243,35 +244,39 @@ protected:
   void TearDown() override {
     sync_client_handler();
     if (le_scanning_manager != nullptr) {
-      fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
+      client_handler_->Synchronize(std::chrono::milliseconds(20));
     }
     test_le_address_manager_.reset();
     test_controller_.reset();
     test_hci_layer_.reset();
-    fake_registry_.StopAll();
+
+    client_handler_->Clear();
+    client_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
+
+    delete client_handler_;
+    delete thread_;
   }
 
   void start_le_scanning_manager() {
-    test_hci_layer_ = std::make_unique<HciLayerFake>(fake_registry_.GetTestHandler());
+    test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
     le_scanning_manager = new LeScanningManagerImpl(
-            fake_registry_.GetTestHandler(), test_hci_layer_.get(), test_controller_.get(),
+            client_handler_, test_hci_layer_.get(), test_controller_.get(),
             test_le_address_manager_.get(), nullptr /* StorageModule */);
     le_scanning_manager->RegisterScanningCallback(&mock_callbacks_);
     sync_client_handler();
   }
 
   void sync_client_handler() {
-    log::assert_that(thread_.GetReactor()->WaitForIdle(std::chrono::seconds(2)),
-                     "assert failed: thread_.GetReactor()->WaitForIdle(std::chrono::seconds(2))");
+    log::assert_that(thread_->GetReactor()->WaitForIdle(std::chrono::seconds(2)),
+                     "assert failed: thread_->GetReactor()->WaitForIdle(std::chrono::seconds(2))");
   }
 
-  TestModuleRegistry fake_registry_;
+  os::Thread* thread_ = nullptr;
+  os::Handler* client_handler_ = nullptr;
   std::unique_ptr<HciLayerFake> test_hci_layer_ = nullptr;
   std::unique_ptr<TestController> test_controller_ = nullptr;
   std::unique_ptr<TestLeAddressManager> test_le_address_manager_ = nullptr;
-  os::Thread& thread_ = fake_registry_.GetTestThread();
   LeScanningManagerImpl* le_scanning_manager = nullptr;
-  os::Handler* client_handler_ = nullptr;
 
   MockCallbacks mock_callbacks_;
 };

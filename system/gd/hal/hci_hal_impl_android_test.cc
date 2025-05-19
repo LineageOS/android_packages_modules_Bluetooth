@@ -25,7 +25,6 @@
 #include "com_android_bluetooth_flags.h"
 #include "hal/hci_backend.h"
 #include "hal/link_clocker.h"
-#include "module.h"  // FakeRegistry
 #include "os/thread.h"
 
 using ::bluetooth::os::Thread;
@@ -104,7 +103,6 @@ protected:
   std::unique_ptr<HciHal> hal;
 
 private:
-  ModuleRegistry fake_registry_;
   Thread* thread_;
   os::Handler* handler_;
 };

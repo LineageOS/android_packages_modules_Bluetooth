@@ -100,7 +100,8 @@ public:
 class AclManagerNoCallbacksTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    client_handler_ = fake_registry_.GetTestHandler();
+    thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
+    client_handler_ = new os::Handler(thread_);
     ASSERT_NE(client_handler_, nullptr);
     test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
     test_controller_ = std::make_unique<TestController>();
@@ -110,11 +111,7 @@ protected:
     EXPECT_CALL(*test_controller_, GetLeResolvingListSize());
     EXPECT_CALL(*test_controller_, SupportsBlePrivacy());
 
-    bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(
-            com::android::bluetooth::flags::same_handler_for_all_modules()
-                    ? client_handler_
-                    : new os::Handler(&thread_));
-    bluetooth::hci::testing::mock_storage_->Start();
+    bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(client_handler_);
 
     test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
     acl_manager_ = std::make_unique<AclManagerImpl>(
@@ -159,30 +156,33 @@ protected:
     bluetooth::hci::testing::mock_storage_ = nullptr;
     connections_.clear();
     le_connections_.clear();
-    fake_registry_.SynchronizeHandler(handler_, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
     test_acl_scheduler_.reset();
-    fake_registry_.SynchronizeHandler(handler_, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
     acl_manager_.reset();
     test_controller_.reset();
     test_hci_layer_.reset();
-    fake_registry_.StopAll();
+
+    client_handler_->Clear();
+    client_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
+
+    delete client_handler_;
+    delete thread_;
   }
 
   void sync_client_handler() {
-    log::assert_that(thread_.GetReactor()->WaitForIdle(std::chrono::seconds(2)),
-                     "assert failed: thread_.GetReactor()->WaitForIdle(std::chrono::seconds(2))");
+    log::assert_that(thread_->GetReactor()->WaitForIdle(std::chrono::seconds(2)),
+                     "assert failed: thread_->GetReactor()->WaitForIdle(std::chrono::seconds(2))");
   }
 
-  TestModuleRegistry fake_registry_;
+  os::Thread* thread_ = nullptr;
+  os::Handler* client_handler_ = nullptr;
+  std::unique_ptr<AclScheduler> test_acl_scheduler_ = nullptr;
   std::unique_ptr<HciLayerFake> test_hci_layer_ = nullptr;
   std::unique_ptr<TestController> test_controller_ = nullptr;
-  os::Thread& thread_ = fake_registry_.GetTestThread();
-  os::Handler* handler_ = fake_registry_.GetTestHandler();
-  std::unique_ptr<AclScheduler> test_acl_scheduler_ = nullptr;
   std::unique_ptr<AclManagerImpl> acl_manager_ = nullptr;
-  os::Handler* client_handler_ = nullptr;
   Address remote;
   AddressWithType my_initiating_address;
   const bool use_accept_list_ = true;  // gd currently only supports connect list
@@ -280,7 +280,7 @@ protected:
     // is cleared after the AclConnectionInterface is deleted
     // through fake_registry_.
     connection_.reset();
-    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
     AclManagerTest::TearDown();
   }
 
@@ -415,7 +415,7 @@ protected:
     // is cleared after the AclConnectionInterface is deleted
     // through fake_registry_.
     connection_.reset();
-    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
     AclManagerTest::TearDown();
   }
 
@@ -665,9 +665,9 @@ TEST_F(AclManagerWithLeConnectionTest, invoke_registered_callback_le_disconnect_
 TEST_F(AclManagerWithLeConnectionTest, invoke_registered_callback_le_queue_disconnect) {
   auto reason = ErrorCode::REMOTE_USER_TERMINATED_CONNECTION;
   test_hci_layer_->Disconnect(handle_, reason);
-  fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
-  fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
-  fake_registry_.SynchronizeHandler(handler_, std::chrono::milliseconds(20));
+  client_handler_->Synchronize(std::chrono::milliseconds(20));
+  client_handler_->Synchronize(std::chrono::milliseconds(20));
+  client_handler_->Synchronize(std::chrono::milliseconds(20));
 
   EXPECT_CALL(mock_le_connection_management_callbacks_, OnDisconnection(reason));
   connection_->RegisterCallbacks(&mock_le_connection_management_callbacks_, client_handler_);
@@ -1142,16 +1142,13 @@ TEST_F(AclManagerWithConnectionTest, send_read_clock) {
 class AclManagerWithResolvableAddressTest : public AclManagerNoCallbacksTest {
 protected:
   void SetUp() override {
-    client_handler_ = fake_registry_.GetTestHandler();
+    thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
+    client_handler_ = new os::Handler(thread_);
     ASSERT_NE(client_handler_, nullptr);
 
     test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
     test_controller_ = std::make_unique<TestController>();
-    bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(
-            com::android::bluetooth::flags::same_handler_for_all_modules()
-                    ? client_handler_
-                    : new os::Handler(&thread_));
-    bluetooth::hci::testing::mock_storage_->Start();
+    bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(client_handler_);
 
     test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
     acl_manager_ = std::make_unique<AclManagerImpl>(
@@ -1190,8 +1187,8 @@ TEST_F(AclManagerWithResolvableAddressTest, create_connection_cancel_fail) {
   GetConnectionManagementCommand(OpCode::LE_CREATE_CONNECTION);
   test_hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
 
-  fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
-  fake_registry_.SynchronizeHandler(handler_, std::chrono::milliseconds(20));
+  client_handler_->Synchronize(std::chrono::milliseconds(20));
+  client_handler_->Synchronize(std::chrono::milliseconds(20));
 
   Address remote2;
   Address::FromString("A1:A2:A3:A4:A5:A7", remote2);

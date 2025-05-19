@@ -52,8 +52,8 @@ MATCHER(IsSet, "Future is set") {
 class AclSchedulerTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    client_handler_ = fake_registry_.GetTestHandler();
-    ASSERT_NE(client_handler_, nullptr);
+    thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
+    client_handler_ = new os::Handler(thread_);
 
     acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
 
@@ -61,8 +61,13 @@ protected:
   }
 
   void TearDown() override {
-    fake_registry_.SynchronizeHandler(client_handler_, timeout);
-    fake_registry_.StopAll();
+    acl_scheduler_.reset();
+
+    client_handler_->Clear();
+    client_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
+
+    delete client_handler_;
+    delete thread_;
   }
 
   common::ContextualOnceCallback<void(std::string)> impossibleCallbackTakingString() {
@@ -93,10 +98,9 @@ protected:
                                      std::move(promise));
   }
 
-  TestModuleRegistry fake_registry_;
-  os::Thread& thread_ = fake_registry_.GetTestThread();
-  std::unique_ptr<AclScheduler> acl_scheduler_ = nullptr;
+  os::Thread* thread_ = nullptr;
   os::Handler* client_handler_ = nullptr;
+  std::unique_ptr<AclScheduler> acl_scheduler_ = nullptr;
 };
 
 TEST_F(AclSchedulerTest, SingleConnectionImmediatelyExecuted) {

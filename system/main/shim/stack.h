@@ -26,7 +26,6 @@
 #include "hci/le_scanning_manager.h"
 #include "hci/remote_name_request.h"
 #include "lpp/lpp_offload_interface.h"
-#include "module.h"
 #include "os/handler.h"
 #include "os/thread.h"
 
@@ -66,16 +65,6 @@ public:
   void Stop();
   bool IsRunning();
 
-  template <class T>
-  T* GetInstance() const {
-    return static_cast<T*>(registry_.Get(&T::Factory));
-  }
-
-  template <class T>
-  bool IsStarted() const {
-    return registry_.IsStarted(&T::Factory);
-  }
-
   virtual Acl* GetAcl() const;
   virtual storage::StorageModule* GetStorage() const;
   virtual hal::SnoopLogger* GetSnoopLogger() const;
@@ -103,9 +92,8 @@ private:
 
   os::Thread* management_thread_ = nullptr;
   os::Handler* management_handler_ = nullptr;
-  ModuleRegistry registry_;
 
-  void handle_start_up(ModuleList* modules, std::promise<void> promise);
+  void handle_start_up(std::promise<void> promise);
   void handle_shut_down(std::promise<void> promise);
   static std::chrono::milliseconds get_gd_stack_timeout_ms(bool is_start);
 };

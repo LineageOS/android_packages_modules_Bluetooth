@@ -348,3 +348,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "read_ppcp_only_for_success"
+    namespace: "bluetooth"
+    description: "Read ppcp only for successful service discovery operations"
+    bug: "417846831"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

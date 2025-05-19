@@ -24,7 +24,6 @@
 
 #include "hal/hci_hal_fake.h"
 #include "hci/hci_packets.h"
-#include "module.h"
 #include "os/thread.h"
 #include "packet/bit_inserter.h"
 #include "packet/raw_builder.h"
@@ -200,15 +199,14 @@ public:
       counting_down_bytes.push_back(~i);
     }
 
-    hal = std::make_unique<hal::TestHciHal>();
-    bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(
-            com::android::bluetooth::flags::same_handler_for_all_modules()
-                    ? fake_registry_.GetTestHandler()
-                    : new os::Handler(&fake_registry_.GetTestThread()));
-    bluetooth::hci::testing::mock_storage_->Start();
+    thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
+    client_handler_ = new os::Handler(thread_);
 
-    hci = std::make_unique<HciLayer>(fake_registry_.GetTestHandler(), hal.get());
-    upper = std::make_unique<DependsOnHci>(fake_registry_.GetTestHandler(), hci.get());
+    hal = std::make_unique<hal::TestHciHal>();
+    bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(client_handler_);
+
+    hci = std::make_unique<HciLayer>(client_handler_, hal.get());
+    upper = std::make_unique<DependsOnHci>(client_handler_, hci.get());
 
     // Verify that reset was received
     auto sent_command = hal->GetSentCommand();
@@ -226,12 +224,18 @@ public:
   void TearDown() override {
     delete bluetooth::hci::testing::mock_storage_;
     bluetooth::hci::testing::mock_storage_ = nullptr;
-    fake_registry_.SynchronizeHandler(fake_registry_.GetTestHandler(),
-                                      std::chrono::milliseconds(20));
+
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+
     upper.reset();
     hci.reset();
     hal.reset();
-    fake_registry_.StopAll();
+
+    client_handler_->Clear();
+    client_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
+
+    delete client_handler_;
+    delete thread_;
   }
 
   std::vector<uint8_t> GetPacketBytes(std::unique_ptr<packet::BasePacketBuilder> packet) {
@@ -242,10 +246,11 @@ public:
     return bytes;
   }
 
+  os::Thread* thread_ = nullptr;
+  os::Handler* client_handler_ = nullptr;
   std::unique_ptr<DependsOnHci> upper = nullptr;
   std::unique_ptr<hal::TestHciHal> hal = nullptr;
   std::unique_ptr<HciLayer> hci = nullptr;
-  TestModuleRegistry fake_registry_;
 };
 
 TEST_F(HciTest, initAndClose) {}

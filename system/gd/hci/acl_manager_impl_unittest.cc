@@ -148,13 +148,10 @@ public:
 class AclManagerBaseTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    client_handler_ = fake_registry_.GetTestHandler();
+    thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
+    client_handler_ = new os::Handler(thread_);
     ASSERT_NE(client_handler_, nullptr);
-    bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(
-            com::android::bluetooth::flags::same_handler_for_all_modules()
-                    ? client_handler_
-                    : new os::Handler(&thread_));
-    bluetooth::hci::testing::mock_storage_->Start();
+    bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(client_handler_);
 
     test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
     test_controller_ = std::make_unique<TestController>();
@@ -168,14 +165,19 @@ protected:
   void TearDown() override {
     delete bluetooth::hci::testing::mock_storage_;
     bluetooth::hci::testing::mock_storage_ = nullptr;
-    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
     acl_manager_.reset();
     test_rnr_.reset();
     test_acl_scheduler_.reset();
     test_controller_.reset();
     test_hci_layer_.reset();
-    fake_registry_.StopAll();
+
+    client_handler_->Clear();
+    client_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
+
+    delete client_handler_;
+    delete thread_;
   }
 
   void sync_client_handler() {
@@ -187,15 +189,15 @@ protected:
     ASSERT_EQ(future_status, std::future_status::ready);
   }
 
+  os::Thread* thread_ = nullptr;
+  os::Handler* client_handler_ = nullptr;
+
   std::unique_ptr<HciLayerFake> test_hci_layer_ = nullptr;
   std::unique_ptr<TestController> test_controller_ = nullptr;
 
-  TestModuleRegistry fake_registry_;
-  os::Thread& thread_ = fake_registry_.GetTestThread();
   std::unique_ptr<AclScheduler> test_acl_scheduler_ = nullptr;
   std::unique_ptr<RemoteNameRequestModule> test_rnr_ = nullptr;
   std::unique_ptr<AclManagerImpl> acl_manager_ = nullptr;
-  os::Handler* client_handler_ = nullptr;
 };
 
 class AclManagerNoCallbacksTest : public AclManagerBaseTest {
@@ -247,9 +249,9 @@ protected:
   }
 
   void TearDown() override {
-    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
     {
       std::promise<void> promise;
       auto future = promise.get_future();
@@ -326,9 +328,9 @@ protected:
   }
 
   void TearDown() override {
-    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
-    fake_registry_.StopAll();
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+
     AclManagerWithCallbacksTest::TearDown();
   }
 
@@ -425,9 +427,9 @@ protected:
   }
 
   void TearDown() override {
-    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
-    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
-    fake_registry_.StopAll();
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+    AclManagerWithCallbacksTest::TearDown();
   }
 
   void sync_client_handler() {
@@ -449,7 +451,7 @@ protected:
 class AclManagerWithResolvableAddressTest : public AclManagerWithCallbacksTest {
 protected:
   void SetUp() override {
-    client_handler_ = fake_registry_.GetTestHandler();
+    // client_handler_ = fake_registry_.GetTestHandler();
     ASSERT_NE(client_handler_, nullptr);
     test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
     test_controller_ = std::make_unique<TestController>();

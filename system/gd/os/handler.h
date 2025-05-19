@@ -28,6 +28,10 @@
 #include "os/thread.h"
 
 namespace bluetooth {
+
+// Timeout for waiting for a handler to stop, used in Handler::WaitUntilStopped()
+constexpr std::chrono::milliseconds kHandlerStopTimeout = std::chrono::milliseconds(2000);
+
 namespace os {
 
 // A message-queue style handler for reactor-based thread to handle incoming events from different
@@ -72,6 +76,13 @@ public:
   bool IsCleared() const LOCKS_EXCLUDED(mutex_) {
     std::lock_guard<std::mutex> lock(mutex_);
     return reactable_ == nullptr;
+  }
+
+  bool Synchronize(std::chrono::milliseconds timeout) {
+    std::promise<void> promise;
+    auto future = promise.get_future();
+    Post(common::BindOnce(&std::promise<void>::set_value, common::Unretained(&promise)));
+    return future.wait_for(timeout) == std::future_status::ready;
   }
 
   template <typename T>
