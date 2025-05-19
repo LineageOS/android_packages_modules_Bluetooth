@@ -114,7 +114,6 @@ protected:
             com::android::bluetooth::flags::same_handler_for_all_modules()
                     ? client_handler_
                     : new os::Handler(&thread_));
-    bluetooth::hci::testing::mock_storage_->Start();
 
     test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
     acl_manager_ = std::make_unique<AclManagerImpl>(
@@ -1151,7 +1150,6 @@ protected:
             com::android::bluetooth::flags::same_handler_for_all_modules()
                     ? client_handler_
                     : new os::Handler(&thread_));
-    bluetooth::hci::testing::mock_storage_->Start();
 
     test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
     acl_manager_ = std::make_unique<AclManagerImpl>(

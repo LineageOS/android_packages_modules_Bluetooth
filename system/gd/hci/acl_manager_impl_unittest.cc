@@ -154,7 +154,6 @@ protected:
             com::android::bluetooth::flags::same_handler_for_all_modules()
                     ? client_handler_
                     : new os::Handler(&thread_));
-    bluetooth::hci::testing::mock_storage_->Start();
 
     test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
     test_controller_ = std::make_unique<TestController>();

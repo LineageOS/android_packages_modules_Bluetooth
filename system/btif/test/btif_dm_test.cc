@@ -143,12 +143,10 @@ protected:
     BtifDmTest::SetUp();
     thread_ = new bluetooth::os::Thread("gd_stack_thread", bluetooth::os::Thread::Priority::NORMAL);
     storage_module_ = new bluetooth::storage::StorageModule(new bluetooth::os::Handler(thread_));
-    storage_module_->Start();
     s_StorageModule = storage_module_;
   }
 
   void TearDown() override {
-    storage_module_->Stop();
     s_StorageModule = nullptr;
     delete storage_module_;
     delete thread_;

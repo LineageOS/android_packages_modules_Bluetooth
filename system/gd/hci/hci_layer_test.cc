@@ -205,7 +205,6 @@ public:
             com::android::bluetooth::flags::same_handler_for_all_modules()
                     ? fake_registry_.GetTestHandler()
                     : new os::Handler(&fake_registry_.GetTestThread()));
-    bluetooth::hci::testing::mock_storage_->Start();
 
     hci = std::make_unique<HciLayer>(fake_registry_.GetTestHandler(), hal.get());
     upper = std::make_unique<DependsOnHci>(fake_registry_.GetTestHandler(), hci.get());
