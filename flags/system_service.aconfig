@@ -72,6 +72,16 @@ flag {
 }
 
 flag {
+    name: "cleanup_starting_user"
+    namespace: "bluetooth"
+    description: "Allow the system server to initialize and start the stack when a foreground user start, without waiting on user switch"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+    bug: "418828239"
+}
+
+flag {
     name: "system_server_messenger"
     namespace: "bluetooth"
     description: "Replace binder call to the system server with a Messenger to enforce thread safety"
