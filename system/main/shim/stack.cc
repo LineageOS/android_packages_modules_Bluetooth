@@ -89,7 +89,7 @@ struct Stack::impl {
   std::unique_ptr<hci::DistanceMeasurementManager> distance_measurement_manager_ = nullptr;
 };
 
-Stack::Stack() { pimpl_ = std::make_shared<Stack::impl>(); }
+Stack::Stack() {}
 
 Stack* Stack::GetInstance() {
   static Stack instance;
@@ -111,15 +111,15 @@ void Stack::StartEverything() {
     WakelockManager::Get().Acquire();
   }
 
-  is_running_ = true;
-  log::info("GD stack is running");
-
   std::promise<void> promise;
   auto future = promise.get_future();
   management_handler_->Post(
           common::BindOnce(&Stack::handle_start_up, common::Unretained(this), std::move(promise)));
   auto init_status = future.wait_for(
           std::chrono::milliseconds(get_gd_stack_timeout_ms(/* is_start = */ true)));
+
+  is_running_ = true;
+  log::info("GD stack is running");
 
   {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -130,9 +130,6 @@ void Stack::StartEverything() {
     log::assert_that(init_status == std::future_status::ready, "Can't start stack");
 
     log::info("Successfully toggled Gd stack");
-
-    // Make sure the leaf modules are started
-    log::assert_that(pimpl_->hci_hal_ != nullptr, "assert failed pimpl_->hci_hal_ != nullptr");
 
     pimpl_->acl_ = new Acl(stack_handler_, GetAclInterface());
 
@@ -157,7 +154,7 @@ void Stack::Stop() {
   log::info("GD stack is not running");
 
   stack_handler_->Clear();
-  if(com::android::bluetooth::flags::same_handler_for_all_modules()) {
+  if (com::android::bluetooth::flags::same_handler_for_all_modules()) {
     stack_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
   }
 
@@ -293,6 +290,8 @@ void Stack::Dump(int fd, std::promise<void> promise) const {
 }
 
 void Stack::handle_start_up(std::promise<void> promise) {
+  pimpl_ = std::make_unique<Stack::impl>();
+
   if (com::android::bluetooth::flags::same_handler_for_all_modules()) {
     pimpl_->storage_ = std::make_shared<storage::StorageModule>(stack_handler_);
     pimpl_->snoop_logger_ = std::make_shared<hal::SnoopLogger>(stack_handler_);

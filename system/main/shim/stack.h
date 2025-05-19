@@ -83,7 +83,7 @@ public:
 
 private:
   struct impl;
-  std::shared_ptr<impl> pimpl_;
+  std::unique_ptr<impl> pimpl_;
 
   mutable std::recursive_mutex mutex_;
   bool is_running_ = false;
