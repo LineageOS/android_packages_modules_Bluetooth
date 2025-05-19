@@ -39,6 +39,12 @@ using namespace bluetooth;
 using ::testing::NiceMock;
 using ::testing::Unused;
 
+bt_status_t do_in_main_thread(base::OnceCallback<void()>) {
+  // this is not properly mocked, so we use abort to catch if this is used in
+  // any test cases
+  abort();
+}
+
 // Verify the passed data is readable
 static void ConsumeData(const uint8_t* data, size_t size) {
   volatile uint8_t checksum = 0;
