@@ -20,12 +20,11 @@ import grpc.aio
 import logging
 import struct
 
+import bumble.utils
 from . import utils
 from .config import Config
 from bumble.core import (
-    BT_BR_EDR_TRANSPORT,
-    BT_LE_TRANSPORT,
-    BT_PERIPHERAL_ROLE,
+    PhysicalTransport,
     UUID,
     AdvertisingData,
     Appearance,
@@ -39,7 +38,6 @@ from bumble.device import (
     AdvertisingEventProperties,
     AdvertisingType,
     Device,
-    Phy,
 )
 from bumble.gatt import Service
 from bumble.hci import (
@@ -47,6 +45,9 @@ from bumble.hci import (
     HCI_PAGE_TIMEOUT_ERROR,
     HCI_REMOTE_USER_TERMINATED_CONNECTION_ERROR,
     Address,
+    Phy,
+    Role,
+    OwnAddressType,
 )
 from google.protobuf import any_pb2  # pytype: disable=pyi-error
 from google.protobuf import empty_pb2  # pytype: disable=pyi-error
@@ -114,11 +115,11 @@ SECONDARY_PHY_TO_BUMBLE_PHY_MAP: Dict[SecondaryPhy, Phy] = {
     SECONDARY_CODED: Phy.LE_CODED,
 }
 
-OWN_ADDRESS_MAP: Dict[host_pb2.OwnAddressType, bumble.hci.OwnAddressType] = {
-    host_pb2.PUBLIC: bumble.hci.OwnAddressType.PUBLIC,
-    host_pb2.RANDOM: bumble.hci.OwnAddressType.RANDOM,
-    host_pb2.RESOLVABLE_OR_PUBLIC: bumble.hci.OwnAddressType.RESOLVABLE_OR_PUBLIC,
-    host_pb2.RESOLVABLE_OR_RANDOM: bumble.hci.OwnAddressType.RESOLVABLE_OR_RANDOM,
+OWN_ADDRESS_MAP: Dict[host_pb2.OwnAddressType, OwnAddressType] = {
+    host_pb2.PUBLIC: OwnAddressType.PUBLIC,
+    host_pb2.RANDOM: OwnAddressType.RANDOM,
+    host_pb2.RESOLVABLE_OR_PUBLIC: OwnAddressType.RESOLVABLE_OR_PUBLIC,
+    host_pb2.RESOLVABLE_OR_RANDOM: OwnAddressType.RESOLVABLE_OR_RANDOM,
 }
 
 
@@ -175,7 +176,7 @@ class HostService(HostServicer):
         self.log.debug(f"Connect to {address}")
 
         try:
-            connection = await self.device.connect(address, transport=BT_BR_EDR_TRANSPORT)
+            connection = await self.device.connect(address, transport=PhysicalTransport.BR_EDR)
         except ConnectionError as e:
             if e.error_code == HCI_PAGE_TIMEOUT_ERROR:
                 self.log.warning(f"Peer not found: {e}")
@@ -204,7 +205,8 @@ class HostService(HostServicer):
 
         self.log.debug(f"WaitConnection from {address}...")
 
-        connection = self.device.find_connection_by_bd_addr(address, transport=BT_BR_EDR_TRANSPORT)
+        connection = self.device.find_connection_by_bd_addr(address,
+                                                            transport=PhysicalTransport.BR_EDR)
         if connection and id(connection) in self.waited_connections:
             # this connection was already returned: wait for a new one.
             connection = None
@@ -232,8 +234,8 @@ class HostService(HostServicer):
         try:
             connection = await self.device.connect(
                 address,
-                transport=BT_LE_TRANSPORT,
-                own_address_type=request.own_address_type,
+                transport=PhysicalTransport.LE,
+                own_address_type=OwnAddressType(request.own_address_type),
             )
         except ConnectionError as e:
             if e.error_code == HCI_PAGE_TIMEOUT_ERROR:
@@ -275,12 +277,13 @@ class HostService(HostServicer):
             def on_disconnection(_: None) -> None:
                 disconnection_future.set_result(None)
 
-            connection.on('disconnection', on_disconnection)
+            connection.on(connection.EVENT_DISCONNECTION, on_disconnection)
             try:
                 await disconnection_future
                 self.log.debug("Disconnected")
             finally:
-                connection.remove_listener('disconnection', on_disconnection)  # type: ignore
+                connection.remove_listener(connection.EVENT_DISCONNECTION,
+                                           on_disconnection)  # type: ignore
 
         return empty_pb2.Empty()
 
@@ -342,17 +345,16 @@ class HostService(HostServicer):
             scan_response_data=scan_response_data,
         )
 
-        pending_connection: asyncio.Future[bumble.device.Connection] = (
-            asyncio.get_running_loop().create_future())
+        connections: asyncio.Queue[bumble.device.Connection] = asyncio.Queue()
 
         if request.connectable:
 
             def on_connection(connection: bumble.device.Connection) -> None:
-                if (connection.transport == BT_LE_TRANSPORT and
-                        connection.role == BT_PERIPHERAL_ROLE):
-                    pending_connection.set_result(connection)
+                if (connection.transport == PhysicalTransport.LE and
+                        connection.role == Role.PERIPHERAL):
+                    connections.put_nowait(connection)
 
-            self.device.on('connection', on_connection)
+            self.device.on(self.device.EVENT_CONNECTION, on_connection)
 
         try:
             # Advertise until RPC is canceled
@@ -365,8 +367,7 @@ class HostService(HostServicer):
                     await asyncio.sleep(1)
                     continue
 
-                connection = await pending_connection
-                pending_connection = asyncio.get_running_loop().create_future()
+                connection = await connections.get()
 
                 cookie = any_pb2.Any(value=connection.handle.to_bytes(4, 'big'))
                 yield AdvertiseResponse(connection=Connection(cookie=cookie))
@@ -446,14 +447,16 @@ class HostService(HostServicer):
                 target = Address(target_bytes, Address.RANDOM_DEVICE_ADDRESS)
                 advertising_type = AdvertisingType.DIRECTED_CONNECTABLE_LOW_DUTY
 
+        connections: asyncio.Queue[bumble.device.Connection] = asyncio.Queue()
+
         if request.connectable:
 
             def on_connection(connection: bumble.device.Connection) -> None:
-                if (connection.transport == BT_LE_TRANSPORT and
-                        connection.role == BT_PERIPHERAL_ROLE):
-                    pending_connection.set_result(connection)
+                if (connection.transport == PhysicalTransport.LE and
+                        connection.role == Role.PERIPHERAL):
+                    connections.put_nowait(connection)
 
-            self.device.on('connection', on_connection)
+            self.device.on(self.device.EVENT_CONNECTION, on_connection)
 
         try:
             while True:
@@ -462,18 +465,15 @@ class HostService(HostServicer):
                     await self.device.start_advertising(
                         target=target,
                         advertising_type=advertising_type,
-                        own_address_type=request.own_address_type,
+                        own_address_type=OwnAddressType(request.own_address_type),
                     )
 
                 if not request.connectable:
                     await asyncio.sleep(1)
                     continue
 
-                pending_connection: asyncio.Future[bumble.device.Connection] = (
-                    asyncio.get_running_loop().create_future())
-
                 self.log.debug('Wait for LE connection...')
-                connection = await pending_connection
+                connection = await connections.get()
 
                 self.log.debug(
                     f"Advertise: Connected to {connection.peer_address} (handle={connection.handle})"
@@ -486,11 +486,13 @@ class HostService(HostServicer):
                 await asyncio.sleep(1)
         finally:
             if request.connectable:
-                self.device.remove_listener('connection', on_connection)  # type: ignore
+                self.device.remove_listener(self.device.EVENT_CONNECTION,
+                                            on_connection)  # type: ignore
 
             try:
                 self.log.debug('Stop advertising')
-                await self.device.abort_on('flush', self.device.stop_advertising())
+                await bumble.utils.cancel_on_event(self.device, 'flush',
+                                                   self.device.stop_advertising())
             except:
                 pass
 
@@ -509,11 +511,11 @@ class HostService(HostServicer):
             scanning_phys = [int(Phy.LE_1M), int(Phy.LE_CODED)]
 
         scan_queue: asyncio.Queue[Advertisement] = asyncio.Queue()
-        handler = self.device.on('advertisement', scan_queue.put_nowait)
+        handler = self.device.on(self.device.EVENT_ADVERTISEMENT, scan_queue.put_nowait)
         await self.device.start_scanning(
             legacy=request.legacy,
             active=not request.passive,
-            own_address_type=request.own_address_type,
+            own_address_type=OwnAddressType(request.own_address_type),
             scan_interval=(int(request.interval)
                            if request.interval else DEVICE_DEFAULT_SCAN_INTERVAL),
             scan_window=(int(request.window) if request.window else DEVICE_DEFAULT_SCAN_WINDOW),
@@ -549,10 +551,11 @@ class HostService(HostServicer):
                 yield sr
 
         finally:
-            self.device.remove_listener('advertisement', handler)  # type: ignore
+            self.device.remove_listener(self.device.EVENT_ADVERTISEMENT, handler)  # type: ignore
             try:
                 self.log.debug('Stop scanning')
-                await self.device.abort_on('flush', self.device.stop_scanning())
+                await bumble.utils.cancel_on_event(self.device, 'flush',
+                                                   self.device.stop_scanning())
             except:
                 pass
 
@@ -563,10 +566,10 @@ class HostService(HostServicer):
 
         inquiry_queue: asyncio.Queue[Optional[Tuple[Address, int, AdvertisingData,
                                                     int]]] = asyncio.Queue()
-        complete_handler = self.device.on('inquiry_complete',
+        complete_handler = self.device.on(self.device.EVENT_INQUIRY_COMPLETE,
                                           lambda: inquiry_queue.put_nowait(None))
         result_handler = self.device.on(  # type: ignore
-            'inquiry_result',
+            self.device.EVENT_INQUIRY_RESULT,
             lambda address, class_of_device, eir_data, rssi: inquiry_queue.
             put_nowait(  # type: ignore
                 (address, class_of_device, eir_data, rssi)  # type: ignore
@@ -586,11 +589,14 @@ class HostService(HostServicer):
                 )
 
         finally:
-            self.device.remove_listener('inquiry_complete', complete_handler)  # type: ignore
-            self.device.remove_listener('inquiry_result', result_handler)  # type: ignore
+            self.device.remove_listener(self.device.EVENT_INQUIRY_COMPLETE,
+                                        complete_handler)  # type: ignore
+            self.device.remove_listener(self.device.EVENT_INQUIRY_RESULT,
+                                        result_handler)  # type: ignore
             try:
                 self.log.debug('Stop inquiry')
-                await self.device.abort_on('flush', self.device.stop_discovery())
+                await bumble.utils.cancel_on_event(self.device, 'flush',
+                                                   self.device.stop_discovery())
             except:
                 pass
 

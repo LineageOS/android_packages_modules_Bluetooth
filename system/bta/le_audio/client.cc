@@ -5114,7 +5114,7 @@ public:
       if (!ReconfigureOrUpdateRemote(group, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
         log::error("Unable to reconfigure group at this time, configuration_context_type_ = {}",
                    ToString(configuration_context_type_));
-        if (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING) {
+        if (group->IsReleasing()) {
           log::debug("Group is releasing, cancel streaming request and wait for release to end.");
           CancelLocalAudioSinkStreamingRequest();
           return;
@@ -5450,6 +5450,10 @@ public:
 
     if (IsReconfigurationTimeoutRunning(group->group_id_)) {
       log::info("Skip it as group is reconfiguring");
+      if (com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+        auto [new_context_type, _] = audioContextTypeManager_->GetAudioContextsForTheGroup(group);
+        group->InvalidateCachedConfigurations(new_context_type);
+      }
       return;
     }
 

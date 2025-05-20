@@ -27,7 +27,6 @@
 #include "os/thread.h"
 #include "packet/bit_inserter.h"
 #include "packet/raw_builder.h"
-#include "test/mock/mock_main_shim_entry.h"
 
 using bluetooth::os::Thread;
 using bluetooth::packet::BitInserter;
@@ -203,9 +202,9 @@ public:
     client_handler_ = new os::Handler(thread_);
 
     hal = std::make_unique<hal::TestHciHal>();
-    bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(client_handler_);
+    storage = std::make_unique<storage::StorageModule>(client_handler_);
 
-    hci = std::make_unique<HciLayer>(client_handler_, hal.get());
+    hci = std::make_unique<HciLayer>(client_handler_, hal.get(), storage.get());
     upper = std::make_unique<DependsOnHci>(client_handler_, hci.get());
 
     // Verify that reset was received
@@ -222,13 +221,11 @@ public:
   }
 
   void TearDown() override {
-    delete bluetooth::hci::testing::mock_storage_;
-    bluetooth::hci::testing::mock_storage_ = nullptr;
-
     client_handler_->Synchronize(std::chrono::milliseconds(20));
 
     upper.reset();
     hci.reset();
+    storage.reset();
     hal.reset();
 
     client_handler_->Clear();
@@ -250,6 +247,7 @@ public:
   os::Handler* client_handler_ = nullptr;
   std::unique_ptr<DependsOnHci> upper = nullptr;
   std::unique_ptr<hal::TestHciHal> hal = nullptr;
+  std::unique_ptr<storage::StorageModule> storage = nullptr;
   std::unique_ptr<HciLayer> hci = nullptr;
 };
 

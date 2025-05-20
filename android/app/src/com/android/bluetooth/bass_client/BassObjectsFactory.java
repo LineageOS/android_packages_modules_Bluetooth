@@ -76,8 +76,7 @@ public class BassObjectsFactory {
             BassClientService service,
             AdapterService adapterService,
             Looper looper) {
-        return new BassClientStateMachine(
-                device, service, adapterService, looper, BassConstants.CONNECT_TIMEOUT_MS);
+        return new BassClientStateMachine(device, service, adapterService, looper);
     }
 
     /**

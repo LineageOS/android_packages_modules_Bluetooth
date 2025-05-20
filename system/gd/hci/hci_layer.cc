@@ -32,7 +32,6 @@
 #include "hci/class_of_device.h"
 #include "hci/hci_metrics_logging.h"
 #include "hci/inquiry_interface.h"
-#include "main/shim/entry.h"
 #include "os/alarm.h"
 #include "os/queue.h"
 #include "os/system_properties.h"
@@ -149,7 +148,8 @@ public:
 };
 
 struct HciLayer::impl {
-  impl(os::Handler* handler, hal::HciHal* hal, HciLayer& module) : hal_(hal), module_(module) {
+  impl(os::Handler* handler, hal::HciHal* hal, storage::StorageModule* storage, HciLayer& module)
+      : hal_(hal), storage_(storage), module_(module) {
     handler_ = handler;
     hci_timeout_alarm_ = new Alarm(handler);
   }
@@ -470,9 +470,9 @@ struct HciLayer::impl {
                          EventCodeText(event_code), OpCodeText(op_code));
       }
       std::unique_ptr<CommandView> no_waiting_command{nullptr};
-      log_hci_event(no_waiting_command, event, shim::GetStorage());
+      log_hci_event(no_waiting_command, event, storage_);
     } else {
-      log_hci_event(command_queue_.front().command_view, event, shim::GetStorage());
+      log_hci_event(command_queue_.front().command_view, event, storage_);
     }
     power_telemetry::GetInstance().LogHciEvtDetail();
     EventCode event_code = event.GetEventCode();
@@ -555,6 +555,7 @@ struct HciLayer::impl {
 
   os::Handler* handler_;
   hal::HciHal* hal_;
+  storage::StorageModule* storage_;
   HciLayer& module_;
 
   // Command Handling
@@ -936,9 +937,9 @@ std::unique_ptr<InquiryInterface> HciLayer::GetInquiryInterface(
   return std::make_unique<CommandInterfaceImpl<DiscoveryCommandBuilder>>(this, std::move(cleanup));
 }
 
-HciLayer::HciLayer(Handler* handler, hal::HciHal* hal) {
+HciLayer::HciLayer(Handler* handler, hal::HciHal* hal, storage::StorageModule* storage) {
   std::unique_lock<std::recursive_mutex> lock(life_cycle_guard);
-  impl_ = new impl(handler, hal, *this);
+  impl_ = new impl(handler, hal, storage, *this);
   hal_callbacks_ = new hal_callbacks(*this);
   life_cycle_stopped = false;
 

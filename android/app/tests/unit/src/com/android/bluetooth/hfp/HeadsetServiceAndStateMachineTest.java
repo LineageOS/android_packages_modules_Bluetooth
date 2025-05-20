@@ -28,8 +28,9 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasData;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockSystemPropertyGet;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -54,6 +55,7 @@ import android.net.Uri;
 import android.os.ParcelUuid;
 import android.os.PowerManager;
 import android.os.RemoteException;
+import android.os.SystemProperties;
 import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.FlagsParameterization;
@@ -73,7 +75,6 @@ import com.android.bluetooth.btservice.SilenceDeviceManager;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
-import com.android.bluetooth.util.SystemProperties;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
@@ -113,7 +114,8 @@ public class HeadsetServiceAndStateMachineTest {
         mSetFlagsRule = new SetFlagsRule(flags);
     }
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule
+    public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(SystemProperties.class);
 
     @Spy private HeadsetObjectsFactory mObjectsFactory = HeadsetObjectsFactory.getInstance();
 
@@ -128,7 +130,6 @@ public class HeadsetServiceAndStateMachineTest {
     @Mock private AudioManager mAudioManager;
     @Mock private HeadsetPhoneState mPhoneState;
     @Mock private RemoteDevices mRemoteDevices;
-    @Mock private SystemProperties.MockableSystemProperties mProperties;
     @Mock private AudioDeviceInfo mAudioDeviceInfo;
 
     private static final int MAX_HEADSET_CONNECTIONS = 5;
@@ -222,15 +223,12 @@ public class HeadsetServiceAndStateMachineTest {
         verify(mNativeInterface)
                 .enableSwb(
                         eq(HeadsetHalConstants.BTHF_SWB_CODEC_VENDOR_APTX),
-                        eq(
-                                SystemProperties.getBoolean(
-                                        "bluetooth.hfp.codec_aptx_voice.enabled", false)),
+                        anyBoolean(),
                         eq(mHeadsetService.getActiveDevice()));
     }
 
     @After
     public void tearDown() {
-        SystemProperties.mProperties = null;
         mTestLooper.dispatchAll();
         mHeadsetService.cleanup();
         mHeadsetService = HeadsetService.getHeadsetService();
@@ -2117,13 +2115,8 @@ public class HeadsetServiceAndStateMachineTest {
     }
 
     private void configureHeadsetServiceForAptxVoice(boolean enable) {
-        doReturn(enable)
-                .when(mProperties)
-                .getBoolean(eq("bluetooth.hfp.codec_aptx_voice.enabled"), anyBoolean());
-        doReturn(enable)
-                .when(mProperties)
-                .getBoolean(eq("bluetooth.hfp.swb.aptx.power_management.enabled"), anyBoolean());
-        SystemProperties.mProperties = mProperties;
+        mockSystemPropertyGet("bluetooth.hfp.codec_aptx_voice.enabled", enable);
+        mockSystemPropertyGet("bluetooth.hfp.swb.aptx.power_management.enabled", enable);
         mHeadsetService.mIsAptXSwbEnabled = enable;
         assertThat(mHeadsetService.isAptXSwbEnabled()).isEqualTo(enable);
         mHeadsetService.mIsAptXSwbPmEnabled = enable;

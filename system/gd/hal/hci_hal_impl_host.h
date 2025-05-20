@@ -22,7 +22,6 @@
 #include "hal/hci_hal.h"
 #include "hal/link_clocker.h"
 #include "hal/snoop_logger.h"
-#include "main/shim/entry.h"
 #include "os/reactor.h"
 #include "os/thread.h"
 
@@ -35,8 +34,7 @@ constexpr int INVALID_FD = -1;
 
 class HciHalImpl : public HciHal {
 public:
-  HciHalImpl(os::Handler*, LinkClocker*, SnoopLogger*) : HciHalImpl() {}
-  HciHalImpl();
+  HciHalImpl(os::Handler*, LinkClocker*, SnoopLogger*);
   ~HciHalImpl();
 
   void registerIncomingPacketCallback(HciHalCallbacks* callback) override;

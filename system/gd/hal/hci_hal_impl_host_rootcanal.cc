@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include "hal/hci_hal_impl_host.h"
-
 #include <bluetooth/log.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -31,8 +29,8 @@
 
 #include "hal/hci_hal.h"
 #include "hal/hci_hal_host_rootcanal_config.h"
+#include "hal/hci_hal_impl_host.h"
 #include "hal/snoop_logger.h"
-#include "main/shim/entry.h"
 #include "os/reactor.h"
 #include "os/thread.h"
 
@@ -169,7 +167,8 @@ void HciHalImpl::sendIsoData(HciPacket data) {
   write_to_fd(packet);
 }
 
-HciHalImpl::HciHalImpl() {
+HciHalImpl::HciHalImpl(os::Handler*, LinkClocker*, SnoopLogger* snoop_logger)
+    : btsnoop_logger_(snoop_logger) {
   std::lock_guard<std::mutex> lock(api_mutex_);
   log::assert_that(sock_fd_ == INVALID_FD, "assert failed: sock_fd_ == INVALID_FD");
   sock_fd_ = ConnectToSocket();
@@ -179,7 +178,6 @@ HciHalImpl::HciHalImpl() {
           common::Bind(&HciHalImpl::send_packet_ready, common::Unretained(this)));
   hci_incoming_thread_.GetReactor()->ModifyRegistration(reactable_,
                                                         os::Reactor::REACT_ON_READ_ONLY);
-  btsnoop_logger_ = shim::GetSnoopLogger();
   log::info("HAL opened successfully");
 }
 

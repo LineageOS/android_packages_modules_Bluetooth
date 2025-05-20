@@ -45,6 +45,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.RemoteException;
+import android.os.SystemProperties;
 import android.provider.Settings;
 import android.util.Log;
 import android.util.SparseBooleanArray;
@@ -57,7 +58,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.Utils.TimeProvider;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.util.SystemProperties;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -150,7 +150,9 @@ public class ScanManager {
     private static final int FILTER_LOGIC_TYPE = 1;
 
     // MSFT-based hardware scan offload sysprop
-    private static final String MSFT_HCI_EXT_ENABLED = "bluetooth.core.le.use_msft_hci_ext";
+    @VisibleForTesting
+    static final String MSFT_HCI_EXT_ENABLED = "bluetooth.core.le.use_msft_hci_ext";
+
     // Hardcoded min number of hardware adv monitor slots for MSFT-enabled controllers
     private static final int MIN_NUM_MSFT_MONITOR_SLOTS = 20;
 

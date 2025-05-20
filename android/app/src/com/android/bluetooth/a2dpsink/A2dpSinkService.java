@@ -69,10 +69,7 @@ public class A2dpSinkService extends ProfileService {
     private BluetoothDevice mActiveDevice = null;
 
     public A2dpSinkService(AdapterService adapterService) {
-        this(
-                adapterService,
-                A2dpSinkNativeInterface.getInstance(adapterService),
-                Looper.getMainLooper());
+        this(adapterService, new A2dpSinkNativeInterface(adapterService), Looper.getMainLooper());
     }
 
     @VisibleForTesting
@@ -82,7 +79,6 @@ public class A2dpSinkService extends ProfileService {
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface = requireNonNull(nativeInterface);
         mLooper = looper;
-
         mMaxConnectedAudioDevices = mAdapterService.getMaxConnectedAudioDevices();
         mNativeInterface.init(mMaxConnectedAudioDevices);
         synchronized (mStreamHandlerLock) {

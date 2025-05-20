@@ -146,7 +146,7 @@ protected:
     HciHalHostRootcanalConfig::Get()->SetPort(kTestPort);
     fake_server_ = new FakeRootcanalDesktopHciServer;
 
-    hal_ = std::make_unique<HciHalImpl>();
+    hal_ = std::make_unique<HciHalImpl>(nullptr, nullptr, nullptr);
     hal_->registerIncomingPacketCallback(&callbacks_);
     fake_server_socket_ =
             fake_server_->Accept();  // accept() after client is connected to avoid blocking
