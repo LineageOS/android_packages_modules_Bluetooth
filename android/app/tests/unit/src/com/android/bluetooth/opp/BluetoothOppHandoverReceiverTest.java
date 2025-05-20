@@ -17,7 +17,7 @@
 package com.android.bluetooth.opp;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.getRealDevice;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -53,15 +53,14 @@ import java.util.List;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppHandoverReceiverTest {
-    Context mContext;
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Spy BluetoothMethodProxy mCallProxy = BluetoothMethodProxy.getInstance();
 
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+
     @Before
     public void setUp() {
-        mContext = InstrumentationRegistry.getInstrumentation().getContext();
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
         doReturn(0).when(mCallProxy).contentResolverDelete(any(), any(Uri.class), any(), any());
         doReturn(null)
@@ -78,7 +77,7 @@ public class BluetoothOppHandoverReceiverTest {
     public void onReceive_withActionHandoverSend_startTransfer() {
         Intent intent = new Intent(Constants.ACTION_HANDOVER_SEND);
         Uri uri = Uri.parse("content:///abc/xyz.txt");
-        BluetoothDevice device = getTestDevice(38);
+        BluetoothDevice device = getRealDevice(38);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         intent.putExtra(Intent.EXTRA_STREAM, uri);
         intent.setType("text/plain");
@@ -106,7 +105,7 @@ public class BluetoothOppHandoverReceiverTest {
                                 Uri.parse("content:///abc/xyz.txt"),
                                 Uri.parse("content:///a/b/c/d/x/y/z.txt"),
                                 Uri.parse("content:///123/456.txt")));
-        BluetoothDevice device = getTestDevice(33);
+        BluetoothDevice device = getRealDevice(33);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         intent.putExtra(Intent.EXTRA_STREAM, uris);
         intent.setType("text/plain");
@@ -128,7 +127,7 @@ public class BluetoothOppHandoverReceiverTest {
     @Test
     public void onReceive_withActionStopHandover_triggerContentResolverDelete() {
         Intent intent = new Intent(Constants.ACTION_STOP_HANDOVER);
-        BluetoothDevice device = getTestDevice(32);
+        BluetoothDevice device = getRealDevice(32);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         intent.putExtra(Constants.EXTRA_BT_OPP_TRANSFER_ID, 0);
 
