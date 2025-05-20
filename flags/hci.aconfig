@@ -20,3 +20,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "acl_fix_in_and_out_connection_reqs"
+    namespace: "bluetooth"
+    description: "Fix ACL scheduler when incoming and outgoing request occur simultaneously"
+    bug: "419027922"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
