@@ -50,6 +50,7 @@ class CustomizedMetadataEntity {
     public byte[] gmcs_cccd;
     public byte[] gtbs_cccd;
     public byte[] exclusive_manager;
+    public byte[] zoomed_in_icon;
 
     public String toString() {
         StringBuilder builder = new StringBuilder();
@@ -112,7 +113,9 @@ class CustomizedMetadataEntity {
                 .append("|gtbs_cccd=")
                 .append(metadataToString(gtbs_cccd))
                 .append("|exclusive_manager=")
-                .append(metadataToString(exclusive_manager));
+                .append(metadataToString(exclusive_manager))
+                .append("|zoomed_in_icon=")
+                .append(metadataToString(zoomed_in_icon));
 
         return builder.toString();
     }

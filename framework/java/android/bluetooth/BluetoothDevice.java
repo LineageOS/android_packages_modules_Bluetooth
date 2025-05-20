@@ -618,7 +618,8 @@ public final class BluetoothDevice implements Parcelable, Attributable {
                 METADATA_HEAD_UNIT_MANUFACTURER_NAME,
                 METADATA_HEAD_UNIT_MODEL_NAME,
                 METADATA_HEAD_UNIT_BUILD,
-                METADATA_HEAD_UNIT_SOFTWARE_VERSION
+                METADATA_HEAD_UNIT_SOFTWARE_VERSION,
+                METADATA_ZOOMED_IN_ICON,
             })
     @Retention(RetentionPolicy.SOURCE)
     public @interface MetadataKey {}
@@ -644,15 +645,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * @hide
      */
     @SystemApi public static final int METADATA_MODEL_NAME = 1;
-
-    /**
-     * Model year of the Bluetooth device. Data type should be {@link String} as {@link Byte} array.
-     *
-     * @hide
-     */
-    @FlaggedApi(Flags.FLAG_SUPPORT_REMOTE_DEVICE_METADATA)
-    @SystemApi
-    public static final int METADATA_MODEL_YEAR = 30;
 
     /**
      * Software version of this Bluetooth device Data type should be {@link String} as {@link Byte}
@@ -890,7 +882,28 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      */
     @SystemApi public static final int METADATA_EXCLUSIVE_MANAGER = 29;
 
+    /**
+     * URI of zoomed in icon (i.e.
+     * content://com.example.fileprovider/example_bluetooth_metadata/f1234model.png). Data type
+     * should be {@link Byte} array.
+     *
+     * @hide
+     */
+    @FlaggedApi(Flags.FLAG_SUPPORT_ZOOMED_IN_ICON_METADATA)
+    @SystemApi
+    public static final int METADATA_ZOOMED_IN_ICON = 30;
+
+    // Need to update this value after adding new Metadata
     private static final int METADATA_MAX_KEY = METADATA_EXCLUSIVE_MANAGER;
+
+    /**
+     * Model year of the Bluetooth device. Data type should be {@link String} as {@link Byte} array.
+     *
+     * @hide
+     */
+    @FlaggedApi(Flags.FLAG_SUPPORT_REMOTE_DEVICE_METADATA)
+    @SystemApi
+    public static final int METADATA_MODEL_YEAR = 31;
 
     /**
      * Head unit manufacturer name of the Bluetooth device. Data type should be {@link String} as
@@ -900,7 +913,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      */
     @FlaggedApi(Flags.FLAG_SUPPORT_REMOTE_DEVICE_METADATA)
     @SystemApi
-    public static final int METADATA_HEAD_UNIT_MANUFACTURER_NAME = 31;
+    public static final int METADATA_HEAD_UNIT_MANUFACTURER_NAME = 32;
 
     /**
      * Head unit model name of the Bluetooth device. Data type should be {@link String} as {@link
@@ -910,7 +923,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      */
     @FlaggedApi(Flags.FLAG_SUPPORT_REMOTE_DEVICE_METADATA)
     @SystemApi
-    public static final int METADATA_HEAD_UNIT_MODEL_NAME = 32;
+    public static final int METADATA_HEAD_UNIT_MODEL_NAME = 33;
 
     /**
      * Build of the overall head unit device. Not specific to hardware or software. Example can be
@@ -921,7 +934,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      */
     @FlaggedApi(Flags.FLAG_SUPPORT_REMOTE_DEVICE_METADATA)
     @SystemApi
-    public static final int METADATA_HEAD_UNIT_BUILD = 33;
+    public static final int METADATA_HEAD_UNIT_BUILD = 34;
 
     /**
      * Head unit software version of the Bluetooth device. Data type should be {@link String} as
@@ -931,7 +944,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      */
     @FlaggedApi(Flags.FLAG_SUPPORT_REMOTE_DEVICE_METADATA)
     @SystemApi
-    public static final int METADATA_HEAD_UNIT_SOFTWARE_VERSION = 34;
+    public static final int METADATA_HEAD_UNIT_SOFTWARE_VERSION = 35;
 
     /**
      * Device type which is used in METADATA_DEVICE_TYPE Indicates this Bluetooth device is a

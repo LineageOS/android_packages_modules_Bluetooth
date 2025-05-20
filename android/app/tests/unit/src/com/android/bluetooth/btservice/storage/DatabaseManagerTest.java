@@ -49,6 +49,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.platform.test.annotations.DisableFlags;
+import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 
@@ -448,6 +449,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_SUPPORT_ZOOMED_IN_ICON_METADATA)
     public void testSetGetCustomMeta() {
         int badKey = 100;
         byte[] value = "input value".getBytes();
@@ -501,6 +503,7 @@ public final class DatabaseManagerTest {
         testSetGetCustomMetaCase(false, BluetoothDevice.METADATA_GTBS_CCCD, value, true);
         testSetGetCustomMetaCase(false, badKey, value, false);
         testSetGetCustomMetaCase(false, BluetoothDevice.METADATA_EXCLUSIVE_MANAGER, value, true);
+        testSetGetCustomMetaCase(false, BluetoothDevice.METADATA_ZOOMED_IN_ICON, value, true);
 
         // Device is in database
         testSetGetCustomMetaCase(true, BluetoothDevice.METADATA_MANUFACTURER_NAME, value, true);
@@ -545,6 +548,7 @@ public final class DatabaseManagerTest {
         testSetGetCustomMetaCase(true, BluetoothDevice.METADATA_GMCS_CCCD, value, true);
         testSetGetCustomMetaCase(true, BluetoothDevice.METADATA_GTBS_CCCD, value, true);
         testSetGetCustomMetaCase(true, BluetoothDevice.METADATA_EXCLUSIVE_MANAGER, value, true);
+        testSetGetCustomMetaCase(true, BluetoothDevice.METADATA_ZOOMED_IN_ICON, value, true);
     }
 
     @Test
@@ -1550,6 +1554,28 @@ public final class DatabaseManagerTest {
                         DB_NAME, 122, true, MetadataDatabase.ROLLBACK_MIGRATION_123_122);
         Cursor cursor = db.query("SELECT * FROM metadata");
         assertHasColumn(cursor, "migrated");
+    }
+
+    @Test
+    public void testDatabaseMigration_123_124() throws IOException {
+        // Create a database with version 123
+        SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 123);
+
+        // insert a device to the database
+        ContentValues device = contentValuesDevice_123();
+        assertThat(db.insert("metadata", SQLiteDatabase.CONFLICT_IGNORE, device)).isNotEqualTo(-1);
+
+        // Migrate database from 123 to 124
+        db.close();
+        db =
+                testHelper.runMigrationsAndValidate(
+                        DB_NAME, 124, true, MetadataDatabase.MIGRATION_123_124);
+        Cursor cursor = db.query("SELECT * FROM metadata");
+        assertHasColumn(cursor, "zoomed_in_icon");
+        while (cursor.moveToNext()) {
+            // Check the new columns was added with default value
+            assertColumnBlobData(cursor, "zoomed_in_icon", null);
+        }
     }
 
     private ContentValues createContentValuesDeviceCommon() {

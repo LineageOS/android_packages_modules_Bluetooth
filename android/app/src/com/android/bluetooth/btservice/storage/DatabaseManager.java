@@ -180,6 +180,12 @@ public class DatabaseManager {
         if (key >= 0 && key <= BluetoothDevice.getMaxMetadataKey()) {
             return true;
         }
+        if (Flags.supportZoomedInIconMetadata() && key == BluetoothDevice.METADATA_ZOOMED_IN_ICON) {
+            // When cleaning the supportZoomedInIconMetadata flag, update METADATA_MAX_KEY to
+            // METADATA_ZOOMED_IN_ICON
+            return true;
+        }
+
         Log.w(TAG, "Invalid metadata key " + key);
         return false;
     }

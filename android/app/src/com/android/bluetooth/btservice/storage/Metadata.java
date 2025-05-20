@@ -277,6 +277,7 @@ public class Metadata {
             case BluetoothDevice.METADATA_GTBS_CCCD -> publicMetadata.gtbs_cccd = value;
             case BluetoothDevice.METADATA_EXCLUSIVE_MANAGER ->
                     publicMetadata.exclusive_manager = value;
+            case BluetoothDevice.METADATA_ZOOMED_IN_ICON -> publicMetadata.zoomed_in_icon = value;
             default -> {} // Nothing to do
         }
     }
@@ -329,6 +330,7 @@ public class Metadata {
             case BluetoothDevice.METADATA_GMCS_CCCD -> publicMetadata.gmcs_cccd;
             case BluetoothDevice.METADATA_GTBS_CCCD -> publicMetadata.gtbs_cccd;
             case BluetoothDevice.METADATA_EXCLUSIVE_MANAGER -> publicMetadata.exclusive_manager;
+            case BluetoothDevice.METADATA_ZOOMED_IN_ICON -> publicMetadata.zoomed_in_icon;
             default -> null;
         };
     }
