@@ -300,7 +300,7 @@ uint16_t HciHalImpl::getMsftOpcode() {
   return os::Management::getInstance().getVendorSpecificCode(MGMT_VS_OPCODE_MSFT);
 }
 
-HciHalImpl::HciHalImpl(os::Handler*, LinkClocker* link_clocker, SnoopLogger* snoop_logger)
+HciHalImpl::HciHalImpl(os::Handler*, LinkClocker& link_clocker, SnoopLogger* snoop_logger)
     : link_clocker_(link_clocker), btsnoop_logger_(snoop_logger) {
   std::lock_guard<std::mutex> lock(api_mutex_);
   log::assert_that(sock_fd_ == INVALID_FD, "assert failed: sock_fd_ == INVALID_FD");
@@ -416,7 +416,7 @@ void HciHalImpl::incoming_packet_received() {
     HciPacket receivedHciPacket;
     receivedHciPacket.assign(buf + kH4HeaderSize,
                              buf + kH4HeaderSize + kHciEvtHeaderSize + payload_size);
-    link_clocker_->OnHciEvent(receivedHciPacket);
+    link_clocker_.OnHciEvent(receivedHciPacket);
     btsnoop_logger_->Capture(receivedHciPacket, SnoopLogger::Direction::INCOMING,
                              SnoopLogger::PacketType::EVT);
     {
