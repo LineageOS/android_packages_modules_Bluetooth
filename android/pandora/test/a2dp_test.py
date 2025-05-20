@@ -30,13 +30,6 @@ from avatar import BumblePandoraDevice, PandoraDevice, PandoraDevices, pandora_s
 from bumble.a2dp import (
     A2DP_MPEG_2_4_AAC_CODEC_TYPE,
     A2DP_SBC_CODEC_TYPE,
-    MPEG_2_AAC_LC_OBJECT_TYPE,
-    SBC_DUAL_CHANNEL_MODE,
-    SBC_JOINT_STEREO_CHANNEL_MODE,
-    SBC_LOUDNESS_ALLOCATION_METHOD,
-    SBC_MONO_CHANNEL_MODE,
-    SBC_SNR_ALLOCATION_METHOD,
-    SBC_STEREO_CHANNEL_MODE,
     AacMediaCodecInformation,
     SbcMediaCodecInformation,
     make_audio_sink_service_sdp_records,
@@ -78,6 +71,7 @@ from pandora.a2dp_pb2 import STEREO, CodecId, CodecParameters, Configuration, Pl
 from pandora.host_pb2 import Connection, ConnectResponse
 from pandora.security_pb2 import LEVEL2
 from typing import AsyncIterator, Awaitable, Optional
+from typing_extensions import override
 
 logger = logging.getLogger(__name__)
 
@@ -136,20 +130,23 @@ def sbc_codec_capabilities() -> MediaCodecCapabilities:
     return MediaCodecCapabilities(
         media_type=AVDTP_AUDIO_MEDIA_TYPE,
         media_codec_type=A2DP_SBC_CODEC_TYPE,
-        media_codec_information=SbcMediaCodecInformation.from_lists(
-            sampling_frequencies=[48000, 44100, 32000, 16000],
-            channel_modes=[
-                SBC_MONO_CHANNEL_MODE,
-                SBC_DUAL_CHANNEL_MODE,
-                SBC_STEREO_CHANNEL_MODE,
-                SBC_JOINT_STEREO_CHANNEL_MODE,
-            ],
-            block_lengths=[4, 8, 12, 16],
-            subbands=[4, 8],
-            allocation_methods=[
-                SBC_LOUDNESS_ALLOCATION_METHOD,
-                SBC_SNR_ALLOCATION_METHOD,
-            ],
+        media_codec_information=SbcMediaCodecInformation(
+            sampling_frequency=(SbcMediaCodecInformation.SamplingFrequency.SF_16000 |
+                                SbcMediaCodecInformation.SamplingFrequency.SF_32000 |
+                                SbcMediaCodecInformation.SamplingFrequency.SF_44100 |
+                                SbcMediaCodecInformation.SamplingFrequency.SF_48000),
+            channel_mode=(SbcMediaCodecInformation.ChannelMode.STEREO |
+                          SbcMediaCodecInformation.ChannelMode.DUAL_CHANNEL |
+                          SbcMediaCodecInformation.ChannelMode.JOINT_STEREO |
+                          SbcMediaCodecInformation.ChannelMode.MONO),
+            block_length=(SbcMediaCodecInformation.BlockLength.BL_4 |
+                          SbcMediaCodecInformation.BlockLength.BL_8 |
+                          SbcMediaCodecInformation.BlockLength.BL_12 |
+                          SbcMediaCodecInformation.BlockLength.BL_16),
+            subbands=(SbcMediaCodecInformation.Subbands.S_4 |
+                      SbcMediaCodecInformation.Subbands.S_8),
+            allocation_method=(SbcMediaCodecInformation.AllocationMethod.LOUDNESS |
+                               SbcMediaCodecInformation.AllocationMethod.SNR),
             minimum_bitpool_value=2,
             maximum_bitpool_value=53,
         ),
@@ -184,10 +181,12 @@ def aac_codec_capabilities() -> MediaCodecCapabilities:
     return MediaCodecCapabilities(
         media_type=AVDTP_AUDIO_MEDIA_TYPE,
         media_codec_type=A2DP_MPEG_2_4_AAC_CODEC_TYPE,
-        media_codec_information=AacMediaCodecInformation.from_lists(
-            object_types=[MPEG_2_AAC_LC_OBJECT_TYPE],
-            sampling_frequencies=[48000, 44100],
-            channels=[1, 2],
+        media_codec_information=AacMediaCodecInformation(
+            object_type=AacMediaCodecInformation.ObjectType.MPEG_2_AAC_LC,
+            sampling_frequency=(AacMediaCodecInformation.SamplingFrequency.SF_44100 |
+                                AacMediaCodecInformation.SamplingFrequency.SF_48000),
+            channels=(AacMediaCodecInformation.Channels.MONO |
+                      AacMediaCodecInformation.Channels.STEREO),
             vbr=1,
             bitrate=256000,
         ),
@@ -399,8 +398,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         # Create a listener to wait for AVDTP connections
         avdtp_future = asyncio.get_running_loop().create_future()
 
-        def on_avdtp_connection(server):
-            nonlocal avdtp_future
+        def on_avdtp_connection(server: bumble.avdtp.Protocol):
             self.ref1_a2dp_sink = server.add_sink(sbc_codec_capabilities())
             self.ref1.log.info(f'Sink: {self.ref1_a2dp_sink}')
             avdtp_future.set_result(None)
@@ -593,10 +591,13 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         3. Check that the DUT will abort and reopen the AVDTP as initiator
         """
 
+        # Create a listener to wait for AVDTP open
+        avdtp_future = asyncio.get_running_loop().create_future()
+
         class TestAvdtProtocol(Protocol):
 
-            def on_open_command(self, command):
-                nonlocal avdtp_future
+            @override
+            def on_open_command(self, command: bumble.avdtp.Open_Command):
                 logger.info("<< AVDTP Open received >>")
                 avdtp_future.set_result(None)
                 return super().on_open_command(command)
@@ -606,9 +607,6 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
             initiate_pairing(self.ref1, self.dut.address),
             accept_pairing(self.dut, self.ref1.address),
         )
-
-        # Create a listener to wait for AVDTP open
-        avdtp_future = asyncio.get_running_loop().create_future()
 
         # Retrieve Bumble connection object from Pandora connection token
         connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
@@ -630,12 +628,12 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         configuration = MediaCodecCapabilities(
             media_type=AVDTP_AUDIO_MEDIA_TYPE,
             media_codec_type=A2DP_SBC_CODEC_TYPE,
-            media_codec_information=SbcMediaCodecInformation.from_lists(
-                sampling_frequencies=[44100],
-                channel_modes=[SBC_JOINT_STEREO_CHANNEL_MODE],
-                block_lengths=[16],
-                subbands=[8],
-                allocation_methods=[SBC_LOUDNESS_ALLOCATION_METHOD],
+            media_codec_information=SbcMediaCodecInformation(
+                sampling_frequency=SbcMediaCodecInformation.SamplingFrequency.SF_44100,
+                channel_mode=SbcMediaCodecInformation.ChannelMode.JOINT_STEREO,
+                block_length=SbcMediaCodecInformation.BlockLength.BL_16,
+                subbands=SbcMediaCodecInformation.Subbands.S_8,
+                allocation_method=SbcMediaCodecInformation.AllocationMethod.LOUDNESS,
                 minimum_bitpool_value=2,
                 maximum_bitpool_value=53,
             ),
@@ -912,12 +910,12 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
             MediaCodecCapabilities(
                 media_type=AVDTP_AUDIO_MEDIA_TYPE,
                 media_codec_type=A2DP_SBC_CODEC_TYPE,
-                media_codec_information=SbcMediaCodecInformation.from_lists(
-                    sampling_frequencies=[44100],
-                    channel_modes=[SBC_JOINT_STEREO_CHANNEL_MODE],
-                    block_lengths=[16],
-                    subbands=[8],
-                    allocation_methods=[SBC_LOUDNESS_ALLOCATION_METHOD],
+                media_codec_information=SbcMediaCodecInformation(
+                    sampling_frequency=SbcMediaCodecInformation.SamplingFrequency.SF_44100,
+                    channel_mode=SbcMediaCodecInformation.ChannelMode.JOINT_STEREO,
+                    block_length=SbcMediaCodecInformation.BlockLength.BL_16,
+                    subbands=SbcMediaCodecInformation.Subbands.S_8,
+                    allocation_method=SbcMediaCodecInformation.AllocationMethod.LOUDNESS,
                     minimum_bitpool_value=2,
                     maximum_bitpool_value=53,
                 ),

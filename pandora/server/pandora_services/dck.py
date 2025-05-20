@@ -53,7 +53,7 @@ class DckGattService(TemplateService):
             self.device_dk_version_value = value
 
         characteristics = [
-            Characteristic(
+            Characteristic[bytes](
                 DckGattService.UUID_SPSM,
                 Characteristic.Properties.READ,
                 Characteristic.READABLE,
@@ -61,19 +61,19 @@ class DckGattService(TemplateService):
                 # 19.2.1.6 DK Service
                 self.psm.to_bytes(2, 'big'),
             ),
-            Characteristic(
+            Characteristic[bytes](
                 DckGattService.UUID_SPSM_DK_VERSION,
                 Characteristic.Properties.READ,
                 Characteristic.READ_REQUIRES_ENCRYPTION,
                 b'',
             ),
-            Characteristic(
+            Characteristic[bytes](
                 DckGattService.UUID_DEVICE_DK_VERSION,
                 Characteristic.Properties.WRITE,
                 Characteristic.READ_REQUIRES_ENCRYPTION,
                 CharacteristicValue(write=on_device_version_write),
             ),
-            Characteristic(
+            Characteristic[bytes](
                 DckGattService.UUID_ANTENNA_IDENTIFIER,
                 Characteristic.READ,
                 Characteristic.READABLE,

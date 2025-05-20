@@ -216,6 +216,8 @@ class GattTest(base_test.BaseTestClass):  # type: ignore[misc]
         # must DISABLE IT otherwise this test will fail, and the previous test will pass even on a broken implementation
         if not isinstance(self.ref, BumblePandoraDevice):
             raise signals.TestSkip('Test require Bumble as reference device(s)')
+        if self.ref.device.gatt_service and self.ref.device.gatt_service.service_changed_characteristic:
+            raise signals.TestSkip('Service change indication is enabled')
 
         # arrange: set up one GATT service on REF side
         dut_gatt = AioGATT(self.dut.aio.channel)
