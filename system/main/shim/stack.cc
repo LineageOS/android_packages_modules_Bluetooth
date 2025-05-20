@@ -326,7 +326,8 @@ void Stack::handle_start_up(std::promise<void> promise) {
   pimpl_->ranging_hal_ = std::make_unique<hal::RangingHalImpl>();
 
   log::info("Starting HciLayer");
-  pimpl_->hci_layer_ = std::make_unique<hci::HciLayer>(stack_handler_, pimpl_->hci_hal_.get());
+  pimpl_->hci_layer_ = std::make_unique<hci::HciLayer>(stack_handler_, pimpl_->hci_hal_.get(),
+                                                       pimpl_->storage_.get());
 
   log::info("Starting Controller");
   pimpl_->controller_ =

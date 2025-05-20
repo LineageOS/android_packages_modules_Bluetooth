@@ -40,7 +40,6 @@
 #include "hci/hci_packets.h"
 #include "hci/le_address_manager.h"
 #include "macros.h"
-#include "main/shim/entry.h"
 #include "os/alarm.h"
 #include "os/handler.h"
 #include "os/system_properties.h"

@@ -29,7 +29,6 @@
 #include "hal/hci_hal.h"
 #include "hal/link_clocker.h"
 #include "hal/snoop_logger.h"
-#include "main/shim/entry.h"
 #include "os/parameter_provider.h"
 
 namespace bluetooth::hal {

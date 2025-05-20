@@ -88,7 +88,7 @@ protected:
     client_handler_ = new os::Handler(thread_);
 
     hal_ = std::make_unique<hal::TestHciHal>();
-    hci_ = std::make_unique<HciLayer>(client_handler_, hal_.get());
+    hci_ = std::make_unique<HciLayer>(client_handler_, hal_.get(), nullptr /* storage */);
     ::testing::FLAGS_gtest_death_test_style = "threadsafe";
     sync_handler();
   }
