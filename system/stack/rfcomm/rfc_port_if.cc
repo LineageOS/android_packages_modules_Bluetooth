@@ -215,7 +215,7 @@ void RFCOMM_PortParameterNegotiationRequest(tRFC_MCB* p_mcb, uint8_t dlci,
   }
 
   /* Send Parameter Negotiation Command UIH frame */
-  if (!p_settings) {
+  if (p_settings == nullptr) {
     p_port->rfc.expected_rsp |= RFC_RSP_RPN_REPLY;
   } else {
     p_port->rfc.expected_rsp |= RFC_RSP_RPN;

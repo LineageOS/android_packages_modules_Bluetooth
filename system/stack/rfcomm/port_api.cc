@@ -125,7 +125,7 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn, bool is_serv
   // multiplexer channel, DLCI should be odd.
   uint8_t dlci;
   tRFC_MCB* p_mcb = port_find_mcb(bd_addr);
-  if (p_mcb && !p_mcb->is_initiator && !is_server) {
+  if (p_mcb != nullptr && !p_mcb->is_initiator && !is_server) {
     dlci = static_cast<uint8_t>((scn << 1) + 1);
   } else {
     dlci = (scn << 1);
@@ -267,11 +267,11 @@ int RFCOMM_ControlReqFromBTSOCK(uint8_t dlci, const RawAddress& bd_addr, uint8_t
                                 uint8_t break_signal, uint8_t discard_buffers,
                                 uint8_t break_signal_seq, bool fc) {
   tRFC_MCB* p_mcb = port_find_mcb(bd_addr);
-  if (!p_mcb) {
+  if (p_mcb == nullptr) {
     return PORT_BAD_BD_ADDR;
   }
   tPORT* p_port = port_find_mcb_dlci_port(p_mcb, dlci);
-  if (!p_port) {
+  if (p_port == nullptr) {
     return PORT_NOT_OPENED;
   }
   p_port->local_ctrl.modem_signal = modem_signal;
@@ -467,7 +467,7 @@ int PORT_CheckConnection(uint16_t handle, RawAddress* bd_addr, uint16_t* p_lcid)
   }
 
   *bd_addr = p_port->rfc.p_mcb->bd_addr;
-  if (p_lcid) {
+  if (p_lcid != nullptr) {
     *p_lcid = p_port->rfc.p_mcb->lcid;
   }
 
@@ -775,7 +775,7 @@ int PORT_ReadData(uint16_t handle, char* p_data, uint16_t max_len, uint16_t* p_l
 
   while (max_len) {
     p_buf = (BT_HDR*)fixed_queue_try_peek_first(p_port->rx.queue);
-    if (p_buf == NULL) {
+    if (p_buf == nullptr) {
       break;
     }
 
@@ -1089,7 +1089,7 @@ int PORT_WriteData(uint16_t handle, const char* p_data, uint16_t max_len, uint16
   mutex_global_lock();
 
   p_buf = (BT_HDR*)fixed_queue_try_peek_last(p_port->tx.queue);
-  if ((p_buf != NULL) && ((p_buf->len + max_len) <= p_port->peer_mtu) &&
+  if ((p_buf != nullptr) && ((p_buf->len + max_len) <= p_port->peer_mtu) &&
       ((p_buf->len + max_len) <= length)) {
     memcpy((uint8_t*)(p_buf + 1) + p_buf->offset + p_buf->len, p_data, max_len);
     p_port->tx.queue_size += max_len;

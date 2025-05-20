@@ -370,7 +370,7 @@ void rfc_port_sm_term_wait_sec_check(tPORT* p_port, tRFC_PORT_EVENT event, void*
           lcid = p_port->rfc.p_mcb->lcid;
           ccb = l2cu_find_ccb_by_cid(nullptr, lcid);
 
-          if (ccb) {
+          if (ccb != nullptr) {
             bluetooth::shim::GetSnoopLogger()->SetRfcommPortOpen(
                     ccb->p_lcb->Handle(), lcid, p_port->dlci, p_port->uuid,
                     p_port->rfc.p_mcb->flow == PORT_FC_CREDIT);
@@ -781,7 +781,7 @@ void rfc_process_msc(tRFC_MCB* p_mcb, bool is_command, MX_FRAME* p_frame) {
   bool new_peer_fc = false;
 
   p_port = port_find_mcb_dlci_port(p_mcb, p_frame->dlci);
-  if (p_port == NULL) {
+  if (p_port == nullptr) {
     return;
   }
 
@@ -857,7 +857,7 @@ void rfc_process_rls(tRFC_MCB* p_mcb, bool is_command, MX_FRAME* p_frame) {
     p_port = port_find_mcb_dlci_port(p_mcb, p_frame->dlci);
 
     /* If we are not awaiting response just ignore it */
-    if (!p_port || !(p_port->rfc.expected_rsp & RFC_RSP_RLS)) {
+    if (p_port == nullptr || !(p_port->rfc.expected_rsp & RFC_RSP_RLS)) {
       return;
     }
 

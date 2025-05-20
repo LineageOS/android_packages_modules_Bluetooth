@@ -70,7 +70,7 @@ void rfcomm_l2cap_if_init(void) {
   p_l2c->pL2CA_DisconnectInd_Cb = RFCOMM_DisconnectInd;
   p_l2c->pL2CA_DataInd_Cb = RFCOMM_BufDataInd;
   p_l2c->pL2CA_CongestionStatus_Cb = RFCOMM_CongestionStatusInd;
-  p_l2c->pL2CA_TxComplete_Cb = NULL;
+  p_l2c->pL2CA_TxComplete_Cb = nullptr;
   p_l2c->pL2CA_Error_Cb = rfc_on_l2cap_error;
 
   if (!stack::l2cap::get_interface().L2CA_Register(BT_PSM_RFCOMM, rfc_cb.rfc.reg_info,
