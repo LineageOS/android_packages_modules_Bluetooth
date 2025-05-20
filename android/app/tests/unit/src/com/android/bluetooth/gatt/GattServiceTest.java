@@ -32,6 +32,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -75,6 +76,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -90,7 +92,6 @@ import java.util.UUID;
 @RunWith(AndroidJUnit4.class)
 public class GattServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private AttributionSource mAttributionSource;
@@ -128,12 +129,8 @@ public class GattServiceTest {
 
     private static final int SERVER_IF = 34;
     private static final int SERVER_CONN_ID = 84;
-
-    private final ContextMap.Connection SERVER_CONN =
-            new ContextMap.Connection(
-                    SERVER_CONN_ID, mDevice, BluetoothDevice.TRANSPORT_LE, SERVER_IF);
-
-    private final List<ContextMap.Connection> SERVER_CONN_LIST = Arrays.asList(SERVER_CONN);
+    private static final int SERVER_CONN_ID_2 = 85;
+    private final List<ContextMap.Connection> mServerConnections = new ArrayList<>();
 
     @Before
     public void setUp() throws Exception {
@@ -150,7 +147,7 @@ public class GattServiceTest {
         doReturn(mContext.getPackageName()).when(mAttributionSource).getPackageName();
         doReturn(mContext.getPackageName()).when(mAttributionSource).getAttributionTag();
         doReturn(Binder.getCallingUid()).when(mAttributionSource).getUid();
-        doReturn(SERVER_CONN_LIST).when(mServerMap).getConnectionsByDevice(SERVER_IF, mDevice);
+
         doReturn(CLIENT_CONN_LIST).when(mClientMap).getConnectionsByDevice(CLIENT_IF, mDevice);
         ContextMap<IBluetoothGattCallback>.App clientApp = mock(ContextMap.App.class);
         clientApp.callback = mGattCallback;
@@ -158,9 +155,62 @@ public class GattServiceTest {
         doReturn(clientApp).when(mClientMap).getByCallbackId(mGattCallback);
         doReturn(clientApp).when(mClientMap).getById(CLIENT_IF);
 
-        ContextMap<IBluetoothGattCallback>.App serverApp = mock(ContextMap.App.class);
-        serverApp.id = SERVER_IF;
-        doReturn(serverApp).when(mServerMap).getByCallbackId(mGattServerCallback);
+        addServerAppRecord(SERVER_IF, BluetoothDevice.TRANSPORT_LE, mGattServerCallback);
+        doAnswer(
+                        (Answer<Void>)
+                                invocation -> {
+                                    Object[] arguments = invocation.getArguments();
+                                    if (arguments != null && arguments.length == 4) {
+                                        int id = (int) arguments[0];
+                                        int connId = (int) arguments[1];
+                                        int transport = (int) arguments[2];
+                                        BluetoothDevice device = (BluetoothDevice) arguments[3];
+                                        mServerConnections.add(
+                                                new ContextMap.Connection(
+                                                        connId, device, transport, id));
+                                    }
+                                    return null;
+                                })
+                .when(mServerMap)
+                .addConnection(anyInt(), anyInt(), anyInt(), any(BluetoothDevice.class));
+        doAnswer(
+                        (Answer<Void>)
+                                invocation -> {
+                                    Object[] arguments = invocation.getArguments();
+                                    if (arguments != null && arguments.length == 2) {
+                                        int id = (int) arguments[0];
+                                        int connId = (int) arguments[1];
+                                        mServerConnections.removeIf(
+                                                conn ->
+                                                        conn.appId() == id
+                                                                && conn.connId() == connId);
+                                    }
+                                    return null;
+                                })
+                .when(mServerMap)
+                .removeConnection(anyInt(), anyInt());
+        doAnswer(
+                        (Answer<List<ContextMap.Connection>>)
+                                invocation -> {
+                                    List<ContextMap.Connection> currentConnections =
+                                            new ArrayList<ContextMap.Connection>();
+                                    Object[] arguments = invocation.getArguments();
+                                    if (arguments != null && arguments.length == 2) {
+                                        int id = (int) arguments[0];
+                                        BluetoothDevice device = (BluetoothDevice) arguments[1];
+                                        for (ContextMap.Connection connection :
+                                                mServerConnections) {
+                                            if (connection.device().equals(device)
+                                                    && connection.appId() == id) {
+                                                currentConnections.add(connection);
+                                            }
+                                        }
+                                    }
+                                    return currentConnections;
+                                })
+                .when(mServerMap)
+                .getConnectionsByDevice(anyInt(), any(BluetoothDevice.class));
+
         doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(mContext.getSharedPreferences("GattServiceTestPrefs", Context.MODE_PRIVATE))
                 .when(mAdapterService)
@@ -732,9 +782,99 @@ public class GattServiceTest {
     }
 
     @Test
-    public void serverDisconnect() {
+    public void serverDisconnect_oneBearerConnected_bearerDisconnectRequested() {
+        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, BluetoothDevice.TRANSPORT_LE, mDevice);
+
         mService.serverDisconnect(mGattServerCallback, mDevice);
+
         verify(mNativeInterface).gattServerDisconnect(SERVER_IF, mDevice, SERVER_CONN_ID);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
+    public void serverDisconnect_multipleBearersConnected_allBearersDisconnected() {
+        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, BluetoothDevice.TRANSPORT_LE, mDevice);
+        addClientConnectionRecord(
+                SERVER_IF, SERVER_CONN_ID_2, BluetoothDevice.TRANSPORT_LE, mDevice);
+
+        mService.serverDisconnect(mGattServerCallback, mDevice);
+
+        verify(mNativeInterface).gattServerDisconnect(SERVER_IF, mDevice, SERVER_CONN_ID);
+        verify(mNativeInterface).gattServerDisconnect(SERVER_IF, mDevice, SERVER_CONN_ID_2);
+    }
+
+    @Test
+    public void serverDisconnect_noBearersConnected_zeroUsedToDisconnectInFlightConnections() {
+        mService.serverDisconnect(mGattServerCallback, mDevice);
+        verify(mNativeInterface, never()).gattServerDisconnect(SERVER_IF, mDevice, SERVER_CONN_ID);
+        verify(mNativeInterface).gattServerDisconnect(SERVER_IF, mDevice, 0);
+    }
+
+    @Test
+    public void serverClientConnects_noExistingBearers_stateChangedToConnected() throws Exception {
+        mService.onClientConnectedFromNative(
+                mDevice, BluetoothDevice.TRANSPORT_BREDR, true, SERVER_CONN_ID_2, SERVER_IF);
+
+        verify(mServerMap)
+                .addConnection(
+                        eq(SERVER_IF),
+                        eq(SERVER_CONN_ID_2),
+                        eq(BluetoothDevice.TRANSPORT_BREDR),
+                        eq(mDevice));
+        verify(mGattServerCallback).onServerConnectionState(eq(0), eq(true), eq(mDevice));
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
+    public void serverClientConnects_bearerExistsForSameDevice_stateDoesNotChange()
+            throws Exception {
+        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, BluetoothDevice.TRANSPORT_LE, mDevice);
+
+        mService.onClientConnectedFromNative(
+                mDevice, BluetoothDevice.TRANSPORT_LE, true, SERVER_CONN_ID_2, SERVER_IF);
+
+        verify(mServerMap)
+                .addConnection(
+                        eq(SERVER_IF),
+                        eq(SERVER_CONN_ID_2),
+                        eq(BluetoothDevice.TRANSPORT_LE),
+                        eq(mDevice));
+        verify(mGattServerCallback, never()).onServerConnectionState(anyInt(), anyBoolean(), any());
+    }
+
+    @Test
+    public void serverClientDisconnects_noMoreBearersExistsForDevice_stateChangedToDisconnected()
+            throws Exception {
+        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, BluetoothDevice.TRANSPORT_LE, mDevice);
+
+        mService.onClientConnectedFromNative(
+                mDevice, BluetoothDevice.TRANSPORT_LE, false, SERVER_CONN_ID, SERVER_IF);
+
+        verify(mServerMap).removeConnection(eq(SERVER_IF), eq(SERVER_CONN_ID));
+        assertThat(mServerConnections).isEmpty();
+        verify(mGattServerCallback).onServerConnectionState(eq(0), eq(false), eq(mDevice));
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
+    public void serverClientDisconnects_bearerStillExistsForDevice_stateDoesNotChange()
+            throws Exception {
+        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, BluetoothDevice.TRANSPORT_LE, mDevice);
+        addClientConnectionRecord(
+                SERVER_IF, SERVER_CONN_ID_2, BluetoothDevice.TRANSPORT_LE, mDevice);
+
+        mService.onClientConnectedFromNative(
+                mDevice, BluetoothDevice.TRANSPORT_LE, false, SERVER_CONN_ID, SERVER_IF);
+
+        verify(mServerMap).removeConnection(eq(SERVER_IF), eq(SERVER_CONN_ID));
+        verify(mServerMap, never()).removeConnection(eq(SERVER_IF), eq(SERVER_CONN_ID_2));
+        verify(mGattServerCallback, never()).onServerConnectionState(anyInt(), anyBoolean(), any());
+    }
+
+    @Test
+    public void serverClearServices_withEmptyServiceSetForApp_noServicesDeleted() {
+        mService.clearServices(mGattServerCallback);
+        verify(mNativeInterface, never()).gattServerDeleteService(eq(SERVER_IF), anyInt());
     }
 
     @Test
@@ -743,6 +883,7 @@ public class GattServiceTest {
         int rxPhy = 1;
         int phyOptions = 3;
 
+        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, BluetoothDevice.TRANSPORT_LE, mDevice);
         mService.serverSetPreferredPhy(mGattServerCallback, mDevice, txPhy, rxPhy, phyOptions);
         verify(mNativeInterface)
                 .gattServerSetPreferredPhy(SERVER_IF, mDevice, txPhy, rxPhy, phyOptions);
@@ -750,23 +891,158 @@ public class GattServiceTest {
 
     @Test
     public void serverReadPhy() {
+        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, BluetoothDevice.TRANSPORT_LE, mDevice);
         mService.serverReadPhy(mGattServerCallback, mDevice);
         verify(mNativeInterface).gattServerReadPhy(SERVER_IF, mDevice);
     }
 
     @Test
-    public void serverSendNotification() throws Exception {
+    public void serverSendNotification_oneBearerConnected_bearerNotified() throws Exception {
         int handle = 2;
         boolean confirm = true;
         byte[] value = new byte[] {5, 6};
 
+        addServerAppRecord(SERVER_IF, BluetoothDevice.TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, BluetoothDevice.TRANSPORT_LE, mDevice);
+
         mService.sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
         verify(mNativeInterface).gattServerSendIndication(SERVER_IF, handle, SERVER_CONN_ID, value);
+    }
 
-        confirm = false;
+    @Test
+    public void serverSendIndication_oneBearerConnected_bearerIndicated() throws Exception {
+        int handle = 2;
+        boolean confirm = false;
+        byte[] value = new byte[] {5, 6};
+
+        addServerAppRecord(SERVER_IF, BluetoothDevice.TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, BluetoothDevice.TRANSPORT_LE, mDevice);
 
         mService.sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
         verify(mNativeInterface)
                 .gattServerSendNotification(SERVER_IF, handle, SERVER_CONN_ID, value);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
+    public void serverSendNotification_multipleBearersConnectedPrefLe_leTransportUsed() {
+        int handle = 2;
+        byte[] value = new byte[] {5, 6};
+
+        addClientConnectionRecord(
+                SERVER_IF, SERVER_CONN_ID, BluetoothDevice.TRANSPORT_BREDR, mDevice);
+        addClientConnectionRecord(
+                SERVER_IF, SERVER_CONN_ID_2, BluetoothDevice.TRANSPORT_LE, mDevice);
+
+        mService.sendNotification(mGattServerCallback, mDevice, handle, false, value);
+
+        verify(mNativeInterface)
+                .gattServerSendNotification(SERVER_IF, handle, SERVER_CONN_ID_2, value);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
+    public void serverSendNotification_multipleBearersConnectedPrefBredr_BredrTransportUsed() {
+        int handle = 2;
+        boolean confirm = false;
+        byte[] value = new byte[] {5, 6};
+
+        addServerAppRecord(SERVER_IF, BluetoothDevice.TRANSPORT_BREDR, mGattServerCallback);
+        addClientConnectionRecord(
+                SERVER_IF, SERVER_CONN_ID, BluetoothDevice.TRANSPORT_BREDR, mDevice);
+        addClientConnectionRecord(
+                SERVER_IF, SERVER_CONN_ID_2, BluetoothDevice.TRANSPORT_LE, mDevice);
+
+        mService.sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
+
+        verify(mNativeInterface)
+                .gattServerSendNotification(SERVER_IF, handle, SERVER_CONN_ID, value);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
+    public void serverSendNotification_twoBearersConnectedPrefAutoBredrOldest_bredrTransportUsed() {
+        int handle = 2;
+        boolean confirm = false;
+        byte[] value = new byte[] {5, 6};
+
+        addServerAppRecord(SERVER_IF, BluetoothDevice.TRANSPORT_AUTO, mGattServerCallback);
+        addClientConnectionRecord(
+                SERVER_IF, SERVER_CONN_ID, BluetoothDevice.TRANSPORT_BREDR, mDevice);
+        addClientConnectionRecord(
+                SERVER_IF, SERVER_CONN_ID_2, BluetoothDevice.TRANSPORT_LE, mDevice);
+
+        mService.sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
+
+        verify(mNativeInterface)
+                .gattServerSendNotification(SERVER_IF, handle, SERVER_CONN_ID, value);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
+    public void serverSendNotification_twoBearersConnectedPrefAutoLeOldest_leTransportUsed() {
+        int handle = 2;
+        boolean confirm = false;
+        byte[] value = new byte[] {5, 6};
+
+        addServerAppRecord(SERVER_IF, BluetoothDevice.TRANSPORT_AUTO, mGattServerCallback);
+        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, BluetoothDevice.TRANSPORT_LE, mDevice);
+        addClientConnectionRecord(
+                SERVER_IF, SERVER_CONN_ID_2, BluetoothDevice.TRANSPORT_BREDR, mDevice);
+
+        mService.sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
+
+        verify(mNativeInterface)
+                .gattServerSendNotification(SERVER_IF, handle, SERVER_CONN_ID, value);
+    }
+
+    @Test
+    public void serverSendNotification_noBearersConnected_noNotificationSent() {
+        int handle = 2;
+        boolean confirm = false;
+        byte[] value = new byte[] {5, 6};
+
+        mService.sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
+
+        verify(mNativeInterface, never())
+                .gattServerSendNotification(SERVER_IF, handle, SERVER_CONN_ID_2, value);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
+    public void serverSendNotification_noBearersThatMatchPref_notificationSentOnOldest() {
+        int handle = 2;
+        boolean confirm = false;
+        byte[] value = new byte[] {5, 6};
+
+        addServerAppRecord(SERVER_IF, BluetoothDevice.TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(
+                SERVER_IF, SERVER_CONN_ID, BluetoothDevice.TRANSPORT_BREDR, mDevice);
+        addClientConnectionRecord(
+                SERVER_IF, SERVER_CONN_ID_2, BluetoothDevice.TRANSPORT_BREDR, mDevice);
+
+        mService.sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
+
+        verify(mNativeInterface)
+                .gattServerSendNotification(SERVER_IF, handle, SERVER_CONN_ID, value);
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // GATT Server Utilities
+    // ---------------------------------------------------------------------------------------------
+
+    private void addServerAppRecord(int serverIf, int transport, IBluetoothGattServerCallback cb) {
+        ContextMap<IBluetoothGattServerCallback>.App serverApp = mock(ContextMap.App.class);
+        serverApp.id = serverIf;
+        serverApp.transport = transport;
+        serverApp.callback = cb;
+        doReturn(serverApp).when(mServerMap).getByCallbackId(mGattServerCallback);
+        doReturn(serverApp).when(mServerMap).getById(serverIf);
+    }
+
+    private void addClientConnectionRecord(
+            int id, int connId, int transport, BluetoothDevice device) {
+        ContextMap.Connection conn = new ContextMap.Connection(connId, device, transport, id);
+        mServerConnections.add(conn);
     }
 }
