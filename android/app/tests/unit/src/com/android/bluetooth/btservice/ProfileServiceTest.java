@@ -39,7 +39,6 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.a2dpsink.A2dpSinkNativeInterface;
-import com.android.bluetooth.avrcp.AvrcpNativeInterface;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.hearingaid.HearingAidNativeInterface;
@@ -63,6 +62,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /** Test cases for {@link ProfileService}. */
 @MediumTest
@@ -74,7 +74,6 @@ public class ProfileServiceTest {
     @Mock private TelephonyManager mMockTelephonyManager;
 
     @Mock private A2dpSinkNativeInterface mA2dpSinkNativeInterface;
-    @Mock private AvrcpNativeInterface mAvrcpNativeInterface;
     @Mock private AvrcpControllerNativeInterface mAvrcpControllerNativeInterface;
     @Mock private HeadsetNativeInterface mHeadsetNativeInterface;
     @Mock private HearingAidNativeInterface mHearingAidNativeInterface;
@@ -141,25 +140,31 @@ public class ProfileServiceTest {
 
         mockGetSystemService(mAdapterService, TelephonyManager.class, mMockTelephonyManager);
 
+        // These are disabled because `AdapterService` incorrectly starts the real NativeInterface
+        // due to their respective NativeInterface being unmockable from here.
+        final Set<Integer> manuallyDisabled =
+                Set.of(BluetoothProfile.AVRCP, BluetoothProfile.HID_HOST);
+
         final Set<Integer> excludedProfiles =
                 Set.of(
-                        BluetoothProfile.HAP_CLIENT,
-                        BluetoothProfile.VOLUME_CONTROL,
+                        BluetoothProfile.A2DP,
                         BluetoothProfile.CSIP_SET_COORDINATOR,
                         BluetoothProfile.GATT,
+                        BluetoothProfile.HAP_CLIENT,
                         BluetoothProfile.HID_DEVICE,
-                        // HID_HOST is disabled because `mAdapterService` incorrectly starts the
-                        // original HidHostNativeInterface
-                        BluetoothProfile.HID_HOST,
                         BluetoothProfile.PAN,
-                        BluetoothProfile.A2DP);
+                        BluetoothProfile.VOLUME_CONTROL);
+
+        final Set<Integer> allDisabled =
+                Stream.concat(manuallyDisabled.stream(), excludedProfiles.stream())
+                        .collect(Collectors.toUnmodifiableSet());
+
         mProfiles =
                 Arrays.stream(Config.getSupportedProfiles())
-                        .filter(profile -> !excludedProfiles.contains(profile))
+                        .filter(profile -> !allDisabled.contains(profile))
                         .toArray();
 
         A2dpSinkNativeInterface.setInstance(mA2dpSinkNativeInterface);
-        AvrcpNativeInterface.setInstance(mAvrcpNativeInterface);
         AvrcpControllerNativeInterface.setInstance(mAvrcpControllerNativeInterface);
         HeadsetNativeInterface.setInstance(mHeadsetNativeInterface);
         HearingAidNativeInterface.setInstance(mHearingAidNativeInterface);
@@ -171,7 +176,6 @@ public class ProfileServiceTest {
     public void tearDown()
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         A2dpSinkNativeInterface.setInstance(null);
-        AvrcpNativeInterface.setInstance(null);
         AvrcpControllerNativeInterface.setInstance(null);
         HeadsetNativeInterface.setInstance(null);
         HearingAidNativeInterface.setInstance(null);

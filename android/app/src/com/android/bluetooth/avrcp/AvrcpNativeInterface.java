@@ -28,8 +28,6 @@ import com.android.bluetooth.audio_util.PlayStatus;
 import com.android.bluetooth.audio_util.PlayerInfo;
 import com.android.bluetooth.audio_util.PlayerSettingsManager.PlayerSettingsValues;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.internal.annotations.GuardedBy;
-import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.List;
 
@@ -39,45 +37,21 @@ import java.util.List;
 public class AvrcpNativeInterface {
     private static final String TAG = AvrcpNativeInterface.class.getSimpleName();
 
-    @GuardedBy("INSTANCE_LOCK")
-    private static AvrcpNativeInterface sInstance;
-
-    private static final Object INSTANCE_LOCK = new Object();
-
-    private AvrcpTargetService mAvrcpService;
     private final AdapterService mAdapterService;
+    private final AvrcpTargetService mAvrcpService;
 
-    private AvrcpNativeInterface(AdapterService adapterService) {
+    AvrcpNativeInterface(AdapterService adapterService, AvrcpTargetService service) {
         mAdapterService = requireNonNull(adapterService);
+        mAvrcpService = requireNonNull(service);
     }
 
-    static AvrcpNativeInterface getInstance(AdapterService adapterService) {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new AvrcpNativeInterface(adapterService);
-            }
-
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    public static void setInstance(AvrcpNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
-    }
-
-    void init(AvrcpTargetService service) {
+    void init() {
         d("Init AvrcpNativeInterface");
-        mAvrcpService = service;
         initNative();
     }
 
     void cleanup() {
         d("Cleanup AvrcpNativeInterface");
-        mAvrcpService = null;
         cleanupNative();
     }
 
