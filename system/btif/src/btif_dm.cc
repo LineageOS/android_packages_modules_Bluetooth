@@ -54,6 +54,7 @@
 #include "bt_dev_class.h"
 #include "bt_name.h"
 #include "bta/dm/bta_dm_disc.h"
+#include "bta/gatt/bta_gattc_int.h"
 #include "bta/include/bta_api.h"
 #include "bta/include/bta_hh_api.h"
 #include "btif/include/stack_manager_t.h"
@@ -587,6 +588,9 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
     bluetooth::metrics::AllocateIdFromMetricIdAllocator(bd_addr);
     if (!bluetooth::metrics::SaveDeviceOnMetricIdAllocator(bd_addr)) {
       log::error("Fail to save metric id for device:{}", bd_addr);
+    }
+    if (com::android::bluetooth::flags::save_cache_for_bonded_device()) {
+      bta_gattc_link_cache_for_bonded_device(bd_addr);
     }
   }
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Bond state changed",

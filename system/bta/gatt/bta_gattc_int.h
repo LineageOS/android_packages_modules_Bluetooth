@@ -478,6 +478,7 @@ const gatt::Characteristic* bta_gattc_get_owning_characteristic(tCONN_ID conn_id
 void bta_gattc_get_gatt_db(tCONN_ID conn_id, uint16_t start_handle, uint16_t end_handle,
                            btgatt_db_element_t** db, int* count);
 void bta_gattc_init_cache(tBTA_GATTC_SERV* p_srvc_cb);
+void bta_gattc_link_cache_for_bonded_device(const RawAddress& bd_addr);
 
 enum class RobustCachingSupport { UNSUPPORTED, SUPPORTED, UNKNOWN, W4_REMOTE_VERSION };
 RobustCachingSupport GetRobustCachingSupport(const tBTA_GATTC_CLCB* p_clcb,

@@ -1040,3 +1040,23 @@ void bta_gattc_get_gatt_db(tCONN_ID conn_id, uint16_t start_handle, uint16_t end
 
   bta_gattc_get_gatt_db_impl(p_clcb->p_srcb, start_handle, end_handle, db, count);
 }
+
+void bta_gattc_link_cache_for_bonded_device(const RawAddress& bd_addr) {
+  log::info("");
+  tBTA_GATTC_SERV* p_srcb = bta_gattc_find_srcb(bd_addr);
+  if (p_srcb == nullptr || p_srcb->gatt_database.IsEmpty()) {
+    return;
+  }
+  gatt::Database db = bta_gattc_cache_load(p_srcb->server_bda);
+  if (!db.IsEmpty()) {
+    return;
+  }
+
+  if (BTM_IsBonded(bd_addr)) {
+    Octet16 hash = p_srcb->gatt_database.Hash();
+
+    log::debug("Linking db hash to bonded device {}",
+               p_srcb->server_bda.ToRedactedStringForLogging());
+    bta_gattc_cache_link(p_srcb->server_bda, hash);
+  }
+}
