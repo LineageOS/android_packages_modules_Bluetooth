@@ -330,7 +330,7 @@ class BluetoothManagerService {
         if (Flags.factoryResetClearAdditionalData()) {
             AutoOnFeature.factoryResetAutoOn(mCurrentUserContext);
             AirplaneModeListener.factoryReset(mContentResolver, mCurrentUserContext);
-            setBtHciSnoopLogMode(BT_SNOOP_LOG_MODE_DISABLED);
+            setBtHciSnoopLogMode(-1);
         }
         if (count == 10 || mState.oneOf(State.OFF)) {
             Log.e(TAG, "factoryReset(" + count + "): Set property to retry when Bluetooth start");
@@ -2385,9 +2385,7 @@ class BluetoothManagerService {
                     case BT_SNOOP_LOG_MODE_FILTERED ->
                             BluetoothProperties.snoop_log_mode_values.FILTERED;
                     case BT_SNOOP_LOG_MODE_FULL -> BluetoothProperties.snoop_log_mode_values.FULL;
-                    default ->
-                            throw new IllegalArgumentException(
-                                    "Invalid HCI snoop log mode param value");
+                    default -> null;
                 };
         try {
             BluetoothProperties.snoop_log_mode(snoopMode);
