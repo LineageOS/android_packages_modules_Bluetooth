@@ -60,7 +60,7 @@ static void RFCOMM_CongestionStatusInd(uint16_t lcid, bool is_congested);
  *                  to register interface functions with L2CAP.
  *
  ******************************************************************************/
-void rfcomm_l2cap_if_init(void) {
+void rfcomm_l2cap_if_init() {
   tL2CAP_APPL_INFO* p_l2c = &rfc_cb.rfc.reg_info;
 
   p_l2c->pL2CA_ConnectInd_Cb = RFCOMM_ConnectInd;

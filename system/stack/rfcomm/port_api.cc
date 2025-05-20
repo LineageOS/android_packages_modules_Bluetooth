@@ -394,14 +394,13 @@ int PORT_SetEventMaskAndCallback(uint16_t handle, uint32_t mask, tPORT_CALLBACK*
  * Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
  *
  ******************************************************************************/
-
 int PORT_ClearKeepHandleFlag(uint16_t handle) {
   tPORT* p_port = get_port_from_handle(handle);
   if (p_port == nullptr) {
     log::error("Unable to get RFCOMM port control block bad handle:{}", handle);
     return PORT_BAD_HANDLE;
   }
-  p_port->keep_port_handle = 0;
+  p_port->keep_port_handle = false;
   return PORT_SUCCESS;
 }
 
@@ -1007,7 +1006,7 @@ int PORT_WriteDataCO(uint16_t handle, int* p_len) {
 
     rc = port_write(p_port, p_buf);
 
-    /* If queue went below the threashold need to send flow control */
+    /* If queue went below the threshold need to send flow control */
     event |= port_flow_control_user(p_port);
 
     if (rc == PORT_SUCCESS) {
@@ -1131,7 +1130,7 @@ int PORT_WriteData(uint16_t handle, const char* p_data, uint16_t max_len, uint16
 
     rc = port_write(p_port, p_buf);
 
-    /* If queue went below the threashold need to send flow control */
+    /* If queue went below the threshold need to send flow control */
     event |= port_flow_control_user(p_port);
 
     if (rc == PORT_SUCCESS) {
@@ -1168,7 +1167,7 @@ int PORT_WriteData(uint16_t handle, const char* p_data, uint16_t max_len, uint16
  * Description      This function is called to initialize RFCOMM layer
  *
  ******************************************************************************/
-void RFCOMM_Init(void) {
+void RFCOMM_Init() {
   memset(&rfc_cb, 0, sizeof(tRFC_CB)); /* Init RFCOMM control block */
   rfc_lcid_mcb = {};
 
