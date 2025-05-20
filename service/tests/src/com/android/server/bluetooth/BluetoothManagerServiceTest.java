@@ -297,7 +297,7 @@ public class BluetoothManagerServiceTest {
     }
 
     /**
-     * Dispatch all the message on the Loopper and check that the what is expected
+     * Dispatch all the message on the Looper and check that the what is expected
      *
      * @param what list of message that are expected to be run by the handler
      */
