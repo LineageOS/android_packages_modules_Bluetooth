@@ -19,7 +19,10 @@ package com.android.bluetooth.btservice;
 import static android.bluetooth.BluetoothAdapter.SCAN_MODE_CONNECTABLE;
 import static android.bluetooth.BluetoothAdapter.SCAN_MODE_NONE;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.StaticMockitoRule;
+import static com.android.bluetooth.TestUtils.mockSystemPropertyGet;
+import static com.android.bluetooth.btservice.AdapterSuspend.BLUETOOTH_SUSPEND_DISCONNECT_ACL;
+import static com.android.bluetooth.btservice.AdapterSuspend.BLUETOOTH_SUSPEND_SCAN_MODE_NONE;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -31,6 +34,7 @@ import android.content.Context;
 import android.hardware.devicestate.DeviceStateManager;
 import android.hardware.display.DisplayManager;
 import android.os.PowerManager;
+import android.os.SystemProperties;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -48,30 +52,29 @@ import org.mockito.Mock;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class AdapterSuspendTest {
-    private TestLooper mTestLooper;
-    private DeviceStateManager mDeviceStateManager;
-    private DisplayManager mDisplayManager;
-    private PowerManager mPowerManager;
-    private AdapterSuspend mAdapterSuspend;
+    @Rule
+    public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(SystemProperties.class);
 
-    static final String BLUETOOTH_SUSPEND_DISCONNECT_ACL =
-            "bluetooth.power.suspend.disconnect_acl.enabled";
-    static final String BLUETOOTH_SUSPEND_SCAN_MODE_NONE =
-            "bluetooth.power.suspend.scan_mode_none.enabled";
-
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Mock private AdapterNativeInterface mAdapterNativeInterface;
     @Mock private AdapterService mAdapterService;
 
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+    private final DeviceStateManager mDeviceStateManager =
+            mContext.getSystemService(DeviceStateManager.class);
+    private final DisplayManager mDisplayManager = mContext.getSystemService(DisplayManager.class);
+    private final PowerManager mPowerManager = mContext.getSystemService(PowerManager.class);
+
+    private TestLooper mTestLooper;
+    private AdapterSuspend mAdapterSuspend;
+
     @Before
-    public void setUp() throws Exception {
-        Context context = InstrumentationRegistry.getInstrumentation().getContext();
-        mTestLooper = new TestLooper();
-        mDeviceStateManager = context.getSystemService(DeviceStateManager.class);
-        mDisplayManager = context.getSystemService(DisplayManager.class);
-        mPowerManager = context.getSystemService(PowerManager.class);
+    public void setUp() {
         doReturn(mAdapterNativeInterface).when(mAdapterService).getNative();
 
+        mTestLooper = new TestLooper();
+
+        mockSystemPropertyGet(BLUETOOTH_SUSPEND_DISCONNECT_ACL, true);
+        mockSystemPropertyGet(BLUETOOTH_SUSPEND_SCAN_MODE_NONE, true);
         mAdapterSuspend =
                 spy(
                         new AdapterSuspend(
@@ -84,8 +87,6 @@ public class AdapterSuspendTest {
 
     @Test
     public void testSuspend() throws Exception {
-        mAdapterSuspend.setPropertyForTest(BLUETOOTH_SUSPEND_DISCONNECT_ACL, true);
-        mAdapterSuspend.setPropertyForTest(BLUETOOTH_SUSPEND_SCAN_MODE_NONE, true);
         doReturn(SCAN_MODE_CONNECTABLE).when(mAdapterService).getScanMode();
         mAdapterSuspend.handleSuspend(true);
 
@@ -98,8 +99,6 @@ public class AdapterSuspendTest {
 
     @Test
     public void testResume() throws Exception {
-        mAdapterSuspend.setPropertyForTest(BLUETOOTH_SUSPEND_DISCONNECT_ACL, true);
-        mAdapterSuspend.setPropertyForTest(BLUETOOTH_SUSPEND_SCAN_MODE_NONE, true);
         mAdapterSuspend.setLastScanModeForTest(SCAN_MODE_CONNECTABLE);
         doReturn(SCAN_MODE_NONE).when(mAdapterService).getScanMode();
         mAdapterSuspend.handleResume();

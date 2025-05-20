@@ -26,9 +26,11 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static android.media.audio.Flags.FLAG_DEPRECATE_STREAM_BT_SCO;
 import static android.media.audio.Flags.FLAG_SCO_MANAGED_BY_AUDIO;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockSystemPropertyGet;
 import static com.android.bluetooth.Utils.joinUninterruptibly;
+import static com.android.bluetooth.hfp.HeadsetStateMachine.HFP_VOLUME_CONTROL_ENABLED;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -48,6 +50,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.HandlerThread;
+import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.annotations.RequiresFlagsDisabled;
@@ -74,7 +77,6 @@ import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.util.SystemProperties;
 
 import org.junit.After;
 import org.junit.Before;
@@ -121,7 +123,8 @@ public class HeadsetStateMachineTest {
     private final BluetoothDevice mDevice = getTestDevice(87);
     private final ArgumentCaptor<Intent> mIntentArgument = ArgumentCaptor.forClass(Intent.class);
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule
+    public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(SystemProperties.class);
 
     @Mock private AdapterService mAdapterService;
     @Mock private ActiveDeviceManager mActiveDeviceManager;
@@ -136,7 +139,6 @@ public class HeadsetStateMachineTest {
     private MockContentResolver mMockContentResolver;
     @Mock private HeadsetNativeInterface mNativeInterface;
     @Mock private RemoteDevices mRemoteDevices;
-    @Mock private SystemProperties.MockableSystemProperties mProperties;
 
     @Before
     public void setUp() throws Exception {
@@ -192,8 +194,6 @@ public class HeadsetStateMachineTest {
                                 mAdapterService,
                                 mNativeInterface,
                                 mSystemInterface);
-
-        SystemProperties.mProperties = mProperties;
     }
 
     @After
@@ -1783,12 +1783,10 @@ public class HeadsetStateMachineTest {
         verify(mockAudioManager).setStreamVolume(AudioManager.STREAM_VOICE_CALL, 2, 0);
     }
 
-    @RequiresFlagsEnabled(Flags.FLAG_HFP_VOLUME_CONTROL_PROPERTY)
     @Test
+    @EnableFlags(Flags.FLAG_HFP_VOLUME_CONTROL_PROPERTY)
     public void testProcessVolumeEventAudioConnected_withVolumeControlEnabled_ShowUiFlagEnabled() {
-        doReturn(true)
-                .when(mProperties)
-                .getBoolean(eq(HeadsetStateMachine.HFP_VOLUME_CONTROL_ENABLED), anyBoolean());
+        mockSystemPropertyGet(HFP_VOLUME_CONTROL_ENABLED, true);
 
         setUpAudioOnState();
 
@@ -1805,12 +1803,10 @@ public class HeadsetStateMachineTest {
                 .isEqualTo(AudioManager.FLAG_SHOW_UI);
     }
 
-    @RequiresFlagsEnabled(Flags.FLAG_HFP_VOLUME_CONTROL_PROPERTY)
     @Test
+    @EnableFlags(Flags.FLAG_HFP_VOLUME_CONTROL_PROPERTY)
     public void testProcessVolumeEventAudioConnected_withVolumeControlEnabled_ShowUiFlagDisabled() {
-        doReturn(false)
-                .when(mProperties)
-                .getBoolean(eq(HeadsetStateMachine.HFP_VOLUME_CONTROL_ENABLED), anyBoolean());
+        mockSystemPropertyGet(HFP_VOLUME_CONTROL_ENABLED, false);
 
         setUpAudioOnState();
 
