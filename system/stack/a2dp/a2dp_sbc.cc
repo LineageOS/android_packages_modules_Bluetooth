@@ -1075,6 +1075,7 @@ tA2DP_STATUS A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_
   if (codec_config_.sample_rate == BTAV_A2DP_CODEC_SAMPLE_RATE_NONE) {
     log::error("cannot match sample frequency: local caps = 0x{:x} peer info = 0x{:x}",
                p_a2dp_sbc_caps->samp_freq, peer_info_cie.samp_freq);
+    status = A2DP_NOT_SUPPORTED_SAMPLING_FREQUENCY;
     goto fail;
   }
 
@@ -1123,6 +1124,7 @@ tA2DP_STATUS A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_
   if (codec_config_.bits_per_sample == BTAV_A2DP_CODEC_BITS_PER_SAMPLE_NONE) {
     log::error("cannot match bits per sample: user preference = 0x{:x}",
                codec_user_config_.bits_per_sample);
+    status = A2DP_NOT_SUPPORTED_BIT_RATE;
     goto fail;
   }
 
@@ -1200,6 +1202,7 @@ tA2DP_STATUS A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_
   if (codec_config_.channel_mode == BTAV_A2DP_CODEC_CHANNEL_MODE_NONE) {
     log::error("cannot match channel mode: local caps = 0x{:x} peer info = 0x{:x}",
                p_a2dp_sbc_caps->ch_mode, peer_info_cie.ch_mode);
+    status = A2DP_NOT_SUPPORTED_CHANNELS;
     goto fail;
   }
 
@@ -1218,6 +1221,7 @@ tA2DP_STATUS A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_
   } else {
     log::error("cannot match block length: local caps = 0x{:x} peer info = 0x{:x}",
                p_a2dp_sbc_caps->block_len, peer_info_cie.block_len);
+    status = A2DP_INVALID_BLOCK_LENGTH;
     goto fail;
   }
 
@@ -1232,6 +1236,7 @@ tA2DP_STATUS A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_
   } else {
     log::error("cannot match number of sub-bands: local caps = 0x{:x} peer info = 0x{:x}",
                p_a2dp_sbc_caps->num_subbands, peer_info_cie.num_subbands);
+    status = A2DP_NOT_SUPPORTED_SUBBANDS;
     goto fail;
   }
 
@@ -1246,6 +1251,7 @@ tA2DP_STATUS A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_
   } else {
     log::error("cannot match allocation method: local caps = 0x{:x} peer info = 0x{:x}",
                p_a2dp_sbc_caps->alloc_method, peer_info_cie.alloc_method);
+    status = A2DP_NOT_SUPPORTED_ALLOCATION_METHOD;
     goto fail;
   }
 
@@ -1266,10 +1272,12 @@ tA2DP_STATUS A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_
             "info min/max = 0x{:x}/0x{:x}",
             p_a2dp_sbc_caps->min_bitpool, p_a2dp_sbc_caps->max_bitpool, peer_info_cie.min_bitpool,
             peer_info_cie.max_bitpool);
+    status = AVDTP_UNSUPPORTED_CONFIGURATION;
     goto fail;
   }
 
   if (!A2DP_BuildInfoSbc(AVDT_MEDIA_TYPE_AUDIO, &result_config_cie, p_result_codec_config)) {
+    status = AVDTP_UNSUPPORTED_CONFIGURATION;
     goto fail;
   }
 
