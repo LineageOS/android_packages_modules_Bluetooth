@@ -285,6 +285,7 @@ public class AdapterService extends Service {
     private final AdapterServiceHandler mHandler;
     private final SilenceDeviceManager mSilenceDeviceManager;
     private final DatabaseManager mDatabaseManager;
+    private final ServiceFactory mServiceFactory;
 
     private boolean mIsMediaProfileConnected;
     private int mStackReportedState;
@@ -405,7 +406,8 @@ public class AdapterService extends Service {
     private AdapterService(Looper looper) {
         mLooper = requireNonNull(looper);
         mHandler = new AdapterServiceHandler(mLooper);
-        mSilenceDeviceManager = new SilenceDeviceManager(this, new ServiceFactory(), mLooper);
+        mServiceFactory = new ServiceFactory();
+        mSilenceDeviceManager = new SilenceDeviceManager(this, mServiceFactory, mLooper);
         mDatabaseManager = new DatabaseManager(this);
     }
 
@@ -722,15 +724,15 @@ public class AdapterService extends Service {
          */
         if (!isAutomotiveDevice && getResources().getBoolean(R.bool.enable_phone_policy)) {
             Log.i(TAG, "Phone policy enabled");
-            mPhonePolicy = Optional.of(new PhonePolicy(this, mLooper, new ServiceFactory()));
+            mPhonePolicy = Optional.of(new PhonePolicy(this, mLooper, mServiceFactory));
         } else {
             Log.i(TAG, "Phone policy disabled");
         }
 
-        mActiveDeviceManager = new ActiveDeviceManager(this, new ServiceFactory());
+        mActiveDeviceManager = new ActiveDeviceManager(this, mServiceFactory);
         mActiveDeviceManager.start();
 
-        mBtCompanionManager = new CompanionManager(this, new ServiceFactory());
+        mBtCompanionManager = new CompanionManager(this, mServiceFactory);
 
         mBluetoothSocketManagerBinder = new BluetoothSocketManagerBinder(this);
 
