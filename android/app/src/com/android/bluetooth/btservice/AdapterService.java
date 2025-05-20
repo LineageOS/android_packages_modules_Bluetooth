@@ -286,6 +286,7 @@ public class AdapterService extends Service {
     private final Looper mLooper;
     private final AdapterServiceHandler mHandler;
     private final AdapterNativeInterface mNativeInterface;
+    private final BluetoothKeystoreService mBluetoothKeystoreService;
     private final GattNativeInterface mGattNativeInterface;
     private final AdvertiseManagerNativeInterface mAdvertiseManagerNativeInterface;
     private final DistanceMeasurementNativeInterface mDistanceMeasurementNativeInterface;
@@ -336,7 +337,6 @@ public class AdapterService extends Service {
 
     private BluetoothSocketManagerBinder mBluetoothSocketManagerBinder;
 
-    private BluetoothKeystoreService mBluetoothKeystoreService;
     private HeadsetService mHeadsetService;
     private HeadsetClientService mHeadsetClientService;
     private A2dpService mA2dpService;
@@ -394,7 +394,7 @@ public class AdapterService extends Service {
 
     // Keep a constructor for ActivityThread.handleCreateService
     AdapterService() {
-        this(Looper.getMainLooper(), new AdapterNativeInterface(), null, null, null);
+        this(Looper.getMainLooper(), new AdapterNativeInterface(), null, null, null, null);
     }
 
     @VisibleForTesting
@@ -402,12 +402,14 @@ public class AdapterService extends Service {
             Looper looper,
             Context ctx,
             AdapterNativeInterface nativeInterface,
+            BluetoothKeystoreNativeInterface bluetoothKeystoreNativeInterface,
             GattNativeInterface gattNativeInterface,
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
             DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
         this(
                 looper,
                 nativeInterface,
+                bluetoothKeystoreNativeInterface,
                 gattNativeInterface,
                 advertiseManagerNativeInterface,
                 distanceMeasurementNativeInterface);
@@ -417,12 +419,14 @@ public class AdapterService extends Service {
     private AdapterService(
             Looper looper,
             AdapterNativeInterface nativeInterface,
+            BluetoothKeystoreNativeInterface bluetoothKeystoreNativeInterface,
             GattNativeInterface gattNativeInterface,
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
             DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
         mLooper = requireNonNull(looper);
         mHandler = new AdapterServiceHandler(mLooper);
         mNativeInterface = requireNonNull(nativeInterface);
+        mBluetoothKeystoreService = new BluetoothKeystoreService(bluetoothKeystoreNativeInterface);
         mGattNativeInterface = gattNativeInterface;
         mAdvertiseManagerNativeInterface = advertiseManagerNativeInterface;
         mDistanceMeasurementNativeInterface = distanceMeasurementNativeInterface;
@@ -782,9 +786,7 @@ public class AdapterService extends Service {
         boolean isCommonCriteriaMode =
                 requireNonNull(getSystemService(DevicePolicyManager.class))
                         .isCommonCriteriaModeEnabled(null);
-        mBluetoothKeystoreService =
-                new BluetoothKeystoreService(
-                        BluetoothKeystoreNativeInterface.getInstance(), isCommonCriteriaMode);
+        mBluetoothKeystoreService.init(isCommonCriteriaMode);
         mBluetoothKeystoreService.start();
         int configCompareResult = mBluetoothKeystoreService.getCompareResult();
 

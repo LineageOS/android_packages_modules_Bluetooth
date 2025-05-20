@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.btservice.bluetoothkeystore;
 
+import static java.util.Objects.requireNonNullElseGet;
+
 import android.annotation.Nullable;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
@@ -63,7 +65,6 @@ public class BluetoothKeystoreService {
     private static final String TAG = BluetoothKeystoreService.class.getSimpleName();
 
     private static BluetoothKeystoreService sBluetoothKeystoreService;
-    private final boolean mIsCommonCriteriaMode;
 
     private static final String CIPHER_ALGORITHM = "AES/GCM/NoPadding";
     private static final int GCM_TAG_LENGTH = 128;
@@ -91,8 +92,6 @@ public class BluetoothKeystoreService {
 
     private final BluetoothKeystoreNativeInterface mBluetoothKeystoreNativeInterface;
 
-    private ComputeDataThread mEncryptDataThread;
-    private ComputeDataThread mDecryptDataThread;
     private final Map<String, String> mNameEncryptKey = new HashMap<>();
     private final Map<String, String> mNameDecryptKey = new HashMap<>();
     private final BlockingQueue<String> mPendingDecryptKey = new LinkedBlockingQueue<>();
@@ -110,10 +109,19 @@ public class BluetoothKeystoreService {
     private final Base64.Decoder mDecoder = Base64.getDecoder();
     private final Base64.Encoder mEncoder = Base64.getEncoder();
 
-    public BluetoothKeystoreService(
-            BluetoothKeystoreNativeInterface nativeInterface, boolean isCommonCriteriaMode) {
-        debugLog("new BluetoothKeystoreService isCommonCriteriaMode: " + isCommonCriteriaMode);
-        mBluetoothKeystoreNativeInterface = nativeInterface;
+    private ComputeDataThread mEncryptDataThread;
+    private ComputeDataThread mDecryptDataThread;
+    private boolean mIsCommonCriteriaMode;
+
+    public BluetoothKeystoreService(BluetoothKeystoreNativeInterface nativeInterface) {
+        debugLog("new BluetoothKeystoreService");
+        mBluetoothKeystoreNativeInterface =
+                requireNonNullElseGet(
+                        nativeInterface, () -> new BluetoothKeystoreNativeInterface(this));
+    }
+
+    public void init(boolean isCommonCriteriaMode) {
+        debugLog("init isCommonCriteriaMode: " + isCommonCriteriaMode);
         mIsCommonCriteriaMode = isCommonCriteriaMode;
         mCompareResult = CONFIG_COMPARE_INIT;
         startThread();
@@ -257,7 +265,7 @@ public class BluetoothKeystoreService {
         stopThread();
         startThread();
         // Initialize native interface
-        mBluetoothKeystoreNativeInterface.init(this);
+        mBluetoothKeystoreNativeInterface.init();
     }
 
     /** Gets result of the checksum comparison */
