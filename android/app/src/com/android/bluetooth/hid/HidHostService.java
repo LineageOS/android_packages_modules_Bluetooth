@@ -25,6 +25,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHidHost;
@@ -124,10 +125,16 @@ public class HidHostService extends ProfileService {
     public static final int STATE_ACCEPTING = STATE_DISCONNECTING + 1;
 
     public HidHostService(AdapterService adapterService) {
+        this(adapterService, null);
+    }
+
+    @VisibleForTesting
+    HidHostService(AdapterService adapterService, HidHostNativeInterface nativeInterface) {
         super(requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
-        mNativeInterface = requireNonNull(HidHostNativeInterface.getInstance());
-        mNativeInterface.init(this);
+        mNativeInterface =
+                requireNonNullElseGet(nativeInterface, () -> new HidHostNativeInterface(this));
+        mNativeInterface.init();
         setHidHostService(this);
     }
 

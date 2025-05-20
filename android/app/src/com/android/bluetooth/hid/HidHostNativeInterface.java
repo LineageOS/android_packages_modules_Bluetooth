@@ -23,39 +23,17 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import android.util.Log;
 
-import com.android.internal.annotations.GuardedBy;
-import com.android.internal.annotations.VisibleForTesting;
-
 /** Provides Bluetooth Hid Host profile, as a service in the Bluetooth application. */
 public class HidHostNativeInterface {
     private static final String TAG = HidHostNativeInterface.class.getSimpleName();
 
-    private HidHostService mHidHostService;
+    private final HidHostService mHidHostService;
 
-    @GuardedBy("INSTANCE_LOCK")
-    private static HidHostNativeInterface sInstance;
-
-    private static final Object INSTANCE_LOCK = new Object();
-
-    static HidHostNativeInterface getInstance() {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new HidHostNativeInterface();
-            }
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    public static void setInstance(HidHostNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
-    }
-
-    void init(HidHostService service) {
+    HidHostNativeInterface(HidHostService service) {
         mHidHostService = service;
+    }
+
+    void init() {
         initializeNative();
     }
 
