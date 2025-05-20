@@ -24,7 +24,6 @@ import android.support.v4.media.MediaBrowserCompat.MediaItem;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -297,9 +296,7 @@ public class BrowseTree {
             mCached = cached;
             if (!cached) {
                 for (BrowseNode child : mChildren) {
-                    if (Flags.uncachePlayerWhenBrowsedPlayerChanges()) {
-                        child.setCached(false);
-                    }
+                    child.setCached(false);
                     mBrowseMap.remove(child.getID());
                     indicateCoverArtUnused(child.getID(), child.getCoverArtUuid());
                 }
