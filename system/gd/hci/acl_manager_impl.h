@@ -54,10 +54,10 @@ class AclManagerImpl : public AclManager, public hci::OnAdvertisingSetTerminated
   friend bool bluetooth::shim::L2CA_SetAclPriority(uint16_t, bool);
 
 public:
-  AclManagerImpl(os::Handler* handler, HciInterface* hci_interface, Controller* controller,
-                 acl_manager::AclScheduler* acl_scheduler,
-                 RemoteNameRequestModule* remote_name_request_module,
-                 storage::StorageModule* storage_module);
+  AclManagerImpl(os::Handler* handler, HciInterface& hci_interface, Controller& controller,
+                 acl_manager::AclScheduler& acl_scheduler,
+                 RemoteNameRequestModule& remote_name_request_module,
+                 storage::StorageModule& storage_module);
   AclManagerImpl(const AclManagerImpl&) = delete;
   AclManagerImpl& operator=(const AclManagerImpl&) = delete;
 
@@ -149,7 +149,7 @@ private:
   void dequeue_and_route_acl_packet_to_connection();
 
   os::Handler* handler_ = nullptr;
-  storage::StorageModule* storage_module_ = nullptr;
+  storage::StorageModule& storage_module_;
 
   acl_manager::RoundRobinScheduler round_robin_scheduler_;
 

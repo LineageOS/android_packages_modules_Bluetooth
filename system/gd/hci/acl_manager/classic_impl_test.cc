@@ -158,14 +158,13 @@ protected:
     EXPECT_CALL(*controller_, UnregisterCompletedAclPacketsCallback);
 
     round_robin_scheduler_ =
-            new acl_manager::RoundRobinScheduler(handler_, controller_, hci_queue_.GetUpEnd());
+            new acl_manager::RoundRobinScheduler(handler_, *controller_, hci_queue_.GetUpEnd());
     hci_queue_.GetDownEnd()->RegisterDequeue(
             handler_, common::Bind(&ClassicImplTest::HciDownEndDequeue, common::Unretained(this)));
     acl_scheduler_ = new MockAclScheduler(handler_);
     rnr_ = new RemoteNameRequestModuleMock();
-    classic_impl_ =
-            new acl_manager::classic_impl(hci_layer_, controller_, handler_, round_robin_scheduler_,
-                                          kCrashOnUnknownHandle, acl_scheduler_, rnr_);
+    classic_impl_ = new acl_manager::classic_impl(*hci_layer_, handler_, *round_robin_scheduler_,
+                                                  kCrashOnUnknownHandle, *acl_scheduler_, *rnr_);
     classic_impl_->handle_register_callbacks(&mock_connection_callback_, handler_);
 
     Address address;
@@ -188,9 +187,6 @@ protected:
     delete handler_;
     delete thread_;
   }
-
-  MockAclScheduler* acl_scheduler_;
-  RemoteNameRequestModule* rnr_;
 
   void sync_handler() { thread_->GetReactor()->WaitForIdle(2s); }
 
@@ -229,6 +225,8 @@ protected:
   HciLayerFake* hci_layer_{nullptr};
   testing::MockController* controller_;
   acl_manager::RoundRobinScheduler* round_robin_scheduler_{nullptr};
+  MockAclScheduler* acl_scheduler_;
+  RemoteNameRequestModule* rnr_;
 
   acl_manager::MockConnectionCallback mock_connection_callback_;
   acl_manager::MockConnectionManagementCallbacks connection_management_callbacks_;

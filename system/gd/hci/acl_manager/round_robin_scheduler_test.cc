@@ -75,8 +75,8 @@ public:
     thread_ = new Thread("thread", Thread::Priority::NORMAL);
     handler_ = new Handler(thread_);
     controller_ = std::make_unique<TestController>();
-    round_robin_scheduler_ = std::make_unique<RoundRobinScheduler>(handler_, controller_.get(),
-                                                                   hci_queue_.GetUpEnd());
+    round_robin_scheduler_ =
+            std::make_unique<RoundRobinScheduler>(handler_, *controller_, hci_queue_.GetUpEnd());
     hci_queue_.GetDownEnd()->RegisterDequeue(
             handler_,
             common::Bind(&RoundRobinSchedulerTest::HciDownEndDequeue, common::Unretained(this)));

@@ -34,6 +34,7 @@
 #include "hci/hci_layer_fake.h"
 #include "hci/hci_packets.h"
 #include "hci/octets.h"
+#include "hci/remote_name_request_mock.h"
 #include "os/handler.h"
 #include "packet/bit_inserter.h"
 #include "packet/raw_builder.h"
@@ -239,18 +240,20 @@ protected:
 
     hci_layer_ = std::make_unique<HciLayerFake>(handler_);
     controller_ = std::make_unique<TestController>();
-    round_robin_scheduler_ = std::make_unique<RoundRobinScheduler>(handler_, controller_.get(),
-                                                                   hci_queue_.GetUpEnd());
+    round_robin_scheduler_ =
+            std::make_unique<RoundRobinScheduler>(handler_, *controller_, hci_queue_.GetUpEnd());
+    test_storage_ = std::make_unique<storage::StorageModule>(handler_);
+    test_rnr_ = std::make_unique<RemoteNameRequestModuleMock>();
+    test_acl_scheduler_ = std::make_unique<AclScheduler>(handler_);
 
     hci_queue_.GetDownEnd()->RegisterDequeue(
             handler_, common::Bind(&LeImplTest::HciDownEndDequeue, common::Unretained(this)));
 
-    classic_impl_ =
-            std::make_unique<classic_impl>(hci_layer_.get(), controller_.get(), handler_,
-                                           round_robin_scheduler_.get(), false, nullptr, nullptr);
-    le_impl_ = std::make_unique<le_impl>(hci_layer_.get(), controller_.get(), handler_,
-                                         round_robin_scheduler_.get(), nullptr /* storage */,
-                                         kCrashOnUnknownHandle, classic_impl_.get());
+    classic_impl_ = std::make_unique<classic_impl>(*hci_layer_, handler_, *round_robin_scheduler_,
+                                                   false, *test_acl_scheduler_, *test_rnr_);
+    le_impl_ =
+            std::make_unique<le_impl>(*hci_layer_, *controller_, handler_, *round_robin_scheduler_,
+                                      *test_storage_, kCrashOnUnknownHandle, classic_impl_.get());
     le_impl_->handle_register_le_callbacks(&mock_le_connection_callbacks_, handler_);
 
     Address address;
@@ -364,6 +367,10 @@ protected:
     round_robin_scheduler_.reset();
     controller_.reset();
 
+    test_acl_scheduler_.reset();
+    test_rnr_.reset();
+    test_storage_.reset();
+
     handler_->Clear();
     delete handler_;
     delete thread_;
@@ -421,6 +428,9 @@ protected:
   std::unique_ptr<classic_impl> classic_impl_;
   std::unique_ptr<TestController> controller_;
   std::unique_ptr<RoundRobinScheduler> round_robin_scheduler_{nullptr};
+  std::unique_ptr<RemoteNameRequestModuleMock> test_rnr_ = nullptr;
+  std::unique_ptr<AclScheduler> test_acl_scheduler_ = nullptr;
+  std::unique_ptr<storage::StorageModule> test_storage_ = nullptr;
 
   MockLeConnectionCallbacks mock_le_connection_callbacks_;
   MockLeConnectionManagementCallbacks connection_management_callbacks_;
