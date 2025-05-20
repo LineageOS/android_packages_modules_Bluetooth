@@ -5572,6 +5572,55 @@ TEST_F(UnicastTest, GroupSetActive_and_GroupSetInactive_DuringPhoneCall) {
   Mock::VerifyAndClearExpectations(&mock_state_machine_);
 }
 
+TEST_F(UnicastTest, GroupSetActive_DuringPhoneCall_NoConversational) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  int group_id = bluetooth::groups::kGroupUnknown;
+
+  /**
+   * Scenario:
+   * 1. Device is connected
+   * 2. Available Contexts are set and do not contain CONVERSATIONAL
+   * 1. Call is started
+   * 2. Group is set active - it is expected the group to stay inactive
+   */
+
+  default_channel_cnt = 1;
+
+  SetSampleDatabaseEarbudsValid(
+          1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+          codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt, default_channel_cnt, 0x0004,
+          /* source sample freq 16khz */ false /*add_csis*/, true /*add_cas*/, true /*add_pacs*/,
+          default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/, 0 /*rank*/);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::CONNECTED, test_address0))
+          .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
+          .WillOnce(DoAll(SaveArg<1>(&group_id)));
+
+  ConnectLeAudio(test_address0);
+  ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
+
+  /* Simulate available context type being set */
+  InjectAvailableContextTypes(
+          test_address0, 1,
+          types::AudioContexts(LeAudioContextType::UNSPECIFIED | LeAudioContextType::MEDIA |
+                               LeAudioContextType::GAME | LeAudioContextType::LIVE),
+          types::AudioContexts(LeAudioContextType::UNINITIALIZED));
+
+  EXPECT_CALL(mock_state_machine_, StartStream(_, _, _, _)).Times(0);
+  EXPECT_CALL(mock_state_machine_, ConfigureStream(_, _, _, _, true)).Times(0);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_, OnGroupStatus(group_id, GroupStatus::INACTIVE))
+          .Times(1);
+
+  log::info("Call is started and group is getting Active");
+  LeAudioClient::Get()->SetInCall(true);
+  LeAudioClient::Get()->GroupSetActive(group_id);
+
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+}
+
 TEST_F(UnicastTest, GroupSetActive_DuringPhoneCall_ThenResume) {
   const RawAddress test_address0 = GetTestAddress(0);
   int group_id = bluetooth::groups::kGroupUnknown;
