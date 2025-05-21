@@ -37,6 +37,7 @@ import static com.android.bluetooth.flags.Flags.leaudioMonitorUnicastSourceWhenM
 import static com.android.bluetooth.flags.Flags.leaudioUseAudioRecordingListener;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
@@ -245,13 +246,15 @@ public class LeAudioService extends ProfileService {
     BluetoothLeScanner mAudioServersScanner;
 
     public LeAudioService(AdapterService adapterService) {
-        this(adapterService, LeAudioNativeInterface.getInstance(adapterService));
+        this(adapterService, null);
     }
 
     @VisibleForTesting
     LeAudioService(AdapterService adapterService, LeAudioNativeInterface nativeInterface) {
         super(requireNonNull(adapterService));
-        mNativeInterface = requireNonNull(nativeInterface);
+        mNativeInterface =
+                requireNonNullElseGet(
+                        nativeInterface, () -> new LeAudioNativeInterface(adapterService, this));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
 
