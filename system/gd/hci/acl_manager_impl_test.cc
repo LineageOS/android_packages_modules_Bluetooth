@@ -39,7 +39,6 @@
 #include "os/thread.h"
 #include "packet/raw_builder.h"
 #include "storage/storage_module.h"
-#include "test/mock/mock_main_shim_entry.h"
 
 using bluetooth::common::BidiQueue;
 using bluetooth::common::BidiQueueEnd;
@@ -111,14 +110,14 @@ protected:
     EXPECT_CALL(*test_controller_, GetLeResolvingListSize());
     EXPECT_CALL(*test_controller_, SupportsBlePrivacy());
 
-    bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(client_handler_);
+    test_storage_ = std::make_unique<storage::StorageModule>(client_handler_);
 
     test_rnr_ = std::make_unique<RemoteNameRequestModuleMock>();
 
     test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
-    acl_manager_ = std::make_unique<AclManagerImpl>(
-            client_handler_, *test_hci_layer_, *test_controller_, *test_acl_scheduler_, *test_rnr_,
-            *bluetooth::hci::testing::mock_storage_);
+    acl_manager_ =
+            std::make_unique<AclManagerImpl>(client_handler_, *test_hci_layer_, *test_controller_,
+                                             *test_acl_scheduler_, *test_rnr_, *test_storage_);
 
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 
@@ -154,8 +153,7 @@ protected:
     // Invalid mutex exception is raised if the connections
     // are cleared after the AclConnectionInterface is deleted
     // through fake_registry_.
-    delete bluetooth::hci::testing::mock_storage_;
-    bluetooth::hci::testing::mock_storage_ = nullptr;
+    test_storage_.reset();
     connections_.clear();
     le_connections_.clear();
     client_handler_->Synchronize(std::chrono::milliseconds(20));
@@ -186,6 +184,7 @@ protected:
   std::unique_ptr<HciLayerFake> test_hci_layer_ = nullptr;
   std::unique_ptr<TestController> test_controller_ = nullptr;
   std::unique_ptr<RemoteNameRequestModuleMock> test_rnr_ = nullptr;
+  std::unique_ptr<storage::StorageModule> test_storage_ = nullptr;
   std::unique_ptr<AclManagerImpl> acl_manager_ = nullptr;
   Address remote;
   AddressWithType my_initiating_address;
@@ -1152,14 +1151,14 @@ protected:
 
     test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
     test_controller_ = std::make_unique<TestController>();
-    bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(client_handler_);
+    test_storage_ = std::make_unique<storage::StorageModule>(client_handler_);
 
     test_rnr_ = std::make_unique<RemoteNameRequestModuleMock>();
 
     test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
-    acl_manager_ = std::make_unique<AclManagerImpl>(
-            client_handler_, *test_hci_layer_, *test_controller_, *test_acl_scheduler_, *test_rnr_,
-            *bluetooth::hci::testing::mock_storage_);
+    acl_manager_ =
+            std::make_unique<AclManagerImpl>(client_handler_, *test_hci_layer_, *test_controller_,
+                                             *test_acl_scheduler_, *test_rnr_, *test_storage_);
 
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 

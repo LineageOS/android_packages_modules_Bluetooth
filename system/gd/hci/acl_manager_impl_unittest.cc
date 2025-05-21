@@ -36,7 +36,6 @@
 #include "hci/remote_name_request_mock.h"
 #include "os/thread.h"
 #include "packet/raw_builder.h"
-#include "test/mock/mock_main_shim_entry.h"
 
 using namespace std::chrono_literals;
 
@@ -151,20 +150,19 @@ protected:
     thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
     client_handler_ = new os::Handler(thread_);
     ASSERT_NE(client_handler_, nullptr);
-    bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(client_handler_);
 
+    test_storage_ = std::make_unique<storage::StorageModule>(client_handler_);
     test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
     test_controller_ = std::make_unique<TestController>();
     test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
     test_rnr_ = std::make_unique<RemoteNameRequestModuleMock>();
-    acl_manager_ = std::make_unique<AclManagerImpl>(
-            client_handler_, *test_hci_layer_, *test_controller_, *test_acl_scheduler_, *test_rnr_,
-            *bluetooth::hci::testing::mock_storage_);
+    acl_manager_ =
+            std::make_unique<AclManagerImpl>(client_handler_, *test_hci_layer_, *test_controller_,
+                                             *test_acl_scheduler_, *test_rnr_, *test_storage_);
   }
 
   void TearDown() override {
-    delete bluetooth::hci::testing::mock_storage_;
-    bluetooth::hci::testing::mock_storage_ = nullptr;
+    test_storage_.reset();
     client_handler_->Synchronize(std::chrono::milliseconds(20));
     client_handler_->Synchronize(std::chrono::milliseconds(20));
     acl_manager_.reset();
@@ -192,6 +190,7 @@ protected:
   os::Thread* thread_ = nullptr;
   os::Handler* client_handler_ = nullptr;
 
+  std::unique_ptr<storage::StorageModule> test_storage_ = nullptr;
   std::unique_ptr<HciLayerFake> test_hci_layer_ = nullptr;
   std::unique_ptr<TestController> test_controller_ = nullptr;
 
@@ -458,9 +457,9 @@ protected:
     test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
     test_rnr_ = std::make_unique<RemoteNameRequestModuleMock>();
 
-    acl_manager_ = std::make_unique<AclManagerImpl>(
-            client_handler_, *test_hci_layer_, *test_controller_, *test_acl_scheduler_, *test_rnr_,
-            *bluetooth::hci::testing::mock_storage_);
+    acl_manager_ =
+            std::make_unique<AclManagerImpl>(client_handler_, *test_hci_layer_, *test_controller_,
+                                             *test_acl_scheduler_, *test_rnr_, *test_storage_);
 
     hci::Address address;
     Address::FromString("D0:05:04:03:02:01", address);
