@@ -25,6 +25,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHearingAid;
@@ -89,7 +90,7 @@ public class HearingAidService extends ProfileService {
     private long mActiveDeviceHiSyncId = BluetoothHearingAid.HI_SYNC_ID_INVALID;
 
     public HearingAidService(AdapterService adapterService) {
-        this(adapterService, null, HearingAidNativeInterface.getInstance(adapterService));
+        this(adapterService, null, null);
     }
 
     @VisibleForTesting
@@ -109,7 +110,10 @@ public class HearingAidService extends ProfileService {
             mStateMachinesThread = null;
             mStateMachinesLooper = looper;
         }
-        mNativeInterface = requireNonNull(nativeInterface);
+        mNativeInterface =
+                requireNonNullElseGet(
+                        nativeInterface,
+                        () -> new HearingAidNativeInterface(mAdapterService, this));
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
 
         setHearingAidService(this);
