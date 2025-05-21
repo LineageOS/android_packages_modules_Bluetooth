@@ -299,17 +299,6 @@ struct bta_av_co_is_supported_codec {
 };
 extern struct bta_av_co_is_supported_codec bta_av_co_is_supported_codec;
 
-// Name: bta_av_co_set_active_peer
-// Params: const RawAddress& peer_address
-// Return: bool
-struct bta_av_co_set_active_peer {
-  static bool return_value;
-  std::function<bool(const RawAddress& peer_address)> body{
-          [](const RawAddress& /* peer_address */) { return return_value; }};
-  bool operator()(const RawAddress& peer_address) { return body(peer_address); }
-};
-extern struct bta_av_co_set_active_peer bta_av_co_set_active_peer;
-
 // Name: bta_av_co_set_codec_audio_config
 // Params: const btav_a2dp_codec_config_t& codec_audio_config
 // Return: bool

@@ -246,6 +246,7 @@ tA2DP_STATUS BtaAvCo::ProcessSourceGetConfig(tBTA_AV_HNDL bta_av_handle,
       (p_peer->num_sup_sinks != BTA_AV_CO_NUM_ELEMENTS(p_peer->sinks))) {
     return A2DP_FAIL;
   }
+
   log::verbose("last Sink codec reached for peer {} (local {})", p_peer->addr,
                p_peer->acceptor ? "acceptor" : "initiator");
 
@@ -1493,10 +1494,6 @@ void bta_av_co_audio_delay(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_ad
 void bta_av_co_audio_update_mtu(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_address,
                                 uint16_t mtu) {
   bta_av_co_cb.UpdateMtu(bta_av_handle, peer_address, mtu);
-}
-
-bool bta_av_co_set_active_peer(const RawAddress& peer_address) {
-  return bta_av_co_cb.SetActivePeer(peer_address, AVDT_TSEP_INVALID);
 }
 
 bool bta_av_co_set_active_sink_peer(const RawAddress& peer_address) {
