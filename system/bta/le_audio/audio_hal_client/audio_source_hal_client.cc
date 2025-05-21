@@ -261,7 +261,10 @@ bool SourceImpl::InitAudioSinkThread() {
 }
 
 void SourceImpl::StartAudioTicks() {
-  wakelock_acquire();
+  if (!com::android::bluetooth::flags::ref_counted_native_wakelock() ||
+      !audio_timer_.IsScheduled()) {
+    wakelock_acquire();
+  }
   asrc_ = std::make_unique<bluetooth::audio::asrc::SourceAudioHalAsrc>(
           worker_thread_, source_codec_config_.num_channels, source_codec_config_.sample_rate,
           source_codec_config_.bits_per_sample, source_codec_config_.data_interval_us);
@@ -272,9 +275,12 @@ void SourceImpl::StartAudioTicks() {
 }
 
 void SourceImpl::StopAudioTicks() {
-  audio_timer_.CancelAndWait();
-  asrc_.reset(nullptr);
-  wakelock_release();
+  if (!com::android::bluetooth::flags::ref_counted_native_wakelock() ||
+      audio_timer_.IsScheduled()) {
+    audio_timer_.CancelAndWait();
+    asrc_.reset(nullptr);
+    wakelock_release();
+  }
 }
 
 bool SourceImpl::OnSuspendReq() {

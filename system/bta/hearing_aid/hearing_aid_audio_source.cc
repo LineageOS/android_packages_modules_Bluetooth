@@ -20,6 +20,7 @@
 
 #include <base/files/file_util.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <stdio.h>
 
 #include <chrono>
@@ -99,7 +100,10 @@ void start_audio_ticks() {
     log::fatal("Unsupported data interval: {}", data_interval_ms);
   }
 
-  wakelock_acquire();
+  if (!com::android::bluetooth::flags::ref_counted_native_wakelock() ||
+      !audio_timer.IsScheduled()) {
+    wakelock_acquire();
+  }
   audio_timer.SchedulePeriodic(get_main_thread()->GetWeakPtr(),
                                base::BindRepeating(&send_audio_data),
                                std::chrono::milliseconds(data_interval_ms));
@@ -108,8 +112,10 @@ void start_audio_ticks() {
 
 void stop_audio_ticks() {
   log::info("stopped");
-  audio_timer.CancelAndWait();
-  wakelock_release();
+  if (!com::android::bluetooth::flags::ref_counted_native_wakelock() || audio_timer.IsScheduled()) {
+    audio_timer.CancelAndWait();
+    wakelock_release();
+  }
 }
 
 bool hearing_aid_on_resume_req(bool start_media_task) {
