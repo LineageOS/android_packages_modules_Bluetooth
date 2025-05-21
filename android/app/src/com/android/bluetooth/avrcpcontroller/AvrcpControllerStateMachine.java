@@ -43,7 +43,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -1078,21 +1077,15 @@ class AvrcpControllerStateMachine extends StateMachine {
             } else if (mNextStep.isPlayer()) {
                 debug("GetFolderList: NAVIGATING Player " + mNextStep.toString());
                 BrowseTree.BrowseNode currentBrowsedPlayer = mBrowseTree.getCurrentBrowsedPlayer();
-                if (Flags.uncachePlayerWhenBrowsedPlayerChanges()) {
-                    if (currentBrowsedPlayer != null) {
-                        debug(
-                                "GetFolderList: Uncache current browsed player, player="
-                                        + currentBrowsedPlayer);
-                        mBrowseTree.getCurrentBrowsedPlayer().setCached(false);
-                    } else {
-                        debug(
-                                "GetFolderList: Browsed player unset, no need to uncache the"
-                                        + " previous player");
-                    }
+                if (currentBrowsedPlayer != null) {
+                    debug(
+                            "GetFolderList: Uncache current browsed player, player="
+                                    + currentBrowsedPlayer);
+                    mBrowseTree.getCurrentBrowsedPlayer().setCached(false);
                 } else {
                     debug(
-                            "GetFolderList: Feature not available: uncache current browsed player"
-                                    + " on switch");
+                            "GetFolderList: Browsed player unset, no need to uncache the"
+                                    + " previous player");
                 }
 
                 if (mNextStep.isBrowsable()) {

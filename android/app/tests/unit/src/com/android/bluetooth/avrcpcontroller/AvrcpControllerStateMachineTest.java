@@ -37,8 +37,6 @@ import android.content.res.Resources;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Looper;
-import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.SetFlagsRule;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -54,7 +52,6 @@ import com.android.bluetooth.R;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 
 import org.junit.After;
 import org.junit.Before;
@@ -72,8 +69,6 @@ import java.util.UUID;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class AvrcpControllerStateMachineTest {
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
-
     @Rule
     public final ServiceTestRule mBluetoothBrowserMediaServiceTestRule = new ServiceTestRule();
 
@@ -2018,7 +2013,6 @@ public class AvrcpControllerStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_UNCACHE_PLAYER_WHEN_BROWSED_PLAYER_CHANGES)
     public void testBrowsingContentsOfOtherBrowsablePlayer_browsedPlayerUncached() {
         setUpConnectedState(true, true);
         sendAudioFocusUpdate(AudioManager.AUDIOFOCUS_GAIN);
