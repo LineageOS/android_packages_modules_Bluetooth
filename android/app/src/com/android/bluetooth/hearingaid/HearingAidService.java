@@ -98,7 +98,7 @@ public class HearingAidService extends ProfileService {
             AdapterService adapterService,
             Looper looper,
             HearingAidNativeInterface nativeInterface) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.HEARING_AID, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));

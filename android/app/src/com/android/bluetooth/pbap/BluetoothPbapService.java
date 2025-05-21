@@ -178,7 +178,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
 
     @VisibleForTesting
     BluetoothPbapService(AdapterService adapterService, NotificationManager notificationManager) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.PBAP, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNotificationManager =
                 requireNonNullElseGet(

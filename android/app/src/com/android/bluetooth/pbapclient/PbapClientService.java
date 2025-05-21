@@ -115,7 +115,7 @@ public class PbapClientService extends ProfileService {
     }
 
     public PbapClientService(AdapterService adapterService) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.PBAP_CLIENT, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new Handler(Looper.getMainLooper());
 
@@ -144,7 +144,7 @@ public class PbapClientService extends ProfileService {
             AdapterService adapterService,
             PbapClientContactsStorage storage,
             Map<BluetoothDevice, PbapClientStateMachine> deviceMap) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.PBAP_CLIENT, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new Handler(Looper.getMainLooper());
 
@@ -721,7 +721,7 @@ public class PbapClientService extends ProfileService {
 
     @VisibleForTesting
     PbapClientService(AdapterService adapterService, PbapClientAccountManager accountManager) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.PBAP_CLIENT, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new Handler(Looper.getMainLooper());
 

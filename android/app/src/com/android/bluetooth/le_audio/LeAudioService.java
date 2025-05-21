@@ -254,7 +254,7 @@ public class LeAudioService extends ProfileService {
             AdapterService adapterService,
             LeAudioNativeInterface nativeInterface,
             LeAudioBroadcasterNativeInterface leAudioBroadcasterNativeInterface) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.LE_AUDIO, requireNonNull(adapterService));
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface, () -> new LeAudioNativeInterface(adapterService, this));

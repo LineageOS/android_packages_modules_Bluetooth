@@ -114,7 +114,7 @@ public class CsipSetCoordinatorService extends ProfileService {
             Looper looper,
             CsipSetCoordinatorNativeInterface nativeInterface,
             ServiceFactory serviceFactory) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.CSIP_SET_COORDINATOR, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(

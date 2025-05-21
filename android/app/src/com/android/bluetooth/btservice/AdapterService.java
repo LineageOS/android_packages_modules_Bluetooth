@@ -1801,64 +1801,11 @@ public class AdapterService extends Service {
      * @return false if one of profile is enabled or disabled, true otherwise
      */
     boolean isAllProfilesUnknown(BluetoothDevice device) {
-        if (mHeadsetService != null
-                && mHeadsetService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mHeadsetClientService != null
-                && mHeadsetClientService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mA2dpService != null
-                && mA2dpService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mA2dpSinkService != null
-                && mA2dpSinkService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mMapClientService != null
-                && mMapClientService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mHidHostService != null
-                && mHidHostService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mPanService != null
-                && mPanService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mPbapClientService != null
-                && mPbapClientService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mHearingAidService != null
-                && mHearingAidService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mHapClientService != null
-                && mHapClientService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mVolumeControlService != null
-                && mVolumeControlService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mCsipSetCoordinatorService != null
-                && mCsipSetCoordinatorService.getConnectionPolicy(device)
-                        != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mLeAudioService != null
-                && mLeAudioService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mBassClientService != null
-                && mBassClientService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        return true;
+        return !mStartedProfiles.values().stream()
+                .anyMatch(
+                        profile ->
+                                mDatabaseManager.getProfileConnectionPolicy(device, profile.getId())
+                                        != CONNECTION_POLICY_UNKNOWN);
     }
 
     /**

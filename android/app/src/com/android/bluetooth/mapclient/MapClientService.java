@@ -72,7 +72,7 @@ public class MapClientService extends ProfileService {
 
     @VisibleForTesting
     MapClientService(AdapterService adapterService, Looper looper, MnsService mnsServer) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.MAP_CLIENT, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(adapterService.getDatabase());
         mMnsServer = requireNonNullElseGet(mnsServer, () -> new MnsService(mAdapterService, this));
 

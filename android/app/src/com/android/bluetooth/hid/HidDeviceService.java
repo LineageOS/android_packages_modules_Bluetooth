@@ -94,7 +94,7 @@ public class HidDeviceService extends ProfileService {
             AdapterService adapterService,
             Looper looper,
             HidDeviceNativeInterface nativeInterface) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.HID_DEVICE, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new HidDeviceServiceHandler(requireNonNull(looper));
         mNativeInterface =

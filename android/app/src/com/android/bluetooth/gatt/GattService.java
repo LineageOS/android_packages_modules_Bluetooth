@@ -191,7 +191,7 @@ public class GattService extends ProfileService {
     // TODO(b/410473516) This constructor will be removed when ScanController is removed from here.
     @VisibleForTesting
     GattService(AdapterService adapterService, ScanController scanController) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.GATT, requireNonNull(adapterService));
         mActivityManager = requireNonNull(obtainSystemService(ActivityManager.class));
         mPackageManager = requireNonNull(mAdapterService.getPackageManager());
         mCompanionDeviceManager = requireNonNull(obtainSystemService(CompanionDeviceManager.class));
