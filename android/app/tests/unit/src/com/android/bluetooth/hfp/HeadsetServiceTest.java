@@ -176,7 +176,6 @@ public class HeadsetServiceTest {
                 .when(mObjectsFactory)
                 .makeStateMachine(any(), any(), any(), any(), any(), any());
         doReturn(mSystemInterface).when(mObjectsFactory).makeSystemInterface(any(), any());
-        HeadsetNativeInterface.setInstance(mNativeInterface);
         mHeadsetService = new HeadsetService(mAdapterService, mNativeInterface);
         mHeadsetService.setAvailable(true);
         verify(mObjectsFactory).makeSystemInterface(mAdapterService, mHeadsetService);
@@ -186,7 +185,6 @@ public class HeadsetServiceTest {
     @After
     public void tearDown() throws Exception {
         mHeadsetService.cleanup();
-        HeadsetNativeInterface.setInstance(null);
         mHeadsetService = HeadsetService.getHeadsetService();
         assertThat(mHeadsetService).isNull();
         mStateMachines.clear();
