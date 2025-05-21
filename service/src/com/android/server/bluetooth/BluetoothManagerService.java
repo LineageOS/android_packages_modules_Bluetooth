@@ -1601,6 +1601,11 @@ class BluetoothManagerService {
                     Log.d(TAG, "MESSAGE_USER_SWITCHED: userTo=" + userTo);
                     mHandler.removeMessages(MESSAGE_USER_SWITCHED);
 
+                    if (Flags.cleanupStartingUser() && mCurrentUser.equals(userTo)) {
+                        Log.d(TAG, "Skip redundant switch on user=" + userTo);
+                        return;
+                    }
+
                     AutoOnFeature.pause();
 
                     mCurrentUser = userTo;

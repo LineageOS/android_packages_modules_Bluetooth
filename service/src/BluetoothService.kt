@@ -110,6 +110,25 @@ class BluetoothService(context: Context) : SystemService(context) {
     }
 
     override fun onUserStarting(user: TargetUser) {
+        if (Flags.cleanupStartingUser()) {
+            if (mInitialized) {
+                Log.i("onUserStarting($user) but already initialized")
+                return
+            }
+            val isForeground =
+                context
+                    .createContextAsUser(user.userHandle, 0)
+                    .getSystemService(android.os.UserManager::class.java)!!
+                    .isUserForeground()
+            if (!isForeground) {
+                Log.i("onUserStarting($user) Skipping non foreground user ")
+                return
+            }
+            Log.i("onUserStarting($user) Initializing for foreground user ")
+            mBluetoothManagerService.handleOnBootPhase(user.userHandle)
+            mInitialized = true
+            return
+        }
         Log.d("onUserStarting($user)")
         if (shouldInitializeBluetooth()) {
             initialize(user)
@@ -118,6 +137,15 @@ class BluetoothService(context: Context) : SystemService(context) {
 
     override fun onUserSwitching(_from: TargetUser?, to: TargetUser) {
         Log.d("onUserSwitching($to)")
+        if (Flags.cleanupStartingUser()) {
+            if (!mInitialized) {
+                throw IllegalStateException(
+                    "Switching on a user when not initialized should never happen"
+                )
+            }
+            mBluetoothManagerService.onSwitchUser(to.userHandle)
+            return
+        }
         if (!mInitialized) {
             initialize(to)
         } else {
@@ -126,6 +154,10 @@ class BluetoothService(context: Context) : SystemService(context) {
     }
 
     override fun onUserUnlocking(user: TargetUser) {
+        if (Flags.cleanupStartingUser()) {
+            Log.d("onUserUnlocking($user): Nothing to do at unlock")
+            return
+        }
         mBluetoothManagerService.handleOnUnlockUser(user.userHandle)
     }
 }
