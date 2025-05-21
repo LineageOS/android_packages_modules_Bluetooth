@@ -29,7 +29,6 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 /** HearingAid Native Interface to/from JNI. */
@@ -37,32 +36,11 @@ public class HearingAidNativeInterface {
     private static final String TAG = HearingAidNativeInterface.class.getSimpleName();
 
     private final AdapterService mAdapterService;
+    private final HearingAidService mService;
 
-    @GuardedBy("INSTANCE_LOCK")
-    private static HearingAidNativeInterface sInstance;
-
-    private static final Object INSTANCE_LOCK = new Object();
-
-    private HearingAidNativeInterface(AdapterService adapterService) {
+    HearingAidNativeInterface(AdapterService adapterService, HearingAidService service) {
         mAdapterService = requireNonNull(adapterService);
-    }
-
-    /** Get singleton instance. */
-    public static HearingAidNativeInterface getInstance(AdapterService adapterService) {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new HearingAidNativeInterface(adapterService);
-            }
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    public static void setInstance(HearingAidNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
+        mService = service;
     }
 
     /**
@@ -70,14 +48,12 @@ public class HearingAidNativeInterface {
      *
      * <p>priorities to configure.
      */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    public void init() {
+    void init() {
         initNative();
     }
 
     /** Cleanup the native interface. */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    public void cleanup() {
+    void cleanup() {
         cleanupNative();
     }
 
@@ -87,8 +63,7 @@ public class HearingAidNativeInterface {
      * @param device the remote device
      * @return true on success, otherwise false.
      */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    public boolean connectHearingAid(BluetoothDevice device) {
+    boolean connectHearingAid(BluetoothDevice device) {
         return connectHearingAidNative(getByteAddress(device));
     }
 
@@ -98,8 +73,7 @@ public class HearingAidNativeInterface {
      * @param device the remote device
      * @return true on success, otherwise false.
      */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    public boolean disconnectHearingAid(BluetoothDevice device) {
+    boolean disconnectHearingAid(BluetoothDevice device) {
         return disconnectHearingAidNative(getByteAddress(device));
     }
 
@@ -109,14 +83,12 @@ public class HearingAidNativeInterface {
      * @param device the remote device
      * @return true on success, otherwise false.
      */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    public boolean addToAcceptlist(BluetoothDevice device) {
+    boolean addToAcceptlist(BluetoothDevice device) {
         return addToAcceptlistNative(getByteAddress(device));
     }
 
     /** Sets the HearingAid volume */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    public void setVolume(int volume) {
+    void setVolume(int volume) {
         setVolumeNative(volume);
     }
 
@@ -132,16 +104,6 @@ public class HearingAidNativeInterface {
         return Utils.getBytesFromAddress(device.getAddress());
     }
 
-    @VisibleForTesting
-    void sendMessageToService(HearingAidStackEvent event) {
-        HearingAidService service = HearingAidService.getHearingAidService();
-        if (service != null) {
-            service.messageFromNative(event);
-        } else {
-            Log.e(TAG, "Event ignored, service not available: " + event);
-        }
-    }
-
     // Callbacks from the native stack back into the Java framework.
     // All callbacks are routed via the Service which will disambiguate which
     // state machine the message should be routed to.
@@ -154,7 +116,7 @@ public class HearingAidNativeInterface {
         event.valueInt1 = state;
 
         Log.d(TAG, "onConnectionStateChanged: " + event);
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     @VisibleForTesting
@@ -166,7 +128,7 @@ public class HearingAidNativeInterface {
         event.valueLong2 = hiSyncId;
 
         Log.d(TAG, "onDeviceAvailable: " + event);
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     // Native methods that call into the JNI interface
