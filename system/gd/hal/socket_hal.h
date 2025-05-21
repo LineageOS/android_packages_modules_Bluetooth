@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <string>
+#include <variant>
 
 namespace bluetooth::hal {
 

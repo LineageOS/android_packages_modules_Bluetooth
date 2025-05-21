@@ -43,6 +43,7 @@ public:
   void sendAclData(HciPacket data) override;
   void sendScoData(HciPacket data) override;
   void sendIsoData(HciPacket data) override;
+  uint16_t getMsftOpcode() override;
 
 private:
   // Held when APIs are called, NOT to be held during callbacks
@@ -54,6 +55,7 @@ private:
           bluetooth::os::Thread("hci_incoming_thread", bluetooth::os::Thread::Priority::NORMAL);
   bluetooth::os::Reactor::Reactable* reactable_ = nullptr;
   std::queue<std::vector<uint8_t>> hci_outgoing_queue_;
+  [[maybe_unused]] LinkClocker* link_clocker_ = nullptr;
   SnoopLogger* btsnoop_logger_ = nullptr;
 
   void write_to_fd(HciPacket packet);
