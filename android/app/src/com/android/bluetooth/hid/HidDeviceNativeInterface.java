@@ -25,7 +25,6 @@ package com.android.bluetooth.hid;
 import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothDevice;
-import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
@@ -36,18 +35,20 @@ public class HidDeviceNativeInterface {
     private static final String TAG = HidDeviceNativeInterface.class.getSimpleName();
 
     private final AdapterService mAdapterService;
+    private final HidDeviceService mService;
 
-    HidDeviceNativeInterface(AdapterService adapterService) {
+    HidDeviceNativeInterface(AdapterService adapterService, HidDeviceService service) {
         mAdapterService = requireNonNull(adapterService);
+        mService = service;
     }
 
     /** Initializes the native interface. */
-    public void init() {
+    void init() {
         initNative();
     }
 
     /** Cleanup the native interface. */
-    public void cleanup() {
+    void cleanup() {
         cleanupNative();
     }
 
@@ -63,7 +64,7 @@ public class HidDeviceNativeInterface {
      * @param outQos outgoing QoS settings
      * @return the result of the native call
      */
-    public boolean registerApp(
+    boolean registerApp(
             String name,
             String description,
             String provider,
@@ -79,7 +80,7 @@ public class HidDeviceNativeInterface {
      *
      * @return the result of the native call
      */
-    public boolean unregisterApp() {
+    boolean unregisterApp() {
         return unregisterAppNative();
     }
 
@@ -90,7 +91,7 @@ public class HidDeviceNativeInterface {
      * @param data report data array
      * @return the result of the native call
      */
-    public boolean sendReport(int id, byte[] data) {
+    boolean sendReport(int id, byte[] data) {
         return sendReportNative(id, data);
     }
 
@@ -102,7 +103,7 @@ public class HidDeviceNativeInterface {
      * @param data report data array
      * @return the result of the native call
      */
-    public boolean replyReport(byte type, byte id, byte[] data) {
+    boolean replyReport(byte type, byte id, byte[] data) {
         return replyReportNative(type, id, data);
     }
 
@@ -111,7 +112,7 @@ public class HidDeviceNativeInterface {
      *
      * @return the result of the native call
      */
-    public boolean unplug() {
+    boolean unplug() {
         return unplugNative();
     }
 
@@ -121,7 +122,7 @@ public class HidDeviceNativeInterface {
      * @param device remote host device
      * @return the result of the native call
      */
-    public boolean connect(BluetoothDevice device) {
+    boolean connect(BluetoothDevice device) {
         return connectNative(Utils.getByteBrEdrAddress(mAdapterService, device));
     }
 
@@ -130,7 +131,7 @@ public class HidDeviceNativeInterface {
      *
      * @return the result of the native call
      */
-    public boolean disconnect() {
+    boolean disconnect() {
         return disconnectNative();
     }
 
@@ -140,99 +141,43 @@ public class HidDeviceNativeInterface {
      * @param error error byte
      * @return the result of the native call
      */
-    public boolean reportError(byte error) {
+    boolean reportError(byte error) {
         return reportErrorNative(error);
     }
 
     @VisibleForTesting
     synchronized void onApplicationStateChanged(byte[] address, boolean registered) {
-        HidDeviceService service = HidDeviceService.getHidDeviceService();
-        if (service != null) {
-            service.onApplicationStateChangedFromNative(getDevice(address), registered);
-        } else {
-            Log.wtf(
-                    TAG,
-                    "FATAL: onApplicationStateChanged() "
-                            + "is called from the stack while service is not available.");
-        }
+        mService.onApplicationStateChangedFromNative(getDevice(address), registered);
     }
 
     @VisibleForTesting
     synchronized void onConnectStateChanged(byte[] address, int state) {
-        HidDeviceService service = HidDeviceService.getHidDeviceService();
-        if (service != null) {
-            service.onConnectStateChangedFromNative(getDevice(address), state);
-        } else {
-            Log.wtf(
-                    TAG,
-                    "FATAL: onConnectStateChanged() "
-                            + "is called from the stack while service is not available.");
-        }
+        mService.onConnectStateChangedFromNative(getDevice(address), state);
     }
 
     @VisibleForTesting
     synchronized void onGetReport(byte type, byte id, short bufferSize) {
-        HidDeviceService service = HidDeviceService.getHidDeviceService();
-        if (service != null) {
-            service.onGetReportFromNative(type, id, bufferSize);
-        } else {
-            Log.wtf(
-                    TAG,
-                    "FATAL: onGetReport() "
-                            + "is called from the stack while service is not available.");
-        }
+        mService.onGetReportFromNative(type, id, bufferSize);
     }
 
     @VisibleForTesting
     synchronized void onSetReport(byte reportType, byte reportId, byte[] data) {
-        HidDeviceService service = HidDeviceService.getHidDeviceService();
-        if (service != null) {
-            service.onSetReportFromNative(reportType, reportId, data);
-        } else {
-            Log.wtf(
-                    TAG,
-                    "FATAL: onSetReport() "
-                            + "is called from the stack while service is not available.");
-        }
+        mService.onSetReportFromNative(reportType, reportId, data);
     }
 
     @VisibleForTesting
     synchronized void onSetProtocol(byte protocol) {
-        HidDeviceService service = HidDeviceService.getHidDeviceService();
-        if (service != null) {
-            service.onSetProtocolFromNative(protocol);
-        } else {
-            Log.wtf(
-                    TAG,
-                    "FATAL: onSetProtocol() "
-                            + "is called from the stack while service is not available.");
-        }
+        mService.onSetProtocolFromNative(protocol);
     }
 
     @VisibleForTesting
     synchronized void onInterruptData(byte reportId, byte[] data) {
-        HidDeviceService service = HidDeviceService.getHidDeviceService();
-        if (service != null) {
-            service.onInterruptDataFromNative(reportId, data);
-        } else {
-            Log.wtf(
-                    TAG,
-                    "FATAL: onInterruptData() "
-                            + "is called from the stack while service is not available.");
-        }
+        mService.onInterruptDataFromNative(reportId, data);
     }
 
     @VisibleForTesting
     synchronized void onVirtualCableUnplug() {
-        HidDeviceService service = HidDeviceService.getHidDeviceService();
-        if (service != null) {
-            service.onVirtualCableUnplugFromNative();
-        } else {
-            Log.wtf(
-                    TAG,
-                    "FATAL: onVirtualCableUnplug() "
-                            + "is called from the stack while service is not available.");
-        }
+        mService.onVirtualCableUnplugFromNative();
     }
 
     private BluetoothDevice getDevice(byte[] address) {

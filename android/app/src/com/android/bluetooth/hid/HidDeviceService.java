@@ -25,6 +25,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.RequiresPermission;
 import android.app.ActivityManager;
@@ -85,7 +86,7 @@ public class HidDeviceService extends ProfileService {
     private BluetoothHidDeviceDeathRecipient mDeathRcpt;
 
     public HidDeviceService(AdapterService adapterService) {
-        this(adapterService, Looper.getMainLooper(), new HidDeviceNativeInterface(adapterService));
+        this(adapterService, Looper.getMainLooper(), null);
     }
 
     @VisibleForTesting
@@ -96,7 +97,9 @@ public class HidDeviceService extends ProfileService {
         super(requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new HidDeviceServiceHandler(requireNonNull(looper));
-        mNativeInterface = requireNonNull(nativeInterface);
+        mNativeInterface =
+                requireNonNullElseGet(
+                        nativeInterface, () -> new HidDeviceNativeInterface(adapterService, this));
         mNativeInterface.init();
         mActivityManager = requireNonNull(obtainSystemService(ActivityManager.class));
         mActivityManager.addOnUidImportanceListener(
@@ -529,8 +532,7 @@ public class HidDeviceService extends ProfileService {
         return sHidDeviceService;
     }
 
-    @VisibleForTesting
-    static synchronized void setHidDeviceService(HidDeviceService instance) {
+    private static synchronized void setHidDeviceService(HidDeviceService instance) {
         Log.d(TAG, "setHidDeviceService(): set to: " + instance);
         sHidDeviceService = instance;
     }
