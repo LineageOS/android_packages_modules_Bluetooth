@@ -63,9 +63,7 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.TestUtils.MockitoRule;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
-import com.android.bluetooth.le_scan.PeriodicScanManager;
-import com.android.bluetooth.le_scan.ScanManager;
-import com.android.bluetooth.le_scan.ScanObjectsFactory;
+import com.android.bluetooth.le_scan.ScanController;
 
 import org.junit.After;
 import org.junit.Before;
@@ -93,15 +91,13 @@ public class GattServiceTest {
     @Mock private ContextMap<IBluetoothGattCallback> mClientMap;
     @Mock private IBluetoothGattServerCallback mGattServerCallback;
     @Mock private ContextMap<IBluetoothGattServerCallback> mServerMap;
-    @Mock private ScanManager mScanManager;
-    @Mock private PeriodicScanManager mPeriodicScanManager;
+    @Mock private ScanController mScanController;
     @Mock private Set<BluetoothDevice> mReliableQueue;
     @Mock private DistanceMeasurementManager mDistanceMeasurementManager;
     @Mock private AdvertiseManagerNativeInterface mAdvertiseManagerNativeInterface;
     @Mock private Resources mResources;
     @Mock private AdapterService mAdapterService;
     @Mock private GattObjectsFactory mGattObjectsFactory;
-    @Mock private ScanObjectsFactory mScanObjectsFactory;
     @Mock private GattNativeInterface mNativeInterface;
 
     private static final int SERVER_IF = 34;
@@ -115,9 +111,8 @@ public class GattServiceTest {
     private final BluetoothDevice mDevice = getTestDevice(109);
 
     private MockContentResolver mMockContentResolver;
-
-    private GattService mService;
     private CompanionManager mBtCompanionManager;
+    private GattService mService;
 
     @Before
     public void setUp() throws Exception {
@@ -132,7 +127,6 @@ public class GattServiceTest {
                 });
 
         GattObjectsFactory.setInstanceForTesting(mGattObjectsFactory);
-        ScanObjectsFactory.setInstanceForTesting(mScanObjectsFactory);
 
         doReturn(mContext.getPackageName()).when(mAttributionSource).getPackageName();
         doReturn(mContext.getPackageName()).when(mAttributionSource).getAttributionTag();
@@ -149,10 +143,6 @@ public class GattServiceTest {
         doReturn(mDistanceMeasurementManager)
                 .when(mGattObjectsFactory)
                 .createDistanceMeasurementManager(any(), any());
-        doReturn(mScanManager).when(mScanObjectsFactory).createScanManager(any(), any(), any());
-        doReturn(mPeriodicScanManager)
-                .when(mScanObjectsFactory)
-                .createPeriodicScanManager(any(), any());
         doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(mContext.getSharedPreferences("GattServiceTestPrefs", Context.MODE_PRIVATE))
                 .when(mAdapterService)
@@ -170,7 +160,7 @@ public class GattServiceTest {
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
 
         AdvertiseManagerNativeInterface.setInstance(mAdvertiseManagerNativeInterface);
-        mService = new GattService(mAdapterService);
+        mService = new GattService(mAdapterService, mScanController);
 
         mService.mClientMap = mClientMap;
         mService.mReliableQueue = mReliableQueue;
@@ -183,16 +173,14 @@ public class GattServiceTest {
     public void tearDown() throws Exception {
         mService.cleanup();
         AdvertiseManagerNativeInterface.setInstance(null);
-
         GattObjectsFactory.setInstanceForTesting(null);
-        ScanObjectsFactory.setInstanceForTesting(null);
     }
 
     @Test
     public void testServiceUpAndDown() throws Exception {
         for (int i = 0; i < 3; i++) {
             mService.cleanup();
-            mService = new GattService(mAdapterService);
+            mService = new GattService(mAdapterService, mScanController);
         }
     }
 

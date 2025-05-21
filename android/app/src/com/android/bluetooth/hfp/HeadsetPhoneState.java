@@ -16,9 +16,10 @@
 
 package com.android.bluetooth.hfp;
 
+import static com.android.bluetooth.Utils.BackgroundExecutor;
+
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.os.Handler;
 import android.telephony.PhoneStateListener;
@@ -31,10 +32,12 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Class that manages Telephony states
@@ -68,10 +71,11 @@ public class HeadsetPhoneState {
     // HFP 1.6 CIND battchg value
     private int mCindBatteryCharge;
 
+    @GuardedBy("mDeviceEventMap")
     private final HashMap<BluetoothDevice, Integer> mDeviceEventMap = new HashMap<>();
+
     private final OnSubscriptionsChangedListener mOnSubscriptionsChangedListener =
             new HeadsetPhoneStateOnSubscriptionChangedListener();
-    private final Object mPhoneStateListenerLock = new Object();
 
     private HeadsetPhoneStateListener mPhoneStateListener;
 
@@ -93,11 +97,11 @@ public class HeadsetPhoneState {
 
     /** Cleanup this instance. Instance can no longer be used after calling this method. */
     public void cleanup() {
+        mSubscriptionManager.removeOnSubscriptionsChangedListener(mOnSubscriptionsChangedListener);
         synchronized (mDeviceEventMap) {
             mDeviceEventMap.clear();
             stopListenForPhoneState();
         }
-        mSubscriptionManager.removeOnSubscriptionsChangedListener(mOnSubscriptionsChangedListener);
     }
 
     @Override
@@ -121,11 +125,10 @@ public class HeadsetPhoneState {
                 + "]";
     }
 
+    @GuardedBy("mDeviceEventMap")
     private int getTelephonyEventsToListen() {
-        synchronized (mDeviceEventMap) {
-            return mDeviceEventMap.values().stream()
-                    .reduce(PhoneStateListener.LISTEN_NONE, (a, b) -> a | b);
-        }
+        return mDeviceEventMap.values().stream()
+                .reduce(PhoneStateListener.LISTEN_NONE, (a, b) -> a | b);
     }
 
     /**
@@ -151,37 +154,49 @@ public class HeadsetPhoneState {
         }
     }
 
+    @GuardedBy("mDeviceEventMap")
     private void startListenForPhoneState() {
-        synchronized (mPhoneStateListenerLock) {
-            if (mPhoneStateListener != null) {
-                Log.w(TAG, "startListenForPhoneState: already listening");
-                return;
-            }
-            int events = getTelephonyEventsToListen();
-            if (events == PhoneStateListener.LISTEN_NONE) {
-                Log.w(TAG, "startListenForPhoneState: no event to listen");
-                return;
-            }
-            int subId = SubscriptionManager.getDefaultSubscriptionId();
-            if (!SubscriptionManager.isValidSubscriptionId(subId)) {
-                // Will retry listening for phone state in onSubscriptionsChanged() callback
-                Log.w(TAG, "startListenForPhoneState: invalid subscription ID " + subId);
-                return;
-            }
-            Log.i(TAG, "startListenForPhoneState: subId=" + subId + ", enabled_events=" + events);
-            mPhoneStateListener = new HeadsetPhoneStateListener(events);
+        Runnable asyncRunnable =
+                () -> {
+                    if (mPhoneStateListener != null) {
+                        Log.w(TAG, "startListenForPhoneState: already listening");
+                        return;
+                    }
+                    int events = getTelephonyEventsToListen();
+                    if (events == PhoneStateListener.LISTEN_NONE) {
+                        Log.w(TAG, "startListenForPhoneState: no event to listen");
+                        return;
+                    }
+                    int subId = SubscriptionManager.getDefaultSubscriptionId();
+                    if (!SubscriptionManager.isValidSubscriptionId(subId)) {
+                        // Will retry listening for phone state in onSubscriptionsChanged() callback
+                        Log.w(TAG, "startListenForPhoneState: invalid subId=" + subId);
+                        return;
+                    }
+                    Log.i(TAG, "startListenForPhoneState: subId=" + subId + " events=" + events);
+                    mPhoneStateListener = new HeadsetPhoneStateListener(events);
+                };
+        try {
+            BackgroundExecutor.submit(asyncRunnable).get();
+        } catch (ExecutionException | InterruptedException e) {
+            Log.e(TAG, "Exception in startListenForPhoneState", e);
         }
     }
 
+    @GuardedBy("mDeviceEventMap")
     private void stopListenForPhoneState() {
-        synchronized (mPhoneStateListenerLock) {
-            if (mPhoneStateListener == null) {
-                Log.i(TAG, "stopListenForPhoneState: no listener indicates nothing is listening");
-                return;
-            }
-            mPhoneStateListener.stopListener();
-            mPhoneStateListener = null;
-        }
+        Runnable asyncRunnable =
+                () -> {
+                    if (mPhoneStateListener == null) {
+                        Log.i(TAG, "stopListenForPhoneState: no listener");
+                        return;
+                    }
+                    mPhoneStateListener.stopListener();
+                    mPhoneStateListener = null;
+                };
+        // We intentionally drop this future. If `start` is called afterward, it will implicitly
+        // await completion. Otherwise, the stack is shutting down, making a wait unnecessary.
+        var unusedFuture = BackgroundExecutor.submit(asyncRunnable);
     }
 
     int getCindService() {
@@ -267,7 +282,6 @@ public class HeadsetPhoneState {
                 new HeadsetDeviceState(mCindService, mCindRoam, signal, mCindBatteryCharge));
     }
 
-    @SuppressLint("AndroidFrameworkRequiresPermission")
     private class HeadsetPhoneStateOnSubscriptionChangedListener
             extends OnSubscriptionsChangedListener {
         @Override

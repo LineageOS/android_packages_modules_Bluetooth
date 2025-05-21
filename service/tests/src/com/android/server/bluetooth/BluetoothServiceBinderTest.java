@@ -111,9 +111,9 @@ public class BluetoothServiceBinderTest {
                 .getUiAutomation()
                 .adoptShellPermissionIdentity(LOG_COMPAT_CHANGE, READ_COMPAT_CHANGE_CONFIG);
 
-        final String appops = mContext.getSystemServiceName(AppOpsManager.class);
+        final String appOps = mContext.getSystemServiceName(AppOpsManager.class);
         final String devicePolicy = mContext.getSystemServiceName(DevicePolicyManager.class);
-        doReturn(mAppOpsManager).when(mContext).getSystemService(eq(appops));
+        doReturn(mAppOpsManager).when(mContext).getSystemService(eq(appOps));
         doReturn(mDevicePolicyManager).when(mContext).getSystemService(eq(devicePolicy));
 
         mBinder = new BluetoothServiceBinder(mManagerService, mContext, mUserManager);

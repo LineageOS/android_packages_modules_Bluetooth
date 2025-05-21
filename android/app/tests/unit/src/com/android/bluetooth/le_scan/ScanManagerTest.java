@@ -145,7 +145,6 @@ public class ScanManagerTest {
     @Mock private ScanController mScanController;
 
     @Spy private GattObjectsFactory mGattObjectsFactory = GattObjectsFactory.getInstance();
-    @Spy private ScanObjectsFactory mScanObjectsFactory = ScanObjectsFactory.getInstance();
 
     private static final int DEFAULT_REGULAR_SCAN_REPORT_DELAY_MS = 0;
     private static final int DEFAULT_BATCH_SCAN_REPORT_DELAY_MS = 100;
@@ -224,9 +223,7 @@ public class ScanManagerTest {
         doReturn(true).when(mAdapter).isOffloadedFilteringSupported();
 
         GattObjectsFactory.setInstanceForTesting(mGattObjectsFactory);
-        ScanObjectsFactory.setInstanceForTesting(mScanObjectsFactory);
         doReturn(mNativeInterface).when(mGattObjectsFactory).getNativeInterface();
-        doReturn(mScanNativeInterface).when(mScanObjectsFactory).getScanNativeInterface();
         // Mock JNI callback in ScanNativeInterface
         doReturn(true).when(mScanNativeInterface).waitForCallback(anyInt());
 
@@ -240,7 +237,11 @@ public class ScanManagerTest {
         mLooper = new TestLooper();
         mScanManager =
                 new ScanManager(
-                        mAdapterService, mScanController, mLooper.getLooper(), mTimeProvider);
+                        mAdapterService,
+                        mScanController,
+                        mLooper.getLooper(),
+                        mTimeProvider,
+                        mScanNativeInterface);
 
         mScanReportDelay = DEFAULT_BATCH_SCAN_REPORT_DELAY_MS;
         mMockAppScanStats =
@@ -257,7 +258,6 @@ public class ScanManagerTest {
     @After
     public void tearDown() throws Exception {
         GattObjectsFactory.setInstanceForTesting(null);
-        ScanObjectsFactory.setInstanceForTesting(null);
         MetricsLogger.setInstanceForTesting(null);
         MetricsLogger.getInstance();
     }
@@ -2067,7 +2067,11 @@ public class ScanManagerTest {
         // ScanManager is created
         mScanManager =
                 new ScanManager(
-                        mAdapterService, mScanController, mLooper.getLooper(), mTimeProvider);
+                        mAdapterService,
+                        mScanController,
+                        mLooper.getLooper(),
+                        mTimeProvider,
+                        mScanNativeInterface);
 
         // Turn on screen
         sendMessageWaitForProcessed(createScreenOnOffMessage(true));
@@ -2126,7 +2130,11 @@ public class ScanManagerTest {
         // ScanManager is created
         mScanManager =
                 new ScanManager(
-                        mAdapterService, mScanController, mLooper.getLooper(), mTimeProvider);
+                        mAdapterService,
+                        mScanController,
+                        mLooper.getLooper(),
+                        mTimeProvider,
+                        mScanNativeInterface);
 
         // Turn on screen
         sendMessageWaitForProcessed(createScreenOnOffMessage(true));

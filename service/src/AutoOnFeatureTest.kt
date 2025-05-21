@@ -403,7 +403,7 @@ class AutoOnFeatureTest {
     fun updateTimezone_whenTimerSchedule_isReScheduled() {
         setupTimer()
 
-        // Fake storaged time so when receiving the intent, the test think we jump in the futur
+        // Fake storage time so when receiving the intent, the test think we jump in the future
         val pastTime = timerTarget.minusDays(3)
         Settings.Secure.putString(resolver, Timer.STORAGE_KEY, pastTime.toString())
 
