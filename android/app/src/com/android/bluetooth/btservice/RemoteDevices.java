@@ -211,13 +211,17 @@ public class RemoteDevices {
                                         + bluetoothDevice.isConnected());
 
                         if (bluetoothDevice.isConnected()) {
-                            int transport =
-                                    deviceProperties.getConnectionHandle(
-                                                            BluetoothDevice.TRANSPORT_BREDR)
-                                                    != BluetoothDevice.ERROR
-                                            ? BluetoothDevice.TRANSPORT_BREDR
-                                            : BluetoothDevice.TRANSPORT_LE;
-                            mAdapterService.notifyAclDisconnected(bluetoothDevice, transport);
+                            if (deviceProperties.getConnectionHandle(
+                                            BluetoothDevice.TRANSPORT_BREDR)
+                                    != BluetoothDevice.ERROR) {
+                                mAdapterService.notifyAclDisconnected(
+                                        bluetoothDevice, BluetoothDevice.TRANSPORT_BREDR);
+                            }
+                            if (deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_LE)
+                                    != BluetoothDevice.ERROR) {
+                                mAdapterService.notifyAclDisconnected(
+                                        bluetoothDevice, BluetoothDevice.TRANSPORT_LE);
+                            }
                             Intent intent = new Intent(BluetoothDevice.ACTION_ACL_DISCONNECTED);
                             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice);
                             intent.addFlags(
