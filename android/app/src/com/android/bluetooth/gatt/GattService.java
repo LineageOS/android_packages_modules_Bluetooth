@@ -27,6 +27,7 @@ import static com.android.bluetooth.Utils.transportToString;
 import static com.android.bluetooth.util.AttributionSourceUtil.getLastAttributionTag;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.Nullable;
 import android.annotation.SuppressLint;
@@ -168,6 +169,12 @@ public class GattService extends ProfileService {
     private final DistanceMeasurementManager mDistanceMeasurementManager;
 
     public GattService(AdapterService adapterService) {
+        this(adapterService, null);
+    }
+
+    // TODO(b/410473516) This constructor will be removed when ScanController is removed from here.
+    @VisibleForTesting
+    GattService(AdapterService adapterService, ScanController scanController) {
         super(requireNonNull(adapterService));
         mActivityManager = requireNonNull(obtainSystemService(ActivityManager.class));
         mPackageManager = requireNonNull(mAdapterService.getPackageManager());
@@ -186,7 +193,8 @@ public class GattService extends ProfileService {
         mAdvertiseManager = new AdvertiseManager(mAdapterService, mHandlerThread.getLooper());
 
         if (!Flags.onlyStartScanDuringBleOn()) {
-            mScanController = new ScanController(adapterService);
+            mScanController =
+                    requireNonNullElseGet(scanController, () -> new ScanController(adapterService));
         } else {
             mScanController = null;
         }

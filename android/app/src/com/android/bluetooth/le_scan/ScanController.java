@@ -19,9 +19,11 @@ package com.android.bluetooth.le_scan;
 import static android.bluetooth.BluetoothUtils.extractBytes;
 
 import static com.android.bluetooth.Utils.checkCallerTargetSdk;
+import static com.android.bluetooth.Utils.getSystemClock;
 import static com.android.bluetooth.flags.Flags.leaudioBassScanWithInternalScanController;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.app.AppOpsManager;
 import android.app.PendingIntent;
@@ -116,6 +118,7 @@ public class ScanController {
             };
 
     private final Map<Integer, Integer> mFilterIndexToMsftAdvMonitorMap = new HashMap<>();
+
     private final Object mTestModeLock = new Object();
 
     private final AdapterService mAdapterService;
@@ -135,6 +138,14 @@ public class ScanController {
     private Handler mTestModeHandler;
 
     public ScanController(AdapterService service) {
+        this(service, null, null);
+    }
+
+    @VisibleForTesting
+    ScanController(
+            AdapterService service,
+            ScanManager scanManager,
+            PeriodicScanManager periodicScanManager) {
         mAdapterService = requireNonNull(service);
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mExposureNotificationPackage =
@@ -163,13 +174,18 @@ public class ScanController {
         mScanThread.start();
         mAppOps = mAdapterService.getSystemService(AppOpsManager.class);
         mCompanionManager = mAdapterService.getSystemService(CompanionDeviceManager.class);
-        var scanObjectsFactory = ScanObjectsFactory.getInstance();
+
+        final var scanThreadLooper = mScanThread.getLooper();
         mScanManager =
-                scanObjectsFactory.createScanManager(
-                        mAdapterService, this, mScanThread.getLooper());
+                requireNonNullElseGet(
+                        scanManager,
+                        () ->
+                                new ScanManager(
+                                        mAdapterService, this, scanThreadLooper, getSystemClock()));
         mPeriodicScanManager =
-                scanObjectsFactory.createPeriodicScanManager(
-                        mAdapterService, mScanThread.getLooper());
+                requireNonNullElseGet(
+                        periodicScanManager,
+                        () -> new PeriodicScanManager(mAdapterService, scanThreadLooper));
     }
 
     public void cleanup() {

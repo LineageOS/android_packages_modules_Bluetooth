@@ -94,7 +94,6 @@ public class ScanControllerTest {
 
     @Mock private AttributionSource mAttributionSource;
     @Mock private GattObjectsFactory mGattObjectsFactory;
-    @Mock private ScanObjectsFactory mScanObjectsFactory;
     @Mock private AdapterService mAdapterService;
     @Mock private GattNativeInterface mNativeInterface;
     @Mock private PeriodicScanManager mPeriodicScanManager;
@@ -116,13 +115,8 @@ public class ScanControllerTest {
     @Before
     public void setUp() throws Exception {
         GattObjectsFactory.setInstanceForTesting(mGattObjectsFactory);
-        ScanObjectsFactory.setInstanceForTesting(mScanObjectsFactory);
 
         doReturn(mNativeInterface).when(mGattObjectsFactory).getNativeInterface();
-        doReturn(mScanManager).when(mScanObjectsFactory).createScanManager(any(), any(), any());
-        doReturn(mPeriodicScanManager)
-                .when(mScanObjectsFactory)
-                .createPeriodicScanManager(any(), any());
         doAnswer(
                         invocation -> {
                             ((Runnable) invocation.getArgument(0)).run();
@@ -145,7 +139,7 @@ public class ScanControllerTest {
         mBtCompanionManager = new CompanionManager(mAdapterService, null);
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
 
-        mScanController = new ScanController(mAdapterService);
+        mScanController = new ScanController(mAdapterService, mScanManager, mPeriodicScanManager);
         mScanController.setScannerMap(mScannerMap);
     }
 
@@ -153,7 +147,6 @@ public class ScanControllerTest {
     public void tearDown() throws Exception {
         mScanController.cleanup();
         GattObjectsFactory.setInstanceForTesting(null);
-        ScanObjectsFactory.setInstanceForTesting(null);
     }
 
     @Test
