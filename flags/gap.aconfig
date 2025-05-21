@@ -358,3 +358,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "save_cache_for_bonded_device"
+    namespace: "bluetooth"
+    description: "Save db cache for just bonded device if available"
+    bug: "417859848"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
