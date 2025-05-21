@@ -104,7 +104,6 @@ public class HidDeviceService extends ProfileService {
         mActivityManager = requireNonNull(obtainSystemService(ActivityManager.class));
         mActivityManager.addOnUidImportanceListener(
                 mUidImportanceListener, FOREGROUND_IMPORTANCE_CUTOFF);
-        setHidDeviceService(this);
     }
 
     public static boolean isEnabled() {
@@ -510,31 +509,8 @@ public class HidDeviceService extends ProfileService {
             return;
         }
 
-        setHidDeviceService(null);
         mNativeInterface.cleanup();
         mActivityManager.removeOnUidImportanceListener(mUidImportanceListener);
-    }
-
-    /**
-     * Get the HID Device Service instance
-     *
-     * @return HID Device Service instance
-     */
-    public static synchronized HidDeviceService getHidDeviceService() {
-        if (sHidDeviceService == null) {
-            Log.d(TAG, "getHidDeviceService(): service is NULL");
-            return null;
-        }
-        if (!sHidDeviceService.isAvailable()) {
-            Log.d(TAG, "getHidDeviceService(): service is not available");
-            return null;
-        }
-        return sHidDeviceService;
-    }
-
-    private static synchronized void setHidDeviceService(HidDeviceService instance) {
-        Log.d(TAG, "setHidDeviceService(): set to: " + instance);
-        sHidDeviceService = instance;
     }
 
     /**

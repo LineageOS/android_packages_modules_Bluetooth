@@ -135,7 +135,6 @@ public class HidDeviceServiceTest {
     @After
     public void tearDown() {
         mService.cleanup();
-        assertThat(HidDeviceService.getHidDeviceService()).isNull();
     }
 
     private void verifyConnectionStateIntent(int newState, int prevState) {
@@ -153,12 +152,6 @@ public class HidDeviceServiceTest {
                         MockitoHamcrest.argThat(AllOf.allOf(matchers)),
                         eq(BLUETOOTH_CONNECT),
                         any(Bundle.class));
-    }
-
-    /** Test getting HidDeviceService: getHidDeviceService(). */
-    @Test
-    public void testGetHidDeviceService() {
-        assertThat(HidDeviceService.getHidDeviceService()).isEqualTo(mService);
     }
 
     /**

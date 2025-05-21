@@ -337,7 +337,6 @@ public class AdapterService extends Service {
     private A2dpSinkService mA2dpSinkService;
     private BluetoothMapService mMapService;
     private MapClientService mMapClientService;
-    private HidDeviceService mHidDeviceService;
     private HidHostService mHidHostService;
     private PanService mPanService;
     private BluetoothPbapService mPbapService;
@@ -1753,7 +1752,7 @@ public class AdapterService extends Service {
                             || arrayContains(
                                     remoteDeviceUuids, HidHostService.ANDROID_HEADTRACKER_UUID);
             case BluetoothProfile.HID_DEVICE -> {
-                final var hidDevice = mHidDeviceService;
+                final var hidDevice = (HidDeviceService) mStartedProfiles.get(profile);
                 yield hidDevice != null
                         && hidDevice.getConnectionState(device) == STATE_DISCONNECTED;
             }
@@ -1937,7 +1936,6 @@ public class AdapterService extends Service {
         mA2dpSinkService = A2dpSinkService.getA2dpSinkService();
         mMapService = BluetoothMapService.getBluetoothMapService();
         mMapClientService = MapClientService.getMapClientService();
-        mHidDeviceService = HidDeviceService.getHidDeviceService();
         mHidHostService = HidHostService.getHidHostService();
         mPanService = PanService.getPanService();
         mPbapService = BluetoothPbapService.getBluetoothPbapService();
@@ -3577,11 +3575,12 @@ public class AdapterService extends Service {
             Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting MAP");
             mMapService.disconnect(device);
         }
-        if (mHidDeviceService != null
-                && (mHidDeviceService.getConnectionState(device) == STATE_CONNECTED
-                        || mHidDeviceService.getConnectionState(device) == STATE_CONNECTING)) {
+        final var hidDevice = (HidDeviceService) mStartedProfiles.get(BluetoothProfile.HID_DEVICE);
+        if (hidDevice != null
+                && (hidDevice.getConnectionState(device) == STATE_CONNECTED
+                        || hidDevice.getConnectionState(device) == STATE_CONNECTING)) {
             Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting Hid Device Profile");
-            mHidDeviceService.disconnect(device);
+            hidDevice.disconnect(device);
         }
         if (mHidHostService != null
                 && (mHidHostService.getConnectionState(device) == STATE_CONNECTED
