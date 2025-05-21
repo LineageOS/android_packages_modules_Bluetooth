@@ -25,6 +25,8 @@ import static android.hardware.devicestate.DeviceState.PROPERTY_LAPTOP_HARDWARE_
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.NonNull;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothProfile;
 import android.hardware.devicestate.DeviceState;
 import android.hardware.devicestate.DeviceStateManager;
 import android.hardware.display.DisplayManager;
@@ -40,7 +42,10 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class AdapterSuspend {
     private static final String TAG =
@@ -65,7 +70,16 @@ public class AdapterSuspend {
     static final String BLUETOOTH_SUSPEND_SCAN_MODE_NONE =
             "bluetooth.power.suspend.scan_mode_none.enabled";
 
+    private static final int[] AUDIO_PROFILES = {
+        BluetoothProfile.A2DP,
+        BluetoothProfile.HEADSET,
+        BluetoothProfile.HEARING_AID,
+        BluetoothProfile.LE_AUDIO
+    };
+
     private final AdapterService mAdapterService;
+    private final AdapterNativeInterface mAdapterNativeInterface;
+
     private final DeviceStateManager mDeviceStateManager;
     private final PowerManager mPowerManager;
     private final AdapterSuspendStateMachine mSuspendStateMachine;
@@ -74,6 +88,7 @@ public class AdapterSuspend {
     private boolean mDisconnectAclOnSuspend;
     private boolean mScanModeNoneOnSuspend;
     private int mScanModeOnLastSuspend;
+    private List<BluetoothDevice> mLastActiveAudioDevices = new ArrayList<>();
 
     @VisibleForTesting
     void setLastScanModeForTest(int val) {
@@ -157,8 +172,6 @@ public class AdapterSuspend {
                 }
             };
 
-    private final AdapterNativeInterface mAdapterNativeInterface;
-
     public AdapterSuspend(
             AdapterService adapterService,
             Looper looper,
@@ -200,6 +213,7 @@ public class AdapterSuspend {
             mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
             mAdapterNativeInterface.clearEventFilter();
             mAdapterNativeInterface.clearFilterAcceptList();
+            storeActiveAudioDevices();
             mAdapterNativeInterface.disconnectAllAcls();
 
             if (allowWakeByHid) {
@@ -215,9 +229,35 @@ public class AdapterSuspend {
             mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
             mAdapterNativeInterface.clearEventFilter();
             mAdapterNativeInterface.restoreFilterAcceptList();
+
+            for (BluetoothDevice device : mLastActiveAudioDevices) {
+                Log.i(TAG, "reconnect to " + device);
+                mAdapterService.connectAllEnabledProfiles(device);
+            }
+            mLastActiveAudioDevices.clear();
         }
         if (mScanModeNoneOnSuspend && (mAdapterService.getScanMode() != mScanModeOnLastSuspend)) {
             mAdapterService.setScanMode(mScanModeOnLastSuspend, "handleResume");
+        }
+    }
+
+    void storeActiveAudioDevices() {
+        // handleSuspend can be called more than once in some condition. If so, we shouldn't store
+        // the devices the second time to handle the possibility where they have been disconnected.
+        if (!mLastActiveAudioDevices.isEmpty()) {
+            Log.d(TAG, "audio devices are already stored: " + mLastActiveAudioDevices);
+            return;
+        }
+
+        for (int audioProfile : AUDIO_PROFILES) {
+            List<BluetoothDevice> devices = mAdapterService.getActiveDevices(audioProfile);
+            // getActiveDevices might return a list containing null elements. Filter them first.
+            devices = devices.stream().filter(d -> d != null).collect(Collectors.toList());
+            if (!devices.isEmpty()) {
+                mLastActiveAudioDevices = devices;
+                Log.i(TAG, "store " + devices + " for reconnection for profile=" + audioProfile);
+                break;
+            }
         }
     }
 
