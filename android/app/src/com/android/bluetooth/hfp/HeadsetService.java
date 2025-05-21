@@ -26,6 +26,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.media.audio.Flags.deprecateStreamBtSco;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -163,7 +164,7 @@ public class HeadsetService extends ProfileService {
     @VisibleForTesting ServiceFactory mFactory = new ServiceFactory();
 
     public HeadsetService(AdapterService adapterService) {
-        this(adapterService, HeadsetNativeInterface.getInstance(adapterService), null);
+        this(adapterService, null, null);
     }
 
     @VisibleForTesting
@@ -176,7 +177,9 @@ public class HeadsetService extends ProfileService {
             AdapterService adapterService, HeadsetNativeInterface nativeInterface, Looper looper) {
         super(requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
-        mNativeInterface = requireNonNull(nativeInterface);
+        mNativeInterface =
+                requireNonNullElseGet(
+                        nativeInterface, () -> new HeadsetNativeInterface(mAdapterService, this));
         if (looper != null) {
             mHandler = new Handler(looper);
             mStateMachinesThread = null;
