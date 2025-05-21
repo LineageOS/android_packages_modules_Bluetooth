@@ -173,7 +173,7 @@ public:
     if (!sCallbackEnv.valid() || mCallbacksObj == nullptr) {
       return;
     }
-    sCallbackEnv->CallStaticVoidMethod(class_LeAudioNativeInterface, method_onInitialized);
+    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onInitialized);
   }
 
   void OnConnectionState(ConnectionState state, const RawAddress& bd_addr) override {
@@ -1581,7 +1581,7 @@ int register_com_android_bluetooth_le_audio(JNIEnv* env) {
           {"onGroupNodeStatus", "([BII)V", &method_onGroupNodeStatus},
           {"onAudioConf", "(IIIII)V", &method_onAudioConf},
           {"onSinkAudioLocationAvailable", "([BI)V", &method_onSinkAudioLocationAvailable},
-          {"onInitialized", "()V", &method_onInitialized, true},
+          {"onInitialized", "()V", &method_onInitialized},
           {"onConnectionStateChanged", "(I[B)V", &method_onConnectionStateChanged},
           {"onAudioLocalCodecCapabilities",
            "([Landroid/bluetooth/BluetoothLeAudioCodecConfig;"
