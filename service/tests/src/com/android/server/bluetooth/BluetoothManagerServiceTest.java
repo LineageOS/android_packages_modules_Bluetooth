@@ -724,6 +724,9 @@ public class BluetoothManagerServiceTest {
                         .startMocking();
         try {
             mManagerService.factoryReset(0);
+            if (Flags.factoryResetClearAdditionalData()) {
+                ExtendedMockito.verify(() -> BluetoothProperties.snoop_log_mode(null));
+            }
             ExtendedMockito.verify(() -> BluetoothProperties.factory_reset(true));
         } finally {
             mockingSession.finishMocking();
@@ -740,7 +743,18 @@ public class BluetoothManagerServiceTest {
         IBluetoothCallback btCallback = transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(STATE_ON);
 
-        mManagerService.factoryReset(0);
+        MockitoSession mockingSession =
+                ExtendedMockito.mockitoSession()
+                        .mockStatic(BluetoothProperties.class)
+                        .startMocking();
+        try {
+            mManagerService.factoryReset(0);
+            if (Flags.factoryResetClearAdditionalData()) {
+                ExtendedMockito.verify(() -> BluetoothProperties.snoop_log_mode(null));
+            }
+        } finally {
+            mockingSession.finishMocking();
+        }
         verify(mAdapterBinder).factoryReset();
 
         transition_onToOff(btCallback);
@@ -766,6 +780,9 @@ public class BluetoothManagerServiceTest {
                         .startMocking();
         try {
             mManagerService.factoryReset(0);
+            if (Flags.factoryResetClearAdditionalData()) {
+                ExtendedMockito.verify(() -> BluetoothProperties.snoop_log_mode(null));
+            }
             ExtendedMockito.verify(() -> BluetoothProperties.factory_reset(true));
         } finally {
             mockingSession.finishMocking();
