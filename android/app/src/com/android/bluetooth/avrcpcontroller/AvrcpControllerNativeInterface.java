@@ -25,7 +25,6 @@ import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Arrays;
@@ -35,38 +34,16 @@ import java.util.UUID;
 public class AvrcpControllerNativeInterface {
     private static final String TAG = AvrcpControllerNativeInterface.class.getSimpleName();
 
-    private AvrcpControllerService mAvrcpController;
-
-    @GuardedBy("INSTANCE_LOCK")
-    private static AvrcpControllerNativeInterface sInstance;
-
-    private static final Object INSTANCE_LOCK = new Object();
-
     private final AdapterService mAdapterService;
+    private final AvrcpControllerService mAvrcpController;
 
-    private AvrcpControllerNativeInterface(AdapterService adapterService) {
+    AvrcpControllerNativeInterface(
+            AdapterService adapterService, AvrcpControllerService controller) {
         mAdapterService = requireNonNull(adapterService);
-    }
-
-    static AvrcpControllerNativeInterface getInstance(AdapterService adapterService) {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new AvrcpControllerNativeInterface(adapterService);
-            }
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    public static void setInstance(AvrcpControllerNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
-    }
-
-    void init(AvrcpControllerService controller) {
         mAvrcpController = controller;
+    }
+
+    void init() {
         initNative();
     }
 
