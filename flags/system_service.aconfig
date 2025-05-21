@@ -52,6 +52,16 @@ flag {
 }
 
 flag {
+    name: "user_switch_during_ble_on"
+    namespace: "bluetooth"
+    description: "Clean user switch code to properly restart even during BLE_ON"
+    bug: "419104737"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "oneway_media_profile"
     namespace: "bluetooth"
     description: "remove non-oneway call to check if media profile are connected"
