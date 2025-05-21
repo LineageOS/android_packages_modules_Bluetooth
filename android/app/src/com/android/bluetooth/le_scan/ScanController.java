@@ -99,16 +99,6 @@ public class ScanController {
 
     private static final int ET_LEGACY_MASK = 0x10;
 
-    /** Example raw beacons captured from a Blue Charm BC011 */
-    private static final String[] TEST_MODE_BEACONS =
-            new String[] {
-                "020106",
-                "0201060303AAFE1716AAFE10EE01626C7565636861726D626561636F6E730009168020691E0EFE13551109426C7565436861726D5F313639363835000000",
-                "0201060303AAFE1716AAFE00EE626C7565636861726D31000000000001000009168020691E0EFE13551109426C7565436861726D5F313639363835000000",
-                "0201060303AAFE1116AAFE20000BF017000008874803FB93540916802069080EFE13551109426C7565436861726D5F313639363835000000000000000000",
-                "0201061AFF4C000215426C7565436861726D426561636F6E730EFE1355C509168020691E0EFE13551109426C7565436861726D5F31363936383500000000",
-            };
-
     private final PendingIntent.CancelListener mScanIntentCancelListener =
             new PendingIntent.CancelListener() {
                 public void onCanceled(PendingIntent intent) {
@@ -130,22 +120,23 @@ public class ScanController {
     private final HandlerThread mScanThread;
     private final AppOpsManager mAppOps;
     private final CompanionDeviceManager mCompanionManager;
+    private final ScannerMap mScannerMap;
     private final ScanManager mScanManager;
     private final PeriodicScanManager mPeriodicScanManager;
 
     private volatile boolean mTestModeEnabled = false;
-    private ScannerMap mScannerMap = new ScannerMap();
     private Handler mTestModeHandler;
 
     public ScanController(AdapterService service) {
-        this(service, null, null);
+        this(service, null, null, new ScannerMap());
     }
 
     @VisibleForTesting
     ScanController(
             AdapterService service,
             ScanManager scanManager,
-            PeriodicScanManager periodicScanManager) {
+            PeriodicScanManager periodicScanManager,
+            ScannerMap scannerMap) {
         mAdapterService = requireNonNull(service);
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mExposureNotificationPackage =
@@ -174,6 +165,7 @@ public class ScanController {
         mScanThread.start();
         mAppOps = mAdapterService.getSystemService(AppOpsManager.class);
         mCompanionManager = mAdapterService.getSystemService(CompanionDeviceManager.class);
+        mScannerMap = scannerMap;
 
         final var scanThreadLooper = mScanThread.getLooper();
         mScanManager =
@@ -197,15 +189,6 @@ public class ScanController {
         mPeriodicScanManager.cleanup();
     }
 
-    ScannerMap getScannerMap() {
-        return mScannerMap;
-    }
-
-    @VisibleForTesting
-    void setScannerMap(ScannerMap scannerMap) {
-        mScannerMap = scannerMap;
-    }
-
     /** Notify Scan manager of bluetooth profile connection state changes */
     public void notifyProfileConnectionStateChange(int profile, int fromState, int toState) {
         mScanManager.handleBluetoothProfileConnectionStateChanged(profile, fromState, toState);
@@ -214,6 +197,20 @@ public class ScanController {
     public IBinder getBinder() {
         return mBinder;
     }
+
+    ScannerMap getScannerMap() {
+        return mScannerMap;
+    }
+
+    /** Example raw beacons captured from a Blue Charm BC011 */
+    private static final String[] TEST_MODE_BEACONS =
+            new String[] {
+                "020106",
+                "0201060303AAFE1716AAFE10EE01626C7565636861726D626561636F6E730009168020691E0EFE13551109426C7565436861726D5F313639363835000000",
+                "0201060303AAFE1716AAFE00EE626C7565636861726D31000000000001000009168020691E0EFE13551109426C7565436861726D5F313639363835000000",
+                "0201060303AAFE1116AAFE20000BF017000008874803FB93540916802069080EFE13551109426C7565436861726D5F313639363835000000000000000000",
+                "0201061AFF4C000215426C7565436861726D426561636F6E730EFE1355C509168020691E0EFE13551109426C7565436861726D5F31363936383500000000",
+            };
 
     public void setTestModeEnabled(boolean enableTestMode) {
         synchronized (mTestModeLock) {

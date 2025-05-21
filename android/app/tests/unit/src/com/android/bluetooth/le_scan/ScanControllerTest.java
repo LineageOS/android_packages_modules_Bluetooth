@@ -60,7 +60,6 @@ import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.CompanionManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.GattNativeInterface;
 import com.android.bluetooth.gatt.GattObjectsFactory;
@@ -109,7 +108,6 @@ public class ScanControllerTest {
 
     private final BluetoothDevice mDevice = getTestDevice(89);
 
-    private CompanionManager mBtCompanionManager;
     private ScanController mScanController;
 
     @Before
@@ -136,11 +134,9 @@ public class ScanControllerTest {
         mockGetBluetoothManager(mAdapterService);
         mockGetSystemService(mAdapterService, LocationManager.class);
 
-        mBtCompanionManager = new CompanionManager(mAdapterService, null);
-        doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
-
-        mScanController = new ScanController(mAdapterService, mScanManager, mPeriodicScanManager);
-        mScanController.setScannerMap(mScannerMap);
+        mScanController =
+                new ScanController(
+                        mAdapterService, mScanManager, mPeriodicScanManager, mScannerMap);
     }
 
     @After
