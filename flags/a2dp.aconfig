@@ -125,3 +125,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "delay_sniff_subrating"
+    namespace: "bluetooth"
+    description: "Delay Sniff Subrating as in some remote's timing issues were observed"
+    bug: "419205731"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
