@@ -401,6 +401,9 @@ public class RemoteDevices {
         @VisibleForTesting int mDeviceType;
         @VisibleForTesting ParcelUuid[] mUuidsBrEdr;
         @VisibleForTesting ParcelUuid[] mUuidsLe;
+        @VisibleForTesting ParcelUuid[] mUuidsFromExtendedInquiryResponse;
+        @VisibleForTesting ParcelUuid[] mUuidsFromLeAdvertisingData;
+        @VisibleForTesting int mDiscoveryResultType = BluetoothDevice.DEVICE_TYPE_UNKNOWN;
         @VisibleForTesting boolean mHfpBatteryIndicator = false;
         private BluetoothSinkAudioPolicy mAudioPolicy;
 
@@ -588,6 +591,42 @@ public class RemoteDevices {
         void setUuidsLe(ParcelUuid[] uuids) {
             synchronized (mObject) {
                 this.mUuidsLe = uuids;
+            }
+        }
+
+        void setUuidsFromExtendedInquiryResponse(ParcelUuid[] uuids) {
+            synchronized (mObject) {
+                this.mUuidsFromExtendedInquiryResponse = uuids;
+            }
+        }
+
+        ParcelUuid[] getUuidsFromExtendedInquiryResponse() {
+            synchronized (mObject) {
+                return mUuidsFromExtendedInquiryResponse;
+            }
+        }
+
+        void setUuidsFromLeAdvertisingData(ParcelUuid[] uuids) {
+            synchronized (mObject) {
+                this.mUuidsFromLeAdvertisingData = uuids;
+            }
+        }
+
+        ParcelUuid[] getUuidsFromLeAdvertisingData() {
+            synchronized (mObject) {
+                return mUuidsFromLeAdvertisingData;
+            }
+        }
+
+        void setDiscoveryResultType(int discoveryResultType) {
+            synchronized (mObject) {
+                this.mDiscoveryResultType = discoveryResultType;
+            }
+        }
+
+        int getDiscoveryResultType() {
+            synchronized (mObject) {
+                return mDiscoveryResultType;
             }
         }
 
@@ -1203,6 +1242,16 @@ public class RemoteDevices {
                         // matches the type defined in BluetoothDevice.java
                         deviceProperties.setDeviceType(Utils.byteArrayToInt(val));
                     }
+                    case AbstractionLayer.BT_PROPERTY_DISCOVERY_RESULT_TYPE ->
+                            deviceProperties.setDiscoveryResultType(val[0]);
+                    case AbstractionLayer.BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE -> {
+                        final ParcelUuid[] newUuids = Utils.byteArrayToUuid(val);
+                        deviceProperties.setUuidsFromExtendedInquiryResponse(newUuids);
+                    }
+                    case AbstractionLayer.BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA -> {
+                        final ParcelUuid[] newUuids = Utils.byteArrayToUuid(val);
+                        deviceProperties.setUuidsFromLeAdvertisingData(newUuids);
+                    }
                     // RSSI from hal is in one byte
                     case AbstractionLayer.BT_PROPERTY_REMOTE_RSSI ->
                             deviceProperties.setRssi(val[0]);
@@ -1286,6 +1335,22 @@ public class RemoteDevices {
         intent.putExtra(
                 BluetoothDevice.EXTRA_IS_COORDINATED_SET_MEMBER,
                 deviceProp.isCoordinatedSetMember());
+
+        int discoveryResultType = deviceProp.getDiscoveryResultType();
+        if (Flags.getSvcUuidsFromBleAdvData()
+                && discoveryResultType != BluetoothDevice.DEVICE_TYPE_UNKNOWN) {
+            intent.putExtra(BluetoothDevice.EXTRA_DISCOVERY_RESULT_TYPE, discoveryResultType);
+
+            if ((discoveryResultType & BluetoothDevice.DEVICE_TYPE_CLASSIC) != 0) {
+                ParcelUuid[] uuids = deviceProp.getUuidsFromExtendedInquiryResponse();
+                intent.putExtra(BluetoothDevice.EXTRA_UUID, uuids);
+            }
+
+            if ((discoveryResultType & BluetoothDevice.DEVICE_TYPE_LE) != 0) {
+                ParcelUuid[] uuids = deviceProp.getUuidsFromLeAdvertisingData();
+                intent.putExtra(BluetoothDevice.EXTRA_UUID_LE, uuids);
+            }
+        }
 
         final List<DiscoveringPackage> packages = mAdapterService.getDiscoveringPackages();
         synchronized (packages) {

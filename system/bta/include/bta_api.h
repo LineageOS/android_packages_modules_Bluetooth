@@ -230,6 +230,7 @@ typedef struct {
   const uint8_t* p_eir; /* received EIR */
   uint16_t eir_len;     /* received EIR length */
   uint8_t inq_result_type;
+  uint8_t last_inq_result_from_type; /* Whether the last inquiry is from LE or BR/EDR */
   tBLE_ADDR_TYPE ble_addr_type;
   uint16_t ble_evt_type;
   uint8_t ble_primary_phy;

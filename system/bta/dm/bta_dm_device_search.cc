@@ -189,6 +189,7 @@ static void bta_dm_inq_results_cb(tBTM_INQ_RESULTS* p_inq, const uint8_t* p_eir,
 
   result.inq_res.ble_addr_type = p_inq->ble_addr_type;
   result.inq_res.inq_result_type = p_inq->inq_result_type;
+  result.inq_res.last_inq_result_from_type = p_inq->last_inq_result_from_type;
   result.inq_res.device_type = p_inq->device_type;
   result.inq_res.flag = p_inq->flag;
   result.inq_res.include_rsi = p_inq->include_rsi;
@@ -589,6 +590,7 @@ static void bta_dm_observe_results_cb(tBTM_INQ_RESULTS* p_inq, const uint8_t* p_
   result.inq_res.rssi = p_inq->rssi;
   result.inq_res.ble_addr_type = p_inq->ble_addr_type;
   result.inq_res.inq_result_type = p_inq->inq_result_type;
+  result.inq_res.last_inq_result_from_type = p_inq->last_inq_result_from_type;
   result.inq_res.device_type = p_inq->device_type;
   result.inq_res.flag = p_inq->flag;
   result.inq_res.ble_evt_type = p_inq->ble_evt_type;
@@ -637,6 +639,7 @@ static void bta_dm_opportunistic_observe_results_cb(tBTM_INQ_RESULTS* p_inq, con
   result.inq_res.rssi = p_inq->rssi;
   result.inq_res.ble_addr_type = p_inq->ble_addr_type;
   result.inq_res.inq_result_type = p_inq->inq_result_type;
+  result.inq_res.last_inq_result_from_type = p_inq->last_inq_result_from_type;
   result.inq_res.device_type = p_inq->device_type;
   result.inq_res.flag = p_inq->flag;
   result.inq_res.ble_evt_type = p_inq->ble_evt_type;
