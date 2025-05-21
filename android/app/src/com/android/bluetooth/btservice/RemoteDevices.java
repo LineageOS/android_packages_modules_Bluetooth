@@ -2124,38 +2124,42 @@ public class RemoteDevices {
                 device, batteryChargeIndicatorToPercentage(batteryLevel), /* isBas= */ false);
     }
 
-    private static final String[] SERVICE_DISCOVERY_IOP_PACKAGES = {
-        "com.sony.songpal.",
-    };
-
-    // TODO (b/395011801): Remove when fetchUuidsWithSdp(transport) is upgraded to public API
-    public boolean serviceDiscoveryIopFixNeeded(BluetoothDevice device) {
+    public boolean packageAssociated(BluetoothDevice device, String[] packages) {
         DeviceProperties deviceProperties = getDeviceProperties(device);
         if (deviceProperties == null) {
             return false;
         }
 
-        String[] packages = deviceProperties.getPackages();
-        if (packages.length == 0) {
+        String[] associatedPackages = deviceProperties.getPackages();
+        if (associatedPackages.length == 0) {
             return false;
         }
 
-        for (String iopFixPackage : SERVICE_DISCOVERY_IOP_PACKAGES) {
-            for (String packageName : packages) {
-                if (packageName.contains(iopFixPackage)) {
+        for (String appName : packages) {
+            for (String associatedPackage : associatedPackages) {
+                if (associatedPackage.contains(appName)) {
                     Log.w(
                             TAG,
-                            "serviceDiscoveryIopFixNeeded(): "
-                                    + " IOP fix needed for "
-                                    + device
-                                    + " package: "
-                                    + packageName);
+                            "packageAssociated(): "
+                                    + " package "
+                                    + associatedPackage
+                                    + "associated with "
+                                    + device);
                     return true;
                 }
             }
         }
 
         return false;
+    }
+
+    private static final String[] SERVICE_DISCOVERY_IOP_PACKAGES = {
+        "com.sony.songpal.",
+    };
+
+    // TODO (b/395011801): Remove when fetchUuidsWithSdp(transport) is upgraded to public API
+    public boolean serviceDiscoveryIopFixNeeded(BluetoothDevice device) {
+        return packageAssociated(device, SERVICE_DISCOVERY_IOP_PACKAGES);
     }
 
     private static final String[] BOND_LOSS_IOP_PACKAGES = {
@@ -2176,35 +2180,11 @@ public class RemoteDevices {
             return false;
         }
 
-        String[] packages = deviceProperties.getPackages();
-        if (packages.length == 0) {
-            return false;
-        }
-
         if (!BOND_LOSS_IOP_DEVICE_NAMES.contains(deviceName)) {
             return false;
         }
 
-        for (String iopFixPackage : BOND_LOSS_IOP_PACKAGES) {
-            for (String packageName : packages) {
-                if (packageName.contains(iopFixPackage)
-                        && !Utils.checkCallerTargetSdk(
-                                mAdapterService, packageName, Build.VERSION_CODES.BAKLAVA)) {
-                    Log.w(
-                            TAG,
-                            "bondLossIopFixNeeded(): "
-                                    + " IOP fix needed for "
-                                    + device
-                                    + " name: "
-                                    + deviceName
-                                    + " package: "
-                                    + packageName);
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return packageAssociated(device, BOND_LOSS_IOP_PACKAGES);
     }
 
     private static void errorLog(String msg) {
