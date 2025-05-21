@@ -208,6 +208,9 @@ private:
     void remove(uint16_t handle) {
       auto connection = le_acl_connections_.find(handle);
       if (connection != le_acl_connections_.end()) {
+        if (connection->second.pending_connection_) {
+          connection->second.pending_connection_->ClearEventCallbacks();
+        }
         connection->second.le_connection_management_callbacks_ = nullptr;
         le_acl_connections_.erase(handle);
       }
