@@ -166,8 +166,8 @@ public class AdapterServiceTest {
     static class MockAdapterService extends AdapterService {
         int mSetProfileServiceStateCounter = 0;
 
-        MockAdapterService(Looper looper, Context ctx) {
-            super(looper, ctx);
+        MockAdapterService(Looper looper, Context ctx, AdapterNativeInterface nativeInterface) {
+            super(looper, ctx, nativeInterface);
         }
 
         @Override
@@ -207,7 +207,6 @@ public class AdapterServiceTest {
         LeAudioService.setLeAudioService(mMockLeAudioService);
         doReturn(CONNECTION_POLICY_ALLOWED).when(mMockLeAudioService).getConnectionPolicy(any());
 
-        AdapterNativeInterface.setInstance(mNativeInterface);
         BluetoothKeystoreNativeInterface.setInstance(mKeystoreNativeInterface);
         BluetoothQualityReportNativeInterface.setInstance(mQualityNativeInterface);
         BluetoothHciVendorSpecificNativeInterface.setInstance(mHciVendorSpecificNativeInterface);
@@ -222,7 +221,10 @@ public class AdapterServiceTest {
         final Handler handler = new Handler(mLooper.getLooper());
         // Post the creation of AdapterService since it rely on Looper.myLooper()
         handler.post(
-                () -> mAdapterService = new MockAdapterService(mLooper.getLooper(), mMockContext));
+                () ->
+                        mAdapterService =
+                                new MockAdapterService(
+                                        mLooper.getLooper(), mMockContext, mNativeInterface));
         assertThat(mLooper.dispatchAll()).isEqualTo(1);
         assertThat(mAdapterService).isNotNull();
 
@@ -325,7 +327,6 @@ public class AdapterServiceTest {
         LeAudioService.setLeAudioService(null);
         mAdapterService.cleanup();
         mAdapterService.unregisterRemoteCallback(mIBluetoothCallback);
-        AdapterNativeInterface.setInstance(null);
         BluetoothKeystoreNativeInterface.setInstance(null);
         BluetoothQualityReportNativeInterface.setInstance(null);
         BluetoothHciVendorSpecificNativeInterface.setInstance(null);
