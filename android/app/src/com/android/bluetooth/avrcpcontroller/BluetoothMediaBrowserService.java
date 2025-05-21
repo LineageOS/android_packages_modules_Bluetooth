@@ -34,7 +34,6 @@ import androidx.media.MediaBrowserServiceCompat;
 
 import com.android.bluetooth.BluetoothPrefs;
 import com.android.bluetooth.R;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -397,11 +396,6 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
      * in the UI while we wait on the remote device to accept our playback command.
      */
     static synchronized void onAudioFocusStateChanged(int state) {
-        if (!Flags.signalConnectingOnFocusGain()) {
-            Log.w(TAG, "Feature 'signal_connecting_on_focus_gain' not enabled. Skip");
-            return;
-        }
-
         if (state != AudioManager.AUDIOFOCUS_GAIN) {
             return;
         }
