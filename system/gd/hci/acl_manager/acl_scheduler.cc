@@ -69,6 +69,13 @@ struct AclScheduler::impl {
         // If so, clear the current entry and advance the queue
         outgoing_entry_.reset();
         handle_outgoing_connection();
+        // Check if incoming request also exists for this address
+        if (com::android::bluetooth::flags::acl_fix_in_and_out_connection_reqs() &&
+            incoming_connecting_address_set_.find(address) !=
+                    incoming_connecting_address_set_.end()) {
+          log::warn("Incoming connection request also exists for {}", address);
+          incoming_connecting_address_set_.erase(address);
+        }
         try_dequeue_next_operation();
         return;
       }

@@ -57,6 +57,8 @@ protected:
 
     acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
 
+    com::android::bluetooth::flags::provider_->reset_flags();
+
     ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   }
 
@@ -213,8 +215,12 @@ TEST_F(AclSchedulerTest, UnknownConnectionCallback) {
 }
 
 TEST_F(AclSchedulerTest, TiebreakForOutgoingConnection) {
-  auto promise = std::promise<void>{};
-  auto future = promise.get_future();
+  com::android::bluetooth::flags::provider_->acl_fix_in_and_out_connection_reqs(true);
+
+  auto promise1 = std::promise<void>{};
+  auto future1 = promise1.get_future();
+  auto promise2 = std::promise<void>{};
+  auto future2 = promise2.get_future();
 
   // start outgoing connection
   acl_scheduler_->EnqueueOutgoingAclConnection(address1, emptyCallback());
@@ -223,14 +229,21 @@ TEST_F(AclSchedulerTest, TiebreakForOutgoingConnection) {
   acl_scheduler_->RegisterPendingIncomingConnection(address1);
 
   // then the connection to that address completes
-  acl_scheduler_->ReportAclConnectionCompletion(address1, promiseCallback(std::move(promise)),
+  acl_scheduler_->ReportAclConnectionCompletion(address1, promiseCallback(std::move(promise1)),
                                                 impossibleCallback(),
                                                 impossibleCallbackTakingString());
 
   // the outgoing_connection callback should have executed, NOT the incoming_connection one
   // this preserves working behavior, it is not based on any principled decision (so if you need to
   // break this test, go for it)
-  EXPECT_THAT(future, IsSet());
+  EXPECT_THAT(future1, IsSet());
+
+  // start an outgoing RNR to another device
+  acl_scheduler_->EnqueueRemoteNameRequest(address2, promiseCallback(std::move(promise2)),
+                                           emptyCallback());
+
+  // we expect the start callback to be invoked for the RNR and not deadlock
+  EXPECT_THAT(future2, IsSet());
 }
 
 TEST_F(AclSchedulerTest, QueueWhileIncomingConnectionsPending) {
