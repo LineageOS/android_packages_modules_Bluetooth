@@ -36,7 +36,6 @@ public abstract class ProfileService extends ContextWrapper {
     private final IProfileServiceBinder mBinder;
     private final String mName;
     private boolean mAvailable = false;
-    private volatile boolean mTestModeEnabled = false;
 
     public String getName() {
         return getClass().getSimpleName();
@@ -50,10 +49,6 @@ public abstract class ProfileService extends ContextWrapper {
         mAvailable = available;
     }
 
-    protected boolean isTestModeEnabled() {
-        return mTestModeEnabled;
-    }
-
     /**
      * Called in ProfileService constructor to init binder interface for this profile service.
      *
@@ -63,13 +58,6 @@ public abstract class ProfileService extends ContextWrapper {
 
     /** Called when this object is no longer needed and is being discarded. */
     public abstract void cleanup();
-
-    /**
-     * @param testModeEnabled if the profile should enter or exit a testing mode
-     */
-    protected void setTestModeEnabled(boolean testModeEnabled) {
-        mTestModeEnabled = testModeEnabled;
-    }
 
     protected ProfileService(AdapterService adapterService) {
         super(adapterService);

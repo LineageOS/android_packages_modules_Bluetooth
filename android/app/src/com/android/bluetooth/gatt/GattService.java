@@ -213,13 +213,6 @@ public class GattService extends ProfileService {
     }
 
     @Override
-    protected void setTestModeEnabled(boolean enableTestMode) {
-        if (mScanController != null) {
-            mScanController.setTestModeEnabled(enableTestMode);
-        }
-    }
-
-    @Override
     protected IProfileServiceBinder initBinder() {
         return new GattServiceBinder(this);
     }
