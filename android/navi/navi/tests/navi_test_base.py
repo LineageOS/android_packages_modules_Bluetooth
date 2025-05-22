@@ -634,7 +634,7 @@ class AndroidBumbleTestBase(BaseTestBase):
                 advertising_interval_max=_DEFAULT_ADVERTISING_INTERVAL,
             )
 
-        match cast(str, self.user_params.get("crown_driver", CrownDriver.ANDROID)):
+        match cast(str, self.user_params.get("crown_driver", CrownDriver.CF_ROOTCANAL)):
             case CrownDriver.ANDROID:
                 controllers = self._get_android_controllers(self.NUM_REF_DEVICES + 1)
                 self.dut = self.dut_wrapper_factory(controllers[0])

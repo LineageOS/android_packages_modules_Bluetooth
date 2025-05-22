@@ -47,9 +47,6 @@ python_test_host {
         unit_test: false,
         runner: "mobly",
     },
-    data: [
-        "config.yml",
-    ],
     device_common_data: [
         ":BluetoothSnippet",
     ],
