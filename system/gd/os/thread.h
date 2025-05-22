@@ -65,6 +65,8 @@ public:
   // Return the pointer of underlying reactor. The ownership is NOT transferred.
   Reactor* GetReactor() const;
 
+  void Abort();
+
 private:
   void run(Priority priority);
   mutable std::mutex mutex_;

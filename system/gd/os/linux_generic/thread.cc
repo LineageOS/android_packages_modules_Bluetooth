@@ -18,6 +18,7 @@
 
 #include <bluetooth/log.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 
@@ -60,6 +61,11 @@ bool Thread::Stop() {
   reactor_.Stop();
   running_thread_.join();
   return true;
+}
+
+void Thread::Abort() {
+  /* Send SIGABRT, this will cause thread to print it's stacktrace in logcat and crash */
+  pthread_kill(running_thread_.native_handle(), SIGABRT);
 }
 
 bool Thread::IsSameThread() const { return std::this_thread::get_id() == running_thread_.get_id(); }
