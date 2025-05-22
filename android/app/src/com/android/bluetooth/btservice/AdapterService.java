@@ -4581,12 +4581,10 @@ public class AdapterService extends Service {
         }
 
         if ("set-test-mode".equals(args[0])) {
-            final boolean testModeEnabled = "enabled".equalsIgnoreCase(args[1]);
-            for (ProfileService profile : mRunningProfiles) {
-                profile.setTestModeEnabled(testModeEnabled);
-            }
-            if (Flags.onlyStartScanDuringBleOn() && mScanController != null) {
-                mScanController.setTestModeEnabled(testModeEnabled);
+            final var testModeEnabled = "enabled".equalsIgnoreCase(args[1]);
+            final var scanController = getBluetoothScanController();
+            if (scanController != null) {
+                scanController.setTestModeEnabled(testModeEnabled);
             }
             mTestModeEnabled = testModeEnabled;
             return;
