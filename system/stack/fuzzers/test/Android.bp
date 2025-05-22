@@ -18,6 +18,7 @@ cc_defaults {
         "include",
     ],
     srcs: [
+        ":TestMockStackA2dp",
         "fuzzer_validation_test.cc",
     ],
     strip: {
