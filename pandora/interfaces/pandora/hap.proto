@@ -20,6 +20,7 @@ import "google/protobuf/empty.proto";
 service HAP {
   rpc GetFeatures(GetFeaturesRequest) returns (GetFeaturesResponse);
   rpc SetActivePreset(SetActivePresetRequest) returns (google.protobuf.Empty);
+  rpc SetActivePresetForGroup(SetActivePresetForGroupRequest) returns (google.protobuf.Empty);
   rpc GetActivePreset(GetActivePresetRequest) returns (GetActivePresetResponse);
   rpc SetNextPreset(SetNextPresetRequest) returns (google.protobuf.Empty);
   rpc SetPreviousPreset(SetPreviousPresetRequest) returns (google.protobuf.Empty);
@@ -39,6 +40,11 @@ message GetFeaturesResponse{
 }
 
 message SetActivePresetRequest {
+    Connection connection = 1;
+    uint32 index = 2;
+}
+
+message SetActivePresetForGroupRequest {
     Connection connection = 1;
     uint32 index = 2;
 }

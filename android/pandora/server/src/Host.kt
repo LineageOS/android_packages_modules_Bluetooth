@@ -492,6 +492,9 @@ class Host(
                 ) {
                     throw RuntimeException("Incomplete Service Class Uuids not supported")
                 }
+                if (!dataTypesRequest.getResolvableSetIdentifier().isEmpty()) {
+                    throw RuntimeException("Resolvable Set Identifier not supported")
+                }
 
                 // Handle service uuids
                 for (uuid16 in dataTypesRequest.getCompleteServiceClassUuids16List()) {

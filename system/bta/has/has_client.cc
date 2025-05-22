@@ -969,9 +969,7 @@ public:
   }
 
   void OnGroupOpCoordinatorTimeout(void* /*p*/) {
-    log::error(
-            "Coordinated operation timeout:  not all the devices notified their "
-            "state change on time.");
+    log::error("Not all the devices notified their state change on time.");
 
     /* Clear pending group operations */
     pending_group_operation_timeouts_.clear();
