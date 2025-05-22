@@ -52,6 +52,10 @@ import android.location.LocationManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Process;
+import android.os.SystemClock;
+import android.platform.test.annotations.EnableFlags;
+import android.platform.test.flag.junit.CheckFlagsRule;
+import android.platform.test.flag.junit.DeviceFlagsValueProvider;
 import android.provider.Settings;
 import android.test.mock.MockContentProvider;
 import android.test.mock.MockContentResolver;
@@ -63,6 +67,7 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.TestUtils.MockitoRule;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_scan.ScanController;
 
 import org.junit.After;
@@ -86,6 +91,9 @@ import java.util.UUID;
 public class GattServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Rule
+    public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
+
     @Mock private AttributionSource mAttributionSource;
     @Mock private IBluetoothGattCallback mGattCallback;
     @Mock private ContextMap<IBluetoothGattCallback> mClientMap;
@@ -104,6 +112,7 @@ public class GattServiceTest {
     private static final int CLIENT_IF = 12;
     private static final int SERVER_CONN_ID = 84;
     private static final int CLIENT_CONN_ID = 42;
+    private static final int TEST_RSSI = 43;
 
     private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
     private final CompanionDeviceManager mCompanionDeviceManager =
@@ -133,9 +142,13 @@ public class GattServiceTest {
         doReturn(Binder.getCallingUid()).when(mAttributionSource).getUid();
         doReturn(SERVER_CONN_ID).when(mServerMap).connIdByDevice(SERVER_IF, mDevice);
         doReturn(CLIENT_CONN_ID).when(mClientMap).connIdByDevice(CLIENT_IF, mDevice);
+
         ContextMap<IBluetoothGattCallback>.App clientApp = mock(ContextMap.App.class);
+        clientApp.callback = mGattCallback;
         clientApp.id = CLIENT_IF;
         doReturn(clientApp).when(mClientMap).getByCallbackId(mGattCallback);
+        doReturn(clientApp).when(mClientMap).getById(CLIENT_IF);
+
         ContextMap<IBluetoothGattCallback>.App serverApp = mock(ContextMap.App.class);
         serverApp.id = SERVER_IF;
         doReturn(serverApp).when(mServerMap).getByCallbackId(mGattServerCallback);
@@ -542,9 +555,34 @@ public class GattServiceTest {
     }
 
     @Test
-    public void readRemoteRssi() {
+    public void readRemoteRssi_entryIsEmpty() {
         mService.readRemoteRssi(mGattCallback, mDevice);
+
         verify(mNativeInterface).gattClientReadRemoteRssi(CLIENT_IF, mDevice);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_READ_RSSI_THROTTLING)
+    public void readRemoteRssi_entryIsNotEmpty() throws Exception {
+        mService.mRssiReadThrottleMs = mService.RSSI_READ_THROTTLE_MS_MAX;
+        mService.mRssiCache.put(
+                mDevice.getAddress(),
+                new com.android.bluetooth.gatt.GattService.RssiCacheEntry(
+                        SystemClock.elapsedRealtime(), TEST_RSSI));
+
+        mService.readRemoteRssi(mGattCallback, mDevice);
+
+        verify(mGattCallback).onReadRemoteRssi(mDevice, TEST_RSSI, BluetoothGatt.GATT_SUCCESS);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_READ_RSSI_THROTTLING)
+    public void onReadRemoteRssiFromNative() throws Exception {
+        mService.onReadRemoteRssiFromNative(
+                CLIENT_IF, mDevice, TEST_RSSI, BluetoothGatt.GATT_SUCCESS);
+
+        assertThat(mService.mRssiCache.get(mDevice.getAddress()).rssi()).isEqualTo(TEST_RSSI);
+        verify(mGattCallback).onReadRemoteRssi(mDevice, TEST_RSSI, BluetoothGatt.GATT_SUCCESS);
     }
 
     @Test

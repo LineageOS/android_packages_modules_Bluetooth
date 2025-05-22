@@ -1801,17 +1801,59 @@ public class RemoteDevices {
         mHandler.sendMessageDelayed(message, UUID_INTENT_DELAY);
 
         // Uses cached UUIDs if we are bonding. If not, we fetch the UUIDs with SDP.
-        if (deviceProperties == null || !deviceProperties.isBonding()) {
-            debugLog(
-                    "Invoking core stack to spin up SDP cycle peer:"
-                            + device
-                            + " transport:"
-                            + transport);
-            mAdapterService
-                    .getNative()
-                    .getRemoteServices(Utils.getBytesFromAddress(device.getAddress()), transport);
-            MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_INVOKE_SDP_CYCLE, 1);
+        if (deviceProperties != null && deviceProperties.isBonding()) {
+            debugLog("Wait for SDP after bonding peer:" + device);
+            return;
         }
+
+        debugLog(
+                "Invoking core stack to spin up SDP cycle peer:"
+                        + device
+                        + " transport:"
+                        + transport);
+        MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_INVOKE_SDP_CYCLE, 1);
+
+        // Some apps expect service discovery to be performed on all connected transports.
+        if (deviceProperties != null
+                && transport == BluetoothDevice.TRANSPORT_AUTO
+                && serviceDiscoveryIopFixNeeded(device)) {
+            boolean startedLeServiceDiscovery = false;
+            boolean startedBredrServiceDiscovery = false;
+            if (deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_LE)
+                    != BluetoothDevice.ERROR) {
+                mAdapterService
+                        .getNative()
+                        .getRemoteServices(
+                                Utils.getBytesFromAddress(device.getAddress()),
+                                BluetoothDevice.TRANSPORT_LE);
+                startedLeServiceDiscovery = true;
+            }
+
+            if (deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_BREDR)
+                    != BluetoothDevice.ERROR) {
+                mAdapterService
+                        .getNative()
+                        .getRemoteServices(
+                                Utils.getBytesFromAddress(device.getAddress()),
+                                BluetoothDevice.TRANSPORT_BREDR);
+                startedBredrServiceDiscovery = true;
+            }
+
+            if (startedLeServiceDiscovery || startedBredrServiceDiscovery) {
+                infoLog(
+                        "fetchUuids(): Invoking service discovery over connected transports:"
+                                + device
+                                + " LE:"
+                                + startedLeServiceDiscovery
+                                + " BREDR:"
+                                + startedBredrServiceDiscovery);
+                return;
+            }
+        }
+
+        mAdapterService
+                .getNative()
+                .getRemoteServices(Utils.getBytesFromAddress(device.getAddress()), transport);
     }
 
     void updateUuids(BluetoothDevice device) {
@@ -2082,6 +2124,44 @@ public class RemoteDevices {
                 device, batteryChargeIndicatorToPercentage(batteryLevel), /* isBas= */ false);
     }
 
+    public boolean packageAssociated(BluetoothDevice device, String[] packages) {
+        DeviceProperties deviceProperties = getDeviceProperties(device);
+        if (deviceProperties == null) {
+            return false;
+        }
+
+        String[] associatedPackages = deviceProperties.getPackages();
+        if (associatedPackages.length == 0) {
+            return false;
+        }
+
+        for (String appName : packages) {
+            for (String associatedPackage : associatedPackages) {
+                if (associatedPackage.contains(appName)) {
+                    Log.w(
+                            TAG,
+                            "packageAssociated(): "
+                                    + " package "
+                                    + associatedPackage
+                                    + "associated with "
+                                    + device);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static final String[] SERVICE_DISCOVERY_IOP_PACKAGES = {
+        "com.sony.songpal.",
+    };
+
+    // TODO (b/395011801): Remove when fetchUuidsWithSdp(transport) is upgraded to public API
+    public boolean serviceDiscoveryIopFixNeeded(BluetoothDevice device) {
+        return packageAssociated(device, SERVICE_DISCOVERY_IOP_PACKAGES);
+    }
+
     private static final String[] BOND_LOSS_IOP_PACKAGES = {
         "com.sjm.crmd.patientApp_Android", "com.abbott.crm.ngq.patient",
     };
@@ -2100,35 +2180,11 @@ public class RemoteDevices {
             return false;
         }
 
-        String[] packages = deviceProperties.getPackages();
-        if (packages.length == 0) {
-            return false;
-        }
-
         if (!BOND_LOSS_IOP_DEVICE_NAMES.contains(deviceName)) {
             return false;
         }
 
-        for (String iopFixPackage : BOND_LOSS_IOP_PACKAGES) {
-            for (String packageName : packages) {
-                if (packageName.contains(iopFixPackage)
-                        && !Utils.checkCallerTargetSdk(
-                                mAdapterService, packageName, Build.VERSION_CODES.BAKLAVA)) {
-                    Log.w(
-                            TAG,
-                            "bondLossIopFixNeeded(): "
-                                    + " IOP fix needed for "
-                                    + device
-                                    + " name: "
-                                    + deviceName
-                                    + " package: "
-                                    + packageName);
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return packageAssociated(device, BOND_LOSS_IOP_PACKAGES);
     }
 
     private static void errorLog(String msg) {

@@ -85,7 +85,7 @@ protected:
     handler_ = new os::Handler(thread_);
 
     link_clocker = std::make_unique<LinkClocker>();
-    hal = std::make_unique<HciHalImpl>(handler_, link_clocker.get(), nullptr /* snoop_logger */);
+    hal = std::make_unique<HciHalImpl>(handler_, *link_clocker, nullptr /* snoop_logger */);
   }
 
   void TearDown() override {

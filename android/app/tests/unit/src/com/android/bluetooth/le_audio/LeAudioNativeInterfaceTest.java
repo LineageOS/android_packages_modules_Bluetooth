@@ -33,7 +33,6 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.AdapterService;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -61,14 +60,7 @@ public class LeAudioNativeInterfaceTest {
                 .when(mAdapterService)
                 .getRemoteDevice(anyString());
         when(mMockService.isAvailable()).thenReturn(true);
-        LeAudioService.setLeAudioService(mMockService);
-        mNativeInterface = LeAudioNativeInterface.getInstance(mAdapterService);
-    }
-
-    @After
-    public void tearDown() {
-        LeAudioService.setLeAudioService(null);
-        LeAudioNativeInterface.setInstance(null);
+        mNativeInterface = new LeAudioNativeInterface(mAdapterService, mMockService);
     }
 
     @Test
