@@ -211,10 +211,13 @@ public class LeAudioBroadcastServiceTest {
 
         MetricsLogger.setInstanceForTesting(mMetricsLogger);
 
-        LeAudioBroadcasterNativeInterface.setInstance(mLeAudioBroadcasterNativeInterface);
         mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
 
-        mService = new LeAudioService(mAdapterService, mLeAudioNativeInterface);
+        mService =
+                new LeAudioService(
+                        mAdapterService,
+                        mLeAudioNativeInterface,
+                        mLeAudioBroadcasterNativeInterface);
         mService.setAvailable(true);
 
         mService.mServiceFactory = mServiceFactory;
@@ -231,7 +234,6 @@ public class LeAudioBroadcastServiceTest {
         mService.cleanup();
         ;
         assertThat(LeAudioService.getLeAudioService()).isNull();
-        LeAudioBroadcasterNativeInterface.setInstance(null);
         MetricsLogger.setInstanceForTesting(null);
     }
 
@@ -1628,7 +1630,7 @@ public class LeAudioBroadcastServiceTest {
                         .setProgramInfo("Subgroup broadcast info")
                         .build();
 
-        /* Start broadcast without prior unicast to broadcast handover, broadacst device should be
+        /* Start broadcast without prior unicast to broadcast handover, broadcast device should be
          * exposed to AudioManager
          */
         verifyBroadcastStarted(broadcastId, buildBroadcastSettingsFromMetadata(meta, code, 1));
@@ -1636,7 +1638,7 @@ public class LeAudioBroadcastServiceTest {
                 .handleBluetoothActiveDeviceChanged(
                         eq(mBroadcastDevice), eq(null), any(BluetoothProfileConnectionInfo.class));
 
-        /* Stop broadcast without prior broadcast to unicast handover, broadacst device should be
+        /* Stop broadcast without prior broadcast to unicast handover, broadcast device should be
          * cleaned in AudioManager
          */
         verifyBroadcastStopped(broadcastId);

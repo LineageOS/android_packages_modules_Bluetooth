@@ -137,8 +137,8 @@ public class LeAudioServiceTest {
     @Mock private ActiveDeviceManager mActiveDeviceManager;
     @Mock private AudioManager mAudioManager;
     @Mock private DatabaseManager mDatabaseManager;
-    @Mock private LeAudioBroadcasterNativeInterface mLeAudioBroadcasterNativeInterface;
     @Mock private LeAudioNativeInterface mNativeInterface;
+    @Mock private LeAudioBroadcasterNativeInterface mLeAudioBroadcasterNativeInterface;
     @Mock private LeAudioTmapGattServer mTmapGattServer;
     @Mock private McpService mMcpService;
     @Mock private TbsService mTbsService;
@@ -272,8 +272,9 @@ public class LeAudioServiceTest {
                 .when(mAdapterService)
                 .getDeviceFromByte(Utils.getBytesFromAddress("FF:FF:FF:FF:FF:FF"));
 
-        LeAudioBroadcasterNativeInterface.setInstance(mLeAudioBroadcasterNativeInterface);
-        mService = new LeAudioService(mAdapterService, mNativeInterface);
+        mService =
+                new LeAudioService(
+                        mAdapterService, mNativeInterface, mLeAudioBroadcasterNativeInterface);
         mService.setAvailable(true);
 
         mService.mMcpService = mMcpService;
@@ -328,7 +329,10 @@ public class LeAudioServiceTest {
                                 set -> {
                                     injectSupportedProfilesBitMask(set);
                                     LeAudioService service =
-                                            new LeAudioService(mAdapterService, mNativeInterface);
+                                            new LeAudioService(
+                                                    mAdapterService,
+                                                    mNativeInterface,
+                                                    mLeAudioBroadcasterNativeInterface);
                                     return service.getTmapRoleMask();
                                 })
                         .collect(Collectors.toList());
