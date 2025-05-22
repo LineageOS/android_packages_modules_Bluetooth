@@ -10,3 +10,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "adm_unset_others_on_hfp_changed"
+    namespace: "bluetooth"
+    description: "when HFP device is set as active, unset LE Audio and Hearing aid"
+    bug: "419505580"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
