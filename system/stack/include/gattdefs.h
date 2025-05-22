@@ -27,37 +27,35 @@
 
 #define GATT_ILLEGAL_UUID 0
 
-/* GATT attribute types
- */
+/* GATT attribute types */
 #define GATT_UUID_PRI_SERVICE 0x2800
 #define GATT_UUID_SEC_SERVICE 0x2801
 #define GATT_UUID_INCLUDE_SERVICE 0x2802
-/*  Characteristic Declaration*/
+/* Characteristic Declaration*/
 #define GATT_UUID_CHAR_DECLARE 0x2803
 
-/*	Characteristic Extended Properties */
+/* Characteristic Extended Properties */
 #define GATT_UUID_CHAR_EXT_PROP 0x2900
-/*  Characteristic User Description*/
+/* Characteristic User Description*/
 #define GATT_UUID_CHAR_DESCRIPTION 0x2901
-/*  Client Characteristic Configuration */
+/* Client Characteristic Configuration */
 #define GATT_UUID_CHAR_CLIENT_CONFIG 0x2902
-/*  Server Characteristic Configuration */
+/* Server Characteristic Configuration */
 #define GATT_UUID_CHAR_SRVR_CONFIG 0x2903
-/*  Characteristic Presentation Format*/
+/* Characteristic Presentation Format*/
 #define GATT_UUID_CHAR_PRESENT_FORMAT 0x2904
-/*  Characteristic Aggregate Format*/
+/* Characteristic Aggregate Format*/
 #define GATT_UUID_CHAR_AGG_FORMAT 0x2905
-/*  Characteristic Valid Range */
+/* Characteristic Valid Range */
 #define GATT_UUID_CHAR_VALID_RANGE 0x2906
 #define GATT_UUID_EXT_RPT_REF_DESCR 0x2907
 #define GATT_UUID_RPT_REF_DESCR 0x2908
 
-/*  Client Characteristic Configuration bits */
+/* Client Characteristic Configuration bits */
 #define GATT_CHAR_CLIENT_CONFIG_NOTIFICATION 0x0001
 #define GATT_CHAR_CLIENT_CONFIG_INDICTION 0x0002
 
-/* GAP Profile Attributes
- */
+/* GAP Profile Attributes */
 #define GATT_UUID_GAP_DEVICE_NAME 0x2A00
 #define GATT_UUID_GAP_ICON 0x2A01
 #define GATT_UUID_GAP_PREF_CONN_PARAM 0x2A04
@@ -119,11 +117,11 @@
 #define GATT_UUID_SC_CONTROL_POINT 0x2A55
 #define GATT_UUID_SENSOR_LOCATION 0x2A5D
 
-/* RUNNERS SPEED AND CADENCE SERVICE      */
+/* RUNNERS SPEED AND CADENCE SERVICE */
 #define GATT_UUID_RSC_MEASUREMENT 0x2A53
 #define GATT_UUID_RSC_FEATURE 0x2A54
 
-/* CYCLING SPEED AND CADENCE SERVICE      */
+/* CYCLING SPEED AND CADENCE SERVICE */
 #define GATT_UUID_CSC_MEASUREMENT 0x2A5B
 #define GATT_UUID_CSC_FEATURE 0x2A5C
 

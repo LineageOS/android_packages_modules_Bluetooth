@@ -549,7 +549,7 @@ public:
     }
 
     // Set data length
-    // TODO(jpawlowski: for 16khz only 87 is required, optimize
+    // TODO(jpawlowski) for 16khz only 87 is required, optimize
     if (get_btm_client_interface().ble.BTM_SetBleDataLength(
                 address, 167, /*is_privileged_client*/ true) != tBTM_STATUS::BTM_SUCCESS) {
       log::warn("Unable to set BLE data length peer:{} size:{}", address, 167);
@@ -1685,7 +1685,7 @@ public:
         std::vector<uint8_t> buffer(bytes_to_read);
 
         uint16_t bytes_read = 0;
-        // TODO:GAP_ConnReadData should accept uint32_t for length!
+        // TODO GAP_ConnReadData should accept uint32_t for length!
         GAP_ConnReadData(gap_handle, buffer.data(), buffer.size(), &bytes_read);
 
         if (bytes_read < 4) {
