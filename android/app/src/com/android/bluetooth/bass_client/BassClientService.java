@@ -3856,14 +3856,16 @@ public class BassClientService extends ProfileService {
                             sm.getAllSources().stream()
                                     .filter(e -> e.getBroadcastId() == metadata.getBroadcastId())
                                     .findAny();
-                    if (receiver.isPresent()
-                            && !getAllSources(sink).stream()
-                                    .anyMatch(
-                                            rs ->
-                                                    (rs.getBroadcastId()
-                                                            == receiver.get().getBroadcastId()))) {
+                    if (receiver.isPresent()) {
                         Log.d(TAG, "handleBassStateReady: restore the source for device, " + sink);
-                        addSource(sink, metadata, /* isGroupOp */ false);
+                        mPausedBroadcastSinks.add(sink);
+                        logPausedBroadcastsAndSinks();
+                        // Not call resume if paused by host or monitored as it will be called later
+                        if (!isSuspendedByHostPauseReason(metadata.getBroadcastId())
+                                && !isBigMonitoringPauseReason(metadata.getBroadcastId())
+                                && !isOorMonitoringPauseReason(metadata.getBroadcastId())) {
+                            resumeReceiversSourceSynchronization();
+                        }
                         return;
                     }
                 }

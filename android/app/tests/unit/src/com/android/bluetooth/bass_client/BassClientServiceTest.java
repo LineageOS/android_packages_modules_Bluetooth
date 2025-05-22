@@ -6461,21 +6461,52 @@ public class BassClientServiceTest {
     }
 
     /**
-     * Test add source will be triggered if new device connected and its peer is synced to broadcast
-     * source
+     * Test resume source will be triggered if new device connected and its peer is synced to
+     * broadcast source
      */
     @Test
-    public void sinkBassStateReady_addSourceIfPeerDeviceSynced() throws RemoteException {
+    public void sinkBassStateReady_resumeSourceIfPeerDeviceSynced() throws RemoteException {
         // Imitate broadcast being active
         doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
         prepareTwoSynchronizedDevicesForLocalBroadcast();
 
+        // Disconnect device to remove its data
+        mBassClientService.connectionStateChanged(
+                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
+
         mBassClientService.getCallbacks().notifyBassStateReady(mCurrentDevice);
         TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
 
+        // Verify modify source when source available but not synced to PA/BIS
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            if (sm.getDevice().equals(mCurrentDevice1)) {
+                verify(sm, never()).sendMessage(any());
+            } else if (sm.getDevice().equals(mCurrentDevice)) {
+                ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+                verify(sm, atLeast(1)).sendMessage(messageCaptor.capture());
+
+                Message msg =
+                        messageCaptor.getAllValues().stream()
+                                .filter(m -> (m.what == BassClientStateMachine.UPDATE_BCAST_SOURCE))
+                                .findFirst()
+                                .orElse(null);
+                assertThat(msg).isNotNull();
+                clearInvocations(sm);
+            } else {
+                throw new AssertionError("Unexpected device");
+            }
+        }
+
+        // Update receiver state with PA and BIS sync
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ true);
+
+        mBassClientService.getCallbacks().notifyBassStateReady(mCurrentDevice);
+        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+
+        // No resuming source if device remain synced to PA/BIS
         assertThat(mStateMachines).hasSize(2);
         for (BassClientStateMachine sm : mStateMachines.values()) {
-            // No adding source if device remain synced
             verify(sm, never()).sendMessage(any());
         }
 
@@ -6485,8 +6516,8 @@ public class BassClientServiceTest {
         mBassClientService.getCallbacks().notifyBassStateReady(mCurrentDevice);
         TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
 
+        // Verify add source when source not available
         for (BassClientStateMachine sm : mStateMachines.values()) {
-            // Verify mCurrentDevice is resuming the broadcast
             if (sm.getDevice().equals(mCurrentDevice1)) {
                 verify(sm, never()).sendMessage(any());
             } else if (sm.getDevice().equals(mCurrentDevice)) {
@@ -6504,6 +6535,62 @@ public class BassClientServiceTest {
                 throw new AssertionError("Unexpected device");
             }
         }
+    }
+
+    @Test
+    public void sinkBassStateReady_addToPausedSinksIfPausedByHost() throws RemoteException {
+        prepareSynchronizedPairAndStopSearching();
+
+        // Disconnect device to remove its data
+        mBassClientService.connectionStateChanged(
+                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
+
+        // Remove source on the mCurrentDevice
+        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
+
+        // Suspend all receivers, SUSPENDED_BY_HOST
+        mBassClientService.suspendAllReceiversSourceSynchronization();
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            clearInvocations(sm);
+        }
+        injectRemoteSourceStateChanged(
+                mStateMachines.get(mCurrentDevice1), mBroadcastMetadata1, false, false);
+
+        mBassClientService.getCallbacks().notifyBassStateReady(mCurrentDevice);
+        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+
+        // No resuming during pause
+        assertThat(mStateMachines).hasSize(2);
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            verify(sm, never()).sendMessage(any());
+        }
+
+        // Verify resume on both devices
+        checkResumeSynchronizationByHost();
+    }
+
+    @Test
+    public void sinkBassStateReady_addToPausedSinksIfMonitored() throws RemoteException {
+        bigMonitoringWithoutScanning();
+
+        // Disconnect device to remove its data
+        mBassClientService.connectionStateChanged(
+                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
+
+        // Remove source on the mCurrentDevice
+        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
+
+        mBassClientService.getCallbacks().notifyBassStateReady(mCurrentDevice);
+        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
+
+        // No resuming during monitoring
+        assertThat(mStateMachines).hasSize(2);
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            verify(sm, never()).sendMessage(any());
+        }
+
+        // Verify resume on both devices
+        checkResumeSynchronizationByBig();
     }
 
     /** Test add pending source when BASS state get ready */
