@@ -96,3 +96,11 @@ prop {
     prop_name: "bluetooth.ble.batch_scan.screen_off_delay_ms.config"
 }
 
+# Remote RSSI read throttle time
+prop {
+    api_name: "rssi_read_throttle_ms"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.rssi_read_throttle_ms.config"
+}
