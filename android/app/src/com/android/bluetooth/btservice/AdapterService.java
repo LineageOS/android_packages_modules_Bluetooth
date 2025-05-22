@@ -240,8 +240,6 @@ public class AdapterService extends Service {
 
     private final List<DiscoveringPackage> mDiscoveringPackages = new ArrayList<>();
 
-    private final AdapterNativeInterface mNativeInterface = AdapterNativeInterface.getInstance();
-
     private final Map<BluetoothDevice, RemoteCallbackList<IBluetoothMetadataListener>>
             mMetadataListeners = new HashMap<>();
 
@@ -283,6 +281,7 @@ public class AdapterService extends Service {
 
     private final Looper mLooper;
     private final AdapterServiceHandler mHandler;
+    private final AdapterNativeInterface mNativeInterface;
     private final SilenceDeviceManager mSilenceDeviceManager;
     private final DatabaseManager mDatabaseManager;
     private final ServiceFactory mServiceFactory;
@@ -389,23 +388,24 @@ public class AdapterService extends Service {
 
     // Keep a constructor for ActivityThread.handleCreateService
     AdapterService() {
-        this(Looper.getMainLooper());
+        this(Looper.getMainLooper(), new AdapterNativeInterface());
     }
 
     @VisibleForTesting
-    public AdapterService(Context ctx) {
-        this(Looper.getMainLooper(), ctx);
+    public AdapterService(Context ctx, AdapterNativeInterface nativeInterface) {
+        this(Looper.getMainLooper(), ctx, nativeInterface);
     }
 
     @VisibleForTesting
-    AdapterService(Looper looper, Context ctx) {
-        this(looper);
+    AdapterService(Looper looper, Context ctx, AdapterNativeInterface nativeInterface) {
+        this(looper, nativeInterface);
         attachBaseContext(ctx);
     }
 
-    private AdapterService(Looper looper) {
+    private AdapterService(Looper looper, AdapterNativeInterface nativeInterface) {
         mLooper = requireNonNull(looper);
         mHandler = new AdapterServiceHandler(mLooper);
+        mNativeInterface = requireNonNull(nativeInterface);
         mServiceFactory = new ServiceFactory();
         mSilenceDeviceManager = new SilenceDeviceManager(this, mServiceFactory, mLooper);
         mDatabaseManager = new DatabaseManager(this);
