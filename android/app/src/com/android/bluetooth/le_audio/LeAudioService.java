@@ -246,11 +246,14 @@ public class LeAudioService extends ProfileService {
     BluetoothLeScanner mAudioServersScanner;
 
     public LeAudioService(AdapterService adapterService) {
-        this(adapterService, null);
+        this(adapterService, null, null);
     }
 
     @VisibleForTesting
-    LeAudioService(AdapterService adapterService, LeAudioNativeInterface nativeInterface) {
+    LeAudioService(
+            AdapterService adapterService,
+            LeAudioNativeInterface nativeInterface,
+            LeAudioBroadcasterNativeInterface leAudioBroadcasterNativeInterface) {
         super(requireNonNull(adapterService));
         mNativeInterface =
                 requireNonNullElseGet(
@@ -275,9 +278,10 @@ public class LeAudioService extends ProfileService {
             }
             if (isProfileSupported(BluetoothProfile.LE_AUDIO_BROADCAST)) {
                 Log.i(TAG, "Init Le Audio broadcaster");
-                LeAudioBroadcasterNativeInterface broadcastNativeInterface =
-                        requireNonNull(
-                                LeAudioBroadcasterNativeInterface.getInstance(mAdapterService));
+                final var broadcastNativeInterface =
+                        requireNonNullElseGet(
+                                leAudioBroadcasterNativeInterface,
+                                () -> new LeAudioBroadcasterNativeInterface(mAdapterService, this));
                 broadcastNativeInterface.init();
                 mLeAudioBroadcasterNativeInterface = Optional.of(broadcastNativeInterface);
 
@@ -292,9 +296,10 @@ public class LeAudioService extends ProfileService {
                             & (1 << BluetoothProfile.LE_AUDIO_BROADCAST))
                     != 0) {
                 Log.i(TAG, "Init Le Audio broadcaster");
-                LeAudioBroadcasterNativeInterface broadcastNativeInterface =
-                        requireNonNull(
-                                LeAudioBroadcasterNativeInterface.getInstance(mAdapterService));
+                final var broadcastNativeInterface =
+                        requireNonNullElseGet(
+                                leAudioBroadcasterNativeInterface,
+                                () -> new LeAudioBroadcasterNativeInterface(mAdapterService, this));
                 broadcastNativeInterface.init();
                 mLeAudioBroadcasterNativeInterface = Optional.of(broadcastNativeInterface);
                 mTmapRoleMask =

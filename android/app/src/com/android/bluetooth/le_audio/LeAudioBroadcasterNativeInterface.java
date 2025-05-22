@@ -31,81 +31,44 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.internal.annotations.GuardedBy;
-import com.android.internal.annotations.VisibleForTesting;
 
 /** LeAudio Native Interface to/from JNI. */
 public class LeAudioBroadcasterNativeInterface {
     private static final String TAG = LeAudioBroadcasterNativeInterface.class.getSimpleName();
 
-    @GuardedBy("INSTANCE_LOCK")
-    private static LeAudioBroadcasterNativeInterface sInstance;
-
-    private static final Object INSTANCE_LOCK = new Object();
-
     private final AdapterService mAdapterService;
+    private final LeAudioService mService;
 
-    private LeAudioBroadcasterNativeInterface(AdapterService adapterService) {
+    LeAudioBroadcasterNativeInterface(AdapterService adapterService, LeAudioService service) {
         mAdapterService = requireNonNull(adapterService);
+        mService = requireNonNull(service);
     }
 
-    public static LeAudioBroadcasterNativeInterface getInstance(AdapterService adapterService) {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new LeAudioBroadcasterNativeInterface(adapterService);
-            }
-            return sInstance;
-        }
-    }
-
-    @VisibleForTesting
-    static void setInstance(LeAudioBroadcasterNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
-    }
-
-    private static void sendMessageToService(LeAudioStackEvent event) {
-        LeAudioService service = LeAudioService.getLeAudioService();
-        if (service != null) {
-            service.messageFromNative(event);
-        } else {
-            Log.e(TAG, "Event ignored, service not available: " + event);
-        }
-    }
-
-    @VisibleForTesting
-    public BluetoothDevice getDevice(byte[] address) {
+    BluetoothDevice getDevice(byte[] address) {
         return mAdapterService.getRemoteDevice(Utils.getAddressStringFromByte(address));
     }
 
     // Callbacks from the native stack back into the Java framework.
-    @VisibleForTesting
-    public void onBroadcastCreated(int broadcastId, boolean success) {
+    void onBroadcastCreated(int broadcastId, boolean success) {
         Log.d(TAG, "onBroadcastCreated: broadcastId=" + broadcastId);
-        LeAudioStackEvent event =
-                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_CREATED);
+        final var event = new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_CREATED);
 
         event.valueInt1 = broadcastId;
         event.valueBool1 = success;
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
-    @VisibleForTesting
-    public void onBroadcastDestroyed(int broadcastId) {
+    void onBroadcastDestroyed(int broadcastId) {
         Log.d(TAG, "onBroadcastDestroyed: broadcastId=" + broadcastId);
-        LeAudioStackEvent event =
-                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_DESTROYED);
+        final var event = new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_DESTROYED);
 
         event.valueInt1 = broadcastId;
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
-    @VisibleForTesting
-    public void onBroadcastStateChanged(int broadcastId, int state) {
+    void onBroadcastStateChanged(int broadcastId, int state) {
         Log.d(TAG, "onBroadcastStateChanged: broadcastId=" + broadcastId + " state=" + state);
-        LeAudioStackEvent event =
-                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_STATE);
+        final var event = new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_STATE);
 
         /* NOTICE: This is a fake device to satisfy Audio Manager in the upper
          * layers which needs a device instance to route audio streams to the
@@ -116,28 +79,26 @@ public class LeAudioBroadcasterNativeInterface {
         event.device = getDevice(Utils.getBytesFromAddress("FF:FF:FF:FF:FF:FF"));
         event.valueInt1 = broadcastId;
         event.valueInt2 = state;
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
-    @VisibleForTesting
-    public void onBroadcastMetadataChanged(int broadcastId, BluetoothLeBroadcastMetadata metadata) {
+    void onBroadcastMetadataChanged(int broadcastId, BluetoothLeBroadcastMetadata metadata) {
         Log.d(TAG, "onBroadcastMetadataChanged: broadcastId=" + broadcastId);
-        LeAudioStackEvent event =
+        final var event =
                 new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_METADATA_CHANGED);
 
         event.valueInt1 = broadcastId;
         event.broadcastMetadata = metadata;
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
-    @VisibleForTesting
-    public void onBroadcastAudioSessionCreated(boolean success) {
+    void onBroadcastAudioSessionCreated(boolean success) {
         Log.d(TAG, "onBroadcastAudioSessionCreated: success=" + success);
-        LeAudioStackEvent event =
+        final var event =
                 new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_AUDIO_SESSION_CREATED);
 
         event.valueBool1 = success;
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     /**
@@ -145,20 +106,17 @@ public class LeAudioBroadcasterNativeInterface {
      *
      * <p>priorities to configure.
      */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    public void init() {
+    void init() {
         initNative();
     }
 
     /** Stop the Broadcast Service. */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    public void stop() {
+    void stop() {
         stopNative();
     }
 
     /** Cleanup the native interface. */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    public void cleanup() {
+    void cleanup() {
         cleanupNative();
     }
 
@@ -173,8 +131,7 @@ public class LeAudioBroadcasterNativeInterface {
      * @param metadataArray BIG sub group metadata array
      *     <p>qualityArray and metadataArray use the same subgroup index
      */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    public void createBroadcast(
+    void createBroadcast(
             boolean isPublicBroadcast,
             String broadcastName,
             byte[] broadcastCode,
@@ -198,8 +155,7 @@ public class LeAudioBroadcasterNativeInterface {
      * @param publicMetadata BIG public broadcast meta data
      * @param metadataArray BIG sub group metadata array
      */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    public void updateMetadata(
+    void updateMetadata(
             int broadcastId, String broadcastName, byte[] publicMetadata, byte[][] metadataArray) {
         updateMetadataNative(broadcastId, broadcastName, publicMetadata, metadataArray);
     }
@@ -209,8 +165,7 @@ public class LeAudioBroadcasterNativeInterface {
      *
      * @param broadcastId broadcast instance identifier
      */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    public void startBroadcast(int broadcastId) {
+    void startBroadcast(int broadcastId) {
         startBroadcastNative(broadcastId);
     }
 
@@ -219,8 +174,7 @@ public class LeAudioBroadcasterNativeInterface {
      *
      * @param broadcastId broadcast instance identifier
      */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    public void stopBroadcast(int broadcastId) {
+    void stopBroadcast(int broadcastId) {
         stopBroadcastNative(broadcastId);
     }
 
@@ -229,8 +183,7 @@ public class LeAudioBroadcasterNativeInterface {
      *
      * @param broadcastId broadcast instance identifier
      */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    public void pauseBroadcast(int broadcastId) {
+    void pauseBroadcast(int broadcastId) {
         pauseBroadcastNative(broadcastId);
     }
 
@@ -239,14 +192,12 @@ public class LeAudioBroadcasterNativeInterface {
      *
      * @param broadcastId broadcast instance identifier
      */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    public void destroyBroadcast(int broadcastId) {
+    void destroyBroadcast(int broadcastId) {
         destroyBroadcastNative(broadcastId);
     }
 
     /** Get all LeAudio Broadcast instance states. */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
-    public void getBroadcastMetadata(int broadcastId) {
+    void getBroadcastMetadata(int broadcastId) {
         getBroadcastMetadataNative(broadcastId);
     }
 
