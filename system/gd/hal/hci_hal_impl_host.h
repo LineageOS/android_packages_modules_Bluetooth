@@ -34,7 +34,7 @@ constexpr int INVALID_FD = -1;
 
 class HciHalImpl : public HciHal {
 public:
-  HciHalImpl(os::Handler*, LinkClocker*, SnoopLogger*);
+  HciHalImpl(os::Handler*, LinkClocker&, SnoopLogger*);
   ~HciHalImpl();
 
   void registerIncomingPacketCallback(HciHalCallbacks* callback) override;
@@ -55,7 +55,7 @@ private:
           bluetooth::os::Thread("hci_incoming_thread", bluetooth::os::Thread::Priority::NORMAL);
   bluetooth::os::Reactor::Reactable* reactable_ = nullptr;
   std::queue<std::vector<uint8_t>> hci_outgoing_queue_;
-  [[maybe_unused]] LinkClocker* link_clocker_ = nullptr;
+  [[maybe_unused]] LinkClocker& link_clocker_;
   SnoopLogger* btsnoop_logger_ = nullptr;
 
   void write_to_fd(HciPacket packet);

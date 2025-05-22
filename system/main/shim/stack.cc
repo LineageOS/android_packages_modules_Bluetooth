@@ -74,7 +74,7 @@ struct Stack::impl {
         sysprops_module_(),
 #endif
         link_clocker_(),
-        hci_hal_(handler, &link_clocker_, &snoop_logger_),
+        hci_hal_(handler, link_clocker_, &snoop_logger_),
         ranging_hal_(),
         hci_layer_(handler, &hci_hal_, &storage_),
         controller_(handler, &hci_layer_),

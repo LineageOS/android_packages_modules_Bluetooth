@@ -169,8 +169,8 @@ void HciHalImpl::sendIsoData(HciPacket data) {
 
 uint16_t HciHalImpl::getMsftOpcode() { return 0; }
 
-HciHalImpl::HciHalImpl(os::Handler*, LinkClocker*, SnoopLogger* snoop_logger)
-    : btsnoop_logger_(snoop_logger) {
+HciHalImpl::HciHalImpl(os::Handler*, LinkClocker& link_clocker, SnoopLogger* snoop_logger)
+    : link_clocker_(link_clocker), btsnoop_logger_(snoop_logger) {
   std::lock_guard<std::mutex> lock(api_mutex_);
   log::assert_that(sock_fd_ == INVALID_FD, "assert failed: sock_fd_ == INVALID_FD");
   sock_fd_ = ConnectToSocket();

@@ -26,7 +26,7 @@ class HciCallbacksImpl;
 
 class HciHalImpl : public HciHal {
 public:
-  HciHalImpl(os::Handler* handler, LinkClocker* link_clocker, SnoopLogger* btsnoop_logger);
+  HciHalImpl(os::Handler* handler, LinkClocker& link_clocker, SnoopLogger* btsnoop_logger);
   ~HciHalImpl();
 
   void sendHciCommand(HciPacket packet) override;
@@ -41,7 +41,7 @@ public:
 private:
   std::shared_ptr<HciCallbacksImpl> callbacks_;
   std::shared_ptr<HciBackend> backend_;
-  LinkClocker* link_clocker_ = nullptr;
+  LinkClocker& link_clocker_;
   SnoopLogger* btsnoop_logger_ = nullptr;
 };
 

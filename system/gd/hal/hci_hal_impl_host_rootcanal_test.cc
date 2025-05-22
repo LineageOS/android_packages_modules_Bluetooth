@@ -145,8 +145,8 @@ protected:
 
     HciHalHostRootcanalConfig::Get()->SetPort(kTestPort);
     fake_server_ = new FakeRootcanalDesktopHciServer;
-
-    hal_ = std::make_unique<HciHalImpl>(nullptr, nullptr, nullptr);
+    link_clocker_ = std::make_unique<LinkClocker>();
+    hal_ = std::make_unique<HciHalImpl>(nullptr, *link_clocker_, nullptr);
     hal_->registerIncomingPacketCallback(&callbacks_);
     fake_server_socket_ =
             fake_server_->Accept();  // accept() after client is connected to avoid blocking
@@ -161,6 +161,7 @@ protected:
       handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
     }
     hal_.reset();
+    link_clocker_.reset();
     delete handler_;
     close(fake_server_socket_);
     delete fake_server_;
@@ -174,6 +175,7 @@ protected:
   }
 
   FakeRootcanalDesktopHciServer* fake_server_ = nullptr;
+  std::unique_ptr<LinkClocker> link_clocker_;
   std::unique_ptr<HciHal> hal_ = nullptr;
   TestHciHalCallbacks callbacks_;
   int fake_server_socket_ = -1;

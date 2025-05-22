@@ -60,7 +60,7 @@ class HciCallbacksImpl : public HciBackendCallbacks {
 public:
   std::promise<void>* const init_promise = &init_promise_;
 
-  HciCallbacksImpl(SnoopLogger* btsnoop_logger, LinkClocker* link_clocker)
+  HciCallbacksImpl(SnoopLogger* btsnoop_logger, LinkClocker& link_clocker)
       : link_clocker_(link_clocker), btsnoop_logger_(btsnoop_logger) {}
 
   void SetCallback(HciHalCallbacks* callback) {
@@ -83,7 +83,7 @@ public:
 
   void hciEventReceived(const std::vector<uint8_t>& packet) override {
     common::StopWatch stop_watch(GetTimerText(__func__, packet));
-    link_clocker_->OnHciEvent(packet);
+    link_clocker_.OnHciEvent(packet);
     btsnoop_logger_->Capture(packet, SnoopLogger::Direction::INCOMING,
                              SnoopLogger::PacketType::EVT);
     {
@@ -126,7 +126,7 @@ private:
   std::mutex mutex_;
   std::promise<void> init_promise_;
   HciHalCallbacks* callback_ = &kNullCallbacks;
-  LinkClocker* link_clocker_;
+  LinkClocker& link_clocker_;
   SnoopLogger* btsnoop_logger_;
 };
 
@@ -163,7 +163,7 @@ uint16_t HciHalImpl::getMsftOpcode() {
   return 0;
 }
 
-HciHalImpl::HciHalImpl(os::Handler* handler, LinkClocker* link_clocker, SnoopLogger* btsnoop_logger)
+HciHalImpl::HciHalImpl(os::Handler* handler, LinkClocker& link_clocker, SnoopLogger* btsnoop_logger)
     : link_clocker_(link_clocker), btsnoop_logger_(btsnoop_logger) {
   common::StopWatch stop_watch(__func__);
   log::assert_that(backend_ == nullptr,
@@ -190,6 +190,5 @@ HciHalImpl::~HciHalImpl() {
   backend_.reset();
   callbacks_.reset();
   btsnoop_logger_ = nullptr;
-  link_clocker_ = nullptr;
 }
 }  // namespace bluetooth::hal
