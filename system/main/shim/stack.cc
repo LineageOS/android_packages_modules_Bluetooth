@@ -80,8 +80,8 @@ struct Stack::impl {
         controller_(handler, &hci_layer_),
         acl_scheduler_(handler),
         remote_name_request_(handler, &hci_layer_, &acl_scheduler_),
-        acl_manager_(handler, &hci_layer_, &controller_, &acl_scheduler_, &remote_name_request_,
-                     &storage_),
+        acl_manager_(handler, hci_layer_, controller_, acl_scheduler_, remote_name_request_,
+                     storage_),
         le_scanning_manager_(handler, &hci_layer_, &controller_, acl_manager_.GetLeAddressManager(),
                              &storage_),
         msft_extension_manager_(handler, &hci_hal_, &hci_layer_),
@@ -158,17 +158,28 @@ void Stack::StartEverything() {
   auto init_status = future.wait_for(
           std::chrono::milliseconds(get_gd_stack_timeout_ms(/* is_start = */ true)));
 
-  is_running_ = true;
-  log::info("GD stack is running");
+  log::info("init_status == {}", int(init_status));
+
+  if (init_status != std::future_status::ready) {
+    /* Crash stuck thread and print it's stack trace, so that we know why starartup is taking too
+     * long */
+    management_thread_->Abort();
+
+    /* Crashed thread should take whole stack with it, but main thread is being executed
+     * simulteanously. This sleep ensures that main thread doesn't execute any logic below, and
+     * nicely dies with rest of stack.  */
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+    /* We should already be dead because of the Abort above, this is just in case the sleep above
+     * was somehow too short */
+    log::assert_that(init_status == std::future_status::ready, "Can't start stack");
+  }
 
   {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
     WakelockManager::Get().Release();
 
-    log::info("init_status == {}", int(init_status));
-
-    log::assert_that(init_status == std::future_status::ready, "Can't start stack");
-
+    is_running_ = true;
     log::info("Successfully toggled Gd stack");
 
     pimpl_->acl_ = new Acl(stack_handler_, GetAclInterface());
