@@ -127,11 +127,11 @@ public class AdapterServiceTest {
     @Mock private MetricsLogger mMockMetricsLogger;
     @Mock private AdapterNativeInterface mNativeInterface;
     @Mock private GattNativeInterface mGattNativeInterface;
+    @Mock private AdvertiseManagerNativeInterface mAdvertiseNativeInterface;
     @Mock private BluetoothKeystoreNativeInterface mKeystoreNativeInterface;
     @Mock private BluetoothQualityReportNativeInterface mQualityNativeInterface;
     @Mock private BluetoothHciVendorSpecificNativeInterface mHciVendorSpecificNativeInterface;
     @Mock private SdpManagerNativeInterface mSdpNativeInterface;
-    @Mock private AdvertiseManagerNativeInterface mAdvertiseNativeInterface;
     @Mock private DistanceMeasurementNativeInterface mDistanceNativeInterface;
     @Mock private PeriodicScanNativeInterface mPeriodicNativeInterface;
     @Mock private ScanNativeInterface mScanNativeInterface;
@@ -170,8 +170,14 @@ public class AdapterServiceTest {
                 Looper looper,
                 Context ctx,
                 AdapterNativeInterface nativeInterface,
-                GattNativeInterface gattNativeInterface) {
-            super(looper, ctx, nativeInterface, gattNativeInterface);
+                GattNativeInterface gattNativeInterface,
+                AdvertiseManagerNativeInterface advertiseManagerNativeInterface) {
+            super(
+                    looper,
+                    ctx,
+                    nativeInterface,
+                    gattNativeInterface,
+                    advertiseManagerNativeInterface);
         }
 
         @Override
@@ -215,7 +221,6 @@ public class AdapterServiceTest {
         BluetoothQualityReportNativeInterface.setInstance(mQualityNativeInterface);
         BluetoothHciVendorSpecificNativeInterface.setInstance(mHciVendorSpecificNativeInterface);
         SdpManagerNativeInterface.setInstance(mSdpNativeInterface);
-        AdvertiseManagerNativeInterface.setInstance(mAdvertiseNativeInterface);
         DistanceMeasurementNativeInterface.setInstance(mDistanceNativeInterface);
         PeriodicScanNativeInterface.setInstance(mPeriodicNativeInterface);
         ScanNativeInterface.setInstance(mScanNativeInterface);
@@ -230,7 +235,8 @@ public class AdapterServiceTest {
                                         mLooper.getLooper(),
                                         mMockContext,
                                         mNativeInterface,
-                                        mGattNativeInterface));
+                                        mGattNativeInterface,
+                                        mAdvertiseNativeInterface));
         assertThat(mLooper.dispatchAll()).isEqualTo(1);
         assertThat(mAdapterService).isNotNull();
 
@@ -337,7 +343,6 @@ public class AdapterServiceTest {
         BluetoothQualityReportNativeInterface.setInstance(null);
         BluetoothHciVendorSpecificNativeInterface.setInstance(null);
         SdpManagerNativeInterface.setInstance(null);
-        AdvertiseManagerNativeInterface.setInstance(null);
         DistanceMeasurementNativeInterface.setInstance(null);
         PeriodicScanNativeInterface.setInstance(null);
         ScanNativeInterface.setInstance(null);

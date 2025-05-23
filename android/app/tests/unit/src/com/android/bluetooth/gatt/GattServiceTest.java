@@ -165,10 +165,14 @@ public class GattServiceTest {
         mBtCompanionManager = new CompanionManager(mAdapterService, null);
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
 
-        AdvertiseManagerNativeInterface.setInstance(mAdvertiseManagerNativeInterface);
         DistanceMeasurementNativeInterface.setInstance(mDistanceMeasurementNativeInterface);
 
-        mService = new GattService(mAdapterService, mNativeInterface, mScanController);
+        mService =
+                new GattService(
+                        mAdapterService,
+                        mNativeInterface,
+                        mAdvertiseManagerNativeInterface,
+                        mScanController);
 
         mService.mClientMap = mClientMap;
         mService.mReliableQueue = mReliableQueue;
@@ -180,7 +184,6 @@ public class GattServiceTest {
     @After
     public void tearDown() throws Exception {
         mService.cleanup();
-        AdvertiseManagerNativeInterface.setInstance(null);
         DistanceMeasurementNativeInterface.setInstance(null);
     }
 
@@ -188,7 +191,12 @@ public class GattServiceTest {
     public void testServiceUpAndDown() throws Exception {
         for (int i = 0; i < 3; i++) {
             mService.cleanup();
-            mService = new GattService(mAdapterService, mNativeInterface, mScanController);
+            mService =
+                    new GattService(
+                            mAdapterService,
+                            mNativeInterface,
+                            mAdvertiseManagerNativeInterface,
+                            mScanController);
         }
     }
 

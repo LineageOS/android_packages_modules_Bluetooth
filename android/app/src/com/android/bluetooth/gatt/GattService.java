@@ -188,15 +188,18 @@ public class GattService extends ProfileService {
         this(adapterService, null, null);
     }
 
-    public GattService(AdapterService adapterService, GattNativeInterface nativeInterface) {
-        this(adapterService, nativeInterface, null);
+    public GattService(
+            AdapterService adapterService,
+            GattNativeInterface nativeInterface,
+            AdvertiseManagerNativeInterface advertiseManagerNativeInterface) {
+        this(adapterService, nativeInterface, advertiseManagerNativeInterface, null);
     }
 
-    // TODO(b/410473516) This constructor will be removed when ScanController is removed from here.
     @VisibleForTesting
     GattService(
             AdapterService adapterService,
             GattNativeInterface nativeInterface,
+            AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
             ScanController scanController) {
         super(BluetoothProfile.GATT, requireNonNull(adapterService));
         mActivityManager = requireNonNull(obtainSystemService(ActivityManager.class));
@@ -216,7 +219,8 @@ public class GattService extends ProfileService {
         mHandlerThread.start();
         final var looper = mHandlerThread.getLooper();
 
-        mAdvertiseManager = new AdvertiseManager(mAdapterService, looper);
+        mAdvertiseManager =
+                new AdvertiseManager(mAdapterService, advertiseManagerNativeInterface, looper);
 
         mRssiReadThrottleMs =
                 SystemProperties.getInt(RSSI_READ_THROTTLE_MS, RSSI_READ_THROTTLE_MS_DEFAULT);
