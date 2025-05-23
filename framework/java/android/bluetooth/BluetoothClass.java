@@ -50,6 +50,13 @@ import android.os.Parcelable;
  */
 public final class BluetoothClass implements Parcelable {
     /**
+     * Impossible value for CoD is an unsigned two byte int
+     *
+     * @hide
+     */
+    static final int BLUETOOTH_CLASS_NULL = -1;
+
+    /**
      * Legacy error value. Applications should use null instead.
      *
      * @hide
