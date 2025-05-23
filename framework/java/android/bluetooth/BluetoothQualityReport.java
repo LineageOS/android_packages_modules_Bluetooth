@@ -329,12 +329,8 @@ public final class BluetoothQualityReport implements Parcelable {
         mLmpSubVer = in.readInt();
         mManufacturerId = in.readInt();
         mName = in.readString();
-        int cod = in.readInt();
-        if (cod != BluetoothClass.BLUETOOTH_CLASS_NULL) {
-            mBluetoothClass = new BluetoothClass(cod);
-        } else {
-           mBluetoothClass = null;
-       }
+        mBluetoothClass = new BluetoothClass(in.readInt());
+
         mBqrCommon = new BqrCommon(in);
         int id = mBqrCommon.getQualityReportId();
         if (id == QUALITY_REPORT_ID_APPROACH_LSTO) {
@@ -525,11 +521,7 @@ public final class BluetoothQualityReport implements Parcelable {
         out.writeInt(mLmpSubVer);
         out.writeInt(mManufacturerId);
         BluetoothUtils.writeStringToParcel(out, mName);
-        int cod = BluetoothClass.BLUETOOTH_CLASS_NULL;
-        if (mBluetoothClass != null) {
-            cod = mBluetoothClass.getClassOfDevice();
-        }
-        out.writeInt(cod);
+        out.writeInt(mBluetoothClass.getClassOfDevice());
         mBqrCommon.writeToParcel(out, flags);
         int id = mBqrCommon.getQualityReportId();
         if (id == QUALITY_REPORT_ID_APPROACH_LSTO) {
