@@ -158,6 +158,7 @@ flag {
 flag {
     name: "support_zoomed_in_icon_metadata"
     namespace: "bluetooth"
+    is_exported: true
     description: "Add api support for a zoomed in icon metadata"
     bug: "417245933"
 }
