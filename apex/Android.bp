@@ -86,6 +86,10 @@ apex {
     certificate: ":com.android.bt.certificate",
     compressible: false,
     visibility: ["//packages/modules/common/build"],
+    licenses: [
+        "Android-Apache-2.0",
+        "opensourcerequest",
+    ],
 }
 
 sdk {
