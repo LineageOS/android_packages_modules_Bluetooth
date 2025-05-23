@@ -169,7 +169,6 @@ public class GattService extends ProfileService {
 
     /** Record data class for RSSI caching */
     record RssiCacheEntry(long readTimeStamp, int rssi) {}
-    ;
 
     /** HashMap used for storing RSSI cache entries */
     @VisibleForTesting final Map<String, RssiCacheEntry> mRssiCache = new HashMap<>();

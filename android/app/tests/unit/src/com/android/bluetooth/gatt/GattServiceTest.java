@@ -54,8 +54,7 @@ import android.os.Bundle;
 import android.os.Process;
 import android.os.SystemClock;
 import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.CheckFlagsRule;
-import android.platform.test.flag.junit.DeviceFlagsValueProvider;
+import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Settings;
 import android.test.mock.MockContentProvider;
 import android.test.mock.MockContentResolver;
@@ -91,8 +90,7 @@ import java.util.UUID;
 public class GattServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Rule
-    public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private AttributionSource mAttributionSource;
     @Mock private IBluetoothGattCallback mGattCallback;
