@@ -428,9 +428,7 @@ public class AdapterService extends Service {
         return sAdapterService;
     }
 
-    /** Allow test to set an AdapterService to be return by AdapterService.getAdapterService() */
-    @VisibleForTesting
-    public static synchronized void setAdapterService(AdapterService instance) {
+    private static synchronized void setAdapterService(AdapterService instance) {
         if (instance == null) {
             Log.e(TAG, "setAdapterService() - instance is null");
             return;
@@ -439,9 +437,7 @@ public class AdapterService extends Service {
         sAdapterService = instance;
     }
 
-    /** Clear test Adapter service. See {@code setAdapterService} */
-    @VisibleForTesting
-    public static synchronized void clearAdapterService(AdapterService instance) {
+    private static synchronized void clearAdapterService(AdapterService instance) {
         if (sAdapterService == instance) {
             Log.d(TAG, "clearAdapterService() - This adapter was cleared " + instance);
             sAdapterService = null;
