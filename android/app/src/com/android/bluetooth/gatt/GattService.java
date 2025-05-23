@@ -185,14 +185,20 @@ public class GattService extends ProfileService {
     @VisibleForTesting int mRssiReadThrottleMs;
 
     public GattService(AdapterService adapterService) {
-        this(adapterService, null, null);
+        this(adapterService, null, null, null);
     }
 
     public GattService(
             AdapterService adapterService,
             GattNativeInterface nativeInterface,
-            AdvertiseManagerNativeInterface advertiseManagerNativeInterface) {
-        this(adapterService, nativeInterface, advertiseManagerNativeInterface, null);
+            AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
+            DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
+        this(
+                adapterService,
+                nativeInterface,
+                advertiseManagerNativeInterface,
+                distanceMeasurementNativeInterface,
+                null);
     }
 
     @VisibleForTesting
@@ -200,6 +206,7 @@ public class GattService extends ProfileService {
             AdapterService adapterService,
             GattNativeInterface nativeInterface,
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
+            DistanceMeasurementNativeInterface distanceMeasurementNativeInterface,
             ScanController scanController) {
         super(BluetoothProfile.GATT, requireNonNull(adapterService));
         mActivityManager = requireNonNull(obtainSystemService(ActivityManager.class));
@@ -240,7 +247,9 @@ public class GattService extends ProfileService {
             mScanController = null;
         }
 
-        mDistanceMeasurementManager = new DistanceMeasurementManager(mAdapterService, looper);
+        mDistanceMeasurementManager =
+                new DistanceMeasurementManager(
+                        mAdapterService, distanceMeasurementNativeInterface, looper);
 
         if (Flags.onlyStartScanDuringBleOn()) {
             setGattService(this);

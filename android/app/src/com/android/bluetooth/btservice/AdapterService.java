@@ -138,6 +138,7 @@ import com.android.bluetooth.btservice.storage.MetadataDatabase;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.AdvertiseManagerNativeInterface;
+import com.android.bluetooth.gatt.DistanceMeasurementNativeInterface;
 import com.android.bluetooth.gatt.GattNativeInterface;
 import com.android.bluetooth.gatt.GattService;
 import com.android.bluetooth.hap.HapClientService;
@@ -287,6 +288,7 @@ public class AdapterService extends Service {
     private final AdapterNativeInterface mNativeInterface;
     private final GattNativeInterface mGattNativeInterface;
     private final AdvertiseManagerNativeInterface mAdvertiseManagerNativeInterface;
+    private final DistanceMeasurementNativeInterface mDistanceMeasurementNativeInterface;
     private final SilenceDeviceManager mSilenceDeviceManager;
     private final DatabaseManager mDatabaseManager;
     private final ServiceFactory mServiceFactory;
@@ -392,7 +394,7 @@ public class AdapterService extends Service {
 
     // Keep a constructor for ActivityThread.handleCreateService
     AdapterService() {
-        this(Looper.getMainLooper(), new AdapterNativeInterface(), null, null);
+        this(Looper.getMainLooper(), new AdapterNativeInterface(), null, null, null);
     }
 
     @VisibleForTesting
@@ -400,13 +402,15 @@ public class AdapterService extends Service {
             Context ctx,
             AdapterNativeInterface nativeInterface,
             GattNativeInterface gattNativeInterface,
-            AdvertiseManagerNativeInterface advertiseManagerNativeInterface) {
+            AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
+            DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
         this(
                 Looper.getMainLooper(),
                 ctx,
                 nativeInterface,
                 gattNativeInterface,
-                advertiseManagerNativeInterface);
+                advertiseManagerNativeInterface,
+                distanceMeasurementNativeInterface);
     }
 
     @VisibleForTesting
@@ -415,8 +419,14 @@ public class AdapterService extends Service {
             Context ctx,
             AdapterNativeInterface nativeInterface,
             GattNativeInterface gattNativeInterface,
-            AdvertiseManagerNativeInterface advertiseManagerNativeInterface) {
-        this(looper, nativeInterface, gattNativeInterface, advertiseManagerNativeInterface);
+            AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
+            DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
+        this(
+                looper,
+                nativeInterface,
+                gattNativeInterface,
+                advertiseManagerNativeInterface,
+                distanceMeasurementNativeInterface);
         attachBaseContext(ctx);
     }
 
@@ -424,12 +434,14 @@ public class AdapterService extends Service {
             Looper looper,
             AdapterNativeInterface nativeInterface,
             GattNativeInterface gattNativeInterface,
-            AdvertiseManagerNativeInterface advertiseManagerNativeInterface) {
+            AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
+            DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
         mLooper = requireNonNull(looper);
         mHandler = new AdapterServiceHandler(mLooper);
         mNativeInterface = requireNonNull(nativeInterface);
         mGattNativeInterface = gattNativeInterface;
         mAdvertiseManagerNativeInterface = advertiseManagerNativeInterface;
+        mDistanceMeasurementNativeInterface = distanceMeasurementNativeInterface;
         mServiceFactory = new ServiceFactory();
         mSilenceDeviceManager = new SilenceDeviceManager(this, mServiceFactory, mLooper);
         mDatabaseManager = new DatabaseManager(this);
@@ -990,7 +1002,11 @@ public class AdapterService extends Service {
     private void startGattProfileService() {
         Log.i(TAG, "startGattProfileService() called");
         mGattService =
-                new GattService(this, mGattNativeInterface, mAdvertiseManagerNativeInterface);
+                new GattService(
+                        this,
+                        mGattNativeInterface,
+                        mAdvertiseManagerNativeInterface,
+                        mDistanceMeasurementNativeInterface);
 
         mStartedProfiles.put(BluetoothProfile.GATT, mGattService);
         addProfile(mGattService);

@@ -33,6 +33,7 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.btservice.AdapterNativeInterface;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.gatt.AdvertiseManagerNativeInterface;
+import com.android.bluetooth.gatt.DistanceMeasurementNativeInterface;
 import com.android.bluetooth.gatt.GattNativeInterface;
 
 import org.junit.Rule;
@@ -49,6 +50,7 @@ public class BluetoothOppServiceCleanupTest {
     @Mock private AdapterNativeInterface mAdapterNativeInterface;
     @Mock private GattNativeInterface mGattNativeInterface;
     @Mock private AdvertiseManagerNativeInterface mAdvertiseManagerNativeInterface;
+    @Mock private DistanceMeasurementNativeInterface mDistanceMeasurementNativeInterface;
 
     private final Context mTargetContext =
             InstrumentationRegistry.getInstrumentation().getTargetContext();
@@ -61,7 +63,8 @@ public class BluetoothOppServiceCleanupTest {
                         mTargetContext,
                         mAdapterNativeInterface,
                         mGattNativeInterface,
-                        mAdvertiseManagerNativeInterface);
+                        mAdvertiseManagerNativeInterface,
+                        mDistanceMeasurementNativeInterface);
 
         // Don't need to disable again since it will be handled in OppService.cleanup
         enableBtOppProvider();
