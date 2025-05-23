@@ -17,6 +17,7 @@
 package com.android.bluetooth.btservice;
 
 import android.annotation.SuppressLint;
+import android.bluetooth.BluetoothProfile;
 import android.content.ComponentName;
 import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
@@ -33,6 +34,7 @@ public abstract class ProfileService extends ContextWrapper {
     }
 
     protected final AdapterService mAdapterService;
+    private final int mId;
     private final IProfileServiceBinder mBinder;
     private final String mName;
     private boolean mAvailable = false;
@@ -59,12 +61,18 @@ public abstract class ProfileService extends ContextWrapper {
     /** Called when this object is no longer needed and is being discarded. */
     public abstract void cleanup();
 
-    protected ProfileService(AdapterService adapterService) {
+    protected ProfileService(int id, AdapterService adapterService) {
         super(adapterService);
+        mId = id;
         mAdapterService = adapterService;
         mName = getName();
         Log.d(mName, "Service created");
         mBinder = initBinder();
+    }
+
+    /** The id of this Profile. see {@link BluetoothProfile} */
+    public final int getId() {
+        return mId;
     }
 
     /** return the binder of the profile */

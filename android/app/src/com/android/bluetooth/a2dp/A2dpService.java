@@ -115,7 +115,7 @@ public class A2dpService extends ProfileService {
 
     @VisibleForTesting
     A2dpService(AdapterService adapterService, A2dpNativeInterface nativeInterface, Looper looper) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.A2DP, requireNonNull(adapterService));
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,

@@ -22,6 +22,7 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothProfile;
 import android.os.ParcelUuid;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
@@ -51,7 +52,7 @@ public class McpService extends ProfileService {
 
     @VisibleForTesting
     McpService(AdapterService adapterService, MediaControlProfile mediaControlProfile) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.MCP_SERVER, requireNonNull(adapterService));
         mGmcs = requireNonNull(mediaControlProfile);
 
         setMcpService(this); // Mark service as started

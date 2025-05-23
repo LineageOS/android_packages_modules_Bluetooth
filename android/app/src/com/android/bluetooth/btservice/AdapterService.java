@@ -40,6 +40,7 @@ import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
 import static android.text.format.DateUtils.SECOND_IN_MILLIS;
 
+import static com.android.bluetooth.Utils.arrayContains;
 import static com.android.bluetooth.Utils.getBytesFromAddress;
 import static com.android.bluetooth.Utils.isDualModeAudioEnabled;
 import static com.android.bluetooth.Utils.isPackageNameAccurate;
@@ -336,7 +337,6 @@ public class AdapterService extends Service {
     private A2dpSinkService mA2dpSinkService;
     private BluetoothMapService mMapService;
     private MapClientService mMapClientService;
-    private HidDeviceService mHidDeviceService;
     private HidHostService mHidHostService;
     private PanService mPanService;
     private BluetoothPbapService mPbapService;
@@ -1729,80 +1729,67 @@ public class AdapterService extends Service {
                         + (" local_uuids=" + Arrays.toString(localDeviceUuids))
                         + (", remote_uuids=" + Arrays.toString(remoteDeviceUuids)));
 
-        if (profile == BluetoothProfile.HEADSET) {
-            return (Utils.arrayContains(localDeviceUuids, BluetoothUuid.HSP_AG)
-                            && Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.HSP))
-                    || (Utils.arrayContains(localDeviceUuids, BluetoothUuid.HFP_AG)
-                            && Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.HFP));
-        }
-        if (profile == BluetoothProfile.HEADSET_CLIENT) {
-            return Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.HFP_AG)
-                    && Utils.arrayContains(localDeviceUuids, BluetoothUuid.HFP);
-        }
-        if (profile == BluetoothProfile.A2DP) {
-            return Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.ADV_AUDIO_DIST)
-                    || Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.A2DP_SINK);
-        }
-        if (profile == BluetoothProfile.A2DP_SINK) {
-            return Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.ADV_AUDIO_DIST)
-                    || Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.A2DP_SOURCE);
-        }
-        if (profile == BluetoothProfile.OPP) {
-            return Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.OBEX_OBJECT_PUSH);
-        }
-        if (profile == BluetoothProfile.HID_HOST) {
-            return Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.HID)
-                    || Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.HOGP)
-                    || Utils.arrayContains(
-                            remoteDeviceUuids, HidHostService.ANDROID_HEADTRACKER_UUID);
-        }
-        if (profile == BluetoothProfile.HID_DEVICE) {
-            return mHidDeviceService.getConnectionState(device) == STATE_DISCONNECTED;
-        }
-        if (profile == BluetoothProfile.PAN) {
-            return Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.NAP);
-        }
-        if (profile == BluetoothProfile.MAP) {
-            return mMapService.getConnectionState(device) == STATE_CONNECTED;
-        }
-        if (profile == BluetoothProfile.PBAP) {
-            return mPbapService.getConnectionState(device) == STATE_CONNECTED;
-        }
-        if (profile == BluetoothProfile.MAP_CLIENT) {
-            return Utils.arrayContains(localDeviceUuids, BluetoothUuid.MNS)
-                    && Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.MAS);
-        }
-        if (profile == BluetoothProfile.PBAP_CLIENT) {
-            return Utils.arrayContains(localDeviceUuids, BluetoothUuid.PBAP_PCE)
-                    && Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.PBAP_PSE);
-        }
-        if (profile == BluetoothProfile.HEARING_AID) {
-            return Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.HEARING_AID);
-        }
-        if (profile == BluetoothProfile.SAP) {
-            return Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.SAP);
-        }
-        if (profile == BluetoothProfile.VOLUME_CONTROL) {
-            return Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.VOLUME_CONTROL);
-        }
-        if (profile == BluetoothProfile.CSIP_SET_COORDINATOR) {
-            return Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.COORDINATED_SET);
-        }
-        if (profile == BluetoothProfile.LE_AUDIO) {
-            return Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.LE_AUDIO);
-        }
-        if (profile == BluetoothProfile.HAP_CLIENT) {
-            return Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.HAS);
-        }
-        if (profile == BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT) {
-            return Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.BASS);
-        }
-        if (profile == BluetoothProfile.BATTERY) {
-            return Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.BATTERY);
-        }
-
-        Log.e(TAG, "isSupported: Unexpected profile passed in to function: " + profile);
-        return false;
+        return switch (profile) {
+            case BluetoothProfile.HEADSET ->
+                    (arrayContains(localDeviceUuids, BluetoothUuid.HSP_AG)
+                                    && arrayContains(remoteDeviceUuids, BluetoothUuid.HSP))
+                            || (arrayContains(localDeviceUuids, BluetoothUuid.HFP_AG)
+                                    && arrayContains(remoteDeviceUuids, BluetoothUuid.HFP));
+            case BluetoothProfile.HEADSET_CLIENT ->
+                    arrayContains(remoteDeviceUuids, BluetoothUuid.HFP_AG)
+                            && arrayContains(localDeviceUuids, BluetoothUuid.HFP);
+            case BluetoothProfile.A2DP ->
+                    arrayContains(remoteDeviceUuids, BluetoothUuid.ADV_AUDIO_DIST)
+                            || arrayContains(remoteDeviceUuids, BluetoothUuid.A2DP_SINK);
+            case BluetoothProfile.A2DP_SINK ->
+                    arrayContains(remoteDeviceUuids, BluetoothUuid.ADV_AUDIO_DIST)
+                            || arrayContains(remoteDeviceUuids, BluetoothUuid.A2DP_SOURCE);
+            case BluetoothProfile.OPP ->
+                    arrayContains(remoteDeviceUuids, BluetoothUuid.OBEX_OBJECT_PUSH);
+            case BluetoothProfile.HID_HOST ->
+                    arrayContains(remoteDeviceUuids, BluetoothUuid.HID)
+                            || arrayContains(remoteDeviceUuids, BluetoothUuid.HOGP)
+                            || arrayContains(
+                                    remoteDeviceUuids, HidHostService.ANDROID_HEADTRACKER_UUID);
+            case BluetoothProfile.HID_DEVICE -> {
+                final var hidDevice = (HidDeviceService) mStartedProfiles.get(profile);
+                yield hidDevice != null
+                        && hidDevice.getConnectionState(device) == STATE_DISCONNECTED;
+            }
+            case BluetoothProfile.PAN -> arrayContains(remoteDeviceUuids, BluetoothUuid.NAP);
+            case BluetoothProfile.MAP -> {
+                final var map = mMapService;
+                yield map != null && map.getConnectionState(device) == STATE_CONNECTED;
+            }
+            case BluetoothProfile.PBAP -> {
+                final var pbap = mPbapService;
+                yield pbap != null && pbap.getConnectionState(device) == STATE_CONNECTED;
+            }
+            case BluetoothProfile.MAP_CLIENT ->
+                    arrayContains(localDeviceUuids, BluetoothUuid.MNS)
+                            && arrayContains(remoteDeviceUuids, BluetoothUuid.MAS);
+            case BluetoothProfile.PBAP_CLIENT ->
+                    arrayContains(localDeviceUuids, BluetoothUuid.PBAP_PCE)
+                            && arrayContains(remoteDeviceUuids, BluetoothUuid.PBAP_PSE);
+            case BluetoothProfile.HEARING_AID ->
+                    arrayContains(remoteDeviceUuids, BluetoothUuid.HEARING_AID);
+            case BluetoothProfile.SAP -> arrayContains(remoteDeviceUuids, BluetoothUuid.SAP);
+            case BluetoothProfile.VOLUME_CONTROL ->
+                    arrayContains(remoteDeviceUuids, BluetoothUuid.VOLUME_CONTROL);
+            case BluetoothProfile.CSIP_SET_COORDINATOR ->
+                    arrayContains(remoteDeviceUuids, BluetoothUuid.COORDINATED_SET);
+            case BluetoothProfile.LE_AUDIO ->
+                    arrayContains(remoteDeviceUuids, BluetoothUuid.LE_AUDIO);
+            case BluetoothProfile.HAP_CLIENT -> arrayContains(remoteDeviceUuids, BluetoothUuid.HAS);
+            case BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT ->
+                    arrayContains(remoteDeviceUuids, BluetoothUuid.BASS);
+            case BluetoothProfile.BATTERY ->
+                    arrayContains(remoteDeviceUuids, BluetoothUuid.BATTERY);
+            default -> {
+                Log.e(TAG, "isSupported: Unexpected profile passed in to function: " + profile);
+                yield false;
+            }
+        };
     }
 
     /**
@@ -1813,64 +1800,11 @@ public class AdapterService extends Service {
      * @return false if one of profile is enabled or disabled, true otherwise
      */
     boolean isAllProfilesUnknown(BluetoothDevice device) {
-        if (mHeadsetService != null
-                && mHeadsetService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mHeadsetClientService != null
-                && mHeadsetClientService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mA2dpService != null
-                && mA2dpService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mA2dpSinkService != null
-                && mA2dpSinkService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mMapClientService != null
-                && mMapClientService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mHidHostService != null
-                && mHidHostService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mPanService != null
-                && mPanService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mPbapClientService != null
-                && mPbapClientService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mHearingAidService != null
-                && mHearingAidService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mHapClientService != null
-                && mHapClientService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mVolumeControlService != null
-                && mVolumeControlService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mCsipSetCoordinatorService != null
-                && mCsipSetCoordinatorService.getConnectionPolicy(device)
-                        != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mLeAudioService != null
-                && mLeAudioService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        if (mBassClientService != null
-                && mBassClientService.getConnectionPolicy(device) != CONNECTION_POLICY_UNKNOWN) {
-            return false;
-        }
-        return true;
+        return !mStartedProfiles.values().stream()
+                .anyMatch(
+                        profile ->
+                                mDatabaseManager.getProfileConnectionPolicy(device, profile.getId())
+                                        != CONNECTION_POLICY_UNKNOWN);
     }
 
     /**
@@ -2002,7 +1936,6 @@ public class AdapterService extends Service {
         mA2dpSinkService = A2dpSinkService.getA2dpSinkService();
         mMapService = BluetoothMapService.getBluetoothMapService();
         mMapClientService = MapClientService.getMapClientService();
-        mHidDeviceService = HidDeviceService.getHidDeviceService();
         mHidHostService = HidHostService.getHidHostService();
         mPanService = PanService.getPanService();
         mPbapService = BluetoothPbapService.getBluetoothPbapService();
@@ -3642,11 +3575,12 @@ public class AdapterService extends Service {
             Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting MAP");
             mMapService.disconnect(device);
         }
-        if (mHidDeviceService != null
-                && (mHidDeviceService.getConnectionState(device) == STATE_CONNECTED
-                        || mHidDeviceService.getConnectionState(device) == STATE_CONNECTING)) {
+        final var hidDevice = (HidDeviceService) mStartedProfiles.get(BluetoothProfile.HID_DEVICE);
+        if (hidDevice != null
+                && (hidDevice.getConnectionState(device) == STATE_CONNECTED
+                        || hidDevice.getConnectionState(device) == STATE_CONNECTING)) {
             Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting Hid Device Profile");
-            mHidDeviceService.disconnect(device);
+            hidDevice.disconnect(device);
         }
         if (mHidHostService != null
                 && (mHidHostService.getConnectionState(device) == STATE_CONNECTED

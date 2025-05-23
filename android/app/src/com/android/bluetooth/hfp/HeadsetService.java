@@ -175,7 +175,7 @@ public class HeadsetService extends ProfileService {
     @VisibleForTesting
     HeadsetService(
             AdapterService adapterService, HeadsetNativeInterface nativeInterface, Looper looper) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.HEADSET, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(
