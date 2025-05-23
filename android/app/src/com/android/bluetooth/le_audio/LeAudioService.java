@@ -4492,8 +4492,7 @@ public class LeAudioService extends ProfileService {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(
-                device, BluetoothProfile.LE_AUDIO, connectionPolicy)) {
+        if (!mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
             return false;
         }
 
@@ -4574,8 +4573,7 @@ public class LeAudioService extends ProfileService {
      * @return connection policy of the device
      */
     public int getConnectionPolicy(BluetoothDevice device) {
-        int connection_policy =
-                mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO);
+        int connection_policy = mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
         Log.d(TAG, device + " connection policy = " + connection_policy);
         return connection_policy;
     }

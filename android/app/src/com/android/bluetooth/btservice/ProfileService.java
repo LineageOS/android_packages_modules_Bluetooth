@@ -33,8 +33,8 @@ public abstract class ProfileService extends ContextWrapper {
         void cleanup();
     }
 
+    protected final int mProfileId;
     protected final AdapterService mAdapterService;
-    private final int mId;
     private final IProfileServiceBinder mBinder;
     private final String mName;
     private boolean mAvailable = false;
@@ -63,7 +63,7 @@ public abstract class ProfileService extends ContextWrapper {
 
     protected ProfileService(int id, AdapterService adapterService) {
         super(adapterService);
-        mId = id;
+        mProfileId = id;
         mAdapterService = adapterService;
         mName = getName();
         Log.d(mName, "Service created");
@@ -71,8 +71,8 @@ public abstract class ProfileService extends ContextWrapper {
     }
 
     /** The id of this Profile. see {@link BluetoothProfile} */
-    public final int getId() {
-        return mId;
+    public final int getProfileId() {
+        return mProfileId;
     }
 
     /** return the binder of the profile */
