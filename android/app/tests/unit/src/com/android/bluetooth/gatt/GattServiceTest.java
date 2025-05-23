@@ -101,11 +101,10 @@ public class GattServiceTest {
     @Mock private ContextMap<IBluetoothGattServerCallback> mServerMap;
     @Mock private ScanController mScanController;
     @Mock private Set<BluetoothDevice> mReliableQueue;
-    @Mock private DistanceMeasurementManager mDistanceMeasurementManager;
     @Mock private AdvertiseManagerNativeInterface mAdvertiseManagerNativeInterface;
+    @Mock private DistanceMeasurementNativeInterface mDistanceMeasurementNativeInterface;
     @Mock private Resources mResources;
     @Mock private AdapterService mAdapterService;
-    @Mock private GattObjectsFactory mGattObjectsFactory;
     @Mock private GattNativeInterface mNativeInterface;
 
     private static final int SERVER_IF = 34;
@@ -135,8 +134,6 @@ public class GattServiceTest {
                     }
                 });
 
-        GattObjectsFactory.setInstanceForTesting(mGattObjectsFactory);
-
         doReturn(mContext.getPackageName()).when(mAttributionSource).getPackageName();
         doReturn(mContext.getPackageName()).when(mAttributionSource).getAttributionTag();
         doReturn(Binder.getCallingUid()).when(mAttributionSource).getUid();
@@ -152,9 +149,6 @@ public class GattServiceTest {
         ContextMap<IBluetoothGattCallback>.App serverApp = mock(ContextMap.App.class);
         serverApp.id = SERVER_IF;
         doReturn(serverApp).when(mServerMap).getByCallbackId(mGattServerCallback);
-        doReturn(mDistanceMeasurementManager)
-                .when(mGattObjectsFactory)
-                .createDistanceMeasurementManager(any(), any());
         doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(mContext.getSharedPreferences("GattServiceTestPrefs", Context.MODE_PRIVATE))
                 .when(mAdapterService)
@@ -172,6 +166,8 @@ public class GattServiceTest {
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
 
         AdvertiseManagerNativeInterface.setInstance(mAdvertiseManagerNativeInterface);
+        DistanceMeasurementNativeInterface.setInstance(mDistanceMeasurementNativeInterface);
+
         mService = new GattService(mAdapterService, mNativeInterface, mScanController);
 
         mService.mClientMap = mClientMap;
@@ -185,7 +181,7 @@ public class GattServiceTest {
     public void tearDown() throws Exception {
         mService.cleanup();
         AdvertiseManagerNativeInterface.setInstance(null);
-        GattObjectsFactory.setInstanceForTesting(null);
+        DistanceMeasurementNativeInterface.setInstance(null);
     }
 
     @Test

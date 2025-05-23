@@ -214,8 +214,9 @@ public class GattService extends ProfileService {
         // Create a thread to handle LE operations
         mHandlerThread = new HandlerThread("Bluetooth LE");
         mHandlerThread.start();
+        final var looper = mHandlerThread.getLooper();
 
-        mAdvertiseManager = new AdvertiseManager(mAdapterService, mHandlerThread.getLooper());
+        mAdvertiseManager = new AdvertiseManager(mAdapterService, looper);
 
         mRssiReadThrottleMs =
                 SystemProperties.getInt(RSSI_READ_THROTTLE_MS, RSSI_READ_THROTTLE_MS_DEFAULT);
@@ -234,10 +235,8 @@ public class GattService extends ProfileService {
         } else {
             mScanController = null;
         }
-        mDistanceMeasurementManager =
-                GattObjectsFactory.getInstance()
-                        .createDistanceMeasurementManager(
-                                mAdapterService, mHandlerThread.getLooper());
+
+        mDistanceMeasurementManager = new DistanceMeasurementManager(mAdapterService, looper);
 
         if (Flags.onlyStartScanDuringBleOn()) {
             setGattService(this);
