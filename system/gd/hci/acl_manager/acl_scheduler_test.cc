@@ -479,6 +479,8 @@ TEST_F(AclSchedulerTest, RemoteNameRequestCancellationWhileQueuedCallback) {
 
   // the first request completes
   acl_scheduler_->ReportRemoteNameRequestCompletion(address1);
+  // ensure request above completes, before we TearDown the test
+  client_handler_->Synchronize(std::chrono::milliseconds(20));
 
   // we don't dequeue the second one, since it was cancelled
   // implicitly assert that its callback was never invoked
