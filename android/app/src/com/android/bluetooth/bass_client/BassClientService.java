@@ -1509,6 +1509,20 @@ public class BassClientService extends ConnectableProfile {
             return BluetoothStatusCodes.ERROR_BAD_PARAMETERS;
         }
 
+        final var leAudio = getLeAudioService();
+        if (!leAudio.isEmpty()) {
+            boolean isOnlyHighQualityAvailable =
+                    metadata.getAudioConfigQuality()
+                            == BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_HIGH;
+            if (isOnlyHighQualityAvailable
+                    && !leAudio.get()
+                            .isCapableToReceiveHighQualityBroadcastAudio(device)
+                            .orElse(true)) {
+                Log.e(TAG, "validateParameters: Sink doesn't support HIGH broadcast audio quality");
+                return BluetoothStatusCodes.ERROR_BAD_PARAMETERS;
+            }
+        }
+
         byte[] code = metadata.getBroadcastCode();
         if ((code != null) && (code.length != 0)) {
             if ((code.length > 16) || (code.length < 4)) {

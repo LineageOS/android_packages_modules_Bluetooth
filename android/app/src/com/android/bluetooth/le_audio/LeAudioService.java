@@ -1357,14 +1357,7 @@ public class LeAudioService extends ConnectableProfile {
         }
 
         for (BluetoothDevice sink : bassClient.get().getConnectedDevices()) {
-            int groupId = getGroupId(sink);
-            if (groupId == LE_AUDIO_GROUP_ID_INVALID) {
-                continue;
-            }
-
-            BluetoothLeAudioCodecStatus codecStatus = getCodecStatus(groupId);
-            if (codecStatus != null
-                    && !codecStatus.isOutputCodecConfigSelectable(BROADCAST_HIGH_QUALITY_CONFIG)) {
+            if (!isCapableToReceiveHighQualityBroadcastAudio(sink).orElse(true)) {
                 // If any sink device does not support high quality audio config,
                 // set all subgroup audio quality to standard quality for now before multi codec
                 // config support is ready
@@ -1379,6 +1372,26 @@ public class LeAudioService extends ConnectableProfile {
             }
         }
         return preferredQualityArray;
+    }
+
+    /**
+     * Check if broadcast sink supports high quality configuration
+     *
+     * @param sink device to check
+     * @return empty if unknown, true if supports, false otherwise
+     */
+    public Optional<Boolean> isCapableToReceiveHighQualityBroadcastAudio(BluetoothDevice sink) {
+        int groupId = getGroupId(sink);
+        if (groupId == LE_AUDIO_GROUP_ID_INVALID) {
+            return Optional.empty();
+        }
+
+        BluetoothLeAudioCodecStatus cs = getCodecStatus(groupId);
+        if (cs == null) {
+            return Optional.empty();
+        }
+
+        return Optional.of(cs.isOutputCodecConfigSelectable(BROADCAST_HIGH_QUALITY_CONFIG));
     }
 
     /**

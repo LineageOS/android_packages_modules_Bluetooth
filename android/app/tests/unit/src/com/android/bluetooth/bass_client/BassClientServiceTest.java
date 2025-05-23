@@ -2125,6 +2125,101 @@ public class BassClientServiceTest {
         }
     }
 
+    @Test
+    public void testCompatibilityOfAudioQuality() throws RemoteException {
+        prepareConnectedDeviceGroup();
+        prepareSyncToSourceAndVerify();
+
+        // Remotes has unknown quality
+        doReturn(Optional.empty())
+                .when(mLeAudioService)
+                .isCapableToReceiveHighQualityBroadcastAudio(mCurrentDevice);
+        doReturn(Optional.empty())
+                .when(mLeAudioService)
+                .isCapableToReceiveHighQualityBroadcastAudio(mCurrentDevice1);
+
+        // Broadcast has high quality only
+        BluetoothLeBroadcastMetadata metadataHighQuality =
+                new BluetoothLeBroadcastMetadata.Builder(mBroadcastMetadata1)
+                        .setAudioConfigQuality(
+                                BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_HIGH)
+                        .build();
+
+        // Verify add source pass, unknown quality, broadcast HQ only
+        verifyAddSourceForGroup(metadataHighQuality);
+        mBassClientService.removeSource(mCurrentDevice1, TEST_SOURCE_ID);
+
+        // Remotes do not support high quality
+        doReturn(Optional.of(false))
+                .when(mLeAudioService)
+                .isCapableToReceiveHighQualityBroadcastAudio(mCurrentDevice);
+        doReturn(Optional.of(false))
+                .when(mLeAudioService)
+                .isCapableToReceiveHighQualityBroadcastAudio(mCurrentDevice1);
+
+        // Broadcast has not defined quality
+        BluetoothLeBroadcastMetadata metadataNoQuality =
+                new BluetoothLeBroadcastMetadata.Builder(mBroadcastMetadata1)
+                        .setAudioConfigQuality(
+                                BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_NONE)
+                        .build();
+
+        // Verify add source pass, group id does not support HQ, broadcast no Q set
+        verifyAddSourceForGroup(metadataNoQuality);
+        mBassClientService.removeSource(mCurrentDevice1, TEST_SOURCE_ID);
+
+        // Broadcast has standard quality only
+        BluetoothLeBroadcastMetadata metadataStandardQuality =
+                new BluetoothLeBroadcastMetadata.Builder(mBroadcastMetadata1)
+                        .setAudioConfigQuality(
+                                BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_STANDARD)
+                        .build();
+
+        // Verify add source pass, group id does not support HQ, broadcast SQ only
+        verifyAddSourceForGroup(metadataStandardQuality);
+        mBassClientService.removeSource(mCurrentDevice1, TEST_SOURCE_ID);
+
+        // Verify add source fail, group id does not support HQ, broadcast HQ only
+        mBassClientService.addSource(mCurrentDevice, metadataHighQuality, /* isGroupOp */ true);
+        verify(mCallback, timeout(TIMEOUT_MS))
+                .onSourceAddFailed(
+                        eq(mCurrentDevice),
+                        eq(metadataHighQuality),
+                        eq(BluetoothStatusCodes.ERROR_BAD_PARAMETERS));
+        verify(mCallback, timeout(TIMEOUT_MS))
+                .onSourceAddFailed(
+                        eq(mCurrentDevice1),
+                        eq(metadataHighQuality),
+                        eq(BluetoothStatusCodes.ERROR_BAD_PARAMETERS));
+
+        // Broadcast has standard and high quality
+        BluetoothLeBroadcastMetadata metadataBothQuality =
+                new BluetoothLeBroadcastMetadata.Builder(mBroadcastMetadata1)
+                        .setAudioConfigQuality(
+                                BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_STANDARD
+                                        | BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_HIGH)
+                        .build();
+
+        // Verify add source pass, group id does not support HQ, broadcast SQ and HQ
+        verifyAddSourceForGroup(metadataBothQuality);
+        mBassClientService.removeSource(mCurrentDevice1, TEST_SOURCE_ID);
+
+        // Remotes support high quality
+        doReturn(Optional.of(true))
+                .when(mLeAudioService)
+                .isCapableToReceiveHighQualityBroadcastAudio(mCurrentDevice);
+        doReturn(Optional.of(true))
+                .when(mLeAudioService)
+                .isCapableToReceiveHighQualityBroadcastAudio(mCurrentDevice1);
+
+        // Verify add source pass, group id supports HQ, broadcast SQ and HQ
+        verifyAddSourceForGroup(metadataBothQuality);
+        mBassClientService.removeSource(mCurrentDevice1, TEST_SOURCE_ID);
+
+        // Verify add source pass, group id supports HQ, broadcast HQ only
+        verifyAddSourceForGroup(metadataHighQuality);
+    }
+
     /**
      * Test that an outgoing connection to two device that have BASS UUID is successful and a
      * connection state change intent is sent
