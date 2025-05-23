@@ -770,6 +770,44 @@ tA2DP_STATUS provider::parse_a2dp_configuration(::bluetooth::a2dp::CodecId codec
   return static_cast<tA2DP_STATUS>(a2dp_status.value());
 }
 
+/***
+ * Reads the provider information from the HAL.
+ * May return std::nullopt if the HAL Provider Info is empty.
+ ***/
+std::optional<btav_a2dp_hal_provider_info_t> get_provider_info() {
+  auto source_provider_info = BluetoothAudioClientInterface::GetProviderInfo(
+          SessionType::A2DP_HARDWARE_OFFLOAD_ENCODING_DATAPATH, nullptr);
+
+  auto sink_provider_info = BluetoothAudioClientInterface::GetProviderInfo(
+          SessionType::A2DP_HARDWARE_OFFLOAD_DECODING_DATAPATH, nullptr);
+
+  if (!source_provider_info.has_value() && !sink_provider_info.has_value()) {
+    log::warn("the provider info is empty");
+    return std::nullopt;
+  }
+
+  btav_a2dp_hal_provider_info_t codecs_info;
+
+  for (auto& codec_info : source_provider_info->codecInfos) {
+    auto source_codec = convertCodecInfo(codec_info);
+    if (source_codec.has_value()) {
+      log::verbose("provider source codec: {}", source_codec.value().ToString());
+      codecs_info.source_codecs.push_back(source_codec.value());
+    }
+  }
+
+  for (auto& codec_info : sink_provider_info->codecInfos) {
+    auto sink_codec = convertCodecInfo(codec_info);
+    if (sink_codec.has_value()) {
+      log::verbose("provider sink codec: {}", sink_codec.value().ToString());
+      codecs_info.sink_codecs.push_back(sink_codec.value());
+    }
+  }
+
+  log::info("successfully loaded provider info");
+  return std::make_optional<btav_a2dp_hal_provider_info_t>(codecs_info);
+}
+
 }  // namespace a2dp
 }  // namespace aidl
 }  // namespace audio

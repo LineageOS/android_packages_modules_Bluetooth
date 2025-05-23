@@ -254,6 +254,13 @@ tA2DP_STATUS parse_a2dp_configuration(::bluetooth::a2dp::CodecId codec_id,
 }
 
 }  // namespace provider
+
+std::optional<btav_a2dp_hal_provider_info_t> get_provider_info() {
+  return (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::AIDL)
+                 ? aidl::a2dp::get_provider_info()
+                 : std::nullopt;
+}
+
 }  // namespace a2dp
 }  // namespace audio
 }  // namespace bluetooth
