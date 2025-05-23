@@ -929,7 +929,7 @@ package android.bluetooth {
 
   public final class BluetoothQualityReport implements android.os.Parcelable {
     method public int describeContents();
-    method @Nullable public android.bluetooth.BluetoothClass getBluetoothClass();
+    method @NonNull public android.bluetooth.BluetoothClass getBluetoothClass();
     method @Nullable public android.bluetooth.BluetoothQualityReport.BqrCommon getBqrCommon();
     method @Nullable public android.os.Parcelable getBqrEvent();
     method public int getLmpSubVersion();
