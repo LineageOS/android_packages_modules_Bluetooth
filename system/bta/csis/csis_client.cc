@@ -2122,7 +2122,8 @@ private:
     }
   }
 
-  void ClearDeviceInformationAndStartSearch(std::shared_ptr<CsisDevice> device) {
+  void ClearDeviceInformationAndStartSearch(std::shared_ptr<CsisDevice> device,
+                                            bool search_request = true) {
     log::info("{}", device->addr);
     if (device->is_gatt_service_valid == false) {
       log::debug("Device database already invalidated.");
@@ -2133,7 +2134,9 @@ private:
     BtaGattQueue::Clean(device->conn_id);
     DeregisterNotifications(device);
     device->ClearSvcData();
-    BTA_GATTC_ServiceSearchRequest(device->conn_id, kCsisServiceUuid);
+    if (search_request) {
+      BTA_GATTC_ServiceSearchRequest(device->conn_id, kCsisServiceUuid);
+    }
   }
 
   void OnGattServiceChangeEvent(const RawAddress& address) {
@@ -2144,7 +2147,7 @@ private:
     }
 
     log::info("{}", address);
-    ClearDeviceInformationAndStartSearch(device);
+    ClearDeviceInformationAndStartSearch(device, false /* search_request */);
   }
 
   void OnGattServiceDiscoveryDoneEvent(const RawAddress& address) {

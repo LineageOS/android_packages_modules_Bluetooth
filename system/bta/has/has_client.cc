@@ -2069,7 +2069,7 @@ private:
     }
   }
 
-  void ClearDeviceInformationAndStartSearch(HasDevice* device) {
+  void ClearDeviceInformationAndStartSearch(HasDevice* device, bool search_request = true) {
     if (!device) {
       log::error("Device is null");
       return;
@@ -2087,7 +2087,10 @@ private:
     BtaGattQueue::Clean(device->conn_id);
     device->ClearSvcData();
     btif_storage_remove_leaudio_has(device->addr);
-    BTA_GATTC_ServiceSearchRequest(device->conn_id, kUuidHearingAccessService);
+
+    if (search_request) {
+      BTA_GATTC_ServiceSearchRequest(device->conn_id, kUuidHearingAccessService);
+    }
   }
 
   void OnGattServiceChangeEvent(const RawAddress& address) {
@@ -2097,7 +2100,7 @@ private:
       return;
     }
     log::info("{}", address);
-    ClearDeviceInformationAndStartSearch(&(*device));
+    ClearDeviceInformationAndStartSearch(&(*device), false);
   }
 
   void OnGattServiceDiscoveryDoneEvent(const RawAddress& address) {
