@@ -99,6 +99,7 @@ public class ScanControllerTest {
     @Mock private ScanManager mScanManager;
     @Mock private ScanNativeInterface mScanNativeInterface;
     @Mock private PeriodicScanManager mPeriodicScanManager;
+    @Mock private PeriodicScanNativeInterface mPeriodicScanNativeInterface;
     @Mock private Resources mResources;
     @Mock private ScannerMap mScannerMap;
     @Mock private ScannerMap.ScannerApp mApp;
@@ -144,6 +145,7 @@ public class ScanControllerTest {
                         mScanManager,
                         mScanNativeInterface,
                         mPeriodicScanManager,
+                        mPeriodicScanNativeInterface,
                         mScannerMap,
                         mLooper.getLooper(),
                         mTimeProvider);

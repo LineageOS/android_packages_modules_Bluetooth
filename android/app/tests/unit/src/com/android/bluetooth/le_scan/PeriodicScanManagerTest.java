@@ -69,11 +69,11 @@ public class PeriodicScanManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        PeriodicScanNativeInterface.setInstance(mPeriodicScanNativeInterface);
-
         mockGetBluetoothManager(mAdapterService);
 
-        mPeriodicScanManager = new PeriodicScanManager(mAdapterService, mScanController);
+        mPeriodicScanManager =
+                new PeriodicScanManager(
+                        mAdapterService, mScanController, mPeriodicScanNativeInterface);
 
         mScanResult = new ScanResult(mDevice, 0, 0, 0, 0, 0, 0, 0, null, 0);
         mCallback = mock(IPeriodicAdvertisingCallback.class);
@@ -87,7 +87,6 @@ public class PeriodicScanManagerTest {
     @After
     public void tearDown() throws Exception {
         mPeriodicScanManager.cleanup();
-        PeriodicScanNativeInterface.setInstance(null);
     }
 
     @Test

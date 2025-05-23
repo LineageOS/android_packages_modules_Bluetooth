@@ -19,6 +19,7 @@ package com.android.bluetooth.le_scan;
 import static com.android.bluetooth.Utils.callbackToApp;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -58,12 +59,16 @@ public class PeriodicScanManager {
     private final ScanController mScanController;
     private final PeriodicScanNativeInterface mNativeInterface;
 
-    PeriodicScanManager(AdapterService service, ScanController scanController) {
+    PeriodicScanManager(
+            AdapterService service,
+            ScanController scanController,
+            PeriodicScanNativeInterface nativeInterface) {
         mAdapterService = requireNonNull(service);
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mScanController = scanController;
-        mNativeInterface = PeriodicScanNativeInterface.getInstance();
-        mNativeInterface.init(this);
+        mNativeInterface =
+                requireNonNullElseGet(nativeInterface, () -> new PeriodicScanNativeInterface(this));
+        mNativeInterface.init();
     }
 
     void cleanup() {

@@ -155,7 +155,7 @@ public class AdapterServiceTest {
     @Mock private Binder mBinder;
     @Mock private MetricsLogger mMockMetricsLogger;
     @Mock private ScanNativeInterface mScanNativeInterface;
-    @Mock private PeriodicScanNativeInterface mPeriodicNativeInterface;
+    @Mock private PeriodicScanNativeInterface mPeriodicScanNativeInterface;
     @Mock private JniCallbacks mJniCallbacks;
 
     private static final String TEST_BT_ADDR_1 = "00:11:22:33:44:55";
@@ -196,6 +196,7 @@ public class AdapterServiceTest {
                 BluetoothQualityReportNativeInterface bluetoothQualityReportNativeInterface,
                 BluetoothHciVendorSpecificNativeInterface bluetoothHciVendorSpecificNativeInterface,
                 ScanNativeInterface scanNativeInterface,
+                PeriodicScanNativeInterface periodicScanNativeInterface,
                 GattNativeInterface gattNativeInterface,
                 AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
                 DistanceMeasurementNativeInterface distanceMeasurementNativeInterface,
@@ -209,6 +210,7 @@ public class AdapterServiceTest {
                     bluetoothQualityReportNativeInterface,
                     bluetoothHciVendorSpecificNativeInterface,
                     scanNativeInterface,
+                    periodicScanNativeInterface,
                     gattNativeInterface,
                     advertiseManagerNativeInterface,
                     distanceMeasurementNativeInterface,
@@ -259,8 +261,6 @@ public class AdapterServiceTest {
         doReturn(true).when(mMockLeAudioService).isAvailable();
         doReturn(CONNECTION_POLICY_ALLOWED).when(mMockLeAudioService).getConnectionPolicy(any());
 
-        PeriodicScanNativeInterface.setInstance(mPeriodicNativeInterface);
-
         mLooper = new TestLooper();
         final Handler handler = new Handler(mLooper.getLooper());
         // Post the creation of AdapterService since it rely on Looper.myLooper()
@@ -275,6 +275,7 @@ public class AdapterServiceTest {
                                         mQualityNativeInterface,
                                         mHciVendorSpecificNativeInterface,
                                         mScanNativeInterface,
+                                        mPeriodicScanNativeInterface,
                                         mGattNativeInterface,
                                         mAdvertiseNativeInterface,
                                         mDistanceNativeInterface,
@@ -373,7 +374,6 @@ public class AdapterServiceTest {
 
         mAdapterService.cleanup();
         mAdapterService.unregisterRemoteCallback(mIBluetoothCallback);
-        PeriodicScanNativeInterface.setInstance(null);
         MetricsLogger.setInstanceForTesting(null);
     }
 
