@@ -162,3 +162,10 @@ flag {
     bug: "417245933"
 }
 
+flag {
+    name: "hfp_connection_failures_api"
+    namespace: "bluetooth"
+    description: "Add api support for api to collect hfp connection failures"
+    bug: "418829893"
+}
+
