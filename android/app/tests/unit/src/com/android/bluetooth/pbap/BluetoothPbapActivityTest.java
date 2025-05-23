@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import static android.content.pm.PackageManager.DONT_KILL_APP;
 import static androidx.lifecycle.Lifecycle.State;
 import static androidx.lifecycle.Lifecycle.State.DESTROYED;
 
+import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.pbap.BluetoothPbapActivity.DISMISS_TIMEOUT_DIALOG;
 import static com.android.bluetooth.pbap.BluetoothPbapActivity.DISMISS_TIMEOUT_DIALOG_DELAY_MS;
 
@@ -32,7 +33,6 @@ import static com.google.common.truth.Truth.assertWithMessage;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 import android.content.ComponentName;
@@ -50,8 +50,11 @@ import com.android.bluetooth.BluetoothMethodProxy;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -59,21 +62,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @LargeTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothPbapActivityTest {
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    Context mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-    Intent mIntent;
+    @Mock private BluetoothMethodProxy mMethodProxy;
 
-    ActivityScenario<BluetoothPbapActivity> mActivityScenario;
-
-    BluetoothMethodProxy mMethodProxy;
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+    private Intent mIntent;
+    private ActivityScenario<BluetoothPbapActivity> mActivityScenario;
 
     @Before
     public void setUp() {
-        mMethodProxy = spy(BluetoothMethodProxy.getInstance());
         BluetoothMethodProxy.setInstanceForTesting(mMethodProxy);
 
         mIntent = new Intent();
-        mIntent.setClass(mTargetContext, BluetoothPbapActivity.class);
+        mIntent.setClass(mContext, BluetoothPbapActivity.class);
         mIntent.setAction(BluetoothPbapService.AUTH_CHALL_ACTION);
 
         enableActivity(true);
@@ -130,6 +132,11 @@ public class BluetoothPbapActivityTest {
                 });
 
         assertThat(finishCalled.get()).isTrue();
+
+        ArgumentCaptor<Intent> argument = ArgumentCaptor.forClass(Intent.class);
+        verify(mMethodProxy).contextSendBroadcast(any(), argument.capture());
+        assertThat(argument.getValue().getAction())
+                .isEqualTo(BluetoothPbapService.AUTH_RESPONSE_ACTION);
     }
 
     @Test
@@ -143,6 +150,11 @@ public class BluetoothPbapActivityTest {
                 });
 
         assertThat(finishCalled.get()).isTrue();
+
+        ArgumentCaptor<Intent> argument = ArgumentCaptor.forClass(Intent.class);
+        verify(mMethodProxy).contextSendBroadcast(any(), argument.capture());
+        assertThat(argument.getValue().getAction())
+                .isEqualTo(BluetoothPbapService.AUTH_CANCELLED_ACTION);
     }
 
     @Test
@@ -200,14 +212,12 @@ public class BluetoothPbapActivityTest {
         int enabledState =
                 enable ? COMPONENT_ENABLED_STATE_ENABLED : COMPONENT_ENABLED_STATE_DEFAULT;
 
-        mTargetContext
-                .getPackageManager()
+        mContext.getPackageManager()
                 .setApplicationEnabledSetting(
-                        mTargetContext.getPackageName(), enabledState, DONT_KILL_APP);
+                        mContext.getPackageName(), enabledState, DONT_KILL_APP);
 
-        ComponentName activityName = new ComponentName(mTargetContext, BluetoothPbapActivity.class);
-        mTargetContext
-                .getPackageManager()
+        ComponentName activityName = new ComponentName(mContext, BluetoothPbapActivity.class);
+        mContext.getPackageManager()
                 .setComponentEnabledSetting(activityName, enabledState, DONT_KILL_APP);
     }
 }

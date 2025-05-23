@@ -195,7 +195,7 @@ public class BluetoothPbapActivity extends AlertActivity
         if (extraName != null) {
             intent.putExtra(extraName, extraValue);
         }
-        sendBroadcast(intent);
+        BluetoothMethodProxy.getInstance().contextSendBroadcast(this, intent);
     }
 
     @VisibleForTesting
