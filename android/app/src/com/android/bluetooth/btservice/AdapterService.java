@@ -1884,7 +1884,8 @@ public class AdapterService extends Service {
         return !mStartedProfiles.values().stream()
                 .anyMatch(
                         profile ->
-                                mDatabaseManager.getProfileConnectionPolicy(device, profile.getId())
+                                mDatabaseManager.getProfileConnectionPolicy(
+                                                device, profile.getProfileId())
                                         != CONNECTION_POLICY_UNKNOWN);
     }
 

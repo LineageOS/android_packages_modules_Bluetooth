@@ -708,8 +708,7 @@ public class HeadsetService extends ProfileService {
                         + ", "
                         + Utils.getUidPidString());
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(
-                device, BluetoothProfile.HEADSET, connectionPolicy)) {
+        if (!mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -731,7 +730,7 @@ public class HeadsetService extends ProfileService {
      * @return connection policy of the device
      */
     public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.HEADSET);
+        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     boolean isNoiseReductionSupported(BluetoothDevice device) {

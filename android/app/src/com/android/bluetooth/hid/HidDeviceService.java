@@ -456,8 +456,7 @@ public class HidDeviceService extends ProfileService {
                 BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(
-                device, BluetoothProfile.HID_DEVICE, connectionPolicy)) {
+        if (!mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
@@ -483,7 +482,7 @@ public class HidDeviceService extends ProfileService {
         }
         enforceCallingOrSelfPermission(
                 BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
-        return mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.HID_DEVICE);
+        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     synchronized boolean reportError(BluetoothDevice device, byte error) {

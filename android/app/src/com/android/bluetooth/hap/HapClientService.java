@@ -333,8 +333,7 @@ public class HapClientService extends ProfileService {
      */
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
-        mDatabaseManager.setProfileConnectionPolicy(
-                device, BluetoothProfile.HAP_CLIENT, connectionPolicy);
+        mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
             connect(device);
         } else if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
@@ -354,7 +353,7 @@ public class HapClientService extends ProfileService {
      * @return connection policy of the device
      */
     public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.HAP_CLIENT);
+        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     /** Check whether it can connect to a peer device. */
