@@ -50,3 +50,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "release_port_in_bta_ag_rfc_fail_before_reset_context"
+    namespace: "bluetooth"
+    description: "relase rfcomm port before reset context"
+    bug: "419817851"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
