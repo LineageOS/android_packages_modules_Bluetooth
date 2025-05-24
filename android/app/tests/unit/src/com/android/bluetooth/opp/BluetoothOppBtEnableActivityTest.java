@@ -25,54 +25,49 @@ import static androidx.test.espresso.matcher.RootMatchers.isDialog;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.mock;
 
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.sysprop.BluetoothProperties;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.action.ViewActions;
 import androidx.test.espresso.intent.Intents;
 import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.R;
 import com.android.bluetooth.TestUtils;
 
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /** Test cases for {@link BluetoothOppBtEnableActivity}. */
+@RunWith(AndroidJUnit4.class)
 public class BluetoothOppBtEnableActivityTest {
-
-    Intent mIntent;
-    Context mTargetContext;
-
     // Activity tests can sometimes flaky because of external factors like system dialog, etc.
     // making the expected Espresso's root not focused or the activity doesn't show up.
     // Add retry rule to resolve this problem.
     @Rule public TestUtils.RetryTestRule mRetryTestRule = new TestUtils.RetryTestRule();
 
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+
+    private Intent mIntent;
+
     @Before
     public void setUp() throws Exception {
-        Assume.assumeTrue(BluetoothProperties.isProfileOppEnabled().orElse(false));
+        assumeTrue(BluetoothProperties.isProfileOppEnabled().orElse(false));
 
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        mTargetContext
-                .getPackageManager()
-                .setComponentEnabledSetting(
-                        new ComponentName(
-                                mTargetContext.getPackageName(),
-                                "com.android.bluetooth.opp.BluetoothOppBtEnableActivity"),
-                        PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-                        PackageManager.DONT_KILL_APP);
         mIntent = new Intent();
-        mIntent.setClass(mTargetContext, BluetoothOppBtEnableActivity.class);
+        mIntent.setClass(mContext, BluetoothOppBtEnableActivity.class);
+
+        BluetoothOppTestUtils.enableActivity(BluetoothOppBtEnableActivity.class, true, mContext);
+        BluetoothOppTestUtils.enableActivity(BluetoothOppBtEnablingActivity.class, true, mContext);
         Intents.init();
         TestUtils.setUpUiTest();
     }
@@ -82,8 +77,10 @@ public class BluetoothOppBtEnableActivityTest {
         if (!BluetoothProperties.isProfileOppEnabled().orElse(false)) {
             return;
         }
-        TestUtils.tearDownUiTest();
         Intents.release();
+        TestUtils.tearDownUiTest();
+        BluetoothOppTestUtils.enableActivity(BluetoothOppBtEnableActivity.class, false, mContext);
+        BluetoothOppTestUtils.enableActivity(BluetoothOppBtEnablingActivity.class, false, mContext);
     }
 
     @Test
@@ -92,10 +89,10 @@ public class BluetoothOppBtEnableActivityTest {
                 ActivityScenario.launch(mIntent);
         activityScenario.onActivity(
                 activity -> activity.mOppManager = mock(BluetoothOppManager.class));
-        onView(withText(mTargetContext.getText(R.string.bt_enable_ok).toString()))
+        onView(withText(mContext.getText(R.string.bt_enable_ok).toString()))
                 .inRoot(isDialog())
                 .perform(ViewActions.scrollTo());
-        onView(withText(mTargetContext.getText(R.string.bt_enable_ok).toString()))
+        onView(withText(mContext.getText(R.string.bt_enable_ok).toString()))
                 .inRoot(isDialog())
                 .check(matches(isDisplayed()))
                 .perform(click());

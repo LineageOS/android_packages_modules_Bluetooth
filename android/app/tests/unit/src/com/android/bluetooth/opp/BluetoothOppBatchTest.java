@@ -50,8 +50,7 @@ public class BluetoothOppBatchTest {
 
     @Mock private AdapterService mAdapterService;
 
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothOppShareInfo mInitShareInfo =
             new BluetoothOppShareInfo(
                     0,
@@ -79,7 +78,7 @@ public class BluetoothOppBatchTest {
                         })
                 .when(mAdapterService)
                 .getRemoteDevice(anyString());
-        doReturn(mTargetContext.getContentResolver()).when(mAdapterService).getContentResolver();
+        doReturn(mContext.getContentResolver()).when(mAdapterService).getContentResolver();
         mBluetoothOppBatch = new BluetoothOppBatch(mAdapterService, mInitShareInfo);
     }
 
@@ -137,7 +136,6 @@ public class BluetoothOppBatchTest {
 
     @Test
     public void cancelBatch_cancelSuccessfully() {
-
         BluetoothMethodProxy proxy = spy(BluetoothMethodProxy.getInstance());
         BluetoothMethodProxy.setInstanceForTesting(proxy);
         doReturn(0).when(proxy).contentResolverDelete(any(), any(), any(), any());

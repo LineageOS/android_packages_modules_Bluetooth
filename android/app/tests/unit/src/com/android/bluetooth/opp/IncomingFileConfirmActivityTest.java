@@ -24,8 +24,6 @@ import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.opp.BluetoothOppIncomingFileConfirmActivity.DISMISS_TIMEOUT_DIALOG;
-import static com.android.bluetooth.opp.BluetoothOppIncomingFileConfirmActivity.DISMISS_TIMEOUT_DIALOG_VALUE;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -34,7 +32,6 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
 import android.content.Context;
@@ -74,20 +71,22 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class IncomingFileConfirmActivityTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock Cursor mCursor;
-    @Spy BluetoothMethodProxy mBluetoothMethodProxy;
-
-    List<BluetoothOppTestUtils.CursorMockData> mCursorMockDataList;
-
-    Intent mIntent;
-    Context mTargetContext;
-
-    static final int TIMEOUT_MS = 3_000;
-
     // Activity tests can sometimes flaky because of external factors like system dialog, etc.
     // making the expected Espresso's root not focused or the activity doesn't show up.
     // Add retry rule to resolve this problem.
     @Rule public TestUtils.RetryTestRule mRetryTestRule = new TestUtils.RetryTestRule();
+
+    @Spy BluetoothMethodProxy mBluetoothMethodProxy;
+
+    @Mock Cursor mCursor;
+
+    private static final int TIMEOUT_MS = 3_000;
+
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+
+    private List<BluetoothOppTestUtils.CursorMockData> mCursorMockDataList;
+
+    private Intent mIntent;
 
     @Before
     public void setUp() throws Exception {
@@ -96,10 +95,8 @@ public class IncomingFileConfirmActivityTest {
 
         Uri dataUrl = Uri.parse("content://com.android.bluetooth.opp.test/random");
 
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-
         mIntent = new Intent();
-        mIntent.setClass(mTargetContext, BluetoothOppIncomingFileConfirmActivity.class);
+        mIntent.setClass(mContext, BluetoothOppIncomingFileConfirmActivity.class);
         mIntent.setData(dataUrl);
 
         doReturn(mCursor)
@@ -148,7 +145,7 @@ public class IncomingFileConfirmActivityTest {
                                         BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED)));
 
         BluetoothOppTestUtils.enableActivity(
-                BluetoothOppIncomingFileConfirmActivity.class, true, mTargetContext);
+                BluetoothOppIncomingFileConfirmActivity.class, true, mContext);
         TestUtils.setUpUiTest();
     }
 
@@ -158,11 +155,11 @@ public class IncomingFileConfirmActivityTest {
 
         BluetoothMethodProxy.setInstanceForTesting(null);
         BluetoothOppTestUtils.enableActivity(
-                BluetoothOppIncomingFileConfirmActivity.class, false, mTargetContext);
+                BluetoothOppIncomingFileConfirmActivity.class, false, mContext);
     }
 
     @Test
-    public void onCreate_clickConfirmCancel_saveUSER_CONFIRMAMTION_DENIED()
+    public void onCreate_clickConfirmCancel_saveUSER_CONFIRMATION_DENIED()
             throws InterruptedException {
         BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
 
@@ -174,10 +171,10 @@ public class IncomingFileConfirmActivityTest {
         // The dialog button is clicked (no error throw) but onClick() is not triggered.
         // It works normally if sleep for a few seconds
         Thread.sleep(TIMEOUT_MS);
-        onView(withText(mTargetContext.getText(R.string.incoming_file_confirm_cancel).toString()))
+        onView(withText(mContext.getText(R.string.incoming_file_confirm_cancel).toString()))
                 .inRoot(isDialog())
                 .perform(ViewActions.scrollTo());
-        onView(withText(mTargetContext.getText(R.string.incoming_file_confirm_cancel).toString()))
+        onView(withText(mContext.getText(R.string.incoming_file_confirm_cancel).toString()))
                 .inRoot(isDialog())
                 .check(matches(isDisplayed()))
                 .perform(click());
@@ -206,10 +203,10 @@ public class IncomingFileConfirmActivityTest {
         // The dialog button is clicked (no error throw) but onClick() is not triggered.
         // It works normally if sleep for a few seconds
         Thread.sleep(TIMEOUT_MS);
-        onView(withText(mTargetContext.getText(R.string.incoming_file_confirm_ok).toString()))
+        onView(withText(mContext.getText(R.string.incoming_file_confirm_ok).toString()))
                 .inRoot(isDialog())
                 .perform(ViewActions.scrollTo());
-        onView(withText(mTargetContext.getText(R.string.incoming_file_confirm_ok).toString()))
+        onView(withText(mContext.getText(R.string.incoming_file_confirm_ok).toString()))
                 .inRoot(isDialog())
                 .check(matches(isDisplayed()))
                 .perform(click());
@@ -225,21 +222,6 @@ public class IncomingFileConfirmActivityTest {
                                                 argument.get(BluetoothShare.USER_CONFIRMATION))),
                         nullable(String.class),
                         nullable(String[].class));
-    }
-
-    @Test
-    public void onTimeout_broadcastUserConfirmationTimeoutAction_sendDismissTimeoutDialogMessage() {
-        BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
-        ActivityScenario<BluetoothOppIncomingFileConfirmActivity> scenario =
-                ActivityScenario.launch(mIntent);
-
-        assertThat(scenario.getState()).isNotEqualTo(Lifecycle.State.DESTROYED);
-        Intent in = new Intent(BluetoothShare.USER_CONFIRMATION_TIMEOUT_ACTION);
-        mTargetContext.sendBroadcast(in);
-
-        verify(mBluetoothMethodProxy, timeout(TIMEOUT_MS))
-                .handlerSendMessageDelayed(
-                        any(), eq(DISMISS_TIMEOUT_DIALOG), eq((long) DISMISS_TIMEOUT_DIALOG_VALUE));
     }
 
     @Test

@@ -55,16 +55,16 @@ import java.io.IOException;
 /** Test cases for {@link BluetoothOppSendFileInfo}. */
 @RunWith(TestParameterInjector.class)
 public class BluetoothOppSendFileInfoTest {
-    Context mContext;
-    MatrixCursor mCursor;
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock BluetoothMethodProxy mCallProxy;
 
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+
+    private MatrixCursor mCursor;
+
     @Before
     public void setUp() {
-        mContext = InstrumentationRegistry.getInstrumentation().getContext();
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
     }
 
