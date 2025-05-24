@@ -101,7 +101,7 @@ public class TbsService extends ProfileService {
         return sTbsService;
     }
 
-    private static synchronized void setTbsService(TbsService instance) {
+    public static synchronized void setTbsService(TbsService instance) {
         Log.d(TAG, "setTbsService: set to=" + instance);
 
         sTbsService = instance;

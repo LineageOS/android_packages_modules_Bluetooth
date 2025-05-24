@@ -1692,7 +1692,8 @@ public class BluetoothInCallService extends InCallService {
         return new BluetoothLeCall(call.getTbsCallId(), uri, friendlyName, state, callFlags);
     }
 
-    private final IBluetoothLeCallControlCallback.Stub mBluetoothLeCallControlCallback =
+    @VisibleForTesting
+    final IBluetoothLeCallControlCallback.Stub mBluetoothLeCallControlCallback =
             new IBluetoothLeCallControlCallback.Stub() {
                 @Override
                 public void onBearerRegistered(int ccid) {
