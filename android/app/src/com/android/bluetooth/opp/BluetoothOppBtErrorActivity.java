@@ -34,13 +34,13 @@ package com.android.bluetooth.opp;
 
 import static android.view.WindowManager.LayoutParams.SYSTEM_FLAG_HIDE_NON_SYSTEM_OVERLAY_WINDOWS;
 
-import android.bluetooth.AlertActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
 import com.android.bluetooth.R;
+import com.android.bluetooth.util.AlertActivity;
 
 /** This class is designed to show BT error messages; */
 public class BluetoothOppBtErrorActivity extends AlertActivity {
