@@ -220,7 +220,9 @@ void PORT_StartCnf(tRFC_MCB* p_mcb, uint16_t result) {
       } else {
         log::warn("Unable start configuration dlci:{} result:{}", p_port->dlci, result);
 
-        rfc_release_multiplexer_channel(p_mcb);
+        if (!com::android::bluetooth::flags::fix_socket_connection_failed_no_callback()) {
+          rfc_release_multiplexer_channel(p_mcb);
+        }
 
         /* Send event to the application */
         if (p_port->p_callback && (p_port->ev_mask & PORT_EV_CONNECT_ERR)) {
@@ -236,10 +238,22 @@ void PORT_StartCnf(tRFC_MCB* p_mcb, uint16_t result) {
     }
   }
 
-  /* There can be a situation when after starting connection, user closes the */
-  /* port, we can catch it here to close multiplexor channel */
-  if (no_ports_up) {
-    rfc_check_mcb_active(p_mcb);
+  if (com::android::bluetooth::flags::fix_socket_connection_failed_no_callback()) {
+    /* There can be a situation when after starting connection, user closes the */
+    /* port, we can catch it here to close multiplexor channel */
+    if (no_ports_up) {
+      rfc_check_mcb_active(p_mcb);
+    } else if (result != RFCOMM_SUCCESS) {
+      /* If we failed to start rfcomm socket connection, */
+      /* we should release multiplexor channel with p_mcb */
+      rfc_release_multiplexer_channel(p_mcb);
+    }
+  } else {
+    /* There can be a situation when after starting connection, user closes the */
+    /* port, we can catch it here to close multiplexor channel */
+    if (no_ports_up) {
+      rfc_check_mcb_active(p_mcb);
+    }
   }
 }
 
