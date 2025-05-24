@@ -39,7 +39,9 @@
 #include "hci/controller_mock.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_status.h"
+#include "stack/include/main_thread.h"
 #include "test/common/mock_functions.h"
+#include "test/mock/mock_bta_hearing_aid_audio_source.h"
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_stack_gap_conn_interface.h"
 #include "test/mock/mock_stack_l2cap_interface.h"
@@ -60,8 +62,10 @@ using ::bluetooth::hearing_aid::ConnectionState;
 using ::bluetooth::hearing_aid::HearingAidCallbacks;
 using ::bluetooth::hearing_aid::HearingAidInterface;
 
+using bluetooth::common::MessageLoopThread;
 using ::testing::_;
 using ::testing::AnyNumber;
+using ::testing::AtLeast;
 using ::testing::DoAll;
 using ::testing::DoDefault;
 using ::testing::Invoke;
@@ -73,6 +77,46 @@ using ::testing::SaveArg;
 using ::testing::Sequence;
 using ::testing::SetArgPointee;
 using ::testing::WithArg;
+
+std::atomic<int> num_async_tasks;
+bluetooth::common::MessageLoopThread message_loop_thread("test message loop");
+
+bt_status_t do_in_main_thread(base::OnceClosure task) {
+  // Wrap the task with task counter so we could later know if there are
+  // any callbacks scheduled and we should wait before performing some actions
+  if (!message_loop_thread.DoInThread(base::BindOnce(
+              [](base::OnceClosure task, std::atomic<int>& num_async_tasks) {
+                std::move(task).Run();
+                num_async_tasks--;
+              },
+              std::move(task), std::ref(num_async_tasks)))) {
+    log::error("failed to post task to task runner!");
+    return BT_STATUS_FAIL;
+  }
+  num_async_tasks++;
+  return BT_STATUS_SUCCESS;
+}
+
+static void init_message_loop_thread() {
+  num_async_tasks = 0;
+  message_loop_thread.StartUp();
+  if (!message_loop_thread.IsRunning()) {
+    FAIL() << "unable to create message loop thread.";
+  }
+
+  if (!message_loop_thread.EnableRealTimeScheduling()) {
+    log::error("Unable to set real time scheduling");
+  }
+}
+
+static void cleanup_message_loop_thread() { message_loop_thread.ShutDown(); }
+
+void SyncOnMainLoop() {
+  // Wait for the main loop to flush
+  // WARNING: Not tested with Timers pushing periodic tasks to the main loop
+  while (num_async_tasks > 0) {
+  }
+}
 
 RawAddress GetTestAddress(int index) {
   CHECK_LT(index, UINT8_MAX);
@@ -98,6 +142,8 @@ public:
 
 class HearingAidTestBase : public ::testing::Test {
 protected:
+  HearingAidAudioReceiver* audio_receiver_;
+
   Uuid HEARING_AID_UUID = Uuid::FromString("FDF0");
   Uuid READ_ONLY_PROPERTIES_UUID = Uuid::FromString("6333651e-c481-4a3e-9169-7c902aad37bb");
   Uuid AUDIO_CONTROL_POINT_UUID = Uuid::FromString("f0d4de7e-4a88-476c-9d9f-1937b0996cc0");
@@ -105,18 +151,18 @@ protected:
   Uuid VOLUME_UUID = Uuid::FromString("00e4ca9e-ab14-41e4-8823-f9e70c7e91df");
   Uuid LE_PSM_UUID = Uuid::FromString("2d410339-82b6-42aa-b34e-e2e01df8cc1a");
 
+  static constexpr uint16_t kSvcStartHdl = 0x0010;
+  static constexpr uint16_t kReadOnlyProperties = 0x0012;
+  static constexpr uint16_t kAudioControlPoint = 0x0015;
+  static constexpr uint16_t kAudioStatusPoint = 0x0018;
+  static constexpr uint16_t kVolume = 0x001B;
+  static constexpr uint16_t kLePsm = 0x001E;
+  static constexpr uint16_t kSvcEndHdl = kLePsm;
+
   void set_sample_database(uint16_t conn_id) {
     static constexpr uint16_t kGapSvcStartHdl = 0x0001;
     static constexpr uint16_t kGapDeviceNameValHdl = 0x0003;
     static constexpr uint16_t kGapSvcEndHdl = kGapDeviceNameValHdl;
-
-    static constexpr uint16_t kSvcStartHdl = 0x0010;
-    static constexpr uint16_t kReadOnlyProperties = 0x0012;
-    static constexpr uint16_t kAudioControlPoint = 0x0015;
-    static constexpr uint16_t kAudioStatusPoint = 0x0018;
-    static constexpr uint16_t kVolume = 0x001B;
-    static constexpr uint16_t kLePsm = 0x001E;
-    static constexpr uint16_t kSvcEndHdl = kLePsm;
 
     gatt::DatabaseBuilder bob;
 
@@ -154,7 +200,19 @@ protected:
                       switch (handle) {
                         case kReadOnlyProperties:
                           value.resize(17);
-                          value.assign(17, 0x01);
+                          value[0] = 0x01;  // Version
+                          value[1] =
+                                  0x00;  // DeviceCapabilities - left, monaural, CSIS not supported
+                          for (int i = 0; i < 8; i++) {
+                            value[2 + i] = 0xFF;  // HiSyncId
+                          }
+                          value[10] = 0x01;  // FeatureMap
+                          value[11] = 0x01;  // RenderDelay
+                          value[12] = 0x01;  // PreparationDelay
+                          value[14] = 0x00;  // RFU
+                          value[13] = 0x00;  // RFU
+                          value[15] = 0x02;  // Codec IDs - G.722 @ 16 kHz
+                          value[16] = 0x00;
                           break;
                         case kAudioStatusPoint:
                           value.resize(1);
@@ -174,6 +232,15 @@ protected:
                         cb(conn_id, status, handle, value.size(), value.data(), cb_data);
                       }
                     }));
+
+    ON_CALL(gatt_queue, WriteCharacteristic(_, _, _, _, _, _))
+            .WillByDefault(Invoke([](uint16_t conn_id, uint16_t handle, std::vector<uint8_t> value,
+                                     tGATT_WRITE_TYPE /*write_type*/, GATT_WRITE_OP_CB cb,
+                                     void* cb_data) -> void {
+              if (cb) {
+                cb(conn_id, GATT_SUCCESS, handle, value.size(), value.data(), cb_data);
+              }
+            }));
 
     /* default action for GetCharacteristic function call */
     ON_CALL(gatt_interface, GetCharacteristic(_, _))
@@ -220,10 +287,18 @@ protected:
             }));
   }
 
+  //    void send_audio_data() { }
+
+  void start_audio_ticks() {}
+  //
+  //    void stop_audio_ticks() { }
+
   void SetUp(void) override {
     fake_osi_bool_props.clear();
     bluetooth::manager::SetMockBtmInterface(&btm_interface);
     bluetooth::storage::SetMockBtifStorageInterface(&btif_storage_interface_);
+    bluetooth::testing::stack::hearing_aid_audio_source::set_interface(
+            &hearing_aid_audio_source_interface_);
     gatt::SetMockBtaGattInterface(&gatt_interface);
     gatt::SetMockBtaGattQueue(&gatt_queue);
     callbacks.reset(new MockHearingAidCallbacks());
@@ -231,6 +306,8 @@ protected:
             std::make_unique<NiceMock<bluetooth::hci::testing::MockController>>();
     bluetooth::testing::stack::l2cap::set_interface(&mock_stack_l2cap_interface_);
     bluetooth::testing::stack::gap_conn::set_interface(&mock_stack_gap_conn_interface_);
+
+    init_message_loop_thread();
 
     encryption_result = true;
 
@@ -279,6 +356,12 @@ protected:
         InjectDisconnectedEvent(conn_id);
       }
     }));
+
+    ON_CALL(hearing_aid_audio_source_interface_, Start(_, _, _))
+            .WillByDefault(Invoke(
+                    [&](const CodecConfiguration& /*codec_config*/,
+                        HearingAidAudioReceiver* audio_receiver,
+                        uint16_t /*remote_delay_ms*/) { audio_receiver_ = audio_receiver; }));
   }
 
   void TearDown(void) override {
@@ -294,6 +377,7 @@ protected:
     Mock::VerifyAndClearExpectations(&gatt_interface);
     Mock::VerifyAndClearExpectations(&btm_interface);
     callbacks.reset();
+    cleanup_message_loop_thread();
   }
 
   void InjectConnectedEvent(const RawAddress& address, uint16_t conn_id,
@@ -351,6 +435,27 @@ protected:
     gatt_callback(BTA_GATTC_SEARCH_CMPL_EVT, (tBTA_GATTC*)&event_data);
   }
 
+  void InjectServiceChangedEvent(uint16_t conn_id) {
+    tBTA_GATTC_SERVICE_CHANGED event_data = {.remote_bda = test_address, .conn_id = conn_id};
+
+    gatt_callback(BTA_GATTC_SRVC_CHG_EVT, (tBTA_GATTC*)&event_data);
+  }
+
+  void InjectConnectionUpdateEvent(uint16_t conn_id) {
+    tBTA_GATTC_CONN_UPDATE event_data = {
+            .conn_id = conn_id,
+            .interval = 0x0010  // CONNECTION_INTERVAL_20MS_PARAM
+    };
+
+    gatt_callback(BTA_GATTC_CONN_UPDATE_EVT, (tBTA_GATTC*)&event_data);
+  }
+
+  void InjectServiceSearchCompleteEvent() {
+    tBTA_GATTC_SERVICE_DISCOVERY_DONE event = {.remote_bda = test_address};
+
+    gatt_callback(BTA_GATTC_SRVC_DISC_DONE_EVT, (tBTA_GATTC*)&event);
+  }
+
   void InjectNotificationEvent(const RawAddress& test_address, uint16_t conn_id, uint16_t handle,
                                std::vector<uint8_t> value, bool indicate = false) {
     tBTA_GATTC_NOTIFY event_data = {
@@ -377,6 +482,7 @@ protected:
   std::unique_ptr<MockHearingAidCallbacks> callbacks;
   bluetooth::manager::MockBtmInterface btm_interface;
   bluetooth::storage::MockBtifStorageInterface btif_storage_interface_;
+  bluetooth::testing::stack::hearing_aid_audio_source::Mock hearing_aid_audio_source_interface_;
   gatt::MockBtaGattInterface gatt_interface;
   gatt::MockBtaGattQueue gatt_queue;
   tBTA_GATTC_CBACK* gatt_callback;
@@ -511,6 +617,129 @@ TEST_F(HearingAidTest, load_from_storage) {
 
   EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION, _));
   HearingAid::Connect(test_address);
+}
+
+/* 1. Hearing aid gets connected.
+ * 2. Volume is set.
+ * 3. Audio stream starts.
+ *
+ * Check if all GATT operations were executed.
+ */
+TEST_F(HearingAidTest, start_stream) {
+  set_sample_database(1);
+  SetEncryptionResult(test_address, true);
+
+  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
+  EXPECT_CALL(*callbacks, OnDeviceAvailable(_, _, test_address)).Times(1);
+  EXPECT_CALL(gatt_interface, ServiceSearchRequest);
+  EXPECT_CALL(gatt_queue, ReadCharacteristic(1, kLePsm, _, _));
+  EXPECT_CALL(gatt_queue, ReadCharacteristic(1, kReadOnlyProperties, _, _));
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(1, kAudioControlPoint, _, _, _, _))
+          .Times(AnyNumber());
+  HearingAid::Connect(test_address);
+
+  Mock::VerifyAndClearExpectations(callbacks.get());
+  Mock::VerifyAndClearExpectations(&gatt_interface);
+  Mock::VerifyAndClearExpectations(&gatt_queue);
+
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(1, kAudioControlPoint, _, _, _, _));
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(1, kVolume, _, _, _, _));
+
+  HearingAid::SetVolume(20);
+  /* Simulate AF sending Audio Resume */
+  auto start_dummy_ticks = []() { log::info("start_audio_ticks: waiting for data path opened"); };
+  do_in_main_thread(base::BindOnce(&HearingAidAudioReceiver::OnAudioResume,
+                                   base::Unretained(audio_receiver_), start_dummy_ticks));
+  SyncOnMainLoop();
+}
+
+/* 1. Hearing aid gets connected.
+ * 2. Service changed event is received
+ * 3. Stream start is requested
+ * 4. Volume is set
+ *    Check if GATT operations were executed after service changed event, using old handles.
+ * 5. Service search complete event arrives
+ *    Check if write to AudioControlPoint was executed.
+ * 6. Second Service changed event is received
+ * 7. Stream is suspended
+ *    Check if write to AudioControlPoint was executed, using old handle.
+ */
+TEST_F(HearingAidTest, service_changed_before_stream_start) {
+  set_sample_database(1);
+  SetEncryptionResult(test_address, true);
+
+  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
+  EXPECT_CALL(*callbacks, OnDeviceAvailable(_, _, test_address)).Times(1);
+  EXPECT_CALL(gatt_interface, ServiceSearchRequest);
+  EXPECT_CALL(gatt_queue, ReadCharacteristic(1, kLePsm, _, _));
+  EXPECT_CALL(gatt_queue, ReadCharacteristic(1, kReadOnlyProperties, _, _));
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(1, kAudioControlPoint, _, _, _, _)).Times(AtLeast(1));
+  HearingAid::Connect(test_address);
+
+  Mock::VerifyAndClearExpectations(callbacks.get());
+  Mock::VerifyAndClearExpectations(&gatt_interface);
+  Mock::VerifyAndClearExpectations(&gatt_queue);
+
+  /* b/417133855 - stream is starting, but Service Changed event arrives.
+   * Let's expect old handles to work, that are used on stream start
+   */
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(1, kAudioControlPoint, _, _, _, _)).Times(1);
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(1, kVolume, _, _, _, _)).Times(1);
+
+  InjectServiceChangedEvent(1);
+
+  /* Simulate AF sending Audio Resume */
+  auto start_dummy_ticks = []() { log::info("start_audio_ticks: waiting for data path opened"); };
+  do_in_main_thread(base::BindOnce(&HearingAidAudioReceiver::OnAudioResume,
+                                   base::Unretained(audio_receiver_), start_dummy_ticks));
+  HearingAid::SetVolume(20);
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(callbacks.get());
+  Mock::VerifyAndClearExpectations(&gatt_interface);
+  Mock::VerifyAndClearExpectations(&gatt_queue);
+
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(1, kAudioControlPoint, _, _, _, _)).Times(AtLeast(1));
+
+  InjectServiceSearchCompleteEvent();
+
+  Mock::VerifyAndClearExpectations(callbacks.get());
+  Mock::VerifyAndClearExpectations(&gatt_interface);
+  Mock::VerifyAndClearExpectations(&gatt_queue);
+
+  /* Simulate AF sending Audio Suspend */
+  do_in_main_thread(base::BindOnce(&HearingAidAudioReceiver::OnAudioSuspend,
+                                   base::Unretained(audio_receiver_), start_dummy_ticks));
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(1, kAudioControlPoint, _, _, _, _)).Times(AtLeast(1));
+  InjectServiceChangedEvent(1);
+  SyncOnMainLoop();
+}
+
+/* 1. Hearing aid gets connected.
+ * 2. Service changed event is received
+ * 3. Connection Update event is received
+ *    Check if write to AudioControlPoint was executed, using old handle.
+ */
+TEST_F(HearingAidTest, conn_update_after_service_changed) {
+  set_sample_database(1);
+  SetEncryptionResult(test_address, true);
+
+  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
+  EXPECT_CALL(*callbacks, OnDeviceAvailable(_, _, test_address)).Times(1);
+  EXPECT_CALL(gatt_interface, ServiceSearchRequest);
+  EXPECT_CALL(gatt_queue, ReadCharacteristic(1, kLePsm, _, _));
+  EXPECT_CALL(gatt_queue, ReadCharacteristic(1, kReadOnlyProperties, _, _));
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(1, kAudioControlPoint, _, _, _, _)).Times(AtLeast(1));
+  HearingAid::Connect(test_address);
+
+  Mock::VerifyAndClearExpectations(callbacks.get());
+  Mock::VerifyAndClearExpectations(&gatt_interface);
+  Mock::VerifyAndClearExpectations(&gatt_queue);
+
+  InjectServiceChangedEvent(1);
+  InjectConnectionUpdateEvent(1);
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(1, kAudioControlPoint, _, _, _, _)).Times(0);
+  SyncOnMainLoop();
 }
 
 }  // namespace

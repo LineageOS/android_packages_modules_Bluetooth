@@ -552,8 +552,11 @@ void btif_a2dp_source_shutdown(std::promise<void> shutdown_complete_promise) {
   btif_a2dp_source_cb.SetState(BtifA2dpSource::kStateShuttingDown);
 
   // Stop the timer.
-  btif_a2dp_source_cb.media_alarm.CancelAndWait();
-  wakelock_release();
+  if (!com::android::bluetooth::flags::ref_counted_native_wakelock() ||
+      btif_a2dp_source_is_streaming()) {
+    btif_a2dp_source_cb.media_alarm.CancelAndWait();
+    wakelock_release();
+  }
 
   bluetooth::audio::a2dp::cleanup();
 

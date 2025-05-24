@@ -23,6 +23,8 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static android.bluetooth.le.ScanSettings.getScanModeString;
 
+import static java.util.Objects.requireNonNull;
+
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -45,6 +47,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.RemoteException;
+import android.os.SystemProperties;
 import android.provider.Settings;
 import android.util.Log;
 import android.util.SparseBooleanArray;
@@ -57,7 +60,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.Utils.TimeProvider;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.util.SystemProperties;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -150,7 +152,9 @@ public class ScanManager {
     private static final int FILTER_LOGIC_TYPE = 1;
 
     // MSFT-based hardware scan offload sysprop
-    private static final String MSFT_HCI_EXT_ENABLED = "bluetooth.core.le.use_msft_hci_ext";
+    @VisibleForTesting
+    static final String MSFT_HCI_EXT_ENABLED = "bluetooth.core.le.use_msft_hci_ext";
+
     // Hardcoded min number of hardware adv monitor slots for MSFT-enabled controllers
     private static final int MIN_NUM_MSFT_MONITOR_SLOTS = 20;
 
@@ -215,15 +219,25 @@ public class ScanManager {
     record UidImportance(int uid, int importance) {}
 
     ScanManager(
-            AdapterService adapterService,
+            AdapterService service,
             ScanController scanController,
             Looper looper,
             TimeProvider timeProvider) {
-        mAdapterService = adapterService;
+        this(service, scanController, looper, timeProvider, ScanNativeInterface.getInstance());
+    }
+
+    @VisibleForTesting
+    ScanManager(
+            AdapterService service,
+            ScanController scanController,
+            Looper looper,
+            TimeProvider timeProvider,
+            ScanNativeInterface nativeInterface) {
+        mAdapterService = service;
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mScanController = scanController;
         mTimeProvider = timeProvider;
-        mNativeInterface = ScanObjectsFactory.getInstance().getScanNativeInterface();
+        mNativeInterface = requireNonNull(nativeInterface);
         mNativeInterface.init(scanController);
         mAlarmManager = mAdapterService.getSystemService(AlarmManager.class);
         Intent batchIntent = new Intent(ACTION_REFRESH_BATCHED_SCAN, null);

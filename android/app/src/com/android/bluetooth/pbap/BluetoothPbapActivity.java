@@ -18,7 +18,6 @@ package com.android.bluetooth.pbap;
 
 import static android.view.WindowManager.LayoutParams.SYSTEM_FLAG_HIDE_NON_SYSTEM_OVERLAY_WINDOWS;
 
-import android.bluetooth.AlertActivity;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
@@ -43,6 +42,7 @@ import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
+import com.android.bluetooth.util.AlertActivity;
 import com.android.internal.annotations.VisibleForTesting;
 
 /**
@@ -195,7 +195,7 @@ public class BluetoothPbapActivity extends AlertActivity
         if (extraName != null) {
             intent.putExtra(extraName, extraValue);
         }
-        sendBroadcast(intent);
+        BluetoothMethodProxy.getInstance().contextSendBroadcast(this, intent);
     }
 
     @VisibleForTesting

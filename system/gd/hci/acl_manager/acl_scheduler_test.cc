@@ -52,17 +52,24 @@ MATCHER(IsSet, "Future is set") {
 class AclSchedulerTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    client_handler_ = fake_registry_.GetTestHandler();
-    ASSERT_NE(client_handler_, nullptr);
+    thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
+    client_handler_ = new os::Handler(thread_);
 
     acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
+
+    com::android::bluetooth::flags::provider_->reset_flags();
 
     ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   }
 
   void TearDown() override {
-    fake_registry_.SynchronizeHandler(client_handler_, timeout);
-    fake_registry_.StopAll();
+    acl_scheduler_.reset();
+
+    client_handler_->Clear();
+    client_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
+
+    delete client_handler_;
+    delete thread_;
   }
 
   common::ContextualOnceCallback<void(std::string)> impossibleCallbackTakingString() {
@@ -93,10 +100,9 @@ protected:
                                      std::move(promise));
   }
 
-  TestModuleRegistry fake_registry_;
-  os::Thread& thread_ = fake_registry_.GetTestThread();
-  std::unique_ptr<AclScheduler> acl_scheduler_ = nullptr;
+  os::Thread* thread_ = nullptr;
   os::Handler* client_handler_ = nullptr;
+  std::unique_ptr<AclScheduler> acl_scheduler_ = nullptr;
 };
 
 TEST_F(AclSchedulerTest, SingleConnectionImmediatelyExecuted) {
@@ -209,8 +215,12 @@ TEST_F(AclSchedulerTest, UnknownConnectionCallback) {
 }
 
 TEST_F(AclSchedulerTest, TiebreakForOutgoingConnection) {
-  auto promise = std::promise<void>{};
-  auto future = promise.get_future();
+  com::android::bluetooth::flags::provider_->acl_fix_in_and_out_connection_reqs(true);
+
+  auto promise1 = std::promise<void>{};
+  auto future1 = promise1.get_future();
+  auto promise2 = std::promise<void>{};
+  auto future2 = promise2.get_future();
 
   // start outgoing connection
   acl_scheduler_->EnqueueOutgoingAclConnection(address1, emptyCallback());
@@ -219,14 +229,21 @@ TEST_F(AclSchedulerTest, TiebreakForOutgoingConnection) {
   acl_scheduler_->RegisterPendingIncomingConnection(address1);
 
   // then the connection to that address completes
-  acl_scheduler_->ReportAclConnectionCompletion(address1, promiseCallback(std::move(promise)),
+  acl_scheduler_->ReportAclConnectionCompletion(address1, promiseCallback(std::move(promise1)),
                                                 impossibleCallback(),
                                                 impossibleCallbackTakingString());
 
   // the outgoing_connection callback should have executed, NOT the incoming_connection one
   // this preserves working behavior, it is not based on any principled decision (so if you need to
   // break this test, go for it)
-  EXPECT_THAT(future, IsSet());
+  EXPECT_THAT(future1, IsSet());
+
+  // start an outgoing RNR to another device
+  acl_scheduler_->EnqueueRemoteNameRequest(address2, promiseCallback(std::move(promise2)),
+                                           emptyCallback());
+
+  // we expect the start callback to be invoked for the RNR and not deadlock
+  EXPECT_THAT(future2, IsSet());
 }
 
 TEST_F(AclSchedulerTest, QueueWhileIncomingConnectionsPending) {
@@ -462,6 +479,8 @@ TEST_F(AclSchedulerTest, RemoteNameRequestCancellationWhileQueuedCallback) {
 
   // the first request completes
   acl_scheduler_->ReportRemoteNameRequestCompletion(address1);
+  // ensure request above completes, before we TearDown the test
+  client_handler_->Synchronize(std::chrono::milliseconds(20));
 
   // we don't dequeue the second one, since it was cancelled
   // implicitly assert that its callback was never invoked

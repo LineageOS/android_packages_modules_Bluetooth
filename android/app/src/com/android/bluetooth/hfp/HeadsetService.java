@@ -26,6 +26,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.media.audio.Flags.deprecateStreamBtSco;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -50,6 +51,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.ParcelUuid;
+import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.sysprop.BluetoothProperties;
 import android.telecom.PhoneAccount;
@@ -68,7 +70,6 @@ import com.android.bluetooth.hfpclient.HeadsetClientService;
 import com.android.bluetooth.hfpclient.HeadsetClientStateMachine;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.telephony.BluetoothInCallService;
-import com.android.bluetooth.util.SystemProperties;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -163,7 +164,7 @@ public class HeadsetService extends ProfileService {
     @VisibleForTesting ServiceFactory mFactory = new ServiceFactory();
 
     public HeadsetService(AdapterService adapterService) {
-        this(adapterService, HeadsetNativeInterface.getInstance(adapterService), null);
+        this(adapterService, null, null);
     }
 
     @VisibleForTesting
@@ -174,9 +175,11 @@ public class HeadsetService extends ProfileService {
     @VisibleForTesting
     HeadsetService(
             AdapterService adapterService, HeadsetNativeInterface nativeInterface, Looper looper) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.HEADSET, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
-        mNativeInterface = requireNonNull(nativeInterface);
+        mNativeInterface =
+                requireNonNullElseGet(
+                        nativeInterface, () -> new HeadsetNativeInterface(mAdapterService, this));
         if (looper != null) {
             mHandler = new Handler(looper);
             mStateMachinesThread = null;
@@ -705,8 +708,7 @@ public class HeadsetService extends ProfileService {
                         + ", "
                         + Utils.getUidPidString());
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(
-                device, BluetoothProfile.HEADSET, connectionPolicy)) {
+        if (!mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -728,7 +730,7 @@ public class HeadsetService extends ProfileService {
      * @return connection policy of the device
      */
     public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.HEADSET);
+        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     boolean isNoiseReductionSupported(BluetoothDevice device) {

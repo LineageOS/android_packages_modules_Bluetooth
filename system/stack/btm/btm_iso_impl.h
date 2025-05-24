@@ -53,6 +53,7 @@ static constexpr uint8_t kStateFlagIsConnected = 0x02;
 static constexpr uint8_t kStateFlagHasDataPathSet = 0x04;
 static constexpr uint8_t kStateFlagIsBroadcast = 0x10;
 static constexpr uint8_t kStateFlagIsCancelled = 0x20;
+static constexpr uint8_t kStateFlagSettingDataPath = 0x40;
 
 constexpr char kBtmLogTag[] = "ISO";
 
@@ -359,6 +360,8 @@ struct iso_impl {
     log::verbose("{}, iso_handle: {:#x}, flags: {:#x} status {}", cis_hdl_to_addr[conn_handle],
                  conn_handle, iso->state_flags, hci_status_code_text((tHCI_STATUS)(status)));
 
+    iso->state_flags &= ~kStateFlagSettingDataPath;
+
     if (status == HCI_SUCCESS) {
       iso->state_flags |= kStateFlagHasDataPathSet;
     }
@@ -379,6 +382,8 @@ struct iso_impl {
     if (!(iso->state_flags & kStateFlagIsBroadcast)) {
       log::assert_that(iso->state_flags & kStateFlagIsConnected, "CIS not established");
     }
+
+    iso->state_flags |= kStateFlagSettingDataPath;
 
     btsnd_hcic_setup_iso_data_path(
             conn_handle, path_params.data_path_dir, path_params.data_path_id,
@@ -432,8 +437,9 @@ struct iso_impl {
   void remove_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir) {
     iso_base* iso = GetIsoIfKnown(iso_handle);
     log::assert_that(iso != nullptr, "No such iso connection: 0x{:x}", iso_handle);
-    log::assert_that((iso->state_flags & kStateFlagHasDataPathSet) == kStateFlagHasDataPathSet,
-                     "Data path not set");
+    log::assert_that(
+            (iso->state_flags & (kStateFlagHasDataPathSet | kStateFlagSettingDataPath)) != 0,
+            "Data path not set");
 
     btsnd_hcic_remove_iso_data_path(
             iso_handle, data_path_dir,

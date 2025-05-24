@@ -111,7 +111,7 @@ public class PanService extends ProfileService {
 
     @VisibleForTesting
     PanService(AdapterService adapterService, PanNativeInterface nativeInterface, Looper looper) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.PAN, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(nativeInterface, () -> new PanNativeInterface(this));
@@ -354,8 +354,7 @@ public class PanService extends ProfileService {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(
-                device, BluetoothProfile.PAN, connectionPolicy)) {
+        if (!mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -377,7 +376,7 @@ public class PanService extends ProfileService {
      * @return connection policy of the device
      */
     public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.PAN);
+        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     public List<BluetoothDevice> getConnectedDevices() {

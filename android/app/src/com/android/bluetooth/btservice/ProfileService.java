@@ -17,6 +17,7 @@
 package com.android.bluetooth.btservice;
 
 import android.annotation.SuppressLint;
+import android.bluetooth.BluetoothProfile;
 import android.content.ComponentName;
 import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
@@ -32,11 +33,11 @@ public abstract class ProfileService extends ContextWrapper {
         void cleanup();
     }
 
+    protected final int mProfileId;
     protected final AdapterService mAdapterService;
     private final IProfileServiceBinder mBinder;
     private final String mName;
     private boolean mAvailable = false;
-    private volatile boolean mTestModeEnabled = false;
 
     public String getName() {
         return getClass().getSimpleName();
@@ -50,10 +51,6 @@ public abstract class ProfileService extends ContextWrapper {
         mAvailable = available;
     }
 
-    protected boolean isTestModeEnabled() {
-        return mTestModeEnabled;
-    }
-
     /**
      * Called in ProfileService constructor to init binder interface for this profile service.
      *
@@ -64,19 +61,18 @@ public abstract class ProfileService extends ContextWrapper {
     /** Called when this object is no longer needed and is being discarded. */
     public abstract void cleanup();
 
-    /**
-     * @param testModeEnabled if the profile should enter or exit a testing mode
-     */
-    protected void setTestModeEnabled(boolean testModeEnabled) {
-        mTestModeEnabled = testModeEnabled;
-    }
-
-    protected ProfileService(AdapterService adapterService) {
+    protected ProfileService(int id, AdapterService adapterService) {
         super(adapterService);
+        mProfileId = id;
         mAdapterService = adapterService;
         mName = getName();
         Log.d(mName, "Service created");
         mBinder = initBinder();
+    }
+
+    /** The id of this Profile. see {@link BluetoothProfile} */
+    public final int getProfileId() {
+        return mProfileId;
     }
 
     /** return the binder of the profile */

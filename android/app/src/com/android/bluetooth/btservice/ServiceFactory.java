@@ -24,7 +24,6 @@ import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
-import com.android.bluetooth.hid.HidDeviceService;
 import com.android.bluetooth.hid.HidHostService;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.mcp.McpService;
@@ -48,10 +47,6 @@ public class ServiceFactory {
 
     public HidHostService getHidHostService() {
         return HidHostService.getHidHostService();
-    }
-
-    public HidDeviceService getHidDeviceService() {
-        return HidDeviceService.getHidDeviceService();
     }
 
     public PanService getPanService() {

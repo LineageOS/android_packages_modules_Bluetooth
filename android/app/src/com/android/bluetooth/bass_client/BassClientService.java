@@ -478,7 +478,7 @@ public class BassClientService extends ProfileService {
     }
 
     public BassClientService(AdapterService adapterService) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mAdapter = obtainSystemService(BluetoothManager.class).getAdapter();
         mPeriodicAdvertisingManager = mAdapter.getPeriodicAdvertisingManager();
@@ -1818,8 +1818,7 @@ public class BassClientService extends ProfileService {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         boolean setSuccessfully =
-                mDatabaseManager.setProfileConnectionPolicy(
-                        device, BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, connectionPolicy);
+                mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
         if (setSuccessfully && connectionPolicy == CONNECTION_POLICY_ALLOWED) {
             connect(device);
         } else if (setSuccessfully && connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
@@ -1839,8 +1838,7 @@ public class BassClientService extends ProfileService {
      * @return connection policy of the device
      */
     public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(
-                device, BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT);
+        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     /**
@@ -3856,14 +3854,16 @@ public class BassClientService extends ProfileService {
                             sm.getAllSources().stream()
                                     .filter(e -> e.getBroadcastId() == metadata.getBroadcastId())
                                     .findAny();
-                    if (receiver.isPresent()
-                            && !getAllSources(sink).stream()
-                                    .anyMatch(
-                                            rs ->
-                                                    (rs.getBroadcastId()
-                                                            == receiver.get().getBroadcastId()))) {
+                    if (receiver.isPresent()) {
                         Log.d(TAG, "handleBassStateReady: restore the source for device, " + sink);
-                        addSource(sink, metadata, /* isGroupOp */ false);
+                        mPausedBroadcastSinks.add(sink);
+                        logPausedBroadcastsAndSinks();
+                        // Not call resume if paused by host or monitored as it will be called later
+                        if (!isSuspendedByHostPauseReason(metadata.getBroadcastId())
+                                && !isBigMonitoringPauseReason(metadata.getBroadcastId())
+                                && !isOorMonitoringPauseReason(metadata.getBroadcastId())) {
+                            resumeReceiversSourceSynchronization();
+                        }
                         return;
                     }
                 }

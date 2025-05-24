@@ -25,6 +25,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHearingAid;
@@ -89,7 +90,7 @@ public class HearingAidService extends ProfileService {
     private long mActiveDeviceHiSyncId = BluetoothHearingAid.HI_SYNC_ID_INVALID;
 
     public HearingAidService(AdapterService adapterService) {
-        this(adapterService, null, HearingAidNativeInterface.getInstance(adapterService));
+        this(adapterService, null, null);
     }
 
     @VisibleForTesting
@@ -97,7 +98,7 @@ public class HearingAidService extends ProfileService {
             AdapterService adapterService,
             Looper looper,
             HearingAidNativeInterface nativeInterface) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.HEARING_AID, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
@@ -109,7 +110,10 @@ public class HearingAidService extends ProfileService {
             mStateMachinesThread = null;
             mStateMachinesLooper = looper;
         }
-        mNativeInterface = requireNonNull(nativeInterface);
+        mNativeInterface =
+                requireNonNullElseGet(
+                        nativeInterface,
+                        () -> new HearingAidNativeInterface(mAdapterService, this));
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
 
         setHearingAidService(this);
@@ -432,8 +436,7 @@ public class HearingAidService extends ProfileService {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(
-                device, BluetoothProfile.HEARING_AID, connectionPolicy)) {
+        if (!mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -455,7 +458,7 @@ public class HearingAidService extends ProfileService {
      * @return connection policy of the device
      */
     public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.HEARING_AID);
+        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     void setVolume(int volume) {

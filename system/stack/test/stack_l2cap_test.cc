@@ -232,7 +232,6 @@ TEST_F(StackL2capTest, l2cap_result_code_text) {
                          "tL2CAP_CONN::L2CAP_CONN_CLIENT_SECURITY_CLEARANCE_FAILED(0xf002)"),
           std::make_pair(tL2CAP_CONN::L2CAP_CONN_NO_LINK,
                          "tL2CAP_CONN::L2CAP_CONN_NO_LINK(0xf003)"),
-          std::make_pair(tL2CAP_CONN::L2CAP_CONN_CANCEL, "tL2CAP_CONN::L2CAP_CONN_CANCEL(0xf004)"),
           std::make_pair(tL2CAP_CONN::L2CAP_CONN_INSUFFICIENT_AUTHENTICATION,
                          "tL2CAP_CONN::L2CAP_CONN_INSUFFICIENT_AUTHENTICATION(0xff05)"),
           std::make_pair(tL2CAP_CONN::L2CAP_CONN_INSUFFICIENT_AUTHORIZATION,

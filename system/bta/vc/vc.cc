@@ -253,7 +253,8 @@ public:
     }
   }
 
-  void ClearDeviceInformationAndStartSearch(VolumeControlDevice* device) {
+  void ClearDeviceInformationAndStartSearch(VolumeControlDevice* device,
+                                            bool search_request = true) {
     if (!device) {
       bluetooth::log::error("Device is null");
       return;
@@ -277,7 +278,9 @@ public:
     }
 
     device->ResetHandles();
-    BTA_GATTC_ServiceSearchRequest(device->connection_id, kVolumeControlUuid);
+    if (search_request) {
+      BTA_GATTC_ServiceSearchRequest(device->connection_id, kVolumeControlUuid);
+    }
   }
 
   void OnServiceChangeEvent(const RawAddress& address) {
@@ -287,7 +290,7 @@ public:
       return;
     }
 
-    ClearDeviceInformationAndStartSearch(device);
+    ClearDeviceInformationAndStartSearch(device, false /* search_request */);
   }
 
   void OnMtuChanged(tCONN_ID conn_id, uint16_t mtu) {

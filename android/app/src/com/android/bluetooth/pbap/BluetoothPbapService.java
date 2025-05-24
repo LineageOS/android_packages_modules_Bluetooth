@@ -178,7 +178,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
 
     @VisibleForTesting
     BluetoothPbapService(AdapterService adapterService, NotificationManager notificationManager) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.PBAP, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNotificationManager =
                 requireNonNullElseGet(
@@ -672,8 +672,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(
-                device, BluetoothProfile.PBAP, connectionPolicy)) {
+        if (!mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
@@ -696,7 +695,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
         if (device == null) {
             throw new IllegalArgumentException("Null device");
         }
-        return mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.PBAP);
+        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     /**

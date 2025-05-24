@@ -69,7 +69,7 @@ public class BatteryService extends ProfileService {
 
     @VisibleForTesting
     BatteryService(AdapterService adapterService, Looper looper) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.BATTERY, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new Handler(requireNonNull(looper));
 
@@ -331,8 +331,7 @@ public class BatteryService extends ProfileService {
      */
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
-        mDatabaseManager.setProfileConnectionPolicy(
-                device, BluetoothProfile.BATTERY, connectionPolicy);
+        mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
             connect(device);
         } else if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
@@ -343,7 +342,7 @@ public class BatteryService extends ProfileService {
 
     /** Gets the connection policy for the battery service of the given device. */
     public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.BATTERY);
+        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     /** Called when the battery level of the device is notified. */

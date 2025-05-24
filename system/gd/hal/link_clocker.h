@@ -17,7 +17,6 @@
 #pragma once
 
 #include "hci_hal.h"
-#include "module.h"
 
 namespace bluetooth::hal {
 

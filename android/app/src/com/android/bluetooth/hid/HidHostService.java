@@ -25,6 +25,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHidHost;
@@ -124,10 +125,16 @@ public class HidHostService extends ProfileService {
     public static final int STATE_ACCEPTING = STATE_DISCONNECTING + 1;
 
     public HidHostService(AdapterService adapterService) {
-        super(requireNonNull(adapterService));
+        this(adapterService, null);
+    }
+
+    @VisibleForTesting
+    HidHostService(AdapterService adapterService, HidHostNativeInterface nativeInterface) {
+        super(BluetoothProfile.HID_HOST, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
-        mNativeInterface = requireNonNull(HidHostNativeInterface.getInstance());
-        mNativeInterface.init(this);
+        mNativeInterface =
+                requireNonNullElseGet(nativeInterface, () -> new HidHostNativeInterface(this));
+        mNativeInterface.init();
         setHidHostService(this);
     }
 
@@ -758,8 +765,7 @@ public class HidHostService extends ProfileService {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "setConnectionPolicy: device=" + device);
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(
-                device, BluetoothProfile.HID_HOST, connectionPolicy)) {
+        if (!mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
             return false;
         }
         Log.d(TAG, "Saved connectionPolicy=" + connectionPolicy + " for device=" + device);
@@ -817,7 +823,7 @@ public class HidHostService extends ProfileService {
      */
     public int getConnectionPolicy(BluetoothDevice device) {
         Log.d(TAG, "getConnectionPolicy: device=" + device);
-        return mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.HID_HOST);
+        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     /**

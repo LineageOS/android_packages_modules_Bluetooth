@@ -153,7 +153,7 @@ public class BluetoothMapService extends ProfileService {
     }
 
     public BluetoothMapService(AdapterService adapterService) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.MAP, requireNonNull(adapterService));
         BluetoothMap.invalidateBluetoothGetConnectionStateCache();
 
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
@@ -669,8 +669,7 @@ public class BluetoothMapService extends ProfileService {
                 BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
         Log.v(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(
-                device, BluetoothProfile.MAP, connectionPolicy)) {
+        if (!mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
@@ -693,7 +692,7 @@ public class BluetoothMapService extends ProfileService {
     int getConnectionPolicy(BluetoothDevice device) {
         enforceCallingOrSelfPermission(
                 BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
-        return mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.MAP);
+        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     @Override

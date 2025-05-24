@@ -217,7 +217,7 @@ private fun airplaneModeValueOverride(
     // … Else, staying ON only depend on a media profile or a watch being connected or not
     //
     // Note: Once the "Airplane Enhancement Mode" has been used, media override no longer apply
-    //       This has been done on purpose to avoid complexe scenario like:
+    //       This has been done on purpose to avoid complex scenario like:
     //           1. User wants Bluetooth OFF according to "Airplane Enhancement Mode"
     //           2. User switches airplane while there is media => so Bluetooth stays ON
     //           3. User turns airplane OFF, stops media and toggles airplane back ON
@@ -362,7 +362,7 @@ internal const val APM_BT_NOTIFICATION = "apm_bt_notification"
 // Notification Id for when the airplane mode is turn on but Bluetooth and Wifi stay on
 internal const val APM_WIFI_BT_NOTIFICATION = "apm_wifi_bt_notification"
 
-// Notification Id for when the Bluetooth is turned back on durin airplane mode
+// Notification Id for when the Bluetooth is turned back on during airplane mode
 internal const val APM_BT_ENABLED_NOTIFICATION = "apm_bt_enabled_notification"
 
 // Whether the "Airplane Enhancement Mode" is enabled

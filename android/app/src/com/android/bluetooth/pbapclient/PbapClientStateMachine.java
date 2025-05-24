@@ -23,6 +23,8 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
+import static java.util.Objects.requireNonNullElseGet;
+
 import android.accounts.Account;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothPbapClient;
@@ -252,27 +254,6 @@ class PbapClientStateMachine extends StateMachine {
             BluetoothDevice device,
             PbapClientContactsStorage storage,
             Context context,
-            Callback callback) {
-        super(TAG);
-        mAdapterService = adapterService;
-        mDevice = device;
-        mContext = context;
-        mContactsStorage = storage;
-        mCallback = callback;
-        mAccount = mContactsStorage.getStorageAccountForDevice(mDevice);
-        mObexClient =
-                new PbapClientObexClient(
-                        device, LOCAL_SUPPORTED_FEATURES, new PbapClientObexClientCallback());
-
-        initializeStates();
-    }
-
-    @VisibleForTesting
-    PbapClientStateMachine(
-            AdapterService adapterService,
-            BluetoothDevice device,
-            PbapClientContactsStorage storage,
-            Context context,
             Looper looper,
             Callback callback,
             PbapClientObexClient obexClient) {
@@ -283,7 +264,14 @@ class PbapClientStateMachine extends StateMachine {
         mContactsStorage = storage;
         mCallback = callback;
         mAccount = mContactsStorage.getStorageAccountForDevice(mDevice);
-        mObexClient = obexClient;
+        mObexClient =
+                requireNonNullElseGet(
+                        obexClient,
+                        () ->
+                                new PbapClientObexClient(
+                                        device,
+                                        LOCAL_SUPPORTED_FEATURES,
+                                        new PbapClientObexClientCallback()));
 
         initializeStates();
     }

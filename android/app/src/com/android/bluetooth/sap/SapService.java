@@ -120,7 +120,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
     };
 
     public SapService(AdapterService adapterService) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.SAP, requireNonNull(adapterService));
         mAdapter = obtainSystemService(BluetoothManager.class).getAdapter();
         BluetoothSap.invalidateBluetoothGetConnectionStateCache();
 

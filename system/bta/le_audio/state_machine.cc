@@ -1628,80 +1628,79 @@ private:
 
   void ApplyDsaParams(LeAudioDeviceGroup* group,
                       bluetooth::hci::iso_manager::cig_create_params& param) {
-    log::info("DSA mode selected: {}", (int)group->dsa_.mode);
+    /* Ignore bidirectional streaming */
+    if (param.sdu_itv_stom != 0) {
+      log::debug("Bidirection streaming, ignore DSA mode {}", group->dsa_.mode);
+      return;
+    }
+    log::info("DSA mode selected: {}", group->dsa_.mode);
     group->dsa_.active = false;
 
-    /* Unidirectional streaming */
-    if (param.sdu_itv_stom == 0) {
-      log::info("Media streaming, apply DSA parameters");
+    switch (group->dsa_.mode) {
+      case DsaMode::ISO_HW:
+      case DsaMode::ISO_SW: {
+        auto& cis_cfgs = param.cis_cfgs;
+        auto it = cis_cfgs.begin();
 
-      switch (group->dsa_.mode) {
-        case DsaMode::ISO_HW:
-        case DsaMode::ISO_SW: {
-          auto& cis_cfgs = param.cis_cfgs;
-          auto it = cis_cfgs.begin();
-
-          for (auto dsa_modes : group->GetAllowedDsaModesList()) {
-            if (!dsa_modes.empty() && it != cis_cfgs.end()) {
-              if (std::find(dsa_modes.begin(), dsa_modes.end(), group->dsa_.mode) !=
-                  dsa_modes.end()) {
-                log::info("Device found with support for selected DsaMode");
-
-                group->dsa_.active = true;
-
-                auto config = group->GetActiveConfiguration();
-                log::assert_that(config.get() != nullptr, "No valid active group configuration!");
-
-                if (config->hasDsaBackChannel()) {
-                  auto const& cfg = config->confs.source.at(0);
-
-                  param.sdu_itv_stom = cfg.qos.sduIntervalUs;
-                  param.max_trans_lat_stom = cfg.qos.max_transport_latency;
-                  it->max_sdu_size_stom = cfg.qos.maxSdu;
-                  it->rtn_stom = cfg.qos.retransmission_number;
-
-                  log::debug(
-                          "Applying DSA Cig parameters: sdu_itv_stom:{}, max_trans_lat_stom: {}, "
-                          "max_sdu_size_stom: {}, rtn_stom: {}",
-                          param.sdu_itv_stom, param.max_trans_lat_stom, it->max_sdu_size_stom,
-                          it->rtn_stom);
-
-                } else {
-                  if (com::android::bluetooth::flags::dsa_use_codec_extensibility()) {
-                    log::warn("Fallback to static DSA configuration for group: {}",
-                              group->group_id_);
-                  }
-                  param.sdu_itv_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerSduItv;
-                  param.max_trans_lat_stom =
-                          bluetooth::le_audio::types::kLeAudioHeadtrackerMaxTransLat;
-                  it->max_sdu_size_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerMaxSduSize;
-
-                  // Early draft of DSA 2.0 spec mentioned allocating 15 bytes for headtracker data
-                  if (!group->DsaReducedSduSizeSupported()) {
-                    log::verbose("Device does not support reduced headtracker SDU");
-                    it->max_sdu_size_stom = 15;
-                  }
-
-                  it->rtn_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerRtn;
-                }
-
-                it++;
-              }
-            }
+        for (auto dsa_modes : group->GetAllowedDsaModesList()) {
+          if (it == cis_cfgs.end()) {
+            log::error("DSA mode {} selected but no CIS configuration found", group->dsa_.mode);
+            return;
           }
-        } break;
 
-        case DsaMode::ACL:
-          /* Todo: Prioritize the ACL */
-          break;
+          // Skip if the device does not support the selected DSA mode
+          if (dsa_modes.empty() ||
+              std::find(dsa_modes.begin(), dsa_modes.end(), group->dsa_.mode) == dsa_modes.end()) {
+            it++;
+            continue;
+          }
 
-        case DsaMode::DISABLED:
-        default:
-          /* No need to change ISO parameters */
-          break;
-      }
-    } else {
-      log::debug("Bidirection streaming, ignore DSA mode");
+          log::info("Device found with support for selected DsaMode");
+          group->dsa_.active = true;
+          auto config = group->GetActiveConfiguration();
+          log::assert_that(config.get() != nullptr, "No valid active group configuration!");
+
+          if (config->hasDsaBackChannel()) {
+            auto const& cfg = config->confs.source.at(0);
+
+            param.sdu_itv_stom = cfg.qos.sduIntervalUs;
+            param.max_trans_lat_stom = cfg.qos.max_transport_latency;
+            it->max_sdu_size_stom = cfg.qos.maxSdu;
+            it->rtn_stom = cfg.qos.retransmission_number;
+
+            log::debug(
+                    "Applying DSA Cig parameters: sdu_itv_stom:{}, max_trans_lat_stom: {}, "
+                    "max_sdu_size_stom: {}, rtn_stom: {}",
+                    param.sdu_itv_stom, param.max_trans_lat_stom, it->max_sdu_size_stom,
+                    it->rtn_stom);
+          } else {
+            if (com::android::bluetooth::flags::dsa_use_codec_extensibility()) {
+              log::warn("Fallback to static DSA configuration for group: {}", group->group_id_);
+            }
+            param.sdu_itv_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerSduItv;
+            param.max_trans_lat_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerMaxTransLat;
+            it->max_sdu_size_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerMaxSduSize;
+
+            // Early draft of DSA 2.0 spec mentioned allocating 15 bytes for headtracker data
+            if (!group->DsaReducedSduSizeSupported()) {
+              log::verbose("Device does not support reduced headtracker SDU");
+              it->max_sdu_size_stom = 15;
+            }
+
+            it->rtn_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerRtn;
+          }
+          it++;
+        }
+      } break;
+
+      case DsaMode::ACL:
+        /* Todo: Prioritize the ACL */
+        break;
+
+      case DsaMode::DISABLED:
+      default:
+        /* No need to change ISO parameters */
+        break;
     }
   }
 
@@ -3427,6 +3426,7 @@ private:
         if (group->HaveAllActiveDevicesAsesTheSameState(
                     AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING)) {
           group->SetState(AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING);
+          group->ClearStreamingMetadataContexts();
         }
 
         bool remove_cig = (DisconnectCisIfNeeded(group, leAudioDevice, ase) == CIS_DISCONNECTED);
@@ -3449,6 +3449,7 @@ private:
           return;
         }
         group->SetState(AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING);
+        group->ClearStreamingMetadataContexts();
 
         if (remove_cig) {
           /* In the ENABLING state most probably there was no CISes created.

@@ -1853,6 +1853,45 @@ TEST_F(IsoManagerTest, SetupIsoDataPathLateArrivingCallback) {
   std::move(iso_cb).Run(buf.data(), buf.size());
 }
 
+TEST_F(IsoManagerTest, DisconnectCisWhileSettingDataPath) {
+  IsoManager::GetInstance()->CreateCig(volatile_test_cig_create_cmpl_evt_.cig_id,
+                                       kDefaultCigParams);
+  // Establish all CISes before setting up their data paths
+  bluetooth::hci::iso_manager::cis_establish_params params;
+  for (auto& handle : volatile_test_cig_create_cmpl_evt_.conn_handles) {
+    params.conn_pairs.push_back({handle, 1});
+  }
+  IsoManager::GetInstance()->EstablishCis(params);
+
+  bluetooth::hci::iso_manager::iso_data_path_params path_params = kDefaultIsoDataPathParams;
+
+  ON_CALL(hcic_interface_, SetupIsoDataPath)
+          .WillByDefault([](uint16_t /*iso_handle*/, uint8_t /* data_path_dir */,
+                            uint8_t /* data_path_id */, uint8_t /* codec_id_format */,
+                            uint16_t /* codec_id_company */, uint16_t /* codec_id_vendor */,
+                            uint32_t /* controller_delay */, std::vector<uint8_t> /* codec_conf */,
+                            base::OnceCallback<void(uint8_t*, uint16_t)> /*cb*/) {});
+
+  // Send Setup data paths but wait with response.
+  path_params.data_path_dir = bluetooth::hci::iso_manager::kRemoveIsoDataPathDirectionInput;
+  for (auto& handle : volatile_test_cig_create_cmpl_evt_.conn_handles) {
+    IsoManager::GetInstance()->SetupIsoDataPath(handle, path_params);
+  }
+
+  /* Inject Disconnect Complete. This is not very relevat but to keep error flow lets do this
+   * followed by HCI Disconnection Complete event */
+  for (auto& handle : volatile_test_cig_create_cmpl_evt_.conn_handles) {
+    IsoManager::GetInstance()->HandleDisconnect(handle, HCI_ERR_REMOTE_LOW_RESOURCE);
+  }
+
+  // Now simulate what host is doing base on this which is Remove data path. Expect no crash
+
+  for (auto& handle : volatile_test_cig_create_cmpl_evt_.conn_handles) {
+    EXPECT_CALL(hcic_interface_, RemoveIsoDataPath(handle, _, _)).Times(1);
+    IsoManager::GetInstance()->RemoveIsoDataPath(handle, path_params.data_path_dir);
+  }
+}
+
 TEST_F(IsoManagerTest, RemoveIsoDataPathValid) {
   IsoManager::GetInstance()->CreateCig(volatile_test_cig_create_cmpl_evt_.cig_id,
                                        kDefaultCigParams);

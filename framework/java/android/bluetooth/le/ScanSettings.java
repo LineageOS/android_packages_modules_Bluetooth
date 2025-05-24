@@ -23,6 +23,7 @@ import android.app.compat.CompatChanges;
 import android.bluetooth.BluetoothDevice;
 import android.compat.annotation.ChangeId;
 import android.compat.annotation.EnabledSince;
+import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -173,11 +174,10 @@ public final class ScanSettings implements Parcelable {
 
     /**
      * Starting with Android B (Baklava), the default number of trackable advertisements for onFound
-     * /onLost scanning is 2 instead of (max hardware allows / 2). TODO: b/391981111 - Change 36 to
-     * VERSION_CODES.BAKLAVA when available.
+     * /onLost scanning is 2 instead of (max hardware allows / 2).
      */
     @ChangeId
-    @EnabledSince(targetSdkVersion = 36)
+    @EnabledSince(targetSdkVersion = Build.VERSION_CODES.BAKLAVA)
     static final long CHANGE_DEFAULT_TRACKABLE_ADV_NUMBER = 386727721L;
 
     // Bluetooth LE scan mode.

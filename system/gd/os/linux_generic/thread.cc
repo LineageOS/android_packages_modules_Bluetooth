@@ -18,6 +18,7 @@
 
 #include <bluetooth/log.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 
@@ -35,6 +36,7 @@ Thread::Thread(const std::string& name, const Priority priority)
     : name_(name), reactor_(), running_thread_(&Thread::run, this, priority) {}
 
 void Thread::run(Priority priority) {
+  pthread_setname_np(pthread_self(), name_.c_str());
   if (priority == Priority::REAL_TIME) {
     struct sched_param rt_params = {.sched_priority = kRealTimeFifoSchedulingPriority};
     auto linux_tid = static_cast<pid_t>(syscall(SYS_gettid));
@@ -60,6 +62,11 @@ bool Thread::Stop() {
   reactor_.Stop();
   running_thread_.join();
   return true;
+}
+
+void Thread::Abort() {
+  /* Send SIGABRT, this will cause thread to print it's stacktrace in logcat and crash */
+  pthread_kill(running_thread_.native_handle(), SIGABRT);
 }
 
 bool Thread::IsSameThread() const { return std::this_thread::get_id() == running_thread_.get_id(); }

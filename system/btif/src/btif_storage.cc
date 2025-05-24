@@ -175,7 +175,10 @@ static bool prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
       std::string val;
       size_t cnt = (prop->len) / sizeof(Uuid);
       for (size_t i = 0; i < cnt; i++) {
-        val += (reinterpret_cast<Uuid*>(prop->val) + i)->ToString() + " ";
+        val += (reinterpret_cast<Uuid*>(prop->val) + i)->ToString();
+        if ((i + 1) < cnt) {
+          val += " ";
+        }
       }
       std::string key = (prop->type == BT_PROPERTY_UUIDS_LE) ? BTIF_STORAGE_KEY_REMOTE_SERVICE_LE
                                                              : BTIF_STORAGE_KEY_REMOTE_SERVICE;

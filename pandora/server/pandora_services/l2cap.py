@@ -73,7 +73,7 @@ class L2CAPService(L2CAPServicer):
             close_future.set_result(None)
 
         l2cap_channel.sink = on_channel_sdu
-        l2cap_channel.on('close', on_close)
+        l2cap_channel.on(l2cap_channel.EVENT_CLOSE, on_close)
 
         return ChannelContext(close_future, sdu_queue)
 
@@ -129,7 +129,7 @@ class L2CAPService(L2CAPServicer):
         if l2cap_server is None:
             l2cap_server = self.device.create_l2cap_server(spec=spec, handler=on_l2cap_channel)
         else:
-            l2cap_server.on('connection', on_l2cap_channel)
+            l2cap_server.on(l2cap_server.EVENT_CONNECTION, on_l2cap_channel)
 
         try:
             self.log.debug('Waiting for a channel connection.')

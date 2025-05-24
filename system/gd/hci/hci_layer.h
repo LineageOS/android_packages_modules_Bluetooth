@@ -38,6 +38,7 @@
 #include "hci/le_security_interface.h"
 #include "hci/security_interface.h"
 #include "os/handler.h"
+#include "storage/storage_module.h"
 
 namespace bluetooth {
 namespace hci {
@@ -45,7 +46,7 @@ namespace hci {
 class HciLayer : public HciInterface {
   // LINT.IfChange
 public:
-  HciLayer(os::Handler* handler, hal::HciHal* hci_hal);
+  HciLayer(os::Handler* handler, hal::HciHal* hci_hal, storage::StorageModule* storage);
   /* For tests, starts HciLayer with no dependencies */
   HciLayer(os::Handler* handler);
   HciLayer(const HciLayer&) = delete;

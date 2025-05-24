@@ -23,6 +23,7 @@ import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.NonNull;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUtils;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -64,16 +65,6 @@ public class AvrcpTargetService extends ProfileService {
     private final BluetoothEventLogger mMediaKeyEventLogger =
             new BluetoothEventLogger(MEDIA_KEY_EVENT_LOGGER_SIZE, MEDIA_KEY_EVENT_LOGGER_TITLE);
 
-    // Cover Art Service (Storage + BIP Server)
-    private final AvrcpCoverArtService mAvrcpCoverArtService;
-    private final AvrcpVersion mAvrcpVersion;
-    private final MediaPlayerList mMediaPlayerList;
-    private final PlayerSettingsManager mPlayerSettingsManager;
-    private final AudioManager mAudioManager;
-    private final AvrcpBroadcastReceiver mReceiver;
-    private final AvrcpNativeInterface mNativeInterface;
-    private final AvrcpVolumeManager mVolumeManager;
-
     private final ServiceFactory mFactory = new ServiceFactory();
     private final BroadcastReceiver mUserUnlockedReceiver =
             new BroadcastReceiver() {
@@ -93,22 +84,24 @@ public class AvrcpTargetService extends ProfileService {
                 }
             };
 
+    // Cover Art Service (Storage + BIP Server)
+    private final AvrcpCoverArtService mAvrcpCoverArtService;
+    private final AvrcpVersion mAvrcpVersion;
+    private final MediaPlayerList mMediaPlayerList;
+    private final PlayerSettingsManager mPlayerSettingsManager;
+    private final AudioManager mAudioManager;
+    private final AvrcpBroadcastReceiver mReceiver;
+    private final AvrcpNativeInterface mNativeInterface;
+    private final AvrcpVolumeManager mVolumeManager;
+    private final boolean mIsVfsCoverArtEnabled;
+
     // Only used to see if the metadata has changed from its previous value
     private MediaData mCurrentData;
 
     private static AvrcpTargetService sInstance = null;
 
-    private final boolean mIsVfsCoverArtEnabled;
-
     public AvrcpTargetService(AdapterService adapterService) {
-        this(
-                requireNonNull(adapterService),
-                null,
-                AvrcpNativeInterface.getInstance(adapterService),
-                new AvrcpVolumeManager(
-                        requireNonNull(adapterService),
-                        AvrcpNativeInterface.getInstance(adapterService)),
-                Looper.myLooper());
+        this(requireNonNull(adapterService), null, null, null, Looper.myLooper());
     }
 
     @VisibleForTesting
@@ -118,10 +111,12 @@ public class AvrcpTargetService extends ProfileService {
             AvrcpNativeInterface nativeInterface,
             AvrcpVolumeManager volumeManager,
             Looper looper) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.AVRCP, requireNonNull(adapterService));
         mAudioManager =
                 requireNonNullElseGet(audioManager, () -> obtainSystemService(AudioManager.class));
-        mNativeInterface = requireNonNull(nativeInterface);
+        mNativeInterface =
+                requireNonNullElseGet(
+                        nativeInterface, () -> new AvrcpNativeInterface(adapterService, this));
 
         mMediaPlayerList = new MediaPlayerList(adapterService, looper);
 
@@ -134,10 +129,15 @@ public class AvrcpTargetService extends ProfileService {
         mCurrentData = new MediaData(null, null, null);
 
         mPlayerSettingsManager = new PlayerSettingsManager(mMediaPlayerList, this);
-        mNativeInterface.init(this);
+        mNativeInterface.init();
 
         mAvrcpVersion = AvrcpVersion.getCurrentSystemPropertiesValue();
-        mVolumeManager = requireNonNull(volumeManager);
+        mVolumeManager =
+                requireNonNullElseGet(
+                        volumeManager,
+                        () ->
+                                new AvrcpVolumeManager(
+                                        requireNonNull(adapterService), mNativeInterface));
 
         UserManager userManager = obtainSystemService(UserManager.class);
         if (userManager.isUserUnlocked()) {

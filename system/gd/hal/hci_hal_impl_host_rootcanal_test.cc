@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include "hal/hci_hal_impl_host.h"
-
 #include <bluetooth/log.h>
 #include <fcntl.h>
 #include <gtest/gtest.h>
@@ -34,8 +32,8 @@
 
 #include "com_android_bluetooth_flags.h"
 #include "hal/hci_hal_host_rootcanal_config.h"
+#include "hal/hci_hal_impl_host.h"
 #include "hal/serialize_packet.h"
-#include "module.h"  // ModuleRegistry
 #include "os/thread.h"
 #include "os/utils.h"
 #include "packet/raw_builder.h"
@@ -147,8 +145,8 @@ protected:
 
     HciHalHostRootcanalConfig::Get()->SetPort(kTestPort);
     fake_server_ = new FakeRootcanalDesktopHciServer;
-
-    hal_ = std::make_unique<HciHalImpl>();
+    link_clocker_ = std::make_unique<LinkClocker>();
+    hal_ = std::make_unique<HciHalImpl>(nullptr, *link_clocker_, nullptr);
     hal_->registerIncomingPacketCallback(&callbacks_);
     fake_server_socket_ =
             fake_server_->Accept();  // accept() after client is connected to avoid blocking
@@ -163,7 +161,7 @@ protected:
       handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
     }
     hal_.reset();
-    fake_registry_.StopAll();
+    link_clocker_.reset();
     delete handler_;
     close(fake_server_socket_);
     delete fake_server_;
@@ -177,8 +175,8 @@ protected:
   }
 
   FakeRootcanalDesktopHciServer* fake_server_ = nullptr;
+  std::unique_ptr<LinkClocker> link_clocker_;
   std::unique_ptr<HciHal> hal_ = nullptr;
-  ModuleRegistry fake_registry_;
   TestHciHalCallbacks callbacks_;
   int fake_server_socket_ = -1;
   Thread* thread_;

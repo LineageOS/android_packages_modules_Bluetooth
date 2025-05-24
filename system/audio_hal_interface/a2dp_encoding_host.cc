@@ -116,30 +116,34 @@ namespace audio {
 namespace a2dp {
 
 std::string ahal_codec_configuration::ToString() const {
-  std::string codec_specific_elements_str;
+  std::string result_string;
+  auto out = std::back_inserter(result_string);
+
+  std::format_to(out,
+                 "ahal_codec_configuration: {{\n"
+                 "  codec_config: {{ {} }}\n"
+                 "  peer_mtu: {}\n"
+                 "  preferred_encoding_interval_us: {}\n"
+                 "  codec_bitrate: {}\n",
+                 codec_config.ToString(), peer_mtu, preferred_encoding_interval_us, codec_bitrate);
+
+  std::format_to(out, "  codec_specific_information_elements: [\n    ");
+
   for (size_t i = 0; i < AVDT_CODEC_SIZE; ++i) {
-    codec_specific_elements_str +=
-            std::format("0x{:02x}", static_cast<int>(codec_specific_information_elements[i]));
+    std::format_to(out, "0x{:02x}",
+                   static_cast<unsigned int>(codec_specific_information_elements[i]));
     if (i < AVDT_CODEC_SIZE - 1) {
-      codec_specific_elements_str += ", ";
+      std::format_to(out, ", ");
       if ((i + 1) % 8 == 0) {
-        codec_specific_elements_str += "\n    ";
+        std::format_to(out, "\n    ");
       }
     }
   }
 
-  return std::format(
-          "ahal_codec_configuration: {{\n"
-          "  codec_config: {{ {} }}\n"
-          "  peer_mtu: {}\n"
-          "  preferred_encoding_interval_us: {}\n"
-          "  codec_bitrate: {}\n"
-          "  codec_specific_information_elements: [\n"
-          "    {}\n"
-          "  ]\n"
-          "}}",
-          codec_config.ToString(), peer_mtu, preferred_encoding_interval_us, codec_bitrate,
-          codec_specific_elements_str);
+  std::format_to(out, "\n  ]");
+  std::format_to(out, "\n}}");
+
+  return result_string;
 }
 
 // Invoked by audio server to set audio config (PCM for now)

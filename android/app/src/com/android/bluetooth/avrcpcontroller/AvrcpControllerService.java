@@ -21,9 +21,11 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothProfile;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
@@ -133,15 +135,18 @@ public class AvrcpControllerService extends ProfileService {
     }
 
     public AvrcpControllerService(AdapterService adapterService) {
-        this(adapterService, AvrcpControllerNativeInterface.getInstance(adapterService));
+        this(adapterService, null);
     }
 
     @VisibleForTesting
     public AvrcpControllerService(
             AdapterService adapterService, AvrcpControllerNativeInterface nativeInterface) {
-        super(requireNonNull(adapterService));
-        mNativeInterface = requireNonNull(nativeInterface);
-        mNativeInterface.init(this);
+        super(BluetoothProfile.AVRCP_CONTROLLER, requireNonNull(adapterService));
+        mNativeInterface =
+                requireNonNullElseGet(
+                        nativeInterface,
+                        () -> new AvrcpControllerNativeInterface(adapterService, this));
+        mNativeInterface.init();
 
         setComponentAvailable(ON_ERROR_SETTINGS_ACTIVITY, true);
         mCoverArtEnabled = getResources().getBoolean(R.bool.avrcp_controller_enable_cover_art);

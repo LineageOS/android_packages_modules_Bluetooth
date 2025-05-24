@@ -40,7 +40,6 @@
 #include "hci/hci_packets.h"
 #include "hci/le_address_manager.h"
 #include "macros.h"
-#include "main/shim/entry.h"
 #include "os/alarm.h"
 #include "os/handler.h"
 #include "os/system_properties.h"
@@ -136,25 +135,24 @@ struct le_acl_connection {
 };
 
 struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
-  le_impl(HciInterface* hci_layer, Controller* controller, os::Handler* handler,
-          RoundRobinScheduler* round_robin_scheduler, bool crash_on_unknown_handle,
-          classic_impl* classic_impl)
+  le_impl(HciInterface& hci_layer, Controller& controller, os::Handler* handler,
+          RoundRobinScheduler& round_robin_scheduler, storage::StorageModule& storage_module,
+          bool crash_on_unknown_handle, classic_impl* classic_impl)
       : hci_layer_(hci_layer),
         controller_(controller),
-        round_robin_scheduler_(round_robin_scheduler) {
-    hci_layer_ = hci_layer;
-    controller_ = controller;
+        round_robin_scheduler_(round_robin_scheduler),
+        storage_module_(storage_module) {
     handler_ = handler;
     connections.crash_on_unknown_handle_ = crash_on_unknown_handle;
     classic_impl_ = classic_impl;
-    le_acl_connection_interface_ = hci_layer_->GetLeAclConnectionInterface(
+    le_acl_connection_interface_ = hci_layer_.GetLeAclConnectionInterface(
             handler_->BindOn(this, &le_impl::on_le_event),
             handler_->BindOn(this, &le_impl::on_le_disconnect),
             handler_->BindOn(this, &le_impl::on_le_read_remote_version_information));
     le_address_manager_ = new LeAddressManager(
             common::Bind(&le_impl::enqueue_command, common::Unretained(this)), handler_,
-            controller->GetMacAddress(), controller->GetLeFilterAcceptListSize(),
-            controller->GetLeResolvingListSize(), controller_);
+            controller.GetMacAddress(), controller.GetLeFilterAcceptListSize(),
+            controller.GetLeResolvingListSize(), &controller_);
   }
 
   ~le_impl() {
@@ -162,7 +160,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       le_address_manager_->UnregisterSync(this);
     }
     delete le_address_manager_;
-    hci_layer_->PutLeAclConnectionInterface();
+    hci_layer_.PutLeAclConnectionInterface();
     connections.reset();
   }
 
@@ -332,9 +330,9 @@ private:
 
 public:
   void enqueue_command(std::unique_ptr<CommandBuilder> command_packet) {
-    hci_layer_->EnqueueCommand(std::move(command_packet),
-                               handler_->BindOnce(&LeAddressManager::OnCommandComplete,
-                                                  common::Unretained(le_address_manager_)));
+    hci_layer_.EnqueueCommand(std::move(command_packet),
+                              handler_->BindOnce(&LeAddressManager::OnCommandComplete,
+                                                 common::Unretained(le_address_manager_)));
   }
 
   bool send_packet_upward(uint16_t handle,
@@ -505,7 +503,7 @@ public:
     auto role_specific_data = initialize_role_specific_data(role);
     auto queue = std::make_shared<AclConnection::Queue>(10);
     auto queue_down_end = queue->GetDownEnd();
-    round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::LE, handle, queue);
+    round_robin_scheduler_.Register(RoundRobinScheduler::ConnectionType::LE, handle, queue);
     std::unique_ptr<LeAclConnection> connection(
             new LeAclConnection(std::move(queue), le_acl_connection_interface_, handle,
                                 role_specific_data, remote_address));
@@ -550,8 +548,8 @@ public:
   RoleSpecificData initialize_role_specific_data(Role role) {
     if (role == hci::Role::CENTRAL) {
       return DataAsCentral{le_address_manager_->GetInitiatorAddress()};
-    } else if (controller_->SupportsBleExtendedAdvertising() ||
-               controller_->IsSupported(hci::OpCode::LE_MULTI_ADVT)) {
+    } else if (controller_.SupportsBleExtendedAdvertising() ||
+               controller_.IsSupported(hci::OpCode::LE_MULTI_ADVT)) {
       // when accepting connection, we must obtain the address from the advertiser.
       // When we receive "set terminated event", we associate connection handle with advertiser
       // address
@@ -574,7 +572,7 @@ public:
     connections.execute(
             handle,
             [=, this](LeConnectionManagementCallbacks* callbacks) {
-              round_robin_scheduler_->Unregister(handle);
+              round_robin_scheduler_.Unregister(handle);
               callbacks->OnDisconnection(reason);
             },
             kRemoveConnectionAfterwards);
@@ -737,6 +735,12 @@ public:
 
   void add_device_to_accept_list(AddressWithType address_with_type) {
     metrics::LogMetricLeDeviceInAcceptList(address_with_type.GetAddress(), true /* is_add */);
+
+    if (address_with_type.GetAddress().IsEmpty()) {
+      log::warn("Address is empty, return");
+      return;
+    }
+
     if (connections.alreadyConnected(address_with_type)) {
       log::info("Device already connected, return");
       return;
@@ -928,13 +932,13 @@ public:
       address_with_type = AddressWithType();
     }
 
-    if (controller_->IsRpaGenerationSupported() &&
+    if (controller_.IsRpaGenerationSupported() &&
         own_address_type != OwnAddressType::PUBLIC_DEVICE_ADDRESS) {
       log::info("Support RPA offload, set own address type RESOLVABLE_OR_RANDOM_ADDRESS");
       own_address_type = OwnAddressType::RESOLVABLE_OR_RANDOM_ADDRESS;
     }
 
-    if (controller_->IsSupported(OpCode::LE_EXTENDED_CREATE_CONNECTION)) {
+    if (controller_.IsSupported(OpCode::LE_EXTENDED_CREATE_CONNECTION)) {
       bool only_init_1m_phy =
               os::GetSystemPropertyBool(kPropertyEnableBleOnlyInit1mPhy, kEnableBleOnlyInit1mPhy);
 
@@ -951,7 +955,7 @@ public:
       scan_parameters.max_ce_length_ = 0x00;
       parameters.push_back(scan_parameters);
 
-      if (controller_->SupportsBle2mPhy() && !only_init_1m_phy) {
+      if (controller_.SupportsBle2mPhy() && !only_init_1m_phy) {
         LeCreateConnPhyScanParameters scan_parameters_2m;
         scan_parameters_2m.scan_interval_ = le_scan_interval;
         scan_parameters_2m.scan_window_ = le_scan_window_2m;
@@ -964,7 +968,7 @@ public:
         parameters.push_back(scan_parameters_2m);
         initiating_phys |= PHY_LE_2M;
       }
-      if (controller_->SupportsBleCodedPhy() && !only_init_1m_phy) {
+      if (controller_.SupportsBleCodedPhy() && !only_init_1m_phy) {
         LeCreateConnPhyScanParameters scan_parameters_coded;
         scan_parameters_coded.scan_interval_ = le_scan_interval;
         scan_parameters_coded.scan_window_ = le_scan_window_coded;
@@ -999,15 +1003,11 @@ public:
     if (accept_list.empty()) {
       return false;
     }
-    storage::StorageModule* storage_module = shim::GetStorage();
-    if (storage_module == nullptr) {
-      log::warn("storage module is null");
-      return false;
-    }
+
     // If found ASCS/BASS UUID in database cache, it is a lea device and reconnection scenario
     for (auto it = accept_list.begin(); it != accept_list.end(); ++it) {
       std::optional<std::vector<hci::Uuid>> uuids =
-              storage_module->GetDeviceByLegacyKey(it->GetAddress()).GetServiceUuidsLe();
+              storage_module_.GetDeviceByLegacyKey(it->GetAddress()).GetServiceUuidsLe();
       if (!uuids.has_value() ||
           std::find_if(uuids->begin(), uuids->end(), [](const hci::Uuid& uuid) {
             return (uuid == UUID_ASCS) || (uuid == UUID_BASS);
@@ -1198,7 +1198,7 @@ public:
                                                 std::chrono::milliseconds maximum_rotation_time) {
     le_address_manager_->SetPrivacyPolicyForInitiatorAddress(
             address_policy, fixed_address, rotation_irk,
-            controller_->SupportsBlePrivacy() &&
+            controller_.SupportsBlePrivacy() &&
                     os::GetSystemPropertyBool(kPropertyEnableBlePrivacy, kEnableBlePrivacy),
             minimum_rotation_time, maximum_rotation_time);
   }
@@ -1328,10 +1328,11 @@ public:
 
   void set_system_suspend_state(bool suspended) { system_suspend_ = suspended; }
 
-  HciInterface* hci_layer_ = nullptr;
-  Controller* controller_ = nullptr;
+  HciInterface& hci_layer_;
+  Controller& controller_;
   os::Handler* handler_ = nullptr;
-  RoundRobinScheduler* round_robin_scheduler_ = nullptr;
+  RoundRobinScheduler& round_robin_scheduler_;
+  storage::StorageModule& storage_module_;
   LeAddressManager* le_address_manager_ = nullptr;
   LeAclConnectionInterface* le_acl_connection_interface_ = nullptr;
   classic_impl* classic_impl_ = nullptr;

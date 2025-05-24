@@ -32,7 +32,6 @@
 #include "hci/distance_measurement_manager_mock.h"
 #include "hci/hci_layer_fake.h"
 #include "metrics/mock/metrics_mock.h"
-#include "module.h"
 #include "os/fake_timer/fake_timerfd.h"
 #include "packet/bit_inserter.h"
 #include "packet/packet_view.h"
@@ -180,14 +179,12 @@ struct StartMeasurementParameters {
 };
 
 struct CsModule {
-  TestModuleRegistry fake_registry_;
+  os::Thread* thread_ = nullptr;
+  os::Handler* client_handler_ = nullptr;
   std::unique_ptr<HciLayerFake> test_hci_layer_ = nullptr;
   std::unique_ptr<testing::MockController> mock_controller_ = nullptr;
   std::unique_ptr<testing::MockAclManager> mock_acl_manager_ = nullptr;
   std::unique_ptr<hal::testing::MockRangingHal> mock_ranging_hal_ = nullptr;
-  os::Thread& thread_ = fake_registry_.GetTestThread();
-  os::Handler* client_handler_ = nullptr;
-  os::Handler* handler_ = nullptr;
 
   DistanceMeasurementManagerImpl* dm_manager_ = nullptr;
   testing::MockDistanceMeasurementCallbacks mock_dm_callbacks_;
@@ -196,7 +193,8 @@ struct CsModule {
   bool remote_capabilities_complete_done_ = false;
 
   void Start() {
-    client_handler_ = fake_registry_.GetTestHandler();
+    thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
+    client_handler_ = new os::Handler(thread_);
     ASSERT_NE(client_handler_, nullptr);
 
     mock_controller_ = std::make_unique<testing::MockController>();
@@ -207,10 +205,9 @@ struct CsModule {
     EXPECT_CALL(*mock_ranging_hal_, IsBound()).Times(AtLeast(1)).WillRepeatedly(Return(true));
     EXPECT_CALL(*mock_ranging_hal_, GetRangingHalVersion).WillRepeatedly(Return(hal::V_2));
 
-    handler_ = fake_registry_.GetTestHandler();
-    test_hci_layer_ = std::make_unique<HciLayerFake>(handler_);
+    test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
     dm_manager_ = new DistanceMeasurementManagerImpl(
-            handler_, test_hci_layer_.get(), mock_controller_.get(), mock_acl_manager_.get(),
+            client_handler_, test_hci_layer_.get(), mock_controller_.get(), mock_acl_manager_.get(),
             mock_ranging_hal_.get());
 
     test_hci_layer_->GetCommand(OpCode::LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES);
@@ -219,13 +216,18 @@ struct CsModule {
   }
 
   void Stop() {
-    fake_registry_.SynchronizeHandler(client_handler_, std::chrono::milliseconds(20));
-    fake_registry_.StopAll();
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+
+    client_handler_->Clear();
+    client_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
+
+    delete client_handler_;
+    delete thread_;
   }
 
   void sync_client_handler() {
-    log::assert_that(thread_.GetReactor()->WaitForIdle(kTimeout),
-                     "assert failed: thread_.GetReactor()->WaitForIdle(kTimeout)");
+    log::assert_that(thread_->GetReactor()->WaitForIdle(kTimeout),
+                     "assert failed: thread_->GetReactor()->WaitForIdle(kTimeout)");
   }
 
   std::future<void> GetDmSessionFuture() {
@@ -237,7 +239,7 @@ struct CsModule {
   std::future<void> fake_timer_advance(uint64_t ms) {
     std::promise<void> promise;
     auto future = promise.get_future();
-    handler_->Post(common::BindOnce(
+    client_handler_->Post(common::BindOnce(
             [](std::promise<void> promise, uint64_t ms) {
               fake_timerfd_advance(ms);
               promise.set_value();

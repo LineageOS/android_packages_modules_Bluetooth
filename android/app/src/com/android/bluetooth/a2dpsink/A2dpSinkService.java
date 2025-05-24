@@ -69,20 +69,16 @@ public class A2dpSinkService extends ProfileService {
     private BluetoothDevice mActiveDevice = null;
 
     public A2dpSinkService(AdapterService adapterService) {
-        this(
-                adapterService,
-                A2dpSinkNativeInterface.getInstance(adapterService),
-                Looper.getMainLooper());
+        this(adapterService, new A2dpSinkNativeInterface(adapterService), Looper.getMainLooper());
     }
 
     @VisibleForTesting
     A2dpSinkService(
             AdapterService adapterService, A2dpSinkNativeInterface nativeInterface, Looper looper) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.A2DP_SINK, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface = requireNonNull(nativeInterface);
         mLooper = looper;
-
         mMaxConnectedAudioDevices = mAdapterService.getMaxConnectedAudioDevices();
         mNativeInterface.init(mMaxConnectedAudioDevices);
         synchronized (mStreamHandlerLock) {
@@ -330,8 +326,7 @@ public class A2dpSinkService extends ProfileService {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(
-                device, BluetoothProfile.A2DP_SINK, connectionPolicy)) {
+        if (!mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -349,7 +344,7 @@ public class A2dpSinkService extends ProfileService {
      * @return connection policy of the specified device
      */
     public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.A2DP_SINK);
+        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     @Override

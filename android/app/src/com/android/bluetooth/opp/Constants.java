@@ -32,9 +32,6 @@
 
 package com.android.bluetooth.opp;
 
-import android.annotation.RequiresPermission;
-import android.annotation.SdkConstant;
-import android.annotation.SdkConstant.SdkConstantType;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -54,10 +51,6 @@ public class Constants {
 
     static final String TAG = TAG_PREFIX_BLUETOOTH_OPP + Constants.class.getSimpleName();
 
-    /** the permission required for others to send us handover broadcasts */
-    static final String PERMISSION_ALLOWLIST_BLUETOOTH_DEVICE =
-            "com.android.permission.ALLOWLIST_BLUETOOTH_DEVICE";
-
     /**
      * The intent that gets sent when the service must wake up for a retry Note: Only retry Outbound
      * transfers
@@ -73,12 +66,6 @@ public class Constants {
     /** the intent that gets sent when clicking a inbound transfer notification */
     static final String ACTION_OPEN_INBOUND_TRANSFER = "android.btopp.intent.action.OPEN_INBOUND";
 
-    /** the intent that acceptlists a remote bluetooth device for auto-receive confirmation (NFC) */
-    static final String ACTION_ACCEPTLIST_DEVICE = "android.btopp.intent.action.ACCEPTLIST_DEVICE";
-
-    /** the intent that can be sent by handover requesters to stop a BTOPP transfer */
-    static final String ACTION_STOP_HANDOVER = "android.btopp.intent.action.STOP_HANDOVER_TRANSFER";
-
     /**
      * the intent extra to show the direction of a transfer. Value should be one of {@link
      * BluetoothShare#DIRECTION_INBOUND} or {@link BluetoothShare#DIRECTION_OUTBOUND}
@@ -87,72 +74,6 @@ public class Constants {
 
     /** the intent that gets sent when clicking an incomplete/failed transfer */
     static final String ACTION_LIST = "android.btopp.intent.action.LIST";
-
-    /** the intent that is used for initiating a handover transfer */
-    static final String ACTION_HANDOVER_SEND = "android.nfc.handover.intent.action.HANDOVER_SEND";
-
-    /** the intent that is used for initiating a multi-uri handover transfer */
-    static final String ACTION_HANDOVER_SEND_MULTIPLE =
-            "android.nfc.handover.intent.action.HANDOVER_SEND_MULTIPLE";
-
-    /** permission needed to be able to receive handover status requests */
-    static final String HANDOVER_STATUS_PERMISSION = "android.permission.NFC_HANDOVER_STATUS";
-
-    /** the intent that is used for indicating an incoming transfer */
-    @RequiresPermission(HANDOVER_STATUS_PERMISSION)
-    @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
-    static final String ACTION_HANDOVER_STARTED =
-            "android.nfc.handover.intent.action.HANDOVER_STARTED";
-
-    /** intent action used to indicate the progress of a handover transfer */
-    @RequiresPermission(HANDOVER_STATUS_PERMISSION)
-    @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
-    static final String ACTION_BT_OPP_TRANSFER_PROGRESS =
-            "android.nfc.handover.intent.action.TRANSFER_PROGRESS";
-
-    /** intent action used to indicate the completion of a handover transfer */
-    @RequiresPermission(HANDOVER_STATUS_PERMISSION)
-    @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
-    static final String ACTION_BT_OPP_TRANSFER_DONE =
-            "android.nfc.handover.intent.action.TRANSFER_DONE";
-
-    /** intent extra used to indicate the success of a handover transfer */
-    static final String EXTRA_BT_OPP_TRANSFER_STATUS =
-            "android.nfc.handover.intent.extra.TRANSFER_STATUS";
-
-    /** intent extra used to indicate the address associated with the transfer */
-    static final String EXTRA_BT_OPP_ADDRESS = "android.nfc.handover.intent.extra.ADDRESS";
-
-    static final String EXTRA_BT_OPP_OBJECT_COUNT =
-            "android.nfc.handover.intent.extra.OBJECT_COUNT";
-
-    static final int COUNT_HEADER_UNAVAILABLE = -1;
-    static final int HANDOVER_TRANSFER_STATUS_SUCCESS = 0;
-
-    static final int HANDOVER_TRANSFER_STATUS_FAILURE = 1;
-
-    /** intent extra used to indicate the direction of a handover transfer */
-    static final String EXTRA_BT_OPP_TRANSFER_DIRECTION =
-            "android.nfc.handover.intent.extra.TRANSFER_DIRECTION";
-
-    static final int DIRECTION_BLUETOOTH_INCOMING = 0;
-
-    static final int DIRECTION_BLUETOOTH_OUTGOING = 1;
-
-    /** intent extra used to provide a unique ID for the transfer */
-    static final String EXTRA_BT_OPP_TRANSFER_ID = "android.nfc.handover.intent.extra.TRANSFER_ID";
-
-    /** intent extra used to provide progress of the transfer */
-    static final String EXTRA_BT_OPP_TRANSFER_PROGRESS =
-            "android.nfc.handover.intent.extra.TRANSFER_PROGRESS";
-
-    /** intent extra used to provide the Uri where the data was stored by the handover transfer */
-    static final String EXTRA_BT_OPP_TRANSFER_URI =
-            "android.nfc.handover.intent.extra.TRANSFER_URI";
-
-    /** intent extra used to provide the mime-type of the data in the handover transfer */
-    static final String EXTRA_BT_OPP_TRANSFER_MIMETYPE =
-            "android.nfc.handover.intent.extra.TRANSFER_MIME_TYPE";
 
     /** the intent that gets sent when deleting the incoming file confirmation notification */
     static final String ACTION_HIDE = "android.btopp.intent.action.HIDE";
@@ -212,9 +133,6 @@ public class Constants {
 
     /** Where we store received files */
     static final String DEFAULT_STORE_SUBDIR = "/bluetooth";
-
-    /** Notify NFC of the transfer progress periodically, or it will timeout after 20sec. */
-    static final int NFC_ALIVE_CHECK_MS = 10000;
 
     /**
      * To log debug/verbose in OPP, use the command "setprop log.tag.BluetoothOpp DEBUG" or "setprop

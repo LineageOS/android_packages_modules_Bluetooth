@@ -27,6 +27,7 @@ import static com.android.bluetooth.Utils.transportToString;
 import static com.android.bluetooth.util.AttributionSourceUtil.getLastAttributionTag;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.Nullable;
 import android.annotation.SuppressLint;
@@ -51,6 +52,8 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.HandlerThread;
 import android.os.IBinder;
+import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
@@ -130,6 +133,12 @@ public class GattService extends ProfileService {
                             "com.google.android.apps.adm",
                             "channelsounding"));
 
+    // Remote RSSI read throttle time
+    private static final String RSSI_READ_THROTTLE_MS =
+            "bluetooth.ble.rssi_read_throttle_ms.config";
+
+    static final int RSSI_READ_THROTTLE_MS_DEFAULT = 75;
+    static final int RSSI_READ_THROTTLE_MS_MAX = 200;
     @VisibleForTesting static final int GATT_CLIENT_LIMIT_PER_APP = 32;
 
     /** This is only used when Flags.onlyStartScanDuringBleOn() is true. */
@@ -158,6 +167,13 @@ public class GattService extends ProfileService {
      */
     private final HashMap<BluetoothDevice, Integer> mPermits = new HashMap<>();
 
+    /** Record data class for RSSI caching */
+    record RssiCacheEntry(long readTimeStamp, int rssi) {}
+    ;
+
+    /** HashMap used for storing RSSI cache entries */
+    @VisibleForTesting final Map<String, RssiCacheEntry> mRssiCache = new HashMap<>();
+
     private final ActivityManager mActivityManager;
     private final PackageManager mPackageManager;
     private final CompanionDeviceManager mCompanionDeviceManager;
@@ -166,9 +182,33 @@ public class GattService extends ProfileService {
     private final AdvertiseManager mAdvertiseManager;
     @Nullable private final ScanController mScanController;
     private final DistanceMeasurementManager mDistanceMeasurementManager;
+    @VisibleForTesting int mRssiReadThrottleMs;
 
     public GattService(AdapterService adapterService) {
-        super(requireNonNull(adapterService));
+        this(adapterService, null, null, null);
+    }
+
+    public GattService(
+            AdapterService adapterService,
+            GattNativeInterface nativeInterface,
+            AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
+            DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
+        this(
+                adapterService,
+                nativeInterface,
+                advertiseManagerNativeInterface,
+                distanceMeasurementNativeInterface,
+                null);
+    }
+
+    @VisibleForTesting
+    GattService(
+            AdapterService adapterService,
+            GattNativeInterface nativeInterface,
+            AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
+            DistanceMeasurementNativeInterface distanceMeasurementNativeInterface,
+            ScanController scanController) {
+        super(BluetoothProfile.GATT, requireNonNull(adapterService));
         mActivityManager = requireNonNull(obtainSystemService(ActivityManager.class));
         mPackageManager = requireNonNull(mAdapterService.getPackageManager());
         mCompanionDeviceManager = requireNonNull(obtainSystemService(CompanionDeviceManager.class));
@@ -176,24 +216,40 @@ public class GattService extends ProfileService {
         Settings.Global.putInt(
                 getContentResolver(), "bluetooth_sanitized_exposure_notification_supported", 1);
 
-        mNativeInterface = GattObjectsFactory.getInstance().getNativeInterface();
-        mNativeInterface.init(this, mAdapterService);
+        mNativeInterface =
+                requireNonNullElseGet(
+                        nativeInterface, () -> new GattNativeInterface(mAdapterService, this));
+        mNativeInterface.init();
 
         // Create a thread to handle LE operations
         mHandlerThread = new HandlerThread("Bluetooth LE");
         mHandlerThread.start();
+        final var looper = mHandlerThread.getLooper();
 
-        mAdvertiseManager = new AdvertiseManager(mAdapterService, mHandlerThread.getLooper());
+        mAdvertiseManager =
+                new AdvertiseManager(mAdapterService, advertiseManagerNativeInterface, looper);
+
+        mRssiReadThrottleMs =
+                SystemProperties.getInt(RSSI_READ_THROTTLE_MS, RSSI_READ_THROTTLE_MS_DEFAULT);
+        if (mRssiReadThrottleMs > RSSI_READ_THROTTLE_MS_MAX) {
+            Log.w(
+                    TAG,
+                    "RSSI read throttle ms exceeds max, clipping to max: "
+                            + RSSI_READ_THROTTLE_MS_MAX
+                            + "ms");
+            mRssiReadThrottleMs = RSSI_READ_THROTTLE_MS_MAX;
+        }
 
         if (!Flags.onlyStartScanDuringBleOn()) {
-            mScanController = new ScanController(adapterService);
+            mScanController =
+                    requireNonNullElseGet(scanController, () -> new ScanController(adapterService));
         } else {
             mScanController = null;
         }
+
         mDistanceMeasurementManager =
-                GattObjectsFactory.getInstance()
-                        .createDistanceMeasurementManager(
-                                mAdapterService, mHandlerThread.getLooper());
+                new DistanceMeasurementManager(
+                        mAdapterService, distanceMeasurementNativeInterface, looper);
 
         if (Flags.onlyStartScanDuringBleOn()) {
             setGattService(this);
@@ -202,13 +258,6 @@ public class GattService extends ProfileService {
 
     public static boolean isEnabled() {
         return BluetoothProperties.isProfileGattEnabled().orElse(true);
-    }
-
-    @Override
-    protected void setTestModeEnabled(boolean enableTestMode) {
-        if (mScanController != null) {
-            mScanController.setTestModeEnabled(enableTestMode);
-        }
     }
 
     @Override
@@ -234,6 +283,7 @@ public class GattService extends ProfileService {
         mRestrictedHandles.clear();
         mServerMap.clear();
         mHandleMap.clear();
+        mRssiCache.clear();
         mReliableQueue.clear();
         mNativeInterface.cleanup();
         mAdvertiseManager.cleanup();
@@ -746,6 +796,13 @@ public class GattService extends ProfileService {
         if (app == null) {
             return;
         }
+
+        if (Flags.readRssiThrottling() && status == BluetoothGatt.GATT_SUCCESS) {
+            Log.d(TAG, "onReadRemoteRssi() - putting timestamp and rssi into cache");
+            mRssiCache.put(
+                    device.getAddress(), new RssiCacheEntry(SystemClock.elapsedRealtime(), rssi));
+        }
+
         callbackToApp(() -> app.callback.onReadRemoteRssi(device, rssi, status));
     }
 
@@ -1352,6 +1409,20 @@ public class GattService extends ProfileService {
         }
         int clientIf = clientApp.id;
         Log.d(TAG, "readRemoteRssi() - device=" + device);
+
+        if (Flags.readRssiThrottling() && mRssiReadThrottleMs > 0) {
+            RssiCacheEntry entry = mRssiCache.get(device.getAddress());
+            if (entry != null
+                    && (SystemClock.elapsedRealtime() - entry.readTimeStamp)
+                            < mRssiReadThrottleMs) {
+                Log.d(TAG, "readRemoteRssi() - rssi value found in cache, returning to callback");
+                callbackToApp(
+                        () ->
+                                clientApp.callback.onReadRemoteRssi(
+                                        device, entry.rssi, BluetoothGatt.GATT_SUCCESS));
+                return;
+            }
+        }
         mNativeInterface.gattClientReadRemoteRssi(clientIf, device);
     }
 

@@ -21,14 +21,11 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.bluetooth.BluetoothDevice;
-import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.avrcpcontroller.BrowseTree.BrowseNode;
-import com.android.bluetooth.flags.Flags;
 
 import com.google.common.testing.EqualsTester;
 
@@ -44,8 +41,6 @@ import java.util.List;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BrowseNodeTest {
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
-
     private static final int TEST_PLAYER_ID = 1;
     private static final String TEST_UUID = "1111";
     private static final String TEST_NAME = "item";
@@ -172,7 +167,6 @@ public class BrowseNodeTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_UNCACHE_PLAYER_WHEN_BROWSED_PLAYER_CHANGES)
     public void setUncached_whenNodeHasChildrenNodes() {
         BrowseNode deviceNode = mBrowseTree.new BrowseNode(mDevice);
         mRootNode.addChild(deviceNode);

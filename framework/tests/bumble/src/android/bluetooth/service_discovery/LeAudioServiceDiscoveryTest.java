@@ -149,6 +149,7 @@ public class LeAudioServiceDiscoveryTest {
             mHost.removeBondAndVerify(mBumbleDevice);
         }
         mHost.close();
+        mTargetContext.unregisterReceiver(mReceiver);
     }
 
     /**

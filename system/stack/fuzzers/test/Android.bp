@@ -18,6 +18,7 @@ cc_defaults {
         "include",
     ],
     srcs: [
+        ":TestMockStackA2dp",
         "fuzzer_validation_test.cc",
     ],
     strip: {
@@ -54,6 +55,11 @@ filegroup {
     srcs: ["data/gatt_corpus.zip"],
 }
 
+filegroup {
+    name: "smp-fuzzer-corpus",
+    srcs: ["data/smp_corpus.zip"],
+}
+
 cc_test {
     name: "rfcomm-fuzzer-validation-test",
     defaults: [
@@ -87,5 +93,17 @@ cc_test {
     data: [":gatt-fuzzer-corpus"],
     srcs: [
         "gatt_fuzzer_validation_test.cc",
+    ],
+}
+
+cc_test {
+    name: "smp-fuzzer-validation-test",
+    defaults: [
+        "fuzzer_validation_test_default",
+        "smp_fuzzer_default",
+    ],
+    data: [":smp-fuzzer-corpus"],
+    srcs: [
+        "smp_fuzzer_validation_test.cc",
     ],
 }

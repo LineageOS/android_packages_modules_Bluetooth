@@ -72,7 +72,7 @@ public class MapClientService extends ProfileService {
 
     @VisibleForTesting
     MapClientService(AdapterService adapterService, Looper looper, MnsService mnsServer) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.MAP_CLIENT, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(adapterService.getDatabase());
         mMnsServer = requireNonNullElseGet(mnsServer, () -> new MnsService(mAdapterService, this));
 
@@ -257,8 +257,7 @@ public class MapClientService extends ProfileService {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.v(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(
-                device, BluetoothProfile.MAP_CLIENT, connectionPolicy)) {
+        if (!mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -280,7 +279,7 @@ public class MapClientService extends ProfileService {
      * @return connection policy of the device
      */
     public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.MAP_CLIENT);
+        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     public synchronized boolean sendMessage(

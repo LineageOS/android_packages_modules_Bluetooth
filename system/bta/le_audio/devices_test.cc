@@ -288,8 +288,8 @@ bool IsLc3SettingSupported(LeAudioContextType context_type, Lc3SettingId id) {
     case LeAudioContextType::UNSPECIFIED:
       if (id == Lc3SettingId::LC3_16_1 || id == Lc3SettingId::LC3_16_2 ||
           id == Lc3SettingId::LC3_48_4 || id == Lc3SettingId::LC3_48_1 ||
-          id == Lc3SettingId::LC3_48_2 || id == Lc3SettingId::LC3_VND_1 ||
-          id == Lc3SettingId::LC3_24_2) {
+          id == Lc3SettingId::LC3_48_2 || id == Lc3SettingId::LC3_48_3 ||
+          id == Lc3SettingId::LC3_VND_1 || id == Lc3SettingId::LC3_24_2) {
         return true;
       }
 

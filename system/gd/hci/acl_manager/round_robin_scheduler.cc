@@ -26,23 +26,23 @@ namespace bluetooth {
 namespace hci {
 namespace acl_manager {
 
-RoundRobinScheduler::RoundRobinScheduler(os::Handler* handler, Controller* controller,
+RoundRobinScheduler::RoundRobinScheduler(os::Handler* handler, Controller& controller,
                                          common::BidiQueueEnd<AclBuilder, AclView>* hci_queue_end)
     : handler_(handler), controller_(controller), hci_queue_end_(hci_queue_end) {
-  max_acl_packet_credits_ = controller_->GetNumAclPacketBuffers();
+  max_acl_packet_credits_ = controller_.GetNumAclPacketBuffers();
   acl_packet_credits_ = max_acl_packet_credits_;
-  hci_mtu_ = controller_->GetAclPacketLength();
-  LeBufferSize le_buffer_size = controller_->GetLeBufferSize();
+  hci_mtu_ = controller_.GetAclPacketLength();
+  LeBufferSize le_buffer_size = controller_.GetLeBufferSize();
   le_max_acl_packet_credits_ = le_buffer_size.total_num_le_packets_;
   le_acl_packet_credits_ = le_max_acl_packet_credits_;
   le_hci_mtu_ = le_buffer_size.le_data_packet_length_;
-  controller_->RegisterCompletedAclPacketsCallback(
+  controller_.RegisterCompletedAclPacketsCallback(
           handler->BindOn(this, &RoundRobinScheduler::incoming_acl_credits));
 }
 
 RoundRobinScheduler::~RoundRobinScheduler() {
   unregister_all_connections();
-  controller_->UnregisterCompletedAclPacketsCallback();
+  controller_.UnregisterCompletedAclPacketsCallback();
 }
 
 void RoundRobinScheduler::Register(ConnectionType connection_type, uint16_t handle,

@@ -45,10 +45,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Process;
-import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
-import android.util.Pair;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
@@ -59,7 +57,6 @@ import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -81,18 +78,12 @@ public class BluetoothOppManager {
     private static final String MULTIPLE_FLAG = "MULTIPLE_FLAG";
     private static final String ARRAYLIST_ITEM_SEPARATOR = ";";
 
-    private static final int ACCEPTLIST_DURATION_MS = 15000;
-
     @VisibleForTesting static final int ALLOWED_INSERT_SHARE_THREAD_NUMBER = 3;
 
     private static final Object INSTANCE_LOCK = new Object();
 
     @GuardedBy("INSTANCE_LOCK")
     private static BluetoothOppManager sInstance;
-
-    // A list of devices that may send files over OPP to this device
-    // without user confirmation. Used for connection handover from forex NFC.
-    private final List<Pair<String, Long>> mAcceptlist = new ArrayList<Pair<String, Long>>();
 
     private final Context mContext;
     private final BluetoothAdapter mAdapter;
@@ -132,42 +123,6 @@ public class BluetoothOppManager {
         mAdapter = mContext.getSystemService(BluetoothManager.class).getAdapter();
 
         restoreApplicationData(); // Restore data from preference
-    }
-
-    private void cleanupAcceptlist() {
-        // Removes expired entries
-        long curTime = SystemClock.elapsedRealtime();
-        for (Iterator<Pair<String, Long>> iter = mAcceptlist.iterator(); iter.hasNext(); ) {
-            Pair<String, Long> entry = iter.next();
-            if (curTime - entry.second > ACCEPTLIST_DURATION_MS) {
-                Log.v(TAG, "Cleaning out acceptlist entry " + entry.first);
-                iter.remove();
-            }
-        }
-    }
-
-    public synchronized void addToAcceptlist(String address) {
-        if (address == null) {
-            return;
-        }
-        // Remove any existing entries
-        for (Iterator<Pair<String, Long>> iter = mAcceptlist.iterator(); iter.hasNext(); ) {
-            Pair<String, Long> entry = iter.next();
-            if (entry.first.equals(address)) {
-                iter.remove();
-            }
-        }
-        mAcceptlist.add(new Pair<String, Long>(address, SystemClock.elapsedRealtime()));
-    }
-
-    public synchronized boolean isAcceptListed(String address) {
-        cleanupAcceptlist();
-        for (Pair<String, Long> entry : mAcceptlist) {
-            if (entry.first.equals(address)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /** Restore data from preference */

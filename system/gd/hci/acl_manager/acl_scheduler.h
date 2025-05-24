@@ -21,7 +21,7 @@
 
 #include "common/contextual_callback.h"
 #include "hci/address.h"
-#include "module.h"
+#include "os/handler.h"
 
 namespace bluetooth {
 namespace hci {

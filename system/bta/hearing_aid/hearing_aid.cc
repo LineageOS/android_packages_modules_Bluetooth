@@ -878,6 +878,14 @@ public:
 
   void ReadPSM(HearingDevice* hearingDevice) {
     if (hearingDevice->read_psm_handle) {
+      /* This should not happen, as GAP is disconnected when service change is received.
+       * Just in case, log such occurrence, letting us know we may use the old handle.
+       */
+      if (hearingDevice->service_changed_rcvd) {
+        log::error(
+                "Service change received before PSM read."
+                "Attempting to read PSM using old handle");
+      }
       log::info("bd_addr={} handle=0x{:x}", hearingDevice->address, hearingDevice->read_psm_handle);
       BtaGattQueue::ReadCharacteristic(hearingDevice->conn_id, hearingDevice->read_psm_handle,
                                        HearingAidImpl::OnPsmReadStatic, nullptr);
@@ -1138,6 +1146,14 @@ public:
     uint8_t* ptr = value.data();
     UINT16_TO_STREAM(ptr, GATT_CHAR_CLIENT_CONFIG_NOTIFICATION);
 
+    /* This should not happen, as GAP is disconnected when service change is received.
+     * Just in case, log such occurrence, letting us know we may use the old handle.
+     */
+    if (hearingDevice->service_changed_rcvd) {
+      log::error(
+              "Service change received, but stream is starting."
+              "Attempting to subscribe Audio Status using old handle");
+    }
     BtaGattQueue::WriteDescriptor(hearingDevice->conn_id, hearingDevice->audio_status_ccc_handle,
                                   std::move(value), GATT_WRITE, write_rpt_ctl_cfg_cb, nullptr);
 
@@ -1212,6 +1228,15 @@ public:
         log::info("send Stop cmd, bd_addr={}", device.address);
         device.playback_started = false;
         device.command_acked = false;
+
+        /* This should not happen, as GAP is disconnected when service change is received.
+         * Just in case, log such occurrence, letting us know we may use the old handle.
+         */
+        if (device.service_changed_rcvd) {
+          log::error(
+                  "Service change received, but stream is active."
+                  "Attempting to write using old Audio Control Point handle");
+        }
         BtaGattQueue::WriteCharacteristic(device.conn_id, device.audio_control_point_handle, stop,
                                           GATT_WRITE, nullptr, nullptr);
       }
@@ -1273,6 +1298,14 @@ public:
     uint8_t* ptr = value.data();
     UINT16_TO_STREAM(ptr, GATT_CHAR_CLIENT_CONFIG_INDICTION);
 
+    /* This should not happen, as GAP is disconnected when service change is received.
+     * Just in case, log such occurrence, letting us know we may use the old handle.
+     */
+    if (device->service_changed_rcvd) {
+      log::error(
+              "Service change received, but stream is starting."
+              "Attempting to subscribe Service Changed using old handle");
+    }
     BtaGattQueue::WriteDescriptor(device->conn_id, device->service_changed_ccc_handle,
                                   std::move(value), GATT_WRITE, nullptr, nullptr);
   }
@@ -1303,6 +1336,14 @@ public:
               "side streaming=0x{:x}",
               start[3], start[2], device->address, start[4]);
       device->command_acked = false;
+      /* This should not happen, as GAP is disconnected when service change is received.
+       * Just in case, log such occurrence, letting us know we may use the old handle.
+       */
+      if (device->service_changed_rcvd) {
+        log::error(
+                "Service change received, but stream is starting."
+                "Attempting to write using old Audio Control Point handle");
+      }
       BtaGattQueue::WriteCharacteristic(device->conn_id, device->audio_control_point_handle, start,
                                         GATT_WRITE, HearingAidImpl::StartAudioCtrlCallbackStatic,
                                         nullptr);
@@ -1901,6 +1942,9 @@ public:
       }
 
       std::vector<uint8_t> volume_value({static_cast<unsigned char>(volume)});
+      if (device.volume_handle == 0 || device.service_changed_rcvd) {
+        log::error("Volume handle not set or service changed received: bd_addr={}", device.address);
+      }
       BtaGattQueue::WriteCharacteristic(device.conn_id, device.volume_handle, volume_value,
                                         GATT_WRITE_NO_RSP, nullptr, nullptr);
     }

@@ -17,8 +17,8 @@
 package com.android.bluetooth.le_scan;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
-
-import static com.google.common.truth.Truth.assertThat;
+import static com.android.bluetooth.TestUtils.getRealDevice;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -28,16 +28,12 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.IPeriodicAdvertisingCallback;
 import android.bluetooth.le.ScanResult;
-import android.content.Context;
 import android.os.IBinder;
 
 import androidx.test.filters.SmallTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
@@ -62,30 +58,23 @@ public class PeriodicScanManagerTest {
     @Mock private IPeriodicAdvertisingCallback mCallback;
     @Mock private IBinder mBinder;
 
+    private static final String REMOTE_DEVICE_ADDRESS = "00:01:02:03:04:05";
+
+    private final BluetoothDevice mDevice =
+            getRealDevice(REMOTE_DEVICE_ADDRESS, BluetoothDevice.ADDRESS_TYPE_RANDOM);
+
     private PeriodicScanManager mPeriodicScanManager;
-    private BluetoothDevice mDevice;
     private ScanResult mScanResult;
     private int syncHandle;
-
-    private static final String REMOTE_DEVICE_ADDRESS = "00:01:02:03:04:05";
 
     @Before
     public void setUp() throws Exception {
         PeriodicScanNativeInterface.setInstance(mPeriodicScanNativeInterface);
 
-        final Context context = InstrumentationRegistry.getInstrumentation().getContext();
-        final BluetoothManager manager = context.getSystemService(BluetoothManager.class);
-        assertThat(manager).isNotNull();
-        final BluetoothAdapter adapter = manager.getAdapter();
-        assertThat(adapter).isNotNull();
-        doReturn(manager).when(mAdapterService).getSystemService(BluetoothManager.class);
+        mockGetBluetoothManager(mAdapterService);
 
         final TestLooper looper = new TestLooper();
         mPeriodicScanManager = new PeriodicScanManager(mAdapterService, looper.getLooper());
-
-        mDevice =
-                adapter.getRemoteLeDevice(
-                        REMOTE_DEVICE_ADDRESS, BluetoothDevice.ADDRESS_TYPE_RANDOM);
 
         mScanResult = new ScanResult(mDevice, 0, 0, 0, 0, 0, 0, 0, null, 0);
         mCallback = mock(IPeriodicAdvertisingCallback.class);

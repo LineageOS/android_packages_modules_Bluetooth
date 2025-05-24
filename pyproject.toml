@@ -21,7 +21,8 @@ dependencies = [
     "types-portpicker",
     # Only for local test.
     "pytest",
-    "bumble@ git+https://android.googlesource.com/platform/external/python/bumble",
+    "bumble == 0.0.212",
+    "snippet-uiautomator"
 ]
 
 [tool.setuptools.package-data]
@@ -32,6 +33,7 @@ dependencies = [
 "pandora_services" = "pandora/server/pandora_services"
 "pandora" = "pandora/interfaces/python/pandora"
 "mmi2grpc" = "android/pandora/mmi2grpc/mmi2grpc"
+"navi" = "android/navi/navi"
 
 [tool.setuptools.cmdclass]
 build_py = "_pandora_build._build.cmd.build_py"
@@ -42,7 +44,11 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "mobly.*"
-ignore_missing_imports = true
+follow_untyped_imports = true
+
+[[tool.mypy.overrides]]
+module = "snippet_uiautomator.*"
+follow_untyped_imports = true
 
 [[tool.mypy.overrides]]
 # Generated files.

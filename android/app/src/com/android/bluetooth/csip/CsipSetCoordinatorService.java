@@ -114,7 +114,7 @@ public class CsipSetCoordinatorService extends ProfileService {
             Looper looper,
             CsipSetCoordinatorNativeInterface nativeInterface,
             ServiceFactory serviceFactory) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.CSIP_SET_COORDINATOR, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(
@@ -424,8 +424,7 @@ public class CsipSetCoordinatorService extends ProfileService {
      */
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
-        mDatabaseManager.setProfileConnectionPolicy(
-                device, BluetoothProfile.CSIP_SET_COORDINATOR, connectionPolicy);
+        mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
             connect(device);
         } else if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
@@ -441,8 +440,7 @@ public class CsipSetCoordinatorService extends ProfileService {
      * @return connection policy of the specified device
      */
     public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(
-                device, BluetoothProfile.CSIP_SET_COORDINATOR);
+        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     /**

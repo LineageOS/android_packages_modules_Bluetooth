@@ -4132,3 +4132,34 @@ void btif_av_connect_sink_delayed(uint8_t handle, const RawAddress& peer_address
     btif_av_source_dispatch_sm_event(peer_address, BTIF_AV_AVRCP_OPEN_EVT);
   }
 }
+
+std::string btav_a2dp_codec_info_t::ToString() const {
+  std::string result_string;
+  auto out = std::back_inserter(result_string);
+
+  std::format_to(out,
+                 "btav_a2dp_codec_info_t: {{\n"
+                 "  name: {}\n"
+                 "  codec_id: {}\n"
+                 "  codec_capabilities: {{ {} }}\n"
+                 "  lossless: {}\n",
+                 name, bluetooth::a2dp::CodecIdToString(codec_id), codec_capabilities.ToString(),
+                 lossless);
+
+  std::format_to(out, "  media_codec_capabilites: [\n    ");
+
+  for (size_t i = 0; i < AVDT_CODEC_SIZE; ++i) {
+    std::format_to(out, "0x{:02x}", static_cast<unsigned int>(media_codec_capabilites[i]));
+    if (i < AVDT_CODEC_SIZE - 1) {
+      std::format_to(out, ", ");
+      if ((i + 1) % 8 == 0) {
+        std::format_to(out, "\n    ");
+      }
+    }
+  }
+
+  std::format_to(out, "\n  ]");
+  std::format_to(out, "\n}}");
+
+  return result_string;
+}

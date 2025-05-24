@@ -63,7 +63,6 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
 
     private static final String CONFIG_SAFE_MEDIA_VOLUME_PROP =
             "bluetooth.avrcp.target.safe_media_volume.config";
-    private static final int CONFIG_SAFE_MEDIA_VOLUME_DEFAULT = 100;
 
     @VisibleForTesting static final int AVRCP_MAX_VOL = 127;
     private static final int STREAM_MUSIC = AudioManager.STREAM_MUSIC;
@@ -181,9 +180,7 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         mAudioManager = mAdapterService.getSystemService(AudioManager.class);
         mNativeInterface = nativeInterface;
         mDeviceMaxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        mSafeMediaVolume =
-                SystemProperties.getInt(
-                        CONFIG_SAFE_MEDIA_VOLUME_PROP, CONFIG_SAFE_MEDIA_VOLUME_DEFAULT);
+        mSafeMediaVolume = SystemProperties.getInt(CONFIG_SAFE_MEDIA_VOLUME_PROP, -1);
 
         mNewDeviceVolume = mDeviceMaxVolume / 2;
 
@@ -221,7 +218,7 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
             return;
         }
 
-        if (newVolume > mSafeMediaVolume) {
+        if (mSafeMediaVolume != -1 && newVolume > mSafeMediaVolume) {
             newVolume = mSafeMediaVolume;
             Log.w(TAG, logHeader + "Saved volume overrode to safe volume" + newVolume);
         }

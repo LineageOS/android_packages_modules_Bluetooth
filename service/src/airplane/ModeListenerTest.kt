@@ -575,7 +575,7 @@ class ModeListenerTest(flags: FlagsWrapper) {
 
     @Test
     fun userToggleBluetooth_whenSessionButNoApm_noNotificationAndNoSettingSave_skipTime() {
-        val timesource = TestTimeSource()
+        val timeSource = TestTimeSource()
         initialize(
             looper,
             resolver,
@@ -584,12 +584,12 @@ class ModeListenerTest(flags: FlagsWrapper) {
             this::notificationCallback,
             this::mediaCallback,
             this::userCallback,
-            timesource,
+            timeSource,
         )
         Settings.Global.putInt(resolver, APM_ENHANCEMENT, 0)
 
         enableMode()
-        timesource += 2.minutes
+        timeSource += 2.minutes
         notifyUserToggledBluetooth(resolver, userContext, true)
 
         assertThat(isOnOverrode).isTrue()

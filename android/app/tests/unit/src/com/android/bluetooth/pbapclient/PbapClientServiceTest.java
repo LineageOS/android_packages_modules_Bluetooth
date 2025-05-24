@@ -51,7 +51,6 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.net.Uri;
-import android.os.Looper;
 import android.os.UserManager;
 import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
@@ -64,6 +63,7 @@ import android.test.mock.MockContentResolver;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -120,6 +120,7 @@ public class PbapClientServiceTest {
     private MockContentResolver mMockContentResolver;
     private MockCallLogProvider mMockCallLogProvider;
     private PbapClientService mService;
+    private TestLooper mTestLooper;
 
     // NEW: Objects for new state machine implementation
     private PbapClientService.PbapClientStateMachineCallback mDeviceCallback;
@@ -157,7 +158,6 @@ public class PbapClientServiceTest {
                 .getAccountVisibility(any(Account.class), anyString());
         doReturn(new Account[] {}).when(mAccountManager).getAccountsByType(eq(Utils.ACCOUNT_TYPE));
         TestUtils.mockGetSystemService(mAdapterService, AccountManager.class, mAccountManager);
-
         TestUtils.mockGetSystemService(mAdapterService, UserManager.class, mUserManager);
 
         // new for mock storage
@@ -169,11 +169,9 @@ public class PbapClientServiceTest {
                 .when(mMockStorage)
                 .getStorageAccountForDevice(any(BluetoothDevice.class));
 
-        if (Looper.myLooper() == null) {
-            Looper.prepare();
-        }
-
-        mService = new PbapClientService(mAdapterService, mMockStorage, mDeviceMap);
+        mTestLooper = new TestLooper();
+        final var looper = mTestLooper.getLooper();
+        mService = new PbapClientService(mAdapterService, mMockStorage, mDeviceMap, looper);
         mService.setAvailable(true);
 
         // new
@@ -291,7 +289,7 @@ public class PbapClientServiceTest {
         mService.mPbapClientStateMachineOldMap.put(mDevice, sm);
 
         mService.aclDisconnected(mDevice, BluetoothDevice.TRANSPORT_LE);
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mTestLooper.dispatchAll();
 
         verify(sm, never()).disconnect(mDevice);
     }
@@ -304,7 +302,7 @@ public class PbapClientServiceTest {
         mService.mPbapClientStateMachineOldMap.put(mDevice, sm);
 
         mService.aclDisconnected(mDevice, BluetoothDevice.TRANSPORT_BREDR);
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mTestLooper.dispatchAll();
 
         verify(sm).disconnect(mDevice);
     }
@@ -315,7 +313,7 @@ public class PbapClientServiceTest {
     @EnableFlags(Flags.FLAG_PBAP_CLIENT_STORAGE_REFACTOR)
     public void testOnBrEdrAclDisconnected_forConnectedDevice_deviceCleanedUp() {
         mService.aclDisconnected(mDevice, BluetoothDevice.TRANSPORT_BREDR);
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mTestLooper.dispatchAll();
         verify(mDeviceStateMachine, times(1)).disconnect();
     }
 
@@ -324,7 +322,7 @@ public class PbapClientServiceTest {
     public void testOnBrEdrAclDisconnected_forDisconnectedDevice_eventDropped() {
         mDeviceMap.clear();
         mService.aclDisconnected(mDevice, BluetoothDevice.TRANSPORT_BREDR);
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mTestLooper.dispatchAll();
         verify(mDeviceStateMachine, never()).disconnect();
     }
 
@@ -332,7 +330,7 @@ public class PbapClientServiceTest {
     @EnableFlags(Flags.FLAG_PBAP_CLIENT_STORAGE_REFACTOR)
     public void testOnLeAclDisconnected_forConnectedDevice_eventDropped() {
         mService.aclDisconnected(mDevice, BluetoothDevice.TRANSPORT_LE);
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mTestLooper.dispatchAll();
         verify(mDeviceStateMachine, never()).disconnect();
     }
 
@@ -340,7 +338,7 @@ public class PbapClientServiceTest {
     @EnableFlags(Flags.FLAG_PBAP_CLIENT_STORAGE_REFACTOR)
     public void testOnUnknownAclDisconnected_forConnectedDevice_deviceCleanedUp() {
         mService.aclDisconnected(mDevice, TRANSPORT_UNKNOWN);
-        TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
+        mTestLooper.dispatchAll();
         verify(mDeviceStateMachine, never()).disconnect();
     }
 
@@ -493,9 +491,8 @@ public class PbapClientServiceTest {
         PbapClientStateMachine sm = mDeviceMap.get(mDevice);
         assertThat(sm).isNotNull();
 
-        Looper looper = sm.getHandler().getLooper();
         sm.disconnect();
-        TestUtils.waitForLooperToFinishScheduledTask(looper);
+        mTestLooper.dispatchAll();
     }
 
     // connect (device null) -> false

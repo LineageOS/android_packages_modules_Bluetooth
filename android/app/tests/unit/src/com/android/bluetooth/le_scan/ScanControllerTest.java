@@ -60,10 +60,7 @@ import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.CompanionManager;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.gatt.GattNativeInterface;
-import com.android.bluetooth.gatt.GattObjectsFactory;
 
 import com.google.protobuf.ByteString;
 import com.google.testing.junit.testparameterinjector.TestParameter;
@@ -93,10 +90,7 @@ public class ScanControllerTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private AttributionSource mAttributionSource;
-    @Mock private GattObjectsFactory mGattObjectsFactory;
-    @Mock private ScanObjectsFactory mScanObjectsFactory;
     @Mock private AdapterService mAdapterService;
-    @Mock private GattNativeInterface mNativeInterface;
     @Mock private PeriodicScanManager mPeriodicScanManager;
     @Mock private Resources mResources;
     @Mock private ScanManager mScanManager;
@@ -110,19 +104,10 @@ public class ScanControllerTest {
 
     private final BluetoothDevice mDevice = getTestDevice(89);
 
-    private CompanionManager mBtCompanionManager;
     private ScanController mScanController;
 
     @Before
     public void setUp() throws Exception {
-        GattObjectsFactory.setInstanceForTesting(mGattObjectsFactory);
-        ScanObjectsFactory.setInstanceForTesting(mScanObjectsFactory);
-
-        doReturn(mNativeInterface).when(mGattObjectsFactory).getNativeInterface();
-        doReturn(mScanManager).when(mScanObjectsFactory).createScanManager(any(), any(), any());
-        doReturn(mPeriodicScanManager)
-                .when(mScanObjectsFactory)
-                .createPeriodicScanManager(any(), any());
         doAnswer(
                         invocation -> {
                             ((Runnable) invocation.getArgument(0)).run();
@@ -142,18 +127,14 @@ public class ScanControllerTest {
         mockGetBluetoothManager(mAdapterService);
         mockGetSystemService(mAdapterService, LocationManager.class);
 
-        mBtCompanionManager = new CompanionManager(mAdapterService, null);
-        doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
-
-        mScanController = new ScanController(mAdapterService);
-        mScanController.setScannerMap(mScannerMap);
+        mScanController =
+                new ScanController(
+                        mAdapterService, mScanManager, mPeriodicScanManager, mScannerMap);
     }
 
     @After
     public void tearDown() throws Exception {
         mScanController.cleanup();
-        GattObjectsFactory.setInstanceForTesting(null);
-        ScanObjectsFactory.setInstanceForTesting(null);
     }
 
     @Test

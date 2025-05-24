@@ -366,7 +366,7 @@ TEST_F_WITH_FLAGS(StackRfcommCollisionTest, err_outgoing_after_collision,
   tRFC_MCB* p_mcb = rfc_cb.port.port[client_handle - 1].rfc.p_mcb;
 
   l2cap_appl_info_.pL2CA_Error_Cb(outgoing_lcid,
-                                  static_cast<uint16_t>(tL2CAP_CONN::L2CAP_CONN_CANCEL));
+                                  static_cast<uint16_t>(tL2CAP_CONN::L2CAP_CONN_OTHER_ERROR));
   ASSERT_EQ(p_mcb->collision_outgoing_lcid, 0);
 }
 
@@ -425,7 +425,7 @@ TEST_F_WITH_FLAGS(StackRfcommCollisionTest, err_outgoing_after_timeout,
   EXPECT_CALL(rfcomm_callback_,
               PortManagementCallback(tPORT_RESULT::PORT_START_FAILED, client_handle, 1));
   l2cap_appl_info_.pL2CA_Error_Cb(outgoing_lcid,
-                                  static_cast<uint16_t>(tL2CAP_CONN::L2CAP_CONN_CANCEL));
+                                  static_cast<uint16_t>(tL2CAP_CONN::L2CAP_CONN_OTHER_ERROR));
   ASSERT_EQ(p_mcb->state, RFC_MX_STATE_IDLE);
 }
 

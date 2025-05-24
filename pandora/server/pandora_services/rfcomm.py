@@ -96,7 +96,9 @@ class RFCOMMService(RFCOMMServicer):
                           address_type=Address.PUBLIC_DEVICE_ADDRESS)
         acl_connection = self.device.find_connection_by_bd_addr(address, transport=0)  # BR/EDR
         if acl_connection is None:
-            acl_connection = await self.device.connect(address, transport=0)  # BR/EDR transport
+            acl_connection = await self.device.connect(address,
+                                                       transport=core.PhysicalTransport.BR_EDR
+                                                      )  # BR/EDR transport
 
         channel = await rfcomm.find_rfcomm_channel_with_uuid(acl_connection, request.uuid)
         assert channel is not None

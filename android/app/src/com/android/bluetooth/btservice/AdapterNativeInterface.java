@@ -21,8 +21,6 @@ import android.bluetooth.OobData;
 import android.os.ParcelUuid;
 
 import com.android.bluetooth.Utils;
-import com.android.internal.annotations.GuardedBy;
-import com.android.internal.annotations.VisibleForTesting;
 
 import java.io.FileDescriptor;
 
@@ -32,29 +30,7 @@ public class AdapterNativeInterface {
 
     private JniCallbacks mJniCallbacks;
 
-    @GuardedBy("INSTANCE_LOCK")
-    private static AdapterNativeInterface sInstance;
-
-    private static final Object INSTANCE_LOCK = new Object();
-
-    private AdapterNativeInterface() {}
-
-    static AdapterNativeInterface getInstance() {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new AdapterNativeInterface();
-            }
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    public static void setInstance(AdapterNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
-    }
+    AdapterNativeInterface() {}
 
     JniCallbacks getCallbacks() {
         return mJniCallbacks;

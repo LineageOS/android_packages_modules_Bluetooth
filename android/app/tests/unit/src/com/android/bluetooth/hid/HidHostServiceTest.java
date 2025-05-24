@@ -68,20 +68,18 @@ public class HidHostServiceTest {
     @Before
     public void setUp() throws Exception {
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        HidHostNativeInterface.setInstance(mNativeInterface);
 
         if (Looper.myLooper() == null) {
             Looper.prepare();
         }
 
-        mService = new HidHostService(mAdapterService);
+        mService = new HidHostService(mAdapterService, mNativeInterface);
         mService.setAvailable(true);
     }
 
     @After
     public void tearDown() throws Exception {
         mService.cleanup();
-        HidHostNativeInterface.setInstance(null);
         mService = HidHostService.getHidHostService();
         assertThat(mService).isNull();
     }

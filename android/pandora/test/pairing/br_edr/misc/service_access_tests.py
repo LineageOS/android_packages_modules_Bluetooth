@@ -20,7 +20,7 @@ from pairing.br_edr.test_base import BREDRPairTestBase
 from avatar import BumblePandoraDevice, PandoraDevice, PandoraDevices
 from avatar.aio import asynchronous
 from bumble.colors import color
-from bumble.core import BT_L2CAP_PROTOCOL_ID, BT_RFCOMM_PROTOCOL_ID, UUID, ConnectionError, ProtocolError
+from bumble.core import BT_L2CAP_PROTOCOL_ID, BT_RFCOMM_PROTOCOL_ID, UUID, ConnectionError, ProtocolError, PhysicalTransport
 from bumble.hci import Address
 from bumble.l2cap import ClassicChannelSpec
 from bumble.rfcomm import Client
@@ -109,7 +109,7 @@ class ServiceAccessTempBondingTest(BREDRPairTestBase):  # type: ignore[misc]
         await asyncio.wait_for(pairing_task, timeout=10.0)
 
         android_addr = Address.from_string_for_transport(str(self.dut.address),
-                                                         Address.PUBLIC_DEVICE_ADDRESS)
+                                                         PhysicalTransport.BR_EDR)
         self.bumble_raw_acl_connection = self.ref.device.find_connection_by_bd_addr(android_addr)
 
     @asynchronous
