@@ -669,11 +669,10 @@ ErrorCode LinkLayerController::LeSetHostFeature(uint8_t bit_number, uint8_t bit_
     connected_isochronous_stream_host_support_ = bit_value != 0;
   } else if (bit_mask == static_cast<uint64_t>(LLFeaturesBits::CONNECTION_SUBRATING_HOST_SUPPORT)) {
     connection_subrating_host_support_ = bit_value != 0;
-  }
-  // If Bit_Number specifies a feature bit that is not controlled by the Host,
-  // the Controller shall return the error code Unsupported Feature or
-  // Parameter Value (0x11).
-  else {
+  } else {
+    // If Bit_Number specifies a feature bit that is not controlled by the Host,
+    // the Controller shall return the error code Unsupported Feature or
+    // Parameter Value (0x11).
     return ErrorCode::UNSUPPORTED_FEATURE_OR_PARAMETER_VALUE;
   }
 
@@ -3953,6 +3952,11 @@ void LinkLayerController::HandleIso(bluetooth::hci::IsoView iso) {
   auto pb_flag = iso.GetPbFlag();
   auto ts_flag = iso.GetTsFlag();
   auto iso_data_load = iso.GetPayload();
+
+  ScheduleTask(kNoDelayMs, [this, cis_connection_handle]() {
+    send_event_(bluetooth::hci::NumberOfCompletedPacketsBuilder::Create(
+            {bluetooth::hci::CompletedPackets(cis_connection_handle, 1)}));
+  });
 
   // In the Host to Controller direction, ISO_Data_Load_Length
   // shall be less than or equal to the size of the buffer supported by the

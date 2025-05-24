@@ -126,13 +126,13 @@ public class AdapterServiceTest {
     @Mock private Binder mBinder;
     @Mock private MetricsLogger mMockMetricsLogger;
     @Mock private AdapterNativeInterface mNativeInterface;
+    @Mock private GattNativeInterface mGattNativeInterface;
     @Mock private BluetoothKeystoreNativeInterface mKeystoreNativeInterface;
     @Mock private BluetoothQualityReportNativeInterface mQualityNativeInterface;
     @Mock private BluetoothHciVendorSpecificNativeInterface mHciVendorSpecificNativeInterface;
     @Mock private SdpManagerNativeInterface mSdpNativeInterface;
     @Mock private AdvertiseManagerNativeInterface mAdvertiseNativeInterface;
     @Mock private DistanceMeasurementNativeInterface mDistanceNativeInterface;
-    @Mock private GattNativeInterface mGattNativeInterface;
     @Mock private PeriodicScanNativeInterface mPeriodicNativeInterface;
     @Mock private ScanNativeInterface mScanNativeInterface;
     @Mock private JniCallbacks mJniCallbacks;
@@ -166,8 +166,12 @@ public class AdapterServiceTest {
     static class MockAdapterService extends AdapterService {
         int mSetProfileServiceStateCounter = 0;
 
-        MockAdapterService(Looper looper, Context ctx) {
-            super(looper, ctx);
+        MockAdapterService(
+                Looper looper,
+                Context ctx,
+                AdapterNativeInterface nativeInterface,
+                GattNativeInterface gattNativeInterface) {
+            super(looper, ctx, nativeInterface, gattNativeInterface);
         }
 
         @Override
@@ -207,14 +211,12 @@ public class AdapterServiceTest {
         LeAudioService.setLeAudioService(mMockLeAudioService);
         doReturn(CONNECTION_POLICY_ALLOWED).when(mMockLeAudioService).getConnectionPolicy(any());
 
-        AdapterNativeInterface.setInstance(mNativeInterface);
         BluetoothKeystoreNativeInterface.setInstance(mKeystoreNativeInterface);
         BluetoothQualityReportNativeInterface.setInstance(mQualityNativeInterface);
         BluetoothHciVendorSpecificNativeInterface.setInstance(mHciVendorSpecificNativeInterface);
         SdpManagerNativeInterface.setInstance(mSdpNativeInterface);
         AdvertiseManagerNativeInterface.setInstance(mAdvertiseNativeInterface);
         DistanceMeasurementNativeInterface.setInstance(mDistanceNativeInterface);
-        GattNativeInterface.setInstance(mGattNativeInterface);
         PeriodicScanNativeInterface.setInstance(mPeriodicNativeInterface);
         ScanNativeInterface.setInstance(mScanNativeInterface);
 
@@ -222,7 +224,13 @@ public class AdapterServiceTest {
         final Handler handler = new Handler(mLooper.getLooper());
         // Post the creation of AdapterService since it rely on Looper.myLooper()
         handler.post(
-                () -> mAdapterService = new MockAdapterService(mLooper.getLooper(), mMockContext));
+                () ->
+                        mAdapterService =
+                                new MockAdapterService(
+                                        mLooper.getLooper(),
+                                        mMockContext,
+                                        mNativeInterface,
+                                        mGattNativeInterface));
         assertThat(mLooper.dispatchAll()).isEqualTo(1);
         assertThat(mAdapterService).isNotNull();
 
@@ -325,14 +333,12 @@ public class AdapterServiceTest {
         LeAudioService.setLeAudioService(null);
         mAdapterService.cleanup();
         mAdapterService.unregisterRemoteCallback(mIBluetoothCallback);
-        AdapterNativeInterface.setInstance(null);
         BluetoothKeystoreNativeInterface.setInstance(null);
         BluetoothQualityReportNativeInterface.setInstance(null);
         BluetoothHciVendorSpecificNativeInterface.setInstance(null);
         SdpManagerNativeInterface.setInstance(null);
         AdvertiseManagerNativeInterface.setInstance(null);
         DistanceMeasurementNativeInterface.setInstance(null);
-        GattNativeInterface.setInstance(null);
         PeriodicScanNativeInterface.setInstance(null);
         ScanNativeInterface.setInstance(null);
         MetricsLogger.setInstanceForTesting(null);

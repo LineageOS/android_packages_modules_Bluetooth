@@ -96,3 +96,10 @@ flag {
     description: "Inject service manager bluetooth hci instance name"
     bug: "413484664"
 }
+
+flag {
+    name: "add_profile_as_intent_extra"
+    namespace: "bluetooth"
+    description: "Add Profile as intent extra"
+    bug: "419074085"
+}

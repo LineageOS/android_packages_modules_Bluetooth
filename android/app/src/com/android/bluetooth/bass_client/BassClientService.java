@@ -478,7 +478,7 @@ public class BassClientService extends ProfileService {
     }
 
     public BassClientService(AdapterService adapterService) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mAdapter = obtainSystemService(BluetoothManager.class).getAdapter();
         mPeriodicAdvertisingManager = mAdapter.getPeriodicAdvertisingManager();

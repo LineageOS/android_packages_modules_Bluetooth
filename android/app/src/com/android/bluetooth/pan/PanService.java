@@ -111,7 +111,7 @@ public class PanService extends ProfileService {
 
     @VisibleForTesting
     PanService(AdapterService adapterService, PanNativeInterface nativeInterface, Looper looper) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.PAN, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(nativeInterface, () -> new PanNativeInterface(this));

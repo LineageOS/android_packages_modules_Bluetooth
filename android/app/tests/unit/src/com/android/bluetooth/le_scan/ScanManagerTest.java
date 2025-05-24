@@ -100,8 +100,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.gatt.GattNativeInterface;
-import com.android.bluetooth.gatt.GattObjectsFactory;
 
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -114,7 +112,6 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.Spy;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -138,13 +135,10 @@ public class ScanManagerTest {
     @Mock private AdapterService mAdapterService;
     @Mock private BluetoothManager mBluetoothManager;
     @Mock private BluetoothAdapter mAdapter;
-    @Mock private GattNativeInterface mNativeInterface;
     @Mock private LocationManager mLocationManager;
     @Mock private MetricsLogger mMetricsLogger;
     @Mock private ScanNativeInterface mScanNativeInterface;
     @Mock private ScanController mScanController;
-
-    @Spy private GattObjectsFactory mGattObjectsFactory = GattObjectsFactory.getInstance();
 
     private static final int DEFAULT_REGULAR_SCAN_REPORT_DELAY_MS = 0;
     private static final int DEFAULT_BATCH_SCAN_REPORT_DELAY_MS = 100;
@@ -222,8 +216,6 @@ public class ScanManagerTest {
         // Needed to mock Native call/callback when hw offload scan filter is enabled
         doReturn(true).when(mAdapter).isOffloadedFilteringSupported();
 
-        GattObjectsFactory.setInstanceForTesting(mGattObjectsFactory);
-        doReturn(mNativeInterface).when(mGattObjectsFactory).getNativeInterface();
         // Mock JNI callback in ScanNativeInterface
         doReturn(true).when(mScanNativeInterface).waitForCallback(anyInt());
 
@@ -257,7 +249,6 @@ public class ScanManagerTest {
 
     @After
     public void tearDown() throws Exception {
-        GattObjectsFactory.setInstanceForTesting(null);
         MetricsLogger.setInstanceForTesting(null);
         MetricsLogger.getInstance();
     }

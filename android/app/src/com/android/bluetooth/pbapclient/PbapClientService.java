@@ -75,6 +75,7 @@ public class PbapClientService extends ProfileService {
     private final DatabaseManager mDatabaseManager;
     private final Map<BluetoothDevice, PbapClientStateMachine> mPbapClientStateMachineMap;
     private final Handler mHandler;
+    private final Looper mStateMachinesLooper;
 
     private int mSdpHandle = -1;
 
@@ -115,9 +116,10 @@ public class PbapClientService extends ProfileService {
     }
 
     public PbapClientService(AdapterService adapterService) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.PBAP_CLIENT, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new Handler(Looper.getMainLooper());
+        mStateMachinesLooper = null;
 
         if (Flags.pbapClientStorageRefactor()) {
             mPbapClientContactsStorage = new PbapClientContactsStorage(mAdapterService);
@@ -143,10 +145,14 @@ public class PbapClientService extends ProfileService {
     PbapClientService(
             AdapterService adapterService,
             PbapClientContactsStorage storage,
-            Map<BluetoothDevice, PbapClientStateMachine> deviceMap) {
-        super(requireNonNull(adapterService));
+            Map<BluetoothDevice, PbapClientStateMachine> deviceMap,
+            Looper looper) {
+        super(BluetoothProfile.PBAP_CLIENT, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
-        mHandler = new Handler(Looper.getMainLooper());
+
+        // This is an override unique to this constructor which belongs to tests only
+        mHandler = new Handler(looper);
+        mStateMachinesLooper = looper;
 
         mPbapClientContactsStorage = storage;
         mPbapClientStateMachineMap = deviceMap;
@@ -271,13 +277,21 @@ public class PbapClientService extends ProfileService {
                     Log.w(TAG, "Cannot connect " + device + ", too many devices connected already");
                     return false;
                 }
+                var looper = mStateMachinesLooper;
+                if (looper == null) {
+                    final var stateMachineThread = new HandlerThread("PbapClientStateMachine");
+                    stateMachineThread.start();
+                    looper = stateMachineThread.getLooper();
+                }
                 stateMachine =
                         new PbapClientStateMachine(
                                 mAdapterService,
                                 device,
                                 mPbapClientContactsStorage,
                                 this,
-                                new PbapClientStateMachineCallback(device));
+                                looper,
+                                new PbapClientStateMachineCallback(device),
+                                null);
                 stateMachine.start();
                 stateMachine.connect();
                 mPbapClientStateMachineMap.put(device, stateMachine);
@@ -721,9 +735,10 @@ public class PbapClientService extends ProfileService {
 
     @VisibleForTesting
     PbapClientService(AdapterService adapterService, PbapClientAccountManager accountManager) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.PBAP_CLIENT, requireNonNull(adapterService));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new Handler(Looper.getMainLooper());
+        mStateMachinesLooper = null;
 
         if (Flags.pbapClientStorageRefactor()) {
             throw new IllegalStateException("pbapClientStorageRefactor: Invalid constructor call");

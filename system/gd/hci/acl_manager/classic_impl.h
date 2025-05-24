@@ -50,20 +50,17 @@ struct acl_connection {
 };
 
 struct classic_impl {
-  classic_impl(HciInterface* hci_layer, Controller* controller, os::Handler* handler,
-               RoundRobinScheduler* round_robin_scheduler, bool crash_on_unknown_handle,
-               AclScheduler* acl_scheduler, RemoteNameRequestModule* remote_name_request_module)
+  classic_impl(HciInterface& hci_layer, os::Handler* handler,
+               RoundRobinScheduler& round_robin_scheduler, bool crash_on_unknown_handle,
+               AclScheduler& acl_scheduler, RemoteNameRequestModule& remote_name_request_module)
       : hci_layer_(hci_layer),
-        controller_(controller),
         round_robin_scheduler_(round_robin_scheduler),
         acl_scheduler_(acl_scheduler),
         remote_name_request_module_(remote_name_request_module) {
-    hci_layer_ = hci_layer;
-    controller_ = controller;
     handler_ = handler;
     connections.crash_on_unknown_handle_ = crash_on_unknown_handle;
     should_accept_connection_ = common::Bind([](Address, ClassOfDevice) { return true; });
-    acl_connection_interface_ = hci_layer_->GetAclConnectionInterface(
+    acl_connection_interface_ = hci_layer_.GetAclConnectionInterface(
             handler_->BindOn(this, &classic_impl::on_classic_event),
             handler_->BindOn(this, &classic_impl::on_classic_disconnect),
             handler_->BindOn(this, &classic_impl::on_incoming_connection),
@@ -71,7 +68,7 @@ struct classic_impl {
   }
 
   ~classic_impl() {
-    hci_layer_->PutAclConnectionInterface();
+    hci_layer_.PutAclConnectionInterface();
     connections.reset();
   }
 
@@ -265,7 +262,7 @@ public:
 
     bluetooth::metrics::LogIncomingAclStartEvent(address);
 
-    acl_scheduler_->RegisterPendingIncomingConnection(address);
+    acl_scheduler_.RegisterPendingIncomingConnection(address);
 
     if (is_classic_link_already_connected(address)) {
       auto reason = RejectConnectionReason::UNACCEPTABLE_BD_ADDR;
@@ -296,7 +293,7 @@ public:
             CreateConnectionBuilder::Create(address, packet_type, page_scan_repetition_mode,
                                             clock_offset, clock_offset_valid, allow_role_switch);
 
-    acl_scheduler_->EnqueueOutgoingAclConnection(
+    acl_scheduler_.EnqueueOutgoingAclConnection(
             address, handler_->BindOnceOn(this, &classic_impl::actually_create_connection, address,
                                           std::move(packet)));
   }
@@ -305,7 +302,7 @@ public:
                                   std::unique_ptr<CreateConnectionBuilder> packet) {
     if (is_classic_link_already_connected(address)) {
       log::warn("already connected: {}", address);
-      acl_scheduler_->ReportOutgoingAclConnectionFailure();
+      acl_scheduler_.ReportOutgoingAclConnectionFailure();
       return;
     }
     acl_connection_interface_->EnqueueCommand(
@@ -324,7 +321,7 @@ public:
       client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectFail,
                                              common::Unretained(client_callbacks_), address,
                                              status.GetStatus(), true /* locally initiated */));
-      acl_scheduler_->ReportOutgoingAclConnectionFailure();
+      acl_scheduler_.ReportOutgoingAclConnectionFailure();
     } else {
       // everything is good, resume when a connection_complete event arrives
       return;
@@ -353,7 +350,7 @@ public:
     uint16_t handle = connection_complete.GetConnectionHandle();
     auto queue = std::make_shared<AclConnection::Queue>(10);
     auto queue_down_end = queue->GetDownEnd();
-    round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle, queue);
+    round_robin_scheduler_.Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle, queue);
     std::unique_ptr<ClassicAclConnection> connection(
             new ClassicAclConnection(std::move(queue), acl_connection_interface_, handle, address));
     connection->locally_initiated_ = initiator == Initiator::LOCALLY_INITIATED;
@@ -382,7 +379,7 @@ public:
     auto status = connection_complete.GetStatus();
     auto address = connection_complete.GetBdAddr();
 
-    acl_scheduler_->ReportAclConnectionCompletion(
+    acl_scheduler_.ReportAclConnectionCompletion(
             address,
             handler_->BindOnceOn(this, &classic_impl::create_and_announce_connection,
                                  connection_complete, Role::CENTRAL, Initiator::LOCALLY_INITIATED),
@@ -399,11 +396,11 @@ public:
                                        valid_incoming_addresses.c_str());
                       remote_name_request_module->ReportRemoteNameRequestCancellation(address);
                     },
-                    common::Unretained(remote_name_request_module_), address, status));
+                    base::Unretained(&remote_name_request_module_), address, status));
   }
 
   void cancel_connect(Address address) {
-    acl_scheduler_->CancelAclConnection(
+    acl_scheduler_.CancelAclConnection(
             address, handler_->BindOnceOn(this, &classic_impl::actually_cancel_connect, address),
             client_handler_->BindOnceOn(client_callbacks_, &ConnectionCallbacks::OnConnectFail,
                                         address, ErrorCode::UNKNOWN_CONNECTION,
@@ -427,7 +424,7 @@ public:
     connections.execute(
             handle,
             [=, this](ConnectionManagementCallbacks* callbacks) {
-              round_robin_scheduler_->Unregister(handle);
+              round_robin_scheduler_.Unregister(handle);
               callbacks->OnDisconnection(reason);
             },
             kRemoveConnectionAfterwards);
@@ -750,11 +747,10 @@ public:
     promise.set_value();
   }
 
-  HciInterface* hci_layer_ = nullptr;
-  Controller* controller_ = nullptr;
-  RoundRobinScheduler* round_robin_scheduler_ = nullptr;
-  AclScheduler* acl_scheduler_ = nullptr;
-  RemoteNameRequestModule* remote_name_request_module_ = nullptr;
+  HciInterface& hci_layer_;
+  RoundRobinScheduler& round_robin_scheduler_;
+  AclScheduler& acl_scheduler_;
+  RemoteNameRequestModule& remote_name_request_module_;
   AclConnectionInterface* acl_connection_interface_ = nullptr;
   os::Handler* handler_ = nullptr;
   ConnectionCallbacks* client_callbacks_ = nullptr;

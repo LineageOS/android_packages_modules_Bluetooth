@@ -219,7 +219,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
 
     @VisibleForTesting
     BluetoothOppService(AdapterService adapterService, BluetoothOppPreference oppPreference) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.OPP, requireNonNull(adapterService));
 
         IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);

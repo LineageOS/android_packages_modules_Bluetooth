@@ -34,7 +34,7 @@ namespace acl_manager {
 
 class RoundRobinScheduler {
 public:
-  RoundRobinScheduler(os::Handler* handler, Controller* controller,
+  RoundRobinScheduler(os::Handler* handler, Controller& controller,
                       common::BidiQueueEnd<AclBuilder, AclView>* hci_queue_end);
   ~RoundRobinScheduler();
 
@@ -72,7 +72,7 @@ private:
   void incoming_acl_credits(uint16_t handle, uint16_t credits);
 
   os::Handler* handler_ = nullptr;
-  Controller* controller_ = nullptr;
+  Controller& controller_;
   std::map<uint16_t, acl_queue_handler> acl_queue_handlers_;
   common::MultiPriorityQueue<packet_fragment, 2> fragments_to_send_;
   uint16_t max_acl_packet_credits_ = 0;

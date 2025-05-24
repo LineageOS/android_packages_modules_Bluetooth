@@ -101,9 +101,9 @@ void BtaAvCo::Init(const std::vector<btav_a2dp_codec_config_t>& codec_priorities
   supported_codecs->clear();
   for (auto* codec_config : peer_cache_->peers_[0].GetCodecs()->orderedSourceCodecs()) {
     auto& codec_info = supported_codecs->emplace_back();
-    codec_info.codec_type = codec_config->codecIndex();
-    codec_info.codec_id = static_cast<uint64_t>(codec_config->codecId());
-    codec_info.codec_name = codec_config->name();
+    codec_info.codec_capabilities.codec_type = codec_config->codecIndex();
+    codec_info.codec_id = codec_config->codecId();
+    codec_info.name = codec_config->name();
   }
 }
 

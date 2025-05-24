@@ -23,6 +23,7 @@ import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.NonNull;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUtils;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -110,7 +111,7 @@ public class AvrcpTargetService extends ProfileService {
             AvrcpNativeInterface nativeInterface,
             AvrcpVolumeManager volumeManager,
             Looper looper) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.AVRCP, requireNonNull(adapterService));
         mAudioManager =
                 requireNonNullElseGet(audioManager, () -> obtainSystemService(AudioManager.class));
         mNativeInterface =

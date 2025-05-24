@@ -153,7 +153,7 @@ public class BluetoothMapService extends ProfileService {
     }
 
     public BluetoothMapService(AdapterService adapterService) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.MAP, requireNonNull(adapterService));
         BluetoothMap.invalidateBluetoothGetConnectionStateCache();
 
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());

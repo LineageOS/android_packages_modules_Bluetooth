@@ -39,7 +39,7 @@ std::string ahal_codec_configuration::ToString() const {
                  "  codec_bitrate: {}\n",
                  codec_config.ToString(), peer_mtu, preferred_encoding_interval_us, codec_bitrate);
 
-  std::format_to(out, "  codec_specific_information_elements: [\n");
+  std::format_to(out, "  codec_specific_information_elements: [\n    ");
 
   for (size_t i = 0; i < AVDT_CODEC_SIZE; ++i) {
     std::format_to(out, "0x{:02x}",
@@ -52,7 +52,8 @@ std::string ahal_codec_configuration::ToString() const {
     }
   }
 
-  std::format_to(out, "}}");
+  std::format_to(out, "\n  ]");
+  std::format_to(out, "\n}}");
 
   return result_string;
 }

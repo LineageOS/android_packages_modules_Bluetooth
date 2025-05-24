@@ -1902,8 +1902,10 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   log::info("peer {} bta_handle:0x{:x} audio_open_cnt:{}, p_data {} start:{}", p_scb->PeerAddress(),
             p_scb->hndl, bta_av_cb.audio_open_cnt, std::format_ptr(p_data), start);
 
-  bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
-  BTM_unblock_role_switch_and_sniff_mode_for(p_scb->PeerAddress());
+  if (!com::android::bluetooth::flags::delay_sniff_subrating()) {
+    bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
+    BTM_unblock_role_switch_and_sniff_mode_for(p_scb->PeerAddress());
+  }
 
   if (p_scb->co_started) {
     if (bta_av_cb.offload_started_hndl == p_scb->hndl) {
@@ -1919,6 +1921,12 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     p_scb->co_started = false;
 
     p_scb->p_cos->stop(p_scb->hndl, p_scb->PeerAddress());
+  }
+
+  if (com::android::bluetooth::flags::delay_sniff_subrating()) {
+    log::info("Delayed Sniff Subrating");
+    bta_sys_idle(BTA_ID_AV, p_scb->hdi, p_scb->PeerAddress());
+    BTM_unblock_role_switch_and_sniff_mode_for(p_scb->PeerAddress());
   }
 
   /* if q_info.a2dp_list is not empty, drop it now */

@@ -352,11 +352,12 @@ static jobjectArray getSupportedCodecTypesNative(JNIEnv* env) {
   }
 
   for (size_t index = 0; index < supported_codecs.size(); index++) {
-    jobject codec_type = env->NewObject(
-            android_bluetooth_BluetoothCodecType.clazz,
-            android_bluetooth_BluetoothCodecType.constructor,
-            (jint)supported_codecs[index].codec_type, (jlong)supported_codecs[index].codec_id,
-            env->NewStringUTF(supported_codecs[index].codec_name.c_str()));
+    uint64_t codec_id = static_cast<uint64_t>(supported_codecs[index].codec_id);
+    jobject codec_type = env->NewObject(android_bluetooth_BluetoothCodecType.clazz,
+                                        android_bluetooth_BluetoothCodecType.constructor,
+                                        (jint)supported_codecs[index].codec_capabilities.codec_type,
+                                        (jlong)codec_id,
+                                        env->NewStringUTF(supported_codecs[index].name.c_str()));
     env->SetObjectArrayElement(result, index, codec_type);
   }
 

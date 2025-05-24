@@ -69,7 +69,7 @@ std::optional<CodecId> ParseCodecId(uint8_t const media_codec_capabilities[]) {
   // The Media Codec Capabilities contain the Media Codec Type and
   // Media Type on 16-bits.
   if (length_of_service_capability < 2) {
-    return {};
+    return std::nullopt;
   }
   tA2DP_CODEC_TYPE codec_type = A2DP_GetCodecType(media_codec_capabilities);
   switch (codec_type) {
@@ -81,7 +81,7 @@ std::optional<CodecId> ParseCodecId(uint8_t const media_codec_capabilities[]) {
       // The Vendor Codec Specific Information Elements contain
       // a 32-bit Vendor ID and 16-bit Vendor Specific Codec ID.
       if (length_of_service_capability < 8) {
-        return {};
+        return std::nullopt;
       }
       uint32_t vendor_id = A2DP_VendorCodecGetVendorId(media_codec_capabilities);
       uint16_t codec_id = A2DP_VendorCodecGetCodecId(media_codec_capabilities);
@@ -89,13 +89,38 @@ std::optional<CodecId> ParseCodecId(uint8_t const media_codec_capabilities[]) {
       // nonreserved 16-bit Company ID as defined in Bluetooth Assigned Numbers.
       // The upper 16 bits of the 32-bit Vendor ID shall be set to zero.
       if (vendor_id > UINT16_MAX) {
-        return {};
+        return std::nullopt;
       }
       return static_cast<CodecId>(VendorCodecId(static_cast<uint16_t>(vendor_id), codec_id));
     }
     default:
-      return {};
+      return std::nullopt;
   }
+}
+
+std::string CodecIdToString(CodecId codec_id) {
+  switch (codec_id) {
+    case CodecId::SBC:
+      return "SBC";
+    case CodecId::AAC:
+      return "AAC";
+    case CodecId::APTX:
+      return "APTX";
+    case CodecId::APTX_HD:
+      return "APTX_HD";
+    case CodecId::LDAC:
+      return "LDAC";
+    case CodecId::OPUS:
+      return "OPUS";
+    default:
+      if (static_cast<uint8_t>(codec_id) == A2DP_MEDIA_CT_NON_A2DP) {
+        return std::format("Codec ID: 0x{:04x}, Vendor ID: 0x{:04x}",
+                           static_cast<uint16_t>(static_cast<uint64_t>(codec_id) >> 24),
+                           static_cast<uint16_t>(static_cast<uint64_t>(codec_id) >> 8));
+      } else {
+        return std::format("Invalid CodecId: {}", static_cast<uint64_t>(codec_id));
+      }
+  };
 }
 
 }  // namespace bluetooth::a2dp

@@ -30,11 +30,14 @@ import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.bluetooth.btservice.AdapterNativeInterface;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.gatt.GattNativeInterface;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 
 /** Test cases for {@link BluetoothOppServiceCleanup}. */
 @SmallTest
@@ -42,13 +45,17 @@ import org.junit.runner.RunWith;
 public class BluetoothOppServiceCleanupTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AdapterNativeInterface mAdapterNativeInterface;
+    @Mock private GattNativeInterface mGattNativeInterface;
+
     private final Context mTargetContext =
             InstrumentationRegistry.getInstrumentation().getTargetContext();
 
     @Test
     @UiThreadTest
     public void testCleanup() throws Exception {
-        AdapterService adapterService = new AdapterService(mTargetContext);
+        AdapterService adapterService =
+                new AdapterService(mTargetContext, mAdapterNativeInterface, mGattNativeInterface);
 
         // Don't need to disable again since it will be handled in OppService.cleanup
         enableBtOppProvider();

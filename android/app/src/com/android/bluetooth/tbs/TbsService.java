@@ -23,6 +23,7 @@ import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeCall;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.IBluetoothLeCallControlCallback;
 import android.os.RemoteException;
 import android.sysprop.BluetoothProperties;
@@ -47,7 +48,7 @@ public class TbsService extends ProfileService {
     private final TbsGeneric mTbsGeneric;
 
     public TbsService(AdapterService adapterService) {
-        super(requireNonNull(adapterService));
+        super(BluetoothProfile.LE_CALL_CONTROL, requireNonNull(adapterService));
 
         // Mark service as started
         setTbsService(this);

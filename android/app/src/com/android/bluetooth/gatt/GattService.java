@@ -185,13 +185,20 @@ public class GattService extends ProfileService {
     @VisibleForTesting int mRssiReadThrottleMs;
 
     public GattService(AdapterService adapterService) {
-        this(adapterService, null);
+        this(adapterService, null, null);
+    }
+
+    public GattService(AdapterService adapterService, GattNativeInterface nativeInterface) {
+        this(adapterService, nativeInterface, null);
     }
 
     // TODO(b/410473516) This constructor will be removed when ScanController is removed from here.
     @VisibleForTesting
-    GattService(AdapterService adapterService, ScanController scanController) {
-        super(requireNonNull(adapterService));
+    GattService(
+            AdapterService adapterService,
+            GattNativeInterface nativeInterface,
+            ScanController scanController) {
+        super(BluetoothProfile.GATT, requireNonNull(adapterService));
         mActivityManager = requireNonNull(obtainSystemService(ActivityManager.class));
         mPackageManager = requireNonNull(mAdapterService.getPackageManager());
         mCompanionDeviceManager = requireNonNull(obtainSystemService(CompanionDeviceManager.class));
@@ -199,14 +206,17 @@ public class GattService extends ProfileService {
         Settings.Global.putInt(
                 getContentResolver(), "bluetooth_sanitized_exposure_notification_supported", 1);
 
-        mNativeInterface = GattObjectsFactory.getInstance().getNativeInterface();
-        mNativeInterface.init(this, mAdapterService);
+        mNativeInterface =
+                requireNonNullElseGet(
+                        nativeInterface, () -> new GattNativeInterface(mAdapterService, this));
+        mNativeInterface.init();
 
         // Create a thread to handle LE operations
         mHandlerThread = new HandlerThread("Bluetooth LE");
         mHandlerThread.start();
+        final var looper = mHandlerThread.getLooper();
 
-        mAdvertiseManager = new AdvertiseManager(mAdapterService, mHandlerThread.getLooper());
+        mAdvertiseManager = new AdvertiseManager(mAdapterService, looper);
 
         mRssiReadThrottleMs =
                 SystemProperties.getInt(RSSI_READ_THROTTLE_MS, RSSI_READ_THROTTLE_MS_DEFAULT);
@@ -225,10 +235,8 @@ public class GattService extends ProfileService {
         } else {
             mScanController = null;
         }
-        mDistanceMeasurementManager =
-                GattObjectsFactory.getInstance()
-                        .createDistanceMeasurementManager(
-                                mAdapterService, mHandlerThread.getLooper());
+
+        mDistanceMeasurementManager = new DistanceMeasurementManager(mAdapterService, looper);
 
         if (Flags.onlyStartScanDuringBleOn()) {
             setGattService(this);
@@ -237,13 +245,6 @@ public class GattService extends ProfileService {
 
     public static boolean isEnabled() {
         return BluetoothProperties.isProfileGattEnabled().orElse(true);
-    }
-
-    @Override
-    protected void setTestModeEnabled(boolean enableTestMode) {
-        if (mScanController != null) {
-            mScanController.setTestModeEnabled(enableTestMode);
-        }
     }
 
     @Override

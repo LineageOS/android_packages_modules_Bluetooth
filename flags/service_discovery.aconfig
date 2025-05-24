@@ -10,3 +10,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "service_discovery_on_connected_transport"
+    namespace: "bluetooth"
+    description: "Prefer to perform service discovery on all connected transport when transport is not specified"
+    bug: "419542108"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

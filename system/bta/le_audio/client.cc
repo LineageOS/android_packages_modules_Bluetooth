@@ -3171,7 +3171,8 @@ public:
     return iter == charac.descriptors.end() ? 0 : (*iter).handle;
   }
 
-  void ClearDeviceInformationAndStartSearch(LeAudioDevice* leAudioDevice) {
+  void ClearDeviceInformationAndStartSearch(LeAudioDevice* leAudioDevice,
+                                            bool search_request = true) {
     if (!leAudioDevice) {
       log::warn("leAudioDevice is null");
       return;
@@ -3194,9 +3195,11 @@ public:
     }
 
     btif_storage_leaudio_clear_service_data(leAudioDevice->address_);
-
-    BTA_GATTC_ServiceSearchRequest(leAudioDevice->conn_id_,
-                                   bluetooth::le_audio::uuid::kPublishedAudioCapabilityServiceUuid);
+    if (search_request) {
+      BTA_GATTC_ServiceSearchRequest(
+              leAudioDevice->conn_id_,
+              bluetooth::le_audio::uuid::kPublishedAudioCapabilityServiceUuid);
+    }
   }
 
   void OnServiceChangeEvent(const RawAddress& address) {
@@ -3206,8 +3209,10 @@ public:
       return;
     }
 
+    log::info(" {}", address);
+
     if (leAudioDevice->conn_id_ != GATT_INVALID_CONN_ID) {
-      ClearDeviceInformationAndStartSearch(leAudioDevice);
+      ClearDeviceInformationAndStartSearch(leAudioDevice, false /* search_request */);
       return;
     }
 
@@ -3264,6 +3269,8 @@ public:
                    std::format_ptr(leAudioDevice));
       return;
     }
+
+    log::info("{}", address);
 
     if (!leAudioDevice->encrypted_) {
       log::debug("Wait for device to be encrypted");
