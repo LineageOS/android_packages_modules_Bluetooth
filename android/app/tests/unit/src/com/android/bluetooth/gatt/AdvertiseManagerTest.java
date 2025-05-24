@@ -82,8 +82,8 @@ public class AdvertiseManagerTest {
         mAdvertiseManager =
                 new AdvertiseManager(
                         mAdapterService,
-                        new TestLooper().getLooper(),
                         mNativeInterface,
+                        new TestLooper().getLooper(),
                         mAdvertiserMap);
 
         AdvertisingSetParameters parameters = new AdvertisingSetParameters.Builder().build();

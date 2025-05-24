@@ -19,48 +19,22 @@ package com.android.bluetooth.gatt;
 import android.bluetooth.le.AdvertisingSetParameters;
 import android.bluetooth.le.PeriodicAdvertisingParameters;
 
-import androidx.annotation.VisibleForTesting;
-
-import com.android.internal.annotations.GuardedBy;
-
 /** Native interface for AdvertiseManager */
-@VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
 public class AdvertiseManagerNativeInterface {
     private static final String TAG = AdvertiseManagerNativeInterface.class.getSimpleName();
 
-    @GuardedBy("INSTANCE_LOCK")
-    private static AdvertiseManagerNativeInterface sInstance;
+    private final AdvertiseManager mManager;
 
-    private static final Object INSTANCE_LOCK = new Object();
-
-    private AdvertiseManager mManager;
-
-    /** Get singleton instance. */
-    static AdvertiseManagerNativeInterface getInstance() {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new AdvertiseManagerNativeInterface();
-            }
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    public static void setInstance(AdvertiseManagerNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
-    }
-
-    void init(AdvertiseManager manager) {
+    AdvertiseManagerNativeInterface(AdvertiseManager manager) {
         mManager = manager;
+    }
+
+    void init() {
         initializeNative();
     }
 
     void cleanup() {
         cleanupNative();
-        mManager = null;
     }
 
     void startAdvertisingSet(

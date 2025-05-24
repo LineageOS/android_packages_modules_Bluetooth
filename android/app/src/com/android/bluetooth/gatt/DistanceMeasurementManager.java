@@ -21,6 +21,8 @@ import static android.bluetooth.le.DistanceMeasurementMethod.DISTANCE_MEASUREMEN
 import static android.bluetooth.le.DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI;
 import static android.content.pm.PackageManager.FEATURE_BLUETOOTH_LE_CHANNEL_SOUNDING;
 
+import static java.util.Objects.requireNonNullElseGet;
+
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUtils;
@@ -75,7 +77,7 @@ public class DistanceMeasurementManager {
     private final AdapterService mAdapterService;
     private final HandlerThread mHandlerThread;
     private final Handler mHandler;
-    private final DistanceMeasurementNativeInterface mDistanceMeasurementNativeInterface;
+    private final DistanceMeasurementNativeInterface mNativeInterface;
     private final DistanceMeasurementBinder mDistanceMeasurementBinder;
     private final ConcurrentHashMap<String, CopyOnWriteArraySet<DistanceMeasurementTracker>>
             mRssiTrackers = new ConcurrentHashMap<>();
@@ -85,8 +87,10 @@ public class DistanceMeasurementManager {
 
     private volatile boolean mIsTurnedOff = false;
 
-    /** Constructor of {@link DistanceMeasurementManager}. */
-    DistanceMeasurementManager(AdapterService adapterService, Looper looper) {
+    DistanceMeasurementManager(
+            AdapterService adapterService,
+            DistanceMeasurementNativeInterface nativeInterface,
+            Looper looper) {
         mAdapterService = adapterService;
 
         if (Flags.distanceMeasurementThread()) {
@@ -104,8 +108,10 @@ public class DistanceMeasurementManager {
             mHandler = new Handler(mHandlerThread.getLooper());
         }
 
-        mDistanceMeasurementNativeInterface = DistanceMeasurementNativeInterface.getInstance();
-        mDistanceMeasurementNativeInterface.init(this);
+        mNativeInterface =
+                requireNonNullElseGet(
+                        nativeInterface, () -> new DistanceMeasurementNativeInterface(this));
+        mNativeInterface.init();
         mDistanceMeasurementBinder = new DistanceMeasurementBinder(adapterService, this);
         if (Flags.channelSounding25q2Apis()) {
             mHasChannelSoundingFeature =
@@ -135,7 +141,7 @@ public class DistanceMeasurementManager {
                     mIsTurnedOff = true;
                     mHandler.removeCallbacksAndMessages(null);
                     mDistanceMeasurementBinder.cleanup();
-                    mDistanceMeasurementNativeInterface.cleanup();
+                    mNativeInterface.cleanup();
                     Log.d(TAG, "stop all sessions as BT is off");
                     for (String addressForCs : mCsTrackers.keySet()) {
                         onDistanceMeasurementStopped(
@@ -254,7 +260,7 @@ public class DistanceMeasurementManager {
             Log.w(TAG, "Already registered");
             return;
         }
-        mDistanceMeasurementNativeInterface.startDistanceMeasurement(
+        mNativeInterface.startDistanceMeasurement(
                 tracker.mAppUid,
                 tracker.mIdentityAddress,
                 tracker.mInterval,
@@ -271,7 +277,7 @@ public class DistanceMeasurementManager {
             Log.w(TAG, "Already registered");
             return;
         }
-        mDistanceMeasurementNativeInterface.startDistanceMeasurement(
+        mNativeInterface.startDistanceMeasurement(
                 tracker.mAppUid,
                 tracker.mIdentityAddress,
                 tracker.mInterval,
@@ -362,7 +368,7 @@ public class DistanceMeasurementManager {
         if (set.isEmpty()) {
             logd("no rssi tracker");
             mRssiTrackers.remove(identityAddress);
-            mDistanceMeasurementNativeInterface.stopDistanceMeasurement(
+            mNativeInterface.stopDistanceMeasurement(
                     identityAddress, DISTANCE_MEASUREMENT_METHOD_RSSI);
         }
         return BluetoothStatusCodes.SUCCESS;
@@ -391,7 +397,7 @@ public class DistanceMeasurementManager {
         if (set.isEmpty()) {
             logd("No CS tracker exists; stop CS");
             mCsTrackers.remove(identityAddress);
-            mDistanceMeasurementNativeInterface.stopDistanceMeasurement(
+            mNativeInterface.stopDistanceMeasurement(
                     identityAddress, DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING);
         }
         return BluetoothStatusCodes.SUCCESS;

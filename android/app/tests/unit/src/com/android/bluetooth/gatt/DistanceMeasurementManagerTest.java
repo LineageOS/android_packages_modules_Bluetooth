@@ -70,7 +70,7 @@ public class DistanceMeasurementManagerTest {
     @Rule public SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private DistanceMeasurementNativeInterface mDistanceMeasurementNativeInterface;
+    @Mock private DistanceMeasurementNativeInterface mNativeInterface;
     @Mock private AdapterService mAdapterService;
     @Mock private PackageManager mPackageManager;
     @Mock private IDistanceMeasurementCallback mCallback;
@@ -95,7 +95,6 @@ public class DistanceMeasurementManagerTest {
         final String address = mDevice.getAddress();
         doReturn(address).when(mAdapterService).getIdentityAddress(address);
         doReturn(true).when(mAdapterService).isConnected(any());
-        DistanceMeasurementNativeInterface.setInstance(mDistanceMeasurementNativeInterface);
 
         mHandlerThread = new HandlerThread("DistanceMeasurementManagerTest");
         mHandlerThread.start();
@@ -106,7 +105,8 @@ public class DistanceMeasurementManagerTest {
         MetricsLogger.setInstanceForTesting(mMockMetricsLogger);
 
         mDistanceMeasurementManager =
-                new DistanceMeasurementManager(mAdapterService, mHandlerThread.getLooper());
+                new DistanceMeasurementManager(
+                        mAdapterService, mNativeInterface, mHandlerThread.getLooper());
         Message msg = mTestLooperManager.next();
         mTestLooperManager.execute(msg);
         mUuid = UUID.randomUUID();
@@ -116,7 +116,6 @@ public class DistanceMeasurementManagerTest {
     public void tearDown() throws Exception {
         mDistanceMeasurementManager.cleanup();
         mTestLooperManager.release();
-        DistanceMeasurementNativeInterface.setInstance(null);
         mHandlerThread.quit();
         MetricsLogger.setInstanceForTesting(null);
         MetricsLogger.getInstance();
@@ -131,7 +130,7 @@ public class DistanceMeasurementManagerTest {
                         .setMethodId(DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI)
                         .build();
         mDistanceMeasurementManager.startDistanceMeasurement(mUuid, APP_UID, params, mCallback);
-        verify(mDistanceMeasurementNativeInterface)
+        verify(mNativeInterface)
                 .startDistanceMeasurement(
                         APP_UID,
                         mDevice.getAddress(),
@@ -152,7 +151,7 @@ public class DistanceMeasurementManagerTest {
         mDistanceMeasurementManager.startDistanceMeasurement(mUuid, APP_UID, params, mCallback);
         mDistanceMeasurementManager.stopDistanceMeasurement(
                 mUuid, mDevice, DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI, false);
-        verify(mDistanceMeasurementNativeInterface)
+        verify(mNativeInterface)
                 .stopDistanceMeasurement(
                         mDevice.getAddress(),
                         DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI);
@@ -167,7 +166,7 @@ public class DistanceMeasurementManagerTest {
                         .setMethodId(DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI)
                         .build();
         mDistanceMeasurementManager.startDistanceMeasurement(mUuid, APP_UID, params, mCallback);
-        verify(mDistanceMeasurementNativeInterface)
+        verify(mNativeInterface)
                 .startDistanceMeasurement(
                         APP_UID,
                         mDevice.getAddress(),
@@ -189,7 +188,7 @@ public class DistanceMeasurementManagerTest {
                         .setMethodId(DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI)
                         .build();
         mDistanceMeasurementManager.startDistanceMeasurement(mUuid, APP_UID, params, mCallback);
-        verify(mDistanceMeasurementNativeInterface)
+        verify(mNativeInterface)
                 .startDistanceMeasurement(
                         APP_UID,
                         mDevice.getAddress(),
@@ -218,7 +217,7 @@ public class DistanceMeasurementManagerTest {
                         .build();
         mDistanceMeasurementManager.startDistanceMeasurement(mUuid, APP_UID, params, mCallback);
 
-        verify(mDistanceMeasurementNativeInterface, never())
+        verify(mNativeInterface, never())
                 .startDistanceMeasurement(
                         APP_UID,
                         mDevice.getAddress(),
@@ -242,7 +241,7 @@ public class DistanceMeasurementManagerTest {
                         .build();
         mDistanceMeasurementManager.startDistanceMeasurement(mUuid, APP_UID, params, mCallback);
 
-        verify(mDistanceMeasurementNativeInterface)
+        verify(mNativeInterface)
                 .startDistanceMeasurement(
                         APP_UID,
                         mDevice.getAddress(),
@@ -362,7 +361,7 @@ public class DistanceMeasurementManagerTest {
         mDistanceMeasurementManager.startDistanceMeasurement(mUuid, APP_UID, params, mCallback);
         mDistanceMeasurementManager.stopDistanceMeasurement(
                 mUuid, mDevice, DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI, false);
-        verify(mDistanceMeasurementNativeInterface)
+        verify(mNativeInterface)
                 .stopDistanceMeasurement(
                         mDevice.getAddress(),
                         DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI);
