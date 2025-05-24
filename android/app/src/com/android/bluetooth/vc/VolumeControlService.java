@@ -474,8 +474,7 @@ public class VolumeControlService extends ProfileService {
      */
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
-        mDatabaseManager.setProfileConnectionPolicy(
-                device, BluetoothProfile.VOLUME_CONTROL, connectionPolicy);
+        mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
             connect(device);
         } else if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
@@ -485,7 +484,7 @@ public class VolumeControlService extends ProfileService {
     }
 
     public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.VOLUME_CONTROL);
+        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     boolean isVolumeOffsetAvailable(BluetoothDevice device) {

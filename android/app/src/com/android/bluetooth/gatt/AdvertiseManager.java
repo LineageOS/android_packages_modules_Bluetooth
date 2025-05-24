@@ -20,6 +20,8 @@ import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringRunnable;
 
 import static com.android.bluetooth.gatt.AdvertiseHelper.advertiseDataToBytes;
 
+import static java.util.Objects.requireNonNullElseGet;
+
 import android.app.ActivityManager;
 import android.bluetooth.IBluetoothGattServerCallback;
 import android.bluetooth.le.AdvertiseCallback;
@@ -67,26 +69,27 @@ public class AdvertiseManager {
     private volatile boolean mIsAvailable = true;
     @VisibleForTesting int mTempRegistrationId = -1;
 
-    AdvertiseManager(AdapterService service, Looper advertiseLooper) {
-        this(
-                service,
-                advertiseLooper,
-                AdvertiseManagerNativeInterface.getInstance(),
-                new AdvertiserMap());
+    AdvertiseManager(
+            AdapterService service,
+            AdvertiseManagerNativeInterface nativeInterface,
+            Looper advertiseLooper) {
+        this(service, nativeInterface, advertiseLooper, new AdvertiserMap());
     }
 
     @VisibleForTesting
     AdvertiseManager(
             AdapterService service,
-            Looper advertiseLooper,
             AdvertiseManagerNativeInterface nativeInterface,
+            Looper advertiseLooper,
             AdvertiserMap advertiserMap) {
         Log.d(TAG, "advertise manager created");
         mService = service;
-        mNativeInterface = nativeInterface;
+        mNativeInterface =
+                requireNonNullElseGet(
+                        nativeInterface, () -> new AdvertiseManagerNativeInterface(this));
         mAdvertiserMap = advertiserMap;
         mActivityManager = mService.getSystemService(ActivityManager.class);
-        mNativeInterface.init(this);
+        mNativeInterface.init();
         mHandler = new Handler(advertiseLooper);
         mAdvertiseBinder = new AdvertiseBinder(service, this);
     }

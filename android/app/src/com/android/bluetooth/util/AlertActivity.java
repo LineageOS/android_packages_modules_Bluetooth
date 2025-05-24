@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package android.bluetooth;
+package com.android.bluetooth.util;
 
 import static android.view.WindowManager.LayoutParams.SYSTEM_FLAG_HIDE_NON_SYSTEM_OVERLAY_WINDOWS;
 

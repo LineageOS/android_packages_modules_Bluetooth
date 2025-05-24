@@ -132,3 +132,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "monitor_read_flag_on_offloaded_socket"
+    namespace: "bluetooth"
+    description: "Monitor read flag on the offloaded socket to catch close signal"
+    bug: "419864098"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

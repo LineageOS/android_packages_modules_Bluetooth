@@ -185,18 +185,28 @@ public class GattService extends ProfileService {
     @VisibleForTesting int mRssiReadThrottleMs;
 
     public GattService(AdapterService adapterService) {
-        this(adapterService, null, null);
+        this(adapterService, null, null, null);
     }
 
-    public GattService(AdapterService adapterService, GattNativeInterface nativeInterface) {
-        this(adapterService, nativeInterface, null);
+    public GattService(
+            AdapterService adapterService,
+            GattNativeInterface nativeInterface,
+            AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
+            DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
+        this(
+                adapterService,
+                nativeInterface,
+                advertiseManagerNativeInterface,
+                distanceMeasurementNativeInterface,
+                null);
     }
 
-    // TODO(b/410473516) This constructor will be removed when ScanController is removed from here.
     @VisibleForTesting
     GattService(
             AdapterService adapterService,
             GattNativeInterface nativeInterface,
+            AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
+            DistanceMeasurementNativeInterface distanceMeasurementNativeInterface,
             ScanController scanController) {
         super(BluetoothProfile.GATT, requireNonNull(adapterService));
         mActivityManager = requireNonNull(obtainSystemService(ActivityManager.class));
@@ -216,7 +226,8 @@ public class GattService extends ProfileService {
         mHandlerThread.start();
         final var looper = mHandlerThread.getLooper();
 
-        mAdvertiseManager = new AdvertiseManager(mAdapterService, looper);
+        mAdvertiseManager =
+                new AdvertiseManager(mAdapterService, advertiseManagerNativeInterface, looper);
 
         mRssiReadThrottleMs =
                 SystemProperties.getInt(RSSI_READ_THROTTLE_MS, RSSI_READ_THROTTLE_MS_DEFAULT);
@@ -236,7 +247,9 @@ public class GattService extends ProfileService {
             mScanController = null;
         }
 
-        mDistanceMeasurementManager = new DistanceMeasurementManager(mAdapterService, looper);
+        mDistanceMeasurementManager =
+                new DistanceMeasurementManager(
+                        mAdapterService, distanceMeasurementNativeInterface, looper);
 
         if (Flags.onlyStartScanDuringBleOn()) {
             setGattService(this);

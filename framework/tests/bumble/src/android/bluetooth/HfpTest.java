@@ -123,6 +123,7 @@ public class HfpTest {
     @After
     public void tearDown() {
         removeBond();
+        mTargetContext.unregisterReceiver(mReceiver);
     }
 
     @Test
