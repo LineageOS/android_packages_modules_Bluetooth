@@ -10,7 +10,6 @@ android_app {
     ],
     min_sdk_version: "36",
     srcs: ["src/**/*.kt"],
-    resource_dirs: ["src/res"],
     manifest: "AndroidManifest.xml",
 
     static_libs: [
