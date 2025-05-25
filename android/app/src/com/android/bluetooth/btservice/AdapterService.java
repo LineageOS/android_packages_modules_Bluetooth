@@ -618,6 +618,22 @@ public class AdapterService extends Service {
         super.onCreate();
         Log.d(TAG, "onCreate()");
         // OnCreate must perform the minimum of infallible and mandatory initialization
+        if (Flags.watchDeviceOverrideAirplaneMode()) {
+            mUserManager = requireNonNull(getSystemService(UserManager.class));
+            mAppOps = requireNonNull(getSystemService(AppOpsManager.class));
+            mPowerManager = requireNonNull(getSystemService(PowerManager.class));
+            mBatteryStatsManager = requireNonNull(getSystemService(BatteryStatsManager.class));
+            mCompanionDeviceManager =
+                    requireNonNull(getSystemService(CompanionDeviceManager.class));
+
+            mRemoteDevices = new RemoteDevices(this, mLooper);
+            mAdapterProperties = new AdapterProperties(this, mRemoteDevices, mLooper);
+            mAdapterStateMachine = new AdapterState(this, mLooper);
+
+            setAdapterService(this);
+            return;
+        }
+
         mRemoteDevices = new RemoteDevices(this, mLooper);
         mAdapterProperties = new AdapterProperties(this, mRemoteDevices, mLooper);
         mAdapterStateMachine = new AdapterState(this, mLooper);
