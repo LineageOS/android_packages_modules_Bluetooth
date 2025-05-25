@@ -50,6 +50,7 @@ import android.util.Pair;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -70,7 +71,7 @@ import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 /** Provides Bluetooth CSIP Set Coordinator profile, as a service. */
-public class CsipSetCoordinatorService extends ProfileService {
+public class CsipSetCoordinatorService extends ConnectableProfile {
     private static final String TAG = CsipSetCoordinatorService.class.getSimpleName();
 
     // Timeout for state machine thread join, to prevent potential ANR.
@@ -226,6 +227,7 @@ public class CsipSetCoordinatorService extends ProfileService {
      *
      * @return true if connection is successful, false otherwise.
      */
+    @Override
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect(): " + device);
         if (device == null) {
@@ -258,6 +260,7 @@ public class CsipSetCoordinatorService extends ProfileService {
      *
      * @return true if disconnect is successful, false otherwise.
      */
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         Log.d(TAG, "disconnect(): " + device);
         if (device == null) {
@@ -398,6 +401,7 @@ public class CsipSetCoordinatorService extends ProfileService {
      *     BluetoothProfile#STATE_CONNECTED} if this profile is connected, or {@link
      *     BluetoothProfile#STATE_DISCONNECTING} if this profile is being disconnected
      */
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         synchronized (mStateMachines) {
             CsipSetCoordinatorStateMachine sm = mStateMachines.get(device);

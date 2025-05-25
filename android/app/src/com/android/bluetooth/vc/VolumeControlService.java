@@ -55,6 +55,7 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -71,7 +72,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class VolumeControlService extends ProfileService {
+public class VolumeControlService extends ConnectableProfile {
     private static final String TAG = VolumeControlService.class.getSimpleName();
 
     private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1000;
@@ -226,6 +227,7 @@ public class VolumeControlService extends ProfileService {
         sVolumeControlService = instance;
     }
 
+    @Override
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect(): " + device);
         if (device == null) {
@@ -254,6 +256,7 @@ public class VolumeControlService extends ProfileService {
         return true;
     }
 
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         Log.d(TAG, "disconnect(): " + device);
         if (device == null) {
@@ -448,6 +451,7 @@ public class VolumeControlService extends ProfileService {
         }
     }
 
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         synchronized (mStateMachines) {
             VolumeControlStateMachine sm = mStateMachines.get(device);

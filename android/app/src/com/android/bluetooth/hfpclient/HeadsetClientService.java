@@ -45,7 +45,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.internal.annotations.GuardedBy;
@@ -61,7 +61,7 @@ import java.util.UUID;
 /**
  * Provides Bluetooth Headset Client (HF Role) profile, as a service in the Bluetooth application.
  */
-public class HeadsetClientService extends ProfileService {
+public class HeadsetClientService extends ConnectableProfile {
     private static final String TAG = HeadsetClientService.class.getSimpleName();
 
     @VisibleForTesting static final int MAX_HFP_SCO_VOICE_CALL_VOLUME = 15; // HFP 1.5 spec.
@@ -302,6 +302,7 @@ public class HeadsetClientService extends ProfileService {
         sHeadsetClientService = instance;
     }
 
+    @Override
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect " + device);
         if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN) {
@@ -328,6 +329,7 @@ public class HeadsetClientService extends ProfileService {
      * @param device is the device with which we are attempting to disconnect the profile
      * @return true if hfp client profile successfully disconnected, false otherwise
      */
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         HeadsetClientStateMachine sm = getStateMachine(device);
         if (sm == null) {
@@ -384,6 +386,7 @@ public class HeadsetClientService extends ProfileService {
      *     BluetoothProfile#STATE_CONNECTED} if this profile is connected, or {@link
      *     BluetoothProfile#STATE_DISCONNECTING} if this profile is being disconnected
      */
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         HeadsetClientStateMachine sm = getStateMachine(device);
         if (sm != null) {

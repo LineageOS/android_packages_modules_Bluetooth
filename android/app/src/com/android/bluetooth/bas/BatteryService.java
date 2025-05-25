@@ -35,7 +35,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
@@ -47,7 +47,7 @@ import java.util.List;
 import java.util.Map;
 
 /** A profile service that connects to the Battery service (BAS) of BLE devices */
-public class BatteryService extends ProfileService {
+public class BatteryService extends ConnectableProfile {
     private static final String TAG = BatteryService.class.getSimpleName();
 
     // Timeout for state machine thread join, to prevent potential ANR.
@@ -142,6 +142,7 @@ public class BatteryService extends ProfileService {
     }
 
     /** Connects to the battery service of the given device. */
+    @Override
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect(): " + device);
         if (device == null) {
@@ -186,6 +187,7 @@ public class BatteryService extends ProfileService {
     }
 
     /** Disconnects from the battery service of the given device. */
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         Log.d(TAG, "disconnect(): " + device);
         if (device == null) {
@@ -305,6 +307,7 @@ public class BatteryService extends ProfileService {
     }
 
     /** Gets the connection state of the given device's battery service */
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         synchronized (mStateMachines) {
             BatteryStateMachine sm = mStateMachines.get(device);

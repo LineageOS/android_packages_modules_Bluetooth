@@ -61,8 +61,8 @@ import com.android.bluetooth.ObexServerSockets;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.InteropUtil;
-import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.flags.Flags;
@@ -76,7 +76,7 @@ import java.util.List;
 import java.util.Map;
 
 // Next tag value for ContentProfileErrorReportUtils.report(): 12
-public class BluetoothPbapService extends ProfileService implements IObexConnectionHandler {
+public class BluetoothPbapService extends ConnectableProfile implements IObexConnectionHandler {
     private static final String TAG = BluetoothPbapService.class.getSimpleName();
 
     /** The component name of the owned BluetoothPbapActivity */
@@ -623,6 +623,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
      *     BluetoothProfile#STATE_CONNECTING}, {@link BluetoothProfile#STATE_CONNECTED}, or {@link
      *     BluetoothProfile#STATE_DISCONNECTING}
      */
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         synchronized (mPbapStateMachineMap) {
             PbapStateMachine sm = mPbapStateMachineMap.get(device);
@@ -703,13 +704,16 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
      *
      * @param device is the remote bluetooth device
      */
-    public void disconnect(BluetoothDevice device) {
+    @Override
+    public boolean disconnect(BluetoothDevice device) {
         synchronized (mPbapStateMachineMap) {
             PbapStateMachine sm = mPbapStateMachineMap.get(device);
             if (sm != null) {
                 sm.sendMessage(PbapStateMachine.DISCONNECT);
             }
         }
+
+        return true;
     }
 
     static String getLocalPhoneNum() {

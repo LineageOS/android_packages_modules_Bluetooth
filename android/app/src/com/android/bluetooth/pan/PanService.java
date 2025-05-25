@@ -48,7 +48,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.HandlerExecutor;
@@ -60,7 +60,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Provides Bluetooth Pan Device profile, as a service in the Bluetooth application. */
-public class PanService extends ProfileService {
+public class PanService extends ConnectableProfile {
     private static final String TAG = PanService.class.getSimpleName();
 
     private static PanService sPanService;
@@ -262,6 +262,7 @@ public class PanService extends ProfileService {
         }
     }
 
+    @Override
     public boolean connect(BluetoothDevice device) {
         if (mUserManager.isGuestUser()) {
             Log.w(TAG, "Guest user does not have the permission to change the WiFi network");
@@ -276,12 +277,14 @@ public class PanService extends ProfileService {
         return true;
     }
 
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         Message msg = mHandler.obtainMessage(MESSAGE_DISCONNECT, device);
         mHandler.sendMessage(msg);
         return true;
     }
 
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         BluetoothPanDevice panDevice = mPanDevices.get(device);
         if (panDevice == null) {

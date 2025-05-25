@@ -91,6 +91,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
@@ -123,7 +124,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 /** Provides Bluetooth LeAudio profile, as a service in the Bluetooth application. */
-public class LeAudioService extends ProfileService {
+public class LeAudioService extends ConnectableProfile {
     private static final String TAG = LeAudioService.class.getSimpleName();
 
     // Timeout for state machine thread join, to prevent potential ANR.
@@ -920,6 +921,7 @@ public class LeAudioService extends ProfileService {
         updateFallbackUnicastGroupIdForBroadcast(targetGroupId);
     }
 
+    @Override
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect(): " + device);
 
@@ -967,6 +969,7 @@ public class LeAudioService extends ProfileService {
      * @param device is the device with which we would like to disconnect LE Audio
      * @return true if profile disconnected, false if device not connected over LE Audio
      */
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         Log.d(TAG, "disconnect(): " + device);
 
@@ -1091,6 +1094,7 @@ public class LeAudioService extends ProfileService {
      *     BluetoothProfile#STATE_CONNECTED} if this profile is connected, or {@link
      *     BluetoothProfile#STATE_DISCONNECTING} if this profile is being disconnected
      */
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         mGroupReadLock.lock();
         try {
