@@ -29,8 +29,8 @@ namespace hci {
 // When GD clients start to use this module, richer functionality should be added.
 class RemoteNameRequestModuleImpl : public RemoteNameRequestModule {
 public:
-  RemoteNameRequestModuleImpl(os::Handler* handler, HciInterface* hci_interface,
-                              acl_manager::AclScheduler* acl_scheduler);
+  RemoteNameRequestModuleImpl(os::Handler* handler, HciInterface& hci_interface,
+                              acl_manager::AclScheduler& acl_scheduler);
   ~RemoteNameRequestModuleImpl();
 
   // Dispatch a Remote Name Request

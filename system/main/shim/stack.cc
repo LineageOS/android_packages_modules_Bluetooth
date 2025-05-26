@@ -79,7 +79,7 @@ struct Stack::impl {
         hci_layer_(handler, &hci_hal_, &storage_),
         controller_(handler, &hci_layer_),
         acl_scheduler_(handler),
-        remote_name_request_(handler, &hci_layer_, &acl_scheduler_),
+        remote_name_request_(handler, hci_layer_, acl_scheduler_),
         acl_manager_(handler, hci_layer_, controller_, acl_scheduler_, remote_name_request_,
                      storage_),
         le_scanning_manager_(handler, &hci_layer_, &controller_, acl_manager_.GetLeAddressManager(),

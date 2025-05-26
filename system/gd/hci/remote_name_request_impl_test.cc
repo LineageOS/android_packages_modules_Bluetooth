@@ -71,7 +71,7 @@ protected:
     test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
     test_acl_scheduler_ = std::make_unique<hci::acl_manager::AclScheduler>(client_handler_);
     remote_name_request_module_ = std::make_unique<RemoteNameRequestModuleImpl>(
-            client_handler_, test_hci_layer_.get(), test_acl_scheduler_.get());
+            client_handler_, *test_hci_layer_, *test_acl_scheduler_);
 
     ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   }
