@@ -57,15 +57,16 @@ namespace a2dp {
 
 using ::bluetooth::audio::a2dp::ahal_codec_configuration;
 
-namespace {
-
 using ::bluetooth::audio::a2dp::Status;
+using ::bluetooth::audio::a2dp::StreamCallbacks;
 using ::bluetooth::audio::aidl::a2dp::LatencyMode;
+
+namespace {
 
 // Provide call-in APIs for the Bluetooth Audio HAL
 class A2dpTransport : public ::bluetooth::audio::aidl::a2dp::IBluetoothTransportInstance {
 public:
-  A2dpTransport(SessionType sessionType);
+  A2dpTransport(SessionType sessionType, StreamCallbacks const* stream_callbacks);
 
   Status StartRequest(bool is_low_latency) override;
 
@@ -96,15 +97,10 @@ private:
   uint16_t remote_delay_report_{0};
   uint64_t total_bytes_read_{0};
   timespec data_position_{};
+  StreamCallbacks const* stream_callbacks_;
 };
 
 }  // namespace
-
-using ::bluetooth::audio::a2dp::Status;
-using ::bluetooth::audio::a2dp::StreamCallbacks;
-
-static StreamCallbacks null_stream_callbacks_;
-static StreamCallbacks const* stream_callbacks_ = &null_stream_callbacks_;
 
 namespace {
 
@@ -126,8 +122,11 @@ using ::bluetooth::audio::aidl::a2dp::codec::getHalPcmConfiguration;
  *
  ***/
 
-A2dpTransport::A2dpTransport(SessionType sessionType)
-    : IBluetoothTransportInstance(sessionType, (AudioConfiguration){}) {}
+A2dpTransport::A2dpTransport(SessionType sessionType, StreamCallbacks const* stream_callbacks)
+    : IBluetoothTransportInstance(sessionType, (AudioConfiguration){}),
+      stream_callbacks_(stream_callbacks) {
+  log::assert_that(stream_callbacks_ != nullptr, "stream_callbacks != nullptr");
+}
 
 Status A2dpTransport::StartRequest(bool is_low_latency) {
   // Check if a previous Start request is ongoing.
@@ -142,7 +141,7 @@ Status A2dpTransport::StartRequest(bool is_low_latency) {
     return Status::FAILURE;
   }
 
-  log::info("");
+  log::info("is_low_latency={}", is_low_latency);
 
   auto status = stream_callbacks_->StartStream(is_low_latency);
   a2dp_pending_cmd_ = status == Status::PENDING ? A2DP_CTRL_CMD_START : A2DP_CTRL_CMD_NONE;
@@ -179,6 +178,7 @@ void A2dpTransport::StopRequest() {
 }
 
 void A2dpTransport::SetLatencyMode(LatencyMode latency_mode) {
+  log::info("latency_mode={}", ::aidl::android::hardware::bluetooth::audio::toString(latency_mode));
   stream_callbacks_->SetLatencyMode(latency_mode == LatencyMode::LOW_LATENCY);
 }
 
@@ -264,14 +264,14 @@ bool is_hal_offloading() {
 // Opens the HAL client interface of the specified session type and check
 // that is is valid. Returns nullptr if the client interface did not open
 // properly.
-static BluetoothAudioClientInterface* new_hal_interface(SessionType session_type) {
-  auto a2dp_transport = new A2dpTransport(session_type);
-  auto hal_interface = new BluetoothAudioClientInterface(a2dp_transport);
+static BluetoothAudioClientInterface* new_hal_interface(
+        IBluetoothTransportInstance* transport_instance) {
+  auto hal_interface = new BluetoothAudioClientInterface(transport_instance);
   if (hal_interface->IsValid()) {
     return hal_interface;
   } else {
     log::error("BluetoothAudio HAL for a2dp is invalid");
-    delete a2dp_transport;
+    delete transport_instance;
     delete hal_interface;
     return nullptr;
   }
@@ -291,7 +291,6 @@ static void delete_hal_interface(BluetoothAudioClientInterface* hal_interface) {
 bool init(bluetooth::common::MessageLoopThread* /*message_loop*/,
           StreamCallbacks const* stream_callbacks, bool offload_enabled) {
   log::info("");
-  log::assert_that(stream_callbacks != nullptr, "stream_callbacks != nullptr");
 
   if (software_hal_interface != nullptr) {
     return true;
@@ -302,14 +301,17 @@ bool init(bluetooth::common::MessageLoopThread* /*message_loop*/,
     return false;
   }
 
-  software_hal_interface = new_hal_interface(SessionType::A2DP_SOFTWARE_ENCODING_DATAPATH);
+  auto a2dp_transport_software =
+          new A2dpTransport(SessionType::A2DP_SOFTWARE_ENCODING_DATAPATH, stream_callbacks);
+  software_hal_interface = new_hal_interface(a2dp_transport_software);
   if (software_hal_interface == nullptr) {
     return false;
   }
 
   if (offload_enabled && offloading_hal_interface == nullptr) {
-    offloading_hal_interface =
-            new_hal_interface(SessionType::A2DP_HARDWARE_OFFLOAD_ENCODING_DATAPATH);
+    auto a2dp_transport_offload = new A2dpTransport(
+            SessionType::A2DP_HARDWARE_OFFLOAD_ENCODING_DATAPATH, stream_callbacks);
+    offloading_hal_interface = new_hal_interface(a2dp_transport_offload);
     if (offloading_hal_interface == nullptr) {
       delete_hal_interface(software_hal_interface);
       software_hal_interface = nullptr;
@@ -317,7 +319,6 @@ bool init(bluetooth::common::MessageLoopThread* /*message_loop*/,
     }
   }
 
-  stream_callbacks_ = stream_callbacks;
   active_hal_interface =
           (offloading_hal_interface != nullptr ? offloading_hal_interface : software_hal_interface);
 
@@ -353,7 +354,6 @@ void cleanup() {
     delete a2dp_sink;
   }
 
-  stream_callbacks_ = &null_stream_callbacks_;
   remote_delay = 0;
 }
 
