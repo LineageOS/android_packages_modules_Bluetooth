@@ -44,12 +44,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size);
 extern "C" const char *__asan_default_options() { return "detect_leaks=0"; }
 
 void runFuzzerOnCorpusAndExitProcess() {
+  int i = 0;
   for (const auto &corpus_entry : fs::directory_iterator("./data/corpus")) {
     if (!corpus_entry.is_regular_file()) {
       continue;
     }
     const fs::path &path = corpus_entry.path();
-    log::info("Running rfcomm-fuzzer with {}", path.string());
+    log::info("Running fuzzer with {}, i={}", path.string(), i);
     ifstream corpus(path, ios::in | ios::binary | ios::ate);
     std::streampos size = corpus.tellg();
     char *data = new char[size];
