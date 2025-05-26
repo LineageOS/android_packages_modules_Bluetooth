@@ -827,7 +827,7 @@ struct shim::Acl::impl {
     for (auto& handle : disconnect_handles) {
       auto found = handle_to_classic_connection_map_.find(handle);
       if (found != handle_to_classic_connection_map_.end()) {
-        GetAclManager()->OnClassicSuspendInitiatedDisconnect(
+        GetAclManagerClassic()->OnClassicSuspendInitiatedDisconnect(
                 found->first, hci::ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST);
       }
     }
@@ -1176,7 +1176,7 @@ shim::Acl::Acl(os::Handler* handler, const acl_interface_t& acl_interface)
   log::assert_that(handler_ != nullptr, "assert failed: handler_ != nullptr");
   ValidateAclInterface(acl_interface_);
   pimpl_ = std::make_unique<Acl::impl>();
-  GetAclManager()->RegisterCallbacks(this, handler_);
+  GetAclManagerClassic()->RegisterCallbacks(this, handler_);
   GetAclManager()->RegisterLeCallbacks(this, handler_);
   GetController()->RegisterCompletedMonitorAclPacketsCallback(
           handler->BindOn(this, &Acl::on_incoming_acl_credits));
@@ -1245,13 +1245,13 @@ void shim::Acl::Flush(HciHandle handle) {
 }
 
 void shim::Acl::CreateClassicConnection(const hci::Address& address) {
-  GetAclManager()->CreateConnection(address);
+  GetAclManagerClassic()->CreateConnection(address);
   log::debug("Connection initiated for classic to remote:{}", address);
   BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "Initiated connection", "classic");
 }
 
 void shim::Acl::CancelClassicConnection(const hci::Address& address) {
-  GetAclManager()->CancelConnect(address);
+  GetAclManagerClassic()->CancelConnect(address);
   log::debug("Connection cancelled for classic to remote:{}", address);
   BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "Cancelled connection", "classic");
 }
@@ -1533,7 +1533,7 @@ void shim::Acl::Shutdown() {
 void shim::Acl::FinalShutdown() {
   std::promise<void> promise;
   auto future = promise.get_future();
-  GetAclManager()->UnregisterCallbacks(this, std::move(promise));
+  GetAclManagerClassic()->UnregisterCallbacks(this, std::move(promise));
   future.wait();
   log::debug("Unregistered classic callbacks from gd acl manager");
 

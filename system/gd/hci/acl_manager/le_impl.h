@@ -31,7 +31,7 @@
 #include "common/bind.h"
 #include "common/le_conn_params.h"
 #include "hci/acl_manager/assembler.h"
-#include "hci/acl_manager/classic_impl.h"
+#include "hci/acl_manager/classic_acl_count_provider.h"
 #include "hci/acl_manager/le_acl_connection.h"
 #include "hci/acl_manager/le_connection_callbacks.h"
 #include "hci/acl_manager/le_connection_management_callbacks.h"
@@ -138,14 +138,15 @@ struct le_acl_connection {
 struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
   le_impl(HciInterface& hci_layer, Controller& controller, os::Handler* handler,
           RoundRobinScheduler& round_robin_scheduler, storage::StorageModule& storage_module,
-          bool crash_on_unknown_handle, classic_impl* classic_impl)
+          bool crash_on_unknown_handle,
+          acl_manager::ClassicAclCountProvider& classic_acl_count_provider)
       : hci_layer_(hci_layer),
         controller_(controller),
         round_robin_scheduler_(round_robin_scheduler),
-        storage_module_(storage_module) {
+        storage_module_(storage_module),
+        classic_acl_count_provider_(classic_acl_count_provider) {
     handler_ = handler;
     connections.crash_on_unknown_handle_ = crash_on_unknown_handle;
-    classic_impl_ = classic_impl;
     le_acl_connection_interface_ = hci_layer_.GetLeAclConnectionInterface(
             handler_->BindOn(this, &le_impl::on_le_event),
             handler_->BindOn(this, &le_impl::on_le_disconnect),
@@ -904,7 +905,7 @@ public:
         log::debug("conn_interval_min={}, conn_interval_max={}", conn_interval_min,
                    conn_interval_max);
       } else {
-        size_t num_classic_acl_connections = classic_impl_->get_connection_count();
+        size_t num_classic_acl_connections = classic_acl_count_provider_.GetAclCount();
         size_t num_acl_connections = connections.size();
 
         log::debug("ACL connection count: Classic={}, LE={}", num_classic_acl_connections,
@@ -1336,7 +1337,7 @@ public:
   storage::StorageModule& storage_module_;
   LeAddressManager* le_address_manager_ = nullptr;
   LeAclConnectionInterface* le_acl_connection_interface_ = nullptr;
-  classic_impl* classic_impl_ = nullptr;
+  ClassicAclCountProvider& classic_acl_count_provider_;
   LeConnectionCallbacks* le_client_callbacks_ = nullptr;
   os::Handler* le_client_handler_ = nullptr;
   std::unordered_set<AddressWithType> connecting_le_{};

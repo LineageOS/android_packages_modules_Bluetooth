@@ -25,6 +25,7 @@
 #include <future>
 
 #include "common/bind.h"
+#include "hci/acl_manager/acl_manager_classic_impl.h"
 #include "hci/acl_manager/connection_callbacks_mock.h"
 #include "hci/acl_manager/connection_management_callbacks_mock.h"
 #include "hci/acl_manager/le_connection_callbacks_mock.h"
@@ -115,9 +116,14 @@ protected:
     test_rnr_ = std::make_unique<RemoteNameRequestModuleMock>();
 
     test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
-    acl_manager_ =
-            std::make_unique<AclManagerImpl>(client_handler_, *test_hci_layer_, *test_controller_,
-                                             *test_acl_scheduler_, *test_rnr_, *test_storage_);
+    test_round_robin_scheduler_ = std::make_unique<RoundRobinScheduler>(
+            client_handler_, *test_controller_, test_hci_layer_->GetAclQueueEnd());
+    acl_manager_classic_ = std::make_unique<AclManagerClassicImpl>(
+            client_handler_, *test_hci_layer_, *test_acl_scheduler_, *test_rnr_,
+            *test_round_robin_scheduler_);
+    acl_manager_ = std::make_unique<AclManagerImpl>(
+            client_handler_, *test_hci_layer_, *test_controller_, *test_storage_,
+            *test_round_robin_scheduler_, *acl_manager_classic_, *acl_manager_classic_);
 
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 
@@ -163,6 +169,8 @@ protected:
     client_handler_->Synchronize(std::chrono::milliseconds(20));
     client_handler_->Synchronize(std::chrono::milliseconds(20));
     acl_manager_.reset();
+    acl_manager_classic_.reset();
+    test_round_robin_scheduler_.reset();
     test_controller_.reset();
     test_hci_layer_.reset();
 
@@ -185,6 +193,8 @@ protected:
   std::unique_ptr<TestController> test_controller_ = nullptr;
   std::unique_ptr<RemoteNameRequestModuleMock> test_rnr_ = nullptr;
   std::unique_ptr<storage::StorageModule> test_storage_ = nullptr;
+  std::unique_ptr<RoundRobinScheduler> test_round_robin_scheduler_ = nullptr;
+  std::unique_ptr<AclManagerClassicImpl> acl_manager_classic_ = nullptr;
   std::unique_ptr<AclManagerImpl> acl_manager_ = nullptr;
   Address remote;
   AddressWithType my_initiating_address;
@@ -244,7 +254,7 @@ class AclManagerTest : public AclManagerNoCallbacksTest {
 protected:
   void SetUp() override {
     AclManagerNoCallbacksTest::SetUp();
-    acl_manager_->RegisterCallbacks(&mock_connection_callback_, client_handler_);
+    acl_manager_classic_->RegisterCallbacks(&mock_connection_callback_, client_handler_);
     acl_manager_->RegisterLeCallbacks(&mock_le_connection_callbacks_, client_handler_);
   }
   void TearDown() override { AclManagerNoCallbacksTest::TearDown(); }
@@ -256,7 +266,7 @@ protected:
     AclManagerTest::SetUp();
 
     handle_ = 0x123;
-    acl_manager_->CreateConnection(remote);
+    acl_manager_classic_->CreateConnection(remote);
 
     // Wait for the connection request
     auto last_command = GetConnectionManagementCommand(OpCode::CREATE_CONNECTION);
@@ -296,7 +306,7 @@ protected:
 TEST_F(AclManagerTest, startup_teardown) {}
 
 TEST_F(AclManagerTest, invoke_registered_callback_connection_complete_success) {
-  acl_manager_->CreateConnection(remote);
+  acl_manager_classic_->CreateConnection(remote);
 
   // Wait for the connection request
   auto last_command = GetConnectionManagementCommand(OpCode::CREATE_CONNECTION);
@@ -317,7 +327,7 @@ TEST_F(AclManagerTest, invoke_registered_callback_connection_complete_success) {
 }
 
 TEST_F(AclManagerTest, invoke_registered_callback_connection_complete_fail) {
-  acl_manager_->CreateConnection(remote);
+  acl_manager_classic_->CreateConnection(remote);
 
   // Wait for the connection request
   auto last_command = GetConnectionManagementCommand(OpCode::CREATE_CONNECTION);
@@ -791,7 +801,7 @@ TEST_F(AclManagerWithConnectionTest, acl_send_data_credits) {
 }
 
 TEST_F(AclManagerWithConnectionTest, send_switch_role) {
-  acl_manager_->SwitchRole(connection_->GetAddress(), Role::PERIPHERAL);
+  acl_manager_classic_->SwitchRole(connection_->GetAddress(), Role::PERIPHERAL);
   auto packet = GetConnectionManagementCommand(OpCode::SWITCH_ROLE);
   auto command_view = SwitchRoleView::Create(packet);
   ASSERT_TRUE(command_view.IsValid());
@@ -807,7 +817,7 @@ TEST_F(AclManagerWithConnectionTest, send_switch_role) {
 
 TEST_F(AclManagerWithConnectionTest, send_write_default_link_policy_settings) {
   uint16_t link_policy_settings = 0x05;
-  acl_manager_->WriteDefaultLinkPolicySettings(link_policy_settings);
+  acl_manager_classic_->WriteDefaultLinkPolicySettings(link_policy_settings);
   auto packet = GetConnectionManagementCommand(OpCode::WRITE_DEFAULT_LINK_POLICY_SETTINGS);
   auto command_view = WriteDefaultLinkPolicySettingsView::Create(packet);
   ASSERT_TRUE(command_view.IsValid());
@@ -818,7 +828,7 @@ TEST_F(AclManagerWithConnectionTest, send_write_default_link_policy_settings) {
           WriteDefaultLinkPolicySettingsCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS));
   sync_client_handler();
 
-  ASSERT_EQ(link_policy_settings, acl_manager_->ReadDefaultLinkPolicySettings());
+  ASSERT_EQ(link_policy_settings, acl_manager_classic_->ReadDefaultLinkPolicySettings());
 }
 
 TEST_F(AclManagerWithConnectionTest, send_authentication_requested) {
@@ -1154,18 +1164,22 @@ protected:
     test_storage_ = std::make_unique<storage::StorageModule>(client_handler_);
 
     test_rnr_ = std::make_unique<RemoteNameRequestModuleMock>();
-
     test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
-    acl_manager_ =
-            std::make_unique<AclManagerImpl>(client_handler_, *test_hci_layer_, *test_controller_,
-                                             *test_acl_scheduler_, *test_rnr_, *test_storage_);
+    test_round_robin_scheduler_ = std::make_unique<RoundRobinScheduler>(
+            client_handler_, *test_controller_, test_hci_layer_->GetAclQueueEnd());
+    acl_manager_classic_ = std::make_unique<AclManagerClassicImpl>(
+            client_handler_, *test_hci_layer_, *test_acl_scheduler_, *test_rnr_,
+            *test_round_robin_scheduler_);
+    acl_manager_ = std::make_unique<AclManagerImpl>(
+            client_handler_, *test_hci_layer_, *test_controller_, *test_storage_,
+            *test_round_robin_scheduler_, *acl_manager_classic_, *acl_manager_classic_);
 
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 
     hci::Address address;
     Address::FromString("D0:05:04:03:02:01", address);
     hci::AddressWithType address_with_type(address, hci::AddressType::RANDOM_DEVICE_ADDRESS);
-    acl_manager_->RegisterCallbacks(&mock_connection_callback_, client_handler_);
+    acl_manager_classic_->RegisterCallbacks(&mock_connection_callback_, client_handler_);
     acl_manager_->RegisterLeCallbacks(&mock_le_connection_callbacks_, client_handler_);
     auto minimum_rotation_time = std::chrono::milliseconds(7 * 60 * 1000);
     auto maximum_rotation_time = std::chrono::milliseconds(15 * 60 * 1000);
@@ -1226,7 +1240,7 @@ class AclManagerLifeCycleTest : public AclManagerNoCallbacksTest {
 protected:
   void SetUp() override {
     AclManagerNoCallbacksTest::SetUp();
-    acl_manager_->RegisterCallbacks(&mock_connection_callback_, client_handler_);
+    acl_manager_classic_->RegisterCallbacks(&mock_connection_callback_, client_handler_);
     acl_manager_->RegisterLeCallbacks(&mock_le_connection_callbacks_, client_handler_);
   }
 
@@ -1236,13 +1250,13 @@ protected:
 
 TEST_F(AclManagerLifeCycleTest, unregister_classic_after_create_connection) {
   // Inject create connection
-  acl_manager_->CreateConnection(remote);
+  acl_manager_classic_->CreateConnection(remote);
   auto connection_command = GetConnectionManagementCommand(OpCode::CREATE_CONNECTION);
 
   // Unregister callbacks after sending connection request
   auto promise = std::promise<void>();
   auto future = promise.get_future();
-  acl_manager_->UnregisterCallbacks(&mock_connection_callback_, std::move(promise));
+  acl_manager_classic_->UnregisterCallbacks(&mock_connection_callback_, std::move(promise));
   future.get();
 
   // Inject peer sending connection complete

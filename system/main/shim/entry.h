@@ -38,6 +38,9 @@ class SnoopLogger;
 }
 
 namespace hci {
+namespace acl_manager {
+class AclManagerClassic;
+}
 class Controller;
 class HciInterface;
 class AclManager;
@@ -70,6 +73,7 @@ hci::LeScanningManager* GetScanning();
 lpp::LppOffloadInterface* GetLppOffloadManager();
 hal::SnoopLogger* GetSnoopLogger();
 storage::StorageModule* GetStorage();
+hci::acl_manager::AclManagerClassic* GetAclManagerClassic();
 hci::AclManager* GetAclManager();
 hci::MsftExtensionManager* GetMsftExtensionManager();
 

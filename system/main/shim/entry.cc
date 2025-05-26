@@ -62,6 +62,9 @@ lpp::LppOffloadInterface* GetLppOffloadManager() {
 
 storage::StorageModule* GetStorage() { return Stack::GetInstance()->GetStorage(); }
 
+hci::acl_manager::AclManagerClassic* GetAclManagerClassic() {
+  return Stack::GetInstance()->GetAclManagerClassic();
+}
 hci::AclManager* GetAclManager() { return Stack::GetInstance()->GetAclManager(); }
 
 hci::MsftExtensionManager* GetMsftExtensionManager() {

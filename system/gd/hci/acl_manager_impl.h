@@ -21,7 +21,7 @@
 
 #include "hci/acl_manager.h"
 #include "hci/acl_manager/acl_scheduler.h"
-#include "hci/acl_manager/classic_impl.h"
+#include "hci/acl_manager/classic_acl_data_consumer.h"
 #include "hci/acl_manager/connection_callbacks.h"
 #include "hci/acl_manager/le_connection_callbacks.h"
 #include "hci/acl_manager/le_impl.h"
@@ -55,9 +55,10 @@ class AclManagerImpl : public AclManager, public hci::OnAdvertisingSetTerminated
 
 public:
   AclManagerImpl(os::Handler* handler, HciInterface& hci_interface, Controller& controller,
-                 acl_manager::AclScheduler& acl_scheduler,
-                 RemoteNameRequestModule& remote_name_request_module,
-                 storage::StorageModule& storage_module);
+                 storage::StorageModule& storage_module,
+                 acl_manager::RoundRobinScheduler& round_robin_scheduler,
+                 acl_manager::ClassicAclCountProvider& classic_acl_count_provider,
+                 acl_manager::ClassicAclDataConsumer& classic_acl_data_consumer);
   AclManagerImpl(const AclManagerImpl&) = delete;
   AclManagerImpl& operator=(const AclManagerImpl&) = delete;
 
@@ -72,20 +73,10 @@ public:
   void Dump(int fd) const override;
 
   // Should register only once when user module starts.
-  // Generates OnConnectSuccess when an incoming connection is established.
-  void RegisterCallbacks(acl_manager::ConnectionCallbacks* callbacks,
-                         os::Handler* handler) override;
-  void UnregisterCallbacks(acl_manager::ConnectionCallbacks* callbacks,
-                           std::promise<void> promise) override;
-
-  // Should register only once when user module starts.
   void RegisterLeCallbacks(acl_manager::LeConnectionCallbacks* callbacks,
                            os::Handler* handler) override;
   void UnregisterLeCallbacks(acl_manager::LeConnectionCallbacks* callbacks,
                              std::promise<void> promise) override;
-
-  // Generates OnConnectSuccess if connected, or OnConnectFail otherwise
-  void CreateConnection(Address address) override;
 
   // Generates OnLeConnectSuccess if connected, or OnLeConnectFail otherwise
   void CreateLeConnection(AddressWithType address_with_type, bool is_direct,
@@ -102,10 +93,6 @@ public:
           Octet16 rotation_irk, std::chrono::milliseconds minimum_rotation_time,
           std::chrono::milliseconds maximum_rotation_time) override;
 
-  // Generates OnConnectFail with error code "terminated by local host 0x16" if
-  // cancelled, or OnConnectSuccess if not successfully cancelled and already
-  // connected
-  void CancelConnect(Address address) override;
   void RemoveFromBackgroundList(AddressWithType address_with_type) override;
 
   void CancelLeConnect(AddressWithType address_with_type) override;
@@ -118,11 +105,6 @@ public:
   void RemoveDeviceFromResolvingList(AddressWithType address_with_type) override;
   void ClearResolvingList() override;
 
-  void CentralLinkKey(KeyFlag key_flag) override;
-  void SwitchRole(Address address, Role role) override;
-  uint16_t ReadDefaultLinkPolicySettings() override;
-  void WriteDefaultLinkPolicySettings(uint16_t default_link_policy_settings) override;
-
   // Callback from Advertising Manager to notify the advitiser (local) address
   void OnAdvertisingSetTerminated(ErrorCode status, uint16_t conn_handle, uint8_t adv_set_id,
                                   hci::AddressWithType adv_address, bool is_discoverable) override;
@@ -130,15 +112,12 @@ public:
   LeAddressManager* GetLeAddressManager() override;
 
   // Virtual ACL disconnect emitted during suspend.
-  void OnClassicSuspendInitiatedDisconnect(uint16_t handle, ErrorCode reason) override;
   void OnLeSuspendInitiatedDisconnect(uint16_t handle, ErrorCode reason) override;
   void SetSystemSuspendState(bool suspended) override;
 
   Address HACK_GetLeAddress(uint16_t connection_handle) override;
 
 private:
-  uint16_t HACK_GetHandle(const Address address);
-
   void HACK_SetAclTxPriority(uint8_t handle, bool high_priority);
 
   template <typename OutputT>
@@ -150,17 +129,15 @@ private:
 
   os::Handler* handler_ = nullptr;
   storage::StorageModule& storage_module_;
-
-  acl_manager::RoundRobinScheduler round_robin_scheduler_;
+  acl_manager::RoundRobinScheduler& round_robin_scheduler_;
+  acl_manager::ClassicAclDataConsumer& classic_acl_data_consumer_;
 
   std::unique_ptr<os::Alarm> unknown_acl_alarm_;
   std::vector<AclView> waiting_packets_;
 
-  acl_manager::classic_impl classic_impl_;
   acl_manager::le_impl le_impl_;
 
   common::BidiQueueEnd<AclBuilder, AclView>* hci_queue_end_ = nullptr;
-  uint16_t default_link_policy_settings_ = 0xffff;
 };
 
 }  // namespace hci
