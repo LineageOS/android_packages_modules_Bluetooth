@@ -14,6 +14,7 @@
 #  limitations under the License.
 
 [workspace]
+resolver = "1"
 
 default-members = [
   "floss/rust/topshim",
