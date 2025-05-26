@@ -49,8 +49,27 @@ public:
   void ReportRemoteNameRequestCancellation(Address address) override;
 
 private:
-  struct impl;
-  std::unique_ptr<impl> pimpl_;
+  void ReportRemoteNameRequestCancellationImpl(Address address);
+  void actually_start_remote_name_request(
+          Address address, std::unique_ptr<RemoteNameRequestBuilder> request,
+          CompletionCallback on_completion,
+          RemoteHostSupportedFeaturesCallback on_remote_host_supported_features_notification,
+          std::shared_ptr<RemoteNameCallback> on_remote_name_complete_ptr);
+  void on_start_remote_name_request_status(Address address, CompletionCallback on_completion,
+                                           CommandStatusView status);
+  void actually_cancel_remote_name_request(Address address);
+  void on_remote_host_supported_features_notification(EventView view);
+  void completed(ErrorCode status, std::array<uint8_t, 248> name, Address address);
+  void on_remote_name_request_complete(EventView view);
+  void check_cancel_status(Address remote, CommandCompleteView complete);
+
+  os::Handler* handler_;
+  HciInterface& hci_layer_;
+  acl_manager::AclScheduler& acl_scheduler_;
+
+  bool pending_ = false;
+  RemoteHostSupportedFeaturesCallback on_remote_host_supported_features_notification_;
+  RemoteNameCallback on_remote_name_complete_;
 };
 
 }  // namespace hci
