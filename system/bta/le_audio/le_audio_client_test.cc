@@ -1654,6 +1654,7 @@ protected:
     com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
     com::android::bluetooth::flags::provider_
             ->leaudio_use_game_sonification_as_regular_sonification(true);
+    com::android::bluetooth::flags::provider_->leaudio_improve_switching_le_audio_devices(true);
     com::android::bluetooth::flags::provider_->dsa_use_codec_extensibility(true);
     com::android::bluetooth::flags::provider_->leaudio_connection_subrating(true);
     com::android::bluetooth::flags::provider_->start_leaudio_subrate_for_active_set_only(true);
@@ -5564,7 +5565,6 @@ TEST_F(UnicastTest, AnotherGroupSetActive_DuringMediaStream) {
 
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
-  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
 
   log::info("Set group 2 as active one ");
   EXPECT_CALL(mock_state_machine_, StopStream(_)).Times(1);
@@ -5572,11 +5572,15 @@ TEST_F(UnicastTest, AnotherGroupSetActive_DuringMediaStream) {
   EXPECT_CALL(mock_state_machine_,
               ConfigureStream(_, types::LeAudioContextType::MEDIA, _, _, false))
           .Times(1);
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, StreamSuspended()).Times(1);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, StreamSuspended()).Times(0);
 
   LeAudioClient::Get()->GroupSetActive(group_id_2);
 
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_state_machine_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_sink_hal_client_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
 
   LocalAudioSourceResume();
   SyncOnMainLoop();
@@ -5589,7 +5593,7 @@ TEST_F(UnicastTest, AnotherGroupSetActive_DuringVoip) {
   int group_id_2 = 2;
   int group_size = 1;
 
-  default_channel_cnt = 2;
+  default_channel_cnt = 1;
   default_src_channel_cnt = 1;
 
   /**
@@ -5608,7 +5612,7 @@ TEST_F(UnicastTest, AnotherGroupSetActive_DuringVoip) {
   ConnectCsisDevice(
           test_address0, 1 /* conn_id*/,
           codec_spec_conf::kLeAudioLocationFrontLeft | codec_spec_conf::kLeAudioLocationFrontRight,
-          codec_spec_conf::kLeAudioLocationFrontLeft, group_size, group_id_1, 1 /* rank*/);
+          codec_spec_conf::kLeAudioLocationMonoAudio, group_size, group_id_1, 1 /* rank*/);
 
   SyncOnMainLoop();
 
@@ -5616,7 +5620,7 @@ TEST_F(UnicastTest, AnotherGroupSetActive_DuringVoip) {
   ConnectCsisDevice(
           test_address1, 2 /* conn_id*/,
           codec_spec_conf::kLeAudioLocationFrontLeft | codec_spec_conf::kLeAudioLocationFrontRight,
-          codec_spec_conf::kLeAudioLocationFrontLeft, group_size, group_id_2, 1 /* rank*/);
+          codec_spec_conf::kLeAudioLocationMonoAudio, group_size, group_id_2, 1 /* rank*/);
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 
@@ -5647,11 +5651,15 @@ TEST_F(UnicastTest, AnotherGroupSetActive_DuringVoip) {
   EXPECT_CALL(mock_state_machine_, StopStream(_)).Times(1);
   EXPECT_CALL(mock_state_machine_, StartStream(_, _, _, _)).Times(0);
   EXPECT_CALL(mock_state_machine_, ConfigureStream(_, _, _, _, true)).Times(1);
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, StreamSuspended()).Times(1);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, StreamSuspended()).Times(1);
 
   LeAudioClient::Get()->GroupSetActive(group_id_2);
 
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_state_machine_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_sink_hal_client_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
 }
 
 TEST_F(UnicastTest, GroupSetActive_and_GroupSetInactive_DuringPhoneCall) {

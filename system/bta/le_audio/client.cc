@@ -876,8 +876,27 @@ public:
     StartReconfigurationTimeout(active_group_id_);
   }
 
-  void ReconfigurationComplete(uint8_t directions) {
-    if (directions & bluetooth::le_audio::types::kLeAudioDirectionSink) {
+  void StreamSuspended(uint8_t remote_directions) {
+    if (remote_directions & bluetooth::le_audio::types::kLeAudioDirectionSink) {
+      LeAudioLogHistory::Get()->AddLogHistory(kLogBtCallAf, active_group_id_, RawAddress::kEmpty,
+                                              kLogAfStreamSuspended + "LocalSource",
+                                              "r_state: " + ToString(audio_receiver_state_) +
+                                                      "s_state: " + ToString(audio_sender_state_));
+
+      le_audio_source_hal_client_->StreamSuspended();
+    }
+    if (remote_directions & bluetooth::le_audio::types::kLeAudioDirectionSource) {
+      LeAudioLogHistory::Get()->AddLogHistory(kLogBtCallAf, active_group_id_, RawAddress::kEmpty,
+                                              kLogAfStreamSuspended + "LocalSink",
+                                              "r_state: " + ToString(audio_receiver_state_) +
+                                                      "s_state: " + ToString(audio_sender_state_));
+
+      le_audio_sink_hal_client_->StreamSuspended();
+    }
+  }
+
+  void ReconfigurationComplete(uint8_t remote_directions) {
+    if (remote_directions & bluetooth::le_audio::types::kLeAudioDirectionSink) {
       LeAudioLogHistory::Get()->AddLogHistory(kLogBtCallAf, active_group_id_, RawAddress::kEmpty,
                                               kLogAfReconfigComplete + "LocalSource",
                                               "r_state: " + ToString(audio_receiver_state_) +
@@ -885,7 +904,7 @@ public:
 
       le_audio_source_hal_client_->ReconfigurationComplete();
     }
-    if (directions & bluetooth::le_audio::types::kLeAudioDirectionSource) {
+    if (remote_directions & bluetooth::le_audio::types::kLeAudioDirectionSource) {
       LeAudioLogHistory::Get()->AddLogHistory(kLogBtCallAf, active_group_id_, RawAddress::kEmpty,
                                               kLogAfReconfigComplete + "LocalSink",
                                               "r_state: " + ToString(audio_receiver_state_) +
@@ -1669,6 +1688,20 @@ public:
     return true;
   }
 
+  void NotifySuspendedForGroupChange(void) {
+    log::info("audio_sender_state_ {}, audio_receiver_state_ {}", ToString(audio_sender_state_),
+              ToString(audio_receiver_state_));
+    if (audio_sender_state_ > AudioState::IDLE) {
+      StreamSuspended(bluetooth::le_audio::types::kLeAudioDirectionSink);
+      audio_sender_state_ = AudioState::IDLE;
+    }
+
+    if (audio_receiver_state_ > AudioState::IDLE) {
+      StreamSuspended(bluetooth::le_audio::types::kLeAudioDirectionSource);
+      audio_receiver_state_ = AudioState::IDLE;
+    }
+  }
+
   void GroupSetActive(const int group_id) override {
     log::info("group_id: {}", group_id);
 
@@ -1790,7 +1823,11 @@ public:
        * the new group so the group change is correctly handled in OnStateMachineStatusReportCb
        */
       active_group_id_ = group_id;
-      SuspendedForReconfiguration();
+      if (com::android::bluetooth::flags::leaudio_improve_switching_le_audio_devices()) {
+        NotifySuspendedForGroupChange();
+      } else {
+        SuspendedForReconfiguration();
+      }
       GroupStop(previous_active_group);
       /* Note: On purpose we are not sending INACTIVE status up to Java, because previous active
        * group will be provided in ACTIVE status. This is in order to have single call to audio
