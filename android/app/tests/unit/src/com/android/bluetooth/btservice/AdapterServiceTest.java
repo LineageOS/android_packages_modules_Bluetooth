@@ -184,6 +184,7 @@ public class AdapterServiceTest {
                 AdapterNativeInterface nativeInterface,
                 BluetoothKeystoreNativeInterface keystoreNativeInterface,
                 BluetoothQualityReportNativeInterface bluetoothQualityReportNativeInterface,
+                BluetoothHciVendorSpecificNativeInterface bluetoothHciVendorSpecificNativeInterface,
                 GattNativeInterface gattNativeInterface,
                 AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
                 DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
@@ -193,6 +194,7 @@ public class AdapterServiceTest {
                     nativeInterface,
                     keystoreNativeInterface,
                     bluetoothQualityReportNativeInterface,
+                    bluetoothHciVendorSpecificNativeInterface,
                     gattNativeInterface,
                     advertiseManagerNativeInterface,
                     distanceMeasurementNativeInterface);
@@ -235,7 +237,6 @@ public class AdapterServiceTest {
         LeAudioService.setLeAudioService(mMockLeAudioService);
         doReturn(CONNECTION_POLICY_ALLOWED).when(mMockLeAudioService).getConnectionPolicy(any());
 
-        BluetoothHciVendorSpecificNativeInterface.setInstance(mHciVendorSpecificNativeInterface);
         SdpManagerNativeInterface.setInstance(mSdpNativeInterface);
         PeriodicScanNativeInterface.setInstance(mPeriodicNativeInterface);
         ScanNativeInterface.setInstance(mScanNativeInterface);
@@ -252,6 +253,7 @@ public class AdapterServiceTest {
                                         mNativeInterface,
                                         mKeystoreNativeInterface,
                                         mQualityNativeInterface,
+                                        mHciVendorSpecificNativeInterface,
                                         mGattNativeInterface,
                                         mAdvertiseNativeInterface,
                                         mDistanceNativeInterface));
@@ -357,7 +359,6 @@ public class AdapterServiceTest {
         LeAudioService.setLeAudioService(null);
         mAdapterService.cleanup();
         mAdapterService.unregisterRemoteCallback(mIBluetoothCallback);
-        BluetoothHciVendorSpecificNativeInterface.setInstance(null);
         SdpManagerNativeInterface.setInstance(null);
         PeriodicScanNativeInterface.setInstance(null);
         ScanNativeInterface.setInstance(null);

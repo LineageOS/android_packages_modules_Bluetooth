@@ -289,6 +289,8 @@ public class AdapterService extends Service {
     private final AdapterNativeInterface mNativeInterface;
     private final BluetoothKeystoreService mBluetoothKeystoreService;
     private final BluetoothQualityReportNativeInterface mBluetoothQualityReportNativeInterface;
+    private final BluetoothHciVendorSpecificNativeInterface
+            mBluetoothHciVendorSpecificNativeInterface;
     private final GattNativeInterface mGattNativeInterface;
     private final AdvertiseManagerNativeInterface mAdvertiseManagerNativeInterface;
     private final DistanceMeasurementNativeInterface mDistanceMeasurementNativeInterface;
@@ -357,7 +359,6 @@ public class AdapterService extends Service {
     private LeAudioService mLeAudioService;
     private BassClientService mBassClientService;
     private BatteryService mBatteryService;
-    private BluetoothHciVendorSpecificNativeInterface mBluetoothHciVendorSpecificNativeInterface;
     private GattService mGattService;
     private ScanController mScanController;
 
@@ -395,7 +396,15 @@ public class AdapterService extends Service {
 
     // Keep a constructor for ActivityThread.handleCreateService
     AdapterService() {
-        this(Looper.getMainLooper(), new AdapterNativeInterface(), null, null, null, null, null);
+        this(
+                Looper.getMainLooper(),
+                new AdapterNativeInterface(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
     }
 
     @VisibleForTesting
@@ -405,6 +414,7 @@ public class AdapterService extends Service {
             AdapterNativeInterface nativeInterface,
             BluetoothKeystoreNativeInterface bluetoothKeystoreNativeInterface,
             BluetoothQualityReportNativeInterface bluetoothQualityReportNativeInterface,
+            BluetoothHciVendorSpecificNativeInterface bluetoothHciVendorSpecificNativeInterface,
             GattNativeInterface gattNativeInterface,
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
             DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
@@ -413,6 +423,7 @@ public class AdapterService extends Service {
                 nativeInterface,
                 bluetoothKeystoreNativeInterface,
                 bluetoothQualityReportNativeInterface,
+                bluetoothHciVendorSpecificNativeInterface,
                 gattNativeInterface,
                 advertiseManagerNativeInterface,
                 distanceMeasurementNativeInterface);
@@ -424,6 +435,7 @@ public class AdapterService extends Service {
             AdapterNativeInterface nativeInterface,
             BluetoothKeystoreNativeInterface bluetoothKeystoreNativeInterface,
             BluetoothQualityReportNativeInterface bluetoothQualityReportNativeInterface,
+            BluetoothHciVendorSpecificNativeInterface bluetoothHciVendorSpecificNativeInterface,
             GattNativeInterface gattNativeInterface,
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
             DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
@@ -435,6 +447,16 @@ public class AdapterService extends Service {
                 requireNonNullElseGet(
                         bluetoothQualityReportNativeInterface,
                         () -> new BluetoothQualityReportNativeInterface(this));
+        if (Flags.hciVendorSpecificExtension()) {
+            mBluetoothHciVendorSpecificNativeInterface =
+                    requireNonNullElseGet(
+                            bluetoothHciVendorSpecificNativeInterface,
+                            () ->
+                                    new BluetoothHciVendorSpecificNativeInterface(
+                                            mBluetoothHciVendorSpecificDispatcher));
+        } else {
+            mBluetoothHciVendorSpecificNativeInterface = null;
+        }
         mGattNativeInterface = gattNativeInterface;
         mAdvertiseManagerNativeInterface = advertiseManagerNativeInterface;
         mDistanceMeasurementNativeInterface = distanceMeasurementNativeInterface;
@@ -831,9 +853,7 @@ public class AdapterService extends Service {
         mBluetoothQualityReportNativeInterface.init();
 
         if (Flags.hciVendorSpecificExtension()) {
-            mBluetoothHciVendorSpecificNativeInterface =
-                    requireNonNull(mBluetoothHciVendorSpecificNativeInterface.getInstance());
-            mBluetoothHciVendorSpecificNativeInterface.init(mBluetoothHciVendorSpecificDispatcher);
+            mBluetoothHciVendorSpecificNativeInterface.init();
         }
 
         mSdpManager = new SdpManager(this, mLooper);
