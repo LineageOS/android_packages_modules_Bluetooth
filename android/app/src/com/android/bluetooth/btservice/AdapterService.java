@@ -3551,127 +3551,39 @@ public class AdapterService extends Service {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
 
-        if (mHeadsetService != null
-                && (mHeadsetService.getConnectionState(device) == STATE_CONNECTED
-                        || mHeadsetService.getConnectionState(device) == STATE_CONNECTING)) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting Headset Profile");
-            mHeadsetService.disconnect(device);
-        }
-        if (mHeadsetClientService != null
-                && (mHeadsetClientService.getConnectionState(device) == STATE_CONNECTED
-                        || mHeadsetClientService.getConnectionState(device) == STATE_CONNECTING)) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting HFP");
-            mHeadsetClientService.disconnect(device);
-        }
-        if (mA2dpService != null
-                && (mA2dpService.getConnectionState(device) == STATE_CONNECTED
-                        || mA2dpService.getConnectionState(device) == STATE_CONNECTING)) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting A2dp");
-            mA2dpService.disconnect(device);
-        }
-        if (mA2dpSinkService != null
-                && (mA2dpSinkService.getConnectionState(device) == STATE_CONNECTED
-                        || mA2dpSinkService.getConnectionState(device) == STATE_CONNECTING)) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting A2dp Sink");
-            mA2dpSinkService.disconnect(device);
-        }
-        if (mMapClientService != null
-                && (mMapClientService.getConnectionState(device) == STATE_CONNECTED
-                        || mMapClientService.getConnectionState(device) == STATE_CONNECTING)) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting MAP Client");
-            mMapClientService.disconnect(device);
-        }
-        if (mMapService != null
-                && (mMapService.getConnectionState(device) == STATE_CONNECTED
-                        || mMapService.getConnectionState(device) == STATE_CONNECTING)) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting MAP");
-            mMapService.disconnect(device);
-        }
+        disconnectEnabledProfile(mHeadsetService, device);
+        disconnectEnabledProfile(mHeadsetClientService, device);
+        disconnectEnabledProfile(mA2dpService, device);
+        disconnectEnabledProfile(mA2dpSinkService, device);
+        disconnectEnabledProfile(mMapClientService, device);
+        disconnectEnabledProfile(mMapService, device);
         final var hidDevice = (HidDeviceService) mStartedProfiles.get(BluetoothProfile.HID_DEVICE);
-        if (hidDevice != null
-                && (hidDevice.getConnectionState(device) == STATE_CONNECTED
-                        || hidDevice.getConnectionState(device) == STATE_CONNECTING)) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting Hid Device Profile");
-            hidDevice.disconnect(device);
-        }
-        if (mHidHostService != null
-                && (mHidHostService.getConnectionState(device) == STATE_CONNECTED
-                        || mHidHostService.getConnectionState(device) == STATE_CONNECTING)) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting Hid Host Profile");
-            mHidHostService.disconnect(device);
-        }
-        if (mPanService != null
-                && (mPanService.getConnectionState(device) == STATE_CONNECTED
-                        || mPanService.getConnectionState(device) == STATE_CONNECTING)) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting Pan Profile");
-            mPanService.disconnect(device);
-        }
-        if (mPbapClientService != null
-                && (mPbapClientService.getConnectionState(device) == STATE_CONNECTED
-                        || mPbapClientService.getConnectionState(device) == STATE_CONNECTING)) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting Pbap Client");
-            mPbapClientService.disconnect(device);
-        }
-        if (mPbapService != null
-                && (mPbapService.getConnectionState(device) == STATE_CONNECTED
-                        || mPbapService.getConnectionState(device) == STATE_CONNECTING)) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting Pbap Server");
-            mPbapService.disconnect(device);
-        }
-        if (mHearingAidService != null
-                && (mHearingAidService.getConnectionState(device) == STATE_CONNECTED
-                        || mHearingAidService.getConnectionState(device) == STATE_CONNECTING)) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting Hearing Aid Profile");
-            mHearingAidService.disconnect(device);
-        }
-        if (mHapClientService != null
-                && (mHapClientService.getConnectionState(device) == STATE_CONNECTED
-                        || mHapClientService.getConnectionState(device) == STATE_CONNECTING)) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting Hearing Access Profile Client");
-            mHapClientService.disconnect(device);
-        }
-        if (mVolumeControlService != null
-                && (mVolumeControlService.getConnectionState(device) == STATE_CONNECTED
-                        || mVolumeControlService.getConnectionState(device) == STATE_CONNECTING)) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting Volume Control Profile");
-            mVolumeControlService.disconnect(device);
-        }
-        if (mSapService != null
-                && (mSapService.getConnectionState(device) == STATE_CONNECTED
-                        || mSapService.getConnectionState(device) == STATE_CONNECTING)) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting Sap Profile");
-            mSapService.disconnect(device);
-        }
-        if (mCsipSetCoordinatorService != null
-                && (mCsipSetCoordinatorService.getConnectionState(device) == STATE_CONNECTED
-                        || mCsipSetCoordinatorService.getConnectionState(device)
-                                == STATE_CONNECTING)) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting Coordinator Set Profile");
-            mCsipSetCoordinatorService.disconnect(device);
-        }
-        if (mLeAudioService != null
-                && (mLeAudioService.getConnectionState(device) == STATE_CONNECTED
-                        || mLeAudioService.getConnectionState(device) == STATE_CONNECTING)) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting LeAudio profile (BAP)");
-            mLeAudioService.disconnect(device);
-        }
-        if (mBassClientService != null
-                && (mBassClientService.getConnectionState(device) == STATE_CONNECTED
-                        || mBassClientService.getConnectionState(device) == STATE_CONNECTING)) {
-            Log.i(
-                    TAG,
-                    "disconnectAllEnabledProfiles: Disconnecting "
-                            + "LE Broadcast Assistant Profile");
-            mBassClientService.disconnect(device);
-        }
-        if (mBatteryService != null
-                && (mBatteryService.getConnectionState(device) == STATE_CONNECTED
-                        || mBatteryService.getConnectionState(device) == STATE_CONNECTING)) {
-            Log.i(TAG, "disconnectAllEnabledProfiles: Disconnecting " + "Battery Service");
-            mBatteryService.disconnect(device);
-        }
+        disconnectEnabledProfile(hidDevice, device);
+        disconnectEnabledProfile(mHidHostService, device);
+        disconnectEnabledProfile(mPanService, device);
+        disconnectEnabledProfile(mPbapClientService, device);
+        disconnectEnabledProfile(mPbapService, device);
+        disconnectEnabledProfile(mHearingAidService, device);
+        disconnectEnabledProfile(mHapClientService, device);
+        disconnectEnabledProfile(mVolumeControlService, device);
+        disconnectEnabledProfile(mSapService, device);
+        disconnectEnabledProfile(mCsipSetCoordinatorService, device);
+        disconnectEnabledProfile(mLeAudioService, device);
+        disconnectEnabledProfile(mBassClientService, device);
+        disconnectEnabledProfile(mBatteryService, device);
 
         return BluetoothStatusCodes.SUCCESS;
+    }
+
+    private static void disconnectEnabledProfile(
+            ConnectableProfile profile, BluetoothDevice device) {
+        if (profile == null) return;
+
+        final int connectionState = profile.getConnectionState(device);
+        if (connectionState != STATE_CONNECTED && connectionState != STATE_CONNECTING) return;
+
+        Log.i(TAG, "Disconnecting " + profile.getName());
+        profile.disconnect(device);
     }
 
     /**
