@@ -1993,6 +1993,66 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
+    public int setOnHeadDetectionEnabled(
+            BluetoothDevice device, int enabledState, AttributionSource source) {
+        requireNonNull(device);
+        AdapterService service = getService();
+        if (service == null) {
+            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+        }
+        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "setOnheadDetectionEnabled")) {
+            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
+        }
+        if (!checkConnectPermissionForDataDelivery(
+                service, source, TAG, "setOnheadDetectionEnabled")) {
+            return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
+        }
+
+        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        DeviceProperties deviceProp = service.getRemoteDevices().getDeviceProperties(device);
+        if (deviceProp == null) {
+            return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+        }
+        deviceProp.setOnheadDetectionEnabledState(enabledState);
+        Log.d(
+                TAG,
+                "Successfully set on-head detection enabled state for device "
+                        + device
+                        + " with value: "
+                        + enabledState);
+        return BluetoothStatusCodes.SUCCESS;
+    }
+
+    @Override
+    public int setOnHead(BluetoothDevice device, int state, AttributionSource source) {
+        requireNonNull(device);
+        AdapterService service = getService();
+        if (service == null) {
+            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
+        }
+        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "setOnHead")) {
+            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
+        }
+        if (!checkConnectPermissionForDataDelivery(service, source, TAG, "setOnHead")) {
+            return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
+        }
+
+        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        DeviceProperties deviceProp = service.getRemoteDevices().getDeviceProperties(device);
+        if (deviceProp == null) {
+            return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+        }
+        deviceProp.setOnHeadDetectionState(state);
+        Log.d(
+                TAG,
+                "Successfully set on-head detection state for device "
+                        + device
+                        + " with value: "
+                        + state);
+        return BluetoothStatusCodes.SUCCESS;
+    }
+
+    @Override
     public boolean isMicrophonePreferredForCalls(BluetoothDevice device, AttributionSource source) {
         requireNonNull(device);
         AdapterService service = getService();

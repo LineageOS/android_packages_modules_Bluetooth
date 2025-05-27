@@ -93,4 +93,5 @@ flag {
     namespace: "bluetooth"
     description: "Prioritized routing by checking in-ear state when multiple devices connected"
     bug: "420509925"
+    is_exported: true
 }

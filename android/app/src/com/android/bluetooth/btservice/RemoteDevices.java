@@ -394,6 +394,9 @@ public class RemoteDevices {
         private int mAshaCapability;
         private int mAshaTruncatedHiSyncId;
         private String mModelName;
+        private int mOnHeadDetectionEnabledState =
+                BluetoothDevice.ON_HEAD_DETECTION_ENABLED_STATE_UNKNOWN;
+        private int mOnHeadDetectionState = BluetoothDevice.ON_HEAD_DETECTION_STATE_UNKNOWN;
         @VisibleForTesting int mBondState;
         @VisibleForTesting int mDeviceType;
         @VisibleForTesting ParcelUuid[] mUuidsBrEdr;
@@ -873,6 +876,36 @@ public class RemoteDevices {
         String getModelName() {
             synchronized (mObject) {
                 return mModelName;
+            }
+        }
+
+        public void setOnheadDetectionEnabledState(int enabledState) {
+            synchronized (mObject) {
+                this.mOnHeadDetectionEnabledState = enabledState;
+            }
+        }
+
+        /**
+         * @return the mOnHeadDetectionEnabledState
+         */
+        int getOnHeadDetectionEnabledState() {
+            synchronized (mObject) {
+                return mOnHeadDetectionEnabledState;
+            }
+        }
+
+        public void setOnHeadDetectionState(int state) {
+            synchronized (mObject) {
+                this.mOnHeadDetectionState = state;
+            }
+        }
+
+        /**
+         * @return the mOnHeadDetectionState
+         */
+        int getOnHeadDetectionState() {
+            synchronized (mObject) {
+                return mOnHeadDetectionState;
             }
         }
 
