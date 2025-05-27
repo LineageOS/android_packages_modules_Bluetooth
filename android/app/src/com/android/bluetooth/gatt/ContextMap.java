@@ -92,6 +92,8 @@ public class ContextMap<C extends IInterface> {
         public int id;
         public C callback;
 
+        public int transport;
+
         /** Flag to signal that transport is congested */
         public Boolean isCongested = false;
 
@@ -101,11 +103,18 @@ public class ContextMap<C extends IInterface> {
         private final List<CallbackInfo> mCongestionQueue = new ArrayList<>();
 
         /** Creates a new app context. */
-        App(UUID uuid, C callback, int appUid, String packageName, AttributionSource source) {
+        App(
+                UUID uuid,
+                C callback,
+                int appUid,
+                String packageName,
+                int transport,
+                AttributionSource source) {
             this.uuid = uuid;
             this.callback = callback;
             this.uid = appUid;
             this.packageName = packageName;
+            this.transport = transport;
             attributionTag = getLastAttributionTag(source);
         }
 
@@ -149,6 +158,7 @@ public class ContextMap<C extends IInterface> {
     private class AppRecord {
         public final UUID uuid;
         public final String packageName;
+        public final int transport;
         @Nullable public final String attributionTag;
         public final Instant registerTime;
 
@@ -159,6 +169,7 @@ public class ContextMap<C extends IInterface> {
         AppRecord(App app) {
             uuid = app.uuid;
             packageName = app.packageName;
+            transport = app.transport;
             attributionTag = app.attributionTag;
             registerTime = Instant.now();
         }
@@ -176,7 +187,9 @@ public class ContextMap<C extends IInterface> {
                     .append(" app_if: ")
                     .append(clientIf)
                     .append(", appName: ")
-                    .append(packageName);
+                    .append(packageName)
+                    .append(", transport: ")
+                    .append(transport);
             if (attributionTag != null) {
                 sb.append(", tag: ").append(attributionTag);
             }
@@ -213,7 +226,8 @@ public class ContextMap<C extends IInterface> {
     private final Object mConnectionsLock = new Object();
 
     /** Add an entry to the application context list. */
-    public App add(UUID uuid, C callback, Context context, AttributionSource source) {
+    public App add(
+            UUID uuid, C callback, int transport, Context context, AttributionSource source) {
         int appUid = Binder.getCallingUid();
         String appName = context.getPackageManager().getNameForUid(appUid);
         if (appName == null) {
@@ -221,7 +235,7 @@ public class ContextMap<C extends IInterface> {
             appName = "Unknown App (UID: " + appUid + ")";
         }
         synchronized (mAppsLock) {
-            App app = new App(uuid, callback, appUid, appName, source);
+            App app = new App(uuid, callback, appUid, appName, transport, source);
             mApps.add(app);
             recordRegisterApp(app);
 
@@ -378,20 +392,31 @@ public class ContextMap<C extends IInterface> {
         return null;
     }
 
-    /** Returns a connection ID for a given device. */
-    Integer connIdByDevice(int id, BluetoothDevice device) {
-        App entry = getById(id);
-        if (entry == null) {
-            return null;
-        }
+    /**
+     * Returns all connection IDs for a given device.
+     *
+     * <p>Devices are allowed to have multiple underlying connections (ATT bearers) to a remote
+     * device. When using BR/EDR, these can be different L2CAP connections targeting the ATT
+     * assigned PSM. When using LE, there's typically one underlying link targeting the fixed ATT
+     * channel for LE. When a device is dual mode, they can use any combination of these links.
+     *
+     * <p>One ATT bearer disconnecting doesn't necessarily mean the entire underlying connection is
+     * gone. We need to use all connections to carefully communicate state to GATT applications.
+     * When requesting a disconnection, we also need to make sure to request a disconnection on all
+     * connections, not just a single connection.
+     *
+     * <p>This function provides a way to get all connections for a device so we can do the above.
+     */
+    List<Connection> getConnectionsByDevice(int appId, BluetoothDevice device) {
+        List<Connection> currentConnections = new ArrayList<Connection>();
         synchronized (mConnectionsLock) {
             for (Connection connection : mConnections) {
-                if (connection.device.equals(device) && connection.appId == id) {
-                    return connection.connId;
+                if (connection.device.equals(device) && connection.appId == appId) {
+                    currentConnections.add(connection);
                 }
             }
         }
-        return null;
+        return currentConnections;
     }
 
     /** Returns the device for a given connection ID. */
@@ -406,6 +431,7 @@ public class ContextMap<C extends IInterface> {
         return null;
     }
 
+    /** Returns all Connections that have a given app UID. */
     public List<Connection> getConnectionByApp(int appId) {
         List<Connection> currentConnections = new ArrayList<Connection>();
         synchronized (mConnectionsLock) {
