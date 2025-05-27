@@ -22,6 +22,7 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
@@ -77,6 +78,8 @@ public class PairingTestDualMode {
     private static final String TAG = PairingTestDualMode.class.getSimpleName();
 
     private static final Duration BOND_INTENT_TIMEOUT = Duration.ofSeconds(10);
+    private static final String BUMBLE_ALIAS = "Bumble";
+
     private final Context mTargetContext =
             InstrumentationRegistry.getInstrumentation().getTargetContext();
     private final BluetoothAdapter mAdapter =
@@ -343,6 +346,10 @@ public class PairingTestDualMode {
      *         <li>Active audio device policy ({@link BluetoothDevice#getActiveAudioDevicePolicy()})
      *         <li>Bond state ({@link BluetoothDevice#getBondState()})
      *         <li>UUIDs ({@link BluetoothDevice#getUuids()})
+     *         <li>identityAddress ({@link BluetoothDevice#getIdentityAddress()})
+     *         <li>identityAddressWithType ({@link BluetoothDevice#getIdentityAddressWithType()})
+     *         <li>class of device ({@link BluetoothDevice#getBluetoothClass()})
+     *         <li>alias
      *       </ul>
      *   <li>Restart the Bluetooth adapter using the {@link #testStep_restartBt()} helper method.
      *   <li>Retrieve the properties of the Bumble device again after the restart.
@@ -374,6 +381,11 @@ public class PairingTestDualMode {
         int deviceAudioPolicy = mBumbleDevice.getActiveAudioDevicePolicy();
         int bondState = mBumbleDevice.getBondState();
         ParcelUuid[] uuids = mBumbleDevice.getUuids();
+        String identityAddress = mBumbleDevice.getIdentityAddress();
+        BluetoothDevice.BluetoothAddress identityAddressWithType =
+                mBumbleDevice.getIdentityAddressWithType();
+        BluetoothClass cod = mBumbleDevice.getBluetoothClass();
+        mBumbleDevice.setAlias(BUMBLE_ALIAS);
 
         testStep_restartBt();
         assertThat(mAdapter.getBondedDevices()).contains(mBumbleDevice);
@@ -386,6 +398,13 @@ public class PairingTestDualMode {
         assertThat(deviceAudioPolicy).isEqualTo(mBumbleDevice.getActiveAudioDevicePolicy());
         assertThat(bondState).isEqualTo(mBumbleDevice.getBondState());
         assertThat(uuids).isEqualTo(mBumbleDevice.getUuids());
+        assertThat(identityAddress).isEqualTo(mBumbleDevice.getIdentityAddress());
+        assertThat(identityAddressWithType.getAddressType())
+                .isEqualTo(mBumbleDevice.getIdentityAddressWithType().getAddressType());
+        assertThat(identityAddressWithType.getAddress())
+                .isEqualTo(mBumbleDevice.getIdentityAddressWithType().getAddress());
+        assertThat(cod).isEqualTo(mBumbleDevice.getBluetoothClass());
+        assertThat(mBumbleDevice.getAlias()).isEqualTo(BUMBLE_ALIAS);
 
         intentReceiver.close();
     }
