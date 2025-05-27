@@ -46,6 +46,7 @@ import static com.android.bluetooth.Utils.isDualModeAudioEnabled;
 import static com.android.bluetooth.Utils.isPackageNameAccurate;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -287,6 +288,7 @@ public class AdapterService extends Service {
     private final AdapterServiceHandler mHandler;
     private final AdapterNativeInterface mNativeInterface;
     private final BluetoothKeystoreService mBluetoothKeystoreService;
+    private final BluetoothQualityReportNativeInterface mBluetoothQualityReportNativeInterface;
     private final GattNativeInterface mGattNativeInterface;
     private final AdvertiseManagerNativeInterface mAdvertiseManagerNativeInterface;
     private final DistanceMeasurementNativeInterface mDistanceMeasurementNativeInterface;
@@ -355,7 +357,6 @@ public class AdapterService extends Service {
     private LeAudioService mLeAudioService;
     private BassClientService mBassClientService;
     private BatteryService mBatteryService;
-    private BluetoothQualityReportNativeInterface mBluetoothQualityReportNativeInterface;
     private BluetoothHciVendorSpecificNativeInterface mBluetoothHciVendorSpecificNativeInterface;
     private GattService mGattService;
     private ScanController mScanController;
@@ -394,7 +395,7 @@ public class AdapterService extends Service {
 
     // Keep a constructor for ActivityThread.handleCreateService
     AdapterService() {
-        this(Looper.getMainLooper(), new AdapterNativeInterface(), null, null, null, null);
+        this(Looper.getMainLooper(), new AdapterNativeInterface(), null, null, null, null, null);
     }
 
     @VisibleForTesting
@@ -403,6 +404,7 @@ public class AdapterService extends Service {
             Context ctx,
             AdapterNativeInterface nativeInterface,
             BluetoothKeystoreNativeInterface bluetoothKeystoreNativeInterface,
+            BluetoothQualityReportNativeInterface bluetoothQualityReportNativeInterface,
             GattNativeInterface gattNativeInterface,
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
             DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
@@ -410,6 +412,7 @@ public class AdapterService extends Service {
                 looper,
                 nativeInterface,
                 bluetoothKeystoreNativeInterface,
+                bluetoothQualityReportNativeInterface,
                 gattNativeInterface,
                 advertiseManagerNativeInterface,
                 distanceMeasurementNativeInterface);
@@ -420,6 +423,7 @@ public class AdapterService extends Service {
             Looper looper,
             AdapterNativeInterface nativeInterface,
             BluetoothKeystoreNativeInterface bluetoothKeystoreNativeInterface,
+            BluetoothQualityReportNativeInterface bluetoothQualityReportNativeInterface,
             GattNativeInterface gattNativeInterface,
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
             DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
@@ -427,6 +431,10 @@ public class AdapterService extends Service {
         mHandler = new AdapterServiceHandler(mLooper);
         mNativeInterface = requireNonNull(nativeInterface);
         mBluetoothKeystoreService = new BluetoothKeystoreService(bluetoothKeystoreNativeInterface);
+        mBluetoothQualityReportNativeInterface =
+                requireNonNullElseGet(
+                        bluetoothQualityReportNativeInterface,
+                        () -> new BluetoothQualityReportNativeInterface(this));
         mGattNativeInterface = gattNativeInterface;
         mAdvertiseManagerNativeInterface = advertiseManagerNativeInterface;
         mDistanceMeasurementNativeInterface = distanceMeasurementNativeInterface;
@@ -820,8 +828,6 @@ public class AdapterService extends Service {
 
         mBluetoothKeystoreService.initJni();
 
-        mBluetoothQualityReportNativeInterface =
-                requireNonNull(BluetoothQualityReportNativeInterface.getInstance(this));
         mBluetoothQualityReportNativeInterface.init();
 
         if (Flags.hciVendorSpecificExtension()) {
