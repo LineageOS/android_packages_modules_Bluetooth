@@ -492,6 +492,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
 
         boolean matched =
                 InteropUtil.interopMatchAddrOrName(
+                        mAdapterService,
                         InteropUtil.InteropFeature.INTEROP_ADV_PBAP_VER_1_2,
                         remoteDevice.getAddress());
         Log.d(TAG, "INTEROP_ADV_PBAP_VER_1_2: matched=" + matched);
