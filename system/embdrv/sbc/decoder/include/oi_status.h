@@ -35,10 +35,7 @@ extern "C" {
 
 /** test it **/
 
-/**
- * OI_STATUS is 16 bits, so status codes can range from 0 to 66535, inclusive.
- */
-
+/** OI_STATUS is 16 bits, so status codes can range from 0 to 66535, inclusive. */
 typedef enum {
   OI_STATUS_SUCCESS = 0,              /**< function call succeeded alias for #OI_OK */
   OI_OK = 0,                          /**< function call succeeded alias for #OI_STATUS_SUCCESS */
@@ -589,12 +586,10 @@ typedef enum {
   OI_FIFOQ_INVALID_DATA_PTR =
           2406, /**< FIFOQ: Enqueue QBuf() failed, data pointer does not match */
 
-  OI_HID_HOST_SERVICE_NOT_STARTED = 2601, /**< HID: Cannot connect to a HID
-                                             device unless HID host is started
-                                             */
+  OI_HID_HOST_SERVICE_NOT_STARTED = 2601, /**< HID: Cannot connect to a HID device unless HID host
+                                            is started */
   OI_HID_DEVICE_SERVICE_NOT_STARTED =
-          2602, /**< HID: Cannot connect to a HID host unless HID device is started
-                 */
+          2602, /**< HID: Cannot connect to a HID host unless HID device is started */
 
   OI_AT_ERROR = 2701,        /**< AT: ERROR response */
   OI_AT_NO_CARRIER = 2702,   /**< AT: NO CARRIER response */
@@ -627,9 +622,8 @@ typedef enum {
 
   OI_UNICODE_INVALID_SOURCE = 3200,        /**< Unicode Conversion: Source string has
                                               invalid character encoding. */
-  OI_UNICODE_SOURCE_EXHAUSTED = 3201,      /**< Unicode Conversion: Incomplete
-                                              Unicode character at end of source
-                                              buffer. */
+  OI_UNICODE_SOURCE_EXHAUSTED = 3201,      /**< Unicode Conversion: Incomplete Unicode character at
+                                             end of source buffer. */
   OI_UNICODE_DESTINATION_EXHAUSTED = 3202, /**< Unicode Conversion: Destination
                                               buffer not large enough to hold
                                               resulting Unicode string. */
@@ -642,16 +636,12 @@ typedef enum {
                                        invalid operands in command packet. */
   OI_AVRCP_INVALID_RESPONSE = 3303, /**< AVRCP: The controller received the
                                        response with invalid parameters */
-  OI_AVRCP_RESPONSE_PACKET_OVERFLOW =
-          3304,                                 /**< AVRCP: The response message does not fir in one
-                                                   AVRCP packet     (512 bytes), has to be fragmented. */
-  OI_AVRCP_RESPONSE_INVALID_PDU = 3305,         /**< AVRCP: Command rejected: target
-                                                   received a PDU that it did not
-                                                   understand. */
-  OI_AVRCP_RESPONSE_INVALID_PARAMETER = 3306,   /**< AVRCP: Command rejected:
-                                                   target received a PDU with a
-                                                   parameter ID that it did not
-                                                   understand. */
+  OI_AVRCP_RESPONSE_PACKET_OVERFLOW = 3304,     /**< AVRCP: The response message does not fit in one
+                                                   packet (512 bytes), has to be fragmented. */
+  OI_AVRCP_RESPONSE_INVALID_PDU = 3305,         /**< AVRCP: Command rejected: target received a PDU
+                                                  that it did not understand. */
+  OI_AVRCP_RESPONSE_INVALID_PARAMETER = 3306,   /**< AVRCP: Command rejected: target received a PDU
+                                                  with a parameter ID that it did not understand. */
   OI_AVRCP_RESPONSE_PARAMETER_NOT_FOUND = 3307, /**< AVRCP: Command rejected: specified parameter
                                                    not found, sent if the parameter ID is
                                                    understood, but content is wrong or corrupted.*/
@@ -659,8 +649,7 @@ typedef enum {
                                               conditions. */
   OI_MAX_BM3_STATUS_VAL,                   /* Maximum BM3 status code */
 
-  /* Status code values reserved for BM3 SDK platform-specific implementations
-   */
+  /* Status code values reserved for BM3 SDK platform-specific implementations */
   OI_STATUS_RESERVED_FOR_BCOT = 9000,
 
   /* Status code values reserved for BHAPI products */
