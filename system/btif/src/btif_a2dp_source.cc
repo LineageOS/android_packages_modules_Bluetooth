@@ -274,7 +274,6 @@ static bool btif_a2dp_source_audio_tx_flush_req(void);
 static void btif_a2dp_source_audio_handle_timer(void);
 static uint32_t btif_a2dp_source_read_callback(uint8_t* p_buf, uint32_t len);
 static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n, uint32_t bytes_read);
-static void log_tstamps_us(const char* comment, uint64_t timestamp_us);
 static void update_scheduling_stats(SchedulingStats* stats, uint64_t now_us,
                                     uint64_t expected_delta);
 // Update the A2DP Source related metrics.
@@ -437,6 +436,7 @@ static bool btif_a2dp_source_startup(void) {
 
 static void btif_a2dp_source_startup_delayed() {
   log::info("state={}", btif_a2dp_source_cb.StateStr());
+
   if (!btif_a2dp_source_thread.EnableRealTimeScheduling()) {
 #if defined(__ANDROID__)
     log::fatal("unable to enable real time scheduling");
@@ -824,7 +824,7 @@ void btif_a2dp_source_set_tx_flush(bool enable) {
 }
 
 static void btif_a2dp_source_audio_tx_start_event(void) {
-  log::info("streaming {} state={}", btif_a2dp_source_is_streaming(),
+  log::info("is_streaming={} state={}", btif_a2dp_source_is_streaming(),
             btif_a2dp_source_cb.StateStr());
 
   btif_a2dp_source_cb.stats.Reset();
@@ -843,7 +843,7 @@ static void btif_a2dp_source_audio_tx_start_event(void) {
   log::assert_that(btif_a2dp_source_cb.encoder_interface != nullptr,
                    "assert failed: btif_a2dp_source_cb.encoder_interface != nullptr");
 
-  log::verbose("starting media encoder timer with interval {}ms",
+  log::info("starting media encoder timer with interval {}ms",
                btif_a2dp_source_cb.encoder_interface->get_encoder_interval_ms());
 
   wakelock_acquire();
@@ -858,7 +858,7 @@ static void btif_a2dp_source_audio_tx_start_event(void) {
 }
 
 static void btif_a2dp_source_audio_tx_stop_event(void) {
-  log::info("streaming {} state={}", btif_a2dp_source_is_streaming(),
+  log::info("is_streaming={} state={}", btif_a2dp_source_is_streaming(),
             btif_a2dp_source_cb.StateStr());
 
   btif_a2dp_source_cb.stats.session_end_us = bluetooth::common::time_get_os_boottime_us();
@@ -906,20 +906,24 @@ static void btif_a2dp_source_audio_tx_stop_event(void) {
 static void btif_a2dp_source_audio_handle_timer(void) {
   uint64_t timestamp_us = bluetooth::common::time_get_audio_server_tick_us();
   uint64_t stats_timestamp_us = bluetooth::common::time_get_os_boottime_us();
+  size_t tx_queue_len = fixed_queue_length(btif_a2dp_source_cb.tx_audio_queue);
 
-  log_tstamps_us("A2DP Source tx scheduling timer", timestamp_us);
+  {
+    static uint64_t previous_timestamp_us = 0;
+    log::verbose("timestamp_us={} delta_us={:08} tx_queue_len={}", timestamp_us,
+              timestamp_us - previous_timestamp_us, tx_queue_len);
+    previous_timestamp_us = timestamp_us;
+  }
 
   log::assert_that(btif_a2dp_source_cb.encoder_interface != nullptr,
                    "assert failed: btif_a2dp_source_cb.encoder_interface != nullptr");
 
-  size_t transmit_queue_length = fixed_queue_length(btif_a2dp_source_cb.tx_audio_queue);
-
 #ifdef __ANDROID__
-  ATRACE_INT("btif TX queue", transmit_queue_length);
+  ATRACE_INT("btif TX queue", tx_queue_len);
 #endif
 
   if (btif_a2dp_source_cb.encoder_interface->set_transmit_queue_length != nullptr) {
-    btif_a2dp_source_cb.encoder_interface->set_transmit_queue_length(transmit_queue_length);
+    btif_a2dp_source_cb.encoder_interface->set_transmit_queue_length(tx_queue_len);
   }
 
   btif_a2dp_source_cb.encoder_interface->send_frames(timestamp_us);
@@ -937,6 +941,7 @@ static uint32_t btif_a2dp_source_read_callback(uint8_t* p_buf, uint32_t len) {
   }
 
   uint32_t bytes_read = bluetooth::audio::a2dp::read(p_buf, len);
+  log::verbose("wanted={} read={}", len, bytes_read);
 
   if (bytes_read < len) {
     log::warn("UNDERFLOW: ONLY READ {} BYTES OUT OF {}", bytes_read, len);
@@ -1013,6 +1018,7 @@ static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n,
 static void btif_a2dp_source_audio_tx_flush_event(void) {
   /* Flush all enqueued audio buffers (encoded) */
   log::info("state={}", btif_a2dp_source_cb.StateStr());
+
   if (btif_av_is_a2dp_offload_running()) {
     return;
   }
@@ -1047,13 +1053,6 @@ BT_HDR* btif_a2dp_source_audio_readbuf(void) {
   }
 
   return p_buf;
-}
-
-static void log_tstamps_us(const char* comment, uint64_t timestamp_us) {
-  static uint64_t prev_us = 0;
-  log::verbose("[{}] ts {:08}, diff : {:08}, queue sz {}", comment, timestamp_us,
-               timestamp_us - prev_us, fixed_queue_length(btif_a2dp_source_cb.tx_audio_queue));
-  prev_us = timestamp_us;
 }
 
 static void update_scheduling_stats(SchedulingStats* stats, uint64_t now_us,
