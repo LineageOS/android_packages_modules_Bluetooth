@@ -39,7 +39,7 @@ from pandora.asha_pb2 import PlaybackAudioRequest
 from typing import AsyncIterator, ByteString, List, Optional, Tuple
 
 ASHA_UUID = GATT_ASHA_SERVICE.to_hex_str('-')
-HISYCNID: List[int] = [0x01, 0x02, 0x03, 0x04, 0x5, 0x6, 0x7, 0x8]
+HISYNCID: List[int] = [0x01, 0x02, 0x03, 0x04, 0x5, 0x6, 0x7, 0x8]
 COMPLETE_LOCAL_NAME: str = "Bumble"
 AUDIO_SIGNAL_AMPLITUDE = 0.8
 AUDIO_SIGNAL_SAMPLING_RATE = 44100
@@ -52,6 +52,13 @@ class Ear(enum.IntEnum):
 
     LEFT = 0
     RIGHT = 1
+
+
+def asha_service_data(ear: Ear) -> bytes:
+    protocol_version = 0x01
+    truncated_hisyncid = HISYNCID[:4]
+    capability = ear
+    return bytes([protocol_version, capability] + truncated_hisyncid)
 
 
 class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
@@ -91,71 +98,56 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
         self.ref_left.server_config.io_capability = PairingDelegate.NO_OUTPUT_NO_INPUT
         self.ref_right.server_config.io_capability = PairingDelegate.NO_OUTPUT_NO_INPUT
 
-    async def ref_advertise_asha(self, ref_device: PandoraDevice, ref_address_type: OwnAddressType,
-                                 ear: Ear) -> AioStream[AdvertiseResponse]:
-        """
-        Ref device starts to advertise with service data in advertisement data.
-        :return: Ref device's advertise stream
-        """
-        # Ref starts advertising with ASHA service data
-        asha = AioAsha(ref_device.aio.channel)
-        await asha.Register(capability=ear, hisyncid=HISYCNID)
-        return ref_device.aio.host.Advertise(
+    async def accept_connection(self, device: BumblePandoraDevice, own_address_type: OwnAddressType,
+                                ear: Ear) -> Connection:
+        """Start advertising with support for the ASHA profile and wait for the
+        remote device connection."""
+
+        asha = AioAsha(device.aio.channel)
+
+        await asha.Register(capability=ear, hisyncid=HISYNCID)
+
+        advertisement = device.aio.host.Advertise(
             legacy=True,
             connectable=True,
-            own_address_type=ref_address_type,
+            own_address_type=own_address_type,
             data=DataTypes(
                 complete_local_name=COMPLETE_LOCAL_NAME,
                 incomplete_service_class_uuids16=[ASHA_UUID],
             ),
         )
 
-    async def dut_scan_for_asha(self, dut_address_type: OwnAddressType,
-                                ear: Ear) -> ScanningResponse:
-        """
-        DUT starts to scan for the Ref device.
-        :return: ScanningResponse for ASHA
-        """
-        dut_scan = self.dut.aio.host.Scan(own_address_type=dut_address_type)
-        expected_advertisement_data = self.get_expected_advertisement_data(ear)
-        ref = await anext((x async for x in dut_scan if (
-            ASHA_UUID in x.data.incomplete_service_class_uuids16 and expected_advertisement_data ==
-            (x.data.service_data_uuid16[ASHA_UUID]).hex())))
-        dut_scan.cancel()
-        return ref
-
-    async def dut_connect_to_ref(self, advertisement: AioStream[AdvertiseResponse],
-                                 ref: ScanningResponse,
-                                 dut_address_type: OwnAddressType) -> Tuple[Connection, Connection]:
-        """
-        Helper method for Dut connects to Ref
-        :return: a Tuple (DUT to REF connection, REF to DUT connection)
-        """
-        (dut_ref_res, ref_dut_res) = await asyncio.gather(
-            self.dut.aio.host.ConnectLE(own_address_type=dut_address_type, **ref.address_asdict()),
-            anext(aiter(advertisement)),  # pytype: disable=name-error
-        )
-        assert_equal(dut_ref_res.result_variant(), 'connection')
-        dut_ref, ref_dut = dut_ref_res.connection, ref_dut_res.connection
-        assert_is_not_none(dut_ref)
-        assert dut_ref
+        result = await anext(aiter(advertisement))
         advertisement.cancel()
-        return dut_ref, ref_dut
 
-    async def is_device_connected(self, device: PandoraDevice, connection: Connection,
-                                  timeout: float) -> bool:
-        try:
-            await device.aio.host.WaitDisconnection(connection=connection, timeout=timeout)
-            return False
-        except grpc.RpcError as e:
-            assert_equal(e.code(), grpc.StatusCode.DEADLINE_EXCEEDED)  # type: ignore
-            return True
+        return result.connection
 
-    def get_expected_advertisement_data(self, ear: Ear) -> str:
-        protocol_version = 0x01
-        truncated_hisyncid = HISYCNID[:4]
-        return ("{:02x}".format(protocol_version) + "{:02x}".format(ear) +
-                "".join([("{:02x}".format(x)) for x in truncated_hisyncid]))
+    async def initiate_connection(self, device: PandoraDevice, own_address_type: OwnAddressType,
+                                  ear: Ear) -> Connection:
+        """Scan for an ASHA capable device and initiate an LE connection."""
+
+        scan = device.aio.host.Scan(own_address_type=own_address_type)
+        expected_service_data = asha_service_data(ear)
+
+        def supports_asha(result):
+            return (ASHA_UUID in result.data.incomplete_service_class_uuids16 and
+                    result.data.service_data_uuid16[ASHA_UUID] == expected_service_data)
+
+        scan_result = await anext((x async for x in scan if supports_asha(x)))
+        scan.cancel()
+
+        result = await device.aio.host.ConnectLE(own_address_type=own_address_type,
+                                                 **scan_result.address_asdict())
+
+        return result.connection
+
+    async def accept_pairing(self, device: PandoraDevice, connection: Connection):
+        wait_security = await device.aio.security.WaitSecurity(connection=connection, le=LE_LEVEL3)
+        assert_equal(wait_security.result_variant(), 'success')
+
+    async def initiate_pairing(self, device: PandoraDevice, connection: Connection):
+        secure = await device.aio.security.Secure(connection=connection, le=LE_LEVEL3)
+        assert_equal(secure.result_variant(), 'success')
 
     def get_le_psm_future(self, ref_device: BumblePandoraDevice) -> asyncio.Future[int]:
         asha_service = next(
@@ -234,66 +226,6 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
             yield PlaybackAudioRequest(connection=connection, data=stereo.tobytes())
 
     @avatar.parameterized(
-        (RANDOM, Ear.LEFT),
-        (RANDOM, Ear.RIGHT),
-    )  # type: ignore[misc]
-    @asynchronous
-    async def test_advertising_advertisement_data(
-        self,
-        ref_address_type: OwnAddressType,
-        ear: Ear,
-    ) -> None:
-        """
-        Ref starts ASHA advertisements with service data in advertisement data.
-        DUT starts a service discovery.
-        Verify Ref is correctly discovered by DUT as a hearing aid device.
-        """
-        advertisement = await self.ref_advertise_asha(self.ref_left, ref_address_type, ear)
-
-        # DUT starts a service discovery
-        scan_result = await self.dut_scan_for_asha(dut_address_type=RANDOM, ear=ear)
-        advertisement.cancel()
-
-        # Verify Ref is correctly discovered by DUT as a hearing aid device
-        assert_in(ASHA_UUID, scan_result.data.service_data_uuid16)
-        assert_equal(type(scan_result.data.complete_local_name), str)
-        expected_advertisement_data = self.get_expected_advertisement_data(ear)
-        assert_equal(
-            expected_advertisement_data,
-            (scan_result.data.service_data_uuid16[ASHA_UUID]).hex(),
-        )
-
-    @asynchronous
-    async def test_advertising_scan_response(self) -> None:
-        """
-        Ref starts ASHA advertisements with service data in scan response data.
-        DUT starts a service discovery.
-        Verify Ref is correctly discovered by DUT as a hearing aid device.
-        """
-        asha = AioAsha(self.ref_left.aio.channel)
-        await asha.Register(capability=Ear.LEFT, hisyncid=HISYCNID)
-
-        # advertise with ASHA service data in scan response
-        advertisement = self.ref_left.aio.host.Advertise(
-            legacy=True,
-            scan_response_data=DataTypes(
-                complete_local_name=COMPLETE_LOCAL_NAME,
-                complete_service_class_uuids16=[ASHA_UUID],
-            ),
-        )
-
-        scan_result = await self.dut_scan_for_asha(dut_address_type=RANDOM, ear=Ear.LEFT)
-        advertisement.cancel()
-
-        # Verify Ref is correctly discovered by DUT as a hearing aid device.
-        assert_in(ASHA_UUID, scan_result.data.service_data_uuid16)
-        expected_advertisement_data = self.get_expected_advertisement_data(Ear.LEFT)
-        assert_equal(
-            expected_advertisement_data,
-            (scan_result.data.service_data_uuid16[ASHA_UUID]).hex(),
-        )
-
-    @avatar.parameterized(
         (RANDOM, PUBLIC),
         (RANDOM, RANDOM),
     )  # type: ignore[misc]
@@ -308,23 +240,24 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
         DUT initiates connection to Ref.
         Verify that DUT and Ref are bonded and connected.
         """
-        advertisement = await self.ref_advertise_asha(ref_device=self.ref_left,
-                                                      ref_address_type=ref_address_type,
-                                                      ear=Ear.LEFT)
 
-        ref = await self.dut_scan_for_asha(dut_address_type=dut_address_type, ear=Ear.LEFT)
-
-        # DUT initiates connection to Ref.
-        dut_ref, ref_dut = await self.dut_connect_to_ref(advertisement, ref, dut_address_type)
-
-        # DUT starts pairing with the Ref.
-        (secure, wait_security) = await asyncio.gather(
-            self.dut.aio.security.Secure(connection=dut_ref, le=LE_LEVEL3),
-            self.ref_left.aio.security.WaitSecurity(connection=ref_dut, le=LE_LEVEL3),
+        logging.info("connecting left device")
+        dut_ref, ref_dut = await asyncio.gather(
+            self.initiate_connection(self.dut, dut_address_type, Ear.LEFT),
+            self.accept_connection(self.ref_left, ref_address_type, Ear.LEFT),
         )
 
-        assert_equal(secure.result_variant(), 'success')
-        assert_equal(wait_security.result_variant(), 'success')
+        logging.info("pairing left device")
+        await asyncio.gather(
+            self.initiate_pairing(self.dut, dut_ref),
+            self.accept_pairing(self.ref_left, ref_dut),
+        )
+
+        logging.info("disconnecting left device")
+        await asyncio.gather(
+            self.ref_left.aio.host.Disconnect(connection=ref_dut),
+            self.dut.aio.host.WaitDisconnection(connection=dut_ref),
+        )
 
     @avatar.parameterized(
         (RANDOM, PUBLIC),
@@ -342,241 +275,33 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
         Verify that DUT and Ref are bonded and connected.
         """
 
-        async def ref_device_connect(ref_device: BumblePandoraDevice,
-                                     ear: Ear) -> Tuple[Connection, Connection]:
-            advertisement = await self.ref_advertise_asha(ref_device=ref_device,
-                                                          ref_address_type=ref_address_type,
-                                                          ear=ear)
-            ref = await self.dut_scan_for_asha(dut_address_type=dut_address_type, ear=ear)
-            # DUT initiates connection to ref_device.
-            dut_ref, ref_dut = await self.dut_connect_to_ref(advertisement, ref, dut_address_type)
-            advertisement.cancel()
-
-            return dut_ref, ref_dut
-
-        ((dut_ref_left, ref_left_dut),
-         (dut_ref_right,
-          ref_right_dut)) = await asyncio.gather(ref_device_connect(self.ref_left, Ear.LEFT),
-                                                 ref_device_connect(self.ref_right, Ear.RIGHT))
-
-        # DUT starts pairing with the ref_left
-        (secure_left, wait_security_left) = await asyncio.gather(
-            self.dut.aio.security.Secure(connection=dut_ref_left, le=LE_LEVEL3),
-            self.ref_left.aio.security.WaitSecurity(connection=ref_left_dut, le=LE_LEVEL3),
+        logging.info("connecting left and right devices")
+        dut_ref_left, dut_ref_right, ref_left_dut, ref_right_dut = await asyncio.gather(
+            self.initiate_connection(self.dut, dut_address_type, Ear.LEFT),
+            self.initiate_connection(self.dut, dut_address_type, Ear.RIGHT),
+            self.accept_connection(self.ref_left, ref_address_type, Ear.LEFT),
+            self.accept_connection(self.ref_right, ref_address_type, Ear.RIGHT),
         )
 
-        assert_equal(secure_left.result_variant(), 'success')
-        assert_equal(wait_security_left.result_variant(), 'success')
-
-        # DUT starts pairing with the ref_right
-        (secure_right, wait_security_right) = await asyncio.gather(
-            self.dut.aio.security.Secure(connection=dut_ref_right, le=LE_LEVEL3),
-            self.ref_right.aio.security.WaitSecurity(connection=ref_right_dut, le=LE_LEVEL3),
+        logging.info("pairing left device")
+        await asyncio.gather(
+            self.initiate_pairing(self.dut, dut_ref_left),
+            self.accept_pairing(self.ref_left, ref_left_dut),
         )
 
-        assert_equal(secure_right.result_variant(), 'success')
-        assert_equal(wait_security_right.result_variant(), 'success')
+        logging.info("pairing right device")
+        await asyncio.gather(
+            self.initiate_pairing(self.dut, dut_ref_right),
+            self.accept_pairing(self.ref_right, ref_right_dut),
+        )
 
+        logging.info("disconnecting left and right devices")
         await asyncio.gather(
             self.ref_left.aio.host.Disconnect(connection=ref_left_dut),
-            self.dut.aio.host.WaitDisconnection(connection=dut_ref_left),
-        )
-        await asyncio.gather(
             self.ref_right.aio.host.Disconnect(connection=ref_right_dut),
+            self.dut.aio.host.WaitDisconnection(connection=dut_ref_left),
             self.dut.aio.host.WaitDisconnection(connection=dut_ref_right),
         )
-
-    @avatar.parameterized(
-        (RANDOM, PUBLIC),
-        (RANDOM, RANDOM),
-    )  # type: ignore[misc]
-    @asynchronous
-    async def test_unbonding(
-        self,
-        dut_address_type: OwnAddressType,
-        ref_address_type: OwnAddressType,
-    ) -> None:
-        """
-        DUT removes bond with Ref.
-        Verify that DUT and Ref are disconnected and unbonded.
-        """
-        raise signals.TestSkip("TODO: update rootcanal to retry")
-
-        advertisement = await self.ref_advertise_asha(ref_device=self.ref_left,
-                                                      ref_address_type=ref_address_type,
-                                                      ear=Ear.LEFT)
-        ref = await self.dut_scan_for_asha(dut_address_type=dut_address_type, ear=Ear.LEFT)
-
-        dut_ref, ref_dut = await self.dut_connect_to_ref(advertisement, ref, dut_address_type)
-
-        secure = self.dut.security.Secure(connection=dut_ref, le=LE_LEVEL3)
-
-        assert_equal(secure.WhichOneof("result"), "success")
-        await self.dut.aio.host.Disconnect(dut_ref)
-        await self.ref_left.aio.host.WaitDisconnection(ref_dut)
-
-        # delete the bond
-        await self.dut.aio.security_storage.DeleteBond(random=self.ref_left.random_address)
-
-        # DUT connect to REF again
-        dut_ref = (await self.dut.aio.host.ConnectLE(own_address_type=dut_address_type,
-                                                     **ref.address_asdict())).connection
-        # TODO very likely there is a bug in android here
-        logging.debug("result should come out")
-
-        advertisement.cancel()
-        assert_is_not_none(dut_ref)
-
-        secure = await self.dut.aio.security.Secure(connection=dut_ref, le=LE_LEVEL3)
-
-        assert_equal(secure.WhichOneof("result"), "success")
-
-    @avatar.parameterized(
-        (RANDOM, RANDOM),
-        (RANDOM, PUBLIC),
-    )  # type: ignore[misc]
-    @asynchronous
-    async def test_connection(self, dut_address_type: OwnAddressType,
-                              ref_address_type: OwnAddressType) -> None:
-        """
-        DUT discovers Ref.
-        DUT initiates connection to Ref.
-        Verify that DUT and Ref are connected.
-        """
-        advertisement = await self.ref_advertise_asha(ref_device=self.ref_left,
-                                                      ref_address_type=ref_address_type,
-                                                      ear=Ear.LEFT)
-        ref = await self.dut_scan_for_asha(dut_address_type=dut_address_type, ear=Ear.LEFT)
-
-        _, _ = await self.dut_connect_to_ref(advertisement, ref, dut_address_type)
-
-    @avatar.parameterized(
-        (RANDOM, RANDOM),
-        (RANDOM, PUBLIC),
-    )  # type: ignore[misc]
-    @asynchronous
-    async def test_disconnect_initiator(
-        self,
-        dut_address_type: OwnAddressType,
-        ref_address_type: OwnAddressType,
-    ) -> None:
-        """
-        DUT initiates disconnection to Ref.
-        Verify that DUT and Ref are disconnected.
-        """
-        advertisement = await self.ref_advertise_asha(ref_device=self.ref_left,
-                                                      ref_address_type=ref_address_type,
-                                                      ear=Ear.LEFT)
-        ref = await self.dut_scan_for_asha(dut_address_type=dut_address_type, ear=Ear.LEFT)
-
-        dut_ref, ref_dut = await self.dut_connect_to_ref(advertisement, ref, dut_address_type)
-        advertisement.cancel()
-
-        await self.dut.aio.host.Disconnect(connection=dut_ref)
-        assert_false(await self.is_device_connected(self.ref_left, ref_dut, 5),
-                     "Should be disconnected")
-
-    @avatar.parameterized(
-        (RANDOM, RANDOM),
-        (RANDOM, PUBLIC),
-    )  # type: ignore[misc]
-    @asynchronous
-    async def test_disconnect_initiator_dual_device(
-        self,
-        dut_address_type: OwnAddressType,
-        ref_address_type: OwnAddressType,
-    ) -> None:
-        """
-        DUT initiates disconnection to Ref.
-        Verify that DUT and Ref are disconnected.
-        """
-
-        async def ref_device_connect(ref_device: BumblePandoraDevice,
-                                     ear: Ear) -> Tuple[Connection, Connection]:
-            advertisement = await self.ref_advertise_asha(ref_device=ref_device,
-                                                          ref_address_type=ref_address_type,
-                                                          ear=ear)
-            ref = await self.dut_scan_for_asha(dut_address_type=dut_address_type, ear=ear)
-            # DUT initiates connection to ref_device.
-            dut_ref, ref_dut = await self.dut_connect_to_ref(advertisement, ref, dut_address_type)
-            advertisement.cancel()
-
-            return dut_ref, ref_dut
-
-        ((dut_ref_left, ref_left_dut),
-         (dut_ref_right,
-          ref_right_dut)) = await asyncio.gather(ref_device_connect(self.ref_left, Ear.LEFT),
-                                                 ref_device_connect(self.ref_right, Ear.RIGHT))
-
-        # Disconnect from DUT
-        await asyncio.gather(
-            self.dut.aio.host.Disconnect(connection=dut_ref_left),
-            self.dut.aio.host.Disconnect(connection=dut_ref_right),
-        )
-
-        # Verify the Refs are disconnected
-        assert_false(await self.is_device_connected(self.ref_left, ref_left_dut, 5),
-                     "Should be disconnected")
-        assert_false(await self.is_device_connected(self.ref_right, ref_right_dut, 5),
-                     "Should be disconnected")
-
-    @avatar.parameterized(
-        (RANDOM, RANDOM),
-        (RANDOM, PUBLIC),
-    )  # type: ignore[misc]
-    @asynchronous
-    async def test_disconnect_acceptor(
-        self,
-        dut_address_type: OwnAddressType,
-        ref_address_type: OwnAddressType,
-    ) -> None:
-        """
-        Ref initiates disconnection to DUT (typically when put back in its box).
-        Verify that Ref is disconnected.
-        """
-        advertisement = await self.ref_advertise_asha(ref_device=self.ref_left,
-                                                      ref_address_type=ref_address_type,
-                                                      ear=Ear.LEFT)
-        ref = await self.dut_scan_for_asha(dut_address_type=dut_address_type, ear=Ear.LEFT)
-
-        dut_ref, ref_dut = await self.dut_connect_to_ref(advertisement, ref, dut_address_type)
-        advertisement.cancel()
-
-        await self.ref_left.aio.host.Disconnect(connection=ref_dut)
-        assert_false(await self.is_device_connected(self.dut, dut_ref, 5), "Should be disconnected")
-
-    @avatar.parameterized(
-        (RANDOM, RANDOM, 0),
-        (RANDOM, RANDOM, 0.5),
-        (RANDOM, RANDOM, 1),
-        (RANDOM, RANDOM, 5),
-    )  # type: ignore[misc]
-    @asynchronous
-    async def test_reconnection(
-        self,
-        dut_address_type: OwnAddressType,
-        ref_address_type: OwnAddressType,
-        reconnection_gap: float,
-    ) -> None:
-        """
-        DUT initiates disconnection to the Ref.
-        Verify that DUT and Ref are disconnected.
-        DUT reconnects to Ref after various certain time.
-        Verify that DUT and Ref are connected.
-        """
-
-        async def connect_and_disconnect() -> None:
-            advertisement = await self.ref_advertise_asha(ref_device=self.ref_left,
-                                                          ref_address_type=ref_address_type,
-                                                          ear=Ear.LEFT)
-            ref = await self.dut_scan_for_asha(dut_address_type=dut_address_type, ear=Ear.LEFT)
-            dut_ref, _ = await self.dut_connect_to_ref(advertisement, ref, dut_address_type)
-            await self.dut.aio.host.Disconnect(connection=dut_ref)
-
-        await connect_and_disconnect()
-        # simulating reconnect interval
-        await asyncio.sleep(reconnection_gap)
-        await connect_and_disconnect()
 
     @avatar.parameterized(
         (RANDOM, RANDOM),
@@ -593,82 +318,36 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
         Ref starts sending ASHA advertisements.
         Verify that DUT auto-connects to Ref.
         """
-        advertisement = await self.ref_advertise_asha(ref_device=self.ref_left,
-                                                      ref_address_type=ref_address_type,
-                                                      ear=Ear.LEFT)
-        ref = await self.dut_scan_for_asha(dut_address_type=dut_address_type, ear=Ear.LEFT)
 
-        # manually connect and not cancel advertisement
-        dut_ref_res, ref_dut_res = await asyncio.gather(
-            self.dut.aio.host.ConnectLE(own_address_type=dut_address_type, **ref.address_asdict()),
-            anext(aiter(advertisement)),  # pytype: disable=name-error
+        logging.info("connecting left device")
+        dut_ref, ref_dut = await asyncio.gather(
+            self.initiate_connection(self.dut, dut_address_type, Ear.LEFT),
+            self.accept_connection(self.ref_left, ref_address_type, Ear.LEFT),
         )
-        assert_equal(dut_ref_res.result_variant(), 'connection')
-        dut_ref, ref_dut = dut_ref_res.connection, ref_dut_res.connection
-        assert_is_not_none(dut_ref)
-        assert dut_ref
 
-        # Pairing
-        (secure, wait_security) = await asyncio.gather(
-            self.dut.aio.security.Secure(connection=dut_ref, le=LE_LEVEL3),
-            self.ref_left.aio.security.WaitSecurity(connection=ref_dut, le=LE_LEVEL3),
+        logging.info("pairing left device")
+        await asyncio.gather(
+            self.initiate_pairing(self.dut, dut_ref),
+            self.accept_pairing(self.ref_left, ref_dut),
         )
-        assert_equal(secure.result_variant(), 'success')
-        assert_equal(wait_security.result_variant(), 'success')
 
-        await self.ref_left.aio.host.Disconnect(connection=ref_dut)
+        logging.info("initiating ASHA profile connection")
+        dut_asha = self.dut.aio.asha
+        _ = await dut_asha.OpenSource(connection=dut_ref)
 
-        ref_dut = (await anext(aiter(advertisement))).connection
-        advertisement.cancel()
+        # Disconnect the tested device and immediately start advertising
+        # again to observe a reconnection.
+        logging.info("disconnecting left device")
+        await asyncio.gather(
+            self.ref_left.aio.host.Disconnect(connection=ref_dut),
+            self.dut.aio.host.WaitDisconnection(connection=dut_ref),
+        )
 
-    @avatar.parameterized(
-        (RANDOM, RANDOM, Ear.LEFT),
-        (RANDOM, PUBLIC, Ear.RIGHT),
-    )  # type: ignore[misc]
-    @asynchronous
-    async def test_disconnect_acceptor_dual_device(
-        self,
-        dut_address_type: OwnAddressType,
-        ref_address_type: OwnAddressType,
-        disconnect_device: Ear,
-    ) -> None:
-        """
-        Prerequisites: DUT and Ref are connected and bonded.
-        Description:
-           1. One peripheral of Ref initiates disconnection to DUT.
-           2. Verify that it is disconnected and that the other peripheral is still connected.
-        """
-
-        advertisement_left = await self.ref_advertise_asha(ref_device=self.ref_left,
-                                                           ref_address_type=ref_address_type,
-                                                           ear=Ear.LEFT)
-        ref_left = await self.dut_scan_for_asha(dut_address_type=dut_address_type, ear=Ear.LEFT)
-        _, ref_left_dut = await self.dut_connect_to_ref(advertisement=advertisement_left,
-                                                        ref=ref_left,
-                                                        dut_address_type=dut_address_type)
-        advertisement_left.cancel()
-
-        advertisement_right = await self.ref_advertise_asha(ref_device=self.ref_right,
-                                                            ref_address_type=ref_address_type,
-                                                            ear=Ear.RIGHT)
-        ref_right = await self.dut_scan_for_asha(dut_address_type=dut_address_type, ear=Ear.RIGHT)
-        _, ref_right_dut = await self.dut_connect_to_ref(advertisement=advertisement_right,
-                                                         ref=ref_right,
-                                                         dut_address_type=dut_address_type)
-        advertisement_right.cancel()
-
-        if disconnect_device == Ear.LEFT:
-            await self.ref_left.aio.host.Disconnect(connection=ref_left_dut)
-            assert_true(await self.is_device_connected(self.ref_right, ref_right_dut, 5),
-                        "Should be disconnected")
-            assert_false(await self.is_device_connected(self.ref_left, ref_left_dut, 5),
-                         "Should be disconnected")
-        else:
-            await self.ref_right.aio.host.Disconnect(connection=ref_right_dut)
-            assert_false(await self.is_device_connected(self.ref_right, ref_right_dut, 5),
-                         "Should be disconnected")
-            assert_true(await self.is_device_connected(self.ref_left, ref_left_dut, 5),
-                        "Should be disconnected")
+        logging.info("waiting for left device reconnection")
+        await asyncio.gather(
+            self.accept_connection(self.ref_left, ref_address_type, Ear.LEFT),
+            dut_asha.WaitSource(connection=dut_ref),
+        )
 
     @avatar.parameterized(
         (RANDOM, RANDOM, Ear.LEFT),
@@ -685,80 +364,56 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
         Description:
            1. One peripheral of Ref initiates disconnection to DUT.
            2. The disconnected peripheral starts sending ASHA advertisements.
-           3. Verify that DUT auto-connects to the peripheral.
+           3. Verify that DUT will automatically reconnect the disconnected peripheral.
         """
 
-        advertisement_left = await self.ref_advertise_asha(ref_device=self.ref_left,
-                                                           ref_address_type=ref_address_type,
-                                                           ear=Ear.LEFT)
-        ref_left = await self.dut_scan_for_asha(dut_address_type=dut_address_type, ear=Ear.LEFT)
-        (dut_ref_left_res, ref_left_dut_res) = await asyncio.gather(
-            self.dut.aio.host.ConnectLE(own_address_type=dut_address_type,
-                                        **ref_left.address_asdict()),
-            anext(aiter(advertisement_left)),  # pytype: disable=name-error
+        logging.info("connecting left and right devices")
+        dut_ref_left, dut_ref_right, ref_left_dut, ref_right_dut = await asyncio.gather(
+            self.initiate_connection(self.dut, dut_address_type, Ear.LEFT),
+            self.initiate_connection(self.dut, dut_address_type, Ear.RIGHT),
+            self.accept_connection(self.ref_left, ref_address_type, Ear.LEFT),
+            self.accept_connection(self.ref_right, ref_address_type, Ear.RIGHT),
         )
-        assert_equal(dut_ref_left_res.result_variant(), 'connection')
-        dut_ref_left, ref_left_dut = dut_ref_left_res.connection, ref_left_dut_res.connection
-        assert_is_not_none(dut_ref_left)
-        assert dut_ref_left
-        advertisement_left.cancel()
 
-        advertisement_right = await self.ref_advertise_asha(ref_device=self.ref_right,
-                                                            ref_address_type=ref_address_type,
-                                                            ear=Ear.RIGHT)
-        ref_right = await self.dut_scan_for_asha(dut_address_type=dut_address_type, ear=Ear.RIGHT)
-        (dut_ref_right_res, ref_right_dut_res) = await asyncio.gather(
-            self.dut.aio.host.ConnectLE(own_address_type=dut_address_type,
-                                        **ref_right.address_asdict()),
-            anext(aiter(advertisement_right)),  # pytype: disable=name-error
+        logging.info("pairing left device")
+        await asyncio.gather(
+            self.initiate_pairing(self.dut, dut_ref_left),
+            self.accept_pairing(self.ref_left, ref_left_dut),
         )
-        assert_equal(dut_ref_right_res.result_variant(), 'connection')
-        dut_ref_right, ref_right_dut = dut_ref_right_res.connection, ref_right_dut_res.connection
-        assert_is_not_none(dut_ref_right)
-        assert dut_ref_right
-        advertisement_right.cancel()
 
-        # Pairing
-        (secure_left, wait_security_left) = await asyncio.gather(
-            self.dut.aio.security.Secure(connection=dut_ref_left, le=LE_LEVEL3),
-            self.ref_left.aio.security.WaitSecurity(connection=ref_left_dut, le=LE_LEVEL3),
+        logging.info("pairing right device")
+        await asyncio.gather(
+            self.initiate_pairing(self.dut, dut_ref_right),
+            self.accept_pairing(self.ref_right, ref_right_dut),
         )
-        assert_equal(secure_left.result_variant(), 'success')
-        assert_equal(wait_security_left.result_variant(), 'success')
 
-        (secure_right, wait_security_right) = await asyncio.gather(
-            self.dut.aio.security.Secure(connection=dut_ref_right, le=LE_LEVEL3),
-            self.ref_right.aio.security.WaitSecurity(connection=ref_right_dut, le=LE_LEVEL3),
-        )
-        assert_equal(secure_right.result_variant(), 'success')
-        assert_equal(wait_security_right.result_variant(), 'success')
+        logging.info("initiating ASHA profile connection")
+        dut_asha = self.dut.aio.asha
+        _ = await asyncio.gather(dut_asha.OpenSource(connection=dut_ref_left),
+                                 dut_asha.OpenSource(connection=dut_ref_right))
 
         if tested_device == Ear.LEFT:
-            await asyncio.gather(
-                self.ref_left.aio.host.Disconnect(connection=ref_left_dut),
-                self.dut.aio.host.WaitDisconnection(connection=dut_ref_left),
-            )
-            assert_false(await self.is_device_connected(self.ref_left, ref_left_dut, 5),
-                         "Should be disconnected")
-
-            advertisement_left = await self.ref_advertise_asha(ref_device=self.ref_left,
-                                                               ref_address_type=ref_address_type,
-                                                               ear=Ear.LEFT)
-            ref_left_dut = (await anext(aiter(advertisement_left))).connection
-            advertisement_left.cancel()
+            ref = self.ref_left
+            ref_dut = ref_left_dut
+            dut_ref = dut_ref_left
         else:
-            await asyncio.gather(
-                self.ref_right.aio.host.Disconnect(connection=ref_right_dut),
-                self.dut.aio.host.WaitDisconnection(connection=dut_ref_right),
-            )
-            assert_false(await self.is_device_connected(self.ref_right, ref_right_dut, 5),
-                         "Should be disconnected")
+            ref = self.ref_right
+            ref_dut = ref_right_dut
+            dut_ref = dut_ref_right
 
-            advertisement_right = await self.ref_advertise_asha(ref_device=self.ref_right,
-                                                                ref_address_type=ref_address_type,
-                                                                ear=Ear.RIGHT)
-            ref_right_dut = (await anext(aiter(advertisement_right))).connection
-            advertisement_right.cancel()
+        # Disconnect the tested device and immediately start advertising
+        # again to observe a reconnection.
+        logging.info("disconnecting test device")
+        await asyncio.gather(
+            ref.aio.host.Disconnect(connection=ref_dut),
+            self.dut.aio.host.WaitDisconnection(connection=dut_ref),
+        )
+
+        logging.info("waiting for test device reconnection")
+        await asyncio.gather(
+            self.accept_connection(ref, ref_address_type, tested_device),
+            dut_asha.WaitSource(connection=dut_ref),
+        )
 
     @asynchronous
     async def test_music_start(self) -> None:
@@ -771,30 +426,20 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
         audiotype=0, volume=<volume set on DUT>, otherstate=<state of Ref aux if dual devices>).
         """
 
-        async def ref_device_connect(ref_device: BumblePandoraDevice,
-                                     ear: Ear) -> Tuple[Connection, Connection]:
-            advertisement = await self.ref_advertise_asha(ref_device=ref_device,
-                                                          ref_address_type=RANDOM,
-                                                          ear=ear)
-            ref = await self.dut_scan_for_asha(dut_address_type=RANDOM, ear=ear)
-            # DUT initiates connection to ref_device.
-            dut_ref, ref_dut = await self.dut_connect_to_ref(advertisement, ref, RANDOM)
-            advertisement.cancel()
+        logging.info("connecting left device")
+        dut_ref, ref_dut = await asyncio.gather(
+            self.initiate_connection(self.dut, RANDOM, Ear.LEFT),
+            self.accept_connection(self.ref_left, RANDOM, Ear.LEFT),
+        )
 
-            return dut_ref, ref_dut
-
-        dut_ref, ref_dut = await ref_device_connect(self.ref_left, Ear.LEFT)
         le_psm_future = self.get_le_psm_future(self.ref_left)
         read_only_properties_future = self.get_read_only_properties_future(self.ref_left)
 
-        # DUT starts pairing with the ref_left
-        (secure, wait_security) = await asyncio.gather(
-            self.dut.aio.security.Secure(connection=dut_ref, le=LE_LEVEL3),
-            self.ref_left.aio.security.WaitSecurity(connection=ref_dut, le=LE_LEVEL3),
+        logging.info("pairing left device")
+        await asyncio.gather(
+            self.initiate_pairing(self.dut, dut_ref),
+            self.accept_pairing(self.ref_left, ref_dut),
         )
-
-        assert_equal(secure.result_variant(), 'success')
-        assert_equal(wait_security.result_variant(), 'success')
 
         le_psm_out_result = await asyncio.wait_for(le_psm_future, timeout=3.0)
         assert_is_not_none(le_psm_out_result)
@@ -806,12 +451,13 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
         dut_asha = AioAsha(self.dut.aio.channel)
         start_future = self.get_start_future(self.ref_left)
 
-        logging.info("send start")
-        await dut_asha.WaitPeripheral(connection=dut_ref)
+        logging.info("initiating ASHA profile connection")
+        await dut_asha.OpenSource(connection=dut_ref)
+
+        logging.info("starting audio stream")
         _, start_result = await asyncio.gather(dut_asha.Start(connection=dut_ref),
                                                asyncio.wait_for(start_future, timeout=3.0))
 
-        logging.info(f"start_result:{start_result}")
         assert_is_not_none(start_result)
         assert_equal(start_result['codec'], 1)
         assert_equal(start_result['audiotype'], 0)
@@ -830,23 +476,17 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
         """
         raise signals.TestSkip("TODO: update bt test interface for SetVolume to retry")
 
-        advertisement = await self.ref_advertise_asha(ref_device=self.ref_left,
-                                                      ref_address_type=RANDOM,
-                                                      ear=Ear.LEFT)
-
-        ref = await self.dut_scan_for_asha(dut_address_type=RANDOM, ear=Ear.LEFT)
-
-        # DUT initiates connection to Ref.
-        dut_ref, ref_dut = await self.dut_connect_to_ref(advertisement, ref, RANDOM)
-
-        # DUT starts pairing with the ref_left
-        (secure, wait_security) = await asyncio.gather(
-            self.dut.aio.security.Secure(connection=dut_ref, le=LE_LEVEL3),
-            self.ref_left.aio.security.WaitSecurity(connection=ref_dut, le=LE_LEVEL3),
+        logging.info("connecting left device")
+        dut_ref, ref_dut = await asyncio.gather(
+            self.initiate_connection(self.dut, RANDOM, Ear.LEFT),
+            self.accept_connection(self.ref_left, RANDOM, Ear.LEFT),
         )
 
-        assert_equal(secure.result_variant(), 'success')
-        assert_equal(wait_security.result_variant(), 'success')
+        logging.info("pairing left device")
+        await asyncio.gather(
+            self.initiate_pairing(self.dut, dut_ref),
+            self.accept_pairing(self.ref_left, ref_dut),
+        )
 
         asha_service = next((x for x in self.ref_left.device.gatt_server.attributes
                              if isinstance(x, AshaGattService)))
@@ -859,7 +499,7 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         asha_service.on('volume', volume_command_handler)
 
-        await dut_asha.WaitPeripheral(connection=dut_ref)
+        await dut_asha.WaitSource(connection=dut_ref)
         await dut_asha.Start(connection=dut_ref)
         # set volume to max volume
         _, volume_result = await asyncio.gather(dut_asha.SetVolume(1),
@@ -880,34 +520,22 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
         Verify that DUT sends a correct AudioControlPoint `Stop` command.
         """
 
-        async def ref_device_connect(ref_device: BumblePandoraDevice,
-                                     ear: Ear) -> Tuple[Connection, Connection]:
-            advertisement = await self.ref_advertise_asha(ref_device=ref_device,
-                                                          ref_address_type=RANDOM,
-                                                          ear=ear)
-            ref = await self.dut_scan_for_asha(dut_address_type=RANDOM, ear=ear)
-            # DUT initiates connection to ref_device.
-            dut_ref, ref_dut = await self.dut_connect_to_ref(advertisement, ref, RANDOM)
-            advertisement.cancel()
-
-            return dut_ref, ref_dut
-
-        dut_ref, ref_dut = await ref_device_connect(self.ref_left, Ear.LEFT)
-
-        # DUT starts pairing with the ref_left
-        (secure, wait_security) = await asyncio.gather(
-            self.dut.aio.security.Secure(connection=dut_ref, le=LE_LEVEL3),
-            self.ref_left.aio.security.WaitSecurity(connection=ref_dut, le=LE_LEVEL3),
+        logging.info("connecting left device")
+        dut_ref, ref_dut = await asyncio.gather(
+            self.initiate_connection(self.dut, RANDOM, Ear.LEFT),
+            self.accept_connection(self.ref_left, RANDOM, Ear.LEFT),
         )
 
-        assert_equal(secure.result_variant(), 'success')
-        assert_equal(wait_security.result_variant(), 'success')
+        logging.info("pairing left device")
+        await asyncio.gather(
+            self.initiate_pairing(self.dut, dut_ref),
+            self.accept_pairing(self.ref_left, ref_dut),
+        )
 
         dut_asha = AioAsha(self.dut.aio.channel)
-
         stop_future = self.get_stop_future(self.ref_left)
 
-        await dut_asha.WaitPeripheral(connection=dut_ref)
+        await dut_asha.OpenSource(connection=dut_ref)
         await dut_asha.Start(connection=dut_ref)
         logging.info("send stop")
         _, stop_result = await asyncio.gather(dut_asha.Stop(),
@@ -937,34 +565,22 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
         Verify that DUT sends a correct AudioControlPoint `Start` command.
         """
 
-        async def ref_device_connect(ref_device: BumblePandoraDevice,
-                                     ear: Ear) -> Tuple[Connection, Connection]:
-            advertisement = await self.ref_advertise_asha(ref_device=ref_device,
-                                                          ref_address_type=RANDOM,
-                                                          ear=ear)
-            ref = await self.dut_scan_for_asha(dut_address_type=RANDOM, ear=ear)
-            # DUT initiates connection to ref_device.
-            dut_ref, ref_dut = await self.dut_connect_to_ref(advertisement, ref, RANDOM)
-            advertisement.cancel()
-
-            return dut_ref, ref_dut
-
-        dut_ref, ref_dut = await ref_device_connect(self.ref_left, Ear.LEFT)
-
-        # DUT starts pairing with the ref_left
-        (secure, wait_security) = await asyncio.gather(
-            self.dut.aio.security.Secure(connection=dut_ref, le=LE_LEVEL3),
-            self.ref_left.aio.security.WaitSecurity(connection=ref_dut, le=LE_LEVEL3),
+        logging.info("connecting left device")
+        dut_ref, ref_dut = await asyncio.gather(
+            self.initiate_connection(self.dut, RANDOM, Ear.LEFT),
+            self.accept_connection(self.ref_left, RANDOM, Ear.LEFT),
         )
 
-        assert_equal(secure.result_variant(), 'success')
-        assert_equal(wait_security.result_variant(), 'success')
+        logging.info("pairing left device")
+        await asyncio.gather(
+            self.initiate_pairing(self.dut, dut_ref),
+            self.accept_pairing(self.ref_left, ref_dut),
+        )
 
         dut_asha = AioAsha(self.dut.aio.channel)
-
         stop_future = self.get_stop_future(self.ref_left)
 
-        await dut_asha.WaitPeripheral(connection=dut_ref)
+        await dut_asha.OpenSource(connection=dut_ref)
         await dut_asha.Start(connection=dut_ref)
         _, stop_result = await asyncio.gather(dut_asha.Stop(),
                                               asyncio.wait_for(stop_future, timeout=10.0))
@@ -977,7 +593,7 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         start_future = self.get_start_future(self.ref_left)
 
-        await dut_asha.WaitPeripheral(connection=dut_ref)
+        await dut_asha.WaitSource(connection=dut_ref)
         _, start_result = await asyncio.gather(dut_asha.Start(connection=dut_ref),
                                                asyncio.wait_for(start_future, timeout=3.0))
 
@@ -995,31 +611,20 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
         audiotype=0, volume=<volume set on DUT>, otherstate=<state of Ref aux if dual devices>).
         """
 
-        async def ref_device_connect(ref_device: BumblePandoraDevice,
-                                     ear: Ear) -> Tuple[Connection, Connection]:
-            advertisement = await self.ref_advertise_asha(ref_device=ref_device,
-                                                          ref_address_type=RANDOM,
-                                                          ear=ear)
-            ref = await self.dut_scan_for_asha(dut_address_type=RANDOM, ear=ear)
-            # DUT initiates connection to ref_device.
-            dut_ref, ref_dut = await self.dut_connect_to_ref(advertisement, ref, RANDOM)
-            advertisement.cancel()
+        logging.info("connecting left device")
+        dut_ref_left, ref_left_dut = await asyncio.gather(
+            self.initiate_connection(self.dut, RANDOM, Ear.LEFT),
+            self.accept_connection(self.ref_left, RANDOM, Ear.LEFT),
+        )
 
-            return dut_ref, ref_dut
-
-        # connect ref_left
-        dut_ref_left, ref_left_dut = await ref_device_connect(self.ref_left, Ear.LEFT)
         le_psm_future_left = self.get_le_psm_future(self.ref_left)
         read_only_properties_future_left = self.get_read_only_properties_future(self.ref_left)
 
-        # DUT starts pairing with the ref_left
-        (secure_left, wait_security_left) = await asyncio.gather(
-            self.dut.aio.security.Secure(connection=dut_ref_left, le=LE_LEVEL3),
-            self.ref_left.aio.security.WaitSecurity(connection=ref_left_dut, le=LE_LEVEL3),
+        logging.info("pairing left device")
+        await asyncio.gather(
+            self.initiate_pairing(self.dut, dut_ref_left),
+            self.accept_pairing(self.ref_left, ref_left_dut),
         )
-
-        assert_equal(secure_left.result_variant(), 'success')
-        assert_equal(wait_security_left.result_variant(), 'success')
 
         le_psm_out_result_left = await asyncio.wait_for(le_psm_future_left, timeout=3.0)
         assert_is_not_none(le_psm_out_result_left)
@@ -1031,8 +636,10 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
         dut_asha = AioAsha(self.dut.aio.channel)
         start_future_left = self.get_start_future(self.ref_left)
 
-        logging.info("send start")
-        await dut_asha.WaitPeripheral(connection=dut_ref_left)
+        logging.info("initiating ASHA profile connection")
+        await dut_asha.OpenSource(connection=dut_ref_left)
+
+        logging.info("starting the audio stream")
         _, start_result_left = await asyncio.gather(
             dut_asha.Start(connection=dut_ref_left), asyncio.wait_for(start_future_left,
                                                                       timeout=3.0))
@@ -1048,19 +655,20 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
         generated_audio = self.generate_sine(connection=dut_ref_left)
         dut_asha.PlaybackAudio(generated_audio)
 
-        # connect ref_right
-        dut_ref_right, ref_right_dut = await ref_device_connect(self.ref_right, Ear.RIGHT)
+        logging.info("connecting right device")
+        dut_ref_right, ref_right_dut = await asyncio.gather(
+            self.initiate_connection(self.dut, RANDOM, Ear.RIGHT),
+            self.accept_connection(self.ref_right, RANDOM, Ear.RIGHT),
+        )
+
         le_psm_future_right = self.get_le_psm_future(self.ref_right)
         read_only_properties_future_right = self.get_read_only_properties_future(self.ref_right)
 
-        # DUT starts pairing with the ref_right
-        (secure_right, wait_security_right) = await asyncio.gather(
-            self.dut.aio.security.Secure(connection=dut_ref_right, le=LE_LEVEL3),
-            self.ref_right.aio.security.WaitSecurity(connection=ref_right_dut, le=LE_LEVEL3),
+        logging.info("pairing right device")
+        await asyncio.gather(
+            self.initiate_pairing(self.dut, dut_ref_right),
+            self.accept_pairing(self.ref_right, ref_right_dut),
         )
-
-        assert_equal(secure_right.result_variant(), 'success')
-        assert_equal(wait_security_right.result_variant(), 'success')
 
         le_psm_out_result_right = await asyncio.wait_for(le_psm_future_right, timeout=3.0)
         assert_is_not_none(le_psm_out_result_right)
@@ -1071,8 +679,9 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         start_future_right = self.get_start_future(self.ref_right)
 
+        await dut_asha.OpenSource(connection=dut_ref_right)
+
         logging.info("send start_right")
-        await dut_asha.WaitPeripheral(connection=dut_ref_right)
         start_result_right = await asyncio.wait_for(start_future_right, timeout=10.0)
 
         logging.info(f"start_result_right:{start_result_right}")
@@ -1095,57 +704,47 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
         Verify Refs cannot recevice audio data after DUT stops media streaming.
         """
 
-        async def ref_device_connect(ref_device: BumblePandoraDevice,
-                                     ear: Ear) -> Tuple[Connection, Connection]:
-            advertisement = await self.ref_advertise_asha(ref_device=ref_device,
-                                                          ref_address_type=RANDOM,
-                                                          ear=ear)
-            ref = await self.dut_scan_for_asha(dut_address_type=RANDOM, ear=ear)
-            # DUT initiates connection to ref_device.
-            dut_ref, ref_dut = await self.dut_connect_to_ref(advertisement, ref, RANDOM)
-            advertisement.cancel()
-
-            return dut_ref, ref_dut
-
-        # DUT starts connecting, pairing with the ref_left
-        dut_ref_left, ref_left_dut = await ref_device_connect(self.ref_left, Ear.LEFT)
-        (secure_left, wait_security_left) = await asyncio.gather(
-            self.dut.aio.security.Secure(connection=dut_ref_left, le=LE_LEVEL3),
-            self.ref_left.aio.security.WaitSecurity(connection=ref_left_dut, le=LE_LEVEL3),
+        logging.info("connecting left and right devices")
+        dut_ref_left, dut_ref_right, ref_left_dut, ref_right_dut = await asyncio.gather(
+            self.initiate_connection(self.dut, RANDOM, Ear.LEFT),
+            self.initiate_connection(self.dut, RANDOM, Ear.RIGHT),
+            self.accept_connection(self.ref_left, RANDOM, Ear.LEFT),
+            self.accept_connection(self.ref_right, RANDOM, Ear.RIGHT),
         )
-        assert_equal(secure_left.result_variant(), 'success')
-        assert_equal(wait_security_left.result_variant(), 'success')
 
-        # DUT starts connecting, pairing with the ref_right
-        dut_ref_right, ref_right_dut = await ref_device_connect(self.ref_right, Ear.RIGHT)
-        (secure_right, wait_security_right) = await asyncio.gather(
-            self.dut.aio.security.Secure(connection=dut_ref_right, le=LE_LEVEL3),
-            self.ref_right.aio.security.WaitSecurity(connection=ref_right_dut, le=LE_LEVEL3),
+        logging.info("pairing left device")
+        await asyncio.gather(
+            self.initiate_pairing(self.dut, dut_ref_left),
+            self.accept_pairing(self.ref_left, ref_left_dut),
         )
-        assert_equal(secure_right.result_variant(), 'success')
-        assert_equal(wait_security_right.result_variant(), 'success')
 
-        dut_asha = AioAsha(self.dut.aio.channel)
-        ref_left_asha = AioAsha(self.ref_left.aio.channel)
-        ref_right_asha = AioAsha(self.ref_right.aio.channel)
+        logging.info("pairing right device")
+        await asyncio.gather(
+            self.initiate_pairing(self.dut, dut_ref_right),
+            self.accept_pairing(self.ref_right, ref_right_dut),
+        )
 
-        await asyncio.gather(dut_asha.WaitPeripheral(connection=dut_ref_left),
-                             dut_asha.WaitPeripheral(connection=dut_ref_right))
+        logging.info("initiating ASHA profile connection")
+        dut_asha = self.dut.aio.asha
+        _ = await asyncio.gather(dut_asha.OpenSource(connection=dut_ref_left),
+                                 dut_asha.OpenSource(connection=dut_ref_right))
+
+        logging.info("starting the audio stream")
         await dut_asha.Start(connection=dut_ref_left)
 
         # Stop audio and wait until ref_device connections stopped.
         stop_future_left = self.get_stop_future(self.ref_left)
         stop_future_right = self.get_stop_future(self.ref_right)
 
-        logging.info("send stop")
+        logging.info("stopping the audio stream")
         _, stop_result_left, stop_result_right = await asyncio.gather(
             dut_asha.Stop(),
             asyncio.wait_for(stop_future_left, timeout=10.0),
             asyncio.wait_for(stop_future_right, timeout=10.0),
         )
 
-        logging.info(f"stop_result_left:{stop_result_left}")
-        logging.info(f"stop_result_right:{stop_result_right}")
+        logging.debug(f"stop_result_left:{stop_result_left}")
+        logging.debug(f"stop_result_right:{stop_result_right}")
         assert_is_not_none(stop_result_left)
         assert_is_not_none(stop_result_right)
 
@@ -1153,8 +752,12 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
         await asyncio.sleep(0.5)
 
         (audio_data_left, audio_data_right) = await asyncio.gather(
-            self.get_audio_data(ref_asha=ref_left_asha, connection=ref_left_dut, timeout=10),
-            self.get_audio_data(ref_asha=ref_right_asha, connection=ref_right_dut, timeout=10),
+            self.get_audio_data(ref_asha=self.ref_left.aio.asha,
+                                connection=ref_left_dut,
+                                timeout=10),
+            self.get_audio_data(ref_asha=self.ref_right.aio.asha,
+                                connection=ref_right_dut,
+                                timeout=10),
         )
 
         assert_equal(len(audio_data_left), 0)
@@ -1170,43 +773,33 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
         Verify that Ref has received audio data.
         """
 
-        async def ref_device_connect(ref_device: BumblePandoraDevice,
-                                     ear: Ear) -> Tuple[Connection, Connection]:
-            advertisement = await self.ref_advertise_asha(ref_device=ref_device,
-                                                          ref_address_type=RANDOM,
-                                                          ear=ear)
-            ref = await self.dut_scan_for_asha(dut_address_type=RANDOM, ear=ear)
-            # DUT initiates connection to ref_device.
-            dut_ref, ref_dut = await self.dut_connect_to_ref(advertisement, ref, RANDOM)
-            advertisement.cancel()
-
-            return dut_ref, ref_dut
-
-        dut_ref_left, ref_left_dut = await ref_device_connect(self.ref_left, Ear.LEFT)
-
-        # DUT starts pairing with the ref_left
-        (secure_left, wait_security_left) = await asyncio.gather(
-            self.dut.aio.security.Secure(connection=dut_ref_left, le=LE_LEVEL3),
-            self.ref_left.aio.security.WaitSecurity(connection=ref_left_dut, le=LE_LEVEL3),
+        logging.info("connecting left device")
+        dut_ref, ref_dut = await asyncio.gather(
+            self.initiate_connection(self.dut, RANDOM, Ear.LEFT),
+            self.accept_connection(self.ref_left, RANDOM, Ear.LEFT),
         )
 
-        assert_equal(secure_left.result_variant(), 'success')
-        assert_equal(wait_security_left.result_variant(), 'success')
+        logging.info("pairing left device")
+        await asyncio.gather(
+            self.initiate_pairing(self.dut, dut_ref),
+            self.accept_pairing(self.ref_left, ref_dut),
+        )
 
-        dut_asha = AioAsha(self.dut.aio.channel)
-        ref_asha = AioAsha(self.ref_left.aio.channel)
+        logging.info("initiating ASHA profile connection")
+        dut_asha = self.dut.aio.asha
+        await dut_asha.OpenSource(connection=dut_ref)
 
-        await dut_asha.WaitPeripheral(connection=dut_ref_left)
-        await dut_asha.Start(connection=dut_ref_left)
+        logging.info("starting the audio stream")
+        await dut_asha.Start(connection=dut_ref)
 
         # Clear audio data before start audio playback testing
-        await self.get_audio_data(ref_asha=ref_asha, connection=ref_left_dut, timeout=10)
+        await self.get_audio_data(ref_asha=self.ref_left.aio.asha, connection=ref_dut, timeout=10)
 
-        generated_audio = self.generate_sine(connection=dut_ref_left)
+        generated_audio = self.generate_sine(connection=dut_ref)
 
         _, audio_data = await asyncio.gather(
             dut_asha.PlaybackAudio(generated_audio),
-            self.get_audio_data(ref_asha=ref_asha, connection=ref_left_dut, timeout=10),
+            self.get_audio_data(ref_asha=self.ref_left.aio.asha, connection=ref_dut, timeout=10),
         )
 
         assert_not_equal(len(audio_data), 0)
