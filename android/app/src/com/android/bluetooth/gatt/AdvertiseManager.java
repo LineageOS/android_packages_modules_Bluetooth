@@ -30,7 +30,6 @@ import android.bluetooth.le.AdvertisingSetParameters;
 import android.bluetooth.le.IAdvertisingSetCallback;
 import android.bluetooth.le.PeriodicAdvertisingParameters;
 import android.content.AttributionSource;
-import android.content.pm.PackageManager;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
@@ -59,7 +58,8 @@ public class AdvertiseManager {
 
     private final Map<IBinder, AdvertiserInfo> mAdvertisers = new HashMap<>();
 
-    private final AdapterService mService;
+    private final AdapterService mAdapterService;
+    private final GattService mGattService;
     private final AdvertiseManagerNativeInterface mNativeInterface;
     private final AdvertiseBinder mAdvertiseBinder;
     private final AdvertiserMap mAdvertiserMap;
@@ -70,28 +70,31 @@ public class AdvertiseManager {
     @VisibleForTesting int mTempRegistrationId = -1;
 
     AdvertiseManager(
-            AdapterService service,
+            AdapterService adapterService,
+            GattService gattService,
             AdvertiseManagerNativeInterface nativeInterface,
             Looper advertiseLooper) {
-        this(service, nativeInterface, advertiseLooper, new AdvertiserMap());
+        this(adapterService, gattService, nativeInterface, advertiseLooper, new AdvertiserMap());
     }
 
     @VisibleForTesting
     AdvertiseManager(
-            AdapterService service,
+            AdapterService adapterService,
+            GattService gattService,
             AdvertiseManagerNativeInterface nativeInterface,
             Looper advertiseLooper,
             AdvertiserMap advertiserMap) {
         Log.d(TAG, "advertise manager created");
-        mService = service;
+        mAdapterService = adapterService;
+        mGattService = gattService;
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface, () -> new AdvertiseManagerNativeInterface(this));
         mAdvertiserMap = advertiserMap;
-        mActivityManager = mService.getSystemService(ActivityManager.class);
+        mActivityManager = mAdapterService.getSystemService(ActivityManager.class);
         mNativeInterface.init();
         mHandler = new Handler(advertiseLooper);
-        mAdvertiseBinder = new AdvertiseBinder(service, this);
+        mAdvertiseBinder = new AdvertiseBinder(mAdapterService, this);
     }
 
     void cleanup() {
@@ -220,11 +223,11 @@ public class AdvertiseManager {
     }
 
     private void fetchAppForegroundState(int id) {
-        PackageManager packageManager = mService.getPackageManager();
+        final var packageManager = mAdapterService.getPackageManager();
         if (mActivityManager == null || packageManager == null) {
             return;
         }
-        int appUid = Binder.getCallingUid();
+        final int appUid = Binder.getCallingUid();
         String[] packages = packageManager.getPackagesForUid(appUid);
         if (packages == null || packages.length == 0) {
             return;
@@ -255,9 +258,7 @@ public class AdvertiseManager {
         int serverIf = 0;
         if (gattServerCallback != null) {
             ContextMap<IBluetoothGattServerCallback>.App serverApp =
-                    mService.getBluetoothGattService()
-                            .getServerMap()
-                            .getByCallbackId(gattServerCallback);
+                    mGattService.getServerMap().getByCallbackId(gattServerCallback);
             if (serverApp == null) {
                 Log.w(TAG, "startAdvertisingSet(" + gattServerCallback + "): App not registered");
             } else {
@@ -280,10 +281,10 @@ public class AdvertiseManager {
             return;
         }
 
-        int appUid = Binder.getCallingUid();
+        final int appUid = Binder.getCallingUid();
         String packageName = null;
-        if (mService.getPackageManager() != null) {
-            packageName = mService.getPackageManager().getNameForUid(appUid);
+        if (mAdapterService.getPackageManager() != null) {
+            packageName = mAdapterService.getPackageManager().getNameForUid(appUid);
         }
         if (packageName == null) {
             packageName = "Unknown package name (UID: " + appUid + ")";
@@ -297,7 +298,7 @@ public class AdvertiseManager {
             throw new IllegalArgumentException("Can't link to advertiser's death");
         }
 
-        final String deviceName = mService.getName();
+        final String deviceName = mAdapterService.getName();
         try {
             byte[] advDataBytes = advertiseDataToBytes(advertiseData, deviceName);
             byte[] scanResponseBytes = advertiseDataToBytes(scanResponse, deviceName);
@@ -308,7 +309,7 @@ public class AdvertiseManager {
 
             Log.d(TAG, "startAdvertisingSet() - reg_id=" + cbId + ", callback: " + binder);
 
-            mAdvertiserMap.addAppAdvertiseStats(cbId, mService, source);
+            mAdvertiserMap.addAppAdvertiseStats(cbId, mAdapterService, source);
             fetchAppForegroundState(cbId);
             mAdvertiserMap.recordAdvertiseStart(
                     cbId,
@@ -420,7 +421,7 @@ public class AdvertiseManager {
             Log.w(TAG, "setAdvertisingData() - bad advertiserId " + advertiserId);
             return;
         }
-        final String deviceName = mService.getName();
+        final String deviceName = mAdapterService.getName();
         try {
             mNativeInterface.setAdvertisingData(
                     advertiserId, advertiseDataToBytes(data, deviceName));
@@ -443,7 +444,7 @@ public class AdvertiseManager {
             Log.w(TAG, "setScanResponseData() - bad advertiserId " + advertiserId);
             return;
         }
-        final String deviceName = mService.getName();
+        final String deviceName = mAdapterService.getName();
         try {
             mNativeInterface.setScanResponseData(
                     advertiserId, advertiseDataToBytes(data, deviceName));
@@ -491,7 +492,7 @@ public class AdvertiseManager {
             Log.w(TAG, "setPeriodicAdvertisingData() - bad advertiserId " + advertiserId);
             return;
         }
-        final String deviceName = mService.getName();
+        final String deviceName = mAdapterService.getName();
         try {
             mNativeInterface.setPeriodicAdvertisingData(
                     advertiserId, advertiseDataToBytes(data, deviceName));

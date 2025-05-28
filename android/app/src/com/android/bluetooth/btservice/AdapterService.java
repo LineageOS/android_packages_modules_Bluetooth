@@ -3998,10 +3998,6 @@ public class AdapterService extends Service {
         return mGattService == null ? null : mGattService.getBinder();
     }
 
-    public GattService getBluetoothGattService() {
-        return mGattService;
-    }
-
     IBinder getBluetoothScan() {
         ScanController controller = getBluetoothScanController();
         return controller == null ? null : controller.getBinder();

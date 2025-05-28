@@ -226,7 +226,8 @@ public class GattService extends ProfileService {
         final var looper = mHandlerThread.getLooper();
 
         mAdvertiseManager =
-                new AdvertiseManager(mAdapterService, advertiseManagerNativeInterface, looper);
+                new AdvertiseManager(
+                        mAdapterService, this, advertiseManagerNativeInterface, looper);
 
         mRssiReadThrottleMs =
                 SystemProperties.getInt(RSSI_READ_THROTTLE_MS, RSSI_READ_THROTTLE_MS_DEFAULT);
