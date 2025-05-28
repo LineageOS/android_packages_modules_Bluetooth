@@ -56,6 +56,7 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -71,7 +72,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /** Provides Bluetooth A2DP profile, as a service in the Bluetooth application. */
-public class A2dpService extends ProfileService {
+public class A2dpService extends ConnectableProfile {
     private static final String TAG = A2dpService.class.getSimpleName();
 
     // TODO(b/240635097): remove in U
@@ -213,6 +214,7 @@ public class A2dpService extends ProfileService {
         sA2dpService = instance;
     }
 
+    @Override
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect(): " + device);
 
@@ -262,6 +264,7 @@ public class A2dpService extends ProfileService {
      * @param device is the device with which we would like to disconnect a2dp
      * @return true if profile disconnected, false if device not connected over a2dp
      */
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         Log.d(TAG, "disconnect(): " + device);
 
@@ -407,6 +410,7 @@ public class A2dpService extends ProfileService {
         }
     }
 
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         synchronized (mStateMachines) {
             A2dpStateMachine sm = mStateMachines.get(device);

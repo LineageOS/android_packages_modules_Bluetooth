@@ -65,6 +65,7 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
@@ -111,7 +112,7 @@ import java.util.Optional;
  * <p>AG - Audio Gateway, device running this {@link HeadsetService}, e.g. Android Phone HF -
  * Handsfree device, device running headset client, e.g. Wireless headphones or car kits
  */
-public class HeadsetService extends ProfileService {
+public class HeadsetService extends ConnectableProfile {
     private static final String TAG = HeadsetService.class.getSimpleName();
 
     /** HFP AG owned/managed components */
@@ -570,6 +571,7 @@ public class HeadsetService extends ProfileService {
         sHeadsetService = instance;
     }
 
+    @Override
     public boolean connect(BluetoothDevice device) {
         if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN) {
             Log.w(
@@ -644,6 +646,7 @@ public class HeadsetService extends ProfileService {
      * @param device is the device with which we will disconnect hfp
      * @return true if hfp is disconnected, false if the device is not connected
      */
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         Log.i(TAG, "disconnect: device=" + device + ", " + Utils.getUidPidString());
         synchronized (mStateMachines) {
@@ -712,6 +715,7 @@ public class HeadsetService extends ProfileService {
         return devices;
     }
 
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         synchronized (mStateMachines) {
             final HeadsetStateMachine stateMachine = mStateMachines.get(device);

@@ -51,7 +51,7 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
@@ -66,7 +66,7 @@ import java.util.ListIterator;
 import java.util.Map;
 
 /** Provides Bluetooth Hearing Access profile, as a service. */
-public class HapClientService extends ProfileService {
+public class HapClientService extends ConnectableProfile {
     private static final String TAG = HapClientService.class.getSimpleName();
 
     // Upper limit of all HearingAccess devices: Bonded or Connected
@@ -307,6 +307,7 @@ public class HapClientService extends ProfileService {
      *     BluetoothProfile#STATE_CONNECTED} if this profile is connected, or {@link
      *     BluetoothProfile#STATE_DISCONNECTING} if this profile is being disconnected
      */
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         synchronized (mStateMachines) {
             HapClientStateMachine sm = mStateMachines.get(device);
@@ -414,6 +415,7 @@ public class HapClientService extends ProfileService {
      * @param device is the device with which we will connect the hearing access service client
      * @return true if hearing access service client successfully connected, false otherwise
      */
+    @Override
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect(): " + device);
         if (device == null) {
@@ -452,6 +454,7 @@ public class HapClientService extends ProfileService {
      *     client
      * @return true if hearing access service client successfully disconnected, false otherwise
      */
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         Log.d(TAG, "disconnect(): " + device);
         if (device == null) {

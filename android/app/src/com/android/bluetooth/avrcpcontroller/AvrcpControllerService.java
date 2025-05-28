@@ -38,6 +38,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService.BrowseResult;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -49,7 +50,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Provides Bluetooth AVRCP Controller profile, as a service in the Bluetooth application. */
-public class AvrcpControllerService extends ProfileService {
+public class AvrcpControllerService extends ConnectableProfile {
     private static final String TAG = AvrcpControllerService.class.getSimpleName();
 
     static final int MAXIMUM_CONNECTED_DEVICES = 5;
@@ -609,6 +610,7 @@ public class AvrcpControllerService extends ProfileService {
      *
      * @return true if disconnect is successful, false otherwise.
      */
+    @Override
     public synchronized boolean disconnect(BluetoothDevice device) {
         Log.d(TAG, "disconnect(device=" + device + ")");
         AvrcpControllerStateMachine stateMachine = mDeviceStateMap.get(device);
@@ -699,7 +701,8 @@ public class AvrcpControllerService extends ProfileService {
         return deviceList;
     }
 
-    synchronized int getConnectionState(BluetoothDevice device) {
+    @Override
+    public synchronized int getConnectionState(BluetoothDevice device) {
         AvrcpControllerStateMachine stateMachine = mDeviceStateMap.get(device);
         return (stateMachine == null) ? STATE_DISCONNECTED : stateMachine.getState();
     }

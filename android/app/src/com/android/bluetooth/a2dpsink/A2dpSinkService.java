@@ -32,6 +32,7 @@ import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.internal.annotations.GuardedBy;
@@ -44,7 +45,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Provides Bluetooth A2DP Sink profile, as a service in the Bluetooth application. */
-public class A2dpSinkService extends ProfileService {
+public class A2dpSinkService extends ConnectableProfile {
     private static final String TAG = A2dpSinkService.class.getSimpleName();
 
     private static A2dpSinkService sService;
@@ -174,6 +175,7 @@ public class A2dpSinkService extends ProfileService {
      *
      * @return true if connection is successful, false otherwise.
      */
+    @Override
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect device=" + device);
         if (device == null) {
@@ -204,6 +206,7 @@ public class A2dpSinkService extends ProfileService {
      *
      * @return true if disconnect is successful, false otherwise.
      */
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         Log.d(TAG, "disconnect device=" + device);
         if (device == null) {
@@ -300,6 +303,7 @@ public class A2dpSinkService extends ProfileService {
      *     BluetoothProfile#STATE_CONNECTED} if this profile is connected, or {@link
      *     BluetoothProfile#STATE_DISCONNECTING} if this profile is being disconnected
      */
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         if (device == null) return STATE_DISCONNECTED;
         A2dpSinkStateMachine stateMachine;
