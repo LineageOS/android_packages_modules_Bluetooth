@@ -22,6 +22,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.provider.Settings;
 
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 /** Proxy class for method calls to help with unit testing */
@@ -69,6 +70,10 @@ class BluetoothServerProxy {
 
     void setBluetoothPersistedState(ContentResolver resolver, int state) {
         Log.i(TAG, "setBluetoothPersistedState(" + state + ")");
+        if (Flags.userSwitchDuringBleOn()) {
+            Settings.Global.putInt(resolver, Settings.Global.BLUETOOTH_ON, state);
+            return;
+        }
         // waive WRITE_SECURE_SETTINGS permission check
         final long callingIdentity = Binder.clearCallingIdentity();
         try {
