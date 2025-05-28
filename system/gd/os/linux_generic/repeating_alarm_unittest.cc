@@ -21,6 +21,7 @@
 #include "common/bind.h"
 #include "gtest/gtest.h"
 #include "os/fake_timer/fake_timerfd.h"
+#include "os/handler.h"
 
 namespace bluetooth {
 namespace os {
@@ -35,7 +36,7 @@ protected:
   void SetUp() override {
     thread_ = new Thread("test_thread", Thread::Priority::NORMAL);
     handler_ = new Handler(thread_);
-    alarm_ = new RepeatingAlarm(handler_);
+    alarm_ = new RepeatingAlarm(thread_);
   }
 
   void TearDown() override {

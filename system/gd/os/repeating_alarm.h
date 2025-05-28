@@ -21,7 +21,6 @@
 #include <mutex>
 
 #include "common/callback.h"
-#include "os/handler.h"
 #include "os/thread.h"
 #include "os/utils.h"
 
@@ -33,8 +32,8 @@ namespace os {
 // it will unregister itself from the thread.
 class RepeatingAlarm {
 public:
-  // Create and register a repeating alarm on a given handler
-  explicit RepeatingAlarm(Handler* handler);
+  // Create and register a repeating alarm on a given thread
+  explicit RepeatingAlarm(Thread* thread);
 
   RepeatingAlarm(const RepeatingAlarm&) = delete;
   RepeatingAlarm& operator=(const RepeatingAlarm&) = delete;
@@ -50,7 +49,7 @@ public:
 
 private:
   common::Closure task_;
-  Handler* handler_;
+  Thread* thread_;
   int fd_ = 0;
   Reactor::Reactable* token_;
   mutable std::mutex mutex_;
