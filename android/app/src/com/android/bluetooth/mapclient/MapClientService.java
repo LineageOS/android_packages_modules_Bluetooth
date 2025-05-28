@@ -40,7 +40,7 @@ import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -51,7 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class MapClientService extends ProfileService {
+public class MapClientService extends ConnectableProfile {
     private static final String TAG = MapClientService.class.getSimpleName();
 
     static final int MAXIMUM_CONNECTED_DEVICES = 4;
@@ -124,6 +124,7 @@ public class MapClientService extends ProfileService {
      *
      * @return true if connection is successful, false otherwise.
      */
+    @Override
     public synchronized boolean connect(BluetoothDevice device) {
         if (device == null) {
             throw new IllegalArgumentException("Null device");
@@ -192,6 +193,7 @@ public class MapClientService extends ProfileService {
         mMapInstanceMap.put(device, mapStateMachine);
     }
 
+    @Override
     public synchronized boolean disconnect(BluetoothDevice device) {
         Log.d(TAG, "disconnect(device= " + device + "): devices=" + mMapInstanceMap.keySet());
         MceStateMachine mapStateMachine = mMapInstanceMap.get(device);
@@ -234,6 +236,7 @@ public class MapClientService extends ProfileService {
         return deviceList;
     }
 
+    @Override
     public synchronized int getConnectionState(BluetoothDevice device) {
         MceStateMachine mapStateMachine = mMapInstanceMap.get(device);
         // a map state machine instance doesn't exist yet, create a new one if we can.

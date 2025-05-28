@@ -48,7 +48,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -57,7 +57,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-public class HidDeviceService extends ProfileService {
+public class HidDeviceService extends ConnectableProfile {
     private static final String TAG = HidDeviceService.class.getSimpleName();
 
     private static final int MESSAGE_APPLICATION_STATE_CHANGED = 1;
@@ -413,6 +413,7 @@ public class HidDeviceService extends ProfileService {
      * @param device is the device with which we would like to connect the hid device profile
      * @return true if the connection is successful, false otherwise
      */
+    @Override
     public synchronized boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect(): device=" + device);
 
@@ -425,6 +426,7 @@ public class HidDeviceService extends ProfileService {
      * @param device is the device with which we would like to disconnect the hid device profile
      * @return true if the disconnection is successful, false otherwise
      */
+    @Override
     public synchronized boolean disconnect(BluetoothDevice device) {
         Log.d(TAG, "disconnect(): device=" + device);
 
@@ -520,6 +522,7 @@ public class HidDeviceService extends ProfileService {
      *     BluetoothProfile#STATE_CONNECTING}, {@link BluetoothProfile#STATE_CONNECTED}, or {@link
      *     BluetoothProfile#STATE_DISCONNECTING}
      */
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         if (mHidDevice != null && mHidDevice.equals(device)) {
             return mHidDeviceState;

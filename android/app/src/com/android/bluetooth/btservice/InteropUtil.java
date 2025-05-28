@@ -53,17 +53,8 @@ public class InteropUtil {
      * @param address a given address to be matched.
      * @return true if matched, false otherwise
      */
-    public static boolean interopMatchAddrOrName(InteropFeature feature, String address) {
-        AdapterService adapterService = AdapterService.getAdapterService();
-        if (adapterService == null) {
-            Log.d(
-                    TAG,
-                    "interopMatchAddrOrName: feature="
-                            + feature.name()
-                            + ", adapterService is null or vendor intf is not enabled");
-            return false;
-        }
-
+    public static boolean interopMatchAddrOrName(
+            AdapterService adapterService, InteropFeature feature, String address) {
         Log.d(
                 TAG,
                 "interopMatchAddrOrName: feature="

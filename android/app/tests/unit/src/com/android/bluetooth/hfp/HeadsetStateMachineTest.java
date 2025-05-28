@@ -25,6 +25,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static android.media.audio.Flags.FLAG_DEPRECATE_STREAM_BT_SCO;
 import static android.media.audio.Flags.FLAG_SCO_MANAGED_BY_AUDIO;
+import static android.media.audio.Flags.FLAG_UNIFY_ABSOLUTE_VOLUME_MANAGEMENT;
 
 import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
@@ -34,7 +35,20 @@ import static com.android.bluetooth.hfp.HeadsetStateMachine.HFP_VOLUME_CONTROL_E
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.after;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
@@ -1835,6 +1849,23 @@ public class HeadsetStateMachineTest {
 
         mHeadsetStateMachine.sendMessage(
                 HeadsetStateMachine.INTENT_SCO_VOLUME_CHANGED, volumeChange);
+        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+
+        // verify volume processed
+        verify(mNativeInterface).setVolume(mDevice, HeadsetHalConstants.VOLUME_TYPE_SPK, vol);
+
+        mHeadsetStateMachine.mSpeakerVolume = originalVolume;
+    }
+
+    @EnableFlags(FLAG_UNIFY_ABSOLUTE_VOLUME_MANAGEMENT)
+    @Test
+    public void testVolumeChangeEvent_fromVolumeIndexWhenAudioOn() {
+        setUpAudioOnState();
+        int originalVolume = mHeadsetStateMachine.mSpeakerVolume;
+        mHeadsetStateMachine.mSpeakerVolume = 0;
+        int vol = 10;
+
+        mHeadsetStateMachine.sendMessage(HeadsetStateMachine.SCO_VOLUME_CHANGED, vol);
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
 
         // verify volume processed

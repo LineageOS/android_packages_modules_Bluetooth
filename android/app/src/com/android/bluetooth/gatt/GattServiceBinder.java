@@ -97,12 +97,13 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             ParcelUuid uuid,
             IBluetoothGattCallback callback,
             boolean eattSupport,
+            int transport,
             AttributionSource source) {
         GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.registerClient(uuid.getUuid(), callback, eattSupport, source);
+        service.registerClient(uuid.getUuid(), callback, eattSupport, transport, source);
     }
 
     @Override
@@ -427,12 +428,13 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             ParcelUuid uuid,
             IBluetoothGattServerCallback callback,
             boolean eattSupport,
+            int transport,
             AttributionSource source) {
         GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.registerServer(uuid.getUuid(), callback, eattSupport, source);
+        service.registerServer(uuid.getUuid(), callback, eattSupport, transport, source);
     }
 
     @Override

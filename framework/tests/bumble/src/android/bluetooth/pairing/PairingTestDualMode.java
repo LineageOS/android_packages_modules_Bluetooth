@@ -30,8 +30,10 @@ import android.bluetooth.StreamObserverSpliterator;
 import android.bluetooth.Utils;
 import android.bluetooth.pairing.utils.IntentReceiver;
 import android.bluetooth.pairing.utils.TestUtil;
+import android.bluetooth.test_utils.BlockingBluetoothAdapter;
 import android.bluetooth.test_utils.EnableBluetoothRule;
 import android.content.Context;
+import android.os.ParcelUuid;
 import android.util.Log;
 
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -324,6 +326,70 @@ public class PairingTestDualMode {
         intentReceiver.close();
     }
 
+    /**
+     * Test that the properties of a bonded BR/EDR device remain intact after a Bluetooth restart.
+     *
+     * <p>Steps:
+     *
+     * <ol>
+     *   <li>Bond Android and Bumble over BR/EDR using the {@link
+     *       #testStep_BondBrEdr(IntentReceiver)} helper method.
+     *   <li>Retrieve and store the following properties of the bonded Bumble device:
+     *       <ul>
+     *         <li>Device type ({@link BluetoothDevice#getType()})
+     *         <li>Device name ({@link BluetoothDevice#getName()})
+     *         <li>Device address ({@link BluetoothDevice#getAddress()})
+     *         <li>Device address type ({@link BluetoothDevice#getAddressType()})
+     *         <li>Active audio device policy ({@link BluetoothDevice#getActiveAudioDevicePolicy()})
+     *         <li>Bond state ({@link BluetoothDevice#getBondState()})
+     *         <li>UUIDs ({@link BluetoothDevice#getUuids()})
+     *       </ul>
+     *   <li>Restart the Bluetooth adapter using the {@link #testStep_restartBt()} helper method.
+     *   <li>Retrieve the properties of the Bumble device again after the restart.
+     * </ol>
+     *
+     * <p>Expectation:
+     *
+     * <ul>
+     *   <li>All retrieved properties of the bonded Bumble device (type, name, address, address
+     *       type, active audio device policy, bond state, and UUIDs) remain the same after the
+     *       Bluetooth restart.
+     * </ul>
+     */
+    @Test
+    public void testProperties_IntactAfterRestart() throws Exception {
+        IntentReceiver intentReceiver =
+                new IntentReceiver.Builder(
+                                mTargetContext,
+                                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                                BluetoothDevice.ACTION_ACL_CONNECTED)
+                        .build();
+
+        testStep_BondBrEdr(intentReceiver);
+        // Retrieve all the properties from remote device
+        int type = mBumbleDevice.getType();
+        String name = mBumbleDevice.getName();
+        String address = mBumbleDevice.getAddress();
+        int addressType = mBumbleDevice.getAddressType();
+        int deviceAudioPolicy = mBumbleDevice.getActiveAudioDevicePolicy();
+        int bondState = mBumbleDevice.getBondState();
+        ParcelUuid[] uuids = mBumbleDevice.getUuids();
+
+        testStep_restartBt();
+        assertThat(mAdapter.getBondedDevices()).contains(mBumbleDevice);
+
+        // Verify properties after restart
+        assertThat(type).isEqualTo(mBumbleDevice.getType());
+        assertThat(name).isEqualTo(mBumbleDevice.getName());
+        assertThat(address).isEqualTo(mBumbleDevice.getAddress());
+        assertThat(addressType).isEqualTo(mBumbleDevice.getAddressType());
+        assertThat(deviceAudioPolicy).isEqualTo(mBumbleDevice.getActiveAudioDevicePolicy());
+        assertThat(bondState).isEqualTo(mBumbleDevice.getBondState());
+        assertThat(uuids).isEqualTo(mBumbleDevice.getUuids());
+
+        intentReceiver.close();
+    }
+
     private void testStep_VerifyBondIntents(
             IntentReceiver parentIntentReceiver, BluetoothDevice device, int transport) {
         IntentReceiver intentReceiver =
@@ -353,6 +419,31 @@ public class PairingTestDualMode {
                         BluetoothDevice.PAIRING_VARIANT_CONSENT));
 
         intentReceiver.close();
+    }
+
+    private static void testStep_restartBt() {
+        assertThat(BlockingBluetoothAdapter.disable(true)).isTrue();
+        assertThat(BlockingBluetoothAdapter.enable()).isTrue();
+    }
+
+    private void testStep_BondBrEdr(IntentReceiver parentIntentReceiver) {
+        IntentReceiver intentReceiver =
+                IntentReceiver.update(
+                        parentIntentReceiver,
+                        new IntentReceiver.Builder(
+                                mTargetContext,
+                                BluetoothDevice.ACTION_ACL_CONNECTED,
+                                BluetoothDevice.ACTION_BOND_STATE_CHANGED));
+
+        assertThat(mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_BREDR)).isTrue();
+
+        testStep_VerifyBondIntents(intentReceiver, mBumbleDevice, BluetoothDevice.TRANSPORT_BREDR);
+
+        mBumbleDevice.setPairingConfirmation(true);
+        intentReceiver.verifyReceived(
+                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
     }
 
     private void testStep_BondBredrFromRemote(IntentReceiver parentIntentReceiver) {

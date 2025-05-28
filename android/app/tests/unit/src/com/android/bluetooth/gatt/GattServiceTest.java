@@ -77,6 +77,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -112,9 +113,19 @@ public class GattServiceTest {
     private static final int TEST_RSSI = 43;
 
     private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+    private final BluetoothDevice mDevice = getTestDevice(109);
+
+    private final ContextMap.Connection SERVER_CONN =
+            new ContextMap.Connection(
+                    SERVER_CONN_ID, mDevice, BluetoothDevice.TRANSPORT_LE, SERVER_IF);
+    private final ContextMap.Connection CLIENT_CONN =
+            new ContextMap.Connection(
+                    CLIENT_CONN_ID, mDevice, BluetoothDevice.TRANSPORT_LE, CLIENT_IF);
+
+    private final List<ContextMap.Connection> SERVER_CONN_LIST = Arrays.asList(SERVER_CONN);
+    private final List<ContextMap.Connection> CLIENT_CONN_LIST = Arrays.asList(CLIENT_CONN);
     private final CompanionDeviceManager mCompanionDeviceManager =
             mContext.getSystemService(CompanionDeviceManager.class);
-    private final BluetoothDevice mDevice = getTestDevice(109);
 
     private MockContentResolver mMockContentResolver;
     private CompanionManager mBtCompanionManager;
@@ -135,9 +146,8 @@ public class GattServiceTest {
         doReturn(mContext.getPackageName()).when(mAttributionSource).getPackageName();
         doReturn(mContext.getPackageName()).when(mAttributionSource).getAttributionTag();
         doReturn(Binder.getCallingUid()).when(mAttributionSource).getUid();
-        doReturn(SERVER_CONN_ID).when(mServerMap).connIdByDevice(SERVER_IF, mDevice);
-        doReturn(CLIENT_CONN_ID).when(mClientMap).connIdByDevice(CLIENT_IF, mDevice);
-
+        doReturn(SERVER_CONN_LIST).when(mServerMap).getConnectionsByDevice(SERVER_IF, mDevice);
+        doReturn(CLIENT_CONN_LIST).when(mClientMap).getConnectionsByDevice(CLIENT_IF, mDevice);
         ContextMap<IBluetoothGattCallback>.App clientApp = mock(ContextMap.App.class);
         clientApp.callback = mGattCallback;
         clientApp.id = CLIENT_IF;
@@ -444,8 +454,9 @@ public class GattServiceTest {
         UUID uuid = UUID.randomUUID();
         IBluetoothGattCallback callback = mock(IBluetoothGattCallback.class);
         boolean eattSupport = true;
+        int transport = BluetoothDevice.TRANSPORT_LE;
 
-        mService.registerClient(uuid, callback, eattSupport, mAttributionSource);
+        mService.registerClient(uuid, callback, eattSupport, transport, mAttributionSource);
         verify(mNativeInterface)
                 .gattClientRegisterApp(
                         uuid.getLeastSignificantBits(),
@@ -459,9 +470,11 @@ public class GattServiceTest {
         doReturn(GattService.GATT_CLIENT_LIMIT_PER_APP).when(mClientMap).countByAppUid(anyInt());
         UUID uuid = UUID.randomUUID();
         IBluetoothGattCallback callback = mock(IBluetoothGattCallback.class);
+        boolean eattSupport = true;
+        int transport = BluetoothDevice.TRANSPORT_LE;
 
-        mService.registerClient(uuid, callback, /* eattSupport= */ true, mAttributionSource);
-        verify(mClientMap, never()).add(any(), any(), any(), any());
+        mService.registerClient(uuid, callback, eattSupport, transport, mAttributionSource);
+        verify(mClientMap, never()).add(any(), any(), anyInt(), any(), any());
         verify(mNativeInterface, never())
                 .gattClientRegisterApp(anyLong(), anyLong(), any(), anyBoolean());
     }

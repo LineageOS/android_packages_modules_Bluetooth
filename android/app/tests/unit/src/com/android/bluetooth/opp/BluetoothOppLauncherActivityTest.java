@@ -34,12 +34,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevicePicker;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -51,9 +49,9 @@ import android.sysprop.BluetoothProperties;
 
 import androidx.lifecycle.Lifecycle;
 import androidx.test.core.app.ActivityScenario;
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.intent.Intents;
 import androidx.test.filters.MediumTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
@@ -78,37 +76,38 @@ import java.util.List;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppLauncherActivityTest {
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule public final CheckFlagsRule mCheckFlagsRule = createCheckFlagsRule();
+
     // Activity tests can sometimes flaky because of external factors like system dialog, etc.
     // making the expected Espresso's root not focused or the activity doesn't show up.
     // Add retry rule to resolve this problem.
     @Rule public TestUtils.RetryTestRule mRetryTestRule = new TestUtils.RetryTestRule();
 
-    @Rule public final CheckFlagsRule mCheckFlagsRule = createCheckFlagsRule();
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
+    @Mock BluetoothMethodProxy mMethodProxy;
     @Mock BluetoothOppManager mBluetoothOppManager;
 
     private static final String CONTENT_TYPE = "image/png";
 
-    Context mTargetContext;
-    Intent mIntent;
-    BluetoothMethodProxy mMethodProxy;
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+
+    private Intent mIntent;
 
     @Before
     public void setUp() throws Exception {
         assumeTrue(BluetoothProperties.isProfileOppEnabled().orElse(false));
 
-        mTargetContext = spy(new ContextWrapper(ApplicationProvider.getApplicationContext()));
-        mMethodProxy = spy(BluetoothMethodProxy.getInstance());
         BluetoothMethodProxy.setInstanceForTesting(mMethodProxy);
 
         mIntent = new Intent();
-        mIntent.setClass(mTargetContext, BluetoothOppLauncherActivity.class);
-
-        TestUtils.setUpUiTest();
+        mIntent.setClass(mContext, BluetoothOppLauncherActivity.class);
 
         BluetoothOppManager.setInstanceForTesting(mBluetoothOppManager);
+        BluetoothOppTestUtils.enableActivity(BluetoothOppLauncherActivity.class, true, mContext);
+        BluetoothOppTestUtils.enableActivity(BluetoothOppReceiver.class, true, mContext);
+        BluetoothOppTestUtils.enableActivity(BluetoothOppBtEnableActivity.class, true, mContext);
         Intents.init();
+        TestUtils.setUpUiTest();
     }
 
     @After
@@ -116,10 +115,13 @@ public class BluetoothOppLauncherActivityTest {
         if (!BluetoothProperties.isProfileOppEnabled().orElse(false)) {
             return;
         }
+        Intents.release();
         TestUtils.tearDownUiTest();
         BluetoothMethodProxy.setInstanceForTesting(null);
         BluetoothOppManager.setInstanceForTesting(null);
-        Intents.release();
+        BluetoothOppTestUtils.enableActivity(BluetoothOppLauncherActivity.class, false, mContext);
+        BluetoothOppTestUtils.enableActivity(BluetoothOppReceiver.class, false, mContext);
+        BluetoothOppTestUtils.enableActivity(BluetoothOppBtEnableActivity.class, false, mContext);
     }
 
     @Test
@@ -224,7 +226,7 @@ public class BluetoothOppLauncherActivityTest {
 
     private Intent createSendIntent(String uriString) {
         return new Intent(Intent.ACTION_SEND)
-                .setClass(mTargetContext, BluetoothOppLauncherActivity.class)
+                .setClass(mContext, BluetoothOppLauncherActivity.class)
                 .setType(CONTENT_TYPE)
                 .putExtra(Intent.EXTRA_STREAM, Uri.parse(uriString));
     }
@@ -364,7 +366,7 @@ public class BluetoothOppLauncherActivityTest {
 
     private Intent createSendMultipleIntent(List<Uri> uriList) {
         return new Intent(Intent.ACTION_SEND_MULTIPLE)
-                .setClass(mTargetContext, BluetoothOppLauncherActivity.class)
+                .setClass(mContext, BluetoothOppLauncherActivity.class)
                 .setType(CONTENT_TYPE)
                 .putParcelableArrayListExtra(Intent.EXTRA_STREAM, new ArrayList<>(uriList));
     }
@@ -393,7 +395,7 @@ public class BluetoothOppLauncherActivityTest {
                 .componentCallerCheckContentUriPermission(any(), any(), anyInt());
         String uriString = "content://test.provider/1";
         Settings.Secure.putString(
-                mTargetContext.getContentResolver(),
+                mContext.getContentResolver(),
                 "nearby_sharing_component",
                 "com.example/.BComponent");
 

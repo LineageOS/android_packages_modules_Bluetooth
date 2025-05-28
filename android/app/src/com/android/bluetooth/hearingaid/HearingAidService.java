@@ -48,7 +48,7 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -59,7 +59,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Provides Bluetooth HearingAid profile, as a service in the Bluetooth application. */
-public class HearingAidService extends ProfileService {
+public class HearingAidService extends ConnectableProfile {
     private static final String TAG = HearingAidService.class.getSimpleName();
 
     private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1000;
@@ -197,6 +197,7 @@ public class HearingAidService extends ProfileService {
      * @param device is the device with which we will connect the hearing aid profile
      * @return true if hearing aid profile successfully connected, false otherwise
      */
+    @Override
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect(): " + device);
         if (device == null) {
@@ -261,6 +262,7 @@ public class HearingAidService extends ProfileService {
      * @param device is the device with which we want to disconnected the hearing aid profile
      * @return true if hearing aid profile successfully disconnected, false otherwise
      */
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         Log.d(TAG, "disconnect(): " + device);
         if (device == null) {
@@ -409,6 +411,7 @@ public class HearingAidService extends ProfileService {
      *     BluetoothProfile#STATE_CONNECTED} if this profile is connected, or {@link
      *     BluetoothProfile#STATE_DISCONNECTING} if this profile is being disconnected
      */
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         synchronized (mStateMachines) {
             HearingAidStateMachine sm = mStateMachines.get(device);

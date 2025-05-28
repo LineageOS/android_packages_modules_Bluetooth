@@ -39,6 +39,7 @@ import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
@@ -52,7 +53,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Provides Bluetooth Phone Book Access Profile Client profile. */
-public class PbapClientService extends ProfileService {
+public class PbapClientService extends ConnectableProfile {
     private static final String TAG = PbapClientService.class.getSimpleName();
 
     private static final String SERVICE_NAME = "Phonebook Access PCE";
@@ -540,6 +541,7 @@ public class PbapClientService extends ProfileService {
      * @param device is the device with which we will connect to
      * @return true if we successfully begin the connection process, false otherwise
      */
+    @Override
     public boolean connect(BluetoothDevice device) {
         if (device == null) {
             throw new IllegalArgumentException("Null device");
@@ -576,6 +578,7 @@ public class PbapClientService extends ProfileService {
      * @param device is the device with which we will disconnect the pbap client profile
      * @return true if we disconnected the pbap client profile, false otherwise
      */
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         if (device == null) {
             throw new IllegalArgumentException("Null device");
@@ -658,6 +661,7 @@ public class PbapClientService extends ProfileService {
      *     BluetoothProfile#STATE_CONNECTED} if this profile is connected, or {@link
      *     BluetoothProfile#STATE_DISCONNECTING} if this profile is being disconnected
      */
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         if (device == null) {
             throw new IllegalArgumentException("Null device");

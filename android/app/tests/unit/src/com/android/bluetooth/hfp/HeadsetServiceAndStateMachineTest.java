@@ -23,6 +23,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.media.audio.Flags.FLAG_SCO_MANAGED_BY_AUDIO;
 import static android.media.audio.Flags.scoManagedByAudio;
+import static android.media.audio.Flags.unifyAbsoluteVolumeManagement;
 
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasData;
@@ -38,7 +39,19 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
@@ -50,6 +63,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
+import android.media.AudioDeviceVolumeManager;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.ParcelUuid;
@@ -128,6 +142,7 @@ public class HeadsetServiceAndStateMachineTest {
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private HeadsetSystemInterface mSystemInterface;
     @Mock private AudioManager mAudioManager;
+    @Mock private AudioDeviceVolumeManager mAudioDeviceVolumeManager;
     @Mock private HeadsetPhoneState mPhoneState;
     @Mock private RemoteDevices mRemoteDevices;
     @Mock private AudioDeviceInfo mAudioDeviceInfo;
@@ -180,6 +195,7 @@ public class HeadsetServiceAndStateMachineTest {
         doNothing().when(mSystemInterface).stop();
         doReturn(mPhoneState).when(mSystemInterface).getHeadsetPhoneState();
         doReturn(mAudioManager).when(mSystemInterface).getAudioManager();
+        doReturn(mAudioDeviceVolumeManager).when(mSystemInterface).getAudioDeviceVolumeManager();
         doReturn(true).when(mSystemInterface).activateVoiceRecognition();
         doReturn(true).when(mSystemInterface).deactivateVoiceRecognition();
         doReturn(mVoiceRecognitionWakeLock).when(mSystemInterface).getVoiceRecognitionWakeLock();
@@ -799,7 +815,9 @@ public class HeadsetServiceAndStateMachineTest {
         verify(mSystemInterface).activateVoiceRecognition();
         verify(mNativeInterface).atResponseCode(device, HeadsetHalConstants.AT_RESPONSE_ERROR, 0);
         verifyNoMoreInteractions(ignoreStubs(mNativeInterface));
-        verifyNoMoreInteractions(mAudioManager);
+        if (!unifyAbsoluteVolumeManagement()) {
+            verifyNoMoreInteractions(mAudioManager);
+        }
     }
 
     /**
@@ -841,7 +859,9 @@ public class HeadsetServiceAndStateMachineTest {
                         anyBoolean(),
                         eq(device));
         verifyNoMoreInteractions(ignoreStubs(mNativeInterface));
-        verifyNoMoreInteractions(mAudioManager);
+        if (!unifyAbsoluteVolumeManagement()) {
+            verifyNoMoreInteractions(mAudioManager);
+        }
     }
 
     /**

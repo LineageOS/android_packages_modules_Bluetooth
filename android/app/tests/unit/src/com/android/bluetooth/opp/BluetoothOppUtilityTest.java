@@ -30,6 +30,7 @@ import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -61,6 +62,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 
+import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -451,5 +453,18 @@ public class BluetoothOppUtilityTest {
                         eq("com.example"),
                         eq(originalUri),
                         eq(Intent.FLAG_GRANT_READ_URI_PERMISSION));
+    }
+
+    @Test
+    public void fileExists_returnFalse() throws Exception {
+        Context context = spy(new ContextWrapper(mContext));
+
+        doThrow(new FileNotFoundException())
+                .when(mCallProxy)
+                .contentResolverOpenFileDescriptor(
+                        any(), eq(CORRECT_FORMAT_BUT_INVALID_FILE_URI), any());
+
+        assertThat(BluetoothOppUtility.fileExists(context, CORRECT_FORMAT_BUT_INVALID_FILE_URI))
+                .isFalse();
     }
 }

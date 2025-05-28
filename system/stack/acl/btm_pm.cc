@@ -40,7 +40,6 @@
 #include "hci/controller.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
-#include "main/shim/entry.h"
 #include "osi/include/stack_power_telemetry.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/internal/btm_api.h"
@@ -472,18 +471,16 @@ static tBTM_PM_MODE btm_pm_get_set_mode(uint8_t pm_id, tBTM_PM_MCB* p_cb,
     }
   }
 
-  /* if the resulting mode is NULL(nobody registers SET), use the requested mode
-   */
+  /* if the resulting mode is NULL(nobody registers SET), use the requested mode */
   if (p_md == NULL) {
     if (p_mode) {
       *p_res = *((tBTM_PM_PWR_MD*)p_mode);
-    } else { /* p_mode is NULL when btm_pm_snd_md_req is called from
-               btm_pm_proc_mode_change */
+    } else {
+      /* p_mode is NULL when btm_pm_snd_md_req is called from btm_pm_proc_mode_change */
       return BTM_PM_MD_ACTIVE;
     }
   } else {
-    /* if the command is from unregistered party,
-       compare the resulting mode from registered party*/
+    /* if the command is from unregistered party, compare the resulting mode from registered party*/
     if ((pm_id == BTM_PM_SET_ONLY_ID) && ((btm_pm_compare_modes(p_mode, p_md, p_res)) == NULL)) {
       return BTM_PM_MD_ACTIVE;
     }

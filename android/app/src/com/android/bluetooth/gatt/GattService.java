@@ -226,7 +226,8 @@ public class GattService extends ProfileService {
         final var looper = mHandlerThread.getLooper();
 
         mAdvertiseManager =
-                new AdvertiseManager(mAdapterService, advertiseManagerNativeInterface, looper);
+                new AdvertiseManager(
+                        mAdapterService, this, advertiseManagerNativeInterface, looper);
 
         mRssiReadThrottleMs =
                 SystemProperties.getInt(RSSI_READ_THROTTLE_MS, RSSI_READ_THROTTLE_MS_DEFAULT);
@@ -512,7 +513,8 @@ public class GattService extends ProfileService {
                         + (" clientIf=" + clientIf)
                         + (", device=" + device)
                         + (", status=" + status));
-        Integer connId = mClientMap.connIdByDevice(clientIf, device);
+
+        Integer connId = getFirstConnectionIdForDevice(clientIf, device);
         if (connId == null) {
             Log.d(TAG, "onClientPhyRead() - no connection to " + device);
             return;
@@ -897,10 +899,26 @@ public class GattService extends ProfileService {
      * GATT Service functions - CLIENT
      *************************************************************************/
 
+    /**
+     * Returns the first connection ID with a device for a particular app, if that device has a
+     * bearer.
+     *
+     * <p>While the specifications allow for multiple bearers, and our native stack strictly can
+     * allow for it, clients *try* to have a limit of one bearer with a remote device. In the case
+     * there's multiple connection IDs with a device for a client app, this utility will grab the
+     * first connection ID found with that device.
+     */
+    Integer getFirstConnectionIdForDevice(int clientIf, BluetoothDevice device) {
+        List<ContextMap.Connection> connections =
+                mClientMap.getConnectionsByDevice(clientIf, device);
+        return connections.isEmpty() ? null : connections.get(0).connId();
+    }
+
     void registerClient(
             UUID uuid,
             IBluetoothGattCallback callback,
             boolean eattSupport,
+            int transport,
             AttributionSource source) {
         if (mClientMap.countByAppUid(Binder.getCallingUid()) >= GATT_CLIENT_LIMIT_PER_APP) {
             Log.w(TAG, "registerClient() - failed due to too many clients");
@@ -918,8 +936,13 @@ public class GattService extends ProfileService {
             name = name + "[" + tag + "]";
         }
 
-        Log.d(TAG, "registerClient() - UUID=" + uuid + " name=" + name);
-        mClientMap.add(uuid, callback, this, source);
+        Log.d(
+                TAG,
+                "registerClient() -"
+                        + (" UUID=" + uuid)
+                        + (" name=" + name)
+                        + (" transport=" + transportToString(transport)));
+        mClientMap.add(uuid, callback, transport, this, source);
 
         mNativeInterface.gattClientRegisterApp(
                 uuid.getLeastSignificantBits(), uuid.getMostSignificantBits(), name, eattSupport);
@@ -969,6 +992,7 @@ public class GattService extends ProfileService {
                 TAG,
                 "clientConnect() -"
                         + (" device=" + device)
+                        + (", transport=" + transportToString(transport))
                         + (", addressType=" + addressType)
                         + (", isDirect=" + isDirect)
                         + (", opportunistic=" + opportunistic)
@@ -1064,7 +1088,7 @@ public class GattService extends ProfileService {
     }
 
     void clientDisconnectInternal(int clientIf, BluetoothDevice device, AttributionSource source) {
-        Integer connId = mClientMap.connIdByDevice(clientIf, device);
+        Integer connId = getFirstConnectionIdForDevice(clientIf, device);
         Log.d(TAG, "clientDisconnectInternal() - device=" + device + ", connId=" + connId);
         statsLogGattConnectionStateChange(
                 BluetoothProfile.GATT,
@@ -1098,7 +1122,7 @@ public class GattService extends ProfileService {
         }
         int clientIf = clientApp.id;
 
-        Integer connId = mClientMap.connIdByDevice(clientIf, device);
+        Integer connId = getFirstConnectionIdForDevice(clientIf, device);
         if (connId == null) {
             Log.d(TAG, "clientSetPreferredPhy() - no connection to " + device);
             return;
@@ -1115,7 +1139,7 @@ public class GattService extends ProfileService {
             return;
         }
         int clientIf = clientApp.id;
-        Integer connId = mClientMap.connIdByDevice(clientIf, device);
+        Integer connId = getFirstConnectionIdForDevice(clientIf, device);
         if (connId == null) {
             Log.d(TAG, "clientReadPhy() - no connection to " + device);
             return;
@@ -1145,7 +1169,7 @@ public class GattService extends ProfileService {
         }
         int clientIf = clientApp.id;
 
-        Integer connId = mClientMap.connIdByDevice(clientIf, device);
+        Integer connId = getFirstConnectionIdForDevice(clientIf, device);
         Log.d(TAG, "discoverServices() - device=" + device + ", connId=" + connId);
 
         if (connId != null) {
@@ -1162,7 +1186,8 @@ public class GattService extends ProfileService {
             return;
         }
         int clientIf = clientApp.id;
-        Integer connId = mClientMap.connIdByDevice(clientIf, device);
+
+        Integer connId = getFirstConnectionIdForDevice(clientIf, device);
         if (connId != null) {
             mNativeInterface.gattClientDiscoverServiceByUuid(
                     connId, uuid.getLeastSignificantBits(), uuid.getMostSignificantBits());
@@ -1185,7 +1210,7 @@ public class GattService extends ProfileService {
         int clientIf = clientApp.id;
         Log.v(TAG, "readCharacteristic(" + device + ")");
 
-        Integer connId = mClientMap.connIdByDevice(clientIf, device);
+        Integer connId = getFirstConnectionIdForDevice(clientIf, device);
         if (connId == null) {
             Log.e(TAG, "readCharacteristic(" + device + ") - No connection");
             return;
@@ -1221,7 +1246,7 @@ public class GattService extends ProfileService {
         int clientIf = clientApp.id;
         Log.v(TAG, "readUsingCharacteristicUuid() - device=" + device);
 
-        Integer connId = mClientMap.connIdByDevice(clientIf, device);
+        Integer connId = getFirstConnectionIdForDevice(clientIf, device);
         if (connId == null) {
             Log.e(TAG, "readUsingCharacteristicUuid() - No connection for " + device);
             return;
@@ -1255,7 +1280,7 @@ public class GattService extends ProfileService {
             writeType = 3; // Prepared write
         }
 
-        Integer connId = mClientMap.connIdByDevice(clientIf, device);
+        Integer connId = getFirstConnectionIdForDevice(clientIf, device);
         if (connId == null) {
             Log.e(TAG, "writeCharacteristic(" + device + ") - No connection");
             return BluetoothStatusCodes.ERROR_DEVICE_NOT_CONNECTED;
@@ -1297,7 +1322,7 @@ public class GattService extends ProfileService {
         int clientIf = clientApp.id;
         Log.v(TAG, "readDescriptor() - device=" + device);
 
-        Integer connId = mClientMap.connIdByDevice(clientIf, device);
+        Integer connId = getFirstConnectionIdForDevice(clientIf, device);
         if (connId == null) {
             Log.e(TAG, "readDescriptor() - No connection for " + device);
             return;
@@ -1332,7 +1357,7 @@ public class GattService extends ProfileService {
         int clientIf = clientApp.id;
         Log.v(TAG, "writeDescriptor() - device=" + device);
 
-        Integer connId = mClientMap.connIdByDevice(clientIf, device);
+        Integer connId = getFirstConnectionIdForDevice(clientIf, device);
         if (connId == null) {
             Log.e(TAG, "writeDescriptor() - No connection for " + device);
             return BluetoothStatusCodes.ERROR_DEVICE_NOT_CONNECTED;
@@ -1359,7 +1384,7 @@ public class GattService extends ProfileService {
         Log.d(TAG, "endReliableWrite() - device=" + device + " execute: " + execute);
         mReliableQueue.remove(device);
 
-        Integer connId = mClientMap.connIdByDevice(clientIf, device);
+        Integer connId = getFirstConnectionIdForDevice(clientIf, device);
         if (connId != null) {
             mNativeInterface.gattClientExecuteWrite(connId, execute);
         }
@@ -1379,7 +1404,7 @@ public class GattService extends ProfileService {
         int clientIf = clientApp.id;
         Log.d(TAG, "registerForNotification() - device=" + device + " enable: " + enable);
 
-        Integer connId = mClientMap.connIdByDevice(clientIf, device);
+        Integer connId = getFirstConnectionIdForDevice(clientIf, device);
         if (connId == null) {
             Log.e(TAG, "registerForNotification() - No connection for " + device);
             return;
@@ -1428,12 +1453,12 @@ public class GattService extends ProfileService {
     void configureMTU(IBluetoothGattCallback callback, BluetoothDevice device, int mtu) {
         ContextMap<IBluetoothGattCallback>.App clientApp = mClientMap.getByCallbackId(callback);
         if (clientApp == null) {
-            Log.w(TAG, "readRemoteRssi(" + callback + "): App not registered");
+            Log.w(TAG, "configureMTU(" + callback + "): App not registered");
             return;
         }
         int clientIf = clientApp.id;
         Log.d(TAG, "configureMTU() - device=" + device + " mtu=" + mtu);
-        Integer connId = mClientMap.connIdByDevice(clientIf, device);
+        Integer connId = getFirstConnectionIdForDevice(clientIf, device);
         if (connId != null) {
             mNativeInterface.gattClientConfigureMTU(connId, mtu);
         } else {
@@ -1676,15 +1701,67 @@ public class GattService extends ProfileService {
 
         ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getById(serverIf);
         if (app == null) {
+            Log.w(TAG, "onClientConnected() received connection event for unregistered app");
             return;
         }
-        int connectionState;
+
+        // The native stack reports connection state changes for *all* bearer connections,
+        // multiplexed across all applications. It's possible for an app to have more than one
+        // bearer with a remote device. Since we don't expose per-bearer information to the
+        // applications, we need to abstract this info away. We send "connected" when we grow from
+        // zero to one connection, and disconnected when there are *no more* connections.
+
+        // Are we connected currently?
+        boolean previouslyConnected =
+                !mServerMap.getConnectionsByDevice(serverIf, device).isEmpty();
+
+        // Add or remove a connection from our records
         if (connected) {
             mServerMap.addConnection(serverIf, connId, transport, device);
-            connectionState = BluetoothProtoEnums.CONNECTION_STATE_CONNECTED;
         } else {
             mServerMap.removeConnection(serverIf, connId);
-            connectionState = BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTED;
+        }
+
+        // Look at new set of connections to determine overall connection state to share outward
+        int connectionState;
+        boolean stateToReport;
+        if (Flags.gattMultiBearerConnections()) {
+            boolean currentlyConnected =
+                    !mServerMap.getConnectionsByDevice(serverIf, device).isEmpty();
+            if (!previouslyConnected && currentlyConnected) {
+                Log.i(
+                        TAG,
+                        "onClientConnected()"
+                                + (" serverIf=" + serverIf)
+                                + (", device=" + device)
+                                + " has its first bearer and is now connected");
+                stateToReport = true;
+                connectionState = BluetoothProtoEnums.CONNECTION_STATE_CONNECTED;
+            } else if (previouslyConnected && !currentlyConnected) {
+                Log.i(
+                        TAG,
+                        "onClientConnected()"
+                                + (" serverIf=" + serverIf)
+                                + (", device=" + device)
+                                + " has no more bearers and is disconnected");
+                stateToReport = false;
+                connectionState = BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTED;
+            } else {
+                Log.d(
+                        TAG,
+                        "onClientConnected()"
+                                + ("serverIf=" + serverIf)
+                                + (", device=" + device)
+                                + (" event dropped, previouslyConnected=" + previouslyConnected)
+                                + (", currentlyConnected=" + currentlyConnected));
+                return;
+            }
+        } else {
+            stateToReport = connected;
+            connectionState =
+                    connected
+                            ? BluetoothProtoEnums.CONNECTION_STATE_CONNECTED
+                            : BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTED;
         }
 
         int applicationUid = -1;
@@ -1695,7 +1772,10 @@ public class GattService extends ProfileService {
             Log.d(TAG, "onClientConnected() uid_not_found=" + app.packageName);
         }
 
-        callbackToApp(() -> app.callback.onServerConnectionState((byte) 0, connected, device));
+        // Lambdas require an effectively final variable. This should be removed when the
+        // gattMultiBearerConnections flag is removed.
+        final boolean state = stateToReport;
+        callbackToApp(() -> app.callback.onServerConnectionState((byte) 0, state, device));
         statsLogAppPackage(device, applicationUid, serverIf);
         statsLogGattConnectionStateChange(
                 BluetoothProfile.GATT_SERVER, device, serverIf, connectionState, -1);
@@ -1721,7 +1801,9 @@ public class GattService extends ProfileService {
             int serverIf, BluetoothDevice device, int txPhy, int rxPhy, int status) {
         Log.d(TAG, "onServerPhyRead() - device=" + device + ", status=" + status);
 
-        Integer connId = mServerMap.connIdByDevice(serverIf, device);
+        List<ContextMap.Connection> connections =
+                mServerMap.getConnectionsByDevice(serverIf, device);
+        Integer connId = connections.isEmpty() ? null : connections.get(0).connId();
         if (connId == null) {
             Log.d(TAG, "onServerPhyRead() - no connection to " + device);
             return;
@@ -1729,10 +1811,14 @@ public class GattService extends ProfileService {
 
         ContextMap<IBluetoothGattServerCallback>.App app = mServerMap.getByConnId(connId);
         if (app == null) {
+            Log.w(TAG, "onServerPhyReadFromNative() received phy read for unregistered app");
             return;
         }
 
-        callbackToApp(() -> app.callback.onPhyRead(device, txPhy, rxPhy, status));
+        // Lambdas require an effectively final variable. This should be removed when the
+        // gattMultiBearerConnections flag is removed.
+        final ContextMap<IBluetoothGattServerCallback>.App finalApp = app;
+        callbackToApp(() -> finalApp.callback.onPhyRead(device, txPhy, rxPhy, status));
     }
 
     void onServerConnUpdateFromNative(
@@ -2006,9 +2092,25 @@ public class GattService extends ProfileService {
             UUID uuid,
             IBluetoothGattServerCallback callback,
             boolean eattSupport,
+            int transport,
             AttributionSource source) {
-        Log.d(TAG, "registerServer() - UUID=" + uuid);
-        mServerMap.add(uuid, callback, this, source);
+        String name = source.getPackageName();
+        String tag = getLastAttributionTag(source);
+        String myPackage = AttributionSource.myAttributionSource().getPackageName();
+        if (myPackage.equals(name) && tag != null) {
+            /* For servers created by Bluetooth stack, use just tag as name */
+            name = tag;
+        } else if (tag != null) {
+            name = name + "[" + tag + "]";
+        }
+
+        Log.d(
+                TAG,
+                "registerServer() -"
+                        + (" UUID=" + uuid)
+                        + (" name=" + name)
+                        + (" transport=" + transportToString(transport)));
+        mServerMap.add(uuid, callback, transport, this, source);
         mNativeInterface.gattServerRegisterApp(
                 uuid.getLeastSignificantBits(), uuid.getMostSignificantBits(), eattSupport);
     }
@@ -2044,7 +2146,11 @@ public class GattService extends ProfileService {
             return;
         }
         int serverIf = serverApp.id;
-        Log.d(TAG, "serverConnect() - device=" + device);
+        Log.d(
+                TAG,
+                "serverConnect() -"
+                        + (" device=" + device)
+                        + (" transport=" + transportToString(transport)));
 
         logServerForegroundInfo(source.getUid(), isDirect);
 
@@ -2059,10 +2165,31 @@ public class GattService extends ProfileService {
             return;
         }
         int serverIf = serverApp.id;
-        Integer connId = mServerMap.connIdByDevice(serverIf, device);
-        Log.d(TAG, "serverDisconnect() - device=" + device + ", connId=" + connId);
 
-        mNativeInterface.gattServerDisconnect(serverIf, device, connId != null ? connId : 0);
+        if (Flags.gattMultiBearerConnections()) {
+            List<ContextMap.Connection> connections =
+                    mServerMap.getConnectionsByDevice(serverIf, device);
+
+            // If we don't have any known connection IDs, we could have a pending connection. We can
+            // use connId => 0 to cancel all pending connections with the given device. Otherwise,
+            // disconnect all bearers
+            if (connections.isEmpty()) {
+                Log.d(TAG, "serverDisconnect() - cancel pending connections for device=" + device);
+                mNativeInterface.gattServerDisconnect(serverIf, device, 0);
+            } else {
+                for (ContextMap.Connection connection : connections) {
+                    int id = connection.connId();
+                    Log.d(TAG, "serverDisconnect() - device=" + device + ", connId=" + id);
+                    mNativeInterface.gattServerDisconnect(serverIf, device, id);
+                }
+            }
+        } else {
+            List<ContextMap.Connection> connections =
+                    mServerMap.getConnectionsByDevice(serverIf, device);
+            Integer connId = connections.isEmpty() ? null : connections.get(0).connId();
+            Log.d(TAG, "serverDisconnect() - device=" + device + ", connId=" + connId);
+            mNativeInterface.gattServerDisconnect(serverIf, device, connId != null ? connId : 0);
+        }
     }
 
     void serverSetPreferredPhy(
@@ -2078,13 +2205,16 @@ public class GattService extends ProfileService {
             return;
         }
         int serverIf = serverApp.id;
-        Integer connId = mServerMap.connIdByDevice(serverIf, device);
-        if (connId == null) {
+
+        List<ContextMap.Connection> connections =
+                mServerMap.getConnectionsByDevice(serverIf, device);
+        if (connections.isEmpty()) {
             Log.d(TAG, "serverSetPreferredPhy() - no connection to " + device);
             return;
         }
 
-        Log.d(TAG, "serverSetPreferredPhy() - device=" + device + ", connId=" + connId);
+        Log.d(TAG, "serverSetPreferredPhy() device=" + device + ", connections=" + connections);
+
         mNativeInterface.gattServerSetPreferredPhy(serverIf, device, txPhy, rxPhy, phyOptions);
     }
 
@@ -2096,13 +2226,16 @@ public class GattService extends ProfileService {
             return;
         }
         int serverIf = serverApp.id;
-        Integer connId = mServerMap.connIdByDevice(serverIf, device);
-        if (connId == null) {
+
+        List<ContextMap.Connection> connections =
+                mServerMap.getConnectionsByDevice(serverIf, device);
+        if (connections.isEmpty()) {
             Log.d(TAG, "serverReadPhy() - no connection to " + device);
             return;
         }
 
-        Log.d(TAG, "serverReadPhy() - device=" + device + ", connId=" + connId);
+        Log.d(TAG, "serverReadPhy() - device=" + device + ", connections=" + connections);
+
         mNativeInterface.gattServerReadPhy(serverIf, device);
     }
 
@@ -2194,25 +2327,20 @@ public class GattService extends ProfileService {
         Log.v(TAG, "sendResponse() - device=" + device + ", requestId=" + requestId);
 
         int handle = 0;
-        Integer connId = 0;
+        int connId = 0;
 
         HandleMap.RequestData requestData = mHandleMap.getRequestDataByRequestId(requestId);
         if (requestData != null) {
             handle = requestData.handle();
             connId = requestData.connId();
         } else {
-            connId = mServerMap.connIdByDevice(serverIf, device);
+            List<ContextMap.Connection> connections =
+                    mServerMap.getConnectionsByDevice(serverIf, device);
+            connId = connections.isEmpty() ? 0 : connections.get(0).connId();
         }
 
         mNativeInterface.gattServerSendResponse(
-                serverIf,
-                connId != null ? connId : 0,
-                requestId,
-                (byte) status,
-                handle,
-                offset,
-                value,
-                (byte) 0);
+                serverIf, connId, requestId, (byte) status, handle, offset, value, (byte) 0);
         mHandleMap.deleteRequest(requestId);
     }
 
@@ -2229,12 +2357,56 @@ public class GattService extends ProfileService {
             return BluetoothStatusCodes.ERROR_CALLBACK_NOT_REGISTERED;
         }
         int serverIf = serverApp.id;
-        Log.v(TAG, "sendNotification() - device=" + device + " handle=" + handle);
+        int transportPreference = serverApp.transport;
 
-        Integer connId = mServerMap.connIdByDevice(serverIf, device);
+        Log.v(
+                TAG,
+                "sendNotification() -"
+                        + (" device=" + device)
+                        + (", handle=" + handle)
+                        + (", transport=" + transportPreference));
+
+        // The specifications do not insist that we must use the same bearer that wrote to the CCCD
+        // to request notifications or indications. We only need to send to the same client.
+        // We pick the first connection that matches the transport preference of the server, or the
+        // oldest connection when transport is AUTO
+        Integer connId = null;
+        List<ContextMap.Connection> connections =
+                mServerMap.getConnectionsByDevice(serverIf, device);
+
+        if (Flags.gattMultiBearerConnections()) {
+            // The list is sorted by oldest first. Grab the oldest bearer that matches our transport
+            // preference. If the transport is AUTO then use the oldest bearer available
+            for (ContextMap.Connection connection : connections) {
+                if (transportPreference == BluetoothDevice.TRANSPORT_AUTO
+                        || transportPreference == connection.transport()) {
+                    connId = connection.connId();
+                    break;
+                }
+            }
+
+            // If there was no transport that matches the preference, use the oldest bearer
+            if (connId == null && !connections.isEmpty()) {
+                connId = connections.get(0).connId();
+            }
+        } else {
+            if (!connections.isEmpty()) {
+                connId = connections.get(0).connId();
+            }
+        }
+
         if (connId == null || connId == 0) {
+            Log.d(TAG, "sendNotification() - no connection to " + device);
             return BluetoothStatusCodes.ERROR_DEVICE_NOT_CONNECTED;
         }
+
+        Log.d(
+                TAG,
+                "sendNotification() -"
+                        + (" device=" + device)
+                        + (", handle=" + handle)
+                        + (", connId=" + connId)
+                        + (", confirm=" + confirm));
 
         if (confirm) {
             mNativeInterface.gattServerSendIndication(serverIf, handle, connId, value);
@@ -2410,6 +2582,7 @@ public class GattService extends ProfileService {
                             + appId
                             + ", appName: "
                             + app.packageName
+                            + (", transport: " + transportToString(app.transport))
                             + (app.attributionTag == null ? "" : ", tag: " + app.attributionTag));
             List<ContextMap.Connection> clientConnections = mClientMap.getConnectionByApp(appId);
             for (ContextMap.Connection connection : clientConnections) {
@@ -2425,6 +2598,7 @@ public class GattService extends ProfileService {
                             + appId
                             + ", appName: "
                             + app.packageName
+                            + (", transport: " + transportToString(app.transport))
                             + (app.attributionTag == null ? "" : ", tag: " + app.attributionTag));
             List<ContextMap.Connection> serverConnections = mServerMap.getConnectionByApp(appId);
             for (ContextMap.Connection connection : serverConnections) {

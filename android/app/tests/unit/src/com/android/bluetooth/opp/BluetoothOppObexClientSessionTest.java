@@ -64,22 +64,21 @@ import java.util.concurrent.TimeUnit;
 public class BluetoothOppObexClientSessionTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private Context mContext;
+    @Mock private Context mMockContext;
     @Mock private BluetoothMethodProxy mMethodProxy;
     @Mock private BluetoothObexTransport mTransport;
 
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
-    private final PowerManager mPowerManager = mTargetContext.getSystemService(PowerManager.class);
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+    private final PowerManager mPowerManager = mContext.getSystemService(PowerManager.class);
 
-    BluetoothOppObexClientSession mClientSession;
+    private BluetoothOppObexClientSession mClientSession;
 
     @Before
     public void setUp() throws IOException {
-        mockGetSystemService(mContext, NotificationManager.class);
-        mockGetSystemService(mContext, PowerManager.class, mPowerManager);
+        mockGetSystemService(mMockContext, NotificationManager.class);
+        mockGetSystemService(mMockContext, PowerManager.class, mPowerManager);
 
-        mClientSession = new BluetoothOppObexClientSession(mContext, mTransport);
+        mClientSession = new BluetoothOppObexClientSession(mMockContext, mTransport);
 
         // to control the mServerSession.mSession
         InputStream input = mock(InputStream.class);

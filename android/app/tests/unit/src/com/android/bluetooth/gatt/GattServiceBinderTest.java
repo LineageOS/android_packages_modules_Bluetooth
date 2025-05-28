@@ -76,10 +76,12 @@ public class GattServiceBinderTest {
     public void registerClient() {
         UUID uuid = UUID.randomUUID();
         boolean eattSupport = true;
+        int transport = BluetoothDevice.TRANSPORT_LE;
 
         mBinder.registerClient(
-                new ParcelUuid(uuid), mGattCallback, eattSupport, mAttributionSource);
-        verify(mService).registerClient(uuid, mGattCallback, eattSupport, mAttributionSource);
+                new ParcelUuid(uuid), mGattCallback, eattSupport, transport, mAttributionSource);
+        verify(mService)
+                .registerClient(uuid, mGattCallback, eattSupport, transport, mAttributionSource);
     }
 
     @Test
@@ -311,10 +313,17 @@ public class GattServiceBinderTest {
     public void registerServer() {
         UUID uuid = UUID.randomUUID();
         boolean eattSupport = true;
+        int transport = BluetoothDevice.TRANSPORT_LE;
 
         mBinder.registerServer(
-                new ParcelUuid(uuid), mGattServerCallback, eattSupport, mAttributionSource);
-        verify(mService).registerServer(uuid, mGattServerCallback, eattSupport, mAttributionSource);
+                new ParcelUuid(uuid),
+                mGattServerCallback,
+                eattSupport,
+                transport,
+                mAttributionSource);
+        verify(mService)
+                .registerServer(
+                        uuid, mGattServerCallback, eattSupport, transport, mAttributionSource);
     }
 
     @Test
