@@ -18,11 +18,10 @@ package com.android.bluetooth.pan;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -53,20 +52,13 @@ public class BluetoothTetheringNetworkFactoryTest {
 
     private BluetoothTetheringNetworkFactory mBluetoothTetheringNetworkFactory;
 
-    private <T> void mockGetSystemService(String serviceName, Class<T> serviceClass, T service) {
-        doReturn(service).when(mContext).getSystemService(eq(serviceClass));
-        doReturn(service).when(mContext).getSystemService(eq(serviceName));
-        doReturn(serviceName).when(mContext).getSystemServiceName(eq(serviceClass));
-    }
-
     @Before
     public void setUp() throws Exception {
         if (Looper.myLooper() == null) {
             Looper.prepare();
         }
 
-        mockGetSystemService(
-                Context.CONNECTIVITY_SERVICE, ConnectivityManager.class, mConnectivityManager);
+        mockGetSystemService(mContext, ConnectivityManager.class, mConnectivityManager);
         mBluetoothTetheringNetworkFactory =
                 new BluetoothTetheringNetworkFactory(mContext, Looper.myLooper(), mPanService);
     }

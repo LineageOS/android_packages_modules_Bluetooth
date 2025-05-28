@@ -31,6 +31,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getBluetoothManager;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -286,21 +287,19 @@ public class AdapterServiceTest {
         mPermissionManager = context.getSystemService(PermissionManager.class);
         mPowerManager = context.getSystemService(PowerManager.class);
 
-        mockGetSystemService(Context.ALARM_SERVICE, AlarmManager.class);
-        mockGetSystemService(Context.APP_OPS_SERVICE, AppOpsManager.class);
-        mockGetSystemService(Context.AUDIO_SERVICE, AudioManager.class);
-        mockGetSystemService(Context.ACTIVITY_SERVICE, ActivityManager.class);
-        DevicePolicyManager dpm =
-                mockGetSystemService(Context.DEVICE_POLICY_SERVICE, DevicePolicyManager.class);
+        mockGetSystemService(mMockContext, AlarmManager.class);
+        mockGetSystemService(mMockContext, AppOpsManager.class);
+        mockGetSystemService(mMockContext, AudioManager.class);
+        mockGetSystemService(mMockContext, ActivityManager.class);
+        DevicePolicyManager dpm = mockGetSystemService(mMockContext, DevicePolicyManager.class);
         doReturn(false).when(dpm).isCommonCriteriaModeEnabled(any());
-        mockGetSystemService(Context.USER_SERVICE, UserManager.class);
-        mockGetSystemService(Context.BATTERY_STATS_SERVICE, BatteryStatsManager.class);
-        mockGetSystemService(Context.BLUETOOTH_SERVICE, BluetoothManager.class, mBluetoothManager);
-        mockGetSystemService(Context.COMPANION_DEVICE_SERVICE, CompanionDeviceManager.class);
-        mockGetSystemService(Context.DISPLAY_SERVICE, DisplayManager.class, mDisplayManager);
-        mockGetSystemService(
-                Context.PERMISSION_SERVICE, PermissionManager.class, mPermissionManager);
-        mockGetSystemService(Context.POWER_SERVICE, PowerManager.class, mPowerManager);
+        mockGetSystemService(mMockContext, UserManager.class);
+        mockGetSystemService(mMockContext, BatteryStatsManager.class);
+        mockGetSystemService(mMockContext, BluetoothManager.class, mBluetoothManager);
+        mockGetSystemService(mMockContext, CompanionDeviceManager.class);
+        mockGetSystemService(mMockContext, DisplayManager.class, mDisplayManager);
+        mockGetSystemService(mMockContext, PermissionManager.class, mPermissionManager);
+        mockGetSystemService(mMockContext, PowerManager.class, mPowerManager);
 
         when(mMockContext.getSharedPreferences(anyString(), anyInt()))
                 .thenReturn(
@@ -357,18 +356,6 @@ public class AdapterServiceTest {
         PeriodicScanNativeInterface.setInstance(null);
         ScanNativeInterface.setInstance(null);
         MetricsLogger.setInstanceForTesting(null);
-    }
-
-    private <T> T mockGetSystemService(String serviceName, Class<T> serviceClass) {
-        T mockedService = mock(serviceClass);
-        mockGetSystemService(serviceName, serviceClass, mockedService);
-        return mockedService;
-    }
-
-    private <T> void mockGetSystemService(String serviceName, Class<T> serviceClass, T service) {
-        doReturn(service).when(mMockContext).getSystemService(eq(serviceClass));
-        doReturn(service).when(mMockContext).getSystemService(eq(serviceName));
-        doReturn(serviceName).when(mMockContext).getSystemServiceName(eq(serviceClass));
     }
 
     private void syncHandler(int... what) {

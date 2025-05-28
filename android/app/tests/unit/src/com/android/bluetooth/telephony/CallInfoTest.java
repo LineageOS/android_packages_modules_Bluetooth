@@ -17,10 +17,10 @@
 package com.android.bluetooth.telephony;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -70,8 +70,7 @@ public class CallInfoTest {
     public void setUp() throws Exception {
         final var context = InstrumentationRegistry.getInstrumentation().getContext();
         Context spiedContext = spy(new ContextWrapper(context));
-        mockGetSystemService(
-                spiedContext, Context.TELECOM_SERVICE, TelecomManager.class, mTelecomManager);
+        mockGetSystemService(spiedContext, TelecomManager.class, mTelecomManager);
 
         mBluetoothInCallService = new BluetoothInCallService(spiedContext, null);
         mBluetoothInCallService.onCreate();
@@ -82,13 +81,6 @@ public class CallInfoTest {
     @After
     public void tearDown() throws Exception {
         mBluetoothInCallService = null;
-    }
-
-    private static <T> void mockGetSystemService(
-            Context context, String serviceName, Class<T> serviceClass, T service) {
-        doReturn(service).when(context).getSystemService(eq(serviceClass));
-        doReturn(service).when(context).getSystemService(eq(serviceName));
-        doReturn(serviceName).when(context).getSystemServiceName(eq(serviceClass));
     }
 
     @Test
