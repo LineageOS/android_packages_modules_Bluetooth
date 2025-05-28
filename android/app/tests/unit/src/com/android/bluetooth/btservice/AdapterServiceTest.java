@@ -28,7 +28,7 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.getBluetoothManager;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
@@ -83,6 +83,7 @@ import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Settings;
+import android.sysprop.BluetoothProperties;
 import android.test.mock.MockContentProvider;
 import android.test.mock.MockContentResolver;
 import android.util.Log;
@@ -102,6 +103,7 @@ import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.le_scan.PeriodicScanNativeInterface;
 import com.android.bluetooth.le_scan.ScanNativeInterface;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
 
 import org.junit.After;
 import org.junit.Before;
@@ -117,6 +119,7 @@ import platform.test.runner.parameterized.Parameters;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.Optional;
 
 /** Test cases for {@link AdapterService}. */
 @MediumTest
@@ -124,7 +127,9 @@ import java.util.List;
 public class AdapterServiceTest {
     private static final String TAG = AdapterServiceTest.class.getSimpleName();
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule
+    public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(BluetoothProperties.class);
+
     @Rule public final SetFlagsRule mSetFlagsRule;
 
     @Mock private Context mMockContext;
@@ -1337,5 +1342,48 @@ public class AdapterServiceTest {
                 mDevice1, BluetoothDevice.BOND_BONDED, BluetoothDevice.BOND_BONDING);
 
         verify(mockEditor, times(3)).remove(anyString());
+    }
+
+    @Test
+    public void onToBleOn_afterUpdatingSnoopLogValue_forceTurnOffBluetooth() {
+        Optional<BluetoothProperties.snoop_log_mode_values> snoopSettingEmpty =
+                Optional.of(BluetoothProperties.snoop_log_mode_values.EMPTY);
+        ExtendedMockito.doReturn(snoopSettingEmpty)
+                .when(() -> BluetoothProperties.snoop_log_mode());
+
+        doEnable(false);
+
+        Optional<BluetoothProperties.snoop_log_mode_values> snoopSettingFull =
+                Optional.of(BluetoothProperties.snoop_log_mode_values.FULL);
+        ExtendedMockito.doReturn(snoopSettingFull).when(() -> BluetoothProperties.snoop_log_mode());
+
+        onToBleOn(
+                mLooper,
+                mAdapterService,
+                mMockContext,
+                mIBluetoothCallback,
+                false,
+                listOfMockServices());
+
+        // Do not call bleOnToOff().  The Adapter should turn itself off.
+        syncHandler(AdapterState.BLE_TURN_OFF);
+        verifyStateChange(STATE_BLE_ON, STATE_BLE_TURNING_OFF, CONTEXT_SWITCH_MS);
+
+        if (!Flags.onlyStartScanDuringBleOn()) {
+            syncHandler(MESSAGE_PROFILE_SERVICE_STATE_CHANGED); // stop GATT
+            syncHandler(MESSAGE_PROFILE_SERVICE_UNREGISTERED);
+        }
+
+        verify(mNativeInterface).disable();
+
+        mAdapterService.stateChangeCallback(AbstractionLayer.BT_STATE_OFF);
+        syncHandler(AdapterState.BLE_STOPPED);
+        // When reaching the OFF state, the cleanup is called that will destroy the state machine of
+        // the adapterService. Destroying state machine send a -1 event on the handler
+        syncHandler(-1);
+
+        verifyStateChange(STATE_BLE_TURNING_OFF, STATE_OFF);
+        assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
+        assertThat(mLooper.nextMessage()).isNull();
     }
 }
