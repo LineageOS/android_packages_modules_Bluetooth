@@ -34,7 +34,6 @@ import android.util.Log;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -58,7 +57,6 @@ public class A2dpSinkService extends ConnectableProfile {
     private final Object mActiveDeviceLock = new Object();
     private final Object mStreamHandlerLock = new Object();
 
-    private final DatabaseManager mDatabaseManager;
     private final A2dpSinkNativeInterface mNativeInterface;
     private final Looper mLooper;
     private final int mMaxConnectedAudioDevices;
@@ -77,7 +75,6 @@ public class A2dpSinkService extends ConnectableProfile {
     A2dpSinkService(
             AdapterService adapterService, A2dpSinkNativeInterface nativeInterface, Looper looper) {
         super(BluetoothProfile.A2DP_SINK, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface = requireNonNull(nativeInterface);
         mLooper = looper;
         mMaxConnectedAudioDevices = mAdapterService.getMaxConnectedAudioDevices();
@@ -327,6 +324,7 @@ public class A2dpSinkService extends ConnectableProfile {
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
@@ -339,16 +337,6 @@ public class A2dpSinkService extends ConnectableProfile {
             disconnect(device);
         }
         return true;
-    }
-
-    /**
-     * Get the connection policy of the profile.
-     *
-     * @param device the remote device
-     * @return connection policy of the specified device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     @Override

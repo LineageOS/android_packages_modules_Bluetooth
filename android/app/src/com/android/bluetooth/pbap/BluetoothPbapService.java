@@ -63,7 +63,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.InteropUtil;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
@@ -151,7 +150,6 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
     private final BluetoothPbapContentObserver mContactChangeObserver =
             new BluetoothPbapContentObserver();
 
-    private final DatabaseManager mDatabaseManager;
     private final NotificationManager mNotificationManager;
     private final PbapHandler mSessionStatusHandler;
     private final HandlerThread mHandlerThread;
@@ -179,7 +177,6 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
     @VisibleForTesting
     BluetoothPbapService(AdapterService adapterService, NotificationManager notificationManager) {
         super(BluetoothProfile.PBAP, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNotificationManager =
                 requireNonNullElseGet(
                         notificationManager, () -> obtainSystemService(NotificationManager.class));
@@ -671,6 +668,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
@@ -693,6 +691,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
      * @param device Bluetooth device
      * @return connection policy of the device
      */
+    @Override
     public int getConnectionPolicy(BluetoothDevice device) {
         if (device == null) {
             throw new IllegalArgumentException("Null device");

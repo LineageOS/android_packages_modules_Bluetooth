@@ -49,7 +49,6 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -69,7 +68,6 @@ public class HearingAidService extends ConnectableProfile {
 
     private static HearingAidService sHearingAidService;
 
-    private final DatabaseManager mDatabaseManager;
     private final HearingAidNativeInterface mNativeInterface;
     private final AudioManager mAudioManager;
     private final HandlerThread mStateMachinesThread;
@@ -99,7 +97,6 @@ public class HearingAidService extends ConnectableProfile {
             Looper looper,
             HearingAidNativeInterface nativeInterface) {
         super(BluetoothProfile.HEARING_AID, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
             mStateMachinesThread = new HandlerThread("HearingAidService.StateMachines");
@@ -436,6 +433,7 @@ public class HearingAidService extends ConnectableProfile {
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
@@ -448,20 +446,6 @@ public class HearingAidService extends ConnectableProfile {
             disconnect(device);
         }
         return true;
-    }
-
-    /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     void setVolume(int volume) {

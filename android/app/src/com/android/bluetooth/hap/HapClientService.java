@@ -53,7 +53,6 @@ import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ServiceFactory;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -79,7 +78,6 @@ public class HapClientService extends ConnectableProfile {
     private final Map<BluetoothDevice, Integer> mDeviceCurrentPresetMap = new HashMap<>();
     private final Map<BluetoothDevice, Integer> mDeviceFeaturesMap = new HashMap<>();
     private final Map<BluetoothDevice, List<BluetoothHapPresetInfo>> mPresetsMap = new HashMap<>();
-    private final DatabaseManager mDatabaseManager;
     private final Handler mHandler;
     private final Looper mStateMachinesLooper;
     private final HandlerThread mStateMachinesThread;
@@ -135,7 +133,6 @@ public class HapClientService extends ConnectableProfile {
                         () ->
                                 new HapClientNativeInterface(
                                         new HapClientNativeCallback(adapterService, this)));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
 
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
@@ -332,6 +329,7 @@ public class HapClientService extends ConnectableProfile {
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true on success, otherwise false
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
@@ -341,20 +339,6 @@ public class HapClientService extends ConnectableProfile {
             disconnect(device);
         }
         return true;
-    }
-
-    /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     /** Check whether it can connect to a peer device. */

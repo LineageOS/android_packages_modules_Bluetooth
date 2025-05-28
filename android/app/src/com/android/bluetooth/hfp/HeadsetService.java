@@ -131,7 +131,6 @@ public class HeadsetService extends ConnectableProfile {
     // Timeout for state machine thread join, to prevent potential ANR.
     private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1000;
 
-    private final DatabaseManager mDatabaseManager;
     private final HeadsetNativeInterface mNativeInterface;
     private final HashMap<BluetoothDevice, HeadsetStateMachine> mStateMachines = new HashMap<>();
     private final Handler mHandler;
@@ -183,7 +182,6 @@ public class HeadsetService extends ConnectableProfile {
     HeadsetService(
             AdapterService adapterService, HeadsetNativeInterface nativeInterface, Looper looper) {
         super(BluetoothProfile.HEADSET, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface, () -> new HeadsetNativeInterface(mAdapterService, this));
@@ -740,6 +738,7 @@ public class HeadsetService extends ConnectableProfile {
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.i(
                 TAG,
@@ -759,20 +758,6 @@ public class HeadsetService extends ConnectableProfile {
             disconnect(device);
         }
         return true;
-    }
-
-    /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     boolean isNoiseReductionSupported(BluetoothDevice device) {

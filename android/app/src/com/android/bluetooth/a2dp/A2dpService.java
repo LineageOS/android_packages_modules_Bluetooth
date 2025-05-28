@@ -83,7 +83,6 @@ public class A2dpService extends ConnectableProfile {
     private final A2dpNativeInterface mNativeInterface;
     private final A2dpCodecConfig mA2dpCodecConfig;
     private final AudioManager mAudioManager;
-    private final DatabaseManager mDatabaseManager;
     private final CompanionDeviceManager mCompanionDeviceManager;
     private final Looper mLooper;
     private final Handler mHandler;
@@ -124,7 +123,6 @@ public class A2dpService extends ConnectableProfile {
                                 new A2dpNativeInterface(
                                         adapterService,
                                         new A2dpNativeCallback(adapterService, this)));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
         mCompanionDeviceManager = requireNonNull(obtainSystemService(CompanionDeviceManager.class));
         mLooper = requireNonNull(looper);
@@ -610,6 +608,7 @@ public class A2dpService extends ConnectableProfile {
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
@@ -622,20 +621,6 @@ public class A2dpService extends ConnectableProfile {
             disconnect(device);
         }
         return true;
-    }
-
-    /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     public void setAvrcpAbsoluteVolume(int volume) {

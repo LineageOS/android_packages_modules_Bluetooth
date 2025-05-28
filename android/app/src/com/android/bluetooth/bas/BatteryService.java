@@ -36,7 +36,6 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -55,7 +54,6 @@ public class BatteryService extends ConnectableProfile {
 
     private static BatteryService sBatteryService;
 
-    private final DatabaseManager mDatabaseManager;
     private final HandlerThread mStateMachinesThread;
     private final Looper mStateMachinesLooper;
     private final Handler mHandler;
@@ -70,7 +68,6 @@ public class BatteryService extends ConnectableProfile {
     @VisibleForTesting
     BatteryService(AdapterService adapterService, Looper looper) {
         super(BluetoothProfile.BATTERY, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new Handler(requireNonNull(looper));
 
         if (Flags.batteryServiceUnifiedThread()) {
@@ -332,6 +329,7 @@ public class BatteryService extends ConnectableProfile {
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true on success, otherwise false
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
@@ -341,11 +339,6 @@ public class BatteryService extends ConnectableProfile {
             disconnect(device);
         }
         return true;
-    }
-
-    /** Gets the connection policy for the battery service of the given device. */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     /** Called when the battery level of the device is notified. */
