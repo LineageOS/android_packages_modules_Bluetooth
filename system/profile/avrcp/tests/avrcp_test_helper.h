@@ -88,6 +88,7 @@ public:
   MOCK_METHOD1(CloseBrowse, uint16_t(uint8_t));
   MOCK_METHOD4(MsgReq, uint16_t(uint8_t, uint8_t, uint8_t, BT_HDR*));
   MOCK_METHOD2(SaveControllerVersion, void(const RawAddress&, uint16_t));
+  MOCK_METHOD0(ResetServiceUuid, void(void));
 };
 
 class MockA2dpInterface : public A2dpInterface {

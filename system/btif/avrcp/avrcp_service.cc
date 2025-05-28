@@ -137,6 +137,7 @@ public:
   void SaveControllerVersion(const RawAddress& bdaddr, uint16_t version) override {
     AVRC_SaveControllerVersion(bdaddr, version);
   }
+  void ResetServiceUuid() { AVRC_ResetServiceUuid(); }
 } avrcp_interface_;
 
 static class SdpInterfaceImpl : public SdpInterface {

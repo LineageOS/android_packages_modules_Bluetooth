@@ -109,6 +109,15 @@ struct AVRC_RemoveRecord {
 };
 extern struct AVRC_RemoveRecord AVRC_RemoveRecord;
 
+// Name: AVRC_ResetServiceUuid
+// Params: void
+// Return: void
+struct AVRC_ResetServiceUuid {
+  std::function<void(void)> body{[](void) {}};
+  void operator()(void) { body(); }
+};
+extern struct AVRC_ResetServiceUuid AVRC_ResetServiceUuid;
+
 }  // namespace stack_avrc_sdp
 }  // namespace mock
 }  // namespace test

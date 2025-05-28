@@ -787,4 +787,5 @@ bool AVRC_IsValidPlayerAttr(uint8_t attr);
 
 void AVRC_UpdateCcb(RawAddress* addr, uint32_t company_id);
 
+void AVRC_ResetServiceUuid();
 #endif /* AVRC_API_H */
