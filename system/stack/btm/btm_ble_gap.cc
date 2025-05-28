@@ -2213,6 +2213,7 @@ void btm_ble_process_adv_pkt_cont_for_inquiry(uint16_t evt_type, tBLE_ADDR_TYPE 
       update = false;
     } else {
       /* if yes, skip it */
+      log::debug("Address has already benn processed for this inquiry");
       return; /* assumption: one result per event */
     }
   }
@@ -2227,7 +2228,7 @@ void btm_ble_process_adv_pkt_cont_for_inquiry(uint16_t evt_type, tBLE_ADDR_TYPE 
       btm_cb.neighbor.le_inquiry.results++;
       btm_cb.neighbor.le_legacy_scan.results++;
     } else {
-      log::warn("Unable to allocate entry for inquiry result");
+      log::debug("Unable to allocate entry for inquiry result");
       return;
     }
   } else if (p_i->inq_count !=
@@ -2263,6 +2264,7 @@ void btm_ble_process_adv_pkt_cont_for_inquiry(uint16_t evt_type, tBLE_ADDR_TYPE 
 
   uint8_t result = btm_ble_is_discoverable(bda, advertising_data);
   if (result == 0) {
+    log::debug("BLE is not scanning");
     return;
   }
 
