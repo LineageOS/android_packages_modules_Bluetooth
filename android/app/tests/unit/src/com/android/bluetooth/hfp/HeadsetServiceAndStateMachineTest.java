@@ -1997,6 +1997,21 @@ public class HeadsetServiceAndStateMachineTest {
         assertThat(mHeadsetService.mExposedActiveDevice).isNull();
     }
 
+    @Test
+    @EnableFlags(FLAG_SCO_MANAGED_BY_AUDIO)
+    public void testSetActiveDeviceNull_broadcastsIntent() {
+        BluetoothDevice device = getTestDevice(0);
+        connectTestDevice(device);
+
+        assertThat(mHeadsetService.setActiveDevice(device)).isTrue();
+        mTestLooper.dispatchAll();
+
+        assertThat(mHeadsetService.setActiveDevice(null)).isTrue();
+        mTestLooper.dispatchAll();
+
+        verifyActiveDeviceChangedIntent(null);
+    }
+
     private void connectTestDevice(BluetoothDevice device) {
         doReturn(CONNECTION_POLICY_UNKNOWN)
                 .when(mDatabaseManager)
