@@ -112,7 +112,7 @@ import java.util.Set;
  * streaming over the active Bluetooth device.
  */
 public class ActiveDeviceManager implements AdapterService.BluetoothStateCallback {
-    private static final String TAG = ActiveDeviceManager.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + ActiveDeviceManager.class.getSimpleName();
 
     @VisibleForTesting static final int A2DP_HFP_SYNC_CONNECTION_TIMEOUT_MS = 5_000;
 

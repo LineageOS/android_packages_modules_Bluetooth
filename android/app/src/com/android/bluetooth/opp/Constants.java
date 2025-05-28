@@ -47,9 +47,9 @@ import java.util.regex.Pattern;
 // Next tag value for ContentProfileErrorReportUtils.report(): 1
 public class Constants {
     /** Tag used for debugging/logging */
-    public static final String TAG_PREFIX_BLUETOOTH_OPP = "BluetoothOpp";
+    public static final String BT_PREFIX_OPP = "BluetoothOpp";
 
-    static final String TAG = TAG_PREFIX_BLUETOOTH_OPP + Constants.class.getSimpleName();
+    static final String TAG = BT_PREFIX_OPP + Constants.class.getSimpleName();
 
     /**
      * The intent that gets sent when the service must wake up for a retry Note: Only retry Outbound

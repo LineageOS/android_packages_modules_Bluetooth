@@ -49,7 +49,7 @@ import java.util.Map;
  * is not connected with A2DP or HFP, it cannot enter silence mode.
  */
 public class SilenceDeviceManager {
-    private static final String TAG = SilenceDeviceManager.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + SilenceDeviceManager.class.getSimpleName();
 
     private final AdapterService mAdapterService;
     private final ServiceFactory mFactory;
