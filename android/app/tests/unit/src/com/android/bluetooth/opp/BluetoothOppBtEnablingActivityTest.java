@@ -56,17 +56,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class BluetoothOppBtEnablingActivityTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Spy BluetoothMethodProxy mBluetoothMethodProxy;
-
-    Intent mIntent;
-    Context mTargetContext;
-
-    int mRealTimeoutValue;
-
     // Activity tests can sometimes flaky because of external factors like system dialog, etc.
     // making the expected Espresso's root not focused or the activity doesn't show up.
     // Add retry rule to resolve this problem.
     @Rule public TestUtils.RetryTestRule mRetryTestRule = new TestUtils.RetryTestRule();
+
+    @Spy BluetoothMethodProxy mBluetoothMethodProxy;
+
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+
+    private Intent mIntent;
+
+    private int mRealTimeoutValue;
 
     @Before
     public void setUp() throws Exception {
@@ -75,12 +76,11 @@ public class BluetoothOppBtEnablingActivityTest {
         mBluetoothMethodProxy = Mockito.spy(BluetoothMethodProxy.getInstance());
         BluetoothMethodProxy.setInstanceForTesting(mBluetoothMethodProxy);
 
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-
         mIntent = new Intent();
-        mIntent.setClass(mTargetContext, BluetoothOppBtEnablingActivity.class);
+        mIntent.setClass(mContext, BluetoothOppBtEnablingActivity.class);
 
         mRealTimeoutValue = BluetoothOppBtEnablingActivity.sBtEnablingTimeoutMs;
+        BluetoothOppTestUtils.enableActivity(BluetoothOppBtEnablingActivity.class, true, mContext);
         TestUtils.setUpUiTest();
     }
 
@@ -89,6 +89,7 @@ public class BluetoothOppBtEnablingActivityTest {
         TestUtils.tearDownUiTest();
         BluetoothMethodProxy.setInstanceForTesting(null);
         BluetoothOppBtEnablingActivity.sBtEnablingTimeoutMs = mRealTimeoutValue;
+        BluetoothOppTestUtils.enableActivity(BluetoothOppBtEnablingActivity.class, false, mContext);
     }
 
     @Ignore("b/277594572")
@@ -153,7 +154,7 @@ public class BluetoothOppBtEnablingActivityTest {
                 activity -> {
                     Intent intent = new Intent(BluetoothAdapter.ACTION_STATE_CHANGED);
                     intent.putExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_ON);
-                    activity.mBluetoothReceiver.onReceive(mTargetContext, intent);
+                    activity.mBluetoothReceiver.onReceive(mContext, intent);
 
                     finishCalled.set(activity.isFinishing());
                 });

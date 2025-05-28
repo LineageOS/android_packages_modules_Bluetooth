@@ -27,7 +27,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -60,34 +59,31 @@ import java.util.Locale;
 /** Test cases for {@link BluetoothOppNotification}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppNotificationTest {
-    static final int TIMEOUT_MS = 3000;
-    static final int WORKAROUND_TIMEOUT = 3000;
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
-    @Mock BluetoothMethodProxy mMethodProxy;
-
-    Context mTargetContext;
-
-    BluetoothOppNotification mOppNotification;
-
-    ComponentName mReceiverName;
-    int mPreviousState;
 
     // Activity tests can sometimes flaky because of external factors like system dialog, etc.
     // making the expected Espresso's root not focused or the activity doesn't show up.
     // Add retry rule to resolve this problem.
     @Rule public TestUtils.RetryTestRule mRetryTestRule = new TestUtils.RetryTestRule();
 
+    @Mock BluetoothMethodProxy mMethodProxy;
+
+    private static final int TIMEOUT_MS = 3000;
+    private static final int WORKAROUND_TIMEOUT = 3000;
+
+    private Context mContext;
+    private BluetoothOppNotification mOppNotification;
+    private ComponentName mReceiverName;
+    private int mPreviousState;
+
     @Before
     public void setUp() throws Exception {
-        mTargetContext =
+        mContext =
                 spy(new ContextWrapper(InstrumentationRegistry.getInstrumentation().getContext()));
         BluetoothMethodProxy.setInstanceForTesting(mMethodProxy);
 
         InstrumentationRegistry.getInstrumentation()
-                .runOnMainSync(
-                        () -> mOppNotification = new BluetoothOppNotification(mTargetContext));
+                .runOnMainSync(() -> mOppNotification = new BluetoothOppNotification(mContext));
 
         Intents.init();
         TestUtils.setUpUiTest();
@@ -96,12 +92,9 @@ public class BluetoothOppNotificationTest {
 
         // Enable BluetoothOppReceiver and then check for dismissed notification
         mReceiverName =
-                new ComponentName(
-                        mTargetContext, com.android.bluetooth.opp.BluetoothOppReceiver.class);
-        mPreviousState =
-                mTargetContext.getPackageManager().getComponentEnabledSetting(mReceiverName);
-        mTargetContext
-                .getPackageManager()
+                new ComponentName(mContext, com.android.bluetooth.opp.BluetoothOppReceiver.class);
+        mPreviousState = mContext.getPackageManager().getComponentEnabledSetting(mReceiverName);
+        mContext.getPackageManager()
                 .setComponentEnabledSetting(
                         mReceiverName, COMPONENT_ENABLED_STATE_ENABLED, DONT_KILL_APP);
 
@@ -118,14 +111,12 @@ public class BluetoothOppNotificationTest {
         BluetoothMethodProxy.setInstanceForTesting(null);
         Intents.release();
 
-        mTargetContext
-                .getPackageManager()
+        mContext.getPackageManager()
                 .setComponentEnabledSetting(mReceiverName, mPreviousState, DONT_KILL_APP);
 
         // clear all OPP notifications after each test
         mOppNotification.cancelOppNotifications();
     }
-
 
     @Test
     @Ignore("b/288660228")
@@ -193,7 +184,7 @@ public class BluetoothOppNotificationTest {
 
         device.openNotification();
 
-        String titleString = mTargetContext.getString(R.string.outbound_noti_title);
+        String titleString = mContext.getString(R.string.outbound_noti_title);
         device.wait(Until.hasObject(By.text(titleString)), TIMEOUT_MS);
         UiObject2 title = device.findObject(By.text(titleString));
         assertThat(title).isNotNull();
@@ -273,7 +264,7 @@ public class BluetoothOppNotificationTest {
 
         device.openNotification();
 
-        String titleString = mTargetContext.getString(R.string.inbound_noti_title);
+        String titleString = mContext.getString(R.string.inbound_noti_title);
         device.wait(Until.hasObject(By.text(titleString)), TIMEOUT_MS);
         UiObject2 title = device.findObject(By.text(titleString));
         assertThat(title).isNotNull();
@@ -345,11 +336,10 @@ public class BluetoothOppNotificationTest {
                 UiDevice.getInstance(
                         androidx.test.platform.app.InstrumentationRegistry.getInstrumentation());
 
-        String titleString =
-                mTargetContext.getString(R.string.incoming_file_confirm_Notification_title);
+        String titleString = mContext.getString(R.string.incoming_file_confirm_Notification_title);
 
-        String confirmString = mTargetContext.getString(R.string.incoming_file_confirm_ok);
-        String declineString = mTargetContext.getString(R.string.incoming_file_confirm_cancel);
+        String confirmString = mContext.getString(R.string.incoming_file_confirm_ok);
+        String declineString = mContext.getString(R.string.incoming_file_confirm_cancel);
 
         device.wait(Until.hasObject(By.text(titleString)), TIMEOUT_MS);
         UiObject2 title = device.findObject(By.text(titleString));

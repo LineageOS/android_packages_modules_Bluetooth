@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppShareInfoTest {
+
     private BluetoothOppShareInfo mBluetoothOppShareInfo;
 
     @Before

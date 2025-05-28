@@ -398,22 +398,6 @@ public class AdapterService extends Service {
     }
 
     @VisibleForTesting
-    public AdapterService(
-            Context ctx,
-            AdapterNativeInterface nativeInterface,
-            GattNativeInterface gattNativeInterface,
-            AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
-            DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
-        this(
-                Looper.getMainLooper(),
-                ctx,
-                nativeInterface,
-                gattNativeInterface,
-                advertiseManagerNativeInterface,
-                distanceMeasurementNativeInterface);
-    }
-
-    @VisibleForTesting
     AdapterService(
             Looper looper,
             Context ctx,
