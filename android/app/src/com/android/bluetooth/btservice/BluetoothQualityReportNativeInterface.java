@@ -25,40 +25,15 @@ import android.bluetooth.BluetoothStatusCodes;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
-import com.android.internal.annotations.GuardedBy;
-import com.android.internal.annotations.VisibleForTesting;
 
 /** Native interface to BQR */
 public class BluetoothQualityReportNativeInterface {
     private static final String TAG = BluetoothQualityReportNativeInterface.class.getSimpleName();
 
-    @GuardedBy("INSTANCE_LOCK")
-    private static BluetoothQualityReportNativeInterface sInstance;
-
-    private static final Object INSTANCE_LOCK = new Object();
-
     private final AdapterService mAdapterService;
 
-    private BluetoothQualityReportNativeInterface(AdapterService adapterService) {
+    BluetoothQualityReportNativeInterface(AdapterService adapterService) {
         mAdapterService = requireNonNull(adapterService);
-    }
-
-    /** Get singleton instance. */
-    public static BluetoothQualityReportNativeInterface getInstance(AdapterService adapterService) {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new BluetoothQualityReportNativeInterface(adapterService);
-            }
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    static void setInstance(BluetoothQualityReportNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
     }
 
     /**
@@ -66,12 +41,12 @@ public class BluetoothQualityReportNativeInterface {
      *
      * <p>priorities to configure.
      */
-    public void init() {
+    void init() {
         initNative();
     }
 
     /** Cleanup the native interface. */
-    public void cleanup() {
+    void cleanup() {
         cleanupNative();
     }
 
