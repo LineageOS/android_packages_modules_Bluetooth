@@ -77,16 +77,19 @@ public class TestUtils {
         return getContext().getSystemService(BluetoothManager.class);
     }
 
-    /** Mocks {@link Context#getSystemService(Class)} to return a specific service instance. */
-    public static <T> void mockGetSystemService(Context context, Class<T> serviceClass, T service) {
-        doReturn(service).when(context).getSystemService(eq(serviceClass));
-    }
-
     /** Mocks {@link Context#getSystemService(Class)} to return a mock instance of the service. */
     public static <T> T mockGetSystemService(Context context, Class<T> serviceClass) {
         T mockedService = mock(serviceClass);
         mockGetSystemService(context, serviceClass, mockedService);
         return mockedService;
+    }
+
+    /** Mocks {@link Context#getSystemService(Class)} to return a specific service instance. */
+    public static <T> void mockGetSystemService(Context context, Class<T> serviceClass, T service) {
+        doReturn(service).when(context).getSystemService(serviceClass);
+        final var serviceName = getContext().getSystemServiceName(serviceClass);
+        doReturn(service).when(context).getSystemService(serviceName);
+        doReturn(serviceName).when(context).getSystemServiceName(serviceClass);
     }
 
     /**
