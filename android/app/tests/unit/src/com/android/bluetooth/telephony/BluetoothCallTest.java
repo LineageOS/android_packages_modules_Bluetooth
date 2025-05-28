@@ -37,6 +37,7 @@ import java.util.UUID;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothCallTest {
+
     private BluetoothCall mBluetoothCall;
 
     @Before
@@ -64,7 +65,6 @@ public class BluetoothCallTest {
     @Test
     public void constructor_withUuid() {
         UUID uuid = UUID.randomUUID();
-
         BluetoothCall bluetoothCall = new BluetoothCall(null, uuid);
 
         assertThat(bluetoothCall.getTbsCallId()).isEqualTo(uuid);
@@ -73,7 +73,6 @@ public class BluetoothCallTest {
     @Test
     public void setTbsCallId() {
         UUID uuid = UUID.randomUUID();
-
         mBluetoothCall.setTbsCallId(uuid);
 
         assertThat(mBluetoothCall.getTbsCallId()).isEqualTo(uuid);
@@ -381,7 +380,6 @@ public class BluetoothCallTest {
     @Test
     public void getIds_withEmptyList() {
         List<Call> calls = new ArrayList<>();
-
         List<Integer> result = BluetoothCall.getIds(calls);
 
         assertThat(result).isEmpty();
