@@ -77,3 +77,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "shutdown_main_thread_before_cleanup"
+    namespace: "bluetooth"
+    description: "Shutdown the legacy main thread before module cleanup"
+    bug: "420748721"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
