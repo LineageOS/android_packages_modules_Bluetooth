@@ -22,6 +22,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getBluetoothManager;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -35,10 +36,8 @@ import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.util.Log;
 
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.FakeObexServer;
@@ -75,7 +74,7 @@ public class PbapClientObexClientTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    private BluetoothAdapter mAdapter = null;
+    private final BluetoothAdapter mAdapter = getBluetoothManager().getAdapter();
     private final BluetoothDevice mDevice = getTestDevice(1);
 
     // Normal supported features for our client
@@ -107,11 +106,6 @@ public class PbapClientObexClientTest {
 
     @Before
     public void setUp() throws IOException {
-        mAdapter =
-                InstrumentationRegistry.getInstrumentation()
-                        .getContext()
-                        .getSystemService(BluetoothManager.class)
-                        .getAdapter();
         assertThat(mAdapter).isNotNull();
 
         mServer = new FakePbapObexServer();

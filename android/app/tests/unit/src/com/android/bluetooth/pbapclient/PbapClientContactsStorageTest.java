@@ -17,6 +17,7 @@
 package com.android.bluetooth.pbapclient;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getBluetoothManager;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -31,7 +32,6 @@ import static org.mockito.Mockito.verify;
 import android.accounts.Account;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.content.ContentProviderOperation;
 import android.content.Context;
 import android.content.OperationApplicationException;
@@ -42,7 +42,6 @@ import android.test.mock.MockContentResolver;
 import android.util.SparseArray;
 
 import androidx.test.filters.MediumTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.vcard.VCardConfig;
@@ -78,7 +77,7 @@ public class PbapClientContactsStorageTest {
     private static final int TEST_CONTACTS_SIZE = 200;
     private static final int DATA_PER_CONTACT = 1;
 
-    private BluetoothAdapter mAdapter = null;
+    private final BluetoothAdapter mAdapter = getBluetoothManager().getAdapter();
 
     @Mock private Context mMockContext;
     private MockContentResolver mMockContentResolver;
@@ -95,11 +94,6 @@ public class PbapClientContactsStorageTest {
 
     @Before
     public void setUp() throws Exception {
-        mAdapter =
-                InstrumentationRegistry.getInstrumentation()
-                        .getContext()
-                        .getSystemService(BluetoothManager.class)
-                        .getAdapter();
         assertThat(mAdapter).isNotNull();
 
         // Mock PbapClientAccountManager to add/remove from a locally managed list

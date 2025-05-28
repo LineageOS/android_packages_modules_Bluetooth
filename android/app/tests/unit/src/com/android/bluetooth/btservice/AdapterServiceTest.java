@@ -29,6 +29,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getBluetoothManager;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -268,7 +269,7 @@ public class AdapterServiceTest {
         when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockContext.getPackageManager()).thenReturn(mMockPackageManager);
 
-        mBluetoothManager = context.getSystemService(BluetoothManager.class);
+        mBluetoothManager = getBluetoothManager();
         mCompanionDeviceManager = context.getSystemService(CompanionDeviceManager.class);
         mDisplayManager = context.getSystemService(DisplayManager.class);
         mPermissionManager = context.getSystemService(PermissionManager.class);

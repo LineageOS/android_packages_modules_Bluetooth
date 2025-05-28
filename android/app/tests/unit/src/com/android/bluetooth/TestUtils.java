@@ -72,6 +72,11 @@ public class TestUtils {
         return InstrumentationRegistry.getInstrumentation().getContext();
     }
 
+    /** Returns the real {@link BluetoothManager} */
+    public static BluetoothManager getBluetoothManager() {
+        return getContext().getSystemService(BluetoothManager.class);
+    }
+
     /** Mocks {@link Context#getSystemService(Class)} to return a specific service instance. */
     public static <T> void mockGetSystemService(Context context, Class<T> serviceClass, T service) {
         doReturn(service).when(context).getSystemService(eq(serviceClass));
@@ -85,11 +90,11 @@ public class TestUtils {
     }
 
     /**
-     * Mocks {@code Context.getSystemService(BluetoothManager.class)} to return the actual {@link
+     * Mocks {@code Context.getSystemService(BluetoothManager.class)} to return the real {@link
      * BluetoothManager}.
      */
     public static void mockGetBluetoothManager(Context context) {
-        final var manager = getContext().getSystemService(BluetoothManager.class);
+        final var manager = getBluetoothManager();
         assertThat(manager).isNotNull();
         doReturn(manager).when(context).getSystemService(BluetoothManager.class);
     }
@@ -176,10 +181,7 @@ public class TestUtils {
     private static BluetoothDevice getDevice(String address, @AddressType int type) {
         assertThat(BluetoothAdapter.checkBluetoothAddress(address)).isTrue();
         BluetoothDevice testDevice =
-                getContext()
-                        .getSystemService(BluetoothManager.class)
-                        .getAdapter()
-                        .getRemoteLeDevice(address, type);
+                getBluetoothManager().getAdapter().getRemoteLeDevice(address, type);
         assertThat(testDevice).isNotNull();
         return testDevice;
     }

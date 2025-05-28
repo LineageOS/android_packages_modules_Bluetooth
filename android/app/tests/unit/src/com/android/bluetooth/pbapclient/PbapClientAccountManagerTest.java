@@ -17,6 +17,7 @@
 package com.android.bluetooth.pbapclient;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getBluetoothManager;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -35,7 +36,6 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -45,7 +45,6 @@ import android.os.Bundle;
 import android.os.HandlerThread;
 import android.os.UserManager;
 
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
@@ -68,7 +67,7 @@ public class PbapClientAccountManagerTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    private BluetoothAdapter mAdapter;
+    private final BluetoothAdapter mAdapter = getBluetoothManager().getAdapter();
 
     @Mock private Context mMockContext;
     @Mock private HandlerThread mMockHandlerThread;
@@ -87,11 +86,6 @@ public class PbapClientAccountManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        mAdapter =
-                InstrumentationRegistry.getInstrumentation()
-                        .getContext()
-                        .getSystemService(BluetoothManager.class)
-                        .getAdapter();
         assertThat(mAdapter).isNotNull();
 
         TestUtils.mockGetSystemService(mMockContext, AccountManager.class, mMockAccountManager);
