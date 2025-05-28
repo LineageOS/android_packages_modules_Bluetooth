@@ -370,7 +370,7 @@ public class TestActivity extends Activity {
 /** This class listens on OPUSH channel for incoming connection */
 class TestTcpListener {
     private static final String TAG =
-            Constants.TAG_PREFIX_BLUETOOTH_OPP + TestTcpListener.class.getSimpleName();
+            Constants.BT_PREFIX_OPP + TestTcpListener.class.getSimpleName();
 
     private static final boolean D = Log.isLoggable(TAG, Log.DEBUG);
 

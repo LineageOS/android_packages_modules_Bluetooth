@@ -66,7 +66,7 @@ import java.util.stream.IntStream;
 
 /** A set of methods useful in Bluetooth instrumentation tests */
 public class TestUtils {
-    private static final String TAG = Utils.TAG_PREFIX_BLUETOOTH + TestUtils.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + TestUtils.class.getSimpleName();
 
     private static Context getContext() {
         return InstrumentationRegistry.getInstrumentation().getContext();

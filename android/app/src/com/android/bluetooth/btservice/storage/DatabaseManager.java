@@ -61,8 +61,7 @@ import java.util.stream.Collectors;
  * The active device manager is responsible to handle a Room database for Bluetooth persistent data.
  */
 public class DatabaseManager {
-    private static final String TAG =
-            Utils.TAG_PREFIX_BLUETOOTH + DatabaseManager.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + DatabaseManager.class.getSimpleName();
 
     private static final int LOAD_DATABASE_TIMEOUT_MS = 500;
     private static final int MSG_LOAD_DATABASE = 0;

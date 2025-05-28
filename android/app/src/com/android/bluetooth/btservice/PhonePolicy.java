@@ -78,8 +78,7 @@ import java.util.Set;
 // will try to connect other profiles on the same device. This is to avoid collision if devices
 // somehow end up trying to connect at same time or general connection issues.
 public class PhonePolicy implements AdapterService.BluetoothStateCallback {
-    private static final String TAG =
-            Utils.TAG_PREFIX_BLUETOOTH + PhonePolicy.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + PhonePolicy.class.getSimpleName();
 
     private static final String AUTO_CONNECT_PROFILES_PROPERTY =
             "bluetooth.auto_connect_profiles.enabled";

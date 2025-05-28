@@ -89,8 +89,7 @@ import java.util.stream.Collectors;
  * killed
  */
 class AdapterServiceBinder extends IBluetooth.Stub {
-    private static final String TAG =
-            Utils.TAG_PREFIX_BLUETOOTH + AdapterServiceBinder.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + AdapterServiceBinder.class.getSimpleName();
 
     private static final int MIN_ADVT_INSTANCES_FOR_MA = 5;
     private static final int MIN_OFFLOADED_FILTERS = 10;

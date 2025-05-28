@@ -201,8 +201,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 public class AdapterService extends Service {
-    private static final String TAG =
-            Utils.TAG_PREFIX_BLUETOOTH + AdapterService.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + AdapterService.class.getSimpleName();
 
     private static final int MESSAGE_PROFILE_SERVICE_STATE_CHANGED = 1;
     private static final int MESSAGE_PROFILE_SERVICE_REGISTERED = 2;
@@ -1144,7 +1143,8 @@ public class AdapterService extends Service {
      *
      * @param profile the service being added.
      */
-    public void addProfile(ProfileService profile) {
+    @VisibleForTesting
+    void addProfile(ProfileService profile) {
         mHandler.obtainMessage(MESSAGE_PROFILE_SERVICE_REGISTERED, profile).sendToTarget();
     }
 
@@ -1153,7 +1153,7 @@ public class AdapterService extends Service {
      *
      * @param profile the service being removed.
      */
-    public void removeProfile(ProfileService profile) {
+    private void removeProfile(ProfileService profile) {
         mHandler.obtainMessage(MESSAGE_PROFILE_SERVICE_UNREGISTERED, profile).sendToTarget();
     }
 
@@ -1163,7 +1163,8 @@ public class AdapterService extends Service {
      * @param profile the service being removed.
      * @param state {@link BluetoothAdapter#STATE_ON} or {@link BluetoothAdapter#STATE_OFF}
      */
-    public void onProfileServiceStateChanged(ProfileService profile, int state) {
+    @VisibleForTesting
+    void onProfileServiceStateChanged(ProfileService profile, int state) {
         if (state != BluetoothAdapter.STATE_ON && state != BluetoothAdapter.STATE_OFF) {
             throw new IllegalArgumentException(nameForState(state));
         }

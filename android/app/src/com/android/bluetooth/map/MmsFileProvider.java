@@ -45,8 +45,7 @@ import java.io.IOException;
  */
 // Next tag value for ContentProfileErrorReportUtils.report(): 5
 public class MmsFileProvider extends ContentProvider {
-    private static final String TAG =
-            Utils.TAG_PREFIX_BLUETOOTH + MmsFileProvider.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + MmsFileProvider.class.getSimpleName();
 
     private final PipeWriter mPipeWriter = new PipeWriter();
 
