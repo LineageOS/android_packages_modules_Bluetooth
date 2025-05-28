@@ -32,6 +32,9 @@
 namespace bluetooth {
 namespace os {
 
+constexpr std::chrono::milliseconds kReactableUnregistrationTimeout =
+        std::chrono::milliseconds(1000);
+
 // A simple implementation of reactor-style looper.
 // When a reactor is running, the main loop is polling and blocked until at least one registered
 // reactable is ready to read or write. It will invoke on_read_ready() or on_write_ready(), which is
