@@ -668,6 +668,7 @@ public class HapClientService extends ConnectableProfile {
                     BluetoothStatusCodes.ERROR_REMOTE_OPERATION_NOT_SUPPORTED;
             case HapClientStackEvent.STATUS_PROCEDURE_ALREADY_IN_PROGRESS ->
                     BluetoothStatusCodes.ERROR_UNKNOWN;
+            case HapClientStackEvent.STATUS_TIMEOUT -> BluetoothStatusCodes.ERROR_TIMEOUT;
             default -> BluetoothStatusCodes.ERROR_UNKNOWN;
         };
     }
