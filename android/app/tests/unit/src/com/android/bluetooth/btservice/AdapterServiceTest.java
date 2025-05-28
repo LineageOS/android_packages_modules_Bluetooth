@@ -161,7 +161,6 @@ public class AdapterServiceTest {
 
     // SystemService that are not mocked
     private BluetoothManager mBluetoothManager;
-    private CompanionDeviceManager mCompanionDeviceManager;
     private DisplayManager mDisplayManager;
     private PowerManager mPowerManager;
     private PermissionManager mPermissionManager;
@@ -215,7 +214,9 @@ public class AdapterServiceTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.allCombinationsOf(Flags.FLAG_LIMIT_USER_SWITCH_PROPAGATION);
+        return FlagsParameterization.progressionOf(
+                Flags.FLAG_LIMIT_USER_SWITCH_PROPAGATION,
+                Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE);
     }
 
     public AdapterServiceTest(FlagsParameterization flags) {
@@ -281,7 +282,6 @@ public class AdapterServiceTest {
         when(mMockContext.getPackageManager()).thenReturn(mMockPackageManager);
 
         mBluetoothManager = getBluetoothManager();
-        mCompanionDeviceManager = context.getSystemService(CompanionDeviceManager.class);
         mDisplayManager = context.getSystemService(DisplayManager.class);
         mPermissionManager = context.getSystemService(PermissionManager.class);
         mPowerManager = context.getSystemService(PowerManager.class);
@@ -296,10 +296,7 @@ public class AdapterServiceTest {
         mockGetSystemService(Context.USER_SERVICE, UserManager.class);
         mockGetSystemService(Context.BATTERY_STATS_SERVICE, BatteryStatsManager.class);
         mockGetSystemService(Context.BLUETOOTH_SERVICE, BluetoothManager.class, mBluetoothManager);
-        mockGetSystemService(
-                Context.COMPANION_DEVICE_SERVICE,
-                CompanionDeviceManager.class,
-                mCompanionDeviceManager);
+        mockGetSystemService(Context.COMPANION_DEVICE_SERVICE, CompanionDeviceManager.class);
         mockGetSystemService(Context.DISPLAY_SERVICE, DisplayManager.class, mDisplayManager);
         mockGetSystemService(
                 Context.PERMISSION_SERVICE, PermissionManager.class, mPermissionManager);
