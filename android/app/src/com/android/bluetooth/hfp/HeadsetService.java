@@ -24,6 +24,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.media.audio.Flags.deprecateStreamBtSco;
+import static android.media.audio.Flags.unifyAbsoluteVolumeManagement;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
@@ -40,10 +41,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.AudioDeviceAttributes;
 import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
+import android.media.AudioDeviceVolumeManager;
 import android.media.AudioManager;
 import android.media.BluetoothProfileConnectionInfo;
+import android.media.VolumeInfo;
 import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Binder;
@@ -156,6 +160,8 @@ public class HeadsetService extends ProfileService {
     private final ArrayList<StateMachineTask> mPendingClccResponses = new ArrayList<>();
     private final AudioManagerAudioDeviceCallback mAudioManagerAudioDeviceCallback =
             new AudioManagerAudioDeviceCallback();
+
+    private final AudioManagerDeviceVolumeListener mAudioManagerDeviceVolumeListener;
     private static HeadsetService sHeadsetService;
 
     @VisibleForTesting boolean mIsAptXSwbEnabled = false;
@@ -219,13 +225,40 @@ public class HeadsetService extends ProfileService {
                     .registerAudioDeviceCallback(mAudioManagerAudioDeviceCallback, mHandler);
         }
 
+        if (unifyAbsoluteVolumeManagement()) {
+            mAudioManagerDeviceVolumeListener = new AudioManagerDeviceVolumeListener();
+        } else {
+            mAudioManagerDeviceVolumeListener = null;
+        }
+
         // Step 7: Setup broadcast receivers
         IntentFilter filter = new IntentFilter();
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         filter.addAction(Intent.ACTION_BATTERY_CHANGED);
-        filter.addAction(AudioManager.ACTION_VOLUME_CHANGED);
+        if (!unifyAbsoluteVolumeManagement()) {
+            filter.addAction(AudioManager.ACTION_VOLUME_CHANGED);
+        }
         filter.addAction(BluetoothDevice.ACTION_CONNECTION_ACCESS_REPLY);
         registerReceiver(mHeadsetReceiver, filter);
+    }
+
+    private void initializeDeviceAbsoluteVolumeBehavior(BluetoothDevice device) {
+        AudioManager audioManager = mSystemInterface.getAudioManager();
+        AudioDeviceAttributes attributes =
+                new AudioDeviceAttributes(
+                        AudioDeviceAttributes.ROLE_OUTPUT,
+                        AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+                        device.getAddress());
+        VolumeInfo volumeInfo =
+                new VolumeInfo.Builder(AudioManager.STREAM_VOICE_CALL)
+                        .setMaxVolumeIndex(
+                                audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL))
+                        .setMinVolumeIndex(0)
+                        .build();
+        mSystemInterface
+                .getAudioDeviceVolumeManager()
+                .setDeviceAbsoluteVolumeBehavior(
+                        attributes, volumeInfo, mHandler::post, mAudioManagerDeviceVolumeListener);
     }
 
     public static boolean isEnabled() {
@@ -440,21 +473,26 @@ public class HeadsetService extends ProfileService {
                             }
                         case AudioManager.ACTION_VOLUME_CHANGED:
                             {
-                                int streamType =
-                                        intent.getIntExtra(
-                                                AudioManager.EXTRA_VOLUME_STREAM_TYPE, -1);
-                                int volStream = AudioManager.STREAM_BLUETOOTH_SCO;
-                                if (deprecateStreamBtSco()) {
-                                    volStream = AudioManager.STREAM_VOICE_CALL;
+                                if (!unifyAbsoluteVolumeManagement()) {
+                                    Log.i(TAG, "received action volume changed");
+                                    int streamType =
+                                            intent.getIntExtra(
+                                                    AudioManager.EXTRA_VOLUME_STREAM_TYPE, -1);
+                                    int volStream = AudioManager.STREAM_BLUETOOTH_SCO;
+                                    if (deprecateStreamBtSco()) {
+                                        volStream = AudioManager.STREAM_VOICE_CALL;
+                                    }
+                                    if (streamType == volStream) {
+                                        Log.i(TAG, "sending message to HSSM");
+                                        doForEachConnectedStateMachine(
+                                                stateMachine ->
+                                                        stateMachine.sendMessage(
+                                                                HeadsetStateMachine
+                                                                        .INTENT_SCO_VOLUME_CHANGED,
+                                                                intent));
+                                    }
                                 }
-                                if (streamType == volStream) {
-                                    doForEachConnectedStateMachine(
-                                            stateMachine ->
-                                                    stateMachine.sendMessage(
-                                                            HeadsetStateMachine
-                                                                    .INTENT_SCO_VOLUME_CHANGED,
-                                                            intent));
-                                }
+
                                 break;
                             }
                         case BluetoothDevice.ACTION_CONNECTION_ACCESS_REPLY:
@@ -1214,7 +1252,13 @@ public class HeadsetService extends ProfileService {
                 } else {
                     broadcastActiveDevice(mActiveDevice);
                 }
+                if (unifyAbsoluteVolumeManagement()) {
+                    initializeDeviceAbsoluteVolumeBehavior(mActiveDevice);
+                }
             } else if (shouldPersistAudio()) {
+                if (unifyAbsoluteVolumeManagement()) {
+                    initializeDeviceAbsoluteVolumeBehavior(mActiveDevice);
+                }
                 if (mSystemInterface.isScoManagedByAudioEnabled()) {
                     // tell Audio Framework that active device changed
                     mSystemInterface
@@ -1254,6 +1298,9 @@ public class HeadsetService extends ProfileService {
                                     BluetoothProfileConnectionInfo.createHfpInfo());
                 } else {
                     broadcastActiveDevice(mActiveDevice);
+                }
+                if (unifyAbsoluteVolumeManagement()) {
+                    initializeDeviceAbsoluteVolumeBehavior(mActiveDevice);
                 }
             }
             updateInbandRinging(device, true);
@@ -2162,6 +2209,44 @@ public class HeadsetService extends ProfileService {
                 UserHandle.ALL,
                 BLUETOOTH_CONNECT,
                 Utils.getTempBroadcastOptions().toBundle());
+    }
+
+    class AudioManagerDeviceVolumeListener
+            implements AudioDeviceVolumeManager.OnAudioDeviceVolumeChangedListener {
+
+        @Override
+        public void onAudioDeviceVolumeChanged(
+                @NonNull AudioDeviceAttributes device, @NonNull VolumeInfo vol) {
+            Log.i(TAG, "In onAudioDeviceVolumeChanged");
+            int streamType = vol.getStreamType();
+            int volStream = AudioManager.STREAM_BLUETOOTH_SCO;
+            if (deprecateStreamBtSco()) {
+                volStream = AudioManager.STREAM_VOICE_CALL;
+            }
+            if (streamType != volStream) {
+                Log.d(
+                        TAG,
+                        "onAudioDeviceVolumeChanged: skip for stream type "
+                                + streamType
+                                + ", expected "
+                                + volStream);
+                return;
+            }
+            Log.i(TAG, "sending message to HSSM");
+            doForEachConnectedStateMachine(
+                    stateMachine ->
+                            stateMachine.sendMessage(
+                                    HeadsetStateMachine.SCO_VOLUME_CHANGED, vol.getVolumeIndex()));
+        }
+
+        @Override
+        public void onAudioDeviceVolumeAdjusted(
+                @androidx.annotation.NonNull AudioDeviceAttributes device,
+                @androidx.annotation.NonNull VolumeInfo vol,
+                int direction,
+                int mode) {
+            Log.e(TAG, "onAudioDeviceVolumeAdjusted is not expected to be called");
+        }
     }
 
     /* Notifications of audio device connection/disconnection events. */

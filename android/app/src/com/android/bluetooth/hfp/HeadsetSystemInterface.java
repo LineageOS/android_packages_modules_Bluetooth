@@ -23,6 +23,7 @@ import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.media.AudioDeviceVolumeManager;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.PowerManager;
@@ -48,6 +49,7 @@ class HeadsetSystemInterface {
     private final AdapterService mAdapterService;
     private final HeadsetService mHeadsetService;
     private final AudioManager mAudioManager;
+    private final AudioDeviceVolumeManager mAudioDeviceVolumeManager;
     private final HeadsetPhoneState mHeadsetPhoneState;
     private final PowerManager.WakeLock mVoiceRecognitionWakeLock;
     private final TelephonyManager mTelephonyManager;
@@ -65,6 +67,8 @@ class HeadsetSystemInterface {
         mAdapterService = adapterService;
         mHeadsetService = headsetService;
         mAudioManager = mAdapterService.getSystemService(AudioManager.class);
+        mAudioDeviceVolumeManager =
+                mAdapterService.getSystemService(AudioDeviceVolumeManager.class);
         PowerManager powerManager = mAdapterService.getSystemService(PowerManager.class);
         mVoiceRecognitionWakeLock =
                 powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG + ":VoiceRecognition");
@@ -91,6 +95,15 @@ class HeadsetSystemInterface {
      */
     public AudioManager getAudioManager() {
         return mAudioManager;
+    }
+
+    /**
+     * Get audio device volume manager.
+     *
+     * @return audio device volume manager for adjusting audio volume
+     */
+    public AudioDeviceVolumeManager getAudioDeviceVolumeManager() {
+        return mAudioDeviceVolumeManager;
     }
 
     /**
