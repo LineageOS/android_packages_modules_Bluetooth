@@ -23,6 +23,7 @@ import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothProfile;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
@@ -106,5 +107,11 @@ public class ConnectableProfileTest {
     @Test
     public void getConnectionState_returnsStateDisconnect() {
         assertThat(mConnectableProfile.getConnectionState(mDevice)).isEqualTo(STATE_DISCONNECTED);
+    }
+
+    @Test
+    public void setConnectionPolicy_returnsFalse() {
+        final var policyUnknown = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+        assertThat(mConnectableProfile.setConnectionPolicy(mDevice, policyUnknown)).isFalse();
     }
 }

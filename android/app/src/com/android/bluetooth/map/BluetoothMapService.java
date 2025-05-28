@@ -667,7 +667,8 @@ public class BluetoothMapService extends ConnectableProfile {
      * @return true if connectionPolicy is set, false on error
      */
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
-    boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
+    @Override
+    public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         enforceCallingOrSelfPermission(
                 BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
         Log.v(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);

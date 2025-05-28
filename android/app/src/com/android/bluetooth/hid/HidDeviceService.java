@@ -453,6 +453,7 @@ public class HidDeviceService extends ConnectableProfile {
      * @return true if hid device is connected or disconnected, false otherwise
      */
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         enforceCallingOrSelfPermission(
                 BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");

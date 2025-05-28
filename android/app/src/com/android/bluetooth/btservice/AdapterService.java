@@ -3421,99 +3421,52 @@ public class AdapterService extends Service {
     }
 
     /** All profile toggles are disabled, so connects all supported profiles */
-    void connectAllSupportedProfiles(BluetoothDevice device) {
+    private void connectAllSupportedProfiles(BluetoothDevice device) {
         int numProfilesConnected = 0;
 
         // Order matters, some devices do not accept A2DP connection before HFP connection
-        if (mHeadsetService != null && isProfileSupported(device, BluetoothProfile.HEADSET)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting Headset Profile");
-            mHeadsetService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mHeadsetService, device)) {
             numProfilesConnected++;
         }
-        if (mHeadsetClientService != null
-                && isProfileSupported(device, BluetoothProfile.HEADSET_CLIENT)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting HFP");
-            mHeadsetClientService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mHeadsetClientService, device)) {
             numProfilesConnected++;
         }
-        if (mA2dpService != null && isProfileSupported(device, BluetoothProfile.A2DP)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting A2dp");
-            // Set connection policy also connects the profile with CONNECTION_POLICY_ALLOWED
-            mA2dpService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mA2dpService, device)) {
             numProfilesConnected++;
         }
-        if (mA2dpSinkService != null && isProfileSupported(device, BluetoothProfile.A2DP_SINK)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting A2dp Sink");
-            mA2dpSinkService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mA2dpSinkService, device)) {
             numProfilesConnected++;
         }
-        if (mMapClientService != null && isProfileSupported(device, BluetoothProfile.MAP_CLIENT)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting MAP");
-            mMapClientService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mMapClientService, device)) {
             numProfilesConnected++;
         }
-        if (mHidHostService != null && isProfileSupported(device, BluetoothProfile.HID_HOST)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting Hid Host Profile");
-            mHidHostService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mHidHostService, device)) {
             numProfilesConnected++;
         }
-        if (mPanService != null && isProfileSupported(device, BluetoothProfile.PAN)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting Pan Profile");
-            mPanService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mPanService, device)) {
             numProfilesConnected++;
         }
-        if (mPbapClientService != null
-                && isProfileSupported(device, BluetoothProfile.PBAP_CLIENT)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting Pbap");
-            mPbapClientService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mPbapClientService, device)) {
             numProfilesConnected++;
         }
-        if (mHearingAidService != null
-                && isProfileSupported(device, BluetoothProfile.HEARING_AID)) {
-            if (mHapClientService != null
-                    && isProfileSupported(device, BluetoothProfile.HAP_CLIENT)) {
-                Log.i(
-                        TAG,
-                        "connectAllSupportedProfiles: Hearing Access Client Profile is enabled at"
-                                + " the same time with Hearing Aid Profile, ignore Hearing Aid"
-                                + " Profile");
-            } else {
-                Log.i(TAG, "connectAllSupportedProfiles: Connecting Hearing Aid Profile");
-                mHearingAidService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
-                numProfilesConnected++;
-            }
-        }
-        if (mHapClientService != null && isProfileSupported(device, BluetoothProfile.HAP_CLIENT)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting Hearing Access Client Profile");
-            mHapClientService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mHapClientService, device)) {
+            numProfilesConnected++;
+        } else if (connectIfProfileSupported(mHearingAidService, device)) {
             numProfilesConnected++;
         }
-        if (mVolumeControlService != null
-                && isProfileSupported(device, BluetoothProfile.VOLUME_CONTROL)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting Volume Control Profile");
-            mVolumeControlService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mVolumeControlService, device)) {
             numProfilesConnected++;
         }
-        if (mCsipSetCoordinatorService != null
-                && isProfileSupported(device, BluetoothProfile.CSIP_SET_COORDINATOR)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting Coordinated Set Profile");
-            mCsipSetCoordinatorService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mCsipSetCoordinatorService, device)) {
             numProfilesConnected++;
         }
-        if (mLeAudioService != null && isProfileSupported(device, BluetoothProfile.LE_AUDIO)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting LeAudio profile (BAP)");
-            mLeAudioService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mLeAudioService, device)) {
             numProfilesConnected++;
         }
-        if (mBassClientService != null
-                && isProfileSupported(device, BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting LE Broadcast Assistant Profile");
-            mBassClientService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mBassClientService, device)) {
             numProfilesConnected++;
         }
-        if (mBatteryService != null && isProfileSupported(device, BluetoothProfile.BATTERY)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting Battery Service");
-            mBatteryService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mBatteryService, device)) {
             numProfilesConnected++;
         }
 
@@ -3521,6 +3474,16 @@ public class AdapterService extends Service {
                 TAG,
                 "connectAllSupportedProfiles: Number of Profiles Connected: "
                         + numProfilesConnected);
+    }
+
+    private boolean connectIfProfileSupported(ConnectableProfile profile, BluetoothDevice device) {
+        if (profile == null || !isProfileSupported(device, profile.getProfileId())) {
+            return false;
+        }
+
+        Log.i(TAG, "connectIfProfileSupported: Connecting " + profile.getName());
+        profile.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        return true;
     }
 
     /**
