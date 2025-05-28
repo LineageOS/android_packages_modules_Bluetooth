@@ -201,7 +201,6 @@ static void clean_up_stack(ProfileStopCallback stopProfiles) {
 static bool get_stack_is_running() { return stack_is_running; }
 
 // Internal functions
-extern const module_t bt_utils_module;
 extern const module_t btif_config_module;
 extern const module_t gd_shim_module;
 extern const module_t interop_module;
