@@ -407,6 +407,10 @@ static void event_clean_up_stack(std::promise<void> promise, ProfileStopCallback
 
   btif_cleanup_bluetooth();
 
+  if (com::android::bluetooth::flags::shutdown_main_thread_before_cleanup()) {
+    main_thread_shut_down();
+  }
+
   module_clean_up(get_local_module(STACK_CONFIG_MODULE));
   module_clean_up(get_local_module(INTEROP_MODULE));
 
@@ -418,7 +422,9 @@ static void event_clean_up_stack(std::promise<void> promise, ProfileStopCallback
 
   module_clean_up(get_local_module(OSI_MODULE));
 
-  main_thread_shut_down();
+  if (!com::android::bluetooth::flags::shutdown_main_thread_before_cleanup()) {
+    main_thread_shut_down();
+  }
 
   module_management_stop();
   info("finished");
