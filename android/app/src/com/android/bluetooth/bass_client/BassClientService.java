@@ -1829,20 +1829,6 @@ public class BassClientService extends ConnectableProfile {
     }
 
     /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device paired bluetooth device
-     * @return connection policy of the device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
-    }
-
-    /**
      * Register callbacks that will be invoked during scan offloading.
      *
      * @param cb callbacks to be invoked

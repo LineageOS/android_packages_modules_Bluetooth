@@ -485,10 +485,6 @@ public class VolumeControlService extends ConnectableProfile {
         return true;
     }
 
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
-    }
-
     boolean isVolumeOffsetAvailable(BluetoothDevice device) {
         VolumeControlOffsetDescriptor offsets = mAudioOffsets.get(device);
         if (offsets == null) {

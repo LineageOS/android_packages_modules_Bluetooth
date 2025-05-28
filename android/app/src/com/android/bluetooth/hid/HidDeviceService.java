@@ -476,6 +476,7 @@ public class HidDeviceService extends ConnectableProfile {
      * @return connection policy of the device
      */
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
+    @Override
     public int getConnectionPolicy(BluetoothDevice device) {
         if (device == null) {
             throw new IllegalArgumentException("Null device");

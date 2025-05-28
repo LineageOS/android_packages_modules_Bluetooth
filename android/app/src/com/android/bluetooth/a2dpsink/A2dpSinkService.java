@@ -339,16 +339,6 @@ public class A2dpSinkService extends ConnectableProfile {
         return true;
     }
 
-    /**
-     * Get the connection policy of the profile.
-     *
-     * @param device the remote device
-     * @return connection policy of the specified device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
-    }
-
     @Override
     public void dump(StringBuilder sb) {
         super.dump(sb);

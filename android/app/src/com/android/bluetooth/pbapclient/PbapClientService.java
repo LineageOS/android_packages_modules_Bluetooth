@@ -722,6 +722,7 @@ public class PbapClientService extends ConnectableProfile {
      * @param device Bluetooth device
      * @return connection policy of the device
      */
+    @Override
     public int getConnectionPolicy(BluetoothDevice device) {
         if (device == null) {
             throw new IllegalArgumentException("Null device");

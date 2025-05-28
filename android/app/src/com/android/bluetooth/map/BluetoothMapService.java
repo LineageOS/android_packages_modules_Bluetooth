@@ -689,7 +689,8 @@ public class BluetoothMapService extends ConnectableProfile {
      * @return connection policy of the device
      */
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
-    int getConnectionPolicy(BluetoothDevice device) {
+    @Override
+    public int getConnectionPolicy(BluetoothDevice device) {
         enforceCallingOrSelfPermission(
                 BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
         return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);

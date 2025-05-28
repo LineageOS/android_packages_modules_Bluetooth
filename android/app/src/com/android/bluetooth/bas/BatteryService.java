@@ -341,11 +341,6 @@ public class BatteryService extends ConnectableProfile {
         return true;
     }
 
-    /** Gets the connection policy for the battery service of the given device. */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
-    }
-
     /** Called when the battery level of the device is notified. */
     void handleBatteryChanged(BluetoothDevice device, int batteryLevel) {
         mAdapterService.setBatteryLevel(device, batteryLevel, /* isBas= */ true);

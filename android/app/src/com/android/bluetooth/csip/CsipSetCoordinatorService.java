@@ -436,16 +436,6 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
     }
 
     /**
-     * Get the connection policy of the profile.
-     *
-     * @param device the remote device
-     * @return connection policy of the specified device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
-    }
-
-    /**
      * Lock a given group.
      *
      * @param groupId group ID to lock

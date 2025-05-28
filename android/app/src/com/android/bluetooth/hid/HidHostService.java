@@ -813,21 +813,6 @@ public class HidHostService extends ConnectableProfile {
     }
 
     /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        Log.d(TAG, "getConnectionPolicy: device=" + device);
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
-    }
-
-    /**
      * @see BluetoothHidHost#getPreferredTransport
      */
     int getPreferredTransport(BluetoothDevice device) {

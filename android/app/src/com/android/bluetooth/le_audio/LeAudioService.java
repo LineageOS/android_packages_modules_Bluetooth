@@ -4566,22 +4566,6 @@ public class LeAudioService extends ConnectableProfile {
     }
 
     /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        int connection_policy = mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
-        Log.d(TAG, device + " connection policy = " + connection_policy);
-        return connection_policy;
-    }
-
-    /**
      * Get device group id. Devices with same group id belong to same group (i.e left and right
      * earbud)
      *

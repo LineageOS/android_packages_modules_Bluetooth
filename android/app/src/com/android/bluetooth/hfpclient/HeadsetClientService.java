@@ -422,20 +422,6 @@ public class HeadsetClientService extends ConnectableProfile {
         return true;
     }
 
-    /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
-    }
-
     boolean startVoiceRecognition(BluetoothDevice device) {
         HeadsetClientStateMachine sm = getStateMachine(device);
         if (sm == null) {

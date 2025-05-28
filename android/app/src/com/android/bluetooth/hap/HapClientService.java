@@ -341,20 +341,6 @@ public class HapClientService extends ConnectableProfile {
         return true;
     }
 
-    /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
-    }
-
     /** Check whether it can connect to a peer device. */
     boolean okToConnect(BluetoothDevice device) {
         // Check if this is an incoming connection in Quiet mode.
