@@ -1691,7 +1691,7 @@ public:
     return true;
   }
 
-  void PrepareStreamForAConversational(LeAudioDeviceGroup* group) {
+  bool PrepareStreamForAConversational(LeAudioDeviceGroup* group) {
     log::debug("group_id: {}", group->group_id_);
 
     auto remote_direction = bluetooth::le_audio::types::kLeAudioDirectionSink;
@@ -1701,7 +1701,7 @@ public:
       if (!com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
         log::error("Something went wrong {} != {} ", ToString(configuration_context_type_),
                    ToString(LeAudioContextType::CONVERSATIONAL));
-        return;
+        return false;
       }
 
       if ((configuration_context_type_ == LeAudioContextType::GAME) && group->IsGmapEnabled()) {
@@ -1709,7 +1709,7 @@ public:
       } else {
         log::error("Something went wrong {} != {} ", ToString(configuration_context_type_),
                    ToString(LeAudioContextType::CONVERSATIONAL));
-        return;
+        return false;
       }
     }
 
@@ -1717,6 +1717,7 @@ public:
       log::info("Reconfiguration is needed for group {}", group->group_id_);
       initReconfiguration(group, LeAudioContextType::UNSPECIFIED);
     }
+    return true;
   }
 
   void GroupSetActive(const int group_id) override {
@@ -1823,7 +1824,11 @@ public:
        * phone is in a call.
        */
       if (prepare_for_a_call) {
-        PrepareStreamForAConversational(group);
+        if (!PrepareStreamForAConversational(group)) {
+          log::error("Could not configure group {} for a call", group->group_id_);
+          callbacks_->OnGroupStatus(active_group_id_, GroupStatus::INACTIVE);
+          return;
+        }
       }
 
     } else {
