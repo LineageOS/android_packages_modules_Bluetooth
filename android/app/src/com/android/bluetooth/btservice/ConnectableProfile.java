@@ -16,15 +16,22 @@
 
 package com.android.bluetooth.btservice;
 
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.util.Log;
 
+import com.android.bluetooth.btservice.storage.DatabaseManager;
+
 /** Base class for a Bluetooth profile that supports connection semantics. */
 public abstract class ConnectableProfile extends ProfileService {
 
+    protected final DatabaseManager mDatabaseManager;
+
     protected ConnectableProfile(int id, AdapterService adapterService) {
         super(id, adapterService);
+        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
     }
 
     /**

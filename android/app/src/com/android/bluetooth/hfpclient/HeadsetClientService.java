@@ -46,7 +46,6 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -79,7 +78,6 @@ public class HeadsetClientService extends ConnectableProfile {
             new HashMap<>();
 
     private final HandlerThread mSmThread;
-    private final DatabaseManager mDatabaseManager;
     private final AudioManager mAudioManager;
     private final HeadsetClientNativeInterface mNativeInterface;
     private final BatteryManager mBatteryManager;
@@ -96,7 +94,6 @@ public class HeadsetClientService extends ConnectableProfile {
     HeadsetClientService(
             AdapterService adapterService, HeadsetClientNativeInterface nativeInterface) {
         super(BluetoothProfile.HEADSET_CLIENT, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(adapterService.getDatabase());
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
         mMaxAmVcVol = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
         mMinAmVcVol = mAudioManager.getStreamMinVolume(AudioManager.STREAM_VOICE_CALL);

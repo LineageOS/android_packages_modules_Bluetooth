@@ -49,7 +49,6 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.HandlerExecutor;
 
@@ -77,7 +76,6 @@ public class PanService extends ConnectableProfile {
 
     private final Map<String, IBluetoothPanCallback> mBluetoothTetheringCallbacks = new HashMap<>();
     private final PanNativeInterface mNativeInterface;
-    private final DatabaseManager mDatabaseManager;
     private final TetheringManager mTetheringManager;
     private final UserManager mUserManager;
     private final int mMaxPanDevices;
@@ -112,7 +110,6 @@ public class PanService extends ConnectableProfile {
     @VisibleForTesting
     PanService(AdapterService adapterService, PanNativeInterface nativeInterface, Looper looper) {
         super(BluetoothProfile.PAN, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(nativeInterface, () -> new PanNativeInterface(this));
         mUserManager = requireNonNull(obtainSystemService(UserManager.class));

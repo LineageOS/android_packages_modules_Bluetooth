@@ -131,7 +131,6 @@ public class HeadsetService extends ConnectableProfile {
     // Timeout for state machine thread join, to prevent potential ANR.
     private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1000;
 
-    private final DatabaseManager mDatabaseManager;
     private final HeadsetNativeInterface mNativeInterface;
     private final HashMap<BluetoothDevice, HeadsetStateMachine> mStateMachines = new HashMap<>();
     private final Handler mHandler;
@@ -183,7 +182,6 @@ public class HeadsetService extends ConnectableProfile {
     HeadsetService(
             AdapterService adapterService, HeadsetNativeInterface nativeInterface, Looper looper) {
         super(BluetoothProfile.HEADSET, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface, () -> new HeadsetNativeInterface(mAdapterService, this));

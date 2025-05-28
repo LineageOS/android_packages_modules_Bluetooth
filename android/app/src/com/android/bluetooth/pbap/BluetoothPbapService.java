@@ -63,7 +63,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.InteropUtil;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
@@ -151,7 +150,6 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
     private final BluetoothPbapContentObserver mContactChangeObserver =
             new BluetoothPbapContentObserver();
 
-    private final DatabaseManager mDatabaseManager;
     private final NotificationManager mNotificationManager;
     private final PbapHandler mSessionStatusHandler;
     private final HandlerThread mHandlerThread;
@@ -179,7 +177,6 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
     @VisibleForTesting
     BluetoothPbapService(AdapterService adapterService, NotificationManager notificationManager) {
         super(BluetoothProfile.PBAP, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNotificationManager =
                 requireNonNullElseGet(
                         notificationManager, () -> obtainSystemService(NotificationManager.class));

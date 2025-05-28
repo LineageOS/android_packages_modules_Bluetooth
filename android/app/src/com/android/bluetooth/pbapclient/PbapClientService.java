@@ -41,7 +41,6 @@ import android.util.Log;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfpclient.HfpClientConnectionService;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
@@ -73,7 +72,6 @@ public class PbapClientService extends ConnectableProfile {
 
     private final PbapClientContactsStorage mPbapClientContactsStorage;
     private final PbapClientAccountManager mPbapClientAccountManager;
-    private final DatabaseManager mDatabaseManager;
     private final Map<BluetoothDevice, PbapClientStateMachine> mPbapClientStateMachineMap;
     private final Handler mHandler;
     private final Looper mStateMachinesLooper;
@@ -118,7 +116,6 @@ public class PbapClientService extends ConnectableProfile {
 
     public PbapClientService(AdapterService adapterService) {
         super(BluetoothProfile.PBAP_CLIENT, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new Handler(Looper.getMainLooper());
         mStateMachinesLooper = null;
 
@@ -149,7 +146,6 @@ public class PbapClientService extends ConnectableProfile {
             Map<BluetoothDevice, PbapClientStateMachine> deviceMap,
             Looper looper) {
         super(BluetoothProfile.PBAP_CLIENT, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
 
         // This is an override unique to this constructor which belongs to tests only
         mHandler = new Handler(looper);
@@ -740,7 +736,6 @@ public class PbapClientService extends ConnectableProfile {
     @VisibleForTesting
     PbapClientService(AdapterService adapterService, PbapClientAccountManager accountManager) {
         super(BluetoothProfile.PBAP_CLIENT, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new Handler(Looper.getMainLooper());
         mStateMachinesLooper = null;
 

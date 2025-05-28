@@ -47,7 +47,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.MetricsLogger;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 
 import java.util.Collections;
@@ -101,7 +100,6 @@ public class HidHostService extends ConnectableProfile {
     private final Map<BluetoothDevice, InputDevice> mInputDevices =
             Collections.synchronizedMap(new HashMap<>());
 
-    private final DatabaseManager mDatabaseManager;
     private final HidHostNativeInterface mNativeInterface;
 
     private static final int MESSAGE_CONNECT = 1;
@@ -131,7 +129,6 @@ public class HidHostService extends ConnectableProfile {
     @VisibleForTesting
     HidHostService(AdapterService adapterService, HidHostNativeInterface nativeInterface) {
         super(BluetoothProfile.HID_HOST, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(nativeInterface, () -> new HidHostNativeInterface(this));
         mNativeInterface.init();

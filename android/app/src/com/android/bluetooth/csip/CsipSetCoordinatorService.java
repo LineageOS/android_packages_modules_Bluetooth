@@ -53,7 +53,6 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -79,7 +78,6 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
 
     private static CsipSetCoordinatorService sCsipSetCoordinatorService;
 
-    private final DatabaseManager mDatabaseManager;
     private final Handler mHandler;
     private final HandlerThread mStateMachinesThread;
     private final Looper mStateMachinesLooper;
@@ -116,7 +114,6 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
             CsipSetCoordinatorNativeInterface nativeInterface,
             ServiceFactory serviceFactory) {
         super(BluetoothProfile.CSIP_SET_COORDINATOR, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,

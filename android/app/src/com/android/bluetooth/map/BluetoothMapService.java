@@ -57,7 +57,6 @@ import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -113,7 +112,6 @@ public class BluetoothMapService extends ConnectableProfile {
 
     private final MapBroadcastReceiver mMapReceiver = new MapBroadcastReceiver();
 
-    private final DatabaseManager mDatabaseManager;
     private final Handler mSessionStatusHandler;
     private final BluetoothMapAppObserver mAppObserver;
     private final boolean mSmsCapable;
@@ -155,8 +153,6 @@ public class BluetoothMapService extends ConnectableProfile {
     public BluetoothMapService(AdapterService adapterService) {
         super(BluetoothProfile.MAP, requireNonNull(adapterService));
         BluetoothMap.invalidateBluetoothGetConnectionStateCache();
-
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
 
         setComponentAvailable(MAP_FILE_PROVIDER, true);
 

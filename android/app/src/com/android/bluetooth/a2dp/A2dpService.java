@@ -83,7 +83,6 @@ public class A2dpService extends ConnectableProfile {
     private final A2dpNativeInterface mNativeInterface;
     private final A2dpCodecConfig mA2dpCodecConfig;
     private final AudioManager mAudioManager;
-    private final DatabaseManager mDatabaseManager;
     private final CompanionDeviceManager mCompanionDeviceManager;
     private final Looper mLooper;
     private final Handler mHandler;
@@ -124,7 +123,6 @@ public class A2dpService extends ConnectableProfile {
                                 new A2dpNativeInterface(
                                         adapterService,
                                         new A2dpNativeCallback(adapterService, this)));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
         mCompanionDeviceManager = requireNonNull(obtainSystemService(CompanionDeviceManager.class));
         mLooper = requireNonNull(looper);

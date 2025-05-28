@@ -47,6 +47,7 @@ import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerService;
 import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.storage.DatabaseManager;
 
 import org.junit.After;
 import org.junit.Before;
@@ -68,8 +69,9 @@ public class A2dpSinkStreamHandlerTest {
     @Mock private AvrcpControllerNativeInterface mMockAvrcpControllerNativeInterface;
     @Mock private AudioManager mAudioManager;
     @Mock private Resources mResources;
-    @Mock private PackageManager mPackageManager;
     @Mock private AdapterService mAdapterService;
+    @Mock private DatabaseManager mDatabaseManager;
+    @Mock private PackageManager mPackageManager;
 
     private static final int DUCK_PERCENT = 75;
 
@@ -92,6 +94,7 @@ public class A2dpSinkStreamHandlerTest {
                 .abandonAudioFocus(any());
 
         doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         doReturn(mPackageManager).when(mAdapterService).getPackageManager();
         doReturn(mResources).when(mAdapterService).getResources();
         mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);

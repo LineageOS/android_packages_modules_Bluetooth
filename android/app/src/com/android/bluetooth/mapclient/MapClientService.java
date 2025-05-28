@@ -41,7 +41,6 @@ import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -59,7 +58,6 @@ public class MapClientService extends ConnectableProfile {
     private final Map<BluetoothDevice, MceStateMachine> mMapInstanceMap =
             new ConcurrentHashMap<>(1);
 
-    private final DatabaseManager mDatabaseManager;
     private final MnsService mMnsServer;
     private final Looper mStateMachinesLooper;
     private final Handler mHandler;
@@ -73,7 +71,6 @@ public class MapClientService extends ConnectableProfile {
     @VisibleForTesting
     MapClientService(AdapterService adapterService, Looper looper, MnsService mnsServer) {
         super(BluetoothProfile.MAP_CLIENT, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(adapterService.getDatabase());
         mMnsServer = requireNonNullElseGet(mnsServer, () -> new MnsService(mAdapterService, this));
 
         if (looper == null) {

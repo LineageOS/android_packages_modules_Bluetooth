@@ -53,7 +53,6 @@ import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ServiceFactory;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -79,7 +78,6 @@ public class HapClientService extends ConnectableProfile {
     private final Map<BluetoothDevice, Integer> mDeviceCurrentPresetMap = new HashMap<>();
     private final Map<BluetoothDevice, Integer> mDeviceFeaturesMap = new HashMap<>();
     private final Map<BluetoothDevice, List<BluetoothHapPresetInfo>> mPresetsMap = new HashMap<>();
-    private final DatabaseManager mDatabaseManager;
     private final Handler mHandler;
     private final Looper mStateMachinesLooper;
     private final HandlerThread mStateMachinesThread;
@@ -135,7 +133,6 @@ public class HapClientService extends ConnectableProfile {
                         () ->
                                 new HapClientNativeInterface(
                                         new HapClientNativeCallback(adapterService, this)));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
 
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));

@@ -49,7 +49,6 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -69,7 +68,6 @@ public class HearingAidService extends ConnectableProfile {
 
     private static HearingAidService sHearingAidService;
 
-    private final DatabaseManager mDatabaseManager;
     private final HearingAidNativeInterface mNativeInterface;
     private final AudioManager mAudioManager;
     private final HandlerThread mStateMachinesThread;
@@ -99,7 +97,6 @@ public class HearingAidService extends ConnectableProfile {
             Looper looper,
             HearingAidNativeInterface nativeInterface) {
         super(BluetoothProfile.HEARING_AID, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
             mStateMachinesThread = new HandlerThread("HearingAidService.StateMachines");

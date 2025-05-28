@@ -22,11 +22,15 @@ import static com.android.bluetooth.TestUtils.MockitoRule;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.Mockito.doReturn;
+
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
+
+import com.android.bluetooth.btservice.storage.DatabaseManager;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -44,6 +48,7 @@ public class ConnectableProfileTest {
 
     @Mock private AdapterService mAdapterService;
     @Mock private ProfileService.IProfileServiceBinder mBinder;
+    @Mock private DatabaseManager mDatabaseManager;
     @Mock private BluetoothDevice mDevice;
 
     private TestConnectableProfile mConnectableProfile;
@@ -76,6 +81,7 @@ public class ConnectableProfileTest {
 
     @Before
     public void setUp() {
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         mConnectableProfile = new TestConnectableProfile(TEST_PROFILE_ID, mAdapterService);
     }
 

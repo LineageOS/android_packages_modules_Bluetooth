@@ -36,7 +36,6 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -55,7 +54,6 @@ public class BatteryService extends ConnectableProfile {
 
     private static BatteryService sBatteryService;
 
-    private final DatabaseManager mDatabaseManager;
     private final HandlerThread mStateMachinesThread;
     private final Looper mStateMachinesLooper;
     private final Handler mHandler;
@@ -70,7 +68,6 @@ public class BatteryService extends ConnectableProfile {
     @VisibleForTesting
     BatteryService(AdapterService adapterService, Looper looper) {
         super(BluetoothProfile.BATTERY, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new Handler(requireNonNull(looper));
 
         if (Flags.batteryServiceUnifiedThread()) {
