@@ -28,7 +28,7 @@ rust_ffi {
         "libnum_traits",
         "libpdl_runtime",
         "libpin_utils",
-        "librand",
+        "librand-0.8",
         "libthiserror",
     ],
     export_include_dirs: ["include"],
@@ -71,7 +71,7 @@ rust_test_host {
         "libnum_traits",
         "libpdl_runtime",
         "libpin_utils",
-        "librand",
+        "librand-0.8",
         "libthiserror",
     ],
 }
