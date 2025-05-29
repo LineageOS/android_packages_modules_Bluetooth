@@ -930,14 +930,14 @@ void Device::MessageReceived(uint8_t label, std::shared_ptr<Packet> pkt) {
                     }
                   }
 
-                  d->media_interface_->SendKeyEvent(0x44, KeyState::PUSHED);
+                  d->media_interface_->SendKeyEvent(d->address_, 0x44, KeyState::PUSHED);
                 },
                 weak_ptr_factory_.GetWeakPtr()));
         return;
       }
 
       if (IsActive()) {
-        media_interface_->SendKeyEvent(pass_through_packet->GetOperationId(),
+        media_interface_->SendKeyEvent(address_, pass_through_packet->GetOperationId(),
                                        pass_through_packet->GetKeyState());
       }
     } break;

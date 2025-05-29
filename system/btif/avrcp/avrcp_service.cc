@@ -171,9 +171,9 @@ class MediaInterfaceWrapper : public MediaInterface {
 public:
   explicit MediaInterfaceWrapper(MediaInterface* cb) : wrapped_(cb) {}
 
-  void SendKeyEvent(uint8_t key, KeyState state) override {
-    do_in_jni_thread(
-            base::Bind(&MediaInterface::SendKeyEvent, base::Unretained(wrapped_), key, state));
+  void SendKeyEvent(const RawAddress& bdaddr, uint8_t key, KeyState state) override {
+    do_in_jni_thread(base::Bind(&MediaInterface::SendKeyEvent, base::Unretained(wrapped_), bdaddr,
+                                key, state));
   }
 
   void GetSongInfo(SongInfoCallback info_cb) override {
