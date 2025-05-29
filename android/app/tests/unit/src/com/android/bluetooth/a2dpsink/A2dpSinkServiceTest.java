@@ -81,7 +81,7 @@ public class A2dpSinkServiceTest {
     public void setUp() throws Exception {
         BluetoothDevice[] bondedDevices = new BluetoothDevice[] {mDevice1, mDevice2};
 
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
         doReturn(1).when(mAdapterService).getMaxConnectedAudioDevices();
         TestUtils.mockGetSystemService(mAdapterService, AudioManager.class);

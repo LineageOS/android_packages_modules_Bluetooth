@@ -69,7 +69,7 @@ public class BluetoothMapServiceTest {
         mockGetSystemService(mAdapterService, TelephonyManager.class);
         mockGetSystemService(mAdapterService, AlarmManager.class);
 
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         mService = new BluetoothMapService(mAdapterService);
         mService.setAvailable(true);
     }

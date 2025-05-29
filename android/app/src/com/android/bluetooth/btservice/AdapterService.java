@@ -699,7 +699,7 @@ public class AdapterService extends Service {
         return mHandler;
     }
 
-    DatabaseManager getDatabaseManager() {
+    public DatabaseManager getDatabaseManager() {
         return mDatabaseManager;
     }
 
@@ -2693,15 +2693,6 @@ public class AdapterService extends Service {
      */
     public BluetoothDevice[] getBondedDevices() {
         return mAdapterProperties.getBondedDevices();
-    }
-
-    /**
-     * Get the database manager to access Bluetooth storage
-     *
-     * @return {@link DatabaseManager} or null on error
-     */
-    public DatabaseManager getDatabase() {
-        return mDatabaseManager;
     }
 
     public byte[] getByteIdentityAddress(BluetoothDevice device) {

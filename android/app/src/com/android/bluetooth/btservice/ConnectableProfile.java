@@ -31,7 +31,7 @@ public abstract class ConnectableProfile extends ProfileService {
 
     protected ConnectableProfile(int id, AdapterService adapterService) {
         super(id, adapterService);
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
+        mDatabaseManager = requireNonNull(mAdapterService.getDatabaseManager());
     }
 
     /**

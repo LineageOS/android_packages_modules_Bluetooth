@@ -640,9 +640,7 @@ public class SapService extends ConnectableProfile
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         enforceCallingOrSelfPermission(
                 BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
-        mAdapterService
-                .getDatabase()
-                .setProfileConnectionPolicy(device, BluetoothProfile.SAP, connectionPolicy);
+        mDatabaseManager.setProfileConnectionPolicy(device, BluetoothProfile.SAP, connectionPolicy);
         if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
             disconnect(device);
         }

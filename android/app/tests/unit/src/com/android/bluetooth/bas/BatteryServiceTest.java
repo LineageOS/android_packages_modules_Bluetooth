@@ -71,7 +71,7 @@ public class BatteryServiceTest {
     public void setUp() {
         mLooper = new TestLooper();
 
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService).getBondState(any());
 
         mService = new BatteryService(mAdapterService, mLooper.getLooper());

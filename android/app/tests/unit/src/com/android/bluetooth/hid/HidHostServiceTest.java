@@ -67,7 +67,7 @@ public class HidHostServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
 
         if (Looper.myLooper() == null) {
             Looper.prepare();

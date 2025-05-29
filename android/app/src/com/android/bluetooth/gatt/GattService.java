@@ -470,7 +470,7 @@ public class GattService extends ProfileService {
         }
         final int disconnectStatus;
         if (status == 0x16 // HCI_ERR_CONN_CAUSE_LOCAL_HOST
-                && mAdapterService.getDatabase().getKeyMissingCount(device) > 0) {
+                && mAdapterService.getDatabaseManager().getKeyMissingCount(device) > 0) {
             // Native stack disconnects the link on detecting the bond loss. Native GATT would
             // return HCI_ERR_CONN_CAUSE_LOCAL_HOST in such case, but the apps should see
             // HCI_ERR_AUTH_FAILURE.
