@@ -567,7 +567,7 @@ public class AdapterService extends Service {
                     mRunningProfiles.add(profile);
                     // TODO(b/228875190): GATT is assumed supported. GATT starting triggers hardware
                     // initialization. Configuring a device without GATT causes start up failures.
-                    if (GattService.class.getSimpleName().equals(profile.getName())
+                    if (profile.getProfileId() == BluetoothProfile.GATT
                             && !Flags.onlyStartScanDuringBleOn()) {
                         mNativeInterface.enable();
                     } else if (mRegisteredProfiles.size() == Config.getSupportedProfiles().length
@@ -603,10 +603,9 @@ public class AdapterService extends Service {
                         // TODO(b/228875190): GATT is assumed supported. GATT is expected to be the
                         // only profile available in the "BLE ON" state. If only GATT is left, send
                         // BREDR_STOPPED. If GATT is stopped, deinitialize the hardware.
-                        if ((mRunningProfiles.size() == 1
-                                && (GattService.class
-                                        .getSimpleName()
-                                        .equals(mRunningProfiles.get(0).getName())))) {
+                        if (mRunningProfiles.size() == 1
+                                && mRunningProfiles.get(0).getProfileId()
+                                        == BluetoothProfile.GATT) {
                             mAdapterStateMachine.sendMessage(AdapterState.BREDR_STOPPED);
                         } else if (mRunningProfiles.size() == 0) {
                             mNativeInterface.disable();
@@ -1046,11 +1045,11 @@ public class AdapterService extends Service {
         if (Flags.callBluetoothReadyBeforeProfilesStart()) {
             mAdapterProperties.onBluetoothReady();
         }
-        int[] supportedProfileServices = Config.getSupportedProfiles();
+        final int[] supportedProfiles = Config.getSupportedProfiles();
         if (Flags.onlyStartScanDuringBleOn()) {
             // Scanning is always supported, started separately, and is not a profile service.
             // This will check other profile services.
-            if (supportedProfileServices.length == 0) {
+            if (supportedProfiles.length == 0) {
                 if (!Flags.callBluetoothReadyBeforeProfilesStart()) {
                     mAdapterProperties.onBluetoothReady();
                 }
@@ -1058,14 +1057,13 @@ public class AdapterService extends Service {
                 updateUuids();
                 mAdapterStateMachine.sendMessage(AdapterState.BREDR_STARTED);
             } else {
-                setAllProfileServiceStates(supportedProfileServices, BluetoothAdapter.STATE_ON);
+                setAllProfileServiceStates(supportedProfiles, BluetoothAdapter.STATE_ON);
             }
         } else {
             // TODO(b/228875190): GATT is assumed supported. If we support no other profiles then
             // just move on to BREDR_STARTED. Note that configuring GATT to NOT supported will cause
             // adapter initialization failures
-            if (supportedProfileServices.length == 1
-                    && supportedProfileServices[0] == BluetoothProfile.GATT) {
+            if (supportedProfiles.length == 1 && supportedProfiles[0] == BluetoothProfile.GATT) {
                 if (!Flags.callBluetoothReadyBeforeProfilesStart()) {
                     mAdapterProperties.onBluetoothReady();
                 }
@@ -1073,7 +1071,7 @@ public class AdapterService extends Service {
                 updateUuids();
                 mAdapterStateMachine.sendMessage(AdapterState.BREDR_STARTED);
             } else {
-                setAllProfileServiceStates(supportedProfileServices, BluetoothAdapter.STATE_ON);
+                setAllProfileServiceStates(supportedProfiles, BluetoothAdapter.STATE_ON);
             }
         }
     }
@@ -1248,29 +1246,27 @@ public class AdapterService extends Service {
         mNativeInterface.cancelDiscovery();
         setScanMode(SCAN_MODE_NONE, "StopProfileServices");
 
-        int[] supportedProfileServices = Config.getSupportedProfiles();
+        final int[] supportedProfiles = Config.getSupportedProfiles();
         if (Flags.onlyStartScanDuringBleOn()) {
             // Scanning is always supported, started separately, and is not a profile service.
             // This will check other profile services.
-            if (supportedProfileServices.length == 0) {
+            if (supportedProfiles.length == 0) {
                 mAdapterStateMachine.sendMessage(AdapterState.BREDR_STOPPED);
             } else {
-                setAllProfileServiceStates(supportedProfileServices, BluetoothAdapter.STATE_OFF);
+                setAllProfileServiceStates(supportedProfiles, BluetoothAdapter.STATE_OFF);
             }
         } else {
             // TODO(b/228875190): GATT is assumed supported. If we support no profiles then just
             // move on to BREDR_STOPPED
-            if (supportedProfileServices.length == 1
-                    && (mRunningProfiles.size() == 1
-                            && GattService.class
-                                    .getSimpleName()
-                                    .equals(mRunningProfiles.get(0).getName()))) {
+            if (supportedProfiles.length == 1
+                    && mRunningProfiles.size() == 1
+                    && mRunningProfiles.get(0).getProfileId() == BluetoothProfile.GATT) {
                 Log.d(
                         TAG,
                         "stopProfileServices() - No profiles services to stop or already stopped.");
                 mAdapterStateMachine.sendMessage(AdapterState.BREDR_STOPPED);
             } else {
-                setAllProfileServiceStates(supportedProfileServices, BluetoothAdapter.STATE_OFF);
+                setAllProfileServiceStates(supportedProfiles, BluetoothAdapter.STATE_OFF);
             }
         }
     }
