@@ -21,6 +21,7 @@ import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.SuppressLint;
 import android.annotation.SystemApi;
+import android.annotation.FlaggedApi;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.os.Build;
 import android.os.IBinder;
@@ -28,6 +29,8 @@ import android.os.IBinder;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.List;
+
+import com.android.bluetooth.flags.Flags;
 
 /**
  * Public APIs for the Bluetooth Profiles.
@@ -53,6 +56,15 @@ public interface BluetoothProfile {
      */
     @SuppressLint("ActionValue")
     String EXTRA_PREVIOUS_STATE = "android.bluetooth.profile.extra.PREVIOUS_STATE";
+
+    /**
+     * Extra for the {@link BluetoothProfile} that the intent applies to.
+     *
+     * <p>This extra represents the Bluetooth profile that the intent applies to.
+     */
+    @FlaggedApi(Flags.FLAG_ADD_PROFILE_AS_INTENT_EXTRA)
+    @SuppressLint("ActionValue")
+    String EXTRA_PROFILE = "android.bluetooth.profile.extra.PROFILE";
 
     /** The profile is in disconnected state */
     int STATE_DISCONNECTED = 0;
