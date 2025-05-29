@@ -55,7 +55,6 @@ import android.location.LocationManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Process;
-import android.os.SystemClock;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Settings;
@@ -66,6 +65,7 @@ import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.bluetooth.TestUtils.FakeTimeProvider;
 import com.android.bluetooth.TestUtils.MockitoRule;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
@@ -81,6 +81,7 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.stubbing.Answer;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -128,6 +129,7 @@ public class GattServiceTest {
                     CLIENT_CONN_ID, mDevice, BluetoothDevice.TRANSPORT_LE, CLIENT_IF);
 
     private final List<ContextMap.Connection> CLIENT_CONN_LIST = Arrays.asList(CLIENT_CONN);
+    private final FakeTimeProvider mTimeProvider = new FakeTimeProvider();
 
     private static final int SERVER_IF = 34;
     private static final int SERVER_IF_2 = 35;
@@ -233,7 +235,8 @@ public class GattServiceTest {
                         mNativeInterface,
                         mAdvertiseManagerNativeInterface,
                         mDistanceMeasurementNativeInterface,
-                        mScanController);
+                        mScanController,
+                        mTimeProvider);
 
         mService.mClientMap = mClientMap;
         mService.mReliableQueue = mReliableQueue;
@@ -261,7 +264,8 @@ public class GattServiceTest {
                             mNativeInterface,
                             mAdvertiseManagerNativeInterface,
                             mDistanceMeasurementNativeInterface,
-                            mScanController);
+                            mScanController,
+                            mTimeProvider);
         }
     }
 
@@ -581,16 +585,34 @@ public class GattServiceTest {
 
     @Test
     @EnableFlags(Flags.FLAG_READ_RSSI_THROTTLING)
-    public void clientReadRemoteRssi_entryIsNotEmpty() throws Exception {
-        mService.mRssiReadThrottleMs = mService.RSSI_READ_THROTTLE_MS_MAX;
+    public void clientReadRemoteRssi_entryIsNotEmpty_elapsedTimeIsLessThanThrottleMs()
+            throws Exception {
         mService.mRssiCache.put(
                 mDevice.getAddress(),
                 new com.android.bluetooth.gatt.GattService.RssiCacheEntry(
-                        SystemClock.elapsedRealtime(), TEST_RSSI));
+                        mTimeProvider.elapsedRealtime(), TEST_RSSI));
 
+        // 25ms is less than the default throttle ms of 75ms
+        mTimeProvider.advanceTime(Duration.ofMillis(25));
         mService.readRemoteRssi(mGattCallback, mDevice);
 
         verify(mGattCallback).onReadRemoteRssi(mDevice, TEST_RSSI, BluetoothGatt.GATT_SUCCESS);
+        verify(mNativeInterface, never()).gattClientReadRemoteRssi(CLIENT_IF, mDevice);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_READ_RSSI_THROTTLING)
+    public void clientReadRemoteRssi_entryIsNotEmpty_elapsedTimeIsMoreThanThrottleMs() {
+        mService.mRssiCache.put(
+                mDevice.getAddress(),
+                new com.android.bluetooth.gatt.GattService.RssiCacheEntry(
+                        mTimeProvider.elapsedRealtime(), TEST_RSSI));
+
+        // 100ms is more than the default throttle ms of 75ms
+        mTimeProvider.advanceTime(Duration.ofMillis(100));
+        mService.readRemoteRssi(mGattCallback, mDevice);
+
+        verify(mNativeInterface).gattClientReadRemoteRssi(CLIENT_IF, mDevice);
     }
 
     @Test

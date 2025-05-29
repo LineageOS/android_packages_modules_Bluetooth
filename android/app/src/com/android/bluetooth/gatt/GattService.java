@@ -22,6 +22,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.Utils.callbackToApp;
+import static com.android.bluetooth.Utils.getSystemClock;
 import static com.android.bluetooth.Utils.transportToString;
 import static com.android.bluetooth.util.AttributionSourceUtil.getLastAttributionTag;
 
@@ -49,13 +50,13 @@ import android.content.pm.PackageManager.PackageInfoFlags;
 import android.os.Binder;
 import android.os.HandlerThread;
 import android.os.IBinder;
-import android.os.SystemClock;
 import android.os.SystemProperties;
 import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
+import com.android.bluetooth.Utils.TimeProvider;
 import com.android.bluetooth.btservice.AbstractionLayer;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
@@ -202,6 +203,7 @@ public class GattService extends ProfileService {
     private final AdvertiseManager mAdvertiseManager;
     @Nullable private final ScanController mScanController;
     private final DistanceMeasurementManager mDistanceMeasurementManager;
+    private final TimeProvider mTimeProvider;
     @VisibleForTesting int mRssiReadThrottleMs;
 
     public GattService(AdapterService adapterService) {
@@ -218,7 +220,8 @@ public class GattService extends ProfileService {
                 nativeInterface,
                 advertiseManagerNativeInterface,
                 distanceMeasurementNativeInterface,
-                null);
+                null,
+                getSystemClock());
     }
 
     @VisibleForTesting
@@ -227,11 +230,13 @@ public class GattService extends ProfileService {
             GattNativeInterface nativeInterface,
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
             DistanceMeasurementNativeInterface distanceMeasurementNativeInterface,
-            ScanController scanController) {
+            ScanController scanController,
+            TimeProvider timeProvider) {
         super(BluetoothProfile.GATT, requireNonNull(adapterService));
         mActivityManager = requireNonNull(obtainSystemService(ActivityManager.class));
         mPackageManager = requireNonNull(mAdapterService.getPackageManager());
         mCompanionDeviceManager = requireNonNull(obtainSystemService(CompanionDeviceManager.class));
+        mTimeProvider = timeProvider;
 
         Settings.Global.putInt(
                 getContentResolver(), "bluetooth_sanitized_exposure_notification_supported", 1);
@@ -885,7 +890,7 @@ public class GattService extends ProfileService {
         if (Flags.readRssiThrottling() && status == BluetoothGatt.GATT_SUCCESS) {
             Log.d(TAG, "onReadRemoteRssi() - putting timestamp and rssi into cache");
             mRssiCache.put(
-                    device.getAddress(), new RssiCacheEntry(SystemClock.elapsedRealtime(), rssi));
+                    device.getAddress(), new RssiCacheEntry(mTimeProvider.elapsedRealtime(), rssi));
         }
 
         callbackToApp(() -> app.callback.onReadRemoteRssi(device, rssi, status));
@@ -1483,7 +1488,7 @@ public class GattService extends ProfileService {
         if (Flags.readRssiThrottling() && mRssiReadThrottleMs > 0) {
             final var entry = mRssiCache.get(device.getAddress());
             if (entry != null
-                    && (SystemClock.elapsedRealtime() - entry.readTimeStamp)
+                    && (mTimeProvider.elapsedRealtime() - entry.readTimeStamp)
                             < mRssiReadThrottleMs) {
                 Log.d(TAG, "readRemoteRssi() - rssi value found in cache, returning to callback");
                 callbackToApp(
