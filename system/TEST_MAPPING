@@ -32,6 +32,24 @@
   "hwasan-presubmit": [
     {
       "name": "bluetooth_le_audio_test"
+    },
+    {
+      "name": "sdp-fuzzer-validation-test"
+    },
+    {
+      "name": "gatt-fuzzer-validation-test"
+    },
+    {
+      "name": "smp-fuzzer-validation-test"
+    },
+    {
+      "name": "avrc-fuzzer-validation-test"
+    },
+    {
+      "name": "bnep-fuzzer-validation-test"
+    },
+    {
+      "name": "l2cap-fuzzer-validation-test"
     }
   ]
 }
