@@ -32,11 +32,11 @@ class ScanClient {
             new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
 
     final int mScannerId;
-    final int mAppUid;
+    final int mScanModeApp;
     final List<ScanFilter> mFilters;
+    final int mAppUid;
 
     ScanSettings mSettings;
-    int mScanModeApp;
     boolean mStarted = false;
     boolean mIsInternalClient = false;
     // App associated with the scan client died.

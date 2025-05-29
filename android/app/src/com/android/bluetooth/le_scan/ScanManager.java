@@ -102,17 +102,17 @@ public class ScanManager {
 
     // Messages for handling BLE scan operations.
     @VisibleForTesting static final int MSG_START_BLE_SCAN = 0;
-    static final int MSG_STOP_BLE_SCAN = 1;
-    static final int MSG_FLUSH_BATCH_RESULTS = 2;
-    static final int MSG_SCAN_TIMEOUT = 3;
-    static final int MSG_SUSPEND_SCANS = 4;
-    static final int MSG_RESUME_SCANS = 5;
-    static final int MSG_IMPORTANCE_CHANGE = 6;
-    static final int MSG_SCREEN_ON = 7;
-    static final int MSG_SCREEN_OFF = 8;
-    static final int MSG_REVERT_SCAN_MODE_UPGRADE = 9;
-    static final int MSG_START_CONNECTING = 10;
-    static final int MSG_STOP_CONNECTING = 11;
+    @VisibleForTesting static final int MSG_STOP_BLE_SCAN = 1;
+    private static final int MSG_FLUSH_BATCH_RESULTS = 2;
+    @VisibleForTesting static final int MSG_SCAN_TIMEOUT = 3;
+    @VisibleForTesting static final int MSG_SUSPEND_SCANS = 4;
+    @VisibleForTesting static final int MSG_RESUME_SCANS = 5;
+    @VisibleForTesting static final int MSG_IMPORTANCE_CHANGE = 6;
+    @VisibleForTesting static final int MSG_SCREEN_ON = 7;
+    @VisibleForTesting static final int MSG_SCREEN_OFF = 8;
+    private static final int MSG_REVERT_SCAN_MODE_UPGRADE = 9;
+    @VisibleForTesting static final int MSG_START_CONNECTING = 10;
+    @VisibleForTesting static final int MSG_STOP_CONNECTING = 11;
     private static final String ACTION_REFRESH_BATCHED_SCAN =
             "com.android.bluetooth.gatt.REFRESH_BATCHED_SCAN";
 
@@ -546,12 +546,12 @@ public class ScanManager {
         }
 
         private static boolean requiresScreenOn(ScanClient client) {
-            boolean isFiltered = isFilteredScan(client);
+            final boolean isFiltered = isFilteredScan(client);
             return !isOpportunisticScanClient(client) && !isFiltered;
         }
 
         private static boolean requiresLocationOn(ScanClient client) {
-            boolean isFiltered = isFilteredScan(client);
+            final boolean isFiltered = isFilteredScan(client);
             return !client.mHasDisavowedLocation && !isFiltered;
         }
 
@@ -576,6 +576,8 @@ public class ScanManager {
                 return;
             }
             Log.d(TAG, "handling stopping scan " + client);
+            final var appDied = client.mAppDied;
+            final var scannerId = client.mScannerId;
 
             if (mSuspendedScanClients.contains(client)) {
                 mSuspendedScanClients.remove(client);
@@ -594,9 +596,9 @@ public class ScanManager {
                 }
                 stopBatchScan(client);
             }
-            if (client.mAppDied) {
-                Log.d(TAG, "app died, unregister scanner - " + client.mScannerId);
-                mScanController.unregisterScanner(client.mScannerId);
+            if (appDied) {
+                Log.d(TAG, "app died, unregister scanner - " + scannerId);
+                mScanController.unregisterScanner(scannerId);
             }
         }
 
@@ -613,7 +615,7 @@ public class ScanManager {
             if (client == null || client.mSettings == null) {
                 return false;
             }
-            ScanSettings settings = client.mSettings;
+            final var settings = client.mSettings;
             return settings.getCallbackType() == ScanSettings.CALLBACK_TYPE_ALL_MATCHES
                     && settings.getReportDelayMillis() != 0;
         }
@@ -622,7 +624,7 @@ public class ScanManager {
             if (client == null || client.mSettings == null) {
                 return true;
             }
-            ScanSettings settings = client.mSettings;
+            final var settings = client.mSettings;
             if (isFilteringSupported()) {
                 return true;
             }
@@ -745,11 +747,10 @@ public class ScanManager {
             if (!isAutoBatchScanClientEnabled(client)) {
                 return;
             }
-            client.updateScanMode(client.mScanModeApp);
-            Log.d(
-                    TAG,
-                    "Scan mode update during clearAutoBatchScanClient() to "
-                            + getScanModeString(client.mScanModeApp));
+            final var scanModeApp = client.mScanModeApp;
+            final var scanModeString = getScanModeString(scanModeApp);
+            client.updateScanMode(scanModeApp);
+            Log.d(TAG, "Scan mode update during clearAutoBatchScanClient() to " + scanModeString);
             client.mStats.ifPresent(stats -> stats.setAutoBatchScan(client.mScannerId, false));
         }
 
@@ -770,12 +771,13 @@ public class ScanManager {
                 return false;
             }
             int updatedScanMode = client.mScanModeApp;
+            final var scanModeString = getScanModeString(updatedScanMode);
             if (!isAppForeground(client) || isForceDowngradedScanClient(client)) {
                 updatedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF;
             } else {
                 // The following codes are effectively only for services
                 // Apps are either already or will be soon handled by handleImportanceChange().
-                switch (client.mScanModeApp) {
+                switch (updatedScanMode) {
                     case ScanSettings.SCAN_MODE_LOW_POWER ->
                             updatedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF;
                     case ScanSettings.SCAN_MODE_BALANCED,
@@ -791,7 +793,7 @@ public class ScanManager {
             Log.d(
                     TAG,
                     "Scan mode update during screen off from "
-                            + getScanModeString(client.mScanModeApp)
+                            + scanModeString
                             + " to "
                             + getScanModeString(updatedScanMode));
             return client.updateScanMode(updatedScanMode);
@@ -860,15 +862,15 @@ public class ScanManager {
         }
 
         private void handleRevertScanModeUpgrade(ScanClient client) {
-            if (mPriorityMap.get(client.mSettings.getScanMode())
-                    <= mPriorityMap.get(client.mScanModeApp)) {
+            final var scanModeApp = client.mScanModeApp;
+            if (mPriorityMap.get(client.mSettings.getScanMode()) <= mPriorityMap.get(scanModeApp)) {
                 return;
             }
-            if (client.updateScanMode(client.mScanModeApp)) {
+            if (client.updateScanMode(scanModeApp)) {
                 Log.d(
                         TAG,
                         "scanMode upgrade is reverted to "
-                                + getScanModeString(client.mScanModeApp)
+                                + getScanModeString(scanModeApp)
                                 + " for "
                                 + client);
                 configureRegularScanParams();
@@ -879,23 +881,24 @@ public class ScanManager {
             if (imp == null) {
                 return;
             }
-            int uid = imp.uid;
-            int importance = imp.importance;
-            boolean updatedScanParams = false;
-            boolean isForeground = importance <= IMPORTANCE_FOREGROUND_SERVICE;
+            final int uid = imp.uid;
+            final int importance = imp.importance;
+            final boolean isForeground = importance <= IMPORTANCE_FOREGROUND_SERVICE;
 
             if (mIsUidForegroundMap.size() < MAX_IS_UID_FOREGROUND_MAP_SIZE) {
                 mIsUidForegroundMap.put(uid, isForeground);
             }
 
+            boolean updatedScanParams = false;
             for (ScanClient client : mRegularScanClients) {
                 if (client.mAppUid != uid || isOpportunisticScanClient(client)) {
                     continue;
                 }
                 client.mStats.ifPresent(stats -> stats.setAppImportance(importance));
+                final var scanSettings = client.mSettings;
                 if (isForeground) {
-                    int scanMode = client.mScanModeApp;
-                    int maxScanMode =
+                    final int scanMode = client.mScanModeApp;
+                    final int maxScanMode =
                             isForceDowngradedScanClient(client)
                                     ? SCAN_MODE_FORCE_DOWNGRADED
                                     : scanMode;
@@ -903,8 +906,8 @@ public class ScanManager {
                         updatedScanParams = true;
                     }
                 } else {
-                    int scanMode = client.mSettings.getScanMode();
-                    int maxScanMode =
+                    final int scanMode = scanSettings.getScanMode();
+                    final int maxScanMode =
                             mScreenOn
                                     ? SCAN_MODE_APP_IN_BACKGROUND
                                     : ScanSettings.SCAN_MODE_SCREEN_OFF;
@@ -916,8 +919,7 @@ public class ScanManager {
                         TAG,
                         ("uid " + uid)
                                 + (" isForeground " + isForeground)
-                                + (" scanMode "
-                                        + getScanModeString(client.mSettings.getScanMode())));
+                                + (" scanMode " + getScanModeString(scanSettings.getScanMode())));
             }
 
             if (updatedScanParams) {
@@ -929,14 +931,15 @@ public class ScanManager {
             if (isOpportunisticScanClient(client)) {
                 return false;
             }
-            int scanMode =
-                    isAppForeground(client) ? client.mScanModeApp : SCAN_MODE_APP_IN_BACKGROUND;
-            int maxScanMode =
+            final var scanModeApp = client.mScanModeApp;
+            final int scanMode =
+                    isAppForeground(client) ? scanModeApp : SCAN_MODE_APP_IN_BACKGROUND;
+            final int maxScanMode =
                     isForceDowngradedScanClient(client) ? SCAN_MODE_FORCE_DOWNGRADED : scanMode;
             Log.d(
                     TAG,
                     "Scan mode update during screen on from "
-                            + getScanModeString(client.mScanModeApp)
+                            + getScanModeString(scanModeApp)
                             + " to "
                             + getScanModeString(getMinScanMode(scanMode, maxScanMode)));
             return client.updateScanMode(getMinScanMode(scanMode, maxScanMode));
@@ -946,7 +949,7 @@ public class ScanManager {
             if (client.mStats.isEmpty() || mAdapterService.getScanDowngradeDurationMillis() == 0) {
                 return false;
             }
-            int updatedScanMode =
+            final int updatedScanMode =
                     getMinScanMode(client.mSettings.getScanMode(), SCAN_MODE_MAX_IN_CONCURRENCY);
             if (client.updateScanMode(updatedScanMode)) {
                 client.mStats.get().setScanDowngrade(client.mScannerId, true);
@@ -1014,7 +1017,7 @@ public class ScanManager {
         }
 
         private void handleProfileConnectionStateChanged(int profile, int fromState, int toState) {
-            boolean updatedConnectingState =
+            final boolean updatedConnectingState =
                     updateCountersAndCheckForConnectingState(toState, fromState);
             Log.d(
                     TAG,
