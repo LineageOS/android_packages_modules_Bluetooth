@@ -82,7 +82,7 @@ public class ConnectableProfileTest {
 
     @Before
     public void setUp() {
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         mConnectableProfile = new TestConnectableProfile(TEST_PROFILE_ID, mAdapterService);
     }
 

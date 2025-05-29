@@ -136,7 +136,7 @@ public class PbapClientServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(CONNECTION_POLICY_ALLOWED)
                 .when(mDatabaseManager)
                 .getProfileConnectionPolicy(any(), anyInt());

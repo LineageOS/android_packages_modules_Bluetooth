@@ -232,7 +232,7 @@ public class LeAudioServiceTest {
                 Set.of(BluetoothProfile.LE_AUDIO_BROADCAST, BluetoothProfile.LE_AUDIO));
 
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
 
         doAnswer(invocation -> mBondedDevices.toArray(new BluetoothDevice[] {}))
                 .when(mAdapterService)

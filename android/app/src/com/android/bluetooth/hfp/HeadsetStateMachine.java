@@ -222,7 +222,7 @@ class HeadsetStateMachine extends StateMachine {
         mNativeInterface = requireNonNull(nativeInterface);
         mSystemInterface = requireNonNull(systemInterface);
         mAdapterService = requireNonNull(adapterService);
-        mDatabaseManager = requireNonNull(adapterService.getDatabase());
+        mDatabaseManager = requireNonNull(adapterService.getDatabaseManager());
 
         mDeviceSilenced = false;
 

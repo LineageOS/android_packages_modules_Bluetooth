@@ -137,7 +137,7 @@ public class VolumeControlServiceTest {
                 .when(mDatabaseManager)
                 .getProfileConnectionPolicy(any(), anyInt());
 
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(BOND_BONDED).when(mAdapterService).getBondState(any());
         doReturn(new ParcelUuid[] {BluetoothUuid.VOLUME_CONTROL})
                 .when(mAdapterService)

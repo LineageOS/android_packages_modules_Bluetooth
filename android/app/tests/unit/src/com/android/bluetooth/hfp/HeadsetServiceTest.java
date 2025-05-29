@@ -144,7 +144,7 @@ public class HeadsetServiceTest {
                 .getBondState(any(BluetoothDevice.class));
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
         doAnswer(
                         invocation -> {

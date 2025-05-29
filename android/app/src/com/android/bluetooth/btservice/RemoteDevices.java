@@ -1534,7 +1534,7 @@ public class RemoteDevices {
         } else {
             final int disconnectReason;
             if (hciReason == 0x16 /* HCI_ERR_CONN_CAUSE_LOCAL_HOST */
-                    && mAdapterService.getDatabase().getKeyMissingCount(device) > 0) {
+                    && mAdapterService.getDatabaseManager().getKeyMissingCount(device) > 0) {
                 // Native stack disconnects the link on detecting the bond loss. Native GATT would
                 // return HCI_ERR_CONN_CAUSE_LOCAL_HOST in such case, but the apps should see
                 // HCI_ERR_AUTH_FAILURE.
@@ -1638,7 +1638,7 @@ public class RemoteDevices {
 
         // Log transition to key missing state, if the key missing count is 0 which indicates
         // that the device is bonded until now.
-        if (mAdapterService.getDatabase().getKeyMissingCount(device) == 0) {
+        if (mAdapterService.getDatabaseManager().getKeyMissingCount(device) == 0) {
             MetricsLogger.getInstance()
                     .logBluetoothEvent(
                             device,
@@ -1650,7 +1650,7 @@ public class RemoteDevices {
         }
 
         // Bond loss detected, add to the count.
-        mAdapterService.getDatabase().updateKeyMissingCount(device, true);
+        mAdapterService.getDatabaseManager().updateKeyMissingCount(device, true);
 
         // Some apps are not able to handle the key missing broadcast, so we need to remove
         // the bond to prevent them from misbehaving.
@@ -1743,7 +1743,7 @@ public class RemoteDevices {
 
             // Log transition to encryption change state (bonded), if the key missing count is > 0
             //  which indicates that the device is in key missing state.
-            if (mAdapterService.getDatabase().getKeyMissingCount(bluetoothDevice) > 0) {
+            if (mAdapterService.getDatabaseManager().getKeyMissingCount(bluetoothDevice) > 0) {
                 MetricsLogger.getInstance()
                         .logBluetoothEvent(
                                 bluetoothDevice,
@@ -1754,7 +1754,7 @@ public class RemoteDevices {
                                 0);
 
                 // Successful bond detected, reset the count.
-                mAdapterService.getDatabase().updateKeyMissingCount(bluetoothDevice, false);
+                mAdapterService.getDatabaseManager().updateKeyMissingCount(bluetoothDevice, false);
             }
         }
 
