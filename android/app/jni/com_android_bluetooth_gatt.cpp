@@ -2401,7 +2401,10 @@ static void ble_advertising_set_started_cb(int /*reg_id*/, int server_if, uint8_
                                            int8_t /*tx_power*/, uint8_t status) {
   // tie advertiser ID to server_if, once the advertisement has started
   if (status == 0 /* AdvertisingCallback::AdvertisingStatus::SUCCESS */ && server_if != 0) {
-    sPrivateGattServerManager->AssociateServerWithAdvertiser(server_if, advertiser_id);
+    std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
+    if (sPrivateGattServerManager) {
+      sPrivateGattServerManager->AssociateServerWithAdvertiser(server_if, advertiser_id);
+    }
   }
 }
 
