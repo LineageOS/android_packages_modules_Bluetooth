@@ -200,15 +200,6 @@ public final class Utils {
         DualModeAudioSetting.sEnabled = enabled;
     }
 
-    public static @Nullable String getName(@Nullable BluetoothDevice device) {
-        final AdapterService service = AdapterService.getAdapterService();
-        if (service != null && device != null) {
-            return service.getRemoteName(device);
-        } else {
-            return null;
-        }
-    }
-
     public static String getLoggableAddress(@Nullable BluetoothDevice device) {
         if (device == null) {
             return "00:00:00:00:00:00";

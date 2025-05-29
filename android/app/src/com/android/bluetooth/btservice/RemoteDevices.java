@@ -176,7 +176,7 @@ public class RemoteDevices {
                         Log.v(TAG, "Skipping device matching denylist: " + device);
                         return true;
                     }
-                    final String name = Utils.getName(device);
+                    final String name = getName(device);
                     if (mAdapterService.getLocationDenylistName().test(name)) {
                         Log.v(TAG, "Skipping name matching denylist: " + name);
                         return true;

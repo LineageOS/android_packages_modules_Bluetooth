@@ -730,13 +730,7 @@ final class BondStateMachine extends StateMachine {
                 BluetoothProtoEnums.BOND_SUB_STATE_LOCAL_PIN_REQUESTED,
                 0);
 
-        infoLog(
-                "pinRequestCallback: "
-                        + bdDevice
-                        + " name:"
-                        + Utils.getName(bdDevice)
-                        + " cod:"
-                        + new BluetoothClass(cod));
+        infoLog("pinRequestCallback: " + bdDevice + " cod:" + new BluetoothClass(cod));
 
         Message msg = obtainMessage(PIN_REQUEST);
         msg.obj = bdDevice;

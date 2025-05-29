@@ -417,7 +417,7 @@ public class PbapStateMachine extends StateMachine {
             deleteIntent.setClass(mService, BluetoothPbapService.class);
             deleteIntent.setAction(BluetoothPbapService.AUTH_CANCELLED_ACTION);
 
-            String name = Utils.getName(mRemoteDevice);
+            String name = mAdapterService.getRemoteName(mRemoteDevice);
 
             Notification notification =
                     new Notification.Builder(mService, PBAP_OBEX_NOTIFICATION_CHANNEL)

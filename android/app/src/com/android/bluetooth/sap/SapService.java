@@ -382,7 +382,7 @@ public class SapService extends ConnectableProfile
                         break;
                     }
 
-                    sRemoteDeviceName = Utils.getName(mRemoteDevice);
+                    sRemoteDeviceName = mAdapterService.getRemoteName(mRemoteDevice);
                     // In case getRemoteName failed and return null
                     if (TextUtils.isEmpty(sRemoteDeviceName)) {
                         sRemoteDeviceName = getString(R.string.defaultname);
