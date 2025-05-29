@@ -50,6 +50,7 @@ import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService.BrowseResult;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.storage.DatabaseManager;
 
 import org.junit.After;
 import org.junit.Before;
@@ -76,6 +77,7 @@ public class AvrcpControllerServiceTest {
 
     @Mock private A2dpSinkService mA2dpSinkService;
     @Mock private AdapterService mAdapterService;
+    @Mock private DatabaseManager mDatabaseManager;
     @Mock private AvrcpControllerStateMachine mStateMachine;
     @Mock private AvrcpControllerStateMachine mStateMachine2;
     @Mock private AvrcpControllerNativeInterface mNativeInterface;
@@ -90,6 +92,7 @@ public class AvrcpControllerServiceTest {
     @Before
     public void setUp() throws Exception {
         doReturn(mAdapterService).when(mAdapterService).getApplicationContext();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
         doReturn(mTargetContext.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();

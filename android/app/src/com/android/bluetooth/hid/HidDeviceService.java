@@ -49,7 +49,6 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.nio.ByteBuffer;
@@ -74,7 +73,6 @@ public class HidDeviceService extends ConnectableProfile {
 
     private static HidDeviceService sHidDeviceService;
 
-    private final DatabaseManager mDatabaseManager;
     private final HidDeviceServiceHandler mHandler;
     private final HidDeviceNativeInterface mNativeInterface;
     private final ActivityManager mActivityManager;
@@ -95,7 +93,6 @@ public class HidDeviceService extends ConnectableProfile {
             Looper looper,
             HidDeviceNativeInterface nativeInterface) {
         super(BluetoothProfile.HID_DEVICE, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mHandler = new HidDeviceServiceHandler(requireNonNull(looper));
         mNativeInterface =
                 requireNonNullElseGet(
@@ -453,6 +450,7 @@ public class HidDeviceService extends ConnectableProfile {
      * @return true if hid device is connected or disconnected, false otherwise
      */
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         enforceCallingOrSelfPermission(
                 BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
@@ -478,6 +476,7 @@ public class HidDeviceService extends ConnectableProfile {
      * @return connection policy of the device
      */
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
+    @Override
     public int getConnectionPolicy(BluetoothDevice device) {
         if (device == null) {
             throw new IllegalArgumentException("Null device");

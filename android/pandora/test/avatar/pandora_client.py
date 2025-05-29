@@ -27,10 +27,12 @@ import pandora_services as bumble_server
 from bumble.hci import Address as BumbleAddress
 from pandora_services.device import PandoraDevice as BumblePandoraDevice
 from dataclasses import dataclass
+from grpc import ChannelConnectivity
 from pandora import host_grpc
 from pandora import host_grpc_aio
 from pandora import security_grpc
 from pandora import security_grpc_aio
+from pandora import asha_grpc_aio
 from typing import Any, Dict, MutableMapping, Optional, Tuple, Union
 
 
@@ -102,34 +104,24 @@ class PandoraClient:
 
     async def reset(self) -> None:
         """Factory reset the device & read it's BD address."""
-        attempts, max_attempts = 1, 3
-        while True:
-            try:
-                await self.aio.host.FactoryReset(wait_for_ready=True, timeout=15.0)
 
-                # Factory reset stopped the server, close the client too.
-                assert self._aio
-                await self._aio.channel.close()
-                self._aio = None
+        # Trigger factory reset and wait for the server to shutdown.
+        await self.aio.host.FactoryReset(wait_for_ready=True, timeout=15.0)
 
-                # This call might fail if the server is unavailable.
-                self._address = Address((await
-                                         self.aio.host.ReadLocalAddress(wait_for_ready=True,
-                                                                        timeout=15.0)).address)
-                return
-            except grpc.aio.AioRpcError as e:
-                if e.code() in (
-                        grpc.StatusCode.UNAVAILABLE,
-                        grpc.StatusCode.DEADLINE_EXCEEDED,
-                        grpc.StatusCode.CANCELLED,
-                ):
-                    if attempts <= max_attempts:
-                        self.log.debug(f'Server unavailable, retry [{attempts}/{max_attempts}].')
-                        attempts += 1
-                        continue
-                    self.log.exception(
-                        f'Server still unavailable after {attempts} attempts, abort.')
-                raise e
+        # There is a race between the server completing the RPC call
+        # and initiating graceful shutdown. This small delay is added to reduce the
+        # possibility of this race occurring.
+        await asyncio.sleep(0.5)
+
+        # The server should not be accepting new connections at this time.
+        # Re-create the channel. The server will return UNAVAILABLE until
+        # reboot is completed.
+        self._aio.channel.close()
+        self._aio = None
+
+        # This call might fail if the server is unavailable.
+        self._address = Address((await self.aio.host.ReadLocalAddress(wait_for_ready=True,
+                                                                      timeout=15.0)).address)
 
     @property
     def channel(self) -> grpc.Channel:
@@ -175,6 +167,11 @@ class PandoraClient:
         def security_storage(self) -> security_grpc_aio.SecurityStorage:
             """Returns the Pandora SecurityStorage gRPC interface."""
             return security_grpc_aio.SecurityStorage(self.channel)
+
+        @property
+        def asha(self) -> asha_grpc_aio.Asha:
+            """Returns the Asha gRPC interface."""
+            return asha_grpc_aio.Asha(self.channel)
 
     @property
     def aio(self) -> 'PandoraClient.Aio':

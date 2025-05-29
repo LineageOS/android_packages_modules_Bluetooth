@@ -635,6 +635,7 @@ public class SapService extends ConnectableProfile
      * @return true if connectionPolicy is set, false on error
      */
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         enforceCallingOrSelfPermission(
@@ -659,12 +660,11 @@ public class SapService extends ConnectableProfile
      * @return connection policy of the device
      */
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
+    @Override
     public int getConnectionPolicy(BluetoothDevice device) {
         enforceCallingOrSelfPermission(
                 BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
-        return mAdapterService
-                .getDatabase()
-                .getProfileConnectionPolicy(device, BluetoothProfile.SAP);
+        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     @Override

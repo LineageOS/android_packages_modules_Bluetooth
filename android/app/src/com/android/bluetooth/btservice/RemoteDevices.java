@@ -35,6 +35,7 @@ import android.bluetooth.BluetoothAssignedNumbers;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothDevice.AddressType;
+import android.bluetooth.BluetoothDevice.BluetoothAddress;
 import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
@@ -44,7 +45,6 @@ import android.bluetooth.BluetoothUtils;
 import android.bluetooth.IBluetoothConnectionCallback;
 import android.content.Intent;
 import android.net.MacAddress;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -75,8 +75,7 @@ import java.util.function.Predicate;
 
 /** Remote device manager. This class is currently mostly used for HF and AG remote devices. */
 public class RemoteDevices {
-    private static final String TAG =
-            Utils.TAG_PREFIX_BLUETOOTH + RemoteDevices.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + RemoteDevices.class.getSimpleName();
 
     // Maximum number of device properties to remember
     private static final int MAX_DEVICE_QUEUE_SIZE = 200;
@@ -377,9 +376,10 @@ public class RemoteDevices {
         private static final int BONDING_INITIATOR_NONE = 0;
         private static final int BONDING_INITIATOR_LOCAL = 1;
         private static final int BONDING_INITIATOR_REMOTE = 2;
+        public static final BluetoothAddress UNKNOWN_ADDRESS =
+                new BluetoothAddress(null, BluetoothDevice.ADDRESS_TYPE_UNKNOWN);
         private String mName;
-        private String mIdentityAddress;
-        @AddressType private int mIdentityAddressType = BluetoothDevice.ADDRESS_TYPE_UNKNOWN;
+        private BluetoothAddress mIdentityAddress = UNKNOWN_ADDRESS;
         private boolean mIsConsolidated = false;
         private int mBluetoothClass = BluetoothClass.Device.Major.UNCATEGORIZED;
         private int mBredrConnectionHandle = BluetoothDevice.ERROR;
@@ -436,7 +436,7 @@ public class RemoteDevices {
         /**
          * @return the mIdentityAddress
          */
-        String getIdentityAddress() {
+        @NonNull BluetoothAddress getIdentityAddress() {
             synchronized (mObject) {
                 return mIdentityAddress;
             }
@@ -445,45 +445,9 @@ public class RemoteDevices {
         /**
          * @param identityAddress the mIdentityAddress to set
          */
-        void setIdentityAddress(String identityAddress) {
+        void setIdentityAddress(String identityAddress, @AddressType int identityAddressType) {
             synchronized (mObject) {
-                this.mIdentityAddress = identityAddress;
-            }
-        }
-
-        /**
-         * @return the mIdentityAddressType
-         */
-        @AddressType
-        int getIdentityAddressType() {
-            synchronized (mObject) {
-                return mIdentityAddressType;
-            }
-        }
-
-        /**
-         * @param identityAddressType the mIdentityAddressType to set
-         */
-        void setIdentityAddressType(int identityAddressType) {
-            /*
-             * from system/types/ble_address_with_type.h
-             *
-             * #define BLE_ADDR_PUBLIC 0x00
-             * #define BLE_ADDR_RANDOM 0x01
-             */
-            final int addressType =
-                    switch (identityAddressType) {
-                        case 0x00 -> BluetoothDevice.ADDRESS_TYPE_PUBLIC;
-                        case 0x01 -> BluetoothDevice.ADDRESS_TYPE_RANDOM;
-                        default -> {
-                            errorLog(
-                                    "Unexpected identity address type received from native: "
-                                            + identityAddressType);
-                            yield BluetoothDevice.ADDRESS_TYPE_UNKNOWN;
-                        }
-                    };
-            synchronized (mObject) {
-                this.mIdentityAddressType = addressType;
+                this.mIdentityAddress = new BluetoothAddress(identityAddress, identityAddressType);
             }
         }
 
@@ -731,9 +695,10 @@ public class RemoteDevices {
 
                     // Identity address of the bonded device may not be provided by the native
                     // stack if it is same as the pseudo address.
-                    if (Flags.alwaysSetIdentityAddr() && mIdentityAddress == null) {
-                        mIdentityAddress = mDevice.getAddress();
-                        mIdentityAddressType = mDevice.getAddressType();
+                    if (Flags.alwaysSetIdentityAddr() && mIdentityAddress == UNKNOWN_ADDRESS) {
+                        mIdentityAddress =
+                                new BluetoothAddress(
+                                        mDevice.getAddress(), mDevice.getAddressType());
                     }
                 }
             }
@@ -1334,10 +1299,12 @@ public class RemoteDevices {
         deviceProperties.setIsConsolidated(true);
         deviceProperties.setDeviceType(BluetoothDevice.DEVICE_TYPE_DUAL);
         // Dual mode devices have public identity address type
-        deviceProperties.setIdentityAddressType(BluetoothDevice.ADDRESS_TYPE_PUBLIC);
-        deviceProperties.setIdentityAddress(Utils.getAddressStringFromByte(secondaryAddress));
+        deviceProperties.setIdentityAddress(
+                Utils.getAddressStringFromByte(secondaryAddress),
+                BluetoothDevice.ADDRESS_TYPE_PUBLIC);
         mDualDevicesMap.put(
-                deviceProperties.getIdentityAddress(), Utils.getAddressStringFromByte(mainAddress));
+                deviceProperties.getIdentityAddress().getAddress(),
+                Utils.getAddressStringFromByte(mainAddress));
     }
 
     /**
@@ -1369,8 +1336,19 @@ public class RemoteDevices {
                         + ", identityAddressType="
                         + identityAddressType);
 
-        deviceProperties.setIdentityAddress(Utils.getAddressStringFromByte(secondaryAddress));
-        deviceProperties.setIdentityAddressType(identityAddressType);
+        final int addressType =
+                switch (identityAddressType) {
+                    case 0x00 -> BluetoothDevice.ADDRESS_TYPE_PUBLIC;
+                    case 0x01 -> BluetoothDevice.ADDRESS_TYPE_RANDOM;
+                    default -> {
+                        errorLog(
+                                 "Unexpected identity address type received from native: "
+                                        + identityAddressType);
+                        yield BluetoothDevice.ADDRESS_TYPE_UNKNOWN;
+                    }
+                };
+        deviceProperties.setIdentityAddress(
+                Utils.getAddressStringFromByte(secondaryAddress), addressType);
     }
 
     void aclStateChangeCallback(
@@ -2220,12 +2198,13 @@ public class RemoteDevices {
             }
 
             boolean bonded = deviceProperties.getBondState() == BluetoothDevice.BOND_BONDED;
-            String identityAddress = deviceProperties.getIdentityAddress();
+            String identityAddress = deviceProperties.getIdentityAddress().getAddress();
             String anonAddress = BluetoothUtils.toAnonymizedAddress(address);
             String anonIdentityAddress =
                     identityAddress != null
                             ? BluetoothUtils.toAnonymizedAddress(identityAddress)
-                            : bonded ? anonAddress : "XX:XX:XX:XX:XX:XX";
+                            : "XX:XX:XX:XX:XX:XX";
+            int identityAddressType = deviceProperties.getIdentityAddress().getAddressType();
 
             boolean connectedBrEdr =
                     deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_BREDR)
@@ -2245,7 +2224,7 @@ public class RemoteDevices {
                     .append(" => ")
                     .append(anonIdentityAddress)
                     .append("(")
-                    .append(Utils.addressTypeToString(deviceProperties.getIdentityAddressType()))
+                    .append(Utils.addressTypeToString(identityAddressType))
                     .append(")")
                     .append(" [")
                     .append(Utils.deviceTypeToString(deviceProperties.getDeviceType()))

@@ -39,7 +39,7 @@ import java.util.Map;
 
 /** Provides Media Control Profile, as a service in the Bluetooth application. */
 public class McpService extends ProfileService {
-    private static final String TAG = Utils.TAG_PREFIX_BLUETOOTH + McpService.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + McpService.class.getSimpleName();
 
     private static McpService sMcpService;
 

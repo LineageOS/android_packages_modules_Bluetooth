@@ -19,6 +19,7 @@ package com.android.bluetooth.btservice
 import android.bluetooth.BluetoothDevice
 import android.companion.AssociationInfo
 import android.companion.AssociationRequest.DEVICE_PROFILE_WATCH
+import android.companion.CompanionDeviceManager
 import android.companion.CompanionDeviceManager.OnAssociationsChangedListener
 import android.os.Handler
 import android.os.Looper
@@ -39,7 +40,7 @@ class WatchConnectionStateListener(private val adapterService: AdapterService, l
 
     init {
         if (!isWatch(adapterService)) {
-            val cdm = adapterService.getCompanionDeviceManager()
+            val cdm = adapterService.getSystemService(CompanionDeviceManager::class.java)
             cdm.addOnAssociationsChangedListener(Handler(looper)::post, this)
             onAssociationsChanged(cdm.getAllAssociations())
         }

@@ -20,12 +20,14 @@ package com.android.bluetooth.btservice;
 import android.bluetooth.BluetoothUtils;
 import android.util.Log;
 
+import com.android.bluetooth.Utils;
+
 /**
  * APIs of interoperability workaround utilities. These APIs will call stack layer's interop APIs of
  * interop.cc to do matching or entry adding/removing.
  */
 public class InteropUtil {
-    private static final String TAG = InteropUtil.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + InteropUtil.class.getSimpleName();
 
     /**
      * Add interop feature from device/include/interop.h to below InteropFeature if this feature

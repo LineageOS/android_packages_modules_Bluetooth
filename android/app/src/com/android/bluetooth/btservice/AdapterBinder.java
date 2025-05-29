@@ -34,7 +34,7 @@ import java.io.FileOutputStream;
 import java.io.PrintWriter;
 
 class AdapterBinder extends IAdapter.Stub {
-    private static final String TAG = AdapterBinder.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + AdapterBinder.class.getSimpleName();
 
     private final AdapterService mService;
 

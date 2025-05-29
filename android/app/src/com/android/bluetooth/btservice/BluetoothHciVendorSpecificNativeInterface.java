@@ -16,40 +16,17 @@
 
 package com.android.bluetooth.btservice;
 
-import com.android.internal.annotations.GuardedBy;
-import com.android.internal.annotations.VisibleForTesting;
-
 public class BluetoothHciVendorSpecificNativeInterface {
     private static final String TAG =
             BluetoothHciVendorSpecificNativeInterface.class.getSimpleName();
 
-    @GuardedBy("INSTANCE_LOCK")
-    private static BluetoothHciVendorSpecificNativeInterface sInstance;
+    private final BluetoothHciVendorSpecificDispatcher mDispatcher;
 
-    private static final Object INSTANCE_LOCK = new Object();
-
-    /** Get singleton instance. */
-    public static BluetoothHciVendorSpecificNativeInterface getInstance() {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new BluetoothHciVendorSpecificNativeInterface();
-            }
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    static void setInstance(BluetoothHciVendorSpecificNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
-    }
-
-    private BluetoothHciVendorSpecificDispatcher mDispatcher;
-
-    void init(BluetoothHciVendorSpecificDispatcher dispatcher) {
+    BluetoothHciVendorSpecificNativeInterface(BluetoothHciVendorSpecificDispatcher dispatcher) {
         mDispatcher = dispatcher;
+    }
+
+    void init() {
         initNative();
     }
 

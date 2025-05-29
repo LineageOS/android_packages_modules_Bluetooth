@@ -177,7 +177,6 @@ public class LeAudioService extends ConnectableProfile {
     private final ArrayDeque<BluetoothLeBroadcastSettings> mCreateBroadcastQueue =
             new ArrayDeque<>();
 
-    private final DatabaseManager mDatabaseManager;
     private final LeAudioNativeInterface mNativeInterface;
     private final HandlerThread mStateMachinesThread;
     private final LeAudioCodecConfig mLeAudioCodecConfig;
@@ -259,7 +258,6 @@ public class LeAudioService extends ConnectableProfile {
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface, () -> new LeAudioNativeInterface(adapterService, this));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
 
         // Start handler thread for state machines
@@ -4493,6 +4491,7 @@ public class LeAudioService extends ConnectableProfile {
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true on success, otherwise false
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
@@ -4564,22 +4563,6 @@ public class LeAudioService extends ConnectableProfile {
                 && Utils.arrayContains(featureUuids, BluetoothUuid.BASS)) {
             mBassClientService.setConnectionPolicy(device, connectionPolicy);
         }
-    }
-
-    /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        int connection_policy = mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
-        Log.d(TAG, device + " connection policy = " + connection_policy);
-        return connection_policy;
     }
 
     /**

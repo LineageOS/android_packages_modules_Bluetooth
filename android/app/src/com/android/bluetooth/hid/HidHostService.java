@@ -47,7 +47,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.MetricsLogger;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 
 import java.util.Collections;
@@ -101,7 +100,6 @@ public class HidHostService extends ConnectableProfile {
     private final Map<BluetoothDevice, InputDevice> mInputDevices =
             Collections.synchronizedMap(new HashMap<>());
 
-    private final DatabaseManager mDatabaseManager;
     private final HidHostNativeInterface mNativeInterface;
 
     private static final int MESSAGE_CONNECT = 1;
@@ -131,7 +129,6 @@ public class HidHostService extends ConnectableProfile {
     @VisibleForTesting
     HidHostService(AdapterService adapterService, HidHostNativeInterface nativeInterface) {
         super(BluetoothProfile.HID_HOST, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(nativeInterface, () -> new HidHostNativeInterface(this));
         mNativeInterface.init();
@@ -765,6 +762,7 @@ public class HidHostService extends ConnectableProfile {
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "setConnectionPolicy: device=" + device);
 
@@ -812,21 +810,6 @@ public class HidHostService extends ConnectableProfile {
         mHandler.sendMessage(msg);
 
         return true;
-    }
-
-    /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        Log.d(TAG, "getConnectionPolicy: device=" + device);
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     /**

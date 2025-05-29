@@ -93,8 +93,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public final class Utils {
-    public static final String TAG_PREFIX_BLUETOOTH = "Bluetooth";
-    private static final String TAG = TAG_PREFIX_BLUETOOTH + Utils.class.getSimpleName();
+    public static final String BT_PREFIX = "Bluetooth";
+    private static final String TAG = BT_PREFIX + Utils.class.getSimpleName();
 
     public static final int BD_ADDR_LEN = 6; // bytes
     public static final int TYPED_BD_ADDR_LEN = 7; // bytes

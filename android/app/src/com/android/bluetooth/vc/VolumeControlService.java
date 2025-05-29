@@ -58,7 +58,6 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.internal.annotations.GuardedBy;
@@ -91,7 +90,6 @@ public class VolumeControlService extends ConnectableProfile {
             new RemoteCallbackList<>();
 
     private final AudioManager mAudioManager;
-    private final DatabaseManager mDatabaseManager;
     private final Handler mHandler;
     private final HandlerThread mStateMachinesThread;
     private final Looper mStateMachinesLooper;
@@ -122,7 +120,6 @@ public class VolumeControlService extends ConnectableProfile {
             Looper looper,
             VolumeControlNativeInterface nativeInterface) {
         super(BluetoothProfile.VOLUME_CONTROL, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,
@@ -476,6 +473,7 @@ public class VolumeControlService extends ConnectableProfile {
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true on success, otherwise false
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
@@ -485,10 +483,6 @@ public class VolumeControlService extends ConnectableProfile {
             disconnect(device);
         }
         return true;
-    }
-
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     boolean isVolumeOffsetAvailable(BluetoothDevice device) {

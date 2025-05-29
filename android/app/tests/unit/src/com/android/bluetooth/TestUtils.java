@@ -66,7 +66,7 @@ import java.util.stream.IntStream;
 
 /** A set of methods useful in Bluetooth instrumentation tests */
 public class TestUtils {
-    private static final String TAG = Utils.TAG_PREFIX_BLUETOOTH + TestUtils.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + TestUtils.class.getSimpleName();
 
     private static Context getContext() {
         return InstrumentationRegistry.getInstrumentation().getContext();
@@ -77,16 +77,19 @@ public class TestUtils {
         return getContext().getSystemService(BluetoothManager.class);
     }
 
-    /** Mocks {@link Context#getSystemService(Class)} to return a specific service instance. */
-    public static <T> void mockGetSystemService(Context context, Class<T> serviceClass, T service) {
-        doReturn(service).when(context).getSystemService(eq(serviceClass));
-    }
-
     /** Mocks {@link Context#getSystemService(Class)} to return a mock instance of the service. */
     public static <T> T mockGetSystemService(Context context, Class<T> serviceClass) {
         T mockedService = mock(serviceClass);
         mockGetSystemService(context, serviceClass, mockedService);
         return mockedService;
+    }
+
+    /** Mocks {@link Context#getSystemService(Class)} to return a specific service instance. */
+    public static <T> void mockGetSystemService(Context context, Class<T> serviceClass, T service) {
+        doReturn(service).when(context).getSystemService(serviceClass);
+        final var serviceName = getContext().getSystemServiceName(serviceClass);
+        doReturn(service).when(context).getSystemService(serviceName);
+        doReturn(serviceName).when(context).getSystemServiceName(serviceClass);
     }
 
     /**

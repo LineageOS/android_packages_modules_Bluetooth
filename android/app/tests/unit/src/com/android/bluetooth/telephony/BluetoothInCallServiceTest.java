@@ -19,6 +19,7 @@ package com.android.bluetooth.telephony;
 import static android.platform.test.flag.junit.DeviceFlagsValueProvider.createCheckFlagsRule;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.telephony.BluetoothInCallService.Result;
 import static com.android.bluetooth.telephony.BluetoothInCallService.TerminationReason;
 
@@ -132,8 +133,7 @@ public class BluetoothInCallServiceTest {
 
         final var context = InstrumentationRegistry.getInstrumentation().getContext();
         Context spiedContext = spy(new ContextWrapper(context));
-        mockGetSystemService(
-                spiedContext, Context.TELEPHONY_SERVICE, TelephonyManager.class, mTelephonyManager);
+        mockGetSystemService(spiedContext, TelephonyManager.class, mTelephonyManager);
 
         mBluetoothInCallService = new BluetoothInCallService(spiedContext, mCallInfo);
         mBluetoothInCallService.onCreate();
@@ -143,13 +143,6 @@ public class BluetoothInCallServiceTest {
     public void tearDown() {
         TbsService.setTbsService(null);
         HeadsetService.setHeadsetService(null);
-    }
-
-    private static <T> void mockGetSystemService(
-            Context context, String serviceName, Class<T> serviceClass, T service) {
-        doReturn(service).when(context).getSystemService(eq(serviceClass));
-        doReturn(service).when(context).getSystemService(eq(serviceName));
-        doReturn(serviceName).when(context).getSystemServiceName(eq(serviceClass));
     }
 
     @Test

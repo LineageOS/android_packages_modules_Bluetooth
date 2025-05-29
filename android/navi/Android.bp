@@ -66,6 +66,7 @@ python_test_host {
     test_config: "Tradefed.xml",
     test_suites: [
         "general-tests",
+        "mts-bt",
     ],
     test_options: {
         unit_test: false,

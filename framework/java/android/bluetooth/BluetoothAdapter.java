@@ -1504,14 +1504,6 @@ public final class BluetoothAdapter {
             }
             state = BluetoothAdapter.STATE_OFF;
         }
-        if (VDBG) {
-            Log.d(
-                    TAG,
-                    ""
-                            + hashCode()
-                            + ": getState(). Returning "
-                            + BluetoothAdapter.nameForState(state));
-        }
         return state;
     }
 
@@ -1535,10 +1527,6 @@ public final class BluetoothAdapter {
                             + "whether you can use BLE & BT classic.")
     public @InternalAdapterState int getLeState() {
         int state = sBluetoothGetSystemStateCache.query(null);
-
-        if (VDBG) {
-            Log.d(TAG, "getLeState() returning " + BluetoothAdapter.nameForState(state));
-        }
         return state;
     }
 

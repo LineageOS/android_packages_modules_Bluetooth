@@ -67,8 +67,7 @@ import java.util.Set;
  * state. TODO(BT) This class can be removed and this logic moved to the stack.
  */
 final class BondStateMachine extends StateMachine {
-    private static final String TAG =
-            Utils.TAG_PREFIX_BLUETOOTH + BondStateMachine.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + BondStateMachine.class.getSimpleName();
 
     static final int CREATE_BOND = 1;
     static final int CANCEL_BOND = 2;

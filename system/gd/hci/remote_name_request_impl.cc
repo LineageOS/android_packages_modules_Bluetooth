@@ -228,14 +228,13 @@ void RemoteNameRequestModuleImpl::StartRemoteNameRequest(
         CompletionCallback on_completion,
         RemoteHostSupportedFeaturesCallback on_remote_host_supported_features_notification,
         RemoteNameCallback on_remote_name_complete) {
-  pimpl_->handler_->CallOn(pimpl_.get(), &impl::StartRemoteNameRequest, address, std::move(request),
-                           std::move(on_completion),
-                           std::move(on_remote_host_supported_features_notification),
-                           std::move(on_remote_name_complete));
+  pimpl_->StartRemoteNameRequest(address, std::move(request), std::move(on_completion),
+                                 std::move(on_remote_host_supported_features_notification),
+                                 std::move(on_remote_name_complete));
 }
 
 void RemoteNameRequestModuleImpl::CancelRemoteNameRequest(Address address) {
-  pimpl_->handler_->CallOn(pimpl_.get(), &impl::CancelRemoteNameRequest, address);
+  pimpl_->CancelRemoteNameRequest(address);
 }
 
 void RemoteNameRequestModuleImpl::ReportRemoteNameRequestCancellation(Address address) {

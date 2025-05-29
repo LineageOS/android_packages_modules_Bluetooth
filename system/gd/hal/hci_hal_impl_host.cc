@@ -328,8 +328,11 @@ HciHalImpl::~HciHalImpl() {
     hci_incoming_thread_.GetReactor()->Unregister(reactable_);
     log::info("HAL is stopping, start waiting for last callback");
     // Wait up to 1 second for the last incoming packet callback to finish
-    hci_incoming_thread_.GetReactor()->WaitForUnregisteredReactable(
-            std::chrono::milliseconds(1000));
+    log::assert_that(hci_incoming_thread_.GetReactor()->WaitForUnregisteredReactable(
+                             os::kReactableUnregistrationTimeout),
+                     "assert failed: "
+                     "hci_incoming_thread_.GetReactor()->WaitForUnregisteredReactable {}ms failed",
+                     os::kReactableUnregistrationTimeout.count());
     log::info("HAL is stopping, finished waiting for last callback");
     log::assert_that(sock_fd_ != INVALID_FD, "assert failed: sock_fd_ != INVALID_FD");
   }

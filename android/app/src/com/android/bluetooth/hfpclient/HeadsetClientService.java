@@ -46,7 +46,6 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -79,7 +78,6 @@ public class HeadsetClientService extends ConnectableProfile {
             new HashMap<>();
 
     private final HandlerThread mSmThread;
-    private final DatabaseManager mDatabaseManager;
     private final AudioManager mAudioManager;
     private final HeadsetClientNativeInterface mNativeInterface;
     private final BatteryManager mBatteryManager;
@@ -96,7 +94,6 @@ public class HeadsetClientService extends ConnectableProfile {
     HeadsetClientService(
             AdapterService adapterService, HeadsetClientNativeInterface nativeInterface) {
         super(BluetoothProfile.HEADSET_CLIENT, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(adapterService.getDatabase());
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
         mMaxAmVcVol = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
         mMinAmVcVol = mAudioManager.getStreamMinVolume(AudioManager.STREAM_VOICE_CALL);
@@ -410,6 +407,7 @@ public class HeadsetClientService extends ConnectableProfile {
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
@@ -422,20 +420,6 @@ public class HeadsetClientService extends ConnectableProfile {
             disconnect(device);
         }
         return true;
-    }
-
-    /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     boolean startVoiceRecognition(BluetoothDevice device) {

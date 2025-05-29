@@ -26,7 +26,8 @@ import java.io.FileDescriptor;
 
 /** Native interface to be used by AdapterService */
 public class AdapterNativeInterface {
-    private static final String TAG = AdapterNativeInterface.class.getSimpleName();
+    private static final String TAG =
+            Utils.BT_PREFIX + AdapterNativeInterface.class.getSimpleName();
 
     private JniCallbacks mJniCallbacks;
 

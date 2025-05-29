@@ -46,6 +46,7 @@ import static com.android.bluetooth.Utils.isDualModeAudioEnabled;
 import static com.android.bluetooth.Utils.isPackageNameAccurate;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -201,8 +202,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 public class AdapterService extends Service {
-    private static final String TAG =
-            Utils.TAG_PREFIX_BLUETOOTH + AdapterService.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + AdapterService.class.getSimpleName();
 
     private static final int MESSAGE_PROFILE_SERVICE_STATE_CHANGED = 1;
     private static final int MESSAGE_PROFILE_SERVICE_REGISTERED = 2;
@@ -286,6 +286,10 @@ public class AdapterService extends Service {
     private final Looper mLooper;
     private final AdapterServiceHandler mHandler;
     private final AdapterNativeInterface mNativeInterface;
+    private final BluetoothKeystoreService mBluetoothKeystoreService;
+    private final BluetoothQualityReportNativeInterface mBluetoothQualityReportNativeInterface;
+    private final BluetoothHciVendorSpecificNativeInterface
+            mBluetoothHciVendorSpecificNativeInterface;
     private final GattNativeInterface mGattNativeInterface;
     private final AdvertiseManagerNativeInterface mAdvertiseManagerNativeInterface;
     private final DistanceMeasurementNativeInterface mDistanceMeasurementNativeInterface;
@@ -336,7 +340,6 @@ public class AdapterService extends Service {
 
     private BluetoothSocketManagerBinder mBluetoothSocketManagerBinder;
 
-    private BluetoothKeystoreService mBluetoothKeystoreService;
     private HeadsetService mHeadsetService;
     private HeadsetClientService mHeadsetClientService;
     private A2dpService mA2dpService;
@@ -355,8 +358,6 @@ public class AdapterService extends Service {
     private LeAudioService mLeAudioService;
     private BassClientService mBassClientService;
     private BatteryService mBatteryService;
-    private BluetoothQualityReportNativeInterface mBluetoothQualityReportNativeInterface;
-    private BluetoothHciVendorSpecificNativeInterface mBluetoothHciVendorSpecificNativeInterface;
     private GattService mGattService;
     private ScanController mScanController;
 
@@ -394,7 +395,15 @@ public class AdapterService extends Service {
 
     // Keep a constructor for ActivityThread.handleCreateService
     AdapterService() {
-        this(Looper.getMainLooper(), new AdapterNativeInterface(), null, null, null);
+        this(
+                Looper.getMainLooper(),
+                new AdapterNativeInterface(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
     }
 
     @VisibleForTesting
@@ -402,12 +411,18 @@ public class AdapterService extends Service {
             Looper looper,
             Context ctx,
             AdapterNativeInterface nativeInterface,
+            BluetoothKeystoreNativeInterface bluetoothKeystoreNativeInterface,
+            BluetoothQualityReportNativeInterface bluetoothQualityReportNativeInterface,
+            BluetoothHciVendorSpecificNativeInterface bluetoothHciVendorSpecificNativeInterface,
             GattNativeInterface gattNativeInterface,
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
             DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
         this(
                 looper,
                 nativeInterface,
+                bluetoothKeystoreNativeInterface,
+                bluetoothQualityReportNativeInterface,
+                bluetoothHciVendorSpecificNativeInterface,
                 gattNativeInterface,
                 advertiseManagerNativeInterface,
                 distanceMeasurementNativeInterface);
@@ -417,12 +432,30 @@ public class AdapterService extends Service {
     private AdapterService(
             Looper looper,
             AdapterNativeInterface nativeInterface,
+            BluetoothKeystoreNativeInterface bluetoothKeystoreNativeInterface,
+            BluetoothQualityReportNativeInterface bluetoothQualityReportNativeInterface,
+            BluetoothHciVendorSpecificNativeInterface bluetoothHciVendorSpecificNativeInterface,
             GattNativeInterface gattNativeInterface,
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
             DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
         mLooper = requireNonNull(looper);
         mHandler = new AdapterServiceHandler(mLooper);
         mNativeInterface = requireNonNull(nativeInterface);
+        mBluetoothKeystoreService = new BluetoothKeystoreService(bluetoothKeystoreNativeInterface);
+        mBluetoothQualityReportNativeInterface =
+                requireNonNullElseGet(
+                        bluetoothQualityReportNativeInterface,
+                        () -> new BluetoothQualityReportNativeInterface(this));
+        if (Flags.hciVendorSpecificExtension()) {
+            mBluetoothHciVendorSpecificNativeInterface =
+                    requireNonNullElseGet(
+                            bluetoothHciVendorSpecificNativeInterface,
+                            () ->
+                                    new BluetoothHciVendorSpecificNativeInterface(
+                                            mBluetoothHciVendorSpecificDispatcher));
+        } else {
+            mBluetoothHciVendorSpecificNativeInterface = null;
+        }
         mGattNativeInterface = gattNativeInterface;
         mAdvertiseManagerNativeInterface = advertiseManagerNativeInterface;
         mDistanceMeasurementNativeInterface = distanceMeasurementNativeInterface;
@@ -782,9 +815,7 @@ public class AdapterService extends Service {
         boolean isCommonCriteriaMode =
                 requireNonNull(getSystemService(DevicePolicyManager.class))
                         .isCommonCriteriaModeEnabled(null);
-        mBluetoothKeystoreService =
-                new BluetoothKeystoreService(
-                        BluetoothKeystoreNativeInterface.getInstance(), isCommonCriteriaMode);
+        mBluetoothKeystoreService.init(isCommonCriteriaMode);
         mBluetoothKeystoreService.start();
         int configCompareResult = mBluetoothKeystoreService.getCompareResult();
 
@@ -818,14 +849,10 @@ public class AdapterService extends Service {
 
         mBluetoothKeystoreService.initJni();
 
-        mBluetoothQualityReportNativeInterface =
-                requireNonNull(BluetoothQualityReportNativeInterface.getInstance(this));
         mBluetoothQualityReportNativeInterface.init();
 
         if (Flags.hciVendorSpecificExtension()) {
-            mBluetoothHciVendorSpecificNativeInterface =
-                    requireNonNull(mBluetoothHciVendorSpecificNativeInterface.getInstance());
-            mBluetoothHciVendorSpecificNativeInterface.init(mBluetoothHciVendorSpecificDispatcher);
+            mBluetoothHciVendorSpecificNativeInterface.init();
         }
 
         mSdpManager = new SdpManager(this, mLooper);
@@ -1144,7 +1171,8 @@ public class AdapterService extends Service {
      *
      * @param profile the service being added.
      */
-    public void addProfile(ProfileService profile) {
+    @VisibleForTesting
+    void addProfile(ProfileService profile) {
         mHandler.obtainMessage(MESSAGE_PROFILE_SERVICE_REGISTERED, profile).sendToTarget();
     }
 
@@ -1153,7 +1181,7 @@ public class AdapterService extends Service {
      *
      * @param profile the service being removed.
      */
-    public void removeProfile(ProfileService profile) {
+    private void removeProfile(ProfileService profile) {
         mHandler.obtainMessage(MESSAGE_PROFILE_SERVICE_UNREGISTERED, profile).sendToTarget();
     }
 
@@ -1163,7 +1191,8 @@ public class AdapterService extends Service {
      * @param profile the service being removed.
      * @param state {@link BluetoothAdapter#STATE_ON} or {@link BluetoothAdapter#STATE_OFF}
      */
-    public void onProfileServiceStateChanged(ProfileService profile, int state) {
+    @VisibleForTesting
+    void onProfileServiceStateChanged(ProfileService profile, int state) {
         if (state != BluetoothAdapter.STATE_ON && state != BluetoothAdapter.STATE_OFF) {
             throw new IllegalArgumentException(nameForState(state));
         }
@@ -2677,8 +2706,8 @@ public class AdapterService extends Service {
 
     public byte[] getByteIdentityAddress(BluetoothDevice device) {
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
-        if (deviceProp != null && deviceProp.getIdentityAddress() != null) {
-            return Utils.getBytesFromAddress(deviceProp.getIdentityAddress());
+        if (deviceProp != null && deviceProp.getIdentityAddress().getAddress() != null) {
+            return Utils.getBytesFromAddress(deviceProp.getIdentityAddress().getAddress());
         }
 
         // Return null if identity address unknown
@@ -2714,13 +2743,7 @@ public class AdapterService extends Service {
     }
 
     public String getIdentityAddress(String address) {
-        BluetoothDevice device = getRemoteDevice(address.toUpperCase(Locale.ROOT));
-        DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
-        if (deviceProp != null && deviceProp.getIdentityAddress() != null) {
-            return deviceProp.getIdentityAddress();
-        }
-        // Return null if identity address unknown
-        return null;
+        return getIdentityAddressWithType(address).getAddress();
     }
 
     /**
@@ -2734,20 +2757,9 @@ public class AdapterService extends Service {
     public BluetoothAddress getIdentityAddressWithType(@NonNull String address) {
         BluetoothDevice device = getRemoteDevice(address.toUpperCase(Locale.ROOT));
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
-
-        String identityAddress = null;
-        int identityAddressType = BluetoothDevice.ADDRESS_TYPE_UNKNOWN;
-
-        if (deviceProp != null) {
-            if (deviceProp.getIdentityAddress() != null) {
-                identityAddress = deviceProp.getIdentityAddress();
-            }
-            identityAddressType = deviceProp.getIdentityAddressType();
-        } else {
-            identityAddress = null;
-        }
-
-        return new BluetoothAddress(identityAddress, identityAddressType);
+        return deviceProp != null
+                ? deviceProp.getIdentityAddress()
+                : DeviceProperties.UNKNOWN_ADDRESS;
     }
 
     public boolean addAssociatedPackage(BluetoothDevice device, String packageName) {
@@ -3421,99 +3433,52 @@ public class AdapterService extends Service {
     }
 
     /** All profile toggles are disabled, so connects all supported profiles */
-    void connectAllSupportedProfiles(BluetoothDevice device) {
+    private void connectAllSupportedProfiles(BluetoothDevice device) {
         int numProfilesConnected = 0;
 
         // Order matters, some devices do not accept A2DP connection before HFP connection
-        if (mHeadsetService != null && isProfileSupported(device, BluetoothProfile.HEADSET)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting Headset Profile");
-            mHeadsetService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mHeadsetService, device)) {
             numProfilesConnected++;
         }
-        if (mHeadsetClientService != null
-                && isProfileSupported(device, BluetoothProfile.HEADSET_CLIENT)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting HFP");
-            mHeadsetClientService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mHeadsetClientService, device)) {
             numProfilesConnected++;
         }
-        if (mA2dpService != null && isProfileSupported(device, BluetoothProfile.A2DP)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting A2dp");
-            // Set connection policy also connects the profile with CONNECTION_POLICY_ALLOWED
-            mA2dpService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mA2dpService, device)) {
             numProfilesConnected++;
         }
-        if (mA2dpSinkService != null && isProfileSupported(device, BluetoothProfile.A2DP_SINK)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting A2dp Sink");
-            mA2dpSinkService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mA2dpSinkService, device)) {
             numProfilesConnected++;
         }
-        if (mMapClientService != null && isProfileSupported(device, BluetoothProfile.MAP_CLIENT)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting MAP");
-            mMapClientService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mMapClientService, device)) {
             numProfilesConnected++;
         }
-        if (mHidHostService != null && isProfileSupported(device, BluetoothProfile.HID_HOST)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting Hid Host Profile");
-            mHidHostService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mHidHostService, device)) {
             numProfilesConnected++;
         }
-        if (mPanService != null && isProfileSupported(device, BluetoothProfile.PAN)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting Pan Profile");
-            mPanService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mPanService, device)) {
             numProfilesConnected++;
         }
-        if (mPbapClientService != null
-                && isProfileSupported(device, BluetoothProfile.PBAP_CLIENT)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting Pbap");
-            mPbapClientService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mPbapClientService, device)) {
             numProfilesConnected++;
         }
-        if (mHearingAidService != null
-                && isProfileSupported(device, BluetoothProfile.HEARING_AID)) {
-            if (mHapClientService != null
-                    && isProfileSupported(device, BluetoothProfile.HAP_CLIENT)) {
-                Log.i(
-                        TAG,
-                        "connectAllSupportedProfiles: Hearing Access Client Profile is enabled at"
-                                + " the same time with Hearing Aid Profile, ignore Hearing Aid"
-                                + " Profile");
-            } else {
-                Log.i(TAG, "connectAllSupportedProfiles: Connecting Hearing Aid Profile");
-                mHearingAidService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
-                numProfilesConnected++;
-            }
-        }
-        if (mHapClientService != null && isProfileSupported(device, BluetoothProfile.HAP_CLIENT)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting Hearing Access Client Profile");
-            mHapClientService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mHapClientService, device)) {
+            numProfilesConnected++;
+        } else if (connectIfProfileSupported(mHearingAidService, device)) {
             numProfilesConnected++;
         }
-        if (mVolumeControlService != null
-                && isProfileSupported(device, BluetoothProfile.VOLUME_CONTROL)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting Volume Control Profile");
-            mVolumeControlService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mVolumeControlService, device)) {
             numProfilesConnected++;
         }
-        if (mCsipSetCoordinatorService != null
-                && isProfileSupported(device, BluetoothProfile.CSIP_SET_COORDINATOR)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting Coordinated Set Profile");
-            mCsipSetCoordinatorService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mCsipSetCoordinatorService, device)) {
             numProfilesConnected++;
         }
-        if (mLeAudioService != null && isProfileSupported(device, BluetoothProfile.LE_AUDIO)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting LeAudio profile (BAP)");
-            mLeAudioService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mLeAudioService, device)) {
             numProfilesConnected++;
         }
-        if (mBassClientService != null
-                && isProfileSupported(device, BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting LE Broadcast Assistant Profile");
-            mBassClientService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mBassClientService, device)) {
             numProfilesConnected++;
         }
-        if (mBatteryService != null && isProfileSupported(device, BluetoothProfile.BATTERY)) {
-            Log.i(TAG, "connectAllSupportedProfiles: Connecting Battery Service");
-            mBatteryService.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        if (connectIfProfileSupported(mBatteryService, device)) {
             numProfilesConnected++;
         }
 
@@ -3521,6 +3486,16 @@ public class AdapterService extends Service {
                 TAG,
                 "connectAllSupportedProfiles: Number of Profiles Connected: "
                         + numProfilesConnected);
+    }
+
+    private boolean connectIfProfileSupported(ConnectableProfile profile, BluetoothDevice device) {
+        if (profile == null || !isProfileSupported(device, profile.getProfileId())) {
+            return false;
+        }
+
+        Log.i(TAG, "connectIfProfileSupported: Connecting " + profile.getName());
+        profile.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+        return true;
     }
 
     /**
