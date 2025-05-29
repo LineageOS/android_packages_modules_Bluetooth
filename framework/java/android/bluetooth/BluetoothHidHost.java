@@ -322,7 +322,6 @@ public final class BluetoothHidHost implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public @NonNull List<BluetoothDevice> getConnectedDevices() {
-        if (VDBG) log("getConnectedDevices()");
         final IBluetoothHidHost service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
@@ -347,7 +346,6 @@ public final class BluetoothHidHost implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
-        if (VDBG) log("getDevicesMatchingStates()");
         final IBluetoothHidHost service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
@@ -374,7 +372,6 @@ public final class BluetoothHidHost implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public int getConnectionState(@NonNull BluetoothDevice device) {
-        if (VDBG) log("getState(" + device + ")");
         if (device == null) {
             throw new IllegalArgumentException("device must not be null");
         }
@@ -522,7 +519,6 @@ public final class BluetoothHidHost implements BluetoothProfile {
                 BLUETOOTH_PRIVILEGED,
             })
     public int getPriority(BluetoothDevice device) {
-        if (VDBG) log("getPriority(" + device + ")");
         return BluetoothAdapter.connectionPolicyToPriority(getConnectionPolicy(device));
     }
 
@@ -544,7 +540,6 @@ public final class BluetoothHidHost implements BluetoothProfile {
                 BLUETOOTH_PRIVILEGED,
             })
     public @ConnectionPolicy int getConnectionPolicy(@NonNull BluetoothDevice device) {
-        if (VDBG) log("getConnectionPolicy(" + device + ")");
         if (device == null) {
             throw new IllegalArgumentException("device must not be null");
         }
@@ -578,8 +573,6 @@ public final class BluetoothHidHost implements BluetoothProfile {
                 BLUETOOTH_PRIVILEGED,
             })
     public @Transport int getPreferredTransport(@NonNull BluetoothDevice device) {
-        if (VDBG) log("getPreferredTransport(" + device + ")");
-
         requireNonNull(device);
 
         final IBluetoothHidHost service = getService();
@@ -641,7 +634,6 @@ public final class BluetoothHidHost implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean getProtocolMode(BluetoothDevice device) {
-        if (VDBG) log("getProtocolMode(" + device + ")");
         final IBluetoothHidHost service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
