@@ -1159,6 +1159,7 @@ public class HeadsetService extends ConnectableProfile {
             BluetoothDevice previousActiveDevice = mActiveDevice;
             mActiveDevice = null;
             mNativeInterface.setActiveDevice(null);
+            broadcastActiveDevice(null);
             if (mSystemInterface.isScoManagedByAudioEnabled()) {
                 mSystemInterface
                         .getAudioManager()
@@ -1166,8 +1167,6 @@ public class HeadsetService extends ConnectableProfile {
                                 null,
                                 previousActiveDevice,
                                 BluetoothProfileConnectionInfo.createHfpInfo());
-            } else {
-                broadcastActiveDevice(null);
             }
             updateInbandRinging(null, true);
         }
