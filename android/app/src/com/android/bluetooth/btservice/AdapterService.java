@@ -340,11 +340,8 @@ public class AdapterService extends Service {
     private HeadsetService mHeadsetService;
     private HeadsetClientService mHeadsetClientService;
     private A2dpService mA2dpService;
-    private A2dpSinkService mA2dpSinkService;
     private BluetoothMapService mMapService;
     private MapClientService mMapClientService;
-    private HidHostService mHidHostService;
-    private PanService mPanService;
     private BluetoothPbapService mPbapService;
     private PbapClientService mPbapClientService;
     private HearingAidService mHearingAidService;
@@ -1878,10 +1875,10 @@ public class AdapterService extends Service {
         connectEnabledProfile(mHeadsetService, device);
         connectEnabledProfile(mHeadsetClientService, device);
         connectEnabledProfile(mA2dpService, device);
-        connectEnabledProfile(mA2dpSinkService, device);
+        connectEnabledProfile(BluetoothProfile.A2DP_SINK, device);
         connectEnabledProfile(mMapClientService, device);
-        connectEnabledProfile(mHidHostService, device);
-        connectEnabledProfile(mPanService, device);
+        connectEnabledProfile(BluetoothProfile.HID_HOST, device);
+        connectEnabledProfile(BluetoothProfile.PAN, device);
         connectEnabledProfile(mPbapClientService, device);
         connectEnabledProfile(mHearingAidService, device);
         connectEnabledProfile(mHapClientService, device);
@@ -1901,6 +1898,18 @@ public class AdapterService extends Service {
             Log.i(TAG, "connectEnabledProfile: Connecting " + profile.getName());
             profile.connect(device);
         }
+    }
+
+    // TODO(b/419212232) Every profile will call this and not the above `connectEnabledProfile`.
+    private void connectEnabledProfile(int id, BluetoothDevice device) {
+        getStartedProfile(id)
+                .filter(profile -> isProfileSupported(device, id))
+                .filter(prof -> prof.getConnectionPolicy(device) > CONNECTION_POLICY_FORBIDDEN)
+                .ifPresent(
+                        profile -> {
+                            Log.i(TAG, "connectEnabledProfile: Connecting " + profile.getName());
+                            profile.connect(device);
+                        });
     }
 
     /**
@@ -1924,11 +1933,8 @@ public class AdapterService extends Service {
         mHeadsetService = HeadsetService.getHeadsetService();
         mHeadsetClientService = HeadsetClientService.getHeadsetClientService();
         mA2dpService = A2dpService.getA2dpService();
-        mA2dpSinkService = A2dpSinkService.getA2dpSinkService();
         mMapService = BluetoothMapService.getBluetoothMapService();
         mMapClientService = MapClientService.getMapClientService();
-        mHidHostService = HidHostService.getHidHostService();
-        mPanService = PanService.getPanService();
         mPbapService = BluetoothPbapService.getBluetoothPbapService();
         mPbapClientService = PbapClientService.getPbapClientService();
         mHearingAidService = HearingAidService.getHearingAidService();
@@ -3356,16 +3362,16 @@ public class AdapterService extends Service {
         if (connectIfProfileSupported(mA2dpService, device)) {
             numProfilesConnected++;
         }
-        if (connectIfProfileSupported(mA2dpSinkService, device)) {
+        if (connectIfProfileSupported(BluetoothProfile.A2DP_SINK, device)) {
             numProfilesConnected++;
         }
         if (connectIfProfileSupported(mMapClientService, device)) {
             numProfilesConnected++;
         }
-        if (connectIfProfileSupported(mHidHostService, device)) {
+        if (connectIfProfileSupported(BluetoothProfile.HID_HOST, device)) {
             numProfilesConnected++;
         }
-        if (connectIfProfileSupported(mPanService, device)) {
+        if (connectIfProfileSupported(BluetoothProfile.PAN, device)) {
             numProfilesConnected++;
         }
         if (connectIfProfileSupported(mPbapClientService, device)) {
@@ -3408,6 +3414,20 @@ public class AdapterService extends Service {
         return true;
     }
 
+    // TODO(b/419212232) Every profile will call this and not the above `connectIfProfileSupported`.
+    private boolean connectIfProfileSupported(int id, BluetoothDevice device) {
+        return getStartedProfile(id)
+                .filter(profile -> isProfileSupported(device, id))
+                .map(
+                        profile -> {
+                            final var name = profile.getName();
+                            Log.i(TAG, "connectIfProfileSupported: Connecting " + name);
+                            profile.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+                            return true;
+                        })
+                .orElse(false);
+    }
+
     /**
      * Disconnects all enabled and supported bluetooth profiles between the local and remote device
      *
@@ -3419,17 +3439,15 @@ public class AdapterService extends Service {
             Log.e(TAG, "disconnectAllEnabledProfiles: Not all profile services bound");
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
-
         disconnectEnabledProfile(mHeadsetService, device);
         disconnectEnabledProfile(mHeadsetClientService, device);
         disconnectEnabledProfile(mA2dpService, device);
-        disconnectEnabledProfile(mA2dpSinkService, device);
+        disconnectEnabledProfile(BluetoothProfile.A2DP_SINK, device);
         disconnectEnabledProfile(mMapClientService, device);
         disconnectEnabledProfile(mMapService, device);
-        final var hidDevice = (HidDeviceService) mStartedProfiles.get(BluetoothProfile.HID_DEVICE);
-        disconnectEnabledProfile(hidDevice, device);
-        disconnectEnabledProfile(mHidHostService, device);
-        disconnectEnabledProfile(mPanService, device);
+        disconnectEnabledProfile(BluetoothProfile.HID_DEVICE, device);
+        disconnectEnabledProfile(BluetoothProfile.HID_HOST, device);
+        disconnectEnabledProfile(BluetoothProfile.PAN, device);
         disconnectEnabledProfile(mPbapClientService, device);
         disconnectEnabledProfile(mPbapService, device);
         disconnectEnabledProfile(mHearingAidService, device);
@@ -3440,7 +3458,6 @@ public class AdapterService extends Service {
         disconnectEnabledProfile(mLeAudioService, device);
         disconnectEnabledProfile(mBassClientService, device);
         disconnectEnabledProfile(mBatteryService, device);
-
         return BluetoothStatusCodes.SUCCESS;
     }
 
@@ -3453,6 +3470,21 @@ public class AdapterService extends Service {
 
         Log.i(TAG, "Disconnecting " + profile.getName());
         profile.disconnect(device);
+    }
+
+    // TODO(b/419212232) Every profile will call this and not the above `disconnectEnabledProfile`.
+    private void disconnectEnabledProfile(int id, BluetoothDevice device) {
+        getStartedProfile(id)
+                .filter(
+                        profile -> {
+                            final int state = profile.getConnectionState(device);
+                            return state == STATE_CONNECTED || state == STATE_CONNECTING;
+                        })
+                .ifPresent(
+                        profile -> {
+                            Log.i(TAG, "Disconnecting " + profile.getName());
+                            profile.disconnect(device);
+                        });
     }
 
     /**
