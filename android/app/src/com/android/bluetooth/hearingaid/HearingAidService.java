@@ -727,7 +727,7 @@ public class HearingAidService extends ConnectableProfile {
                 BluetoothProfileConnectionInfo.createHearingAidInfo(!stopAudio));
     }
 
-    /** Process a change in the bonding state for a device */
+    @Override
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
         mHandler.post(() -> bondStateChanged(device, toState));
     }

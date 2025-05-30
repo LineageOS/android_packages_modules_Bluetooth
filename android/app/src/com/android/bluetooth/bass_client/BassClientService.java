@@ -1611,6 +1611,7 @@ public class BassClientService extends ConnectableProfile {
         }
     }
 
+    @Override
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
         mHandler.post(() -> bondStateChanged(device, toState));
     }

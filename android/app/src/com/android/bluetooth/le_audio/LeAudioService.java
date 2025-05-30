@@ -4101,6 +4101,7 @@ public class LeAudioService extends ConnectableProfile {
         return sm;
     }
 
+    @Override
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
         mHandler.post(() -> bondStateChanged(device, toState));
     }

@@ -197,4 +197,9 @@ public abstract class ConnectableProfile extends ProfileService {
         Log.w(getName(), "setConnectionPolicy() was called but not implemented");
         return false;
     }
+
+    /** Process a change in the bonding state for a device */
+    public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
+        Log.w(getName(), "handleBondStateChanged() was called but not implemented");
+    }
 }

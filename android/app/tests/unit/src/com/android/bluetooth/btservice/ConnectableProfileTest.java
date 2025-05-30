@@ -132,4 +132,10 @@ public class ConnectableProfileTest {
         final var policyUnknown = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
         assertThat(mConnectableProfile.setConnectionPolicy(mDevice, policyUnknown)).isFalse();
     }
+
+    @Test
+    public void handleBondStateChanged_doesNotCrash() {
+        mConnectableProfile.handleBondStateChanged(
+                mDevice, BluetoothDevice.BOND_NONE, BluetoothDevice.BOND_NONE);
+    }
 }

@@ -325,7 +325,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
         }
     }
 
-    /** Process a change in the bonding state for a device */
+    @Override
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
         if (toState == BluetoothDevice.BOND_BONDED && mIsPseDynamicVersionUpgradeEnabled) {
             mSessionStatusHandler.sendMessageDelayed(
