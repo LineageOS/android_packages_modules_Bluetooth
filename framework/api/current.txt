@@ -1016,6 +1016,7 @@ package android.bluetooth {
     field public static final int SOURCE_CODEC_TYPE_INVALID = 1000000; // 0xf4240
     field public static final int SOURCE_CODEC_TYPE_LC3 = 0; // 0x0
     field @FlaggedApi("com.android.bluetooth.flags.leaudio_add_opus_codec_type") public static final int SOURCE_CODEC_TYPE_OPUS = 1; // 0x1
+    field @FlaggedApi("com.android.bluetooth.flags.leaudio_add_opus_hi_res_codec_type_api") public static final int SOURCE_CODEC_TYPE_OPUS_HI_RES = 2; // 0x2
   }
 
   public static final class BluetoothLeAudioCodecConfig.Builder {
