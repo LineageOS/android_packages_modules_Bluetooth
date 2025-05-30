@@ -103,3 +103,10 @@ flag {
     description: "Add Profile as intent extra"
     bug: "419074085"
 }
+
+flag {
+    name: "add_bond_loss_reason"
+    namespace: "bluetooth"
+    description: "Add bond loss reason to ACTION_KEY_MISSING Intent"
+    bug: "421377117"
+}
