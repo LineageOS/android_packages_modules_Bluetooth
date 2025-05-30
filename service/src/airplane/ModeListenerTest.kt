@@ -24,6 +24,8 @@ import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.os.Looper
 import android.os.UserHandle
+import android.platform.test.annotations.DisableFlags
+import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.FlagsParameterization
 import android.platform.test.flag.junit.SetFlagsRule
 import android.provider.Settings
@@ -33,6 +35,7 @@ import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
 import com.android.server.bluetooth.airplane.APM_BT_ENABLED_NOTIFICATION
 import com.android.server.bluetooth.airplane.APM_BT_NOTIFICATION
+import com.android.server.bluetooth.airplane.APM_BT_NOTIFICATION_DUE_TO_MEDIA
 import com.android.server.bluetooth.airplane.APM_BT_NOTIFICATION_DUE_TO_WATCH
 import com.android.server.bluetooth.airplane.APM_BT_NOTIFICATION_ON_WATCH
 import com.android.server.bluetooth.airplane.APM_ENHANCEMENT
@@ -316,11 +319,14 @@ class ModeListenerTest(flags: FlagsWrapper) {
 
         assertThat(isOnOverrode).isTrue()
         assertThat(mode).containsExactly(true)
-        assertThat(ShadowToast.shownToastCount()).isEqualTo(0)
+        if (!Flags.watchDeviceOverrideAirplaneMode()) {
+            assertThat(ShadowToast.shownToastCount()).isEqualTo(0)
+        }
     }
 
     @Test
-    fun triggerOverride_whenMedia_staysOn() {
+    @DisableFlags(Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE)
+    fun triggerOverride_whenMedia_staysOnOld() {
         initializeAirplane()
 
         state.set(BluetoothAdapter.STATE_ON)
@@ -340,6 +346,22 @@ class ModeListenerTest(flags: FlagsWrapper) {
                         .getIdentifier("bluetooth_airplane_mode_toast", "string", "android")
                 )
             )
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE)
+    fun triggerOverride_whenMedia_staysOn() {
+        initializeAirplane()
+
+        state.set(BluetoothAdapter.STATE_ON)
+        setIsMediaProfileConnected(true)
+        isMediaProfileConnected = true
+
+        enableMode()
+
+        assertThat(isOnOverrode).isFalse()
+        assertThat(mode).isEmpty()
+        assertThat(notification).containsExactly(APM_BT_NOTIFICATION_DUE_TO_MEDIA)
     }
 
     @Test
@@ -384,7 +406,9 @@ class ModeListenerTest(flags: FlagsWrapper) {
         assertThat(isOnOverrode).isFalse()
         assertThat(isOn).isTrue()
         assertThat(mode).isEmpty()
-        assertThat(notification).isEmpty()
+        if (Flags.watchDeviceOverrideAirplaneMode()) {
+            assertThat(notification).containsExactly(APM_BT_NOTIFICATION_DUE_TO_MEDIA)
+        }
     }
 
     @Test
@@ -486,6 +510,7 @@ class ModeListenerTest(flags: FlagsWrapper) {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE)
     fun showToast_inLoop_stopNotifyWhenMaxToastReached() {
         initializeAirplane()
 
@@ -507,6 +532,7 @@ class ModeListenerTest(flags: FlagsWrapper) {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE)
     fun showToast_afterFactoryReset_stopNotifyWhenMaxToastReached() {
         initializeAirplane()
 
@@ -539,7 +565,9 @@ class ModeListenerTest(flags: FlagsWrapper) {
         assertThat(isOnOverrode).isFalse()
         assertThat(mode).isEmpty()
         assertThat(notification).isEmpty()
-        assertThat(ShadowToast.shownToastCount()).isEqualTo(0)
+        if (!Flags.watchDeviceOverrideAirplaneMode()) {
+            assertThat(ShadowToast.shownToastCount()).isEqualTo(0)
+        }
     }
 
     @Test
@@ -553,7 +581,9 @@ class ModeListenerTest(flags: FlagsWrapper) {
         assertThat(isOnOverrode).isTrue()
         assertThat(mode).containsExactly(true)
         assertThat(notification).isEmpty()
-        assertThat(ShadowToast.shownToastCount()).isEqualTo(0)
+        if (!Flags.watchDeviceOverrideAirplaneMode()) {
+            assertThat(ShadowToast.shownToastCount()).isEqualTo(0)
+        }
         assertThat(Settings.Secure.getInt(userContext.contentResolver, BLUETOOTH_APM_STATE, 0))
             .isEqualTo(0)
         assertThat(
@@ -572,7 +602,9 @@ class ModeListenerTest(flags: FlagsWrapper) {
         assertThat(isOnOverrode).isTrue()
         assertThat(mode).containsExactly(true)
         assertThat(notification).isEmpty()
-        assertThat(ShadowToast.shownToastCount()).isEqualTo(0)
+        if (!Flags.watchDeviceOverrideAirplaneMode()) {
+            assertThat(ShadowToast.shownToastCount()).isEqualTo(0)
+        }
         assertThat(Settings.Secure.getInt(userContext.contentResolver, BLUETOOTH_APM_STATE, 0))
             .isEqualTo(0)
         assertThat(
@@ -591,7 +623,9 @@ class ModeListenerTest(flags: FlagsWrapper) {
         assertThat(isOnOverrode).isTrue()
         assertThat(mode).containsExactly(true)
         assertThat(notification).containsExactly(APM_BT_ENABLED_NOTIFICATION)
-        assertThat(ShadowToast.shownToastCount()).isEqualTo(0)
+        if (!Flags.watchDeviceOverrideAirplaneMode()) {
+            assertThat(ShadowToast.shownToastCount()).isEqualTo(0)
+        }
         assertThat(Settings.Secure.getInt(userContext.contentResolver, BLUETOOTH_APM_STATE, 0))
             .isEqualTo(1)
         assertThat(
@@ -611,7 +645,9 @@ class ModeListenerTest(flags: FlagsWrapper) {
         assertThat(isOnOverrode).isTrue()
         assertThat(mode).containsExactly(true)
         assertThat(notification).containsExactly(APM_BT_ENABLED_NOTIFICATION)
-        assertThat(ShadowToast.shownToastCount()).isEqualTo(0)
+        if (!Flags.watchDeviceOverrideAirplaneMode()) {
+            assertThat(ShadowToast.shownToastCount()).isEqualTo(0)
+        }
         assertThat(Settings.Secure.getInt(userContext.contentResolver, BLUETOOTH_APM_STATE, 0))
             .isEqualTo(0)
         assertThat(
@@ -642,7 +678,9 @@ class ModeListenerTest(flags: FlagsWrapper) {
         assertThat(isOnOverrode).isTrue()
         assertThat(mode).containsExactly(true)
         assertThat(notification).isEmpty()
-        assertThat(ShadowToast.shownToastCount()).isEqualTo(0)
+        if (!Flags.watchDeviceOverrideAirplaneMode()) {
+            assertThat(ShadowToast.shownToastCount()).isEqualTo(0)
+        }
         assertThat(Settings.Secure.getInt(userContext.contentResolver, BLUETOOTH_APM_STATE, 0))
             .isEqualTo(0)
         assertThat(
@@ -747,9 +785,11 @@ class ModeListenerTest(flags: FlagsWrapper) {
         @JvmStatic
         @Parameters(name = "{0}")
         fun getParams(): List<FlagsWrapper> {
-            return FlagsParameterization.progressionOf(Flags.FLAG_ONEWAY_MEDIA_PROFILE).map {
-                FlagsWrapper(it)
-            }
+            return FlagsParameterization.progressionOf(
+                    Flags.FLAG_ONEWAY_MEDIA_PROFILE,
+                    Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE,
+                )
+                .map { FlagsWrapper(it) }
         }
     }
 }
