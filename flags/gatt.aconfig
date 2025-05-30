@@ -28,3 +28,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "gatt_multi_bearer_transactions"
+    namespace: "bluetooth"
+    description: "Make transaction IDs local to a device/bearer"
+    bug: "418050422"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
