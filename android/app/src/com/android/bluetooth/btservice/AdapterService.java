@@ -342,7 +342,6 @@ public class AdapterService extends Service {
     private A2dpService mA2dpService;
     private BluetoothMapService mMapService;
     private MapClientService mMapClientService;
-    private BluetoothPbapService mPbapService;
     private PbapClientService mPbapClientService;
     private HearingAidService mHearingAidService;
     private HapClientService mHapClientService;
@@ -1923,7 +1922,6 @@ public class AdapterService extends Service {
         mA2dpService = A2dpService.getA2dpService();
         mMapService = BluetoothMapService.getBluetoothMapService();
         mMapClientService = MapClientService.getMapClientService();
-        mPbapService = BluetoothPbapService.getBluetoothPbapService();
         mPbapClientService = PbapClientService.getPbapClientService();
         mHearingAidService = HearingAidService.getHearingAidService();
         mHapClientService = HapClientService.getHapClientService();

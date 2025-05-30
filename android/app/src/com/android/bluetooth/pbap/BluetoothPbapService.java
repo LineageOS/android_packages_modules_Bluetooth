@@ -168,8 +168,6 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
 
     private Thread mThreadUpdateSecVersionCounter;
 
-    private static BluetoothPbapService sBluetoothPbapService;
-
     public BluetoothPbapService(AdapterService adapterService) {
         this(requireNonNull(adapterService), null);
     }
@@ -208,8 +206,6 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
                         DevicePolicyUtils.getEnterprisePhoneUri(mAdapterService),
                         false,
                         mContactChangeObserver);
-
-        setBluetoothPbapService(this);
 
         mSessionStatusHandler.sendEmptyMessage(GET_LOCAL_TELEPHONY_DETAILS);
         mSessionStatusHandler.sendEmptyMessage(LOAD_CONTACTS);
@@ -738,7 +734,6 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        setBluetoothPbapService(null);
         mSessionStatusHandler.sendEmptyMessage(SHUTDOWN);
         mHandlerThread.quitSafely();
         joinUninterruptibly(mHandlerThread);
@@ -750,26 +745,6 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
             mPbapStateMachineMap.clear();
         }
         unregisterReceiver(mUserChangeReceiver);
-    }
-
-    /**
-     * @return current instance of {@link BluetoothPbapService}
-     */
-    public static synchronized BluetoothPbapService getBluetoothPbapService() {
-        if (sBluetoothPbapService == null) {
-            Log.w(TAG, "getBluetoothPbapService(): service is null");
-            return null;
-        }
-        if (!sBluetoothPbapService.isAvailable()) {
-            Log.w(TAG, "getBluetoothPbapService(): service is not available");
-            return null;
-        }
-        return sBluetoothPbapService;
-    }
-
-    private static synchronized void setBluetoothPbapService(BluetoothPbapService instance) {
-        Log.d(TAG, "setBluetoothPbapService(): set to: " + instance);
-        sBluetoothPbapService = instance;
     }
 
     @Override
