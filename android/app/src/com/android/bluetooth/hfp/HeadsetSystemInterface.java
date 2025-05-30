@@ -358,6 +358,9 @@ class HeadsetSystemInterface {
         } catch (ActivityNotFoundException e) {
             Log.e(TAG, "activateVoiceRecognition, failed due to activity not found for " + intent);
             return false;
+        } catch (SecurityException se) {
+            Log.e(TAG, "activateVoiceRecognition, failed due to a SecurityException: " + se);
+            return false;
         }
         return true;
     }
