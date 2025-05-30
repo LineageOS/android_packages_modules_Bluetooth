@@ -533,7 +533,7 @@ public class AdapterService extends Service {
 
         private void registerProfileService(ProfileService profile) {
             if (mRegisteredProfiles.contains(profile)) {
-                Log.e(TAG, profile.getName() + " already registered.");
+                Log.e(TAG, profile + " already registered.");
                 return;
             }
             mRegisteredProfiles.add(profile);
@@ -541,7 +541,7 @@ public class AdapterService extends Service {
 
         private void unregisterProfileService(ProfileService profile) {
             if (!mRegisteredProfiles.contains(profile)) {
-                Log.e(TAG, profile.getName() + " not registered (UNREGISTER).");
+                Log.e(TAG, profile + " not registered (UNREGISTER).");
                 return;
             }
             mRegisteredProfiles.remove(profile);
@@ -551,11 +551,11 @@ public class AdapterService extends Service {
             switch (state) {
                 case BluetoothAdapter.STATE_ON -> {
                     if (!mRegisteredProfiles.contains(profile)) {
-                        Log.e(TAG, profile.getName() + " not registered (STATE_ON).");
+                        Log.e(TAG, profile + " not registered (STATE_ON).");
                         return;
                     }
                     if (mRunningProfiles.contains(profile)) {
-                        Log.e(TAG, profile.getName() + " already running.");
+                        Log.e(TAG, profile + " already running.");
                         return;
                     }
                     mRunningProfiles.add(profile);
@@ -580,11 +580,11 @@ public class AdapterService extends Service {
                 }
                 case BluetoothAdapter.STATE_OFF -> {
                     if (!mRegisteredProfiles.contains(profile)) {
-                        Log.e(TAG, profile.getName() + " not registered (STATE_OFF).");
+                        Log.e(TAG, profile + " not registered (STATE_OFF).");
                         return;
                     }
                     if (!mRunningProfiles.contains(profile)) {
-                        Log.e(TAG, profile.getName() + " not running.");
+                        Log.e(TAG, profile + " not running.");
                         return;
                     }
                     mRunningProfiles.remove(profile);
@@ -1895,7 +1895,7 @@ public class AdapterService extends Service {
         final int connectionPolicy = mDatabaseManager.getProfileConnectionPolicy(device, id);
 
         if (isProfileSupported(device, id) && connectionPolicy > CONNECTION_POLICY_FORBIDDEN) {
-            Log.i(TAG, "connectEnabledProfile: Connecting " + profile.getName());
+            Log.i(TAG, "connectEnabledProfile: Connecting " + profile);
             profile.connect(device);
         }
     }
@@ -1907,7 +1907,7 @@ public class AdapterService extends Service {
                 .filter(prof -> prof.getConnectionPolicy(device) > CONNECTION_POLICY_FORBIDDEN)
                 .ifPresent(
                         profile -> {
-                            Log.i(TAG, "connectEnabledProfile: Connecting " + profile.getName());
+                            Log.i(TAG, "connectEnabledProfile: Connecting " + profile);
                             profile.connect(device);
                         });
     }
@@ -3409,7 +3409,7 @@ public class AdapterService extends Service {
             return false;
         }
 
-        Log.i(TAG, "connectIfProfileSupported: Connecting " + profile.getName());
+        Log.i(TAG, "connectIfProfileSupported: Connecting " + profile);
         profile.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
         return true;
     }
@@ -3420,8 +3420,7 @@ public class AdapterService extends Service {
                 .filter(profile -> isProfileSupported(device, id))
                 .map(
                         profile -> {
-                            final var name = profile.getName();
-                            Log.i(TAG, "connectIfProfileSupported: Connecting " + name);
+                            Log.i(TAG, "connectIfProfileSupported: Connecting " + profile);
                             profile.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
                             return true;
                         })
@@ -3468,7 +3467,7 @@ public class AdapterService extends Service {
         final int connectionState = profile.getConnectionState(device);
         if (connectionState != STATE_CONNECTED && connectionState != STATE_CONNECTING) return;
 
-        Log.i(TAG, "Disconnecting " + profile.getName());
+        Log.i(TAG, "Disconnecting " + profile);
         profile.disconnect(device);
     }
 
@@ -3482,7 +3481,7 @@ public class AdapterService extends Service {
                         })
                 .ifPresent(
                         profile -> {
-                            Log.i(TAG, "Disconnecting " + profile.getName());
+                            Log.i(TAG, "Disconnecting " + profile);
                             profile.disconnect(device);
                         });
     }

@@ -335,10 +335,6 @@ public class AdapterServiceTest {
 
         when(mIBluetoothCallback.asBinder()).thenReturn(mBinder);
 
-        when(mMockGattService.getName()).thenReturn("GattService");
-        when(mMockService1.getName()).thenReturn("Service1");
-        when(mMockService2.getName()).thenReturn("Service2");
-
         configureEnabledProfiles();
 
         Config.init(mMockContext);

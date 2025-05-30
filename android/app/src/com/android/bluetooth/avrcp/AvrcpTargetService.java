@@ -247,11 +247,6 @@ public class AvrcpTargetService extends ProfileService {
     }
 
     @Override
-    public String getName() {
-        return TAG;
-    }
-
-    @Override
     protected IProfileServiceBinder initBinder() {
         return null;
     }
