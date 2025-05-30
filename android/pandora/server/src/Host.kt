@@ -163,50 +163,44 @@ class Host(
 
     override fun factoryReset(request: Empty, responseObserver: StreamObserver<Empty>) {
         scope.launch {
-            grpcUnary<Empty>(scope, responseObserver, timeout = 30) {
-                    Log.i(TAG, "factoryReset")
+            Log.i(TAG, "factoryReset")
 
-                    // This is triggering a graceful shutdown; ongoing RPCs are allowed to
-                    // complete but new connections are rejected.
-                    server.shutdown()
+            // This is triggering a graceful shutdown; used to temporarily block
+            // incoming RPC calls while factoryReset is ongoing.
+            server.shutdown()
 
-                    // We use a fresh intent flow to make sure that obsolete state changed events
-                    // are not accidentally caught by the filter when waiting for state ON.
-                    val stateFlow =
-                        intentFlow(
-                                context,
-                                IntentFilter(BluetoothAdapter.ACTION_BLE_STATE_CHANGED),
-                                scope,
-                            )
-                            .shareIn(scope, SharingStarted.Eagerly)
-                            .map {
-                                it.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
-                            }
+            // We use a fresh intent flow to make sure that obsolete state changed events
+            // are not accidentally caught by the filter when waiting for state ON.
+            val stateFlow =
+                intentFlow(context, IntentFilter(BluetoothAdapter.ACTION_BLE_STATE_CHANGED), scope)
+                    .shareIn(scope, SharingStarted.Eagerly)
+                    .map { it.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR) }
 
-                    val wasEnabled = bluetoothAdapter.isEnabled
+            val wasEnabled = bluetoothAdapter.isEnabled
 
-                    bluetoothAdapter.clearBluetooth()
+            bluetoothAdapter.clearBluetooth()
 
-                    // Factory resets places Bluetooth in the same state as it was before the API
-                    // call. Bluetooth must be manually turned on if it was off before.
-                    if (!wasEnabled) {
-                        bluetoothAdapter.enable()
-                    }
+            // Factory resets places Bluetooth in the same state as it was before the API
+            // call. Bluetooth must be manually turned on if it was off before.
+            if (!wasEnabled) {
+                bluetoothAdapter.enable()
+            }
 
-                    stateFlow.filter { it == BluetoothAdapter.STATE_ON }.first()
+            stateFlow.filter { it == BluetoothAdapter.STATE_ON }.first()
 
-                    initiatedConnection.clear()
-                    waitedAclConnection.clear()
-                    waitedAclDisconnection.clear()
+            initiatedConnection.clear()
+            waitedAclConnection.clear()
+            waitedAclDisconnection.clear()
 
-                    Empty.getDefaultInstance()
-                }
-                .join()
+            Log.i(TAG, "factory reset completed")
 
             // Trigger a forced shutdown once the gRPC unary call has completed for `factoryReset`.
             // This will cancel all ongoing gRPC calls.
             Log.i(TAG, "triggering gRPC shutdown")
             server.shutdownNow()
+
+            // No response is sent to the streamObserver; factoryReset will return
+            // an error CANCELLED to the client as the call is cancelled during server shutdown.
         }
     }
 
@@ -459,7 +453,7 @@ class Host(
                 }
             val bluetoothDevice =
                 bluetoothAdapter.getRemoteLeDevice(address.decodeAsMacAddressToString(), type)
-            Log.i(TAG, "connectLE(${bluetoothDevice})")
+            Log.i(TAG, "connectLE($bluetoothDevice)")
             initiatedConnection.add(bluetoothDevice)
             GattInstance(bluetoothDevice, TRANSPORT_LE, context).waitForState(STATE_CONNECTED)
             ConnectLEResponse.newBuilder()
