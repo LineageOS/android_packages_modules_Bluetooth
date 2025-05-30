@@ -1093,6 +1093,7 @@ public class A2dpService extends ConnectableProfile {
         sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
     }
 
+    @Override
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
         mHandler.post(() -> bondStateChanged(device, toState));
     }
