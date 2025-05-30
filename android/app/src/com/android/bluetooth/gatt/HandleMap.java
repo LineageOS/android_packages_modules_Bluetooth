@@ -41,7 +41,7 @@ class HandleMap {
     private int mLastCharacteristic = 0;
 
     private final Map<Integer, RequestData> mRequestMap = new ConcurrentHashMap<>();
-    AtomicInteger mNextRequestId = new AtomicInteger(0);
+    private final AtomicInteger mNextRequestId = new AtomicInteger(0);
     private final Map<Integer, RequestContext> mRequestContextMap = new ConcurrentHashMap<>();
 
     void clear() {
