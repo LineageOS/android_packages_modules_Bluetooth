@@ -29,9 +29,11 @@ public class A2dpSinkNativeInterface {
     private static final String TAG = A2dpSinkNativeInterface.class.getSimpleName();
 
     private final AdapterService mAdapterService;
+    private final A2dpSinkService mService;
 
-    A2dpSinkNativeInterface(AdapterService adapterService) {
+    A2dpSinkNativeInterface(AdapterService adapterService, A2dpSinkService service) {
         mAdapterService = requireNonNull(adapterService);
+        mService = service;
     }
 
     /**
@@ -103,28 +105,18 @@ public class A2dpSinkNativeInterface {
         informAudioTrackGainNative(gain);
     }
 
-    /** Send a stack event up to the A2DP Sink Service */
-    private static void sendMessageToService(StackEvent event) {
-        A2dpSinkService service = A2dpSinkService.getA2dpSinkService();
-        if (service != null) {
-            service.messageFromNative(event);
-        } else {
-            Log.e(TAG, "Event ignored, service not available: " + event);
-        }
-    }
-
     /** For the JNI to send messages about connection state changes */
     public void onConnectionStateChanged(byte[] address, int state) {
         StackEvent event = StackEvent.connectionStateChanged(getDevice(address), state);
         Log.d(TAG, "onConnectionStateChanged: " + event);
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     /** For the JNI to send messages about audio stream state changes */
     public void onAudioStateChanged(byte[] address, int state) {
         StackEvent event = StackEvent.audioStateChanged(getDevice(address), state);
         Log.d(TAG, "onAudioStateChanged: " + event);
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     /** For the JNI to send messages about audio configuration changes */
@@ -132,7 +124,7 @@ public class A2dpSinkNativeInterface {
         StackEvent event =
                 StackEvent.audioConfigChanged(getDevice(address), sampleRate, channelCount);
         Log.d(TAG, "onAudioConfigChanged: " + event);
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     // Native methods that call into the JNI interface
