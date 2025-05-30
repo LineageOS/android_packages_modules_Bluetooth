@@ -344,13 +344,8 @@ public class AdapterService extends Service {
     private MapClientService mMapClientService;
     private PbapClientService mPbapClientService;
     private HearingAidService mHearingAidService;
-    private HapClientService mHapClientService;
     private SapService mSapService;
-    private VolumeControlService mVolumeControlService;
-    private CsipSetCoordinatorService mCsipSetCoordinatorService;
     private LeAudioService mLeAudioService;
-    private BassClientService mBassClientService;
-    private BatteryService mBatteryService;
     private GattService mGattService;
     private ScanController mScanController;
 
@@ -1924,13 +1919,8 @@ public class AdapterService extends Service {
         mMapClientService = MapClientService.getMapClientService();
         mPbapClientService = PbapClientService.getPbapClientService();
         mHearingAidService = HearingAidService.getHearingAidService();
-        mHapClientService = HapClientService.getHapClientService();
         mSapService = SapService.getSapService();
-        mVolumeControlService = VolumeControlService.getVolumeControlService();
-        mCsipSetCoordinatorService = CsipSetCoordinatorService.getCsipSetCoordinatorService();
         mLeAudioService = LeAudioService.getLeAudioService();
-        mBassClientService = BassClientService.getBassClientService();
-        mBatteryService = BatteryService.getBatteryService();
     }
 
     @BluetoothAdapter.RfcommListenerResult
