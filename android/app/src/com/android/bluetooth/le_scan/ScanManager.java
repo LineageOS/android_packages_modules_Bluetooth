@@ -270,7 +270,7 @@ public class ScanManager {
                 Flags.leScanMsftSupport()
                         && SystemProperties.getBoolean(MSFT_HCI_EXT_ENABLED, false)
                         && mNativeInterface.gattClientIsMsftSupported();
-        mDisplayManager = mAdapterService.getSystemService(DisplayManager.class);
+        mDisplayManager = requireNonNull(mAdapterService.getSystemService(DisplayManager.class));
         mActivityManager = mAdapterService.getSystemService(ActivityManager.class);
         mLocationManager = mAdapterService.getSystemService(LocationManager.class);
         mIsConnecting = false;
@@ -283,9 +283,7 @@ public class ScanManager {
         mPriorityMap.put(ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY, 4);
         mPriorityMap.put(ScanSettings.SCAN_MODE_LOW_LATENCY, 5);
         mHandler = new ClientHandler(looper);
-        if (mDisplayManager != null) {
-            mDisplayManager.registerDisplayListener(mDisplayListener, null);
-        }
+        mDisplayManager.registerDisplayListener(mDisplayListener, null);
         mScreenOn = isScreenOn();
         AppScanStats.initScanRadioState();
         AppScanStats.setScreenState(mScreenOn, mTimeProvider);
@@ -315,9 +313,7 @@ public class ScanManager {
             }
         }
 
-        if (mDisplayManager != null) {
-            mDisplayManager.unregisterDisplayListener(mDisplayListener);
-        }
+        mDisplayManager.unregisterDisplayListener(mDisplayListener);
 
         // Shut down the thread
         mHandler.removeCallbacksAndMessages(null);
@@ -2098,8 +2094,7 @@ public class ScanManager {
     }
 
     private boolean isScreenOn() {
-        Display[] displays = mDisplayManager.getDisplays();
-
+        final var displays = mDisplayManager.getDisplays();
         if (displays == null) {
             return false;
         }
