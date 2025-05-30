@@ -5613,6 +5613,8 @@ TEST_F(UnicastTest, GroupSetActive_DuringPhoneCall_NoConversational) {
 
   EXPECT_CALL(mock_state_machine_, StartStream(_, _, _, _)).Times(0);
   EXPECT_CALL(mock_state_machine_, ConfigureStream(_, _, _, _, true)).Times(0);
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Stop()).Times(1);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, Stop()).Times(1);
   EXPECT_CALL(mock_audio_hal_client_callbacks_, OnGroupStatus(group_id, GroupStatus::INACTIVE))
           .Times(1);
 
