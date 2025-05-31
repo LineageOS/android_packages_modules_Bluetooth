@@ -340,11 +340,7 @@ public class AdapterService extends Service {
     private HeadsetService mHeadsetService;
     private HeadsetClientService mHeadsetClientService;
     private A2dpService mA2dpService;
-    private BluetoothMapService mMapService;
-    private MapClientService mMapClientService;
-    private PbapClientService mPbapClientService;
     private HearingAidService mHearingAidService;
-    private SapService mSapService;
     private LeAudioService mLeAudioService;
     private GattService mGattService;
     private ScanController mScanController;
@@ -738,6 +734,26 @@ public class AdapterService extends Service {
 
     BluetoothHciVendorSpecificNativeInterface getBluetoothHciVendorSpecificNativeInterface() {
         return mBluetoothHciVendorSpecificNativeInterface;
+    }
+
+    private Optional<BluetoothMapService> getMapService() {
+        return getStartedProfile(BluetoothProfile.MAP, BluetoothMapService.class)
+                .filter(ProfileService::isAvailable);
+    }
+
+    private Optional<MapClientService> getMapClientService() {
+        return getStartedProfile(BluetoothProfile.MAP_CLIENT, MapClientService.class)
+                .filter(ProfileService::isAvailable);
+    }
+
+    private Optional<PbapClientService> getPbapClientService() {
+        return getStartedProfile(BluetoothProfile.PBAP_CLIENT, PbapClientService.class)
+                .filter(ProfileService::isAvailable);
+    }
+
+    private Optional<SapService> getSapService() {
+        return getStartedProfile(BluetoothProfile.SAP, SapService.class)
+                .filter(ProfileService::isAvailable);
     }
 
     /**
@@ -1922,11 +1938,7 @@ public class AdapterService extends Service {
         mHeadsetService = HeadsetService.getHeadsetService();
         mHeadsetClientService = HeadsetClientService.getHeadsetClientService();
         mA2dpService = A2dpService.getA2dpService();
-        mMapService = BluetoothMapService.getBluetoothMapService();
-        mMapClientService = MapClientService.getMapClientService();
-        mPbapClientService = PbapClientService.getPbapClientService();
         mHearingAidService = HearingAidService.getHearingAidService();
-        mSapService = SapService.getSapService();
         mLeAudioService = LeAudioService.getLeAudioService();
     }
 
@@ -3945,18 +3957,10 @@ public class AdapterService extends Service {
      * for a given {@code transport}.
      */
     public void notifyAclDisconnected(BluetoothDevice device, int transport) {
-        if (mMapService != null && mMapService.isAvailable()) {
-            mMapService.aclDisconnected(device);
-        }
-        if (mMapClientService != null && mMapClientService.isAvailable()) {
-            mMapClientService.aclDisconnected(device, transport);
-        }
-        if (mSapService != null && mSapService.isAvailable()) {
-            mSapService.aclDisconnected(device);
-        }
-        if (mPbapClientService != null && mPbapClientService.isAvailable()) {
-            mPbapClientService.aclDisconnected(device, transport);
-        }
+        getMapService().ifPresent(profile -> profile.aclDisconnected(device));
+        getMapClientService().ifPresent(profile -> profile.aclDisconnected(device, transport));
+        getSapService().ifPresent(profile -> profile.aclDisconnected(device));
+        getPbapClientService().ifPresent(profile -> profile.aclDisconnected(device, transport));
     }
 
     /**
@@ -4006,15 +4010,11 @@ public class AdapterService extends Service {
     /** Notify MAP and Pbap when a new sdp search record is found. */
     public void sendSdpSearchRecord(
             BluetoothDevice device, int status, Parcelable record, ParcelUuid uuid) {
-        if (mMapService != null && mMapService.isAvailable()) {
-            mMapService.receiveSdpSearchRecord(status, record, uuid);
-        }
-        if (mMapClientService != null && mMapClientService.isAvailable()) {
-            mMapClientService.receiveSdpSearchRecord(device, status, record, uuid);
-        }
-        if (mPbapClientService != null && mPbapClientService.isAvailable()) {
-            mPbapClientService.receiveSdpSearchRecord(device, status, record, uuid);
-        }
+        getMapService().ifPresent(profile -> profile.receiveSdpSearchRecord(status, record, uuid));
+        getMapClientService()
+                .ifPresent(profile -> profile.receiveSdpSearchRecord(device, status, record, uuid));
+        getPbapClientService()
+                .ifPresent(profile -> profile.receiveSdpSearchRecord(device, status, record, uuid));
     }
 
     /** Handle Bluetooth profiles when bond state changes with a {@link BluetoothDevice} */
