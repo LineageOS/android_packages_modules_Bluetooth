@@ -1189,8 +1189,15 @@ public class AdapterService extends Service {
     }
 
     Optional<ConnectableProfile> getStartedConnectableProfile(int id) {
-        return Optional.ofNullable(mStartedProfiles.get(id))
-                .map(profile -> (ConnectableProfile) profile);
+        return getStartedProfile(id, ConnectableProfile.class);
+    }
+
+    private <T extends ProfileService> Optional<T> getStartedProfile(int id, Class<T> profile) {
+        return getStartedProfile(id).filter(profile::isInstance).map(profile::cast);
+    }
+
+    private Optional<ProfileService> getStartedProfile(int id) {
+        return Optional.ofNullable(mStartedProfiles.get(id));
     }
 
     void bringDownBle() {
@@ -3894,22 +3901,17 @@ public class AdapterService extends Service {
         }
     }
 
-    IBinder getProfile(int profileId) {
+    IBinder getProfile(int id) {
         if (getState() == BluetoothAdapter.STATE_TURNING_ON) {
             return null;
         }
 
         // LE_AUDIO_BROADCAST is not associated with a service and use LE_AUDIO's Binder
-        if (profileId == BluetoothProfile.LE_AUDIO_BROADCAST) {
-            profileId = BluetoothProfile.LE_AUDIO;
+        if (id == BluetoothProfile.LE_AUDIO_BROADCAST) {
+            id = BluetoothProfile.LE_AUDIO;
         }
 
-        ProfileService profile = mStartedProfiles.get(profileId);
-        if (profile != null) {
-            return profile.getBinder();
-        } else {
-            return null;
-        }
+        return getStartedProfile(id).map(ProfileService::getBinder).orElse(null);
     }
 
     boolean isMediaProfileConnected() {
