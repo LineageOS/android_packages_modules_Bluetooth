@@ -2081,7 +2081,7 @@ public class HeadsetService extends ConnectableProfile {
         mAdapterService
                 .getRemoteDevices()
                 .handleHeadsetConnectionStateChanged(device, fromState, toState);
-        mAdapterService.notifyProfileConnectionStateChangeToGatt(mProfileId, fromState, toState);
+        mAdapterService.notifyProfileConnectionStateChangeToScan(mProfileId, fromState, toState);
         mAdapterService.handleProfileConnectionStateChange(mProfileId, device, fromState, toState);
         mAdapterService.updateProfileConnectionAdapterProperties(
                 device, mProfileId, toState, fromState);

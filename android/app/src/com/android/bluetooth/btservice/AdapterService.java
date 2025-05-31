@@ -588,10 +588,9 @@ public class AdapterService extends Service {
                     mRunningProfiles.add(profile);
                     // TODO(b/228875190): GATT is assumed supported. GATT starting triggers hardware
                     // initialization. Configuring a device without GATT causes start up failures.
-                    if (profile.getProfileId() == BluetoothProfile.GATT
-                            && !Flags.onlyStartScanDuringBleOn()) {
-                        mNativeInterface.enable();
-                    } else if (mRegisteredProfiles.size() == Config.getSupportedProfiles().length
+                    if (!(profile.getProfileId() == BluetoothProfile.GATT
+                                    && !Flags.onlyStartScanDuringBleOn())
+                            && mRegisteredProfiles.size() == Config.getSupportedProfiles().length
                             && mRegisteredProfiles.size() == mRunningProfiles.size()) {
                         if (!Flags.callBluetoothReadyBeforeProfilesStart()) {
                             mAdapterProperties.onBluetoothReady();
@@ -627,8 +626,6 @@ public class AdapterService extends Service {
                                 && mRunningProfiles.get(0).getProfileId()
                                         == BluetoothProfile.GATT) {
                             mAdapterStateMachine.sendMessage(AdapterState.BREDR_STOPPED);
-                        } else if (mRunningProfiles.size() == 0) {
-                            mNativeInterface.disable();
                         }
                     }
                 }
@@ -1146,17 +1143,16 @@ public class AdapterService extends Service {
                 false,
                 false);
 
-        // TODO(b/228875190): GATT is assumed supported. As a result, we don't respect the
-        // configuration sysprop. Configuring a device without GATT, although rare, will cause stack
-        // start up errors yielding init loops.
-        if (!GattService.isEnabled()) {
-            Log.w(
-                    TAG,
-                    "GATT is configured off but the stack assumes it to be enabled. Start anyway.");
-        }
-        if (Flags.onlyStartScanDuringBleOn()) {
-            startScanController();
-        } else {
+        startScanController();
+
+        if (!Flags.onlyStartScanDuringBleOn()) {
+            // Note: This segment can be deleted on `Flags.onlyStartScanDuringBleOn()` cleanup
+            // TODO(b/228875190): GATT is assumed supported. As a result, we don't respect the
+            // configuration sysprop. Configuring a device without GATT, although rare, will cause
+            // stack start up errors yielding init loops.
+            if (!GattService.isEnabled()) {
+                Log.w(TAG, "GATT is not enabled but stack requires it to be. Starting GATT");
+            }
             startGattProfileService();
         }
     }
@@ -1391,34 +1387,23 @@ public class AdapterService extends Service {
     }
 
     void bringDownBle() {
-        if (Flags.onlyStartScanDuringBleOn()) {
-            stopScanController();
-        } else {
+        if (!Flags.onlyStartScanDuringBleOn()) {
             stopGattProfileService();
         }
+        stopScanController();
     }
 
     private void stopScanController() {
         Log.i(TAG, "stopScanController() called");
         setScanMode(SCAN_MODE_NONE, "stopScanController");
-
-        if (mScanController == null) {
-            mAdapterStateMachine.sendMessage(AdapterState.BLE_STOPPED);
-        } else {
-            mScanController.cleanup();
-            mScanController = null;
-            mNativeInterface.disable();
-        }
+        mScanController.cleanup();
+        mScanController = null;
+        mNativeInterface.disable();
     }
 
     private void stopGattProfileService() {
         Log.i(TAG, "stopGattProfileService() called");
         setScanMode(SCAN_MODE_NONE, "stopGattProfileService");
-
-        if (mRunningProfiles.size() == 0) {
-            Log.d(TAG, "stopGattProfileService() - No profiles services to stop.");
-            mAdapterStateMachine.sendMessage(AdapterState.BLE_STOPPED);
-        }
 
         mStartedProfiles.remove(BluetoothProfile.GATT);
         if (mGattService != null) {
@@ -4046,17 +4031,13 @@ public class AdapterService extends Service {
     }
 
     IBinder getBluetoothScan() {
-        ScanController controller = getBluetoothScanController();
-        return controller == null ? null : controller.getBinder();
+        final var scanController = getBluetoothScanController();
+        return scanController == null ? null : scanController.getBinder();
     }
 
     @Nullable
     public ScanController getBluetoothScanController() {
-        if (Flags.onlyStartScanDuringBleOn()) {
-            return mScanController;
-        } else {
-            return mGattService == null ? null : mGattService.getScanController();
-        }
+        return mScanController;
     }
 
     @Nullable
@@ -4129,17 +4110,13 @@ public class AdapterService extends Service {
     }
 
     /**
-     * Notify GATT of a Bluetooth profile's connection state change for a given {@link
+     * Notify scan module of a Bluetooth profile's connection state change for a given {@link
      * BluetoothProfile}.
      */
-    public void notifyProfileConnectionStateChangeToGatt(int profile, int fromState, int toState) {
-        if (mGattService == null) {
-            Log.w(TAG, "GATT Service is not running!");
-            return;
-        }
-        ScanController controller = getBluetoothScanController();
-        if (controller != null) {
-            controller.notifyProfileConnectionStateChange(profile, fromState, toState);
+    public void notifyProfileConnectionStateChangeToScan(int profile, int fromState, int toState) {
+        final var scanController = getBluetoothScanController();
+        if (scanController != null) {
+            scanController.notifyProfileConnectionStateChange(profile, fromState, toState);
         }
     }
 
@@ -4474,12 +4451,10 @@ public class AdapterService extends Service {
         for (ProfileService profile : mRegisteredProfiles) {
             profile.dump(sb);
         }
-        if (Flags.onlyStartScanDuringBleOn()) {
-            ScanController scanController = mScanController;
-            if (scanController != null) {
-                scanController.dumpRegisterId(sb);
-                scanController.dump(sb);
-            }
+        final var scanController = getBluetoothScanController();
+        if (scanController != null) {
+            scanController.dumpRegisterId(sb);
+            scanController.dump(sb);
         }
 
         writer.write(sb.toString());

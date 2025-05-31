@@ -1295,7 +1295,7 @@ public class A2dpService extends ConnectableProfile {
                 .ifPresent(
                         avrcpTarget ->
                                 avrcpTarget.handleA2dpConnectionStateChanged(device, toState));
-        mAdapterService.notifyProfileConnectionStateChangeToGatt(mProfileId, fromState, toState);
+        mAdapterService.notifyProfileConnectionStateChangeToScan(mProfileId, fromState, toState);
         mAdapterService.handleProfileConnectionStateChange(mProfileId, device, fromState, toState);
         mAdapterService
                 .getActiveDeviceManager()
