@@ -77,3 +77,20 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "shutdown_main_thread_before_cleanup"
+    namespace: "bluetooth"
+    description: "Shutdown the legacy main thread before module cleanup"
+    bug: "420748721"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "prioritized_in_ear_routing"
+    namespace: "bluetooth"
+    description: "Prioritized routing by checking in-ear state when multiple devices connected"
+    bug: "420509925"
+}

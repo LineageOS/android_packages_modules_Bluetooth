@@ -56,8 +56,7 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -67,7 +66,7 @@ import java.util.HashMap;
 import java.util.List;
 
 // Next tag value for ContentProfileErrorReportUtils.report(): 25
-public class BluetoothMapService extends ProfileService {
+public class BluetoothMapService extends ConnectableProfile {
     private static final String TAG = BluetoothMapService.class.getSimpleName();
 
     /**
@@ -113,7 +112,6 @@ public class BluetoothMapService extends ProfileService {
 
     private final MapBroadcastReceiver mMapReceiver = new MapBroadcastReceiver();
 
-    private final DatabaseManager mDatabaseManager;
     private final Handler mSessionStatusHandler;
     private final BluetoothMapAppObserver mAppObserver;
     private final boolean mSmsCapable;
@@ -155,8 +153,6 @@ public class BluetoothMapService extends ProfileService {
     public BluetoothMapService(AdapterService adapterService) {
         super(BluetoothProfile.MAP, requireNonNull(adapterService));
         BluetoothMap.invalidateBluetoothGetConnectionStateCache();
-
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
 
         setComponentAvailable(MAP_FILE_PROVIDER, true);
 
@@ -580,8 +576,10 @@ public class BluetoothMapService extends ProfileService {
      *
      * @param device is the device on which we want to disconnect MAP
      */
-    public void disconnect(BluetoothDevice device) {
+    @Override
+    public boolean disconnect(BluetoothDevice device) {
         mSessionStatusHandler.obtainMessage(DISCONNECT_MAP, 0, 0, device).sendToTarget();
+        return true;
     }
 
     void disconnectMap(BluetoothDevice device) {
@@ -638,6 +636,7 @@ public class BluetoothMapService extends ProfileService {
      * @return {@link BluetoothProfile#STATE_CONNECTED} if MAP is connected to this device, {@link
      *     BluetoothProfile#STATE_DISCONNECTED} otherwise
      */
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         synchronized (this) {
             if (getState() == BluetoothMap.STATE_CONNECTED
@@ -664,7 +663,8 @@ public class BluetoothMapService extends ProfileService {
      * @return true if connectionPolicy is set, false on error
      */
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
-    boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
+    @Override
+    public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         enforceCallingOrSelfPermission(
                 BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
         Log.v(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
@@ -689,7 +689,8 @@ public class BluetoothMapService extends ProfileService {
      * @return connection policy of the device
      */
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
-    int getConnectionPolicy(BluetoothDevice device) {
+    @Override
+    public int getConnectionPolicy(BluetoothDevice device) {
         enforceCallingOrSelfPermission(
                 BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
         return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);

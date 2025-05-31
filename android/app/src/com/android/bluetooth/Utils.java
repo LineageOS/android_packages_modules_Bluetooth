@@ -93,8 +93,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public final class Utils {
-    public static final String TAG_PREFIX_BLUETOOTH = "Bluetooth";
-    private static final String TAG = TAG_PREFIX_BLUETOOTH + Utils.class.getSimpleName();
+    public static final String BT_PREFIX = "Bluetooth";
+    private static final String TAG = BT_PREFIX + Utils.class.getSimpleName();
 
     public static final int BD_ADDR_LEN = 6; // bytes
     public static final int TYPED_BD_ADDR_LEN = 7; // bytes
@@ -178,7 +178,7 @@ public final class Utils {
         }
 
         // Check metadata
-        DatabaseManager mDbManager = service.getDatabase();
+        DatabaseManager mDbManager = service.getDatabaseManager();
         byte[] deviceType = mDbManager.getCustomMeta(device, BluetoothDevice.METADATA_DEVICE_TYPE);
         if (deviceType == null) {
             return false;
@@ -256,6 +256,7 @@ public final class Utils {
     /** Convert a BluetoothDevice transport constant to a string for printing in debug lines */
     public static String transportToString(int transport) {
         return switch (transport) {
+            case BluetoothDevice.TRANSPORT_AUTO -> "AUTO";
             case BluetoothDevice.TRANSPORT_BREDR -> "BR/EDR";
             case BluetoothDevice.TRANSPORT_LE -> "LE";
             default -> "Unknown transport (" + transport + ")";

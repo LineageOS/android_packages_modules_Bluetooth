@@ -68,18 +68,19 @@ import java.util.List;
 public class BluetoothOppTransferHistoryTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock Cursor mCursor;
-    @Spy BluetoothMethodProxy mBluetoothMethodProxy;
-
-    List<BluetoothOppTestUtils.CursorMockData> mCursorMockDataList;
-
-    Intent mIntent;
-    Context mTargetContext;
-
     // Activity tests can sometimes flaky because of external factors like system dialog, etc.
     // making the expected Espresso's root not focused or the activity doesn't show up.
     // Add retry rule to resolve this problem.
     @Rule public TestUtils.RetryTestRule mRetryTestRule = new TestUtils.RetryTestRule();
+
+    @Mock Cursor mCursor;
+    @Spy BluetoothMethodProxy mBluetoothMethodProxy;
+
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+
+    private List<BluetoothOppTestUtils.CursorMockData> mCursorMockDataList;
+
+    private Intent mIntent;
 
     @Before
     public void setUp() throws Exception {
@@ -87,10 +88,9 @@ public class BluetoothOppTransferHistoryTest {
         BluetoothMethodProxy.setInstanceForTesting(mBluetoothMethodProxy);
 
         Uri dataUrl = Uri.parse("content://com.android.bluetooth.opp.test/random");
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
 
         mIntent = new Intent();
-        mIntent.setClass(mTargetContext, BluetoothOppTransferHistory.class);
+        mIntent.setClass(mContext, BluetoothOppTransferHistory.class);
         mIntent.setData(dataUrl);
 
         doReturn(mCursor)
@@ -135,8 +135,7 @@ public class BluetoothOppTransferHistoryTest {
                                         11,
                                         BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED)));
 
-        BluetoothOppTestUtils.enableActivity(
-                BluetoothOppTransferHistory.class, true, mTargetContext);
+        BluetoothOppTestUtils.enableActivity(BluetoothOppTransferHistory.class, true, mContext);
         TestUtils.setUpUiTest();
     }
 
@@ -144,14 +143,13 @@ public class BluetoothOppTransferHistoryTest {
     public void tearDown() throws Exception {
         TestUtils.tearDownUiTest();
         BluetoothMethodProxy.setInstanceForTesting(null);
-        BluetoothOppTestUtils.enableActivity(
-                BluetoothOppTransferHistory.class, false, mTargetContext);
+        BluetoothOppTestUtils.enableActivity(BluetoothOppTransferHistory.class, false, mContext);
     }
 
     @Test
     public void onCreate_withDirectionInbound_displayInboundHistory() {
         Assume.assumeFalse(
-                mTargetContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WATCH));
+                mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WATCH));
 
         BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
         mIntent.setAction(Constants.ACTION_OPEN_INBOUND_TRANSFER);
@@ -159,14 +157,14 @@ public class BluetoothOppTransferHistoryTest {
         ActivityScenario.launch(mIntent);
         InstrumentationRegistry.getInstrumentation().waitForIdleSync();
 
-        onView(withText(mTargetContext.getText(R.string.inbound_history_title).toString()))
+        onView(withText(mContext.getText(R.string.inbound_history_title).toString()))
                 .check(matches(isDisplayed()));
     }
 
     @Test
     public void onCreate_withDirectionOutbound_displayOutboundHistory() {
         Assume.assumeFalse(
-                mTargetContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WATCH));
+                mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WATCH));
 
         BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
         mCursorMockDataList.set(
@@ -178,7 +176,7 @@ public class BluetoothOppTransferHistoryTest {
         ActivityScenario.launch(mIntent);
         InstrumentationRegistry.getInstrumentation().waitForIdleSync();
 
-        onView(withText(mTargetContext.getText(R.string.outbound_history_title).toString()))
+        onView(withText(mContext.getText(R.string.outbound_history_title).toString()))
                 .check(matches(isDisplayed()));
     }
 
@@ -215,12 +213,12 @@ public class BluetoothOppTransferHistoryTest {
                         any(),
                         any());
 
-        onView(withText(mTargetContext.getText(R.string.transfer_clear_dlg_title).toString()))
+        onView(withText(mContext.getText(R.string.transfer_clear_dlg_title).toString()))
                 .inRoot(isDialog())
                 .check(matches(isDisplayed()));
 
         // Click ok on the prompted dialog
-        onView(withText(mTargetContext.getText(android.R.string.ok).toString()))
+        onView(withText(mContext.getText(android.R.string.ok).toString()))
                 .inRoot(isDialog())
                 .check(matches(isDisplayed()))
                 .perform(click());

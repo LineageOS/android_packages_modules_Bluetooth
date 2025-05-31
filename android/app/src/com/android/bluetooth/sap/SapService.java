@@ -53,7 +53,7 @@ import android.util.Log;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -61,7 +61,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SapService extends ProfileService implements AdapterService.BluetoothStateCallback {
+public class SapService extends ConnectableProfile
+        implements AdapterService.BluetoothStateCallback {
     private static final String TAG = SapService.class.getSimpleName();
 
     private static final String SDP_SAP_SERVICE_NAME = "SIM Access";
@@ -557,6 +558,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
         return sRemoteDeviceName;
     }
 
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         boolean result = false;
         synchronized (SapService.this) {
@@ -606,6 +608,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
         return deviceList;
     }
 
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         synchronized (this) {
             if (getState() == BluetoothSap.STATE_CONNECTED
@@ -632,13 +635,12 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
      * @return true if connectionPolicy is set, false on error
      */
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         enforceCallingOrSelfPermission(
                 BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
-        mAdapterService
-                .getDatabase()
-                .setProfileConnectionPolicy(device, BluetoothProfile.SAP, connectionPolicy);
+        mDatabaseManager.setProfileConnectionPolicy(device, BluetoothProfile.SAP, connectionPolicy);
         if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
             disconnect(device);
         }
@@ -656,12 +658,11 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
      * @return connection policy of the device
      */
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
+    @Override
     public int getConnectionPolicy(BluetoothDevice device) {
         enforceCallingOrSelfPermission(
                 BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
-        return mAdapterService
-                .getDatabase()
-                .getProfileConnectionPolicy(device, BluetoothProfile.SAP);
+        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     @Override

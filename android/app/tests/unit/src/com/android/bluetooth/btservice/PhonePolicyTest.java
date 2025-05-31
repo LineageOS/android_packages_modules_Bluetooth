@@ -125,7 +125,7 @@ public class PhonePolicyTest {
 
         doReturn(BluetoothAdapter.STATE_ON).when(mAdapterService).getState();
         doReturn(MAX_CONNECTED_AUDIO_DEVICES).when(mAdapterService).getMaxConnectedAudioDevices();
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         // Setup the mocked factory to return mocked services
         doReturn(mHeadsetService).when(mServiceFactory).getHeadsetService();
         doReturn(mA2dpService).when(mServiceFactory).getA2dpService();
@@ -889,7 +889,7 @@ public class PhonePolicyTest {
                                 MetadataDatabase.class)
                         .build();
         DatabaseManager db = new DatabaseManager(mAdapterService);
-        doReturn(db).when(mAdapterService).getDatabase();
+        doReturn(db).when(mAdapterService).getDatabaseManager();
         PhonePolicy phonePolicy =
                 new PhonePolicy(mAdapterService, mLooper.getLooper(), mServiceFactory);
 
@@ -921,7 +921,7 @@ public class PhonePolicyTest {
                                 MetadataDatabase.class)
                         .build();
         DatabaseManager db = new DatabaseManager(mAdapterService);
-        doReturn(db).when(mAdapterService).getDatabase();
+        doReturn(db).when(mAdapterService).getDatabaseManager();
         PhonePolicy phonePolicy =
                 new PhonePolicy(mAdapterService, mLooper.getLooper(), mServiceFactory);
 
@@ -958,7 +958,7 @@ public class PhonePolicyTest {
                                 MetadataDatabase.class)
                         .build();
         DatabaseManager db = new DatabaseManager(mAdapterService);
-        doReturn(db).when(mAdapterService).getDatabase();
+        doReturn(db).when(mAdapterService).getDatabaseManager();
         PhonePolicy phonePolicy =
                 new PhonePolicy(mAdapterService, mLooper.getLooper(), mServiceFactory);
 

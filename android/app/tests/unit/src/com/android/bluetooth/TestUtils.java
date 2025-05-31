@@ -66,15 +66,15 @@ import java.util.stream.IntStream;
 
 /** A set of methods useful in Bluetooth instrumentation tests */
 public class TestUtils {
-    private static final String TAG = Utils.TAG_PREFIX_BLUETOOTH + TestUtils.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + TestUtils.class.getSimpleName();
 
     private static Context getContext() {
         return InstrumentationRegistry.getInstrumentation().getContext();
     }
 
-    /** Mocks {@link Context#getSystemService(Class)} to return a specific service instance. */
-    public static <T> void mockGetSystemService(Context context, Class<T> serviceClass, T service) {
-        doReturn(service).when(context).getSystemService(eq(serviceClass));
+    /** Returns the real {@link BluetoothManager} */
+    public static BluetoothManager getBluetoothManager() {
+        return getContext().getSystemService(BluetoothManager.class);
     }
 
     /** Mocks {@link Context#getSystemService(Class)} to return a mock instance of the service. */
@@ -84,12 +84,20 @@ public class TestUtils {
         return mockedService;
     }
 
+    /** Mocks {@link Context#getSystemService(Class)} to return a specific service instance. */
+    public static <T> void mockGetSystemService(Context context, Class<T> serviceClass, T service) {
+        doReturn(service).when(context).getSystemService(serviceClass);
+        final var serviceName = getContext().getSystemServiceName(serviceClass);
+        doReturn(service).when(context).getSystemService(serviceName);
+        doReturn(serviceName).when(context).getSystemServiceName(serviceClass);
+    }
+
     /**
-     * Mocks {@code Context.getSystemService(BluetoothManager.class)} to return the actual {@link
+     * Mocks {@code Context.getSystemService(BluetoothManager.class)} to return the real {@link
      * BluetoothManager}.
      */
     public static void mockGetBluetoothManager(Context context) {
-        final var manager = getContext().getSystemService(BluetoothManager.class);
+        final var manager = getBluetoothManager();
         assertThat(manager).isNotNull();
         doReturn(manager).when(context).getSystemService(BluetoothManager.class);
     }
@@ -176,10 +184,7 @@ public class TestUtils {
     private static BluetoothDevice getDevice(String address, @AddressType int type) {
         assertThat(BluetoothAdapter.checkBluetoothAddress(address)).isTrue();
         BluetoothDevice testDevice =
-                getContext()
-                        .getSystemService(BluetoothManager.class)
-                        .getAdapter()
-                        .getRemoteLeDevice(address, type);
+                getBluetoothManager().getAdapter().getRemoteLeDevice(address, type);
         assertThat(testDevice).isNotNull();
         return testDevice;
     }

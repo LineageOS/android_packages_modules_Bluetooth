@@ -45,9 +45,8 @@ import androidx.annotation.VisibleForTesting;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.MetricsLogger;
-import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 
 import java.util.Collections;
@@ -58,7 +57,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /** Provides Bluetooth Hid Host profile, as a service in the Bluetooth application. */
-public class HidHostService extends ProfileService {
+public class HidHostService extends ConnectableProfile {
     private static final String TAG = HidHostService.class.getSimpleName();
 
     public static final String ANDROID_HEADTRACKER_UUID_STR =
@@ -101,7 +100,6 @@ public class HidHostService extends ProfileService {
     private final Map<BluetoothDevice, InputDevice> mInputDevices =
             Collections.synchronizedMap(new HashMap<>());
 
-    private final DatabaseManager mDatabaseManager;
     private final HidHostNativeInterface mNativeInterface;
 
     private static final int MESSAGE_CONNECT = 1;
@@ -131,7 +129,6 @@ public class HidHostService extends ProfileService {
     @VisibleForTesting
     HidHostService(AdapterService adapterService, HidHostNativeInterface nativeInterface) {
         super(BluetoothProfile.HID_HOST, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(nativeInterface, () -> new HidHostNativeInterface(this));
         mNativeInterface.init();
@@ -680,6 +677,7 @@ public class HidHostService extends ProfileService {
      * @param device is the device with which to connect the hid host profile
      * @return true if connection request is passed down to mHandler.
      */
+    @Override
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect: device=" + device);
         int state = getConnectionState(device);
@@ -717,6 +715,7 @@ public class HidHostService extends ProfileService {
      * @param device is the device with which to disconnect the hid host profile
      * @return true
      */
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         disconnect(device, getConnectionPolicy(device));
         return true;
@@ -731,6 +730,7 @@ public class HidHostService extends ProfileService {
      *     BluetoothProfile#STATE_CONNECTED} if this profile is connected, or {@link
      *     BluetoothProfile#STATE_DISCONNECTING} if this profile is being disconnected
      */
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         Log.d(TAG, "getConnectionState: device=" + device);
         InputDevice inputDevice = mInputDevices.get(device);
@@ -762,6 +762,7 @@ public class HidHostService extends ProfileService {
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "setConnectionPolicy: device=" + device);
 
@@ -809,21 +810,6 @@ public class HidHostService extends ProfileService {
         mHandler.sendMessage(msg);
 
         return true;
-    }
-
-    /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        Log.d(TAG, "getConnectionPolicy: device=" + device);
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     /**

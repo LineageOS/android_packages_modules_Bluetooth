@@ -575,8 +575,16 @@ cc_fuzz {
     ],
 }
 
-cc_fuzz {
-    name: "bnep-fuzzer",
+filegroup {
+    name: "BnepFuzzerSources",
+    srcs: [
+        "bnep/*.cc",
+        "fuzzers/bnep_fuzzer.cc",
+    ],
+}
+
+cc_defaults {
+    name: "bnep_fuzzer_default",
     defaults: [
         "btstack_fuzzer_default",
         "fluoride_defaults",
@@ -588,6 +596,7 @@ cc_fuzz {
     ],
     srcs: [
         ":BluetoothPacketSources",
+        ":BnepFuzzerSources",
         ":TestCommonMockFunctions",
         ":TestCommonStackConfig",
         ":TestFakeOsi",
@@ -601,8 +610,6 @@ cc_fuzz {
         ":TestMockStackBtm",
         ":TestMockStackHcic",
         ":TestMockStackL2cap",
-        "bnep/*.cc",
-        "fuzzers/bnep_fuzzer.cc",
     ],
     static_libs: [
         "libbluetooth-types",
@@ -614,7 +621,24 @@ cc_fuzz {
 }
 
 cc_fuzz {
-    name: "avrc-fuzzer",
+    name: "bnep-fuzzer",
+    team: "trendy_team_bluetooth",
+    defaults: [
+        "bnep_fuzzer_default",
+    ],
+}
+
+filegroup {
+    name: "AvrcFuzzerSources",
+    srcs: [
+        "avct/*.cc",
+        "avrc/*.cc",
+        "fuzzers/avrc_fuzzer.cc",
+    ],
+}
+
+cc_defaults {
+    name: "avrc_fuzzer_default",
     defaults: [
         "btstack_fuzzer_default",
         "fluoride_defaults",
@@ -625,6 +649,7 @@ cc_fuzz {
         "packages/modules/Bluetooth/system/stack/btm",
     ],
     srcs: [
+        ":AvrcFuzzerSources",
         ":BluetoothPacketSources",
         ":TestCommonMockFunctions",
         ":TestCommonStackConfig",
@@ -640,9 +665,6 @@ cc_fuzz {
         ":TestMockStackHcic",
         ":TestMockStackL2cap",
         ":TestMockStackSdp",
-        "avct/*.cc",
-        "avrc/*.cc",
-        "fuzzers/avrc_fuzzer.cc",
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",
@@ -661,7 +683,23 @@ cc_fuzz {
 }
 
 cc_fuzz {
-    name: "l2cap-fuzzer",
+    name: "avrc-fuzzer",
+    team: "trendy_team_bluetooth",
+    defaults: [
+        "avrc_fuzzer_default",
+    ],
+}
+
+filegroup {
+    name: "L2capFuzzerSources",
+    srcs: [
+        "fuzzers/l2cap_fuzzer.cc",
+        "l2cap/*.cc",
+    ],
+}
+
+cc_defaults {
+    name: "l2cap_fuzzer_default",
     defaults: [
         "btstack_fuzzer_default",
         "fluoride_defaults",
@@ -673,6 +711,7 @@ cc_fuzz {
     ],
     srcs: [
         ":BluetoothPacketSources",
+        ":L2capFuzzerSources",
         ":TestCommonMockFunctions",
         ":TestCommonStackConfig",
         ":TestFakeOsi",
@@ -684,8 +723,6 @@ cc_fuzz {
         ":TestMockStackAcl",
         ":TestMockStackBtm",
         ":TestMockStackHcic",
-        "fuzzers/l2cap_fuzzer.cc",
-        "l2cap/*.cc",
     ],
     static_libs: [
         "bluetooth_flags_c_lib",
@@ -711,6 +748,14 @@ cc_fuzz {
             ],
         },
     },
+}
+
+cc_fuzz {
+    name: "l2cap-fuzzer",
+    team: "trendy_team_bluetooth",
+    defaults: [
+        "l2cap_fuzzer_default",
+    ],
 }
 
 // Bluetooth stack unit tests for target

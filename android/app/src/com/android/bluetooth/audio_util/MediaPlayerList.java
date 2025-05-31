@@ -1067,13 +1067,14 @@ public class MediaPlayerList {
             mPlayerSettingsListener.onActivePlayerChanged(player);
         }
 
+        MediaData data = player.getMediaData();
+
         // Ensure that metadata is synced on the new player
-        if (!player.isMetadataSynced()) {
+        if (!player.isMetadataSynced(data)) {
             Log.w(TAG, "setActivePlayer(): Metadata not synced on new player");
             return;
         }
 
-        MediaData data = player.getCurrentMediaData();
         if (mAudioPlaybackIsActive) {
             data.state = mCurrMediaData.state;
             Log.d(TAG, "setActivePlayer mAudioPlaybackIsActive=true, state=" + data.state);

@@ -53,12 +53,21 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
     @Retention(RetentionPolicy.SOURCE)
     public @interface SourceCodecType {};
 
+    /**
+     * Source codec type for LC3.
+     */
     public static final int SOURCE_CODEC_TYPE_LC3 = 0;
 
+    /**
+     * Source codec type for Opus.
+     */
     @FlaggedApi(Flags.FLAG_LEAUDIO_ADD_OPUS_CODEC_TYPE)
     public static final int SOURCE_CODEC_TYPE_OPUS = 1;
 
-    /** @hide */
+    /**
+     * Source codec type for Opus High Resolution.
+     */
+    @FlaggedApi(Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API)
     public static final int SOURCE_CODEC_TYPE_OPUS_HI_RES = 2;
 
     public static final int SOURCE_CODEC_TYPE_INVALID = 1000 * 1000;
@@ -396,18 +405,17 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
                 return "LC3";
             case SOURCE_CODEC_TYPE_INVALID:
                 return "INVALID CODEC";
-            case SOURCE_CODEC_TYPE_OPUS_HI_RES:
-                if (Flags.leaudioAddOpusHiResCodecType()) {
-                    return "Opus Hi-Res";
-                }
-            // Fall-through intended
             default:
                 if (Flags.leaudioAddOpusCodecType()) {
                     if (mCodecType == SOURCE_CODEC_TYPE_OPUS) {
                         return "Opus";
                     }
                 }
-                break;
+                if (Flags.leaudioAddOpusHiResCodecTypeApi()) {
+                    if (mCodecType == SOURCE_CODEC_TYPE_OPUS_HI_RES) {
+                        return "Opus Hi-Res";
+                    }
+                }
         }
         return "UNKNOWN CODEC(" + mCodecType + ")";
     }

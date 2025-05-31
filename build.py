@@ -443,7 +443,7 @@ class HostBuild():
 
         if not self.args.no_vendored_rust:
             contents = template.format(self.platform_dir)
-            with open(os.path.join(self.env['CARGO_HOME'], 'config'), 'w') as f:
+            with open(os.path.join(self.env['CARGO_HOME'], 'config.toml'), 'w') as f:
                 f.write(contents)
 
     def _rust_build(self):

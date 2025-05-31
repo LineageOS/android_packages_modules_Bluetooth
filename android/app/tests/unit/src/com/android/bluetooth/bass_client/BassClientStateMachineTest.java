@@ -31,6 +31,7 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasFlag;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.bass_client.BassClientStateMachine.ADD_BCAST_SOURCE;
@@ -71,7 +72,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -85,10 +85,8 @@ import android.bluetooth.BluetoothLeBroadcastChannel;
 import android.bluetooth.BluetoothLeBroadcastMetadata;
 import android.bluetooth.BluetoothLeBroadcastReceiveState;
 import android.bluetooth.BluetoothLeBroadcastSubgroup;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothStatusCodes;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Looper;
 import android.os.Message;
@@ -97,7 +95,6 @@ import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
@@ -150,10 +147,6 @@ public class BassClientStateMachineTest {
     private static final byte OPCODE_UPDATE_SOURCE = 0x03;
     private static final int UPDATE_SOURCE_FIXED_LENGTH = 6;
 
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
-    private final BluetoothAdapter mAdapter =
-            mTargetContext.getSystemService(BluetoothManager.class).getAdapter();
     private final BluetoothDevice mDevice = getTestDevice(0);
     private final BluetoothDevice mEmptyTestDevice = getTestDevice(EMPTY_BLUETOOTH_DEVICE_ADDRESS);
     private final BluetoothDevice mSourceTestDevice = getTestDevice(1);
@@ -1736,8 +1729,7 @@ public class BassClientStateMachineTest {
                 new BluetoothLeBroadcastReceiveState(
                         2,
                         BluetoothDevice.ADDRESS_TYPE_PUBLIC,
-                        mAdapter.getRemoteLeDevice(
-                                "00:00:00:00:00:00", BluetoothDevice.ADDRESS_TYPE_PUBLIC),
+                        getRealDevice("00:00:00:00:00:00"),
                         0,
                         0,
                         BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
@@ -1755,8 +1747,7 @@ public class BassClientStateMachineTest {
                 new BluetoothLeBroadcastReceiveState(
                         sourceId,
                         BluetoothDevice.ADDRESS_TYPE_PUBLIC,
-                        mAdapter.getRemoteLeDevice(
-                                "00:00:00:00:00:00", BluetoothDevice.ADDRESS_TYPE_PUBLIC),
+                        getRealDevice("00:00:00:00:00:00"),
                         0,
                         0,
                         BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
@@ -2722,14 +2713,14 @@ public class BassClientStateMachineTest {
         assertThat(mStateMachine.getCurrentState()).isInstanceOf(type);
     }
 
-    private BluetoothLeBroadcastMetadata createBroadcastMetadata() {
+    private static BluetoothLeBroadcastMetadata createBroadcastMetadata() {
         final String testMacAddress = "00:11:22:33:44:55";
         final int testAdvertiserSid = 1234;
         final int testPaSyncInterval = 100;
         final int testPresentationDelayMs = 345;
 
         BluetoothDevice testDevice =
-                mAdapter.getRemoteLeDevice(testMacAddress, BluetoothDevice.ADDRESS_TYPE_RANDOM);
+                getRealDevice(testMacAddress, BluetoothDevice.ADDRESS_TYPE_RANDOM);
 
         BluetoothLeBroadcastMetadata.Builder builder =
                 new BluetoothLeBroadcastMetadata.Builder()

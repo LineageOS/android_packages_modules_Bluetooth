@@ -201,7 +201,6 @@ static void clean_up_stack(ProfileStopCallback stopProfiles) {
 static bool get_stack_is_running() { return stack_is_running; }
 
 // Internal functions
-extern const module_t bt_utils_module;
 extern const module_t btif_config_module;
 extern const module_t gd_shim_module;
 extern const module_t interop_module;
@@ -408,6 +407,10 @@ static void event_clean_up_stack(std::promise<void> promise, ProfileStopCallback
 
   btif_cleanup_bluetooth();
 
+  if (com::android::bluetooth::flags::shutdown_main_thread_before_cleanup()) {
+    main_thread_shut_down();
+  }
+
   module_clean_up(get_local_module(STACK_CONFIG_MODULE));
   module_clean_up(get_local_module(INTEROP_MODULE));
 
@@ -419,7 +422,9 @@ static void event_clean_up_stack(std::promise<void> promise, ProfileStopCallback
 
   module_clean_up(get_local_module(OSI_MODULE));
 
-  main_thread_shut_down();
+  if (!com::android::bluetooth::flags::shutdown_main_thread_before_cleanup()) {
+    main_thread_shut_down();
+  }
 
   module_management_stop();
   info("finished");

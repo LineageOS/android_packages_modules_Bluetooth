@@ -158,7 +158,25 @@ flag {
 flag {
     name: "support_zoomed_in_icon_metadata"
     namespace: "bluetooth"
+    is_exported: true
     description: "Add api support for a zoomed in icon metadata"
     bug: "417245933"
+}
+
+flag {
+    name: "hfp_connection_failures_api"
+    namespace: "bluetooth"
+    description: "Add api support for api to collect hfp connection failures"
+    bug: "418829893"
+}
+
+flag {
+    name: "send_ok_clcc_before_slc"
+    namespace: "bluetooth"
+    description: "Send clcc response ok before slc is completed to avoid remote issues"
+    bug: "421323693"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
 }
 

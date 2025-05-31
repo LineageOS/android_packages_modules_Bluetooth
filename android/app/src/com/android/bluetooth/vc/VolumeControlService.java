@@ -55,9 +55,9 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.internal.annotations.GuardedBy;
@@ -71,7 +71,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class VolumeControlService extends ProfileService {
+public class VolumeControlService extends ConnectableProfile {
     private static final String TAG = VolumeControlService.class.getSimpleName();
 
     private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1000;
@@ -90,7 +90,6 @@ public class VolumeControlService extends ProfileService {
             new RemoteCallbackList<>();
 
     private final AudioManager mAudioManager;
-    private final DatabaseManager mDatabaseManager;
     private final Handler mHandler;
     private final HandlerThread mStateMachinesThread;
     private final Looper mStateMachinesLooper;
@@ -121,7 +120,6 @@ public class VolumeControlService extends ProfileService {
             Looper looper,
             VolumeControlNativeInterface nativeInterface) {
         super(BluetoothProfile.VOLUME_CONTROL, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,
@@ -226,6 +224,7 @@ public class VolumeControlService extends ProfileService {
         sVolumeControlService = instance;
     }
 
+    @Override
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect(): " + device);
         if (device == null) {
@@ -254,6 +253,7 @@ public class VolumeControlService extends ProfileService {
         return true;
     }
 
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         Log.d(TAG, "disconnect(): " + device);
         if (device == null) {
@@ -448,6 +448,7 @@ public class VolumeControlService extends ProfileService {
         }
     }
 
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         synchronized (mStateMachines) {
             VolumeControlStateMachine sm = mStateMachines.get(device);
@@ -472,6 +473,7 @@ public class VolumeControlService extends ProfileService {
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true on success, otherwise false
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
@@ -481,10 +483,6 @@ public class VolumeControlService extends ProfileService {
             disconnect(device);
         }
         return true;
-    }
-
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     boolean isVolumeOffsetAvailable(BluetoothDevice device) {
@@ -1527,7 +1525,7 @@ public class VolumeControlService extends ProfileService {
         mGroupMuteCache.remove(groupId);
     }
 
-    /** Process a change in the bonding state for a device */
+    @Override
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
         mHandler.post(() -> bondStateChanged(device, toState));
     }

@@ -61,9 +61,8 @@ import com.android.bluetooth.ObexServerSockets;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.InteropUtil;
-import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
@@ -76,7 +75,7 @@ import java.util.List;
 import java.util.Map;
 
 // Next tag value for ContentProfileErrorReportUtils.report(): 12
-public class BluetoothPbapService extends ProfileService implements IObexConnectionHandler {
+public class BluetoothPbapService extends ConnectableProfile implements IObexConnectionHandler {
     private static final String TAG = BluetoothPbapService.class.getSimpleName();
 
     /** The component name of the owned BluetoothPbapActivity */
@@ -151,7 +150,6 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
     private final BluetoothPbapContentObserver mContactChangeObserver =
             new BluetoothPbapContentObserver();
 
-    private final DatabaseManager mDatabaseManager;
     private final NotificationManager mNotificationManager;
     private final PbapHandler mSessionStatusHandler;
     private final HandlerThread mHandlerThread;
@@ -170,8 +168,6 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
 
     private Thread mThreadUpdateSecVersionCounter;
 
-    private static BluetoothPbapService sBluetoothPbapService;
-
     public BluetoothPbapService(AdapterService adapterService) {
         this(requireNonNull(adapterService), null);
     }
@@ -179,7 +175,6 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
     @VisibleForTesting
     BluetoothPbapService(AdapterService adapterService, NotificationManager notificationManager) {
         super(BluetoothProfile.PBAP, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNotificationManager =
                 requireNonNullElseGet(
                         notificationManager, () -> obtainSystemService(NotificationManager.class));
@@ -211,8 +206,6 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
                         DevicePolicyUtils.getEnterprisePhoneUri(mAdapterService),
                         false,
                         mContactChangeObserver);
-
-        setBluetoothPbapService(this);
 
         mSessionStatusHandler.sendEmptyMessage(GET_LOCAL_TELEPHONY_DETAILS);
         mSessionStatusHandler.sendEmptyMessage(LOAD_CONTACTS);
@@ -328,7 +321,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
         }
     }
 
-    /** Process a change in the bonding state for a device */
+    @Override
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
         if (toState == BluetoothDevice.BOND_BONDED && mIsPseDynamicVersionUpgradeEnabled) {
             mSessionStatusHandler.sendMessageDelayed(
@@ -492,6 +485,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
 
         boolean matched =
                 InteropUtil.interopMatchAddrOrName(
+                        mAdapterService,
                         InteropUtil.InteropFeature.INTEROP_ADV_PBAP_VER_1_2,
                         remoteDevice.getAddress());
         Log.d(TAG, "INTEROP_ADV_PBAP_VER_1_2: matched=" + matched);
@@ -623,6 +617,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
      *     BluetoothProfile#STATE_CONNECTING}, {@link BluetoothProfile#STATE_CONNECTED}, or {@link
      *     BluetoothProfile#STATE_DISCONNECTING}
      */
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         synchronized (mPbapStateMachineMap) {
             PbapStateMachine sm = mPbapStateMachineMap.get(device);
@@ -669,6 +664,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
@@ -691,6 +687,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
      * @param device Bluetooth device
      * @return connection policy of the device
      */
+    @Override
     public int getConnectionPolicy(BluetoothDevice device) {
         if (device == null) {
             throw new IllegalArgumentException("Null device");
@@ -703,13 +700,16 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
      *
      * @param device is the remote bluetooth device
      */
-    public void disconnect(BluetoothDevice device) {
+    @Override
+    public boolean disconnect(BluetoothDevice device) {
         synchronized (mPbapStateMachineMap) {
             PbapStateMachine sm = mPbapStateMachineMap.get(device);
             if (sm != null) {
                 sm.sendMessage(PbapStateMachine.DISCONNECT);
             }
         }
+
+        return true;
     }
 
     static String getLocalPhoneNum() {
@@ -734,7 +734,6 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        setBluetoothPbapService(null);
         mSessionStatusHandler.sendEmptyMessage(SHUTDOWN);
         mHandlerThread.quitSafely();
         joinUninterruptibly(mHandlerThread);
@@ -746,26 +745,6 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
             mPbapStateMachineMap.clear();
         }
         unregisterReceiver(mUserChangeReceiver);
-    }
-
-    /**
-     * @return current instance of {@link BluetoothPbapService}
-     */
-    public static synchronized BluetoothPbapService getBluetoothPbapService() {
-        if (sBluetoothPbapService == null) {
-            Log.w(TAG, "getBluetoothPbapService(): service is null");
-            return null;
-        }
-        if (!sBluetoothPbapService.isAvailable()) {
-            Log.w(TAG, "getBluetoothPbapService(): service is not available");
-            return null;
-        }
-        return sBluetoothPbapService;
-    }
-
-    private static synchronized void setBluetoothPbapService(BluetoothPbapService instance) {
-        Log.d(TAG, "setBluetoothPbapService(): set to: " + instance);
-        sBluetoothPbapService = instance;
     }
 
     @Override

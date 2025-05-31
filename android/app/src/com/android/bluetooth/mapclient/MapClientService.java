@@ -40,8 +40,7 @@ import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -51,7 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class MapClientService extends ProfileService {
+public class MapClientService extends ConnectableProfile {
     private static final String TAG = MapClientService.class.getSimpleName();
 
     static final int MAXIMUM_CONNECTED_DEVICES = 4;
@@ -59,7 +58,6 @@ public class MapClientService extends ProfileService {
     private final Map<BluetoothDevice, MceStateMachine> mMapInstanceMap =
             new ConcurrentHashMap<>(1);
 
-    private final DatabaseManager mDatabaseManager;
     private final MnsService mMnsServer;
     private final Looper mStateMachinesLooper;
     private final Handler mHandler;
@@ -73,7 +71,6 @@ public class MapClientService extends ProfileService {
     @VisibleForTesting
     MapClientService(AdapterService adapterService, Looper looper, MnsService mnsServer) {
         super(BluetoothProfile.MAP_CLIENT, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(adapterService.getDatabase());
         mMnsServer = requireNonNullElseGet(mnsServer, () -> new MnsService(mAdapterService, this));
 
         if (looper == null) {
@@ -124,6 +121,7 @@ public class MapClientService extends ProfileService {
      *
      * @return true if connection is successful, false otherwise.
      */
+    @Override
     public synchronized boolean connect(BluetoothDevice device) {
         if (device == null) {
             throw new IllegalArgumentException("Null device");
@@ -192,6 +190,7 @@ public class MapClientService extends ProfileService {
         mMapInstanceMap.put(device, mapStateMachine);
     }
 
+    @Override
     public synchronized boolean disconnect(BluetoothDevice device) {
         Log.d(TAG, "disconnect(device= " + device + "): devices=" + mMapInstanceMap.keySet());
         MceStateMachine mapStateMachine = mMapInstanceMap.get(device);
@@ -234,6 +233,7 @@ public class MapClientService extends ProfileService {
         return deviceList;
     }
 
+    @Override
     public synchronized int getConnectionState(BluetoothDevice device) {
         MceStateMachine mapStateMachine = mMapInstanceMap.get(device);
         // a map state machine instance doesn't exist yet, create a new one if we can.
@@ -254,6 +254,7 @@ public class MapClientService extends ProfileService {
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.v(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
@@ -266,20 +267,6 @@ public class MapClientService extends ProfileService {
             disconnect(device);
         }
         return true;
-    }
-
-    /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     public synchronized boolean sendMessage(

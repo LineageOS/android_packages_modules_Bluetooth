@@ -31,11 +31,17 @@ class Bugreport:
             return None
 
     def __init__(self, path: Path):
-        self.archive = zipfile.ZipFile(path)
-        self.btsnoop_hci = Btsnoop(
-            self.read(Bugreport.BTSNOOP_HCI_PATH),
-            self.read(Bugreport.BTSNOOP_HCI_LAST_PATH),
-        )
+        if path.suffix == '.log':
+            with open(path, 'rb') as f:
+                self.archive = None
+                self.btsnoop_hci = Btsnoop(f.read(), None)
+
+        else:
+            self.archive = zipfile.ZipFile(path)
+            self.btsnoop_hci = Btsnoop(
+                self.read(Bugreport.BTSNOOP_HCI_PATH),
+                self.read(Bugreport.BTSNOOP_HCI_LAST_PATH),
+            )
 
 
 def run_a2dp(bugreport: Bugreport, args: argparse.Namespace):

@@ -10,7 +10,8 @@ package {
 }
 
 cc_defaults {
-    name: "fuzzer_validation_test_default",
+    // Needs to come first in the default list for tests, hence the prefix
+    name: "_fuzzer_validation_test_default",
     defaults: ["mts_defaults"],
     host_supported: true,
     test_suites: ["general-tests"],
@@ -60,10 +61,25 @@ filegroup {
     srcs: ["data/smp_corpus.zip"],
 }
 
+filegroup {
+    name: "avrc-fuzzer-corpus",
+    srcs: ["data/avrc_corpus.zip"],
+}
+
+filegroup {
+    name: "bnep-fuzzer-corpus",
+    srcs: ["data/bnep_corpus.zip"],
+}
+
+filegroup {
+    name: "l2cap-fuzzer-corpus",
+    srcs: ["data/l2cap_corpus.zip"],
+}
+
 cc_test {
     name: "rfcomm-fuzzer-validation-test",
     defaults: [
-        "fuzzer_validation_test_default",
+        "_fuzzer_validation_test_default",
         "rfcomm_fuzzer_default",
     ],
     data: [":rfcomm-fuzzer-corpus"],
@@ -75,7 +91,7 @@ cc_test {
 cc_test {
     name: "sdp-fuzzer-validation-test",
     defaults: [
-        "fuzzer_validation_test_default",
+        "_fuzzer_validation_test_default",
         "sdp_fuzzer_default",
     ],
     data: [":sdp-fuzzer-corpus"],
@@ -87,7 +103,7 @@ cc_test {
 cc_test {
     name: "gatt-fuzzer-validation-test",
     defaults: [
-        "fuzzer_validation_test_default",
+        "_fuzzer_validation_test_default",
         "gatt_fuzzer_default",
     ],
     data: [":gatt-fuzzer-corpus"],
@@ -99,11 +115,48 @@ cc_test {
 cc_test {
     name: "smp-fuzzer-validation-test",
     defaults: [
-        "fuzzer_validation_test_default",
+        "_fuzzer_validation_test_default",
         "smp_fuzzer_default",
     ],
     data: [":smp-fuzzer-corpus"],
     srcs: [
         "smp_fuzzer_validation_test.cc",
+    ],
+}
+
+cc_test {
+    name: "avrc-fuzzer-validation-test",
+    defaults: [
+        "_fuzzer_validation_test_default",
+        "avrc_fuzzer_default",
+    ],
+    host_supported: false, // Seems to fail on ASAN-ized host build but not hwasan-ized device.
+    data: [":avrc-fuzzer-corpus"],
+    srcs: [
+        "avrc_fuzzer_validation_test.cc",
+    ],
+}
+
+cc_test {
+    name: "bnep-fuzzer-validation-test",
+    defaults: [
+        "_fuzzer_validation_test_default",
+        "bnep_fuzzer_default",
+    ],
+    data: [":bnep-fuzzer-corpus"],
+    srcs: [
+        "bnep_fuzzer_validation_test.cc",
+    ],
+}
+
+cc_test {
+    name: "l2cap-fuzzer-validation-test",
+    defaults: [
+        "_fuzzer_validation_test_default",
+        "l2cap_fuzzer_default",
+    ],
+    data: [":l2cap-fuzzer-corpus"],
+    srcs: [
+        "l2cap_fuzzer_validation_test.cc",
     ],
 }

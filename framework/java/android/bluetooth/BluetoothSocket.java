@@ -954,8 +954,33 @@ public final class BluetoothSocket implements Closeable {
     }
 
     /*package*/ int available() throws IOException {
-        if (VDBG) Log.d(TAG, "available: " + mSocketIS);
-        return mSocketIS.available();
+        if (!Flags.fixLecocSocketAvailable()) {
+            int socketAvailable = mSocketIS.available();
+            if (VDBG) {
+                Log.d(TAG, "available returns: mSocketIS.available=" + socketAvailable);
+            }
+            return socketAvailable;
+        }
+
+        if (mSocketState == SocketState.CLOSED) {
+            Log.e(TAG, "available called on closed socket!");
+            return 0;
+        }
+
+        int available = mSocketIS.available();
+        if ((mType == TYPE_L2CAP || mType == TYPE_L2CAP_LE)
+                && mL2capBuffer != null
+                && mL2capBuffer.remaining() > 0) {
+            // as L2CAP sockets are of SOCK_SEQPACKET type, App has to read one packet
+            // at a time
+            available = mL2capBuffer.remaining();
+            if (VDBG) {
+                Log.d(TAG, "available returns: mL2capBuffer.remaining=" + available);
+            }
+        } else if (VDBG) {
+            Log.d(TAG, "available returns: mSocketIS.available=" + available);
+        }
+        return available;
     }
 
     /*package*/ int read(byte[] b, int offset, int length) throws IOException {

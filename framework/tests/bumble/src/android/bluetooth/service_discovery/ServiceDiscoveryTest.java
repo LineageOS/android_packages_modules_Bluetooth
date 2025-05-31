@@ -24,11 +24,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.PandoraDevice;
 import android.bluetooth.Utils;
 import android.bluetooth.test_utils.EnableBluetoothRule;
@@ -79,7 +77,7 @@ public class ServiceDiscoveryTest {
     public final PandoraDevice mBumble = new PandoraDevice();
 
     @Rule(order = 3)
-    public final EnableBluetoothRule mEnableBluetoothRule = new EnableBluetoothRule();
+    public final EnableBluetoothRule mEnableBluetoothRule = new EnableBluetoothRule(false, true);
 
     @Mock private BroadcastReceiver mReceiver;
 
@@ -101,7 +99,6 @@ public class ServiceDiscoveryTest {
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
-        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
         filter.addAction(BluetoothDevice.ACTION_UUID);
 
         mTargetContext.registerReceiver(mReceiver, filter);
@@ -145,14 +142,7 @@ public class ServiceDiscoveryTest {
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
 
         // Wait for GATT service discovery to complete on Android
-        verifyIntentReceivedUnordered(hasAction(BluetoothDevice.ACTION_UUID));
-        if (mBumbleDevice.isConnected()) {
-            // Disconnect Bumble
-            assertThat(mBumbleDevice.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
-        }
-        verifyIntentReceivedUnordered(
-                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+        verifyIntentReceived(hasAction(BluetoothDevice.ACTION_UUID));
 
         // Ensure that no other ACTION_UUID intent is received
         verifyNoMoreInteractions(mReceiver);
@@ -210,18 +200,9 @@ public class ServiceDiscoveryTest {
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE));
 
         // Wait for GATT service discovery to complete on Android
-        // ACTION_UUID & ACTION_ACL_DISCONNECTED order is non deterministic :(
-        verifyIntentReceivedUnordered(
+        verifyIntentReceived(
                 hasAction(BluetoothDevice.ACTION_UUID),
                 hasExtra(BluetoothDevice.EXTRA_UUID, Matchers.hasItemInArray(BATTERY_UUID)));
-
-        if (mBumbleDevice.isConnected()) {
-            // Disconnect Bumble
-            assertThat(mBumbleDevice.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
-        }
-        verifyIntentReceivedUnordered(
-                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE));
 
         // Ensure that no other ACTION_UUID intent is received
         verifyNoMoreInteractions(mReceiver);
@@ -230,12 +211,6 @@ public class ServiceDiscoveryTest {
     @SafeVarargs
     private void verifyIntentReceived(Matcher<Intent>... matchers) {
         mInOrder.verify(mReceiver, timeout(INTENT_TIMEOUT.toMillis()))
-                .onReceive(any(Context.class), MockitoHamcrest.argThat(AllOf.allOf(matchers)));
-    }
-
-    @SafeVarargs
-    private void verifyIntentReceivedUnordered(Matcher<Intent>... matchers) {
-        verify(mReceiver, timeout(INTENT_TIMEOUT.toMillis()))
                 .onReceive(any(Context.class), MockitoHamcrest.argThat(AllOf.allOf(matchers)));
     }
 }

@@ -20,11 +20,19 @@ import static android.Manifest.permission.MEDIA_CONTENT_CONTROL;
 import static android.Manifest.permission.MODIFY_PHONE_STATE;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -38,6 +46,7 @@ import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -53,7 +62,8 @@ import java.util.ArrayList;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class MediaPlayerListTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule public final StaticMockitoRule mStaticMockitoRule =
+              new StaticMockitoRule(MediaPlayerWrapper.class);
 
     @Mock private Context mMockContext;
     @Mock private MediaPlayerList.MediaUpdateCallback mMediaUpdateCallback;
@@ -101,7 +111,8 @@ public class MediaPlayerListTest {
         MediaPlayerWrapperFactory.inject(mMockPlayerWrapper);
 
         doReturn("testPlayer").when(mMockController).getPackageName();
-        when(mMockPlayerWrapper.isMetadataSynced()).thenReturn(false);
+        doReturn("testPlayer").when(mMockPlayerWrapper).getPackageName();
+        ExtendedMockito.doReturn(false).when(() -> MediaPlayerWrapper.isMetadataSynced(any()));
 
         // Be sure to do this setup last, after factor injections, or you risk leaking device state
         // into the tests

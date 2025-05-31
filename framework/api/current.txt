@@ -1016,6 +1016,7 @@ package android.bluetooth {
     field public static final int SOURCE_CODEC_TYPE_INVALID = 1000000; // 0xf4240
     field public static final int SOURCE_CODEC_TYPE_LC3 = 0; // 0x0
     field @FlaggedApi("com.android.bluetooth.flags.leaudio_add_opus_codec_type") public static final int SOURCE_CODEC_TYPE_OPUS = 1; // 0x1
+    field @FlaggedApi("com.android.bluetooth.flags.leaudio_add_opus_hi_res_codec_type_api") public static final int SOURCE_CODEC_TYPE_OPUS_HI_RES = 2; // 0x2
   }
 
   public static final class BluetoothLeAudioCodecConfig.Builder {
@@ -1064,6 +1065,7 @@ package android.bluetooth {
     field public static final int A2DP = 2; // 0x2
     field public static final int CSIP_SET_COORDINATOR = 25; // 0x19
     field public static final String EXTRA_PREVIOUS_STATE = "android.bluetooth.profile.extra.PREVIOUS_STATE";
+    field @FlaggedApi("com.android.bluetooth.flags.add_profile_as_intent_extra") public static final String EXTRA_PROFILE = "android.bluetooth.profile.extra.PROFILE";
     field public static final String EXTRA_STATE = "android.bluetooth.profile.extra.STATE";
     field public static final int GATT = 7; // 0x7
     field public static final int GATT_SERVER = 8; // 0x8

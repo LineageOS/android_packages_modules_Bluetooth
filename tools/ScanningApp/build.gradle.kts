@@ -20,7 +20,7 @@ android {
         getByName("main") {
             manifest.srcFile("AndroidManifest.xml")
             kotlin.srcDirs("src")
-            res.srcDirs("src/res")
+            res.srcDirs("res")
         }
     }
 

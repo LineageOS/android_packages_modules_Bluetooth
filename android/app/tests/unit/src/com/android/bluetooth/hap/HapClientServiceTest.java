@@ -123,7 +123,7 @@ public class HapClientServiceTest {
         doReturn(mDevice2).when(mAdapterService).getDeviceFromByte(eq(byteAddress2));
         final byte[] byteAddress3 = getByteAddress(mDevice3);
         doReturn(mDevice3).when(mAdapterService).getDeviceFromByte(eq(byteAddress3));
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
 
         doReturn(CONNECTION_POLICY_ALLOWED)
                 .when(mDatabaseManager)
@@ -162,7 +162,7 @@ public class HapClientServiceTest {
         doReturn(new ParcelUuid[] {BluetoothUuid.HAS})
                 .when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
 
         mInOrder = inOrder(mAdapterService);
         mLooper = new TestLooper();

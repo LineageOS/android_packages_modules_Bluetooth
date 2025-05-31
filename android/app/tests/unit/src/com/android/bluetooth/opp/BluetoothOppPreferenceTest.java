@@ -43,9 +43,9 @@ import org.junit.runner.RunWith;
 /** Test cases for {@link BluetoothOppPreference}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppPreferenceTest {
-    Context mContext;
 
-    BluetoothMethodProxy mCallProxy;
+    private Context mContext;
+    private BluetoothMethodProxy mCallProxy;
 
     @Before
     public void setUp() {

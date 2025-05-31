@@ -241,7 +241,7 @@ void rfc_mx_sm_state_wait_conn_cnf(tRFC_MCB* p_mcb, tRFC_MX_EVENT event, void* p
         log::verbose("RFCOMM MX retry as acceptor in collision case - evt:{} in state:{}",
                      rfcomm_mx_event_text(event), rfcomm_mx_state_text(p_mcb->state));
 
-        rfc_save_lcid_mcb(NULL, p_mcb->lcid);
+        rfc_save_lcid_mcb(nullptr, p_mcb->lcid);
         p_mcb->lcid = p_mcb->pending_lcid;
         rfc_save_lcid_mcb(p_mcb, p_mcb->lcid);
 
@@ -568,7 +568,7 @@ void rfc_mx_sm_state_disc_wait_ua(tRFC_MCB* p_mcb, tRFC_MX_EVENT event, void* p_
         uint16_t lcid =
                 stack::l2cap::get_interface().L2CA_ConnectReq(BT_PSM_RFCOMM, p_mcb->bd_addr);
         if (lcid == 0) {
-          rfc_save_lcid_mcb(NULL, p_mcb->lcid);
+          rfc_save_lcid_mcb(nullptr, p_mcb->lcid);
           p_mcb->lcid = 0;
           PORT_StartCnf(p_mcb, RFCOMM_ERROR);
           return;
@@ -578,7 +578,7 @@ void rfc_mx_sm_state_disc_wait_ua(tRFC_MCB* p_mcb, tRFC_MX_EVENT event, void* p_
         rfc_save_lcid_mcb(p_mcb, p_mcb->lcid);
 
         /* clean up before reuse it */
-        while ((p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_mcb->cmd_q)) != NULL) {
+        while ((p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_mcb->cmd_q)) != nullptr) {
           osi_free(p_buf);
         }
 
@@ -656,7 +656,7 @@ void rfc_on_l2cap_error(uint16_t lcid, uint16_t result) {
                    p_mcb->pending_lcid);
 
       /* remove mcb from mapping table */
-      rfc_save_lcid_mcb(NULL, p_mcb->lcid);
+      rfc_save_lcid_mcb(nullptr, p_mcb->lcid);
 
       p_mcb->lcid = p_mcb->pending_lcid;
       p_mcb->is_initiator = false;

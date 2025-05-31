@@ -408,15 +408,22 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
   }
 
   void remove_advertiser(AdvertiserId advertiser_id) {
-    stop_advertising(advertiser_id);
     std::unique_lock lock(id_mutex_);
     if (advertising_sets_.count(advertiser_id) == 0) {
       return;
     }
+
+    bool started = advertising_sets_[advertiser_id].started;
+    if (started) {
+      stop_advertising(advertiser_id);
+    }
+
     if (advertising_api_type_ == AdvertisingApiType::EXTENDED) {
-      le_advertising_interface_->EnqueueCommand(
-              hci::LeRemoveAdvertisingSetBuilder::Create(advertiser_id),
-              handler_->BindOnce(check_complete<LeRemoveAdvertisingSetCompleteView>));
+      if (started) {
+        le_advertising_interface_->EnqueueCommand(
+                hci::LeRemoveAdvertisingSetBuilder::Create(advertiser_id),
+                handler_->BindOnce(check_complete<LeRemoveAdvertisingSetCompleteView>));
+      }
 
       if (advertising_sets_[advertiser_id].address_rotation_wake_alarm_ != nullptr) {
         advertising_sets_[advertiser_id].address_rotation_wake_alarm_->Cancel();
@@ -1533,7 +1540,7 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
   bool address_manager_registered = false;
   bool paused = false;
 
-  std::mutex id_mutex_;
+  std::recursive_mutex id_mutex_;
   size_t num_instances_;
   std::vector<hci::EnabledSet> enabled_sets_;
   // map to mapping the id from java layer and advertier id

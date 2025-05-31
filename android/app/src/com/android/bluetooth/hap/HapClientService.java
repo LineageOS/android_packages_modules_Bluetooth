@@ -51,9 +51,8 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ServiceFactory;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -66,7 +65,7 @@ import java.util.ListIterator;
 import java.util.Map;
 
 /** Provides Bluetooth Hearing Access profile, as a service. */
-public class HapClientService extends ProfileService {
+public class HapClientService extends ConnectableProfile {
     private static final String TAG = HapClientService.class.getSimpleName();
 
     // Upper limit of all HearingAccess devices: Bonded or Connected
@@ -79,7 +78,6 @@ public class HapClientService extends ProfileService {
     private final Map<BluetoothDevice, Integer> mDeviceCurrentPresetMap = new HashMap<>();
     private final Map<BluetoothDevice, Integer> mDeviceFeaturesMap = new HashMap<>();
     private final Map<BluetoothDevice, List<BluetoothHapPresetInfo>> mPresetsMap = new HashMap<>();
-    private final DatabaseManager mDatabaseManager;
     private final Handler mHandler;
     private final Looper mStateMachinesLooper;
     private final HandlerThread mStateMachinesThread;
@@ -135,7 +133,6 @@ public class HapClientService extends ProfileService {
                         () ->
                                 new HapClientNativeInterface(
                                         new HapClientNativeCallback(adapterService, this)));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
 
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
@@ -205,7 +202,7 @@ public class HapClientService extends ProfileService {
         }
     }
 
-    /** Process a change in the bonding state for a device */
+    @Override
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
         mHandler.post(() -> bondStateChanged(device, toState));
     }
@@ -307,6 +304,7 @@ public class HapClientService extends ProfileService {
      *     BluetoothProfile#STATE_CONNECTED} if this profile is connected, or {@link
      *     BluetoothProfile#STATE_DISCONNECTING} if this profile is being disconnected
      */
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         synchronized (mStateMachines) {
             HapClientStateMachine sm = mStateMachines.get(device);
@@ -331,6 +329,7 @@ public class HapClientService extends ProfileService {
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true on success, otherwise false
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
@@ -340,20 +339,6 @@ public class HapClientService extends ProfileService {
             disconnect(device);
         }
         return true;
-    }
-
-    /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     /** Check whether it can connect to a peer device. */
@@ -414,6 +399,7 @@ public class HapClientService extends ProfileService {
      * @param device is the device with which we will connect the hearing access service client
      * @return true if hearing access service client successfully connected, false otherwise
      */
+    @Override
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect(): " + device);
         if (device == null) {
@@ -452,6 +438,7 @@ public class HapClientService extends ProfileService {
      *     client
      * @return true if hearing access service client successfully disconnected, false otherwise
      */
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         Log.d(TAG, "disconnect(): " + device);
         if (device == null) {

@@ -50,9 +50,9 @@ import android.util.Pair;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -70,7 +70,7 @@ import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 /** Provides Bluetooth CSIP Set Coordinator profile, as a service. */
-public class CsipSetCoordinatorService extends ProfileService {
+public class CsipSetCoordinatorService extends ConnectableProfile {
     private static final String TAG = CsipSetCoordinatorService.class.getSimpleName();
 
     // Timeout for state machine thread join, to prevent potential ANR.
@@ -78,7 +78,6 @@ public class CsipSetCoordinatorService extends ProfileService {
 
     private static CsipSetCoordinatorService sCsipSetCoordinatorService;
 
-    private final DatabaseManager mDatabaseManager;
     private final Handler mHandler;
     private final HandlerThread mStateMachinesThread;
     private final Looper mStateMachinesLooper;
@@ -115,7 +114,6 @@ public class CsipSetCoordinatorService extends ProfileService {
             CsipSetCoordinatorNativeInterface nativeInterface,
             ServiceFactory serviceFactory) {
         super(BluetoothProfile.CSIP_SET_COORDINATOR, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,
@@ -226,6 +224,7 @@ public class CsipSetCoordinatorService extends ProfileService {
      *
      * @return true if connection is successful, false otherwise.
      */
+    @Override
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect(): " + device);
         if (device == null) {
@@ -258,6 +257,7 @@ public class CsipSetCoordinatorService extends ProfileService {
      *
      * @return true if disconnect is successful, false otherwise.
      */
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         Log.d(TAG, "disconnect(): " + device);
         if (device == null) {
@@ -398,6 +398,7 @@ public class CsipSetCoordinatorService extends ProfileService {
      *     BluetoothProfile#STATE_CONNECTED} if this profile is connected, or {@link
      *     BluetoothProfile#STATE_DISCONNECTING} if this profile is being disconnected
      */
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         synchronized (mStateMachines) {
             CsipSetCoordinatorStateMachine sm = mStateMachines.get(device);
@@ -422,6 +423,7 @@ public class CsipSetCoordinatorService extends ProfileService {
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true on success, otherwise false
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
@@ -431,16 +433,6 @@ public class CsipSetCoordinatorService extends ProfileService {
             disconnect(device);
         }
         return true;
-    }
-
-    /**
-     * Get the connection policy of the profile.
-     *
-     * @param device the remote device
-     * @return connection policy of the specified device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     /**
@@ -876,7 +868,7 @@ public class CsipSetCoordinatorService extends ProfileService {
         }
     }
 
-    /** Process a change in the bonding state for a device */
+    @Override
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
         mHandler.post(() -> bondStateChanged(device, toState));
     }

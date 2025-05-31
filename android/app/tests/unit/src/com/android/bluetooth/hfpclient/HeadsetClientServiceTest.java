@@ -85,7 +85,7 @@ public class HeadsetClientServiceTest {
     public void setUp() throws Exception {
         mMockAudioManager = mockGetSystemService(mAdapterService, AudioManager.class);
         mockGetSystemService(mAdapterService, BatteryManager.class);
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
     }
 

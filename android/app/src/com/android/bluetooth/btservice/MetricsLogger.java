@@ -111,8 +111,7 @@ import java.util.function.BiPredicate;
 
 /** Class of Bluetooth Metrics */
 public class MetricsLogger {
-    private static final String TAG =
-            Utils.TAG_PREFIX_BLUETOOTH + MetricsLogger.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + MetricsLogger.class.getSimpleName();
 
     private static final String BLOOMFILTER_PATH = "/data/misc/bluetooth";
     private static final String BLOOMFILTER_FILE = "/devices_for_metrics_v3";

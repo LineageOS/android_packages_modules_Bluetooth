@@ -18,9 +18,6 @@ package com.android.bluetooth.btservice.bluetoothkeystore;
 
 import android.util.Log;
 
-import com.android.internal.annotations.GuardedBy;
-import com.android.internal.annotations.VisibleForTesting;
-
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
@@ -28,47 +25,19 @@ import java.security.NoSuchAlgorithmException;
 public class BluetoothKeystoreNativeInterface {
     private static final String TAG = BluetoothKeystoreNativeInterface.class.getSimpleName();
 
-    private BluetoothKeystoreService mBluetoothKeystoreService;
+    private final BluetoothKeystoreService mBluetoothKeystoreService;
 
-    @GuardedBy("INSTANCE_LOCK")
-    private static BluetoothKeystoreNativeInterface sInstance;
-
-    private static final Object INSTANCE_LOCK = new Object();
-
-    private BluetoothKeystoreNativeInterface() {}
-
-    /** return static native instance */
-    public static BluetoothKeystoreNativeInterface getInstance() {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new BluetoothKeystoreNativeInterface();
-            }
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    public static void setInstance(BluetoothKeystoreNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
-    }
-
-    /**
-     * Initializes the native interface.
-     *
-     * <p>priorities to configure.
-     */
-    public void init(BluetoothKeystoreService service) {
+    BluetoothKeystoreNativeInterface(BluetoothKeystoreService service) {
         mBluetoothKeystoreService = service;
+    }
+
+    void init() {
         initNative();
     }
 
     /** Cleanup the native interface. */
-    public void cleanup() {
+    void cleanup() {
         cleanupNative();
-        mBluetoothKeystoreService = null;
     }
 
     // Callbacks from the native stack back into the Java framework.

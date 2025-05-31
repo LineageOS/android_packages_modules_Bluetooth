@@ -45,8 +45,7 @@ import java.util.Set;
  * individual GATT connection parameters.
  */
 public class CompanionManager {
-    private static final String TAG =
-            Utils.TAG_PREFIX_BLUETOOTH + CompanionManager.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + CompanionManager.class.getSimpleName();
 
     private final int[] mGattConnHighPrimary;
     private final int[] mGattConnBalancePrimary;

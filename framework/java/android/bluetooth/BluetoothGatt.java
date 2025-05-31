@@ -1064,7 +1064,11 @@ public final class BluetoothGatt implements BluetoothProfile {
 
         try {
             mService.registerClient(
-                    new ParcelUuid(uuid), mBluetoothGattCallback, eattSupport, mAttributionSource);
+                    new ParcelUuid(uuid),
+                    mBluetoothGattCallback,
+                    eattSupport,
+                    mTransport,
+                    mAttributionSource);
         } catch (RemoteException e) {
             Log.e(TAG, "", e);
             return false;
@@ -1186,6 +1190,7 @@ public final class BluetoothGatt implements BluetoothProfile {
                         new ParcelUuid(uuid),
                         mBluetoothGattCallback,
                         /* eatt_support= */ false,
+                        mTransport,
                         mAttributionSource);
             } catch (RemoteException e) {
                 Log.e(TAG, "", e);

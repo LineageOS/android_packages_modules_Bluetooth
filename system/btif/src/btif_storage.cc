@@ -924,8 +924,7 @@ void btif_storage_load_le_devices(void) {
       // Invokes address consolidation for DuMo devices
       GetInterfaceToProfiles()->events->invoke_address_consolidate_cb(pseudo_addr.bda,
                                                                       identity_addr.bda);
-    }
-    else {
+    } else {
       // Associates RPA & identity address for LE-only devices
       GetInterfaceToProfiles()->events->invoke_le_address_associate_cb(
               pseudo_addr.bda, identity_addr.bda, identity_addr.type);

@@ -108,7 +108,7 @@ public class CsipSetCoordinatorServiceTest {
     @Before
     public void setUp() throws Exception {
         mNativeCallback = new CsipSetCoordinatorNativeInterface(mAdapterService);
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService).getBondState(any());
         doReturn(new ParcelUuid[] {BluetoothUuid.COORDINATED_SET})
                 .when(mAdapterService)

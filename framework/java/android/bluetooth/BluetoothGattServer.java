@@ -629,6 +629,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                         new ParcelUuid(uuid),
                         mBluetoothGattServerCallback,
                         eattSupport,
+                        mTransport,
                         mAttributionSource);
             } catch (RemoteException e) {
                 Log.e(TAG, "", e);

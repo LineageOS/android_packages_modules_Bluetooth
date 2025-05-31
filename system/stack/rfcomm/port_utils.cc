@@ -303,7 +303,7 @@ tRFC_MCB* port_find_mcb(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 tPORT* port_find_mcb_dlci_port(tRFC_MCB* p_mcb, uint8_t dlci) {
-  if (!p_mcb) {
+  if (p_mcb == nullptr) {
     log::error("p_mcb is null, dlci={}", dlci);
     return nullptr;
   }

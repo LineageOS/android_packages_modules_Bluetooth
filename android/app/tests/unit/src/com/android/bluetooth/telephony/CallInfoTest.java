@@ -36,8 +36,8 @@ import android.telecom.PhoneAccount;
 import android.telecom.PhoneAccountHandle;
 import android.telecom.TelecomManager;
 
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.SmallTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.After;
@@ -56,24 +56,23 @@ import java.util.UUID;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class CallInfoTest {
-
-    private static final String TEST_ACCOUNT_ADDRESS = "https://foo.com/";
-    private static final int TEST_ACCOUNT_INDEX = 0;
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private TelecomManager mTelecomManager;
+
+    private static final String TEST_ACCOUNT_ADDRESS = "https://foo.com/";
+    private static final int TEST_ACCOUNT_INDEX = 0;
 
     private BluetoothInCallService mBluetoothInCallService;
     private BluetoothInCallService.CallInfo mMockCallInfo;
 
     @Before
     public void setUp() throws Exception {
-        Context spiedContext = spy(new ContextWrapper(ApplicationProvider.getApplicationContext()));
-        mockGetSystemService(
-                spiedContext, Context.TELECOM_SERVICE, TelecomManager.class, mTelecomManager);
+        final var context = InstrumentationRegistry.getInstrumentation().getContext();
+        Context spiedContext = spy(new ContextWrapper(context));
+        mockGetSystemService(spiedContext, TelecomManager.class, mTelecomManager);
 
-        mBluetoothInCallService = new BluetoothInCallService(spiedContext, null, null);
+        mBluetoothInCallService = new BluetoothInCallService(spiedContext, null);
         mBluetoothInCallService.onCreate();
 
         mMockCallInfo = spy(mBluetoothInCallService.new CallInfo());

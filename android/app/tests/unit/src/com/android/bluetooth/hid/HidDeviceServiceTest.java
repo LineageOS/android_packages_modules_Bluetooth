@@ -105,7 +105,7 @@ public class HidDeviceServiceTest {
         }
 
         mockGetSystemService(mAdapterService, ActivityManager.class);
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(mBinder).when(mCallback).asBinder();
 
         mInOrder = inOrder(mAdapterService);

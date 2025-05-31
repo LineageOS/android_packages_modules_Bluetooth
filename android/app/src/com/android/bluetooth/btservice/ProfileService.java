@@ -26,7 +26,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 
-/** Base class for a background service that runs a Bluetooth profile */
+/** Base class for a Bluetooth profile. */
 public abstract class ProfileService extends ContextWrapper {
 
     public interface IProfileServiceBinder extends IBinder {
@@ -35,12 +35,33 @@ public abstract class ProfileService extends ContextWrapper {
 
     protected final int mProfileId;
     protected final AdapterService mAdapterService;
+    protected final String mName;
     private final IProfileServiceBinder mBinder;
-    private final String mName;
+
     private boolean mAvailable = false;
 
-    public String getName() {
-        return getClass().getSimpleName();
+    protected ProfileService(int id, AdapterService adapterService) {
+        super(adapterService);
+        mProfileId = id;
+        mAdapterService = adapterService;
+        mName = getClass().getSimpleName();
+        Log.d(mName, "Service created");
+        mBinder = initBinder();
+    }
+
+    @Override
+    public String toString() {
+        return mName;
+    }
+
+    /** The id of this Profile. see {@link BluetoothProfile} */
+    public final int getProfileId() {
+        return mProfileId;
+    }
+
+    /** Return the binder of the profile */
+    public IProfileServiceBinder getBinder() {
+        return mBinder;
     }
 
     public boolean isAvailable() {
@@ -61,23 +82,8 @@ public abstract class ProfileService extends ContextWrapper {
     /** Called when this object is no longer needed and is being discarded. */
     public abstract void cleanup();
 
-    protected ProfileService(int id, AdapterService adapterService) {
-        super(adapterService);
-        mProfileId = id;
-        mAdapterService = adapterService;
-        mName = getName();
-        Log.d(mName, "Service created");
-        mBinder = initBinder();
-    }
-
-    /** The id of this Profile. see {@link BluetoothProfile} */
-    public final int getProfileId() {
-        return mProfileId;
-    }
-
-    /** return the binder of the profile */
-    public IProfileServiceBinder getBinder() {
-        return mBinder;
+    protected <T> T obtainSystemService(Class<T> serviceClass) {
+        return mAdapterService.getSystemService(serviceClass);
     }
 
     /**
@@ -127,10 +133,6 @@ public abstract class ProfileService extends ContextWrapper {
                                 ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
                                 : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                         PackageManager.DONT_KILL_APP | PackageManager.SYNCHRONOUS);
-    }
-
-    protected <T> T obtainSystemService(Class<T> serviceClass) {
-        return mAdapterService.getSystemService(serviceClass);
     }
 
     /**

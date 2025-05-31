@@ -85,7 +85,7 @@ public class PanServiceTest {
     @Before
     public void setUp() {
         doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         mockGetSystemService(mAdapterService, UserManager.class, mMockUserManager);
         mockGetSystemService(mAdapterService, TetheringManager.class);
 

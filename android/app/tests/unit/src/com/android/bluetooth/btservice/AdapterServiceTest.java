@@ -28,14 +28,27 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.StaticMockitoRule;
+import static com.android.bluetooth.TestUtils.getBluetoothManager;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.app.ActivityManager;
 import android.app.AlarmManager;
@@ -71,6 +84,7 @@ import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Settings;
+import android.sysprop.BluetoothProperties;
 import android.test.mock.MockContentProvider;
 import android.test.mock.MockContentResolver;
 import android.util.Log;
@@ -90,6 +104,7 @@ import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.le_scan.PeriodicScanNativeInterface;
 import com.android.bluetooth.le_scan.ScanNativeInterface;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
 
 import org.junit.After;
 import org.junit.Before;
@@ -105,6 +120,7 @@ import platform.test.runner.parameterized.Parameters;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.Optional;
 
 /** Test cases for {@link AdapterService}. */
 @MediumTest
@@ -112,7 +128,9 @@ import java.util.List;
 public class AdapterServiceTest {
     private static final String TAG = AdapterServiceTest.class.getSimpleName();
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule
+    public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(BluetoothProperties.class);
+
     @Rule public final SetFlagsRule mSetFlagsRule;
 
     @Mock private Context mMockContext;
@@ -149,7 +167,6 @@ public class AdapterServiceTest {
 
     // SystemService that are not mocked
     private BluetoothManager mBluetoothManager;
-    private CompanionDeviceManager mCompanionDeviceManager;
     private DisplayManager mDisplayManager;
     private PowerManager mPowerManager;
     private PermissionManager mPermissionManager;
@@ -170,6 +187,9 @@ public class AdapterServiceTest {
                 Looper looper,
                 Context ctx,
                 AdapterNativeInterface nativeInterface,
+                BluetoothKeystoreNativeInterface keystoreNativeInterface,
+                BluetoothQualityReportNativeInterface bluetoothQualityReportNativeInterface,
+                BluetoothHciVendorSpecificNativeInterface bluetoothHciVendorSpecificNativeInterface,
                 GattNativeInterface gattNativeInterface,
                 AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
                 DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
@@ -177,6 +197,9 @@ public class AdapterServiceTest {
                     looper,
                     ctx,
                     nativeInterface,
+                    keystoreNativeInterface,
+                    bluetoothQualityReportNativeInterface,
+                    bluetoothHciVendorSpecificNativeInterface,
                     gattNativeInterface,
                     advertiseManagerNativeInterface,
                     distanceMeasurementNativeInterface);
@@ -203,7 +226,9 @@ public class AdapterServiceTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.allCombinationsOf(Flags.FLAG_LIMIT_USER_SWITCH_PROPAGATION);
+        return FlagsParameterization.progressionOf(
+                Flags.FLAG_LIMIT_USER_SWITCH_PROPAGATION,
+                Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE);
     }
 
     public AdapterServiceTest(FlagsParameterization flags) {
@@ -219,9 +244,6 @@ public class AdapterServiceTest {
         LeAudioService.setLeAudioService(mMockLeAudioService);
         doReturn(CONNECTION_POLICY_ALLOWED).when(mMockLeAudioService).getConnectionPolicy(any());
 
-        BluetoothKeystoreNativeInterface.setInstance(mKeystoreNativeInterface);
-        BluetoothQualityReportNativeInterface.setInstance(mQualityNativeInterface);
-        BluetoothHciVendorSpecificNativeInterface.setInstance(mHciVendorSpecificNativeInterface);
         SdpManagerNativeInterface.setInstance(mSdpNativeInterface);
         PeriodicScanNativeInterface.setInstance(mPeriodicNativeInterface);
         ScanNativeInterface.setInstance(mScanNativeInterface);
@@ -236,6 +258,9 @@ public class AdapterServiceTest {
                                         mLooper.getLooper(),
                                         mMockContext,
                                         mNativeInterface,
+                                        mKeystoreNativeInterface,
+                                        mQualityNativeInterface,
+                                        mHciVendorSpecificNativeInterface,
                                         mGattNativeInterface,
                                         mAdvertiseNativeInterface,
                                         mDistanceNativeInterface));
@@ -268,30 +293,24 @@ public class AdapterServiceTest {
         when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockContext.getPackageManager()).thenReturn(mMockPackageManager);
 
-        mBluetoothManager = context.getSystemService(BluetoothManager.class);
-        mCompanionDeviceManager = context.getSystemService(CompanionDeviceManager.class);
+        mBluetoothManager = getBluetoothManager();
         mDisplayManager = context.getSystemService(DisplayManager.class);
         mPermissionManager = context.getSystemService(PermissionManager.class);
         mPowerManager = context.getSystemService(PowerManager.class);
 
-        mockGetSystemService(Context.ALARM_SERVICE, AlarmManager.class);
-        mockGetSystemService(Context.APP_OPS_SERVICE, AppOpsManager.class);
-        mockGetSystemService(Context.AUDIO_SERVICE, AudioManager.class);
-        mockGetSystemService(Context.ACTIVITY_SERVICE, ActivityManager.class);
-        DevicePolicyManager dpm =
-                mockGetSystemService(Context.DEVICE_POLICY_SERVICE, DevicePolicyManager.class);
+        mockGetSystemService(mMockContext, AlarmManager.class);
+        mockGetSystemService(mMockContext, AppOpsManager.class);
+        mockGetSystemService(mMockContext, AudioManager.class);
+        mockGetSystemService(mMockContext, ActivityManager.class);
+        DevicePolicyManager dpm = mockGetSystemService(mMockContext, DevicePolicyManager.class);
         doReturn(false).when(dpm).isCommonCriteriaModeEnabled(any());
-        mockGetSystemService(Context.USER_SERVICE, UserManager.class);
-        mockGetSystemService(Context.BATTERY_STATS_SERVICE, BatteryStatsManager.class);
-        mockGetSystemService(Context.BLUETOOTH_SERVICE, BluetoothManager.class, mBluetoothManager);
-        mockGetSystemService(
-                Context.COMPANION_DEVICE_SERVICE,
-                CompanionDeviceManager.class,
-                mCompanionDeviceManager);
-        mockGetSystemService(Context.DISPLAY_SERVICE, DisplayManager.class, mDisplayManager);
-        mockGetSystemService(
-                Context.PERMISSION_SERVICE, PermissionManager.class, mPermissionManager);
-        mockGetSystemService(Context.POWER_SERVICE, PowerManager.class, mPowerManager);
+        mockGetSystemService(mMockContext, UserManager.class);
+        mockGetSystemService(mMockContext, BatteryStatsManager.class);
+        mockGetSystemService(mMockContext, BluetoothManager.class, mBluetoothManager);
+        mockGetSystemService(mMockContext, CompanionDeviceManager.class);
+        mockGetSystemService(mMockContext, DisplayManager.class, mDisplayManager);
+        mockGetSystemService(mMockContext, PermissionManager.class, mPermissionManager);
+        mockGetSystemService(mMockContext, PowerManager.class, mPowerManager);
 
         when(mMockContext.getSharedPreferences(anyString(), anyInt()))
                 .thenReturn(
@@ -316,10 +335,6 @@ public class AdapterServiceTest {
 
         when(mIBluetoothCallback.asBinder()).thenReturn(mBinder);
 
-        when(mMockGattService.getName()).thenReturn("GattService");
-        when(mMockService1.getName()).thenReturn("Service1");
-        when(mMockService2.getName()).thenReturn("Service2");
-
         configureEnabledProfiles();
 
         Config.init(mMockContext);
@@ -341,25 +356,10 @@ public class AdapterServiceTest {
         LeAudioService.setLeAudioService(null);
         mAdapterService.cleanup();
         mAdapterService.unregisterRemoteCallback(mIBluetoothCallback);
-        BluetoothKeystoreNativeInterface.setInstance(null);
-        BluetoothQualityReportNativeInterface.setInstance(null);
-        BluetoothHciVendorSpecificNativeInterface.setInstance(null);
         SdpManagerNativeInterface.setInstance(null);
         PeriodicScanNativeInterface.setInstance(null);
         ScanNativeInterface.setInstance(null);
         MetricsLogger.setInstanceForTesting(null);
-    }
-
-    private <T> T mockGetSystemService(String serviceName, Class<T> serviceClass) {
-        T mockedService = mock(serviceClass);
-        mockGetSystemService(serviceName, serviceClass, mockedService);
-        return mockedService;
-    }
-
-    private <T> void mockGetSystemService(String serviceName, Class<T> serviceClass, T service) {
-        doReturn(service).when(mMockContext).getSystemService(eq(serviceClass));
-        doReturn(service).when(mMockContext).getSystemService(eq(serviceName));
-        doReturn(serviceName).when(mMockContext).getSystemServiceName(eq(serviceClass));
     }
 
     private void syncHandler(int... what) {
@@ -1325,5 +1325,48 @@ public class AdapterServiceTest {
                 mDevice1, BluetoothDevice.BOND_BONDED, BluetoothDevice.BOND_BONDING);
 
         verify(mockEditor, times(3)).remove(anyString());
+    }
+
+    @Test
+    public void onToBleOn_afterUpdatingSnoopLogValue_forceTurnOffBluetooth() {
+        Optional<BluetoothProperties.snoop_log_mode_values> snoopSettingEmpty =
+                Optional.of(BluetoothProperties.snoop_log_mode_values.EMPTY);
+        ExtendedMockito.doReturn(snoopSettingEmpty)
+                .when(() -> BluetoothProperties.snoop_log_mode());
+
+        doEnable(false);
+
+        Optional<BluetoothProperties.snoop_log_mode_values> snoopSettingFull =
+                Optional.of(BluetoothProperties.snoop_log_mode_values.FULL);
+        ExtendedMockito.doReturn(snoopSettingFull).when(() -> BluetoothProperties.snoop_log_mode());
+
+        onToBleOn(
+                mLooper,
+                mAdapterService,
+                mMockContext,
+                mIBluetoothCallback,
+                false,
+                listOfMockServices());
+
+        // Do not call bleOnToOff().  The Adapter should turn itself off.
+        syncHandler(AdapterState.BLE_TURN_OFF);
+        verifyStateChange(STATE_BLE_ON, STATE_BLE_TURNING_OFF, CONTEXT_SWITCH_MS);
+
+        if (!Flags.onlyStartScanDuringBleOn()) {
+            syncHandler(MESSAGE_PROFILE_SERVICE_STATE_CHANGED); // stop GATT
+            syncHandler(MESSAGE_PROFILE_SERVICE_UNREGISTERED);
+        }
+
+        verify(mNativeInterface).disable();
+
+        mAdapterService.stateChangeCallback(AbstractionLayer.BT_STATE_OFF);
+        syncHandler(AdapterState.BLE_STOPPED);
+        // When reaching the OFF state, the cleanup is called that will destroy the state machine of
+        // the adapterService. Destroying state machine send a -1 event on the handler
+        syncHandler(-1);
+
+        verifyStateChange(STATE_BLE_TURNING_OFF, STATE_OFF);
+        assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
+        assertThat(mLooper.nextMessage()).isNull();
     }
 }

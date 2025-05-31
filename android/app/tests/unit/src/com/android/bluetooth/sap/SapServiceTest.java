@@ -62,7 +62,7 @@ public class SapServiceTest {
 
     @Before
     public void setUp() {
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         if (Looper.myLooper() == null) {
             Looper.prepare();
         }

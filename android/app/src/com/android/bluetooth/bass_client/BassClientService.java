@@ -72,9 +72,8 @@ import com.android.bluetooth.BluetoothEventLogger;
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ServiceFactory;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.le_scan.ScanController;
@@ -100,7 +99,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /** Broadcast Assistant Scan Service */
-public class BassClientService extends ProfileService {
+public class BassClientService extends ConnectableProfile {
     static final String TAG = BassClientService.class.getSimpleName();
 
     private static final int MAX_ACTIVE_SYNCED_SOURCES_NUM = 4;
@@ -174,7 +173,6 @@ public class BassClientService extends ProfileService {
             new ConcurrentHashMap<>();
     private final BassScanCallbackWrapper mBassScanCallback = new BassScanCallbackWrapper();
 
-    private final DatabaseManager mDatabaseManager;
     private final BluetoothAdapter mAdapter;
     private final PeriodicAdvertisingManager mPeriodicAdvertisingManager;
     private final Handler mHandler;
@@ -479,7 +477,6 @@ public class BassClientService extends ProfileService {
 
     public BassClientService(AdapterService adapterService) {
         super(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mAdapter = obtainSystemService(BluetoothManager.class).getAdapter();
         mPeriodicAdvertisingManager = mAdapter.getPeriodicAdvertisingManager();
         mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
@@ -1614,6 +1611,7 @@ public class BassClientService extends ProfileService {
         }
     }
 
+    @Override
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
         mHandler.post(() -> bondStateChanged(device, toState));
     }
@@ -1647,6 +1645,7 @@ public class BassClientService extends ProfileService {
      * @param device is the device with which we will connect the Bass profile
      * @return true if BAss profile successfully connected, false otherwise
      */
+    @Override
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect(): " + device);
         if (device == null) {
@@ -1684,6 +1683,7 @@ public class BassClientService extends ProfileService {
      * @param device is the device with which we want to disconnected the BAss client profile
      * @return true if Bass client profile successfully disconnected, false otherwise
      */
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         Log.d(TAG, "disconnect(): " + device);
         if (device == null) {
@@ -1739,6 +1739,7 @@ public class BassClientService extends ProfileService {
      * @param sink the remote device
      * @return connection state
      */
+    @Override
     public int getConnectionState(BluetoothDevice sink) {
         synchronized (mStateMachines) {
             BassClientStateMachine sm = mStateMachines.get(sink);
@@ -1815,6 +1816,7 @@ public class BassClientService extends ProfileService {
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         boolean setSuccessfully =
@@ -1825,20 +1827,6 @@ public class BassClientService extends ProfileService {
             disconnect(device);
         }
         return setSuccessfully;
-    }
-
-    /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device paired bluetooth device
-     * @return connection policy of the device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     /**

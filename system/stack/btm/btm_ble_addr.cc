@@ -97,7 +97,8 @@ static bool rpa_matches_irk(const RawAddress& rpa, const Octet16& irk) {
  *  Returns true is resolvable; false otherwise.
  */
 bool btm_ble_addr_resolvable(const RawAddress& rpa, tBTM_SEC_DEV_REC* p_dev_rec) {
-  if (!BTM_BLE_IS_RESOLVE_BDA(rpa)) {
+  if (p_dev_rec->ble.AddressType() == BLE_ADDR_PUBLIC ||
+      !BTM_BLE_IS_RESOLVE_BDA(rpa)) {
     return false;
   }
 
