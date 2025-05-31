@@ -114,8 +114,6 @@ public class SapService extends ConnectableProfile
     private boolean mRemoveTimeoutMsg = false;
     private boolean mIsWaitingAuthorization = false;
 
-    private static SapService sSapService;
-
     private static final ParcelUuid[] SAP_UUIDS = {
         BluetoothUuid.SAP,
     };
@@ -135,7 +133,6 @@ public class SapService extends ConnectableProfile
         mAdapterService.registerBluetoothStateCallback(getMainExecutor(), this);
         // start RFCOMM listener
         mSessionStatusHandler.sendMessage(mSessionStatusHandler.obtainMessage(START_LISTENER));
-        setSapService(this);
     }
 
     public static boolean isEnabled() {
@@ -674,7 +671,6 @@ public class SapService extends ConnectableProfile
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        setSapService(null);
         unregisterReceiver(mSapReceiver);
         mAdapterService.unregisterBluetoothStateCallback(this);
         setState(BluetoothSap.STATE_DISCONNECTED, BluetoothSap.RESULT_CANCELED);
@@ -697,26 +693,6 @@ public class SapService extends ConnectableProfile
             // start RFCOMM listener
             mSessionStatusHandler.sendMessage(mSessionStatusHandler.obtainMessage(START_LISTENER));
         }
-    }
-
-    /**
-     * @return current instance of {@link SapService}
-     */
-    public static synchronized SapService getSapService() {
-        if (sSapService == null) {
-            Log.w(TAG, "getSapService(): service is null");
-            return null;
-        }
-        if (!sSapService.isAvailable()) {
-            Log.w(TAG, "getSapService(): service is not available");
-            return null;
-        }
-        return sSapService;
-    }
-
-    private static synchronized void setSapService(SapService instance) {
-        Log.d(TAG, "setSapService(): set to: " + instance);
-        sSapService = instance;
     }
 
     private void setUserTimeoutAlarm() {

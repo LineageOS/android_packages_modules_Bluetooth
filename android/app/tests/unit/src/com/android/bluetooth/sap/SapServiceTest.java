@@ -74,13 +74,6 @@ public class SapServiceTest {
     @After
     public void tearDown() {
         mService.cleanup();
-        assertThat(SapService.getSapService()).isNull();
-    }
-
-    @Test
-    public void testGetSapService() {
-        assertThat(mService).isEqualTo(SapService.getSapService());
-        assertThat(mService.getConnectedDevices()).isEmpty();
     }
 
     /** Test get connection policy for BluetoothDevice */
