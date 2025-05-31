@@ -87,13 +87,13 @@ public class ConnectableProfileTest {
     }
 
     @Test
-    public void getProfileId_returnsCorrectId() {
-        assertThat(mConnectableProfile.getProfileId()).isEqualTo(TEST_PROFILE_ID);
+    public void toString_returnsClassName() {
+        assertThat(mConnectableProfile.toString()).isEqualTo("TestConnectableProfile");
     }
 
     @Test
-    public void getName_returnsClassName() {
-        assertThat(mConnectableProfile.getName()).isEqualTo("TestConnectableProfile");
+    public void getProfileId_returnsCorrectId() {
+        assertThat(mConnectableProfile.getProfileId()).isEqualTo(TEST_PROFILE_ID);
     }
 
     @Test

@@ -125,12 +125,6 @@ public class BluetoothPbapServiceTest {
         BluetoothMethodProxy.setInstanceForTesting(null);
         SdpManagerNativeInterface.setInstance(null);
         mService.cleanup();
-        assertThat(BluetoothPbapService.getBluetoothPbapService()).isNull();
-    }
-
-    @Test
-    public void initialize() {
-        assertThat(BluetoothPbapService.getBluetoothPbapService()).isNotNull();
     }
 
     @Test
