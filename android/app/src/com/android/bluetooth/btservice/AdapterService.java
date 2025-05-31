@@ -1188,6 +1188,11 @@ public class AdapterService extends Service {
         mHandler.sendMessage(m);
     }
 
+    Optional<ConnectableProfile> getStartedConnectableProfile(int id) {
+        return Optional.ofNullable(mStartedProfiles.get(id))
+                .map(profile -> (ConnectableProfile) profile);
+    }
+
     void bringDownBle() {
         if (Flags.onlyStartScanDuringBleOn()) {
             stopScanController();
@@ -1835,11 +1840,6 @@ public class AdapterService extends Service {
         return ConnectableProfile.isSupported(this, device, id);
     }
 
-    Optional<ConnectableProfile> getStartedProfile(int id) {
-        return Optional.ofNullable(mStartedProfiles.get(id))
-                .map(profile -> (ConnectableProfile) profile);
-    }
-
     /**
      * Checks if the connection policy of all profiles are unknown for the given device
      *
@@ -1884,7 +1884,7 @@ public class AdapterService extends Service {
     }
 
     private void connectEnabledProfile(int id, BluetoothDevice device) {
-        getStartedProfile(id)
+        getStartedConnectableProfile(id)
                 .filter(profile -> isProfileSupported(device, id))
                 .filter(prof -> prof.getConnectionPolicy(device) > CONNECTION_POLICY_FORBIDDEN)
                 .ifPresent(
@@ -3378,7 +3378,7 @@ public class AdapterService extends Service {
     }
 
     private boolean connectIfProfileSupported(int id, BluetoothDevice device) {
-        return getStartedProfile(id)
+        return getStartedConnectableProfile(id)
                 .filter(profile -> isProfileSupported(device, id))
                 .map(
                         profile -> {
@@ -3423,7 +3423,7 @@ public class AdapterService extends Service {
     }
 
     private void disconnectEnabledProfile(int id, BluetoothDevice device) {
-        getStartedProfile(id)
+        getStartedConnectableProfile(id)
                 .filter(
                         profile -> {
                             final int state = profile.getConnectionState(device);
@@ -4040,7 +4040,7 @@ public class AdapterService extends Service {
     }
 
     private void handleBondStateChange(int id, BluetoothDevice device, int fromState, int toState) {
-        getStartedProfile(id)
+        getStartedConnectableProfile(id)
                 .filter(ConnectableProfile::isAvailable)
                 .ifPresent(profile -> profile.handleBondStateChanged(device, fromState, toState));
     }
