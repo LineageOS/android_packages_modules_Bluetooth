@@ -143,7 +143,7 @@ public abstract class ConnectableProfile extends ProfileService {
      * @return {@code true} if the connection was successful, {@code false} otherwise.
      */
     public boolean connect(BluetoothDevice device) {
-        Log.w(getName(), "connect() was called but not implemented");
+        Log.w(mName, "connect() was called but not implemented");
         return false;
     }
 
@@ -194,7 +194,12 @@ public abstract class ConnectableProfile extends ProfileService {
      * @return true if connectionPolicy is set, false on error
      */
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
-        Log.w(getName(), "setConnectionPolicy() was called but not implemented");
+        Log.w(mName, "setConnectionPolicy() was called but not implemented");
         return false;
+    }
+
+    /** Process a change in the bonding state for a device */
+    public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
+        Log.w(mName, "handleBondStateChanged() was called but not implemented");
     }
 }

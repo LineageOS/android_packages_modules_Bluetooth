@@ -87,13 +87,13 @@ public class ConnectableProfileTest {
     }
 
     @Test
-    public void getProfileId_returnsCorrectId() {
-        assertThat(mConnectableProfile.getProfileId()).isEqualTo(TEST_PROFILE_ID);
+    public void toString_returnsClassName() {
+        assertThat(mConnectableProfile.toString()).isEqualTo("TestConnectableProfile");
     }
 
     @Test
-    public void getName_returnsClassName() {
-        assertThat(mConnectableProfile.getName()).isEqualTo("TestConnectableProfile");
+    public void getProfileId_returnsCorrectId() {
+        assertThat(mConnectableProfile.getProfileId()).isEqualTo(TEST_PROFILE_ID);
     }
 
     @Test
@@ -131,5 +131,11 @@ public class ConnectableProfileTest {
     public void setConnectionPolicy_returnsFalse() {
         final var policyUnknown = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
         assertThat(mConnectableProfile.setConnectionPolicy(mDevice, policyUnknown)).isFalse();
+    }
+
+    @Test
+    public void handleBondStateChanged_doesNotCrash() {
+        mConnectableProfile.handleBondStateChanged(
+                mDevice, BluetoothDevice.BOND_NONE, BluetoothDevice.BOND_NONE);
     }
 }

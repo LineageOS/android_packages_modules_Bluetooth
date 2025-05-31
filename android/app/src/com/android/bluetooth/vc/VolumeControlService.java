@@ -1525,7 +1525,7 @@ public class VolumeControlService extends ConnectableProfile {
         mGroupMuteCache.remove(groupId);
     }
 
-    /** Process a change in the bonding state for a device */
+    @Override
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
         mHandler.post(() -> bondStateChanged(device, toState));
     }

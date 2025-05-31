@@ -264,10 +264,6 @@ public class HeadsetPhoneState {
     }
 
     private synchronized void sendDeviceStateChanged() {
-        // When out of service, send signal strength as 0. Some devices don't
-        // use the service indicator, but only the signal indicator
-        int signal = mCindService == HeadsetHalConstants.NETWORK_STATE_AVAILABLE ? mCindSignal : 0;
-
         Log.d(
                 TAG,
                 "sendDeviceStateChanged. mService="
@@ -279,7 +275,7 @@ public class HeadsetPhoneState {
                         + " mBatteryCharge="
                         + mCindBatteryCharge);
         mHeadsetService.onDeviceStateChanged(
-                new HeadsetDeviceState(mCindService, mCindRoam, signal, mCindBatteryCharge));
+                new HeadsetDeviceState(mCindService, mCindRoam, mCindSignal, mCindBatteryCharge));
     }
 
     private class HeadsetPhoneStateOnSubscriptionChangedListener
@@ -345,6 +341,9 @@ public class HeadsetPhoneState {
                 return;
             }
             mCindService = cindService;
+            if (mCindService == HeadsetHalConstants.NETWORK_STATE_NOT_AVAILABLE) {
+                mCindSignal = 0;
+            }
             mCindRoam = newRoam;
             sendDeviceStateChanged();
         }
