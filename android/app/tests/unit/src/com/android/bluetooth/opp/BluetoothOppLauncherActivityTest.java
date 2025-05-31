@@ -26,7 +26,6 @@ import static com.android.bluetooth.TestUtils.MockitoRule;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.junit.Assume.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -45,7 +44,6 @@ import android.platform.test.annotations.RequiresFlagsDisabled;
 import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.platform.test.flag.junit.CheckFlagsRule;
 import android.provider.Settings;
-import android.sysprop.BluetoothProperties;
 
 import androidx.lifecycle.Lifecycle;
 import androidx.test.core.app.ActivityScenario;
@@ -59,7 +57,9 @@ import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.flags.Flags;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -84,68 +84,87 @@ public class BluetoothOppLauncherActivityTest {
     // Add retry rule to resolve this problem.
     @Rule public TestUtils.RetryTestRule mRetryTestRule = new TestUtils.RetryTestRule();
 
-    @Mock BluetoothMethodProxy mMethodProxy;
-    @Mock BluetoothOppManager mBluetoothOppManager;
+    @Mock private BluetoothMethodProxy mMethodProxy;
+    @Mock private BluetoothOppManager mBluetoothOppManager;
 
     private static final String CONTENT_TYPE = "image/png";
-
-    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+    private static final Context sContext =
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     private Intent mIntent;
 
+    @BeforeClass
+    public static void setUpClass() {
+        BluetoothOppTestUtils.enableActivity(BluetoothOppLauncherActivity.class, true, sContext);
+        BluetoothOppTestUtils.enableActivity(BluetoothOppReceiver.class, true, sContext);
+        BluetoothOppTestUtils.enableActivity(BluetoothOppBtEnableActivity.class, true, sContext);
+    }
+
+    @AfterClass
+    public static void tearDownClass() {
+        BluetoothOppTestUtils.enableActivity(BluetoothOppLauncherActivity.class, false, sContext);
+        BluetoothOppTestUtils.enableActivity(BluetoothOppReceiver.class, false, sContext);
+        BluetoothOppTestUtils.enableActivity(BluetoothOppBtEnableActivity.class, false, sContext);
+    }
+
     @Before
     public void setUp() throws Exception {
-        assumeTrue(BluetoothProperties.isProfileOppEnabled().orElse(false));
-
         BluetoothMethodProxy.setInstanceForTesting(mMethodProxy);
+        BluetoothOppManager.setInstanceForTesting(mBluetoothOppManager);
 
         mIntent = new Intent();
-        mIntent.setClass(mContext, BluetoothOppLauncherActivity.class);
+        mIntent.setClass(sContext, BluetoothOppLauncherActivity.class);
 
-        BluetoothOppManager.setInstanceForTesting(mBluetoothOppManager);
-        BluetoothOppTestUtils.enableActivity(BluetoothOppLauncherActivity.class, true, mContext);
-        BluetoothOppTestUtils.enableActivity(BluetoothOppReceiver.class, true, mContext);
-        BluetoothOppTestUtils.enableActivity(BluetoothOppBtEnableActivity.class, true, mContext);
         Intents.init();
         TestUtils.setUpUiTest();
     }
 
     @After
     public void tearDown() throws Exception {
-        if (!BluetoothProperties.isProfileOppEnabled().orElse(false)) {
-            return;
-        }
         Intents.release();
         TestUtils.tearDownUiTest();
         BluetoothMethodProxy.setInstanceForTesting(null);
         BluetoothOppManager.setInstanceForTesting(null);
-        BluetoothOppTestUtils.enableActivity(BluetoothOppLauncherActivity.class, false, mContext);
-        BluetoothOppTestUtils.enableActivity(BluetoothOppReceiver.class, false, mContext);
-        BluetoothOppTestUtils.enableActivity(BluetoothOppBtEnableActivity.class, false, mContext);
+    }
+
+    private static Intent createSendIntent(String uriString) {
+        return new Intent(Intent.ACTION_SEND)
+                .setClass(sContext, BluetoothOppLauncherActivity.class)
+                .setType(CONTENT_TYPE)
+                .putExtra(Intent.EXTRA_STREAM, Uri.parse(uriString));
+    }
+
+    private static Intent createSendMultipleIntent(List<Uri> uriList) {
+        return new Intent(Intent.ACTION_SEND_MULTIPLE)
+                .setClass(sContext, BluetoothOppLauncherActivity.class)
+                .setType(CONTENT_TYPE)
+                .putParcelableArrayListExtra(Intent.EXTRA_STREAM, new ArrayList<>(uriList));
     }
 
     @Test
-    public void onCreate_withNoAction_returnImmediately() throws Exception {
-        ActivityScenario<BluetoothOppLauncherActivity> activityScenario =
-                ActivityScenario.launch(mIntent);
-        assertActivityState(activityScenario, Lifecycle.State.DESTROYED);
+    public void onCreate_withNoAction_returnImmediately() {
+        try (ActivityScenario<BluetoothOppLauncherActivity> activityScenario =
+                ActivityScenario.launch(mIntent)) {
+            assertThat(activityScenario.getState()).isEqualTo(Lifecycle.State.DESTROYED);
+        }
     }
 
     @Test
-    public void onCreate_withActionSend_withoutMetadata_finishImmediately() throws Exception {
+    public void onCreate_withActionSend_withoutMetadata_finishImmediately() {
         mIntent.setAction(Intent.ACTION_SEND);
-        ActivityScenario<BluetoothOppLauncherActivity> activityScenario =
-                ActivityScenario.launch(mIntent);
-        assertActivityState(activityScenario, Lifecycle.State.DESTROYED);
+        try (ActivityScenario<BluetoothOppLauncherActivity> activityScenario =
+                ActivityScenario.launch(mIntent)) {
+            assertThat(activityScenario.getState()).isEqualTo(Lifecycle.State.DESTROYED);
+        }
     }
 
     @Test
-    public void onCreate_withActionSendMultiple_withoutMetadata_finishImmediately()
-            throws Exception {
+    public void onCreate_withActionSendMultiple_withoutMetadata_finishImmediately() {
         mIntent.setAction(Intent.ACTION_SEND_MULTIPLE);
-        ActivityScenario<BluetoothOppLauncherActivity> activityScenario =
-                ActivityScenario.launch(mIntent);
-        assertActivityState(activityScenario, Lifecycle.State.DESTROYED);
+        try (ActivityScenario<BluetoothOppLauncherActivity> activityScenario =
+                ActivityScenario.launch(mIntent)) {
+            assertThat(activityScenario.getState()).isEqualTo(Lifecycle.State.DESTROYED);
+        }
     }
 
     @Test
@@ -222,13 +241,6 @@ public class BluetoothOppLauncherActivityTest {
                 .saveSendingFileInfo(
                         eq(CONTENT_TYPE), eq(uriString),
                         anyBoolean() /* isHandover */, anyBoolean() /* fromExternal */);
-    }
-
-    private Intent createSendIntent(String uriString) {
-        return new Intent(Intent.ACTION_SEND)
-                .setClass(mContext, BluetoothOppLauncherActivity.class)
-                .setType(CONTENT_TYPE)
-                .putExtra(Intent.EXTRA_STREAM, Uri.parse(uriString));
     }
 
     @Test
@@ -364,13 +376,6 @@ public class BluetoothOppLauncherActivityTest {
                         anyBoolean() /* isHandover */, anyBoolean() /* fromExternal */);
     }
 
-    private Intent createSendMultipleIntent(List<Uri> uriList) {
-        return new Intent(Intent.ACTION_SEND_MULTIPLE)
-                .setClass(mContext, BluetoothOppLauncherActivity.class)
-                .setType(CONTENT_TYPE)
-                .putParcelableArrayListExtra(Intent.EXTRA_STREAM, new ArrayList<>(uriList));
-    }
-
     @Test
     public void onCreate_withActionOpen_sendBroadcast() throws Exception {
         mIntent.setAction(Constants.ACTION_OPEN);
@@ -395,7 +400,7 @@ public class BluetoothOppLauncherActivityTest {
                 .componentCallerCheckContentUriPermission(any(), any(), anyInt());
         String uriString = "content://test.provider/1";
         Settings.Secure.putString(
-                mContext.getContentResolver(),
+                sContext.getContentResolver(),
                 "nearby_sharing_component",
                 "com.example/.BComponent");
 
@@ -464,21 +469,16 @@ public class BluetoothOppLauncherActivityTest {
         doReturn(true).when(mMethodProxy).bluetoothAdapterIsEnabled(any());
         // Unsupported action, the activity will stay without being finished right the way
         mIntent.setAction("unsupported-action");
-        ActivityScenario<BluetoothOppLauncherActivity> scenario = ActivityScenario.launch(mIntent);
         doThrow(new IllegalArgumentException())
                 .when(mBluetoothOppManager)
                 .saveSendingFileInfo(any(), any(String.class), any(), any());
-        scenario.onActivity(
-                activity -> {
-                    activity.sendFileInfo("text/plain", "content:///abc.txt", false, false);
-                });
-
-        assertActivityState(scenario, Lifecycle.State.DESTROYED);
-    }
-
-    private static void assertActivityState(
-            ActivityScenario activityScenario, Lifecycle.State state) throws Exception {
-        Thread.sleep(2_000);
-        assertThat(activityScenario.getState()).isEqualTo(state);
+        try (ActivityScenario<BluetoothOppLauncherActivity> activityScenario =
+                ActivityScenario.launch(mIntent)) {
+            activityScenario.onActivity(
+                    activity -> {
+                        activity.sendFileInfo("text/plain", "content:///abc.txt", false, false);
+                    });
+            assertThat(activityScenario.getState()).isEqualTo(Lifecycle.State.DESTROYED);
+        }
     }
 }
