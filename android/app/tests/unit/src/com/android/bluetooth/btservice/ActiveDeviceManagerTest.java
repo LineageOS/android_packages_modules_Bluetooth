@@ -128,7 +128,7 @@ public class ActiveDeviceManagerTest {
         mDatabaseManager = new TestDatabaseManager(mAdapterService);
 
         mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
-        when(mAdapterService.getDatabase()).thenReturn(mDatabaseManager);
+        when(mAdapterService.getDatabaseManager()).thenReturn(mDatabaseManager);
         when(mServiceFactory.getA2dpService()).thenReturn(mA2dpService);
         when(mServiceFactory.getHeadsetService()).thenReturn(mHeadsetService);
         when(mServiceFactory.getHearingAidService()).thenReturn(mHearingAidService);

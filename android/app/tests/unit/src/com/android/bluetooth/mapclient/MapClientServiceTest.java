@@ -85,7 +85,7 @@ public class MapClientServiceTest {
                 .when(mDatabaseManager)
                 .getProfileConnectionPolicy(any(), anyInt());
 
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         TestUtils.mockGetSystemService(mAdapterService, SubscriptionManager.class);
 
         mTestLooper = new TestLooper();

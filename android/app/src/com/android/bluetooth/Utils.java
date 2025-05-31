@@ -178,7 +178,7 @@ public final class Utils {
         }
 
         // Check metadata
-        DatabaseManager mDbManager = service.getDatabase();
+        DatabaseManager mDbManager = service.getDatabaseManager();
         byte[] deviceType = mDbManager.getCustomMeta(device, BluetoothDevice.METADATA_DEVICE_TYPE);
         if (deviceType == null) {
             return false;

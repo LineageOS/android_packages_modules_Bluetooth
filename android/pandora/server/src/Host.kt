@@ -162,38 +162,51 @@ class Host(
     }
 
     override fun factoryReset(request: Empty, responseObserver: StreamObserver<Empty>) {
-        grpcUnary<Empty>(scope, responseObserver, timeout = 30) {
-            Log.i(TAG, "factoryReset")
+        scope.launch {
+            grpcUnary<Empty>(scope, responseObserver, timeout = 30) {
+                    Log.i(TAG, "factoryReset")
 
-            // We use a fresh intent flow to make sure that obsolete state changed events
-            // are not accidentally caught by the filter when waiting for state ON.
-            val stateFlow =
-                intentFlow(context, IntentFilter(BluetoothAdapter.ACTION_BLE_STATE_CHANGED), scope)
-                    .shareIn(scope, SharingStarted.Eagerly)
-                    .map { it.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR) }
+                    // This is triggering a graceful shutdown; ongoing RPCs are allowed to
+                    // complete but new connections are rejected.
+                    server.shutdown()
 
-            val wasEnabled = bluetoothAdapter.isEnabled
+                    // We use a fresh intent flow to make sure that obsolete state changed events
+                    // are not accidentally caught by the filter when waiting for state ON.
+                    val stateFlow =
+                        intentFlow(
+                                context,
+                                IntentFilter(BluetoothAdapter.ACTION_BLE_STATE_CHANGED),
+                                scope,
+                            )
+                            .shareIn(scope, SharingStarted.Eagerly)
+                            .map {
+                                it.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
+                            }
 
-            bluetoothAdapter.clearBluetooth()
+                    val wasEnabled = bluetoothAdapter.isEnabled
 
-            // Factory resets places Bluetooth in the same state as it was before the API call.
-            // Bluetooth must be manually turned on if it was off before.
-            if (!wasEnabled) {
-                bluetoothAdapter.enable()
-            }
+                    bluetoothAdapter.clearBluetooth()
 
-            stateFlow.filter { it == BluetoothAdapter.STATE_ON }.first()
+                    // Factory resets places Bluetooth in the same state as it was before the API
+                    // call. Bluetooth must be manually turned on if it was off before.
+                    if (!wasEnabled) {
+                        bluetoothAdapter.enable()
+                    }
 
-            initiatedConnection.clear()
-            waitedAclConnection.clear()
-            waitedAclDisconnection.clear()
+                    stateFlow.filter { it == BluetoothAdapter.STATE_ON }.first()
 
-            // This is triggering a graceful shutdown; ongoing RPCs are allowed to complete
-            // but new connections are rejected.
-            Log.i(TAG, "shutting down the gRPC server")
-            server.shutdown()
+                    initiatedConnection.clear()
+                    waitedAclConnection.clear()
+                    waitedAclDisconnection.clear()
 
-            Empty.getDefaultInstance()
+                    Empty.getDefaultInstance()
+                }
+                .join()
+
+            // Trigger a forced shutdown once the gRPC unary call has completed for `factoryReset`.
+            // This will cancel all ongoing gRPC calls.
+            Log.i(TAG, "triggering gRPC shutdown")
+            server.shutdownNow()
         }
     }
 

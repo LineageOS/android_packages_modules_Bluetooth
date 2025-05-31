@@ -109,7 +109,7 @@ public class BluetoothPbapServiceTest {
         doReturn(mTestLooper.getLooper()).when(mMethodProxy).handlerThreadGetLooper(any());
         doNothing().when(mMethodProxy).threadStart(any());
         mTestLooper.startAutoDispatch();
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         mockGetBluetoothManager(mAdapterService);
         mService = new BluetoothPbapService(mAdapterService, mNotificationManager);
         mService.setAvailable(true);

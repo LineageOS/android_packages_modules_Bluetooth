@@ -168,7 +168,7 @@ public class HeadsetStateMachineTest {
         doReturn(true).when(mNativeInterface).disconnectHfp(mDevice);
         doReturn(true).when(mNativeInterface).connectAudio(mDevice);
         doReturn(true).when(mNativeInterface).disconnectAudio(mDevice);
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();

@@ -92,7 +92,7 @@ public class AvrcpControllerServiceTest {
     @Before
     public void setUp() throws Exception {
         doReturn(mAdapterService).when(mAdapterService).getApplicationContext();
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
         doReturn(mTargetContext.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();

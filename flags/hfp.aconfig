@@ -170,3 +170,13 @@ flag {
     bug: "418829893"
 }
 
+flag {
+    name: "send_ok_clcc_before_slc"
+    namespace: "bluetooth"
+    description: "Send clcc response ok before slc is completed to avoid remote issues"
+    bug: "421323693"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+

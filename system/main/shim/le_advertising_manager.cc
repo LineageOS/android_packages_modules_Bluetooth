@@ -250,6 +250,11 @@ public:
   // bluetooth::hci::AdvertisingCallback
   void OnAdvertisingSetStarted(int reg_id, uint8_t advertiser_id, int8_t tx_power,
                                AdvertisingCallback::AdvertisingStatus status) override {
+    if (status != AdvertisingCallback::AdvertisingStatus::SUCCESS) {
+      log::info("Failed to start advertiser {}. Removing it.", advertiser_id);
+      bluetooth::shim::GetAdvertising()->RemoveAdvertiser(advertiser_id);
+    }
+
     uint8_t client_id = is_native_advertiser(reg_id);
     if (client_id != kAdvertiserClientIdJni) {
       // Invoke callback for native client

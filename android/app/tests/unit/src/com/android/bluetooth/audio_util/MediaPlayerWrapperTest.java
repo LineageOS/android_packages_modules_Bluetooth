@@ -206,6 +206,70 @@ public class MediaPlayerWrapperTest {
     }
 
     /*
+     * Test to make sure that isMetadataSynced() or isMetadataSynced(MediaData) returns true
+     * if the current playing song in queue matches current Metadata
+     */
+    @Test
+    public void testIsSynced() {
+        MediaPlayerWrapper wrapper =
+                MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
+        assertThat(wrapper.isPlaybackStateReady()).isTrue();
+        assertThat(wrapper.isMetadataReady()).isTrue();
+
+        // Test isMetadataSynced() is true when using default test data
+        assertThat(wrapper.isMetadataSynced()).isTrue();
+        assertThat(wrapper.isMetadataSynced(wrapper.getCurrentMediaData())).isTrue();
+
+        // Test isMetadataSynced() is true when queue is null
+        doReturn(null).when(mMockController).getQueue();
+        assertThat(wrapper.isMetadataSynced()).isTrue();
+        assertThat(wrapper.isMetadataSynced(wrapper.getCurrentMediaData())).isTrue();
+        doReturn(getQueueFromDescriptions(mTestQueue)).when(mMockController).getQueue();
+
+        // Test isMetadataSynced() is true when the playback state is null
+        doReturn(null).when(mMockController).getPlaybackState();
+        assertThat(wrapper.isMetadataSynced()).isTrue();
+        assertThat(wrapper.isMetadataSynced(wrapper.getCurrentMediaData())).isTrue();
+        doReturn(mTestState.build()).when(mMockController).getPlaybackState();
+
+        // Test isMetadataSynced() is false when the playback state points
+        // to a song that's not in the queue
+        doReturn(new PlaybackState.Builder()
+            .setActiveQueueItemId(200)
+            .setState(PlaybackState.STATE_PAUSED, 0, 1.0f)
+            .build()).when(mMockController).getPlaybackState();
+        assertThat(wrapper.isMetadataSynced()).isFalse();
+        assertThat(wrapper.isMetadataSynced(wrapper.getCurrentMediaData())).isFalse();
+        doReturn(mTestState.build()).when(mMockController).getPlaybackState();
+
+        // Test isMetadataSynced() is false when the current metadata is null
+        doReturn(null).when(mMockController).getMetadata();
+        assertThat(wrapper.isMetadataSynced()).isFalse();
+        assertThat(wrapper.isMetadataSynced(wrapper.getCurrentMediaData())).isFalse();
+
+        // Test isMetadataSynced() is false when the Queue item pointed to
+        // by playback state doesn't match the current metadata
+        doReturn(new MediaMetadata.Builder()
+                        .putString(MediaMetadata.METADATA_KEY_TITLE, "BT Test Song2")
+                        .putString(MediaMetadata.METADATA_KEY_ARTIST, "BT Test Artist")
+                        .putString(MediaMetadata.METADATA_KEY_ALBUM, "BT Test Album")
+                        .putLong(MediaMetadata.METADATA_KEY_DURATION, 5000L)
+                        .build()).when(mMockController).getMetadata();
+        assertThat(wrapper.isMetadataSynced()).isFalse();
+        assertThat(wrapper.isMetadataSynced(wrapper.getCurrentMediaData())).isFalse();
+
+        // Test isMetadataReady() is false when the metadata is null
+        doReturn(null).when(mMockController).getMetadata();
+        assertThat(wrapper.isMetadataReady()).isFalse();
+        assertThat(wrapper.isMetadataSynced(wrapper.getCurrentMediaData())).isFalse();
+
+        // Restore the old metadata
+        doReturn(mTestMetadata.build()).when(mMockController).getMetadata();
+        assertThat(wrapper.isMetadataReady()).isTrue();
+        assertThat(wrapper.isMetadataSynced(wrapper.getCurrentMediaData())).isTrue();
+    }
+
+    /*
      * Test to make sure that if a new controller is registered with different metadata than the
      * previous controller, the new metadata is pulled upon registration.
      */

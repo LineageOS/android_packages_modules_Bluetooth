@@ -94,7 +94,7 @@ public class A2dpSinkStreamHandlerTest {
                 .abandonAudioFocus(any());
 
         doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(mPackageManager).when(mAdapterService).getPackageManager();
         doReturn(mResources).when(mAdapterService).getResources();
         mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);

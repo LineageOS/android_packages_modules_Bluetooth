@@ -163,6 +163,11 @@ public class MediaPlayerWrapper {
         return mCurrentData.queue;
     }
 
+    // return the cached MediaData here, callers make sure the cached MediaData is up-to-date
+    MediaData getMediaData() {
+        return mCurrentData;
+    }
+
     // We don't return the cached info here in order to always provide the freshest data.
     MediaData getCurrentMediaData() {
         MediaData data = new MediaData(getCurrentMetadata(), getPlaybackState(), getCurrentQueue());
@@ -252,37 +257,40 @@ public class MediaPlayerWrapper {
 
     /** Return whether the queue, metadata, and queueID are all in sync. */
     boolean isMetadataSynced() {
-        return isMetadataSynced(getQueue(), getMetadata(), getPlaybackState());
+        return isMetadataSynced(new MediaData(
+                        Util.toMetadata(mContext, getMetadata()),
+                        getPlaybackState(),
+                        Util.toMetadataList(mContext, getQueue())));
     }
 
-    private boolean isMetadataSynced(List<MediaSession.QueueItem> queue,
-                                     MediaMetadata metadata,
-                                     PlaybackState state) {
-        if (queue != null && state != null && state.getActiveQueueItemId() != -1) {
+    public static boolean isMetadataSynced(MediaData data) {
+        final List<Metadata> queue = data.queue;
+        final PlaybackState state = data.state;
+        if (!queue.isEmpty() && state != null && state.getActiveQueueItemId() != -1) {
             // Check if currentPlayingQueueId is in the current Queue
-            MediaSession.QueueItem currItem = null;
+            Metadata qitem = null;
 
-            for (MediaSession.QueueItem item : queue) {
-                if (item.getQueueId()
-                        == state.getActiveQueueItemId()) { // The item exists in the current queue
-                    currItem = item;
+            final String nowPlayingId = Util.NOW_PLAYING_PREFIX + state.getActiveQueueItemId();
+            for (Metadata item : queue) {
+                if (item.mediaId.equals(nowPlayingId)) {
+                    // The item exists in the current queue
+                    qitem = item;
                     break;
                 }
             }
 
             // Check if current playing song in Queue matches current Metadata
-            Metadata qitem = Util.toMetadata(mContext, currItem);
-            Metadata mdata = Util.toMetadata(mContext, metadata);
-            if (currItem == null || !qitem.equals(mdata)) {
-                Log.d(TAG, "Metadata currently out of sync for " + mPackageName);
+            final Metadata mdata = data.metadata;
+            if (qitem == null || !qitem.equals(mdata)) {
+                Log.d(TAG, "Metadata currently out of sync");
                 Log.d(TAG, "  └ Current queueItem: " + qitem);
                 Log.d(TAG, "  └ Current metadata : " + mdata);
 
                 // Some player do not provide full song info in queue item, allow case
                 // that only title and artist match.
-                if (Objects.equals(qitem.title, mdata.title)
+                if (qitem != null && Objects.equals(qitem.title, mdata.title)
                         && Objects.equals(qitem.artist, mdata.artist)) {
-                    Log.d(TAG, mPackageName + " Only Title and Artist info sync for metadata");
+                    Log.d(TAG, "Only Title and Artist info sync for metadata");
                     return true;
                 }
                 return false;
@@ -439,11 +447,14 @@ public class MediaPlayerWrapper {
         void trySendMediaUpdate(List<MediaSession.QueueItem> queue,
                                 MediaMetadata metadata,
                                 PlaybackState state) {
+            final MediaData mdata = new MediaData(Util.toMetadata(mContext, metadata),
+                                                  state,
+                                                  Util.toMetadataList(mContext, queue));
             synchronized (mTimeoutHandlerLock) {
                 if (mTimeoutHandler == null) return;
                 mTimeoutHandler.removeMessages(TimeoutHandler.MSG_TIMEOUT);
 
-                if (!isMetadataSynced(queue, metadata, state)) {
+                if (!isMetadataSynced(mdata)) {
                     d("trySendMediaUpdate(): Starting media update timeout");
                     mTimeoutHandler.sendEmptyMessageDelayed(
                             TimeoutHandler.MSG_TIMEOUT, TimeoutHandler.CALLBACK_TIMEOUT_MS);
@@ -451,10 +462,7 @@ public class MediaPlayerWrapper {
                 }
             }
 
-            sendMediaUpdate(new MediaData(
-                Util.toMetadata(mContext, metadata),
-                state,
-                Util.toMetadataList(mContext, queue)));
+            sendMediaUpdate(mdata);
         }
 
         @Override

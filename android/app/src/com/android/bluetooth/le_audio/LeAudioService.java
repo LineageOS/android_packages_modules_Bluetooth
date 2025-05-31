@@ -95,7 +95,6 @@ import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hap.HapClientService;
@@ -891,17 +890,7 @@ public class LeAudioService extends ConnectableProfile {
     }
 
     private void setDefaultBroadcastToUnicastFallbackGroup() {
-        DatabaseManager dbManager = mAdapterService.getDatabase();
-        if (dbManager == null) {
-            Log.i(
-                    TAG,
-                    "Can't get db manager to pick default Broadcast to Unicast fallback group"
-                            + ", leaving: "
-                            + mUnicastGroupIdDeactivatedForBroadcastTransition);
-            return;
-        }
-
-        List<BluetoothDevice> devices = dbManager.getMostRecentlyConnectedDevices();
+        List<BluetoothDevice> devices = mDatabaseManager.getMostRecentlyConnectedDevices();
 
         int targetDeviceIdx = -1;
         int targetGroupId = LE_AUDIO_GROUP_ID_INVALID;

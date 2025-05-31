@@ -200,7 +200,7 @@ public class LeAudioBroadcastServiceTest {
             Looper.prepare();
         }
 
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(true).when(mAdapterService).isLeAudioBroadcastSourceSupported();
         doReturn(
                         (long) (1 << BluetoothProfile.LE_AUDIO_BROADCAST)

@@ -42,12 +42,12 @@
 #define A2DP_OPUS_FRAMESIZE_MASK 0x18
 #define A2DP_OPUS_10MS_FRAMESIZE 0x08
 #define A2DP_OPUS_20MS_FRAMESIZE 0x10
-// [Octet 6], [Bits 5] Sampling Frequency
+// [Octet 6], [Bits 5,6] Reserved
+#define A2DP_OPUS_FUTURE_3 0x20
+#define A2DP_OPUS_FUTURE_4 0x40
+// [Octet 6], [Bits 7] Sampling Frequency
 #define A2DP_OPUS_SAMPLING_FREQ_MASK 0x80
 #define A2DP_OPUS_SAMPLING_FREQ_48000 0x80
-// [Octet 6], [Bits 6,7] Reserved
-#define A2DP_OPUS_FUTURE_3 0x40
-#define A2DP_OPUS_FUTURE_4 0x80
 
 // Length of the Opus Media Payload header
 #define A2DP_OPUS_MPL_HDR_LEN 1

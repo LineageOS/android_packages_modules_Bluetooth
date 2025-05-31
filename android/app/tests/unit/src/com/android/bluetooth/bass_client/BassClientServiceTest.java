@@ -283,7 +283,7 @@ public class BassClientServiceTest {
         doReturn(BluetoothDevice.BOND_BONDED)
                 .when(mAdapterService)
                 .getBondState(any(BluetoothDevice.class));
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doAnswer(
                         invocation -> {
                             Set<BluetoothDevice> keys = mStateMachines.keySet();
