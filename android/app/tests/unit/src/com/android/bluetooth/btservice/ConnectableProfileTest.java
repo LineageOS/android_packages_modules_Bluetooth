@@ -98,7 +98,7 @@ public class ConnectableProfileTest {
 
     @Test
     public void getBinder_returnsBinderFromInitBinder() {
-        assertThat(mConnectableProfile.getBinder()).isEqualTo(mBinder);
+        assertThat(mConnectableProfile.getBinder()).hasValue(mBinder);
     }
 
     @Test

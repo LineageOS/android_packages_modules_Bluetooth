@@ -1160,9 +1160,7 @@ public class AdapterService extends Service {
             onProfileServiceStateChanged(profileService, BluetoothAdapter.STATE_OFF);
             removeProfile(profileService);
             profileService.cleanup();
-            if (profileService.getBinder() != null) {
-                profileService.getBinder().cleanup();
-            }
+            profileService.getBinder().ifPresent(ProfileService.IProfileServiceBinder::cleanup);
         }
         Instant end = Instant.now();
         Log.i(TAG, logHdr + " completed in " + Duration.between(start, end).toMillis() + "ms");
@@ -1252,7 +1250,7 @@ public class AdapterService extends Service {
             onProfileServiceStateChanged(mGattService, BluetoothAdapter.STATE_OFF);
             removeProfile(mGattService);
             mGattService.cleanup();
-            mGattService.getBinder().cleanup();
+            mGattService.getBinder().ifPresent(ProfileService.IProfileServiceBinder::cleanup);
             mGattService = null;
         }
     }
@@ -3880,7 +3878,7 @@ public class AdapterService extends Service {
     }
 
     IBinder getBluetoothGatt() {
-        return mGattService == null ? null : mGattService.getBinder();
+        return mGattService == null ? null : mGattService.getBinder().orElse(null);
     }
 
     IBinder getBluetoothScan() {
@@ -3923,7 +3921,7 @@ public class AdapterService extends Service {
             id = BluetoothProfile.LE_AUDIO;
         }
 
-        return getStartedProfile(id).map(ProfileService::getBinder).orElse(null);
+        return getStartedProfile(id).flatMap(ProfileService::getBinder).orElse(null);
     }
 
     boolean isMediaProfileConnected() {
