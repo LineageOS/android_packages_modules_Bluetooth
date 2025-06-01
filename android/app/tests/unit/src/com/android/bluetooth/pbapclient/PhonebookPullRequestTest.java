@@ -18,8 +18,6 @@ package com.android.bluetooth.pbapclient;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import android.content.Context;
-
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
@@ -41,18 +39,16 @@ import java.util.List;
 public class PhonebookPullRequestTest {
 
     private PhonebookPullRequest mRequest;
-    private Context mTargetContext;
 
     @Before
     public void setUp() {
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
-        mRequest = new PhonebookPullRequest(mTargetContext);
+        final var context = InstrumentationRegistry.getInstrumentation().getContext();
+        mRequest = new PhonebookPullRequest(context);
     }
 
     @Test
     public void onPullComplete_whenResultsAreNull() {
         mRequest.setResults(null);
-
         mRequest.onPullComplete();
 
         // No operation has been done.
@@ -62,21 +58,12 @@ public class PhonebookPullRequestTest {
     @Test
     public void onPullComplete_success() {
         List<VCardEntry> results = new ArrayList<>();
-        results.add(createEntry(200));
-        results.add(createEntry(200));
+        results.add(createEntry(PhonebookPullRequest.MAX_OPS / 2));
         results.add(createEntry(PhonebookPullRequest.MAX_OPS));
         mRequest.setResults(results);
-
         mRequest.onPullComplete();
 
         assertThat(mRequest.complete).isTrue();
-    }
-
-    private static VCardProperty createProperty(String name, String value) {
-        VCardProperty property = new VCardProperty();
-        property.setName(name);
-        property.setValues(value);
-        return property;
     }
 
     private static VCardEntry createEntry(int propertyCount) {
@@ -85,5 +72,12 @@ public class PhonebookPullRequestTest {
             entry.addProperty(createProperty(VCardConstants.PROPERTY_TEL, Integer.toString(i)));
         }
         return entry;
+    }
+
+    private static VCardProperty createProperty(String name, String value) {
+        VCardProperty property = new VCardProperty();
+        property.setName(name);
+        property.setValues(value);
+        return property;
     }
 }
