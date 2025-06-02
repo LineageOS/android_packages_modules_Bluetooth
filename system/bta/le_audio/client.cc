@@ -4737,13 +4737,13 @@ public:
     if (group->GetActiveEnabledDirections() & remote_direction) {
       log::info("Remote Sink Direction already enabled for group_id: {}", group->group_id_);
       StartSendingAudio(group->group_id_);
-    } else if (group->GetActiveQoSConfiguredDirections() & remote_direction) {
+    } else {
       log::info("Remote Sink Direction needs to be enabled first for group_id: {}",
                 group->group_id_);
-      groupStateMachine_->EnableStreamingDirection(group, remote_direction);
-    } else {
-      log::error("Group direction: {} in invalid state", remote_direction);
-      group->PrintDebugState();
+      if (!groupStateMachine_->EnableStreamingDirection(group, remote_direction)) {
+        log::error("Could not re-enable streaming direction for group_id: {}", group->group_id_);
+        CancelLocalAudioSourceStreamingRequest();
+      }
     }
   }
 
@@ -4758,13 +4758,13 @@ public:
     if (group->GetActiveEnabledDirections() & remote_direction) {
       log::info("Remote Source Direction already enabled for group_id: {}", group->group_id_);
       StartReceivingAudio(group->group_id_);
-    } else if (group->GetActiveQoSConfiguredDirections() & remote_direction) {
+    } else {
       log::info("Remote Source Direction needs to be enabled first for group_id: {}",
                 group->group_id_);
-      groupStateMachine_->EnableStreamingDirection(group, remote_direction);
-    } else {
-      log::error("Group direction: {} in invalid state", remote_direction);
-      group->PrintDebugState();
+      if (!groupStateMachine_->EnableStreamingDirection(group, remote_direction)) {
+        log::error("Could not re-enable streaming direction for group_id: {}", group->group_id_);
+        CancelLocalAudioSinkStreamingRequest();
+      }
     }
   }
 
@@ -4930,6 +4930,8 @@ public:
             break;
           case AudioState::READY_TO_RELEASE:
             /* If the other direction is streaming we can start sending audio */
+            audio_sender_state_ = AudioState::READY_TO_START;
+
             if (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
               if (group->IsDirectionAvailableForConfiguration(
                           upcoming_configuration_context_type,
@@ -5263,6 +5265,8 @@ public:
           case AudioState::READY_TO_RELEASE:
             /* If the other direction is streaming we can start receiving audio
              */
+            audio_receiver_state_ = AudioState::READY_TO_START;
+
             if (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
               if (group->IsDirectionAvailableForConfiguration(
                           configuration_context_type_,
