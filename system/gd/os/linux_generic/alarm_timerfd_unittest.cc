@@ -37,23 +37,19 @@ protected:
   void SetUp() override {
     bool isWakeAlarm = GetParam();
     thread_ = new Thread("test_thread", Thread::Priority::NORMAL);
-    handler_ = new Handler(thread_);
-    alarm_ = std::make_shared<Alarm>(handler_, isWakeAlarm);
+    alarm_ = std::make_shared<Alarm>(thread_, isWakeAlarm);
   }
 
   void TearDown() override {
     alarm_.reset();
-    handler_->Clear();
-    delete handler_;
     delete thread_;
   }
 
-  std::shared_ptr<Alarm> get_new_alarm() { return std::make_shared<Alarm>(handler_, GetParam()); }
+  std::shared_ptr<Alarm> get_new_alarm() { return std::make_shared<Alarm>(thread_, GetParam()); }
 
   std::shared_ptr<Alarm> alarm_;
 
 private:
-  Handler* handler_;
   Thread* thread_;
 };
 

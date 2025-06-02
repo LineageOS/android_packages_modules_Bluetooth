@@ -99,10 +99,16 @@ class IUT:
 
         self.modem = Modem(port=self.modem_simulator_port)
 
-        # Note: we don't keep a single gRPC channel instance in the IUT class
-        # because reset is allowed to close the gRPC server.
-        with grpc.insecure_channel(f'localhost:{self.pandora_server_port}') as channel:
-            self._retry(Host(channel).FactoryReset)(wait_for_ready=True)
+        try:
+            # Note: we don't keep a single gRPC channel instance in the IUT class
+            # because reset is allowed to close the gRPC server.
+            with grpc.insecure_channel(f'localhost:{self.pandora_server_port}') as channel:
+                Host(channel).FactoryReset(wait_for_ready=True, timeout=15.0)
+        except grpc.RpcError as exn:
+            # FactoryReset might be cancelled before completion by the gRPC server
+            # shutdown.
+            if exn.code() != grpc.StatusCode.CANCELLED:
+                raise exn
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.rootcanal.close()

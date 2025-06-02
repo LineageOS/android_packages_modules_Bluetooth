@@ -63,7 +63,7 @@ struct PendingPeriodicSyncRequest {
         address_with_type(std::move(address_with_type)),
         skip(skip),
         sync_timeout(sync_timeout),
-        sync_timeout_alarm(handler) {}
+        sync_timeout_alarm(&handler->thread()) {}
   bool busy = false;
   uint8_t advertiser_sid;
   AddressWithType address_with_type;

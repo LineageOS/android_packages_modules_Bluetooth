@@ -37,21 +37,21 @@ namespace os {
 using common::Closure;
 using common::OnceClosure;
 
-Alarm::Alarm(Handler* handler) : Alarm(handler, true) {}
+Alarm::Alarm(Thread* thread) : Alarm(thread, true) {}
 
-Alarm::Alarm(Handler* handler, bool isWakeAlarm) : handler_(handler) {
+Alarm::Alarm(Thread* thread, bool isWakeAlarm) : thread_(thread) {
   int timerfd_flag = TFD_NONBLOCK;
 
   fd_ = TIMERFD_CREATE(isWakeAlarm ? ALARM_CLOCK : CLOCK_BOOTTIME, timerfd_flag);
 
   log::assert_that(fd_ != -1, "cannot create timerfd: {}", strerror(errno));
 
-  token_ = handler_->thread_->GetReactor()->Register(
+  token_ = thread_->GetReactor()->Register(
           fd_, common::Bind(&Alarm::on_fire, common::Unretained(this)), Closure());
 }
 
 Alarm::~Alarm() {
-  auto reactor = handler_->thread_->GetReactor();
+  auto reactor = thread_->GetReactor();
   reactor->Unregister(token_);
 
   int close_status;

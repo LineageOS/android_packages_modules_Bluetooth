@@ -2189,7 +2189,6 @@ impl BleDiscoveryCallbacks {
 
 // Handle BLE scanner results.
 impl IScannerCallback for BleDiscoveryCallbacks {
-    #[log_cb_args]
     fn on_scanner_registered(&mut self, uuid: Uuid, scanner_id: u8, status: GattStatus) {
         let tx = self.tx.clone();
         tokio::spawn(async move {
@@ -2201,7 +2200,6 @@ impl IScannerCallback for BleDiscoveryCallbacks {
         });
     }
 
-    #[log_cb_args]
     fn on_scan_result(&mut self, scan_result: ScanResult) {
         let tx = self.tx.clone();
         tokio::spawn(async move {
@@ -2215,7 +2213,6 @@ impl IScannerCallback for BleDiscoveryCallbacks {
 
     fn on_advertisement_found(&mut self, _scanner_id: u8, _scan_result: ScanResult) {}
     fn on_advertisement_lost(&mut self, _scanner_id: u8, _scan_result: ScanResult) {}
-    #[log_cb_args]
     fn on_suspend_mode_change(&mut self, _suspend_mode: SuspendMode) {}
 }
 
