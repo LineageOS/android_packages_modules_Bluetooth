@@ -22,7 +22,7 @@ import numpy as np
 # from scipy.io import wavfile
 
 SINE_FREQUENCY = 440
-SINE_DURATION = 0.1
+SINE_DURATION = 1.
 
 # File which stores the audio signal output data (after transport).
 # Used for running comparisons with the generated audio signal.
@@ -58,20 +58,20 @@ class AudioSignal:
         self.fs = fs
         self.thread = None
 
-    def start(self):
+    def start(self, duration_s: float = 4.0):
         """Generates the audio signal and send it to the transport."""
-        self.thread = Thread(target=self._run)
+        self.thread = Thread(target=self._run, args=(duration_s,))
         self.thread.start()
 
-    def _run(self):
+    def _run(self, duration_s: float):
         sine = self._generate_sine(SINE_FREQUENCY, SINE_DURATION)
 
         # Interleaved audio.
         stereo = np.zeros(sine.size * 2, dtype=sine.dtype)
         stereo[0::2] = sine
 
-        # Send 4 second of audio.
-        audio = itertools.repeat(stereo.tobytes(), int(4 / SINE_DURATION))
+        # Send the requested audio.
+        audio = itertools.repeat(stereo.tobytes(), int(duration_s / SINE_DURATION))
 
         self.transport(audio)
 
