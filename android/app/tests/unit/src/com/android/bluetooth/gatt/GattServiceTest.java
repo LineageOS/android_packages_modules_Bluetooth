@@ -112,8 +112,6 @@ public class GattServiceTest {
     private GattService mService;
 
     private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
-    private final CompanionDeviceManager mCompanionDeviceManager =
-            mContext.getSystemService(CompanionDeviceManager.class);
     private CompanionManager mBtCompanionManager;
     private final BluetoothDevice mDevice = getTestDevice(109);
     private MockContentResolver mMockContentResolver;
@@ -230,8 +228,8 @@ public class GattServiceTest {
         mockGetBluetoothManager(mAdapterService);
         mockGetSystemService(mAdapterService, LocationManager.class);
         mockGetSystemService(mAdapterService, ActivityManager.class);
-        mockGetSystemService(
-                mAdapterService, CompanionDeviceManager.class, mCompanionDeviceManager);
+        final var companionDeviceManager = mContext.getSystemService(CompanionDeviceManager.class);
+        mockGetSystemService(mAdapterService, CompanionDeviceManager.class, companionDeviceManager);
 
         mBtCompanionManager = new CompanionManager(mAdapterService, null);
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
@@ -328,7 +326,7 @@ public class GattServiceTest {
         verify(mNativeInterface).gattClientUnregisterApp(CLIENT_IF);
     }
 
-	@Test
+    @Test
     public void clientUnregAll() throws Exception {
         int appId = 1;
         ContextMap<IBluetoothGattCallback>.App app = mock(ContextMap.App.class);
@@ -731,7 +729,7 @@ public class GattServiceTest {
         verify(mNativeInterface).gattClientConfigureMTU(CLIENT_CONN_ID, mtu);
     }
 
-	@Test
+    @Test
     public void clientRestrictedHandles() throws Exception {
         ArrayList<GattDbElement> db = new ArrayList<>();
 

@@ -22,7 +22,6 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.Utils.callbackToApp;
-import static com.android.bluetooth.Utils.checkCallerTargetSdk;
 import static com.android.bluetooth.Utils.transportToString;
 import static com.android.bluetooth.util.AttributionSourceUtil.getLastAttributionTag;
 
@@ -49,7 +48,6 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.PackageManager.PackageInfoFlags;
 import android.content.res.Resources;
 import android.os.Binder;
-import android.os.Build;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.SystemClock;
@@ -357,11 +355,23 @@ public class GattService extends ProfileService {
 
     // Suppressed because we are conditionally enforcing
     @SuppressLint("AndroidFrameworkRequiresPermission")
-    private void permissionCheck(int connId, int handle) {
+    // * Only called from {@code GattServiceBinder} */
+    void permissionCheck(IBluetoothGattCallback callback, BluetoothDevice device, int handle) {
+        final var clientApp = mClientMap.getByCallbackId(callback);
+        if (clientApp == null) {
+            Log.w(TAG, "(" + callback + "): App not registered");
+            return;
+        }
+        final var connId = getFirstConnectionIdForDevice(clientApp.id, device);
+        if (connId == null) {
+            Log.e(TAG, "(" + device + ") - No connection");
+            return;
+        }
+
         if (!isHandleRestricted(connId, handle)) {
             return;
         }
-        this.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
     }
 
     private boolean isHandleRestricted(int connId, int handle) {
@@ -1218,18 +1228,6 @@ public class GattService extends ProfileService {
             return;
         }
 
-        try {
-            permissionCheck(connId, handle);
-        } catch (SecurityException ex) {
-            String callingPackage = source.getPackageName();
-            // Only throws on apps with target SDK T+ as this old API did not throw prior to T
-            if (checkCallerTargetSdk(this, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
-                throw ex;
-            }
-            Log.w(TAG, "readCharacteristic() - permission check failed!");
-            return;
-        }
-
         mNativeInterface.gattClientReadCharacteristic(connId, handle, authReq);
     }
 
@@ -1286,7 +1284,6 @@ public class GattService extends ProfileService {
             Log.e(TAG, "writeCharacteristic(" + device + ") - No connection");
             return BluetoothStatusCodes.ERROR_DEVICE_NOT_CONNECTED;
         }
-        permissionCheck(connId, handle);
 
         Log.d(TAG, "writeCharacteristic() - trying to acquire permit.");
         // Lock the thread until onCharacteristicWrite callback comes back.
@@ -1330,18 +1327,6 @@ public class GattService extends ProfileService {
             return;
         }
 
-        try {
-            permissionCheck(connId, handle);
-        } catch (SecurityException ex) {
-            String callingPackage = source.getPackageName();
-            // Only throws on apps with target SDK T+ as this old API did not throw prior to T
-            if (checkCallerTargetSdk(this, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
-                throw ex;
-            }
-            Log.w(TAG, "readDescriptor() - permission check failed!");
-            return;
-        }
-
         mNativeInterface.gattClientReadDescriptor(connId, handle, authReq);
     }
 
@@ -1365,7 +1350,6 @@ public class GattService extends ProfileService {
             Log.e(TAG, "writeDescriptor() - No connection for " + device);
             return BluetoothStatusCodes.ERROR_DEVICE_NOT_CONNECTED;
         }
-        permissionCheck(connId, handle);
 
         mNativeInterface.gattClientWriteDescriptor(connId, handle, authReq, value);
         return BluetoothStatusCodes.SUCCESS;
@@ -1411,18 +1395,6 @@ public class GattService extends ProfileService {
         final var connId = getFirstConnectionIdForDevice(clientIf, device);
         if (connId == null) {
             Log.e(TAG, "registerForNotification() - No connection for " + device);
-            return;
-        }
-
-        try {
-            permissionCheck(connId, handle);
-        } catch (SecurityException ex) {
-            String callingPackage = source.getPackageName();
-            // Only throws on apps with target SDK T+ as this old API did not throw prior to T
-            if (checkCallerTargetSdk(this, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
-                throw ex;
-            }
-            Log.w(TAG, "registerForNotification() - permission check failed!");
             return;
         }
 
