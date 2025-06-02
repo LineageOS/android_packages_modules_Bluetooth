@@ -338,7 +338,6 @@ public class AdapterService extends Service {
     private BluetoothSocketManagerBinder mBluetoothSocketManagerBinder;
 
     private HeadsetService mHeadsetService;
-    private HeadsetClientService mHeadsetClientService;
     private A2dpService mA2dpService;
     private HearingAidService mHearingAidService;
     private LeAudioService mLeAudioService;
@@ -736,6 +735,10 @@ public class AdapterService extends Service {
         return mBluetoothHciVendorSpecificNativeInterface;
     }
 
+    private Optional<HeadsetClientService> getHeadsetClientService() {
+        return getStartedProfile(BluetoothProfile.HEADSET_CLIENT, HeadsetClientService.class);
+    }
+
     private Optional<BluetoothMapService> getMapService() {
         return getStartedProfile(BluetoothProfile.MAP, BluetoothMapService.class)
                 .filter(ProfileService::isAvailable);
@@ -754,6 +757,18 @@ public class AdapterService extends Service {
     private Optional<SapService> getSapService() {
         return getStartedProfile(BluetoothProfile.SAP, SapService.class)
                 .filter(ProfileService::isAvailable);
+    }
+
+    Optional<ConnectableProfile> getStartedConnectableProfile(int id) {
+        return getStartedProfile(id, ConnectableProfile.class);
+    }
+
+    private <T extends ProfileService> Optional<T> getStartedProfile(int id, Class<T> profile) {
+        return getStartedProfile(id).filter(profile::isInstance).map(profile::cast);
+    }
+
+    private Optional<ProfileService> getStartedProfile(int id) {
+        return Optional.ofNullable(mStartedProfiles.get(id));
     }
 
     /**
@@ -1200,18 +1215,6 @@ public class AdapterService extends Service {
         m.obj = profile;
         m.arg1 = state;
         mHandler.sendMessage(m);
-    }
-
-    Optional<ConnectableProfile> getStartedConnectableProfile(int id) {
-        return getStartedProfile(id, ConnectableProfile.class);
-    }
-
-    private <T extends ProfileService> Optional<T> getStartedProfile(int id, Class<T> profile) {
-        return getStartedProfile(id).filter(profile::isInstance).map(profile::cast);
-    }
-
-    private Optional<ProfileService> getStartedProfile(int id) {
-        return Optional.ofNullable(mStartedProfiles.get(id));
     }
 
     void bringDownBle() {
@@ -1934,7 +1937,6 @@ public class AdapterService extends Service {
     private void initProfileServices() {
         Log.i(TAG, "initProfileServices: Initializing all bluetooth profile services");
         mHeadsetService = HeadsetService.getHeadsetService();
-        mHeadsetClientService = HeadsetClientService.getHeadsetClientService();
         mA2dpService = A2dpService.getA2dpService();
         mHearingAidService = HearingAidService.getHearingAidService();
         mLeAudioService = LeAudioService.getLeAudioService();
@@ -4671,12 +4673,13 @@ public class AdapterService extends Service {
      * @return int status of the remote support for audio policy feature
      */
     public int isRequestAudioPolicyAsSinkSupported(BluetoothDevice device) {
-        if (mHeadsetClientService != null) {
-            return mHeadsetClientService.getAudioPolicyRemoteSupported(device);
-        } else {
-            Log.e(TAG, "No audio transport connected");
-            return BluetoothStatusCodes.FEATURE_NOT_CONFIGURED;
-        }
+        return getHeadsetClientService()
+                .map(headsetClient -> headsetClient.getAudioPolicyRemoteSupported(device))
+                .orElseGet(
+                        () -> {
+                            Log.e(TAG, "No audio transport connected");
+                            return BluetoothStatusCodes.FEATURE_NOT_CONFIGURED;
+                        });
     }
 
     /**
@@ -4691,19 +4694,23 @@ public class AdapterService extends Service {
             return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
         }
 
-        if (mHeadsetClientService != null) {
-            if (isRequestAudioPolicyAsSinkSupported(device)
-                    != BluetoothStatusCodes.FEATURE_SUPPORTED) {
-                throw new UnsupportedOperationException(
-                        "Request Audio Policy As Sink not supported");
-            }
-            deviceProp.setHfAudioPolicyForRemoteAg(policies);
-            mHeadsetClientService.setAudioPolicy(device, policies);
-            return BluetoothStatusCodes.SUCCESS;
-        } else {
-            Log.e(TAG, "HeadsetClient not connected");
-            return BluetoothStatusCodes.ERROR_PROFILE_NOT_CONNECTED;
-        }
+        return getHeadsetClientService()
+                .map(
+                        headsetClient -> {
+                            if (isRequestAudioPolicyAsSinkSupported(device)
+                                    != BluetoothStatusCodes.FEATURE_SUPPORTED) {
+                                throw new UnsupportedOperationException(
+                                        "Request Audio Policy As Sink not supported");
+                            }
+                            deviceProp.setHfAudioPolicyForRemoteAg(policies);
+                            headsetClient.setAudioPolicy(device, policies);
+                            return BluetoothStatusCodes.SUCCESS;
+                        })
+                .orElseGet(
+                        () -> {
+                            Log.e(TAG, "HeadsetClient not connected");
+                            return BluetoothStatusCodes.ERROR_PROFILE_NOT_CONNECTED;
+                        });
     }
 
     /**
@@ -4718,12 +4725,13 @@ public class AdapterService extends Service {
             return null;
         }
 
-        if (mHeadsetClientService != null) {
-            return deviceProp.getHfAudioPolicyForRemoteAg();
-        } else {
-            Log.e(TAG, "HeadsetClient not connected");
-            return null;
-        }
+        return getHeadsetClientService()
+                .map(headsetClient -> deviceProp.getHfAudioPolicyForRemoteAg())
+                .orElseGet(
+                        () -> {
+                            Log.e(TAG, "HeadsetClient not connected");
+                            return null;
+                        });
     }
 
     /**
