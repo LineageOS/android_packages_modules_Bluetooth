@@ -337,7 +337,6 @@ public class AdapterService extends Service {
 
     private BluetoothSocketManagerBinder mBluetoothSocketManagerBinder;
 
-    private HeadsetService mHeadsetService;
     private A2dpService mA2dpService;
     private LeAudioService mLeAudioService;
     private GattService mGattService;
@@ -736,6 +735,10 @@ public class AdapterService extends Service {
 
     private Optional<HeadsetClientService> getHeadsetClientService() {
         return getStartedProfile(BluetoothProfile.HEADSET_CLIENT, HeadsetClientService.class);
+    }
+
+    private Optional<HeadsetService> getHeadsetService() {
+        return getStartedProfile(BluetoothProfile.HEADSET, HeadsetService.class);
     }
 
     private Optional<HearingAidService> getHearingAidService() {
@@ -1939,7 +1942,6 @@ public class AdapterService extends Service {
     /** Initializes all the profile services fields */
     private void initProfileServices() {
         Log.i(TAG, "initProfileServices: Initializing all bluetooth profile services");
-        mHeadsetService = HeadsetService.getHeadsetService();
         mA2dpService = A2dpService.getA2dpService();
         mLeAudioService = LeAudioService.getLeAudioService();
     }
@@ -2388,9 +2390,11 @@ public class AdapterService extends Service {
             }
 
             if (previousDuplex != newDuplex) {
+                final var headset = getHeadsetService().get();
                 if (newDuplex == BluetoothProfile.HEADSET
-                        && mHeadsetService.getActiveDevice() != null
-                        && groupDevices.contains(mHeadsetService.getActiveDevice())) {
+                        && headset != null
+                        && headset.getActiveDevice() != null
+                        && groupDevices.contains(headset.getActiveDevice())) {
                     Log.i(TAG, "Sent change for AUDIO_MODE_DUPLEX to HFP to Audio FW");
                     // TODO(b/275426145): Add similar HFP method in BluetoothProfileConnectionInfo
                     numRequestsToAudioFw +=
@@ -3150,10 +3154,11 @@ public class AdapterService extends Service {
             }
         }
 
+        final var headset = getHeadsetService().get();
         boolean hfpSupported =
-                mHeadsetService != null
+                headset != null
                         && (device == null
-                                || mHeadsetService.getConnectionPolicy(device)
+                                || headset.getConnectionPolicy(device)
                                         == CONNECTION_POLICY_ALLOWED);
         boolean a2dpSupported =
                 mA2dpService != null
@@ -3185,7 +3190,7 @@ public class AdapterService extends Service {
         // Order matters, some devices do not accept A2DP connection before HFP connection
         if (setHeadset && hfpSupported) {
             Log.i(TAG, "setActiveDevice: Setting active Headset " + device);
-            mHeadsetService.setActiveDevice(device);
+            headset.setActiveDevice(device);
         }
 
         if (setA2dp && a2dpSupported) {
@@ -3238,8 +3243,9 @@ public class AdapterService extends Service {
         boolean a2dpSupported = isProfileSupported(leAudioDevice, BluetoothProfile.A2DP);
 
         List<BluetoothDevice> groupDevices = mLeAudioService.getGroupDevices(leAudioDevice);
-        if (hfpSupported && mHeadsetService != null) {
-            BluetoothDevice activeHfpDevice = mHeadsetService.getActiveDevice();
+        final var headset = getHeadsetService().get();
+        if (hfpSupported && headset != null) {
+            BluetoothDevice activeHfpDevice = headset.getActiveDevice();
             if (activeHfpDevice == null || !groupDevices.contains(activeHfpDevice)) {
                 return false;
             }
@@ -3266,10 +3272,11 @@ public class AdapterService extends Service {
 
         switch (profile) {
             case BluetoothProfile.HEADSET -> {
-                if (mHeadsetService == null) {
+                final var headset = getHeadsetService().get();
+                if (headset == null) {
                     Log.e(TAG, "getActiveDevices: HeadsetService is null");
                 } else {
-                    BluetoothDevice device = mHeadsetService.getActiveDevice();
+                    BluetoothDevice device = headset.getActiveDevice();
                     if (device != null) {
                         activeDevices.add(device);
                     }
