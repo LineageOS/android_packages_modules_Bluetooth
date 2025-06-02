@@ -368,23 +368,6 @@ public final class BluetoothPbapClient implements BluetoothProfile, AutoCloseabl
     }
 
     /**
-     * Get the priority of the profile.
-     *
-     * <p>The priority can be any of: {@link #PRIORITY_OFF}, {@link #PRIORITY_ON}, {@link
-     * #PRIORITY_UNDEFINED}
-     *
-     * @param device Bluetooth device
-     * @return priority of the device
-     * @hide
-     */
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
-    public int getPriority(BluetoothDevice device) {
-        if (VDBG) log("getPriority(" + device + ")");
-        return BluetoothAdapter.connectionPolicyToPriority(getConnectionPolicy(device));
-    }
-
-    /**
      * Get the connection policy of the profile.
      *
      * <p>The connection policy can be any of: {@link #CONNECTION_POLICY_ALLOWED}, {@link

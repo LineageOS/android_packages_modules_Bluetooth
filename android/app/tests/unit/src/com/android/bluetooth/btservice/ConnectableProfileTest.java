@@ -117,7 +117,7 @@ public class ConnectableProfileTest {
     }
 
     @Test
-    public void getConnectionPolicy_callsDatabaseManager() {
+    public void getConnectionPolicy_callsDatabaseManager_returnsExpectedPolicy() {
         final int expectedPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED;
         doReturn(expectedPolicy)
                 .when(mDatabaseManager)
@@ -125,6 +125,17 @@ public class ConnectableProfileTest {
 
         assertThat(mConnectableProfile.getConnectionPolicy(mDevice)).isEqualTo(expectedPolicy);
         verify(mDatabaseManager).getProfileConnectionPolicy(mDevice, TEST_PROFILE_ID);
+    }
+
+    @Test
+    public void getConnectionPolicy_callsDatabaseManager_onNullDevice_returnsPolicyUnknown() {
+        final var policyUnknown = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+        doReturn(policyUnknown)
+                .when(mDatabaseManager)
+                .getProfileConnectionPolicy(null, TEST_PROFILE_ID);
+
+        assertThat(mConnectableProfile.getConnectionPolicy(null)).isEqualTo(policyUnknown);
+        verify(mDatabaseManager).getProfileConnectionPolicy(null, TEST_PROFILE_ID);
     }
 
     @Test
