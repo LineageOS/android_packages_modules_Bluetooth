@@ -24,6 +24,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.content.pm.PackageManager.FEATURE_WATCH;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadsetClientCall;
@@ -87,7 +88,7 @@ public class HeadsetClientService extends ConnectableProfile {
     private int mLastBatteryLevel = -1;
 
     public HeadsetClientService(AdapterService adapterService) {
-        this(adapterService, new HeadsetClientNativeInterface(adapterService));
+        this(adapterService, null);
     }
 
     @VisibleForTesting
@@ -98,8 +99,10 @@ public class HeadsetClientService extends ConnectableProfile {
         mMaxAmVcVol = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
         mMinAmVcVol = mAudioManager.getStreamMinVolume(AudioManager.STREAM_VOICE_CALL);
 
-        // Setup the JNI service
-        mNativeInterface = requireNonNull(nativeInterface);
+        mNativeInterface =
+                requireNonNullElseGet(
+                        nativeInterface,
+                        () -> new HeadsetClientNativeInterface(adapterService, this));
         mNativeInterface.initialize();
 
         mBatteryManager = obtainSystemService(BatteryManager.class);
