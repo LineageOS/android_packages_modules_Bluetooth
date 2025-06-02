@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 
 set -e
+if [ -z "${ANDROID_BUILD_TOP}" ]
+then
+    printf "ANDROID_BUILD_TOP is not set. Please source the android env:\n\tsource build/envsetup.sh\n"
+    false
+fi
+if [ ! -f "${ANDROID_BUILD_TOP}/out/host/linux-x86/framework/jacoco-cli.jar" ]
+then
+    printf "You need to build jacoco-cli in order to run coverage tool:\n\tm jacoco-cli\n"
+    false
+fi
+
+# Build test independently, to prevent spamming logs in the terminal if it doesn't build
+m ServiceBluetoothRoboTests
 
 # Setup tmp folder
 COVERAGE_TMP_FOLDER=/tmp/coverage_robolectric

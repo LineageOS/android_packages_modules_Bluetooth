@@ -1509,7 +1509,7 @@ public class RemoteDevices {
         if (connectionState == BluetoothAdapter.STATE_CONNECTED) {
             connectionChangeConsumer = cb -> cb.onDeviceConnected(device);
             if (Flags.watchDeviceOverrideAirplaneMode()) {
-                mWatchConnectionStateListener.connectedDevice(device);
+                mWatchConnectionStateListener.onDeviceConnected(device, transport);
             }
         } else {
             final int disconnectReason;
@@ -1532,7 +1532,7 @@ public class RemoteDevices {
                                     device,
                                     AdapterService.hciToAndroidDisconnectReason(disconnectReason));
             if (Flags.watchDeviceOverrideAirplaneMode()) {
-                mWatchConnectionStateListener.disconnectedDevice(device);
+                mWatchConnectionStateListener.onDeviceDisconnected(device, transport);
             }
         }
 
