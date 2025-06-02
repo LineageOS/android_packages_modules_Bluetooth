@@ -103,15 +103,14 @@ class PandoraClient:
         self._address = Address(address)
 
     async def reset(self) -> None:
-        """Factory reset the device & read it's BD address."""
-
-        # Trigger factory reset and wait for the server to shutdown.
-        await self.aio.host.FactoryReset(wait_for_ready=True, timeout=15.0)
-
-        # There is a race between the server completing the RPC call
-        # and initiating graceful shutdown. This small delay is added to reduce the
-        # possibility of this race occurring.
-        await asyncio.sleep(0.5)
+        """Factory reset the device & read its BD address."""
+        try:
+            # Trigger server shutdown and restart.
+            # The rpc might cancel itself when invoking shutdown on the server.
+            await self.aio.host.FactoryReset(wait_for_ready=True, timeout=15.0)
+        except grpc.aio.AioRpcError as exn:
+            if exn.code() != grpc.StatusCode.CANCELLED:
+                raise exn
 
         # The server should not be accepting new connections at this time.
         # Re-create the channel. The server will return UNAVAILABLE until
