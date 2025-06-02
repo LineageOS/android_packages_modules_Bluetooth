@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hci/acl_manager_impl.h"
+#include "hci/acl_manager/acl_manager_classic_impl.h"
 
 #include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
@@ -26,14 +26,11 @@
 #include <memory>
 
 #include "common/bind.h"
-#include "hci/acl_manager/acl_manager_classic_impl.h"
-#include "hci/acl_manager/le_connection_management_callbacks_mock.h"
 #include "hci/acl_manager/round_robin_scheduler.h"
 #include "hci/address.h"
 #include "hci/address_with_type.h"
 #include "hci/class_of_device.h"
 #include "hci/controller_mock.h"
-#include "hci/hci_layer.h"
 #include "hci/hci_layer_fake.h"
 #include "hci/remote_name_request_mock.h"
 #include "os/thread.h"
@@ -74,16 +71,6 @@ struct {
 };
 }  // namespace
 
-std::unique_ptr<BasePacketBuilder> NextPayload(uint16_t handle) {
-  static uint32_t packet_number = 1;
-  auto payload = std::make_unique<RawBuilder>();
-  payload->AddOctets2(6);  // L2CAP PDU size
-  payload->AddOctets2(2);  // L2CAP CID
-  payload->AddOctets2(handle);
-  payload->AddOctets4(packet_number++);
-  return std::move(payload);
-}
-
 class TestController : public testing::MockController {
 public:
   uint16_t GetAclPacketLength() const override { return acl_buffer_length_; }
@@ -121,32 +108,15 @@ public:
   size_t NumberOfConnections() const { return connections_.size(); }
 
 private:
-  friend class AclManagerWithCallbacksTest;
-  friend class AclManagerNoCallbacksTest;
+  friend class AclManagerClassicWithCallbacksTest;
+  friend class AclManagerClassicNoCallbacksTest;
 
   std::deque<std::shared_ptr<ClassicAclConnection>> connections_;
   std::promise<std::shared_ptr<ClassicAclConnection>> connection_promise_;
   bool is_promise_set_{false};
 };
 
-class MockLeConnectionCallbacks : public LeConnectionCallbacks {
-public:
-  void OnLeConnectSuccess(AddressWithType /* address_with_type */,
-                          std::unique_ptr<LeAclConnection> connection) override {
-    le_connections_.push_back(std::move(connection));
-    if (le_connection_promise_ != nullptr) {
-      std::promise<void>* prom = le_connection_promise_.release();
-      prom->set_value();
-      delete prom;
-    }
-  }
-  MOCK_METHOD(void, OnLeConnectFail, (AddressWithType, ErrorCode reason), (override));
-
-  std::deque<std::shared_ptr<LeAclConnection>> le_connections_;
-  std::unique_ptr<std::promise<void>> le_connection_promise_;
-};
-
-class AclManagerBaseTest : public ::testing::Test {
+class AclManagerClassicBaseTest : public ::testing::Test {
 protected:
   void SetUp() override {
     thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
@@ -163,16 +133,12 @@ protected:
     acl_manager_classic_ = std::make_unique<AclManagerClassicImpl>(
             client_handler_, *test_hci_layer_, *test_acl_scheduler_, *test_rnr_,
             *test_round_robin_scheduler_);
-    acl_manager_ = std::make_unique<AclManagerImpl>(
-            client_handler_, *test_hci_layer_, *test_controller_, *test_storage_,
-            *test_round_robin_scheduler_, *acl_manager_classic_, *acl_manager_classic_);
   }
 
   void TearDown() override {
     test_storage_.reset();
     client_handler_->Synchronize(std::chrono::milliseconds(20));
     client_handler_->Synchronize(std::chrono::milliseconds(20));
-    acl_manager_.reset();
     acl_manager_classic_.reset();
     test_round_robin_scheduler_.reset();
     test_rnr_.reset();
@@ -207,55 +173,28 @@ protected:
   std::unique_ptr<RemoteNameRequestModule> test_rnr_ = nullptr;
   std::unique_ptr<RoundRobinScheduler> test_round_robin_scheduler_ = nullptr;
   std::unique_ptr<AclManagerClassicImpl> acl_manager_classic_ = nullptr;
-  std::unique_ptr<AclManagerImpl> acl_manager_ = nullptr;
 };
 
-class AclManagerNoCallbacksTest : public AclManagerBaseTest {
+class AclManagerClassicNoCallbacksTest : public AclManagerClassicBaseTest {
 protected:
   void SetUp() override {
-    AclManagerBaseTest::SetUp();
+    AclManagerClassicBaseTest::SetUp();
 
     local_address_with_type_ =
             AddressWithType(Address::FromString(kLocalRandomAddressString).value(),
                             hci::AddressType::RANDOM_DEVICE_ADDRESS);
-
-    acl_manager_->SetPrivacyPolicyForInitiatorAddress(
-            LeAddressManager::AddressPolicy::USE_STATIC_ADDRESS, local_address_with_type_,
-            kMinimumRotationTime, kMaximumRotationTime);
-
-    auto command = test_hci_layer_->GetCommand();
-    ASSERT_TRUE(command.IsValid());
-    ASSERT_EQ(OpCode::LE_SET_RANDOM_ADDRESS, command.GetOpCode());
   }
 
-  void TearDown() override { AclManagerBaseTest::TearDown(); }
+  void TearDown() override { AclManagerClassicBaseTest::TearDown(); }
 
   AddressWithType local_address_with_type_;
-  const bool use_accept_list_ = true;  // gd currently only supports connect list
-
-  void SendAclData(uint16_t handle, AclConnection::QueueUpEnd* queue_end) {
-    std::promise<void> promise;
-    auto future = promise.get_future();
-    queue_end->RegisterEnqueue(
-            client_handler_,
-            common::Bind(
-                    [](decltype(queue_end) queue_end, uint16_t handle, std::promise<void> promise) {
-                      queue_end->UnregisterEnqueue();
-                      promise.set_value();
-                      return NextPayload(handle);
-                    },
-                    queue_end, handle, common::Passed(std::move(promise))));
-    auto status = future.wait_for(2s);
-    ASSERT_EQ(status, std::future_status::ready);
-  }
 };
 
-class AclManagerWithCallbacksTest : public AclManagerNoCallbacksTest {
+class AclManagerClassicWithCallbacksTest : public AclManagerClassicNoCallbacksTest {
 protected:
   void SetUp() override {
-    AclManagerNoCallbacksTest::SetUp();
+    AclManagerClassicNoCallbacksTest::SetUp();
     acl_manager_classic_->RegisterCallbacks(&mock_connection_callbacks_, client_handler_);
-    acl_manager_->RegisterLeCallbacks(&mock_le_connection_callbacks_, client_handler_);
   }
 
   void TearDown() override {
@@ -265,20 +204,13 @@ protected:
     {
       std::promise<void> promise;
       auto future = promise.get_future();
-      acl_manager_->UnregisterLeCallbacks(&mock_le_connection_callbacks_, std::move(promise));
-      future.wait_for(2s);
-    }
-    {
-      std::promise<void> promise;
-      auto future = promise.get_future();
       acl_manager_classic_->UnregisterCallbacks(&mock_connection_callbacks_, std::move(promise));
       future.wait_for(2s);
     }
 
     mock_connection_callbacks_.connections_.clear();
-    mock_le_connection_callbacks_.le_connections_.clear();
 
-    AclManagerNoCallbacksTest::TearDown();
+    AclManagerClassicNoCallbacksTest::TearDown();
   }
 
   std::future<std::shared_ptr<ClassicAclConnection>> GetConnectionFuture() {
@@ -289,31 +221,19 @@ protected:
     return mock_connection_callbacks_.connection_promise_.get_future();
   }
 
-  std::future<void> GetLeConnectionFuture() {
-    mock_le_connection_callbacks_.le_connection_promise_ = std::make_unique<std::promise<void>>();
-    return mock_le_connection_callbacks_.le_connection_promise_->get_future();
-  }
-
   std::shared_ptr<ClassicAclConnection> GetLastConnection() {
     return mock_connection_callbacks_.connections_.back();
   }
 
   size_t NumberOfConnections() { return mock_connection_callbacks_.connections_.size(); }
 
-  std::shared_ptr<LeAclConnection> GetLastLeConnection() {
-    return mock_le_connection_callbacks_.le_connections_.back();
-  }
-
-  size_t NumberOfLeConnections() { return mock_le_connection_callbacks_.le_connections_.size(); }
-
   MockConnectionCallback mock_connection_callbacks_;
-  MockLeConnectionCallbacks mock_le_connection_callbacks_;
 };
 
-class AclManagerWithConnectionTest : public AclManagerWithCallbacksTest {
+class AclManagerClassicWithConnectionTest : public AclManagerClassicWithCallbacksTest {
 protected:
   void SetUp() override {
-    AclManagerWithCallbacksTest::SetUp();
+    AclManagerClassicWithCallbacksTest::SetUp();
 
     handle_ = 0x123;
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
@@ -341,7 +261,7 @@ protected:
     client_handler_->Synchronize(std::chrono::milliseconds(20));
     client_handler_->Synchronize(std::chrono::milliseconds(20));
 
-    AclManagerWithCallbacksTest::TearDown();
+    AclManagerClassicWithCallbacksTest::TearDown();
   }
 
   uint16_t handle_;
@@ -391,74 +311,9 @@ protected:
   } mock_connection_management_callbacks_;
 };
 
-TEST_F(AclManagerWithCallbacksTest, startup_teardown) {}
+TEST_F(AclManagerClassicWithCallbacksTest, startup_teardown) {}
 
-class AclManagerWithLeConnectionTest : public AclManagerWithCallbacksTest {
-protected:
-  void SetUp() override {
-    AclManagerWithCallbacksTest::SetUp();
-
-    Address remote_public_address = Address::FromString(kRemotePublicDeviceStringA).value();
-    remote_with_type_ = AddressWithType(remote_public_address, AddressType::PUBLIC_DEVICE_ADDRESS);
-    acl_manager_->CreateLeConnection(remote_with_type_, true, false);
-    test_hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
-    test_hci_layer_->IncomingEvent(
-            LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
-    auto packet = test_hci_layer_->GetCommand(OpCode::LE_CREATE_CONNECTION);
-    auto le_connection_management_command_view =
-            LeConnectionManagementCommandView::Create(AclCommandView::Create(packet));
-    auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
-    ASSERT_TRUE(command_view.IsValid());
-    if (use_accept_list_) {
-      ASSERT_EQ(command_view.GetPeerAddress(), empty_address_with_type.GetAddress());
-      ASSERT_EQ(command_view.GetPeerAddressType(), empty_address_with_type.GetAddressType());
-    } else {
-      ASSERT_EQ(command_view.GetPeerAddress(), remote_public_address);
-      ASSERT_EQ(command_view.GetPeerAddressType(), AddressType::PUBLIC_DEVICE_ADDRESS);
-    }
-
-    test_hci_layer_->IncomingEvent(
-            LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
-
-    auto first_connection = GetLeConnectionFuture();
-
-    test_hci_layer_->IncomingLeMetaEvent(LeConnectionCompleteBuilder::Create(
-            ErrorCode::SUCCESS, handle_, Role::PERIPHERAL, AddressType::PUBLIC_DEVICE_ADDRESS,
-            remote_public_address, 0x0100, 0x0010, 0x0C80, ClockAccuracy::PPM_30));
-
-    test_hci_layer_->GetCommand(OpCode::LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST);
-    test_hci_layer_->IncomingEvent(
-            LeRemoveDeviceFromFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
-
-    auto first_connection_status = first_connection.wait_for(2s);
-    ASSERT_EQ(first_connection_status, std::future_status::ready);
-
-    connection_ = GetLastLeConnection();
-  }
-
-  void TearDown() override {
-    client_handler_->Synchronize(std::chrono::milliseconds(20));
-    client_handler_->Synchronize(std::chrono::milliseconds(20));
-    AclManagerWithCallbacksTest::TearDown();
-  }
-
-  void sync_client_handler() {
-    std::promise<void> promise;
-    auto future = promise.get_future();
-    client_handler_->Post(
-            common::BindOnce(&std::promise<void>::set_value, common::Unretained(&promise)));
-    auto future_status = future.wait_for(std::chrono::seconds(1));
-    ASSERT_EQ(future_status, std::future_status::ready);
-  }
-
-  uint16_t handle_ = 0x123;
-  std::shared_ptr<LeAclConnection> connection_;
-  AddressWithType remote_with_type_;
-
-  MockLeConnectionManagementCallbacks mock_le_connection_management_callbacks_;
-};
-
-class AclManagerWithResolvableAddressTest : public AclManagerWithCallbacksTest {
+class AclManagerWithResolvableAddressTest : public AclManagerClassicWithCallbacksTest {
 protected:
   void SetUp() override {
     // client_handler_ = fake_registry_.GetTestHandler();
@@ -472,28 +327,15 @@ protected:
     acl_manager_classic_ = std::make_unique<AclManagerClassicImpl>(
             client_handler_, *test_hci_layer_, *test_acl_scheduler_, *test_rnr_,
             *test_round_robin_scheduler_);
-    acl_manager_ = std::make_unique<AclManagerImpl>(
-            client_handler_, *test_hci_layer_, *test_controller_, *test_storage_,
-            *test_round_robin_scheduler_, *acl_manager_classic_, *acl_manager_classic_);
 
     hci::Address address;
     Address::FromString("D0:05:04:03:02:01", address);
     hci::AddressWithType address_with_type(address, hci::AddressType::RANDOM_DEVICE_ADDRESS);
     acl_manager_classic_->RegisterCallbacks(&mock_connection_callbacks_, client_handler_);
-    acl_manager_->RegisterLeCallbacks(&mock_le_connection_callbacks_, client_handler_);
-    auto minimum_rotation_time = std::chrono::milliseconds(7 * 60 * 1000);
-    auto maximum_rotation_time = std::chrono::milliseconds(15 * 60 * 1000);
-    acl_manager_->SetPrivacyPolicyForInitiatorAddress(
-            LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS, address_with_type,
-            minimum_rotation_time, maximum_rotation_time);
-
-    test_hci_layer_->GetCommand(OpCode::LE_SET_RANDOM_ADDRESS);
-    test_hci_layer_->IncomingEvent(
-            LeSetRandomAddressCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   }
 };
 
-TEST_F(AclManagerNoCallbacksTest, unregister_classic_before_connection_request) {
+TEST_F(AclManagerClassicNoCallbacksTest, unregister_classic_before_connection_request) {
   ClassOfDevice class_of_device;
 
   MockConnectionCallback mock_connection_callbacks_;
@@ -517,7 +359,7 @@ TEST_F(AclManagerNoCallbacksTest, unregister_classic_before_connection_request) 
   auto command = test_hci_layer_->GetCommand(OpCode::REJECT_CONNECTION_REQUEST);
 }
 
-TEST_F(AclManagerWithCallbacksTest, two_remote_connection_requests_ABAB) {
+TEST_F(AclManagerClassicWithCallbacksTest, two_remote_connection_requests_ABAB) {
   Address::FromString(kRemotePublicDeviceStringA, remote_device[0].address);
   Address::FromString(kRemotePublicDeviceStringB, remote_device[1].address);
 
@@ -572,7 +414,7 @@ TEST_F(AclManagerWithCallbacksTest, two_remote_connection_requests_ABAB) {
   }
 }
 
-TEST_F(AclManagerWithCallbacksTest, two_remote_connection_requests_ABBA) {
+TEST_F(AclManagerClassicWithCallbacksTest, two_remote_connection_requests_ABBA) {
   Address::FromString(kRemotePublicDeviceStringA, remote_device[0].address);
   Address::FromString(kRemotePublicDeviceStringB, remote_device[1].address);
 
@@ -627,7 +469,7 @@ TEST_F(AclManagerWithCallbacksTest, two_remote_connection_requests_ABBA) {
   }
 }
 
-TEST_F(AclManagerWithCallbacksTest, test_disconnection_after_request) {
+TEST_F(AclManagerClassicWithCallbacksTest, test_disconnection_after_request) {
   Address remote = *Address::FromString("12:34:56:78:9a:bc");
   EXPECT_CALL(mock_connection_callbacks_, OnConnectRequest).Times(1);
   test_hci_layer_->IncomingEvent(ConnectionRequestBuilder::Create(remote, ClassOfDevice({1, 2, 3}),
@@ -637,7 +479,7 @@ TEST_F(AclManagerWithCallbacksTest, test_disconnection_after_request) {
                                             LinkType::ACL, Enable::DISABLED));
 }
 
-TEST_F(AclManagerWithCallbacksTest, test_disconnection_after_request_sync) {
+TEST_F(AclManagerClassicWithCallbacksTest, test_disconnection_after_request_sync) {
   std::promise<void> request_promise;
   auto request_future = request_promise.get_future();
 
