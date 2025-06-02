@@ -340,11 +340,7 @@ public class AdapterService extends Service {
     private HeadsetService mHeadsetService;
     private HeadsetClientService mHeadsetClientService;
     private A2dpService mA2dpService;
-    private BluetoothMapService mMapService;
-    private MapClientService mMapClientService;
-    private PbapClientService mPbapClientService;
     private HearingAidService mHearingAidService;
-    private SapService mSapService;
     private LeAudioService mLeAudioService;
     private GattService mGattService;
     private ScanController mScanController;
@@ -738,6 +734,26 @@ public class AdapterService extends Service {
 
     BluetoothHciVendorSpecificNativeInterface getBluetoothHciVendorSpecificNativeInterface() {
         return mBluetoothHciVendorSpecificNativeInterface;
+    }
+
+    private Optional<BluetoothMapService> getMapService() {
+        return getStartedProfile(BluetoothProfile.MAP, BluetoothMapService.class)
+                .filter(ProfileService::isAvailable);
+    }
+
+    private Optional<MapClientService> getMapClientService() {
+        return getStartedProfile(BluetoothProfile.MAP_CLIENT, MapClientService.class)
+                .filter(ProfileService::isAvailable);
+    }
+
+    private Optional<PbapClientService> getPbapClientService() {
+        return getStartedProfile(BluetoothProfile.PBAP_CLIENT, PbapClientService.class)
+                .filter(ProfileService::isAvailable);
+    }
+
+    private Optional<SapService> getSapService() {
+        return getStartedProfile(BluetoothProfile.SAP, SapService.class)
+                .filter(ProfileService::isAvailable);
     }
 
     /**
@@ -1144,9 +1160,7 @@ public class AdapterService extends Service {
             onProfileServiceStateChanged(profileService, BluetoothAdapter.STATE_OFF);
             removeProfile(profileService);
             profileService.cleanup();
-            if (profileService.getBinder() != null) {
-                profileService.getBinder().cleanup();
-            }
+            profileService.getBinder().ifPresent(ProfileService.IProfileServiceBinder::cleanup);
         }
         Instant end = Instant.now();
         Log.i(TAG, logHdr + " completed in " + Duration.between(start, end).toMillis() + "ms");
@@ -1188,6 +1202,18 @@ public class AdapterService extends Service {
         mHandler.sendMessage(m);
     }
 
+    Optional<ConnectableProfile> getStartedConnectableProfile(int id) {
+        return getStartedProfile(id, ConnectableProfile.class);
+    }
+
+    private <T extends ProfileService> Optional<T> getStartedProfile(int id, Class<T> profile) {
+        return getStartedProfile(id).filter(profile::isInstance).map(profile::cast);
+    }
+
+    private Optional<ProfileService> getStartedProfile(int id) {
+        return Optional.ofNullable(mStartedProfiles.get(id));
+    }
+
     void bringDownBle() {
         if (Flags.onlyStartScanDuringBleOn()) {
             stopScanController();
@@ -1224,7 +1250,7 @@ public class AdapterService extends Service {
             onProfileServiceStateChanged(mGattService, BluetoothAdapter.STATE_OFF);
             removeProfile(mGattService);
             mGattService.cleanup();
-            mGattService.getBinder().cleanup();
+            mGattService.getBinder().ifPresent(ProfileService.IProfileServiceBinder::cleanup);
             mGattService = null;
         }
     }
@@ -1835,11 +1861,6 @@ public class AdapterService extends Service {
         return ConnectableProfile.isSupported(this, device, id);
     }
 
-    Optional<ConnectableProfile> getStartedProfile(int id) {
-        return Optional.ofNullable(mStartedProfiles.get(id))
-                .map(profile -> (ConnectableProfile) profile);
-    }
-
     /**
      * Checks if the connection policy of all profiles are unknown for the given device
      *
@@ -1884,7 +1905,7 @@ public class AdapterService extends Service {
     }
 
     private void connectEnabledProfile(int id, BluetoothDevice device) {
-        getStartedProfile(id)
+        getStartedConnectableProfile(id)
                 .filter(profile -> isProfileSupported(device, id))
                 .filter(prof -> prof.getConnectionPolicy(device) > CONNECTION_POLICY_FORBIDDEN)
                 .ifPresent(
@@ -1915,11 +1936,7 @@ public class AdapterService extends Service {
         mHeadsetService = HeadsetService.getHeadsetService();
         mHeadsetClientService = HeadsetClientService.getHeadsetClientService();
         mA2dpService = A2dpService.getA2dpService();
-        mMapService = BluetoothMapService.getBluetoothMapService();
-        mMapClientService = MapClientService.getMapClientService();
-        mPbapClientService = PbapClientService.getPbapClientService();
         mHearingAidService = HearingAidService.getHearingAidService();
-        mSapService = SapService.getSapService();
         mLeAudioService = LeAudioService.getLeAudioService();
     }
 
@@ -3378,7 +3395,7 @@ public class AdapterService extends Service {
     }
 
     private boolean connectIfProfileSupported(int id, BluetoothDevice device) {
-        return getStartedProfile(id)
+        return getStartedConnectableProfile(id)
                 .filter(profile -> isProfileSupported(device, id))
                 .map(
                         profile -> {
@@ -3423,7 +3440,7 @@ public class AdapterService extends Service {
     }
 
     private void disconnectEnabledProfile(int id, BluetoothDevice device) {
-        getStartedProfile(id)
+        getStartedConnectableProfile(id)
                 .filter(
                         profile -> {
                             final int state = profile.getConnectionState(device);
@@ -3861,7 +3878,7 @@ public class AdapterService extends Service {
     }
 
     IBinder getBluetoothGatt() {
-        return mGattService == null ? null : mGattService.getBinder();
+        return mGattService == null ? null : mGattService.getBinder().orElse(null);
     }
 
     IBinder getBluetoothScan() {
@@ -3894,22 +3911,17 @@ public class AdapterService extends Service {
         }
     }
 
-    IBinder getProfile(int profileId) {
+    IBinder getProfile(int id) {
         if (getState() == BluetoothAdapter.STATE_TURNING_ON) {
             return null;
         }
 
         // LE_AUDIO_BROADCAST is not associated with a service and use LE_AUDIO's Binder
-        if (profileId == BluetoothProfile.LE_AUDIO_BROADCAST) {
-            profileId = BluetoothProfile.LE_AUDIO;
+        if (id == BluetoothProfile.LE_AUDIO_BROADCAST) {
+            id = BluetoothProfile.LE_AUDIO;
         }
 
-        ProfileService profile = mStartedProfiles.get(profileId);
-        if (profile != null) {
-            return profile.getBinder();
-        } else {
-            return null;
-        }
+        return getStartedProfile(id).flatMap(ProfileService::getBinder).orElse(null);
     }
 
     boolean isMediaProfileConnected() {
@@ -3943,18 +3955,10 @@ public class AdapterService extends Service {
      * for a given {@code transport}.
      */
     public void notifyAclDisconnected(BluetoothDevice device, int transport) {
-        if (mMapService != null && mMapService.isAvailable()) {
-            mMapService.aclDisconnected(device);
-        }
-        if (mMapClientService != null && mMapClientService.isAvailable()) {
-            mMapClientService.aclDisconnected(device, transport);
-        }
-        if (mSapService != null && mSapService.isAvailable()) {
-            mSapService.aclDisconnected(device);
-        }
-        if (mPbapClientService != null && mPbapClientService.isAvailable()) {
-            mPbapClientService.aclDisconnected(device, transport);
-        }
+        getMapService().ifPresent(profile -> profile.aclDisconnected(device));
+        getMapClientService().ifPresent(profile -> profile.aclDisconnected(device, transport));
+        getSapService().ifPresent(profile -> profile.aclDisconnected(device));
+        getPbapClientService().ifPresent(profile -> profile.aclDisconnected(device, transport));
     }
 
     /**
@@ -4004,15 +4008,11 @@ public class AdapterService extends Service {
     /** Notify MAP and Pbap when a new sdp search record is found. */
     public void sendSdpSearchRecord(
             BluetoothDevice device, int status, Parcelable record, ParcelUuid uuid) {
-        if (mMapService != null && mMapService.isAvailable()) {
-            mMapService.receiveSdpSearchRecord(status, record, uuid);
-        }
-        if (mMapClientService != null && mMapClientService.isAvailable()) {
-            mMapClientService.receiveSdpSearchRecord(device, status, record, uuid);
-        }
-        if (mPbapClientService != null && mPbapClientService.isAvailable()) {
-            mPbapClientService.receiveSdpSearchRecord(device, status, record, uuid);
-        }
+        getMapService().ifPresent(profile -> profile.receiveSdpSearchRecord(status, record, uuid));
+        getMapClientService()
+                .ifPresent(profile -> profile.receiveSdpSearchRecord(device, status, record, uuid));
+        getPbapClientService()
+                .ifPresent(profile -> profile.receiveSdpSearchRecord(device, status, record, uuid));
     }
 
     /** Handle Bluetooth profiles when bond state changes with a {@link BluetoothDevice} */
@@ -4040,7 +4040,7 @@ public class AdapterService extends Service {
     }
 
     private void handleBondStateChange(int id, BluetoothDevice device, int fromState, int toState) {
-        getStartedProfile(id)
+        getStartedConnectableProfile(id)
                 .filter(ConnectableProfile::isAvailable)
                 .ifPresent(profile -> profile.handleBondStateChanged(device, fromState, toState));
     }

@@ -100,19 +100,6 @@ public class MapClientServiceTest {
     @After
     public void tearDown() throws Exception {
         mService.cleanup();
-        assertThat(MapClientService.getMapClientService()).isNull();
-    }
-
-    @Test
-    public void initialize() {
-        assertThat(MapClientService.getMapClientService()).isNotNull();
-    }
-
-    @Test
-    public void setMapClientService_withNull() {
-        MapClientService.setMapClientService(null);
-
-        assertThat(MapClientService.getMapClientService()).isNull();
     }
 
     @Test
