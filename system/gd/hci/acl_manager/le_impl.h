@@ -714,7 +714,7 @@ public:
             std::piecewise_construct,
             std::forward_as_tuple(address_with_type.GetAddress(),
                                   address_with_type.GetAddressType()),
-            std::forward_as_tuple(handler_));
+            std::forward_as_tuple(&handler_->thread()));
     uint32_t connection_timeout =
             os::GetSystemPropertyUint32(kPropertyDirectConnTimeout, kCreateConnectionTimeoutMs);
     emplace_result.first->second.Schedule(
