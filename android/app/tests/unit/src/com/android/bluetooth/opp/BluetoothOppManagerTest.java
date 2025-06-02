@@ -20,6 +20,7 @@ import static androidx.test.espresso.intent.Intents.intended;
 import static androidx.test.espresso.intent.Intents.intending;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.anyIntent;
 
+import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.opp.BluetoothOppManager.ALLOWED_INSERT_SHARE_THREAD_NUMBER;
 import static com.android.bluetooth.opp.BluetoothOppManager.OPP_PREFERENCE_FILE;
@@ -45,12 +46,16 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.bluetooth.btservice.AdapterService;
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,12 +64,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /** Test cases for {@link BluetoothOppManager}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppManagerTest {
+    @Rule public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(AdapterService.class);
+    @Mock private AdapterService mAdapterService;
 
     private Context mContext;
     private BluetoothMethodProxy mCallProxy;
 
     @Before
     public void setUp() {
+        ExtendedMockito.doReturn(mAdapterService).when(() -> AdapterService.getAdapterService());
         mContext =
                 spy(new ContextWrapper(InstrumentationRegistry.getInstrumentation().getContext()));
 
@@ -170,7 +178,7 @@ public class BluetoothOppManagerTest {
                 "text/plain", "content:///abc/xyz.txt", false, true);
         BluetoothDevice device = getTestDevice(34);
         bluetoothOppManager.startTransfer(device);
-        verify(mCallProxy, timeout(5_000).times(1))
+        verify(mCallProxy, timeout(5_000))
                 .contentResolverInsert(any(), nullable(Uri.class), nullable(ContentValues.class));
     }
 

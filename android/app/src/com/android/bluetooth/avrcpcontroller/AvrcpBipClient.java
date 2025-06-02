@@ -22,6 +22,8 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static android.bluetooth.BluetoothProfile.getConnectionStateName;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -32,6 +34,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothObexTransport;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ClientSession;
 import com.android.obex.HeaderSet;
@@ -82,6 +85,7 @@ public class AvrcpBipClient {
     private final Handler mHandler;
     private final HandlerThread mThread;
 
+    private final AdapterService mAdapterService;
     private final BluetoothDevice mDevice;
     private final int mPsm;
     private int mState = STATE_DISCONNECTED;
@@ -126,17 +130,12 @@ public class AvrcpBipClient {
      *
      * <p>{@link connectAsync()} must be called separately.
      */
-    public AvrcpBipClient(BluetoothDevice remoteDevice, int psm, Callback callback) {
-        if (remoteDevice == null) {
-            throw new NullPointerException("Remote device is null");
-        }
-        if (callback == null) {
-            throw new NullPointerException("Callback is null");
-        }
-
-        mDevice = remoteDevice;
+    public AvrcpBipClient(
+            AdapterService adapterService, BluetoothDevice device, int psm, Callback callback) {
+        mAdapterService = requireNonNull(adapterService);
+        mDevice = requireNonNull(device);
+        mCallback = requireNonNull(callback);
         mPsm = psm;
-        mCallback = callback;
 
         mThread = new HandlerThread("AvrcpBipClient");
         mThread.start();
@@ -257,7 +256,7 @@ public class AvrcpBipClient {
             mSocket = mDevice.createL2capSocket(mPsm);
             mSocket.connect();
 
-            mTransport = new BluetoothObexTransport(mSocket);
+            mTransport = new BluetoothObexTransport(mAdapterService, mSocket);
             mSession = new ClientSession(mTransport);
 
             HeaderSet headerSet = new HeaderSet();

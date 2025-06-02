@@ -579,7 +579,9 @@ class MceStateMachine extends StateMachine {
                                             + " [Connecting]: SDP record is null");
                             return NOT_HANDLED;
                         }
-                        mMasClient = new MasClient(mDevice, MceStateMachine.this, record);
+                        mMasClient =
+                                new MasClient(
+                                        mAdapterService, mDevice, MceStateMachine.this, record);
                         setDefaultMessageType(record);
                     }
                 }
