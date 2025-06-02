@@ -741,28 +741,20 @@ provider::get_a2dp_configuration(
  * received from the peer and decide whether accept
  * the it or not.
  ***/
-tA2DP_STATUS provider::parse_a2dp_configuration(btav_a2dp_codec_index_t codec_index,
+tA2DP_STATUS provider::parse_a2dp_configuration(::bluetooth::a2dp::CodecId codec_id,
                                                 const uint8_t* codec_info,
                                                 btav_a2dp_codec_config_t* codec_parameters,
                                                 std::vector<uint8_t>* vendor_specific_parameters) {
   std::vector<uint8_t> configuration;
   CodecParameters codec_parameters_aidl;
 
-  if (provider_info == nullptr) {
-    log::error("provider_info is null");
-    return A2DP_FAIL;
-  }
-
-  auto codec = provider_info->GetCodec(codec_index);
-  if (!codec.has_value()) {
-    log::error("codec index not recognized by provider");
-    return A2DP_FAIL;
-  }
+  auto aidl_codec_id = convertCodecId(codec_id);
+  log::assert_that(aidl_codec_id.has_value(), "convertCodecId failed");
 
   std::copy(codec_info, codec_info + AVDT_CODEC_SIZE, std::back_inserter(configuration));
 
   auto a2dp_status = offloading_hal_interface->ParseA2dpConfiguration(
-          codec.value()->id, configuration, &codec_parameters_aidl);
+          aidl_codec_id.value(), configuration, &codec_parameters_aidl);
 
   if (!a2dp_status.has_value()) {
     log::error("provider failed to parse configuration");

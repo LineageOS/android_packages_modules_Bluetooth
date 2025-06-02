@@ -144,13 +144,13 @@ bool is_opus_supported() {
   inc_func_call_count(__func__);
   return test::mock::audio_hal_interface_a2dp_encoding::is_opus_supported();
 }
-tA2DP_STATUS provider::parse_a2dp_configuration(btav_a2dp_codec_index_t codec_index,
+tA2DP_STATUS provider::parse_a2dp_configuration(::bluetooth::a2dp::CodecId codec_id,
                                                 const uint8_t* codec_info,
                                                 btav_a2dp_codec_config_t* codec_parameters,
                                                 std::vector<uint8_t>* vendor_specific_parameters) {
   inc_func_call_count(__func__);
   return test::mock::audio_hal_interface_a2dp_encoding::parse_a2dp_configuration(
-          codec_index, codec_info, codec_parameters, vendor_specific_parameters);
+          codec_id, codec_info, codec_parameters, vendor_specific_parameters);
 }
 size_t read(uint8_t* p_buf, uint32_t len) {
   inc_func_call_count(__func__);
