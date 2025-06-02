@@ -40,6 +40,7 @@ import static org.mockito.Mockito.when;
 import android.bluetooth.BluetoothA2dp;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothLeAudioCodecConfig;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothStatusCodes;
@@ -1578,6 +1579,32 @@ public final class DatabaseManagerTest {
         }
     }
 
+    @Test
+    public void testDatabaseMigration_124_125() throws IOException {
+        SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 124);
+
+        // insert a device to the database
+        ContentValues device = contentValuesDevice_124();
+        assertThat(db.insert("metadata", SQLiteDatabase.CONFLICT_IGNORE, device)).isNotEqualTo(-1);
+
+        // Migrate database from 124 to 125
+        db.close();
+        db =
+                testHelper.runMigrationsAndValidate(
+                        DB_NAME, 125, true, MetadataDatabase.MIGRATION_124_125);
+        Cursor cursor = db.query("SELECT * FROM metadata");
+
+        // Check the new column was added with default value
+        assertHasColumn(cursor, "le_audio_unicast_client_input_codec_config_preference_list");
+        assertHasColumn(cursor, "le_audio_unicast_client_output_codec_config_preference_list");
+        while (cursor.moveToNext()) {
+            assertColumnBlobData(
+                    cursor, "le_audio_unicast_client_input_codec_config_preference_list", null);
+            assertColumnBlobData(
+                    cursor, "le_audio_unicast_client_output_codec_config_preference_list", null);
+        }
+    }
+
     private ContentValues createContentValuesDeviceCommon() {
         ContentValues device = new ContentValues();
         device.put("address", mDevice1.getAddress());
@@ -1777,6 +1804,11 @@ public final class DatabaseManagerTest {
     private ContentValues contentValuesDevice_123() {
         ContentValues device = contentValuesDevice_122();
         device.remove("migrated");
+        return device;
+    }
+
+    private ContentValues contentValuesDevice_124() {
+        ContentValues device = contentValuesDevice_123();
         return device;
     }
 
@@ -2041,5 +2073,86 @@ public final class DatabaseManagerTest {
         mDatabaseManager.setCustomMeta(mDevice1, key, newValue);
 
         assertThat(future.get()).isEqualTo(newValue);
+    }
+
+    @Test
+    @EnableFlags({
+        Flags.FLAG_LEAUDIO_ADD_OPUS_CODEC_TYPE,
+        Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API
+    })
+    public void testSetGetLeAudioUnicastInputOutputCodecPreferenceList() {
+        Metadata data = new Metadata(mDevice1.getAddress());
+        mDatabaseManager.mMetadataCache.put(mDevice1.getAddress(), data);
+        mDatabase.insert(data);
+
+        final BluetoothLeAudioCodecConfig codec1 =
+                new BluetoothLeAudioCodecConfig.Builder()
+                        .setCodecType(BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3)
+                        .setCodecPriority(BluetoothLeAudioCodecConfig.CODEC_PRIORITY_DEFAULT)
+                        .setSampleRate(BluetoothLeAudioCodecConfig.SAMPLE_RATE_48000)
+                        .setBitsPerSample(BluetoothLeAudioCodecConfig.BITS_PER_SAMPLE_16)
+                        .setChannelCount(BluetoothLeAudioCodecConfig.CHANNEL_COUNT_2)
+                        .setFrameDuration(BluetoothLeAudioCodecConfig.FRAME_DURATION_7500)
+                        .setOctetsPerFrame(80)
+                        .setMinOctetsPerFrame(80)
+                        .setMaxOctetsPerFrame(80)
+                        .build();
+        final BluetoothLeAudioCodecConfig codec2 =
+                new BluetoothLeAudioCodecConfig.Builder()
+                        .setCodecType(BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_OPUS)
+                        .setCodecPriority(BluetoothLeAudioCodecConfig.CODEC_PRIORITY_DEFAULT + 1)
+                        .setSampleRate(BluetoothLeAudioCodecConfig.SAMPLE_RATE_48000)
+                        .setBitsPerSample(BluetoothLeAudioCodecConfig.BITS_PER_SAMPLE_24)
+                        .setChannelCount(BluetoothLeAudioCodecConfig.CHANNEL_COUNT_2)
+                        .setFrameDuration(BluetoothLeAudioCodecConfig.FRAME_DURATION_10000)
+                        .setOctetsPerFrame(90)
+                        .setMinOctetsPerFrame(90)
+                        .setMaxOctetsPerFrame(100)
+                        .build();
+        final BluetoothLeAudioCodecConfig codec3 =
+                new BluetoothLeAudioCodecConfig.Builder()
+                        .setCodecType(BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_OPUS_HI_RES)
+                        .setCodecPriority(BluetoothLeAudioCodecConfig.CODEC_PRIORITY_HIGHEST)
+                        .setSampleRate(BluetoothLeAudioCodecConfig.SAMPLE_RATE_96000)
+                        .setBitsPerSample(BluetoothLeAudioCodecConfig.BITS_PER_SAMPLE_24)
+                        .setChannelCount(BluetoothLeAudioCodecConfig.CHANNEL_COUNT_2)
+                        .setFrameDuration(BluetoothLeAudioCodecConfig.FRAME_DURATION_20000)
+                        .setOctetsPerFrame(100)
+                        .setMinOctetsPerFrame(90)
+                        .setMaxOctetsPerFrame(120)
+                        .build();
+
+        // Store the input codec preferences
+        List<BluetoothLeAudioCodecConfig> inputCodecPreferenceList = List.of(codec1, codec2);
+        assertThat(
+                        mDatabaseManager.setLeAudioUnicastInputCodecPreferenceList(
+                                mDevice1, inputCodecPreferenceList))
+                .isEqualTo(BluetoothStatusCodes.SUCCESS);
+
+        // Store the output codec preferences
+        List<BluetoothLeAudioCodecConfig> outputCodecPreferenceList =
+                List.of(codec1, codec2, codec3);
+        assertThat(
+                        mDatabaseManager.setLeAudioUnicastOutputCodecPreferenceList(
+                                mDevice1, outputCodecPreferenceList))
+                .isEqualTo(BluetoothStatusCodes.SUCCESS);
+
+        // Wait for database update & verify the current state
+        TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
+        assertThat(mDatabaseManager.getLeAudioUnicastInputCodecPreferenceList(mDevice1))
+                .isEqualTo(inputCodecPreferenceList);
+        assertThat(mDatabaseManager.getLeAudioUnicastOutputCodecPreferenceList(mDevice1))
+                .isEqualTo(outputCodecPreferenceList);
+
+        // Check number of metadata in the database
+        List<Metadata> list = mDatabase.load();
+        assertThat(list).hasSize(1);
+
+        // Check whether the device is in database & verify the input/output codec preferences
+        restartDatabaseManagerHelper();
+        assertThat(mDatabaseManager.getLeAudioUnicastInputCodecPreferenceList(mDevice1))
+                .isEqualTo(inputCodecPreferenceList);
+        assertThat(mDatabaseManager.getLeAudioUnicastOutputCodecPreferenceList(mDevice1))
+                .isEqualTo(outputCodecPreferenceList);
     }
 }

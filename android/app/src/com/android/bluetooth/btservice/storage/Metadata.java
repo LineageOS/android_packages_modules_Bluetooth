@@ -77,6 +77,16 @@ public class Metadata {
     /** This is used to indicate the number of times the bond has been lost */
     public int key_missing_count;
 
+    /** This is used for the LE Audio Unicast input codec preference */
+    @Embedded(prefix = "le_audio_unicast_client_input_codec_config_preference_")
+    @NonNull
+    LeAudioUnicastClientCodecPreferenceEntity leAudioUnicastClientInputCodecConfigPreference;
+
+    /** This is used for the LE Audio Unicast output codec preference */
+    @Embedded(prefix = "le_audio_unicast_client_output_codec_config_preference_")
+    @NonNull
+    LeAudioUnicastClientCodecPreferenceEntity leAudioUnicastClientOutputCodecConfigPreference;
+
     Metadata(String address) {
         this(address, false, false);
     }
@@ -96,6 +106,10 @@ public class Metadata {
         active_audio_device_policy = BluetoothDevice.ACTIVE_AUDIO_DEVICE_POLICY_DEFAULT;
         is_preferred_microphone_for_calls = true;
         key_missing_count = 0;
+        leAudioUnicastClientInputCodecConfigPreference =
+                new LeAudioUnicastClientCodecPreferenceEntity();
+        leAudioUnicastClientOutputCodecConfigPreference =
+                new LeAudioUnicastClientCodecPreferenceEntity();
     }
 
     static final class Builder {
@@ -364,6 +378,10 @@ public class Metadata {
                 .append(audioPolicyMetadata)
                 .append("), is_preferred_microphone_for_calls(")
                 .append(is_preferred_microphone_for_calls)
+                .append("), leAudioUnicastClientInputCodecConfigPreference(")
+                .append(leAudioUnicastClientInputCodecConfigPreference)
+                .append("), leAudioUnicastClientOutputCodecConfigPreference(")
+                .append(leAudioUnicastClientOutputCodecConfigPreference)
                 .append(")}");
 
         return builder.toString();

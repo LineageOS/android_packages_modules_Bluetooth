@@ -152,6 +152,7 @@ android_library {
         ":statslog-bt-restricted-java-gen",
         ":system-messages-proto-src",
         "proto/keystore.proto",
+        "proto/le_audio_storage.proto",
         "src/**/*.java",
         "src/**/*.kt",
     ],
