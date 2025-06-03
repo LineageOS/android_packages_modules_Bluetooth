@@ -83,7 +83,6 @@ import android.bluetooth.IBluetoothQualityReportReadyCallback;
 import android.bluetooth.IncomingRfcommSocketInfo;
 import android.bluetooth.OobData;
 import android.bluetooth.UidTraffic;
-import android.bluetooth.rfcomm.BluetoothRfcommProtoEnums;
 import android.companion.CompanionDeviceManager;
 import android.content.AttributionSource;
 import android.content.Context;
@@ -1500,38 +1499,6 @@ public class AdapterService extends Service {
                 appUid,
                 socketCreationLatencyMillis,
                 socketConnectionLatencyMillis);
-    }
-
-    /**
-     * Log RFCOMM Connection Metrics
-     *
-     * @param device Bluetooth device
-     * @param isSecured if secured API is called
-     * @param resultCode transaction result of the connection
-     * @param isSerialPort true if service class UUID is 0x1101
-     */
-    public void logRfcommConnectionAttempt(
-            BluetoothDevice device,
-            boolean isSecured,
-            int resultCode,
-            long socketCreationTimeNanos,
-            boolean isSerialPort,
-            int appUid) {
-        int metricId = getMetricId(device);
-        long currentTime = System.nanoTime();
-        long endToEndLatencyNanos = currentTime - socketCreationTimeNanos;
-        byte[] remoteDeviceInfoBytes = MetricsLogger.getInstance().getRemoteDeviceInfoProto(device);
-        BluetoothStatsLog.write(
-                BluetoothStatsLog.BLUETOOTH_RFCOMM_CONNECTION_ATTEMPTED,
-                metricId,
-                endToEndLatencyNanos,
-                isSecured
-                        ? BluetoothRfcommProtoEnums.SOCKET_SECURITY_SECURE
-                        : BluetoothRfcommProtoEnums.SOCKET_SECURITY_INSECURE,
-                resultCode,
-                isSerialPort,
-                appUid,
-                remoteDeviceInfoBytes);
     }
 
     public boolean sdpSearch(BluetoothDevice device, ParcelUuid uuid) {

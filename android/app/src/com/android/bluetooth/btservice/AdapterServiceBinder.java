@@ -1137,26 +1137,6 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
-    public void logRfcommConnectionAttempt(
-            BluetoothDevice device,
-            boolean isSecured,
-            int resultCode,
-            long socketCreationTimeNanos,
-            boolean isSerialPort) {
-        AdapterService service = getService();
-        if (service == null) {
-            return;
-        }
-        service.logRfcommConnectionAttempt(
-                device,
-                isSecured,
-                resultCode,
-                socketCreationTimeNanos,
-                isSerialPort,
-                Binder.getCallingUid());
-    }
-
-    @Override
     public boolean sdpSearch(BluetoothDevice device, ParcelUuid uuid, AttributionSource source) {
         AdapterService service = getService();
         if (service == null
