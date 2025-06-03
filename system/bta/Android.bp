@@ -1441,6 +1441,79 @@ cc_test {
 }
 
 cc_test {
+    name: "bluetooth_hd_test",
+    test_suites: ["general-tests"],
+    defaults: [
+        "fluoride_bta_defaults",
+        "mts_defaults",
+    ],
+    host_supported: true,
+    isolated: false,
+    include_dirs: [
+        "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/bta/include",
+        "packages/modules/Bluetooth/system/bta/test/common",
+        "packages/modules/Bluetooth/system/stack/include",
+    ],
+    srcs: [
+        ":BtaDmSources",
+        ":TestCommonMainHandler",
+        ":TestCommonMockFunctions",
+        ":TestMockBtaGatt",
+        ":TestMockBtaLeAudio",
+        ":TestMockBtaSdp",
+        ":TestMockBtaSys",
+        ":TestMockBtif",
+        ":TestMockDevice",
+        ":TestMockMainShim",
+        ":TestMockMainShimEntry",
+        ":TestMockOsi",
+        ":TestMockStack",
+        "hd/bta_hd_act.cc",
+        "hd/bta_hd_api.cc",
+        "hd/bta_hd_main.cc",
+        "test/bta_hd_test.cc",
+    ],
+    shared_libs: [
+        "libaconfig_storage_read_api_cc",
+        "libbase",
+        "libcrypto",
+        "liblog",
+        "server_configurable_flags",
+    ],
+    static_libs: [
+        "bluetooth_flags_c_lib",
+        "libbase",
+        "libbluetooth-types",
+        "libbluetooth_core_rs_bridge",
+        "libbluetooth_crypto_toolbox",
+        "libbluetooth_gd",
+        "libbluetooth_hci_pdl",
+        "libbluetooth_log",
+        "libbluetooth_metrics_mock",
+        "libbt-common",
+
+        "libchrome",
+        "libcom.android.sysprop.bluetooth.wrapped",
+        "libevent",
+        "libgmock",
+        "liblog",
+        "libosi",
+    ],
+    header_libs: ["libbluetooth_headers"],
+    sanitize: {
+        cfi: true,
+        scs: true,
+        address: true,
+        all_undefined: true,
+        integer_overflow: true,
+        diag: {
+            undefined: true,
+        },
+    },
+}
+
+cc_test {
     name: "bluetooth_hh_test",
     test_suites: ["general-tests"],
     defaults: [
