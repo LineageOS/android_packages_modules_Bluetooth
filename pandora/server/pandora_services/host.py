@@ -757,6 +757,8 @@ class HostService(HostServicer):
                 AdvertisingData.MANUFACTURER_SPECIFIC_DATA,
                 dt.manufacturer_specific_data,
             ))
+        if rsi := dt.resolvable_set_identifier:
+            ad_structures.append((AdvertisingData.RESOLVABLE_SET_IDENTIFIER, rsi))
 
         flag_map = {
             NOT_DISCOVERABLE: 0x00,
