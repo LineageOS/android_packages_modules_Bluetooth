@@ -2669,8 +2669,7 @@
     },
     {
       "flags": [
-        "leaudio_allow_leaudio_only_devices",
-        "enable_hap_by_default"
+        "leaudio_allow_leaudio_only_devices"
       ],
       "tests": [
         "HAP"

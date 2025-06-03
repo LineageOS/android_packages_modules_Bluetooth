@@ -353,11 +353,6 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
 
     // return true if device support Hearing Access Service and it has not been manually disabled
     private boolean shouldEnableHapByDefault(BluetoothDevice device, ParcelUuid[] uuids) {
-        if (!Flags.enableHapByDefault()) {
-            Log.i(TAG, "shouldEnableHapByDefault: Flag is disabled");
-            return false;
-        }
-
         final var hap = getHapClientService();
         if (hap.isEmpty()) {
             Log.e(TAG, "shouldEnableHapByDefault: No HapClientService");
