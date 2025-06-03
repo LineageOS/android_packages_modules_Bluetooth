@@ -109,7 +109,7 @@ public class AvrcpControllerStateMachineTest {
 
     @Before
     public void setUp() throws Exception {
-        mBrowseTree = new BrowseTree(null);
+        mBrowseTree = new BrowseTree(mAdapterService, null);
 
         doReturn(STATE_DISCONNECTED).when(mCoverArtManager).getState(any());
 

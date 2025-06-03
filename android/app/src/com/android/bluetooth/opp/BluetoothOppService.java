@@ -1345,7 +1345,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
             Log.d(TAG, " onConnect BluetoothSocket :" + socket + " rejected");
             return false;
         }
-        BluetoothObexTransport transport = new BluetoothObexTransport(socket);
+        BluetoothObexTransport transport = new BluetoothObexTransport(mAdapterService, socket);
         Message msg = mHandler.obtainMessage(MSG_INCOMING_BTOPP_CONNECTION);
         msg.obj = transport;
         msg.sendToTarget();

@@ -678,24 +678,6 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
     }
 
     /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    @Override
-    public int getConnectionPolicy(BluetoothDevice device) {
-        if (device == null) {
-            throw new IllegalArgumentException("Null device");
-        }
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
-    }
-
-    /**
      * Disconnects pbap server profile with device
      *
      * @param device is the remote bluetooth device

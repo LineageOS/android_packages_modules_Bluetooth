@@ -435,7 +435,7 @@ public final class BluetoothQualityReport implements Parcelable {
      * @hide
      */
     @SystemApi
-    public @Nullable BluetoothClass getBluetoothClass() {
+    public @NonNull BluetoothClass getBluetoothClass() {
         return mBluetoothClass;
     }
 

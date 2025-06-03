@@ -52,6 +52,7 @@ import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -263,7 +264,7 @@ public class BluetoothOppManager {
         if (device != null) {
             deviceName = device.getAlias();
             if (deviceName == null) {
-                deviceName = BluetoothOppPreference.getInstance(mContext).getName(device);
+                deviceName = device.getName();
             }
         }
 
@@ -377,10 +378,11 @@ public class BluetoothOppManager {
                         1);
                 return;
             }
+            final var adapterService = AdapterService.getAdapterService();
             if (mIsMultiple) {
-                insertMultipleShare();
+                insertMultipleShare(adapterService);
             } else {
-                insertSingleShare();
+                insertSingleShare(adapterService);
             }
             synchronized (BluetoothOppManager.this) {
                 mInsertShareThreadNum--;
@@ -388,8 +390,7 @@ public class BluetoothOppManager {
         }
 
         /** Insert multiple sending sessions to db, only used by Opp application. */
-        @SuppressLint("AndroidFrameworkRequiresPermission") // re-entrant call
-        private void insertMultipleShare() {
+        private void insertMultipleShare(AdapterService adapterService) {
             int count = mUris.size();
             Long ts = System.currentTimeMillis();
             for (int i = 0; i < count; i++) {
@@ -405,7 +406,9 @@ public class BluetoothOppManager {
                 }
 
                 values.put(BluetoothShare.MIMETYPE, contentType);
-                values.put(BluetoothShare.DESTINATION, Utils.getBrEdrAddress(mRemoteDevice));
+                values.put(
+                        BluetoothShare.DESTINATION,
+                        Utils.getBrEdrAddress(mRemoteDevice, adapterService));
                 values.put(BluetoothShare.TIMESTAMP, ts);
                 if (mIsHandoverInitiated) {
                     values.put(
@@ -428,12 +431,13 @@ public class BluetoothOppManager {
         }
 
         /** Insert single sending session to db, only used by Opp application. */
-        @SuppressLint("AndroidFrameworkRequiresPermission") // re-entrant call
-        private void insertSingleShare() {
+        private void insertSingleShare(AdapterService adapterService) {
             ContentValues values = new ContentValues();
             values.put(BluetoothShare.URI, mUri);
             values.put(BluetoothShare.MIMETYPE, mTypeOfSingleFile);
-            values.put(BluetoothShare.DESTINATION, Utils.getBrEdrAddress(mRemoteDevice));
+            values.put(
+                    BluetoothShare.DESTINATION,
+                    Utils.getBrEdrAddress(mRemoteDevice, adapterService));
             if (mIsHandoverInitiated) {
                 values.put(
                         BluetoothShare.USER_CONFIRMATION,

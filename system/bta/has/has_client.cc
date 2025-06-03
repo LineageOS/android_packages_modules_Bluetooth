@@ -969,9 +969,7 @@ public:
   }
 
   void OnGroupOpCoordinatorTimeout(void* /*p*/) {
-    log::error(
-            "Coordinated operation timeout:  not all the devices notified their "
-            "state change on time.");
+    log::error("Not all the devices notified their state change on time.");
 
     /* Clear pending group operations */
     pending_group_operation_timeouts_.clear();
@@ -1308,65 +1306,67 @@ private:
       device.ctp_notifications_.pop_front();
     }
 
-    if (device.isGattServiceValid()) {
-      /* Update preset values in the storage */
-      std::vector<uint8_t> presets_bin;
-      if (device.SerializePresets(presets_bin)) {
-        btif_storage_set_leaudio_has_presets(device.addr, presets_bin);
+    if (!device.isGattServiceValid()) {
+      return;
+    }
+    /* Update preset values in the storage */
+    std::vector<uint8_t> presets_bin;
+    if (device.SerializePresets(presets_bin)) {
+      btif_storage_set_leaudio_has_presets(device.addr, presets_bin);
+    }
+
+    /* Check for the matching coordinated group op. to use group callbacks */
+    for (auto it = pending_group_operation_timeouts_.rbegin();
+         it != pending_group_operation_timeouts_.rend(); ++it) {
+      auto& group_op_coordinator = it->second;
+
+      /* Here we interested only in valid preset name changes */
+      if (!((group_op_coordinator.operation.opcode == PresetCtpOpcode::WRITE_PRESET_NAME) &&
+            group_op_coordinator.operation.name.has_value())) {
+        continue;
       }
 
-      /* Check for the matching coordinated group op. to use group callbacks */
-      for (auto it = pending_group_operation_timeouts_.rbegin();
-           it != pending_group_operation_timeouts_.rend(); ++it) {
-        auto& group_op_coordinator = it->second;
-
-        /* Here we interested only in valid preset name changes */
-        if (!((group_op_coordinator.operation.opcode == PresetCtpOpcode::WRITE_PRESET_NAME) &&
-              group_op_coordinator.operation.name.has_value())) {
-          continue;
-        }
-
-        /* Match preset update results with the triggering operation */
-        auto renamed_preset_info = std::find_if(
-                updated_infos.begin(), updated_infos.end(),
-                [&group_op_coordinator](const auto& info) {
-                  return group_op_coordinator.operation.name.value() == info.preset_name;
-                });
-        if (renamed_preset_info == updated_infos.end()) {
-          continue;
-        }
-
-        if (group_op_coordinator.SetCompleted(device.addr)) {
-          group_op_coordinator.preset_info_verification_list.push_back(*renamed_preset_info);
-
-          /* Call the proper group operation completion callback */
-          if (group_op_coordinator.IsFullyCompleted()) {
-            callbacks_->OnPresetInfo(group_op_coordinator.operation.GetGroupId(),
-                                     PresetInfoReason::PRESET_INFO_UPDATE, {*renamed_preset_info});
-            pending_group_operation_timeouts_.erase(it->first);
-          }
-
-          /* Erase it from the 'updated_infos' since later we'll be sending
-           * this as a group callback when the other device completes the
-           * coordinated group name change.
-           *
-           * WARNING: There might an issue with callbacks call reordering due to
-           *  some of them being kept for group callbacks called later, when all
-           *  the grouped devices complete the coordinated group rename
-           *  operation. In most cases this should not be a major problem.
-           */
-          updated_infos.erase(renamed_preset_info);
-          break;
-        }
+      /* Match preset update results with the triggering operation */
+      auto renamed_preset_info =
+              std::find_if(updated_infos.begin(), updated_infos.end(),
+                           [&group_op_coordinator](const auto& info) {
+                             return group_op_coordinator.operation.name.value() == info.preset_name;
+                           });
+      if (renamed_preset_info == updated_infos.end()) {
+        continue;
       }
 
-      if (!updated_infos.empty()) {
-        callbacks_->OnPresetInfo(device.addr, PresetInfoReason::PRESET_INFO_UPDATE, updated_infos);
+      if (!group_op_coordinator.SetCompleted(device.addr)) {
+        continue;
+      }
+      group_op_coordinator.preset_info_verification_list.push_back(*renamed_preset_info);
+
+      /* Call the proper group operation completion callback */
+      if (group_op_coordinator.IsFullyCompleted()) {
+        callbacks_->OnPresetInfo(group_op_coordinator.operation.GetGroupId(),
+                                 PresetInfoReason::PRESET_INFO_UPDATE, {*renamed_preset_info});
+        pending_group_operation_timeouts_.erase(it->first);
       }
 
-      if (!deleted_infos.empty()) {
-        callbacks_->OnPresetInfo(device.addr, PresetInfoReason::PRESET_DELETED, deleted_infos);
-      }
+      /* Erase it from the 'updated_infos' since later we'll be sending
+       * this as a group callback when the other device completes the
+       * coordinated group name change.
+       *
+       * WARNING: There might an issue with callbacks call reordering due to
+       *  some of them being kept for group callbacks called later, when all
+       *  the grouped devices complete the coordinated group rename
+       *  operation. In most cases this should not be a major problem.
+       */
+      updated_infos.erase(renamed_preset_info);
+      break;
+    }
+
+    if (!updated_infos.empty()) {
+      callbacks_->OnPresetInfo(device.addr, PresetInfoReason::PRESET_INFO_UPDATE, updated_infos);
+    }
+
+    if (!deleted_infos.empty()) {
+      callbacks_->OnPresetInfo(device.addr, PresetInfoReason::PRESET_DELETED, deleted_infos);
     }
   }
 
@@ -1580,45 +1580,41 @@ private:
     /* If svc not marked valid, this might be the last validation step. */
     MarkDeviceValidIfInInitialDiscovery(*device);
 
-    if (device->isGattServiceValid()) {
-      if (pending_group_operation_timeouts_.empty()) {
-        callbacks_->OnActivePresetSelected(device->addr, device->currently_active_preset);
-      } else {
-        for (auto it = pending_group_operation_timeouts_.rbegin();
-             it != pending_group_operation_timeouts_.rend(); ++it) {
-          auto& group_op_coordinator = it->second;
+    if (!device->isGattServiceValid()) {
+      return;
+    }
+    if (pending_group_operation_timeouts_.empty()) {
+      callbacks_->OnActivePresetSelected(device->addr, device->currently_active_preset);
+      return;
+    }
+    for (auto it = pending_group_operation_timeouts_.rbegin();
+         it != pending_group_operation_timeouts_.rend(); ++it) {
+      auto& group_op_coordinator = it->second;
 
-          bool matches = false;
-          switch (group_op_coordinator.operation.opcode) {
-            case PresetCtpOpcode::SET_ACTIVE_PRESET:
-              [[fallthrough]];
-            case PresetCtpOpcode::SET_NEXT_PRESET:
-              [[fallthrough]];
-            case PresetCtpOpcode::SET_PREV_PRESET:
-              [[fallthrough]];
-            case PresetCtpOpcode::SET_ACTIVE_PRESET_SYNC:
-              [[fallthrough]];
-            case PresetCtpOpcode::SET_NEXT_PRESET_SYNC:
-              [[fallthrough]];
-            case PresetCtpOpcode::SET_PREV_PRESET_SYNC: {
-              if (group_op_coordinator.SetCompleted(device->addr)) {
-                matches = true;
-                break;
-              }
-            } break;
-            default:
-              /* Ignore */
-              break;
-          }
-          if (group_op_coordinator.IsFullyCompleted()) {
-            callbacks_->OnActivePresetSelected(group_op_coordinator.operation.GetGroupId(),
-                                               device->currently_active_preset);
-            pending_group_operation_timeouts_.erase(it->first);
-          }
-          if (matches) {
+      bool matches = false;
+      switch (group_op_coordinator.operation.opcode) {
+        case PresetCtpOpcode::SET_ACTIVE_PRESET:
+        case PresetCtpOpcode::SET_NEXT_PRESET:
+        case PresetCtpOpcode::SET_PREV_PRESET:
+        case PresetCtpOpcode::SET_ACTIVE_PRESET_SYNC:
+        case PresetCtpOpcode::SET_NEXT_PRESET_SYNC:
+        case PresetCtpOpcode::SET_PREV_PRESET_SYNC: {
+          if (group_op_coordinator.SetCompleted(device->addr)) {
+            matches = true;
             break;
           }
-        }
+        } break;
+        default:
+          /* Ignore */
+          break;
+      }
+      if (group_op_coordinator.IsFullyCompleted()) {
+        callbacks_->OnActivePresetSelected(group_op_coordinator.operation.GetGroupId(),
+                                           device->currently_active_preset);
+        pending_group_operation_timeouts_.erase(it->first);
+      }
+      if (matches) {
+        break;
       }
     }
   }
@@ -2166,8 +2162,7 @@ private:
   std::list<HasDevice> devices_;
   std::list<HasCtpOp> pending_operations_;
 
-  typedef std::map<decltype(HasCtpOp::op_id), HasCtpGroupOpCoordinator> has_operation_timeouts_t;
-  has_operation_timeouts_t pending_group_operation_timeouts_;
+  std::map<decltype(HasCtpOp::op_id), HasCtpGroupOpCoordinator> pending_group_operation_timeouts_;
 };
 
 }  // namespace

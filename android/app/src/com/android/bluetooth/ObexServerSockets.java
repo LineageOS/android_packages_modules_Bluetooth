@@ -51,21 +51,22 @@ import java.io.IOException;
 public class ObexServerSockets {
     private static final String TAG = ObexServerSockets.class.getSimpleName();
 
-    private final BluetoothAdapter mAdapter;
+    private final AdapterService mAdapterService;
     private final IObexConnectionHandler mConHandler;
     /* The wrapped sockets */
     private final BluetoothServerSocket mRfcommSocket;
     private final BluetoothServerSocket mL2capSocket;
+
     /* Handles to the accept threads. Needed for shutdown. */
     private SocketAcceptThread mRfcommThread;
     private SocketAcceptThread mL2capThread;
 
     private ObexServerSockets(
-            BluetoothAdapter adapter,
+            AdapterService adapterService,
             IObexConnectionHandler conHandler,
             BluetoothServerSocket rfcommSocket,
             BluetoothServerSocket l2capSocket) {
-        mAdapter = adapter;
+        mAdapterService = adapterService;
         mConHandler = conHandler;
         mRfcommSocket = rfcommSocket;
         mL2capSocket = l2capSocket;
@@ -183,8 +184,8 @@ public class ObexServerSockets {
 
         if (initSocketOK) {
             Log.d(TAG, "Succeed to create listening sockets ");
-            final ObexServerSockets sockets =
-                    new ObexServerSockets(adapter, validator, rfcommSocket, l2capSocket);
+            ObexServerSockets sockets =
+                    new ObexServerSockets(adapterService, validator, rfcommSocket, l2capSocket);
             sockets.startAccept();
             return sockets;
         } else {
@@ -243,7 +244,7 @@ public class ObexServerSockets {
     /** Signal to the {@link IObexConnectionHandler} that an error have occurred. */
     private synchronized void onAcceptFailed() {
         shutdown(false);
-        if (mAdapter.getState() == BluetoothAdapter.STATE_ON) {
+        if (mAdapterService.getState() == BluetoothAdapter.STATE_ON) {
             Log.d(TAG, "onAcceptFailed() calling shutdown...");
             mConHandler.onAcceptFailed();
         }
@@ -346,11 +347,10 @@ public class ObexServerSockets {
 
                         if (!isValid) {
                             /* Close connection if we already have a connection with another device
-                             * by responding to the OBEX connect request.
-                             */
+                             * by responding to the OBEX connect request. */
                             Log.i(TAG, "RemoteDevice is invalid - creating ObexRejectServer.");
                             BluetoothObexTransport obexTrans =
-                                    new BluetoothObexTransport(connSocket);
+                                    new BluetoothObexTransport(mAdapterService, connSocket);
                             // Create and detach a self destructing ServerSession to respond to any
                             // incoming OBEX signals.
                             new ServerSession(

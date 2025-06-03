@@ -34,6 +34,7 @@ import androidx.test.rule.ServiceTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.After;
 import org.junit.Before;
@@ -53,6 +54,7 @@ public class AvrcpBipClientTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AdapterService mAdapterService;
     @Mock private AvrcpControllerService mService;
     @Mock private AvrcpCoverArtManager.Callback mCallback;
 
@@ -67,9 +69,14 @@ public class AvrcpBipClientTest {
                 TestUtils.prepareIntentToStartBluetoothBrowserMediaService();
         mBluetoothBrowserMediaServiceTestRule.startService(bluetoothBrowserMediaServiceStartIntent);
 
-        mArtManager = new AvrcpCoverArtManager(mService, mCallback);
+        mArtManager = new AvrcpCoverArtManager(mAdapterService, mService, mCallback);
 
-        mClient = new AvrcpBipClient(mDevice, TEST_PSM, mArtManager.new BipClientCallback(mDevice));
+        mClient =
+                new AvrcpBipClient(
+                        mAdapterService,
+                        mDevice,
+                        TEST_PSM,
+                        mArtManager.new BipClientCallback(mDevice));
     }
 
     @After
@@ -88,12 +95,17 @@ public class AvrcpBipClientTest {
                 NullPointerException.class,
                 () ->
                         new AvrcpBipClient(
-                                null, TEST_PSM, mArtManager.new BipClientCallback(mDevice)));
+                                mAdapterService,
+                                null,
+                                TEST_PSM,
+                                mArtManager.new BipClientCallback(mDevice)));
     }
 
     @Test
     public void constructor_withNullCallback() {
-        assertThrows(NullPointerException.class, () -> new AvrcpBipClient(mDevice, TEST_PSM, null));
+        assertThrows(
+                NullPointerException.class,
+                () -> new AvrcpBipClient(mAdapterService, mDevice, TEST_PSM, null));
     }
 
     @Test

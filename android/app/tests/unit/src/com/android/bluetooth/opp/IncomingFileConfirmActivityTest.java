@@ -53,7 +53,9 @@ import com.android.bluetooth.TestUtils;
 import com.google.common.base.Objects;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -80,13 +82,24 @@ public class IncomingFileConfirmActivityTest {
 
     @Mock Cursor mCursor;
 
-    private static final int TIMEOUT_MS = 3_000;
-
-    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+    //     private static final int TIMEOUT_MS = 3_000;
+    private static final Context sContext =
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     private List<BluetoothOppTestUtils.CursorMockData> mCursorMockDataList;
-
     private Intent mIntent;
+
+    @BeforeClass
+    public static void setUpClass() {
+        BluetoothOppTestUtils.enableActivity(
+                BluetoothOppIncomingFileConfirmActivity.class, true, sContext);
+    }
+
+    @AfterClass
+    public static void tearDownClass() {
+        BluetoothOppTestUtils.enableActivity(
+                BluetoothOppIncomingFileConfirmActivity.class, false, sContext);
+    }
 
     @Before
     public void setUp() throws Exception {
@@ -96,7 +109,7 @@ public class IncomingFileConfirmActivityTest {
         Uri dataUrl = Uri.parse("content://com.android.bluetooth.opp.test/random");
 
         mIntent = new Intent();
-        mIntent.setClass(mContext, BluetoothOppIncomingFileConfirmActivity.class);
+        mIntent.setClass(sContext, BluetoothOppIncomingFileConfirmActivity.class);
         mIntent.setData(dataUrl);
 
         doReturn(mCursor)
@@ -143,9 +156,6 @@ public class IncomingFileConfirmActivityTest {
                                         BluetoothShare.USER_CONFIRMATION,
                                         11,
                                         BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED)));
-
-        BluetoothOppTestUtils.enableActivity(
-                BluetoothOppIncomingFileConfirmActivity.class, true, mContext);
         TestUtils.setUpUiTest();
     }
 
@@ -154,103 +164,96 @@ public class IncomingFileConfirmActivityTest {
         TestUtils.tearDownUiTest();
 
         BluetoothMethodProxy.setInstanceForTesting(null);
-        BluetoothOppTestUtils.enableActivity(
-                BluetoothOppIncomingFileConfirmActivity.class, false, mContext);
     }
 
     @Test
-    public void onCreate_clickConfirmCancel_saveUSER_CONFIRMATION_DENIED()
-            throws InterruptedException {
+    public void onCreate_clickConfirmCancel_saveUSER_CONFIRMATION_DENIED() {
         BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
 
-        ActivityScenario<BluetoothOppIncomingFileConfirmActivity> activityScenario =
-                ActivityScenario.launch(mIntent);
-        activityScenario.onActivity(activity -> {});
+        try (ActivityScenario<BluetoothOppIncomingFileConfirmActivity> activityScenario =
+                ActivityScenario.launch(mIntent)) {
+            activityScenario.onActivity(activity -> {});
+            onView(withText(sContext.getText(R.string.incoming_file_confirm_cancel).toString()))
+                    .inRoot(isDialog())
+                    .perform(ViewActions.scrollTo());
+            onView(withText(sContext.getText(R.string.incoming_file_confirm_cancel).toString()))
+                    .inRoot(isDialog())
+                    .check(matches(isDisplayed()))
+                    .perform(click());
 
-        // To work around (possibly) ActivityScenario's bug.
-        // The dialog button is clicked (no error throw) but onClick() is not triggered.
-        // It works normally if sleep for a few seconds
-        Thread.sleep(TIMEOUT_MS);
-        onView(withText(mContext.getText(R.string.incoming_file_confirm_cancel).toString()))
-                .inRoot(isDialog())
-                .perform(ViewActions.scrollTo());
-        onView(withText(mContext.getText(R.string.incoming_file_confirm_cancel).toString()))
-                .inRoot(isDialog())
-                .check(matches(isDisplayed()))
-                .perform(click());
-
-        verify(mBluetoothMethodProxy)
-                .contentResolverUpdate(
-                        any(),
-                        any(),
-                        argThat(
-                                argument ->
-                                        Objects.equal(
-                                                BluetoothShare.USER_CONFIRMATION_DENIED,
-                                                argument.get(BluetoothShare.USER_CONFIRMATION))),
-                        nullable(String.class),
-                        nullable(String[].class));
+            verify(mBluetoothMethodProxy)
+                    .contentResolverUpdate(
+                            any(),
+                            any(),
+                            argThat(
+                                    argument ->
+                                            Objects.equal(
+                                                    BluetoothShare.USER_CONFIRMATION_DENIED,
+                                                    argument.get(
+                                                            BluetoothShare.USER_CONFIRMATION))),
+                            nullable(String.class),
+                            nullable(String[].class));
+        }
     }
 
     @Test
-    public void onCreate_clickConfirmOk_saveUSER_CONFIRMATION_CONFIRMED()
-            throws InterruptedException {
+    public void onCreate_clickConfirmOk_saveUSER_CONFIRMATION_CONFIRMED() {
         BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
 
-        ActivityScenario.launch(mIntent);
+        try (ActivityScenario<BluetoothOppIncomingFileConfirmActivity> activityScenario =
+                ActivityScenario.launch(mIntent)) {
+            onView(withText(sContext.getText(R.string.incoming_file_confirm_ok).toString()))
+                    .inRoot(isDialog())
+                    .perform(ViewActions.scrollTo());
+            onView(withText(sContext.getText(R.string.incoming_file_confirm_ok).toString()))
+                    .inRoot(isDialog())
+                    .check(matches(isDisplayed()))
+                    .perform(click());
 
-        // To work around (possibly) ActivityScenario's bug.
-        // The dialog button is clicked (no error throw) but onClick() is not triggered.
-        // It works normally if sleep for a few seconds
-        Thread.sleep(TIMEOUT_MS);
-        onView(withText(mContext.getText(R.string.incoming_file_confirm_ok).toString()))
-                .inRoot(isDialog())
-                .perform(ViewActions.scrollTo());
-        onView(withText(mContext.getText(R.string.incoming_file_confirm_ok).toString()))
-                .inRoot(isDialog())
-                .check(matches(isDisplayed()))
-                .perform(click());
-
-        verify(mBluetoothMethodProxy)
-                .contentResolverUpdate(
-                        any(),
-                        any(),
-                        argThat(
-                                argument ->
-                                        Objects.equal(
-                                                BluetoothShare.USER_CONFIRMATION_CONFIRMED,
-                                                argument.get(BluetoothShare.USER_CONFIRMATION))),
-                        nullable(String.class),
-                        nullable(String[].class));
+            verify(mBluetoothMethodProxy)
+                    .contentResolverUpdate(
+                            any(),
+                            any(),
+                            argThat(
+                                    argument ->
+                                            Objects.equal(
+                                                    BluetoothShare.USER_CONFIRMATION_CONFIRMED,
+                                                    argument.get(
+                                                            BluetoothShare.USER_CONFIRMATION))),
+                            nullable(String.class),
+                            nullable(String[].class));
+        }
     }
 
     @Test
     public void onKeyDown() throws Exception {
         BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
-        ActivityScenario<BluetoothOppIncomingFileConfirmActivity> scenario =
-                ActivityScenario.launch(mIntent);
-        AtomicBoolean atomicBoolean = new AtomicBoolean();
-        scenario.onActivity(
-                activity -> {
-                    atomicBoolean.set(
-                            activity.onKeyDown(
-                                    KeyEvent.KEYCODE_A,
-                                    new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_A)));
-                });
+        try (ActivityScenario<BluetoothOppIncomingFileConfirmActivity> activityScenario =
+                ActivityScenario.launch(mIntent)) {
+            AtomicBoolean atomicBoolean = new AtomicBoolean();
+            activityScenario.onActivity(
+                    activity -> {
+                        atomicBoolean.set(
+                                activity.onKeyDown(
+                                        KeyEvent.KEYCODE_A,
+                                        new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_A)));
+                    });
 
-        assertThat(atomicBoolean.get()).isFalse();
-        assertThat(scenario.getState()).isNotEqualTo(Lifecycle.State.DESTROYED);
+            assertThat(atomicBoolean.get()).isFalse();
+            assertThat(activityScenario.getState()).isNotEqualTo(Lifecycle.State.DESTROYED);
 
-        scenario.onActivity(
-                activity -> {
-                    atomicBoolean.set(
-                            activity.onKeyDown(
-                                            KeyEvent.KEYCODE_BACK,
-                                            new KeyEvent(
-                                                    KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK))
-                                    && activity.isFinishing());
-                });
+            activityScenario.onActivity(
+                    activity -> {
+                        atomicBoolean.set(
+                                activity.onKeyDown(
+                                                KeyEvent.KEYCODE_BACK,
+                                                new KeyEvent(
+                                                        KeyEvent.ACTION_DOWN,
+                                                        KeyEvent.KEYCODE_BACK))
+                                        && activity.isFinishing());
+                    });
 
-        assertThat(atomicBoolean.get()).isTrue();
+            assertThat(atomicBoolean.get()).isTrue();
+        }
     }
 }

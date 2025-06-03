@@ -18,7 +18,7 @@
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="app_name" msgid="2326164424236203271">"Bluetooth"</string>
     <string name="permlab_bluetoothShareManager" msgid="5297865456717871041">"Pristupite upravitelju za preuzimanja."</string>
-    <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Dozvoljava aplikaciji da pristupa BluetoothShare upravitelju i koristi ga za prenošenje fajlova."</string>
+    <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Dozvoljava aplikaciji da pristupa BluetoothShare upravitelju i koristi ga za prenos fajlova."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"Stavi pristup Bluetooth uređaja na listu prihvaćenih."</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Dozvoljava aplikaciji da privremeno stavi Bluetooth uređaj na listu prihvaćenih, čime mu se omogućava da šalje fajlove na ovaj uređaj bez potvrde korisnika."</string>
     <string name="bt_share_picker_label" msgid="7464438494743777696">"Bluetooth"</string>
@@ -44,7 +44,7 @@
     <string name="notification_sending" msgid="8269912843286868700">"Bluetooth dijeljenje: slanje fajla <xliff:g id="FILE">%1$s</xliff:g>"</string>
     <string name="notification_sent" msgid="2685202778935769332">"Bluetooth dijeljenje: poslan fajl <xliff:g id="FILE">%1$s</xliff:g>"</string>
     <string name="notification_sent_fail" msgid="7449832660578001579">"Bluetooth dijeljenje: Fajl <xliff:g id="FILE">%1$s</xliff:g> nije poslan"</string>
-    <string name="download_title" msgid="6449408649671518102">"Prenošenje fajla"</string>
+    <string name="download_title" msgid="6449408649671518102">"Prenos fajla"</string>
     <string name="download_line1" msgid="6449220145685308846">"Šalje: \"<xliff:g id="SENDER">%1$s</xliff:g>\""</string>
     <string name="download_line2" msgid="7634316500490825390">"Fajl: <xliff:g id="FILE">%1$s</xliff:g>"</string>
     <string name="download_line3" msgid="6722284930665532816">"Veličina fajla: <xliff:g id="SIZE">%1$s</xliff:g>"</string>
@@ -89,8 +89,8 @@
     <string name="status_running" msgid="7419075903776657351">"Prenošenje fajla je u toku."</string>
     <string name="status_success" msgid="7963589000098719541">"Prenošenje fajla je uspješno dovršeno."</string>
     <string name="status_not_accept" msgid="1165798802740579658">"Sadržaj nije podržan."</string>
-    <string name="status_forbidden" msgid="4017060451358837245">"Ciljni uređaj je zabranio prenošenje."</string>
-    <string name="status_canceled" msgid="8441679418717978515">"Korisnik je otkazao prenošenje."</string>
+    <string name="status_forbidden" msgid="4017060451358837245">"Ciljni uređaj je zabranio prenos."</string>
+    <string name="status_canceled" msgid="8441679418717978515">"Korisnik je otkazao prenos."</string>
     <string name="status_file_error" msgid="5379018888714679311">"Problem s pohranom."</string>
     <string name="status_no_sd_card_nosdcard" msgid="6445646484924125975">"Nema USB pohrane."</string>
     <string name="status_no_sd_card_default" msgid="8878262565692541241">"Nema SD kartice. Umetnite SD karticu kako biste sačuvali prenesene fajlove."</string>

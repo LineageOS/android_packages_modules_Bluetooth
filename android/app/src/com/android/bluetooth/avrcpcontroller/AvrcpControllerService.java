@@ -146,19 +146,20 @@ public class AvrcpControllerService extends ConnectableProfile {
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,
-                        () -> new AvrcpControllerNativeInterface(adapterService, this));
+                        () -> new AvrcpControllerNativeInterface(mAdapterService, this));
         mNativeInterface.init();
 
         setComponentAvailable(ON_ERROR_SETTINGS_ACTIVITY, true);
         mCoverArtEnabled = getResources().getBoolean(R.bool.avrcp_controller_enable_cover_art);
         if (mCoverArtEnabled) {
             setComponentAvailable(COVER_ART_PROVIDER, true);
-            mCoverArtManager = new AvrcpCoverArtManager(this, new ImageDownloadCallback());
+            mCoverArtManager =
+                    new AvrcpCoverArtManager(mAdapterService, this, new ImageDownloadCallback());
         } else {
             mCoverArtManager = null;
         }
 
-        mBrowseTree = new BrowseTree(null);
+        mBrowseTree = new BrowseTree(mAdapterService, null);
         setAvrcpControllerService(this);
 
         // Start the media browser service.

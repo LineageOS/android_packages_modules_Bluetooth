@@ -20,6 +20,7 @@ import android.app.ActivityManager
 import android.bluetooth.BluetoothAdapter
 import android.content.ContentResolver
 import android.content.Context
+import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.os.Looper
 import android.os.UserHandle
@@ -32,6 +33,8 @@ import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
 import com.android.server.bluetooth.airplane.APM_BT_ENABLED_NOTIFICATION
 import com.android.server.bluetooth.airplane.APM_BT_NOTIFICATION
+import com.android.server.bluetooth.airplane.APM_BT_NOTIFICATION_DUE_TO_WATCH
+import com.android.server.bluetooth.airplane.APM_BT_NOTIFICATION_ON_WATCH
 import com.android.server.bluetooth.airplane.APM_ENHANCEMENT
 import com.android.server.bluetooth.airplane.APM_USER_TOGGLED_BLUETOOTH
 import com.android.server.bluetooth.airplane.APM_WIFI_BT_NOTIFICATION
@@ -61,6 +64,7 @@ import org.junit.rules.TestName
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.ParameterizedRobolectricTestRunner.Parameters
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowToast
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
@@ -144,6 +148,7 @@ class ModeListenerTest(flags: FlagsWrapper) {
         assertThat(isOn).isFalse()
         assertThat(isOnOverrode).isFalse()
         assertThat(mode).isEmpty()
+        assertThat(notification).isEmpty()
     }
 
     @Test
@@ -156,6 +161,7 @@ class ModeListenerTest(flags: FlagsWrapper) {
         assertThat(isOn).isFalse()
         assertThat(isOnOverrode).isFalse()
         assertThat(mode).isEmpty()
+        assertThat(notification).isEmpty()
     }
 
     @Test
@@ -170,6 +176,7 @@ class ModeListenerTest(flags: FlagsWrapper) {
         assertThat(isOn).isFalse()
         assertThat(isOnOverrode).isFalse()
         assertThat(mode).isEmpty()
+        assertThat(notification).isEmpty()
     }
 
     @Test
@@ -179,6 +186,7 @@ class ModeListenerTest(flags: FlagsWrapper) {
         assertThat(isOn).isFalse()
         assertThat(isOnOverrode).isFalse()
         assertThat(mode).isEmpty()
+        assertThat(notification).isEmpty()
     }
 
     @Test
@@ -191,6 +199,7 @@ class ModeListenerTest(flags: FlagsWrapper) {
         assertThat(isOn).isTrue()
         assertThat(isOnOverrode).isTrue()
         assertThat(mode).isEmpty()
+        assertThat(notification).isEmpty()
     }
 
     @Test
@@ -205,6 +214,21 @@ class ModeListenerTest(flags: FlagsWrapper) {
         assertThat(isOn).isTrue()
         assertThat(isOnOverrode).isFalse()
         assertThat(mode).isEmpty()
+        assertThat(notification).isEmpty()
+    }
+
+    @Test
+    fun initialize_whenWatchConnected_isOnOverrode() {
+        enableMode()
+        setWatchConnectionState(true)
+        Settings.Global.putInt(resolver, APM_ENHANCEMENT, 0)
+
+        initializeAirplane()
+
+        assertThat(isOn).isTrue()
+        assertThat(isOnOverrode).isFalse()
+        assertThat(mode).isEmpty()
+        assertThat(notification).isEmpty()
     }
 
     @Test
@@ -240,6 +264,7 @@ class ModeListenerTest(flags: FlagsWrapper) {
 
         assertThat(isOnOverrode).isFalse()
         assertThat(mode).isEmpty()
+        assertThat(notification).isEmpty()
     }
 
     @Test
@@ -265,6 +290,7 @@ class ModeListenerTest(flags: FlagsWrapper) {
 
         assertThat(isOnOverrode).isTrue()
         assertThat(mode).isEmpty()
+        assertThat(notification).isEmpty()
     }
 
     @Test
@@ -277,6 +303,7 @@ class ModeListenerTest(flags: FlagsWrapper) {
         assertThat(isOnOverrode).isFalse()
         // As opposed to the bare RadioModeListener, similar consecutive event are discarded
         assertThat(mode).isEmpty()
+        assertThat(notification).isEmpty()
     }
 
     @Test
@@ -326,6 +353,7 @@ class ModeListenerTest(flags: FlagsWrapper) {
 
         assertThat(isOnOverrode).isFalse()
         assertThat(mode).isEmpty()
+        assertThat(notification).containsExactly(APM_BT_NOTIFICATION_DUE_TO_WATCH)
     }
 
     @Test
@@ -356,6 +384,7 @@ class ModeListenerTest(flags: FlagsWrapper) {
         assertThat(isOnOverrode).isFalse()
         assertThat(isOn).isTrue()
         assertThat(mode).isEmpty()
+        assertThat(notification).isEmpty()
     }
 
     @Test
@@ -371,6 +400,24 @@ class ModeListenerTest(flags: FlagsWrapper) {
         assertThat(isOnOverrode).isFalse()
         assertThat(isOn).isTrue()
         assertThat(mode).isEmpty()
+        assertThat(notification).containsExactly(APM_BT_NOTIFICATION_DUE_TO_WATCH)
+    }
+
+    @Test
+    fun triggerOverrideOnWatch_whenApmEnhancementNotTriggerButConnectedDevice_staysOn() {
+        shadowOf(userContext.packageManager).setSystemFeature(PackageManager.FEATURE_WATCH, true)
+        initializeAirplane()
+
+        state.set(BluetoothAdapter.STATE_ON)
+        Settings.Global.putInt(resolver, APM_ENHANCEMENT, 0)
+        setWatchConnectionState(true)
+
+        enableMode()
+
+        assertThat(isOnOverrode).isFalse()
+        assertThat(isOn).isTrue()
+        assertThat(mode).isEmpty()
+        assertThat(notification).containsExactly(APM_BT_NOTIFICATION_ON_WATCH)
     }
 
     @Test

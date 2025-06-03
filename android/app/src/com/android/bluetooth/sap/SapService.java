@@ -114,8 +114,6 @@ public class SapService extends ConnectableProfile
     private boolean mRemoveTimeoutMsg = false;
     private boolean mIsWaitingAuthorization = false;
 
-    private static SapService sSapService;
-
     private static final ParcelUuid[] SAP_UUIDS = {
         BluetoothUuid.SAP,
     };
@@ -135,7 +133,6 @@ public class SapService extends ConnectableProfile
         mAdapterService.registerBluetoothStateCallback(getMainExecutor(), this);
         // start RFCOMM listener
         mSessionStatusHandler.sendMessage(mSessionStatusHandler.obtainMessage(START_LISTENER));
-        setSapService(this);
     }
 
     public static boolean isEnabled() {
@@ -385,7 +382,7 @@ public class SapService extends ConnectableProfile
                         break;
                     }
 
-                    sRemoteDeviceName = Utils.getName(mRemoteDevice);
+                    sRemoteDeviceName = mAdapterService.getRemoteName(mRemoteDevice);
                     // In case getRemoteName failed and return null
                     if (TextUtils.isEmpty(sRemoteDeviceName)) {
                         sRemoteDeviceName = getString(R.string.defaultname);
@@ -647,24 +644,6 @@ public class SapService extends ConnectableProfile
         return true;
     }
 
-    /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    @RequiresPermission(BLUETOOTH_PRIVILEGED)
-    @Override
-    public int getConnectionPolicy(BluetoothDevice device) {
-        enforceCallingOrSelfPermission(
-                BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
-    }
-
     @Override
     protected IProfileServiceBinder initBinder() {
         return new SapServiceBinder(this);
@@ -674,7 +653,6 @@ public class SapService extends ConnectableProfile
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        setSapService(null);
         unregisterReceiver(mSapReceiver);
         mAdapterService.unregisterBluetoothStateCallback(this);
         setState(BluetoothSap.STATE_DISCONNECTED, BluetoothSap.RESULT_CANCELED);
@@ -697,26 +675,6 @@ public class SapService extends ConnectableProfile
             // start RFCOMM listener
             mSessionStatusHandler.sendMessage(mSessionStatusHandler.obtainMessage(START_LISTENER));
         }
-    }
-
-    /**
-     * @return current instance of {@link SapService}
-     */
-    public static synchronized SapService getSapService() {
-        if (sSapService == null) {
-            Log.w(TAG, "getSapService(): service is null");
-            return null;
-        }
-        if (!sSapService.isAvailable()) {
-            Log.w(TAG, "getSapService(): service is not available");
-            return null;
-        }
-        return sSapService;
-    }
-
-    private static synchronized void setSapService(SapService instance) {
-        Log.d(TAG, "setSapService(): set to: " + instance);
-        sSapService = instance;
     }
 
     private void setUserTimeoutAlarm() {

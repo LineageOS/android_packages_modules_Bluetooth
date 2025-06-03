@@ -19,12 +19,15 @@ package com.android.bluetooth.avrcpcontroller;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.BluetoothDevice;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.SystemProperties;
 import android.util.Log;
 
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.obex.ResponseCodes;
 
 import java.util.Map;
@@ -50,12 +53,15 @@ class AvrcpCoverArtManager {
 
     private final Map<BluetoothDevice, AvrcpBipClient> mClients = new ConcurrentHashMap<>(1);
     private final Map<BluetoothDevice, AvrcpBipSession> mBipSessions = new ConcurrentHashMap<>(1);
+    private final AdapterService mAdapterService;
     private final AvrcpControllerService mService;
     private final AvrcpCoverArtStorage mCoverArtStorage;
     private final Callback mCallback;
     private final String mDownloadScheme;
 
-    AvrcpCoverArtManager(AvrcpControllerService service, Callback callback) {
+    AvrcpCoverArtManager(
+            AdapterService adapterService, AvrcpControllerService service, Callback callback) {
+        mAdapterService = requireNonNull(adapterService);
         mService = service;
         mCoverArtStorage = new AvrcpCoverArtStorage(mService);
         mCallback = callback;
@@ -141,7 +147,8 @@ class AvrcpCoverArtManager {
     synchronized boolean connect(BluetoothDevice device, int psm) {
         debug("Connect " + device + ", psm: " + psm);
         if (mClients.containsKey(device)) return false;
-        AvrcpBipClient client = new AvrcpBipClient(device, psm, new BipClientCallback(device));
+        AvrcpBipClient client =
+                new AvrcpBipClient(mAdapterService, device, psm, new BipClientCallback(device));
         client.connectAsync();
         mClients.put(device, client);
         mBipSessions.put(device, new AvrcpBipSession());

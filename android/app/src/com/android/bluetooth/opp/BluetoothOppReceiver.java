@@ -37,7 +37,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothDevicePicker;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
-import android.bluetooth.BluetoothUtils;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -50,7 +49,6 @@ import android.widget.Toast;
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 
 /**
@@ -76,11 +74,7 @@ public class BluetoothOppReceiver extends BroadcastReceiver {
                 return;
             }
 
-            Log.d(
-                    TAG,
-                    "Received BT device selected intent, bt device: "
-                            + BluetoothUtils.toAnonymizedAddress(
-                                    Utils.getBrEdrAddress(remoteDevice)));
+            Log.d(TAG, "Received BT device selected intent, bt device: " + remoteDevice);
 
             // Insert transfer session record to database
             mOppManager.startTransfer(remoteDevice);

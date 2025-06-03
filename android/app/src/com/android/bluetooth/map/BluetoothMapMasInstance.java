@@ -15,9 +15,9 @@
 
 package com.android.bluetooth.map;
 
-import android.bluetooth.BluetoothAdapter;
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSocket;
@@ -53,6 +53,10 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
 
     private final int mObjectInstanceId;
 
+    public static final String TYPE_SMS_MMS_STR = "SMS/MMS";
+    public static final String TYPE_EMAIL_STR = "EMAIL";
+    public static final String TYPE_IM_STR = "IM";
+
     private static final int SDP_MAP_MSG_TYPE_EMAIL = 0x01;
     private static final int SDP_MAP_MSG_TYPE_SMS_GSM = 0x02;
     private static final int SDP_MAP_MSG_TYPE_SMS_CDMA = 0x04;
@@ -71,7 +75,6 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
     static final int SDP_MAP_MAS_FEATURES_1_4 = 0x000603FF;
 
     private final AdapterService mAdapterService;
-    private final BluetoothAdapter mAdapter;
 
     private ServerSession mServerSession = null;
     // The handle to the socket registration with SDP
@@ -109,10 +112,6 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
     private int mRemoteFeatureMask = BluetoothMapUtils.MAP_FEATURE_DEFAULT_BITMASK;
     private static int sFeatureMask = SDP_MAP_MAS_FEATURES_1_4;
 
-    public static final String TYPE_SMS_MMS_STR = "SMS/MMS";
-    public static final String TYPE_EMAIL_STR = "EMAIL";
-    public static final String TYPE_IM_STR = "IM";
-
     /** Create a e-mail MAS instance */
     BluetoothMapMasInstance(
             AdapterService adapterService,
@@ -120,11 +119,10 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
             BluetoothMapAccountItem account,
             int masId,
             boolean enableSmsMms) {
-        mAdapterService = adapterService;
+        mAdapterService = requireNonNull(adapterService);
         mObjectInstanceId = sInstanceCounter++;
         mMapService = mapService;
         mServiceHandler = mapService.getHandler();
-        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mAccount = account;
         if (account != null) {
             mBaseUri = account.mBase_uri;
@@ -135,7 +133,7 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
 
     private void removeSdpRecord() {
         SdpManagerNativeInterface nativeInterface = SdpManagerNativeInterface.getInstance();
-        if (mAdapter != null && mSdpHandle >= 0 && nativeInterface.isAvailable()) {
+        if (mSdpHandle >= 0 && nativeInterface.isAvailable()) {
             verbose(
                     "Removing SDP record for MAS instance: "
                             + mMasInstanceId
@@ -400,7 +398,8 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
                             mEnableSmsMms);
             mMapServer.setRemoteFeatureMask(mRemoteFeatureMask);
             // setup transport
-            BluetoothObexTransport transport = new BluetoothObexTransport(mConnSocket);
+            BluetoothObexTransport transport =
+                    new BluetoothObexTransport(mAdapterService, mConnSocket);
             mServerSession = new ServerSession(transport, mMapServer, null);
             debug("    ServerSession started.");
 

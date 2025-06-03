@@ -318,10 +318,6 @@ package android.bluetooth {
     field public static final int METADATA_ENHANCED_SETTINGS_UI_URI = 16; // 0x10
     field public static final int METADATA_EXCLUSIVE_MANAGER = 29; // 0x1d
     field public static final int METADATA_HARDWARE_VERSION = 3; // 0x3
-    field @FlaggedApi("com.android.bluetooth.flags.support_remote_device_metadata") public static final int METADATA_HEAD_UNIT_BUILD = 34; // 0x22
-    field @FlaggedApi("com.android.bluetooth.flags.support_remote_device_metadata") public static final int METADATA_HEAD_UNIT_MANUFACTURER_NAME = 32; // 0x20
-    field @FlaggedApi("com.android.bluetooth.flags.support_remote_device_metadata") public static final int METADATA_HEAD_UNIT_MODEL_NAME = 33; // 0x21
-    field @FlaggedApi("com.android.bluetooth.flags.support_remote_device_metadata") public static final int METADATA_HEAD_UNIT_SOFTWARE_VERSION = 35; // 0x23
     field public static final int METADATA_IS_UNTETHERED_HEADSET = 6; // 0x6
     field public static final int METADATA_LE_AUDIO = 26; // 0x1a
     field public static final int METADATA_MAIN_BATTERY = 18; // 0x12
@@ -331,7 +327,6 @@ package android.bluetooth {
     field public static final int METADATA_MANUFACTURER_NAME = 0; // 0x0
     field public static final int METADATA_MAX_LENGTH = 2048; // 0x800
     field public static final int METADATA_MODEL_NAME = 1; // 0x1
-    field @FlaggedApi("com.android.bluetooth.flags.support_remote_device_metadata") public static final int METADATA_MODEL_YEAR = 31; // 0x1f
     field public static final int METADATA_SOFTWARE_VERSION = 2; // 0x2
     field public static final int METADATA_UNTETHERED_CASE_BATTERY = 12; // 0xc
     field public static final int METADATA_UNTETHERED_CASE_CHARGING = 15; // 0xf
@@ -930,7 +925,7 @@ package android.bluetooth {
 
   public final class BluetoothQualityReport implements android.os.Parcelable {
     method public int describeContents();
-    method @Nullable public android.bluetooth.BluetoothClass getBluetoothClass();
+    method @NonNull public android.bluetooth.BluetoothClass getBluetoothClass();
     method @Nullable public android.bluetooth.BluetoothQualityReport.BqrCommon getBqrCommon();
     method @Nullable public android.os.Parcelable getBqrEvent();
     method public int getLmpSubVersion();
