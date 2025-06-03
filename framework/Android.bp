@@ -24,7 +24,7 @@ java_defaults {
     ],
     static_libs: [
         "PlatformProperties",
-        "bluetooth_constants_java",
+        "bluetooth_constants-java",
         "bluetooth_flags_java_lib",
         "modules-utils-build",
         "service-bluetooth-binder-aidl",

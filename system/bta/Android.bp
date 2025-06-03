@@ -173,6 +173,7 @@ cc_library_static {
         "android.hardware.bluetooth.audio@2.0",
         "android.hardware.bluetooth.audio@2.1",
         "avrcp-target-service",
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib",
         "lib-bt-packets",
         "libaconfig_storage_read_api_cc",
@@ -189,11 +190,7 @@ cc_library_static {
         "liblc3",
         "server_configurable_flags",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     shared_libs: [
-        "libbinder",
         "libcrypto",
     ],
     generated_headers: [
@@ -637,18 +634,15 @@ cc_test {
         "vc/vc.cc",
         "vc/vc_test.cc",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     shared_libs: [
         "libbase",
-        "libbinder",
         "libcrypto",
         "libcutils",
         "liblog",
     ],
     static_libs: [
         "aics",
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib_for_test",
         "libaconfig_storage_read_api_cc",
         "libbluetooth-types",

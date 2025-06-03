@@ -50,9 +50,6 @@ cc_library_shared {
         "jni_headers",
         "libbluetooth_headers",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
@@ -78,6 +75,7 @@ cc_library_shared {
         "android.system.suspend-V1-ndk",
         "android.system.suspend.control-V1-ndk",
         "avrcp-target-service",
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib",
         "lib-bt-packets-avrcp",
         "lib-bt-packets-base",
@@ -161,7 +159,7 @@ android_library {
 
     libs: [
         "PlatformProperties",
-        "bluetooth_constants_java",
+        "bluetooth_constants-java",
         "bluetooth_flags_java_lib",
         "error_prone_annotations",
         "framework-annotations-lib",
