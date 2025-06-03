@@ -121,25 +121,7 @@ class HandleMap {
      * that requested them. Once a request context is created and an ID given out, other server apps
      * are not allowed to get or delete another server's request contexts.
      */
-    record RequestContext(int serverIf, int requestId, int connId, int transactionId, int handle) {
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("RequestContext<")
-                    .append("request_id: ")
-                    .append(requestId)
-                    .append(", server_if: ")
-                    .append(serverIf)
-                    .append(", conn_id: ")
-                    .append(connId)
-                    .append(", transaction_id: ")
-                    .append(transactionId)
-                    .append(", handle: ")
-                    .append(handle)
-                    .append(">");
-            return sb.toString();
-        }
-    }
+    record RequestContext(int serverIf, int requestId, int connId, int transactionId, int handle) {}
 
     List<Entry> getEntries() {
         return mEntries;
