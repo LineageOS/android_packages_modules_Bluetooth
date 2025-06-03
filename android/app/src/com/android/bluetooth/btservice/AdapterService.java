@@ -339,7 +339,6 @@ public class AdapterService extends Service {
 
     private HeadsetService mHeadsetService;
     private A2dpService mA2dpService;
-    private HearingAidService mHearingAidService;
     private LeAudioService mLeAudioService;
     private GattService mGattService;
     private ScanController mScanController;
@@ -737,6 +736,10 @@ public class AdapterService extends Service {
 
     private Optional<HeadsetClientService> getHeadsetClientService() {
         return getStartedProfile(BluetoothProfile.HEADSET_CLIENT, HeadsetClientService.class);
+    }
+
+    private Optional<HearingAidService> getHearingAidService() {
+        return getStartedProfile(BluetoothProfile.HEARING_AID, HearingAidService.class);
     }
 
     private Optional<BluetoothMapService> getMapService() {
@@ -1938,7 +1941,6 @@ public class AdapterService extends Service {
         Log.i(TAG, "initProfileServices: Initializing all bluetooth profile services");
         mHeadsetService = HeadsetService.getHeadsetService();
         mA2dpService = A2dpService.getA2dpService();
-        mHearingAidService = HearingAidService.getHearingAidService();
         mLeAudioService = LeAudioService.getLeAudioService();
     }
 
@@ -3205,15 +3207,16 @@ public class AdapterService extends Service {
             }
         }
 
-        if (mHearingAidService != null
-                && (device == null
-                        || mHearingAidService.getConnectionPolicy(device)
-                                == CONNECTION_POLICY_ALLOWED)) {
-            Log.i(TAG, "setActiveDevice: Setting active Hearing Aid " + device);
-            if (device == null) {
-                mHearingAidService.removeActiveDevice(false);
-            } else {
-                mHearingAidService.setActiveDevice(device);
+        final var hearingAid = getHearingAidService().get();
+        if (hearingAid != null) {
+            if (device == null
+                    || hearingAid.getConnectionPolicy(device) == CONNECTION_POLICY_ALLOWED) {
+                Log.i(TAG, "setActiveDevice: Setting active Hearing Aid " + device);
+                if (device == null) {
+                    hearingAid.removeActiveDevice(false);
+                } else {
+                    hearingAid.setActiveDevice(device);
+                }
             }
         }
 
@@ -3285,10 +3288,11 @@ public class AdapterService extends Service {
                 }
             }
             case BluetoothProfile.HEARING_AID -> {
-                if (mHearingAidService == null) {
+                final var hearingAid = getHearingAidService().get();
+                if (hearingAid == null) {
                     Log.e(TAG, "getActiveDevices: HearingAidService is null");
                 } else {
-                    activeDevices = mHearingAidService.getActiveDevices();
+                    activeDevices = hearingAid.getActiveDevices();
                     Log.i(
                             TAG,
                             "getActiveDevices: Hearing Aid devices:"
@@ -3930,8 +3934,9 @@ public class AdapterService extends Service {
         if (mA2dpService != null && mA2dpService.getConnectedDevices().size() > 0) {
             Log.d(TAG, "isMediaProfileConnected. A2dp is connected");
             return true;
-        } else if (mHearingAidService != null
-                && mHearingAidService.getConnectedDevices().size() > 0) {
+        } else if (getHearingAidService()
+                .map(hearingAid -> hearingAid.getConnectedDevices().size() > 0)
+                .orElse(false)) {
             Log.d(TAG, "isMediaProfileConnected. HearingAid is connected");
             return true;
         } else if (mLeAudioService != null && mLeAudioService.getConnectedDevices().size() > 0) {
@@ -3942,7 +3947,7 @@ public class AdapterService extends Service {
                     TAG,
                     "isMediaProfileConnected: no Media connected."
                             + (" A2dp=" + mA2dpService)
-                            + (" HearingAid=" + mHearingAidService)
+                            + (" HearingAid=" + getHearingAidService())
                             + (" LeAudio=" + mLeAudioService));
             return false;
         }
