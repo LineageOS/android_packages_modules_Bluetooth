@@ -508,14 +508,7 @@ class MceStateMachine extends StateMachine {
     }
 
     public void dump(StringBuilder sb) {
-        ProfileService.println(
-                sb,
-                "mCurrentDevice: "
-                        + mDevice
-                        + "("
-                        + Utils.getName(mDevice)
-                        + ") "
-                        + this.toString());
+        ProfileService.println(sb, "mCurrentDevice: " + mDevice + " " + this.toString());
         if (mDatabase != null) {
             mDatabase.dump(sb);
         } else {
@@ -656,7 +649,7 @@ class MceStateMachine extends StateMachine {
                     };
             // Keeps mock database from being overwritten in tests
             if (mDatabase == null) {
-                mDatabase = new MapClientContent(mService, callbacks, mDevice);
+                mDatabase = new MapClientContent(mAdapterService, callbacks, mDevice);
             }
             onConnectionStateChanged(mPreviousState, STATE_CONNECTED);
             if (Utils.isPtsTestMode()) return;

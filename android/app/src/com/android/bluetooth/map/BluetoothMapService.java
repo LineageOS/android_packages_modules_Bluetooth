@@ -882,12 +882,7 @@ public class BluetoothMapService extends ConnectableProfile {
                     mSdpSearchInitiated = true;
                 }
             } else if (!mRemoteDevice.equals(remoteDevice)) {
-                Log.w(
-                        TAG,
-                        "Unexpected connection from a second Remote Device received. name: "
-                                + ((remoteDevice == null)
-                                        ? "unknown"
-                                        : Utils.getName(remoteDevice)));
+                Log.w(TAG, "Unexpected connection from a second Remote Device: " + remoteDevice);
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.MAP,
                         BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,

@@ -776,7 +776,7 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                 BluetoothObexTransport transport;
                 transport = new BluetoothObexTransport(mAdapterService, mBtSocket);
                 BluetoothOppPreference.getInstance(mAdapterService)
-                        .setName(mDevice, Utils.getName(mDevice));
+                        .setName(mDevice, mAdapterService.getRemoteName(mDevice));
                 Log.v(TAG, "Send transport message " + transport.toString());
                 mSessionHandler.obtainMessage(TRANSPORT_CONNECTED, transport).sendToTarget();
             } catch (IOException e) {
@@ -854,7 +854,7 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                 BluetoothObexTransport transport;
                 transport = new BluetoothObexTransport(mAdapterService, mBtSocket);
                 BluetoothOppPreference.getInstance(mAdapterService)
-                        .setName(mDevice, Utils.getName(mDevice));
+                        .setName(mDevice, mAdapterService.getRemoteName(mDevice));
                 Log.v(TAG, "Send transport message " + transport.toString());
                 mSessionHandler.obtainMessage(TRANSPORT_CONNECTED, transport).sendToTarget();
             } catch (IOException e) {

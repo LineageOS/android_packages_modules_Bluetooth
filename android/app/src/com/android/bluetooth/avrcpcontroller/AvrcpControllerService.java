@@ -146,7 +146,7 @@ public class AvrcpControllerService extends ConnectableProfile {
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,
-                        () -> new AvrcpControllerNativeInterface(adapterService, this));
+                        () -> new AvrcpControllerNativeInterface(mAdapterService, this));
         mNativeInterface.init();
 
         setComponentAvailable(ON_ERROR_SETTINGS_ACTIVITY, true);
@@ -159,7 +159,7 @@ public class AvrcpControllerService extends ConnectableProfile {
             mCoverArtManager = null;
         }
 
-        mBrowseTree = new BrowseTree(null);
+        mBrowseTree = new BrowseTree(mAdapterService, null);
         setAvrcpControllerService(this);
 
         // Start the media browser service.
