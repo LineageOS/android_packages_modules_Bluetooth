@@ -24,7 +24,6 @@ import static android.bluetooth.BluetoothUtils.logRemoteException;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.CallbackExecutor;
-import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
@@ -34,8 +33,6 @@ import android.annotation.SystemApi;
 import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
 import android.content.AttributionSource;
 import android.os.RemoteException;
-
-import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -55,7 +52,6 @@ import java.util.stream.IntStream;
  * @see BluetoothVolumeControl#getAudioInputControlServices
  * @hide
  */
-@FlaggedApi(Flags.FLAG_AICS_API)
 @SystemApi
 public class AudioInputControl {
     private static final String TAG = AudioInputControl.class.getSimpleName();

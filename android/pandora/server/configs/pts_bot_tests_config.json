@@ -2677,8 +2677,7 @@
     },
     {
       "flags": [
-        "leaudio_add_aics_support",
-        "aics_api"
+        "leaudio_add_aics_support"
       ],
       "tests": [
         "VCP/VC/AICP/BV-01-C",
