@@ -172,7 +172,7 @@ public class BluetoothMapService extends ConnectableProfile {
             filterMessageSent.addDataType("message/*");
         } catch (MalformedMimeTypeException e) {
             ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
+                    mProfileId,
                     BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     7);
@@ -241,7 +241,7 @@ public class BluetoothMapService extends ConnectableProfile {
             } else {
                 Log.w(TAG, "startSocketListeners(): Invalid MasId: " + masId);
                 ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
+                        mProfileId,
                         BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                         0);
@@ -277,7 +277,7 @@ public class BluetoothMapService extends ConnectableProfile {
                 }
             } catch (IOException e) {
                 ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
+                        mProfileId,
                         BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         1);
@@ -289,7 +289,7 @@ public class BluetoothMapService extends ConnectableProfile {
                 mMasInstances.valueAt(i).restartObexServerSession();
             } catch (RemoteException e) {
                 ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
+                        mProfileId,
                         BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         2);
@@ -465,7 +465,7 @@ public class BluetoothMapService extends ConnectableProfile {
                     } else {
                         Log.w(TAG, "remoteDevice info not available");
                         ContentProfileErrorReportUtils.report(
-                                BluetoothProfile.MAP,
+                                mProfileId,
                                 BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
                                 BluetoothStatsLog
                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
@@ -489,7 +489,7 @@ public class BluetoothMapService extends ConnectableProfile {
                             }
                         } catch (RemoteException e) {
                             ContentProfileErrorReportUtils.report(
-                                    BluetoothProfile.MAP,
+                                    mProfileId,
                                     BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
                                     BluetoothStatsLog
                                             .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
@@ -525,14 +525,14 @@ public class BluetoothMapService extends ConnectableProfile {
                 }
             } catch (IOException ex) {
                 ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
+                        mProfileId,
                         BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         5);
                 Log.e(TAG, "catch IOException starting obex server session", ex);
             } catch (RemoteException ex) {
                 ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
+                        mProfileId,
                         BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         6);
@@ -559,7 +559,7 @@ public class BluetoothMapService extends ConnectableProfile {
             int prevState = mState;
             mState = state;
             mAdapterService.updateProfileConnectionAdapterProperties(
-                    mRemoteDevice, BluetoothProfile.MAP, mState, prevState);
+                    mRemoteDevice, mProfileId, mState, prevState);
 
             BluetoothMap.invalidateBluetoothGetConnectionStateCache();
             Intent intent = new Intent(BluetoothMap.ACTION_CONNECTION_STATE_CHANGED);
@@ -889,7 +889,7 @@ public class BluetoothMapService extends ConnectableProfile {
                                         ? "unknown"
                                         : Utils.getName(remoteDevice)));
                 ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.MAP,
+                        mProfileId,
                         BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                         10);
@@ -968,7 +968,7 @@ public class BluetoothMapService extends ConnectableProfile {
         } else {
             Log.w(TAG, "mSessionStatusHandler START_LISTENER message already in Queue");
             ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
+                    mProfileId,
                     BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                     11);
@@ -1002,7 +1002,7 @@ public class BluetoothMapService extends ConnectableProfile {
         if (mSessionStatusHandler.hasMessages(SHUTDOWN)) {
             Log.w(TAG, "mSessionStatusHandler shutdown message already in Queue");
             ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
+                    mProfileId,
                     BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                     13);
@@ -1014,7 +1014,7 @@ public class BluetoothMapService extends ConnectableProfile {
         if (!mSessionStatusHandler.sendMessage(msg)) {
             Log.w(TAG, "mSessionStatusHandler shutdown message could not be sent");
             ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
+                    mProfileId,
                     BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                     14);
@@ -1116,7 +1116,7 @@ public class BluetoothMapService extends ConnectableProfile {
         if (mRemoteDevice == null || device == null) {
             Log.e(TAG, "Unexpected error!");
             ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
+                    mProfileId,
                     BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
                     15);

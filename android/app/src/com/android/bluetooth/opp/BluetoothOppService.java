@@ -263,7 +263,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         if (sBluetoothOppService == null) {
             Log.w(TAG, "cleanup() called before initialization");
             ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.OPP,
+                    mProfileId,
                     BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                     1);
@@ -420,7 +420,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                                 if (mPendingConnection != null) {
                                     Log.w(TAG, "OPP busy! Reject connection");
                                     ContentProfileErrorReportUtils.report(
-                                            BluetoothProfile.OPP,
+                                            mProfileId,
                                             BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
                                             BluetoothStatsLog
                                                     .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
@@ -429,7 +429,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                                         transport.close();
                                     } catch (IOException e) {
                                         ContentProfileErrorReportUtils.report(
-                                                BluetoothProfile.OPP,
+                                                mProfileId,
                                                 BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
                                                 BluetoothStatsLog
                                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
@@ -456,7 +456,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                                 if (mIncomingRetries == 20) {
                                     Log.w(TAG, "Retried 20 seconds, reject connection");
                                     ContentProfileErrorReportUtils.report(
-                                            BluetoothProfile.OPP,
+                                            mProfileId,
                                             BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
                                             BluetoothStatsLog
                                                     .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
@@ -465,7 +465,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                                         mPendingConnection.close();
                                     } catch (IOException e) {
                                         ContentProfileErrorReportUtils.report(
-                                                BluetoothProfile.OPP,
+                                                mProfileId,
                                                 BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
                                                 BluetoothStatsLog
                                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
@@ -502,7 +502,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         if (!nativeInterface.isAvailable()) {
             Log.e(TAG, "ERROR:serverSocket: SdpManagerNativeInterface is not available");
             ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.OPP,
+                    mProfileId,
                     BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
                     10);
@@ -511,7 +511,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         if (mServerSocket == null) {
             Log.e(TAG, "ERROR:serverSocket: mServerSocket is null");
             ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.OPP,
+                    mProfileId,
                     BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
                     11);
@@ -536,7 +536,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
             unregisterReceiver(mBluetoothReceiver);
         } catch (IllegalArgumentException e) {
             ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.OPP,
+                    mProfileId,
                     BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     12);
@@ -568,7 +568,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                 Thread.sleep(50);
             } catch (Exception e) {
                 ContentProfileErrorReportUtils.report(
-                        BluetoothProfile.OPP,
+                        mProfileId,
                         BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         4);
@@ -581,7 +581,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                     mUpdateThread.join();
                 } catch (InterruptedException e) {
                     ContentProfileErrorReportUtils.report(
-                            BluetoothProfile.OPP,
+                            mProfileId,
                             BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
                             BluetoothStatsLog
                                     .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
@@ -812,7 +812,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
             uri = null;
             Log.e(TAG, "insertShare found null URI at cursor!");
             ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.OPP,
+                    mProfileId,
                     BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
                     13);
@@ -878,7 +878,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                 if (sendFileInfo == null || sendFileInfo.mInputStream == null) {
                     Log.e(TAG, "Can't open file for OUTBOUND info " + info.mId);
                     ContentProfileErrorReportUtils.report(
-                            BluetoothProfile.OPP,
+                            mProfileId,
                             BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
                             BluetoothStatsLog
                                     .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
@@ -966,7 +966,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         } else {
             Log.w(TAG, "updateShare() called for ID " + info.mId + " with null URI");
             ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.OPP,
+                    mProfileId,
                     BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                     15);
@@ -1033,7 +1033,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                     if (mTransfer == null) {
                         Log.e(TAG, "Unexpected error! mTransfer is null");
                         ContentProfileErrorReportUtils.report(
-                                BluetoothProfile.OPP,
+                                mProfileId,
                                 BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
                                 BluetoothStatsLog
                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
@@ -1048,7 +1048,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                                         + " doesn't match mTransfer id "
                                         + mTransfer.getBatchId());
                         ContentProfileErrorReportUtils.report(
-                                BluetoothProfile.OPP,
+                                mProfileId,
                                 BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
                                 BluetoothStatsLog
                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
@@ -1059,7 +1059,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                     if (mServerTransfer == null) {
                         Log.e(TAG, "Unexpected error! mServerTransfer is null");
                         ContentProfileErrorReportUtils.report(
-                                BluetoothProfile.OPP,
+                                mProfileId,
                                 BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
                                 BluetoothStatsLog
                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
@@ -1074,7 +1074,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                                         + " doesn't match mServerTransfer id "
                                         + mServerTransfer.getBatchId());
                         ContentProfileErrorReportUtils.report(
-                                BluetoothProfile.OPP,
+                                mProfileId,
                                 BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
                                 BluetoothStatsLog
                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
