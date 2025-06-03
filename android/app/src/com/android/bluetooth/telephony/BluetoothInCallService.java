@@ -77,7 +77,7 @@ import java.util.UUID;
  * the service triggering InCallActivity (via CallList) to finish soon after.
  */
 public class BluetoothInCallService extends InCallService {
-    private static final String TAG = BluetoothInCallService.class.getSimpleName();
+    @VisibleForTesting static final String TAG = BluetoothInCallService.class.getSimpleName();
 
     static final int BEARER_TECHNOLOGY_3G = 0x01;
     static final int BEARER_TECHNOLOGY_4G = 0x02;
@@ -749,6 +749,7 @@ public class BluetoothInCallService extends InCallService {
             IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
             intentFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
             registerReceiver(mBluetoothAdapterReceiver, intentFilter);
+            registerBearer(TbsService.getTbsService());
             sInstance = this;
         }
     }

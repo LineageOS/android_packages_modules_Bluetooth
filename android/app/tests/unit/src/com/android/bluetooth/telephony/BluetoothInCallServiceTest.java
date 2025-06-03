@@ -28,6 +28,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
@@ -119,6 +120,8 @@ public class BluetoothInCallServiceTest {
     // Add all held calls to a conference
     private static final int CHLD_TYPE_ADDHELDTOCONF = 3;
 
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+
     private BluetoothInCallService mBluetoothInCallService;
 
     @Before
@@ -131,8 +134,7 @@ public class BluetoothInCallServiceTest {
         doReturn(true).when(mCallInfo).isNullCall(null);
         doReturn(false).when(mCallInfo).isNullCall(notNull());
 
-        final var context = InstrumentationRegistry.getInstrumentation().getContext();
-        Context spiedContext = spy(new ContextWrapper(context));
+        Context spiedContext = spy(new ContextWrapper(mContext));
         mockGetSystemService(spiedContext, TelephonyManager.class, mTelephonyManager);
 
         mBluetoothInCallService = new BluetoothInCallService(spiedContext, mCallInfo);
@@ -143,6 +145,53 @@ public class BluetoothInCallServiceTest {
     public void tearDown() {
         TbsService.setTbsService(null);
         HeadsetService.setHeadsetService(null);
+    }
+
+    @Test
+    public void onCreate_registerBearer_whenTbsServiceIsNull_doesNothing() {
+        clearInvocations(mTbsService);
+        TbsService.setTbsService(null);
+
+        Context spiedContext = spy(new ContextWrapper(mContext));
+        mockGetSystemService(spiedContext, TelephonyManager.class, mTelephonyManager);
+        final var bluetoothInCallService = new BluetoothInCallService(spiedContext, mCallInfo);
+        bluetoothInCallService.onCreate();
+
+        verify(mTbsService, never())
+                .registerBearer(
+                        anyString(),
+                        any(),
+                        anyString(),
+                        anyList(),
+                        anyInt(),
+                        anyString(),
+                        anyInt());
+    }
+
+    @Test
+    public void onCreate_registerBearer_whenTbsServiceIsPresent_callsRegisterBearer() {
+        clearInvocations(mTbsService);
+        TbsService.setTbsService(mTbsService);
+
+        PhoneAccount fakePhoneAccount = makeQuickAccount("id0", TEST_ACCOUNT_INDEX);
+        doReturn(fakePhoneAccount).when(mCallInfo).getBestPhoneAccount();
+        String networkOperator = mBluetoothInCallService.getNetworkOperator();
+        assertThat(networkOperator).isEqualTo("label0");
+
+        Context spiedContext = spy(new ContextWrapper(mContext));
+        mockGetSystemService(spiedContext, TelephonyManager.class, mTelephonyManager);
+        final var bluetoothInCallService = new BluetoothInCallService(spiedContext, mCallInfo);
+        bluetoothInCallService.onCreate();
+
+        verify(mTbsService)
+                .registerBearer(
+                        eq(BluetoothInCallService.TAG),
+                        eq(bluetoothInCallService.mBluetoothLeCallControlCallback),
+                        eq(BluetoothInCallService.TAG),
+                        eq(List.of("tel")),
+                        eq(BluetoothInCallService.Capability.HOLD_CALL),
+                        eq(networkOperator),
+                        anyInt());
     }
 
     @Test
