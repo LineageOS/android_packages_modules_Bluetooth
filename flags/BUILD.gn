@@ -19,6 +19,7 @@ aconfig("bluetooth_flags_c_lib") {
     "hal.aconfig",
     "hap.aconfig",
     "hci.aconfig",
+    "hearing_aid.aconfig",
     "hfp.aconfig",
     "hfpclient.aconfig",
     "hid.aconfig",
