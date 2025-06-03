@@ -337,7 +337,6 @@ public class AdapterService extends Service {
 
     private BluetoothSocketManagerBinder mBluetoothSocketManagerBinder;
 
-    private A2dpService mA2dpService;
     private LeAudioService mLeAudioService;
     private GattService mGattService;
     private ScanController mScanController;
@@ -731,6 +730,10 @@ public class AdapterService extends Service {
 
     BluetoothHciVendorSpecificNativeInterface getBluetoothHciVendorSpecificNativeInterface() {
         return mBluetoothHciVendorSpecificNativeInterface;
+    }
+
+    private Optional<A2dpService> getA2dpService() {
+        return getStartedProfile(BluetoothProfile.A2DP, A2dpService.class);
     }
 
     private Optional<HeadsetClientService> getHeadsetClientService() {
@@ -1791,7 +1794,11 @@ public class AdapterService extends Service {
                             + activeDevices.size());
             return;
         }
-        mA2dpService.switchCodecByBufferSize(activeDevices.get(0), isLowLatencyBufferSize);
+        getA2dpService()
+                .ifPresent(
+                        a2dp ->
+                                a2dp.switchCodecByBufferSize(
+                                        activeDevices.get(0), isLowLatencyBufferSize));
     }
 
     /**
@@ -1942,7 +1949,6 @@ public class AdapterService extends Service {
     /** Initializes all the profile services fields */
     private void initProfileServices() {
         Log.i(TAG, "initProfileServices: Initializing all bluetooth profile services");
-        mA2dpService = A2dpService.getA2dpService();
         mLeAudioService = LeAudioService.getLeAudioService();
     }
 
@@ -2375,12 +2381,13 @@ public class AdapterService extends Service {
 
         synchronized (mCsipGroupsPendingAudioProfileChanges) {
             if (previousOutput != newOutput) {
+                final var a2dp = getA2dpService().get();
                 if (newOutput == BluetoothProfile.A2DP
-                        && mA2dpService.getActiveDevice() != null
-                        && groupDevices.contains(mA2dpService.getActiveDevice())) {
+                        && a2dp != null
+                        && a2dp.getActiveDevice() != null
+                        && groupDevices.contains(a2dp.getActiveDevice())) {
                     Log.i(TAG, "Sent change for AUDIO_MODE_OUTPUT_ONLY to A2DP to Audio FW");
-                    numRequestsToAudioFw +=
-                            mA2dpService.sendPreferredAudioProfileChangeToAudioFramework();
+                    numRequestsToAudioFw += a2dp.sendPreferredAudioProfileChangeToAudioFramework();
                 } else if (newOutput == BluetoothProfile.LE_AUDIO
                         && mLeAudioService.getActiveGroupId() == groupId) {
                     Log.i(TAG, "Sent change for AUDIO_MODE_OUTPUT_ONLY to LE_AUDIO to Audio FW");
@@ -2397,8 +2404,11 @@ public class AdapterService extends Service {
                         && groupDevices.contains(headset.getActiveDevice())) {
                     Log.i(TAG, "Sent change for AUDIO_MODE_DUPLEX to HFP to Audio FW");
                     // TODO(b/275426145): Add similar HFP method in BluetoothProfileConnectionInfo
-                    numRequestsToAudioFw +=
-                            mA2dpService.sendPreferredAudioProfileChangeToAudioFramework();
+                    final var a2dp = getA2dpService().get();
+                    if (a2dp != null) {
+                        numRequestsToAudioFw +=
+                                a2dp.sendPreferredAudioProfileChangeToAudioFramework();
+                    }
                 } else if (newDuplex == BluetoothProfile.LE_AUDIO
                         && mLeAudioService.getActiveGroupId() == groupId) {
                     Log.i(TAG, "Sent change for AUDIO_MODE_DUPLEX to LE_AUDIO to Audio FW");
@@ -3160,11 +3170,11 @@ public class AdapterService extends Service {
                         && (device == null
                                 || headset.getConnectionPolicy(device)
                                         == CONNECTION_POLICY_ALLOWED);
+        final var a2dp = getA2dpService().get();
         boolean a2dpSupported =
-                mA2dpService != null
+                a2dp != null
                         && (device == null
-                                || mA2dpService.getConnectionPolicy(device)
-                                        == CONNECTION_POLICY_ALLOWED);
+                                || a2dp.getConnectionPolicy(device) == CONNECTION_POLICY_ALLOWED);
         boolean leAudioSupported =
                 mLeAudioService != null
                         && (device == null
@@ -3179,9 +3189,9 @@ public class AdapterService extends Service {
                  */
                 mLeAudioService.removeActiveDevice(true /* hasFallbackDevice */);
             } else {
-                if (mA2dpService != null && mA2dpService.getActiveDevice() != null) {
+                if (a2dp != null && a2dp.getActiveDevice() != null) {
                     // TODO:  b/312396770
-                    mA2dpService.removeActiveDevice(false);
+                    a2dp.removeActiveDevice(false);
                 }
                 mLeAudioService.setActiveDevice(device);
             }
@@ -3193,10 +3203,10 @@ public class AdapterService extends Service {
             headset.setActiveDevice(device);
         }
 
-        if (setA2dp && a2dpSupported) {
+        if (setA2dp && a2dpSupported && a2dp != null) {
             Log.i(TAG, "setActiveDevice: Setting active A2dp device " + device);
             if (device == null) {
-                mA2dpService.removeActiveDevice(false);
+                a2dp.removeActiveDevice(false);
             } else {
                 /* Workaround for the controller issue which is not able to handle correctly
                  * A2DP offloader vendor specific command while ISO Data path is set.
@@ -3208,7 +3218,7 @@ public class AdapterService extends Service {
                         mLeAudioService.removeActiveDevice(true);
                     }
                 }
-                mA2dpService.setActiveDevice(device);
+                a2dp.setActiveDevice(device);
             }
         }
 
@@ -3250,8 +3260,9 @@ public class AdapterService extends Service {
                 return false;
             }
         }
-        if (a2dpSupported && mA2dpService != null) {
-            BluetoothDevice activeA2dpDevice = mA2dpService.getActiveDevice();
+        final var a2dp = getA2dpService().get();
+        if (a2dpSupported && a2dp != null) {
+            BluetoothDevice activeA2dpDevice = a2dp.getActiveDevice();
             if (activeA2dpDevice == null || !groupDevices.contains(activeA2dpDevice)) {
                 return false;
             }
@@ -3284,10 +3295,11 @@ public class AdapterService extends Service {
                 }
             }
             case BluetoothProfile.A2DP -> {
-                if (mA2dpService == null) {
+                final var a2dp = getA2dpService().get();
+                if (a2dp == null) {
                     Log.e(TAG, "getActiveDevices: A2dpService is null");
                 } else {
-                    BluetoothDevice device = mA2dpService.getActiveDevice();
+                    BluetoothDevice device = a2dp.getActiveDevice();
                     if (device != null) {
                         activeDevices.add(device);
                     }
@@ -3938,7 +3950,7 @@ public class AdapterService extends Service {
     }
 
     boolean isMediaProfileConnected() {
-        if (mA2dpService != null && mA2dpService.getConnectedDevices().size() > 0) {
+        if (getA2dpService().map(a2dp -> a2dp.getConnectedDevices().size() > 0).orElse(false)) {
             Log.d(TAG, "isMediaProfileConnected. A2dp is connected");
             return true;
         } else if (getHearingAidService()
@@ -3953,7 +3965,7 @@ public class AdapterService extends Service {
             Log.d(
                     TAG,
                     "isMediaProfileConnected: no Media connected."
-                            + (" A2dp=" + mA2dpService)
+                            + (" A2dp=" + getA2dpService())
                             + (" HearingAid=" + getHearingAidService())
                             + (" LeAudio=" + mLeAudioService));
             return false;
