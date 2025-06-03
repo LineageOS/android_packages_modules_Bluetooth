@@ -38,7 +38,6 @@ import android.bluetooth.annotations.RequiresLegacyBluetoothPermission;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.AttributionSource;
 import android.content.Context;
-import android.os.Build;
 import android.os.IBinder;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
@@ -517,27 +516,6 @@ public final class BluetoothA2dp implements BluetoothProfile {
     }
 
     /**
-     * Set priority of the profile
-     *
-     * <p>The device should already be paired. Priority can be one of {@link #PRIORITY_ON} or {@link
-     * #PRIORITY_OFF}
-     *
-     * @param device Paired bluetooth device
-     * @return true if priority is set, false on error
-     * @hide
-     */
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(
-            allOf = {
-                BLUETOOTH_CONNECT,
-                BLUETOOTH_PRIVILEGED,
-            })
-    public boolean setPriority(BluetoothDevice device, int priority) {
-        log("setPriority(" + device + ", " + priority + ")");
-        return setConnectionPolicy(device, BluetoothAdapter.priorityToConnectionPolicy(priority));
-    }
-
-    /**
      * Set connection policy of the profile
      *
      * <p>The device should already be paired. Connection policy can be one of {@link
@@ -574,25 +552,6 @@ public final class BluetoothA2dp implements BluetoothProfile {
             }
         }
         return false;
-    }
-
-    /**
-     * Get the priority of the profile.
-     *
-     * <p>The priority can be any of: {@link #PRIORITY_OFF}, {@link #PRIORITY_ON}, {@link
-     * #PRIORITY_UNDEFINED}
-     *
-     * @param device Bluetooth device
-     * @return priority of the device
-     * @hide
-     */
-    @RequiresLegacyBluetoothPermission
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
-    @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.P, trackingBug = 115609023)
-    public int getPriority(BluetoothDevice device) {
-        if (VDBG) log("getPriority(" + device + ")");
-        return BluetoothAdapter.connectionPolicyToPriority(getConnectionPolicy(device));
     }
 
     /**
