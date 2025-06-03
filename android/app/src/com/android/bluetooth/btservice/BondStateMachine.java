@@ -45,6 +45,7 @@ import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.hfpclient.HeadsetClientService;
@@ -601,7 +602,13 @@ final class BondStateMachine extends StateMachine {
         intent.putExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, oldState);
         if (newState == BluetoothDevice.BOND_NONE) {
             intent.putExtra(BluetoothDevice.EXTRA_UNBOND_REASON, reason);
+            if (Flags.enableWakeupFlagForIntents() && oldState == BluetoothDevice.BOND_BONDED) {
+                // wakeup the apps to receive the intent when the bond is removed (BOND_BONDED ->
+                // BOND_NONE)
+                intent.addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
+            }
         }
+
         mAdapterService.onBondStateChanged(device, newState);
         mAdapterService.sendBroadcastAsUser(
                 intent,
