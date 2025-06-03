@@ -25,6 +25,7 @@ import android.graphics.BitmapFactory;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.tests.R;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,12 +42,10 @@ public class BipImageTest {
 
     @Test
     public void testParseImage_200by200() {
-        InputStream imageInputStream =
-                mTestResources.openRawResource(com.android.bluetooth.tests.R.raw.image_200_200);
+        InputStream imageInputStream = mTestResources.openRawResource(R.raw.image_200_200);
         BipImage image = new BipImage(IMAGE_HANDLE, imageInputStream);
 
-        InputStream expectedInputStream =
-                mTestResources.openRawResource(com.android.bluetooth.tests.R.raw.image_200_200);
+        InputStream expectedInputStream = mTestResources.openRawResource(R.raw.image_200_200);
         Bitmap bitmap = BitmapFactory.decodeStream(expectedInputStream);
 
         assertThat(image.getImageHandle()).isEqualTo(IMAGE_HANDLE);
@@ -55,12 +54,10 @@ public class BipImageTest {
 
     @Test
     public void testParseImage_600by600() {
-        InputStream imageInputStream =
-                mTestResources.openRawResource(com.android.bluetooth.tests.R.raw.image_600_600);
+        InputStream imageInputStream = mTestResources.openRawResource(R.raw.image_600_600);
         BipImage image = new BipImage(IMAGE_HANDLE, imageInputStream);
 
-        InputStream expectedInputStream =
-                mTestResources.openRawResource(com.android.bluetooth.tests.R.raw.image_600_600);
+        InputStream expectedInputStream = mTestResources.openRawResource(R.raw.image_600_600);
         Bitmap bitmap = BitmapFactory.decodeStream(expectedInputStream);
 
         assertThat(image.getImageHandle()).isEqualTo(IMAGE_HANDLE);
@@ -69,8 +66,7 @@ public class BipImageTest {
 
     @Test
     public void testMakeFromImage_200by200() {
-        InputStream imageInputStream =
-                mTestResources.openRawResource(com.android.bluetooth.tests.R.raw.image_200_200);
+        InputStream imageInputStream = mTestResources.openRawResource(R.raw.image_200_200);
         Bitmap bitmap = BitmapFactory.decodeStream(imageInputStream);
         BipImage image = new BipImage(IMAGE_HANDLE, bitmap);
         assertThat(image.getImageHandle()).isEqualTo(IMAGE_HANDLE);
@@ -79,8 +75,7 @@ public class BipImageTest {
 
     @Test
     public void testMakeFromImage_600by600() {
-        InputStream imageInputStream =
-                mTestResources.openRawResource(com.android.bluetooth.tests.R.raw.image_600_600);
+        InputStream imageInputStream = mTestResources.openRawResource(R.raw.image_600_600);
         Bitmap bitmap = BitmapFactory.decodeStream(imageInputStream);
         BipImage image = new BipImage(IMAGE_HANDLE, bitmap);
         assertThat(image.getImageHandle()).isEqualTo(IMAGE_HANDLE);
