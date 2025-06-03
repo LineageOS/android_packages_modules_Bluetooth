@@ -169,7 +169,7 @@ void generate_local_oob_data_callback(tBT_TRANSPORT /* transport */, bt_oob_data
 void switch_buffer_size_callback(bool /* is_low_latency_buffer_size */) {}
 void switch_codec_callback(bool /* is_low_latency_buffer_size */) {}
 void le_rand_callback(uint64_t /* random */) {}
-void key_missing_callback(const RawAddress /* bd_addr */) {}
+void key_missing_callback(const RawAddress /* bd_addr */, uint8_t /* reason */) {}
 #undef TESTCB
 
 bt_callbacks_t callbacks = {
