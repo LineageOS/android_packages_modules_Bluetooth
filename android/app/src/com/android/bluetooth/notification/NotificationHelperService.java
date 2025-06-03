@@ -33,6 +33,7 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.bluetooth.R;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.messages.SystemMessageProto.SystemMessage;
 
 import java.time.LocalDateTime;
@@ -47,6 +48,8 @@ public class NotificationHelperService extends Service {
     private static final String APM_BT_NOTIFICATION_ON_WATCH = "apm_bt_notification_on_watch";
     private static final String APM_BT_NOTIFICATION_DUE_TO_WATCH =
             "apm_bt_notification_due_to_watch";
+    private static final String APM_BT_NOTIFICATION_DUE_TO_MEDIA =
+            "apm_bt_notification_due_to_media";
     private static final String APM_BT_ENABLED_NOTIFICATION = "apm_bt_enabled_notification";
     private static final String AUTO_ON_BT_ENABLED_NOTIFICATION = "auto_on_bt_enabled_notification";
 
@@ -85,7 +88,11 @@ public class NotificationHelperService extends Service {
                             APM_BT_NOTIFICATION_DUE_TO_WATCH,
                             Pair.create(
                                     R.string.bluetooth_stays_on_title,
-                                    R.string.bluetooth_stays_on_message_due_to_watch));
+                                    R.string.bluetooth_stays_on_message_due_to_watch),
+                            APM_BT_NOTIFICATION_DUE_TO_MEDIA,
+                            Pair.create(
+                                    R.string.bluetooth_stays_on_title,
+                                    R.string.bluetooth_stays_on_message_due_to_media));
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -115,9 +122,19 @@ public class NotificationHelperService extends Service {
         NotificationManager notificationManager =
                 requireNonNull(getSystemService(NotificationManager.class));
         String tag = NOTIFICATION_TAG + "/" + notificationReason;
-        for (StatusBarNotification notification : notificationManager.getActiveNotifications()) {
-            if (tag.equals(notification.getTag())) {
-                notificationManager.cancel(tag, notification.getId());
+        if (Flags.watchDeviceOverrideAirplaneMode()) {
+            for (StatusBarNotification notification :
+                    notificationManager.getActiveNotifications()) {
+                if (notification.getId() == SystemMessage.ID.NOTE_BT_APM_NOTIFICATION_VALUE) {
+                    notificationManager.cancel(notification.getTag(), notification.getId());
+                }
+            }
+        } else {
+            for (StatusBarNotification notification :
+                    notificationManager.getActiveNotifications()) {
+                if (tag.equals(notification.getTag())) {
+                    notificationManager.cancel(tag, notification.getId());
+                }
             }
         }
 
