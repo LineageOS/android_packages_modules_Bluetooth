@@ -106,6 +106,8 @@ public:
   MOCK_METHOD(void, RegisterForScoConnectionRequests,
               (common::ContextualCallback<void(Address, ClassOfDevice, ConnectionRequestLinkType)>
                        on_sco_connection_request));
+  MOCK_METHOD(void, SetLeAclDataConsumer,(LeAclDataConsumer*), (override));
+  MOCK_METHOD(void, SetClassicAclDataConsumer,(ClassicAclDataConsumer*), (override));
 };
 
 }  // namespace testing

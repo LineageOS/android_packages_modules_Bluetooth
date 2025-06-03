@@ -18,9 +18,11 @@
 
 #include <functional>
 
-namespace bluetooth::hci::acl_manager {
+namespace bluetooth::hci {
 
+namespace acl_manager {
 struct assembler;
+}
 
 /* Interface for obtaining count of Classic transport ACLs */
 class ClassicAclDataConsumer {
@@ -31,4 +33,4 @@ public:
           uint16_t handle, std::function<void(struct acl_manager::assembler* assembler)> cb) = 0;
 };
 
-}  // namespace bluetooth::hci::acl_manager
+}  // namespace bluetooth::hci

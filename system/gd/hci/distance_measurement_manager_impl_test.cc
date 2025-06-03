@@ -221,6 +221,8 @@ struct CsModule {
     client_handler_->Clear();
     client_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
 
+    test_hci_layer_.reset();
+
     delete client_handler_;
     delete thread_;
   }

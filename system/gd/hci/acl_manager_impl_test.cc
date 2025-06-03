@@ -90,18 +90,17 @@ class FakeClassicAclCountProvider : public ClassicAclCountProvider {
 public:
   size_t GetAclCount() override { return 0; }
 };
-
 FakeClassicAclCountProvider acl_count_provider_mock;
 
 class FakeClassicAclDataConsumer : public ClassicAclDataConsumer {
 public:
-  bool SendPacketUpward(uint16_t /* handle */,
-                        std::function<void(struct acl_manager::assembler* assembler)> /* cb */) {
+  virtual bool SendPacketUpward(
+          uint16_t /* handle */,
+          std::function<void(struct acl_manager::assembler* assembler)> /* cb */) override {
     return false;
   }
 };
-
-FakeClassicAclDataConsumer classic_acl_data_consumer_mock;
+FakeClassicAclDataConsumer fake_classic_acl_data_consumer;
 
 class AclManagerNoCallbacksTest : public ::testing::Test {
 protected:
@@ -111,6 +110,8 @@ protected:
     ASSERT_NE(client_handler_, nullptr);
     test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
     test_controller_ = std::make_unique<TestController>();
+
+    test_hci_layer_->SetClassicAclDataConsumer(&fake_classic_acl_data_consumer);
 
     EXPECT_CALL(*test_controller_, GetMacAddress());
     EXPECT_CALL(*test_controller_, GetLeFilterAcceptListSize());
@@ -124,7 +125,7 @@ protected:
 
     acl_manager_ = std::make_unique<AclManagerImpl>(
             client_handler_, *test_hci_layer_, *test_controller_, *test_storage_,
-            *test_round_robin_scheduler_, acl_count_provider_mock, classic_acl_data_consumer_mock);
+            *test_round_robin_scheduler_, acl_count_provider_mock);
 
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 
@@ -616,6 +617,8 @@ protected:
     ASSERT_NE(client_handler_, nullptr);
 
     test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
+    test_hci_layer_->SetClassicAclDataConsumer(&fake_classic_acl_data_consumer);
+
     test_controller_ = std::make_unique<TestController>();
     test_storage_ = std::make_unique<storage::StorageModule>(client_handler_);
 
@@ -623,7 +626,7 @@ protected:
             client_handler_, *test_controller_, test_hci_layer_->GetAclQueueEnd());
     acl_manager_ = std::make_unique<AclManagerImpl>(
             client_handler_, *test_hci_layer_, *test_controller_, *test_storage_,
-            *test_round_robin_scheduler_, acl_count_provider_mock, classic_acl_data_consumer_mock);
+            *test_round_robin_scheduler_, acl_count_provider_mock);
 
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 

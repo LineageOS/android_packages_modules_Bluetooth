@@ -59,6 +59,8 @@ public:
     hci_->RegisterLeEventHandler(
             SubeventCode::CONNECTION_COMPLETE,
             handler_->BindOn(this, &DependsOnHci::handle_event<LeMetaEventView>));
+    // We must unregister Dequeue registered by HciDataRouter for this tests
+    hci_->GetAclQueueEnd()->UnregisterDequeue();
     hci_->GetAclQueueEnd()->RegisterDequeue(
             handler_, common::Bind(&DependsOnHci::handle_acl, common::Unretained(this)));
     hci_->GetIsoQueueEnd()->RegisterDequeue(
@@ -66,7 +68,8 @@ public:
   }
 
   ~DependsOnHci() {
-    hci_->GetAclQueueEnd()->UnregisterDequeue();
+    // HciDataRouter destructor will unregister our queue
+    // hci_->GetAclQueueEnd()->UnregisterDequeue();
     hci_->GetIsoQueueEnd()->UnregisterDequeue();
   }
 
@@ -245,10 +248,10 @@ public:
 
   os::Thread* thread_ = nullptr;
   os::Handler* client_handler_ = nullptr;
-  std::unique_ptr<DependsOnHci> upper = nullptr;
   std::unique_ptr<hal::TestHciHal> hal = nullptr;
   std::unique_ptr<storage::StorageModule> storage = nullptr;
   std::unique_ptr<HciLayer> hci = nullptr;
+  std::unique_ptr<DependsOnHci> upper = nullptr;
 };
 
 TEST_F(HciTest, initAndClose) {}

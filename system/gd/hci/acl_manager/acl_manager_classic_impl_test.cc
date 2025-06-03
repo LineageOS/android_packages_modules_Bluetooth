@@ -93,6 +93,15 @@ public:
   common::ContextualCallback<void(uint16_t /* handle */, uint16_t /* packets */)> acl_cb_;
 };
 
+class FakeLeAclDataConsumer : public LeAclDataConsumer {
+public:
+  virtual bool SendPacketUpward(
+          uint16_t /* handle */,
+          std::function<void(struct acl_manager::assembler* assembler)> /* cb */) override {
+    return false;
+  }
+};
+
 class AclManagerClassicNoCallbacksTest : public ::testing::Test {
 protected:
   void SetUp() override {
@@ -101,6 +110,8 @@ protected:
     ASSERT_NE(client_handler_, nullptr);
     test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
     test_controller_ = std::make_unique<TestController>();
+
+    test_hci_layer_->SetLeAclDataConsumer(&fakeLeAclDataConsumer_);
 
     EXPECT_CALL(*test_controller_, GetMacAddress());
     EXPECT_CALL(*test_controller_, GetLeFilterAcceptListSize());
@@ -119,7 +130,7 @@ protected:
             *test_round_robin_scheduler_);
     acl_manager_ = std::make_unique<AclManagerImpl>(
             client_handler_, *test_hci_layer_, *test_controller_, *test_storage_,
-            *test_round_robin_scheduler_, *acl_manager_classic_, *acl_manager_classic_);
+            *test_round_robin_scheduler_, *acl_manager_classic_);
 
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 
@@ -191,6 +202,8 @@ protected:
   std::unique_ptr<RoundRobinScheduler> test_round_robin_scheduler_ = nullptr;
   std::unique_ptr<AclManagerClassicImpl> acl_manager_classic_ = nullptr;
   std::unique_ptr<AclManagerImpl> acl_manager_ = nullptr;
+
+  FakeLeAclDataConsumer fakeLeAclDataConsumer_;
   Address remote;
   AddressWithType my_initiating_address;
   const bool use_accept_list_ = true;  // gd currently only supports connect list
@@ -780,7 +793,7 @@ protected:
             *test_round_robin_scheduler_);
     acl_manager_ = std::make_unique<AclManagerImpl>(
             client_handler_, *test_hci_layer_, *test_controller_, *test_storage_,
-            *test_round_robin_scheduler_, *acl_manager_classic_, *acl_manager_classic_);
+            *test_round_robin_scheduler_, *acl_manager_classic_);
 
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
   }

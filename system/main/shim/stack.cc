@@ -85,7 +85,7 @@ struct Stack::impl {
         acl_manager_classic_(handler, hci_layer_, acl_scheduler_, remote_name_request_,
                              round_robin_scheduler_),
         acl_manager_(handler, hci_layer_, controller_, storage_, round_robin_scheduler_,
-                     acl_manager_classic_, acl_manager_classic_),
+                     acl_manager_classic_),
         le_scanning_manager_(handler, &hci_layer_, &controller_, acl_manager_.GetLeAddressManager(),
                              &storage_),
         msft_extension_manager_(handler, &hci_hal_, &hci_layer_),
