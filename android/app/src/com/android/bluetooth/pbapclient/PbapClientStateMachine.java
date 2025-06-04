@@ -679,11 +679,11 @@ class PbapClientStateMachine extends StateMachine {
                         mPhonebooks
                                 .get(phonebook)
                                 .onContactsDownloaded(numReceived, numImagesDownloaded);
-                        int totalContactDownloaded =
+                        int totalContactsDownloaded =
                                 mPhonebooks.get(phonebook).getNumberOfContactsDownloaded();
                         int totalContactsExpected =
                                 mPhonebooks.get(phonebook).getTotalNumberOfContacts();
-                        int totalContactDownloadedWithImages =
+                        int totalContactsDownloadedWithImages =
                                 mPhonebooks
                                         .get(phonebook)
                                         .getNumberOfContactsDownloadedWithImages();
@@ -695,10 +695,10 @@ class PbapClientStateMachine extends StateMachine {
                                         + numReceived
                                         + (" (images=" + numImagesDownloaded + ")")
                                         + ", total="
-                                        + totalContactDownloaded
+                                        + totalContactsDownloaded
                                         + "/"
                                         + totalContactsExpected
-                                        + (" (images=" + totalContactDownloadedWithImages + ")"));
+                                        + (" (images=" + totalContactsDownloadedWithImages + ")"));
                         if (numReceived != 0) {
                             storeDownloadedContacts(phonebook, contacts);
                         } else {
@@ -718,7 +718,7 @@ class PbapClientStateMachine extends StateMachine {
                             break;
                         }
 
-                        if (totalContactDownloaded >= totalContactsExpected) {
+                        if (totalContactsDownloaded >= totalContactsExpected) {
                             info("Downloading: download complete, phonebook=" + phonebook);
                             asyncTraceForTrackEndForDevice(); // End trace slice for
                             // downloadPhonebook().
@@ -732,7 +732,7 @@ class PbapClientStateMachine extends StateMachine {
                         } else {
                             downloadPhonebook(
                                     currentPhonebook,
-                                    totalContactDownloaded,
+                                    totalContactsDownloaded,
                                     CONTACT_DOWNLOAD_BATCH_SIZE);
                         }
                     } else {
@@ -1142,15 +1142,15 @@ class PbapClientStateMachine extends StateMachine {
         ProfileService.println(sb, "    Download Batch Size: " + CONTACT_DOWNLOAD_BATCH_SIZE);
 
         int totalContacts = 0;
-        int totalContactDownloaded = 0;
+        int totalContactsDownloaded = 0;
         ProfileService.println(sb, "    Supported Repositories:");
         for (Phonebook pb : mPhonebooks.values()) {
             ProfileService.println(sb, "      " + pb);
             totalContacts += pb.getTotalNumberOfContacts();
-            totalContactDownloaded += pb.getNumberOfContactsDownloaded();
+            totalContactsDownloaded += pb.getNumberOfContactsDownloaded();
         }
         ProfileService.println(sb, "    Total Contacts: " + totalContacts);
         ProfileService.println(
-                sb, "    Download Progress: " + totalContactDownloaded + "/" + totalContacts);
+                sb, "    Download Progress: " + totalContactsDownloaded + "/" + totalContacts);
     }
 }
