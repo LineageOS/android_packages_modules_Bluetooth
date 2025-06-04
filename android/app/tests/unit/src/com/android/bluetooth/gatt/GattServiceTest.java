@@ -167,15 +167,13 @@ public class GattServiceTest {
                         (Answer<Void>)
                                 invocation -> {
                                     Object[] arguments = invocation.getArguments();
-                                    if (arguments != null && arguments.length == 4) {
-                                        int id = (int) arguments[0];
-                                        int connId = (int) arguments[1];
-                                        int transport = (int) arguments[2];
-                                        BluetoothDevice device = (BluetoothDevice) arguments[3];
-                                        mServerConnections.add(
-                                                new ContextMap.Connection(
-                                                        connId, device, transport, id));
-                                    }
+                                    int id = (int) arguments[0];
+                                    int connId = (int) arguments[1];
+                                    int transport = (int) arguments[2];
+                                    BluetoothDevice device = (BluetoothDevice) arguments[3];
+                                    mServerConnections.add(
+                                            new ContextMap.Connection(
+                                                    connId, device, transport, id));
                                     return null;
                                 })
                 .when(mServerMap)
@@ -184,14 +182,10 @@ public class GattServiceTest {
                         (Answer<Void>)
                                 invocation -> {
                                     Object[] arguments = invocation.getArguments();
-                                    if (arguments != null && arguments.length == 2) {
-                                        int id = (int) arguments[0];
-                                        int connId = (int) arguments[1];
-                                        mServerConnections.removeIf(
-                                                conn ->
-                                                        conn.appId() == id
-                                                                && conn.connId() == connId);
-                                    }
+                                    int id = (int) arguments[0];
+                                    int connId = (int) arguments[1];
+                                    mServerConnections.removeIf(
+                                            conn -> conn.appId() == id && conn.connId() == connId);
                                     return null;
                                 })
                 .when(mServerMap)
@@ -202,15 +196,12 @@ public class GattServiceTest {
                                     List<ContextMap.Connection> currentConnections =
                                             new ArrayList<ContextMap.Connection>();
                                     Object[] arguments = invocation.getArguments();
-                                    if (arguments != null && arguments.length == 2) {
-                                        int id = (int) arguments[0];
-                                        BluetoothDevice device = (BluetoothDevice) arguments[1];
-                                        for (ContextMap.Connection connection :
-                                                mServerConnections) {
-                                            if (connection.device().equals(device)
-                                                    && connection.appId() == id) {
-                                                currentConnections.add(connection);
-                                            }
+                                    int id = (int) arguments[0];
+                                    BluetoothDevice device = (BluetoothDevice) arguments[1];
+                                    for (ContextMap.Connection connection : mServerConnections) {
+                                        if (connection.device().equals(device)
+                                                && connection.appId() == id) {
+                                            currentConnections.add(connection);
                                         }
                                     }
                                     return currentConnections;

@@ -72,7 +72,8 @@ public class BluetoothOppManagerTest {
 
     @Before
     public void setUp() {
-        ExtendedMockito.doReturn(mAdapterService).when(() -> AdapterService.getAdapterService());
+        ExtendedMockito.doReturn(mAdapterService)
+                .when(() -> AdapterService.deprecatedGetAdapterService());
         mContext =
                 spy(new ContextWrapper(InstrumentationRegistry.getInstrumentation().getContext()));
 

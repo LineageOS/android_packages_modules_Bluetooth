@@ -57,6 +57,13 @@ enum tBTM_PAIRING_STATE : uint8_t {
   BTM_PAIR_STATE_WAIT_DISCONNECT       /* Waiting to disconnect the ACL */
 };
 
+enum tBTM_KEY_MISSING_REASON : uint8_t {
+  BTM_KEY_MISSING_BREDR_AUTH_FAILURE,
+  BTM_KEY_MISSING_BREDR_INCOMING_PAIRING,
+  BTM_KEY_MISSING_LE_ENCRYPT_FAILURE,
+  BTM_KEY_MISSING_LE_INCOMING_PAIRING
+};
+
 #define BTM_PAIR_FLAGS_WE_STARTED_DD 0x01    /* We want to do dedicated bonding              */
 #define BTM_PAIR_FLAGS_PEER_STARTED_DD 0x02  /* Peer initiated dedicated bonding             */
 #define BTM_PAIR_FLAGS_DISC_WHEN_DONE 0x04   /* Disconnect when done     */

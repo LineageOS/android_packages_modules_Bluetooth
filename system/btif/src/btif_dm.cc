@@ -2281,7 +2281,7 @@ void btif_dm_sec_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
       break;
 
     case BTA_DM_KEY_MISSING_EVT:
-      GetInterfaceToProfiles()->events->invoke_key_missing_cb(p_data->key_missing.bd_addr);
+      GetInterfaceToProfiles()->events->invoke_key_missing_cb(p_data->key_missing);
       break;
 
     case BTA_DM_ENCRYPTION_CHANGE_EVT:

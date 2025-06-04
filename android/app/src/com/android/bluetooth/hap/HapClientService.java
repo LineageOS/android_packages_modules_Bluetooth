@@ -388,8 +388,7 @@ public class HapClientService extends ConnectableProfile {
         }
         ActiveDeviceManager adManager = mAdapterService.getActiveDeviceManager();
         if (adManager != null) {
-            adManager.profileConnectionStateChanged(
-                    BluetoothProfile.HAP_CLIENT, device, fromState, toState);
+            adManager.profileConnectionStateChanged(mProfileId, device, fromState, toState);
         }
     }
 

@@ -945,19 +945,20 @@ static void bta_gattc_get_gatt_db_impl(tBTA_GATTC_SERV* p_srvc_cb, uint16_t star
                                        uint16_t end_handle, btgatt_db_element_t** db, int* count) {
   log::verbose("start_handle 0x{:04x}, end_handle 0x{:04x}", start_handle, end_handle);
 
-  if (p_srvc_cb->gatt_database.IsEmpty()) {
+  // Copy the database as it could be deallocated by another thread.
+  gatt::Database server_gatt_db = p_srvc_cb->gatt_database;
+  if (server_gatt_db.IsEmpty()) {
     *count = 0;
     *db = NULL;
     return;
   }
 
-  size_t db_size =
-          bta_gattc_get_db_size(p_srvc_cb->gatt_database.Services(), start_handle, end_handle);
+  size_t db_size = bta_gattc_get_db_size(server_gatt_db.Services(), start_handle, end_handle);
 
   void* buffer = osi_malloc(db_size * sizeof(btgatt_db_element_t));
   btgatt_db_element_t* curr_db_attr = (btgatt_db_element_t*)buffer;
 
-  for (const Service& service : p_srvc_cb->gatt_database.Services()) {
+  for (const Service& service : server_gatt_db.Services()) {
     if (service.handle < start_handle) {
       continue;
     }

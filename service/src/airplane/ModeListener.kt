@@ -225,6 +225,10 @@ private fun airplaneModeValueOverride(
     //       Should we turn Bluetooth OFF like asked initially ? Or keep it ON like the toggle ?
     if (isMediaConnected) {
         Log.i(TAG, "Legacy Mode: override and stays ON since media profile are connected")
+        if (Flags.watchDeviceOverrideAirplaneMode()) {
+            sendAirplaneModeNotification?.invoke(APM_BT_NOTIFICATION_DUE_TO_MEDIA)
+            return false
+        }
         ToastNotification.displayIfNeeded(resolver, getUser)
         return false
     }
@@ -369,6 +373,9 @@ internal const val APM_BT_NOTIFICATION_ON_WATCH = "apm_bt_notification_on_watch"
 
 // Notification Id for when the airplane mode is turn on but a watch is connected (not on a watch)
 internal const val APM_BT_NOTIFICATION_DUE_TO_WATCH = "apm_bt_notification_due_to_watch"
+
+// Notification Id for when the airplane mode is turn on but a watch is connected (not on a watch)
+internal const val APM_BT_NOTIFICATION_DUE_TO_MEDIA = "apm_bt_notification_due_to_media"
 
 // Notification Id for when the airplane mode is turn on but Bluetooth and Wifi stay on
 internal const val APM_WIFI_BT_NOTIFICATION = "apm_wifi_bt_notification"

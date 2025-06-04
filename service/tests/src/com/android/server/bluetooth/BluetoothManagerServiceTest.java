@@ -876,6 +876,29 @@ public class BluetoothManagerServiceTest {
         endTest();
     }
 
+    @Test
+    @EnableFlags({
+        Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP,
+        Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
+        Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD,
+        Flags.FLAG_CLEANUP_STARTING_USER,
+        Flags.FLAG_USER_SWITCH_DURING_BLE_ON
+    })
+    public void enable_afterLeSession_canStart() throws Exception {
+        mManagerService.enableBle("enable_afterLeSession_canStart", mBleBinder);
+        IBluetoothCallback btCallback = transition_offToBleOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.BLE_ON);
+        mManagerService.disableBle("enable_afterLeSession_canStart", mBleBinder);
+        transition_bleOnToOff(btCallback);
+        assertThat(mManagerService.getState()).isEqualTo(State.OFF);
+
+        mManagerService.enable("enable_afterLeSession_canStart");
+        transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        endTest();
+    }
+
     @SafeVarargs
     private void verifyIntentSent(Matcher<Intent>... matchers) {
         mInOrder.verify(mContext)

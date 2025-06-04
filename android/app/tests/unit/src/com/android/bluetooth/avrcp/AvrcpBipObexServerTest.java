@@ -33,6 +33,7 @@ import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.audio_util.Image;
 import com.android.bluetooth.avrcpcontroller.BipEncoding;
 import com.android.bluetooth.avrcpcontroller.BipImageDescriptor;
+import com.android.bluetooth.tests.R;
 import com.android.obex.HeaderSet;
 import com.android.obex.Operation;
 import com.android.obex.ResponseCodes;
@@ -115,7 +116,7 @@ public class AvrcpBipObexServerTest {
 
     @Before
     public void setUp() throws Exception {
-        mCoverArt = loadCoverArt(com.android.bluetooth.tests.R.raw.image_200_200);
+        mCoverArt = loadCoverArt(R.raw.image_200_200);
 
         mAvrcpCoverArtService = mock(AvrcpCoverArtService.class);
         mCallback = mock(AvrcpBipObexServer.Callback.class);

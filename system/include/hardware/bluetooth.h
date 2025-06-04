@@ -620,7 +620,7 @@ typedef void (*energy_info_callback)(bt_activity_energy_info* energy_info,
 /** Callback invoked when OOB data is returned from the controller */
 typedef void (*generate_local_oob_data_callback)(tBT_TRANSPORT transport, bt_oob_data_t oob_data);
 
-typedef void (*key_missing_callback)(const RawAddress bd_addr);
+typedef void (*key_missing_callback)(const RawAddress bd_addr, uint8_t reason);
 
 typedef void (*encryption_change_callback)(const bt_encryption_change_evt encryption_change);
 
