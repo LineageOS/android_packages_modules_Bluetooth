@@ -771,6 +771,10 @@ public class AdapterService extends Service {
                 .filter(ProfileService::isAvailable);
     }
 
+    public Optional<TbsService> getTbsService() {
+        return getStartedProfile(BluetoothProfile.LE_CALL_CONTROL, TbsService.class);
+    }
+
     Optional<ConnectableProfile> getStartedConnectableProfile(int id) {
         return getStartedProfile(id, ConnectableProfile.class);
     }
