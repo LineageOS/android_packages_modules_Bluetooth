@@ -542,6 +542,7 @@ package android.bluetooth {
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothClass getBluetoothClass();
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public int getBondState();
     method @FlaggedApi("com.android.bluetooth.flags.identity_address_type_api") @NonNull @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public android.bluetooth.BluetoothDevice.BluetoothAddress getIdentityAddressWithType();
+    method @FlaggedApi("com.android.bluetooth.flags.key_missing_count_api") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public int getKeyMissingCount();
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public String getName();
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public int getType();
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.os.ParcelUuid[] getUuids();

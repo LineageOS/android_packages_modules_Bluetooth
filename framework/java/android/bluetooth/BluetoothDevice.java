@@ -3718,13 +3718,13 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     }
 
     /**
-     * Get the number of times {@link ACTION_KEY_MISSING} intent is thrown for this device since
-     * last successful encrypted connection
+     * Get the number of times {@link ACTION_KEY_MISSING} intent was thrown for this device since
+     * the last successful encrypted connection
      *
-     * @return number of times {@link ACTION_KEY_MISSING} intent is thrown for this device since
-     *     last successful encrypted connection
-     * @hide
+     * @return number of times {@link ACTION_KEY_MISSING} intent was thrown for this device since
+     *     the last successful encrypted connection
      */
+    @FlaggedApi(Flags.FLAG_KEY_MISSING_COUNT_API)
     @RequiresPermission(BLUETOOTH_CONNECT)
     public int getKeyMissingCount() {
         final IBluetooth service = getService();
