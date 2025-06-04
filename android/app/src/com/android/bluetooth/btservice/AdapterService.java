@@ -442,7 +442,8 @@ public class AdapterService extends Service {
         mDatabaseManager = new DatabaseManager(this);
     }
 
-    public static synchronized AdapterService getAdapterService() {
+    @Deprecated // Do not expand this method usage and use injection pattern when needed.
+    public static synchronized AdapterService deprecatedGetAdapterService() {
         return sAdapterService;
     }
 

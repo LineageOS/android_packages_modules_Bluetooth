@@ -378,7 +378,7 @@ public class BluetoothOppManager {
                         1);
                 return;
             }
-            final var adapterService = AdapterService.getAdapterService();
+            final var adapterService = AdapterService.deprecatedGetAdapterService();
             if (mIsMultiple) {
                 insertMultipleShare(adapterService);
             } else {
