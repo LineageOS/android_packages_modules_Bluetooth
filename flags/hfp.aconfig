@@ -9,6 +9,13 @@ flag {
 }
 
 flag {
+    name: "sco_managed_by_audio_remove_hfp_hal"
+    namespace: "bluetooth"
+    description: "Deprecate the btm_sco_hfp_hal and migrate to IBluetoothAudio"
+    bug: "417621867"
+}
+
+flag {
     name: "hfp_software_datapath"
     namespace: "bluetooth"
     description: "enable HFP software decode/encode data path"
