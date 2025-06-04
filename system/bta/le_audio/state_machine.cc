@@ -148,16 +148,8 @@ namespace {
 
 using namespace bluetooth;
 
-constexpr int linkQualityCheckInterval = 4000;
 constexpr int kAutonomousTransitionTimeoutMs = 5000;
 constexpr int kNumberOfCisRetries = 2;
-
-static void link_quality_cb(void* data) {
-  // very ugly, but we need to pass just two bytes
-  uint16_t cis_conn_handle = *((uint16_t*)data);
-
-  IsoManager::GetInstance()->ReadIsoLinkQuality(cis_conn_handle);
-}
 
 class LeAudioGroupStateMachineImpl;
 LeAudioGroupStateMachineImpl* instance;
@@ -681,15 +673,6 @@ public:
     PrepareAndSendQoSToTheGroup(group);
   }
 
-  void FreeLinkQualityReports(LeAudioDevice* leAudioDevice) {
-    if (leAudioDevice->link_quality_timer == nullptr) {
-      return;
-    }
-
-    alarm_free(leAudioDevice->link_quality_timer);
-    leAudioDevice->link_quality_timer = nullptr;
-  }
-
   void ProcessHciNotifyOnCigRemoveRecovering(uint8_t status, LeAudioDeviceGroup* group) {
     group->cig.SetState(CigState::NONE);
 
@@ -731,20 +714,6 @@ public:
                      ToString(group->cig.GetState()));
 
     group->cig.SetState(CigState::NONE);
-
-    LeAudioDevice* leAudioDevice = group->GetFirstDevice();
-    if (!leAudioDevice) {
-      return;
-    }
-
-    do {
-      FreeLinkQualityReports(leAudioDevice);
-
-      for (auto& ase : leAudioDevice->ases_) {
-        ase.cis_state = CisState::IDLE;
-        ase.data_path_state = DataPathState::IDLE;
-      }
-    } while ((leAudioDevice = group->GetNextDevice(leAudioDevice)));
   }
 
   void ProcessHciNotifSetupIsoDataPath(LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice,
@@ -928,7 +897,7 @@ public:
   }
 
   void ProcessHciNotifAclDisconnected(LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice) {
-    FreeLinkQualityReports(leAudioDevice);
+    leAudioDevice->FreeLinkQualityReports();
     if (!group) {
       log::error("group is null for device: {} group_id: {}", leAudioDevice->address_,
                  leAudioDevice->group_id_);
@@ -1205,10 +1174,7 @@ public:
     }
 
     if (osi_property_get_bool("persist.bluetooth.iso_link_quality_report", false)) {
-      leAudioDevice->link_quality_timer = alarm_new_periodic("le_audio_cis_link_quality");
-      leAudioDevice->link_quality_timer_data = event->cis_conn_hdl;
-      alarm_set_on_mloop(leAudioDevice->link_quality_timer, linkQualityCheckInterval,
-                         link_quality_cb, &leAudioDevice->link_quality_timer_data);
+      leAudioDevice->StartLinkQualityReports(event->cis_conn_hdl);
     }
 
     if (!leAudioDevice->HaveAllActiveAsesCisEst()) {
@@ -1317,7 +1283,7 @@ public:
           const bluetooth::hci::iso_manager::cis_disconnected_evt* event) override {
     /* Reset the disconnected CIS states */
 
-    FreeLinkQualityReports(leAudioDevice);
+    leAudioDevice->FreeLinkQualityReports();
 
     auto ases_pair = leAudioDevice->GetAsesByCisConnHdl(event->cis_conn_hdl);
 

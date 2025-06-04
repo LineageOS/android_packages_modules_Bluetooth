@@ -57,11 +57,7 @@ public:
     CigConfiguration(LeAudioDeviceGroup* group) : group_(group), state_(types::CigState::NONE) {}
 
     types::CigState GetState(void) const { return state_; }
-    void SetState(bluetooth::le_audio::types::CigState state) {
-      log::verbose("{} -> {}", bluetooth::common::ToString(state_),
-                   bluetooth::common::ToString(state));
-      state_ = state;
-    }
+    void SetState(bluetooth::le_audio::types::CigState state);
     void GetCisCount(types::LeAudioContextType context_type, uint8_t& out_cis_count_bidir,
                      uint8_t& out_cis_count_unidir_sink,
                      uint8_t& out_cis_count_unidir_source) const;
