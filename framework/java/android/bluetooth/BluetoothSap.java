@@ -429,23 +429,6 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
     }
 
     /**
-     * Set priority of the profile
-     *
-     * <p>The device should already be paired. Priority can be one of {@link #PRIORITY_ON} or {@link
-     * #PRIORITY_OFF},
-     *
-     * @param device Paired bluetooth device
-     * @return true if priority is set, false on error
-     * @hide
-     */
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
-    public boolean setPriority(BluetoothDevice device, int priority) {
-        log("setPriority(" + device + ", " + priority + ")");
-        return setConnectionPolicy(device, BluetoothAdapter.priorityToConnectionPolicy(priority));
-    }
-
-    /**
      * Set connection policy of the profile
      *
      * <p>The device should already be paired. Connection policy can be one of {@link
@@ -480,23 +463,6 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
             }
         }
         return false;
-    }
-
-    /**
-     * Get the priority of the profile.
-     *
-     * <p>The priority can be any of: {@link #PRIORITY_OFF}, {@link #PRIORITY_ON}, {@link
-     * #PRIORITY_UNDEFINED}
-     *
-     * @param device Bluetooth device
-     * @return priority of the device
-     * @hide
-     */
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
-    public int getPriority(BluetoothDevice device) {
-        if (VDBG) log("getPriority(" + device + ")");
-        return BluetoothAdapter.connectionPolicyToPriority(getConnectionPolicy(device));
     }
 
     /**
