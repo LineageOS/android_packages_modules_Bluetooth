@@ -30,12 +30,14 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * The silence device manager controls silence mode for A2DP, HFP, and AVRCP.
@@ -52,7 +54,7 @@ public class SilenceDeviceManager {
     private static final String TAG = Utils.BT_PREFIX + SilenceDeviceManager.class.getSimpleName();
 
     private final AdapterService mAdapterService;
-    private final ServiceFactory mFactory;
+    private final ServiceFactory mFactory; // TODO(b/422543753) Delete on flag cleanup
     private final Handler mHandler;
 
     private final Map<BluetoothDevice, Boolean> mSilenceDevices = new HashMap<>();
@@ -229,17 +231,26 @@ public class SilenceDeviceManager {
                 return;
             }
         }
-        mSilenceDevices.replace(device, state);
+        final var stateFinal = state;
+        mSilenceDevices.replace(device, stateFinal);
 
-        A2dpService a2dpService = mFactory.getA2dpService();
-        if (a2dpService != null) {
-            a2dpService.setSilenceMode(device, state);
+        final Optional<A2dpService> a2dpService;
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            a2dpService = mAdapterService.getA2dpService();
+        } else {
+            a2dpService = Optional.ofNullable(mFactory.getA2dpService());
         }
-        HeadsetService headsetService = mFactory.getHeadsetService();
-        if (headsetService != null) {
-            headsetService.setSilenceMode(device, state);
+        a2dpService.ifPresent(a2dp -> a2dp.setSilenceMode(device, stateFinal));
+
+        final Optional<HeadsetService> headsetService;
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            headsetService = mAdapterService.getHeadsetService();
+        } else {
+            headsetService = Optional.ofNullable(mFactory.getHeadsetService());
         }
-        Log.i(TAG, "Silence mode change " + device + ": " + oldState + " -> " + state);
+        headsetService.ifPresent(headset -> headset.setSilenceMode(device, stateFinal));
+
+        Log.i(TAG, "Silence mode change " + device + ": " + oldState + " -> " + stateFinal);
         broadcastSilenceStateChange(device);
     }
 

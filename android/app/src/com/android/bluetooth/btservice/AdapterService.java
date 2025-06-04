@@ -730,7 +730,7 @@ public class AdapterService extends Service {
         return mBluetoothHciVendorSpecificNativeInterface;
     }
 
-    private Optional<A2dpService> getA2dpService() {
+    Optional<A2dpService> getA2dpService() {
         return getStartedProfile(BluetoothProfile.A2DP, A2dpService.class);
     }
 
@@ -738,7 +738,7 @@ public class AdapterService extends Service {
         return getStartedProfile(BluetoothProfile.HEADSET_CLIENT, HeadsetClientService.class);
     }
 
-    private Optional<HeadsetService> getHeadsetService() {
+    Optional<HeadsetService> getHeadsetService() {
         return getStartedProfile(BluetoothProfile.HEADSET, HeadsetService.class);
     }
 
