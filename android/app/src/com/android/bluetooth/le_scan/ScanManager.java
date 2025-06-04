@@ -448,23 +448,72 @@ public class ScanManager {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case MSG_START_BLE_SCAN -> handleStartScan((ScanClient) msg.obj);
-                case MSG_STOP_BLE_SCAN -> handleStopScan((ScanClient) msg.obj);
-                case MSG_FLUSH_BATCH_RESULTS -> handleFlushBatchResults((ScanClient) msg.obj);
-                case MSG_SCAN_TIMEOUT -> regularScanTimeout((ScanClient) msg.obj);
-                case MSG_SUSPEND_SCANS -> handleSuspendScans();
-                case MSG_RESUME_SCANS -> handleResumeScans();
-                case MSG_SCREEN_OFF -> handleScreenOff();
-                case MSG_SCREEN_ON -> handleScreenOn();
+                case MSG_START_BLE_SCAN -> handleStartScanClientHandlerImpl((ScanClient) msg.obj);
+                case MSG_STOP_BLE_SCAN -> handleStopScanClientHandlerImpl((ScanClient) msg.obj);
+                case MSG_FLUSH_BATCH_RESULTS -> handleFlushBatchResultsClientHandlerImpl((ScanClient) msg.obj);
+                case MSG_SCAN_TIMEOUT -> regularScanTimeoutClientHandlerImpl((ScanClient) msg.obj);
+                case MSG_SUSPEND_SCANS -> handleSuspendScansClientHandlerImpl();
+                case MSG_RESUME_SCANS -> handleResumeScansClientHandlerImpl();
+                case MSG_SCREEN_OFF -> handleScreenOffClientHandlerImpl();
+                case MSG_SCREEN_ON -> handleScreenOnClientHandlerImpl();
                 case MSG_REVERT_SCAN_MODE_UPGRADE ->
-                        handleRevertScanModeUpgrade((ScanClient) msg.obj);
-                case MSG_IMPORTANCE_CHANGE -> handleImportanceChange((UidImportance) msg.obj);
-                case MSG_START_CONNECTING -> handleConnectingState();
-                case MSG_STOP_CONNECTING -> handleClearConnectingState();
+                        handleRevertScanModeUpgradeClientHandlerImpl((ScanClient) msg.obj);
+                case MSG_IMPORTANCE_CHANGE -> handleImportanceChangeClientHandlerImpl((UidImportance) msg.obj);
+                case MSG_START_CONNECTING -> handleConnectingStateClientHandlerImpl();
+                case MSG_STOP_CONNECTING -> handleClearConnectingStateClientHandlerImpl();
                 // Shouldn't happen.
                 default -> Log.e(TAG, "received an unknown message : " + msg.what);
             }
         }
+
+        void handleStartScanClientHandlerImpl(ScanClient client) {
+            handleStartScan(client);
+        }
+
+        void handleStopScanClientHandlerImpl(ScanClient client) {
+            handleStopScan(client);
+        }
+
+        void handleFlushBatchResultsClientHandlerImpl(ScanClient client) {
+            handleFlushBatchResults(client);
+        }
+
+        void regularScanTimeoutClientHandlerImpl(ScanClient client) {
+            regularScanTimeout(client);
+        }
+
+        void handleSuspendScansClientHandlerImpl() {
+            handleSuspendScans();
+        }
+
+        void handleResumeScansClientHandlerImpl() {
+            handleResumeScans();
+        }
+
+        void handleScreenOffClientHandlerImpl() {
+            handleScreenOff();
+        }
+
+        void handleScreenOnClientHandlerImpl() {
+            handleScreenOn();
+        }
+
+        void handleRevertScanModeUpgradeClientHandlerImpl(ScanClient client) {
+            handleRevertScanModeUpgrade(client);
+        }
+
+        void handleImportanceChangeClientHandlerImpl(UidImportance uidImportance) {
+            handleImportanceChange(uidImportance);
+        }
+
+        void handleConnectingStateClientHandlerImpl() {
+            handleConnectingState();
+        }
+
+        void handleClearConnectingStateClientHandlerImpl() {
+            handleClearConnectingState();
+        }
+    }
 
         private void handleStartScan(ScanClient client) {
             Log.d(TAG, "handling starting scan");
@@ -524,11 +573,11 @@ public class ScanManager {
                     configureRegularScanParams();
 
                     if (!isExemptFromScanTimeout(client)) {
-                        Message msg = obtainMessage(MSG_SCAN_TIMEOUT);
+                        Message msg = mClientHandler.obtainMessage(MSG_SCAN_TIMEOUT);
                         msg.obj = client;
                         // Only one timeout message should exist at any time
-                        removeMessages(MSG_SCAN_TIMEOUT, client);
-                        sendMessageDelayed(msg, mAdapterService.getScanTimeoutMillis());
+                        mClientHandler.removeMessages(MSG_SCAN_TIMEOUT, client);
+                        mClientHandler.sendMessageDelayed(msg, mAdapterService.getScanTimeoutMillis());
                         Log.d(
                                 TAG,
                                 "apply scan timeout ("
@@ -579,8 +628,8 @@ public class ScanManager {
             if (mSuspendedScanClients.contains(client)) {
                 mSuspendedScanClients.remove(client);
             }
-            removeMessages(MSG_REVERT_SCAN_MODE_UPGRADE, client);
-            removeMessages(MSG_SCAN_TIMEOUT, client);
+            mClientHandler.removeMessages(MSG_REVERT_SCAN_MODE_UPGRADE, client);
+            mClientHandler.removeMessages(MSG_SCAN_TIMEOUT, client);
             if (mRegularScanClients.contains(client)) {
                 stopRegularScan(client);
 
@@ -659,9 +708,9 @@ public class ScanManager {
             if (updatedScanParams) {
                 configureRegularScanParams();
             }
-            removeMessages(MSG_STOP_CONNECTING);
-            Message msg = obtainMessage(MSG_STOP_CONNECTING);
-            sendMessageDelayed(msg, mAdapterService.getScanDowngradeDurationMillis());
+            mClientHandler.removeMessages(MSG_STOP_CONNECTING);
+            Message msg = mClientHandler.obtainMessage(MSG_STOP_CONNECTING);
+            mClientHandler.sendMessageDelayed(msg, mAdapterService.getScanDowngradeDurationMillis());
         }
 
         private void handleClearConnectingState() {
@@ -680,7 +729,7 @@ public class ScanManager {
             if (updatedScanParams) {
                 configureRegularScanParams();
             }
-            removeMessages(MSG_STOP_CONNECTING);
+            mClientHandler.removeMessages(MSG_STOP_CONNECTING);
             mIsConnecting = false;
         }
 
@@ -835,7 +884,7 @@ public class ScanManager {
             }
 
             if (upgradeScanModeByOneLevel(client)) {
-                Message msg = obtainMessage(MSG_REVERT_SCAN_MODE_UPGRADE);
+                Message msg = mClientHandler.obtainMessage(MSG_REVERT_SCAN_MODE_UPGRADE);
                 msg.obj = client;
                 Log.d(
                         TAG,
@@ -843,7 +892,7 @@ public class ScanManager {
                                 + getScanModeString(client.mSettings.getScanMode())
                                 + " for "
                                 + client);
-                sendMessageDelayed(msg, mAdapterService.getScanUpgradeDurationMillis());
+                mClientHandler.sendMessageDelayed(msg, mAdapterService.getScanUpgradeDurationMillis());
                 return true;
             }
             return false;
@@ -1035,7 +1084,6 @@ public class ScanManager {
                 }
             }
         }
-    }
 
     static class BatchScanParams {
         @VisibleForTesting int mScanMode;
@@ -2206,7 +2254,7 @@ public class ScanManager {
             int profile, int fromState, int toState) {
         mClientHandler.post(
                 () ->
-                        mClientHandler.handleProfileConnectionStateChanged(
+                        handleProfileConnectionStateChanged(
                                 profile, fromState, toState));
     }
 }
