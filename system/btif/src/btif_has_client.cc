@@ -128,10 +128,14 @@ class HearingAaccessClientServiceInterfaceImpl : public HasClientInterface,
             Bind(&HasClientCallbacks::OnFeaturesUpdate, Unretained(callbacks_), addr, features));
   }
 
-  void OnActivePresetSelected(std::variant<RawAddress, int> addr_or_group_id,
-                              uint8_t preset_index) override {
+  void OnActivePresetSelected(const RawAddress& addr, uint8_t preset_index) override {
     do_in_jni_thread(Bind(&HasClientCallbacks::OnActivePresetSelected, Unretained(callbacks_),
-                          std::move(addr_or_group_id), preset_index));
+                          std::move(addr), preset_index));
+  }
+
+  void OnActivePresetSelectedForGroup(int group_id, uint8_t preset_index) override {
+    do_in_jni_thread(Bind(&HasClientCallbacks::OnActivePresetSelectedForGroup,
+                          Unretained(callbacks_), group_id, preset_index));
   }
 
   void OnActivePresetSelectError(std::variant<RawAddress, int> addr_or_group_id,

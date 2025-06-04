@@ -1609,8 +1609,8 @@ private:
           break;
       }
       if (group_op_coordinator.IsFullyCompleted()) {
-        callbacks_->OnActivePresetSelected(group_op_coordinator.operation.GetGroupId(),
-                                           device->currently_active_preset);
+        callbacks_->OnActivePresetSelectedForGroup(group_op_coordinator.operation.GetGroupId(),
+                                                   device->currently_active_preset);
         pending_group_operation_timeouts_.erase(it->first);
       }
       if (matches) {
