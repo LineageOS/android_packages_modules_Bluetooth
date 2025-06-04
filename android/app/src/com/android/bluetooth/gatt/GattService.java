@@ -423,8 +423,7 @@ public class GattService extends ProfileService {
         }
 
         final ContextMap<IBluetoothGattCallback>.App app = mClientMap.getById(clientIf);
-        statsLogGattConnectionStateChange(
-                BluetoothProfile.GATT, device, clientIf, connectionState, status);
+        statsLogGattConnectionStateChange(mProfileId, device, clientIf, connectionState, status);
         if (app == null) {
             return;
         }
@@ -470,7 +469,7 @@ public class GattService extends ProfileService {
         }
 
         statsLogGattConnectionStateChange(
-                BluetoothProfile.GATT,
+                mProfileId,
                 device,
                 clientIf,
                 BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTED,
@@ -1013,11 +1012,7 @@ public class GattService extends ProfileService {
         logClientForegroundInfo(source.getUid(), isDirect);
 
         statsLogGattConnectionStateChange(
-                BluetoothProfile.GATT,
-                device,
-                clientIf,
-                BluetoothProtoEnums.CONNECTION_STATE_CONNECTING,
-                -1);
+                mProfileId, device, clientIf, BluetoothProtoEnums.CONNECTION_STATE_CONNECTING, -1);
 
         MetricsLogger.getInstance()
                 .logBluetoothEvent(
@@ -1103,7 +1098,7 @@ public class GattService extends ProfileService {
         final var connId = getFirstConnectionIdForDevice(clientIf, device);
         Log.d(TAG, "clientDisconnectInternal() - device=" + device + ", connId=" + connId);
         statsLogGattConnectionStateChange(
-                BluetoothProfile.GATT,
+                mProfileId,
                 device,
                 clientIf,
                 BluetoothProtoEnums.CONNECTION_STATE_DISCONNECTING,

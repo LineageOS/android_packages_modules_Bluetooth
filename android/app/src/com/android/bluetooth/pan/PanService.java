@@ -536,7 +536,7 @@ public class PanService extends ConnectableProfile {
         }
 
         mAdapterService.updateProfileConnectionAdapterProperties(
-                device, BluetoothProfile.PAN, state, prevState);
+                device, mProfileId, state, prevState);
 
         /* Notifying the connection state change of the profile before sending the intent for
         connection state change, as it was causing a race condition, with the UI not being
