@@ -102,3 +102,11 @@ flag {
     description: "Add bond loss reason to ACTION_KEY_MISSING Intent"
     bug: "421377117"
 }
+
+flag {
+    name: "key_missing_count_api"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Promote getKeyMissingCount as public API"
+    bug: "421357557"
+}
