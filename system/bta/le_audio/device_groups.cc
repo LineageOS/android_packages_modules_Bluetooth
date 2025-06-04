@@ -66,6 +66,7 @@ using types::AseState;
 using types::AudioContexts;
 using types::AudioLocations;
 using types::BidirectionalPair;
+using types::CigState;
 using types::CisState;
 using types::CisType;
 using types::DataPathState;
@@ -1519,6 +1520,25 @@ int LeAudioDeviceGroup::GetAseCount(uint8_t direction) const {
   }
 
   return result;
+}
+
+void LeAudioDeviceGroup::CigConfiguration::SetState(CigState state) {
+  log::verbose("{} -> {}", bluetooth::common::ToString(state_), bluetooth::common::ToString(state));
+  state_ = state;
+
+  if (state_ != CigState::NONE) {
+    return;
+  }
+
+  auto leAudioDevice = group_->GetFirstDevice();
+  while (leAudioDevice != nullptr) {
+    leAudioDevice->FreeLinkQualityReports();
+    for (auto& ase : leAudioDevice->ases_) {
+      ase.cis_state = CisState::IDLE;
+      ase.data_path_state = DataPathState::IDLE;
+    }
+    leAudioDevice = group_->GetNextDevice(leAudioDevice);
+  }
 }
 
 /* Calculate the total number of sink, source and bidirectional CISes required by the CIG,
