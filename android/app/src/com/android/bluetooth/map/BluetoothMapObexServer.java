@@ -38,11 +38,13 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.SignedLongLong;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.HeaderSet;
 import com.android.obex.Operation;
 import com.android.obex.ResponseCodes;
+import com.android.obex.ServerOperation;
 import com.android.obex.ServerRequestHandler;
 
 import java.io.IOException;
@@ -447,6 +449,27 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                 appParams = new BluetoothMapAppParams(appParamRaw);
             }
             Log.d(TAG, "type = " + type + ", name = " + name);
+
+            boolean shouldContinue =
+                    Flags.mapContinueOperation()
+                            && (op instanceof ServerOperation)
+                            && !((ServerOperation) op).finalBitSet;
+            if (shouldContinue) {
+                int continueCnt = 0;
+                while (((ServerOperation) op).continueOperation(true, true)) {
+                    // Too many continue operations, could be an error.
+                    if (++continueCnt >= 100) {
+                        return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
+                    }
+                }
+                if (appParamRaw == null) {
+                    request = op.getReceivedHeader();
+                    appParamRaw = (byte[]) request.getHeader(HeaderSet.APPLICATION_PARAMETER);
+                    if (appParamRaw != null) {
+                        appParams = new BluetoothMapAppParams(appParamRaw);
+                    }
+                }
+            }
             if (type.equals(TYPE_MESSAGE_UPDATE)) {
                 Log.v(TAG, "TYPE_MESSAGE_UPDATE:");
                 return updateInbox();
