@@ -676,8 +676,6 @@ public:
   void ProcessHciNotifyOnCigRemoveRecovering(uint8_t status, LeAudioDeviceGroup* group) {
     group->cig.SetState(CigState::NONE);
 
-    log_history_->AddLogHistory(kLogHciEvent, group->group_id_, RawAddress::kEmpty,
-                                kLogCigRemoveOp + " STATUS=" + loghex(status));
     if (status != HCI_SUCCESS) {
       log::error(
               "Could not recover from the COMMAND DISALLOAD on CigCreate. Status "
@@ -693,27 +691,36 @@ public:
     }
   }
 
-  void ProcessHciNotifOnCigRemove(uint8_t status, LeAudioDeviceGroup* group) override {
-    if (group->cig.GetState() == CigState::RECOVERING) {
-      ProcessHciNotifyOnCigRemoveRecovering(status, group);
-      return;
-    }
-
-    log_history_->AddLogHistory(kLogHciEvent, group->group_id_, RawAddress::kEmpty,
-                                kLogCigRemoveOp + " STATUS=" + loghex(status));
-
+  void ProcessHciNotifOnCigRemoveDefault(uint8_t status, LeAudioDeviceGroup* group) {
     if (status != HCI_SUCCESS) {
+      /* Move state back to Created */
       group->cig.SetState(CigState::CREATED);
       log::error("failed to remove cig, id: {}, status 0x{:02x}, new cig state: {}",
                  group->group_id_, status, ToString(group->cig.GetState()));
       return;
     }
-
-    log::assert_that(group->cig.GetState() == CigState::REMOVING,
-                     "Unexpected CIG remove group id: {}, cig state {}", group->group_id_,
-                     ToString(group->cig.GetState()));
-
     group->cig.SetState(CigState::NONE);
+  }
+
+  void ProcessHciNotifOnCigRemove(uint8_t status, LeAudioDeviceGroup* group) override {
+    log_history_->AddLogHistory(kLogHciEvent, group->group_id_, RawAddress::kEmpty,
+                                kLogCigRemoveOp + " STATUS=" + loghex(status));
+    CigState cig_state = group->cig.GetState();
+    log::debug("group_id: {}, cig state: {}", group->group_id_, ToString(cig_state));
+    switch (cig_state) {
+      case CigState::RECOVERING:
+        ProcessHciNotifyOnCigRemoveRecovering(status, group);
+        break;
+      case CigState::REMOVING:
+        ProcessHciNotifOnCigRemoveDefault(status, group);
+        break;
+      case CigState::NONE:
+      case CigState::CREATING:
+      case CigState::CREATED:
+        log::fatal("Invalid CIG state {} for group {} - controller issue",
+                   ToString(cig_state), group->group_id_);
+        break;
+    }
   }
 
   void ProcessHciNotifSetupIsoDataPath(LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice,
