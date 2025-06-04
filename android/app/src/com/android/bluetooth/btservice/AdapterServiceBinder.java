@@ -36,7 +36,6 @@ import static java.util.Objects.requireNonNull;
 import android.annotation.NonNull;
 import android.app.PendingIntent;
 import android.app.compat.CompatChanges;
-import android.bluetooth.BluetoothActivityEnergyInfo;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothAdapter.ActiveDeviceProfile;
 import android.bluetooth.BluetoothAdapter.ActiveDeviceUse;
@@ -1384,18 +1383,6 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         return service.getAdapterProperties().isActivityAndEnergyReportingSupported();
     }
 
-    @Override
-    public BluetoothActivityEnergyInfo reportActivityInfo(AttributionSource source) {
-        AdapterService service = getService();
-        if (service == null
-                || !checkConnectPermissionForDataDelivery(
-                        service, source, TAG, "reportActivityInfo")) {
-            return null;
-        }
-
-        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return service.reportActivityInfo();
-    }
 
     @Override
     public boolean registerMetadataListener(
@@ -1529,9 +1516,17 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     @Override
     public void requestActivityInfo(
             IBluetoothActivityEnergyInfoListener listener, AttributionSource source) {
-        BluetoothActivityEnergyInfo info = reportActivityInfo(source);
+        AdapterService service = getService();
+        if (service == null
+                || !checkConnectPermissionForDataDelivery(
+                        service, source, TAG, "requestActivityInfo")) {
+            return;
+        }
+
+        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+
         try {
-            listener.onBluetoothActivityEnergyInfoAvailable(info);
+            listener.onBluetoothActivityEnergyInfoAvailable(service.requestActivityInfo());
         } catch (RemoteException e) {
             Log.e(TAG, "onBluetoothActivityEnergyInfo: RemoteException", e);
         }
