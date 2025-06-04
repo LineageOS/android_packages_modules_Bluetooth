@@ -1826,7 +1826,7 @@ public:
       if (prepare_for_a_call) {
         if (!PrepareStreamForAConversational(group)) {
           log::error("Could not configure group {} for a call", group->group_id_);
-          callbacks_->OnGroupStatus(active_group_id_, GroupStatus::INACTIVE);
+          groupSetAndNotifyInactive();
           return;
         }
       }
