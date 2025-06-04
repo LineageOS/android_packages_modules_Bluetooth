@@ -44,6 +44,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.tests.R;
 
 import org.junit.After;
 import org.junit.Before;
@@ -97,7 +98,7 @@ public class MediaPlayerWrapperTest {
 
     @Before
     public void setUp() {
-        mTestBitmap = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
+        mTestBitmap = loadImage(R.raw.image_200_200);
         Util.UriImagesSupport.sValue = true;
 
         // Set up Looper thread for the timeout handler
@@ -234,10 +235,13 @@ public class MediaPlayerWrapperTest {
 
         // Test isMetadataSynced() is false when the playback state points
         // to a song that's not in the queue
-        doReturn(new PlaybackState.Builder()
-            .setActiveQueueItemId(200)
-            .setState(PlaybackState.STATE_PAUSED, 0, 1.0f)
-            .build()).when(mMockController).getPlaybackState();
+        doReturn(
+                        new PlaybackState.Builder()
+                                .setActiveQueueItemId(200)
+                                .setState(PlaybackState.STATE_PAUSED, 0, 1.0f)
+                                .build())
+                .when(mMockController)
+                .getPlaybackState();
         assertThat(wrapper.isMetadataSynced()).isFalse();
         assertThat(wrapper.isMetadataSynced(wrapper.getCurrentMediaData())).isFalse();
         doReturn(mTestState.build()).when(mMockController).getPlaybackState();
@@ -249,12 +253,15 @@ public class MediaPlayerWrapperTest {
 
         // Test isMetadataSynced() is false when the Queue item pointed to
         // by playback state doesn't match the current metadata
-        doReturn(new MediaMetadata.Builder()
-                        .putString(MediaMetadata.METADATA_KEY_TITLE, "BT Test Song2")
-                        .putString(MediaMetadata.METADATA_KEY_ARTIST, "BT Test Artist")
-                        .putString(MediaMetadata.METADATA_KEY_ALBUM, "BT Test Album")
-                        .putLong(MediaMetadata.METADATA_KEY_DURATION, 5000L)
-                        .build()).when(mMockController).getMetadata();
+        doReturn(
+                        new MediaMetadata.Builder()
+                                .putString(MediaMetadata.METADATA_KEY_TITLE, "BT Test Song2")
+                                .putString(MediaMetadata.METADATA_KEY_ARTIST, "BT Test Artist")
+                                .putString(MediaMetadata.METADATA_KEY_ALBUM, "BT Test Album")
+                                .putLong(MediaMetadata.METADATA_KEY_DURATION, 5000L)
+                                .build())
+                .when(mMockController)
+                .getMetadata();
         assertThat(wrapper.isMetadataSynced()).isFalse();
         assertThat(wrapper.isMetadataSynced(wrapper.getCurrentMediaData())).isFalse();
 
