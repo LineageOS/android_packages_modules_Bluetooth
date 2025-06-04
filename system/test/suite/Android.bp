@@ -106,6 +106,9 @@ cc_test {
     ],
     srcs: [
         "adapter/adapter_unittest.cc",
+        "bt_status/bt_status_unittest.cc",
+        "bt_status/bt_status_test.cc",
+        "bt_status/bt_status_unittest.cc",
         "gatt/gatt_test.cc",
         "gatt/gatt_unittest.cc",
     ],
