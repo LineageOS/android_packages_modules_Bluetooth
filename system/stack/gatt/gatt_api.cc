@@ -144,14 +144,24 @@ static bool is_gatt_attr_type(const Uuid& uuid) {
 static void gatt_update_last_srv_info() {
   gatt_cb.last_service_handle = 0;
 
-  for (tGATT_SRV_LIST_ELEM& el : *gatt_cb.srv_list_info) {
+  auto srv_list_info = gatt_cb.srv_list_info;
+  if (srv_list_info == nullptr) {
+    return;
+  }
+
+  for (tGATT_SRV_LIST_ELEM& el : *srv_list_info) {
     gatt_cb.last_service_handle = el.s_hdl;
   }
 }
 
 /** Update database hash and client status */
 static void gatt_update_for_database_change() {
-  gatt_cb.database_hash = gatts_calculate_database_hash(gatt_cb.srv_list_info);
+  auto srv_list_info = gatt_cb.srv_list_info;
+  if (srv_list_info == nullptr) {
+    return;
+  }
+
+  gatt_cb.database_hash = gatts_calculate_database_hash(srv_list_info);
 
   uint8_t i = 0;
   for (i = 0; i < GATT_MAX_PHY_CHANNEL; i++) {

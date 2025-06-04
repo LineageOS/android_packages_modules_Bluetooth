@@ -152,7 +152,7 @@ void gatt_init(void) {
   gatt_cb.hdl_cfg.app_start_hdl = GATT_APP_START_HANDLE;
 
   gatt_cb.hdl_list_info = new std::list<tGATT_HDL_LIST_ELEM>();
-  gatt_cb.srv_list_info = new std::list<tGATT_SRV_LIST_ELEM>();
+  gatt_cb.srv_list_info = std::make_shared<std::list<tGATT_SRV_LIST_ELEM>>();
   gatt_profile_db_init();
 
   EattExtension::GetInstance()->Start();
@@ -198,8 +198,6 @@ void gatt_free(void) {
   gatt_cb.hdl_list_info->clear();
   delete gatt_cb.hdl_list_info;
   gatt_cb.hdl_list_info = nullptr;
-  gatt_cb.srv_list_info->clear();
-  delete gatt_cb.srv_list_info;
   gatt_cb.srv_list_info = nullptr;
 
   EattExtension::GetInstance()->Stop();
