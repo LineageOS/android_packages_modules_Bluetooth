@@ -64,7 +64,7 @@ EventCallbacks mock_event_callbacks = {
                 [](uint64_t /* timestamp */, int /* report_id */, int /* rssi */, int /* snr */,
                    int /* retransmission_count */, int /* packets_not_receive_count */,
                    int /* negative_acknowledgement_count */) {},
-        .invoke_key_missing_cb = [](RawAddress /* bd_addr */) {},
+        .invoke_key_missing_cb = [](tBTA_DM_KEY_MISSING /* key_missing */) {},
         .invoke_encryption_change_cb = [](bt_encryption_change_evt /* encryption_change */) {},
 };
 

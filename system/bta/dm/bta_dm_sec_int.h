@@ -20,6 +20,7 @@
 #include <memory>
 
 #include "bta/include/bta_sec_api.h"
+#include "stack/btm/btm_sec_int_types.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_sec_api_types.h"
 
@@ -92,7 +93,7 @@ void bta_dm_pin_reply(std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg);
 void bta_dm_set_encryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                            tBTA_DM_ENCRYPT_CBACK* p_callback, tBTM_BLE_SEC_ACT sec_act);
 void btm_dm_sec_init();
-void bta_dm_remote_key_missing(const RawAddress bd_addr);
+void bta_dm_remote_key_missing(const RawAddress bd_addr, tBTM_KEY_MISSING_REASON reason);
 
 namespace bluetooth::legacy::testing {
 tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data);

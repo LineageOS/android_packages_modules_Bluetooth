@@ -143,8 +143,7 @@ typedef struct {
   const char* (*BTM_SecReadDevName)(const RawAddress& bd_addr);
   DEV_CLASS (*BTM_SecReadDevClass)(const RawAddress& bd_addr);
 
-  tBTM_STATUS (*BTM_SecReportBondLoss)(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                                       const std::string& reason);
+  tBTM_STATUS (*BTM_SecReportBondLoss)(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 } SecurityClientInterface;
 
 const SecurityClientInterface& get_security_client_interface();

@@ -227,9 +227,9 @@ void bta_dm_remove_device(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_remove_device(bd_addr);
 }
-void bta_dm_remote_key_missing(const RawAddress bd_addr) {
+void bta_dm_remote_key_missing(const RawAddress bd_addr, tBTM_KEY_MISSING_REASON reason) {
   inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_remote_key_missing(bd_addr);
+  test::mock::bta_dm_act::bta_dm_remote_key_missing(bd_addr, reason);
 }
 void bta_dm_on_encryption_change(bt_encryption_change_evt encryption_change) {
   inc_func_call_count(__func__);

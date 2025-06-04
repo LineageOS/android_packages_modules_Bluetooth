@@ -550,8 +550,8 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
        */
       if (BTM_IsBonded(p_cb->pairing_bda, BT_TRANSPORT_LE) &&
           !BTM_IsEncrypted(p_cb->pairing_bda, BT_TRANSPORT_LE)) {
-        get_btm_client_interface().security.BTM_SecReportBondLoss(
-                p_cb->pairing_bda, BT_TRANSPORT_LE, "Bonded unencrypted central wants to pair");
+        get_btm_client_interface().security.BTM_SecReportBondLoss(p_cb->pairing_bda,
+                                                                  BT_TRANSPORT_LE);
         return;
       }
     }
