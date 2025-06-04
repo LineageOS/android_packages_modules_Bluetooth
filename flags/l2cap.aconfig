@@ -27,3 +27,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "ldac_rate_control_configuration"
+    namespace: "bluetooth"
+    description: "Configure LDAC rate control based on the LDAC bitrate."
+    bug: "422347819"
+}
