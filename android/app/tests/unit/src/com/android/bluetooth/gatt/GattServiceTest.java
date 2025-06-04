@@ -34,6 +34,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -76,6 +77,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.stubbing.Answer;
 
@@ -266,6 +268,27 @@ public class GattServiceTest {
     @Test
     public void cleanUp_doesNotCrash() {
         mService.cleanup();
+    }
+
+    @Test
+    public void subrateModeRequest() {
+        InOrder inOrder = inOrder(mNativeInterface);
+
+        for (int subrateMode = BluetoothGatt.SUBRATE_MODE_OFF;
+                subrateMode <= BluetoothGatt.SUBRATE_MODE_HIGH;
+                subrateMode++) {
+            mService.subrateModeRequest(mGattCallback, mDevice, subrateMode);
+
+            inOrder.verify(mNativeInterface)
+                    .gattSubrateRequest(
+                            eq(CLIENT_IF),
+                            eq(mDevice),
+                            anyInt(),
+                            anyInt(),
+                            anyInt(),
+                            anyInt(),
+                            anyInt());
+        }
     }
 
     @Test

@@ -46,7 +46,6 @@ import android.content.AttributionSource;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.PackageManager.PackageInfoFlags;
-import android.content.res.Resources;
 import android.os.Binder;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -57,7 +56,6 @@ import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.R;
 import com.android.bluetooth.btservice.AbstractionLayer;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
@@ -111,6 +109,31 @@ public class GattService extends ProfileService {
         UUID.fromString("00001854-0000-1000-8000-00805F9B34FB"), // HAP
         UUID.fromString("00001846-0000-1000-8000-00805F9B34FB"), // CSIS
     };
+
+    private final int[] mSubrateHighParameters;
+    private final int[] mSubrateBalancedParameters;
+    private final int[] mSubrateLowParameters;
+    private final int[] mSubrateOffParameters;
+
+    public static final int GATT_SUBRATE_MIN_SUBRATE_FACTOR_INDEX = 0;
+    public static final int GATT_SUBRATE_MAX_SUBRATE_FACTOR_INDEX = 1;
+    public static final int GATT_SUBRATE_LATENCY_INDEX = 2;
+    public static final int GATT_SUBRATE_CONT_NUM_INDEX = 3;
+
+    public static final int SUBRATE_LOW_MODE_SUBRATE_MIN_DEFAULT = 2;
+    public static final int SUBRATE_LOW_MODE_SUBRATE_MAX_DEFAULT = 4;
+    public static final int SUBRATE_LOW_MODE_LATENCY_DEFAULT = 0;
+    public static final int SUBRATE_LOW_MODE_CONT_NUM_DEFAULT = 1;
+
+    public static final int SUBRATE_BALANCED_MODE_SUBRATE_MIN_DEFAULT = 5;
+    public static final int SUBRATE_BALANCED_MODE_SUBRATE_MAX_DEFAULT = 7;
+    public static final int SUBRATE_BALANCED_MODE_LATENCY_DEFAULT = 0;
+    public static final int SUBRATE_BALANCED_MODE_CONT_NUM_DEFAULT = 4;
+
+    public static final int SUBRATE_HIGH_MODE_SUBRATE_MIN_DEFAULT = 8;
+    public static final int SUBRATE_HIGH_MODE_SUBRATE_MAX_DEFAULT = 10;
+    public static final int SUBRATE_HIGH_MODE_LATENCY_DEFAULT = 0;
+    public static final int SUBRATE_HIGH_MODE_CONT_NUM_DEFAULT = 6;
 
     private static final Integer GATT_MTU_MAX = 517;
     private static final Map<String, Integer> EARLY_MTU_EXCHANGE_PACKAGES =
@@ -252,6 +275,53 @@ public class GattService extends ProfileService {
         if (Flags.onlyStartScanDuringBleOn()) {
             setGattService(this);
         }
+
+        mSubrateLowParameters =
+                new int[] {
+                    SystemProperties.getInt(
+                            "bluetooth.ble.client.subrate_mode_low_min_subrate.config",
+                            SUBRATE_LOW_MODE_SUBRATE_MIN_DEFAULT),
+                    SystemProperties.getInt(
+                            "bluetooth.ble.client.subrate_mode_low_min_subrate.config",
+                            SUBRATE_LOW_MODE_SUBRATE_MAX_DEFAULT),
+                    SystemProperties.getInt(
+                            "bluetooth.ble.client.subrate_mode_low_latency.config",
+                            SUBRATE_LOW_MODE_LATENCY_DEFAULT),
+                    SystemProperties.getInt(
+                            "bluetooth.ble.client.subrate_mode_low_cont_number.config",
+                            SUBRATE_LOW_MODE_CONT_NUM_DEFAULT),
+                };
+        mSubrateBalancedParameters =
+                new int[] {
+                    SystemProperties.getInt(
+                            "bluetooth.ble.client.subrate_mode_balanced_min_subrate.config",
+                            SUBRATE_BALANCED_MODE_SUBRATE_MIN_DEFAULT),
+                    SystemProperties.getInt(
+                            "bluetooth.ble.client.subrate_mode_balanced_min_subrate.config",
+                            SUBRATE_BALANCED_MODE_SUBRATE_MAX_DEFAULT),
+                    SystemProperties.getInt(
+                            "bluetooth.ble.client.subrate_mode_balanced_latency.config",
+                            SUBRATE_BALANCED_MODE_LATENCY_DEFAULT),
+                    SystemProperties.getInt(
+                            "bluetooth.ble.client.subrate_mode_balanced_cont_number.config",
+                            SUBRATE_BALANCED_MODE_CONT_NUM_DEFAULT),
+                };
+        mSubrateHighParameters =
+                new int[] {
+                    SystemProperties.getInt(
+                            "bluetooth.ble.client.subrate_mode_high_min_subrate.config",
+                            SUBRATE_HIGH_MODE_SUBRATE_MIN_DEFAULT),
+                    SystemProperties.getInt(
+                            "bluetooth.ble.client.subrate_mode_high_min_subrate.config",
+                            SUBRATE_HIGH_MODE_SUBRATE_MAX_DEFAULT),
+                    SystemProperties.getInt(
+                            "bluetooth.ble.client.subrate_mode_high_latency.config",
+                            SUBRATE_HIGH_MODE_LATENCY_DEFAULT),
+                    SystemProperties.getInt(
+                            "bluetooth.ble.client.subrate_mode_high_cont_number.config",
+                            SUBRATE_HIGH_MODE_CONT_NUM_DEFAULT),
+                };
+        mSubrateOffParameters = new int[] {1, 1, 0, 0};
     }
 
     public static boolean isEnabled() {
@@ -575,6 +645,8 @@ public class GattService extends ProfileService {
             int connId, int subrateFactor, int latency, int contNum, int timeout, int status) {
         Log.d(TAG, "onClientSubrateChange() - connId=" + connId + ", status=" + status);
 
+        int subrateMode;
+
         final var device = mClientMap.deviceByConnId(connId);
         if (device == null) {
             return;
@@ -585,10 +657,13 @@ public class GattService extends ProfileService {
             return;
         }
 
+        if (status == BluetoothStatusCodes.SUCCESS) {
+            subrateMode = verifyGattSubratingMode(subrateFactor, latency, contNum);
+        } else {
+            subrateMode = BluetoothGatt.SUBRATE_MODE_NOT_UPDATED;
+        }
         callbackToApp(
-                () ->
-                        app.callback.onSubrateChange(
-                                device, subrateFactor, latency, contNum, timeout, status));
+                () -> app.callback.onSubrateChange(device, subrateMode, translateHciCode(status)));
     }
 
     GattDbElement getSampleGattDbElement() {
@@ -1519,36 +1594,14 @@ public class GattService extends ProfileService {
         }
         final var clientIf = clientApp.id;
 
-        int subrateMin;
-        int subrateMax;
-        int maxLatency;
-        int contNumber;
+        int subrateMin =
+                getGattSubratingParameters(GATT_SUBRATE_MIN_SUBRATE_FACTOR_INDEX, subrateMode);
+        int subrateMax =
+                getGattSubratingParameters(GATT_SUBRATE_MAX_SUBRATE_FACTOR_INDEX, subrateMode);
+        int maxLatency = getGattSubratingParameters(GATT_SUBRATE_LATENCY_INDEX, subrateMode);
+        int contNumber = getGattSubratingParameters(GATT_SUBRATE_CONT_NUM_INDEX, subrateMode);
+
         int supervisionTimeout = 500; // 5s. Link supervision timeout is measured in N * 10ms
-
-        final Resources res = getResources();
-        switch (subrateMode) {
-            case BluetoothGatt.SUBRATE_REQUEST_MODE_HIGH:
-                subrateMin = res.getInteger(R.integer.subrate_mode_high_priority_min_subrate);
-                subrateMax = res.getInteger(R.integer.subrate_mode_high_priority_max_subrate);
-                maxLatency = res.getInteger(R.integer.subrate_mode_high_priority_latency);
-                contNumber = res.getInteger(R.integer.subrate_mode_high_priority_cont_number);
-                break;
-
-            case BluetoothGatt.SUBRATE_REQUEST_MODE_LOW_POWER:
-                subrateMin = res.getInteger(R.integer.subrate_mode_low_power_min_subrate);
-                subrateMax = res.getInteger(R.integer.subrate_mode_low_power_max_subrate);
-                maxLatency = res.getInteger(R.integer.subrate_mode_low_power_latency);
-                contNumber = res.getInteger(R.integer.subrate_mode_low_power_cont_number);
-                break;
-
-            case BluetoothGatt.SUBRATE_REQUEST_MODE_BALANCED:
-            default:
-                subrateMin = res.getInteger(R.integer.subrate_mode_balanced_min_subrate);
-                subrateMax = res.getInteger(R.integer.subrate_mode_balanced_max_subrate);
-                maxLatency = res.getInteger(R.integer.subrate_mode_balanced_latency);
-                contNumber = res.getInteger(R.integer.subrate_mode_balanced_cont_number);
-                break;
-        }
 
         Log.d(
                 TAG,
@@ -1815,6 +1868,8 @@ public class GattService extends ProfileService {
             int connId, int subrateFactor, int latency, int contNum, int timeout, int status) {
         Log.d(TAG, "onServerSubrateChange() - connId=" + connId + ", status=" + status);
 
+        int subrateMode;
+
         final var device = mServerMap.deviceByConnId(connId);
         if (device == null) {
             return;
@@ -1825,10 +1880,13 @@ public class GattService extends ProfileService {
             return;
         }
 
+        if (status == BluetoothStatusCodes.SUCCESS) {
+            subrateMode = verifyGattSubratingMode(subrateFactor, latency, contNum);
+        } else {
+            subrateMode = BluetoothGatt.SUBRATE_MODE_NOT_UPDATED;
+        }
         callbackToApp(
-                () ->
-                        app.callback.onSubrateChange(
-                                device, subrateFactor, latency, contNum, timeout, status));
+                () -> app.callback.onSubrateChange(device, subrateMode, translateHciCode(status)));
     }
 
     void onServerReadCharacteristicFromNative(
@@ -2589,6 +2647,78 @@ public class GattService extends ProfileService {
         for (Integer handle : handleList) {
             mNativeInterface.gattServerDeleteService(serverIf, handle);
         }
+    }
+
+    /**
+     * Verifies the GATT connection subrating parameters of the device
+     *
+     * @param subrateFactor for this LE connection.
+     * @param latency Worker latency for this LE connection in number of connection events.
+     * @param contNum Continuation Number for this LE connection.
+     * @return the connection subrating priority in integer
+     */
+    public int verifyGattSubratingMode(int subrateFactor, int latency, int contNum) {
+        int returnSubrateMode = BluetoothGatt.SUBRATE_MODE_SYSTEM_UPDATE;
+        if (mSubrateLowParameters[GATT_SUBRATE_MIN_SUBRATE_FACTOR_INDEX] <= subrateFactor
+                && subrateFactor <= mSubrateLowParameters[GATT_SUBRATE_MAX_SUBRATE_FACTOR_INDEX]
+                && latency == mSubrateLowParameters[GATT_SUBRATE_LATENCY_INDEX]
+                && contNum <= mSubrateLowParameters[GATT_SUBRATE_CONT_NUM_INDEX]) {
+            returnSubrateMode = BluetoothGatt.SUBRATE_MODE_LOW;
+        }
+        if (mSubrateBalancedParameters[GATT_SUBRATE_MIN_SUBRATE_FACTOR_INDEX] <= subrateFactor
+                && subrateFactor
+                        <= mSubrateBalancedParameters[GATT_SUBRATE_MAX_SUBRATE_FACTOR_INDEX]
+                && latency == mSubrateBalancedParameters[GATT_SUBRATE_LATENCY_INDEX]
+                && contNum <= mSubrateBalancedParameters[GATT_SUBRATE_CONT_NUM_INDEX]) {
+            returnSubrateMode = BluetoothGatt.SUBRATE_MODE_BALANCED;
+        }
+        if (mSubrateHighParameters[GATT_SUBRATE_MIN_SUBRATE_FACTOR_INDEX] <= subrateFactor
+                && subrateFactor <= mSubrateHighParameters[GATT_SUBRATE_MAX_SUBRATE_FACTOR_INDEX]
+                && latency == mSubrateHighParameters[GATT_SUBRATE_LATENCY_INDEX]
+                && contNum <= mSubrateHighParameters[GATT_SUBRATE_CONT_NUM_INDEX]) {
+            returnSubrateMode = BluetoothGatt.SUBRATE_MODE_HIGH;
+        }
+        if (mSubrateOffParameters[GATT_SUBRATE_MIN_SUBRATE_FACTOR_INDEX] == subrateFactor
+                && subrateFactor == mSubrateOffParameters[GATT_SUBRATE_MAX_SUBRATE_FACTOR_INDEX]
+                && latency == mSubrateOffParameters[GATT_SUBRATE_LATENCY_INDEX]
+                && contNum == mSubrateOffParameters[GATT_SUBRATE_CONT_NUM_INDEX]) {
+            returnSubrateMode = BluetoothGatt.SUBRATE_MODE_OFF;
+        }
+        return returnSubrateMode;
+    }
+
+    /**
+     * Gets the GATT connection subrating mode of the device
+     *
+     * @param type type of the parameter, can be GATT_SUBRATE_MIN_SUBRATE_FACTOR_INDEX,
+     *     GATT_SUBRATE_MAX_SUBRATE_FACTOR_INDEX, GATT_SUBRATE_LATENCY_INDEX or
+     *     GATT_SUBRATE_CONT_NUM_INDEX
+     * @param mode the priority of the connection, can be BluetoothGatt.SUBRATE_MODE_HIGH,
+     *     BluetoothGatt.SUBRATE_MODE_LOW or BluetoothGatt.SUBRATE_MODE_BALANCED
+     * @return the connection parameter in integer
+     */
+    private int getGattSubratingParameters(int type, @BluetoothGatt.SubrateMode int mode) {
+        return switch (mode) {
+            case BluetoothGatt.SUBRATE_MODE_LOW -> mSubrateLowParameters[type];
+            case BluetoothGatt.SUBRATE_MODE_BALANCED -> mSubrateBalancedParameters[type];
+            case BluetoothGatt.SUBRATE_MODE_HIGH -> mSubrateHighParameters[type];
+            default -> mSubrateOffParameters[type];
+        };
+    }
+
+    private static int translateHciCode(int code) {
+        return switch (code) {
+            case 0 -> BluetoothStatusCodes.SUCCESS;
+            // Hardware Failure
+            case 3 -> BluetoothStatusCodes.ERROR_HARDWARE_GENERIC;
+            // Unsupported Command Remote
+            case 26 -> BluetoothStatusCodes.ERROR_REMOTE_OPERATION_NOT_SUPPORTED;
+            // Insufficient Resources
+            case 12, 13, 58 -> BluetoothStatusCodes.ERROR_LOCAL_NOT_ENOUGH_RESOURCES;
+            // Invalid Parameters
+            case 17, 18, 30, 32, 48, 59 -> BluetoothStatusCodes.ERROR_BAD_PARAMETERS;
+            default -> BluetoothStatusCodes.ERROR_UNKNOWN;
+        };
     }
 
     void dumpRegisterId(StringBuilder sb) {

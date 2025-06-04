@@ -638,6 +638,7 @@ package android.bluetooth {
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean readRemoteRssi();
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean requestConnectionPriority(int);
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean requestMtu(int);
+    method @FlaggedApi("com.android.bluetooth.flags.le_subrate_api") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}, conditional=true) public int requestSubrateMode(int);
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean setCharacteristicNotification(android.bluetooth.BluetoothGattCharacteristic, boolean);
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public void setPreferredPhy(int, int, int);
     method @Deprecated @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean writeCharacteristic(android.bluetooth.BluetoothGattCharacteristic);
@@ -660,6 +661,12 @@ package android.bluetooth {
     field public static final int GATT_REQUEST_NOT_SUPPORTED = 6; // 0x6
     field public static final int GATT_SUCCESS = 0; // 0x0
     field public static final int GATT_WRITE_NOT_PERMITTED = 3; // 0x3
+    field @FlaggedApi("com.android.bluetooth.flags.le_subrate_api") public static final int SUBRATE_MODE_BALANCED = 2; // 0x2
+    field @FlaggedApi("com.android.bluetooth.flags.le_subrate_api") public static final int SUBRATE_MODE_HIGH = 3; // 0x3
+    field @FlaggedApi("com.android.bluetooth.flags.le_subrate_api") public static final int SUBRATE_MODE_LOW = 1; // 0x1
+    field @FlaggedApi("com.android.bluetooth.flags.le_subrate_api") public static final int SUBRATE_MODE_NOT_UPDATED = 255; // 0xff
+    field @FlaggedApi("com.android.bluetooth.flags.le_subrate_api") public static final int SUBRATE_MODE_OFF = 0; // 0x0
+    field @FlaggedApi("com.android.bluetooth.flags.le_subrate_api") public static final int SUBRATE_MODE_SYSTEM_UPDATE = 99; // 0x63
   }
 
   public abstract class BluetoothGattCallback {
@@ -680,6 +687,7 @@ package android.bluetooth {
     method public void onReliableWriteCompleted(android.bluetooth.BluetoothGatt, int);
     method public void onServiceChanged(@NonNull android.bluetooth.BluetoothGatt);
     method public void onServicesDiscovered(android.bluetooth.BluetoothGatt, int);
+    method @FlaggedApi("com.android.bluetooth.flags.le_subrate_api") public void onSubrateChange(@NonNull android.bluetooth.BluetoothGatt, int, int);
   }
 
   public class BluetoothGattCharacteristic implements android.os.Parcelable {
@@ -790,6 +798,7 @@ package android.bluetooth {
     method public void onPhyRead(android.bluetooth.BluetoothDevice, int, int, int);
     method public void onPhyUpdate(android.bluetooth.BluetoothDevice, int, int, int);
     method public void onServiceAdded(int, android.bluetooth.BluetoothGattService);
+    method @FlaggedApi("com.android.bluetooth.flags.le_subrate_api") public void onSubrateChange(@NonNull android.bluetooth.BluetoothDevice, int, int);
   }
 
   public class BluetoothGattService implements android.os.Parcelable {

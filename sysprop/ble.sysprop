@@ -104,3 +104,105 @@ prop {
     access: Readonly
     prop_name: "bluetooth.ble.rssi_read_throttle_ms.config"
 }
+
+# Bluetooth Subrating Mode Configurations
+
+# Bluetooth Subrate Mode - LOW configurations
+prop {
+    api_name: "subrate_mode_low_min_subrate"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.client.subrate_mode_low_min_subrate.config"
+}
+
+prop {
+    api_name: "subrate_mode_low_max_subrate"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.client.subrate_mode_low_max_subrate.config"
+}
+
+prop {
+    api_name: "subrate_mode_low_latency"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.client.subrate_mode_low_latency.config"
+}
+
+prop {
+    api_name: "subrate_mode_low_cont_number"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.client.subrate_mode_low_cont_number.config"
+}
+
+# Bluetooth Subrate Mode - BALANCED configurations
+prop {
+    api_name: "subrate_mode_balanced_min_subrate"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.client.subrate_mode_balanced_min_subrate.config"
+}
+
+prop {
+    api_name: "subrate_mode_balanced_max_subrate"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.client.subrate_mode_balanced_max_subrate.config"
+}
+
+prop {
+    api_name: "subrate_mode_balanced_latency"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.client.subrate_mode_balanced_latency.config"
+}
+
+prop {
+    api_name: "subrate_mode_balanced_cont_number"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.client.subrate_mode_balanced_cont_number.config"
+}
+
+
+# Bluetooth Subrate Mode - HIGH configurations
+prop {
+    api_name: "subrate_mode_high_min_subrate"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.client.subrate_mode_high_min_subrate.config"
+}
+
+prop {
+    api_name: "subrate_mode_high_max_subrate"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.client.subrate_mode_high_max_subrate.config"
+}
+
+prop {
+    api_name: "subrate_mode_high_latency"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.client.subrate_mode_high_latency.config"
+}
+
+prop {
+    api_name: "subrate_mode_high_cont_number"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.client.subrate_mode_high_cont_number.config"
+}
