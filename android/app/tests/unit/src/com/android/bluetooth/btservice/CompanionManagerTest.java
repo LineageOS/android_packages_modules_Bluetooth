@@ -82,7 +82,7 @@ public class CompanionManagerTest {
         mockGetBluetoothManager(mAdapterService);
 
         // Must be called to initialize services
-        mCompanionManager = new CompanionManager(mAdapterService, null);
+        mCompanionManager = new CompanionManager(mAdapterService);
     }
 
     @After

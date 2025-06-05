@@ -913,7 +913,7 @@ public class AdapterService extends Service {
         mActiveDeviceManager = new ActiveDeviceManager(this, mServiceFactory);
         mActiveDeviceManager.start();
 
-        mBtCompanionManager = new CompanionManager(this, mServiceFactory);
+        mBtCompanionManager = new CompanionManager(this);
 
         mBluetoothSocketManagerBinder = new BluetoothSocketManagerBinder(this);
 

@@ -96,7 +96,7 @@ public class CompanionManager {
     private BluetoothDevice mCompanionDevice;
     private int mCompanionType;
 
-    public CompanionManager(AdapterService service, ServiceFactory factory) {
+    public CompanionManager(AdapterService service) {
         mAdapterService = service;
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
 
