@@ -36,6 +36,7 @@
 #include "bta/include/utl.h"
 #include "bta_ag_swb_aptx.h"
 #include "bta_sys.h"
+#include "btif/include/btif_storage.h"
 #include "btm_api_types.h"
 #include "hardware/bt_hf.h"
 #include "osi/include/alarm.h"
@@ -1151,6 +1152,12 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type, cha
       }
 
       bluetooth::metrics::LogMetricHfpAgVersion(p_scb->peer_addr, p_scb->peer_version);
+
+      if (interop_match_addr(INTEROP_INBAND_RINGTONE_SET_TO_FALSE, &p_scb->peer_addr)) {
+        log::verbose("do not send inband ringtone supported for denylisted device");
+        p_scb->masked_features = p_scb->masked_features & ~(BTA_AG_FEAT_INBAND);
+      }
+
       log::verbose("BRSF HF: 0x{:x}, phone: 0x{:x}", p_scb->peer_features, p_scb->masked_features);
 
       /* send BRSF, send OK */
@@ -1527,7 +1534,11 @@ static void bta_ag_hsp_result(tBTA_AG_SCB* p_scb, const tBTA_AG_API_RESULT& resu
       break;
 
     case BTA_AG_INBAND_RING_RES:
-      p_scb->inband_enabled = result.data.state;
+      if (interop_match_addr(INTEROP_INBAND_RINGTONE_SET_TO_FALSE, &p_scb->peer_addr)) {
+        p_scb->inband_enabled = false;
+      } else {
+        p_scb->inband_enabled = result.data.state;
+      }
       log::verbose("inband_enabled set to {}", p_scb->inband_enabled);
       break;
 
@@ -1737,7 +1748,11 @@ static void bta_ag_hfp_result(tBTA_AG_SCB* p_scb, const tBTA_AG_API_RESULT& resu
       break;
 
     case BTA_AG_INBAND_RING_RES:
-      p_scb->inband_enabled = result.data.state;
+      if (interop_match_addr(INTEROP_INBAND_RINGTONE_SET_TO_FALSE, &p_scb->peer_addr)) {
+        p_scb->inband_enabled = false;
+      } else {
+        p_scb->inband_enabled = result.data.state;
+      }
       log::verbose("inband_enabled set to {}", p_scb->inband_enabled);
       bta_ag_send_result(p_scb, result.result, nullptr, result.data.state);
       break;
