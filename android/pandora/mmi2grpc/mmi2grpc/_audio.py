@@ -103,3 +103,7 @@ class AudioSignal:
         match_amplitude = math.isclose(amplitude, self.amplitude, rel_tol=1e-03)
 
         return match_amplitude
+
+    def wait_complete(self):
+        """Waits until the audio signal is generated and sent."""
+        self.thread.join()
