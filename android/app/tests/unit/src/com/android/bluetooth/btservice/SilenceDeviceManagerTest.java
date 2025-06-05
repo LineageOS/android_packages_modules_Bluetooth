@@ -38,12 +38,14 @@ import android.os.Bundle;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.UserHandle;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.a2dp.A2dpService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetService;
 
 import org.junit.After;
@@ -54,14 +56,17 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
+import java.util.Optional;
+
 /** Test cases for {@link SilenceDeviceManager}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class SilenceDeviceManagerTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private ServiceFactory mServiceFactory;
+    @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
     @Mock private A2dpService mA2dpService;
     @Mock private HeadsetService mHeadsetService;
 
@@ -74,8 +79,13 @@ public class SilenceDeviceManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        when(mServiceFactory.getA2dpService()).thenReturn(mA2dpService);
-        when(mServiceFactory.getHeadsetService()).thenReturn(mHeadsetService);
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            doReturn(Optional.of(mA2dpService)).when(mAdapterService).getA2dpService();
+            doReturn(Optional.of(mHeadsetService)).when(mAdapterService).getHeadsetService();
+        } else {
+            when(mServiceFactory.getA2dpService()).thenReturn(mA2dpService);
+            when(mServiceFactory.getHeadsetService()).thenReturn(mHeadsetService);
+        }
 
         mHandlerThread = new HandlerThread("SilenceManagerTestHandlerThread");
         mHandlerThread.start();
