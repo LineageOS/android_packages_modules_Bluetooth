@@ -94,3 +94,10 @@ flag {
     description: "Prioritized routing by checking in-ear state when multiple devices connected"
     bug: "420509925"
 }
+
+flag {
+    name: "adapter_service_profiles_use_optional"
+    namespace: "bluetooth"
+    description: "Add optional getters for all profiles in [Bluetooth]AdapterService"
+    bug: "422543753"
+}
