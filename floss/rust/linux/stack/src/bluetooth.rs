@@ -1555,7 +1555,7 @@ pub(crate) trait BtifBluetoothCallbacks {
     fn thread_event(&mut self, event: BtThreadEvent) {}
 
     #[btif_callback(KeyMissing)]
-    fn key_missing(&mut self, addr: RawAddress) {}
+    fn key_missing(&mut self, addr: RawAddress, reason: u8) {}
 }
 
 #[btif_callbacks_dispatcher(dispatch_hid_host_callbacks, HHCallbacks)]
@@ -2168,7 +2168,8 @@ impl BtifBluetoothCallbacks for Bluetooth {
         }
     }
 
-    fn key_missing(&mut self, addr: RawAddress) {
+    #[log_cb_args]
+    fn key_missing(&mut self, addr: RawAddress, reason: u8) {
         if let Some(d) = self.remote_devices.get(&addr) {
             self.callbacks.for_all_callbacks(|callback| {
                 callback.on_device_key_missing(d.info.clone());
