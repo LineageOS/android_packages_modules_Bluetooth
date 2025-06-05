@@ -94,7 +94,6 @@ import com.android.bluetooth.flags.Flags;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1481,7 +1480,6 @@ public class HeadsetStateMachineTest {
         assertThat(mHeadsetStateMachine.parseUnknownAt(atString)).isEqualTo("A\"command\"");
     }
 
-    @Ignore("b/265556073")
     @Test
     public void testHandleAccessPermissionResult_withNoChangeInAtCommandResult() {
         when(mIntent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)).thenReturn(null);
@@ -1494,7 +1492,6 @@ public class HeadsetStateMachineTest {
         mHeadsetStateMachine.mPhonebook.setCheckingAccessPermission(true);
 
         mHeadsetStateMachine.handleAccessPermissionResult(mIntent);
-
         verify(mNativeInterface).atResponseCode(null, 0, 0);
     }
 
