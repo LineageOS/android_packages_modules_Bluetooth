@@ -33,6 +33,7 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.bluetooth.R;
+import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.messages.SystemMessageProto.SystemMessage;
 
@@ -157,8 +158,16 @@ public class NotificationHelperService extends Service {
                         .setStyle(new Notification.BigTextStyle().bigText(message))
                         .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth);
 
-        if (!notificationReason.equals(AUTO_ON_BT_ENABLED_NOTIFICATION)) {
-            // Do not display airplane link when the notification is due to auto_on feature
+        if (notificationReason.equals(AUTO_ON_BT_ENABLED_NOTIFICATION)) {
+            // Open the setting page when auto-on notification is clicked
+            builder.setContentIntent(
+                    PendingIntent.getActivity(
+                            this,
+                            PendingIntent.FLAG_UPDATE_CURRENT,
+                            new Intent("android.settings.BLUETOOTH_DASHBOARD_SETTINGS"),
+                            PendingIntent.FLAG_IMMUTABLE));
+        } else if (Flags.watchDeviceOverrideAirplaneMode() && !Utils.isWatch(this)) {
+            // Do not display url link on watch, as they cannot show webpage
             String helpLinkUrl = getString(R.string.config_apmLearnMoreLink);
             builder.setContentIntent(
                     PendingIntent.getActivity(
@@ -167,14 +176,6 @@ public class NotificationHelperService extends Service {
                             new Intent(Intent.ACTION_VIEW)
                                     .setData(Uri.parse(helpLinkUrl))
                                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                            PendingIntent.FLAG_IMMUTABLE));
-        } else {
-            // Open the setting page when the notification is clicked
-            builder.setContentIntent(
-                    PendingIntent.getActivity(
-                            this,
-                            PendingIntent.FLAG_UPDATE_CURRENT,
-                            new Intent("android.settings.BLUETOOTH_DASHBOARD_SETTINGS"),
                             PendingIntent.FLAG_IMMUTABLE));
         }
 
