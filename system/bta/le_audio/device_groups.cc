@@ -2594,6 +2594,7 @@ bool LeAudioDeviceGroup::Configure(
    * It might happen it will get unavailable in some point of time
    */
   stream_conf.conf = conf;
+  stream_conf.configuration_hash = utils::GetConfigurationHash(*conf);
   return true;
 }
 
