@@ -16,13 +16,12 @@
 
 #pragma once
 
-#include "hci/hci_packets.h"
+#include "hci/hci_status.h"
 
 namespace bluetooth {
 namespace common {
 
-void LogConnectionAdminAuditEvent(const char* action, const hci::Address& address,
-                                  hci::ErrorCode status);
+void LogConnectionAdminAuditEvent(const char* action, const hci::Address& address, BtStatus status);
 
 }  // namespace common
 }  // namespace bluetooth
