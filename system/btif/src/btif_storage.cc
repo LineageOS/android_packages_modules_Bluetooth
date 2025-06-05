@@ -771,7 +771,10 @@ bt_status_t btif_storage_add_remote_device(const RawAddress* remote_bd_addr,
     if (properties[i].type == BT_PROPERTY_REMOTE_RSSI ||
         properties[i].type == BT_PROPERTY_REMOTE_IS_COORDINATED_SET_MEMBER ||
         properties[i].type == BT_PROPERTY_REMOTE_ASHA_CAPABILITY ||
-        properties[i].type == BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID) {
+        properties[i].type == BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID ||
+        properties[i].type == BT_PROPERTY_DISCOVERY_RESULT_TYPE ||
+        properties[i].type == BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE ||
+        properties[i].type == BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA) {
       continue;
     }
 

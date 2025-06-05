@@ -581,6 +581,7 @@ package android.bluetooth {
     field public static final String EXTRA_BOND_STATE = "android.bluetooth.device.extra.BOND_STATE";
     field public static final String EXTRA_CLASS = "android.bluetooth.device.extra.CLASS";
     field public static final String EXTRA_DEVICE = "android.bluetooth.device.extra.DEVICE";
+    field @FlaggedApi("com.android.bluetooth.flags.get_svc_uuids_from_ble_adv_data") public static final String EXTRA_DISCOVERY_RESULT_TYPE = "android.bluetooth.device.extra.DISCOVERY_RESULT_TYPE";
     field @FlaggedApi("com.android.bluetooth.flags.encryption_change_broadcast") public static final String EXTRA_ENCRYPTION_ALGORITHM = "android.bluetooth.device.extra.EXTRA_ENCRYPTION_ALGORITHM";
     field @FlaggedApi("com.android.bluetooth.flags.encryption_change_broadcast") public static final String EXTRA_ENCRYPTION_ENABLED = "android.bluetooth.device.extra.ENCRYPTION_ENABLED";
     field @FlaggedApi("com.android.bluetooth.flags.encryption_change_broadcast") public static final String EXTRA_ENCRYPTION_STATUS = "android.bluetooth.device.extra.ENCRYPTION_STATUS";
@@ -593,6 +594,7 @@ package android.bluetooth {
     field public static final String EXTRA_RSSI = "android.bluetooth.device.extra.RSSI";
     field public static final String EXTRA_TRANSPORT = "android.bluetooth.device.extra.TRANSPORT";
     field public static final String EXTRA_UUID = "android.bluetooth.device.extra.UUID";
+    field @FlaggedApi("com.android.bluetooth.flags.get_svc_uuids_from_ble_adv_data") public static final String EXTRA_UUID_LE = "android.bluetooth.device.extra.UUID_LE";
     field public static final int PAIRING_VARIANT_PASSKEY_CONFIRMATION = 2; // 0x2
     field public static final int PAIRING_VARIANT_PIN = 0; // 0x0
     field public static final int PHY_LE_1M = 1; // 0x1
