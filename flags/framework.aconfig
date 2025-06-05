@@ -110,11 +110,3 @@ flag {
     description: "Promote getKeyMissingCount as public API"
     bug: "421357557"
 }
-
-flag {
-    name: "link_status_api"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Add Link Status API to BluetoothDevice"
-    bug: "419143231"
-}
