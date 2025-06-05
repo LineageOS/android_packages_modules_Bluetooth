@@ -131,9 +131,9 @@ public:
   DBusHeadsetCallbacks(headset::Interface* headset) : headset_(headset) {}
 
   // headset::Callbacks
-  void ConnectionStateCallback(headset::bthf_connection_state_t state,
-                               RawAddress* bd_addr) override {
-    log::info("ConnectionStateCallback from {}", *bd_addr);
+  void ConnectionStateCallback(headset::bthf_connection_state_t state, RawAddress* bd_addr,
+                               uint8_t reason) override {
+    log::info("ConnectionStateCallback from {}, state={}, reason={}", *bd_addr, state, reason);
     topshim::rust::internal::connection_state_cb(state, bd_addr);
   }
 
