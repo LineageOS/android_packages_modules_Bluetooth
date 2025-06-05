@@ -297,3 +297,11 @@ flag {
     description: "Enable wakeup flag for intents"
     bug: "419143077"
 }
+
+flag {
+    name: "link_status_api"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Add Link Status API to BluetoothDevice"
+    bug: "419143231"
+}
