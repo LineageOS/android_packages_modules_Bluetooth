@@ -270,29 +270,63 @@ public:
           return false;
         }
 
+        bool send_codec_config = false;
+        bool wait_for_cig_removal = false;
+        /* All ASEs should aim to achieve target state */
+        SetTargetState(group, AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
+
         if (!group->IsConfiguredForContext(context_type)) {
-          if (group->GetConfigurationContextType() == context_type) {
-            log::info(
-                    "Looks like another device connected in the meantime to group_id: {}, try to "
-                    "reconfigure.",
-                    group->group_id_);
-            if (group->Configure(context_type, metadata_context_types, ccid_lists)) {
-              return PrepareAndSendCodecConfigToTheGroup(group);
-            }
+          log::info(
+                  "Looks like configuration has changed for group_id: {}, try to "
+                  "reconfigure.",
+                  group->group_id_);
+
+          const auto old_cig_hash = group->stream_conf.configuration_hash;
+          if (!group->Configure(context_type, metadata_context_types, ccid_lists)) {
+            log::error("Trying to start stream not configured for the context {} in group_id: {} ",
+                       ToString(context_type), group->group_id_);
+            group->PrintDebugState();
+            StopStream(group);
+            return false;
           }
-          log::error("Trying to start stream not configured for the context {} in group_id: {} ",
-                     ToString(context_type), group->group_id_);
-          group->PrintDebugState();
-          StopStream(group);
-          return false;
+
+          /* Check new CIG hash if it match to the old one. If yes, it means we can keep CIG and
+           * just do reconfiguration */
+          if (old_cig_hash != group->stream_conf.configuration_hash) {
+            log::info("Need to reconfigure CIG as something has changed.");
+
+            ReleaseCisIds(group);
+            group->cig.GenerateCisIds(context_type);
+
+            wait_for_cig_removal = true;
+
+            if (!RemoveCigForGroup(group, CigState::RECONFIGURING)) {
+              group->PrintDebugState();
+              StopStream(group);
+              return false;
+            }
+          } else {
+            log::debug("CIG can stay, just reconfigure ASEs on remote device(s)");
+            send_codec_config = true;
+          }
         }
+
+        log::debug("group_id: {}, wait_for_cig_removal: {}, send_codec_config: {}",
+                   group->group_id_, wait_for_cig_removal, send_codec_config);
 
         // Even stream is already configured for the context, update the metadata.
         group->SetMetadataContexts(metadata_context_types);
 
-        /* All ASEs should aim to achieve target state */
-        SetTargetState(group, AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
-        PrepareAndSendEnableToTheGroup(group);
+        if (wait_for_cig_removal) {
+          log::debug("Continue after CIG is removed");
+          return true;
+        }
+
+        if (send_codec_config) {
+          PrepareAndSendCodecConfigToTheGroup(group);
+        } else {
+          PrepareAndSendEnableToTheGroup(group);
+        }
         break;
       }
 
@@ -702,17 +736,47 @@ public:
     group->cig.SetState(CigState::NONE);
   }
 
+  void ProcessHciNotifyOnCigRemoveReconfiguring(uint8_t status, LeAudioDeviceGroup* group) {
+    /* We are here because we wanted to remove and restart configuration */
+    if (status != HCI_SUCCESS) {
+      log::error("Could not remove the cig for group_id: {}", group->group_id_);
+      group->cig.SetState(CigState::CREATED);
+      StopStream(group);
+      return;
+    }
+
+    group->cig.SetState(CigState::NONE);
+
+    if (group->GetTargetState() != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+      log::warn("Unexpected group state: {}, group target state: {} for group_id: {}",
+                ToString(group->GetState()), ToString(group->GetTargetState()), group->group_id_);
+      group->PrintDebugState();
+      return;
+    }
+
+    log::verbose("Continue reconfiguration for group_id: {}", group->group_id_);
+    if (!PrepareAndSendCodecConfigToTheGroup(group)) {
+      log::error("No active devices for group_id: {}", group->group_id_);
+      group->PrintDebugState();
+    }
+  }
+
   void ProcessHciNotifOnCigRemove(uint8_t status, LeAudioDeviceGroup* group) override {
     log_history_->AddLogHistory(kLogHciEvent, group->group_id_, RawAddress::kEmpty,
                                 kLogCigRemoveOp + " STATUS=" + loghex(status));
     CigState cig_state = group->cig.GetState();
-    log::debug("group_id: {}, cig state: {}", group->group_id_, ToString(cig_state));
+    log::debug("group_id: {}, cig state: {}, status: {:#x}", group->group_id_, ToString(cig_state),
+               status);
+
     switch (cig_state) {
       case CigState::RECOVERING:
         ProcessHciNotifyOnCigRemoveRecovering(status, group);
         break;
       case CigState::REMOVING:
         ProcessHciNotifOnCigRemoveDefault(status, group);
+        break;
+      case CigState::RECONFIGURING:
+        ProcessHciNotifyOnCigRemoveReconfiguring(status, group);
         break;
       case CigState::NONE:
       case CigState::CREATING:
@@ -886,21 +950,24 @@ public:
     }
   }
 
-  void RemoveCigForGroup(LeAudioDeviceGroup* group) {
-    log::debug("Group: {}, id: {} cig state: {}", std::format_ptr(group), group->group_id_,
-               ToString(group->cig.GetState()));
+  bool RemoveCigForGroup(LeAudioDeviceGroup* group,
+                         CigState cig_state_during_removal = CigState::REMOVING) {
+    log::debug("Group: {}, id: {} cig state: {}, removing_state: {}", std::format_ptr(group),
+               group->group_id_, ToString(group->cig.GetState()),
+               ToString(cig_state_during_removal));
     if (group->cig.GetState() != CigState::CREATED) {
       log::warn("Group: {}, id: {} cig state: {} cannot be removed", std::format_ptr(group),
                 group->group_id_, ToString(group->cig.GetState()));
-      return;
+      return false;
     }
 
-    group->cig.SetState(CigState::REMOVING);
+    group->cig.SetState(cig_state_during_removal);
     IsoManager::GetInstance()->RemoveCig(group->group_id_);
     log::debug("Group: {}, id: {} cig state: {}", std::format_ptr(group), group->group_id_,
                ToString(group->cig.GetState()));
     log_history_->AddLogHistory(kLogStateMachineTag, group->group_id_, RawAddress::kEmpty,
                                 kLogCigRemoveOp);
+    return true;
   }
 
   void ProcessHciNotifAclDisconnected(LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice) {
@@ -2322,6 +2389,11 @@ private:
 
         break;
       }
+      case AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED:
+        log::verbose("Reconfiguring from QoS to Codec Configured group_id: {}", group->group_id_);
+        SetAseState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED);
+        group->PrintDebugState();
+        FALLTHROUGH_INTENDED;
       case AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED: {
         /* Received Configured in Configured state. This could be done
          * autonomously because of the reconfiguration done by us
@@ -2378,7 +2450,10 @@ private:
           if (group->cig.GetState() == CigState::CREATED) {
             /* It can happen on the earbuds switch scenario. When one device
              * is getting remove while other is adding to the stream and CIG is
-             * already created */
+             * already created.
+             * Also it can happen, when second set member is adding while the other is in
+             * Streaming or QoS Configured state.
+             */
             PrepareAndSendConfigQos(group, leAudioDevice);
           } else if (!CigCreate(group)) {
             log::error("Could not create CIG. Stop the stream for group {}", group->group_id_);
@@ -2404,10 +2479,6 @@ private:
 
         break;
       }
-      case AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED:
-        SetAseState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED);
-        group->PrintDebugState();
-        break;
       case AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING:
         log::error("Ignore invalid attempt of state transition from {} to {}, {}, ase_id: {}",
                    ToString(ase->state),
