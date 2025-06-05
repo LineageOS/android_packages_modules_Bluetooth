@@ -461,7 +461,6 @@ public class A2dpService extends ConnectableProfile {
      * @param silence true to enable silence mode, false to disable.
      * @return true on success, false on error
      */
-    @VisibleForTesting
     public boolean setSilenceMode(@NonNull BluetoothDevice device, boolean silence) {
         Log.d(TAG, "setSilenceMode(" + device + "): " + silence);
         synchronized (mStateMachines) {

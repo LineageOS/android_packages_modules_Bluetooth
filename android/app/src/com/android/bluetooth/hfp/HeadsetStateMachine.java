@@ -1829,7 +1829,6 @@ class HeadsetStateMachine extends StateMachine {
      *     BluetoothProfile#STATE_CONNECTING}, {@link BluetoothProfile#STATE_CONNECTED}, or {@link
      *     BluetoothProfile#STATE_DISCONNECTING}
      */
-    @VisibleForTesting
     public synchronized int getConnectionState() {
         if (mCurrentState == null) {
             return BluetoothHeadset.STATE_DISCONNECTED;
