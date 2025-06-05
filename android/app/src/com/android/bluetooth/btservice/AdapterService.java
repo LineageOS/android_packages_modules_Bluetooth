@@ -291,7 +291,7 @@ public class AdapterService extends Service {
     private final DistanceMeasurementNativeInterface mDistanceMeasurementNativeInterface;
     private final SilenceDeviceManager mSilenceDeviceManager;
     private final DatabaseManager mDatabaseManager;
-    private final ServiceFactory mServiceFactory;
+    private final ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
 
     private boolean mIsMediaProfileConnected;
     private int mStackReportedState;
@@ -734,6 +734,24 @@ public class AdapterService extends Service {
         return getStartedProfile(BluetoothProfile.A2DP, A2dpService.class);
     }
 
+    Optional<BassClientService> getBassClientService() {
+        return getStartedProfile(
+                BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, BassClientService.class);
+    }
+
+    Optional<BatteryService> getBatteryService() {
+        return getStartedProfile(BluetoothProfile.BATTERY, BatteryService.class);
+    }
+
+    Optional<CsipSetCoordinatorService> getCsipSetCoordinatorService() {
+        return getStartedProfile(
+                BluetoothProfile.CSIP_SET_COORDINATOR, CsipSetCoordinatorService.class);
+    }
+
+    Optional<HapClientService> getHapClientService() {
+        return getStartedProfile(BluetoothProfile.HAP_CLIENT, HapClientService.class);
+    }
+
     private Optional<HeadsetClientService> getHeadsetClientService() {
         return getStartedProfile(BluetoothProfile.HEADSET_CLIENT, HeadsetClientService.class);
     }
@@ -744,6 +762,10 @@ public class AdapterService extends Service {
 
     Optional<HearingAidService> getHearingAidService() {
         return getStartedProfile(BluetoothProfile.HEARING_AID, HearingAidService.class);
+    }
+
+    Optional<HidHostService> getHidHostService() {
+        return getStartedProfile(BluetoothProfile.HID_HOST, HidHostService.class);
     }
 
     Optional<LeAudioService> getLeAudioService() {
@@ -760,6 +782,10 @@ public class AdapterService extends Service {
                 .filter(ProfileService::isAvailable);
     }
 
+    Optional<PanService> getPanService() {
+        return getStartedProfile(BluetoothProfile.PAN, PanService.class);
+    }
+
     private Optional<PbapClientService> getPbapClientService() {
         return getStartedProfile(BluetoothProfile.PBAP_CLIENT, PbapClientService.class)
                 .filter(ProfileService::isAvailable);
@@ -772,6 +798,10 @@ public class AdapterService extends Service {
 
     public Optional<TbsService> getTbsService() {
         return getStartedProfile(BluetoothProfile.LE_CALL_CONTROL, TbsService.class);
+    }
+
+    Optional<VolumeControlService> getVolumeControlService() {
+        return getStartedProfile(BluetoothProfile.VOLUME_CONTROL, VolumeControlService.class);
     }
 
     Optional<ConnectableProfile> getStartedConnectableProfile(int id) {

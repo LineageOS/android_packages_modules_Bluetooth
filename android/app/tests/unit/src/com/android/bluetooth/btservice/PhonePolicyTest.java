@@ -81,6 +81,7 @@ import org.mockito.Mock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /** Test cases for {@link PhonePolicy}. */
 @MediumTest
@@ -92,7 +93,7 @@ public class PhonePolicyTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private ServiceFactory mServiceFactory;
+    @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
     @Mock private HeadsetService mHeadsetService;
     @Mock private A2dpService mA2dpService;
     @Mock private LeAudioService mLeAudioService;
@@ -126,13 +127,26 @@ public class PhonePolicyTest {
         doReturn(BluetoothAdapter.STATE_ON).when(mAdapterService).getState();
         doReturn(MAX_CONNECTED_AUDIO_DEVICES).when(mAdapterService).getMaxConnectedAudioDevices();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
-        // Setup the mocked factory to return mocked services
-        doReturn(mHeadsetService).when(mServiceFactory).getHeadsetService();
-        doReturn(mA2dpService).when(mServiceFactory).getA2dpService();
-        doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
-        doReturn(mCsipSetCoordinatorService).when(mServiceFactory).getCsipSetCoordinatorService();
-        doReturn(mHearingAidService).when(mServiceFactory).getHearingAidService();
-        doReturn(mHapClientService).when(mServiceFactory).getHapClientService();
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            doReturn(Optional.of(mA2dpService)).when(mAdapterService).getA2dpService();
+            doReturn(Optional.of(mCsipSetCoordinatorService))
+                    .when(mAdapterService)
+                    .getCsipSetCoordinatorService();
+            doReturn(Optional.of(mHeadsetService)).when(mAdapterService).getHeadsetService();
+            doReturn(Optional.of(mHearingAidService)).when(mAdapterService).getHearingAidService();
+            doReturn(Optional.of(mHapClientService)).when(mAdapterService).getHapClientService();
+            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
+        } else {
+            // Setup the mocked factory to return mocked services
+            doReturn(mA2dpService).when(mServiceFactory).getA2dpService();
+            doReturn(mCsipSetCoordinatorService)
+                    .when(mServiceFactory)
+                    .getCsipSetCoordinatorService();
+            doReturn(mHeadsetService).when(mServiceFactory).getHeadsetService();
+            doReturn(mHearingAidService).when(mServiceFactory).getHearingAidService();
+            doReturn(mHapClientService).when(mServiceFactory).getHapClientService();
+            doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
+        }
 
         // Most common default
         doReturn(CONNECTION_POLICY_UNKNOWN).when(mHeadsetService).getConnectionPolicy(any());

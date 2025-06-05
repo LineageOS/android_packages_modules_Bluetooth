@@ -90,7 +90,7 @@ public class ActiveDeviceManagerTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private ServiceFactory mServiceFactory;
+    @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
     @Mock private A2dpService mA2dpService;
     @Mock private HeadsetService mHeadsetService;
     @Mock private HearingAidService mHearingAidService;
