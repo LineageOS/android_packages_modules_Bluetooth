@@ -77,6 +77,7 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.flags.Flags;
 
 import org.junit.After;
 import org.junit.Before;
@@ -1005,7 +1006,7 @@ public class HeadsetServiceTest {
 
     /** Verifies that all CLCC responses are sent to the connected device. */
     @Test
-    public void testClccResponse_withOneDevice() {
+    public void testClccResponse_withOneDeviceConnected() {
         when(mDatabaseManager.getProfileConnectionPolicy(
                         any(BluetoothDevice.class), eq(BluetoothProfile.HEADSET)))
                 .thenReturn(CONNECTION_POLICY_UNKNOWN);
@@ -1030,12 +1031,40 @@ public class HeadsetServiceTest {
                         eq(HeadsetStateMachine.SEND_CLCC_RESPONSE), any(HeadsetClccResponse.class));
     }
 
+    /** Verifies that all CLCC responses are sent to the connecting device. */
+    @Test
+    @EnableFlags(Flags.FLAG_SEND_OK_CLCC_BEFORE_SLC)
+    public void testClccResponse_withOneDeviceConnecting() {
+        when(mDatabaseManager.getProfileConnectionPolicy(
+                        any(BluetoothDevice.class), eq(BluetoothProfile.HEADSET)))
+                .thenReturn(CONNECTION_POLICY_UNKNOWN);
+        mCurrentDevice = getTestDevice(0);
+        assertThat(mHeadsetService.connect(mCurrentDevice)).isTrue();
+        verify(mObjectsFactory)
+                .makeStateMachine(
+                        mCurrentDevice,
+                        mHeadsetService.getStateMachinesThreadLooper(),
+                        mHeadsetService,
+                        mAdapterService,
+                        mNativeInterface,
+                        mSystemInterface);
+        when(mStateMachines.get(mCurrentDevice).getDevice()).thenReturn(mCurrentDevice);
+        when(mStateMachines.get(mCurrentDevice).getConnectionState()).thenReturn(STATE_CONNECTING);
+        assertThat(mHeadsetService.getConnectionState(mCurrentDevice)).isEqualTo(STATE_CONNECTING);
+        mHeadsetService.clccResponse(1, 0, 0, 0, false, "8225319000", 0);
+        // index 0 is the end mark of CLCC response.
+        mHeadsetService.clccResponse(0, 0, 0, 0, false, "8225319000", 0);
+        verify(mStateMachines.get(mCurrentDevice), times(2))
+                .sendMessage(
+                        eq(HeadsetStateMachine.SEND_CLCC_RESPONSE), any(HeadsetClccResponse.class));
+    }
+
     /**
      * Verifies that all CLCC responses are sent to the connected devices even it is connected in
      * the middle of generating CLCC responses.
      */
     @Test
-    public void testClccResponse_withMultipleDevices() {
+    public void testClccResponse_withMultipleDevicesConnected() {
         ArrayList<BluetoothDevice> connectedDevices = new ArrayList<>();
         when(mDatabaseManager.getProfileConnectionPolicy(
                         any(BluetoothDevice.class), eq(BluetoothProfile.HEADSET)))
@@ -1054,6 +1083,43 @@ public class HeadsetServiceTest {
             when(mStateMachines.get(mCurrentDevice).getDevice()).thenReturn(mCurrentDevice);
             when(mStateMachines.get(mCurrentDevice).getConnectionState())
                     .thenReturn(STATE_CONNECTED);
+            connectedDevices.add(mCurrentDevice);
+            // index 0 is the end mark of CLCC response.
+            mHeadsetService.clccResponse(i, 0, 0, 0, false, "8225319000", 0);
+        }
+        for (int i = 2; i >= 0; i--) {
+            verify(mStateMachines.get(connectedDevices.get(i)), times(3))
+                    .sendMessage(
+                            eq(HeadsetStateMachine.SEND_CLCC_RESPONSE),
+                            any(HeadsetClccResponse.class));
+        }
+    }
+
+    /**
+     * Verifies that all CLCC responses are sent to the connected devices even it is connected in
+     * the middle of generating CLCC responses.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_SEND_OK_CLCC_BEFORE_SLC)
+    public void testClccResponse_withMultipleDevicesConnecting() {
+        ArrayList<BluetoothDevice> connectedDevices = new ArrayList<>();
+        when(mDatabaseManager.getProfileConnectionPolicy(
+                        any(BluetoothDevice.class), eq(BluetoothProfile.HEADSET)))
+                .thenReturn(CONNECTION_POLICY_UNKNOWN);
+        for (int i = 2; i >= 0; i--) {
+            mCurrentDevice = getTestDevice(i);
+            assertThat(mHeadsetService.connect(mCurrentDevice)).isTrue();
+            verify(mObjectsFactory)
+                    .makeStateMachine(
+                            mCurrentDevice,
+                            mHeadsetService.getStateMachinesThreadLooper(),
+                            mHeadsetService,
+                            mAdapterService,
+                            mNativeInterface,
+                            mSystemInterface);
+            when(mStateMachines.get(mCurrentDevice).getDevice()).thenReturn(mCurrentDevice);
+            when(mStateMachines.get(mCurrentDevice).getConnectionState())
+                    .thenReturn(STATE_CONNECTING);
             connectedDevices.add(mCurrentDevice);
             // index 0 is the end mark of CLCC response.
             mHeadsetService.clccResponse(i, 0, 0, 0, false, "8225319000", 0);

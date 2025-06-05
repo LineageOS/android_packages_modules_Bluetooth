@@ -393,6 +393,16 @@ public class HeadsetService extends ConnectableProfile {
         }
     }
 
+    private void doForEachConnectedOrConnectingStateMachine(List<StateMachineTask> tasks) {
+        synchronized (mStateMachines) {
+            for (BluetoothDevice device : getConnectedOrConnectingDevices()) {
+                for (StateMachineTask task : tasks) {
+                    task.execute(mStateMachines.get(device));
+                }
+            }
+        }
+    }
+
     void onDeviceStateChanged(HeadsetDeviceState deviceState) {
         doForEachConnectedStateMachine(
                 stateMachine ->
@@ -674,6 +684,25 @@ public class HeadsetService extends ConnectableProfile {
         synchronized (mStateMachines) {
             for (HeadsetStateMachine stateMachine : mStateMachines.values()) {
                 if (stateMachine.getConnectionState() == STATE_CONNECTED) {
+                    devices.add(stateMachine.getDevice());
+                }
+            }
+        }
+        return devices;
+    }
+
+    /**
+     * Get a list of devices in STATE_CONNECTED or in STATE_CONNECTING
+     *
+     * @return list of Bluetooth Devices
+     */
+    public List<BluetoothDevice> getConnectedOrConnectingDevices() {
+        ArrayList<BluetoothDevice> devices = new ArrayList<>();
+        int connectionState = STATE_DISCONNECTED;
+        synchronized (mStateMachines) {
+            for (HeadsetStateMachine stateMachine : mStateMachines.values()) {
+                connectionState = stateMachine.getConnectionState();
+                if (connectionState == STATE_CONNECTED || connectionState == STATE_CONNECTING) {
                     devices.add(stateMachine.getDevice());
                 }
             }
@@ -1887,7 +1916,12 @@ public class HeadsetService extends ConnectableProfile {
                                 new HeadsetClccResponse(
                                         index, direction, status, mode, mpty, number, type)));
         if (index == CLCC_END_MARK_INDEX) {
-            doForEachConnectedStateMachine(mPendingClccResponses);
+            if (Flags.sendOkClccBeforeSlc()) {
+                doForEachConnectedOrConnectingStateMachine(mPendingClccResponses);
+            } else {
+                doForEachConnectedStateMachine(mPendingClccResponses);
+            }
+
             mPendingClccResponses.clear();
         }
     }
