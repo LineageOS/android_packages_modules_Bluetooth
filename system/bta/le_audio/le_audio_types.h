@@ -1317,6 +1317,34 @@ struct AudioSetConfiguration {
   BidirectionalPair<bool> getDirections() const {
     return {.sink = !confs.sink.empty(), .source = !confs.source.empty()};
   }
+
+  BidirectionalPair<uint8_t> getTargetLatency() const {
+    BidirectionalPair<uint8_t> target_latencies = {0, 0};
+    /* same latency size is used for all the ASEs, just take first one */
+    if (!confs.sink.empty()) {
+      target_latencies.sink = confs.sink[0].qos.target_latency;
+    }
+
+    if (!confs.source.empty()) {
+      target_latencies.source = confs.source[0].qos.target_latency;
+    }
+
+    return target_latencies;
+  }
+
+  BidirectionalPair<uint16_t> getMaxSdu() const {
+    BidirectionalPair<uint16_t> max_sdu = {0, 0};
+    /* same max_sdu is used for all the ASEs, just take first one */
+    if (!confs.sink.empty()) {
+      max_sdu.sink = confs.sink[0].codec.GetOctetsPerFrame();
+    }
+
+    if (!confs.source.empty()) {
+      max_sdu.source = confs.source[0].codec.GetOctetsPerFrame();
+    }
+
+    return max_sdu;
+  }
 };
 
 std::ostream& operator<<(std::ostream& os, const AudioSetConfiguration& config);
@@ -1396,6 +1424,9 @@ struct stream_parameters {
 };
 
 struct stream_configuration {
+  /* Has used to described later CIG configuration */
+  size_t configuration_hash;
+
   /* Whether the group should be reconfigured once the streaming stops */
   bool pending_configuration;
 
