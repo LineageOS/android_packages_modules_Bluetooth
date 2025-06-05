@@ -88,7 +88,7 @@ public:
   }
 
   void ConnectionStateCallback(bluetooth::headset::bthf_connection_state_t state,
-                               RawAddress* bd_addr) override {
+                               RawAddress* bd_addr, uint8_t reason) override {
     log::info("{} for {}", state, *bd_addr);
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
@@ -103,7 +103,7 @@ public:
     }
 
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectionStateChanged, (jint)state,
-                                 addr.get());
+                                 addr.get(), (jint)reason);
   }
 
   void AudioStateCallback(bluetooth::headset::bthf_audio_state_t state,
@@ -1041,7 +1041,7 @@ int register_com_android_bluetooth_hfp(JNIEnv* env) {
   }
 
   const JNIJavaMethod javaMethods[] = {
-          {"onConnectionStateChanged", "(I[B)V", &method_onConnectionStateChanged},
+          {"onConnectionStateChanged", "(I[BI)V", &method_onConnectionStateChanged},
           {"onAudioStateChanged", "(I[B)V", &method_onAudioStateChanged},
           {"onVrStateChanged", "(I[B)V", &method_onVrStateChanged},
           {"onAnswerCall", "([B)V", &method_onAnswerCall},

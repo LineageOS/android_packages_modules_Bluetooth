@@ -26,6 +26,7 @@ import static android.bluetooth.BluetoothUtils.isValidDevice;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -44,6 +45,8 @@ import android.content.Context;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
+
+import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -77,6 +80,8 @@ public final class BluetoothHeadset implements BluetoothProfile {
      *   <li>{@link #EXTRA_STATE} - The current state of the profile.
      *   <li>{@link #EXTRA_PREVIOUS_STATE}- The previous state of the profile.
      *   <li>{@link BluetoothDevice#EXTRA_DEVICE} - The remote device.
+     *   <li>{@link #EXTRA_DISCONNECTED_REASON} - A disconnection reason if moved from {@link
+     *       #STATE_CONNECTING} to {@link #STATE_DISCONNECTED}.
      * </ul>
      *
      * <p>{@link #EXTRA_STATE} or {@link #EXTRA_PREVIOUS_STATE} can be any of {@link
@@ -316,6 +321,55 @@ public final class BluetoothHeadset implements BluetoothProfile {
      * {@link #EXTRA_PREVIOUS_STATE} of {@link #ACTION_AUDIO_STATE_CHANGED} intent.
      */
     public static final int STATE_AUDIO_CONNECTED = 12;
+
+    /**
+     * HFP was disconnected due to an unknown reason. This disconnection could be intentional (e.g.
+     * manual user disconnection).
+     */
+    @FlaggedApi(Flags.FLAG_HFP_CONNECTION_FAILURES_API)
+    public static final int DISCONNECTED_REASON_UNKNOWN = 0;
+
+    /** HFP service not found with SDP discovery */
+    @FlaggedApi(Flags.FLAG_HFP_CONNECTION_FAILURES_API)
+    public static final int DISCONNECTED_REASON_SDP_DISCOVERY_FAILED = 1;
+
+    /** HFP connection failed due to RFCOMM connection failure */
+    @FlaggedApi(Flags.FLAG_HFP_CONNECTION_FAILURES_API)
+    public static final int DISCONNECTED_REASON_RFCOMM_CONNECTION_FAILED = 2;
+
+    /** HFP connection failed due to resource constraints */
+    @FlaggedApi(Flags.FLAG_HFP_CONNECTION_FAILURES_API)
+    public static final int DISCONNECTED_REASON_INSUFFICIENT_RESOURCES = 3;
+
+    /** @hide */
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef(
+            prefix = {"DISCONNECTED_REASON_"},
+            value = {
+                DISCONNECTED_REASON_UNKNOWN,
+                DISCONNECTED_REASON_SDP_DISCOVERY_FAILED,
+                DISCONNECTED_REASON_RFCOMM_CONNECTION_FAILED,
+                DISCONNECTED_REASON_INSUFFICIENT_RESOURCES,
+            })
+    public @interface HfpConnection {}
+
+    /**
+     * Used as an int extra field in {@link
+     * android.bluetooth.BluetoothHeadset#ACTION_CONNECTION_STATE_CHANGED} intents for connection
+     * failure reasons.
+     *
+     * <p>The value is one of the following:
+     *
+     * <ul>
+     *   <li>{@link #DISCONNECTED_REASON_UNKNOWN}
+     *   <li>{@link #DISCONNECTED_REASON_SDP_DISCOVERY_FAILED}
+     *   <li>{@link #DISCONNECTED_REASON_RFCOMM_CONNECTION_FAILED}
+     *   <li>{@link #DISCONNECTED_REASON_INSUFFICIENT_RESOURCES}
+     * </ul>
+     */
+    @FlaggedApi(Flags.FLAG_HFP_CONNECTION_FAILURES_API)
+    public static final String EXTRA_DISCONNECTED_REASON =
+            "android.bluetooth.extra.DISCONNECTED_REASON";
 
     /**
      * Intent used to broadcast the headset's indicator status

@@ -695,10 +695,7 @@ public:
     tBTA_GATTC_MULTI multi_read{};
 
     for (int i = 0; i < ases_num; i++) {
-      /* Last read ase characteristic should issue connected state callback
-       * to upper layer
-       */
-
+      /* Last read ase characteristic should issue connected state callback to upper layer */
       if (leAudioDevice->notify_connected_after_read_ && (i == (ases_num - 1))) {
         notify_flag_ptr = INT_TO_PTR(leAudioDevice->notify_connected_after_read_);
       }
@@ -711,16 +708,17 @@ public:
         continue;
       }
 
-      if (i != 0 && (i % GATT_MAX_READ_MULTI_HANDLES == 0)) {
+      multi_read.handles[i % GATT_MAX_READ_MULTI_HANDLES] = leAudioDevice->ases_[i].hdls.val_hdl;
+
+      if ((i + 1) % GATT_MAX_READ_MULTI_HANDLES == 0) {
         multi_read.num_attr = GATT_MAX_READ_MULTI_HANDLES;
         BtaGattQueue::ReadMultiCharacteristic(leAudioDevice->conn_id_, multi_read,
                                               OnGattReadMultiRspStatic, notify_flag_ptr);
         memset(multi_read.handles, 0, GATT_MAX_READ_MULTI_HANDLES * sizeof(uint16_t));
       }
-      multi_read.handles[i % GATT_MAX_READ_MULTI_HANDLES] = leAudioDevice->ases_[i].hdls.val_hdl;
     }
 
-    if (com::android::bluetooth::flags::le_ase_read_multiple_variable() &&
+    if (com::android::bluetooth::flags::le_ase_read_multiple_variable() && is_multiread_expected &&
         (ases_num % GATT_MAX_READ_MULTI_HANDLES != 0)) {
       multi_read.num_attr = ases_num % GATT_MAX_READ_MULTI_HANDLES;
       BtaGattQueue::ReadMultiCharacteristic(leAudioDevice->conn_id_, multi_read,

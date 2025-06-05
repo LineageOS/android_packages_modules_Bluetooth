@@ -120,6 +120,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -233,6 +234,7 @@ public class LeAudioServiceTest {
 
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
+        doReturn(Optional.of(mTbsService)).when(mAdapterService).getTbsService();
 
         doAnswer(invocation -> mBondedDevices.toArray(new BluetoothDevice[] {}))
                 .when(mAdapterService)
@@ -275,7 +277,6 @@ public class LeAudioServiceTest {
         mService.setAvailable(true);
 
         mService.mMcpService = mMcpService;
-        mService.mTbsService = mTbsService;
         mService.mHapClientService = mHapClientService;
         mService.mBassClientService = mBassClientService;
         mService.mServiceFactory = mServiceFactory;

@@ -16,6 +16,7 @@
 
 #include "hci/le_scanning_reassembler.h"
 
+#include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -79,11 +80,19 @@ TEST_F(LeScanningReassemblerTest, non_scannable_legacy_advertising) {
 TEST_F(LeScanningReassemblerTest, scannable_non_connectable_legacy_advertising) {
   // Test scannable legacy advertising with well formed advertising and
   // scan response payload.
-  ASSERT_FALSE(reassembler_
-                       .ProcessAdvertisingReport(kLegacy | kScannable | kComplete,
-                                                 (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
-                                                 kTestAddress, kSidNotPresent, {0x1, 0x2})
-                       .has_value());
+  if (com::android::bluetooth::flags::support_passive_scanning()) {
+    ASSERT_TRUE(reassembler_
+                        .ProcessAdvertisingReport(kLegacy | kScannable | kComplete,
+                                                  (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
+                                                  kTestAddress, kSidNotPresent, {0x1, 0x2})
+                        .has_value());
+  } else {
+    ASSERT_FALSE(reassembler_
+                         .ProcessAdvertisingReport(kLegacy | kScannable | kComplete,
+                                                   (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
+                                                   kTestAddress, kSidNotPresent, {0x1, 0x2})
+                         .has_value());
+  }
 
   auto processed_report =
           reassembler_.ProcessAdvertisingReport(kLegacy | kScannable | kScanResponse | kComplete,
@@ -95,11 +104,21 @@ TEST_F(LeScanningReassemblerTest, scannable_non_connectable_legacy_advertising) 
 
   // Test scannable legacy advertising with padding after the
   // advertising and scan response data.
-  ASSERT_FALSE(reassembler_
-                       .ProcessAdvertisingReport(kLegacy | kScannable | kComplete,
-                                                 (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
-                                                 kTestAddress, kSidNotPresent, {0x1, 0x2, 0x0, 0x0})
-                       .has_value());
+  if (com::android::bluetooth::flags::support_passive_scanning()) {
+    ASSERT_TRUE(reassembler_
+                        .ProcessAdvertisingReport(kLegacy | kScannable | kComplete,
+                                                  (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
+                                                  kTestAddress, kSidNotPresent,
+                                                  {0x1, 0x2, 0x0, 0x0})
+                        .has_value());
+  } else {
+    ASSERT_FALSE(reassembler_
+                         .ProcessAdvertisingReport(kLegacy | kScannable | kComplete,
+                                                   (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
+                                                   kTestAddress, kSidNotPresent,
+                                                   {0x1, 0x2, 0x0, 0x0})
+                         .has_value());
+  }
 
   ASSERT_EQ(reassembler_
                     .ProcessAdvertisingReport(kLegacy | kScannable | kScanResponse | kComplete,
@@ -112,11 +131,19 @@ TEST_F(LeScanningReassemblerTest, scannable_non_connectable_legacy_advertising) 
 }
 
 TEST_F(LeScanningReassemblerTest, scannable_connectable_legacy_advertising) {
-  ASSERT_FALSE(reassembler_
-                       .ProcessAdvertisingReport(kLegacy | kScannable | kConnectable,
-                                                 (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
-                                                 kTestAddress, kSidNotPresent, {0x1, 0x2})
-                       .has_value());
+  if (com::android::bluetooth::flags::support_passive_scanning()) {
+    ASSERT_TRUE(reassembler_
+                        .ProcessAdvertisingReport(kLegacy | kScannable | kConnectable,
+                                                  (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
+                                                  kTestAddress, kSidNotPresent, {0x1, 0x2})
+                        .has_value());
+  } else {
+    ASSERT_FALSE(reassembler_
+                         .ProcessAdvertisingReport(kLegacy | kScannable | kConnectable,
+                                                   (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
+                                                   kTestAddress, kSidNotPresent, {0x1, 0x2})
+                         .has_value());
+  }
 
   auto processed_report = reassembler_.ProcessAdvertisingReport(
           kLegacy | kScannable | kScanResponse, (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
@@ -187,11 +214,20 @@ TEST_F(LeScanningReassemblerTest, scannable_extended_advertising) {
                                                  kTestAddress, kSidNotPresent, {0x1, 0x2, 0x3})
                        .has_value());
 
-  ASSERT_FALSE(reassembler_
-                       .ProcessAdvertisingReport(
-                               kScannable | kComplete, (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
-                               kTestAddress, kSidNotPresent, {0x4, 0x5, 0x6, 0x0, 0x0})
-                       .has_value());
+  if (com::android::bluetooth::flags::support_passive_scanning()) {
+    ASSERT_TRUE(reassembler_
+                        .ProcessAdvertisingReport(
+                                kScannable | kComplete, (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
+                                kTestAddress, kSidNotPresent, {0x4, 0x5, 0x6, 0x0, 0x0})
+                        .has_value());
+  } else {
+    ASSERT_FALSE(reassembler_
+                         .ProcessAdvertisingReport(kScannable | kComplete,
+                                                   (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
+                                                   kTestAddress, kSidNotPresent,
+                                                   {0x4, 0x5, 0x6, 0x0, 0x0})
+                         .has_value());
+  }
 
   ASSERT_FALSE(reassembler_
                        .ProcessAdvertisingReport(kContinuation,

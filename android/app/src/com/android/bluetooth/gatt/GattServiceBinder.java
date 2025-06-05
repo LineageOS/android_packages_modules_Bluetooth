@@ -450,8 +450,8 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         Utils.enforceCdmAssociationIfNotBluetoothPrivileged(
                 service, service.getCompanionDeviceManager(), source, device);
 
-        if (subrateMode < BluetoothGatt.SUBRATE_REQUEST_MODE_BALANCED
-                || subrateMode > BluetoothGatt.SUBRATE_REQUEST_MODE_LOW_POWER) {
+        if (subrateMode < BluetoothGatt.SUBRATE_MODE_OFF
+                || subrateMode > BluetoothGatt.SUBRATE_MODE_HIGH) {
             throw new IllegalArgumentException("Subrate Mode not within valid range");
         }
 

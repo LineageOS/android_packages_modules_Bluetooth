@@ -35,7 +35,8 @@ public:
    * @param state one of the values from bthf_connection_state_t
    * @param bd_addr remote device address
    */
-  virtual void ConnectionStateCallback(bthf_connection_state_t state, RawAddress* bd_addr) = 0;
+  virtual void ConnectionStateCallback(bthf_connection_state_t state, RawAddress* bd_addr,
+                                       uint8_t reason) = 0;
 
   /**
    * Callback for audio connection state change.

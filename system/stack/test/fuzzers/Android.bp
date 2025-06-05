@@ -75,7 +75,6 @@ cc_defaults {
         "libaaudio",
         "libaconfig_storage_read_api_cc",
         "libbase",
-        "libbinder",
         "libbinder_ndk",
         "libcrypto",
         "libcutils",

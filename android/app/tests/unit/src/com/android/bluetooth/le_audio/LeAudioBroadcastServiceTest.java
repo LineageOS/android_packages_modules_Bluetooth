@@ -110,6 +110,7 @@ import org.mockito.hamcrest.MockitoHamcrest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /** Test cases for {@link LeAudioBroadcastService}. */
 @MediumTest
@@ -208,6 +209,7 @@ public class LeAudioBroadcastServiceTest {
                 .when(mAdapterService)
                 .getSupportedProfilesBitMask();
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
+        doReturn(Optional.of(mTbsService)).when(mAdapterService).getTbsService();
 
         MetricsLogger.setInstanceForTesting(mMetricsLogger);
 
@@ -221,7 +223,6 @@ public class LeAudioBroadcastServiceTest {
         mService.setAvailable(true);
 
         mService.mServiceFactory = mServiceFactory;
-        mService.mTbsService = mTbsService;
         when(mServiceFactory.getBassClientService()).thenReturn(mBassClientService);
         // Set up the State Changed receiver
 

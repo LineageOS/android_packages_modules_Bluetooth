@@ -16,6 +16,7 @@
 #include "hci/le_scanning_reassembler.h"
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include "hci/hci_packets.h"
 #include "hci/le_periodic_sync_manager.h"
@@ -72,20 +73,26 @@ LeScanningReassembler::ProcessAdvertisingReport(uint16_t event_type, uint8_t add
   // - For legacy advertising, when a scan response is expected.
   // - For extended advertising, when the current data is marked
   //   incomplete OR when a scan response is expected.
-  if (data_status == DataStatus::CONTINUING || expect_scan_response) {
-    log::verbose(
-            "Ignoring advertising report when scan response is expected or current data is marked "
-            "incomplete");
+  if (data_status == DataStatus::CONTINUING ||
+      (expect_scan_response && !com::android::bluetooth::flags::support_passive_scanning())) {
+    log::verbose("Ignoring advertising report when current data is marked incomplete");
     return {};
   }
 
-  // Otherwise the full advertising report has been reassembled,
-  // removed the cache entry and return the complete advertising data.
-  CompleteAdvertisingData result{.extended_event_type = advertising_fragment->extended_event_type,
-                                 .data = std::move(advertising_fragment->data)};
-  cache_.erase(advertising_fragment);
-  log::verbose("Full advertising report has been reassembled");
-  return result;
+  // Returns current result and save it for next scan response
+  if (expect_scan_response) {
+    CompleteAdvertisingData result{.extended_event_type = advertising_fragment->extended_event_type,
+                                   .data = advertising_fragment->data};
+    return result;
+  } else {
+    // Otherwise the full advertising report has been reassembled,
+    // removed the cache entry and return the complete advertising data.
+    CompleteAdvertisingData result{.extended_event_type = advertising_fragment->extended_event_type,
+                                   .data = std::move(advertising_fragment->data)};
+    cache_.erase(advertising_fragment);
+    log::verbose("Full advertising report has been reassembled");
+    return result;
+  }
 }
 
 std::optional<std::vector<uint8_t>> LeScanningReassembler::ProcessPeriodicAdvertisingReport(

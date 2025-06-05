@@ -76,8 +76,7 @@ public class PairingTestDualMode {
     @Mock private BluetoothProfile.ServiceListener mProfileServiceListener;
 
     private static final String TAG = PairingTestDualMode.class.getSimpleName();
-
-    private static final Duration BOND_INTENT_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration INTENT_TIMEOUT = Duration.ofSeconds(10);
     private static final String BUMBLE_ALIAS = "Bumble";
 
     private final Context mTargetContext =
@@ -161,7 +160,7 @@ public class PairingTestDualMode {
         // Pairing Event Observer
         StreamObserver<SecurityProto.PairingEventAnswer> pairingEventAnswerObserver =
                 mBumble.security()
-                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
+                        .withDeadlineAfter(INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
                         .onPairing(mPairingEventStreamObserver);
 
         // Start advertising for LE
@@ -270,7 +269,7 @@ public class PairingTestDualMode {
 
         StreamObserver<SecurityProto.PairingEventAnswer> pairingEventAnswerObserver =
                 mBumble.security()
-                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
+                        .withDeadlineAfter(INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
                         .onPairing(mPairingEventStreamObserver);
 
         // Start advertising for LE
@@ -325,6 +324,78 @@ public class PairingTestDualMode {
                 hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
 
         assertThat(mAdapter.getBondedDevices()).contains(mBumbleDevice);
+
+        intentReceiver.close();
+    }
+
+    /**
+     * Test the reconnection over BR/EDR transport after a Bluetooth restart and verify link
+     * encryption.
+     *
+     * <p>Steps:
+     *
+     * <ol>
+     *   <li>Bond Android and Bumble over BR/EDR
+     *   <li>Verify that the link is encrypted
+     *   <li>Restart the Bluetooth adapter using the {@link #testStep_restartBt()} helper method.
+     *   <li>Initiate a connection from the Bumble side to the Android device.
+     *   <li>Verify that the link is encrypted
+     * </ol>
+     *
+     * <p>Expectation:
+     *
+     * <ul>
+     *   <li>After a Bluetooth restart, Bumble can successfully reconnect to the Android device over
+     *       BR/EDR.
+     *   <li>After restart link is encryption.
+     * </ul>
+     */
+    @Test
+    public void testReconnection_OverTransportBrEdr() throws Exception {
+
+        IntentReceiver intentReceiver =
+                new IntentReceiver.Builder(
+                                mTargetContext,
+                                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                                BluetoothDevice.ACTION_ENCRYPTION_CHANGE)
+                        .build();
+
+        assertThat(mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_BREDR)).isTrue();
+
+        testStep_VerifyBondIntents(intentReceiver, mBumbleDevice, BluetoothDevice.TRANSPORT_BREDR);
+
+        mBumbleDevice.setPairingConfirmation(true);
+
+        intentReceiver.verifyReceivedOrdered(
+                hasAction(BluetoothDevice.ACTION_ENCRYPTION_CHANGE),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
+                hasExtra(BluetoothDevice.EXTRA_ENCRYPTION_STATUS, 0),
+                hasExtra(BluetoothDevice.EXTRA_ENCRYPTION_ENABLED, true));
+
+        intentReceiver.verifyReceived(
+                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
+
+        testStep_restartBt();
+
+        // Create connection from Bumble side
+        ByteString address =
+                ByteString.copyFrom(Utils.addressBytesFromString(mAdapter.getAddress()));
+        HostProto.ConnectRequest connectionRequest =
+                HostProto.ConnectRequest.newBuilder().setAddress(address).build();
+        HostProto.ConnectResponse response = mBumble.hostBlocking().connect(connectionRequest);
+
+        assertThat(response.hasConnection()).isTrue();
+
+        // Verify the link encryption after restart
+        intentReceiver.verifyReceived(
+                hasAction(BluetoothDevice.ACTION_ENCRYPTION_CHANGE),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
+                hasExtra(BluetoothDevice.EXTRA_ENCRYPTION_STATUS, 0),
+                hasExtra(BluetoothDevice.EXTRA_ENCRYPTION_ENABLED, true));
 
         intentReceiver.close();
     }
