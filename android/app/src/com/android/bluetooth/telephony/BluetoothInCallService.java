@@ -1178,10 +1178,18 @@ public class BluetoothInCallService extends InCallService {
                 // currently-held call.
                 heldCall.unhold();
                 return true;
-            } else if (!mCallInfo.isNullCall(activeCall)
-                    && activeCall.can(Connection.CAPABILITY_HOLD)) {
-                activeCall.hold();
-                return true;
+            } else if (!mCallInfo.isNullCall(activeCall)) {
+                if (Flags.holdConferenceCallFromRemote()) {
+                    BluetoothCall conferenceCall = getBluetoothCallById(activeCall.getParentId());
+                    if (!mCallInfo.isNullCall(conferenceCall)) {
+                        Log.i(TAG, "Hold conference call");
+                        activeCall = conferenceCall;
+                    }
+                }
+                if (activeCall.can(Connection.CAPABILITY_HOLD)) {
+                    activeCall.hold();
+                    return true;
+                }
             }
         } else if (chld == CHLD_TYPE_ADDHELDTOCONF) {
             if (!mCallInfo.isNullCall(activeCall)) {

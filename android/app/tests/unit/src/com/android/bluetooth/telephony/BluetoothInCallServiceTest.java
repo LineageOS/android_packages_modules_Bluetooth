@@ -1327,6 +1327,44 @@ public class BluetoothInCallServiceTest {
     }
 
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_HOLD_CONFERENCE_CALL_FROM_REMOTE)
+    public void processChldHoldActiveConfCall() {
+
+        BluetoothCall parentCall = createActiveCall(UUID.randomUUID());
+        BluetoothCall childCall = createActiveCall(UUID.randomUUID());
+        doReturn(List.of(parentCall, childCall)).when(mCallInfo).getBluetoothCalls();
+        doReturn(Uri.parse("tel:555-0000")).when(parentCall).getHandle();
+        doReturn(Uri.parse("tel:555-0001")).when(childCall).getHandle();
+
+        mBluetoothInCallService.onCallAdded(Optional.of(mHeadsetService), parentCall);
+        mBluetoothInCallService.onCallAdded(Optional.of(mHeadsetService), childCall);
+
+        addCallCapability(parentCall, Connection.CAPABILITY_MANAGE_CONFERENCE);
+        Integer parentId = parentCall.getId();
+        doReturn(parentId).when(childCall).getParentId();
+        List<Integer> childrenIds = Arrays.asList(childCall.getId());
+        doReturn(childrenIds).when(parentCall).getChildrenIds();
+
+        doReturn(true).when(parentCall).isConference();
+        doReturn(Call.STATE_ACTIVE).when(parentCall).getState();
+        doReturn(Call.STATE_ACTIVE).when(childCall).getState();
+        doReturn(true).when(parentCall).hasProperty(Call.Details.PROPERTY_GENERIC_CONFERENCE);
+        doReturn(true).when(parentCall).isIncoming();
+
+        mBluetoothInCallService.listCurrentCalls(mHeadsetService);
+
+        addCallCapability(parentCall, Connection.CAPABILITY_HOLD);
+
+        boolean didProcess =
+                mBluetoothInCallService.processChld(
+                        mHeadsetService, CHLD_TYPE_HOLDACTIVE_ACCEPTHELD);
+
+        verify(parentCall).hold();
+
+        assertThat(didProcess).isTrue();
+    }
+
+    @Test
     public void processChldAddHeldToConfHolding() {
         BluetoothCall activeCall = createActiveCall(UUID.randomUUID());
         addCallCapability(activeCall, Connection.CAPABILITY_MERGE_CONFERENCE);
