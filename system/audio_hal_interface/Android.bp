@@ -251,7 +251,6 @@ cc_test {
     shared_libs: [
         "libaconfig_storage_read_api_cc",
         "libbase",
-        "libbinder",
         "libbinder_ndk",
         "libcutils",
         "libfmq",
