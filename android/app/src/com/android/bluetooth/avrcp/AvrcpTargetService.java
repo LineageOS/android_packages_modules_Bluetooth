@@ -22,6 +22,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
 import android.annotation.NonNull;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUtils;
@@ -290,7 +291,11 @@ public class AvrcpTargetService extends ProfileService {
      * <p>This will be called by the native stack when a play event is received from a remote
      * device. See packages/modules/Bluetooth/system/profile/avrcp/device.cc.
      */
-    private static void setA2dpActiveDevice(@NonNull BluetoothDevice device) {
+    private void setA2dpActiveDevice(@NonNull BluetoothDevice device) {
+        if (Flags.setA2dpActiveDeviceThroughAdapterService()) {
+            mAdapterService.setActiveDevice(device, BluetoothAdapter.ACTIVE_DEVICE_AUDIO);
+            return;
+        }
         A2dpService service = A2dpService.getA2dpService();
         if (service == null) {
             Log.d(TAG, "setA2dpActiveDevice: A2dp service not found");
