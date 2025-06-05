@@ -21,3 +21,13 @@ flag {
     description: "Refactor how MAP Client collects and saves a message and its metadata."
     bug: "331478849"
 }
+
+flag {
+    name: "not_delete_locked_message"
+    namespace: "bluetooth"
+    description: "Do not delete messages if they are locked"
+    bug: "420362857"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
