@@ -416,9 +416,9 @@ std::vector<RawAddress> btif_storage_get_wake_capable_classic_hid_devices(void) 
   return hid_addresses;
 }
 
-void btif_storage_add_hearing_aid(const HearingDevice& dev_info) {
+void btif_storage_add_hearing_aid(const bluetooth::asha::HearingDevice& dev_info) {
   do_in_jni_thread(Bind(
-          [](const HearingDevice& dev_info) {
+          [](const bluetooth::asha::HearingDevice& dev_info) {
             std::string bdstr = dev_info.address.ToString();
             log::verbose("saving hearing aid device: {}", dev_info.address);
             if (!com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
@@ -532,12 +532,13 @@ void btif_storage_load_bonded_hearing_aids() {
     }
 
     // add extracted information to BTA Hearing Aid
-    do_in_main_thread(Bind(&HearingAid::AddFromStorage,
-                           HearingDevice(bd_addr, capabilities, codecs, audio_control_point_handle,
-                                         audio_status_handle, audio_status_ccc_handle,
-                                         service_changed_ccc_handle, volume_handle, read_psm_handle,
-                                         hi_sync_id, render_delay, preparation_delay),
-                           is_acceptlisted));
+    do_in_main_thread(Bind(
+            &bluetooth::asha::HearingAid::AddFromStorage,
+            bluetooth::asha::HearingDevice(
+                    bd_addr, capabilities, codecs, audio_control_point_handle, audio_status_handle,
+                    audio_status_ccc_handle, service_changed_ccc_handle, volume_handle,
+                    read_psm_handle, hi_sync_id, render_delay, preparation_delay),
+            is_acceptlisted));
   }
 }
 

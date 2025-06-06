@@ -80,11 +80,10 @@
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
+namespace bluetooth::asha {
+
 using base::Closure;
-using bluetooth::Uuid;
-using bluetooth::hci::IsoManager;
-using bluetooth::hearing_aid::ConnectionState;
-using namespace bluetooth;
+using hci::IsoManager;
 
 // The MIN_CE_LEN parameter for Connection Parameters based on the current
 // Connection Interval
@@ -299,7 +298,7 @@ private:
 public:
   ~HearingAidImpl() override = default;
 
-  HearingAidImpl(bluetooth::hearing_aid::HearingAidCallbacks* callbacks, Closure initCb)
+  HearingAidImpl(HearingAidCallbacks* callbacks, Closure initCb)
       : audio_running(false),
         overwrite_min_ce_len(-1),
         overwrite_max_ce_len(-1),
@@ -2001,7 +2000,7 @@ private:
   uint8_t seq_counter;
   /* current volume gain for the hearing aids*/
   int8_t current_volume;
-  bluetooth::hearing_aid::HearingAidCallbacks* callbacks;
+  HearingAidCallbacks* callbacks;
 
   /* currently used codec */
   uint8_t codec_in_use;
@@ -2222,8 +2221,7 @@ HearingAidAudioReceiverImpl audioReceiverImpl;
 
 }  // namespace
 
-void HearingAid::Initialize(bluetooth::hearing_aid::HearingAidCallbacks* callbacks,
-                            Closure initCb) {
+void HearingAid::Initialize(HearingAidCallbacks* callbacks, Closure initCb) {
   std::scoped_lock<std::mutex> lock(instance_mutex);
   if (instance) {
     log::error("Already initialized!");
@@ -2310,3 +2308,5 @@ void HearingAid::DebugDump(int fd) {
   HearingAidAudioSource::DebugDump(fd);
   dprintf(fd, "\n");
 }
+
+}  // namespace bluetooth::asha

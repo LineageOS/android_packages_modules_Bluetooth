@@ -41,8 +41,7 @@
 #include "osi/include/wakelock.h"
 #include "stack/include/main_thread.h"
 
-using namespace bluetooth;
-
+namespace bluetooth::asha {
 namespace {
 
 int bit_rate = -1;
@@ -217,3 +216,5 @@ void HearingAidAudioSource::DebugDump(int fd) {
          << std::endl;
   dprintf(fd, "%s", stream.str().c_str());
 }
+
+}  // namespace bluetooth::asha
