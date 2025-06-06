@@ -167,6 +167,7 @@ public class HeadsetService extends ConnectableProfile {
     @VisibleForTesting boolean mIsAptXSwbEnabled = false;
     @VisibleForTesting boolean mIsAptXSwbPmEnabled = false;
 
+    // TODO(b/422543753) Delete on flag cleanup
     @VisibleForTesting ServiceFactory mFactory = new ServiceFactory();
 
     public HeadsetService(AdapterService adapterService) {
@@ -239,6 +240,33 @@ public class HeadsetService extends ConnectableProfile {
         }
         filter.addAction(BluetoothDevice.ACTION_CONNECTION_ACCESS_REPLY);
         registerReceiver(mHeadsetReceiver, filter);
+    }
+
+    // TODO(b/422543753) Delete on flag cleanup
+    Optional<A2dpService> getA2dpService() {
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            return mAdapterService.getA2dpService();
+        } else {
+            return Optional.ofNullable(A2dpService.getA2dpService());
+        }
+    }
+
+    // TODO(b/422543753) Delete on flag cleanup
+    Optional<HeadsetClientService> getHeadsetClientService() {
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            return mAdapterService.getHeadsetClientService();
+        } else {
+            return Optional.ofNullable(HeadsetClientService.getHeadsetClientService());
+        }
+    }
+
+    // TODO(b/422543753) Delete on flag cleanup
+    Optional<LeAudioService> getLeAudioService() {
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            return mAdapterService.getLeAudioService();
+        } else {
+            return Optional.ofNullable(mFactory.getLeAudioService());
+        }
     }
 
     private void initializeDeviceAbsoluteVolumeBehavior(BluetoothDevice device) {
@@ -1238,11 +1266,15 @@ public class HeadsetService extends ConnectableProfile {
              * when SCO is going to be created
              */
             if (mSystemInterface.isInCall() || mSystemInterface.isRinging()) {
-                LeAudioService leAudioService = mFactory.getLeAudioService();
-                if (leAudioService != null && !leAudioService.getConnectedDevices().isEmpty()) {
-                    Log.i(TAG, "Make sure no le audio device active for HFP handover.");
-                    leAudioService.setInactiveForHfpHandover(mActiveDevice);
-                }
+                getLeAudioService()
+                        .filter(leAudio -> !leAudio.getConnectedDevices().isEmpty())
+                        .ifPresent(
+                                leAudio -> {
+                                    Log.i(
+                                            TAG,
+                                            "Make sure no le audio device active for HFP handover");
+                                    leAudio.setInactiveForHfpHandover(mActiveDevice);
+                                });
             }
 
             if (getAudioState(previousActiveDevice) != BluetoothHeadset.STATE_AUDIO_DISCONNECTED) {
@@ -1985,12 +2017,10 @@ public class HeadsetService extends ConnectableProfile {
                 && !isHeadsetClientConnected();
     }
 
-    private static boolean isHeadsetClientConnected() {
-        HeadsetClientService headsetClientService = HeadsetClientService.getHeadsetClientService();
-        if (headsetClientService == null) {
-            return false;
-        }
-        return !(headsetClientService.getConnectedDevices().isEmpty());
+    private boolean isHeadsetClientConnected() {
+        return getHeadsetClientService()
+                .map(headsetClient -> !headsetClient.getConnectedDevices().isEmpty())
+                .orElse(false);
     }
 
     /**
@@ -2183,17 +2213,17 @@ public class HeadsetService extends ConnectableProfile {
                 // Resumes LE audio previous active device if HFP handover happened before.
                 // Do it here because some controllers cannot handle SCO and CIS
                 // co-existence see {@link LeAudioService#setInactiveForHfpHandover}
-                LeAudioService leAudioService = mFactory.getLeAudioService();
+                final var leAudio = getLeAudioService();
                 boolean isLeAudioConnectedDeviceNotActive =
-                        leAudioService != null
-                                && !leAudioService.getConnectedDevices().isEmpty()
-                                && leAudioService.getActiveDevices().get(0) == null;
+                        leAudio.isPresent()
+                                && !leAudio.get().getConnectedDevices().isEmpty()
+                                && leAudio.get().getActiveDevices().get(0) == null;
                 // usually controller limitation cause CONNECTING -> DISCONNECTED, so only
                 // resume LE audio active device if it is HFP audio only and SCO disconnected
                 if (fromState != BluetoothHeadset.STATE_AUDIO_CONNECTING
                         && isHFPAudioOnly(device)
                         && isLeAudioConnectedDeviceNotActive) {
-                    leAudioService.setActiveAfterHfpHandover();
+                    leAudio.get().setActiveAfterHfpHandover();
                 }
 
                 // Unsuspend A2DP when SCO connection is gone and call state is idle
@@ -2389,13 +2419,13 @@ public class HeadsetService extends ConnectableProfile {
                 && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
             // Otherwise, reject the connection if connection policy is not valid.
             if (!isOutgoingRequest) {
-                A2dpService a2dpService = A2dpService.getA2dpService();
-                if (a2dpService != null && a2dpService.okToConnect(device, true)) {
+                final var a2dp = getA2dpService();
+                if (a2dp.isPresent() && a2dp.get().okToConnect(device, true)) {
                     Log.d(
                             TAG,
                             "okToAcceptConnection: return false,"
                                     + " Fallback connection to allowed A2DP profile");
-                    a2dpService.connect(device);
+                    a2dp.get().connect(device);
                     return false;
                 }
             }
