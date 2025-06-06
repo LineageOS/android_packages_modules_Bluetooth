@@ -299,7 +299,6 @@ static tBTA_JV_RFC_CB* bta_jv_rfc_port_to_cb(uint16_t port_handle) {
 static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB* p_cb, tBTA_JV_PCB* p_pcb) {
   tBTA_JV_STATUS status = tBTA_JV_STATUS::SUCCESS;
   bool remove_server = false;
-  int close_pending = 0;
 
   if (!p_cb || !p_pcb) {
     log::error("p_cb or p_pcb cannot be null");
@@ -356,32 +355,31 @@ static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB* p_cb, tBTA_JV_PCB* p_pc
     }
     if (port_status != PORT_SUCCESS) {
       status = tBTA_JV_STATUS::FAILURE;
-      log::warn(
-              "Remove jv_handle=0x{:x}, state={}, port_status={}, port_handle={}, close_pending={}",
-              p_pcb->handle, p_pcb->state, port_status, p_pcb->port_handle, close_pending);
+      log::warn("Remove jv_handle=0x{:x}, state={}, port_status={}, port_handle={}", p_pcb->handle,
+                p_pcb->state, port_status, p_pcb->port_handle);
     }
   }
-  if (!close_pending) {
-    p_pcb->port_handle = 0;
-    p_pcb->state = BTA_JV_ST_NONE;
-    bta_jv_free_set_pm_profile_cb(p_pcb->handle);
 
-    // Initialize congestion flags
-    p_pcb->cong = false;
-    p_pcb->rfcomm_slot_id = 0;
-    int si = BTA_JV_RFC_HDL_TO_SIDX(p_pcb->handle);
-    if (0 <= si && si < BTA_JV_MAX_RFC_SR_SESSION) {
-      p_cb->rfc_hdl[si] = 0;
-    }
-    p_pcb->handle = 0;
-    p_cb->curr_sess--;
-    if (p_cb->curr_sess == 0) {
-      p_cb->scn = 0;
-      p_cb->p_cback = NULL;
-      p_cb->handle = 0;
-      p_cb->curr_sess = -1;
-    }
+  p_pcb->port_handle = 0;
+  p_pcb->state = BTA_JV_ST_NONE;
+  bta_jv_free_set_pm_profile_cb(p_pcb->handle);
+
+  // Initialize congestion flags
+  p_pcb->cong = false;
+  p_pcb->rfcomm_slot_id = 0;
+  int si = BTA_JV_RFC_HDL_TO_SIDX(p_pcb->handle);
+  if (0 <= si && si < BTA_JV_MAX_RFC_SR_SESSION) {
+    p_cb->rfc_hdl[si] = 0;
   }
+  p_pcb->handle = 0;
+  p_cb->curr_sess--;
+  if (p_cb->curr_sess == 0) {
+    p_cb->scn = 0;
+    p_cb->p_cback = NULL;
+    p_cb->handle = 0;
+    p_cb->curr_sess = -1;
+  }
+
   return status;
 }
 
