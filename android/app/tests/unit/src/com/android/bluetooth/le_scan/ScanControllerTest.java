@@ -53,6 +53,7 @@ import android.location.LocationManager;
 import android.os.Binder;
 import android.os.RemoteException;
 import android.os.WorkSource;
+import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
@@ -147,6 +148,7 @@ public class ScanControllerTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_SUPPORT_PASSIVE_SCANNING)
     public void onScanResult_remoteException_clientDied() throws Exception {
         int eventType = 0;
         int addressType = 0;
