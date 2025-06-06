@@ -424,6 +424,7 @@ cc_test {
         "libgmock",
         "libosi",
         "server_configurable_flags",
+        "libbtdevice",
     ],
     shared_libs: [
         "libPlatformProperties",
@@ -573,6 +574,9 @@ cc_fuzz {
         ":TestCommonMockFunctions",
         ":TestMockMainShim",
         "hci/fuzz/acl_manager_fuzz_test.cc",
+    ],
+    static_libs: [
+        "libbtdevice",
     ],
     include_dirs: [
         "packages/modules/Bluetooth/system",

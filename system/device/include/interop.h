@@ -375,6 +375,10 @@ typedef enum {
   // Some devices need inband ringing disabled
   INTEROP_INBAND_RINGTONE_SET_TO_FALSE,
 
+  // Some devices don't respond when accept connection request
+  // with central role.
+  INTEROP_REMAIN_PERIPHERAL_ON_ACCEPT_CONNECTION_REQUEST,
+
   END_OF_INTEROP_LIST
 } interop_feature_t;
 
