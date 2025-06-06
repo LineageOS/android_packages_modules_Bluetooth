@@ -83,8 +83,8 @@ public class HeadsetPhoneStateTest {
 
         mHandlerThread = new HandlerThread("HeadsetStateMachineTestHandlerThread");
         mHandlerThread.start();
-        doReturn(mHandlerThread.getLooper()).when(mHeadsetService).getStateMachinesThreadLooper();
-        mHeadsetPhoneState = new HeadsetPhoneState(mAdapterService, mHeadsetService);
+        mHeadsetPhoneState =
+                new HeadsetPhoneState(mAdapterService, mHeadsetService, mHandlerThread.getLooper());
     }
 
     @After

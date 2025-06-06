@@ -289,8 +289,7 @@ public class MapClientService extends ConnectableProfile {
      * @param device BluetoothDevice address of remote device
      * @param sm the state machine to clean up or {@code null} to clean up any state machine.
      */
-    @VisibleForTesting
-    public void cleanupDevice(BluetoothDevice device, MceStateMachine sm) {
+    void cleanupDevice(BluetoothDevice device, MceStateMachine sm) {
         Log.d(TAG, "cleanup(device= " + device + "): devices=" + mMapInstanceMap.keySet());
         synchronized (mMapInstanceMap) {
             MceStateMachine stateMachine = mMapInstanceMap.get(device);

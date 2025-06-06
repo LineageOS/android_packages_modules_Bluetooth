@@ -70,7 +70,7 @@ final class LeAudioStateMachine extends StateMachine {
 
     static final int CONNECT = 1;
     static final int DISCONNECT = 2;
-    @VisibleForTesting static final int STACK_EVENT = 101;
+    static final int STACK_EVENT = 101;
     private static final int CONNECT_TIMEOUT = 201;
 
     @VisibleForTesting static int sConnectTimeoutMs = 30000; // 30s

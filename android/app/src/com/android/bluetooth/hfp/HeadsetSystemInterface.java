@@ -26,6 +26,7 @@ import android.content.Intent;
 import android.media.AudioDeviceVolumeManager;
 import android.media.AudioManager;
 import android.net.Uri;
+import android.os.Looper;
 import android.os.PowerManager;
 import android.os.SystemProperties;
 import android.telecom.PhoneAccount;
@@ -60,7 +61,8 @@ class HeadsetSystemInterface {
     private boolean mIsScoManagedByAudioEnabled =
             SystemProperties.getBoolean(ENABLE_SCO_MANAGED_BY_AUDIO, false);
 
-    HeadsetSystemInterface(AdapterService adapterService, HeadsetService headsetService) {
+    HeadsetSystemInterface(
+            AdapterService adapterService, HeadsetService headsetService, Looper looper) {
         if (headsetService == null) {
             Log.wtf(TAG, "HeadsetService parameter is null");
         }
@@ -73,7 +75,7 @@ class HeadsetSystemInterface {
         mVoiceRecognitionWakeLock =
                 powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG + ":VoiceRecognition");
         mVoiceRecognitionWakeLock.setReferenceCounted(false);
-        mHeadsetPhoneState = new HeadsetPhoneState(mAdapterService, mHeadsetService);
+        mHeadsetPhoneState = new HeadsetPhoneState(mAdapterService, mHeadsetService, looper);
         mTelephonyManager = mAdapterService.getSystemService(TelephonyManager.class);
         mTelecomManager = mAdapterService.getSystemService(TelecomManager.class);
     }

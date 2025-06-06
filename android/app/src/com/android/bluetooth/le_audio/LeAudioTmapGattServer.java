@@ -34,14 +34,12 @@ import java.util.Arrays;
 import java.util.UUID;
 
 /** A GATT server for Telephony and Media Audio Profile (TMAP) */
-@VisibleForTesting
-public class LeAudioTmapGattServer {
+class LeAudioTmapGattServer {
     private static final String TAG = LeAudioTmapGattServer.class.getSimpleName();
 
     /* Telephony and Media Audio Profile Role Characteristic UUID */
     @VisibleForTesting
-    public static final UUID UUID_TMAP_ROLE =
-            UUID.fromString("00002B51-0000-1000-8000-00805f9b34fb");
+    static final UUID UUID_TMAP_ROLE = UUID.fromString("00002B51-0000-1000-8000-00805f9b34fb");
 
     /* TMAP Role: Call Gateway */
     public static final int TMAP_ROLE_FLAG_CG = 1;
@@ -63,12 +61,9 @@ public class LeAudioTmapGattServer {
     }
 
     /**
-     * Init TMAP server
-     *
      * @param roleMask bit mask of supported roles.
      */
-    @VisibleForTesting
-    public void start(int roleMask) {
+    void start(int roleMask) {
         Log.d(TAG, "start(roleMask:" + roleMask + ")");
 
         if (!mBluetoothGattServer.open(mBluetoothGattServerCallback)) {
@@ -93,9 +88,7 @@ public class LeAudioTmapGattServer {
         }
     }
 
-    /** Stop TMAP server */
-    @VisibleForTesting
-    public void stop() {
+    void stop() {
         Log.d(TAG, "stop()");
         if (mBluetoothGattServer == null) {
             Log.w(TAG, "mBluetoothGattServer should not be null when stop() is called");
@@ -132,7 +125,7 @@ public class LeAudioTmapGattServer {
      *
      * <p>This is necessary due to the "final" attribute of the BluetoothGattServer class.
      */
-    public static class BluetoothGattServerProxy {
+    static class BluetoothGattServerProxy {
         private final Context mContext;
         private final BluetoothManager mBluetoothManager;
 
@@ -143,7 +136,7 @@ public class LeAudioTmapGattServer {
          *
          * @param context context to use
          */
-        public BluetoothGattServerProxy(Context context) {
+        BluetoothGattServerProxy(Context context) {
             mContext = context;
             mBluetoothManager = context.getSystemService(BluetoothManager.class);
         }
@@ -155,14 +148,14 @@ public class LeAudioTmapGattServer {
          * @return true on success
          */
         @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786
-        public boolean open(BluetoothGattServerCallback callback) {
+        boolean open(BluetoothGattServerCallback callback) {
             mBluetoothGattServer = mBluetoothManager.openGattServer(mContext, callback);
             return mBluetoothGattServer != null;
         }
 
         /** Close the GATT server, should be called as soon as the server is not needed */
         @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786
-        public void close() {
+        void close() {
             if (mBluetoothGattServer == null) {
                 Log.w(TAG, "BluetoothGattServerProxy.close() called without open()");
                 return;
@@ -178,7 +171,7 @@ public class LeAudioTmapGattServer {
          * @return true on success
          */
         @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786
-        public boolean addService(BluetoothGattService service) {
+        boolean addService(BluetoothGattService service) {
             return mBluetoothGattServer.addService(service);
         }
 
@@ -193,7 +186,7 @@ public class LeAudioTmapGattServer {
          * @return true on success
          */
         @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786
-        public boolean sendResponse(
+        boolean sendResponse(
                 BluetoothDevice device, int requestId, int status, int offset, byte[] value) {
             return mBluetoothGattServer.sendResponse(device, requestId, status, offset, value);
         }

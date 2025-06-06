@@ -334,7 +334,6 @@ public class RemoteDevices {
         return getDevice(addressString);
     }
 
-    @VisibleForTesting
     DeviceProperties addDeviceProperties(byte[] address, int addressType) {
         synchronized (mDevices) {
             String key = Utils.getAddressStringFromByte(address);
@@ -383,7 +382,6 @@ public class RemoteDevices {
         }
     }
 
-    @VisibleForTesting
     DeviceProperties addDeviceProperties(byte[] address) {
         return addDeviceProperties(address, BluetoothDevice.ADDRESS_TYPE_PUBLIC);
     }

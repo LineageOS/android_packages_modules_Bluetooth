@@ -1913,7 +1913,6 @@ public class AdapterService extends Service {
      * @param id is the profile id we are checking for support
      * @return true if the profile is supported by both the local and remote device, false otherwise
      */
-    @VisibleForTesting
     boolean isProfileSupported(BluetoothDevice device, int id) {
         return ConnectableProfile.isSupported(this, device, id);
     }

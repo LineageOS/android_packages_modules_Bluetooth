@@ -375,7 +375,6 @@ public class AvrcpControllerService extends ConnectableProfile {
     }
 
     // Called by JNI when a device has connected or disconnected.
-    @VisibleForTesting
     synchronized void onConnectionStateChanged(
             boolean remoteControlConnected, boolean browsingConnected, BluetoothDevice device) {
         StackEvent event =
@@ -404,7 +403,6 @@ public class AvrcpControllerService extends ConnectableProfile {
     }
 
     // Called by JNI when remote wants to receive absolute volume notifications.
-    @VisibleForTesting
     synchronized void handleRegisterNotificationAbsVol(BluetoothDevice device, byte label) {
         AvrcpControllerStateMachine stateMachine = getStateMachine(device);
         if (stateMachine != null) {
@@ -415,7 +413,6 @@ public class AvrcpControllerService extends ConnectableProfile {
     }
 
     // Called by JNI when remote wants to set absolute volume.
-    @VisibleForTesting
     synchronized void handleSetAbsVolume(BluetoothDevice device, byte absVol, byte label) {
         AvrcpControllerStateMachine stateMachine = getStateMachine(device);
         if (stateMachine != null) {
@@ -455,7 +452,6 @@ public class AvrcpControllerService extends ConnectableProfile {
     }
 
     // Called by JNI when a track changes and local AvrcpController is registered for updates.
-    @VisibleForTesting
     synchronized void onTrackChanged(
             BluetoothDevice device, byte numAttributes, int[] attributes, String[] attribVals) {
         AvrcpControllerStateMachine stateMachine = getStateMachine(device);
@@ -478,7 +474,6 @@ public class AvrcpControllerService extends ConnectableProfile {
     }
 
     // Called by JNI periodically based upon timer to update play position
-    @VisibleForTesting
     synchronized void onPlayPositionChanged(
             BluetoothDevice device, int songLen, int currSongPosition) {
         AvrcpControllerStateMachine stateMachine = getStateMachine(device);
@@ -491,7 +486,6 @@ public class AvrcpControllerService extends ConnectableProfile {
     }
 
     // Called by JNI on changes of play status
-    @VisibleForTesting
     synchronized void onPlayStatusChanged(BluetoothDevice device, int playbackState) {
         AvrcpControllerStateMachine stateMachine = getStateMachine(device);
         if (stateMachine != null) {
@@ -501,7 +495,6 @@ public class AvrcpControllerService extends ConnectableProfile {
     }
 
     // Called by JNI to report remote Player's capabilities
-    @VisibleForTesting
     synchronized void handlePlayerAppSetting(
             BluetoothDevice device, byte[] playerAttribRsp, int rspLen) {
         AvrcpControllerStateMachine stateMachine = getStateMachine(device);
@@ -528,7 +521,6 @@ public class AvrcpControllerService extends ConnectableProfile {
         }
     }
 
-    @VisibleForTesting
     void onAvailablePlayerChanged(BluetoothDevice device) {
         AvrcpControllerStateMachine stateMachine = getStateMachine(device);
         if (stateMachine != null) {
@@ -567,7 +559,6 @@ public class AvrcpControllerService extends ConnectableProfile {
         }
     }
 
-    @VisibleForTesting
     void handleChangeFolderRsp(BluetoothDevice device, int count) {
         AvrcpControllerStateMachine stateMachine = getStateMachine(device);
         if (stateMachine != null) {
@@ -576,7 +567,6 @@ public class AvrcpControllerService extends ConnectableProfile {
         }
     }
 
-    @VisibleForTesting
     void handleSetBrowsedPlayerRsp(BluetoothDevice device, int items, int depth) {
         AvrcpControllerStateMachine stateMachine = getStateMachine(device);
         if (stateMachine != null) {
@@ -585,7 +575,6 @@ public class AvrcpControllerService extends ConnectableProfile {
         }
     }
 
-    @VisibleForTesting
     void handleSetAddressedPlayerRsp(BluetoothDevice device, int status) {
         AvrcpControllerStateMachine stateMachine = getStateMachine(device);
         if (stateMachine != null) {
@@ -594,7 +583,6 @@ public class AvrcpControllerService extends ConnectableProfile {
         }
     }
 
-    @VisibleForTesting
     void handleAddressedPlayerChanged(BluetoothDevice device, int id) {
         AvrcpControllerStateMachine stateMachine = getStateMachine(device);
         if (stateMachine != null) {
@@ -603,7 +591,6 @@ public class AvrcpControllerService extends ConnectableProfile {
         }
     }
 
-    @VisibleForTesting
     void handleNowPlayingContentChanged(BluetoothDevice device) {
         AvrcpControllerStateMachine stateMachine = getStateMachine(device);
         if (stateMachine != null) {

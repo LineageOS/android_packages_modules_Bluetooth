@@ -37,12 +37,10 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ProfileService.IProfileServiceBinder;
-import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Collections;
 import java.util.List;
 
-@VisibleForTesting
 class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfileServiceBinder {
     private static final String TAG = HapClientServiceBinder.class.getSimpleName();
 
