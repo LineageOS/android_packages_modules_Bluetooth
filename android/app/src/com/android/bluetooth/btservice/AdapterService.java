@@ -4009,8 +4009,11 @@ public class AdapterService extends Service {
         boolean mediaConnected = isMediaProfileConnected();
         if (mIsMediaProfileConnected != mediaConnected) {
             mIsMediaProfileConnected = mediaConnected;
-            broadcastToSystemServerCallbacks(
-                    "mediaConnected", (c) -> c.onMediaProfileConnectionChange(mediaConnected));
+            mHandler.post(
+                    () ->
+                            broadcastToSystemServerCallbacks(
+                                    "mediaConnected",
+                                    (c) -> c.onMediaProfileConnectionChange(mediaConnected)));
         }
     }
 
