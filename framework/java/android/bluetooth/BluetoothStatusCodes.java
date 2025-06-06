@@ -512,6 +512,10 @@ public final class BluetoothStatusCodes {
     @FlaggedApi(Flags.FLAG_A2DP_DISCONNECT_REASON_API)
     public static final int INSUFFICIENT_RESOURCES = 1404;
 
+    /** Rfcomm connection failed. */
+    @FlaggedApi(Flags.FLAG_A2DP_DISCONNECT_REASON_API)
+    public static final int RFCOMM_CONNECTION_FAILED = 1405;
+
     /**
      * Indicates that the RFCOMM listener could not be started due to the requested UUID already
      * being in use.
