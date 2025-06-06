@@ -110,6 +110,7 @@ class HeadsetStateMachine extends StateMachine {
     static final int DIALING_OUT_RESULT = 14;
     static final int VOICE_RECOGNITION_RESULT = 15;
     static final int SCO_VOLUME_CHANGED = 16;
+    static final int MICROPHONE_VOL_MUTE_CHANGED = 17;
 
     static final int STACK_EVENT = 101;
     private static final int CLCC_RSP_TIMEOUT = 104;
@@ -123,6 +124,9 @@ class HeadsetStateMachine extends StateMachine {
     // Number of times we should retry disconnecting audio before
     // disconnecting the device.
     private static final int MAX_RETRY_DISCONNECT_AUDIO = 3;
+
+    static final int MIC_MUTE = 0;
+    static final int MIC_UNMUTE = 15;
 
     private static final HeadsetAgIndicatorEnableState DEFAULT_AG_INDICATOR_ENABLE_STATE =
             new HeadsetAgIndicatorEnableState(true, true, true, true);
@@ -1310,7 +1314,7 @@ class HeadsetStateMachine extends StateMachine {
 
         void processScoVolume(int volumeValue, BluetoothDevice device) {
             stateLogD(
-                    "processIntentScoVolume: mSpeakerVolume="
+                    "processScoVolume: mSpeakerVolume="
                             + mSpeakerVolume
                             + ", volumeValue="
                             + volumeValue);
@@ -1319,6 +1323,19 @@ class HeadsetStateMachine extends StateMachine {
                 mNativeInterface.setVolume(
                         device, HeadsetHalConstants.VOLUME_TYPE_SPK, mSpeakerVolume);
             }
+        }
+
+        void processMicrophoneVolume(BluetoothDevice device) {
+            boolean isAgMicMuted = mSystemInterface.getAudioManager().isMicrophoneMute();
+            // set unmute volume to non zero (15 or previous value)
+            int unmuteVolume = (mMicVolume == MIC_MUTE) ? MIC_UNMUTE : mMicVolume;
+            int micVolume = isAgMicMuted ? MIC_MUTE : unmuteVolume;
+            stateLogD(
+                    "processMicrophoneStatus: isAgMicMuted="
+                            + isAgMicMuted
+                            + ", micVolume="
+                            + micVolume);
+            mNativeInterface.setVolume(device, HeadsetHalConstants.VOLUME_TYPE_MIC, micVolume);
         }
     }
 
@@ -1690,6 +1707,11 @@ class HeadsetStateMachine extends StateMachine {
                     break;
                 case SCO_VOLUME_CHANGED:
                     processScoVolume(message.arg1, mDevice);
+                    break;
+                case MICROPHONE_VOL_MUTE_CHANGED:
+                    if (Flags.microphoneMuteStatusSync()) {
+                        processMicrophoneVolume(mDevice);
+                    }
                     break;
                 case STACK_EVENT:
                     HeadsetStackEvent event = (HeadsetStackEvent) message.obj;
@@ -2065,8 +2087,16 @@ class HeadsetStateMachine extends StateMachine {
                 mSystemInterface.getAudioManager().setStreamVolume(volStream, volume, flag);
             }
         } else if (volumeType == HeadsetHalConstants.VOLUME_TYPE_MIC) {
-            // Not used currently
-            mMicVolume = volume;
+            if (Flags.microphoneMuteStatusSync()) {
+                if (mMicVolume != volume) {
+                    mMicVolume = volume;
+                    Log.i(TAG, "Event: Mic status: " + mMicVolume);
+                    mSystemInterface.getAudioManager().setMicrophoneMute(mMicVolume == MIC_MUTE);
+                }
+            } else {
+                // Not used currently
+                mMicVolume = volume;
+            }
         } else {
             Log.e(TAG, "Bad volume type: " + volumeType);
         }
@@ -2904,6 +2934,7 @@ class HeadsetStateMachine extends StateMachine {
             case CLCC_RSP_TIMEOUT -> "CLCC_RSP_TIMEOUT";
             case CONNECT_TIMEOUT -> "CONNECT_TIMEOUT";
             case SCO_VOLUME_CHANGED -> "SCO_VOLUME_CHANGED";
+            case MICROPHONE_VOL_MUTE_CHANGED -> "MICROPHONE_VOL_MUTE_CHANGED";
             default -> "UNKNOWN(" + what + ")";
         };
     }
