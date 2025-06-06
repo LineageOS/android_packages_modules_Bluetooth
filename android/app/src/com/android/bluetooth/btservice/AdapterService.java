@@ -747,7 +747,7 @@ public class AdapterService extends Service {
         return getStartedProfile(BluetoothProfile.BATTERY, BatteryService.class);
     }
 
-    Optional<CsipSetCoordinatorService> getCsipSetCoordinatorService() {
+    public Optional<CsipSetCoordinatorService> getCsipSetCoordinatorService() {
         return getStartedProfile(
                 BluetoothProfile.CSIP_SET_COORDINATOR, CsipSetCoordinatorService.class);
     }
