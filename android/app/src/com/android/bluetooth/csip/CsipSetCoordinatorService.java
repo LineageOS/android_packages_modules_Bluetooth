@@ -53,6 +53,7 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -63,6 +64,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -82,7 +84,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
     private final HandlerThread mStateMachinesThread;
     private final Looper mStateMachinesLooper;
     private final CsipSetCoordinatorNativeInterface mNativeInterface;
-    private final ServiceFactory mServiceFactory;
+    private final ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
 
     @GuardedBy("mStateMachines")
     private final Map<BluetoothDevice, CsipSetCoordinatorStateMachine> mStateMachines =
@@ -100,8 +102,6 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
             new HashMap<>();
     private final Map<Integer, Pair<UUID, IBluetoothCsipSetCoordinatorLockCallback>> mLocks =
             new ConcurrentHashMap<>();
-
-    private LeAudioService mLeAudioService;
 
     public CsipSetCoordinatorService(AdapterService adapterService) {
         this(adapterService, null, null, new ServiceFactory());
@@ -130,14 +130,20 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
             mStateMachinesLooper = looper;
         }
 
-        // Get LE Audio service (can be null)
-        mLeAudioService = mServiceFactory.getLeAudioService();
-
         // Mark service as started
         setCsipSetCoordinatorService(this);
 
         // Initialize native interface
         mNativeInterface.init();
+    }
+
+    // TODO(b/422543753) Delete on flag cleanup
+    Optional<LeAudioService> getLeAudioService() {
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            return mAdapterService.getLeAudioService();
+        } else {
+            return Optional.ofNullable(mServiceFactory.getLeAudioService());
+        }
     }
 
     public static boolean isEnabled() {
@@ -638,45 +644,41 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
     private void disableCsipIfNeeded(int groupId) {
         /* Make sure CSIP connection policy mirrors that of LeAudioService once all CSIP
         characteristic reads have completed (ensures we can pair other set devices) */
-        if (mLeAudioService == null) {
-            mLeAudioService = mServiceFactory.getLeAudioService();
-        }
-
-        if (mLeAudioService != null) {
-            if (!mGroupIdToConnectedDevices.containsKey(groupId)) {
-                Log.w(TAG, "No connected devices for groupId=" + groupId);
-                return;
-            }
-            if (!mGroupIdToGroupSize.containsKey(groupId)) {
-                Log.w(TAG, "No group size stored for groupId=" + groupId);
-                return;
-            }
-            if (mGroupIdToConnectedDevices.get(groupId).size() < mGroupIdToGroupSize.get(groupId)) {
-                Log.d(
-                        TAG,
-                        "disableCsipIfNeeded: groupId "
-                                + groupId
-                                + "has "
-                                + mGroupIdToConnectedDevices.get(groupId).size()
-                                + " connected devices out"
-                                + " of a group size of "
-                                + mGroupIdToGroupSize.get(groupId));
-                return;
-            }
-            for (BluetoothDevice groupDevice : mGroupIdToConnectedDevices.get(groupId)) {
-                if (mLeAudioService.getConnectionPolicy(groupDevice)
-                        == CONNECTION_POLICY_FORBIDDEN) {
-                    Log.i(
-                            TAG,
-                            "Setting CSIP connection policy to FORBIDDEN for device "
-                                    + groupDevice
-                                    + " after all group devices bonded because LEA "
-                                    + "connection policy is FORBIDDEN");
-                    setConnectionPolicy(groupDevice, CONNECTION_POLICY_FORBIDDEN);
-                }
-            }
-        } else {
+        final var leAudio = getLeAudioService();
+        if (leAudio.isEmpty()) {
             Log.w(TAG, "checkIfGroupPaired: LE Audio Service is null");
+            return;
+        }
+        if (!mGroupIdToConnectedDevices.containsKey(groupId)) {
+            Log.w(TAG, "No connected devices for groupId=" + groupId);
+            return;
+        }
+        if (!mGroupIdToGroupSize.containsKey(groupId)) {
+            Log.w(TAG, "No group size stored for groupId=" + groupId);
+            return;
+        }
+        if (mGroupIdToConnectedDevices.get(groupId).size() < mGroupIdToGroupSize.get(groupId)) {
+            Log.d(
+                    TAG,
+                    "disableCsipIfNeeded: groupId "
+                            + groupId
+                            + "has "
+                            + mGroupIdToConnectedDevices.get(groupId).size()
+                            + " connected devices out"
+                            + " of a group size of "
+                            + mGroupIdToGroupSize.get(groupId));
+            return;
+        }
+        for (BluetoothDevice groupDevice : mGroupIdToConnectedDevices.get(groupId)) {
+            if (leAudio.get().getConnectionPolicy(groupDevice) == CONNECTION_POLICY_FORBIDDEN) {
+                Log.i(
+                        TAG,
+                        "Setting CSIP connection policy to FORBIDDEN for device "
+                                + groupDevice
+                                + " after all group devices bonded because LEA "
+                                + "connection policy is FORBIDDEN");
+                setConnectionPolicy(groupDevice, CONNECTION_POLICY_FORBIDDEN);
+            }
         }
     }
 
