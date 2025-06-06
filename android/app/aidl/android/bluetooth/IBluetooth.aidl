@@ -33,6 +33,7 @@ import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothDevice.BluetoothAddress;
 import android.bluetooth.BluetoothQualityReport;
+import android.bluetooth.EncryptionStatusParcel;
 import android.bluetooth.IncomingRfcommSocketInfo;
 import android.bluetooth.OobData;
 import android.content.AttributionSource;
@@ -42,6 +43,7 @@ import android.os.ParcelFileDescriptor;
 import android.os.ResultReceiver;
 
 parcelable BluetoothDevice.BluetoothAddress;
+parcelable EncryptionStatusParcel;
 
 /**
  * System private API for talking with the Bluetooth service.
@@ -327,4 +329,10 @@ interface IBluetooth
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     int getKeyMissingCount(in BluetoothDevice device, in AttributionSource source);
+
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    EncryptionStatusParcel getEncryptionStatus(in BluetoothDevice device, in AttributionSource source, in int transport);
+
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    boolean isConnected(in BluetoothDevice device, in AttributionSource source, in int transport);
 }
