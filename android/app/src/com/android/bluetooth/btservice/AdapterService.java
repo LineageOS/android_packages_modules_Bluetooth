@@ -734,6 +734,10 @@ public class AdapterService extends Service {
         return getStartedProfile(BluetoothProfile.A2DP, A2dpService.class);
     }
 
+    public Optional<AvrcpTargetService> getAvrcpTargetService() {
+        return getStartedProfile(BluetoothProfile.AVRCP, AvrcpTargetService.class);
+    }
+
     Optional<BassClientService> getBassClientService() {
         return getStartedProfile(
                 BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, BassClientService.class);
@@ -756,7 +760,7 @@ public class AdapterService extends Service {
         return getStartedProfile(BluetoothProfile.HEADSET_CLIENT, HeadsetClientService.class);
     }
 
-    Optional<HeadsetService> getHeadsetService() {
+    public Optional<HeadsetService> getHeadsetService() {
         return getStartedProfile(BluetoothProfile.HEADSET, HeadsetService.class);
     }
 
