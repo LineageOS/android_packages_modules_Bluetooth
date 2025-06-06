@@ -16,7 +16,10 @@
 
 package android.bluetooth;
 
+import android.annotation.FlaggedApi;
 import android.annotation.SystemApi;
+
+import com.android.bluetooth.flags.Flags;
 
 /**
  * A class with constants representing possible return values for Bluetooth APIs. General return
@@ -488,6 +491,26 @@ public final class BluetoothStatusCodes {
      * @hide
      */
     @SystemApi public static final int ERROR_DISTANCE_MEASUREMENT_INTERNAL = 1301;
+
+    /** Profile service not found with SDP discovery. */
+    @FlaggedApi(Flags.FLAG_A2DP_DISCONNECT_REASON_API)
+    public static final int SDP_DISCOVERY_FAILED = 1400;
+
+    /** Profile stream connection failed. */
+    @FlaggedApi(Flags.FLAG_A2DP_DISCONNECT_REASON_API)
+    public static final int STREAM_CONNECTION_FAILED = 1401;
+
+    /** Profile connection failed due to role management related issues. */
+    @FlaggedApi(Flags.FLAG_A2DP_DISCONNECT_REASON_API)
+    public static final int ROLE_SWITCH_FAILED = 1402;
+
+    /** AVDTP discovery failed to find available SEPs on the peer device. */
+    @FlaggedApi(Flags.FLAG_A2DP_DISCONNECT_REASON_API)
+    public static final int AVDTP_DISCOVERY_FAILED = 1403;
+
+    /** Profile connection failed from insufficient resources, local or remote. */
+    @FlaggedApi(Flags.FLAG_A2DP_DISCONNECT_REASON_API)
+    public static final int INSUFFICIENT_RESOURCES = 1404;
 
     /**
      * Indicates that the RFCOMM listener could not be started due to the requested UUID already

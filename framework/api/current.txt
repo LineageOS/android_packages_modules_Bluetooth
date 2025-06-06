@@ -10,6 +10,7 @@ package android.bluetooth {
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean isA2dpPlaying(android.bluetooth.BluetoothDevice);
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_CONNECTION_STATE_CHANGED = "android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED";
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_PLAYING_STATE_CHANGED = "android.bluetooth.a2dp.profile.action.PLAYING_STATE_CHANGED";
+    field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final String EXTRA_DISCONNECTED_REASON = "android.bluetooth.a2dp.extra.DISCONNECTED_REASON";
     field public static final int STATE_NOT_PLAYING = 11; // 0xb
     field public static final int STATE_PLAYING = 10; // 0xa
   }
@@ -1176,6 +1177,7 @@ package android.bluetooth {
   }
 
   public final class BluetoothStatusCodes {
+    field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final int AVDTP_DISCOVERY_FAILED = 1403; // 0x57b
     field public static final int ERROR_BLUETOOTH_NOT_ALLOWED = 2; // 0x2
     field public static final int ERROR_BLUETOOTH_NOT_ENABLED = 1; // 0x1
     field public static final int ERROR_DEVICE_NOT_BONDED = 3; // 0x3
@@ -1187,6 +1189,10 @@ package android.bluetooth {
     field public static final int FEATURE_NOT_CONFIGURED = 30; // 0x1e
     field public static final int FEATURE_NOT_SUPPORTED = 11; // 0xb
     field public static final int FEATURE_SUPPORTED = 10; // 0xa
+    field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final int INSUFFICIENT_RESOURCES = 1404; // 0x57c
+    field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final int ROLE_SWITCH_FAILED = 1402; // 0x57a
+    field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final int SDP_DISCOVERY_FAILED = 1400; // 0x578
+    field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final int STREAM_CONNECTION_FAILED = 1401; // 0x579
     field public static final int SUCCESS = 0; // 0x0
   }
 

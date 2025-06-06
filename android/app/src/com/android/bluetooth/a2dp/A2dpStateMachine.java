@@ -53,6 +53,7 @@ import android.bluetooth.BluetoothCodecStatus;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
+import android.bluetooth.BluetoothStatusCodes;
 import android.content.Intent;
 import android.os.Looper;
 import android.os.Message;
@@ -98,6 +99,9 @@ final class A2dpStateMachine extends StateMachine {
     private int mConnectionState = STATE_DISCONNECTED;
     private int mLastConnectionState = -1;
     private BluetoothCodecStatus mCodecStatus;
+
+    // Disconnection reason from BluetoothStatusCodes.
+    private int mReason = 0;
 
     A2dpStateMachine(
             A2dpService a2dpService,
@@ -358,8 +362,10 @@ final class A2dpStateMachine extends StateMachine {
                         Log.wtf(TAG, "Device(" + mDevice + "): event mismatch: " + event);
                     }
                     switch (event.type) {
-                        case A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED ->
-                                processConnectionEvent(event.valueInt);
+                        case A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED -> {
+                            mReason = reasonToBluetoothStatusCode(event.reason);
+                            processConnectionEvent(event.valueInt);
+                        }
                         case A2dpStackEvent.EVENT_TYPE_CODEC_CONFIG_CHANGED ->
                                 processCodecConfigEvent(event.codecStatus);
                         default -> Log.e(TAG, "Connecting: ignoring stack event: " + event);
@@ -744,6 +750,11 @@ final class A2dpStateMachine extends StateMachine {
         intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
         intent.putExtra(BluetoothProfile.EXTRA_STATE, newState);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mDevice);
+        if (Flags.a2dpDisconnectReasonApi()
+                && newState == BluetoothProfile.STATE_DISCONNECTED
+                && prevState == BluetoothProfile.STATE_CONNECTING) {
+            intent.putExtra(BluetoothA2dp.EXTRA_DISCONNECTED_REASON, mReason);
+        }
         intent.addFlags(
                 Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                         | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
@@ -781,6 +792,21 @@ final class A2dpStateMachine extends StateMachine {
                 .append(", obj=")
                 .append(msg.obj);
         return builder.toString();
+    }
+
+    // Convert AV status codes defined in `bta/include/bta_av_api.h` to BluetoothStatusCodes values.
+    // TODO: mimgrate the values to AIDL constants to avoid hardcoded values.
+    private static int reasonToBluetoothStatusCode(int reason) {
+        return switch (reason) {
+            case /* BTA_AV_SUCCESS */ 0 -> BluetoothStatusCodes.SUCCESS;
+            case /* BTA_AV_FAIL */ 1 -> BluetoothStatusCodes.ERROR_UNKNOWN;
+            case /* BTA_AV_FAIL_SDP */ 2 -> BluetoothStatusCodes.SDP_DISCOVERY_FAILED;
+            case /* BTA_AV_FAIL_STREAM */ 3 -> BluetoothStatusCodes.STREAM_CONNECTION_FAILED;
+            case /* BTA_AV_FAIL_RESOURCES */ 4 -> BluetoothStatusCodes.INSUFFICIENT_RESOURCES;
+            case /* BTA_AV_FAIL_ROLE */ 5 -> BluetoothStatusCodes.ROLE_SWITCH_FAILED;
+            case /* BTA_AV_FAIL_GET_CAP */ 6 -> BluetoothStatusCodes.AVDTP_DISCOVERY_FAILED;
+            default -> BluetoothStatusCodes.ERROR_UNKNOWN;
+        };
     }
 
     private static boolean sameSelectableCodec(
