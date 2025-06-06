@@ -20,6 +20,7 @@ import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_CONNECTIO
 import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_DEVICE_AVAILABLE;
 import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_DEVICE_FEATURES;
 import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED;
+import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED_FOR_GROUP;
 import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_ON_ACTIVE_PRESET_SELECT_ERROR;
 import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_ON_PRESET_INFO;
 import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_ON_PRESET_INFO_ERROR;
@@ -89,8 +90,9 @@ public class HapClientNativeCallback {
     }
 
     @VisibleForTesting
-    void onActivePresetGroupSelected(int groupId, int presetIndex) {
-        HapClientStackEvent event = new HapClientStackEvent(EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED);
+    void onActivePresetSelectedForGroup(int groupId, int presetIndex) {
+        HapClientStackEvent event =
+                new HapClientStackEvent(EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED_FOR_GROUP);
         event.valueInt1 = presetIndex;
         event.valueInt2 = groupId;
 
