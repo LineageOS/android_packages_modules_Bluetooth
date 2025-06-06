@@ -3682,8 +3682,12 @@ public class BassClientService extends ConnectableProfile {
                     "Modify Broadcast Source (suspend): "
                             + ("device: " + device)
                             + (", sourceId: " + sourceId)
-                            + (", updatedBroadcastId: " + metadata.getBroadcastId())
-                            + (", updatedBroadcastName: " + metadata.getBroadcastName()));
+                            + (", updatedBroadcastId: "
+                                    + (metadata != null
+                                            ? metadata.getBroadcastId()
+                                            : BassConstants.INVALID_BROADCAST_ID))
+                            + (", updatedBroadcastName: "
+                                    + (metadata != null ? metadata.getBroadcastName() : "")));
             Message message = sm.obtainMessage(BassClientStateMachine.UPDATE_BCAST_SOURCE);
             message.arg1 = sourceId;
 
