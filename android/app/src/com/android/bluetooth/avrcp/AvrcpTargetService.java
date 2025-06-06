@@ -66,6 +66,7 @@ public class AvrcpTargetService extends ProfileService {
     private final BluetoothEventLogger mMediaKeyEventLogger =
             new BluetoothEventLogger(MEDIA_KEY_EVENT_LOGGER_SIZE, MEDIA_KEY_EVENT_LOGGER_TITLE);
 
+    // TODO(b/422543753) Delete on flag cleanup
     private final ServiceFactory mFactory = new ServiceFactory();
     private final BroadcastReceiver mUserUnlockedReceiver =
             new BroadcastReceiver() {
@@ -278,6 +279,9 @@ public class AvrcpTargetService extends ProfileService {
 
     /** Returns the active A2DP {@link BluetoothDevice} */
     private BluetoothDevice getA2dpActiveDevice() {
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            return mAdapterService.getA2dpService().map(A2dpService::getActiveDevice).orElse(null);
+        }
         A2dpService service = mFactory.getA2dpService();
         if (service == null) {
             return null;
