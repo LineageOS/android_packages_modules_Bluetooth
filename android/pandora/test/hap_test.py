@@ -362,7 +362,6 @@ class HapTest(base_test.BaseTestClass):
         await self.dut_hap.SetActivePresetForGroup(connection=self.ref_left.to_ref,
                                                    index=bar_preset.index)
         await self.dut.aio.host.Disconnect(connection=self.ref_left.to_ref)
-        await asyncio.gather(self.ref_left.ref.reset())
 
     @asynchronous
     async def test__set_active_monaural__when_disconnecting__do_not_crash(self) -> None:
