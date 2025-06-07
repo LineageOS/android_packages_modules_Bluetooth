@@ -611,7 +611,6 @@ cc_test {
     ],
     shared_libs: [
         "libbase",
-        "libbinder",
         "libbinder_ndk",
         "libchrome",
         "libcutils",

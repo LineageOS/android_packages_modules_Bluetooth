@@ -40,7 +40,6 @@ cc_defaults {
     shared_libs: [
         "libPlatformProperties",
         "libaaudio",
-        "libbinder",
         "libbinder_ndk",
         "libcrypto",
         "libcutils",
@@ -112,6 +111,7 @@ cc_test {
     ],
     static_libs: [
         "aics",
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib_for_test",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
@@ -125,9 +125,6 @@ cc_test {
         "libgmock",
         "libprotobuf-cpp-lite",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     shared_libs: [
         "libaconfig_storage_read_api_cc",
         "libbase",

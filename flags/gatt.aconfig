@@ -38,3 +38,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "tbs_gatt_no_longer_calls_framework"
+    namespace: "bluetooth"
+    description: "TbsGatt will avoid BluetoothGattServerProxy and use GattServer directly"
+    bug: "422544191"
+}

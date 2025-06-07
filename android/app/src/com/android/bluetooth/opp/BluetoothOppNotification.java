@@ -174,8 +174,6 @@ class BluetoothOppNotification {
         public long timeStamp = 0; // Database time stamp. Used for sorting ongoing transfers.
 
         public String description; // the text above progress bar
-
-        public String destination; // destination associated with this transfer
     }
 
     /**
@@ -304,7 +302,6 @@ class BluetoothOppNotification {
         final int currentBytesIndex = cursor.getColumnIndexOrThrow(BluetoothShare.CURRENT_BYTES);
         final int dataIndex = cursor.getColumnIndexOrThrow(BluetoothShare._DATA);
         final int filenameHintIndex = cursor.getColumnIndexOrThrow(BluetoothShare.FILENAME_HINT);
-        final int destinationIndex = cursor.getColumnIndexOrThrow(BluetoothShare.DESTINATION);
 
         mNotifications.clear();
         for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
@@ -314,7 +311,6 @@ class BluetoothOppNotification {
             long total = cursor.getLong(totalBytesIndex);
             long current = cursor.getLong(currentBytesIndex);
 
-            String destination = cursor.getString(destinationIndex);
             String fileName = cursor.getString(dataIndex);
             if (fileName == null) {
                 fileName = cursor.getString(filenameHintIndex);
@@ -344,7 +340,6 @@ class BluetoothOppNotification {
                 }
                 item.totalCurrent = current;
                 item.totalTotal = total;
-                item.destination = destination;
                 mNotifications.put(batchID, item);
 
                 Log.v(

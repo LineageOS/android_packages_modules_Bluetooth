@@ -179,6 +179,23 @@ TEST_F(BtaAgActTest, set_codec_q1_fail_unsupported) {
   ASSERT_TRUE(enable_aptx_voice_property(false));
 }
 
+TEST_F_WITH_FLAGS(BtaAgActTest, rfc_fail_releases_rfcomm_port,
+  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(
+          TEST_BT, release_port_in_bta_ag_rfc_fail_before_reset_context))) {
+  tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
+  p_scb->serv_handle[0] = 12;
+  p_scb->serv_handle[1] = 18;
+  p_scb->state = BTA_AG_OPENING_ST;
+  p_scb->reg_services |= (1 << BTA_HSP_SERVICE_ID) | (1 << BTA_HFP_SERVICE_ID);
+
+  bta_ag_rfc_fail(p_scb, tBTA_AG_DATA::kEmpty);
+
+  ASSERT_EQ(2, get_func_call_count("RFCOMM_RemoveServer"));
+  ASSERT_EQ(2, get_func_call_count("RFCOMM_CreateConnectionWithSecurity"));
+
+  ASSERT_EQ(p_scb->state, BTA_AG_INIT_ST);
+}
+
 class BtaAgCmdTest : public BtaAgTest {
 protected:
   void SetUp() override { BtaAgTest::SetUp(); }

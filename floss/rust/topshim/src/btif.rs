@@ -1054,7 +1054,7 @@ pub enum BaseCallbacks {
     // switch_codec_cb
     GenerateLocalOobData(u8, Box<OobData>), // Box OobData as its size is much bigger than others
     LeRandCallback(u64),
-    KeyMissing(RawAddress),
+    KeyMissing(RawAddress, u8),
     // encryption_change_cb
 }
 
@@ -1117,7 +1117,7 @@ cb_variant!(BaseCb, generate_local_oob_data_cb -> BaseCallbacks::GenerateLocalOo
 
 cb_variant!(BaseCb, le_rand_cb -> BaseCallbacks::LeRandCallback, u64);
 
-cb_variant!(BaseCb, key_missing_cb -> BaseCallbacks::KeyMissing, RawAddress);
+cb_variant!(BaseCb, key_missing_cb -> BaseCallbacks::KeyMissing, RawAddress, u8);
 
 struct RawInterfaceWrapper {
     pub raw: *const bindings::bt_interface_t,

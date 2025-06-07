@@ -1091,7 +1091,7 @@ class AdapterProperties {
         StringBuilder sb = new StringBuilder();
         for (BluetoothDevice device : mBondedDevices) {
             String address = device.getAddress();
-            String brEdrAddress = Utils.getBrEdrAddress(device);
+            String brEdrAddress = Utils.getBrEdrAddress(device, mService);
             if (brEdrAddress.equals(address)) {
                 writer.println(
                         "    "
@@ -1100,8 +1100,7 @@ class AdapterProperties {
                                 + dumpDeviceType(mRemoteDevices.getType(device))
                                 + "][ 0x"
                                 + String.format("%06X", mRemoteDevices.getBluetoothClass(device))
-                                + " ] "
-                                + Utils.getName(device));
+                                + " ] ");
             } else {
                 sb.append("    ")
                         .append(BluetoothUtils.toAnonymizedAddress(address))
@@ -1112,7 +1111,6 @@ class AdapterProperties {
                         .append("][ 0x")
                         .append(String.format("%06X", mRemoteDevices.getBluetoothClass(device)))
                         .append(" ] ")
-                        .append(Utils.getName(device))
                         .append("\n");
             }
         }

@@ -40,6 +40,7 @@ public class A2dpStackEvent {
     public int type = EVENT_TYPE_NONE;
     public BluetoothDevice device;
     public int valueInt = 0;
+    public int reason = 0;
     public BluetoothCodecStatus codecStatus;
 
     A2dpStackEvent(int type) {

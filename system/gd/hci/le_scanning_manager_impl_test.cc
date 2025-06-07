@@ -345,6 +345,11 @@ TEST_F(LeScanningManagerTest, legacy_adv_scan_ind_report_with_scan_response) {
   // Scannable & not connectable!
   report.event_type_ = AdvertisingEventType::ADV_SCAN_IND;
 
+  if (com::android::bluetooth::flags::support_passive_scanning()) {
+    uint16_t extended_event_type = kLegacy | kScannable;
+    EXPECT_CALL(mock_callbacks_, OnScanResult(extended_event_type, _, _, _, _, _, _, _, _, _));
+  }
+
   test_hci_layer_->IncomingLeMetaEvent(LeAdvertisingReportBuilder::Create({report}));
 
   LeAdvertisingResponse scan_response = make_advertising_report();
@@ -371,7 +376,10 @@ TEST_F(LeScanningManagerTest, legacy_adv_ind_report_with_scan_response) {
   LeAdvertisingResponse report = make_advertising_report();
   // Scannable & connectable!
   report.event_type_ = AdvertisingEventType::ADV_IND;
-
+  if (com::android::bluetooth::flags::support_passive_scanning()) {
+    uint16_t extended_event_type = kLegacy | kScannable | kConnectable;
+    EXPECT_CALL(mock_callbacks_, OnScanResult(extended_event_type, _, _, _, _, _, _, _, _, _));
+  }
   test_hci_layer_->IncomingLeMetaEvent(LeAdvertisingReportBuilder::Create({report}));
 
   LeAdvertisingResponse scan_response = make_advertising_report();
@@ -875,6 +883,15 @@ TEST_F(LeScanningManagerExtendedTest, drop_insignificant_bytes_test) {
     adv_data.push_back({});  // pad with a few insigificant zeros
   }
   scan_response_report.advertising_data_ = adv_data;
+
+  if (com::android::bluetooth::flags::support_passive_scanning()) {
+    auto result_without_scan_response = std::vector<uint8_t>();
+    packet::BitInserter it(result_without_scan_response);
+    flags_data.Serialize(it);
+    name_data.Serialize(it);
+    EXPECT_CALL(mock_callbacks_,
+                OnScanResult(_, _, _, _, _, _, _, _, _, result_without_scan_response));
+  }
 
   // We expect the two reports to be concatenated, excluding the zero-padding
   auto result = std::vector<uint8_t>();

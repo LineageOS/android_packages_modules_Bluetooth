@@ -757,7 +757,7 @@ static void le_rand_callback(uint64_t /* random */) {
   // Android doesn't support the LeRand API.
 }
 
-static void key_missing_callback(const RawAddress bd_addr) {
+static void key_missing_callback(const RawAddress bd_addr, uint8_t reason) {
   std::shared_lock<std::shared_timed_mutex> lock(jniObjMutex);
   if (!sJniCallbacksObj) {
     log::error("JNI obj is null. Failed to call JNI callback");
@@ -778,7 +778,8 @@ static void key_missing_callback(const RawAddress bd_addr) {
   sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
                                    reinterpret_cast<jbyte*>(const_cast<RawAddress*>(&bd_addr)));
 
-  sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_keyMissingCallback, addr.get());
+  sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_keyMissingCallback, addr.get(),
+                               (jint)reason);
 }
 
 static void encryption_change_callback(const bt_encryption_change_evt encryption_change) {
@@ -2302,7 +2303,7 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
           {"acquireWakeLock", "(Ljava/lang/String;)Z", &method_acquireWakeLock},
           {"releaseWakeLock", "(Ljava/lang/String;)Z", &method_releaseWakeLock},
           {"energyInfoCallback", "(IIJJJJ[Landroid/bluetooth/UidTraffic;)V", &method_energyInfo},
-          {"keyMissingCallback", "([B)V", &method_keyMissingCallback},
+          {"keyMissingCallback", "([BI)V", &method_keyMissingCallback},
           {"encryptionChangeCallback", "([BIZIZI)V", &method_encryptionChangeCallback},
   };
   GET_JAVA_METHODS(env, "com/android/bluetooth/btservice/JniCallbacks", javaMethods);

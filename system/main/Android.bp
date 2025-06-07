@@ -99,6 +99,7 @@ cc_test {
         "test/main_shim_test.cc",
     ],
     static_libs: [
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib_for_test",
         "libbase",
         "libbluetooth-types",
@@ -119,13 +120,9 @@ cc_test {
         "liblog",
         "libosi",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     shared_libs: [
         "libPlatformProperties",
         "libaconfig_storage_read_api_cc",
-        "libbinder",
         "libbinder_ndk",
         "libcrypto",
         "server_configurable_flags",

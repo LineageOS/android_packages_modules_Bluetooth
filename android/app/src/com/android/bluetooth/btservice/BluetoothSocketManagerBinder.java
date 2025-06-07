@@ -57,7 +57,7 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
             return null;
         }
 
-        String brEdrAddress = Utils.getBrEdrAddress(device);
+        String brEdrAddress = Utils.getBrEdrAddress(device, mService);
 
         Log.i(
                 TAG,
@@ -114,30 +114,21 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
             mService.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
             enforceSocketOffloadSupport(type);
         }
-        String brEdrAddress = Utils.getBrEdrAddress(device);
+        String brEdrAddress = Utils.getBrEdrAddress(device, mService);
 
         Log.i(
                 TAG,
-                "connectSocketWithOffload: device="
-                        + device
-                        + ", type="
-                        + type
-                        + ", uuid="
-                        + uuid
-                        + ", port="
-                        + port
-                        + ", from "
-                        + Utils.getUidPidString()
-                        + ", dataPath="
-                        + dataPath
-                        + ", socketName="
-                        + socketName
-                        + ", hubId="
-                        + hubId
-                        + ", endpointId="
-                        + endpointId
-                        + ", maximumPacketSize="
-                        + maximumPacketSize);
+                "connectSocketWithOffload:"
+                        + (" device=" + device)
+                        + (" type=" + type)
+                        + (" uuid=" + uuid)
+                        + (" port=" + port)
+                        + (" from " + Utils.getUidPidString())
+                        + (" dataPath=" + dataPath)
+                        + (" socketName=" + socketName)
+                        + (" hubId=" + hubId)
+                        + (" endpointId=" + endpointId)
+                        + (" maximumPacketSize=" + maximumPacketSize));
 
         return marshalFd(
                 mService.getNative()

@@ -1049,7 +1049,7 @@ public class HidHostService extends ConnectableProfile {
                         + (" prevState=" + prevState + " -> newState=" + newState));
 
         mAdapterService.updateProfileConnectionAdapterProperties(
-                device, BluetoothProfile.HID_HOST, newState, prevState);
+                device, mProfileId, newState, prevState);
 
         Intent intent = new Intent(BluetoothHidHost.ACTION_CONNECTION_STATE_CHANGED);
         intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);

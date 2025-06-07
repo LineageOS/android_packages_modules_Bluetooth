@@ -120,13 +120,13 @@ public abstract class ConnectableProfile extends ProfileService {
             case VOLUME_CONTROL -> arrayContains(remoteDeviceUuids, BluetoothUuid.VOLUME_CONTROL);
             case HID_DEVICE -> {
                 yield adapterService
-                        .getStartedProfile(id)
+                        .getStartedConnectableProfile(id)
                         .filter(profile -> profile.getConnectionState(device) == STATE_DISCONNECTED)
                         .isPresent();
             }
             case MAP, PBAP -> {
                 yield adapterService
-                        .getStartedProfile(id)
+                        .getStartedConnectableProfile(id)
                         .filter(profile -> profile.getConnectionState(device) == STATE_CONNECTED)
                         .isPresent();
             }

@@ -268,6 +268,7 @@ public class PbapStateMachine extends StateMachine {
                     new BluetoothPbapObexServer(mServiceHandler, mService, PbapStateMachine.this);
             BluetoothObexTransport transport =
                     new BluetoothObexTransport(
+                            mAdapterService,
                             mConnSocket,
                             PBAP_OBEX_MAXIMUM_PACKET_SIZE,
                             BluetoothObexTransport.PACKET_SIZE_UNSPECIFIED);
@@ -380,6 +381,7 @@ public class PbapStateMachine extends StateMachine {
             }
             BluetoothObexTransport transport =
                     new BluetoothObexTransport(
+                            mAdapterService,
                             mConnSocket,
                             PBAP_OBEX_MAXIMUM_PACKET_SIZE,
                             BluetoothObexTransport.PACKET_SIZE_UNSPECIFIED);
@@ -415,7 +417,7 @@ public class PbapStateMachine extends StateMachine {
             deleteIntent.setClass(mService, BluetoothPbapService.class);
             deleteIntent.setAction(BluetoothPbapService.AUTH_CANCELLED_ACTION);
 
-            String name = Utils.getName(mRemoteDevice);
+            String name = mAdapterService.getRemoteName(mRemoteDevice);
 
             Notification notification =
                     new Notification.Builder(mService, PBAP_OBEX_NOTIFICATION_CHANNEL)

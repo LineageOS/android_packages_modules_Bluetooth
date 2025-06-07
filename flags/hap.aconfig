@@ -33,3 +33,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "synchronize_preset_can_timeout"
+    namespace: "bluetooth"
+    description: "Once a group preset operation timeout, we should be able to recover"
+    bug: "422249143"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

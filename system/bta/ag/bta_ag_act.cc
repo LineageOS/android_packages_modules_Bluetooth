@@ -353,6 +353,21 @@ void bta_ag_open_fail(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
 void bta_ag_rfc_fail(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
   log::info("reset p_scb with index={}", bta_ag_scb_to_idx(p_scb));
   RawAddress peer_addr = p_scb->peer_addr;
+
+  if (com::android::bluetooth::flags::release_port_in_bta_ag_rfc_fail_before_reset_context()) {
+    for (uint8_t i = 0; i < BTA_AG_NUM_IDX; i++) {
+      if (p_scb->serv_handle[i] != 0) {
+        log::info("SCB idx {}: Removing server on serv_handle[{}] = {}",
+                  bta_ag_scb_to_idx(p_scb), i, p_scb->serv_handle[i]);
+        if (RFCOMM_RemoveServer(p_scb->serv_handle[i]) != PORT_SUCCESS) {
+          log::warn("RFCOMM_RemoveServer failed for handle {}",
+                    p_scb->serv_handle[i]);
+        }
+        p_scb->serv_handle[i] = 0;
+      }
+    }
+  }
+
   /* reinitialize stuff */
   p_scb->state = BTA_AG_INIT_ST;
   p_scb->conn_handle = 0;

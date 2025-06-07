@@ -1511,9 +1511,12 @@ void invoke_switch_codec_cb(bool is_low_latency_buffer_size) {
           is_low_latency_buffer_size));
 }
 
-void invoke_key_missing_cb(RawAddress bd_addr) {
+void invoke_key_missing_cb(tBTA_DM_KEY_MISSING key_missing) {
   do_in_jni_thread(base::BindOnce(
-          [](RawAddress bd_addr) { HAL_CBACK(bt_hal_cbacks, key_missing_cb, bd_addr); }, bd_addr));
+          [](tBTA_DM_KEY_MISSING key_missing) {
+            HAL_CBACK(bt_hal_cbacks, key_missing_cb, key_missing.bd_addr, key_missing.reason);
+          },
+          key_missing));
 }
 
 void invoke_encryption_change_cb(bt_encryption_change_evt encryption_change) {

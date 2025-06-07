@@ -212,6 +212,21 @@ class Hap(val context: Context) : HAPImplBase(), Closeable {
         }
     }
 
+    override fun setActivePresetForGroup(
+        request: SetActivePresetForGroupRequest,
+        responseObserver: StreamObserver<Empty>,
+    ) {
+        grpcUnary<Empty>(scope, responseObserver) {
+            val device = request.connection.toBluetoothDevice(bluetoothAdapter)
+            val groupId = bluetoothHapClient.getHapGroup(device)
+            Log.i(TAG, "SetActivePresetForGroup($device, ${request.index}) => with group=$groupId")
+
+            bluetoothHapClient.selectPresetForGroup(groupId, request.index)
+
+            Empty.getDefaultInstance()
+        }
+    }
+
     override fun getActivePreset(
         request: GetActivePresetRequest,
         responseObserver: StreamObserver<GetActivePresetResponse>,
@@ -286,7 +301,7 @@ class Hap(val context: Context) : HAPImplBase(), Closeable {
     ) {
         grpcUnary<Empty>(scope, responseObserver) {
             val device = request.connection.toBluetoothDevice(bluetoothAdapter)
-            Log.i(TAG, "waitPeripheral(${device}")
+            Log.i(TAG, "waitPeripheral($device)")
             if (bluetoothHapClient.getConnectionState(device) != STATE_CONNECTED) {
                 Log.d(TAG, "Manual call to setConnectionPolicy")
                 bluetoothHapClient.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED)

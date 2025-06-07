@@ -410,7 +410,7 @@ typedef struct {
   tGATT_SVC_CHG gattp_attr;     /* GATT profile attribute service change */
   tGATT_IF gatt_if;
   std::list<tGATT_HDL_LIST_ELEM>* hdl_list_info;
-  std::list<tGATT_SRV_LIST_ELEM>* srv_list_info;
+  std::shared_ptr<std::list<tGATT_SRV_LIST_ELEM>> srv_list_info;
 
   fixed_queue_t* srv_chg_clt_q; /* service change clients queue */
   tGATT_REG cl_rcb[GATT_MAX_APPS];
@@ -687,7 +687,7 @@ bluetooth::Uuid* gatts_get_service_uuid(tGATT_SVC_DB* p_db);
 void gatts_proc_srv_chg_ind_ack(tGATT_TCB tcb);
 
 /* gatt_sr_hash.cc */
-Octet16 gatts_calculate_database_hash(std::list<tGATT_SRV_LIST_ELEM>* lst_ptr);
+Octet16 gatts_calculate_database_hash(std::shared_ptr<std::list<tGATT_SRV_LIST_ELEM>> lst_ptr);
 
 namespace bluetooth {
 namespace legacy {

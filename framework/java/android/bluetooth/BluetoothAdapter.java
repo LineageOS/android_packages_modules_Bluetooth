@@ -24,9 +24,6 @@ import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
 import static android.Manifest.permission.LOCAL_MAC_ADDRESS;
 import static android.Manifest.permission.MODIFY_PHONE_STATE;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.getProfileName;
 import static android.bluetooth.BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
 import static android.bluetooth.BluetoothUtils.executeFromBinder;
@@ -50,7 +47,6 @@ import android.annotation.SystemApi;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothDevice.AddressType;
 import android.bluetooth.BluetoothDevice.Transport;
-import android.bluetooth.BluetoothProfile.ConnectionPolicy;
 import android.bluetooth.annotations.RequiresBluetoothAdvertisePermission;
 import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
 import android.bluetooth.annotations.RequiresBluetoothLocationPermission;
@@ -5335,42 +5331,6 @@ public final class BluetoothAdapter {
                 @NonNull BluetoothDevice device,
                 @NonNull BluetoothQualityReport bluetoothQualityReport,
                 int status);
-    }
-
-    /**
-     * Converts old constant of priority to the new for connection policy
-     *
-     * @param priority is the priority to convert to connection policy
-     * @return the equivalent connection policy constant to the priority
-     * @hide
-     */
-    public static @ConnectionPolicy int priorityToConnectionPolicy(int priority) {
-        return switch (priority) {
-            case BluetoothProfile.PRIORITY_AUTO_CONNECT -> CONNECTION_POLICY_ALLOWED;
-            case BluetoothProfile.PRIORITY_ON -> CONNECTION_POLICY_ALLOWED;
-            case BluetoothProfile.PRIORITY_OFF -> CONNECTION_POLICY_FORBIDDEN;
-            case BluetoothProfile.PRIORITY_UNDEFINED -> CONNECTION_POLICY_UNKNOWN;
-            default -> {
-                Log.e(TAG, "setPriority: Invalid priority: " + priority);
-                yield CONNECTION_POLICY_UNKNOWN;
-            }
-        };
-    }
-
-    /**
-     * Converts new constant of connection policy to the old for priority
-     *
-     * @param connectionPolicy is the connection policy to convert to priority
-     * @return the equivalent priority constant to the connectionPolicy
-     * @hide
-     */
-    public static int connectionPolicyToPriority(@ConnectionPolicy int connectionPolicy) {
-        return switch (connectionPolicy) {
-            case CONNECTION_POLICY_ALLOWED -> BluetoothProfile.PRIORITY_ON;
-            case CONNECTION_POLICY_FORBIDDEN -> BluetoothProfile.PRIORITY_OFF;
-            case CONNECTION_POLICY_UNKNOWN -> BluetoothProfile.PRIORITY_UNDEFINED;
-            default -> BluetoothProfile.PRIORITY_UNDEFINED;
-        };
     }
 
     /**

@@ -171,7 +171,7 @@ class AvrcpControllerStateMachine extends StateMachine {
         mAddressedPlayer = apb.build();
         mAvailablePlayerList.put(mAddressedPlayerId, mAddressedPlayer);
 
-        mBrowseTree = new BrowseTree(mDevice);
+        mBrowseTree = new BrowseTree(mAdapterService, mDevice);
         mDisconnected = new Disconnected();
         mConnecting = new Connecting();
         mConnected = new Connected();
@@ -251,8 +251,7 @@ class AvrcpControllerStateMachine extends StateMachine {
      * @param sb output string
      */
     public void dump(StringBuilder sb) {
-        ProfileService.println(
-                sb, "mDevice: " + mDevice + "(" + Utils.getName(mDevice) + ") " + this.toString());
+        ProfileService.println(sb, "mDevice: " + mDevice + "(" + mDevice + ") " + this.toString());
         ProfileService.println(sb, "isActive: " + isActive());
         ProfileService.println(sb, "Control: " + mRemoteControlConnected);
         ProfileService.println(sb, "Browsing: " + mBrowsingConnected);

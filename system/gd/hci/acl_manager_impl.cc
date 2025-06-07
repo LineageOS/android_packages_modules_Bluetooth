@@ -128,7 +128,7 @@ void AclManagerImpl::dequeue_and_route_acl_packet_to_connection() {
     return;
   }
   if (unknown_acl_alarm_ == nullptr) {
-    unknown_acl_alarm_.reset(new os::Alarm(handler_));
+    unknown_acl_alarm_.reset(new os::Alarm(&handler_->thread()));
   }
   waiting_packets_.push_back(*packet);
   log::info("Saving packet of size {} to unknown connection 0x{:x}", packet->size(),

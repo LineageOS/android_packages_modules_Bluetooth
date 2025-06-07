@@ -173,21 +173,6 @@ public class PbapClientObexTransportTest {
     }
 
     @Test
-    public void testGetRemoteAddress_transportL2cap_returnsDeviceAddress() {
-        PbapClientObexTransport transport = new PbapClientObexTransport(mMockSocket);
-        assertThat(transport.getRemoteAddress()).isEqualTo(mDevice.getAddress());
-    }
-
-    @Test
-    public void testGetRemoteAddress_transportRfcomm_returnsDeviceIdentityAddress() {
-        doReturn(BluetoothSocket.TYPE_RFCOMM).when(mMockSocket).getConnectionType();
-        PbapClientObexTransport transport = new PbapClientObexTransport(mMockSocket);
-        // Identity address won't be "known" by the stack for a test device, so it'll return null.
-        // assertThat(transport.getRemoteAddress()).isNull();
-        assertThat(transport.getRemoteAddress()).isEqualTo(mDevice.getAddress());
-    }
-
-    @Test
     public void testIsSrmSupported_transportL2cap_returnsTrue() {
         PbapClientObexTransport transport = new PbapClientObexTransport(mMockSocket);
         assertThat(transport.isSrmSupported()).isTrue();

@@ -331,8 +331,7 @@ uint8_t BTM_GetSecurityMode();
  * Description      This function is called to report remote bond loss.
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SecReportBondLoss(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                                  const std::string& reason);
+tBTM_STATUS BTM_SecReportBondLoss(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 
 /*******************************************************************************
  *

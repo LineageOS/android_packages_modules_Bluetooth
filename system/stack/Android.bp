@@ -1088,7 +1088,6 @@ cc_test {
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",
-        "libbinder",
         "libbinder_ndk",
         "libcrypto",
         "libcutils",
@@ -1238,16 +1237,13 @@ cc_test {
         "avct/avct_lcb_act.cc",
         "test/stack_avctp_test.cc",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     shared_libs: [
-        "libbinder",
         "libcrypto",
         "libcutils",
         "server_configurable_flags",
     ],
     static_libs: [
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib_for_test",
         "libaconfig_storage_read_api_cc",
         "libbase",
@@ -1311,16 +1307,13 @@ cc_test {
         "test/common/mock_stack_avdt_msg.cc",
         "test/stack_avdtp_test.cc",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     shared_libs: [
-        "libbinder",
         "libcrypto",
         "libcutils",
         "server_configurable_flags",
     ],
     static_libs: [
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib_for_test",
         "libaconfig_storage_read_api_cc",
         "libbase",
@@ -1423,17 +1416,14 @@ cc_test {
         "test/a2dp/wav_reader.cc",
         "test/a2dp/wav_reader_unittest.cc",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     shared_libs: [
-        "libbinder",
         "libcrypto",
         "libcutils",
         "libprotobuf-cpp-lite",
         "server_configurable_flags",
     ],
     static_libs: [
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib_for_test",
         "libFraunhoferAAC",
         "libaconfig_storage_read_api_cc",
@@ -1503,17 +1493,14 @@ cc_test {
         "test/gatt/mock_gatt_utils_ref.cc",
         "test/stack_gatt_sr_hash_test.cc",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     shared_libs: [
         "libaconfig_storage_read_api_cc",
-        "libbinder",
         "libcrypto",
         "libcutils",
         "server_configurable_flags",
     ],
     static_libs: [
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib_for_test",
         "libbase",
         "libbluetooth-types",
@@ -1758,6 +1745,7 @@ cc_test {
         "test/stack_include_test.cc",
     ],
     static_libs: [
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib_for_test",
         "libbase",
         "libbluetooth-types",
@@ -1780,12 +1768,8 @@ cc_test {
         "libprotobuf-cpp-lite",
         "libudrv-uipc",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     shared_libs: [
         "libaconfig_storage_read_api_cc",
-        "libbinder",
         "libcrypto",
         "libcutils",
         "server_configurable_flags",
@@ -1967,6 +1951,7 @@ cc_test {
         "test/stack_btu_test.cc",
     ],
     static_libs: [
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib_for_test",
         "libaconfig_storage_read_api_cc",
         "libbase",
@@ -1985,11 +1970,7 @@ cc_test {
         "libosi",
         "server_configurable_flags",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     shared_libs: [
-        "libbinder",
         "libbinder_ndk",
         "libcrypto",
     ],
@@ -2057,6 +2038,7 @@ cc_test {
         "test/gatt/stack_gatt_test.cc",
     ],
     static_libs: [
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib_for_test",
         "libbase",
         "libbluetooth-types",
@@ -2076,13 +2058,9 @@ cc_test {
         "libosi",
         "libprotobuf-cpp-lite",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     shared_libs: [
         "libaconfig_storage_read_api_cc",
         "libbase",
-        "libbinder",
         "libbinder_ndk",
         "libcrypto",
         "libcutils",
@@ -2152,6 +2130,7 @@ cc_test {
         "test/stack_l2cap_test.cc",
     ],
     static_libs: [
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib",
         "libbluetooth-types",
         "libbluetooth_gd",
@@ -2167,13 +2146,9 @@ cc_test {
         "libosi",
         "libprotobuf-cpp-lite",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     shared_libs: [
         "libaconfig_storage_read_api_cc",
         "libbase",
-        "libbinder",
         "libbinder_ndk",
         "libcrypto",
         "libcutils",
@@ -2246,6 +2221,7 @@ cc_test {
         "test/stack_acl_test.cc",
     ],
     static_libs: [
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib",
         "libbluetooth-types",
         "libbluetooth_core_rs_bridge",
@@ -2263,13 +2239,9 @@ cc_test {
         "liblog",
         "libosi",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     shared_libs: [
         "libaconfig_storage_read_api_cc",
         "libbase",
-        "libbinder",
         "libbinder_ndk",
         "libcrypto",
         "server_configurable_flags",
@@ -2339,6 +2311,7 @@ cc_test {
         "test/stack_rnr_test.cc",
     ],
     static_libs: [
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib_for_test",
         "libbase",
         "libbluetooth-types",
@@ -2361,12 +2334,8 @@ cc_test {
         "libprotobuf-cpp-lite",
         "libudrv-uipc",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     shared_libs: [
         "libaconfig_storage_read_api_cc",
-        "libbinder",
         "libcrypto",
         "libcutils",
         "server_configurable_flags",
@@ -2426,6 +2395,7 @@ cc_test {
         "test/sdp/stack_sdp_utils_test.cc",
     ],
     static_libs: [
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib_for_test",
         "libbase",
         "libbluetooth-types",
@@ -2439,12 +2409,8 @@ cc_test {
         "libgmock",
         "liblog",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     shared_libs: [
         "libaconfig_storage_read_api_cc",
-        "libbinder",
         "libcrypto",
         "libcutils",
         "server_configurable_flags",

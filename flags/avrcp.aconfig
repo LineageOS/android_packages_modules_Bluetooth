@@ -47,3 +47,13 @@ flag {
     description: "Set AVRCP 1.6 as default AVRCP version"
     bug: "374271695"
 }
+
+flag {
+    name: "set_a2dp_active_device_through_adapter_service"
+    namespace: "bluetooth"
+    description: "Instead of calling A2dpService#setActiveDevice, call AdapterService#setActiveDevice"
+    bug: "419448067"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

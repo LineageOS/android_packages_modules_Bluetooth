@@ -74,11 +74,11 @@ bool hearing_aid_on_suspend_req();
 void send_audio_data() {
   uint32_t bytes_per_tick = (num_channels * sample_rate * data_interval_ms * (bit_rate / 8)) / 1000;
 
-  uint8_t p_buf[bytes_per_tick];
+  std::vector<uint8_t> data(bytes_per_tick);
 
   uint32_t bytes_read = 0;
   if (bluetooth::audio::hearing_aid::is_hal_enabled()) {
-    bytes_read = bluetooth::audio::hearing_aid::read(p_buf, bytes_per_tick);
+    bytes_read = bluetooth::audio::hearing_aid::read(data.data(), bytes_per_tick);
   }
 
   log::debug("bytes_read: {}", bytes_read);
@@ -88,7 +88,7 @@ void send_audio_data() {
     stats.media_read_last_underflow_us = bluetooth::common::time_get_os_boottime_us();
   }
 
-  std::vector<uint8_t> data(p_buf, p_buf + bytes_read);
+  data.resize(bytes_read);
 
   if (localAudioReceiver != nullptr) {
     localAudioReceiver->OnAudioDataReady(data);

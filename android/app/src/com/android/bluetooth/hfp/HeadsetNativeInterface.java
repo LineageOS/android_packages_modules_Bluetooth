@@ -50,17 +50,17 @@ public class HeadsetNativeInterface {
         return Utils.getByteBrEdrAddress(mAdapterService, device);
     }
 
-    void onConnectionStateChanged(int state, byte[] address) {
+    void onConnectionStateChanged(int state, byte[] address, int reason) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(
                         HeadsetStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED,
                         state,
                         getDevice(address));
+        event.reason = reason;
         mService.messageFromNative(event);
     }
 
     // Callbacks for native code
-
     private void onAudioStateChanged(int state, byte[] address) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(

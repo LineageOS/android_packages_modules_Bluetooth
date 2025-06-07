@@ -18,14 +18,6 @@ flag {
 }
 
 flag {
-    name: "support_remote_device_metadata"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Support setting/retrieving the remote device metadata for a BluetoothDevice"
-    bug: "374171574"
-}
-
-flag {
     name: "identity_address_type_api"
     is_exported: true
     namespace: "bluetooth"
@@ -102,4 +94,19 @@ flag {
     namespace: "bluetooth"
     description: "Add Profile as intent extra"
     bug: "419074085"
+}
+
+flag {
+    name: "add_bond_loss_reason"
+    namespace: "bluetooth"
+    description: "Add bond loss reason to ACTION_KEY_MISSING Intent"
+    bug: "421377117"
+}
+
+flag {
+    name: "key_missing_count_api"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Promote getKeyMissingCount as public API"
+    bug: "421357557"
 }

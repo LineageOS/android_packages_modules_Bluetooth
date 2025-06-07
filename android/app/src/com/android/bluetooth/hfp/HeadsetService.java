@@ -393,6 +393,16 @@ public class HeadsetService extends ConnectableProfile {
         }
     }
 
+    private void doForEachConnectedOrConnectingStateMachine(List<StateMachineTask> tasks) {
+        synchronized (mStateMachines) {
+            for (BluetoothDevice device : getConnectedOrConnectingDevices()) {
+                for (StateMachineTask task : tasks) {
+                    task.execute(mStateMachines.get(device));
+                }
+            }
+        }
+    }
+
     void onDeviceStateChanged(HeadsetDeviceState deviceState) {
         doForEachConnectedStateMachine(
                 stateMachine ->
@@ -674,6 +684,25 @@ public class HeadsetService extends ConnectableProfile {
         synchronized (mStateMachines) {
             for (HeadsetStateMachine stateMachine : mStateMachines.values()) {
                 if (stateMachine.getConnectionState() == STATE_CONNECTED) {
+                    devices.add(stateMachine.getDevice());
+                }
+            }
+        }
+        return devices;
+    }
+
+    /**
+     * Get a list of devices in STATE_CONNECTED or in STATE_CONNECTING
+     *
+     * @return list of Bluetooth Devices
+     */
+    public List<BluetoothDevice> getConnectedOrConnectingDevices() {
+        ArrayList<BluetoothDevice> devices = new ArrayList<>();
+        int connectionState = STATE_DISCONNECTED;
+        synchronized (mStateMachines) {
+            for (HeadsetStateMachine stateMachine : mStateMachines.values()) {
+                connectionState = stateMachine.getConnectionState();
+                if (connectionState == STATE_CONNECTED || connectionState == STATE_CONNECTING) {
                     devices.add(stateMachine.getDevice());
                 }
             }
@@ -1074,7 +1103,6 @@ public class HeadsetService extends ConnectableProfile {
      * @param silence true to enable silence mode, false to disable.
      * @return true on success, false on error
      */
-    @VisibleForTesting
     public boolean setSilenceMode(BluetoothDevice device, boolean silence) {
         Log.d(TAG, "setSilenceMode(" + device + "): " + silence);
 
@@ -1888,7 +1916,12 @@ public class HeadsetService extends ConnectableProfile {
                                 new HeadsetClccResponse(
                                         index, direction, status, mode, mpty, number, type)));
         if (index == CLCC_END_MARK_INDEX) {
-            doForEachConnectedStateMachine(mPendingClccResponses);
+            if (Flags.sendOkClccBeforeSlc()) {
+                doForEachConnectedOrConnectingStateMachine(mPendingClccResponses);
+            } else {
+                doForEachConnectedStateMachine(mPendingClccResponses);
+            }
+
             mPendingClccResponses.clear();
         }
     }
@@ -1983,20 +2016,17 @@ public class HeadsetService extends ConnectableProfile {
 
         mAdapterService
                 .getActiveDeviceManager()
-                .profileConnectionStateChanged(
-                        BluetoothProfile.HEADSET, device, fromState, toState);
+                .profileConnectionStateChanged(mProfileId, device, fromState, toState);
         mAdapterService
                 .getSilenceDeviceManager()
                 .hfpConnectionStateChanged(device, fromState, toState);
         mAdapterService
                 .getRemoteDevices()
                 .handleHeadsetConnectionStateChanged(device, fromState, toState);
-        mAdapterService.notifyProfileConnectionStateChangeToGatt(
-                BluetoothProfile.HEADSET, fromState, toState);
-        mAdapterService.handleProfileConnectionStateChange(
-                BluetoothProfile.HEADSET, device, fromState, toState);
+        mAdapterService.notifyProfileConnectionStateChangeToGatt(mProfileId, fromState, toState);
+        mAdapterService.handleProfileConnectionStateChange(mProfileId, device, fromState, toState);
         mAdapterService.updateProfileConnectionAdapterProperties(
-                device, BluetoothProfile.HEADSET, toState, fromState);
+                device, mProfileId, toState, fromState);
     }
 
     /** Called from {@link HeadsetClientStateMachine} to update inband ringing status. */
@@ -2072,8 +2102,7 @@ public class HeadsetService extends ConnectableProfile {
      * @return true if it is a BluetoothDevice with only HFP profile connectable
      */
     private boolean isHFPAudioOnly(@NonNull BluetoothDevice device) {
-        int hfpPolicy =
-                mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.HEADSET);
+        int hfpPolicy = mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
         int a2dpPolicy = mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.A2DP);
         int leAudioPolicy =
                 mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO);
@@ -2180,11 +2209,11 @@ public class HeadsetService extends ConnectableProfile {
     private void broadcastActiveDevice(BluetoothDevice device) {
         logD("broadcastActiveDevice: " + device);
 
-        mAdapterService.handleActiveDeviceChange(BluetoothProfile.HEADSET, device);
+        mAdapterService.handleActiveDeviceChange(mProfileId, device);
 
         BluetoothStatsLog.write(
                 BluetoothStatsLog.BLUETOOTH_ACTIVE_DEVICE_CHANGED,
-                BluetoothProfile.HEADSET,
+                mProfileId,
                 mAdapterService.obfuscateAddress(device),
                 mAdapterService.getMetricId(device));
 

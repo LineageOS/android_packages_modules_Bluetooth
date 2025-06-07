@@ -16,6 +16,11 @@
 
 package android.bluetooth;
 
+import android.annotation.FlaggedApi;
+import android.annotation.NonNull;
+
+import com.android.bluetooth.flags.Flags;
+
 /** This abstract class is used to implement {@link BluetoothGattServer} callbacks. */
 public abstract class BluetoothGattServerCallback {
 
@@ -192,24 +197,16 @@ public abstract class BluetoothGattServerCallback {
             BluetoothDevice device, int interval, int latency, int timeout, int status) {}
 
     /**
-     * Callback indicating the LE connection's subrate parameters were updated.
+     * Callback indicating LE connection's subrate parameters have changed.
      *
      * @param device The remote device involved
-     * @param subrateFactor for the LE connection.
-     * @param latency for the LE connection in number of subrated connection events. Valid range is
-     *     from 0 to 499.
-     * @param contNum Valid range is from 0 to 499.
-     * @param timeout Supervision timeout for this connection, in 10ms unit. Valid range is from 10
-     *     (0.1s) to 3200 (32s)
-     * @param status {@link BluetoothGatt#GATT_SUCCESS} if LE connection subrating has been changed
-     *     successfully.
-     * @hide
+     * @param subrateMode for this LE connection.
+     * @param status {@link BluetoothGatt#GATT_SUCCESS} if the connection subrating has been updated
+     *     successfully
      */
+    @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
     public void onSubrateChange(
-            BluetoothDevice device,
-            int subrateFactor,
-            int latency,
-            int contNum,
-            int timeout,
-            int status) {}
+            @NonNull BluetoothDevice device,
+            @BluetoothGatt.OnSubrateChangeModeValues int subrateMode,
+            @BluetoothGatt.OnSubrateChangeStatusValues int status) {}
 }

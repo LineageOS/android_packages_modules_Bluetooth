@@ -29,7 +29,8 @@
 using bluetooth::Uuid;
 using namespace bluetooth;
 
-static size_t calculate_database_info_size(std::list<tGATT_SRV_LIST_ELEM>* lst_ptr) {
+static size_t calculate_database_info_size(
+        std::shared_ptr<std::list<tGATT_SRV_LIST_ELEM>> lst_ptr) {
   size_t len = 0;
   auto srv_it = lst_ptr->begin();
   for (; srv_it != lst_ptr->end(); srv_it++) {
@@ -62,7 +63,8 @@ static size_t calculate_database_info_size(std::list<tGATT_SRV_LIST_ELEM>* lst_p
   return len;
 }
 
-static void fill_database_info(std::list<tGATT_SRV_LIST_ELEM>* lst_ptr, uint8_t* p_data) {
+static void fill_database_info(std::shared_ptr<std::list<tGATT_SRV_LIST_ELEM>> lst_ptr,
+                               uint8_t* p_data) {
   auto srv_it = lst_ptr->begin();
   for (; srv_it != lst_ptr->end(); srv_it++) {
     auto attr_list = &srv_it->p_db->attr_list;
@@ -115,7 +117,7 @@ static void fill_database_info(std::list<tGATT_SRV_LIST_ELEM>* lst_ptr, uint8_t*
   }
 }
 
-Octet16 gatts_calculate_database_hash(std::list<tGATT_SRV_LIST_ELEM>* lst_ptr) {
+Octet16 gatts_calculate_database_hash(std::shared_ptr<std::list<tGATT_SRV_LIST_ELEM>> lst_ptr) {
   int len = calculate_database_info_size(lst_ptr);
 
   std::vector<uint8_t> serialized(len);

@@ -24,7 +24,6 @@ import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeNotNull;
 import static org.junit.Assume.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,7 +38,6 @@ import static org.mockito.Mockito.when;
 
 import android.app.NotificationManager;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -143,18 +141,6 @@ public class BluetoothPbapServiceTest {
         mService.mPbapStateMachineMap.put(mRemoteDevice, sm);
 
         assertThat(mService.getConnectedDevices()).contains(mRemoteDevice);
-    }
-
-    @Test
-    public void getConnectionPolicy_withDeviceIsNull_throwsNPE() {
-        assertThrows(IllegalArgumentException.class, () -> mService.getConnectionPolicy(null));
-    }
-
-    @Test
-    public void getConnectionPolicy() {
-        mService.getConnectionPolicy(mRemoteDevice);
-
-        verify(mDatabaseManager).getProfileConnectionPolicy(mRemoteDevice, BluetoothProfile.PBAP);
     }
 
     @Test

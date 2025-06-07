@@ -31,6 +31,7 @@ import com.android.bluetooth.avrcpcontroller.BipImageDescriptor;
 import com.android.bluetooth.avrcpcontroller.BipImageFormat;
 import com.android.bluetooth.avrcpcontroller.BipImageProperties;
 import com.android.bluetooth.avrcpcontroller.BipPixel;
+import com.android.bluetooth.tests.R;
 
 import org.junit.After;
 import org.junit.Before;
@@ -58,8 +59,8 @@ public class CoverArtTest {
 
     @Before
     public void setUp() throws Exception {
-        m200by200Image = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
-        m200by200ImageBlue = loadImage(com.android.bluetooth.tests.R.raw.image_200_200_blue);
+        m200by200Image = loadImage(R.raw.image_200_200);
+        m200by200ImageBlue = loadImage(R.raw.image_200_200_blue);
         mImage = new Image(null, m200by200Image);
         mImage2 = new Image(null, m200by200ImageBlue);
     }

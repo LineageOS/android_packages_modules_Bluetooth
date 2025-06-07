@@ -54,6 +54,7 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -63,6 +64,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Optional;
 
 /** Provides Bluetooth Hearing Access profile, as a service. */
 public class HapClientService extends ConnectableProfile {
@@ -87,6 +89,7 @@ public class HapClientService extends ConnectableProfile {
     @GuardedBy("mCallbacks")
     final RemoteCallbackList<IBluetoothHapClientCallback> mCallbacks = new RemoteCallbackList<>();
 
+    // TODO(b/422543753) Delete on flag cleanup
     @VisibleForTesting ServiceFactory mFactory = new ServiceFactory();
 
     public static boolean isEnabled() {
@@ -150,6 +153,15 @@ public class HapClientService extends ConnectableProfile {
 
         // Mark service as started
         setHapClient(this);
+    }
+
+    // TODO(b/422543753) Delete on flag cleanup
+    Optional<CsipSetCoordinatorService> getCsipSetCoordinatorService() {
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            return mAdapterService.getCsipSetCoordinatorService();
+        } else {
+            return Optional.ofNullable(mFactory.getCsipSetCoordinatorService());
+        }
     }
 
     @Override
@@ -388,8 +400,7 @@ public class HapClientService extends ConnectableProfile {
         }
         ActiveDeviceManager adManager = mAdapterService.getActiveDeviceManager();
         if (adManager != null) {
-            adManager.profileConnectionStateChanged(
-                    BluetoothProfile.HAP_CLIENT, device, fromState, toState);
+            adManager.profileConnectionStateChanged(mProfileId, device, fromState, toState);
         }
     }
 
@@ -481,10 +492,10 @@ public class HapClientService extends ConnectableProfile {
 
     @VisibleForTesting
     int getHapGroup(BluetoothDevice device) {
-        CsipSetCoordinatorService csipClient = mFactory.getCsipSetCoordinatorService();
-
-        if (csipClient != null) {
-            Map<Integer, ParcelUuid> groups = csipClient.getGroupUuidMapByDevice(device);
+        final var csipSetCoordinator = getCsipSetCoordinatorService();
+        if (csipSetCoordinator.isPresent()) {
+            final Map<Integer, ParcelUuid> groups =
+                    csipSetCoordinator.get().getGroupUuidMapByDevice(device);
             for (Map.Entry<Integer, ParcelUuid> entry : groups.entrySet()) {
                 if (entry.getValue().equals(BluetoothUuid.CAP)) {
                     return entry.getKey();
@@ -697,12 +708,9 @@ public class HapClientService extends ConnectableProfile {
             return false;
         }
 
-        CsipSetCoordinatorService csipClient = mFactory.getCsipSetCoordinatorService();
-        if (csipClient == null) {
-            return false;
-        }
-        List<Integer> groups = csipClient.getAllGroupIds(BluetoothUuid.CAP);
-        return groups.contains(groupId);
+        return getCsipSetCoordinatorService()
+                .map(csipClient -> csipClient.getAllGroupIds(BluetoothUuid.CAP).contains(groupId))
+                .orElse(false);
     }
 
     @VisibleForTesting
@@ -791,12 +799,9 @@ public class HapClientService extends ConnectableProfile {
             return Collections.emptyList();
         }
 
-        CsipSetCoordinatorService csipClient = mFactory.getCsipSetCoordinatorService();
-        if (csipClient == null) {
-            return Collections.emptyList();
-        }
-
-        return csipClient.getGroupDevicesOrdered(groupId);
+        return getCsipSetCoordinatorService()
+                .map(csipClient -> csipClient.getGroupDevicesOrdered(groupId))
+                .orElse(Collections.emptyList());
     }
 
     void messageFromNative(HapClientStackEvent stackEvent) {
@@ -842,20 +847,21 @@ public class HapClientService extends ConnectableProfile {
             }
             case HapClientStackEvent.EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED -> {
                 int presetIndex = stackEvent.valueInt1;
+                // FIXME: Add app request queueing to support other reasons
+                int reason = BluetoothStatusCodes.REASON_LOCAL_STACK_REQUEST;
+
+                mDeviceCurrentPresetMap.put(device, presetIndex);
+                broadcastToClient(cb -> cb.onPresetSelected(device, presetIndex, reason));
+            }
+            case HapClientStackEvent.EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED_FOR_GROUP -> {
+                int presetIndex = stackEvent.valueInt1;
                 int groupId = stackEvent.valueInt2;
                 // FIXME: Add app request queueing to support other reasons
                 int reason = BluetoothStatusCodes.REASON_LOCAL_STACK_REQUEST;
 
-                if (device != null) {
-                    mDeviceCurrentPresetMap.put(device, presetIndex);
-                    broadcastToClient(cb -> cb.onPresetSelected(device, presetIndex, reason));
-
-                } else if (groupId != BluetoothCsipSetCoordinator.GROUP_ID_INVALID) {
-                    List<BluetoothDevice> all_group_devices = getGroupDevices(groupId);
-                    for (BluetoothDevice dev : all_group_devices) {
-                        mDeviceCurrentPresetMap.put(dev, presetIndex);
-                        broadcastToClient(cb -> cb.onPresetSelected(dev, presetIndex, reason));
-                    }
+                for (BluetoothDevice dev : getGroupDevices(groupId)) {
+                    mDeviceCurrentPresetMap.put(dev, presetIndex);
+                    broadcastToClient(cb -> cb.onPresetSelected(dev, presetIndex, reason));
                 }
             }
             case HapClientStackEvent.EVENT_TYPE_ON_ACTIVE_PRESET_SELECT_ERROR -> {

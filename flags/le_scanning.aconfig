@@ -14,6 +14,7 @@ flag {
 flag {
     name: "support_passive_scanning"
     namespace: "bluetooth"
+    is_exported: true
     description: "Support passive scannign by delivering adv packet w/o scan response"
     bug: "414501027"
 }

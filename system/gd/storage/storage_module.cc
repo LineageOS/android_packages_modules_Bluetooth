@@ -64,7 +64,7 @@ const std::string StorageModule::kAdapterSection = BTIF_STORAGE_SECTION_ADAPTER;
 
 struct StorageModule::impl {
   explicit impl(Handler* handler, ConfigCache cache, size_t in_memory_cache_size_limit)
-      : config_save_alarm_(handler),
+      : config_save_alarm_(&handler->thread()),
         cache_(std::move(cache)),
         memory_only_cache_(in_memory_cache_size_limit, {}) {}
   Alarm config_save_alarm_;

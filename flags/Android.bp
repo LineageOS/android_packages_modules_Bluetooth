@@ -26,6 +26,7 @@ aconfig_declarations {
         "hal.aconfig",
         "hap.aconfig",
         "hci.aconfig",
+        "hearing_aid.aconfig",
         "hfp.aconfig",
         "hfpclient.aconfig",
         "hid.aconfig",

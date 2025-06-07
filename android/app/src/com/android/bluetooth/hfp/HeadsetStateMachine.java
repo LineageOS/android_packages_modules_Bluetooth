@@ -126,6 +126,7 @@ class HeadsetStateMachine extends StateMachine {
 
     private static final HeadsetAgIndicatorEnableState DEFAULT_AG_INDICATOR_ENABLE_STATE =
             new HeadsetAgIndicatorEnableState(true, true, true, true);
+    private int mReason = 0;
 
     // State machine states
     private final Disconnected mDisconnected = new Disconnected();
@@ -166,6 +167,7 @@ class HeadsetStateMachine extends StateMachine {
     private int mAudioDisconnectRetry = 0;
 
     private BluetoothSinkAudioPolicy mHsClientAudioPolicy;
+    boolean mHasRfcommConnectionCompleted = false;
 
     // Keys are AT commands, and values are the company IDs.
     private static final Map<String, Integer> VENDOR_SPECIFIC_AT_COMMAND_COMPANY_ID;
@@ -354,6 +356,11 @@ class HeadsetStateMachine extends StateMachine {
             intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, fromState);
             intent.putExtra(BluetoothProfile.EXTRA_STATE, toState);
             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
+            if (Flags.hfpConnectionFailuresApi()
+                    && toState == BluetoothProfile.STATE_DISCONNECTED
+                    && fromState == BluetoothProfile.STATE_CONNECTING) {
+                intent.putExtra(BluetoothHeadset.EXTRA_DISCONNECTED_REASON, mReason);
+            }
             intent.addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
             mHeadsetService.sendBroadcastAsUser(
                     intent,
@@ -568,6 +575,7 @@ class HeadsetStateMachine extends StateMachine {
             mHasSwbLc3Enabled = false;
             mHasNrecEnabled = false;
             mHasSwbAptXEnabled = false;
+            mHasRfcommConnectionCompleted = false;
 
             if (mHeadsetService.mPendingScoConnection != null
                     && mHeadsetService.mPendingScoConnection.equals(mDevice)) {
@@ -789,6 +797,9 @@ class HeadsetStateMachine extends StateMachine {
                 case DEVICE_STATE_CHANGED:
                     stateLogD("ignoring DEVICE_STATE_CHANGED event");
                     break;
+                case SEND_CLCC_RESPONSE:
+                    processSendClccResponse((HeadsetClccResponse) message.obj);
+                    break;
                 case STACK_EVENT:
                     HeadsetStackEvent event = (HeadsetStackEvent) message.obj;
                     stateLogD("STACK_EVENT: " + event);
@@ -802,6 +813,7 @@ class HeadsetStateMachine extends StateMachine {
                     }
                     switch (event.type) {
                         case HeadsetStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED:
+                            mReason = event.reason;
                             processConnectionEvent(message, event.valueInt);
                             break;
                         case HeadsetStackEvent.EVENT_TYPE_AT_CIND:
@@ -901,6 +913,7 @@ class HeadsetStateMachine extends StateMachine {
                     break;
                 case HeadsetHalConstants.CONNECTION_STATE_CONNECTED:
                     stateLogD("RFCOMM connected");
+                    mHasRfcommConnectionCompleted = true;
                     break;
                 case HeadsetHalConstants.CONNECTION_STATE_SLC_CONNECTED:
                     stateLogD("SLC connected");
@@ -1822,7 +1835,6 @@ class HeadsetStateMachine extends StateMachine {
      *     BluetoothProfile#STATE_CONNECTING}, {@link BluetoothProfile#STATE_CONNECTED}, or {@link
      *     BluetoothProfile#STATE_DISCONNECTING}
      */
-    @VisibleForTesting
     public synchronized int getConnectionState() {
         if (mCurrentState == null) {
             return BluetoothHeadset.STATE_DISCONNECTED;
@@ -2732,6 +2744,10 @@ class HeadsetStateMachine extends StateMachine {
     @VisibleForTesting
     void processSendClccResponse(HeadsetClccResponse clcc) {
         if (!hasMessages(CLCC_RSP_TIMEOUT)) {
+            return;
+        }
+        if (!mHasRfcommConnectionCompleted) {
+            log("rfcomm not completed, not sending clcc response");
             return;
         }
         if (clcc.mIndex == 0) {

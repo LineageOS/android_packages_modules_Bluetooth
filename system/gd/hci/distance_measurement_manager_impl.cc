@@ -462,7 +462,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
     }
     // make sure the repeating_alarm is initialized.
     if (it->second.procedure_schedule_guard_alarm == nullptr) {
-      it->second.procedure_schedule_guard_alarm = std::make_unique<os::Alarm>(handler_);
+      it->second.procedure_schedule_guard_alarm = std::make_unique<os::Alarm>(&handler_->thread());
     }
     it->second.state = CsTrackerState::INIT;
 
@@ -1231,7 +1231,8 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
       live_tracker->state = CsTrackerState::WAIT_FOR_SECURITY_ENABLED;
       if (live_tracker->local_start) {
         if (live_tracker->enable_security_timeout_alarm == nullptr) {
-          live_tracker->enable_security_timeout_alarm = std::make_unique<os::Alarm>(handler_);
+          live_tracker->enable_security_timeout_alarm =
+                  std::make_unique<os::Alarm>(&handler_->thread());
         }
         live_tracker->enable_security_timeout_alarm->Schedule(
                 common::Bind(&impl::le_cs_enable_security_timeout, common::Unretained(this),

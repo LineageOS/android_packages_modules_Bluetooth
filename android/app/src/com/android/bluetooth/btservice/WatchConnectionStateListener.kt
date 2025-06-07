@@ -23,6 +23,7 @@ import android.companion.CompanionDeviceManager
 import android.companion.CompanionDeviceManager.OnAssociationsChangedListener
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import com.android.bluetooth.Utils.isWatch
 import com.android.bluetooth.Utils.remoteDeviceIsWatch
 
@@ -34,9 +35,11 @@ import com.android.bluetooth.Utils.remoteDeviceIsWatch
  */
 class WatchConnectionStateListener(private val adapterService: AdapterService, looper: Looper) :
     OnAssociationsChangedListener {
-    private val connectedDevices: MutableSet<BluetoothDevice> = mutableSetOf()
-    private var watchDevicesAssociated: Set<BluetoothDevice> = setOf()
-    private var watchStatus = false
+    private val TAG = "WatchConnectionStateListener"
+    // Map value is the bitmask of the connected transport
+    private val connectedDevices: MutableMap<BluetoothDevice, Int> = mutableMapOf()
+    private var associatedWatches: Set<BluetoothDevice> = setOf()
+    private var currentWatchStatus = false
 
     init {
         if (!isWatch(adapterService)) {
@@ -50,22 +53,25 @@ class WatchConnectionStateListener(private val adapterService: AdapterService, l
         if (isWatch(adapterService)) {
             return !connectedDevices.isEmpty()
         }
-        return connectedDevices.any { element ->
-            element in watchDevicesAssociated || remoteDeviceIsWatch(adapterService, element)
+        return connectedDevices.keys.any { device ->
+            device in associatedWatches || remoteDeviceIsWatch(adapterService, device)
         }
     }
 
     private fun updateSystemServerIfNeeded() {
+        val log = "connectedDevices=$connectedDevices associatedWatches=$associatedWatches"
         val newWatchStatus = computeCurrentWatchStatus()
-        if (newWatchStatus == watchStatus) {
+        if (newWatchStatus == currentWatchStatus) {
+            Log.v(TAG, "Keeping watch status to $currentWatchStatus. $log")
             return
         }
-        watchStatus = newWatchStatus
-        adapterService.updateWatchConnection(watchStatus)
+        currentWatchStatus = newWatchStatus
+        Log.i(TAG, "Updating watch status to $currentWatchStatus. $log")
+        adapterService.updateWatchConnection(currentWatchStatus)
     }
 
     override fun onAssociationsChanged(associations: List<AssociationInfo>) {
-        watchDevicesAssociated =
+        associatedWatches =
             associations
                 .filter { info -> info.deviceProfile == DEVICE_PROFILE_WATCH }
                 .mapNotNull { info -> info.associatedDevice?.bluetoothDevice }
@@ -73,13 +79,16 @@ class WatchConnectionStateListener(private val adapterService: AdapterService, l
         updateSystemServerIfNeeded()
     }
 
-    fun connectedDevice(device: BluetoothDevice) {
-        connectedDevices.add(device)
+    fun onDeviceConnected(device: BluetoothDevice, transport: Int) {
+        connectedDevices.compute(device) { _, value -> (value ?: 0) or transport }
         updateSystemServerIfNeeded()
     }
 
-    fun disconnectedDevice(device: BluetoothDevice) {
-        connectedDevices.remove(device)
+    fun onDeviceDisconnected(device: BluetoothDevice, transport: Int) {
+        connectedDevices.compute(device) { _, value ->
+            val v = (value ?: 0) and (transport).inv()
+            if (v != 0) v else null
+        }
         updateSystemServerIfNeeded()
     }
 }

@@ -31,6 +31,7 @@ import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.ParcelUuid;
+import android.os.SystemProperties;
 import android.telecom.BluetoothCallQualityReport;
 import android.telecom.Call;
 import android.telecom.CallAudioState;
@@ -76,7 +77,7 @@ import java.util.UUID;
  * the service triggering InCallActivity (via CallList) to finish soon after.
  */
 public class BluetoothInCallService extends InCallService {
-    private static final String TAG = BluetoothInCallService.class.getSimpleName();
+    @VisibleForTesting static final String TAG = BluetoothInCallService.class.getSimpleName();
 
     static final int BEARER_TECHNOLOGY_3G = 0x01;
     static final int BEARER_TECHNOLOGY_4G = 0x02;
@@ -182,6 +183,7 @@ public class BluetoothInCallService extends InCallService {
 
     private int mCcid = ContentControlIdKeeper.CCID_INVALID;
     private int mMaxNumberOfCalls = 0;
+    private boolean mAllowVideoAnswer = false;
 
     public class BluetoothAdapterReceiver extends BroadcastReceiver {
         @Override
@@ -369,6 +371,8 @@ public class BluetoothInCallService extends InCallService {
 
     private BluetoothInCallService(CallInfo callInfo) {
         Log.i(TAG, "BluetoothInCallService is created");
+        mAllowVideoAnswer =
+                SystemProperties.getBoolean("bluetooth.hfp.answer_call_with_video.enabled", false);
         mCallInfo = requireNonNullElseGet(callInfo, () -> new CallInfo());
     }
 
@@ -383,7 +387,9 @@ public class BluetoothInCallService extends InCallService {
             if (mCallInfo.isNullCall(call)) {
                 return false;
             }
-            call.answer(VideoProfile.STATE_AUDIO_ONLY);
+            int callState =
+                    mAllowVideoAnswer ? call.getVideoState() : VideoProfile.STATE_AUDIO_ONLY;
+            call.answer(callState);
             return true;
         }
     }
@@ -743,6 +749,7 @@ public class BluetoothInCallService extends InCallService {
             IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
             intentFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
             registerReceiver(mBluetoothAdapterReceiver, intentFilter);
+            registerBearer(TbsService.getTbsService());
             sInstance = this;
         }
     }
@@ -1148,7 +1155,11 @@ public class BluetoothInCallService extends InCallService {
                 updateHeadsetWithCallState(headsetService, true /* force */);
                 return true;
             } else if (!mCallInfo.isNullCall(ringingCall)) {
-                ringingCall.answer(VideoProfile.STATE_AUDIO_ONLY);
+                int callState =
+                        mAllowVideoAnswer
+                                ? ringingCall.getVideoState()
+                                : VideoProfile.STATE_AUDIO_ONLY;
+                ringingCall.answer(callState);
                 return true;
             } else if (!mCallInfo.isNullCall(heldCall)) {
                 // CallsManager will hold any active calls when unhold() is called on a
@@ -1713,7 +1724,11 @@ public class BluetoothInCallService extends InCallService {
                         if (mCallInfo.isNullCall(call)) {
                             result = Result.ERROR_UNKNOWN_CALL_ID;
                         } else {
-                            call.answer(VideoProfile.STATE_AUDIO_ONLY);
+                            int callState =
+                                    mAllowVideoAnswer
+                                            ? call.getVideoState()
+                                            : VideoProfile.STATE_AUDIO_ONLY;
+                            call.answer(callState);
                         }
                         final var tbsService = TbsService.getTbsService();
                         if (tbsService != null) {

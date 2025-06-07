@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.pbapclient;
 
+import static java.util.Objects.requireNonNull;
+
 import android.accounts.Account;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
@@ -31,6 +33,7 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothObexTransport;
 import com.android.bluetooth.ObexAppParameters;
 import com.android.bluetooth.R;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ClientSession;
@@ -95,6 +98,7 @@ class PbapClientConnectionHandler extends Handler {
     private final PbapClientService mService;
     private PbapClientObexAuthenticator mAuth = null;
     private final PbapClientStateMachineOld mPbapClientStateMachine;
+    private final AdapterService mAdapterService;
     private boolean mAccountCreated;
 
     /**
@@ -109,6 +113,7 @@ class PbapClientConnectionHandler extends Handler {
             Log.w(TAG, "This object is no longer used in this configuration");
         }
 
+        mAdapterService = requireNonNull(pceHandlerbuild.mAdapterService);
         mDevice = pceHandlerbuild.mDevice;
         mLocalSupportedFeatures = pceHandlerbuild.mLocalSupportedFeatures;
         mService = pceHandlerbuild.mService;
@@ -122,11 +127,17 @@ class PbapClientConnectionHandler extends Handler {
 
     public static class Builder {
 
+        private AdapterService mAdapterService;
         private Looper mLooper;
         private PbapClientService mService;
         private BluetoothDevice mDevice;
         private int mLocalSupportedFeatures;
         private PbapClientStateMachineOld mClientStateMachine;
+
+        public Builder setAdapterService(AdapterService adapterService) {
+            this.mAdapterService = adapterService;
+            return this;
+        }
 
         public Builder setLooper(Looper loop) {
             this.mLooper = loop;
@@ -289,7 +300,7 @@ class PbapClientConnectionHandler extends Handler {
 
         try {
             Log.v(TAG, "Start Obex Client Session");
-            BluetoothObexTransport transport = new BluetoothObexTransport(mSocket);
+            BluetoothObexTransport transport = new BluetoothObexTransport(mAdapterService, mSocket);
             mObexSession = new ClientSession(transport);
             mObexSession.setAuthenticator(mAuth);
 

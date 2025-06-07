@@ -34,6 +34,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -76,6 +77,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.stubbing.Answer;
 
@@ -112,8 +114,6 @@ public class GattServiceTest {
     private GattService mService;
 
     private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
-    private final CompanionDeviceManager mCompanionDeviceManager =
-            mContext.getSystemService(CompanionDeviceManager.class);
     private CompanionManager mBtCompanionManager;
     private final BluetoothDevice mDevice = getTestDevice(109);
     private MockContentResolver mMockContentResolver;
@@ -169,15 +169,13 @@ public class GattServiceTest {
                         (Answer<Void>)
                                 invocation -> {
                                     Object[] arguments = invocation.getArguments();
-                                    if (arguments != null && arguments.length == 4) {
-                                        int id = (int) arguments[0];
-                                        int connId = (int) arguments[1];
-                                        int transport = (int) arguments[2];
-                                        BluetoothDevice device = (BluetoothDevice) arguments[3];
-                                        mServerConnections.add(
-                                                new ContextMap.Connection(
-                                                        connId, device, transport, id));
-                                    }
+                                    int id = (int) arguments[0];
+                                    int connId = (int) arguments[1];
+                                    int transport = (int) arguments[2];
+                                    BluetoothDevice device = (BluetoothDevice) arguments[3];
+                                    mServerConnections.add(
+                                            new ContextMap.Connection(
+                                                    connId, device, transport, id));
                                     return null;
                                 })
                 .when(mServerMap)
@@ -186,14 +184,10 @@ public class GattServiceTest {
                         (Answer<Void>)
                                 invocation -> {
                                     Object[] arguments = invocation.getArguments();
-                                    if (arguments != null && arguments.length == 2) {
-                                        int id = (int) arguments[0];
-                                        int connId = (int) arguments[1];
-                                        mServerConnections.removeIf(
-                                                conn ->
-                                                        conn.appId() == id
-                                                                && conn.connId() == connId);
-                                    }
+                                    int id = (int) arguments[0];
+                                    int connId = (int) arguments[1];
+                                    mServerConnections.removeIf(
+                                            conn -> conn.appId() == id && conn.connId() == connId);
                                     return null;
                                 })
                 .when(mServerMap)
@@ -204,15 +198,12 @@ public class GattServiceTest {
                                     List<ContextMap.Connection> currentConnections =
                                             new ArrayList<ContextMap.Connection>();
                                     Object[] arguments = invocation.getArguments();
-                                    if (arguments != null && arguments.length == 2) {
-                                        int id = (int) arguments[0];
-                                        BluetoothDevice device = (BluetoothDevice) arguments[1];
-                                        for (ContextMap.Connection connection :
-                                                mServerConnections) {
-                                            if (connection.device().equals(device)
-                                                    && connection.appId() == id) {
-                                                currentConnections.add(connection);
-                                            }
+                                    int id = (int) arguments[0];
+                                    BluetoothDevice device = (BluetoothDevice) arguments[1];
+                                    for (ContextMap.Connection connection : mServerConnections) {
+                                        if (connection.device().equals(device)
+                                                && connection.appId() == id) {
+                                            currentConnections.add(connection);
                                         }
                                     }
                                     return currentConnections;
@@ -230,10 +221,10 @@ public class GattServiceTest {
         mockGetBluetoothManager(mAdapterService);
         mockGetSystemService(mAdapterService, LocationManager.class);
         mockGetSystemService(mAdapterService, ActivityManager.class);
-        mockGetSystemService(
-                mAdapterService, CompanionDeviceManager.class, mCompanionDeviceManager);
+        final var companionDeviceManager = mContext.getSystemService(CompanionDeviceManager.class);
+        mockGetSystemService(mAdapterService, CompanionDeviceManager.class, companionDeviceManager);
 
-        mBtCompanionManager = new CompanionManager(mAdapterService, null);
+        mBtCompanionManager = new CompanionManager(mAdapterService);
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
 
         mService =
@@ -277,6 +268,27 @@ public class GattServiceTest {
     @Test
     public void cleanUp_doesNotCrash() {
         mService.cleanup();
+    }
+
+    @Test
+    public void subrateModeRequest() {
+        InOrder inOrder = inOrder(mNativeInterface);
+
+        for (int subrateMode = BluetoothGatt.SUBRATE_MODE_OFF;
+                subrateMode <= BluetoothGatt.SUBRATE_MODE_HIGH;
+                subrateMode++) {
+            mService.subrateModeRequest(mGattCallback, mDevice, subrateMode);
+
+            inOrder.verify(mNativeInterface)
+                    .gattSubrateRequest(
+                            eq(CLIENT_IF),
+                            eq(mDevice),
+                            anyInt(),
+                            anyInt(),
+                            anyInt(),
+                            anyInt(),
+                            anyInt());
+        }
     }
 
     @Test
@@ -328,7 +340,7 @@ public class GattServiceTest {
         verify(mNativeInterface).gattClientUnregisterApp(CLIENT_IF);
     }
 
-	@Test
+    @Test
     public void clientUnregAll() throws Exception {
         int appId = 1;
         ContextMap<IBluetoothGattCallback>.App app = mock(ContextMap.App.class);
@@ -731,7 +743,7 @@ public class GattServiceTest {
         verify(mNativeInterface).gattClientConfigureMTU(CLIENT_CONN_ID, mtu);
     }
 
-	@Test
+    @Test
     public void clientRestrictedHandles() throws Exception {
         ArrayList<GattDbElement> db = new ArrayList<>();
 

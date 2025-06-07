@@ -97,6 +97,8 @@ public class ScanController {
     @VisibleForTesting static final int ADVT_STATE_ONFOUND = 0;
     private static final int ADVT_STATE_ONLOST = 1;
 
+    private static final int ET_SCANNABLE_MASK = 0x02;
+    private static final int ET_SCAN_RESPONSE_MASK = 0x08;
     private static final int ET_LEGACY_MASK = 0x10;
 
     private final PendingIntent.CancelListener mScanIntentCancelListener =
@@ -412,6 +414,15 @@ public class ScanController {
 
             final ScanSettings settings = client.mSettings;
             final byte[] scanRecordData;
+            boolean isScanResponse = (eventType & ET_SCAN_RESPONSE_MASK) != 0;
+            boolean requiresScanResponse = (eventType & ET_SCANNABLE_MASK) == 0 || !isScanResponse;
+            if (Flags.supportPassiveScanning()
+                    && ((settings.getScanType() == ScanSettings.SCAN_TYPE_ACTIVE
+                                    && requiresScanResponse)
+                            || (settings.getScanType() == ScanSettings.SCAN_TYPE_PASSIVE
+                                    && isScanResponse))) {
+                continue;
+            }
             // This is for compatibility with applications that assume fixed size scan data.
             if (settings.getLegacy()) {
                 if ((eventType & ET_LEGACY_MASK) == 0) {

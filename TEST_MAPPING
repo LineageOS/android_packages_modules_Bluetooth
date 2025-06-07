@@ -16,10 +16,6 @@
       "name": "ServiceBluetoothTests"
     },
     // Device only tests
-    // Broken
-    //{
-    //  "name": "bluetooth-test-audio-hal-interface"
-    //},
     {
       "name": "net_test_bluetooth"
     },
@@ -236,10 +232,6 @@
       "name": "ServiceBluetoothTests"
     },
     // Device only tests
-    // Broken
-    //{
-    //  "name": "bluetooth-test-audio-hal-interface"
-    //},
     {
       "name": "net_test_bluetooth"
     },
@@ -452,10 +444,6 @@
       "name": "ServiceBluetoothTests"
     },
     // device only tests
-    // Broken
-    //{
-    //  "name": "bluetooth-test-audio-hal-interface"
-    //},
     {
       "name": "net_test_bluetooth"
     },

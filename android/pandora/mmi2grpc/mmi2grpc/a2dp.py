@@ -731,21 +731,12 @@ class A2DPProxy(ProfileProxy):
         return "OK"
 
     @assert_description
-    def TSC_A2DP_mmi_wait_delay_reporting(self, **kwargs):
+    def TSC_A2DP_mmi_wait_delay_reporting(self, test: str, **kwargs):
         """
         Please wait while the tester periodically adjusts the delay reporting
         during the stream ...
 
         Note: This will take approximately 30 seconds.
-        """
-
-        return "OK"
-
-    @assert_description
-    def TSC_A2DP_mmi_sbc_playback_is_correct(self, test: str, **kwargs):
-        """
-        Take action if necessary to accept the Delay Reportl command from the
-        tester.
         """
 
         if test in [
@@ -754,7 +745,16 @@ class A2DPProxy(ProfileProxy):
             # The PTS expects the host stack to start the stream for the above
             # listed tests.
             self.a2dp.Start(source=self.source)
-            self.audio.start()
+            self.audio.start(duration_s=30.)
+
+        return "OK"
+
+    @assert_description
+    def TSC_A2DP_mmi_sbc_playback_is_correct(self, **kwargs):
+        """
+        Take action if necessary to accept the Delay Reportl command from the
+        tester.
+        """
 
         return "OK"
 

@@ -62,6 +62,7 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
@@ -72,6 +73,7 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
+import com.android.bluetooth.flags.Flags;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
@@ -96,12 +98,13 @@ import java.util.Optional;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class HapClientServiceTest {
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private HapClientNativeInterface mNativeInterface;
-    @Mock private ServiceFactory mServiceFactory;
+    @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
     @Mock private CsipSetCoordinatorService mCsipService;
     @Mock private IBluetoothHapClientCallback mFrameworkCallback;
     @Mock private Binder mBinder;
@@ -129,7 +132,13 @@ public class HapClientServiceTest {
                 .when(mDatabaseManager)
                 .getProfileConnectionPolicy(any(), anyInt());
 
-        doReturn(mCsipService).when(mServiceFactory).getCsipSetCoordinatorService();
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            doReturn(Optional.of(mCsipService))
+                    .when(mAdapterService)
+                    .getCsipSetCoordinatorService();
+        } else {
+            doReturn(mCsipService).when(mServiceFactory).getCsipSetCoordinatorService();
+        }
 
         doReturn(mBinder).when(mFrameworkCallback).asBinder();
 

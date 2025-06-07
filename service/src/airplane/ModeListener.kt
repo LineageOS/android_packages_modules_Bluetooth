@@ -20,6 +20,7 @@ package com.android.server.bluetooth.airplane
 import android.bluetooth.State
 import android.content.ContentResolver
 import android.content.Context
+import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.os.Looper
 import android.provider.Settings
@@ -224,11 +225,19 @@ private fun airplaneModeValueOverride(
     //       Should we turn Bluetooth OFF like asked initially ? Or keep it ON like the toggle ?
     if (isMediaConnected) {
         Log.i(TAG, "Legacy Mode: override and stays ON since media profile are connected")
+        if (Flags.watchDeviceOverrideAirplaneMode()) {
+            sendAirplaneModeNotification?.invoke(APM_BT_NOTIFICATION_DUE_TO_MEDIA)
+            return false
+        }
         ToastNotification.displayIfNeeded(resolver, getUser)
         return false
     }
     if (watchConnectionState) {
-        Log.i(TAG, "Legacy Mode: override and stays ON due to watch connection")
+        val isWatch = getUser().packageManager.hasSystemFeature(PackageManager.FEATURE_WATCH)
+        Log.i(TAG, "Legacy Mode: override and stays ON due to watch connection. isWatch=$isWatch")
+        sendAirplaneModeNotification?.invoke(
+            if (isWatch) APM_BT_NOTIFICATION_ON_WATCH else APM_BT_NOTIFICATION_DUE_TO_WATCH
+        )
         return false
     }
     Log.i(TAG, "Legacy Mode: no override, turns OFF")
@@ -358,6 +367,15 @@ private class AirplaneMetricSession(
 
 // Notification Id for when the airplane mode is turn on but Bluetooth stay on
 internal const val APM_BT_NOTIFICATION = "apm_bt_notification"
+
+// Notification Id for when the airplane mode is turn on but a device is connected (on a watch)
+internal const val APM_BT_NOTIFICATION_ON_WATCH = "apm_bt_notification_on_watch"
+
+// Notification Id for when the airplane mode is turn on but a watch is connected (not on a watch)
+internal const val APM_BT_NOTIFICATION_DUE_TO_WATCH = "apm_bt_notification_due_to_watch"
+
+// Notification Id for when the airplane mode is turn on but a watch is connected (not on a watch)
+internal const val APM_BT_NOTIFICATION_DUE_TO_MEDIA = "apm_bt_notification_due_to_media"
 
 // Notification Id for when the airplane mode is turn on but Bluetooth and Wifi stay on
 internal const val APM_WIFI_BT_NOTIFICATION = "apm_wifi_bt_notification"

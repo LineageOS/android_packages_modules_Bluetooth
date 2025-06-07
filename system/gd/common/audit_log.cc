@@ -23,7 +23,7 @@
 #endif  // __ANDROID__
 
 #include "common/strings.h"
-#include "hci/hci_packets.h"
+#include "hci/hci_status.h"
 
 namespace {
 #if defined(__ANDROID__) && !defined(FUZZ_TARGET)
@@ -40,13 +40,12 @@ namespace common {
 
 void LogConnectionAdminAuditEvent([[maybe_unused]] const char* action,
                                   [[maybe_unused]] const hci::Address& address,
-                                  [[maybe_unused]] hci::ErrorCode status) {
+                                  [[maybe_unused]] BtStatus status) {
 #if defined(__ANDROID__) && !defined(FUZZ_TARGET)
 
   android_log_event_list(SEC_TAG_BLUETOOTH_CONNECTION)
-          << address.ToRedactedStringForLogging()
-          << /* success */ int32_t(status == hci::ErrorCode::SUCCESS)
-          << std::format("{}: {}", action, ErrorCodeText(status)) << LOG_ID_SECURITY;
+          << address.ToRedactedStringForLogging() << /* success */ int32_t(status.isSuccess())
+          << std::format("{}: {}", action, status.toString()) << LOG_ID_SECURITY;
 
 #endif /* defined(__ANDROID__) && !defined (FUZZ_TARGET) */
 }

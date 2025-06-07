@@ -159,13 +159,3 @@ cc_fuzz {
         "libbinder",
     ],
 }
-
-cc_fuzz {
-    name: "libbt_audio_hal_client_interface_fuzzer",
-    defaults: [
-        "libbt_audio_hal_interface_fuzz_defaults",
-    ],
-    srcs: [
-        "libbt_audio_hal_client_interface_fuzzer.cpp",
-    ],
-}

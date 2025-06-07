@@ -742,6 +742,98 @@ TEST_F(HearingAidTest, conn_update_after_service_changed) {
   SyncOnMainLoop();
 }
 
+/* 1. Hearing aid gets connected.
+ * 2. Service changed event is received
+ * 3. Stream start is requested
+ * 4. Volume is set
+ *    Check if GATT operations were executed after service changed event, using old handles.
+ * 5. Service search complete event arrives
+ *    Check if write to AudioControlPoint was executed.
+ * 6. Second Service changed event is received
+ * 7. Stream is suspended
+ *    Check if write to AudioControlPoint was executed, using old handle.
+ */
+TEST_F(HearingAidTest, service_changed_before_stream_start_gatt_omitted_after_svc_changed) {
+  com::android::bluetooth::flags::provider_->asha_omit_gatt_after_svc_changed(true);
+  set_sample_database(1);
+  SetEncryptionResult(test_address, true);
+
+  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
+  EXPECT_CALL(*callbacks, OnDeviceAvailable(_, _, test_address)).Times(1);
+  EXPECT_CALL(gatt_interface, ServiceSearchRequest);
+  EXPECT_CALL(gatt_queue, ReadCharacteristic(1, kLePsm, _, _));
+  EXPECT_CALL(gatt_queue, ReadCharacteristic(1, kReadOnlyProperties, _, _));
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(1, kAudioControlPoint, _, _, _, _)).Times(AtLeast(1));
+  HearingAid::Connect(test_address);
+
+  Mock::VerifyAndClearExpectations(callbacks.get());
+  Mock::VerifyAndClearExpectations(&gatt_interface);
+  Mock::VerifyAndClearExpectations(&gatt_queue);
+
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(1, kAudioControlPoint, _, _, _, _)).Times(0);
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(1, kVolume, _, _, _, _)).Times(0);
+
+  InjectServiceChangedEvent(1);
+
+  /* Simulate AF sending Audio Resume */
+  auto start_dummy_ticks = []() { log::info("start_audio_ticks: waiting for data path opened"); };
+  do_in_main_thread(base::BindOnce(&HearingAidAudioReceiver::OnAudioResume,
+                                   base::Unretained(audio_receiver_), start_dummy_ticks));
+  HearingAid::SetVolume(20);
+  SyncOnMainLoop();
+
+  Mock::VerifyAndClearExpectations(callbacks.get());
+  Mock::VerifyAndClearExpectations(&gatt_interface);
+  Mock::VerifyAndClearExpectations(&gatt_queue);
+
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(1, kAudioControlPoint, _, _, _, _)).Times(AtLeast(0));
+
+  InjectServiceSearchCompleteEvent();
+
+  Mock::VerifyAndClearExpectations(callbacks.get());
+  Mock::VerifyAndClearExpectations(&gatt_interface);
+  Mock::VerifyAndClearExpectations(&gatt_queue);
+
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(1, kVolume, _, _, _, _)).Times(1);
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(1, kAudioControlPoint, _, _, _, _)).Times(AtLeast(2));
+  /* Simulate AF sending Audio Suspend */
+  do_in_main_thread(base::BindOnce(&HearingAidAudioReceiver::OnAudioSuspend,
+                                   base::Unretained(audio_receiver_), start_dummy_ticks));
+  /* Simulate AF sending Audio Resume */
+  do_in_main_thread(base::BindOnce(&HearingAidAudioReceiver::OnAudioResume,
+                                   base::Unretained(audio_receiver_), start_dummy_ticks));
+  HearingAid::SetVolume(20);
+  SyncOnMainLoop();
+}
+
+/* 1. Hearing aid gets connected.
+ * 2. Service changed event is received
+ * 3. Connection Update event is received
+ *    Check if write to AudioControlPoint was executed, using old handle.
+ */
+TEST_F(HearingAidTest, conn_update_after_service_changed_gatt_omitted_after_svc_changed) {
+  com::android::bluetooth::flags::provider_->asha_omit_gatt_after_svc_changed(true);
+  set_sample_database(1);
+  SetEncryptionResult(test_address, true);
+
+  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
+  EXPECT_CALL(*callbacks, OnDeviceAvailable(_, _, test_address)).Times(1);
+  EXPECT_CALL(gatt_interface, ServiceSearchRequest);
+  EXPECT_CALL(gatt_queue, ReadCharacteristic(1, kLePsm, _, _));
+  EXPECT_CALL(gatt_queue, ReadCharacteristic(1, kReadOnlyProperties, _, _));
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(1, kAudioControlPoint, _, _, _, _)).Times(AtLeast(1));
+  HearingAid::Connect(test_address);
+
+  Mock::VerifyAndClearExpectations(callbacks.get());
+  Mock::VerifyAndClearExpectations(&gatt_interface);
+  Mock::VerifyAndClearExpectations(&gatt_queue);
+
+  InjectServiceChangedEvent(1);
+  InjectConnectionUpdateEvent(1);
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(1, kAudioControlPoint, _, _, _, _)).Times(0);
+  SyncOnMainLoop();
+}
+
 }  // namespace
 }  // namespace internal
 }  // namespace hearing_aid

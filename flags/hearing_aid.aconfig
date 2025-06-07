@@ -1,0 +1,9 @@
+package: "com.android.bluetooth.flags"
+container: "com.android.bt"
+
+flag {
+    name: "asha_omit_gatt_after_svc_changed"
+    namespace: "bluetooth"
+    description: "When Service Changed event was received, do not perform GATT operations on outdated handles"
+    bug: "419703276"
+}

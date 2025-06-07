@@ -1,6 +1,6 @@
 //! BLE Advertising types and utilities
 
-use btif_macros::{btif_callback, btif_callbacks_dispatcher, log_cb_args};
+use btif_macros::{btif_callback, btif_callbacks_dispatcher};
 
 use bt_topshim::btif::{RawAddress, Uuid};
 use bt_topshim::profiles::gatt::{AdvertisingStatus, Gatt, GattAdvCallbacks, LeDiscMode, LePhy};
@@ -1203,7 +1203,6 @@ pub(crate) trait BtifGattAdvCallbacks {
 }
 
 impl BtifGattAdvCallbacks for AdvertiseManagerImpl {
-    #[log_cb_args]
     fn on_advertising_set_started(
         &mut self,
         reg_id: i32,
@@ -1244,7 +1243,6 @@ impl BtifGattAdvCallbacks for AdvertiseManagerImpl {
         }
     }
 
-    #[log_cb_args]
     fn on_advertising_enabled(&mut self, adv_id: u8, enabled: bool, status: AdvertisingStatus) {
         let advertiser_id: i32 = adv_id.into();
 
@@ -1264,7 +1262,6 @@ impl BtifGattAdvCallbacks for AdvertiseManagerImpl {
         }
     }
 
-    #[log_cb_args]
     fn on_advertising_data_set(&mut self, adv_id: u8, status: AdvertisingStatus) {
         let advertiser_id: i32 = adv_id.into();
         if self.get_by_advertiser_id(advertiser_id).is_none() {
@@ -1277,7 +1274,6 @@ impl BtifGattAdvCallbacks for AdvertiseManagerImpl {
         }
     }
 
-    #[log_cb_args]
     fn on_scan_response_data_set(&mut self, adv_id: u8, status: AdvertisingStatus) {
         let advertiser_id: i32 = adv_id.into();
         if self.get_by_advertiser_id(advertiser_id).is_none() {
@@ -1290,7 +1286,6 @@ impl BtifGattAdvCallbacks for AdvertiseManagerImpl {
         }
     }
 
-    #[log_cb_args]
     fn on_advertising_parameters_updated(
         &mut self,
         adv_id: u8,
@@ -1308,7 +1303,6 @@ impl BtifGattAdvCallbacks for AdvertiseManagerImpl {
         }
     }
 
-    #[log_cb_args]
     fn on_periodic_advertising_parameters_updated(
         &mut self,
         adv_id: u8,
@@ -1325,7 +1319,6 @@ impl BtifGattAdvCallbacks for AdvertiseManagerImpl {
         }
     }
 
-    #[log_cb_args]
     fn on_periodic_advertising_data_set(&mut self, adv_id: u8, status: AdvertisingStatus) {
         let advertiser_id: i32 = adv_id.into();
         if self.get_by_advertiser_id(advertiser_id).is_none() {
@@ -1338,7 +1331,6 @@ impl BtifGattAdvCallbacks for AdvertiseManagerImpl {
         }
     }
 
-    #[log_cb_args]
     fn on_periodic_advertising_enabled(
         &mut self,
         adv_id: u8,
@@ -1356,7 +1348,6 @@ impl BtifGattAdvCallbacks for AdvertiseManagerImpl {
         }
     }
 
-    #[log_cb_args]
     fn on_own_address_read(&mut self, adv_id: u8, addr_type: u8, address: RawAddress) {
         let advertiser_id: i32 = adv_id.into();
         if self.get_by_advertiser_id(advertiser_id).is_none() {

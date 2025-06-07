@@ -169,7 +169,7 @@ void generate_local_oob_data_callback(tBT_TRANSPORT /* transport */, bt_oob_data
 void switch_buffer_size_callback(bool /* is_low_latency_buffer_size */) {}
 void switch_codec_callback(bool /* is_low_latency_buffer_size */) {}
 void le_rand_callback(uint64_t /* random */) {}
-void key_missing_callback(const RawAddress /* bd_addr */) {}
+void key_missing_callback(const RawAddress /* bd_addr */, uint8_t /* reason */) {}
 #undef TESTCB
 
 bt_callbacks_t callbacks = {
@@ -321,6 +321,11 @@ TEST_F(BtifUtilsTest, dump_property_type) {
           std::make_pair(BT_PROPERTY_ADAPTER_BONDED_DEVICES, "BT_PROPERTY_ADAPTER_BONDED_DEVICES"),
           std::make_pair(BT_PROPERTY_REMOTE_FRIENDLY_NAME, "BT_PROPERTY_REMOTE_FRIENDLY_NAME"),
           std::make_pair(BT_PROPERTY_UUIDS_LE, "BT_PROPERTY_UUIDS_LE"),
+          std::make_pair(BT_PROPERTY_DISCOVERY_RESULT_TYPE, "BT_PROPERTY_DISCOVERY_RESULT_TYPE"),
+          std::make_pair(BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE,
+                         "BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE"),
+          std::make_pair(BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA,
+                         "BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA"),
   };
   for (const auto& type : types) {
     EXPECT_TRUE(dump_property_type(type.first).starts_with(type.second));

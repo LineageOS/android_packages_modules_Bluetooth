@@ -424,8 +424,11 @@ extern struct bta_dm_remove_device bta_dm_remove_device;
 // Params: const RawAddress bd_addr
 // Return: void
 struct bta_dm_remote_key_missing {
-  std::function<void(const RawAddress bd_addr)> body{[](const RawAddress /* bd_addr */) {}};
-  void operator()(const RawAddress bd_addr) { body(bd_addr); }
+  std::function<void(const RawAddress bd_addr, tBTM_KEY_MISSING_REASON reason)> body{
+          [](const RawAddress /* bd_addr */, tBTM_KEY_MISSING_REASON /* reason */) {}};
+  void operator()(const RawAddress bd_addr, tBTM_KEY_MISSING_REASON reason) {
+    body(bd_addr, reason);
+  }
 };
 extern struct bta_dm_remote_key_missing bta_dm_remote_key_missing;
 

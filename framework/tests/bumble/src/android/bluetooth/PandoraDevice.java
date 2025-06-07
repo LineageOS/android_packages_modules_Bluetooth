@@ -78,7 +78,7 @@ public final class PandoraDevice extends ExternalResource {
         try {
             stub.factoryReset(Empty.getDefaultInstance());
         } catch (StatusRuntimeException e) {
-            if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {
+            if (e.getStatus().getCode() == Status.Code.CANCELLED) {
                 // Server is shutting down, the call might be canceled with an UNAVAILABLE status
                 // because the stream is closed.
             } else {

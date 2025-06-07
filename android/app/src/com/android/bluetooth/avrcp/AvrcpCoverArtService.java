@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.avrcp;
 
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
@@ -67,7 +69,7 @@ public class AvrcpCoverArtService {
     // The native interface must be a parameter here in order to be able to mock AvrcpTargetService
     public AvrcpCoverArtService(
             AdapterService adapterService, AvrcpNativeInterface nativeInterface) {
-        mAdapterService = adapterService;
+        mAdapterService = requireNonNull(adapterService);
         mNativeInterface = nativeInterface;
         mAcceptThread = new SocketAcceptor();
         mStorage = new AvrcpCoverArtStorage(COVER_ART_STORAGE_MAX_ITEMS);
@@ -207,6 +209,7 @@ public class AvrcpCoverArtService {
                             });
             BluetoothObexTransport transport =
                     new BluetoothObexTransport(
+                            mAdapterService,
                             socket,
                             MAX_TRANSMIT_PACKET_SIZE,
                             BluetoothObexTransport.PACKET_SIZE_UNSPECIFIED);

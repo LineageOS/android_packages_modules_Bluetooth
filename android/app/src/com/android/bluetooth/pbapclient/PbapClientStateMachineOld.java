@@ -198,6 +198,7 @@ class PbapClientStateMachineOld extends StateMachine {
             if (mConnectionHandler == null && looper != null) {
                 mConnectionHandler =
                         new PbapClientConnectionHandler.Builder()
+                                .setAdapterService(mAdapterService)
                                 .setLooper(looper)
                                 .setLocalSupportedFeatures(LOCAL_SUPPORTED_FEATURES)
                                 .setService(mService)
@@ -517,13 +518,6 @@ class PbapClientStateMachineOld extends StateMachine {
     }
 
     public void dump(StringBuilder sb) {
-        ProfileService.println(
-                sb,
-                "mCurrentDevice: "
-                        + mCurrentDevice.getAddress()
-                        + "("
-                        + Utils.getName(mCurrentDevice)
-                        + ") "
-                        + this.toString());
+        ProfileService.println(sb, "mCurrentDevice: " + mCurrentDevice + " " + this.toString());
     }
 }

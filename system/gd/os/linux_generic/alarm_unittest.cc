@@ -15,6 +15,7 @@
  */
 
 #include "os/alarm.h"
+#include "os/handler.h"
 
 #include <future>
 #include <memory>
@@ -37,7 +38,7 @@ protected:
     bool isWakeAlarm = GetParam();
     thread_ = new Thread("test_thread", Thread::Priority::NORMAL);
     handler_ = new Handler(thread_);
-    alarm_ = std::make_shared<Alarm>(handler_, isWakeAlarm);
+    alarm_ = std::make_shared<Alarm>(thread_, isWakeAlarm);
   }
 
   void TearDown() override {
@@ -52,7 +53,7 @@ protected:
     handler_->Post(common::BindOnce(fake_timerfd_advance, ms));
   }
 
-  std::shared_ptr<Alarm> get_new_alarm() { return std::make_shared<Alarm>(handler_, GetParam()); }
+  std::shared_ptr<Alarm> get_new_alarm() { return std::make_shared<Alarm>(thread_, GetParam()); }
 
   std::shared_ptr<Alarm> alarm_;
 

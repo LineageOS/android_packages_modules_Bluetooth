@@ -48,7 +48,7 @@ static jmethodID method_onConnectionStateChanged;
 static jmethodID method_onDeviceAvailable;
 static jmethodID method_onFeaturesUpdate;
 static jmethodID method_onActivePresetSelected;
-static jmethodID method_onGroupActivePresetSelected;
+static jmethodID method_onActivePresetSelectedForGroup;
 static jmethodID method_onActivePresetSelectError;
 static jmethodID method_onGroupActivePresetSelectError;
 static jmethodID method_onPresetInfo;
@@ -145,31 +145,35 @@ public:
                                  (jint)features);
   }
 
-  void OnActivePresetSelected(std::variant<RawAddress, int> addr_or_group_id,
-                              uint8_t preset_index) override {
+  void OnActivePresetSelected(const RawAddress& bd_addr, uint8_t preset_index) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || mCallbacksObj == nullptr) {
       return;
     }
 
-    if (std::holds_alternative<RawAddress>(addr_or_group_id)) {
-      ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
-                                      sCallbackEnv->NewByteArray(sizeof(RawAddress)));
-      if (!addr.get()) {
-        log::error("Failed to new bd addr jbyteArray for preset selected");
-        return;
-      }
-      sCallbackEnv->SetByteArrayRegion(
-              addr.get(), 0, sizeof(RawAddress),
-              reinterpret_cast<jbyte*>(&std::get<RawAddress>(addr_or_group_id)));
-
-      sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onActivePresetSelected, addr.get(),
-                                   (jint)preset_index);
-    } else {
-      sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onGroupActivePresetSelected,
-                                   std::get<int>(addr_or_group_id), (jint)preset_index);
+    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(),
+                                    sCallbackEnv->NewByteArray(sizeof(RawAddress)));
+    if (!addr.get()) {
+      log::error("Failed to new bd addr jbyteArray for preset selected");
+      return;
     }
+    sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
+                                     reinterpret_cast<const jbyte*>(&bd_addr));
+
+    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onActivePresetSelected, addr.get(),
+                                 (jint)preset_index);
+  }
+
+  void OnActivePresetSelectedForGroup(int group_id, uint8_t preset_index) override {
+    std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
+    CallbackEnv sCallbackEnv(__func__);
+    if (!sCallbackEnv.valid() || mCallbacksObj == nullptr) {
+      return;
+    }
+
+    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onActivePresetSelectedForGroup,
+                                 (jint)group_id, (jint)preset_index);
   }
 
   void OnActivePresetSelectError(std::variant<RawAddress, int> addr_or_group_id,
@@ -624,7 +628,7 @@ int register_com_android_bluetooth_hap_client(JNIEnv* env) {
           {"onDeviceAvailable", "([BI)V", &method_onDeviceAvailable},
           {"onFeaturesUpdate", "([BI)V", &method_onFeaturesUpdate},
           {"onActivePresetSelected", "([BI)V", &method_onActivePresetSelected},
-          {"onActivePresetGroupSelected", "(II)V", &method_onGroupActivePresetSelected},
+          {"onActivePresetSelectedForGroup", "(II)V", &method_onActivePresetSelectedForGroup},
           {"onActivePresetSelectError", "([BI)V", &method_onActivePresetSelectError},
           {"onActivePresetGroupSelectError", "(II)V", &method_onGroupActivePresetSelectError},
           {"onPresetInfo", "([BI[Landroid/bluetooth/BluetoothHapPresetInfo;)V",

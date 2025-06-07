@@ -26,6 +26,7 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.audio_util.Image;
+import com.android.bluetooth.tests.R;
 
 import org.junit.After;
 import org.junit.Before;
@@ -63,7 +64,7 @@ public class AvrcpCoverArtStorageTest {
     /** Make sure you can store and get an image handle for an image */
     @Test
     public void testStoreImage() {
-        CoverArt artwork = getCoverArt(com.android.bluetooth.tests.R.raw.image_200_200);
+        CoverArt artwork = getCoverArt(R.raw.image_200_200);
         String handle = mAvrcpCoverArtStorage.storeImage(artwork);
         assertThat(handle).isNotNull();
         assertThat(mAvrcpCoverArtStorage.getImage(handle)).isEqualTo(artwork);
@@ -72,7 +73,7 @@ public class AvrcpCoverArtStorageTest {
     /** Make sure an attempt to store an image that is already stored yields the previous handle */
     @Test
     public void testStoreImageThatIsAlreadyStored() {
-        CoverArt artwork = getCoverArt(com.android.bluetooth.tests.R.raw.image_200_200);
+        CoverArt artwork = getCoverArt(R.raw.image_200_200);
         String handle = mAvrcpCoverArtStorage.storeImage(artwork);
         assertThat(handle).isNotNull();
         assertThat(mAvrcpCoverArtStorage.storeImage(artwork)).isEqualTo(handle);
@@ -81,8 +82,8 @@ public class AvrcpCoverArtStorageTest {
     /** Make sure you can store and get an image handle for a second image thats not yet stored */
     @Test
     public void testStoreSecondImage() {
-        CoverArt artwork_green = getCoverArt(com.android.bluetooth.tests.R.raw.image_200_200);
-        CoverArt artwork_blue = getCoverArt(com.android.bluetooth.tests.R.raw.image_200_200_blue);
+        CoverArt artwork_green = getCoverArt(R.raw.image_200_200);
+        CoverArt artwork_blue = getCoverArt(R.raw.image_200_200_blue);
         String handle_green = mAvrcpCoverArtStorage.storeImage(artwork_green);
         String handle_blue = mAvrcpCoverArtStorage.storeImage(artwork_blue);
         assertThat(handle_green).isNotNull();
@@ -100,10 +101,9 @@ public class AvrcpCoverArtStorageTest {
      */
     @Test
     public void testStoreThirdImageWithLruAsFirstImage() {
-        CoverArt artwork_green = getCoverArt(com.android.bluetooth.tests.R.raw.image_200_200);
-        CoverArt artwork_blue = getCoverArt(com.android.bluetooth.tests.R.raw.image_200_200_blue);
-        CoverArt artwork_orange =
-                getCoverArt(com.android.bluetooth.tests.R.raw.image_200_200_orange);
+        CoverArt artwork_green = getCoverArt(R.raw.image_200_200);
+        CoverArt artwork_blue = getCoverArt(R.raw.image_200_200_blue);
+        CoverArt artwork_orange = getCoverArt(R.raw.image_200_200_orange);
 
         // Store image 1, 2 and 3, evicting image 1 when image 3 is stored
         String handle_green = mAvrcpCoverArtStorage.storeImage(artwork_green);
@@ -132,10 +132,9 @@ public class AvrcpCoverArtStorageTest {
      */
     @Test
     public void testStoreThirdImageWithLruAsSecondImage() {
-        CoverArt artwork_green = getCoverArt(com.android.bluetooth.tests.R.raw.image_200_200);
-        CoverArt artwork_blue = getCoverArt(com.android.bluetooth.tests.R.raw.image_200_200_blue);
-        CoverArt artwork_orange =
-                getCoverArt(com.android.bluetooth.tests.R.raw.image_200_200_orange);
+        CoverArt artwork_green = getCoverArt(R.raw.image_200_200);
+        CoverArt artwork_blue = getCoverArt(R.raw.image_200_200_blue);
+        CoverArt artwork_orange = getCoverArt(R.raw.image_200_200_orange);
 
         // Store images 1 and 2, touch image 1 by getting it
         String handle_green = mAvrcpCoverArtStorage.storeImage(artwork_green);

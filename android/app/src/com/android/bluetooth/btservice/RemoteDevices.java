@@ -176,7 +176,7 @@ public class RemoteDevices {
                         Log.v(TAG, "Skipping device matching denylist: " + device);
                         return true;
                     }
-                    final String name = Utils.getName(device);
+                    final String name = getName(device);
                     if (mAdapterService.getLocationDenylistName().test(name)) {
                         Log.v(TAG, "Skipping name matching denylist: " + name);
                         return true;
@@ -394,10 +394,16 @@ public class RemoteDevices {
         private int mAshaCapability;
         private int mAshaTruncatedHiSyncId;
         private String mModelName;
+        private int mOnHeadDetectionEnabledState =
+                BluetoothDevice.ON_HEAD_DETECTION_ENABLED_STATE_UNKNOWN;
+        private int mOnHeadDetectionState = BluetoothDevice.ON_HEAD_DETECTION_STATE_UNKNOWN;
         @VisibleForTesting int mBondState;
         @VisibleForTesting int mDeviceType;
         @VisibleForTesting ParcelUuid[] mUuidsBrEdr;
         @VisibleForTesting ParcelUuid[] mUuidsLe;
+        @VisibleForTesting ParcelUuid[] mUuidsFromExtendedInquiryResponse;
+        @VisibleForTesting ParcelUuid[] mUuidsFromLeAdvertisingData;
+        @VisibleForTesting int mDiscoveryResultType = BluetoothDevice.DEVICE_TYPE_UNKNOWN;
         @VisibleForTesting boolean mHfpBatteryIndicator = false;
         private BluetoothSinkAudioPolicy mAudioPolicy;
 
@@ -585,6 +591,42 @@ public class RemoteDevices {
         void setUuidsLe(ParcelUuid[] uuids) {
             synchronized (mObject) {
                 this.mUuidsLe = uuids;
+            }
+        }
+
+        void setUuidsFromExtendedInquiryResponse(ParcelUuid[] uuids) {
+            synchronized (mObject) {
+                this.mUuidsFromExtendedInquiryResponse = uuids;
+            }
+        }
+
+        ParcelUuid[] getUuidsFromExtendedInquiryResponse() {
+            synchronized (mObject) {
+                return mUuidsFromExtendedInquiryResponse;
+            }
+        }
+
+        void setUuidsFromLeAdvertisingData(ParcelUuid[] uuids) {
+            synchronized (mObject) {
+                this.mUuidsFromLeAdvertisingData = uuids;
+            }
+        }
+
+        ParcelUuid[] getUuidsFromLeAdvertisingData() {
+            synchronized (mObject) {
+                return mUuidsFromLeAdvertisingData;
+            }
+        }
+
+        void setDiscoveryResultType(int discoveryResultType) {
+            synchronized (mObject) {
+                this.mDiscoveryResultType = discoveryResultType;
+            }
+        }
+
+        int getDiscoveryResultType() {
+            synchronized (mObject) {
+                return mDiscoveryResultType;
             }
         }
 
@@ -873,6 +915,36 @@ public class RemoteDevices {
         String getModelName() {
             synchronized (mObject) {
                 return mModelName;
+            }
+        }
+
+        public void setOnheadDetectionEnabledState(int enabledState) {
+            synchronized (mObject) {
+                this.mOnHeadDetectionEnabledState = enabledState;
+            }
+        }
+
+        /**
+         * @return the mOnHeadDetectionEnabledState
+         */
+        int getOnHeadDetectionEnabledState() {
+            synchronized (mObject) {
+                return mOnHeadDetectionEnabledState;
+            }
+        }
+
+        public void setOnHeadDetectionState(int state) {
+            synchronized (mObject) {
+                this.mOnHeadDetectionState = state;
+            }
+        }
+
+        /**
+         * @return the mOnHeadDetectionState
+         */
+        int getOnHeadDetectionState() {
+            synchronized (mObject) {
+                return mOnHeadDetectionState;
             }
         }
 
@@ -1170,6 +1242,16 @@ public class RemoteDevices {
                         // matches the type defined in BluetoothDevice.java
                         deviceProperties.setDeviceType(Utils.byteArrayToInt(val));
                     }
+                    case AbstractionLayer.BT_PROPERTY_DISCOVERY_RESULT_TYPE ->
+                            deviceProperties.setDiscoveryResultType(val[0]);
+                    case AbstractionLayer.BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE -> {
+                        final ParcelUuid[] newUuids = Utils.byteArrayToUuid(val);
+                        deviceProperties.setUuidsFromExtendedInquiryResponse(newUuids);
+                    }
+                    case AbstractionLayer.BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA -> {
+                        final ParcelUuid[] newUuids = Utils.byteArrayToUuid(val);
+                        deviceProperties.setUuidsFromLeAdvertisingData(newUuids);
+                    }
                     // RSSI from hal is in one byte
                     case AbstractionLayer.BT_PROPERTY_REMOTE_RSSI ->
                             deviceProperties.setRssi(val[0]);
@@ -1253,6 +1335,22 @@ public class RemoteDevices {
         intent.putExtra(
                 BluetoothDevice.EXTRA_IS_COORDINATED_SET_MEMBER,
                 deviceProp.isCoordinatedSetMember());
+
+        int discoveryResultType = deviceProp.getDiscoveryResultType();
+        if (Flags.getSvcUuidsFromBleAdvData()
+                && discoveryResultType != BluetoothDevice.DEVICE_TYPE_UNKNOWN) {
+            intent.putExtra(BluetoothDevice.EXTRA_DISCOVERY_RESULT_TYPE, discoveryResultType);
+
+            if ((discoveryResultType & BluetoothDevice.DEVICE_TYPE_CLASSIC) != 0) {
+                ParcelUuid[] uuids = deviceProp.getUuidsFromExtendedInquiryResponse();
+                intent.putExtra(BluetoothDevice.EXTRA_UUID, uuids);
+            }
+
+            if ((discoveryResultType & BluetoothDevice.DEVICE_TYPE_LE) != 0) {
+                ParcelUuid[] uuids = deviceProp.getUuidsFromLeAdvertisingData();
+                intent.putExtra(BluetoothDevice.EXTRA_UUID_LE, uuids);
+            }
+        }
 
         final List<DiscoveringPackage> packages = mAdapterService.getDiscoveringPackages();
         synchronized (packages) {
@@ -1509,7 +1607,9 @@ public class RemoteDevices {
         if (connectionState == BluetoothAdapter.STATE_CONNECTED) {
             connectionChangeConsumer = cb -> cb.onDeviceConnected(device);
             if (Flags.watchDeviceOverrideAirplaneMode()) {
-                mWatchConnectionStateListener.connectedDevice(device);
+                // TODO the whole method should run on the looper
+                mHandler.post(
+                        () -> mWatchConnectionStateListener.onDeviceConnected(device, transport));
             }
         } else {
             final int disconnectReason;
@@ -1532,7 +1632,10 @@ public class RemoteDevices {
                                     device,
                                     AdapterService.hciToAndroidDisconnectReason(disconnectReason));
             if (Flags.watchDeviceOverrideAirplaneMode()) {
-                mWatchConnectionStateListener.disconnectedDevice(device);
+                mHandler.post(
+                        () ->
+                                mWatchConnectionStateListener.onDeviceDisconnected(
+                                        device, transport));
             }
         }
 
@@ -1594,7 +1697,7 @@ public class RemoteDevices {
 
     // TODO: remove when key_missing_public flag is deleted
     @SuppressLint("AndroidFrameworkRequiresPermission")
-    void keyMissingCallback(byte[] address) {
+    void keyMissingCallback(byte[] address, int reason) {
         BluetoothDevice device = getDevice(address);
         if (device == null) {
             errorLog(
@@ -1608,7 +1711,7 @@ public class RemoteDevices {
             return;
         }
 
-        Log.i(TAG, "keyMissingCallback device: " + device);
+        Log.i(TAG, "keyMissingCallback device: " + device + ", reason: " + reason);
         Intent intent =
                 new Intent(BluetoothDevice.ACTION_KEY_MISSING)
                         .putExtra(BluetoothDevice.EXTRA_DEVICE, device)

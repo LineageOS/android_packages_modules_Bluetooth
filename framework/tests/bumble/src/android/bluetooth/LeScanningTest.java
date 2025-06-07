@@ -76,6 +76,7 @@ public class LeScanningTest {
 
     private static final int TIMEOUT_SCANNING_MS = 3000;
     private static final String TEST_UUID_STRING = "00001805-0000-1000-8000-00805f9b34fb";
+    private static final String TEST_UUID_STRING2 = "00001806-0000-1000-8000-00805f9b34fb";
     private static final String TEST_ADDRESS_RANDOM_STATIC = "F0:43:A8:23:10:11";
     private static final String ACTION_DYNAMIC_RECEIVER_SCAN_RESULT =
             "android.bluetooth.test.ACTION_DYNAMIC_RECEIVER_SCAN_RESULT";
@@ -438,13 +439,68 @@ public class LeScanningTest {
                 .isEqualTo(ParcelUuid.fromString(TEST_UUID_STRING));
     }
 
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_SUPPORT_PASSIVE_SCANNING)
+    public void startScan_scanType(@TestParameter boolean isActive) {
+        AdvertiseRequest.Builder requestBuilder = AdvertiseRequest.newBuilder();
+
+        // advertise data
+        HostProto.DataTypes.Builder dataTypeBuilder = HostProto.DataTypes.newBuilder();
+        dataTypeBuilder.addCompleteServiceClassUuids128(TEST_UUID_STRING);
+        requestBuilder.setData(dataTypeBuilder.build());
+
+        // scan response
+        HostProto.DataTypes.Builder responseDataTypeBuilder = HostProto.DataTypes.newBuilder();
+        responseDataTypeBuilder.addCompleteServiceClassUuids128(TEST_UUID_STRING2);
+        requestBuilder.setScanResponseData(responseDataTypeBuilder.build());
+
+        advertiseWithBumble(requestBuilder, true);
+
+        ScanFilter scanFilter =
+                new ScanFilter.Builder()
+                        .setServiceUuid(ParcelUuid.fromString(TEST_UUID_STRING))
+                        .build();
+
+        List<ScanResult> results =
+                startScanning(
+                        scanFilter,
+                        ScanSettings.CALLBACK_TYPE_ALL_MATCHES,
+                        /* isLegacy= */ true,
+                        BluetoothDevice.PHY_LE_1M,
+                        isActive ? ScanSettings.SCAN_TYPE_ACTIVE : ScanSettings.SCAN_TYPE_PASSIVE);
+
+        assertThat(results).isNotNull();
+        assertThat(results.get(0).getScanRecord().getServiceUuids().get(0))
+                .isEqualTo(ParcelUuid.fromString(TEST_UUID_STRING));
+        if (isActive) {
+            assertThat(results.get(0).getScanRecord().getServiceUuids().size()).isEqualTo(2);
+
+            // scan response is added
+            assertThat(results.get(0).getScanRecord().getServiceUuids().get(1))
+                    .isEqualTo(ParcelUuid.fromString(TEST_UUID_STRING2));
+        } else {
+            assertThat(results.get(0).getScanRecord().getServiceUuids().size()).isEqualTo(1);
+        }
+    }
+
     private List<ScanResult> startScanning(
             ScanFilter scanFilter, int callbackType, boolean isLegacy) {
-        return startScanning(scanFilter, callbackType, isLegacy, BluetoothDevice.PHY_LE_1M);
+        return startScanning(
+                scanFilter,
+                callbackType,
+                isLegacy,
+                BluetoothDevice.PHY_LE_1M,
+                ScanSettings.SCAN_TYPE_ACTIVE);
     }
 
     private List<ScanResult> startScanning(
             ScanFilter scanFilter, int callbackType, boolean isLegacy, int phy) {
+        return startScanning(
+                scanFilter, callbackType, isLegacy, phy, ScanSettings.SCAN_TYPE_ACTIVE);
+    }
+
+    private List<ScanResult> startScanning(
+            ScanFilter scanFilter, int callbackType, boolean isLegacy, int phy, int scanType) {
         CompletableFuture<List<ScanResult>> future = new CompletableFuture<>();
         List<ScanResult> scanResults = new ArrayList<>();
 
@@ -454,6 +510,7 @@ public class LeScanningTest {
                         .setCallbackType(callbackType)
                         .setLegacy(isLegacy)
                         .setPhy(phy)
+                        .setScanType(scanType)
                         .build();
 
         ScanCallback scanCallback =

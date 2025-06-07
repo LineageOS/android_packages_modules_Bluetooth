@@ -1555,7 +1555,7 @@ pub(crate) trait BtifBluetoothCallbacks {
     fn thread_event(&mut self, event: BtThreadEvent) {}
 
     #[btif_callback(KeyMissing)]
-    fn key_missing(&mut self, addr: RawAddress) {}
+    fn key_missing(&mut self, addr: RawAddress, reason: u8) {}
 }
 
 #[btif_callbacks_dispatcher(dispatch_hid_host_callbacks, HHCallbacks)]
@@ -2168,7 +2168,8 @@ impl BtifBluetoothCallbacks for Bluetooth {
         }
     }
 
-    fn key_missing(&mut self, addr: RawAddress) {
+    #[log_cb_args]
+    fn key_missing(&mut self, addr: RawAddress, reason: u8) {
         if let Some(d) = self.remote_devices.get(&addr) {
             self.callbacks.for_all_callbacks(|callback| {
                 callback.on_device_key_missing(d.info.clone());
@@ -2189,7 +2190,6 @@ impl BleDiscoveryCallbacks {
 
 // Handle BLE scanner results.
 impl IScannerCallback for BleDiscoveryCallbacks {
-    #[log_cb_args]
     fn on_scanner_registered(&mut self, uuid: Uuid, scanner_id: u8, status: GattStatus) {
         let tx = self.tx.clone();
         tokio::spawn(async move {
@@ -2201,7 +2201,6 @@ impl IScannerCallback for BleDiscoveryCallbacks {
         });
     }
 
-    #[log_cb_args]
     fn on_scan_result(&mut self, scan_result: ScanResult) {
         let tx = self.tx.clone();
         tokio::spawn(async move {
@@ -2215,7 +2214,6 @@ impl IScannerCallback for BleDiscoveryCallbacks {
 
     fn on_advertisement_found(&mut self, _scanner_id: u8, _scan_result: ScanResult) {}
     fn on_advertisement_lost(&mut self, _scanner_id: u8, _scan_result: ScanResult) {}
-    #[log_cb_args]
     fn on_suspend_mode_change(&mut self, _suspend_mode: SuspendMode) {}
 }
 

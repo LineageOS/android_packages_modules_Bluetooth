@@ -17,6 +17,7 @@
 package android.bluetooth.le;
 
 import android.annotation.FlaggedApi;
+import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.SystemApi;
 import android.app.compat.CompatChanges;
@@ -29,6 +30,8 @@ import android.os.Parcelable;
 
 import com.android.bluetooth.flags.Flags;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.List;
 
 /**
@@ -172,6 +175,29 @@ public final class ScanSettings implements Parcelable {
      */
     public static final int PHY_LE_ALL_SUPPORTED = 255;
 
+    /** Scan type is unknown. */
+    @FlaggedApi(Flags.FLAG_SUPPORT_PASSIVE_SCANNING)
+    public static final int SCAN_TYPE_UNKNOWN = 0;
+
+    /** Does passive scanning, scan responses are ignored. */
+    @FlaggedApi(Flags.FLAG_SUPPORT_PASSIVE_SCANNING)
+    public static final int SCAN_TYPE_PASSIVE = 1;
+
+    /** Does active scanning, scan results are delivered upon scan responses arrive. */
+    @FlaggedApi(Flags.FLAG_SUPPORT_PASSIVE_SCANNING)
+    public static final int SCAN_TYPE_ACTIVE = 2;
+
+    /** @hide */
+    @IntDef(
+            prefix = "SCAN_TYPE_",
+            value = {
+                SCAN_TYPE_UNKNOWN,
+                SCAN_TYPE_PASSIVE,
+                SCAN_TYPE_ACTIVE,
+            })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface ScanType {}
+
     /**
      * Starting with Android B (Baklava), the default number of trackable advertisements for onFound
      * /onLost scanning is 2 instead of (max hardware allows / 2).
@@ -202,6 +228,8 @@ public final class ScanSettings implements Parcelable {
     private final int mPhy;
 
     private final int mRssiThreshold;
+
+    private final int mScanType;
 
     public int getScanMode() {
         return mScanMode;
@@ -248,6 +276,12 @@ public final class ScanSettings implements Parcelable {
         return mRssiThreshold;
     }
 
+    @FlaggedApi(Flags.FLAG_SUPPORT_PASSIVE_SCANNING)
+    @ScanType
+    public int getScanType() {
+        return mScanType;
+    }
+
     private ScanSettings(
             int scanMode,
             int callbackType,
@@ -257,7 +291,8 @@ public final class ScanSettings implements Parcelable {
             int numOfMatchesPerFilter,
             boolean legacy,
             int phy,
-            int rssiThreshold) {
+            int rssiThreshold,
+            int scanType) {
         mScanMode = scanMode;
         mCallbackType = callbackType;
         mScanResultType = scanResultType;
@@ -267,6 +302,7 @@ public final class ScanSettings implements Parcelable {
         mLegacy = legacy;
         mPhy = phy;
         mRssiThreshold = rssiThreshold;
+        mScanType = scanType;
     }
 
     private ScanSettings(Parcel in) {
@@ -279,6 +315,7 @@ public final class ScanSettings implements Parcelable {
         mLegacy = in.readInt() != 0;
         mPhy = in.readInt();
         mRssiThreshold = in.readInt();
+        mScanType = in.readInt();
     }
 
     @Override
@@ -292,6 +329,7 @@ public final class ScanSettings implements Parcelable {
         dest.writeInt(mLegacy ? 1 : 0);
         dest.writeInt(mPhy);
         dest.writeInt(mRssiThreshold);
+        dest.writeInt(mScanType);
     }
 
     @Override
@@ -323,6 +361,7 @@ public final class ScanSettings implements Parcelable {
         private boolean mLegacy = true;
         private int mPhy = BluetoothDevice.PHY_LE_1M;
         private int mRssiThreshold = Byte.MIN_VALUE;
+        private int mScanType = Flags.supportPassiveScanning() ? SCAN_TYPE_ACTIVE : 2;
 
         // Instance initializer for mNumOfMatchesPerFilter
         {
@@ -494,6 +533,24 @@ public final class ScanSettings implements Parcelable {
         }
 
         /**
+         * Sets the scan type. Either {@link #SCAN_TYPE_ACTIVE} or {@link #SCAN_TYPE_PASSIVE} can be
+         * set. The default value is {@link #SCAN_TYPE_ACTIVE}.
+         *
+         * @param scanType Either {@link #SCAN_TYPE_ACTIVE} or {@link #SCAN_TYPE_PASSIVE}. If scan
+         *     type is {@link #SCAN_TYPE_PASSIVE}, scan results are delivered immediately upon
+         *     receiving an advertising report, without waiting for scan responses.
+         * @throws IllegalArgumentException if invalid scan type is given.
+         */
+        @FlaggedApi(Flags.FLAG_SUPPORT_PASSIVE_SCANNING)
+        public @NonNull Builder setScanType(@ScanType int scanType) {
+            if (scanType != SCAN_TYPE_PASSIVE && scanType != SCAN_TYPE_ACTIVE) {
+                throw new IllegalArgumentException("invalid scan type");
+            }
+            mScanType = scanType;
+            return this;
+        }
+
+        /**
          * Build {@link ScanSettings}.
          *
          * @throws IllegalArgumentException if the settings cannot be built.
@@ -514,7 +571,8 @@ public final class ScanSettings implements Parcelable {
                     mNumOfMatchesPerFilter,
                     mLegacy,
                     mPhy,
-                    mRssiThreshold);
+                    mRssiThreshold,
+                    mScanType);
         }
     }
 

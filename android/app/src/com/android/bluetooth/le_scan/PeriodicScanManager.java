@@ -400,21 +400,22 @@ public class PeriodicScanManager {
     }
 
     void doOnScanThread(Runnable r) {
-        if (mIsAvailable) {
-            if (Flags.scanControllerThread()) {
-                boolean posted =
-                        mHandler.post(
-                                () -> {
-                                    if (mIsAvailable) {
-                                        r.run();
-                                    }
-                                });
-                if (!posted) {
-                    Log.w(TAG, "Unable to post async task");
-                }
-            } else {
-                r.run();
-            }
+        if (!mIsAvailable) return;
+
+        if (!Flags.scanControllerThread()) {
+            r.run();
+            return;
+        }
+
+        final var posted =
+                mHandler.post(
+                        () -> {
+                            if (mIsAvailable) {
+                                r.run();
+                            }
+                        });
+        if (!posted) {
+            Log.w(TAG, "Unable to post async task to the handler");
         }
     }
 
@@ -423,8 +424,9 @@ public class PeriodicScanManager {
             r.run();
             return;
         }
+
         final CompletableFuture<Void> future = new CompletableFuture<>();
-        boolean posted =
+        final var posted =
                 mHandler.postAtFrontOfQueue(
                         () -> {
                             r.run();
@@ -434,6 +436,7 @@ public class PeriodicScanManager {
             Log.w(TAG, "Unable to post sync task");
             return;
         }
+
         try {
             future.get(RUN_SYNC_WAIT_TIME_MS, TimeUnit.MILLISECONDS);
         } catch (InterruptedException | TimeoutException | ExecutionException e) {

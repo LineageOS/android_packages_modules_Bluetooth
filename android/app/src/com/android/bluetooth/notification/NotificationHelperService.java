@@ -33,6 +33,8 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.bluetooth.R;
+import com.android.bluetooth.Utils;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.messages.SystemMessageProto.SystemMessage;
 
 import java.time.LocalDateTime;
@@ -42,13 +44,14 @@ import java.util.Map;
 public class NotificationHelperService extends Service {
     private static final String TAG = NotificationHelperService.class.getSimpleName();
 
-    // Keeps track of whether wifi and bt remains on notification was shown
     private static final String APM_WIFI_BT_NOTIFICATION = "apm_wifi_bt_notification";
-    // Keeps track of whether bt remains on notification was shown
     private static final String APM_BT_NOTIFICATION = "apm_bt_notification";
-    // Keeps track of whether user enabling bt notification was shown
+    private static final String APM_BT_NOTIFICATION_ON_WATCH = "apm_bt_notification_on_watch";
+    private static final String APM_BT_NOTIFICATION_DUE_TO_WATCH =
+            "apm_bt_notification_due_to_watch";
+    private static final String APM_BT_NOTIFICATION_DUE_TO_MEDIA =
+            "apm_bt_notification_due_to_media";
     private static final String APM_BT_ENABLED_NOTIFICATION = "apm_bt_enabled_notification";
-    // Keeps track of whether auto on enabling bt notification was shown
     private static final String AUTO_ON_BT_ENABLED_NOTIFICATION = "auto_on_bt_enabled_notification";
 
     private static final String NOTIFICATION_TAG = "com.android.bluetooth";
@@ -78,7 +81,19 @@ public class NotificationHelperService extends Service {
                             AUTO_ON_BT_ENABLED_NOTIFICATION,
                             Pair.create(
                                     R.string.bluetooth_enabled_auto_on_title,
-                                    R.string.bluetooth_enabled_auto_on_message));
+                                    R.string.bluetooth_enabled_auto_on_message),
+                            APM_BT_NOTIFICATION_ON_WATCH,
+                            Pair.create(
+                                    R.string.bluetooth_stays_on_title,
+                                    R.string.bluetooth_stays_on_message_on_watch),
+                            APM_BT_NOTIFICATION_DUE_TO_WATCH,
+                            Pair.create(
+                                    R.string.bluetooth_stays_on_title,
+                                    R.string.bluetooth_stays_on_message_due_to_watch),
+                            APM_BT_NOTIFICATION_DUE_TO_MEDIA,
+                            Pair.create(
+                                    R.string.bluetooth_stays_on_title,
+                                    R.string.bluetooth_stays_on_message_due_to_media));
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -108,9 +123,19 @@ public class NotificationHelperService extends Service {
         NotificationManager notificationManager =
                 requireNonNull(getSystemService(NotificationManager.class));
         String tag = NOTIFICATION_TAG + "/" + notificationReason;
-        for (StatusBarNotification notification : notificationManager.getActiveNotifications()) {
-            if (tag.equals(notification.getTag())) {
-                notificationManager.cancel(tag, notification.getId());
+        if (Flags.watchDeviceOverrideAirplaneMode()) {
+            for (StatusBarNotification notification :
+                    notificationManager.getActiveNotifications()) {
+                if (notification.getId() == SystemMessage.ID.NOTE_BT_APM_NOTIFICATION_VALUE) {
+                    notificationManager.cancel(notification.getTag(), notification.getId());
+                }
+            }
+        } else {
+            for (StatusBarNotification notification :
+                    notificationManager.getActiveNotifications()) {
+                if (tag.equals(notification.getTag())) {
+                    notificationManager.cancel(tag, notification.getId());
+                }
             }
         }
 
@@ -133,8 +158,16 @@ public class NotificationHelperService extends Service {
                         .setStyle(new Notification.BigTextStyle().bigText(message))
                         .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth);
 
-        if (!notificationReason.equals(AUTO_ON_BT_ENABLED_NOTIFICATION)) {
-            // Do not display airplane link when the notification is due to auto_on feature
+        if (notificationReason.equals(AUTO_ON_BT_ENABLED_NOTIFICATION)) {
+            // Open the setting page when auto-on notification is clicked
+            builder.setContentIntent(
+                    PendingIntent.getActivity(
+                            this,
+                            PendingIntent.FLAG_UPDATE_CURRENT,
+                            new Intent("android.settings.BLUETOOTH_DASHBOARD_SETTINGS"),
+                            PendingIntent.FLAG_IMMUTABLE));
+        } else if (Flags.watchDeviceOverrideAirplaneMode() && !Utils.isWatch(this)) {
+            // Do not display url link on watch, as they cannot show webpage
             String helpLinkUrl = getString(R.string.config_apmLearnMoreLink);
             builder.setContentIntent(
                     PendingIntent.getActivity(
@@ -143,14 +176,6 @@ public class NotificationHelperService extends Service {
                             new Intent(Intent.ACTION_VIEW)
                                     .setData(Uri.parse(helpLinkUrl))
                                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                            PendingIntent.FLAG_IMMUTABLE));
-        } else {
-            // Open the setting page when the notification is clicked
-            builder.setContentIntent(
-                    PendingIntent.getActivity(
-                            this,
-                            PendingIntent.FLAG_UPDATE_CURRENT,
-                            new Intent("android.settings.BLUETOOTH_DASHBOARD_SETTINGS"),
                             PendingIntent.FLAG_IMMUTABLE));
         }
 

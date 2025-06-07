@@ -290,3 +290,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "enable_wakeup_flag_for_intents"
+    namespace: "bluetooth"
+    description: "Enable wakeup flag for intents"
+    bug: "419143077"
+}

@@ -89,7 +89,7 @@ public:
     log::info("Trying to find a HIDL interface");
     const int32_t timeout_ms = get_adjusted_timeout(500);
 
-    auto get_service_alarm = new os::Alarm(module_handler);
+    auto get_service_alarm = new os::Alarm(&module_handler->thread());
     get_service_alarm->Schedule(
             BindOnce(
                     [](uint32_t timeout_ms) {

@@ -433,6 +433,29 @@ typedef enum {
    */
   BT_PROPERTY_UUIDS_LE,
 
+  /**
+   * Description - Bluetooth discovery result type (i.e. inquiry result type)
+   * Access mode - Only GET.
+   * Data type   - uint8_t
+   */
+  BT_PROPERTY_DISCOVERY_RESULT_TYPE,
+
+  /**
+   * Description - Bluetooth Service 128-bit UUIDs in Extended inquiry result (EIR).
+   * Access mode - Only GET.
+   * Data type   - Array of bluetooth::Uuid (Array size inferred from property
+   *               length).
+   */
+  BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE,
+
+  /**
+   * Description - Bluetooth Service 128-bit UUIDs in LE Advertising data (AD)
+   * Access mode - Only GET.
+   * Data type   - Array of bluetooth::Uuid (Array size inferred from property
+   *               length).
+   */
+  BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA,
+
   BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP = 0xFF,
 } bt_property_type_t;
 
@@ -620,7 +643,7 @@ typedef void (*energy_info_callback)(bt_activity_energy_info* energy_info,
 /** Callback invoked when OOB data is returned from the controller */
 typedef void (*generate_local_oob_data_callback)(tBT_TRANSPORT transport, bt_oob_data_t oob_data);
 
-typedef void (*key_missing_callback)(const RawAddress bd_addr);
+typedef void (*key_missing_callback)(const RawAddress bd_addr, uint8_t reason);
 
 typedef void (*encryption_change_callback)(const bt_encryption_change_evt encryption_change);
 

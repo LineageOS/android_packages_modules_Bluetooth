@@ -973,8 +973,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
             mGroupIdToConnectedDevices.get(groupId).add(device);
             disableCsipIfNeeded(groupId);
         }
-        mAdapterService.handleProfileConnectionStateChange(
-                BluetoothProfile.CSIP_SET_COORDINATOR, device, fromState, toState);
+        mAdapterService.handleProfileConnectionStateChange(mProfileId, device, fromState, toState);
     }
 
     @Override

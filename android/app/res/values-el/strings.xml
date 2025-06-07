@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Αν διατηρήσετε το Bluetooth ενεργοποιημένο, η συσκευή σας θα θυμάται να το διατηρήσει ενεργοποιημένο την επόμενη φορά που θα βρεθεί σε λειτουργία πτήσης"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Το Bluetooth παραμένει ενεργό"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Η συσκευή σας θυμάται να διατηρεί ενεργοποιημένο το Bluetooth σε λειτουργία πτήσης. Απενεργοποιήστε το Bluetooth αν δεν θέλετε να παραμένει ενεργοποιημένο."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"Το Bluetooth παραμένει ενεργό σε λειτουργία πτήσης ενώ είναι συνδεδεμένο σε άλλες συσκευές."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"Η συσκευή σας θα διατηρεί ενεργοποιημένο το Bluetooth σε λειτουργία πτήσης ενώ είναι συνδεδεμένη στο ρολόι σας."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"Το Bluetooth παραμένει ενεργό σε λειτουργία πτήσης ενώ είναι συνδεδεμένο σε μια συσκευή μέσων."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Το Wi-Fi και το Bluetooth παραμένουν ενεργοποιημένα"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Η συσκευή θυμάται να διατηρεί ενεργοποιημένο το Wi‑Fi και το Bluetooth σε λειτουργία πτήσης. Απενεργοποιήστε το Wi-Fi και το Bluetooth αν δεν θέλετε να παραμένουν ενεργοποιημένα."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Το Bluetooth ενεργοποιήθηκε εκ νέου"</string>

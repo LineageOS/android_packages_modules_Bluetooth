@@ -62,8 +62,6 @@ public class MapClientService extends ConnectableProfile {
     private final Looper mStateMachinesLooper;
     private final Handler mHandler;
 
-    private static MapClientService sMapClientService;
-
     public MapClientService(AdapterService adapterService) {
         this(adapterService, null, null);
     }
@@ -86,29 +84,10 @@ public class MapClientService extends ConnectableProfile {
 
         removeUncleanAccounts();
         MapClientContent.clearAllContent(mAdapterService);
-        setMapClientService(this);
     }
 
     public static boolean isEnabled() {
         return BluetoothProperties.isProfileMapClientEnabled().orElse(false);
-    }
-
-    public static synchronized MapClientService getMapClientService() {
-        if (sMapClientService == null) {
-            Log.w(TAG, "getMapClientService(): service is null");
-            return null;
-        }
-        if (!sMapClientService.isAvailable()) {
-            Log.w(TAG, "getMapClientService(): service is not available ");
-            return null;
-        }
-        return sMapClientService;
-    }
-
-    @VisibleForTesting
-    static synchronized void setMapClientService(MapClientService instance) {
-        Log.d(TAG, "setMapClientService(): set to: " + instance);
-        sMapClientService = instance;
     }
 
     @VisibleForTesting
@@ -302,8 +281,6 @@ public class MapClientService extends ConnectableProfile {
         mHandler.removeCallbacksAndMessages(null);
 
         removeUncleanAccounts();
-
-        setMapClientService(null);
     }
 
     /**

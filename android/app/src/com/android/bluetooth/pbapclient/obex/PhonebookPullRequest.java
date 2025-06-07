@@ -62,20 +62,20 @@ public class PhonebookPullRequest extends PullRequest {
             // processing time.
             for (VCardEntry e : mEntries) {
                 if (Thread.currentThread().isInterrupted()) {
-                    Log.e(TAG, "Interrupted durring insert.");
+                    Log.e(TAG, "Interrupted during insert.");
                     break;
                 }
                 int numberOfOperations = insertOperations.size();
                 // Append current vcard to list of insert operations.
                 e.constructInsertOperations(contactsProvider, insertOperations);
                 if (insertOperations.size() >= MAX_OPS) {
-                    // If we have exceded the limit to the insert operation remove the latest vcard
+                    // If we have exceeded the limit to the insert operation remove the latest vcard
                     // and submit.
                     insertOperations.subList(numberOfOperations, insertOperations.size()).clear();
                     contactsProvider.applyBatch(ContactsContract.AUTHORITY, insertOperations);
                     insertOperations = e.constructInsertOperations(contactsProvider, null);
                     if (insertOperations.size() >= MAX_OPS) {
-                        // Current VCard has more than 500 attributes, drop the card.
+                        // Current VCard has more than {@see MAX_OPS} attributes, drop the card.
                         insertOperations.clear();
                     }
                 }

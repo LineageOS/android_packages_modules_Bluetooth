@@ -119,10 +119,11 @@ void bta_dm_on_encryption_change(bt_encryption_change_evt encryption_change) {
   }
 }
 
-void bta_dm_remote_key_missing(const RawAddress bd_addr) {
+void bta_dm_remote_key_missing(const RawAddress bd_addr, tBTM_KEY_MISSING_REASON reason) {
   if (bta_dm_sec_cb.p_sec_cback) {
     tBTA_DM_SEC sec_event;
     sec_event.key_missing.bd_addr = bd_addr;
+    sec_event.key_missing.reason = reason;
     bta_dm_sec_cb.p_sec_cback(BTA_DM_KEY_MISSING_EVT, &sec_event);
   }
 }

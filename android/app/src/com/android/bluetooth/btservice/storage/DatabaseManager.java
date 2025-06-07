@@ -28,6 +28,7 @@ import android.bluetooth.BluetoothA2dp.OptionalCodecsPreferenceStatus;
 import android.bluetooth.BluetoothA2dp.OptionalCodecsSupportStatus;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothLeAudioCodecConfig;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSinkAudioPolicy;
@@ -1342,6 +1343,104 @@ public class DatabaseManager {
 
             Metadata metadata = mMetadataCache.get(address);
             return metadata.key_missing_count;
+        }
+    }
+
+    /**
+     * Set the preferred codec parameters and priorities
+     *
+     * @param device is the remote device for which we set the preferred codec list
+     * @param configList a list of preferred codec parameters and their priorities
+     * @return whether the preferred codec list was set properly
+     */
+    public int setLeAudioUnicastInputCodecPreferenceList(
+            BluetoothDevice device, List<BluetoothLeAudioCodecConfig> configList) {
+        synchronized (mMetadataCache) {
+            String address = device.getAddress();
+
+            if (!mMetadataCache.containsKey(address)) {
+                Log.e(TAG, "device is not bonded");
+                return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+            }
+
+            Log.i(TAG, "setLeAudioUnicastInputCodecPreferenceList(" + device + ")");
+
+            Metadata metadata = mMetadataCache.get(address);
+            metadata.leAudioUnicastClientInputCodecConfigPreference.list = configList;
+            updateDatabase(metadata);
+        }
+        return BluetoothStatusCodes.SUCCESS;
+    }
+
+    /**
+     * Get the preferred codec parameters and priorities
+     *
+     * @param device is the remote device for which we set the preferred codec list
+     * @return the codec preference list
+     */
+    public List<BluetoothLeAudioCodecConfig> getLeAudioUnicastInputCodecPreferenceList(
+            BluetoothDevice device) {
+        synchronized (mMetadataCache) {
+            String address = device.getAddress();
+
+            if (!mMetadataCache.containsKey(address)) {
+                Log.e(TAG, "device is not bonded");
+                return new ArrayList<BluetoothLeAudioCodecConfig>();
+            }
+
+            Log.i(TAG, "getLeAudioUnicastInputCodecPreferenceList(" + device + ")");
+
+            Metadata metadata = mMetadataCache.get(address);
+            return metadata.leAudioUnicastClientInputCodecConfigPreference.list;
+        }
+    }
+
+    /**
+     * Set the preferred codec parameters and priorities
+     *
+     * @param device is the remote device for which we set the preferred codec list
+     * @param configList a list of preferred codec parameters and their priorities
+     * @return whether the preferred codec list was set properly
+     */
+    public int setLeAudioUnicastOutputCodecPreferenceList(
+            BluetoothDevice device, List<BluetoothLeAudioCodecConfig> configList) {
+        synchronized (mMetadataCache) {
+            String address = device.getAddress();
+
+            if (!mMetadataCache.containsKey(address)) {
+                Log.e(TAG, "device is not bonded");
+                return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+            }
+
+            Log.i(TAG, "setLeAudioUnicastOutputCodecPreferenceList(" + device + ")");
+
+            Metadata metadata = mMetadataCache.get(address);
+            metadata.leAudioUnicastClientOutputCodecConfigPreference.list = configList;
+            updateDatabase(metadata);
+        }
+        return BluetoothStatusCodes.SUCCESS;
+    }
+
+    /**
+     * Get the preferred codec parameters and priorities
+     *
+     * @param device is the remote device for which we get the preferred codec list
+     * @return the codec preference list
+     */
+    public List<BluetoothLeAudioCodecConfig> getLeAudioUnicastOutputCodecPreferenceList(
+            BluetoothDevice device) {
+        synchronized (mMetadataCache) {
+            String address = device.getAddress();
+
+            if (!mMetadataCache.containsKey(address)) {
+                Log.e(TAG, "device is not bonded");
+                return new ArrayList<BluetoothLeAudioCodecConfig>();
+            }
+
+            Log.i(TAG, "getLeAudioUnicastOutputCodecPreferenceList(" + device + ")");
+
+            Metadata metadata = mMetadataCache.get(address);
+            return metadata.leAudioUnicastClientOutputCodecConfigPreference.list;
         }
     }
 }

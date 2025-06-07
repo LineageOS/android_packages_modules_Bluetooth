@@ -23,6 +23,7 @@
 #include <cstdint>
 #include <string>
 
+#include "stack/btm/btm_sec_int_types.h"
 #include "macros.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
@@ -62,6 +63,7 @@ typedef struct {
 
 typedef struct {
   RawAddress bd_addr;
+  tBTM_KEY_MISSING_REASON reason;
 } tBTA_DM_KEY_MISSING;
 
 namespace std {

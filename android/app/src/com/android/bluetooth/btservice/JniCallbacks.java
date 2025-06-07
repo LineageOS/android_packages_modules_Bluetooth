@@ -89,8 +89,8 @@ class JniCallbacks {
                 status, address, addressType, transport, newState, hciReason, handle);
     }
 
-    void keyMissingCallback(byte[] address) {
-        mRemoteDevices.keyMissingCallback(address);
+    void keyMissingCallback(byte[] address, int reason) {
+        mRemoteDevices.keyMissingCallback(address, reason);
     }
 
     void encryptionChangeCallback(

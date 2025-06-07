@@ -882,9 +882,14 @@ public:
        * Just in case, log such occurrence, letting us know we may use the old handle.
        */
       if (hearingDevice->service_changed_rcvd) {
-        log::error(
-                "Service change received before PSM read."
-                "Attempting to read PSM using old handle");
+        if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+          log::error("Service change received before PSM read. Read omitted.");
+          return;
+        } else {
+          log::error(
+                  "Service change received before PSM read."
+                  "Attempting to read PSM using old handle");
+        }
       }
       log::info("bd_addr={} handle=0x{:x}", hearingDevice->address, hearingDevice->read_psm_handle);
       BtaGattQueue::ReadCharacteristic(hearingDevice->conn_id, hearingDevice->read_psm_handle,
@@ -1150,9 +1155,14 @@ public:
      * Just in case, log such occurrence, letting us know we may use the old handle.
      */
     if (hearingDevice->service_changed_rcvd) {
-      log::error(
-              "Service change received, but stream is starting."
-              "Attempting to subscribe Audio Status using old handle");
+      if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+        log::error("Stream is starting, but service change received. Aborting.");
+        return;
+      } else {
+        log::error(
+                "Service change received, but stream is starting."
+                "Attempting to subscribe Audio Status using old handle");
+      }
     }
     BtaGattQueue::WriteDescriptor(hearingDevice->conn_id, hearingDevice->audio_status_ccc_handle,
                                   std::move(value), GATT_WRITE, write_rpt_ctl_cfg_cb, nullptr);
@@ -1233,6 +1243,12 @@ public:
          * Just in case, log such occurrence, letting us know we may use the old handle.
          */
         if (device.service_changed_rcvd) {
+          if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+            log::error(
+                    "Service change received during active stream."
+                    "Omit write to Audio Control Point");
+            return;
+          }
           log::error(
                   "Service change received, but stream is active."
                   "Attempting to write using old Audio Control Point handle");
@@ -1302,6 +1318,12 @@ public:
      * Just in case, log such occurrence, letting us know we may use the old handle.
      */
     if (device->service_changed_rcvd) {
+      if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+        log::error(
+                "Service change received, but stream is starting."
+                "Omit write to Service Changed CCC");
+        return;
+      }
       log::error(
               "Service change received, but stream is starting."
               "Attempting to subscribe Service Changed using old handle");
@@ -1340,6 +1362,12 @@ public:
        * Just in case, log such occurrence, letting us know we may use the old handle.
        */
       if (device->service_changed_rcvd) {
+        if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+          log::error(
+                  "Service change received, but stream is starting."
+                  "Omit write using to Audio Control Point");
+          return;
+        }
         log::error(
                 "Service change received, but stream is starting."
                 "Attempting to write using old Audio Control Point handle");
@@ -1943,6 +1971,13 @@ public:
 
       std::vector<uint8_t> volume_value({static_cast<unsigned char>(volume)});
       if (device.volume_handle == 0 || device.service_changed_rcvd) {
+        if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+          log::error(
+                  "Volume handle not set or service changed received: bd_addr={}"
+                  "Write to Volume omitted",
+                  device.address);
+          return;
+        }
         log::error("Volume handle not set or service changed received: bd_addr={}", device.address);
       }
       BtaGattQueue::WriteCharacteristic(device.conn_id, device.volume_handle, volume_value,

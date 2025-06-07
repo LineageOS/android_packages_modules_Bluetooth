@@ -187,6 +187,7 @@ message DataTypes {
   bytes manufacturer_specific_data = 30; // Manufacturer Specific Data
   DiscoverabilityMode le_discoverability_mode = 31; // Flags LE Discoverability Mode
   DataTypes encrypted_data = 32;
+  bytes resolvable_set_identifier = 33;
 }
 
 // Response of the `ReadLocalAddress` method.
@@ -360,6 +361,11 @@ message AdvertiseRequest {
   PrimaryPhy primary_phy = 10;
   // Extended only: secondary PHYs.
   SecondaryPhy secondary_phy = 11;
+  // Random address for the advertising set.
+  // If it is not supported because the controller
+  // does not support extended advertising, then
+  // the Advertise request will fail.
+  bytes random_address = 12;
 }
 
 // Response of the `Advertise` method.

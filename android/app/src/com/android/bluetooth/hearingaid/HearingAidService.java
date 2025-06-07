@@ -600,7 +600,7 @@ public class HearingAidService extends ConnectableProfile {
     }
 
     private void notifyActiveDeviceChanged() {
-        mAdapterService.handleActiveDeviceChange(BluetoothProfile.HEARING_AID, mActiveDevice);
+        mAdapterService.handleActiveDeviceChange(mProfileId, mActiveDevice);
         Intent intent = new Intent(BluetoothHearingAid.ACTION_ACTIVE_DEVICE_CHANGED);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mActiveDevice);
         intent.addFlags(
@@ -700,7 +700,7 @@ public class HearingAidService extends ConnectableProfile {
 
         BluetoothStatsLog.write(
                 BluetoothStatsLog.BLUETOOTH_ACTIVE_DEVICE_CHANGED,
-                BluetoothProfile.HEARING_AID,
+                mProfileId,
                 mAdapterService.obfuscateAddress(device),
                 mAdapterService.getMetricId(device));
 
@@ -818,14 +818,12 @@ public class HearingAidService extends ConnectableProfile {
                 removeStateMachine(device);
             }
         }
-        mAdapterService.notifyProfileConnectionStateChangeToGatt(
-                BluetoothProfile.HEARING_AID, fromState, toState);
+        mAdapterService.notifyProfileConnectionStateChangeToGatt(mProfileId, fromState, toState);
         mAdapterService
                 .getActiveDeviceManager()
-                .profileConnectionStateChanged(
-                        BluetoothProfile.HEARING_AID, device, fromState, toState);
+                .profileConnectionStateChanged(mProfileId, device, fromState, toState);
         mAdapterService.updateProfileConnectionAdapterProperties(
-                device, BluetoothProfile.HEARING_AID, toState, fromState);
+                device, mProfileId, toState, fromState);
     }
 
     @Override

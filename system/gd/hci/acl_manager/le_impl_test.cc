@@ -1328,7 +1328,7 @@ TEST_F(LeImplTest, on_create_connection_timeout) {
           std::piecewise_construct,
           std::forward_as_tuple(remote_public_address_with_type_.GetAddress(),
                                 remote_public_address_with_type_.GetAddressType()),
-          std::forward_as_tuple(handler_));
+          std::forward_as_tuple(&handler_->thread()));
   le_impl_->on_create_connection_timeout(remote_public_address_with_type_);
   sync_handler();
   ASSERT_TRUE(le_impl_->create_connection_timeout_alarms_.empty());
@@ -1345,7 +1345,7 @@ TEST_F(LeImplTest, cancel_connect) {
           std::piecewise_construct,
           std::forward_as_tuple(remote_public_address_with_type_.GetAddress(),
                                 remote_public_address_with_type_.GetAddressType()),
-          std::forward_as_tuple(handler_));
+          std::forward_as_tuple(&handler_->thread()));
   le_impl_->cancel_connect(remote_public_address_with_type_);
   sync_handler();
   ASSERT_TRUE(le_impl_->create_connection_timeout_alarms_.empty());

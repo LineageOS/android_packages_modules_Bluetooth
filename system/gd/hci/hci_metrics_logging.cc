@@ -565,7 +565,7 @@ void log_link_layer_connection_other_hci_event(EventView packet,
                                     connection_handle, status, storage_module);
 
       if (status != ErrorCode::SUCCESS) {
-        common::LogConnectionAdminAuditEvent("Connecting", address, status);
+        common::LogConnectionAdminAuditEvent("Connecting", address, HciStatus(status));
       }
       break;
     }
@@ -662,7 +662,7 @@ void log_link_layer_connection_event_le_meta(LeMetaEventView le_meta_event_view)
   if (status != ErrorCode::SUCCESS && status != ErrorCode::UNKNOWN_CONNECTION) {
     // ERROR CODE 0x02, unknown connection identifier, means connection attempt was cancelled by
     // host, so probably no need to log it.
-    common::LogConnectionAdminAuditEvent("Connecting", address, status);
+    common::LogConnectionAdminAuditEvent("Connecting", address, HciStatus(status));
   }
 }
 

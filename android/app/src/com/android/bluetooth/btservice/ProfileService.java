@@ -26,6 +26,8 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 
+import java.util.Optional;
+
 /** Base class for a Bluetooth profile. */
 public abstract class ProfileService extends ContextWrapper {
 
@@ -36,7 +38,7 @@ public abstract class ProfileService extends ContextWrapper {
     protected final int mProfileId;
     protected final AdapterService mAdapterService;
     protected final String mName;
-    private final IProfileServiceBinder mBinder;
+    private final Optional<IProfileServiceBinder> mBinder;
 
     private boolean mAvailable = false;
 
@@ -46,7 +48,7 @@ public abstract class ProfileService extends ContextWrapper {
         mAdapterService = adapterService;
         mName = getClass().getSimpleName();
         Log.d(mName, "Service created");
-        mBinder = initBinder();
+        mBinder = Optional.ofNullable(initBinder());
     }
 
     @Override
@@ -60,7 +62,7 @@ public abstract class ProfileService extends ContextWrapper {
     }
 
     /** Return the binder of the profile */
-    public IProfileServiceBinder getBinder() {
+    public Optional<IProfileServiceBinder> getBinder() {
         return mBinder;
     }
 

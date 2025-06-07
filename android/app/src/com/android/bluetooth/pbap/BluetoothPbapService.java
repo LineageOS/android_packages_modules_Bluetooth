@@ -263,7 +263,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
                 if (sm == null) {
                     Log.w(TAG, "device not connected! device=" + device);
                     ContentProfileErrorReportUtils.report(
-                            BluetoothProfile.PBAP,
+                            mProfileId,
                             BluetoothProtoEnums.BLUETOOTH_PBAP_SERVICE,
                             BluetoothStatsLog
                                     .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
@@ -314,7 +314,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
         } else {
             Log.w(TAG, "Unhandled intent action: " + action);
             ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
+                    mProfileId,
                     BluetoothProtoEnums.BLUETOOTH_PBAP_SERVICE,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                     1);
@@ -344,7 +344,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
                     if (userId == BluetoothUtils.USER_HANDLE_NULL.getIdentifier()) {
                         Log.e(TAG, "userChangeReceiver received an invalid EXTRA_USER_HANDLE");
                         ContentProfileErrorReportUtils.report(
-                                BluetoothProfile.PBAP,
+                                mProfileId,
                                 BluetoothProtoEnums.BLUETOOTH_PBAP_SERVICE,
                                 BluetoothStatsLog
                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
@@ -403,7 +403,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
         if (mSdpHandle > -1) {
             Log.w(TAG, "createSdpRecord, SDP record already created");
             ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
+                    mProfileId,
                     BluetoothProtoEnums.BLUETOOTH_PBAP_SERVICE,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                     3);
@@ -440,14 +440,14 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
         if (!nativeInterface.isAvailable()) {
             Log.e(TAG, "SdpManagerNativeInterface is not available");
             ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
+                    mProfileId,
                     BluetoothProtoEnums.BLUETOOTH_PBAP_SERVICE,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
                     4);
         } else if (!nativeInterface.removeSdpRecord(sdpHandle)) {
             Log.w(TAG, "cleanUpSdpRecord, removeSdpRecord failed, sdpHandle=" + sdpHandle);
             ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.PBAP,
+                    mProfileId,
                     BluetoothProtoEnums.BLUETOOTH_PBAP_SERVICE,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                     5);
@@ -515,7 +515,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
                     if (mServerSockets == null) {
                         Log.w(TAG, "ObexServerSockets.create() returned null");
                         ContentProfileErrorReportUtils.report(
-                                BluetoothProfile.PBAP,
+                                mProfileId,
                                 BluetoothProtoEnums.BLUETOOTH_PBAP_SERVICE,
                                 BluetoothStatsLog
                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
@@ -552,7 +552,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
                         mWakeLock.acquire();
                         Log.w(TAG, "Acquire Wake Lock");
                         ContentProfileErrorReportUtils.report(
-                                BluetoothProfile.PBAP,
+                                mProfileId,
                                 BluetoothProtoEnums.BLUETOOTH_PBAP_SERVICE,
                                 BluetoothStatsLog
                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
@@ -675,24 +675,6 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
             disconnect(device);
         }
         return true;
-    }
-
-    /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    @Override
-    public int getConnectionPolicy(BluetoothDevice device) {
-        if (device == null) {
-            throw new IllegalArgumentException("Null device");
-        }
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
     }
 
     /**
@@ -835,7 +817,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
     public synchronized void onAcceptFailed() {
         Log.w(TAG, "PBAP server socket accept thread failed. Restarting the server socket");
         ContentProfileErrorReportUtils.report(
-                BluetoothProfile.PBAP,
+                mProfileId,
                 BluetoothProtoEnums.BLUETOOTH_PBAP_SERVICE,
                 BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                 11);

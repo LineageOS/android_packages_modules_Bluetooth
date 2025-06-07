@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.mapclient;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -28,6 +30,7 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothObexTransport;
 import com.android.bluetooth.ObexAppParameters;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.internal.util.StateMachine;
 import com.android.obex.ClientSession;
 import com.android.obex.HeaderSet;
@@ -80,20 +83,24 @@ public class MasClient {
 
     private final StateMachine mCallback;
     private final Handler mHandler;
+    private final BluetoothDevice mDevice;
+    private final AdapterService mAdapterService;
+    private final HandlerThread mThread;
+
+    private ClientSession mSession;
     private BluetoothSocket mSocket;
     private BluetoothObexTransport mTransport;
-    private final BluetoothDevice mRemoteDevice;
-    private ClientSession mSession;
-    private final HandlerThread mThread;
     private boolean mConnected = false;
+
     SdpMasRecord mSdpMasRecord;
 
     public MasClient(
-            BluetoothDevice remoteDevice, StateMachine callback, SdpMasRecord sdpMasRecord) {
-        if (remoteDevice == null) {
-            throw new NullPointerException("Obex transport is null");
-        }
-        mRemoteDevice = remoteDevice;
+            AdapterService adapterService,
+            BluetoothDevice device,
+            StateMachine callback,
+            SdpMasRecord sdpMasRecord) {
+        mAdapterService = requireNonNull(adapterService);
+        mDevice = requireNonNull(device);
         mCallback = callback;
         mSdpMasRecord = sdpMasRecord;
         mThread = new HandlerThread("Client");
@@ -113,17 +120,17 @@ public class MasClient {
 
             if (l2capSocket != L2CAP_INVALID_PSM) {
                 Log.d(TAG, "Connecting to OBEX on L2CAP channel " + l2capSocket);
-                mSocket = mRemoteDevice.createL2capSocket(l2capSocket);
+                mSocket = mDevice.createL2capSocket(l2capSocket);
             } else {
                 Log.d(
                         TAG,
                         "Connecting to OBEX on RFCOMM channel "
                                 + mSdpMasRecord.getRfcommCannelNumber());
-                mSocket = mRemoteDevice.createRfcommSocket(mSdpMasRecord.getRfcommCannelNumber());
+                mSocket = mDevice.createRfcommSocket(mSdpMasRecord.getRfcommCannelNumber());
             }
-            Log.d(TAG, mRemoteDevice.toString() + "Socket: " + mSocket.toString());
+            Log.d(TAG, mDevice.toString() + " Socket: " + mSocket.toString());
             mSocket.connect();
-            mTransport = new BluetoothObexTransport(mSocket);
+            mTransport = new BluetoothObexTransport(mAdapterService, mSocket);
 
             mSession = new ClientSession(mTransport);
             HeaderSet headerset = new HeaderSet();

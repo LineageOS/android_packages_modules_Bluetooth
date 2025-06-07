@@ -14,12 +14,11 @@ cc_library {
     srcs: [
         "aics.cc",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
+    static_libs: [
+        "bluetooth_constants-cpp",
+    ],
     shared_libs: [
         "libbase",
-        "libbinder",
         "libbluetooth_log",
         "liblog",
     ],

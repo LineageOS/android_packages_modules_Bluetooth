@@ -763,12 +763,6 @@ public class PbapClientServiceTest {
         assertThat(mService.getConnectionPolicy(mDevice)).isEqualTo(CONNECTION_POLICY_ALLOWED);
     }
 
-    // getConnectionPolicy (device null) -> exception
-    @Test
-    public void testGetConnectionPolicy_onNullDevice_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> mService.getConnectionPolicy(null));
-    }
-
     // *********************************************************************************************
     // * Debug/Dump/toString()
     // *********************************************************************************************

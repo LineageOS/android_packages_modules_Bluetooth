@@ -148,7 +148,8 @@ public class ScanControllerTest {
 
     @Test
     public void onScanResult_remoteException_clientDied() throws Exception {
-        int eventType = 0;
+        // scannable and scan response
+        int eventType = 0x0A;
         int addressType = 0;
         String address = "02:00:00:00:00:00";
         int primaryPhy = 0;

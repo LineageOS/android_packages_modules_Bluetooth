@@ -180,7 +180,8 @@ public class AdapterServiceTest {
 
     private MockAdapterService mAdapterService;
 
-    static class MockAdapterService extends AdapterService {
+    private static class MockAdapterService extends AdapterService {
+        private final LeAudioService mTestLeAudio;
         int mSetProfileServiceStateCounter = 0;
 
         MockAdapterService(
@@ -192,7 +193,8 @@ public class AdapterServiceTest {
                 BluetoothHciVendorSpecificNativeInterface bluetoothHciVendorSpecificNativeInterface,
                 GattNativeInterface gattNativeInterface,
                 AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
-                DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
+                DistanceMeasurementNativeInterface distanceMeasurementNativeInterface,
+                LeAudioService leAudio) {
             super(
                     looper,
                     ctx,
@@ -203,6 +205,12 @@ public class AdapterServiceTest {
                     gattNativeInterface,
                     advertiseManagerNativeInterface,
                     distanceMeasurementNativeInterface);
+            mTestLeAudio = leAudio;
+        }
+
+        @Override
+        protected Optional<LeAudioService> getLeAudioService() {
+            return Optional.ofNullable(mTestLeAudio);
         }
 
         @Override
@@ -241,7 +249,6 @@ public class AdapterServiceTest {
 
         doReturn(mJniCallbacks).when(mNativeInterface).getCallbacks();
         doReturn(true).when(mMockLeAudioService).isAvailable();
-        LeAudioService.setLeAudioService(mMockLeAudioService);
         doReturn(CONNECTION_POLICY_ALLOWED).when(mMockLeAudioService).getConnectionPolicy(any());
 
         SdpManagerNativeInterface.setInstance(mSdpNativeInterface);
@@ -263,7 +270,8 @@ public class AdapterServiceTest {
                                         mHciVendorSpecificNativeInterface,
                                         mGattNativeInterface,
                                         mAdvertiseNativeInterface,
-                                        mDistanceNativeInterface));
+                                        mDistanceNativeInterface,
+                                        mMockLeAudioService));
         assertThat(mLooper.dispatchAll()).isEqualTo(1);
         assertThat(mAdapterService).isNotNull();
 
@@ -353,7 +361,6 @@ public class AdapterServiceTest {
             Utils.setForegroundUserId(mForegroundUserId);
         }
 
-        LeAudioService.setLeAudioService(null);
         mAdapterService.cleanup();
         mAdapterService.unregisterRemoteCallback(mIBluetoothCallback);
         SdpManagerNativeInterface.setInstance(null);

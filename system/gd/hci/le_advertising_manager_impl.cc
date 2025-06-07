@@ -365,9 +365,9 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
         if (was_rotating_address) {
           log::info("Scheduling address rotation for advertiser_id={}", advertiser_id);
           advertising_sets_[advertiser_id].address_rotation_wake_alarm_ =
-                  std::make_unique<os::Alarm>(handler_, true);
+                  std::make_unique<os::Alarm>(&handler_->thread(), true);
           advertising_sets_[advertiser_id].address_rotation_non_wake_alarm_ =
-                  std::make_unique<os::Alarm>(handler_, false);
+                  std::make_unique<os::Alarm>(&handler_->thread(), false);
 
           std::string client_name = "advertising_set_" + std::to_string(advertiser_id);
           auto privateAddressIntervalRange =
@@ -661,9 +661,9 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
         // start timer for random address
         log::info("Scheduling address rotation for advertiser_id={}", id);
         advertising_sets_[id].address_rotation_wake_alarm_ =
-                std::make_unique<os::Alarm>(handler_, true);
+                std::make_unique<os::Alarm>(&handler_->thread(), true);
         advertising_sets_[id].address_rotation_non_wake_alarm_ =
-                std::make_unique<os::Alarm>(handler_, false);
+                std::make_unique<os::Alarm>(&handler_->thread(), false);
 
         std::string client_name = "advertising_set_" + std::to_string(id);
         auto privateAddressIntervalRange =

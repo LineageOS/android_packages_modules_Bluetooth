@@ -41,6 +41,5 @@ oneway interface IBluetoothGattCallback {
     void onConnectionUpdated(in BluetoothDevice device, in int interval, in int latency,
                              in int timeout, in int status);
     void onServiceChanged(in BluetoothDevice device);
-    void onSubrateChange(in BluetoothDevice device, in int subrateFactor, in int latency,
-                         in int contNum, in int timeout, in int status);
+    void onSubrateChange(in BluetoothDevice device, in int subrateMode, in int status);
 }

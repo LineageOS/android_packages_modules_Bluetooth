@@ -41,6 +41,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.tests.R;
 
 import org.junit.After;
 import org.junit.Before;
@@ -88,7 +89,7 @@ public class MetadataTest {
 
     @Before
     public void setUp() throws Exception {
-        mTestBitmap = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
+        mTestBitmap = loadImage(R.raw.image_200_200);
         mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
         mTestContentResolver = new MockContentResolver(mTargetContext);
         mTestContentResolver.addProvider(
@@ -98,8 +99,7 @@ public class MetadataTest {
                     public AssetFileDescriptor openTypedAssetFile(
                             Uri url, String mimeType, Bundle opts) {
                         if (IMAGE_URI_1.equals(url)) {
-                            return mTestResources.openRawResourceFd(
-                                    com.android.bluetooth.tests.R.raw.image_200_200);
+                            return mTestResources.openRawResourceFd(R.raw.image_200_200);
                         }
                         return null;
                     }

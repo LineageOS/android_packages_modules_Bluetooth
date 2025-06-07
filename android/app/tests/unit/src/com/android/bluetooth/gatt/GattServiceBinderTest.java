@@ -310,6 +310,16 @@ public class GattServiceBinderTest {
     }
 
     @Test
+    public void subrateModeRequest() throws Exception {
+        BluetoothDevice testDevice = getTestDevice(5);
+        int subrateMode = 0;
+
+        mBinder.subrateModeRequest(mGattCallback, testDevice, subrateMode, mAttributionSource);
+
+        verify(mService).subrateModeRequest(mGattCallback, testDevice, subrateMode);
+    }
+
+    @Test
     public void registerServer() {
         UUID uuid = UUID.randomUUID();
         boolean eattSupport = true;

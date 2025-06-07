@@ -16,6 +16,7 @@
 
 package com.android.bluetooth.avrcpcontroller;
 
+import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -25,15 +26,22 @@ import android.bluetooth.BluetoothDevice;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.avrcpcontroller.BrowseTree.BrowseNode;
+import com.android.bluetooth.btservice.AdapterService;
 
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 
 import java.util.Set;
 
 /** Test cases for {@link BrowseTree}. */
 @RunWith(AndroidJUnit4.class)
 public class BrowseTreeTest {
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
+    @Mock private AdapterService mAdapterService;
+
     private static final String ILLEGAL_ID = "illegal_id";
     private static final String TEST_HANDLE = "test_handle";
     private static final String TEST_NODE_ID = "test_node_id";
@@ -42,21 +50,21 @@ public class BrowseTreeTest {
 
     @Test
     public void constructor_withoutDevice() {
-        BrowseTree browseTree = new BrowseTree(null);
+        BrowseTree browseTree = new BrowseTree(mAdapterService, null);
 
         assertThat(browseTree.mRootNode.mItem.getDevice()).isNull();
     }
 
     @Test
     public void constructor_withDevice() {
-        BrowseTree browseTree = new BrowseTree(mDevice);
+        BrowseTree browseTree = new BrowseTree(mAdapterService, mDevice);
 
         assertThat(browseTree.mRootNode.mItem.getDevice()).isEqualTo(mDevice);
     }
 
     @Test
     public void clear() {
-        BrowseTree browseTree = new BrowseTree(mDevice);
+        BrowseTree browseTree = new BrowseTree(mAdapterService, mDevice);
 
         browseTree.clear();
 
@@ -65,7 +73,7 @@ public class BrowseTreeTest {
 
     @Test
     public void getTrackFromNowPlayingList() {
-        BrowseTree browseTree = new BrowseTree(mDevice);
+        BrowseTree browseTree = new BrowseTree(mAdapterService, mDevice);
         BrowseNode trackInNowPlayingList =
                 browseTree
                 .new BrowseNode(
@@ -82,7 +90,7 @@ public class BrowseTreeTest {
 
     @Test
     public void onConnected() {
-        BrowseTree browseTree = new BrowseTree(null);
+        BrowseTree browseTree = new BrowseTree(mAdapterService, null);
 
         assertThat(browseTree.mRootNode.getChildrenCount()).isEqualTo(0);
 
@@ -93,8 +101,8 @@ public class BrowseTreeTest {
 
     @Test
     public void sameDeviceDifferentBrowseTrees_uniqueMediaIds() {
-        BrowseTree browseTree1 = new BrowseTree(mDevice);
-        BrowseTree browseTree2 = new BrowseTree(mDevice);
+        BrowseTree browseTree1 = new BrowseTree(mAdapterService, mDevice);
+        BrowseTree browseTree2 = new BrowseTree(mAdapterService, mDevice);
 
         String mediaId1 = browseTree1.mRootNode.getID();
         String mediaId2 = browseTree2.mRootNode.getID();
@@ -104,19 +112,19 @@ public class BrowseTreeTest {
 
     @Test
     public void findBrowseNodeByIDForRoot() {
-        BrowseTree browseTree = new BrowseTree(null);
+        BrowseTree browseTree = new BrowseTree(mAdapterService, null);
         assertThat(browseTree.findBrowseNodeByID(BrowseTree.ROOT)).isEqualTo(browseTree.mRootNode);
     }
 
     @Test
     public void findBrowseNodeByIDForIllegalId() {
-        BrowseTree browseTree = new BrowseTree(mDevice);
+        BrowseTree browseTree = new BrowseTree(mAdapterService, mDevice);
         assertThat(browseTree.findBrowseNodeByID(ILLEGAL_ID)).isNull();
     }
 
     @Test
     public void setAndGetCurrentBrowsedFolder() {
-        BrowseTree browseTree = new BrowseTree(mDevice);
+        BrowseTree browseTree = new BrowseTree(mAdapterService, mDevice);
 
         assertThat(browseTree.setCurrentBrowsedFolder(ILLEGAL_ID)).isFalse();
         assertThat(browseTree.setCurrentBrowsedFolder(BrowseTree.NOW_PLAYING_PREFIX)).isTrue();
@@ -125,14 +133,14 @@ public class BrowseTreeTest {
 
     @Test
     public void findBrowseNodeByIDForDevice_nodeIsFound() {
-        BrowseTree browseTree = new BrowseTree(mDevice);
+        BrowseTree browseTree = new BrowseTree(mAdapterService, mDevice);
         final String deviceId = browseTree.mRootNode.getID();
         assertThat(browseTree.findBrowseNodeByID(deviceId)).isEqualTo(browseTree.mRootNode);
     }
 
     @Test
     public void setAndGetCurrentBrowsedPlayer() {
-        BrowseTree browseTree = new BrowseTree(mDevice);
+        BrowseTree browseTree = new BrowseTree(mAdapterService, mDevice);
 
         assertThat(browseTree.setCurrentBrowsedPlayer(ILLEGAL_ID, 0, 0)).isFalse();
         assertThat(browseTree.setCurrentBrowsedPlayer(BrowseTree.NOW_PLAYING_PREFIX, 2, 1))
@@ -142,7 +150,7 @@ public class BrowseTreeTest {
 
     @Test
     public void setAndGetCurrentAddressedPlayer() {
-        BrowseTree browseTree = new BrowseTree(mDevice);
+        BrowseTree browseTree = new BrowseTree(mAdapterService, mDevice);
 
         assertThat(browseTree.setCurrentAddressedPlayer(ILLEGAL_ID)).isFalse();
         assertThat(browseTree.setCurrentAddressedPlayer(BrowseTree.NOW_PLAYING_PREFIX)).isTrue();
@@ -151,7 +159,7 @@ public class BrowseTreeTest {
 
     @Test
     public void indicateCoverArtUsedAndUnused() {
-        BrowseTree browseTree = new BrowseTree(mDevice);
+        BrowseTree browseTree = new BrowseTree(mAdapterService, mDevice);
         assertThat(browseTree.getNodesUsingCoverArt(TEST_HANDLE)).isEmpty();
 
         browseTree.indicateCoverArtUsed(TEST_NODE_ID, TEST_HANDLE);
@@ -166,7 +174,7 @@ public class BrowseTreeTest {
 
     @Test
     public void notifyImageDownload() {
-        BrowseTree browseTree = new BrowseTree(null);
+        BrowseTree browseTree = new BrowseTree(mAdapterService, null);
 
         browseTree.onConnected(mDevice);
         browseTree.indicateCoverArtUsed(browseTree.mRootNode.getChild(0).getID(), TEST_HANDLE);
@@ -177,7 +185,7 @@ public class BrowseTreeTest {
 
     @Test
     public void getEldestChild_whenNodesAreNotAncestorDescendantRelation() {
-        BrowseTree browseTree = new BrowseTree(null);
+        BrowseTree browseTree = new BrowseTree(mAdapterService, null);
 
         browseTree.onConnected(mDevice);
 
@@ -187,7 +195,7 @@ public class BrowseTreeTest {
 
     @Test
     public void getEldestChild_whenNodesAreAncestorDescendantRelation() {
-        BrowseTree browseTree = new BrowseTree(null);
+        BrowseTree browseTree = new BrowseTree(mAdapterService, null);
 
         browseTree.onConnected(mDevice);
 
@@ -199,7 +207,7 @@ public class BrowseTreeTest {
 
     @Test
     public void getNextStepFolder() {
-        BrowseTree browseTree = new BrowseTree(null);
+        BrowseTree browseTree = new BrowseTree(mAdapterService, null);
         BrowseNode nodeOutOfMap =
                 browseTree
                 .new BrowseNode(
@@ -225,7 +233,7 @@ public class BrowseTreeTest {
 
     @Test
     public void toString_returnsSizeInfo() {
-        BrowseTree browseTree = new BrowseTree(mDevice);
+        BrowseTree browseTree = new BrowseTree(mAdapterService, mDevice);
         assertThat(browseTree.toString())
                 .isEqualTo("[BrowseTree size=" + browseTree.mBrowseMap.size() + "]");
     }
