@@ -1037,17 +1037,7 @@ public class HeadsetService extends ConnectableProfile {
         }
 
         if (mSystemInterface.isScoManagedByAudioEnabled()) {
-            // do the task outside synchronized to avoid deadlock with Audio Fwk
-            BluetoothDevice finalDevice = device;
-            mHandler.post(
-                    () -> {
-                        mSystemInterface.getAudioManager().clearCommunicationDevice();
-                        logScoSessionMetric(
-                                finalDevice,
-                                BluetoothStatsLog
-                                        .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__SCO_VOICE_RECOGNITION_INITIATED_END,
-                                Binder.getCallingUid());
-                    });
+            clearCommunicationDevice(device);
         }
         enableSwbCodec(HeadsetHalConstants.BTHF_SWB_CODEC_VENDOR_APTX, false, device);
         return true;
@@ -1472,9 +1462,31 @@ public class HeadsetService extends ConnectableProfile {
                 Log.w(TAG, "disconnectAudio, audio is already disconnected for " + device);
                 return BluetoothStatusCodes.ERROR_AUDIO_DEVICE_ALREADY_DISCONNECTED;
             }
-            stateMachine.sendMessage(HeadsetStateMachine.DISCONNECT_AUDIO, device);
+            if (!mSystemInterface.isScoManagedByAudioEnabled()) {
+                stateMachine.sendMessage(HeadsetStateMachine.DISCONNECT_AUDIO, device);
+                logScoSessionMetric(
+                        device,
+                        BluetoothStatsLog
+                                .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__SCO_DISCONNECT_AUDIO_END,
+                        Binder.getCallingUid());
+            } else {
+                clearCommunicationDevice(device);
+            }
         }
         return BluetoothStatusCodes.SUCCESS;
+    }
+
+    private void clearCommunicationDevice(BluetoothDevice device) {
+        // do the task outside synchronized to avoid deadlock with Audio Fwk
+        mHandler.post(
+                () -> {
+                    mSystemInterface.getAudioManager().clearCommunicationDevice();
+                    logScoSessionMetric(
+                            device,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__SCO_VOICE_RECOGNITION_INITIATED_END,
+                            Binder.getCallingUid());
+                });
     }
 
     boolean isVirtualCallStarted() {
