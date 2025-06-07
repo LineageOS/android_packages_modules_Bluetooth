@@ -17,6 +17,7 @@
 package com.android.bluetooth.btservice;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getRealDevice;
@@ -30,6 +31,8 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,6 +46,8 @@ import android.os.HandlerThread;
 import android.os.Message;
 import android.os.ParcelUuid;
 import android.os.UserHandle;
+import android.platform.test.annotations.DisableFlags;
+import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 
@@ -51,7 +56,17 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.a2dp.A2dpService;
+import com.android.bluetooth.a2dpsink.A2dpSinkService;
+import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.hap.HapClientService;
+import com.android.bluetooth.hfp.HeadsetService;
+import com.android.bluetooth.hfpclient.HeadsetClientService;
+import com.android.bluetooth.hid.HidHostService;
+import com.android.bluetooth.le_audio.LeAudioService;
+import com.android.bluetooth.pbapclient.PbapClientService;
+import com.android.bluetooth.vc.VolumeControlService;
 
 import org.junit.After;
 import org.junit.Before;
@@ -59,12 +74,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 
 import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
 import platform.test.runner.parameterized.Parameters;
 
 import java.util.List;
+import java.util.Optional;
 
 /** Test cases for {@link BondStateMachine}. */
 @MediumTest
@@ -76,6 +93,17 @@ public class BondStateMachineTest {
     @Mock private AdapterService mAdapterService;
     @Mock private AdapterNativeInterface mNativeInterface;
     @Mock private PackageManager mPackageManager;
+
+    @Mock HidHostService mHidHostService;
+    @Mock A2dpService mA2dpService;
+    @Mock HeadsetService mHeadsetService;
+    @Mock HeadsetClientService mHeadsetClientService;
+    @Mock A2dpSinkService mA2dpSinkService;
+    @Mock PbapClientService mPbapClientService;
+    @Mock LeAudioService mLeAudioService;
+    @Mock CsipSetCoordinatorService mCsipSetCoordinatorService;
+    @Mock VolumeControlService mVolumeControlService;
+    @Mock HapClientService mHapClientService;
 
     private static final int TEST_BOND_REASON = 0;
     private static final byte[] TEST_BT_ADDR_BYTES = {00, 11, 22, 33, 44, 55};
@@ -586,6 +614,99 @@ public class BondStateMachineTest {
                 false);
         testSendIntentPendingDeviceWithUuid(
                 BOND_BONDED, badBondState, true, BOND_BONDED, false, BOND_NONE, BOND_NONE, false);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_ADAPTER_SERVICE_PROFILES_USE_OPTIONAL)
+    public void clearProfilePriority_whenAdapterServiceProfilesUseOptionalFlagOn_callsOptional() {
+        doReturn(Optional.of(mHidHostService)).when(mAdapterService).getHidHostService();
+        doReturn(Optional.of(mA2dpService)).when(mAdapterService).getA2dpService();
+        // Random profile intentionally left out to test empty case
+        doReturn(Optional.empty()).when(mAdapterService).getHeadsetService();
+        doReturn(Optional.of(mHeadsetClientService))
+                .when(mAdapterService)
+                .getHeadsetClientService();
+        doReturn(Optional.of(mA2dpSinkService)).when(mAdapterService).getA2dpSinkService();
+        // Random profile intentionally left out to test empty case
+        doReturn(Optional.empty()).when(mAdapterService).getPbapClientService();
+        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
+        doReturn(Optional.of(mCsipSetCoordinatorService))
+                .when(mAdapterService)
+                .getCsipSetCoordinatorService();
+        doReturn(Optional.of(mVolumeControlService))
+                .when(mAdapterService)
+                .getVolumeControlService();
+        // Random profile intentionally left out to test empty case
+        doReturn(Optional.empty()).when(mAdapterService).getHapClientService();
+
+        mBondStateMachine.clearProfilePriority(mDevice);
+
+        InOrder inOrder =
+                inOrder(
+                        mHidHostService,
+                        mA2dpService,
+                        mHeadsetClientService,
+                        mA2dpSinkService,
+                        mLeAudioService,
+                        mCsipSetCoordinatorService,
+                        mVolumeControlService);
+
+        inOrder.verify(mHidHostService)
+                .setConnectionPolicy(eq(mDevice), eq(CONNECTION_POLICY_UNKNOWN));
+        inOrder.verify(mA2dpService)
+                .setConnectionPolicy(eq(mDevice), eq(CONNECTION_POLICY_UNKNOWN));
+        inOrder.verify(mHeadsetClientService)
+                .setConnectionPolicy(eq(mDevice), eq(CONNECTION_POLICY_UNKNOWN));
+        inOrder.verify(mA2dpSinkService)
+                .setConnectionPolicy(eq(mDevice), eq(CONNECTION_POLICY_UNKNOWN));
+        inOrder.verify(mLeAudioService)
+                .setConnectionPolicy(eq(mDevice), eq(CONNECTION_POLICY_UNKNOWN));
+        inOrder.verify(mCsipSetCoordinatorService)
+                .setConnectionPolicy(eq(mDevice), eq(CONNECTION_POLICY_UNKNOWN));
+        inOrder.verify(mVolumeControlService)
+                .setConnectionPolicy(eq(mDevice), eq(CONNECTION_POLICY_UNKNOWN));
+
+        verify(mHeadsetService, never()).setConnectionPolicy(any(), anyInt());
+        verify(mPbapClientService, never()).setConnectionPolicy(any(), anyInt());
+        verify(mHapClientService, never()).setConnectionPolicy(any(), anyInt());
+    }
+
+    @Test
+    @DisableFlags(Flags.FLAG_ADAPTER_SERVICE_PROFILES_USE_OPTIONAL)
+    public void clearProfilePriority_whenAdapterServiceProfilesUseOptionalFlagOff_callsStatic() {
+        // The following random profiles intentionally left out to test empty case: HidHostService
+        // A2dpService PbapClientService LeAudioService CsipSetCoordinatorService
+        // VolumeControlService HapClientService
+        // Additionally, their public static setters don't exist / are private.
+        doReturn(true).when(mHeadsetService).isAvailable();
+        doReturn(true).when(mHeadsetClientService).isAvailable();
+        doReturn(true).when(mA2dpSinkService).isAvailable();
+        HeadsetService.setHeadsetService(mHeadsetService);
+        HeadsetClientService.setHeadsetClientService(mHeadsetClientService);
+        A2dpSinkService.setA2dpSinkService(mA2dpSinkService);
+
+        mBondStateMachine.clearProfilePriority(mDevice);
+
+        InOrder inOrder = inOrder(mHeadsetService, mHeadsetClientService, mA2dpSinkService);
+
+        inOrder.verify(mHeadsetService)
+                .setConnectionPolicy(eq(mDevice), eq(CONNECTION_POLICY_UNKNOWN));
+        inOrder.verify(mHeadsetClientService)
+                .setConnectionPolicy(eq(mDevice), eq(CONNECTION_POLICY_UNKNOWN));
+        inOrder.verify(mA2dpSinkService)
+                .setConnectionPolicy(eq(mDevice), eq(CONNECTION_POLICY_UNKNOWN));
+
+        verify(mHidHostService, never()).setConnectionPolicy(any(), anyInt());
+        verify(mA2dpService, never()).setConnectionPolicy(any(), anyInt());
+        verify(mPbapClientService, never()).setConnectionPolicy(any(), anyInt());
+        verify(mLeAudioService, never()).setConnectionPolicy(any(), anyInt());
+        verify(mCsipSetCoordinatorService, never()).setConnectionPolicy(any(), anyInt());
+        verify(mVolumeControlService, never()).setConnectionPolicy(any(), anyInt());
+        verify(mHapClientService, never()).setConnectionPolicy(any(), anyInt());
+
+        HeadsetService.setHeadsetService(null);
+        HeadsetClientService.setHeadsetClientService(null);
+        A2dpSinkService.setA2dpSinkService(null);
     }
 
     private void testSendIntentCase(
