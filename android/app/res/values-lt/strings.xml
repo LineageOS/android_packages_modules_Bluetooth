@@ -122,6 +122,12 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Jei paliksite „Bluetooth“ ryšį įjungtą, įrenginys prisimins palikti jį įjungtą, kai kitą kartą įjungsite lėktuvo režimą"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"„Bluetooth“ liks įjungtas"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Įrenginys prisimena, kad lėktuvo režimu reikia palikti įjungtą „Bluetooth“ ryšį. Išjunkite „Bluetooth“, jei nenorite, kad jis liktų įjungtas."</string>
+    <!-- no translation found for bluetooth_stays_on_message_on_watch (22414923033382368) -->
+    <skip />
+    <!-- no translation found for bluetooth_stays_on_message_due_to_watch (6174290516042701934) -->
+    <skip />
+    <!-- no translation found for bluetooth_stays_on_message_due_to_media (2627984855508391911) -->
+    <skip />
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"„Wi‑Fi“ ir „Bluetooth“ ryšys lieka įjungtas"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Įrenginys prisimena, kad lėktuvo režimu reikia palikti įjungtą „Wi‑Fi“ ir „Bluetooth“ ryšį. Išjunkite „Wi-Fi“ ir „Bluetooth“, jei nenorite, kad jie liktų įjungti."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"„Bluetooth“ vėl įjungtas"</string>
