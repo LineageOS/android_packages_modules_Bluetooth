@@ -224,7 +224,7 @@ public class GattServiceTest {
         final var companionDeviceManager = mContext.getSystemService(CompanionDeviceManager.class);
         mockGetSystemService(mAdapterService, CompanionDeviceManager.class, companionDeviceManager);
 
-        mBtCompanionManager = new CompanionManager(mAdapterService, null);
+        mBtCompanionManager = new CompanionManager(mAdapterService);
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
 
         mService =

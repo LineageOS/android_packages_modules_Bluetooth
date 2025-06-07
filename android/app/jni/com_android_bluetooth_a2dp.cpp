@@ -77,7 +77,7 @@ static std::shared_timed_mutex callbacks_mutex;
 
 static void bta2dp_connection_state_callback(const RawAddress& bd_addr,
                                              btav_connection_state_t state,
-                                             const btav_error_t& /* error */) {
+                                             const btav_error_t& error) {
   log::info("{}: state: {}", bd_addr, dump_av_conn_state(state));
 
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
@@ -97,7 +97,7 @@ static void bta2dp_connection_state_callback(const RawAddress& bd_addr,
                                    reinterpret_cast<const jbyte*>(bd_addr.address));
   sCallbackEnv->CallVoidMethod(mCallbacksObj,
                                android_bluetooth_A2dpNativeCallback.onConnectionStateChanged,
-                               addr.get(), (jint)state);
+                               addr.get(), (jint)state, (jint)error.error_code);
 }
 
 static void bta2dp_audio_state_callback(const RawAddress& bd_addr, btav_audio_state_t state) {
@@ -490,7 +490,7 @@ int register_com_android_bluetooth_a2dp(JNIEnv* env) {
   }
 
   const JNIJavaMethod javaMethods[] = {
-          {"onConnectionStateChanged", "([BI)V",
+          {"onConnectionStateChanged", "([BII)V",
            &android_bluetooth_A2dpNativeCallback.onConnectionStateChanged},
           {"onAudioStateChanged", "([BI)V",
            &android_bluetooth_A2dpNativeCallback.onAudioStateChanged},

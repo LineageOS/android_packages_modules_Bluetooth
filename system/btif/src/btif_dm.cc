@@ -289,6 +289,9 @@ static void btif_stats_add_bond_event(const RawAddress& bd_addr, bt_bond_functio
 static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status, const BD_NAME bd_name,
                               bool during_device_search);
 
+static bool btif_extract_uuids_in_adv_data(const uint8_t* p_ad, size_t ad_len, RawAddress& bdaddr,
+                                           std::list<Uuid>* p_uuid_list);
+
 /******************************************************************************
  *  Functions
  *****************************************************************************/
@@ -1524,6 +1527,34 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
           }
         }
 
+        // Scope needs to persist until `invoke_device_found_cb` below.
+        std::vector<uint8_t> uuids_value;
+        if (com::android::bluetooth::flags::get_svc_uuids_from_ble_adv_data()) {
+          uint8_t inq_result_type = p_search_data->inq_res.inq_result_type;
+          log::debug("Inquiry result type for {}[{}]", bdaddr, inq_result_type);
+          bt_properties.push_back(bt_property_t{BT_PROPERTY_DISCOVERY_RESULT_TYPE,
+                                                sizeof(inq_result_type), &inq_result_type});
+
+          std::list<Uuid> uuids;
+          bool uuid_type_exists = btif_extract_uuids_in_adv_data(
+                  p_search_data->inq_res.p_eir, p_search_data->inq_res.eir_len, bdaddr, &uuids);
+          if (uuid_type_exists) {
+            for (auto uuid : uuids) {
+              auto uuid_128bit = uuid.To128BitBE();
+              uuids_value.insert(uuids_value.end(), uuid_128bit.begin(), uuid_128bit.end());
+            }
+
+            bt_property_type_t property_type =
+                    (p_search_data->inq_res.last_inq_result_from_type == BT_DEVICE_TYPE_BLE)
+                            ? BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA
+                            : BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE;
+
+            bt_properties.push_back(bt_property_t{
+                    property_type, static_cast<int>(uuids.size() * Uuid::kNumBytes128),
+                    (void*)uuids_value.data()});
+          }
+        }
+
         // Floss needs appearance for metrics purposes
         uint16_t appearance = 0;
         if (check_eir_appearance(p_search_data, &appearance)) {
@@ -1572,6 +1603,220 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
       log::warn("Unhandled event:{}", bta_dm_search_evt_text(event));
       break;
   }
+}
+
+/*******************************************************************************
+ *
+ * Function         btif_extract_uuids_in_adv_data
+ *
+ * Description      This function parses BLE advertising data (AD) or EIR and returns UUID list.
+ *                  The list is merged list of 'Service UUID' and 'Service Data (AD only)',
+ *                  for all types of UUID length (16/32/128 bit).
+ *                  Maximum 32 UUIDs will be returned.
+ *
+ * Parameters       p_ad - BLE Advertising data or EIR
+ *                  ad_len - AD or EIR length
+ *                  bdaddr - Address of the BLE device
+ *                  p_uuid_list - An empty list to return uuids
+ *
+ * Returns          Whether it contains 'Service UUID' and 'Service Data' type or not,
+ *                  regardless of whether the actual UUID list is empty.
+ *                  Also returns false if p_uuid_list is invalid (i.e. not empty or points to null).
+ *
+ ******************************************************************************/
+static bool btif_extract_uuids_in_adv_data(const uint8_t* p_ad, size_t ad_len, RawAddress& bdaddr,
+                                           std::list<Uuid>* p_uuid_list) {
+  if (p_uuid_list == nullptr || !p_uuid_list->empty()) {
+    log::error("p_uuid_list is null or not empty");
+    return false;
+  }
+
+  const size_t kMaxNumOfUuids = 32;
+  size_t remaining_uuid_slots = kMaxNumOfUuids;
+
+  bool uuid_type_exists = false;
+
+  // UUIDs from Service UUID
+  // 16bit UUIDs
+  {
+    uint8_t num_of_uuids = 0;
+    uint8_t uuid_list[kMaxNumOfUuids * Uuid::kNumBytes16];
+
+    if (get_btm_client_interface().eir.BTM_GetEirUuidList(p_ad, ad_len, Uuid::kNumBytes16,
+                                                          &num_of_uuids, uuid_list,
+                                                          remaining_uuid_slots) != 0) {
+      uuid_type_exists = true;
+
+      uint16_t* p_uuid16 = (uint16_t*)uuid_list;
+      log::debug("16-bit UUIDs for {} (from Service UUID)", bdaddr);
+      for (int i = 0; i < num_of_uuids; i++) {
+        Uuid uuid = Uuid::From16Bit(p_uuid16[i]);
+        log::debug("{}", uuid.ToString());
+        if (std::find(p_uuid_list->begin(), p_uuid_list->end(), uuid) != p_uuid_list->end()) {
+          log::debug("Ignoring duplicate UUID: {}", uuid);
+        } else {
+          p_uuid_list->push_back(uuid);
+          remaining_uuid_slots--;
+        }
+      }
+    }
+  }
+
+  // 32bit UUIDs
+  if (remaining_uuid_slots > 0) {
+    uint8_t num_uuids = 0;
+    uint8_t uuid_list[kMaxNumOfUuids * Uuid::kNumBytes32];
+
+    if (get_btm_client_interface().eir.BTM_GetEirUuidList(p_ad, ad_len, Uuid::kNumBytes32,
+                                                          &num_uuids, uuid_list,
+                                                          remaining_uuid_slots) != 0) {
+      uuid_type_exists = true;
+
+      uint32_t* p_uuid32 = (uint32_t*)uuid_list;
+      log::debug("32-bit UUIDs for {} (from Service UUID)", bdaddr);
+      for (int i = 0; i < num_uuids; i++) {
+        Uuid uuid = Uuid::From32Bit(p_uuid32[i]);
+        log::debug("{}", uuid.ToString());
+        if (std::find(p_uuid_list->begin(), p_uuid_list->end(), uuid) != p_uuid_list->end()) {
+          log::debug("Ignoring duplicate UUID: {}", uuid);
+        } else {
+          p_uuid_list->push_back(uuid);
+          remaining_uuid_slots--;
+        }
+      }
+    }
+  }
+
+  // 128bit UUIDs
+  if (remaining_uuid_slots > 0) {
+    uint8_t num_uuids = 0;
+    uint8_t uuid_list[kMaxNumOfUuids * Uuid::kNumBytes128];
+
+    if (get_btm_client_interface().eir.BTM_GetEirUuidList(p_ad, ad_len, Uuid::kNumBytes128,
+                                                          &num_uuids, uuid_list,
+                                                          remaining_uuid_slots) != 0) {
+      uuid_type_exists = true;
+
+      uint8_t* p_uuid128 = (uint8_t*)uuid_list;
+      log::debug("128-bit UUIDs for {} (from Service UUID)", bdaddr);
+      for (int i = 0; i < num_uuids; i++) {
+        // Reversed to big-endian format in BTM_GetEirUuidList, so use Uuid::From128BitBE.
+        Uuid uuid = Uuid::From128BitBE(p_uuid128 + 16 * i);
+        log::debug("{}", uuid.ToString());
+        if (std::find(p_uuid_list->begin(), p_uuid_list->end(), uuid) != p_uuid_list->end()) {
+          log::debug("Ignoring duplicate UUID: {}", uuid);
+        } else {
+          p_uuid_list->push_back(uuid);
+          remaining_uuid_slots--;
+        }
+      }
+    }
+  }
+
+  // UUIDs from Service Data (Only for AD)
+  if (remaining_uuid_slots > 0) {
+    // 16bit UUIDs
+    {
+      const uint8_t* p_service_data = p_ad;
+      uint8_t service_data_len = 0;
+
+      bool found = false;
+      while ((p_service_data = AdvertiseDataParser::GetFieldByType(
+                      p_service_data + service_data_len,
+                      ad_len - (p_service_data - p_ad) - service_data_len,
+                      HCI_EIR_SERVICE_DATA_16BITS_UUID_TYPE, &service_data_len)) &&
+             remaining_uuid_slots > 0) {
+        if (service_data_len < 2) {
+          continue;
+        }
+
+        if (!found) {
+          log::debug("16-bit UUIDs for {} (from Service Data)", bdaddr);
+          found = true;
+          uuid_type_exists = true;
+        }
+
+        uint16_t* p_uuid16 = (uint16_t*)p_service_data;
+        Uuid uuid = Uuid::From16Bit(p_uuid16[0]);
+        log::debug("{}", uuid.ToString());
+        if (std::find(p_uuid_list->begin(), p_uuid_list->end(), uuid) != p_uuid_list->end()) {
+          log::debug("Ignoring duplicate UUID: {}", uuid);
+        } else {
+          p_uuid_list->push_back(uuid);
+          remaining_uuid_slots--;
+        }
+      }
+    }
+
+    // 32bit UUIDs
+    {
+      const uint8_t* p_service_data = p_ad;
+      uint8_t service_data_len = 0;
+
+      bool found = false;
+      while ((p_service_data = AdvertiseDataParser::GetFieldByType(
+                      p_service_data + service_data_len,
+                      ad_len - (p_service_data - p_ad) - service_data_len,
+                      HCI_EIR_SERVICE_DATA_32BITS_UUID_TYPE, &service_data_len)) &&
+             remaining_uuid_slots > 0) {
+        if (service_data_len < 4) {
+          continue;
+        }
+
+        if (!found) {
+          log::debug("32-bit UUIDs for {} (from Service Data)", bdaddr);
+          found = true;
+          uuid_type_exists = true;
+        }
+
+        uint32_t* p_uuid32 = (uint32_t*)p_service_data;
+        Uuid uuid = Uuid::From32Bit(p_uuid32[0]);
+        log::debug("{}", uuid.ToString());
+        if (std::find(p_uuid_list->begin(), p_uuid_list->end(), uuid) != p_uuid_list->end()) {
+          log::debug("Ignoring duplicate UUID: {}", uuid);
+        } else {
+          p_uuid_list->push_back(uuid);
+          remaining_uuid_slots--;
+        }
+      }
+    }
+
+    // 128bit UUIDs
+    {
+      const uint8_t* p_service_data = p_ad;
+      uint8_t service_data_len = 0;
+
+      bool found = false;
+      while ((p_service_data = AdvertiseDataParser::GetFieldByType(
+                      p_service_data + service_data_len,
+                      ad_len - (p_service_data - p_ad) - service_data_len,
+                      HCI_EIR_SERVICE_DATA_128BITS_UUID_TYPE, &service_data_len)) &&
+             remaining_uuid_slots > 0) {
+        if (service_data_len < 16) {
+          continue;
+        }
+
+        if (!found) {
+          log::debug("128-bit UUIDs for {} (from Service Data)", bdaddr);
+          found = true;
+          uuid_type_exists = true;
+        }
+
+        uint8_t* p_uuid128 = (uint8_t*)p_service_data;
+        Uuid uuid = Uuid::From128BitLE(p_uuid128);
+        log::debug("{}", uuid.ToString());
+        if (std::find(p_uuid_list->begin(), p_uuid_list->end(), uuid) != p_uuid_list->end()) {
+          log::debug("Ignoring duplicate UUID: {}", uuid);
+        } else {
+          p_uuid_list->push_back(uuid);
+          remaining_uuid_slots--;
+        }
+      }
+    }
+  }
+
+  log::debug("Remaining UUID slots: {}", remaining_uuid_slots);
+  return uuid_type_exists;
 }
 
 /* Returns true if |uuid| should be passed as device property */

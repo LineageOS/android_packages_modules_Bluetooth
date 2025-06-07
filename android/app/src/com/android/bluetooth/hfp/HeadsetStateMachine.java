@@ -167,6 +167,7 @@ class HeadsetStateMachine extends StateMachine {
     private int mAudioDisconnectRetry = 0;
 
     private BluetoothSinkAudioPolicy mHsClientAudioPolicy;
+    boolean mHasRfcommConnectionCompleted = false;
 
     // Keys are AT commands, and values are the company IDs.
     private static final Map<String, Integer> VENDOR_SPECIFIC_AT_COMMAND_COMPANY_ID;
@@ -574,6 +575,7 @@ class HeadsetStateMachine extends StateMachine {
             mHasSwbLc3Enabled = false;
             mHasNrecEnabled = false;
             mHasSwbAptXEnabled = false;
+            mHasRfcommConnectionCompleted = false;
 
             if (mHeadsetService.mPendingScoConnection != null
                     && mHeadsetService.mPendingScoConnection.equals(mDevice)) {
@@ -795,6 +797,9 @@ class HeadsetStateMachine extends StateMachine {
                 case DEVICE_STATE_CHANGED:
                     stateLogD("ignoring DEVICE_STATE_CHANGED event");
                     break;
+                case SEND_CLCC_RESPONSE:
+                    processSendClccResponse((HeadsetClccResponse) message.obj);
+                    break;
                 case STACK_EVENT:
                     HeadsetStackEvent event = (HeadsetStackEvent) message.obj;
                     stateLogD("STACK_EVENT: " + event);
@@ -908,6 +913,7 @@ class HeadsetStateMachine extends StateMachine {
                     break;
                 case HeadsetHalConstants.CONNECTION_STATE_CONNECTED:
                     stateLogD("RFCOMM connected");
+                    mHasRfcommConnectionCompleted = true;
                     break;
                 case HeadsetHalConstants.CONNECTION_STATE_SLC_CONNECTED:
                     stateLogD("SLC connected");
@@ -2738,6 +2744,10 @@ class HeadsetStateMachine extends StateMachine {
     @VisibleForTesting
     void processSendClccResponse(HeadsetClccResponse clcc) {
         if (!hasMessages(CLCC_RSP_TIMEOUT)) {
+            return;
+        }
+        if (!mHasRfcommConnectionCompleted) {
+            log("rfcomm not completed, not sending clcc response");
             return;
         }
         if (clcc.mIndex == 0) {

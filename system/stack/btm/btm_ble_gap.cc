@@ -1912,6 +1912,7 @@ static void btm_ble_update_inq_result(tINQ_DB_ENT* p_i, uint8_t addr_type,
 
   /* Save the info */
   p_cur->inq_result_type |= BT_DEVICE_TYPE_BLE;
+  p_cur->last_inq_result_from_type = BT_DEVICE_TYPE_BLE;
   p_cur->ble_addr_type = static_cast<tBLE_ADDR_TYPE>(addr_type);
   p_cur->rssi = rssi;
   p_cur->ble_primary_phy = primary_phy;

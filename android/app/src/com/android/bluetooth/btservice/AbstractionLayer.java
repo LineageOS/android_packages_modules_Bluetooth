@@ -51,6 +51,9 @@ public final class AbstractionLayer {
     static final int BT_PROPERTY_REMOTE_MODEL_NUM = 0x17;
     static final int BT_PROPERTY_LPP_OFFLOAD_FEATURES = 0x1B;
     static final int BT_PROPERTY_UUIDS_LE = 0x1C;
+    static final int BT_PROPERTY_DISCOVERY_RESULT_TYPE = 0x1D;
+    static final int BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE = 0x1E;
+    static final int BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA = 0x1F;
 
     public static final int BT_DEVICE_TYPE_BREDR = 0x01;
     public static final int BT_DEVICE_TYPE_BLE = 0x02;

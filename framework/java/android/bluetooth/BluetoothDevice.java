@@ -142,8 +142,33 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * <p>Always contains the extra fields {@link #EXTRA_DEVICE} and {@link #EXTRA_CLASS}. Can
      * contain the extra fields {@link #EXTRA_NAME} and/or {@link #EXTRA_RSSI} and/or {@link
      * #EXTRA_IS_COORDINATED_SET_MEMBER} if they are available.
+     *
+     * <p>It can contain the extra field {@link #EXTRA_DISCOVERY_RESULT_TYPE}. Based on the
+     * discovery result type, it can contain extra fields for UUIDs:
+     *
+     * <ul>
+     *   <li>If {@link #EXTRA_DISCOVERY_RESULT_TYPE} is {@link #DEVICE_TYPE_CLASSIC}, it can contain
+     *       {@link #EXTRA_UUID} for BR/EDR UUIDs.
+     *   <li>If {@link #EXTRA_DISCOVERY_RESULT_TYPE} is {@link #DEVICE_TYPE_LE}, it can contain
+     *       {@link #EXTRA_UUID_LE} for LE UUIDs.
+     *   <li>If {@link #EXTRA_DISCOVERY_RESULT_TYPE} is {@link #DEVICE_TYPE_DUAL}, it can contain
+     *       {@link #EXTRA_UUID} for BR/EDR UUIDs and {@link #EXTRA_UUID_LE} for LE UUIDs.
+     * </ul>
+     *
+     * <p>{@link #EXTRA_UUID} includes BR/EDR UUIDs in the extended inquiry response (EIR). A {@code
+     * null} or absent {@link #EXTRA_UUID} indicates EIR does not include Service Class UUID list.
+     * An empty {@link #EXTRA_UUID} indicates EIR includes Service Class UUID filed, but the list is
+     * empty.
+     *
+     * <p>{@link #EXTRA_UUID_LE} includes BLE UUIDs in the BLE advertising data (AD). Specifically,
+     * it includes UUIDs present in SERVICE UUID data type and SERVICE DATA data type, as defined by
+     * Bluetooth Core Specification Supplement (CSS). A {@code null} or absent {@link
+     * #EXTRA_UUID_LE} indicates the AD does not include Service UUID or Service DATA. An empty
+     * {@link #EXTRA_UUID} indicates AD includes Service UUID and/or Service DATA, but the list is
+     * empty.
      */
     // TODO: Change API to not broadcast RSSI if not available (incoming connection)
+    // TODO: Remove the discovery result / UUID part in the Javadoc if the flag is not enabled.
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothScanPermission
     @RequiresBluetoothLocationPermission
@@ -390,6 +415,21 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             "android.bluetooth.extra.IS_COORDINATED_SET_MEMBER";
 
     /**
+     * Used as an integer field in {@link #ACTION_FOUND} intents. It contains the discovery type for
+     * how the device is found:
+     *
+     * <ul>
+     *   <li>If BR/EDR inquiry result is received, {@link #DEVICE_TYPE_CLASSIC}.
+     *   <li>If BLE advertising data is received, {@link #DEVICE_TYPE_LE}.
+     *   <li>If both are received, {@link #DEVICE_TYPE_DUAL}.
+     * </ul>
+     */
+    @SuppressLint("ActionValue")
+    @FlaggedApi(Flags.FLAG_GET_SVC_UUIDS_FROM_BLE_ADV_DATA)
+    public static final String EXTRA_DISCOVERY_RESULT_TYPE =
+            "android.bluetooth.device.extra.DISCOVERY_RESULT_TYPE";
+
+    /**
      * Used as a Parcelable {@link BluetoothClass} extra field in {@link #ACTION_FOUND} and {@link
      * #ACTION_CLASS_CHANGED} intents.
      */
@@ -572,6 +612,18 @@ public final class BluetoothDevice implements Parcelable, Attributable {
 
     /** Bluetooth device type, Dual Mode - BR/EDR/LE */
     public static final int DEVICE_TYPE_DUAL = 3;
+
+    /** @hide */
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef(
+            prefix = {"DEVICE_TYPE_"},
+            value = {
+                DEVICE_TYPE_CLASSIC,
+                DEVICE_TYPE_LE,
+                DEVICE_TYPE_DUAL,
+                DEVICE_TYPE_UNKNOWN,
+            })
+    public @interface DeviceType {}
 
     /** @hide */
     @RequiresBluetoothConnectPermission
@@ -968,6 +1020,10 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * only when the UUIDs of the remote device are requested to be fetched using Service Discovery
      * Protocol
      *
+     * <p>{@link #EXTRA_UUID} includes UUIDs from both BR/EDR and LE service discovery results. A
+     * {@code null} {@link #EXTRA_UUID} indicates a timeout. An empty {@link #EXTRA_UUID} indicates
+     * a successful discovery, but zero UUIDs are discovered.
+     *
      * <p>Always contains the extra field {@link #EXTRA_DEVICE}
      *
      * <p>Always contains the extra field {@link #EXTRA_UUID}
@@ -1292,11 +1348,26 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @SystemApi public static final int PAIRING_VARIANT_PIN_16_DIGITS = 7;
 
     /**
-     * Used as an extra field in {@link #ACTION_UUID} intents, Contains the {@link
-     * android.os.ParcelUuid}s of the remote device which is a parcelable version of {@link UUID}. A
-     * {@code null} EXTRA_UUID indicates a timeout.
+     * Contains the {@link android.os.ParcelUuid}s of the remote device which is a parcelable
+     * version of {@link UUID}.
+     *
+     * <p>An empty EXTRA_UUID indicates the UUIDs are discovered, but zero UUIDs were found.
+     *
+     * <p>A {@code null} or absent EXTRA_UUID indicates the system failed obtain the UUIDs.
      */
     public static final String EXTRA_UUID = "android.bluetooth.device.extra.UUID";
+
+    /**
+     * Contains the {@link android.os.ParcelUuid}s of the remote device which is a parcelable
+     * version of {@link UUID}. Only services discovered for the LE transport is included here.
+     *
+     * <p>An empty EXTRA_UUID_LE indicates the UUIDs are discovered, but zero UUIDs were found.
+     *
+     * <p>A {@code null} or absent EXTRA_UUID_LE indicates the system failed obtain the UUIDs.
+     */
+    @SuppressLint("ActionValue")
+    @FlaggedApi(Flags.FLAG_GET_SVC_UUIDS_FROM_BLE_ADV_DATA)
+    public static final String EXTRA_UUID_LE = "android.bluetooth.device.extra.UUID_LE";
 
     /** @hide */
     public static final String EXTRA_SDP_RECORD = "android.bluetooth.device.extra.SDP_RECORD";

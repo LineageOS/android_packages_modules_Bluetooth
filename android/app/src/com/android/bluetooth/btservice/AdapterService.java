@@ -291,7 +291,7 @@ public class AdapterService extends Service {
     private final DistanceMeasurementNativeInterface mDistanceMeasurementNativeInterface;
     private final SilenceDeviceManager mSilenceDeviceManager;
     private final DatabaseManager mDatabaseManager;
-    private final ServiceFactory mServiceFactory;
+    private final ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
 
     private boolean mIsMediaProfileConnected;
     private int mStackReportedState;
@@ -730,24 +730,49 @@ public class AdapterService extends Service {
         return mBluetoothHciVendorSpecificNativeInterface;
     }
 
-    private Optional<A2dpService> getA2dpService() {
+    public Optional<A2dpService> getA2dpService() {
         return getStartedProfile(BluetoothProfile.A2DP, A2dpService.class);
+    }
+
+    public Optional<AvrcpTargetService> getAvrcpTargetService() {
+        return getStartedProfile(BluetoothProfile.AVRCP, AvrcpTargetService.class);
+    }
+
+    Optional<BassClientService> getBassClientService() {
+        return getStartedProfile(
+                BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, BassClientService.class);
+    }
+
+    Optional<BatteryService> getBatteryService() {
+        return getStartedProfile(BluetoothProfile.BATTERY, BatteryService.class);
+    }
+
+    public Optional<CsipSetCoordinatorService> getCsipSetCoordinatorService() {
+        return getStartedProfile(
+                BluetoothProfile.CSIP_SET_COORDINATOR, CsipSetCoordinatorService.class);
+    }
+
+    Optional<HapClientService> getHapClientService() {
+        return getStartedProfile(BluetoothProfile.HAP_CLIENT, HapClientService.class);
     }
 
     private Optional<HeadsetClientService> getHeadsetClientService() {
         return getStartedProfile(BluetoothProfile.HEADSET_CLIENT, HeadsetClientService.class);
     }
 
-    private Optional<HeadsetService> getHeadsetService() {
+    public Optional<HeadsetService> getHeadsetService() {
         return getStartedProfile(BluetoothProfile.HEADSET, HeadsetService.class);
     }
 
-    private Optional<HearingAidService> getHearingAidService() {
+    Optional<HearingAidService> getHearingAidService() {
         return getStartedProfile(BluetoothProfile.HEARING_AID, HearingAidService.class);
     }
 
-    @VisibleForTesting
-    protected Optional<LeAudioService> getLeAudioService() {
+    Optional<HidHostService> getHidHostService() {
+        return getStartedProfile(BluetoothProfile.HID_HOST, HidHostService.class);
+    }
+
+    Optional<LeAudioService> getLeAudioService() {
         return getStartedProfile(BluetoothProfile.LE_AUDIO, LeAudioService.class);
     }
 
@@ -759,6 +784,10 @@ public class AdapterService extends Service {
     private Optional<MapClientService> getMapClientService() {
         return getStartedProfile(BluetoothProfile.MAP_CLIENT, MapClientService.class)
                 .filter(ProfileService::isAvailable);
+    }
+
+    Optional<PanService> getPanService() {
+        return getStartedProfile(BluetoothProfile.PAN, PanService.class);
     }
 
     private Optional<PbapClientService> getPbapClientService() {
@@ -773,6 +802,10 @@ public class AdapterService extends Service {
 
     public Optional<TbsService> getTbsService() {
         return getStartedProfile(BluetoothProfile.LE_CALL_CONTROL, TbsService.class);
+    }
+
+    Optional<VolumeControlService> getVolumeControlService() {
+        return getStartedProfile(BluetoothProfile.VOLUME_CONTROL, VolumeControlService.class);
     }
 
     Optional<ConnectableProfile> getStartedConnectableProfile(int id) {
@@ -914,7 +947,7 @@ public class AdapterService extends Service {
         mActiveDeviceManager = new ActiveDeviceManager(this, mServiceFactory);
         mActiveDeviceManager.start();
 
-        mBtCompanionManager = new CompanionManager(this, mServiceFactory);
+        mBtCompanionManager = new CompanionManager(this);
 
         mBluetoothSocketManagerBinder = new BluetoothSocketManagerBinder(this);
 
@@ -4009,8 +4042,11 @@ public class AdapterService extends Service {
         boolean mediaConnected = isMediaProfileConnected();
         if (mIsMediaProfileConnected != mediaConnected) {
             mIsMediaProfileConnected = mediaConnected;
-            broadcastToSystemServerCallbacks(
-                    "mediaConnected", (c) -> c.onMediaProfileConnectionChange(mediaConnected));
+            mHandler.post(
+                    () ->
+                            broadcastToSystemServerCallbacks(
+                                    "mediaConnected",
+                                    (c) -> c.onMediaProfileConnectionChange(mediaConnected)));
         }
     }
 

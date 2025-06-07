@@ -90,8 +90,9 @@ public:
   virtual void OnFeaturesUpdate(const RawAddress& addr, uint8_t features) = 0;
 
   /** Callback for the currently active preset */
-  virtual void OnActivePresetSelected(std::variant<RawAddress, int> addr_or_group_id,
-                                      uint8_t preset_index) = 0;
+  virtual void OnActivePresetSelected(const RawAddress& addr, uint8_t preset_index) = 0;
+
+  virtual void OnActivePresetSelectedForGroup(int group_id, uint8_t preset_index) = 0;
 
   /** Callbacks for the active preset selection error */
   virtual void OnActivePresetSelectError(std::variant<RawAddress, int> addr_or_group_id,

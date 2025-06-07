@@ -433,6 +433,29 @@ typedef enum {
    */
   BT_PROPERTY_UUIDS_LE,
 
+  /**
+   * Description - Bluetooth discovery result type (i.e. inquiry result type)
+   * Access mode - Only GET.
+   * Data type   - uint8_t
+   */
+  BT_PROPERTY_DISCOVERY_RESULT_TYPE,
+
+  /**
+   * Description - Bluetooth Service 128-bit UUIDs in Extended inquiry result (EIR).
+   * Access mode - Only GET.
+   * Data type   - Array of bluetooth::Uuid (Array size inferred from property
+   *               length).
+   */
+  BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE,
+
+  /**
+   * Description - Bluetooth Service 128-bit UUIDs in LE Advertising data (AD)
+   * Access mode - Only GET.
+   * Data type   - Array of bluetooth::Uuid (Array size inferred from property
+   *               length).
+   */
+  BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA,
+
   BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP = 0xFF,
 } bt_property_type_t;
 
