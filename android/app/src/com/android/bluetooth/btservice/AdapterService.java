@@ -734,16 +734,24 @@ public class AdapterService extends Service {
         return getStartedProfile(BluetoothProfile.A2DP, A2dpService.class);
     }
 
+    public Optional<A2dpSinkService> getA2dpSinkService() {
+        return getStartedProfile(BluetoothProfile.A2DP_SINK, A2dpSinkService.class);
+    }
+
     public Optional<AvrcpTargetService> getAvrcpTargetService() {
         return getStartedProfile(BluetoothProfile.AVRCP, AvrcpTargetService.class);
     }
 
-    Optional<BassClientService> getBassClientService() {
+    public Optional<AvrcpControllerService> getAvrcpControllerService() {
+        return getStartedProfile(BluetoothProfile.AVRCP_CONTROLLER, AvrcpControllerService.class);
+    }
+
+    public Optional<BassClientService> getBassClientService() {
         return getStartedProfile(
                 BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, BassClientService.class);
     }
 
-    Optional<BatteryService> getBatteryService() {
+    public Optional<BatteryService> getBatteryService() {
         return getStartedProfile(BluetoothProfile.BATTERY, BatteryService.class);
     }
 
@@ -752,59 +760,79 @@ public class AdapterService extends Service {
                 BluetoothProfile.CSIP_SET_COORDINATOR, CsipSetCoordinatorService.class);
     }
 
-    Optional<HapClientService> getHapClientService() {
+    public Optional<HapClientService> getHapClientService() {
         return getStartedProfile(BluetoothProfile.HAP_CLIENT, HapClientService.class);
-    }
-
-    private Optional<HeadsetClientService> getHeadsetClientService() {
-        return getStartedProfile(BluetoothProfile.HEADSET_CLIENT, HeadsetClientService.class);
     }
 
     public Optional<HeadsetService> getHeadsetService() {
         return getStartedProfile(BluetoothProfile.HEADSET, HeadsetService.class);
     }
 
-    Optional<HearingAidService> getHearingAidService() {
+    public Optional<HeadsetClientService> getHeadsetClientService() {
+        return getStartedProfile(BluetoothProfile.HEADSET_CLIENT, HeadsetClientService.class);
+    }
+
+    public Optional<HearingAidService> getHearingAidService() {
         return getStartedProfile(BluetoothProfile.HEARING_AID, HearingAidService.class);
     }
 
-    Optional<HidHostService> getHidHostService() {
+    public Optional<HidDeviceService> getHidDeviceService() {
+        return getStartedProfile(BluetoothProfile.HID_DEVICE, HidDeviceService.class);
+    }
+
+    public Optional<HidHostService> getHidHostService() {
         return getStartedProfile(BluetoothProfile.HID_HOST, HidHostService.class);
     }
 
-    Optional<LeAudioService> getLeAudioService() {
+    public Optional<GattService> getGattService() {
+        return getStartedProfile(BluetoothProfile.GATT, GattService.class);
+    }
+
+    public Optional<LeAudioService> getLeAudioService() {
         return getStartedProfile(BluetoothProfile.LE_AUDIO, LeAudioService.class);
-    }
-
-    private Optional<BluetoothMapService> getMapService() {
-        return getStartedProfile(BluetoothProfile.MAP, BluetoothMapService.class)
-                .filter(ProfileService::isAvailable);
-    }
-
-    private Optional<MapClientService> getMapClientService() {
-        return getStartedProfile(BluetoothProfile.MAP_CLIENT, MapClientService.class)
-                .filter(ProfileService::isAvailable);
-    }
-
-    Optional<PanService> getPanService() {
-        return getStartedProfile(BluetoothProfile.PAN, PanService.class);
-    }
-
-    private Optional<PbapClientService> getPbapClientService() {
-        return getStartedProfile(BluetoothProfile.PBAP_CLIENT, PbapClientService.class)
-                .filter(ProfileService::isAvailable);
-    }
-
-    private Optional<SapService> getSapService() {
-        return getStartedProfile(BluetoothProfile.SAP, SapService.class)
-                .filter(ProfileService::isAvailable);
     }
 
     public Optional<TbsService> getTbsService() {
         return getStartedProfile(BluetoothProfile.LE_CALL_CONTROL, TbsService.class);
     }
 
-    Optional<VolumeControlService> getVolumeControlService() {
+    public Optional<BluetoothMapService> getMapService() {
+        return getStartedProfile(BluetoothProfile.MAP, BluetoothMapService.class)
+                .filter(ProfileService::isAvailable);
+    }
+
+    public Optional<MapClientService> getMapClientService() {
+        return getStartedProfile(BluetoothProfile.MAP_CLIENT, MapClientService.class)
+                .filter(ProfileService::isAvailable);
+    }
+
+    public Optional<McpService> getMcpService() {
+        return getStartedProfile(BluetoothProfile.MCP_SERVER, McpService.class);
+    }
+
+    public Optional<BluetoothOppService> getOppService() {
+        return getStartedProfile(BluetoothProfile.OPP, BluetoothOppService.class);
+    }
+
+    public Optional<PanService> getPanService() {
+        return getStartedProfile(BluetoothProfile.PAN, PanService.class);
+    }
+
+    public Optional<BluetoothPbapService> getPbapService() {
+        return getStartedProfile(BluetoothProfile.PBAP, BluetoothPbapService.class);
+    }
+
+    public Optional<PbapClientService> getPbapClientService() {
+        return getStartedProfile(BluetoothProfile.PBAP_CLIENT, PbapClientService.class)
+                .filter(ProfileService::isAvailable);
+    }
+
+    public Optional<SapService> getSapService() {
+        return getStartedProfile(BluetoothProfile.SAP, SapService.class)
+                .filter(ProfileService::isAvailable);
+    }
+
+    public Optional<VolumeControlService> getVolumeControlService() {
         return getStartedProfile(BluetoothProfile.VOLUME_CONTROL, VolumeControlService.class);
     }
 
