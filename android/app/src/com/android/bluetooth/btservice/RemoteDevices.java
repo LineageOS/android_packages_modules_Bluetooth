@@ -70,6 +70,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -183,6 +184,15 @@ public class RemoteDevices {
                     }
                     return false;
                 };
+    }
+
+    // TODO(b/422543753) Delete on flag cleanup
+    Optional<BatteryService> getBatteryService() {
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            return mAdapterService.getBatteryService();
+        } else {
+            return Optional.ofNullable(BatteryService.getBatteryService());
+        }
     }
 
     /**
@@ -442,7 +452,8 @@ public class RemoteDevices {
         /**
          * @return the mIdentityAddress
          */
-        @NonNull BluetoothAddress getIdentityAddress() {
+        @NonNull
+        BluetoothAddress getIdentityAddress() {
             synchronized (mObject) {
                 return mIdentityAddress;
             }
@@ -1440,7 +1451,7 @@ public class RemoteDevices {
                     case 0x01 -> BluetoothDevice.ADDRESS_TYPE_RANDOM;
                     default -> {
                         errorLog(
-                                 "Unexpected identity address type received from native: "
+                                "Unexpected identity address type received from native: "
                                         + identityAddressType);
                         yield BluetoothDevice.ADDRESS_TYPE_UNKNOWN;
                     }
@@ -1503,10 +1514,9 @@ public class RemoteDevices {
                     || state == BluetoothAdapter.STATE_BLE_TURNING_ON) {
                 intent = new Intent(BluetoothAdapter.ACTION_BLE_ACL_CONNECTED);
             }
-            BatteryService batteryService = BatteryService.getBatteryService();
-            if (batteryService != null && transport == BluetoothDevice.TRANSPORT_LE) {
-                batteryService.connectIfPossible(device);
-            }
+            getBatteryService()
+                    .filter(battery -> transport == BluetoothDevice.TRANSPORT_LE)
+                    .ifPresent(battery -> battery.connectIfPossible(device));
             mAdapterService.updatePhonePolicyOnAclConnect(device);
             SecurityLog.writeEvent(
                     SecurityLog.TAG_BLUETOOTH_CONNECTION,
@@ -1536,12 +1546,10 @@ public class RemoteDevices {
             }
             // Reset battery level on complete disconnection
             if (mAdapterService.getConnectionState(device) == 0) {
-                BatteryService batteryService = BatteryService.getBatteryService();
-                if (batteryService != null
-                        && batteryService.getConnectionState(device) != STATE_DISCONNECTED
-                        && transport == BluetoothDevice.TRANSPORT_LE) {
-                    batteryService.disconnect(device);
-                }
+                getBatteryService()
+                        .filter(battery -> transport == BluetoothDevice.TRANSPORT_LE)
+                        .filter(battery -> battery.getConnectionState(device) != STATE_DISCONNECTED)
+                        .ifPresent(battery -> battery.disconnect(device));
                 resetBatteryLevel(device, /* isBas= */ true);
             }
 
@@ -2172,9 +2180,9 @@ public class RemoteDevices {
 
     @VisibleForTesting
     boolean hasBatteryService(BluetoothDevice device) {
-        BatteryService batteryService = BatteryService.getBatteryService();
-        return batteryService != null
-                && batteryService.getConnectionState(device) == STATE_CONNECTED;
+        return getBatteryService()
+                .map(battery -> battery.getConnectionState(device) == STATE_CONNECTED)
+                .orElse(false);
     }
 
     /** Handles headset client connection state change event. */
