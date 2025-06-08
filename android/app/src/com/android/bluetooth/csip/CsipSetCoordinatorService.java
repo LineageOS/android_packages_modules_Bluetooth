@@ -117,7 +117,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,
-                        () -> new CsipSetCoordinatorNativeInterface(mAdapterService));
+                        () -> new CsipSetCoordinatorNativeInterface(mAdapterService, this));
         mServiceFactory = requireNonNull(serviceFactory);
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));

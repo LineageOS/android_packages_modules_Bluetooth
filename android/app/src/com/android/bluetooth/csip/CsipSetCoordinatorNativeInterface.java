@@ -33,9 +33,12 @@ public class CsipSetCoordinatorNativeInterface {
     private static final String TAG = CsipSetCoordinatorNativeInterface.class.getSimpleName();
 
     private final AdapterService mAdapterService;
+    private final CsipSetCoordinatorService mService;
 
-    CsipSetCoordinatorNativeInterface(AdapterService adapterService) {
+    CsipSetCoordinatorNativeInterface(
+            AdapterService adapterService, CsipSetCoordinatorService service) {
         mAdapterService = requireNonNull(adapterService);
+        mService = service;
     }
 
     void init() {
@@ -65,16 +68,6 @@ public class CsipSetCoordinatorNativeInterface {
         return Utils.getBytesFromAddress(device.getAddress());
     }
 
-    private static void sendMessageToService(CsipSetCoordinatorStackEvent event) {
-        CsipSetCoordinatorService service =
-                CsipSetCoordinatorService.getCsipSetCoordinatorService();
-        if (service != null) {
-            service.messageFromNative(event);
-        } else {
-            Log.e(TAG, "Event ignored, service not available: " + event);
-        }
-    }
-
     // Callbacks from the native stack back into the Java framework.
     // All callbacks are routed via the Service which will disambiguate which
     // state machine the message should be routed to.
@@ -89,7 +82,7 @@ public class CsipSetCoordinatorNativeInterface {
         event.valueInt1 = state;
 
         Log.d(TAG, "onConnectionStateChanged: " + event);
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     /** Device availability */
@@ -107,7 +100,7 @@ public class CsipSetCoordinatorNativeInterface {
         event.valueUuid1 = uuid;
 
         Log.d(TAG, "onDeviceAvailable: " + event);
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     // Callbacks from the native stack back into the Java framework.
@@ -123,7 +116,7 @@ public class CsipSetCoordinatorNativeInterface {
         event.device = getDevice(address);
         event.valueInt1 = groupId;
         Log.d(TAG, "onSetMemberAvailable: " + event);
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     /**
@@ -142,7 +135,7 @@ public class CsipSetCoordinatorNativeInterface {
         event.valueInt2 = status;
         event.valueBool1 = locked;
         Log.d(TAG, "onGroupLockChanged: " + event);
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     /**
