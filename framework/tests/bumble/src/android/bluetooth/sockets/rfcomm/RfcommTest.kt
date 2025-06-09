@@ -457,12 +457,15 @@ class RfcommTest {
      * - Create listening socket and connect
      * - Disconnect RFCOMM from remote device
      */
-    @RequiresFlagsEnabled(Flags.FLAG_TRIGGER_SEC_PROC_ON_INC_ACCESS_REQ)
+    @RequiresFlagsEnabled(
+        Flags.FLAG_TRIGGER_SEC_PROC_ON_INC_ACCESS_REQ,
+        Flags.FLAG_UPGRADE_TEMP_BONDING_ON_AUTH_REQ,
+    )
     @Test
     fun serverSecureConnectThenRemoteDisconnect() {
         updateSecurityConfig()
         // step 1
-        val (serverSock, connection) = connectRemoteToListeningSocket()
+        val (serverSock, connection) = connectRemoteToListeningSocket(mRemoteDevice)
         val disconnectRequest =
             RfcommProto.DisconnectionRequest.newBuilder().setConnection(connection).build()
         // step 2
@@ -475,12 +478,15 @@ class RfcommTest {
      * - Create listening socket and connect
      * - Disconnect RFCOMM from local device
      */
-    @RequiresFlagsEnabled(Flags.FLAG_TRIGGER_SEC_PROC_ON_INC_ACCESS_REQ)
+    @RequiresFlagsEnabled(
+        Flags.FLAG_TRIGGER_SEC_PROC_ON_INC_ACCESS_REQ,
+        Flags.FLAG_UPGRADE_TEMP_BONDING_ON_AUTH_REQ,
+    )
     @Test
     fun serverSecureConnectThenLocalDisconnect() {
         updateSecurityConfig()
         // step 1
-        val (serverSock, _) = connectRemoteToListeningSocket()
+        val (serverSock, _) = connectRemoteToListeningSocket(mRemoteDevice)
         // step 2
         serverSock.close()
         Truth.assertThat(serverSock.channel).isEqualTo(-1) // ensure disconnected at RFCOMM Layer
@@ -862,6 +868,7 @@ class RfcommTest {
     }
 
     private fun connectRemoteToListeningSocket(
+        device: BluetoothDevice,
         name: String = TEST_SERVER_NAME,
         uuid: String = TEST_UUID,
     ): Pair<BluetoothServerSocket, RfcommProto.RfcommConnection> {
@@ -878,7 +885,23 @@ class RfcommTest {
         val socket = mAdapter.listenUsingRfcommWithServiceRecord(name, UUID.fromString(uuid))
 
         try {
-            socket.accept(3000) // 3 second timeout
+            runBlocking(mScope.coroutineContext) {
+                withTimeout(CONNECT_TIMEOUT.toMillis()) {
+                    // We need to reply to the pairing request in the case where the devices aren't
+                    // bonded yet
+                    if (!mAdapter.bondedDevices.contains(device)) {
+                        launch {
+                            Log.i(TAG, "Waiting for ACTION_PAIRING_REQUEST")
+                            mFlow
+                                .filter { it.action == BluetoothDevice.ACTION_PAIRING_REQUEST }
+                                .filter { it.getBluetoothDeviceExtra() == device }
+                                .first()
+                            device.setPairingConfirmation(true)
+                        }
+                    }
+                    socket.accept(ACCEPT_TIMEOUT.toMillis().toInt())
+                }
+            }
         } catch (e: IOException) {
             Log.e(TAG, "Unexpected IOException: $e")
         }
@@ -930,6 +953,7 @@ class RfcommTest {
         private val GRPC_TIMEOUT = Duration.ofSeconds(10)
         private val CONNECT_TIMEOUT = Duration.ofSeconds(7)
         private val STATE_CHANGE_TIMEOUT = Duration.ofSeconds(5)
+        private val ACCEPT_TIMEOUT = Duration.ofSeconds(7)
         private const val TEST_UUID = "2ac5d8f1-f58d-48ac-a16b-cdeba0892d65"
         private const val SERIAL_PORT_UUID = "00001101-0000-1000-8000-00805F9B34FB"
         private const val TEST_SERVER_NAME = "RFCOMM Server"
