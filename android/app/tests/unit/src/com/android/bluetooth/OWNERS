@@ -1,0 +1,2 @@
+# MessageQueue-related classes
+per-file TestLooper.java = file:platform/frameworks/base:/MESSAGE_QUEUE_OWNERS
