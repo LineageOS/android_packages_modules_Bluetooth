@@ -3028,9 +3028,7 @@ public class BassClientServiceTest {
         prepareSyncToSourceAndVerify();
 
         /* Fake external broadcast - no Broadcast Metadata from LE Audio service */
-        doReturn(new ArrayList<BluetoothLeBroadcastMetadata>())
-                .when(mLeAudioService)
-                .getAllBroadcastMetadata();
+        doReturn(null).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
         doReturn(testGroupId).when(mLeAudioService).getActiveGroupId();
         doReturn(new ArrayList<BluetoothDevice>(Arrays.asList(mCurrentDevice)))
                 .when(mLeAudioService)
@@ -3746,9 +3744,7 @@ public class BassClientServiceTest {
         prepareSyncToSourceAndVerify();
 
         /* Fake external broadcast - no Broadcast Metadata from LE Audio service */
-        doReturn(new ArrayList<BluetoothLeBroadcastMetadata>())
-                .when(mLeAudioService)
-                .getAllBroadcastMetadata();
+        doReturn(null).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
 
         verifyAddSourceForGroup(mBroadcastMetadata1);
         prepareRemoteSourceState(
@@ -3777,9 +3773,7 @@ public class BassClientServiceTest {
         prepareSyncToSourceAndVerify();
 
         /* Fake external broadcast - no Broadcast Metadata from LE Audio service */
-        doReturn(new ArrayList<BluetoothLeBroadcastMetadata>())
-                .when(mLeAudioService)
-                .getAllBroadcastMetadata();
+        doReturn(null).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
 
         verifyAddSourceForGroup(mBroadcastMetadata1);
         prepareRemoteSourceState(
@@ -3905,9 +3899,7 @@ public class BassClientServiceTest {
     }
 
     private void prepareTwoSynchronizedDevicesForLocalBroadcast() throws RemoteException {
-        doReturn(new ArrayList<BluetoothLeBroadcastMetadata>(Arrays.asList(mBroadcastMetadata1)))
-                .when(mLeAudioService)
-                .getAllBroadcastMetadata();
+        doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
         prepareConnectedDeviceGroup();
         verifyAddSourceForGroup(mBroadcastMetadata1);
         for (BassClientStateMachine sm : mStateMachines.values()) {
@@ -3970,9 +3962,7 @@ public class BassClientServiceTest {
         doReturn(false).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
         doReturn(false).when(mLeAudioService).isPaused(TEST_BROADCAST_ID);
 
-        doReturn(new ArrayList<BluetoothLeBroadcastMetadata>(Arrays.asList(mBroadcastMetadata1)))
-                .when(mLeAudioService)
-                .getAllBroadcastMetadata();
+        doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
         prepareConnectedDeviceGroup();
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
         verify(mCallback, timeout(TIMEOUT_MS).atLeastOnce())
@@ -6585,9 +6575,7 @@ public class BassClientServiceTest {
             doReturn(false).when(sm).isBassStateReady();
         }
         doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
-        doReturn(new ArrayList<BluetoothLeBroadcastMetadata>(Arrays.asList(mBroadcastMetadata1)))
-                .when(mLeAudioService)
-                .getAllBroadcastMetadata();
+        doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
         // Add broadcast source and got queued due to BASS not ready
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ false);
 
@@ -6653,9 +6641,7 @@ public class BassClientServiceTest {
             doReturn(false).when(sm).isBassStateReady();
         }
         doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
-        doReturn(new ArrayList<BluetoothLeBroadcastMetadata>(Arrays.asList(mBroadcastMetadata1)))
-                .when(mLeAudioService)
-                .getAllBroadcastMetadata();
+        doReturn(mBroadcastMetadata1).when(mLeAudioService).getBroadcastMetadata(TEST_BROADCAST_ID);
         // Add broadcast source and got queued due to BASS not ready
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata1, /* isGroupOp */ true);
 
@@ -6731,17 +6717,13 @@ public class BassClientServiceTest {
                                 .collect(Collectors.toList()));
 
         /* External broadcast check */
-        doReturn(new ArrayList<BluetoothLeBroadcastMetadata>())
-                .when(mLeAudioService)
-                .getAllBroadcastMetadata();
+        doReturn(null).when(mLeAudioService).getBroadcastMetadata(broadcastId);
 
         assertThat(mBassClientService.isLocalBroadcast(metadata)).isFalse();
         assertThat(mBassClientService.isLocalBroadcast(receiveState)).isFalse();
 
         /* Local broadcast check */
-        doReturn(new ArrayList<BluetoothLeBroadcastMetadata>(Arrays.asList(metadata)))
-                .when(mLeAudioService)
-                .getAllBroadcastMetadata();
+        doReturn(metadata).when(mLeAudioService).getBroadcastMetadata(broadcastId);
 
         assertThat(mBassClientService.isLocalBroadcast(metadata)).isTrue();
         assertThat(mBassClientService.isLocalBroadcast(receiveState)).isTrue();

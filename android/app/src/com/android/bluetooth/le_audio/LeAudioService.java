@@ -1566,6 +1566,17 @@ public class LeAudioService extends ConnectableProfile {
     }
 
     /**
+     * Get broadcast metadata for passed broadcastId
+     *
+     * @param broadcastId broadcast instance identifier
+     * @return metadata if available, null otherwise
+     */
+    public BluetoothLeBroadcastMetadata getBroadcastMetadata(int broadcastId) {
+        LeAudioBroadcastDescriptor descriptor = mBroadcastDescriptors.get(broadcastId);
+        return descriptor == null ? null : descriptor.mMetadata;
+    }
+
+    /**
      * Get all broadcast metadata.
      *
      * @return list of all know Broadcast metadata
