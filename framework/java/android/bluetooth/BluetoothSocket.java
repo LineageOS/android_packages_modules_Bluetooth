@@ -1036,7 +1036,6 @@ public final class BluetoothSocket implements Closeable {
         //      splitting the write into multiple smaller writes.
         //      Rfcomm uses dynamic allocation, and should not have any bindings
         //      to the actual message length.
-        if (VDBG) Log.d(TAG, "write: " + mSocketOS + " length: " + length);
         if ((mType == TYPE_L2CAP) || (mType == TYPE_L2CAP_LE)) {
             if (length <= mMaxTxPacketSize) {
                 mSocketOS.write(b, offset, length);
@@ -1062,7 +1061,7 @@ public final class BluetoothSocket implements Closeable {
             mSocketOS.write(b, offset, length);
         }
         // There is no good way to confirm since the entire process is asynchronous anyway
-        if (VDBG) Log.d(TAG, "write out: " + mSocketOS + " length: " + length);
+        if (VDBG) Log.v(TAG, "write finished: " + mSocketOS + " length: " + length);
         return length;
     }
 
@@ -1443,7 +1442,7 @@ public final class BluetoothSocket implements Closeable {
     private static int readInt(InputStream is) throws IOException {
         byte[] ibytes = new byte[4];
         int ret = readAll(is, ibytes);
-        if (VDBG) Log.d(TAG, "inputStream.read ret: " + ret);
+        if (VDBG) Log.v(TAG, "inputStream.read ret: " + ret);
         ByteBuffer bb = ByteBuffer.wrap(ibytes);
         bb.order(ByteOrder.nativeOrder());
         return bb.getInt();
