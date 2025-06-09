@@ -67,6 +67,7 @@ enum class Priority : uint8_t {
 struct SniffOffloadConfig {
   SniffOffloadParameters parameters_;
   Priority priority_;
+  bool allow_subrating_update_;
 };
 
 }  // namespace sniff_offload

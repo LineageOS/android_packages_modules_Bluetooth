@@ -44,6 +44,7 @@ filegroup {
         "dm/bta_dm_pm.cc",
         "dm/bta_dm_sec.cc",
         "dm/bta_dm_sec_api.cc",
+        "dm/sniff_offload/sniff_offload_config_reader.cc",
         "dm/sniff_offload/sniff_offload_vsc_sender.cc",
     ],
 }
@@ -1651,4 +1652,59 @@ cc_test {
             undefined: true,
         },
     },
+}
+
+cc_test {
+    name: "sniff_offload_config_reader_test",
+    team: "trendy_team_bluetooth",
+    srcs: [
+        "test/common/bta_dm_cfg_mock.cc",
+        "dm/sniff_offload/sniff_offload_config_reader.cc",
+        "dm/sniff_offload/sniff_offload_config_reader_test.cc",
+    ],
+
+    include_dirs: [
+        "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/bta/include",
+        "packages/modules/Bluetooth/system/bta/sys",
+        "packages/modules/Bluetooth/system/bta/dm",
+        "packages/modules/Bluetooth/system/bta/dm/sniff_offload",
+        "packages/modules/Bluetooth/system/stack/include",
+        "packages/modules/Bluetooth/system/gd",
+    ],
+
+    shared_libs: [
+        "liblog",
+    ],
+
+    static_libs: [
+        "bluetooth_flags_c_lib_for_test",
+        "libbluetooth_gd",
+        "libbluetooth_types",
+        "libbluetooth_log",
+        "libgtest",
+        "libgtest_main",
+    ],
+
+    header_libs: [
+        "libbluetooth_headers",
+    ],
+
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+
+    sanitize: {
+        cfi: true,
+        scs: true,
+        address: true,
+        all_undefined: true,
+        integer_overflow: true,
+        diag: {
+            undefined: true,
+        },
+    },
+
+    host_supported: true,
 }
