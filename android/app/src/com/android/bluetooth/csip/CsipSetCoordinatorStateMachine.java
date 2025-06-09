@@ -57,6 +57,7 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
     private final Connecting mConnecting;
     private final Disconnecting mDisconnecting;
     private final Connected mConnected;
+    private State mCurrentState;
     private int mLastConnectionState = -1;
 
     private final CsipSetCoordinatorService mService;
@@ -78,6 +79,7 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
         mConnecting = new Connecting();
         mDisconnecting = new Disconnecting();
         mConnected = new Connected();
+        mCurrentState = mDisconnected;
 
         addState(mDisconnected);
         addState(mConnecting);
@@ -109,6 +111,7 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
     class Disconnected extends State {
         @Override
         public void enter() {
+            mCurrentState = this;
             Log.i(
                     TAG,
                     "Enter Disconnected("
@@ -235,6 +238,7 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
     class Connecting extends State {
         @Override
         public void enter() {
+            mCurrentState = this;
             Log.i(
                     TAG,
                     "Enter Connecting("
@@ -333,6 +337,7 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
     class Disconnecting extends State {
         @Override
         public void enter() {
+            mCurrentState = this;
             Log.i(
                     TAG,
                     "Enter Disconnecting("
@@ -450,6 +455,7 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
     class Connected extends State {
         @Override
         public void enter() {
+            mCurrentState = this;
             Log.i(
                     TAG,
                     "Enter Connected("
@@ -532,11 +538,11 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
     }
 
     synchronized boolean isConnected() {
-        return getCurrentState() == mConnected;
+        return mCurrentState == mConnected;
     }
 
     int getConnectionState() {
-        String currentState = getCurrentState().getName();
+        String currentState = mCurrentState.getName();
         return switch (currentState) {
             case "Disconnected" -> STATE_DISCONNECTED;
             case "Connecting" -> STATE_CONNECTING;
