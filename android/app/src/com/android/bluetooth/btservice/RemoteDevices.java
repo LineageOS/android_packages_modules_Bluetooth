@@ -1616,6 +1616,10 @@ public class RemoteDevices {
                                 Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                                         | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
 
+        if (Flags.addBondLossReason()) {
+            intent.putExtra(BluetoothDevice.EXTRA_BOND_LOSS_REASON, reason);
+        }
+
         // Log transition to key missing state, if the key missing count is 0 which indicates
         // that the device is bonded until now.
         if (mAdapterService.getDatabaseManager().getKeyMissingCount(device) == 0) {
