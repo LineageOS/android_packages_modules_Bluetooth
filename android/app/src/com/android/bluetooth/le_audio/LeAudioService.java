@@ -827,7 +827,9 @@ public class LeAudioService extends ConnectableProfile {
         return sLeAudioService;
     }
 
-    private static synchronized void setLeAudioService(LeAudioService instance) {
+    // TODO(b/422543753) Hide on flag cleanup
+    @VisibleForTesting
+    public static synchronized void setLeAudioService(LeAudioService instance) {
         Log.d(TAG, "setLeAudioService(): set to: " + instance);
         sLeAudioService = instance;
     }
