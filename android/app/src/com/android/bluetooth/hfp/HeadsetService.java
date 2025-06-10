@@ -145,6 +145,8 @@ public class HeadsetService extends ConnectableProfile {
     private BluetoothDevice mActiveDevice;
     // Device waiting for audio framework to start SCO
     BluetoothDevice mPendingScoConnection;
+    Intent mPendingDialingOutIntent = null;
+    BluetoothDevice mPendingDialingOutDevice = null;
     private boolean mAudioRouteAllowed = true;
     // Indicates whether SCO audio needs to be forced to open regardless ANY OTHER restrictions
     private boolean mForceScoAudio;
@@ -317,6 +319,8 @@ public class HeadsetService extends ConnectableProfile {
                 mExposedActiveDevice = null;
                 mActiveDevice = null;
                 mPendingScoConnection = null;
+                mPendingDialingOutIntent = null;
+                mPendingDialingOutDevice = null;
                 broadcastActiveDevice(null);
             }
             mInbandRingingRuntimeDisable = false;
@@ -1621,12 +1625,21 @@ public class HeadsetService extends ConnectableProfile {
                             Intent.ACTION_CALL_PRIVILEGED,
                             Uri.fromParts(PhoneAccount.SCHEME_TEL, dialNumber, null));
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-            mDialingOutTimeoutEvent = new DialingOutTimeoutEvent(fromDevice);
-            mStateMachinesThreadHandler.postDelayed(
-                    mDialingOutTimeoutEvent, DIALING_OUT_TIMEOUT_MS);
+            if (!mSystemInterface.isScoManagedByAudioEnabled()) {
+                startDialingOutActivity(fromDevice, intent);
+            } else {
+                mPendingDialingOutIntent = intent;
+                mPendingDialingOutDevice = fromDevice;
+            }
+
             return true;
         }
+    }
+
+    private void startDialingOutActivity(BluetoothDevice device, Intent intent) {
+        startActivity(intent);
+        mDialingOutTimeoutEvent = new DialingOutTimeoutEvent(device);
+        mStateMachinesThreadHandler.postDelayed(mDialingOutTimeoutEvent, DIALING_OUT_TIMEOUT_MS);
     }
 
     /**
@@ -2355,6 +2368,21 @@ public class HeadsetService extends ConnectableProfile {
                         startScoViaAudioManager(mPendingScoConnection);
                         mPendingScoConnection = null;
                     }
+
+                    if (mPendingDialingOutIntent != null
+                            && mPendingDialingOutDevice.equals(mExposedActiveDevice)) {
+                        startDialingOutActivity(mPendingDialingOutDevice, mPendingDialingOutIntent);
+                        mPendingDialingOutIntent = null;
+                    } else if (mPendingDialingOutIntent != null) {
+                        Log.d(
+                                TAG,
+                                "pending dialing out intent: "
+                                        + mPendingDialingOutIntent
+                                        + " device: "
+                                        + mPendingDialingOutDevice
+                                        + " does not match the exposed active device: "
+                                        + mExposedActiveDevice);
+                    }
                     return;
                 }
             }
@@ -2386,6 +2414,20 @@ public class HeadsetService extends ConnectableProfile {
                     if (mPendingScoConnection != null
                             && address.equals(mPendingScoConnection.getAddress())) {
                         mPendingScoConnection = null;
+                    }
+                    if (mPendingDialingOutIntent != null
+                            && address.equals(mPendingDialingOutDevice.getAddress())) {
+                        mPendingDialingOutIntent = null;
+                        mPendingDialingOutDevice = null;
+                    } else if (mPendingDialingOutIntent != null) {
+                        Log.d(
+                                TAG,
+                                "pending dialing out intent: "
+                                        + mPendingDialingOutIntent
+                                        + " device: "
+                                        + mPendingDialingOutDevice
+                                        + " does not match the exposed active device: "
+                                        + mExposedActiveDevice);
                     }
 
                     Log.d(
