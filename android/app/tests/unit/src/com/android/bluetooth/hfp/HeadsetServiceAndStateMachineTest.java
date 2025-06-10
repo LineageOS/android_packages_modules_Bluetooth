@@ -782,7 +782,6 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Reference: Section 4.25, Page 64/144 of HFP 1.7.1 specification
      */
     @Test
-    @DisableFlags(FLAG_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_SingleHfStopSuccess() {
         // Connect HF
         BluetoothDevice device = getTestDevice(0);
@@ -796,6 +795,22 @@ public class HeadsetServiceAndStateMachineTest {
         // Start voice recognition
         if (scoManagedByAudio()) {
             startVoiceRecognitionFromHf_ScoManagedByAudio(device);
+            // Since we're mocking audio framework behavior, need to move the state machine to
+            // AudioConnected for stopVoiceRecognition to process
+            mHeadsetService.messageFromNative(
+                    new HeadsetStackEvent(
+                            HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED,
+                            HeadsetHalConstants.AUDIO_STATE_CONNECTING,
+                            device));
+            mTestLooper.dispatchAll();
+
+            // then SCO is connected
+            mHeadsetService.messageFromNative(
+                    new HeadsetStackEvent(
+                            HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED,
+                            HeadsetHalConstants.AUDIO_STATE_CONNECTED,
+                            device));
+            mTestLooper.dispatchAll();
         } else {
             startVoiceRecognitionFromHf(device);
         }
@@ -811,13 +826,23 @@ public class HeadsetServiceAndStateMachineTest {
         verify(mSystemInterface).deactivateVoiceRecognition();
         verify(mNativeInterface, times(2))
                 .atResponseCode(device, HeadsetHalConstants.AT_RESPONSE_OK, 0);
-        verify(mNativeInterface).disconnectAudio(device);
+        if (scoManagedByAudio()) {
+            verify(mAudioManager).clearCommunicationDevice();
+        } else {
+            verify(mNativeInterface).disconnectAudio(device);
+        }
         verify(mNativeInterface, atLeast(1))
                 .enableSwb(
                         eq(HeadsetHalConstants.BTHF_SWB_CODEC_VENDOR_APTX),
                         anyBoolean(),
                         eq(device));
-        verifyNoMoreInteractions(mNativeInterface);
+
+        if (!scoManagedByAudio()) {
+            // Extra interaction since disconnectAudio calls setActiveDevice which calls
+            // sendBsir.  ClearCommunicationDevice would trigger the audio framework callback
+            // if it's not mocked.
+            verifyNoMoreInteractions(mNativeInterface);
+        }
     }
 
     /**
@@ -829,7 +854,6 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Reference: Section 4.25, Page 64/144 of HFP 1.7.1 specification
      */
     @Test
-    @DisableFlags(FLAG_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_SingleHfInitiatedFailedToActivate() {
         doReturn(false).when(mSystemInterface).activateVoiceRecognition();
         // Connect HF
@@ -849,10 +873,13 @@ public class HeadsetServiceAndStateMachineTest {
                         device);
         mHeadsetService.messageFromNative(startVrEvent);
         mTestLooper.dispatchAll();
+        if (scoManagedByAudio()) {
+            verifyActiveDeviceChanged_scoManagement(device);
+        }
         verify(mSystemInterface).activateVoiceRecognition();
         verify(mNativeInterface).atResponseCode(device, HeadsetHalConstants.AT_RESPONSE_ERROR, 0);
         verifyNoMoreInteractions(ignoreStubs(mNativeInterface));
-        if (!unifyAbsoluteVolumeManagement()) {
+        if (!unifyAbsoluteVolumeManagement() && !scoManagedByAudio()) {
             verifyNoMoreInteractions(mAudioManager);
         }
     }
@@ -865,7 +892,6 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Reference: Section 4.25, Page 64/144 of HFP 1.7.1 specification
      */
     @Test
-    @DisableFlags(FLAG_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_SingleHfInitiatedTimeout() {
         // Connect HF
         BluetoothDevice device = getTestDevice(0);
@@ -885,6 +911,9 @@ public class HeadsetServiceAndStateMachineTest {
         mHeadsetService.messageFromNative(startVrEvent);
         mTestLooper.dispatchAll();
         verify(mSystemInterface).activateVoiceRecognition();
+        if (scoManagedByAudio()) {
+            verifyActiveDeviceChanged_scoManagement(device);
+        }
 
         mTestLooper.moveTimeForward(mHeadsetService.sStartVrTimeoutMs); // Trigger timeout
         mTestLooper.dispatchAll();
@@ -896,7 +925,7 @@ public class HeadsetServiceAndStateMachineTest {
                         anyBoolean(),
                         eq(device));
         verifyNoMoreInteractions(ignoreStubs(mNativeInterface));
-        if (!unifyAbsoluteVolumeManagement()) {
+        if (!unifyAbsoluteVolumeManagement() && !scoManagedByAudio()) {
             verifyNoMoreInteractions(mAudioManager);
         }
     }
@@ -955,7 +984,6 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Reference: Section 4.25, Page 64/144 of HFP 1.7.1 specification
      */
     @Test
-    @DisableFlags(FLAG_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_SingleAgStopSuccess() {
         // Connect HF
         BluetoothDevice device = getTestDevice(0);
@@ -1156,7 +1184,6 @@ public class HeadsetServiceAndStateMachineTest {
      * <p>Reference: Section 4.25, Page 64/144 of HFP 1.7.1 specification
      */
     @Test
-    @DisableFlags(FLAG_SCO_MANAGED_BY_AUDIO)
     public void testVoiceRecognition_MultiAgInitiatedSuccess() {
         // Connect two devices
         BluetoothDevice deviceA = getTestDevice(0);
@@ -1186,6 +1213,11 @@ public class HeadsetServiceAndStateMachineTest {
         mHeadsetService.messageFromNative(startVrEventA);
         mTestLooper.dispatchAll();
         verify(mNativeInterface).stopVoiceRecognition(deviceB);
+        if (scoManagedByAudio()) {
+            verify(mAudioManager).clearCommunicationDevice();
+        } else {
+            verify(mNativeInterface).disconnectAudio(deviceB);
+        }
         // This request should still fail
         verify(mNativeInterface).atResponseCode(deviceA, HeadsetHalConstants.AT_RESPONSE_ERROR, 0);
         verify(mNativeInterface, atLeast(1))
