@@ -324,6 +324,12 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *
      * <p>Always contains the extra field {@link #EXTRA_DEVICE}
      *
+     * <p>From {@link Build.VERSION_CODES#BAKLAVA}, it can contain the extra field {@link
+     * #EXTRA_BOND_LOSS_REASON} which contains the reason for the bond loss. The possible values
+     * are: {@link #BOND_LOSS_REASON_BREDR_AUTH_FAILURE}, {@link
+     * #BOND_LOSS_REASON_BREDR_INCOMING_PAIRING}, {@link #BOND_LOSS_REASON_LE_ENCRYPT_FAILURE},
+     * {@link #BOND_LOSS_REASON_LE_INCOMING_PAIRING}.
+     *
      * <p>This method requires the calling app to have the {@link
      * android.Manifest.permission#BLUETOOTH_CONNECT} permission. Before {@link
      * android.os.Build.VERSION_CODES#BAKLAVA} this method also required {@link
@@ -461,6 +467,41 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @SystemApi
     public static final String EXTRA_LOW_LATENCY_BUFFER_SIZE =
             "android.bluetooth.device.extra.LOW_LATENCY_BUFFER_SIZE";
+
+    /**
+     * Contains the reason for the bond loss.
+     *
+     * <ul> Possible values are:
+     *   <li> {@link #BOND_LOSS_REASON_UNKNOWN}
+     *   <li> {@link #BOND_LOSS_REASON_BREDR_AUTH_FAILURE}
+     *   <li> {@link #BOND_LOSS_REASON_BREDR_INCOMING_PAIRING}
+     *   <li> {@link #BOND_LOSS_REASON_LE_ENCRYPT_FAILURE}
+     *   <li> {@link #BOND_LOSS_REASON_LE_INCOMING_PAIRING}
+     */
+    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
+    @SuppressLint("ActionValue")
+    public static final String EXTRA_BOND_LOSS_REASON =
+            "android.bluetooth.device.extra.BOND_LOSS_REASON";
+
+    /** Indicates the reason for the bond loss is unknown. */
+    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
+    public static final int BOND_LOSS_REASON_UNKNOWN = 0;
+
+    /** Indicates the reason for the bond loss is BREDR authentication failure. */
+    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
+    public static final int BOND_LOSS_REASON_BREDR_AUTH_FAILURE = 1;
+
+    /** Indicates the reason for the bond loss is BREDR pairing failure. */
+    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
+    public static final int BOND_LOSS_REASON_BREDR_INCOMING_PAIRING = 2;
+
+    /** Indicates the reason for the bond loss is LE encryption failure. */
+    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
+    public static final int BOND_LOSS_REASON_LE_ENCRYPT_FAILURE = 3;
+
+    /** Indicates the reason for the bond loss is LE pairing failure. */
+    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
+    public static final int BOND_LOSS_REASON_LE_INCOMING_PAIRING = 4;
 
     /**
      * Indicates the remote device is not bonded (paired).
