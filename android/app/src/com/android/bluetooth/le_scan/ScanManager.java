@@ -1426,9 +1426,7 @@ public class ScanManager {
             return;
         }
         long batchTriggerIntervalMillis =
-                Flags.batchScanOptimization()
-                        ? mBatchScanThrottler.getBatchTriggerIntervalMillis(mBatchClients)
-                        : getBatchTriggerIntervalMillis();
+                mBatchScanThrottler.getBatchTriggerIntervalMillis(mBatchClients);
         // Allows the alarm to be triggered within
         // [batchTriggerIntervalMillis, 1.1 * batchTriggerIntervalMillis]
         long windowLengthMillis = batchTriggerIntervalMillis / 10;
@@ -1577,16 +1575,6 @@ public class ScanManager {
             waitForCallback();
         }
         setBatchAlarm();
-    }
-
-    private long getBatchTriggerIntervalMillis() {
-        long intervalMillis = Long.MAX_VALUE;
-        for (ScanClient client : mBatchClients) {
-            if (client.mSettings != null && client.mSettings.getReportDelayMillis() > 0) {
-                intervalMillis = Math.min(intervalMillis, client.mSettings.getReportDelayMillis());
-            }
-        }
-        return intervalMillis;
     }
 
     // Add scan filters. The logic is:
