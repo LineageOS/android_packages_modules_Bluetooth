@@ -667,6 +667,7 @@ TEST_F(HearingAidTest, start_stream) {
 TEST_F(HearingAidTest, service_changed_before_stream_start) {
   set_sample_database(1);
   SetEncryptionResult(test_address, true);
+  com::android::bluetooth::flags::provider_->asha_omit_gatt_after_svc_changed(false);
 
   EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
   EXPECT_CALL(*callbacks, OnDeviceAvailable(_, _, test_address)).Times(1);
@@ -746,12 +747,14 @@ TEST_F(HearingAidTest, conn_update_after_service_changed) {
  * 2. Service changed event is received
  * 3. Stream start is requested
  * 4. Volume is set
- *    Check if GATT operations were executed after service changed event, using old handles.
+ *    Check if GATT operations were not executed after service changed event.
  * 5. Service search complete event arrives
  *    Check if write to AudioControlPoint was executed.
  * 6. Second Service changed event is received
  * 7. Stream is suspended
  *    Check if write to AudioControlPoint was executed, using old handle.
+ * This test should replace service_changed_before_stream_start after flag
+ * asha_omit_gatt_after_svc_changed is released.
  */
 TEST_F(HearingAidTest, service_changed_before_stream_start_gatt_omitted_after_svc_changed) {
   com::android::bluetooth::flags::provider_->asha_omit_gatt_after_svc_changed(true);
@@ -809,7 +812,7 @@ TEST_F(HearingAidTest, service_changed_before_stream_start_gatt_omitted_after_sv
 /* 1. Hearing aid gets connected.
  * 2. Service changed event is received
  * 3. Connection Update event is received
- *    Check if write to AudioControlPoint was executed, using old handle.
+ *    Check if write to AudioControlPoint was not executed.
  */
 TEST_F(HearingAidTest, conn_update_after_service_changed_gatt_omitted_after_svc_changed) {
   com::android::bluetooth::flags::provider_->asha_omit_gatt_after_svc_changed(true);
