@@ -49,6 +49,7 @@ import android.content.res.Resources;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Looper;
+import android.platform.test.flag.junit.SetFlagsRule;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -64,6 +65,7 @@ import com.android.bluetooth.R;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 
 import org.junit.After;
 import org.junit.Before;
@@ -75,16 +77,18 @@ import org.mockito.Mock;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /** Test cases for {@link AvrcpControllerStateMachine}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class AvrcpControllerStateMachineTest {
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
     @Rule
     public final ServiceTestRule mBluetoothBrowserMediaServiceTestRule = new ServiceTestRule();
-
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
     @Mock private A2dpSinkService mA2dpSinkService;
@@ -130,10 +134,12 @@ public class AvrcpControllerStateMachineTest {
             Looper.prepare();
         }
 
-        // Set a mock A2dpSinkService for audio focus calls
-        A2dpSinkService.setA2dpSinkService(mA2dpSinkService);
-
-        AvrcpControllerService.setAvrcpControllerService(mAvrcpControllerService);
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            doReturn(Optional.of(mA2dpSinkService)).when(mAdapterService).getA2dpSinkService();
+        } else {
+            // Set a mock A2dpSinkService for audio focus calls
+            A2dpSinkService.setA2dpSinkService(mA2dpSinkService);
+        }
 
         // Start the Bluetooth Media Browser Service
         final Intent bluetoothBrowserMediaServiceStartIntent =
@@ -151,8 +157,9 @@ public class AvrcpControllerStateMachineTest {
     @After
     public void tearDown() throws Exception {
         destroyStateMachine(mAvrcpStateMachine);
-        A2dpSinkService.setA2dpSinkService(null);
-        AvrcpControllerService.setAvrcpControllerService(null);
+        if (!Flags.adapterServiceProfilesUseOptional()) {
+            A2dpSinkService.setA2dpSinkService(null);
+        }
     }
 
     /** Create a state machine to test */
