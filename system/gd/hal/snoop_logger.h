@@ -32,6 +32,7 @@
 #include "hal/syscall_wrapper_impl.h"
 #include "hci/hci_packets.h"
 #include "os/repeating_alarm.h"
+#include "os/handler.h"
 
 namespace bluetooth {
 namespace hal {
