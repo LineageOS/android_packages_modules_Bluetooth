@@ -59,6 +59,7 @@ import android.platform.test.flag.junit.SetFlagsRule;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.android.bluetooth.TestUtils.FakeTimeProvider;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 
@@ -102,6 +103,7 @@ public class ScanControllerTest {
     private static final int TEST_ACTION = 1;
     private static final int TEST_CLIENT_IF = 2;
 
+    private final FakeTimeProvider mTimeProvider = new FakeTimeProvider();
     private final BluetoothDevice mDevice = getTestDevice(89);
 
     private ScanController mScanController;
@@ -129,7 +131,11 @@ public class ScanControllerTest {
 
         mScanController =
                 new ScanController(
-                        mAdapterService, mScanManager, mPeriodicScanManager, mScannerMap);
+                        mAdapterService,
+                        mScanManager,
+                        mPeriodicScanManager,
+                        mScannerMap,
+                        mTimeProvider);
     }
 
     @After

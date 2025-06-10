@@ -158,6 +158,7 @@ public class ScanManagerTest {
 
     private final FakeTimeProvider mTimeProvider = new FakeTimeProvider();
 
+    private ScanRadioStats mScanRadioStats;
     private AppScanStats mMockAppScanStats;
     private MockContentResolver mMockContentResolver;
 
@@ -219,6 +220,8 @@ public class ScanManagerTest {
         // Mock JNI callback in ScanNativeInterface
         doReturn(true).when(mScanNativeInterface).waitForCallback(anyInt());
 
+        mScanRadioStats = new ScanRadioStats(mTimeProvider);
+        doReturn(mScanRadioStats).when(mScanController).getScanRadioStats();
         MetricsLogger.setInstanceForTesting(mMetricsLogger);
         mInOrder = inOrder(mMetricsLogger);
 
@@ -1750,11 +1753,11 @@ public class ScanManagerTest {
         final long scanTestDuration = 100;
         // Set scan mode map {scan mode (ScanMode) : scan weight (ScanWeight)}
         SparseIntArray scanModeMap = new SparseIntArray();
-        scanModeMap.put(SCAN_MODE_SCREEN_OFF, AppScanStats.SCREEN_OFF_LOW_POWER_WEIGHT);
-        scanModeMap.put(SCAN_MODE_LOW_POWER, AppScanStats.LOW_POWER_WEIGHT);
-        scanModeMap.put(SCAN_MODE_BALANCED, AppScanStats.BALANCED_WEIGHT);
-        scanModeMap.put(SCAN_MODE_LOW_LATENCY, AppScanStats.LOW_LATENCY_WEIGHT);
-        scanModeMap.put(SCAN_MODE_AMBIENT_DISCOVERY, AppScanStats.AMBIENT_DISCOVERY_WEIGHT);
+        scanModeMap.put(SCAN_MODE_SCREEN_OFF, ScanRadioStats.SCREEN_OFF_LOW_POWER_WEIGHT);
+        scanModeMap.put(SCAN_MODE_LOW_POWER, ScanRadioStats.LOW_POWER_WEIGHT);
+        scanModeMap.put(SCAN_MODE_BALANCED, ScanRadioStats.BALANCED_WEIGHT);
+        scanModeMap.put(SCAN_MODE_LOW_LATENCY, ScanRadioStats.LOW_LATENCY_WEIGHT);
+        scanModeMap.put(SCAN_MODE_AMBIENT_DISCOVERY, ScanRadioStats.AMBIENT_DISCOVERY_WEIGHT);
 
         // Turn on screen
         sendMessageWaitForProcessed(createScreenOnOffMessage(true));

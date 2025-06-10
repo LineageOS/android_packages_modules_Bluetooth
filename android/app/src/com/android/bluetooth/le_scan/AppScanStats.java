@@ -35,7 +35,6 @@ import com.android.bluetooth.Utils.TimeProvider;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.util.WorkSourceUtil;
-import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.text.DateFormat;
@@ -48,34 +47,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /** ScanStats class helps keep track of information about scans on a per application basis. */
 class AppScanStats {
     private static final String TAG = AppScanStats.class.getSimpleName();
 
-    // Weight is the duty cycle of the scan mode
-    private static final int OPPORTUNISTIC_WEIGHT = 0;
-    @VisibleForTesting static final int SCREEN_OFF_LOW_POWER_WEIGHT = 5;
-    @VisibleForTesting static final int LOW_POWER_WEIGHT = 10;
-    @VisibleForTesting static final int AMBIENT_DISCOVERY_WEIGHT = 25;
-    @VisibleForTesting static final int BALANCED_WEIGHT = 25;
-    @VisibleForTesting static final int LOW_LATENCY_WEIGHT = 100;
-
     private static final int LARGE_SCAN_TIME_GAP_MS = 24000;
 
-    @GuardedBy("sLock")
-    private static long sRadioStartTime = 0;
-    private static final Object sLock = new Object();
-
-    private static WorkSourceUtil sRadioScanWorkSourceUtil;
-    private static int sRadioScanType;
-    private static int sRadioScanMode;
-    private static int sRadioScanWindowMs;
-    private static int sRadioScanIntervalMs;
-    private static boolean sIsRadioStarted = false;
-    private static boolean sIsScreenOn = false;
-    private static int sRadioScanAppImportance = IMPORTANCE_CACHED;
-    @Nullable private static String sRadioScanAttributionTag;
+    private static final AtomicBoolean sIsScreenOn = new AtomicBoolean(false);
 
     private static class LastScan {
         public long duration;
@@ -139,10 +119,10 @@ class AppScanStats {
     }
 
     final String mAppName;
+    final WorkSourceUtil mWorkSourceUtil; // Used for BluetoothStatsLog
     private final List<LastScan> mLastScans = new ArrayList<>();
     private final Map<Integer, LastScan> mOngoingScans = new HashMap<>();
     private final WorkSource mWorkSource; // Used for BatteryStatsManager
-    private final WorkSourceUtil mWorkSourceUtil; // Used for BluetoothStatsLog
     @VisibleForTesting final ScannerMap mScannerMap; // Used to grab Apps
     private final AdapterService mAdapterService;
     // Used to keep track of scans and result stats
@@ -153,6 +133,7 @@ class AppScanStats {
 
     boolean mIsAppDead = false;
     boolean mIsRegistered = false;
+    int mAppImportance = IMPORTANCE_CACHED;
     private int mScansStarted = 0;
     private int mScansStopped = 0;
     private long mScanStartTime = 0;
@@ -169,7 +150,6 @@ class AppScanStats {
     private int mBalancedScan = 0;
     private int mLowLatencyScan = 0;
     private int mAmbientDiscoveryScan = 0;
-    private int mAppImportance = IMPORTANCE_CACHED;
     private long startTime = 0;
     private int results = 0;
 
@@ -194,8 +174,12 @@ class AppScanStats {
     }
 
     @Nullable
-    private synchronized LastScan getScanFromScannerId(int scannerId) {
+    synchronized LastScan getScanFromScannerId(int scannerId) {
         return mOngoingScans.get(scannerId);
+    }
+
+    static void setScreenState(boolean isScreenOn) {
+        sIsScreenOn.set(isScreenOn);
     }
 
     synchronized void addResult(int scannerId) {
@@ -388,7 +372,7 @@ class AppScanStats {
                 scan.reportDelayMillis,
                 0 /* app_scan_duration_ms */,
                 mOngoingScans.size(),
-                sIsScreenOn,
+                sIsScreenOn.get(),
                 mIsAppDead,
                 mAppImportance,
                 scan.getAttributionTag());
@@ -420,7 +404,7 @@ class AppScanStats {
                 scan.reportDelayMillis,
                 scan.duration,
                 mOngoingScans.size(),
-                sIsScreenOn,
+                sIsScreenOn.get(),
                 mIsAppDead,
                 mAppImportance,
                 scan.getAttributionTag());
@@ -456,7 +440,7 @@ class AppScanStats {
         };
     }
 
-    private static int convertScanType(LastScan scan) {
+    static int convertScanType(LastScan scan) {
         if (scan == null) {
             return BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_TYPE__SCAN_TYPE_UNKNOWN;
         }
@@ -469,7 +453,6 @@ class AppScanStats {
         }
     }
 
-    @VisibleForTesting
     static int convertScanMode(int mode) {
         return switch (mode) {
             case ScanSettings.SCAN_MODE_OPPORTUNISTIC ->
@@ -519,193 +502,6 @@ class AppScanStats {
                 getAttributionTagFromScannerId(scannerId));
         MetricsLogger.getInstance()
                 .cacheCount(BluetoothProtoEnums.LE_SCAN_ABUSE_COUNT_HW_FILTER_NOT_AVAILABLE, 1);
-    }
-
-    static void initScanRadioState() {
-        synchronized (sLock) {
-            sIsRadioStarted = false;
-        }
-    }
-
-    static boolean recordScanRadioStart(
-            int scanMode,
-            int scannerId,
-            AppScanStats stats,
-            int scanWindowMs,
-            int scanIntervalMs,
-            TimeProvider timeProvider) {
-        synchronized (sLock) {
-            if (sIsRadioStarted) {
-                return false;
-            }
-            sRadioStartTime = timeProvider.elapsedRealtime();
-            sRadioScanWorkSourceUtil = stats.mWorkSourceUtil;
-            sRadioScanType = convertScanType(stats.getScanFromScannerId(scannerId));
-            sRadioScanMode = scanMode;
-            sRadioScanWindowMs = scanWindowMs;
-            sRadioScanIntervalMs = scanIntervalMs;
-            sIsRadioStarted = true;
-            sRadioScanAppImportance = stats.mAppImportance;
-            sRadioScanAttributionTag = stats.getAttributionTagFromScannerId(scannerId);
-        }
-        return true;
-    }
-
-    static boolean recordScanRadioStop(TimeProvider timeProvider) {
-        synchronized (sLock) {
-            if (!sIsRadioStarted) {
-                return false;
-            }
-            recordScanRadioDurationMetrics(timeProvider);
-        }
-        return true;
-    }
-
-    @GuardedBy("sLock")
-    private static void recordScanRadioDurationMetrics(TimeProvider timeProvider) {
-        if (!sIsRadioStarted) {
-            return;
-        }
-        MetricsLogger logger = MetricsLogger.getInstance();
-        long currentTime = timeProvider.elapsedRealtime();
-        long radioScanDuration = currentTime - sRadioStartTime;
-        double scanWeight = getScanWeight(sRadioScanMode) * 0.01;
-        long weightedDuration = (long) (radioScanDuration * scanWeight);
-
-        logger.logRadioScanStopped(
-                getRadioScanUids(),
-                getRadioScanTags(),
-                sRadioScanType,
-                convertScanMode(sRadioScanMode),
-                sRadioScanIntervalMs,
-                sRadioScanWindowMs,
-                sIsScreenOn,
-                radioScanDuration,
-                sRadioScanAppImportance,
-                getRadioScanAttributionTag());
-        sRadioStartTime = 0;
-        sIsRadioStarted = false;
-        if (weightedDuration > 0) {
-            logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR, weightedDuration);
-            if (sIsScreenOn) {
-                logger.cacheCount(
-                        BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON,
-                        weightedDuration);
-            } else {
-                logger.cacheCount(
-                        BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF,
-                        weightedDuration);
-            }
-        }
-    }
-
-    private static int[] getRadioScanUids() {
-        synchronized (sLock) {
-            return sRadioScanWorkSourceUtil != null
-                    ? sRadioScanWorkSourceUtil.getUids()
-                    : new int[] {0};
-        }
-    }
-
-    private static String[] getRadioScanTags() {
-        synchronized (sLock) {
-            return sRadioScanWorkSourceUtil != null
-                    ? sRadioScanWorkSourceUtil.getTags()
-                    : new String[] {""};
-        }
-    }
-
-    private static String getRadioScanAttributionTag() {
-        synchronized (sLock) {
-            return sRadioScanAttributionTag != null ? sRadioScanAttributionTag : "";
-        }
-    }
-
-    @GuardedBy("sLock")
-    private static void recordScreenOnOffMetrics(boolean isScreenOn) {
-        if (isScreenOn) {
-            MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SCREEN_ON_EVENT, 1);
-        } else {
-            MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SCREEN_OFF_EVENT, 1);
-        }
-    }
-
-    private static int getScanWeight(int scanMode) {
-        return switch (scanMode) {
-            case ScanSettings.SCAN_MODE_OPPORTUNISTIC -> OPPORTUNISTIC_WEIGHT;
-            case ScanSettings.SCAN_MODE_SCREEN_OFF -> SCREEN_OFF_LOW_POWER_WEIGHT;
-            case ScanSettings.SCAN_MODE_LOW_POWER -> LOW_POWER_WEIGHT;
-            case ScanSettings.SCAN_MODE_LOW_LATENCY -> LOW_LATENCY_WEIGHT;
-            case ScanSettings.SCAN_MODE_BALANCED,
-                    ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY,
-                    ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED ->
-                    BALANCED_WEIGHT;
-            default -> LOW_POWER_WEIGHT;
-        };
-    }
-
-    static void recordScanRadioResultCount() {
-        synchronized (sLock) {
-            if (!sIsRadioStarted) {
-                return;
-            }
-            BluetoothStatsLog.write(
-                    BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED,
-                    getRadioScanUids(),
-                    getRadioScanTags(),
-                    1 /* num_results */,
-                    BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED__LE_SCAN_TYPE__SCAN_TYPE_REGULAR,
-                    sIsScreenOn,
-                    getRadioScanAttributionTag());
-            MetricsLogger logger = MetricsLogger.getInstance();
-            logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_REGULAR, 1);
-            if (sIsScreenOn) {
-                logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_REGULAR_SCREEN_ON, 1);
-            } else {
-                logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_REGULAR_SCREEN_OFF, 1);
-            }
-        }
-    }
-
-    static void recordBatchScanRadioResultCount(int numRecords) {
-        boolean isScreenOn;
-        synchronized (sLock) {
-            isScreenOn = sIsScreenOn;
-        }
-        BluetoothStatsLog.write(
-                BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED,
-                getRadioScanUids(),
-                getRadioScanTags(),
-                numRecords,
-                BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED__LE_SCAN_TYPE__SCAN_TYPE_BATCH,
-                sIsScreenOn,
-                getRadioScanAttributionTag());
-        MetricsLogger logger = MetricsLogger.getInstance();
-        logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH_BUNDLE, 1);
-        logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH, numRecords);
-        if (isScreenOn) {
-            logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH_BUNDLE_SCREEN_ON, 1);
-            logger.cacheCount(
-                    BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH_SCREEN_ON, numRecords);
-        } else {
-            logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH_BUNDLE_SCREEN_OFF, 1);
-            logger.cacheCount(
-                    BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH_SCREEN_OFF, numRecords);
-        }
-    }
-
-    static void setScreenState(boolean isScreenOn, TimeProvider timeProvider) {
-        synchronized (sLock) {
-            if (sIsScreenOn == isScreenOn) {
-                return;
-            }
-            if (sIsRadioStarted) {
-                recordScanRadioDurationMetrics(timeProvider);
-                sRadioStartTime = timeProvider.elapsedRealtime();
-            }
-            recordScreenOnOffMetrics(isScreenOn);
-            sIsScreenOn = isScreenOn;
-        }
     }
 
     synchronized void recordScanSuspend(int scannerId) {
@@ -784,7 +580,7 @@ class AppScanStats {
                 < LARGE_SCAN_TIME_GAP_MS);
     }
 
-    private String getAttributionTagFromScannerId(int scannerId) {
+    String getAttributionTagFromScannerId(int scannerId) {
         LastScan scan = getScanFromScannerId(scannerId);
         return scan == null ? "" : scan.getAttributionTag();
     }
@@ -913,11 +709,12 @@ class AppScanStats {
         }
 
         long Score =
-                (oppScanTime * OPPORTUNISTIC_WEIGHT
-                                + lowPowerScanTime * LOW_POWER_WEIGHT
-                                + balancedScanTime * BALANCED_WEIGHT
-                                + lowLatencyScanTime * LOW_LATENCY_WEIGHT
-                                + ambientDiscoveryScanTime * AMBIENT_DISCOVERY_WEIGHT)
+                (oppScanTime * ScanRadioStats.OPPORTUNISTIC_WEIGHT
+                                + lowPowerScanTime * ScanRadioStats.LOW_POWER_WEIGHT
+                                + balancedScanTime * ScanRadioStats.BALANCED_WEIGHT
+                                + lowLatencyScanTime * ScanRadioStats.LOW_LATENCY_WEIGHT
+                                + ambientDiscoveryScanTime
+                                        * ScanRadioStats.AMBIENT_DISCOVERY_WEIGHT)
                         / 100;
 
         sb.append("  ").append(mAppName);
