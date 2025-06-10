@@ -23,6 +23,7 @@
 #include <memory>
 
 #include "common/bind.h"
+#include "device/include/interop.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager/assembler.h"
 #include "hci/acl_manager/connection_callbacks.h"
@@ -33,6 +34,7 @@
 #include "hci/event_checkers.h"
 #include "hci/hci_interface.h"
 #include "hci/remote_name_request.h"
+#include "main/shim/helpers.h"
 
 namespace bluetooth {
 namespace hci {
@@ -719,6 +721,14 @@ public:
 
   void accept_connection(Address address) {
     auto role = AcceptConnectionRequestRole::BECOME_CENTRAL;  // We prefer to be central
+
+    // Some devices would not respond when local  accept connection as central.
+    RawAddress raw_address = ToRawAddress(address);
+    if (interop_match_addr(INTEROP_REMAIN_PERIPHERAL_ON_ACCEPT_CONNECTION_REQUEST,
+                             &raw_address)) {
+      log::info("IOP workaround for {}, accept connection as peripheral", raw_address);
+      role = AcceptConnectionRequestRole::REMAIN_PERIPHERAL;
+    }
     acl_connection_interface_->EnqueueCommand(
             AcceptConnectionRequestBuilder::Create(address, role),
             handler_->BindOnceOn(this, &classic_impl::on_accept_connection_status, address));

@@ -59,6 +59,7 @@ import com.android.internal.util.StateMachine;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -762,48 +763,71 @@ final class BondStateMachine extends StateMachine {
         removeMessages(what);
     }
 
-    private static void clearProfilePriority(BluetoothDevice device) {
-        HidHostService hidService = HidHostService.getHidHostService();
-        A2dpService a2dpService = A2dpService.getA2dpService();
-        HeadsetService headsetService = HeadsetService.getHeadsetService();
-        HeadsetClientService headsetClientService = HeadsetClientService.getHeadsetClientService();
-        A2dpSinkService a2dpSinkService = A2dpSinkService.getA2dpSinkService();
-        PbapClientService pbapClientService = PbapClientService.getPbapClientService();
-        LeAudioService leAudioService = LeAudioService.getLeAudioService();
-        CsipSetCoordinatorService csipSetCoordinatorService =
-                CsipSetCoordinatorService.getCsipSetCoordinatorService();
-        VolumeControlService volumeControlService = VolumeControlService.getVolumeControlService();
-        HapClientService hapClientService = HapClientService.getHapClientService();
+    @VisibleForTesting
+    void clearProfilePriority(BluetoothDevice device) {
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            // Preserving existing order
+            List.of(
+                            mAdapterService.getHidHostService(),
+                            mAdapterService.getA2dpService(),
+                            mAdapterService.getHeadsetService(),
+                            mAdapterService.getHeadsetClientService(),
+                            mAdapterService.getA2dpSinkService(),
+                            mAdapterService.getPbapClientService(),
+                            mAdapterService.getLeAudioService(),
+                            mAdapterService.getCsipSetCoordinatorService(),
+                            mAdapterService.getVolumeControlService(),
+                            mAdapterService.getHapClientService())
+                    .stream()
+                    .flatMap(Optional::stream)
+                    .forEach(
+                            profile ->
+                                    profile.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN));
+        } else {
+            HidHostService hidService = HidHostService.getHidHostService();
+            A2dpService a2dpService = A2dpService.getA2dpService();
+            HeadsetService headsetService = HeadsetService.getHeadsetService();
+            HeadsetClientService headsetClientService =
+                    HeadsetClientService.getHeadsetClientService();
+            A2dpSinkService a2dpSinkService = A2dpSinkService.getA2dpSinkService();
+            PbapClientService pbapClientService = PbapClientService.getPbapClientService();
+            LeAudioService leAudioService = LeAudioService.getLeAudioService();
+            CsipSetCoordinatorService csipSetCoordinatorService =
+                    CsipSetCoordinatorService.getCsipSetCoordinatorService();
+            VolumeControlService volumeControlService =
+                    VolumeControlService.getVolumeControlService();
+            HapClientService hapClientService = HapClientService.getHapClientService();
 
-        if (hidService != null) {
-            hidService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
-        }
-        if (a2dpService != null) {
-            a2dpService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
-        }
-        if (headsetService != null) {
-            headsetService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
-        }
-        if (headsetClientService != null) {
-            headsetClientService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
-        }
-        if (a2dpSinkService != null) {
-            a2dpSinkService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
-        }
-        if (pbapClientService != null) {
-            pbapClientService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
-        }
-        if (leAudioService != null) {
-            leAudioService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
-        }
-        if (csipSetCoordinatorService != null) {
-            csipSetCoordinatorService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
-        }
-        if (volumeControlService != null) {
-            volumeControlService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
-        }
-        if (hapClientService != null) {
-            hapClientService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
+            if (hidService != null) {
+                hidService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
+            }
+            if (a2dpService != null) {
+                a2dpService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
+            }
+            if (headsetService != null) {
+                headsetService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
+            }
+            if (headsetClientService != null) {
+                headsetClientService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
+            }
+            if (a2dpSinkService != null) {
+                a2dpSinkService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
+            }
+            if (pbapClientService != null) {
+                pbapClientService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
+            }
+            if (leAudioService != null) {
+                leAudioService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
+            }
+            if (csipSetCoordinatorService != null) {
+                csipSetCoordinatorService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
+            }
+            if (volumeControlService != null) {
+                volumeControlService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
+            }
+            if (hapClientService != null) {
+                hapClientService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
+            }
         }
     }
 

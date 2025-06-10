@@ -285,8 +285,9 @@ public class ScanManager {
         mHandler = new ClientHandler(looper);
         mDisplayManager.registerDisplayListener(mDisplayListener, null);
         mScreenOn = isScreenOn();
-        AppScanStats.initScanRadioState();
-        AppScanStats.setScreenState(mScreenOn, mTimeProvider);
+        AppScanStats.setScreenState(mScreenOn);
+        mScanController.getScanRadioStats().initScanRadioState();
+        mScanController.getScanRadioStats().setScreenState(mScreenOn);
         if (mActivityManager != null) {
             mActivityManager.addOnUidImportanceListener(
                     mUidImportanceListener, FOREGROUND_IMPORTANCE_CUTOFF);
@@ -629,7 +630,8 @@ public class ScanManager {
         }
 
         private void handleScreenOff() {
-            AppScanStats.setScreenState(false, mTimeProvider);
+            AppScanStats.setScreenState(false);
+            mScanController.getScanRadioStats().setScreenState(false);
             if (!mScreenOn) {
                 return;
             }
@@ -974,7 +976,8 @@ public class ScanManager {
         }
 
         private void handleScreenOn() {
-            AppScanStats.setScreenState(true, mTimeProvider);
+            AppScanStats.setScreenState(true);
+            mScanController.getScanRadioStats().setScreenState(true);
             if (mScreenOn) {
                 return;
             }
@@ -1103,7 +1106,7 @@ public class ScanManager {
             int scanWindowCoded = getScanWindow(clientCoded);
             int scanIntervalCoded = getScanInterval(clientCoded);
             mNativeInterface.gattClientScan(false);
-            if (!AppScanStats.recordScanRadioStop(mTimeProvider)) {
+            if (!mScanController.getScanRadioStats().recordScanRadioStop()) {
                 Log.w(TAG, "There is no scan radio to stop");
             }
             Log.d(
@@ -1169,10 +1172,6 @@ public class ScanManager {
     }
 
     private static boolean isPhyConfigured(ScanClient client, boolean use1mPhy) {
-        if (!Flags.phyToNative()) {
-            // When the flag is off the PHY setting is ignored and all clients scan on 1m
-            return use1mPhy;
-        }
         if (client.mSettings.getPhy() == ScanSettings.PHY_LE_ALL_SUPPORTED) {
             return true;
         }
@@ -1214,13 +1213,14 @@ public class ScanManager {
         }
         if (chosenClient != null
                 && chosenClient.mStats.isPresent()
-                && !AppScanStats.recordScanRadioStart(
-                        chosenClient.mScanModeApp,
-                        chosenClient.mScannerId,
-                        chosenClient.mStats.get(),
-                        getScanWindowMillis(chosenClient.mSettings),
-                        getScanIntervalMillis(chosenClient.mSettings),
-                        mTimeProvider)) {
+                && !mScanController
+                        .getScanRadioStats()
+                        .recordScanRadioStart(
+                                chosenClient.mScanModeApp,
+                                chosenClient.mScannerId,
+                                chosenClient.mStats.get(),
+                                getScanWindowMillis(chosenClient.mSettings),
+                                getScanIntervalMillis(chosenClient.mSettings))) {
             Log.w(TAG, "Scan radio already started");
         }
     }
@@ -1422,9 +1422,7 @@ public class ScanManager {
             return;
         }
         long batchTriggerIntervalMillis =
-                Flags.batchScanOptimization()
-                        ? mBatchScanThrottler.getBatchTriggerIntervalMillis(mBatchClients)
-                        : getBatchTriggerIntervalMillis();
+                mBatchScanThrottler.getBatchTriggerIntervalMillis(mBatchClients);
         // Allows the alarm to be triggered within
         // [batchTriggerIntervalMillis, 1.1 * batchTriggerIntervalMillis]
         long windowLengthMillis = batchTriggerIntervalMillis / 10;
@@ -1464,7 +1462,7 @@ public class ScanManager {
         if (numRegularScanClients() == 0) {
             Log.d(TAG, "stop gattClientScanNative");
             mNativeInterface.gattClientScan(false);
-            if (!AppScanStats.recordScanRadioStop(mTimeProvider)) {
+            if (!mScanController.getScanRadioStats().recordScanRadioStop()) {
                 Log.w(TAG, "There is no scan radio to stop");
             }
         }
@@ -1512,7 +1510,7 @@ public class ScanManager {
         if (numRegularScanClients() == 0) {
             Log.d(TAG, "stop gattClientScanNative");
             mNativeInterface.gattClientScan(false);
-            if (!AppScanStats.recordScanRadioStop(mTimeProvider)) {
+            if (!mScanController.getScanRadioStats().recordScanRadioStop()) {
                 Log.w(TAG, "There is no scan radio to stop");
             }
         }
@@ -1573,16 +1571,6 @@ public class ScanManager {
             waitForCallback();
         }
         setBatchAlarm();
-    }
-
-    private long getBatchTriggerIntervalMillis() {
-        long intervalMillis = Long.MAX_VALUE;
-        for (ScanClient client : mBatchClients) {
-            if (client.mSettings != null && client.mSettings.getReportDelayMillis() > 0) {
-                intervalMillis = Math.min(intervalMillis, client.mSettings.getReportDelayMillis());
-            }
-        }
-        return intervalMillis;
     }
 
     // Add scan filters. The logic is:

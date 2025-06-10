@@ -158,6 +158,7 @@ public class ScanManagerTest {
 
     private final FakeTimeProvider mTimeProvider = new FakeTimeProvider();
 
+    private ScanRadioStats mScanRadioStats;
     private AppScanStats mMockAppScanStats;
     private MockContentResolver mMockContentResolver;
 
@@ -219,6 +220,8 @@ public class ScanManagerTest {
         // Mock JNI callback in ScanNativeInterface
         doReturn(true).when(mScanNativeInterface).waitForCallback(anyInt());
 
+        mScanRadioStats = new ScanRadioStats(mTimeProvider);
+        doReturn(mScanRadioStats).when(mScanController).getScanRadioStats();
         MetricsLogger.setInstanceForTesting(mMetricsLogger);
         mInOrder = inOrder(mMetricsLogger);
 
@@ -1750,11 +1753,11 @@ public class ScanManagerTest {
         final long scanTestDuration = 100;
         // Set scan mode map {scan mode (ScanMode) : scan weight (ScanWeight)}
         SparseIntArray scanModeMap = new SparseIntArray();
-        scanModeMap.put(SCAN_MODE_SCREEN_OFF, AppScanStats.SCREEN_OFF_LOW_POWER_WEIGHT);
-        scanModeMap.put(SCAN_MODE_LOW_POWER, AppScanStats.LOW_POWER_WEIGHT);
-        scanModeMap.put(SCAN_MODE_BALANCED, AppScanStats.BALANCED_WEIGHT);
-        scanModeMap.put(SCAN_MODE_LOW_LATENCY, AppScanStats.LOW_LATENCY_WEIGHT);
-        scanModeMap.put(SCAN_MODE_AMBIENT_DISCOVERY, AppScanStats.AMBIENT_DISCOVERY_WEIGHT);
+        scanModeMap.put(SCAN_MODE_SCREEN_OFF, ScanRadioStats.SCREEN_OFF_LOW_POWER_WEIGHT);
+        scanModeMap.put(SCAN_MODE_LOW_POWER, ScanRadioStats.LOW_POWER_WEIGHT);
+        scanModeMap.put(SCAN_MODE_BALANCED, ScanRadioStats.BALANCED_WEIGHT);
+        scanModeMap.put(SCAN_MODE_LOW_LATENCY, ScanRadioStats.LOW_LATENCY_WEIGHT);
+        scanModeMap.put(SCAN_MODE_AMBIENT_DISCOVERY, ScanRadioStats.AMBIENT_DISCOVERY_WEIGHT);
 
         // Turn on screen
         sendMessageWaitForProcessed(createScreenOnOffMessage(true));
@@ -1907,18 +1910,7 @@ public class ScanManagerTest {
 
     // PHY_LE_1M: 1, PHY_LE_CODED: 3, PHY_LE_ALL_SUPPORTED: 255
     @Test
-    @EnableFlags(Flags.FLAG_PHY_TO_NATIVE)
     public void startScan_basicPhyTest(@TestParameter({"1", "3", "255"}) int phy) {
-        doPhyTest(phy, true);
-    }
-
-    @Test
-    @DisableFlags(Flags.FLAG_PHY_TO_NATIVE)
-    public void startScan_basicPhyTest_ignorePhy(@TestParameter({"1", "3", "255"}) int phy) {
-        doPhyTest(phy, false);
-    }
-
-    private void doPhyTest(int phy, boolean respectPhy) {
         final boolean isFiltered = false;
         final boolean isEmptyFilter = false;
         final boolean expect1m;
@@ -1931,15 +1923,15 @@ public class ScanManagerTest {
                 expectCoded = false;
                 break;
             case PHY_LE_CODED:
-                expectedPhyMask = respectPhy ? PHY_LE_CODED_MASK : PHY_LE_1M_MASK;
-                expectCoded = respectPhy;
-                expect1m = !respectPhy;
+                expectedPhyMask = PHY_LE_CODED_MASK;
+                expectCoded = true;
+                expect1m = false;
                 break;
             case PHY_LE_ALL_SUPPORTED:
             default:
-                expectedPhyMask = respectPhy ? PHY_LE_1M_MASK | PHY_LE_CODED_MASK : PHY_LE_1M_MASK;
+                expectedPhyMask = PHY_LE_1M_MASK | PHY_LE_CODED_MASK;
                 expect1m = true;
-                expectCoded = respectPhy;
+                expectCoded = true;
                 break;
         }
 
@@ -1974,7 +1966,6 @@ public class ScanManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_PHY_TO_NATIVE)
     public void startScan_phyTestMultiplexing() {
         int clientId1m = ++mClientId;
         int clientIdCoded = ++mClientId;

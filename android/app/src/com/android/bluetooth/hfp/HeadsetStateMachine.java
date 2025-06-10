@@ -126,6 +126,8 @@ class HeadsetStateMachine extends StateMachine {
 
     private static final HeadsetAgIndicatorEnableState DEFAULT_AG_INDICATOR_ENABLE_STATE =
             new HeadsetAgIndicatorEnableState(true, true, true, true);
+
+    // Disconnection reason from BluetoothStatusCodes.
     private int mReason = 0;
 
     // State machine states
@@ -356,7 +358,7 @@ class HeadsetStateMachine extends StateMachine {
             intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, fromState);
             intent.putExtra(BluetoothProfile.EXTRA_STATE, toState);
             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
-            if (Flags.hfpConnectionFailuresApi()
+            if (Flags.a2dpDisconnectReasonApi()
                     && toState == BluetoothProfile.STATE_DISCONNECTED
                     && fromState == BluetoothProfile.STATE_CONNECTING) {
                 intent.putExtra(BluetoothHeadset.EXTRA_DISCONNECTED_REASON, mReason);
@@ -813,7 +815,7 @@ class HeadsetStateMachine extends StateMachine {
                     }
                     switch (event.type) {
                         case HeadsetStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                            mReason = event.reason;
+                            mReason = reasonToBluetoothStatusCode(event.reason);
                             processConnectionEvent(message, event.valueInt);
                             break;
                         case HeadsetStackEvent.EVENT_TYPE_AT_CIND:
@@ -2860,6 +2862,18 @@ class HeadsetStateMachine extends StateMachine {
         } else {
             log("handleAccessPermissionResult - RESULT_NONE");
         }
+    }
+
+    // Convert AG status codes defined in `bta/include/bta_ag_api.h` to BluetoothStatusCodes values.
+    // TODO: migrate the values to AIDL constants to avoid hardcoded values.
+    private static int reasonToBluetoothStatusCode(int reason) {
+        return switch (reason) {
+            case /* BTA_AG_SUCCESS */ 0 -> BluetoothStatusCodes.SUCCESS;
+            case /* BTA_AG_FAIL_SDP */ 1 -> BluetoothStatusCodes.SDP_DISCOVERY_FAILED;
+            case /* BTA_AG_FAIL_RFCOMM */ 2 -> BluetoothStatusCodes.RFCOMM_CONNECTION_FAILED;
+            case /* BTA_AG_FAIL_RESOURCES */ 3 -> BluetoothStatusCodes.INSUFFICIENT_RESOURCES;
+            default -> BluetoothStatusCodes.ERROR_UNKNOWN;
+        };
     }
 
     private static int getConnectionStateFromAudioState(int audioState) {

@@ -91,6 +91,7 @@ import org.mockito.hamcrest.MockitoHamcrest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 /** Test cases for {@link VolumeControlService}. */
@@ -108,7 +109,7 @@ public class VolumeControlServiceTest {
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private VolumeControlNativeInterface mNativeInterface;
     @Mock private AudioManager mAudioManager;
-    @Mock private ServiceFactory mServiceFactory;
+    @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
     @Mock private CsipSetCoordinatorService mCsipService;
 
     private static final int BT_LE_AUDIO_MAX_VOL = 255;
@@ -143,9 +144,17 @@ public class VolumeControlServiceTest {
                 .when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
 
-        doReturn(mCsipService).when(mServiceFactory).getCsipSetCoordinatorService();
-        doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
-        doReturn(mBassClientService).when(mServiceFactory).getBassClientService();
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            doReturn(Optional.of(mCsipService))
+                    .when(mAdapterService)
+                    .getCsipSetCoordinatorService();
+            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
+            doReturn(Optional.of(mBassClientService)).when(mAdapterService).getBassClientService();
+        } else {
+            doReturn(mCsipService).when(mServiceFactory).getCsipSetCoordinatorService();
+            doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
+            doReturn(mBassClientService).when(mServiceFactory).getBassClientService();
+        }
 
         doReturn(MEDIA_MIN_VOL)
                 .when(mAudioManager)

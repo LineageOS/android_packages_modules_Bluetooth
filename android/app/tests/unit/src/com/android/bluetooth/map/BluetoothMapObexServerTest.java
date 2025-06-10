@@ -30,7 +30,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import android.content.ContentProviderClient;
-import android.content.Context;
 import android.database.MatrixCursor;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
@@ -57,7 +56,6 @@ import org.mockito.Spy;
 public class BluetoothMapObexServerTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private Context mMockContext;
     @Mock private AdapterService mAdapterService;
     @Mock private BluetoothMapService mMapService;
     @Mock private ContentProviderClient mProviderClient;
@@ -111,7 +109,7 @@ public class BluetoothMapObexServerTest {
         mParams = new BluetoothMapAppParams();
         mObexServer =
                 new BluetoothMapObexServer(
-                        mMockContext,
+                        mAdapterService,
                         null,
                         mObserver,
                         mMasInstance,
@@ -134,7 +132,7 @@ public class BluetoothMapObexServerTest {
                         TEST_UCI_PREFIX);
         BluetoothMapObexServer obexServer =
                 new BluetoothMapObexServer(
-                        mMockContext,
+                        mAdapterService,
                         null,
                         mObserver,
                         mMasInstance,
@@ -237,7 +235,7 @@ public class BluetoothMapObexServerTest {
     public void setMsgTypeFilterParams_withAccountNull_andOverwriteTrue() throws Exception {
         BluetoothMapObexServer obexServer =
                 new BluetoothMapObexServer(
-                        mMockContext, null, mObserver, mMasInstance, null, false);
+                        mAdapterService, null, mObserver, mMasInstance, null, false);
 
         obexServer.setMsgTypeFilterParams(mParams, true);
 
@@ -264,7 +262,7 @@ public class BluetoothMapObexServerTest {
                         TEST_UCI_PREFIX);
         BluetoothMapObexServer obexServer =
                 new BluetoothMapObexServer(
-                        mMockContext,
+                        mAdapterService,
                         null,
                         mObserver,
                         mMasInstance,
@@ -291,7 +289,7 @@ public class BluetoothMapObexServerTest {
                         TEST_UCI_PREFIX);
         BluetoothMapObexServer obexServer =
                 new BluetoothMapObexServer(
-                        mMockContext,
+                        mAdapterService,
                         null,
                         mObserver,
                         mMasInstance,

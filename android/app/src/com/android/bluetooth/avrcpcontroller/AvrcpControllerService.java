@@ -40,12 +40,14 @@ import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService.Browse
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -217,13 +219,18 @@ public class AvrcpControllerService extends ConnectableProfile {
     @VisibleForTesting
     boolean setActiveDevice(BluetoothDevice device) {
         Log.d(TAG, "setActiveDevice(device=" + device + ")");
-        A2dpSinkService a2dpSinkService = A2dpSinkService.getA2dpSinkService();
-        if (a2dpSinkService == null) {
+        final Optional<A2dpSinkService> a2dpSinkService;
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            a2dpSinkService = mAdapterService.getA2dpSinkService();
+        } else {
+            a2dpSinkService = Optional.ofNullable(A2dpSinkService.getA2dpSinkService());
+        }
+        if (a2dpSinkService.isEmpty()) {
             Log.w(TAG, "setActiveDevice(device=" + device + "): A2DP Sink not available");
             return false;
         }
 
-        BluetoothDevice currentActiveDevice = getActiveDevice();
+        final BluetoothDevice currentActiveDevice = getActiveDevice();
         if ((device == null && currentActiveDevice == null)
                 || (device != null && device.equals(currentActiveDevice))) {
             return true;
@@ -231,7 +238,7 @@ public class AvrcpControllerService extends ConnectableProfile {
 
         // Try and update the active device
         synchronized (mActiveDeviceLock) {
-            if (a2dpSinkService.setActiveDevice(device)) {
+            if (a2dpSinkService.get().setActiveDevice(device)) {
                 mActiveDevice = device;
 
                 // Pause the old active device

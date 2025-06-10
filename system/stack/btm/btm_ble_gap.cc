@@ -2404,14 +2404,11 @@ void btm_ble_stop_inquiry(void) {
                                                         btm_cb.ble_ctr_cb.inq_var.scan_window_1m)) {
     log::verbose("setting default params for ongoing observe");
     btm_ble_stop_scan();
-    if (com::android::bluetooth::flags::phy_to_native()) {
-      btm_send_hci_set_scan_params(
-              BTM_BLE_SCAN_MODE_ACTI, btm_cb.ble_ctr_cb.inq_var.scan_interval_1m,
-              btm_cb.ble_ctr_cb.inq_var.scan_window_1m,
-              btm_cb.ble_ctr_cb.inq_var.scan_interval_coded,
-              btm_cb.ble_ctr_cb.inq_var.scan_window_coded, btm_cb.ble_ctr_cb.inq_var.scan_phy,
-              btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type, SP_ADV_ALL);
-    }
+    btm_send_hci_set_scan_params(
+            BTM_BLE_SCAN_MODE_ACTI, btm_cb.ble_ctr_cb.inq_var.scan_interval_1m,
+            btm_cb.ble_ctr_cb.inq_var.scan_window_1m, btm_cb.ble_ctr_cb.inq_var.scan_interval_coded,
+            btm_cb.ble_ctr_cb.inq_var.scan_window_coded, btm_cb.ble_ctr_cb.inq_var.scan_phy,
+            btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type, SP_ADV_ALL);
     btm_ble_start_scan();
   }
 

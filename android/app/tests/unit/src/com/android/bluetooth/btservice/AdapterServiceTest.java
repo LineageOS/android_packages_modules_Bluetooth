@@ -209,7 +209,7 @@ public class AdapterServiceTest {
         }
 
         @Override
-        protected Optional<LeAudioService> getLeAudioService() {
+        public Optional<LeAudioService> getLeAudioService() {
             return Optional.ofNullable(mTestLeAudio);
         }
 

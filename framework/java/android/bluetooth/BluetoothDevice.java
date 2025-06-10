@@ -38,6 +38,8 @@ import android.bluetooth.annotations.RequiresBluetoothLocationPermission;
 import android.bluetooth.annotations.RequiresBluetoothScanPermission;
 import android.bluetooth.annotations.RequiresLegacyBluetoothAdminPermission;
 import android.bluetooth.annotations.RequiresLegacyBluetoothPermission;
+import android.bluetooth.EncryptionStatus;
+import android.bluetooth.EncryptionStatusParcel;
 import android.companion.AssociationRequest;
 import android.compat.annotation.ChangeId;
 import android.compat.annotation.EnabledSince;
@@ -324,6 +326,12 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *
      * <p>Always contains the extra field {@link #EXTRA_DEVICE}
      *
+     * <p>From {@link Build.VERSION_CODES#BAKLAVA}, it can contain the extra field {@link
+     * #EXTRA_BOND_LOSS_REASON} which contains the reason for the bond loss. The possible values
+     * are: {@link #BOND_LOSS_REASON_BREDR_AUTH_FAILURE}, {@link
+     * #BOND_LOSS_REASON_BREDR_INCOMING_PAIRING}, {@link #BOND_LOSS_REASON_LE_ENCRYPT_FAILURE},
+     * {@link #BOND_LOSS_REASON_LE_INCOMING_PAIRING}.
+     *
      * <p>This method requires the calling app to have the {@link
      * android.Manifest.permission#BLUETOOTH_CONNECT} permission. Before {@link
      * android.os.Build.VERSION_CODES#BAKLAVA} this method also required {@link
@@ -463,6 +471,41 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             "android.bluetooth.device.extra.LOW_LATENCY_BUFFER_SIZE";
 
     /**
+     * Contains the reason for the bond loss.
+     *
+     * <ul> Possible values are:
+     *   <li> {@link #BOND_LOSS_REASON_UNKNOWN}
+     *   <li> {@link #BOND_LOSS_REASON_BREDR_AUTH_FAILURE}
+     *   <li> {@link #BOND_LOSS_REASON_BREDR_INCOMING_PAIRING}
+     *   <li> {@link #BOND_LOSS_REASON_LE_ENCRYPT_FAILURE}
+     *   <li> {@link #BOND_LOSS_REASON_LE_INCOMING_PAIRING}
+     */
+    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
+    @SuppressLint("ActionValue")
+    public static final String EXTRA_BOND_LOSS_REASON =
+            "android.bluetooth.device.extra.BOND_LOSS_REASON";
+
+    /** Indicates the reason for the bond loss is unknown. */
+    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
+    public static final int BOND_LOSS_REASON_UNKNOWN = 0;
+
+    /** Indicates the reason for the bond loss is BREDR authentication failure. */
+    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
+    public static final int BOND_LOSS_REASON_BREDR_AUTH_FAILURE = 1;
+
+    /** Indicates the reason for the bond loss is BREDR pairing failure. */
+    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
+    public static final int BOND_LOSS_REASON_BREDR_INCOMING_PAIRING = 2;
+
+    /** Indicates the reason for the bond loss is LE encryption failure. */
+    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
+    public static final int BOND_LOSS_REASON_LE_ENCRYPT_FAILURE = 3;
+
+    /** Indicates the reason for the bond loss is LE pairing failure. */
+    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
+    public static final int BOND_LOSS_REASON_LE_INCOMING_PAIRING = 4;
+
+    /**
      * Indicates the remote device is not bonded (paired).
      *
      * <p>There is no shared link key with the remote device, so communication (if it is allowed at
@@ -549,12 +592,25 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * for encryption.
      *
      * <p>Possible values are: {@link #ENCRYPTION_ALGORITHM_NONE}, {@link #ENCRYPTION_ALGORITHM_E0},
-     * {@link #ENCRYPTION_ALGORITHM_AES}.
+     * {@link #ENCRYPTION_ALGORITHM_AES}, {@link #ENCRYPTION_ALGORITHM_UNKNOWN}.
      */
     @FlaggedApi(Flags.FLAG_ENCRYPTION_CHANGE_BROADCAST)
     @SuppressLint("ActionValue")
     public static final String EXTRA_ENCRYPTION_ALGORITHM =
             "android.bluetooth.device.extra.EXTRA_ENCRYPTION_ALGORITHM";
+
+    /** @hide */
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef(
+            prefix = {"ENCRYPTION_ALGORITHM_"},
+            value = {
+                ENCRYPTION_ALGORITHM_NONE,
+                ENCRYPTION_ALGORITHM_E0,
+                ENCRYPTION_ALGORITHM_AES,
+                ENCRYPTION_ALGORITHM_UNKNOWN
+            })
+    @FlaggedApi(Flags.FLAG_LINK_STATUS_API)
+    public @interface EncryptionAlgorithm {}
 
     /** Indicates that link was not encrypted using any algorithm */
     @FlaggedApi(Flags.FLAG_ENCRYPTION_CHANGE_BROADCAST)
@@ -567,6 +623,10 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     /** Indicates link was encrypted using AES algorithm */
     @FlaggedApi(Flags.FLAG_ENCRYPTION_CHANGE_BROADCAST)
     public static final int ENCRYPTION_ALGORITHM_AES = 2;
+
+    /** Indicates link was encrypted using unknown algorithm */
+    @FlaggedApi(Flags.FLAG_ENCRYPTION_CHANGE_BROADCAST)
+    public static final int ENCRYPTION_ALGORITHM_UNKNOWN = 3;
 
     /**
      * Used as an int extra field in {@link #ACTION_ENCRYPTION_CHANGE} intent. This is the status
@@ -1418,6 +1478,14 @@ public final class BluetoothDevice implements Parcelable, Attributable {
                 TRANSPORT_LE,
             })
     public @interface Transport {}
+
+    /** @hide */
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef(
+            prefix = {"TRANSPORT_"},
+            value = {TRANSPORT_BREDR, TRANSPORT_LE})
+    @FlaggedApi(Flags.FLAG_LINK_STATUS_API)
+    public @interface SupportedTransport {}
 
     /** No preference of physical transport for GATT connections to remote dual-mode devices */
     public static final int TRANSPORT_AUTO = 0;
@@ -3935,6 +4003,64 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             }
         }
         return -1;
+    }
+
+    /**
+     * Get the encryption status of the connected device. This API will return the encryption state
+     * (if connected). The encryption details are enclosed in a {@link EncryptionStatus} object,
+     * which can be null if the device is not encrypted (or not connected)
+     *
+     * @param transport the transport to get the link status for.
+     * @return the encryption status of the device, null if the device is not encrypted or not
+     *     connected.
+     */
+    @FlaggedApi(Flags.FLAG_LINK_STATUS_API)
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    public @Nullable EncryptionStatus getEncryptionStatus(@SupportedTransport int transport) {
+        if (transport != TRANSPORT_BREDR && transport != TRANSPORT_LE) {
+            throw new IllegalArgumentException("Transport(" + transport + ") is not supported");
+        }
+
+        final IBluetooth service = getService();
+        if (service == null || !isBluetoothEnabled()) {
+            Log.e(TAG, "Bluetooth is not enabled. Cannot get link status.");
+            if (DBG) log(Log.getStackTraceString(new Throwable()));
+        } else {
+            try {
+                EncryptionStatusParcel parcel =
+                        service.getEncryptionStatus(this, mAttributionSource, transport);
+                return (parcel != null) ? parcel.toEncryptionStatus() : null;
+            } catch (RemoteException e) {
+                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns whether there is an open connection to this device on the given transport.
+     *
+     * @return True if there is at least one open connection to this device.
+     */
+    @FlaggedApi(Flags.FLAG_LINK_STATUS_API)
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    public boolean isConnected(@SupportedTransport int transport) {
+        if (transport != TRANSPORT_BREDR && transport != TRANSPORT_LE) {
+            throw new IllegalArgumentException("Transport(" + transport + ") is not supported");
+        }
+
+        final IBluetooth service = getService();
+        if (service == null || !isBluetoothEnabled()) {
+            Log.w(TAG, "Proxy not attached to service");
+            if (DBG) log(Log.getStackTraceString(new Throwable()));
+        } else {
+            try {
+                return service.isConnected(this, mAttributionSource, transport);
+            } catch (RemoteException e) {
+                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+            }
+        }
+        return false;
     }
 
     private static void log(String msg) {

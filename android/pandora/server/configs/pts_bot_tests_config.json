@@ -2669,8 +2669,7 @@
     },
     {
       "flags": [
-        "leaudio_allow_leaudio_only_devices",
-        "enable_hap_by_default"
+        "leaudio_allow_leaudio_only_devices"
       ],
       "tests": [
         "HAP"
@@ -2678,8 +2677,7 @@
     },
     {
       "flags": [
-        "leaudio_add_aics_support",
-        "aics_api"
+        "leaudio_add_aics_support"
       ],
       "tests": [
         "VCP/VC/AICP/BV-01-C",

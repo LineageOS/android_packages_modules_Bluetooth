@@ -21,14 +21,17 @@ import static com.android.bluetooth.TestUtils.MockitoRule;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.IBluetoothActivityEnergyInfoListener;
 import android.bluetooth.IBluetoothOobDataCallback;
 import android.content.AttributionSource;
 import android.os.ParcelUuid;
+import android.os.RemoteException;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
@@ -146,9 +149,11 @@ public class AdapterServiceBinderTest {
     }
 
     @Test
-    public void reportActivityInfo() {
-        mBinder.reportActivityInfo(mAttributionSource);
-        verify(mService).reportActivityInfo();
+    public void requestActivityInfo() throws RemoteException {
+        var listener = mock(IBluetoothActivityEnergyInfoListener.class);
+        mBinder.requestActivityInfo(listener, mAttributionSource);
+        verify(mService).requestActivityInfo();
+        verify(listener).onBluetoothActivityEnergyInfoAvailable(any());
     }
 
     @Test

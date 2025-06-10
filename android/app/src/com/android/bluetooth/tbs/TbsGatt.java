@@ -160,8 +160,8 @@ public class TbsGatt {
             AdapterService adapterService,
             TbsService tbsService,
             BluetoothGattServerProxy gattServerProxy) {
-        mTbsService = requireNonNull(tbsService);
         mAdapterService = requireNonNull(adapterService);
+        mTbsService = requireNonNull(tbsService);
         mBluetoothGattServer = requireNonNull(gattServerProxy);
         mHandler = new Handler(Looper.getMainLooper());
 

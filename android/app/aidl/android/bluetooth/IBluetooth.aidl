@@ -33,6 +33,7 @@ import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothDevice.BluetoothAddress;
 import android.bluetooth.BluetoothQualityReport;
+import android.bluetooth.EncryptionStatusParcel;
 import android.bluetooth.IncomingRfcommSocketInfo;
 import android.bluetooth.OobData;
 import android.content.AttributionSource;
@@ -42,6 +43,7 @@ import android.os.ParcelFileDescriptor;
 import android.os.ResultReceiver;
 
 parcelable BluetoothDevice.BluetoothAddress;
+parcelable EncryptionStatusParcel;
 
 /**
  * System private API for talking with the Bluetooth service.
@@ -192,9 +194,6 @@ interface IBluetooth
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     int getLeMaximumAdvertisingDataLength();
 
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
-    BluetoothActivityEnergyInfo reportActivityInfo(in AttributionSource attributionSource);
-
     // For Metadata
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     boolean registerMetadataListener(in IBluetoothMetadataListener listener, in BluetoothDevice device, in AttributionSource attributionSource);
@@ -205,13 +204,6 @@ interface IBluetooth
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     byte[] getMetadata(in BluetoothDevice device, in int key, in AttributionSource attributionSource);
 
-    /**
-     * Requests the controller activity info asynchronously.
-     * The implementor is expected to reply with the
-     * {@link android.bluetooth.BluetoothActivityEnergyInfo} object placed into the Bundle with the
-     * key {@link android.os.BatteryStats#RESULT_RECEIVER_CONTROLLER_KEY}.
-     * The result code is ignored.
-     */
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     oneway void requestActivityInfo(in IBluetoothActivityEnergyInfoListener listener, in AttributionSource attributionSource);
 
@@ -327,4 +319,10 @@ interface IBluetooth
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     int getKeyMissingCount(in BluetoothDevice device, in AttributionSource source);
+
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    EncryptionStatusParcel getEncryptionStatus(in BluetoothDevice device, in AttributionSource source, in int transport);
+
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    boolean isConnected(in BluetoothDevice device, in AttributionSource source, in int transport);
 }

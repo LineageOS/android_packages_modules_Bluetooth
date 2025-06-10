@@ -387,7 +387,8 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
           rssi_trackers[address].interval_ms = interval;
           rssi_trackers[address].remote_tx_power = kTxPowerNotAvailable;
           rssi_trackers[address].started = false;
-          rssi_trackers[address].repeating_alarm = std::make_unique<os::RepeatingAlarm>(handler_);
+          rssi_trackers[address].repeating_alarm =
+                  std::make_unique<os::RepeatingAlarm>(&handler_->thread());
           hci_layer_->EnqueueCommand(
                   LeReadRemoteTransmitPowerLevelBuilder::Create(connection_handle, 0x01),
                   handler_->BindOnceOn(this, &impl::on_read_remote_transmit_power_level_status,

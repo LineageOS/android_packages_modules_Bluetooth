@@ -16,13 +16,6 @@ flag {
 }
 
 flag {
-    name: "phy_to_native"
-    namespace: "bluetooth"
-    description: "Expose advertising PHY settings to native layer"
-    bug: "326249470"
-}
-
-flag {
     name: "msft_addr_tracking_quirk"
     namespace: "bluetooth"
     description: "Scanning with MSFT paddress tracking for Realtek BT controllers"
@@ -172,16 +165,6 @@ flag {
     namespace: "bluetooth"
     description: "Fixes BluetoothGatt getting duplicate GATT services"
     bug: "391773937"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "batch_scan_optimization"
-    namespace: "bluetooth"
-    description: "Optimized batch scan for less wakeups"
-    bug: "392132489"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

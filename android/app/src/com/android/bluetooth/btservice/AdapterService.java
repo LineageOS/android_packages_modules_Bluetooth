@@ -74,6 +74,7 @@ import android.bluetooth.BluetoothSocket;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUtils;
 import android.bluetooth.BufferConstraints;
+import android.bluetooth.EncryptionStatusParcel;
 import android.bluetooth.IBluetoothCallback;
 import android.bluetooth.IBluetoothConnectionCallback;
 import android.bluetooth.IBluetoothMetadataListener;
@@ -128,6 +129,8 @@ import com.android.bluetooth.bas.BatteryService;
 import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.InteropUtil.InteropFeature;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
+import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties.LinkState;
+import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties.LinkState.EncryptionAttributes;
 import com.android.bluetooth.btservice.bluetoothkeystore.BluetoothKeystoreNativeInterface;
 import com.android.bluetooth.btservice.bluetoothkeystore.BluetoothKeystoreService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -734,16 +737,24 @@ public class AdapterService extends Service {
         return getStartedProfile(BluetoothProfile.A2DP, A2dpService.class);
     }
 
+    public Optional<A2dpSinkService> getA2dpSinkService() {
+        return getStartedProfile(BluetoothProfile.A2DP_SINK, A2dpSinkService.class);
+    }
+
     public Optional<AvrcpTargetService> getAvrcpTargetService() {
         return getStartedProfile(BluetoothProfile.AVRCP, AvrcpTargetService.class);
     }
 
-    Optional<BassClientService> getBassClientService() {
+    public Optional<AvrcpControllerService> getAvrcpControllerService() {
+        return getStartedProfile(BluetoothProfile.AVRCP_CONTROLLER, AvrcpControllerService.class);
+    }
+
+    public Optional<BassClientService> getBassClientService() {
         return getStartedProfile(
                 BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, BassClientService.class);
     }
 
-    Optional<BatteryService> getBatteryService() {
+    public Optional<BatteryService> getBatteryService() {
         return getStartedProfile(BluetoothProfile.BATTERY, BatteryService.class);
     }
 
@@ -752,59 +763,79 @@ public class AdapterService extends Service {
                 BluetoothProfile.CSIP_SET_COORDINATOR, CsipSetCoordinatorService.class);
     }
 
-    Optional<HapClientService> getHapClientService() {
+    public Optional<HapClientService> getHapClientService() {
         return getStartedProfile(BluetoothProfile.HAP_CLIENT, HapClientService.class);
-    }
-
-    private Optional<HeadsetClientService> getHeadsetClientService() {
-        return getStartedProfile(BluetoothProfile.HEADSET_CLIENT, HeadsetClientService.class);
     }
 
     public Optional<HeadsetService> getHeadsetService() {
         return getStartedProfile(BluetoothProfile.HEADSET, HeadsetService.class);
     }
 
-    Optional<HearingAidService> getHearingAidService() {
+    public Optional<HeadsetClientService> getHeadsetClientService() {
+        return getStartedProfile(BluetoothProfile.HEADSET_CLIENT, HeadsetClientService.class);
+    }
+
+    public Optional<HearingAidService> getHearingAidService() {
         return getStartedProfile(BluetoothProfile.HEARING_AID, HearingAidService.class);
     }
 
-    Optional<HidHostService> getHidHostService() {
+    public Optional<HidDeviceService> getHidDeviceService() {
+        return getStartedProfile(BluetoothProfile.HID_DEVICE, HidDeviceService.class);
+    }
+
+    public Optional<HidHostService> getHidHostService() {
         return getStartedProfile(BluetoothProfile.HID_HOST, HidHostService.class);
     }
 
-    Optional<LeAudioService> getLeAudioService() {
+    public Optional<GattService> getGattService() {
+        return getStartedProfile(BluetoothProfile.GATT, GattService.class);
+    }
+
+    public Optional<LeAudioService> getLeAudioService() {
         return getStartedProfile(BluetoothProfile.LE_AUDIO, LeAudioService.class);
-    }
-
-    private Optional<BluetoothMapService> getMapService() {
-        return getStartedProfile(BluetoothProfile.MAP, BluetoothMapService.class)
-                .filter(ProfileService::isAvailable);
-    }
-
-    private Optional<MapClientService> getMapClientService() {
-        return getStartedProfile(BluetoothProfile.MAP_CLIENT, MapClientService.class)
-                .filter(ProfileService::isAvailable);
-    }
-
-    Optional<PanService> getPanService() {
-        return getStartedProfile(BluetoothProfile.PAN, PanService.class);
-    }
-
-    private Optional<PbapClientService> getPbapClientService() {
-        return getStartedProfile(BluetoothProfile.PBAP_CLIENT, PbapClientService.class)
-                .filter(ProfileService::isAvailable);
-    }
-
-    private Optional<SapService> getSapService() {
-        return getStartedProfile(BluetoothProfile.SAP, SapService.class)
-                .filter(ProfileService::isAvailable);
     }
 
     public Optional<TbsService> getTbsService() {
         return getStartedProfile(BluetoothProfile.LE_CALL_CONTROL, TbsService.class);
     }
 
-    Optional<VolumeControlService> getVolumeControlService() {
+    public Optional<BluetoothMapService> getMapService() {
+        return getStartedProfile(BluetoothProfile.MAP, BluetoothMapService.class)
+                .filter(ProfileService::isAvailable);
+    }
+
+    public Optional<MapClientService> getMapClientService() {
+        return getStartedProfile(BluetoothProfile.MAP_CLIENT, MapClientService.class)
+                .filter(ProfileService::isAvailable);
+    }
+
+    public Optional<McpService> getMcpService() {
+        return getStartedProfile(BluetoothProfile.MCP_SERVER, McpService.class);
+    }
+
+    public Optional<BluetoothOppService> getOppService() {
+        return getStartedProfile(BluetoothProfile.OPP, BluetoothOppService.class);
+    }
+
+    public Optional<PanService> getPanService() {
+        return getStartedProfile(BluetoothProfile.PAN, PanService.class);
+    }
+
+    public Optional<BluetoothPbapService> getPbapService() {
+        return getStartedProfile(BluetoothProfile.PBAP, BluetoothPbapService.class);
+    }
+
+    public Optional<PbapClientService> getPbapClientService() {
+        return getStartedProfile(BluetoothProfile.PBAP_CLIENT, PbapClientService.class)
+                .filter(ProfileService::isAvailable);
+    }
+
+    public Optional<SapService> getSapService() {
+        return getStartedProfile(BluetoothProfile.SAP, SapService.class)
+                .filter(ProfileService::isAvailable);
+    }
+
+    public Optional<VolumeControlService> getVolumeControlService() {
         return getStartedProfile(BluetoothProfile.VOLUME_CONTROL, VolumeControlService.class);
     }
 
@@ -3862,7 +3893,7 @@ public class AdapterService extends Service {
         return true;
     }
 
-    BluetoothActivityEnergyInfo reportActivityInfo() {
+    BluetoothActivityEnergyInfo requestActivityInfo() {
         if (mAdapterProperties.getState() != BluetoothAdapter.STATE_ON
                 || !mAdapterProperties.isActivityAndEnergyReportingSupported()) {
             return null;
@@ -4935,5 +4966,46 @@ public class AdapterService extends Service {
     public boolean isRfcommSocketOffloadSupported() {
         int val = getNumberOfSupportedOffloadedRfcommSockets();
         return val > 0;
+    }
+
+    /**
+     * Get the link status of the given transport.
+     *
+     * <p>It will extract the remote device properties, and use the link details to construct the
+     * link status.
+     *
+     * @param transport the transport to get the link status for
+     * @return the link status of the given transport
+     */
+    public EncryptionStatusParcel getEncryptionStatus(BluetoothDevice device, int transport) {
+        DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
+        if (deviceProp == null) {
+            return null;
+        }
+        LinkState.EncryptionAttributes encryptionAttributes =
+                deviceProp.getEncryptionAttributes(transport);
+        EncryptionStatusParcel deviceEncryptionStatusParcel = null;
+
+        if (encryptionAttributes != null) {
+            deviceEncryptionStatusParcel =
+                    new EncryptionStatusParcel(
+                            encryptionAttributes.keySize(), encryptionAttributes.algorithm());
+        }
+        return deviceEncryptionStatusParcel;
+    }
+
+    /**
+     * Checks if the device is connected on the given transport.
+     *
+     * <p>It will extract the remote device properties, and use the connection handle to check if
+     * the device is connected.
+     *
+     * @param transport the transport to check the connection for
+     * @return true if the device is connected to the given transport, false otherwise
+     */
+    boolean isConnected(BluetoothDevice device, int transport) {
+        DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
+        return (deviceProp != null)
+                && (deviceProp.getConnectionHandle(transport) != BluetoothDevice.ERROR);
     }
 }

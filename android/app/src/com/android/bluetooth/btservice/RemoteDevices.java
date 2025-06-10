@@ -70,6 +70,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -185,6 +186,15 @@ public class RemoteDevices {
                 };
     }
 
+    // TODO(b/422543753) Delete on flag cleanup
+    Optional<BatteryService> getBatteryService() {
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            return mAdapterService.getBatteryService();
+        } else {
+            return Optional.ofNullable(BatteryService.getBatteryService());
+        }
+    }
+
     /**
      * Reset should be called when the state of this object needs to be cleared RemoteDevices is
      * still usable after reset
@@ -213,11 +223,18 @@ public class RemoteDevices {
                             if (deviceProperties.getConnectionHandle(
                                             BluetoothDevice.TRANSPORT_BREDR)
                                     != BluetoothDevice.ERROR) {
+                                if (Flags.linkStatusApi()) {
+                                    deviceProperties.setDisconnected(
+                                            BluetoothDevice.TRANSPORT_BREDR);
+                                }
                                 mAdapterService.notifyAclDisconnected(
                                         bluetoothDevice, BluetoothDevice.TRANSPORT_BREDR);
                             }
                             if (deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_LE)
                                     != BluetoothDevice.ERROR) {
+                                if (Flags.linkStatusApi()) {
+                                    deviceProperties.setDisconnected(BluetoothDevice.TRANSPORT_LE);
+                                }
                                 mAdapterService.notifyAclDisconnected(
                                         bluetoothDevice, BluetoothDevice.TRANSPORT_LE);
                             }
@@ -382,8 +399,6 @@ public class RemoteDevices {
         private BluetoothAddress mIdentityAddress = UNKNOWN_ADDRESS;
         private boolean mIsConsolidated = false;
         private int mBluetoothClass = BluetoothClass.Device.Major.UNCATEGORIZED;
-        private int mBredrConnectionHandle = BluetoothDevice.ERROR;
-        private int mLeConnectionHandle = BluetoothDevice.ERROR;
         private short mRssi;
         private String mAlias;
         private BluetoothDevice mDevice;
@@ -406,6 +421,34 @@ public class RemoteDevices {
         @VisibleForTesting int mDiscoveryResultType = BluetoothDevice.DEVICE_TYPE_UNKNOWN;
         @VisibleForTesting boolean mHfpBatteryIndicator = false;
         private BluetoothSinkAudioPolicy mAudioPolicy;
+
+        static class LinkState {
+            private int mConnectionHandle;
+
+            public record EncryptionAttributes(int keySize, int algorithm) {}
+
+            private EncryptionAttributes mEncryptionAttributes;
+
+            public LinkState(int handle) {
+                mConnectionHandle = handle;
+                mEncryptionAttributes = null;
+            }
+
+            public int getConnectionHandle() {
+                return mConnectionHandle;
+            }
+
+            public void setEncryptionAttributes(EncryptionAttributes encryptionAttributes) {
+                mEncryptionAttributes = encryptionAttributes;
+            }
+
+            public EncryptionAttributes getEncryptionAttributes() {
+                return mEncryptionAttributes;
+            }
+        }
+
+        private LinkState mBredrLink;
+        private LinkState mLeLink;
 
         // LRU cache of package names associated to this device
         private final Set<String> mPackages =
@@ -442,7 +485,8 @@ public class RemoteDevices {
         /**
          * @return the mIdentityAddress
          */
-        @NonNull BluetoothAddress getIdentityAddress() {
+        @NonNull
+        BluetoothAddress getIdentityAddress() {
             synchronized (mObject) {
                 return mIdentityAddress;
             }
@@ -499,29 +543,99 @@ public class RemoteDevices {
          */
         int getConnectionHandle(int transport) {
             synchronized (mObject) {
-                if (transport == BluetoothDevice.TRANSPORT_BREDR) {
-                    return mBredrConnectionHandle;
-                } else if (transport == BluetoothDevice.TRANSPORT_LE) {
-                    return mLeConnectionHandle;
-                } else {
+                if (transport == BluetoothDevice.TRANSPORT_AUTO) {
                     return BluetoothDevice.ERROR;
+                }
+                LinkState linkState =
+                        (transport == BluetoothDevice.TRANSPORT_BREDR) ? mBredrLink : mLeLink;
+                if (linkState == null) {
+                    return BluetoothDevice.ERROR;
+                }
+                return linkState.getConnectionHandle();
+            }
+        }
+
+        /**
+         * Initializes the LinkState object for the given transport with connectionHandle. The
+         * non-null LinkState object for the given transport indicates that the device is now
+         * connected.
+         *
+         * @param connectionHandle the connectionHandle to set
+         * @param transport the transport on which to set the handle
+         */
+        void setConnected(int transport, int connectionHandle) {
+            synchronized (mObject) {
+                switch (transport) {
+                    case BluetoothDevice.TRANSPORT_BREDR ->
+                            mBredrLink = new LinkState(connectionHandle);
+                    case BluetoothDevice.TRANSPORT_LE -> mLeLink = new LinkState(connectionHandle);
+                    default -> errorLog("setConnected(): unexpected transport value " + transport);
                 }
             }
         }
 
         /**
-         * @param connectionHandle the connectionHandle to set
-         * @param transport the transport on which to set the handle
+         * Sets the link state to disconnected for the given transport. The respective transport
+         * based LinkState object is set to null.
+         *
+         * @param transport the transport on which the connection exists
          */
-        void setConnectionHandle(int connectionHandle, int transport) {
+        void setDisconnected(int transport) {
             synchronized (mObject) {
-                if (transport == BluetoothDevice.TRANSPORT_BREDR) {
-                    mBredrConnectionHandle = connectionHandle;
-                } else if (transport == BluetoothDevice.TRANSPORT_LE) {
-                    mLeConnectionHandle = connectionHandle;
-                } else {
-                    errorLog("setConnectionHandle() unexpected transport value " + transport);
+                switch (transport) {
+                    case BluetoothDevice.TRANSPORT_BREDR -> mBredrLink = null;
+                    case BluetoothDevice.TRANSPORT_LE -> mLeLink = null;
+                    default ->
+                            errorLog("setDisconnected(): unexpected transport value " + transport);
                 }
+            }
+        }
+
+        /**
+         * @param transport the transport on which the connection exists
+         * @param keySize the encryption key size
+         * @param algorithm the encryption algorithm (E0/AES)
+         */
+        void setEncryptionAttributes(int transport, int keySize, int algorithm) {
+            synchronized (mObject) {
+                if (transport == BluetoothDevice.TRANSPORT_AUTO) {
+                    errorLog("setEncryptionAttributes(): unexpected transport value " + transport);
+                    return;
+                }
+                LinkState linkState = getLinkState(transport);
+                if (linkState == null) {
+                    errorLog("setEncryptionAttributes(): the device is not connected");
+                    return;
+                }
+                LinkState.EncryptionAttributes encDetails = null;
+                if (keySize > 0 && algorithm > 0) {
+                    encDetails = new LinkState.EncryptionAttributes(keySize, algorithm);
+                }
+                linkState.setEncryptionAttributes(encDetails);
+            }
+        }
+
+        /**
+         * @param transport the transport on which the connection exists
+         * @return the current {@link LinkState} object for the given transport, or null if the
+         *     device is not connected.
+         */
+        LinkState getLinkState(int transport) {
+            synchronized (mObject) {
+                LinkState linkState = null;
+                switch (transport) {
+                    case BluetoothDevice.TRANSPORT_BREDR -> linkState = mBredrLink;
+                    case BluetoothDevice.TRANSPORT_LE -> linkState = mLeLink;
+                    default -> errorLog("getLinkState(): unexpected transport value " + transport);
+                }
+                return linkState;
+            }
+        }
+
+        LinkState.EncryptionAttributes getEncryptionAttributes(int transport) {
+            synchronized (mObject) {
+                LinkState linkState = getLinkState(transport);
+                return (linkState == null) ? null : linkState.getEncryptionAttributes();
             }
         }
 
@@ -1440,7 +1554,7 @@ public class RemoteDevices {
                     case 0x01 -> BluetoothDevice.ADDRESS_TYPE_RANDOM;
                     default -> {
                         errorLog(
-                                 "Unexpected identity address type received from native: "
+                                "Unexpected identity address type received from native: "
                                         + identityAddressType);
                         yield BluetoothDevice.ADDRESS_TYPE_UNKNOWN;
                     }
@@ -1495,7 +1609,7 @@ public class RemoteDevices {
 
         Intent intent = null;
         if (newState == AbstractionLayer.BT_ACL_STATE_CONNECTED) {
-            deviceProperties.setConnectionHandle(handle, transport);
+            deviceProperties.setConnected(transport, handle);
             if (state == BluetoothAdapter.STATE_ON || state == BluetoothAdapter.STATE_TURNING_ON) {
                 intent = new Intent(BluetoothDevice.ACTION_ACL_CONNECTED);
                 intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, transport);
@@ -1503,10 +1617,9 @@ public class RemoteDevices {
                     || state == BluetoothAdapter.STATE_BLE_TURNING_ON) {
                 intent = new Intent(BluetoothAdapter.ACTION_BLE_ACL_CONNECTED);
             }
-            BatteryService batteryService = BatteryService.getBatteryService();
-            if (batteryService != null && transport == BluetoothDevice.TRANSPORT_LE) {
-                batteryService.connectIfPossible(device);
-            }
+            getBatteryService()
+                    .filter(battery -> transport == BluetoothDevice.TRANSPORT_LE)
+                    .ifPresent(battery -> battery.connectIfPossible(device));
             mAdapterService.updatePhonePolicyOnAclConnect(device);
             SecurityLog.writeEvent(
                     SecurityLog.TAG_BLUETOOTH_CONNECTION,
@@ -1514,7 +1627,7 @@ public class RemoteDevices {
                     1, /* reason */
                     "");
         } else {
-            deviceProperties.setConnectionHandle(BluetoothDevice.ERROR, transport);
+            deviceProperties.setDisconnected(transport);
             if (getBondState(device) == BluetoothDevice.BOND_BONDING) {
                 // Send PAIRING_CANCEL intent to dismiss any dialog requesting bonding.
                 sendPairingCancelIntent(device);
@@ -1536,12 +1649,10 @@ public class RemoteDevices {
             }
             // Reset battery level on complete disconnection
             if (mAdapterService.getConnectionState(device) == 0) {
-                BatteryService batteryService = BatteryService.getBatteryService();
-                if (batteryService != null
-                        && batteryService.getConnectionState(device) != STATE_DISCONNECTED
-                        && transport == BluetoothDevice.TRANSPORT_LE) {
-                    batteryService.disconnect(device);
-                }
+                getBatteryService()
+                        .filter(battery -> transport == BluetoothDevice.TRANSPORT_LE)
+                        .filter(battery -> battery.getConnectionState(device) != STATE_DISCONNECTED)
+                        .ifPresent(battery -> battery.disconnect(device));
                 resetBatteryLevel(device, /* isBas= */ true);
             }
 
@@ -1719,6 +1830,10 @@ public class RemoteDevices {
                                 Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                                         | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
 
+        if (Flags.addBondLossReason()) {
+            intent.putExtra(BluetoothDevice.EXTRA_BOND_LOSS_REASON, reason);
+        }
+
         // Log transition to key missing state, if the key missing count is 0 which indicates
         // that the device is bonded until now.
         if (mAdapterService.getDatabaseManager().getKeyMissingCount(device) == 0) {
@@ -1839,6 +1954,11 @@ public class RemoteDevices {
                 // Successful bond detected, reset the count.
                 mAdapterService.getDatabaseManager().updateKeyMissingCount(bluetoothDevice, false);
             }
+        }
+
+        if (Flags.linkStatusApi()) {
+            getDeviceProperties(bluetoothDevice)
+                    .setEncryptionAttributes(transport, keySize, algorithm);
         }
 
         Intent intent =
@@ -2172,9 +2292,9 @@ public class RemoteDevices {
 
     @VisibleForTesting
     boolean hasBatteryService(BluetoothDevice device) {
-        BatteryService batteryService = BatteryService.getBatteryService();
-        return batteryService != null
-                && batteryService.getConnectionState(device) == STATE_CONNECTED;
+        return getBatteryService()
+                .map(battery -> battery.getConnectionState(device) == STATE_CONNECTED)
+                .orElse(false);
     }
 
     /** Handles headset client connection state change event. */
@@ -2337,6 +2457,21 @@ public class RemoteDevices {
                     .append(connectedBrEdr ? "Y" : "N")
                     .append(" LE:")
                     .append(connectedLe ? "Y" : "N")
+                    .append("] [ Encryption status(BR/EDR): ")
+                    .append(
+                            connectedBrEdr
+                                    ? deviceProperties
+                                            .getEncryptionAttributes(
+                                                    BluetoothDevice.TRANSPORT_BREDR)
+                                            .toString()
+                                    : "N/A")
+                    .append(" LE: ")
+                    .append(
+                            connectedLe
+                                    ? deviceProperties
+                                            .getEncryptionAttributes(BluetoothDevice.TRANSPORT_LE)
+                                            .toString()
+                                    : "N/A")
                     .append("] ")
                     .append(deviceProperties.getName())
                     .append("\n");

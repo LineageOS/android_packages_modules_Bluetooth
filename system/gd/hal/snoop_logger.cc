@@ -610,7 +610,7 @@ SnoopLogger::SnoopLogger(os::Handler* handler, std::string snoop_log_path,
   SnoopLoggerTracing::InitializePerfetto();
 #endif  // __ANDROID__
 
-  alarm_ = std::make_unique<os::RepeatingAlarm>(handler_);
+  alarm_ = std::make_unique<os::RepeatingAlarm>(&handler_->thread());
   alarm_->Schedule(common::Bind(&delete_old_btsnooz_files, snooz_log_path_, snooz_log_life_time_),
                    snooz_log_delete_alarm_interval_);
 }
