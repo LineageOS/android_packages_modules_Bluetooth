@@ -795,7 +795,7 @@ final class A2dpStateMachine extends StateMachine {
     }
 
     // Convert AV status codes defined in `bta/include/bta_av_api.h` to BluetoothStatusCodes values.
-    // TODO: mimgrate the values to AIDL constants to avoid hardcoded values.
+    // TODO: migrate the values to AIDL constants to avoid hardcoded values.
     private static int reasonToBluetoothStatusCode(int reason) {
         return switch (reason) {
             case /* BTA_AV_SUCCESS */ 0 -> BluetoothStatusCodes.SUCCESS;
