@@ -51,6 +51,7 @@ import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService.BrowseResult;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.flags.Flags;
 
 import org.junit.After;
 import org.junit.Before;
@@ -63,6 +64,7 @@ import org.mockito.Mock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 /** Test cases for {@link AvrcpControllerService}. */
 @MediumTest
@@ -99,8 +101,12 @@ public class AvrcpControllerServiceTest {
         mockGetSystemService(mAdapterService, AudioManager.class);
 
         mService = new AvrcpControllerService(mAdapterService, mNativeInterface);
-        // Set a mock A2dpSinkService for audio focus calls
-        A2dpSinkService.setA2dpSinkService(mA2dpSinkService);
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            doReturn(Optional.of(mA2dpSinkService)).when(mAdapterService).getA2dpSinkService();
+        } else {
+            // Set a mock A2dpSinkService for audio focus calls
+            A2dpSinkService.setA2dpSinkService(mA2dpSinkService);
+        }
 
         mService.mDeviceStateMap.put(mDevice1, mStateMachine);
         final Intent bluetoothBrowserMediaServiceStartIntent =
@@ -116,7 +122,9 @@ public class AvrcpControllerServiceTest {
     @After
     public void tearDown() throws Exception {
         mService.cleanup();
-        A2dpSinkService.setA2dpSinkService(null);
+        if (!Flags.adapterServiceProfilesUseOptional()) {
+            A2dpSinkService.setA2dpSinkService(null);
+        }
         mService = AvrcpControllerService.getAvrcpControllerService();
         assertThat(mService).isNull();
     }
