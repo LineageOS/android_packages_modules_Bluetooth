@@ -74,6 +74,7 @@ import android.bluetooth.BluetoothSocket;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUtils;
 import android.bluetooth.BufferConstraints;
+import android.bluetooth.EncryptionStatusParcel;
 import android.bluetooth.IBluetoothCallback;
 import android.bluetooth.IBluetoothConnectionCallback;
 import android.bluetooth.IBluetoothMetadataListener;
@@ -128,6 +129,8 @@ import com.android.bluetooth.bas.BatteryService;
 import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.InteropUtil.InteropFeature;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
+import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties.LinkState;
+import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties.LinkState.EncryptionAttributes;
 import com.android.bluetooth.btservice.bluetoothkeystore.BluetoothKeystoreNativeInterface;
 import com.android.bluetooth.btservice.bluetoothkeystore.BluetoothKeystoreService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -4935,5 +4938,46 @@ public class AdapterService extends Service {
     public boolean isRfcommSocketOffloadSupported() {
         int val = getNumberOfSupportedOffloadedRfcommSockets();
         return val > 0;
+    }
+
+    /**
+     * Get the link status of the given transport.
+     *
+     * <p>It will extract the remote device properties, and use the link details to construct the
+     * link status.
+     *
+     * @param transport the transport to get the link status for
+     * @return the link status of the given transport
+     */
+    public EncryptionStatusParcel getEncryptionStatus(BluetoothDevice device, int transport) {
+        DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
+        if (deviceProp == null) {
+            return null;
+        }
+        LinkState.EncryptionAttributes encryptionAttributes =
+                deviceProp.getEncryptionAttributes(transport);
+        EncryptionStatusParcel deviceEncryptionStatusParcel = null;
+
+        if (encryptionAttributes != null) {
+            deviceEncryptionStatusParcel =
+                    new EncryptionStatusParcel(
+                            encryptionAttributes.keySize(), encryptionAttributes.algorithm());
+        }
+        return deviceEncryptionStatusParcel;
+    }
+
+    /**
+     * Checks if the device is connected on the given transport.
+     *
+     * <p>It will extract the remote device properties, and use the connection handle to check if
+     * the device is connected.
+     *
+     * @param transport the transport to check the connection for
+     * @return true if the device is connected to the given transport, false otherwise
+     */
+    boolean isConnected(BluetoothDevice device, int transport) {
+        DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
+        return (deviceProp != null)
+                && (deviceProp.getConnectionHandle(transport) != BluetoothDevice.ERROR);
     }
 }

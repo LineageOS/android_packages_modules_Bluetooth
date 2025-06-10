@@ -46,6 +46,7 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothStatusCodes;
+import android.bluetooth.EncryptionStatusParcel;
 import android.bluetooth.IBluetooth;
 import android.bluetooth.IBluetoothActivityEnergyInfoListener;
 import android.bluetooth.IBluetoothConnectionCallback;
@@ -2125,5 +2126,32 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         }
 
         return service.getDatabaseManager().getKeyMissingCount(device);
+    }
+
+    @Override
+    public EncryptionStatusParcel getEncryptionStatus(
+            BluetoothDevice device, AttributionSource source, int transport) {
+        AdapterService service = getService();
+        if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
+            throw new IllegalArgumentException("device cannot have an invalid address");
+        }
+        if (!checkConnectPermissionForDataDelivery(service, source, TAG, "getEncryptionStatus")) {
+            return null;
+        }
+
+        return service == null ? null : service.getEncryptionStatus(device, transport);
+    }
+
+    @Override
+    public boolean isConnected(BluetoothDevice device, AttributionSource source, int transport) {
+        AdapterService service = getService();
+        if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
+            throw new IllegalArgumentException("device cannot have an invalid address");
+        }
+        if (!checkConnectPermissionForDataDelivery(service, source, TAG, "isConnected")) {
+            return false;
+        }
+
+        return service == null ? false : service.isConnected(device, transport);
     }
 }
