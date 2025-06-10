@@ -495,28 +495,23 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
         RawAddress connected_bda = btif_hf_cb[idx].connected_bda;
         reset_control_block(&btif_hf_cb[idx]);
 
-        if (com::android::bluetooth::flags::ignore_notify_when_already_connected()) {
-          bool notify_required = true;
+        bool notify_required = true;
 
-          for (int i = 0; i < BTA_AG_MAX_NUM_CLIENTS; i++) {
-            if ((i != idx) && (BTHF_CONNECTION_STATE_CONNECTED == btif_hf_cb[i].state) &&
-                (connected_bda == btif_hf_cb[i].connected_bda)) {
-              // There is already an active cnnection on this device
-              // skip upper layer notification
-              notify_required = false;
-              log::info(
-                      "AG open failure for {} is ignored because there's an "
-                      "active connection on the same device",
-                      connected_bda);
-              break;
-            }
+        for (int i = 0; i < BTA_AG_MAX_NUM_CLIENTS; i++) {
+          if ((i != idx) && (BTHF_CONNECTION_STATE_CONNECTED == btif_hf_cb[i].state) &&
+              (connected_bda == btif_hf_cb[i].connected_bda)) {
+            // There is already an active cnnection on this device
+            // skip upper layer notification
+            notify_required = false;
+            log::info(
+                    "AG open failure for {} is ignored because there's an "
+                    "active connection on the same device",
+                    connected_bda);
+            break;
           }
+        }
 
-          if (notify_required) {
-            bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state, &connected_bda,
-                                                     p_data->open.status);
-          }
-        } else {
+        if (notify_required) {
           bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state, &connected_bda,
                                                    p_data->open.status);
         }
