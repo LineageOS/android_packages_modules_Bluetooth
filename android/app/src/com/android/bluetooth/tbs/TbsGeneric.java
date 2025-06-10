@@ -177,6 +177,7 @@ public class TbsGeneric {
 
         int ccid =
                 ContentControlIdKeeper.acquireCcid(
+                        mAdapterService,
                         new ParcelUuid(TbsGatt.UUID_GTBS),
                         BluetoothLeAudio.CONTEXT_TYPE_CONVERSATIONAL);
         if (!isCcidValid(ccid)) {
@@ -351,6 +352,7 @@ public class TbsGeneric {
                         providerName,
                         technology,
                         ContentControlIdKeeper.acquireCcid(
+                                mAdapterService,
                                 new ParcelUuid(UUID.randomUUID()),
                                 BluetoothLeAudio.CONTEXT_TYPE_CONVERSATIONAL));
         if (isCcidValid(bearer.ccid)) {
@@ -399,7 +401,7 @@ public class TbsGeneric {
         }
 
         // Release the ccid acquired
-        ContentControlIdKeeper.releaseCcid(bearer.ccid);
+        ContentControlIdKeeper.releaseCcid(mAdapterService, bearer.ccid);
 
         mBearerList.remove(bearer);
 
