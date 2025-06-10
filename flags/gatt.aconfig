@@ -10,16 +10,6 @@ flag {
 }
 
 flag {
-    name: "advertise_thread"
-    namespace: "bluetooth"
-    description: "Run all advertise functions on a single thread"
-    bug: "391508617"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "gatt_multi_bearer_connections"
     namespace: "bluetooth"
     description: "Run all advertise functions on a single thread"

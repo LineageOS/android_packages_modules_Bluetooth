@@ -39,7 +39,6 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.HashMap;
@@ -628,28 +627,20 @@ public class AdvertiseManager {
 
     void doOnAdvertiseThread(Runnable r) {
         if (mIsAvailable) {
-            if (Flags.advertiseThread()) {
-                final boolean posted =
-                        mHandler.post(
-                                () -> {
-                                    if (mIsAvailable) {
-                                        r.run();
-                                    }
-                                });
-                if (!posted) {
-                    Log.w(TAG, "Unable to post async task");
-                }
-            } else {
-                r.run();
+            final boolean posted =
+                    mHandler.post(
+                            () -> {
+                                if (mIsAvailable) {
+                                    r.run();
+                                }
+                            });
+            if (!posted) {
+                Log.w(TAG, "Unable to post async task");
             }
         }
     }
 
     private void forceRunSyncOnAdvertiseThread(Runnable r) {
-        if (!Flags.advertiseThread()) {
-            r.run();
-            return;
-        }
         final CompletableFuture<Void> future = new CompletableFuture<>();
         final boolean posted =
                 mHandler.postAtFrontOfQueue(
@@ -669,9 +660,7 @@ public class AdvertiseManager {
     }
 
     private void checkThread() {
-        if (Flags.advertiseThread()
-                && !mHandler.getLooper().isCurrentThread()
-                && !Utils.isInstrumentationTestMode()) {
+        if (!mHandler.getLooper().isCurrentThread() && !Utils.isInstrumentationTestMode()) {
             throw new IllegalStateException("Not on advertise thread");
         }
     }
