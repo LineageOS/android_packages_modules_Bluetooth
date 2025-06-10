@@ -81,7 +81,7 @@ public class BluetoothMnsObexClient {
     private Handler mCallback = null;
     private SdpMnsRecord mMnsRecord;
 
-    public BluetoothMnsObexClient(
+    BluetoothMnsObexClient(
             AdapterService adapterService,
             BluetoothDevice device,
             SdpMnsRecord mnsRecord,

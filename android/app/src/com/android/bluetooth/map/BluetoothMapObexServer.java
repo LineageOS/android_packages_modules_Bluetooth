@@ -130,6 +130,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
 
     public BluetoothMapObexServer(
             AdapterService adapterService,
+            BluetoothMapService mapService,
             Handler callback,
             BluetoothMapContentObserver observer,
             BluetoothMapMasInstance mas,
@@ -165,7 +166,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                                 mCurrentFolder to root folder */
         mObserver.setFolderStructure(mCurrentFolder.getRoot());
 
-        mOutContent = new BluetoothMapContent(mAdapterService, mAccount, mMasInstance);
+        mOutContent = new BluetoothMapContent(mAdapterService, mapService, mAccount, mMasInstance);
     }
 
     /** */

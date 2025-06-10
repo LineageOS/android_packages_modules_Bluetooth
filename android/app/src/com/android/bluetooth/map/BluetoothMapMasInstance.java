@@ -373,7 +373,8 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
     /* Called for all MAS instances for each instance when auth. is completed, hence
      * must check if it has a valid connection before creating a session.
      * Returns true at success. */
-    public boolean startObexServerSession(BluetoothMnsObexClient mnsClient)
+    public boolean startObexServerSession(
+            BluetoothMapService mapService, BluetoothMnsObexClient mnsClient)
             throws IOException, RemoteException {
         debug("Map Service startObexServerSession masid = " + mMasInstanceId);
 
@@ -391,6 +392,7 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
             mMapServer =
                     new BluetoothMapObexServer(
                             mAdapterService,
+                            mapService,
                             mServiceHandler,
                             mObserver,
                             this,
