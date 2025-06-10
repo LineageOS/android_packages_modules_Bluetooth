@@ -85,6 +85,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
@@ -93,6 +94,7 @@ import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hap.HapClientService;
+import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.le_scan.ScanController;
 import com.android.bluetooth.mcp.McpService;
@@ -139,14 +141,19 @@ public class LeAudioServiceTest {
     @Mock private LeAudioNativeInterface mNativeInterface;
     @Mock private LeAudioBroadcasterNativeInterface mLeAudioBroadcasterNativeInterface;
     @Mock private LeAudioTmapGattServer mTmapGattServer;
+
+    @Mock private A2dpService mA2dpService;
+    @Mock private BassClientService mBassClientService;
+    @Mock private CsipSetCoordinatorService mCsipSetCoordinatorService;
+    @Mock private HapClientService mHapClientService;
+    @Mock private HeadsetService mHeadsetService;
+    @Mock private HearingAidService mHearingAidService;
     @Mock private McpService mMcpService;
     @Mock private TbsService mTbsService;
     @Mock private VolumeControlService mVolumeControlService;
-    @Mock private HapClientService mHapClientService;
-    @Mock private CsipSetCoordinatorService mCsipSetCoordinatorService;
-    @Mock private BassClientService mBassClientService;
 
     @Spy private LeAudioObjectsFactory mObjectsFactory = LeAudioObjectsFactory.getInstance();
+    // TODO(b/422543753) Delete on flag cleanup
     @Spy private ServiceFactory mServiceFactory = new ServiceFactory();
 
     private static final int MAX_LE_AUDIO_CONNECTIONS = 5;
@@ -259,11 +266,6 @@ public class LeAudioServiceTest {
         LeAudioObjectsFactory.setInstanceForTesting(mObjectsFactory);
         doReturn(mTmapGattServer).when(mObjectsFactory).getTmapGattServer(any());
 
-        doReturn(mVolumeControlService).when(mServiceFactory).getVolumeControlService();
-        doReturn(mHapClientService).when(mServiceFactory).getHapClientService();
-        doReturn(mCsipSetCoordinatorService).when(mServiceFactory).getCsipSetCoordinatorService();
-        doReturn(mBassClientService).when(mServiceFactory).getBassClientService();
-
         doReturn(true).when(mNativeInterface).connectLeAudio(any(BluetoothDevice.class));
         doReturn(true).when(mNativeInterface).disconnectLeAudio(any(BluetoothDevice.class));
 
@@ -271,14 +273,36 @@ public class LeAudioServiceTest {
                 .when(mAdapterService)
                 .getDeviceFromByte(Utils.getBytesFromAddress("FF:FF:FF:FF:FF:FF"));
 
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            doReturn(Optional.of(mA2dpService)).when(mAdapterService).getA2dpService();
+            doReturn(Optional.of(mBassClientService)).when(mAdapterService).getBassClientService();
+            doReturn(Optional.of(mCsipSetCoordinatorService))
+                    .when(mAdapterService)
+                    .getCsipSetCoordinatorService();
+            doReturn(Optional.of(mHapClientService)).when(mAdapterService).getHapClientService();
+            doReturn(Optional.of(mHeadsetService)).when(mAdapterService).getHeadsetService();
+            doReturn(Optional.of(mHearingAidService)).when(mAdapterService).getHearingAidService();
+            doReturn(Optional.of(mMcpService)).when(mAdapterService).getMcpService();
+            doReturn(Optional.of(mVolumeControlService))
+                    .when(mAdapterService)
+                    .getVolumeControlService();
+        } else {
+            doReturn(mA2dpService).when(mServiceFactory).getA2dpService();
+            doReturn(mBassClientService).when(mServiceFactory).getBassClientService();
+            doReturn(mCsipSetCoordinatorService)
+                    .when(mServiceFactory)
+                    .getCsipSetCoordinatorService();
+            doReturn(mHapClientService).when(mServiceFactory).getHapClientService();
+            doReturn(mHeadsetService).when(mServiceFactory).getHeadsetService();
+            doReturn(mHearingAidService).when(mServiceFactory).getHearingAidService();
+            doReturn(mMcpService).when(mServiceFactory).getMcpService();
+            doReturn(mVolumeControlService).when(mServiceFactory).getVolumeControlService();
+        }
+
         mService =
                 new LeAudioService(
                         mAdapterService, mNativeInterface, mLeAudioBroadcasterNativeInterface);
         mService.setAvailable(true);
-
-        mService.mMcpService = mMcpService;
-        mService.mHapClientService = mHapClientService;
-        mService.mBassClientService = mBassClientService;
         mService.mServiceFactory = mServiceFactory;
 
         LeAudioStackEvent stackEvent =
@@ -2367,8 +2391,11 @@ public class LeAudioServiceTest {
 
     @Test
     public void testGetAudioDeviceGroupVolume_whenVolumeControlServiceIsNull() {
-        mService.mVolumeControlService = null;
-        doReturn(null).when(mServiceFactory).getVolumeControlService();
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            doReturn(Optional.empty()).when(mAdapterService).getVolumeControlService();
+        } else {
+            doReturn(null).when(mServiceFactory).getVolumeControlService();
+        }
 
         int groupId = 1;
         assertThat(mService.getAudioDeviceGroupVolume(groupId)).isEqualTo(-1);
