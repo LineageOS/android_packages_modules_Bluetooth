@@ -63,7 +63,6 @@ import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
-import com.android.bluetooth.flags.Flags;
 
 /**
  * View showing the user's finished bluetooth opp transfers that the user does not confirm.
@@ -93,23 +92,17 @@ public class BluetoothOppTransferHistory extends Activity
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
 
-        if (Flags.oppSetInsetsForEdgeToEdge()) {
-            ViewCompat.setOnApplyWindowInsetsListener(
-                    findViewById(android.R.id.content),
-                    (v, windowInsets) -> {
-                        Insets insets =
-                                windowInsets.getInsets(
-                                        WindowInsetsCompat.Type.systemBars()
-                                                | WindowInsetsCompat.Type.ime()
-                                                | WindowInsetsCompat.Type.displayCutout());
-                        v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
-                        return WindowInsetsCompat.CONSUMED;
-                    });
-        } else {
-            // TODO(b/309578419): Make this activity handle insets properly and then remove this.
-            getTheme().applyStyle(R.style.OptOutEdgeToEdgeEnforcement, /* force */ false);
-        }
-
+        ViewCompat.setOnApplyWindowInsetsListener(
+                findViewById(android.R.id.content),
+                (v, windowInsets) -> {
+                    Insets insets =
+                            windowInsets.getInsets(
+                                    WindowInsetsCompat.Type.systemBars()
+                                            | WindowInsetsCompat.Type.ime()
+                                            | WindowInsetsCompat.Type.displayCutout());
+                    v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
+                    return WindowInsetsCompat.CONSUMED;
+                });
         setContentView(R.layout.bluetooth_transfers_page);
         mListView = (ListView) findViewById(R.id.list);
         mListView.setEmptyView(findViewById(R.id.empty));
