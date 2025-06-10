@@ -110,6 +110,7 @@ public class BluetoothMapObexServerTest {
         mObexServer =
                 new BluetoothMapObexServer(
                         mAdapterService,
+                        mMapService,
                         null,
                         mObserver,
                         mMasInstance,
@@ -133,6 +134,7 @@ public class BluetoothMapObexServerTest {
         BluetoothMapObexServer obexServer =
                 new BluetoothMapObexServer(
                         mAdapterService,
+                        mMapService,
                         null,
                         mObserver,
                         mMasInstance,
@@ -235,7 +237,7 @@ public class BluetoothMapObexServerTest {
     public void setMsgTypeFilterParams_withAccountNull_andOverwriteTrue() throws Exception {
         BluetoothMapObexServer obexServer =
                 new BluetoothMapObexServer(
-                        mAdapterService, null, mObserver, mMasInstance, null, false);
+                        mAdapterService, mMapService, null, mObserver, mMasInstance, null, false);
 
         obexServer.setMsgTypeFilterParams(mParams, true);
 
@@ -263,6 +265,7 @@ public class BluetoothMapObexServerTest {
         BluetoothMapObexServer obexServer =
                 new BluetoothMapObexServer(
                         mAdapterService,
+                        mMapService,
                         null,
                         mObserver,
                         mMasInstance,
@@ -290,6 +293,7 @@ public class BluetoothMapObexServerTest {
         BluetoothMapObexServer obexServer =
                 new BluetoothMapObexServer(
                         mAdapterService,
+                        mMapService,
                         null,
                         mObserver,
                         mMasInstance,

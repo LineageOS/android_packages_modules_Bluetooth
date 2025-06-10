@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.map;
 
+import static com.android.bluetooth.TestUtils.MockitoRule;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import android.util.Xml;
@@ -25,8 +27,10 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.Utils;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -40,6 +44,10 @@ import java.time.format.DateTimeFormatter;
 /** Test cases for {@link BluetoothMapMessageListing}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapMessageListingTest {
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
+    @Mock private BluetoothMapService mMapService;
+
     private static final long TEST_DATE_TIME_EARLIEST = 0;
     private static final long TEST_DATE_TIME_MIDDLE = 1;
     private static final long TEST_DATE_TIME_LATEST = 2;
@@ -57,17 +65,17 @@ public class BluetoothMapMessageListingTest {
 
     @Before
     public void setUp() {
-        mListingElementEarliestWithReadFalse = new BluetoothMapMessageListingElement();
+        mListingElementEarliestWithReadFalse = new BluetoothMapMessageListingElement(mMapService);
         mListingElementEarliestWithReadFalse.setDateTime(TEST_DATE_TIME_EARLIEST);
 
-        mListingElementMiddleWithReadFalse = new BluetoothMapMessageListingElement();
+        mListingElementMiddleWithReadFalse = new BluetoothMapMessageListingElement(mMapService);
         mListingElementMiddleWithReadFalse.setDateTime(TEST_DATE_TIME_MIDDLE);
 
-        mListingElementLatestWithReadTrue = new BluetoothMapMessageListingElement();
+        mListingElementLatestWithReadTrue = new BluetoothMapMessageListingElement(mMapService);
         mListingElementLatestWithReadTrue.setDateTime(TEST_DATE_TIME_LATEST);
         mListingElementLatestWithReadTrue.setRead(TEST_READ, TEST_REPORT_READ);
 
-        mListing = new BluetoothMapMessageListing();
+        mListing = new BluetoothMapMessageListing(mMapService);
         mListing.add(mListingElementEarliestWithReadFalse);
         mListing.add(mListingElementMiddleWithReadFalse);
         mListing.add(mListingElementLatestWithReadTrue);
@@ -75,7 +83,7 @@ public class BluetoothMapMessageListingTest {
 
     @Test
     public void addElement() {
-        final BluetoothMapMessageListing listing = new BluetoothMapMessageListing();
+        final BluetoothMapMessageListing listing = new BluetoothMapMessageListing(mMapService);
         assertThat(listing.getCount()).isEqualTo(0);
         listing.add(mListingElementEarliestWithReadFalse);
         assertThat(listing.getCount()).isEqualTo(1);
@@ -111,11 +119,12 @@ public class BluetoothMapMessageListingTest {
 
     @Test
     public void encodeToXml_thenAppendFromXml() throws Exception {
-        final BluetoothMapMessageListing listingToAppend = new BluetoothMapMessageListing();
+        final BluetoothMapMessageListing listingToAppend =
+                new BluetoothMapMessageListing(mMapService);
         final BluetoothMapMessageListingElement listingElementToAppendOne =
-                new BluetoothMapMessageListingElement();
+                new BluetoothMapMessageListingElement(mMapService);
         final BluetoothMapMessageListingElement listingElementToAppendTwo =
-                new BluetoothMapMessageListingElement();
+                new BluetoothMapMessageListingElement(mMapService);
 
         listingElementToAppendOne.setDateTime(TEST_DATE_TIME_EARLIEST);
         listingElementToAppendTwo.setRead(TEST_READ, TEST_REPORT_READ);
@@ -128,7 +137,7 @@ public class BluetoothMapMessageListingTest {
         final InputStream listingStream =
                 new ByteArrayInputStream(listingToAppend.encode(false, TEST_VERSION));
 
-        BluetoothMapMessageListing listing = new BluetoothMapMessageListing();
+        BluetoothMapMessageListing listing = new BluetoothMapMessageListing(mMapService);
         appendFromXml(listingStream, listing);
         assertThat(listing.getList()).hasSize(2);
         assertThat(listing.getList().get(0).getDateTime()).isEqualTo(TEST_DATE_TIME_EARLIEST);
@@ -181,7 +190,8 @@ public class BluetoothMapMessageListingTest {
 
     private BluetoothMapMessageListingElement createFromXml(XmlPullParser parser)
             throws XmlPullParserException, IOException {
-        BluetoothMapMessageListingElement newElement = new BluetoothMapMessageListingElement();
+        BluetoothMapMessageListingElement newElement =
+                new BluetoothMapMessageListingElement(mMapService);
         int count = parser.getAttributeCount();
         for (int i = 0; i < count; i++) {
             String attributeName = parser.getAttributeName(i).trim();

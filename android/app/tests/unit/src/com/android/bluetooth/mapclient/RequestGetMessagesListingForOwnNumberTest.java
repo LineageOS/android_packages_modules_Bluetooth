@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.mapclient;
 
+import static com.android.bluetooth.TestUtils.MockitoRule;
+
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
@@ -26,11 +28,15 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.ObexAppParameters;
 import com.android.bluetooth.map.BluetoothMapMessageListing;
 import com.android.bluetooth.map.BluetoothMapMessageListingElement;
+import com.android.bluetooth.map.BluetoothMapService;
+import com.android.bluetooth.map.BluetoothMapUtils;
 import com.android.obex.HeaderSet;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -43,6 +49,10 @@ import java.util.Map;
 public class RequestGetMessagesListingForOwnNumberTest {
     private static final String TAG =
             RequestGetMessagesListingForOwnNumberTest.class.getSimpleName();
+
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
+    @Mock private BluetoothMapService mMapService;
 
     private static final int MAX_LIST_COUNT_UPPER_LIMIT = 100;
     private static final int LIST_START_OFFSET_UPPER_LIMIT = 100;
@@ -64,8 +74,13 @@ public class RequestGetMessagesListingForOwnNumberTest {
     private BluetoothMapMessageListingElement mSMSWithoutOwnNumber;
 
     private static class FakeMessageFoldersForListing {
+        private final BluetoothMapService mMapService;
         private final Map<String, List<BluetoothMapMessageListingElement>> mFolders =
                 new HashMap<>();
+
+        FakeMessageFoldersForListing(BluetoothMapService mapService) {
+            mMapService = mapService;
+        }
 
         /**
          * @param folder - the folder you want to create messages for.
@@ -101,7 +116,8 @@ public class RequestGetMessagesListingForOwnNumberTest {
                 String folder, int offset, int maxCount, byte msgTypeFilter) {
             List<BluetoothMapMessageListingElement> folderElements = mFolders.get(folder);
 
-            BluetoothMapMessageListing requestedListing = new BluetoothMapMessageListing();
+            BluetoothMapMessageListing requestedListing =
+                    new BluetoothMapMessageListing(mMapService);
             if (folderElements != null
                     && offset >= 0
                     && offset < LIST_START_OFFSET_UPPER_LIMIT
@@ -171,17 +187,17 @@ public class RequestGetMessagesListingForOwnNumberTest {
         RequestGetMessagesListingForOwnNumber.sListStartOffsetUpperLimit =
                 LIST_START_OFFSET_UPPER_LIMIT;
 
-        mSMSWithOwnNumberAsRecipient = new BluetoothMapMessageListingElement();
+        mSMSWithOwnNumberAsRecipient = new BluetoothMapMessageListingElement(mMapService);
         mSMSWithOwnNumberAsRecipient.setSenderAddressing(TEST_OTHER_NUMBER_TX);
         mSMSWithOwnNumberAsRecipient.setRecipientAddressing(TEST_OWN_NUMBER);
         listingElementSetType(mSMSWithOwnNumberAsRecipient, MessagesFilter.MESSAGE_TYPE_SMS_GSM);
 
-        mMMSWithOwnNumberAsSender = new BluetoothMapMessageListingElement();
+        mMMSWithOwnNumberAsSender = new BluetoothMapMessageListingElement(mMapService);
         mMMSWithOwnNumberAsSender.setSenderAddressing(TEST_OWN_NUMBER);
         mMMSWithOwnNumberAsSender.setRecipientAddressing(TEST_OTHER_NUMBER_RX);
         listingElementSetType(mMMSWithOwnNumberAsSender, MessagesFilter.MESSAGE_TYPE_MMS);
 
-        mSMSWithoutOwnNumber = new BluetoothMapMessageListingElement();
+        mSMSWithoutOwnNumber = new BluetoothMapMessageListingElement(mMapService);
         mSMSWithoutOwnNumber.setSenderAddressing(TEST_NO_NUMBER);
         mSMSWithoutOwnNumber.setRecipientAddressing(TEST_NO_NUMBER);
         listingElementSetType(mSMSWithoutOwnNumber, MessagesFilter.MESSAGE_TYPE_SMS_GSM);
@@ -193,7 +209,7 @@ public class RequestGetMessagesListingForOwnNumberTest {
             int positionSentFolder,
             int positionInboxFolder,
             BluetoothMapMessageListingElement targetElement) {
-        FakeMessageFoldersForListing folders = new FakeMessageFoldersForListing();
+        FakeMessageFoldersForListing folders = new FakeMessageFoldersForListing(mMapService);
         folders.createMessageFolder(
                 MceStateMachine.FOLDER_SENT,
                 sizeSentFolder,
