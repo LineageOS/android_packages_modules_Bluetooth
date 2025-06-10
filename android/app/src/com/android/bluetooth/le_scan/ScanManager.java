@@ -1169,10 +1169,6 @@ public class ScanManager {
     }
 
     private static boolean isPhyConfigured(ScanClient client, boolean use1mPhy) {
-        if (!Flags.phyToNative()) {
-            // When the flag is off the PHY setting is ignored and all clients scan on 1m
-            return use1mPhy;
-        }
         if (client.mSettings.getPhy() == ScanSettings.PHY_LE_ALL_SUPPORTED) {
             return true;
         }

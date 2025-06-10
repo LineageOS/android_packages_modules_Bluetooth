@@ -16,13 +16,6 @@ flag {
 }
 
 flag {
-    name: "phy_to_native"
-    namespace: "bluetooth"
-    description: "Expose advertising PHY settings to native layer"
-    bug: "326249470"
-}
-
-flag {
     name: "msft_addr_tracking_quirk"
     namespace: "bluetooth"
     description: "Scanning with MSFT paddress tracking for Realtek BT controllers"
