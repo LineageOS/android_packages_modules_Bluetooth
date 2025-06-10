@@ -74,8 +74,13 @@ public class RequestGetMessagesListingForOwnNumberTest {
     private BluetoothMapMessageListingElement mSMSWithoutOwnNumber;
 
     private static class FakeMessageFoldersForListing {
+        private final BluetoothMapService mMapService;
         private final Map<String, List<BluetoothMapMessageListingElement>> mFolders =
                 new HashMap<>();
+
+        FakeMessageFoldersForListing(BluetoothMapService mapService) {
+            mMapService = mapService;
+        }
 
         /**
          * @param folder - the folder you want to create messages for.
@@ -111,7 +116,8 @@ public class RequestGetMessagesListingForOwnNumberTest {
                 String folder, int offset, int maxCount, byte msgTypeFilter) {
             List<BluetoothMapMessageListingElement> folderElements = mFolders.get(folder);
 
-            BluetoothMapMessageListing requestedListing = new BluetoothMapMessageListing();
+            BluetoothMapMessageListing requestedListing =
+                    new BluetoothMapMessageListing(mMapService);
             if (folderElements != null
                     && offset >= 0
                     && offset < LIST_START_OFFSET_UPPER_LIMIT
@@ -203,7 +209,7 @@ public class RequestGetMessagesListingForOwnNumberTest {
             int positionSentFolder,
             int positionInboxFolder,
             BluetoothMapMessageListingElement targetElement) {
-        FakeMessageFoldersForListing folders = new FakeMessageFoldersForListing();
+        FakeMessageFoldersForListing folders = new FakeMessageFoldersForListing(mMapService);
         folders.createMessageFolder(
                 MceStateMachine.FOLDER_SENT,
                 sizeSentFolder,

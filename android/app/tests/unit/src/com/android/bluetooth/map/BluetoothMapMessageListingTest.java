@@ -75,7 +75,7 @@ public class BluetoothMapMessageListingTest {
         mListingElementLatestWithReadTrue.setDateTime(TEST_DATE_TIME_LATEST);
         mListingElementLatestWithReadTrue.setRead(TEST_READ, TEST_REPORT_READ);
 
-        mListing = new BluetoothMapMessageListing();
+        mListing = new BluetoothMapMessageListing(mMapService);
         mListing.add(mListingElementEarliestWithReadFalse);
         mListing.add(mListingElementMiddleWithReadFalse);
         mListing.add(mListingElementLatestWithReadTrue);
@@ -83,7 +83,7 @@ public class BluetoothMapMessageListingTest {
 
     @Test
     public void addElement() {
-        final BluetoothMapMessageListing listing = new BluetoothMapMessageListing();
+        final BluetoothMapMessageListing listing = new BluetoothMapMessageListing(mMapService);
         assertThat(listing.getCount()).isEqualTo(0);
         listing.add(mListingElementEarliestWithReadFalse);
         assertThat(listing.getCount()).isEqualTo(1);
@@ -119,7 +119,8 @@ public class BluetoothMapMessageListingTest {
 
     @Test
     public void encodeToXml_thenAppendFromXml() throws Exception {
-        final BluetoothMapMessageListing listingToAppend = new BluetoothMapMessageListing();
+        final BluetoothMapMessageListing listingToAppend =
+                new BluetoothMapMessageListing(mMapService);
         final BluetoothMapMessageListingElement listingElementToAppendOne =
                 new BluetoothMapMessageListingElement(mMapService);
         final BluetoothMapMessageListingElement listingElementToAppendTwo =
@@ -136,7 +137,7 @@ public class BluetoothMapMessageListingTest {
         final InputStream listingStream =
                 new ByteArrayInputStream(listingToAppend.encode(false, TEST_VERSION));
 
-        BluetoothMapMessageListing listing = new BluetoothMapMessageListing();
+        BluetoothMapMessageListing listing = new BluetoothMapMessageListing(mMapService);
         appendFromXml(listingStream, listing);
         assertThat(listing.getList()).hasSize(2);
         assertThat(listing.getList().get(0).getDateTime()).isEqualTo(TEST_DATE_TIME_EARLIEST);

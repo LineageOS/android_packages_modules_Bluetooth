@@ -2145,7 +2145,7 @@ public class BluetoothMapContent {
             BluetoothMapFolderElement folderElement, BluetoothMapAppParams ap) {
         Log.d(TAG, "msgListing: messageType = " + ap.getFilterMessageType());
 
-        BluetoothMapMessageListing bmList = new BluetoothMapMessageListing();
+        BluetoothMapMessageListing bmList = new BluetoothMapMessageListing(mMapService);
 
         /* We overwrite the parameter mask here if it is 0 or not present, as this
          * should cause all parameters to be included in the message list. */
