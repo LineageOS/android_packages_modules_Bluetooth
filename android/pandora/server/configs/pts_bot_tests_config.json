@@ -2703,14 +2703,6 @@
         "VCP/VC/SPE/BI-19-C",
         "VCP/VC/SPE/BI-20-C"
       ]
-    },
-    {
-      "flags": [
-        "leaudio_gmap_client"
-      ],
-      "tests": [
-        "GMAP"
-      ]
     }
   ],
   "system_properties": [
