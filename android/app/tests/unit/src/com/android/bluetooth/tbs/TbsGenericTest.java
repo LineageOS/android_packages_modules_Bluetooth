@@ -14,10 +14,9 @@
 
 package com.android.bluetooth.tbs;
 
-import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
-
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.telephony.BluetoothInCallService.Capability;
 import static com.android.bluetooth.telephony.BluetoothInCallService.Result;
 
@@ -31,20 +30,24 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 
-import android.bluetooth.*;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothLeCall;
 import android.bluetooth.IBluetoothLeCallControlCallback;
-import android.content.Context;
+import android.media.AudioManager;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.ServiceFactory;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
 
 import org.junit.Before;
@@ -60,15 +63,23 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /** Test cases for {@link TbsGeneric}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class TbsGenericTest {
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
+    @Mock private AdapterService mAdapterService;
+    @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
+    @Mock private LeAudioService mLeAudioService;
     @Mock private TbsGatt mTbsGatt;
     @Mock private IBluetoothLeCallControlCallback mIBluetoothLeCallControlCallback;
+    @Mock private AudioManager mAudioManager;
+
     @Captor private ArgumentCaptor<Integer> mGtbsCcidCaptor;
     @Captor private ArgumentCaptor<String> mGtbsUciCaptor;
 
@@ -80,7 +91,6 @@ public class TbsGenericTest {
     @Captor private ArgumentCaptor<Integer> mDefaultGtbsTechnologyCaptor;
     @Captor private ArgumentCaptor<TbsGatt.Callback> mTbsGattCallback;
 
-    private final Context mContext = getInstrumentation().getContext();
     private final BluetoothDevice mDevice = getTestDevice(32);
 
     private TbsGeneric mTbsGeneric;
@@ -114,7 +124,16 @@ public class TbsGenericTest {
         doReturn(true).when(mTbsGatt).setCallFriendlyName(anyInt(), anyString());
         doReturn(true).when(mTbsGatt).clearFriendlyName();
 
-        mTbsGeneric = new TbsGeneric(mContext, mTbsGatt);
+        mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
+        } else {
+            // Setup the mocked factory to return mocked services
+            doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
+        }
+
+        mTbsGeneric = new TbsGeneric(mAdapterService, mTbsGatt);
+        mTbsGeneric.mFactory = mServiceFactory;
     }
 
     private Integer prepareTestBearer() {
@@ -352,9 +371,6 @@ public class TbsGenericTest {
         Integer ccid = prepareTestBearer();
         reset(mTbsGatt);
 
-        LeAudioService leAudioService = mock(LeAudioService.class);
-        mTbsGeneric.setLeAudioServiceForTesting(leAudioService);
-
         // Prepare the incoming call
         UUID callUuid = UUID.randomUUID();
         List<BluetoothLeCall> tbsCalls = new ArrayList<>();
@@ -390,7 +406,7 @@ public class TbsGenericTest {
         }
         assertThat(callUuidCaptor.getValue().getUuid()).isEqualTo(callUuid);
         // Active device should be changed
-        verify(leAudioService).setActiveDevice(mDevice);
+        verify(mLeAudioService).setActiveDevice(mDevice);
 
         // Respond with requestComplete...
         mTbsGeneric.requestResult(ccid, requestIdCaptor.getValue(), Result.SUCCESS);
@@ -572,9 +588,6 @@ public class TbsGenericTest {
         Integer ccid = prepareTestBearer();
         reset(mTbsGatt);
 
-        LeAudioService leAudioService = mock(LeAudioService.class);
-        mTbsGeneric.setLeAudioServiceForTesting(leAudioService);
-
         // Act as if peer originates a call via Gtbs
         String uri = "xmpp:123456789";
         mTbsGattCallback
@@ -592,7 +605,7 @@ public class TbsGenericTest {
         }
 
         // Active device should be changed
-        verify(leAudioService).setActiveDevice(mDevice);
+        verify(mLeAudioService).setActiveDevice(mDevice);
 
         // Respond with requestComplete...
         mTbsGeneric.requestResult(ccid, requestIdCaptor.getValue(), Result.SUCCESS);
@@ -685,9 +698,6 @@ public class TbsGenericTest {
         Integer ccid = prepareTestBearer();
         reset(mTbsGatt);
 
-        LeAudioService leAudioService = mock(LeAudioService.class);
-        mTbsGeneric.setLeAudioServiceForTesting(leAudioService);
-
         // Prepare the incoming call
         UUID callUuid = UUID.randomUUID();
         List<BluetoothLeCall> tbsCalls = new ArrayList<>();
@@ -708,10 +718,10 @@ public class TbsGenericTest {
         reset(mTbsGatt);
 
         doReturn(new HashSet<>(Arrays.asList(mDevice)))
-                .when(leAudioService)
+                .when(mLeAudioService)
                 .getLocalBroadcastReceivers();
 
-        doReturn(false).when(leAudioService).isPrimaryDevice(mDevice);
+        doReturn(false).when(mLeAudioService).isPrimaryDevice(mDevice);
 
         // Verify call accept
         byte args[] = new byte[1];
@@ -721,7 +731,7 @@ public class TbsGenericTest {
                 .onCallControlPointRequest(mDevice, TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT, args);
 
         // Active device should not be changed
-        verify(leAudioService, never()).setActiveDevice(mDevice);
+        verify(mLeAudioService, never()).setActiveDevice(mDevice);
         // Verify if GTBS control point is updated to notify the peer about the result
         verify(mTbsGatt)
                 .setCallControlPointResult(
