@@ -70,10 +70,6 @@ public:
               (override));
   MOCK_METHOD(void, RemoveDeviceFromResolvingList, (AddressWithType address_with_type), (override));
   MOCK_METHOD(void, ClearResolvingList, (), (override));
-  MOCK_METHOD(void, OnAdvertisingSetTerminated,
-              (ErrorCode status, uint16_t conn_handle, uint8_t adv_set_id,
-               hci::AddressWithType adv_address, bool is_discoverable),
-              (override));
   MOCK_METHOD(LeAddressManager*, GetLeAddressManager, (), (override));
   MOCK_METHOD(void, OnLeSuspendInitiatedDisconnect, (uint16_t handle, ErrorCode reason),
               (override));
