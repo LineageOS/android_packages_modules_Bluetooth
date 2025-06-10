@@ -415,7 +415,7 @@ public class ScanController {
             final ScanSettings settings = client.mSettings;
             final byte[] scanRecordData;
             boolean isScanResponse = (eventType & ET_SCAN_RESPONSE_MASK) != 0;
-            boolean requiresScanResponse = (eventType & ET_SCANNABLE_MASK) == 0 || !isScanResponse;
+            boolean requiresScanResponse = (eventType & ET_SCANNABLE_MASK) != 0 && !isScanResponse;
             if (Flags.supportPassiveScanning()
                     && ((settings.getScanType() == ScanSettings.SCAN_TYPE_ACTIVE
                                     && requiresScanResponse)
