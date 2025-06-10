@@ -126,8 +126,7 @@
     <skip />
     <!-- no translation found for bluetooth_stays_on_message_due_to_watch (6174290516042701934) -->
     <skip />
-    <!-- no translation found for bluetooth_stays_on_message_due_to_media (2627984855508391911) -->
-    <skip />
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"„Bluetooth“ ryšys lieka įjungtas lėktuvo režimu, kai prijungiama prie laikmenos."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"„Wi‑Fi“ ir „Bluetooth“ ryšys lieka įjungtas"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Įrenginys prisimena, kad lėktuvo režimu reikia palikti įjungtą „Wi‑Fi“ ir „Bluetooth“ ryšį. Išjunkite „Wi-Fi“ ir „Bluetooth“, jei nenorite, kad jie liktų įjungti."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"„Bluetooth“ vėl įjungtas"</string>
