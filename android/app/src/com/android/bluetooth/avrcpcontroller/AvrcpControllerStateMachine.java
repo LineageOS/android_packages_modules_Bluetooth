@@ -43,12 +43,14 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -190,6 +192,15 @@ class AvrcpControllerStateMachine extends StateMachine {
         setInitialState(mDisconnected);
 
         debug("State machine created");
+    }
+
+    // TODO(b/422543753) Delete on flag cleanup
+    Optional<A2dpSinkService> getA2dpSinkService() {
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            return mAdapterService.getA2dpSinkService();
+        } else {
+            return Optional.ofNullable(A2dpSinkService.getA2dpSinkService());
+        }
     }
 
     BrowseTree.BrowseNode findNode(String parentMediaId) {
@@ -1225,13 +1236,10 @@ class AvrcpControllerStateMachine extends StateMachine {
         }
     }
 
-    private static int getFocusState() {
-        int focusState = AudioManager.ERROR;
-        A2dpSinkService a2dpSinkService = A2dpSinkService.getA2dpSinkService();
-        if (a2dpSinkService != null) {
-            focusState = a2dpSinkService.getFocusState();
-        }
-        return focusState;
+    private int getFocusState() {
+        return getA2dpSinkService()
+                .map(a2dpSink -> a2dpSink.getFocusState())
+                .orElse(AudioManager.ERROR);
     }
 
     MediaSessionCompat.Callback mSessionCallbacks =
@@ -1300,10 +1308,8 @@ class AvrcpControllerStateMachine extends StateMachine {
                 @Override
                 public void onPrepare() {
                     debug("onPrepare");
-                    A2dpSinkService a2dpSinkService = A2dpSinkService.getA2dpSinkService();
-                    if (a2dpSinkService != null) {
-                        a2dpSinkService.requestAudioFocus(mDevice, true);
-                    }
+                    getA2dpSinkService()
+                            .ifPresent(a2dpSink -> a2dpSink.requestAudioFocus(mDevice, true));
                 }
 
                 @Override
