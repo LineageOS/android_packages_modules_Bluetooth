@@ -279,6 +279,10 @@ public class BluetoothMethodProxy {
 
     /** Proxies {@link Context#grantUriPermission(String, Uri, int)}. } */
     public void grantUriPermission(Context context, String packageName, Uri uri, int modeFlags) {
-        context.grantUriPermission(packageName, uri, modeFlags);
+        try {
+            context.grantUriPermission(packageName, uri, modeFlags);
+        } catch (Exception e) {
+            Log.e(TAG, "Exception happened:" + e);
+        }
     }
 }
