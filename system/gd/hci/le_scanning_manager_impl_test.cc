@@ -415,10 +415,8 @@ TEST_F(LeScanningManagerExtendedTest, is_coded_phy_supported_test) {
   auto command_view = LeSetExtendedScanParametersView::Create(
           LeScanningCommandView::Create(test_hci_layer_->GetCommand()));
   ASSERT_TRUE(command_view.IsValid());
-  if (com::android::bluetooth::flags::phy_to_native()) {
-    ASSERT_EQ(command_view.GetScanningPhys(), scan_phy);
-    ASSERT_EQ(command_view.GetParameters().size(), static_cast<size_t>(1));
-  }
+  ASSERT_EQ(command_view.GetScanningPhys(), scan_phy);
+  ASSERT_EQ(command_view.GetParameters().size(), static_cast<size_t>(1));
 }
 
 TEST_F(LeScanningManagerExtendedTest, is_multiple_phy_supported_test) {
@@ -432,10 +430,8 @@ TEST_F(LeScanningManagerExtendedTest, is_multiple_phy_supported_test) {
   auto command_view = LeSetExtendedScanParametersView::Create(
           LeScanningCommandView::Create(test_hci_layer_->GetCommand()));
   ASSERT_TRUE(command_view.IsValid());
-  if (com::android::bluetooth::flags::phy_to_native()) {
-    ASSERT_EQ(command_view.GetScanningPhys(), scan_phy);
-    ASSERT_EQ(command_view.GetParameters().size(), static_cast<size_t>(2));
-  }
+  ASSERT_EQ(command_view.GetScanningPhys(), scan_phy);
+  ASSERT_EQ(command_view.GetParameters().size(), static_cast<size_t>(2));
 }
 
 TEST_F(LeScanningManagerAndroidHciTest, startup_teardown) {}
