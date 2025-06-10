@@ -328,9 +328,16 @@ public class BassClientServiceTest {
         mBassClientService = new BassClientService(mAdapterService);
         mBassClientService.setAvailable(true);
 
-        mBassClientService.mServiceFactory = mServiceFactory;
-        doReturn(mCsipService).when(mServiceFactory).getCsipSetCoordinatorService();
-        doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            doReturn(Optional.of(mCsipService))
+                    .when(mAdapterService)
+                    .getCsipSetCoordinatorService();
+            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
+        } else {
+            mBassClientService.mServiceFactory = mServiceFactory;
+            doReturn(mCsipService).when(mServiceFactory).getCsipSetCoordinatorService();
+            doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
+        }
 
         when(mCallback.asBinder()).thenReturn(mBinder);
         mBassClientService.registerCallback(mCallback);
