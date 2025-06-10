@@ -1398,14 +1398,15 @@ bt_status_t btif_hh_connect(const tAclLinkSpec& link_spec) {
  * Returns          void
  *
  ******************************************************************************/
-static void btif_hh_disconnect(const tAclLinkSpec& link_spec) {
+static bool btif_hh_disconnect(const tAclLinkSpec& link_spec) {
   btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_link_spec(link_spec);
   if (p_dev == nullptr) {
     log::warn("Unable to disconnect unknown HID device:{}", link_spec);
-    return;
+    return false;
   }
   log::debug("Disconnect and close request for HID device:{}", link_spec);
   BTA_HhClose(p_dev->dev_handle);
+  return true;
 }
 
 /*******************************************************************************
@@ -1679,8 +1680,9 @@ static void btif_hh_handle_evt(uint16_t event, char* p_param) {
 
     case BTIF_HH_DISCONNECT_REQ_EVT: {
       log::debug("BTIF_HH_DISCONNECT_REQ_EVT: link spec:{}", link_spec);
-      btif_hh_disconnect(link_spec);
-      BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_DISCONNECTING);
+      if (btif_hh_disconnect(link_spec)) {
+        BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_DISCONNECTING);
+      }
     } break;
 
     case BTIF_HH_VUP_REQ_EVT: {
