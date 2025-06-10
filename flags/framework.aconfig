@@ -91,6 +91,7 @@ flag {
 
 flag {
     name: "add_profile_as_intent_extra"
+    is_exported: true
     namespace: "bluetooth"
     description: "Add Profile as intent extra"
     bug: "419074085"
