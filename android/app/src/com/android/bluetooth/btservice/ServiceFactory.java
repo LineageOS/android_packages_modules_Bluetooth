@@ -31,6 +31,7 @@ import com.android.bluetooth.pan.PanService;
 import com.android.bluetooth.vc.VolumeControlService;
 
 // Factory class to create instances of static services. Useful in mocking the service objects.
+// TODO(b/422543753) Delete on flag cleanup
 public class ServiceFactory {
     public A2dpService getA2dpService() {
         return A2dpService.getA2dpService();
