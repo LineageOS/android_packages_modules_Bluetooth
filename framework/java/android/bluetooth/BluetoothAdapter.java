@@ -25,6 +25,8 @@ import static android.Manifest.permission.BLUETOOTH_SCAN;
 import static android.Manifest.permission.LOCAL_MAC_ADDRESS;
 import static android.Manifest.permission.MODIFY_PHONE_STATE;
 import static android.bluetooth.BluetoothProfile.getProfileName;
+import static android.bluetooth.BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
+import static android.bluetooth.BluetoothStatusCodes.ERROR_UNKNOWN;
 import static android.bluetooth.BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
 import static android.bluetooth.BluetoothUtils.executeFromBinder;
 import static android.bluetooth.BluetoothUtils.logRemoteException;
@@ -987,64 +989,28 @@ public final class BluetoothAdapter {
                 @BluetoothActivityEnergyInfoCallbackError int error);
     }
 
-    private static class OnBluetoothActivityEnergyInfoProxy
+    private static final class OnBluetoothActivityEnergyInfoProxy
             extends IBluetoothActivityEnergyInfoListener.Stub {
-        private final Object mLock = new Object();
-
-        @Nullable
-        @GuardedBy("mLock")
         private Executor mExecutor;
-
-        @Nullable
-        @GuardedBy("mLock")
         private OnBluetoothActivityEnergyInfoCallback mCallback;
 
         OnBluetoothActivityEnergyInfoProxy(
                 Executor executor, OnBluetoothActivityEnergyInfoCallback callback) {
-            mExecutor = executor;
-            mCallback = callback;
+            mExecutor = requireNonNull(executor);
+            mCallback = requireNonNull(callback);
         }
 
         @Override
         @RequiresNoPermission
         public void onBluetoothActivityEnergyInfoAvailable(BluetoothActivityEnergyInfo info) {
-            Executor executor;
-            OnBluetoothActivityEnergyInfoCallback callback;
-            synchronized (mLock) {
-                if (mExecutor == null || mCallback == null) {
-                    return;
-                }
-                executor = mExecutor;
-                callback = mCallback;
-                mExecutor = null;
-                mCallback = null;
-            }
             if (info == null) {
                 executeFromBinder(
-                        executor,
-                        () -> callback.onBluetoothActivityEnergyInfoError(FEATURE_NOT_SUPPORTED));
+                        mExecutor,
+                        () -> mCallback.onBluetoothActivityEnergyInfoError(FEATURE_NOT_SUPPORTED));
             } else {
                 executeFromBinder(
-                        executor, () -> callback.onBluetoothActivityEnergyInfoAvailable(info));
+                        mExecutor, () -> mCallback.onBluetoothActivityEnergyInfoAvailable(info));
             }
-        }
-
-        /** Framework only method that is called when the service can't be reached. */
-        @RequiresNoPermission
-        public void onError(int errorCode) {
-            Executor executor;
-            OnBluetoothActivityEnergyInfoCallback callback;
-            synchronized (mLock) {
-                if (mExecutor == null || mCallback == null) {
-                    return;
-                }
-                executor = mExecutor;
-                callback = mCallback;
-                mExecutor = null;
-                mCallback = null;
-            }
-            executeFromBinder(
-                    executor, () -> callback.onBluetoothActivityEnergyInfoError(errorCode));
         }
     }
 
@@ -2702,18 +2668,22 @@ public final class BluetoothAdapter {
             @NonNull OnBluetoothActivityEnergyInfoCallback callback) {
         requireNonNull(executor);
         requireNonNull(callback);
-        OnBluetoothActivityEnergyInfoProxy proxy =
-                new OnBluetoothActivityEnergyInfoProxy(executor, callback);
+        enforcePermissionInFramework(BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED);
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
-                mService.requestActivityInfo(proxy, mAttributionSource);
+                mService.requestActivityInfo(
+                        new OnBluetoothActivityEnergyInfoProxy(executor, callback),
+                        mAttributionSource);
             } else {
-                proxy.onError(BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND);
+                executor.execute(
+                        () ->
+                                callback.onBluetoothActivityEnergyInfoError(
+                                        ERROR_PROFILE_SERVICE_NOT_BOUND));
             }
         } catch (RemoteException e) {
             logRemoteException(TAG, e);
-            proxy.onError(BluetoothStatusCodes.ERROR_UNKNOWN);
+            executor.execute(() -> callback.onBluetoothActivityEnergyInfoError(ERROR_UNKNOWN));
         } finally {
             mServiceLock.readLock().unlock();
         }

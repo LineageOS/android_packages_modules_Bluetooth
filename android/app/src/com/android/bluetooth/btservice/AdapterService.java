@@ -3865,7 +3865,7 @@ public class AdapterService extends Service {
         return true;
     }
 
-    BluetoothActivityEnergyInfo reportActivityInfo() {
+    BluetoothActivityEnergyInfo requestActivityInfo() {
         if (mAdapterProperties.getState() != BluetoothAdapter.STATE_ON
                 || !mAdapterProperties.isActivityAndEnergyReportingSupported()) {
             return null;
