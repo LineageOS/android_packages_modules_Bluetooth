@@ -112,7 +112,6 @@ public class CsipSetCoordinatorServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        mNativeCallback = new CsipSetCoordinatorNativeInterface(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService).getBondState(any());
         doReturn(new ParcelUuid[] {BluetoothUuid.COORDINATED_SET})
@@ -141,6 +140,7 @@ public class CsipSetCoordinatorServiceTest {
                 new CsipSetCoordinatorService(
                         mAdapterService, mLooper.getLooper(), mNativeInterface, mServiceFactory);
         mService.setAvailable(true);
+        mNativeCallback = new CsipSetCoordinatorNativeInterface(mAdapterService, mService);
 
         mockGetRemoteDevice(mAdapterService, mDevice1, mDevice2, mDevice3);
     }
