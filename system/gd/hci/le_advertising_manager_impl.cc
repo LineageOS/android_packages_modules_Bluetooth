@@ -236,11 +236,9 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
 
     auto advertiser_id = view.GetAdvertisingInstance();
 
-    if (com::android::bluetooth::flags::fix_unusable_adv_slot_due_to_map_access()) {
-      if (!advertising_sets_.contains(advertiser_id)) {
-        log::warn("Unknown advertiser id {}", advertiser_id);
-        return;
-      }
+    if (!advertising_sets_.contains(advertiser_id)) {
+      log::warn("Unknown advertiser id {}", advertiser_id);
+      return;
     }
 
     log::info("Instance: 0x{:x} StateChangeReason: {} Handle: 0x{:x} Address: {}", advertiser_id,
@@ -305,11 +303,9 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
 
     uint8_t advertiser_id = event_view.GetAdvertisingHandle();
 
-    if (com::android::bluetooth::flags::fix_unusable_adv_slot_due_to_map_access()) {
-      if (!advertising_sets_.contains(advertiser_id)) {
-        log::warn("Unknown advertiser id {}", advertiser_id);
-        return;
-      }
+    if (!advertising_sets_.contains(advertiser_id)) {
+      log::warn("Unknown advertiser id {}", advertiser_id);
+      return;
     }
 
     bool was_rotating_address = false;
@@ -759,11 +755,9 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
   }
 
   void rotate_advertiser_address(AdvertiserId advertiser_id) {
-    if (com::android::bluetooth::flags::fix_unusable_adv_slot_due_to_map_access()) {
-      if (!advertising_sets_.contains(advertiser_id)) {
-        log::warn("Unknown advertiser id {}", advertiser_id);
-        return;
-      }
+    if (!advertising_sets_.contains(advertiser_id)) {
+      log::warn("Unknown advertiser id {}", advertiser_id);
+      return;
     }
 
     if (advertising_api_type_ == AdvertisingApiType::EXTENDED) {
@@ -779,11 +773,9 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
   }
 
   void set_advertising_set_random_address_on_timer(AdvertiserId advertiser_id) {
-    if (com::android::bluetooth::flags::fix_unusable_adv_slot_due_to_map_access()) {
-      if (!advertising_sets_.contains(advertiser_id)) {
-        log::warn("Unknown advertiser id {}", advertiser_id);
-        return;
-      }
+    if (!advertising_sets_.contains(advertiser_id)) {
+      log::warn("Unknown advertiser id {}", advertiser_id);
+      return;
     }
 
     // This function should only be trigger by enabled advertising set or IRK rotation
@@ -884,11 +876,9 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
   }
 
   void set_parameters(AdvertiserId advertiser_id, AdvertisingConfig config) {
-    if (com::android::bluetooth::flags::fix_unusable_adv_slot_due_to_map_access()) {
-      if (!advertising_sets_.contains(advertiser_id)) {
-        log::warn("Unknown advertiser id {}", advertiser_id);
-        return;
-      }
+    if (!advertising_sets_.contains(advertiser_id)) {
+      log::warn("Unknown advertiser id {}", advertiser_id);
+      return;
     }
 
     config.tx_power = get_tx_power_after_calibration(static_cast<int8_t>(config.tx_power));
@@ -1055,11 +1045,9 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
   }
 
   void set_data(AdvertiserId advertiser_id, bool set_scan_rsp, std::vector<GapData> data) {
-    if (com::android::bluetooth::flags::fix_unusable_adv_slot_due_to_map_access()) {
-      if (!advertising_sets_.contains(advertiser_id)) {
-        log::warn("Unknown advertiser id {}", advertiser_id);
-        return;
-      }
+    if (!advertising_sets_.contains(advertiser_id)) {
+      log::warn("Unknown advertiser id {}", advertiser_id);
+      return;
     }
 
     // The Flags data type shall be included when any of the Flag bits are non-zero and the
@@ -1587,11 +1575,9 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
         continue;
       }
 
-      if (com::android::bluetooth::flags::fix_unusable_adv_slot_due_to_map_access()) {
-        if (!advertising_sets_.contains(id)) {
-          log::warn("Unknown advertiser id {}", id);
-          continue;
-        }
+      if (!advertising_sets_.contains(id)) {
+        log::warn("Unknown advertiser id {}", id);
+        continue;
       }
 
       bool started = advertising_sets_[id].started;
@@ -1642,11 +1628,9 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
         continue;
       }
 
-      if (com::android::bluetooth::flags::fix_unusable_adv_slot_due_to_map_access()) {
-        if (!advertising_sets_.contains(id)) {
-          log::warn("Unknown advertiser id {}", id);
-          continue;
-        }
+      if (!advertising_sets_.contains(id)) {
+        log::warn("Unknown advertiser id {}", id);
+        continue;
       }
 
       int8_t tx_power = advertising_sets_[enabled_set.advertising_handle_].tx_power;
@@ -1685,11 +1669,9 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
       advertising_status = AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR;
     }
 
-    if (com::android::bluetooth::flags::fix_unusable_adv_slot_due_to_map_access()) {
-      if (!advertising_sets_.contains(id)) {
-        log::warn("Unknown advertiser id {}", id);
-        return;
-      }
+    if (!advertising_sets_.contains(id)) {
+      log::warn("Unknown advertiser id {}", id);
+      return;
     }
 
     advertising_sets_[id].tx_power = complete_view.GetSelectedTxPower();
@@ -1713,11 +1695,9 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
       advertising_status = AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR;
     }
 
-    if (com::android::bluetooth::flags::fix_unusable_adv_slot_due_to_map_access()) {
-      if (!advertising_sets_.contains(id)) {
-        log::warn("Unknown advertiser id {}", id);
-        return;
-      }
+    if (!advertising_sets_.contains(id)) {
+      log::warn("Unknown advertiser id {}", id);
+      return;
     }
 
     if (advertising_callbacks_ == nullptr || !advertising_sets_[id].started ||
@@ -1741,11 +1721,9 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
       log::info("update random address for advertising set {} : {}", advertiser_id,
                 address_with_type.GetAddress());
 
-      if (com::android::bluetooth::flags::fix_unusable_adv_slot_due_to_map_access()) {
-        if (!advertising_sets_.contains(advertiser_id)) {
-          log::warn("Unknown advertiser id {}", advertiser_id);
-          return;
-        }
+      if (!advertising_sets_.contains(advertiser_id)) {
+        log::warn("Unknown advertiser id {}", advertiser_id);
+        return;
       }
       advertising_sets_[advertiser_id].current_address = address_with_type;
     }
@@ -1767,11 +1745,9 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
       advertising_status = AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR;
     }
 
-    if (com::android::bluetooth::flags::fix_unusable_adv_slot_due_to_map_access()) {
-      if (!advertising_sets_.contains(id)) {
-        log::warn("Unknown advertiser id {}", id);
-        return;
-      }
+    if (!advertising_sets_.contains(id)) {
+      log::warn("Unknown advertiser id {}", id);
+      return;
     }
 
     // Do not trigger callback if the advertiser not stated yet, or the advertiser is not register
