@@ -30,12 +30,14 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /** Provides Media Control Profile, as a service in the Bluetooth application. */
 public class McpService extends ProfileService {
@@ -170,13 +172,18 @@ public class McpService extends ProfileService {
             return authorization;
         }
 
-        LeAudioService leAudioService = LeAudioService.getLeAudioService();
-        if (leAudioService == null) {
+        final Optional<LeAudioService> leAudio;
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            leAudio = mAdapterService.getLeAudioService();
+        } else {
+            leAudio = Optional.ofNullable(LeAudioService.getLeAudioService());
+        }
+        if (leAudio.isEmpty()) {
             Log.e(TAG, "MCS access not permitted. LeAudioService not available");
             return BluetoothDevice.ACCESS_UNKNOWN;
         }
 
-        if (leAudioService.getConnectionPolicy(device) > CONNECTION_POLICY_FORBIDDEN) {
+        if (leAudio.get().getConnectionPolicy(device) > CONNECTION_POLICY_FORBIDDEN) {
             Log.d(TAG, "MCS authorization allowed based on supported LeAudio service");
             setDeviceAuthorized(device, true);
             return BluetoothDevice.ACCESS_ALLOWED;
