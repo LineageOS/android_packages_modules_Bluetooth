@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "opp_set_insets_for_edge_to_edge"
-    namespace: "bluetooth"
-    description: "Set proper insets in BluetoothOppTransferHistory to adapt to edge-to-edge."
-    bug: "378813445"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "update_opp_launcher_user_changed"
     namespace: "bluetooth"
     description: "Enable/disable OPP launcher when user changed"
