@@ -76,7 +76,6 @@ from typing_extensions import override
 logger = logging.getLogger(__name__)
 
 AVDTP_HANDLE_SIGNALING_ON_PEER_FAILURE = 'com.android.bluetooth.flags.avdt_handle_signaling_on_peer_failure'
-A2DP_SM_IGNORE_CONNECT_EVENTS_IN_CONNECTING_STATE = 'com.android.bluetooth.flags.a2dp_sm_ignore_connect_events_in_connecting_state'
 AVDT_WAIT_FOR_INITIAL_DELAY_REPORT_AS_INITIATOR = 'com.android.bluetooth.flags.avdt_wait_for_initial_delay_report_as_initiator'
 
 AUDIO_SIGNAL_AMPLITUDE = 0.8
@@ -772,7 +771,6 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         logger.info("<< Test finished! >>")
 
     @avatar.asynchronous
-    @enableFlag(A2DP_SM_IGNORE_CONNECT_EVENTS_IN_CONNECTING_STATE)
     async def test_avdt_signaling_channel_connection_collision_case2(self) -> None:
         """Test AVDTP signaling channel connection collision with Android as initiator.
 

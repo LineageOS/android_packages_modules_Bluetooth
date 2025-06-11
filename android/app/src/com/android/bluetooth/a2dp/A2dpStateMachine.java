@@ -331,8 +331,7 @@ final class A2dpStateMachine extends StateMachine {
 
             switch (message.what) {
                 case MESSAGE_CONNECT -> {
-                    if (Flags.a2dpSmIgnoreConnectEventsInConnectingState()
-                            && !hasDeferredMessages(MESSAGE_DISCONNECT)) {
+                    if (!hasDeferredMessages(MESSAGE_DISCONNECT)) {
                         Log.w(TAG, "Connecting: CONNECT ignored: " + mDevice);
                     } else {
                         deferMessage(message);
