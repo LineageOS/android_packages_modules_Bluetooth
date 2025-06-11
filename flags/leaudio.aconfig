@@ -162,16 +162,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_broadcast_receive_state_processing_refactor"
-    namespace: "bluetooth"
-    description: "Fix parsing empty receive states and refactor its processing"
-    bug: "380231464"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "dsa_hw_transparent_codec"
     namespace: "bluetooth"
     description: "Use trasparent codec for DSA hardware path"
