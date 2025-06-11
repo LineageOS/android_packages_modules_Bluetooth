@@ -75,7 +75,6 @@ from typing_extensions import override
 
 logger = logging.getLogger(__name__)
 
-AVDTP_HANDLE_SIGNALING_ON_PEER_FAILURE = 'com.android.bluetooth.flags.avdt_handle_signaling_on_peer_failure'
 AVDT_WAIT_FOR_INITIAL_DELAY_REPORT_AS_INITIATOR = 'com.android.bluetooth.flags.avdt_wait_for_initial_delay_report_as_initiator'
 
 AUDIO_SIGNAL_AMPLITUDE = 0.8
@@ -579,7 +578,6 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         await channel.accept_close(timeout=10.0)
 
     @avatar.asynchronous
-    @enableFlag(AVDTP_HANDLE_SIGNALING_ON_PEER_FAILURE)
     async def test_avdt_open_after_timeout(self) -> None:
         """Test AVDTP automatically opens stream after timeout if peer device only configures codec.
 
