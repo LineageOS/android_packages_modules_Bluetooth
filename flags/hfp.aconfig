@@ -177,3 +177,12 @@ flag {
     }
 }
 
+flag {
+    name: "merge_call_with_held_conference"
+    namespace: "bluetooth"
+    description: "Merge the active call with held conference call"
+    bug: "397374535"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

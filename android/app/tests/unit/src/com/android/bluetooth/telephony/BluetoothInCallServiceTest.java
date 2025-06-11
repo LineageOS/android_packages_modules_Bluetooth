@@ -1030,6 +1030,52 @@ public class BluetoothInCallServiceTest {
     }
 
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_MERGE_CALL_WITH_HELD_CONFERENCE)
+    public void mergeActiveCallWithConferenceCall() {
+
+        List<BluetoothCall> calls = new ArrayList<>();
+        // Call 1 active call is added
+        BluetoothCall activeCall_1 = createActiveCall(UUID.randomUUID());
+        calls.add(activeCall_1);
+
+        // Call 2 holding call is added
+        BluetoothCall activeCall_2 = createHeldCall(UUID.randomUUID());
+        calls.add(activeCall_2);
+
+        BluetoothCall conferenceCall = createActiveCall(UUID.randomUUID());
+        addCallCapability(conferenceCall, Connection.CAPABILITY_MANAGE_CONFERENCE);
+
+        doReturn(Uri.parse("tel:555-1234")).when(conferenceCall).getHandle();
+        doReturn(true).when(conferenceCall).isConference();
+        doReturn(calls).when(mCallInfo).getBluetoothCalls();
+
+        // Conference created
+        calls.add(conferenceCall);
+        doReturn(3).when(conferenceCall).getParentId();
+        doReturn(3).when(conferenceCall).getId();
+        mBluetoothInCallService.onCallAdded(mHeadsetService, conferenceCall);
+        // Call 3 is added
+        BluetoothCall activeCall_3 = createActiveCall(UUID.randomUUID());
+        doReturn(null).when(activeCall_3).getParentId();
+        calls.add(activeCall_3);
+
+        // Call 3 active call, Conference on hold
+        doReturn(Call.STATE_HOLDING).when(conferenceCall).getState();
+        ManageCall(activeCall_3, "tel:555-0003", Call.STATE_ACTIVE);
+
+        doReturn(conferenceCall).when(mCallInfo).getActiveCall();
+        ArrayList<Integer> conferenceableCalls = new ArrayList<>();
+        conferenceableCalls.add(activeCall_3.getId());
+        mBluetoothInCallService.onCallAdded(mHeadsetService, activeCall_3);
+        doReturn(conferenceableCalls).when(activeCall_3).getConferenceableCalls();
+
+        boolean didProcess =
+                mBluetoothInCallService.processChld(mHeadsetService, CHLD_TYPE_ADDHELDTOCONF);
+        verify(activeCall_3).conference(activeCall_3);
+        assertThat(didProcess).isTrue();
+    }
+
+    @Test
     @RequiresFlagsEnabled(Flags.FLAG_MAINTAIN_CALL_INDEX_AFTER_CONFERENCE)
     public void conferenceLastCallIndexIsMaintained() throws Exception {
         doReturn("").when(mTelephonyManager).getNetworkCountryIso();
