@@ -22,16 +22,6 @@ flag {
 }
 
 flag {
-    name: "avdt_handle_suspend_cfm_bad_state"
-    namespace: "bluetooth"
-    description: "Close connection on AVDTP Suspend Confirmation with BAD STATE error"
-    bug: "377830155"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "a2dp_lhdc_api"
     namespace: "bluetooth"
     description: "API change for LHDC codec support"

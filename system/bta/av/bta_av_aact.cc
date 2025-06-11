@@ -2530,9 +2530,7 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   }
 
   suspend_rsp.status = BTA_AV_SUCCESS;
-  bool handle_bad_state = (err_code != AVDT_ERR_BAD_STATE) ||
-                          com::android::bluetooth::flags::avdt_handle_suspend_cfm_bad_state();
-  if (err_code && handle_bad_state) {
+  if (err_code) {
     suspend_rsp.status = BTA_AV_FAIL;
 
     log::error("suspend failed, closing connection");
