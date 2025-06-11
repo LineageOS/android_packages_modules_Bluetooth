@@ -1535,23 +1535,25 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
           bt_properties.push_back(bt_property_t{BT_PROPERTY_DISCOVERY_RESULT_TYPE,
                                                 sizeof(inq_result_type), &inq_result_type});
 
-          std::list<Uuid> uuids;
-          bool uuid_type_exists = btif_extract_uuids_in_adv_data(
-                  p_search_data->inq_res.p_eir, p_search_data->inq_res.eir_len, bdaddr, &uuids);
-          if (uuid_type_exists) {
-            for (auto uuid : uuids) {
-              auto uuid_128bit = uuid.To128BitBE();
-              uuids_value.insert(uuids_value.end(), uuid_128bit.begin(), uuid_128bit.end());
+          if (p_search_data->inq_res.p_eir) {
+            std::list<Uuid> uuids;
+            bool uuid_type_exists = btif_extract_uuids_in_adv_data(
+                    p_search_data->inq_res.p_eir, p_search_data->inq_res.eir_len, bdaddr, &uuids);
+            if (uuid_type_exists) {
+              for (auto uuid : uuids) {
+                auto uuid_128bit = uuid.To128BitBE();
+                uuids_value.insert(uuids_value.end(), uuid_128bit.begin(), uuid_128bit.end());
+              }
+
+              bt_property_type_t property_type =
+                      (p_search_data->inq_res.last_inq_result_from_type == BT_DEVICE_TYPE_BLE)
+                              ? BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA
+                              : BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE;
+
+              bt_properties.push_back(bt_property_t{
+                      property_type, static_cast<int>(uuids.size() * Uuid::kNumBytes128),
+                      (void*)uuids_value.data()});
             }
-
-            bt_property_type_t property_type =
-                    (p_search_data->inq_res.last_inq_result_from_type == BT_DEVICE_TYPE_BLE)
-                            ? BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA
-                            : BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE;
-
-            bt_properties.push_back(bt_property_t{
-                    property_type, static_cast<int>(uuids.size() * Uuid::kNumBytes128),
-                    (void*)uuids_value.data()});
           }
         }
 
