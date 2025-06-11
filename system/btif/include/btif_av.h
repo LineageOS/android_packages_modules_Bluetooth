@@ -64,6 +64,11 @@ typedef void (*btav_audio_sink_config_callback)(const RawAddress& bd_addr, uint3
  */
 typedef bool (*btav_mandatory_codec_preferred_callback)(const RawAddress& bd_addr);
 
+/** Callback for reporting delay report change events.
+ * The delay is measured in 1/10 milliseconds.
+ */
+typedef void (*btav_audio_delay_reported_callback)(const RawAddress& bd_addr, int delay);
+
 /** BT-AV A2DP Source callback structure. */
 typedef struct {
   /** set to sizeof(btav_source_callbacks_t) */
@@ -72,6 +77,7 @@ typedef struct {
   btav_audio_state_callback audio_state_cb;
   btav_audio_source_config_callback audio_config_cb;
   btav_mandatory_codec_preferred_callback mandatory_codec_preferred_cb;
+  btav_audio_delay_reported_callback audio_delay_reported_cb;
 } btav_source_callbacks_t;
 
 /** BT-AV A2DP Sink callback structure. */
