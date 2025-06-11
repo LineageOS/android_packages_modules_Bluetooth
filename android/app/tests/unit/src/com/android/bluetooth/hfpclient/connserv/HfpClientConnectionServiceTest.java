@@ -53,6 +53,8 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.R;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
+import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.pbapclient.PbapClientService;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -62,6 +64,7 @@ import org.mockito.Mock;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 /** Test cases for {@link HfpClientConnectionService}. */
 @MediumTest
@@ -70,6 +73,7 @@ public class HfpClientConnectionServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
+    @Mock private PbapClientService mPbapClientService;
     @Mock private RemoteDevices mRemoteDevices;
     @Mock private HeadsetClientService mMockHeadsetClientService;
     @Mock private TelecomManager mMockTelecomManager;
@@ -91,6 +95,9 @@ public class HfpClientConnectionServiceTest {
                 .when(mAdapterService)
                 .getRemoteDevice(anyString());
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            doReturn(Optional.of(mPbapClientService)).when(mAdapterService).getPbapClientService();
+        }
 
         // Set a mocked HeadsetClientService for testing so we can insure the right functions were
         // called through the service interface
