@@ -47,6 +47,7 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -55,6 +56,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -131,6 +133,15 @@ public class HeadsetClientService extends ConnectableProfile {
         mSmThread.start();
 
         setHeadsetClientService(this);
+    }
+
+    // TODO(b/422543753) Delete on flag cleanup
+    Optional<HeadsetService> getHeadsetService() {
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            return mAdapterService.getHeadsetService();
+        } else {
+            return Optional.ofNullable(HeadsetService.getHeadsetService());
+        }
     }
 
     public static boolean isEnabled() {
@@ -926,7 +937,7 @@ public class HeadsetClientService extends ConnectableProfile {
                     new HeadsetClientStateMachine(
                             mAdapterService,
                             this,
-                            HeadsetService.getHeadsetService(),
+                            getHeadsetService(),
                             mSmThread.getLooper(),
                             mNativeInterface);
             mStateMachineMap.put(device, sm);
