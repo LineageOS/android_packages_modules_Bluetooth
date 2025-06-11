@@ -334,7 +334,6 @@ public class A2dpStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_A2DP_SM_IGNORE_CONNECT_EVENTS_IN_CONNECTING_STATE)
     public void connectEventNeglectedWhileInConnectingState() {
         sendAndDispatchMessage(MESSAGE_CONNECT, mDevice);
         verifyConnectionStateIntent(STATE_CONNECTING, STATE_DISCONNECTED);

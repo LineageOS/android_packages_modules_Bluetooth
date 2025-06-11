@@ -10,13 +10,3 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
-
-flag {
-    name: "snoop_logger_recreate_logs_directory"
-    namespace: "bluetooth"
-    description: "Recreate logs directory if removed"
-    bug: "383876267"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
