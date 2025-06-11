@@ -63,6 +63,15 @@ android_test {
         "mts-bt",
     ],
 
+    jacoco: {
+        include_filter: [
+            "android.bluetooth.**",
+            "com.android.bluetooth.**",
+            "com.android.server.bluetooth.**",
+        ],
+        exclude_filter: [],
+    },
+
     sdk_version: "system_server_current",
     min_sdk_version: "36",
 }
