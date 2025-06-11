@@ -342,8 +342,7 @@ public class HfpClientConnectionService extends ConnectionService {
             return null;
         }
 
-        HfpClientDeviceBlock block =
-                HfpClientDeviceBlock.Factory.build(device, this, mServiceInterface);
+        HfpClientDeviceBlock block = new HfpClientDeviceBlock(device, this, mServiceInterface);
         mDeviceBlocks.put(device, block);
         return block;
     }
