@@ -3664,7 +3664,7 @@ public class BluetoothMapContent {
         int type, threadId;
         long time = -1;
         String msgBody;
-        BluetoothMapbMessageSms message = new BluetoothMapbMessageSms();
+        BluetoothMapbMessageSms message = new BluetoothMapbMessageSms(mMapService);
         TelephonyManager tm = mAdapterService.getSystemService(TelephonyManager.class);
 
         Cursor c = mResolver.query(Sms.CONTENT_URI, SMS_PROJECTION, "_ID = " + id, null, null);
