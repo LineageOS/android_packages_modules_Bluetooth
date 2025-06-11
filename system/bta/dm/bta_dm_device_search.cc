@@ -139,10 +139,6 @@ static void bta_dm_search_cancel() {
       log::warn("Unable to cancel RNR");
     }
     /* bta_dm_search_cmpl is called when receiving the remote name cancel evt */
-    if (!com::android::bluetooth::flags::
-                bta_dm_defer_device_discovery_state_change_until_rnr_complete()) {
-      bta_dm_search_cmpl();
-    }
   } else {
     bta_dm_inq_cmpl();
   }
