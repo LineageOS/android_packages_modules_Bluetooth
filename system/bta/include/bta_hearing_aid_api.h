@@ -31,6 +31,8 @@
 #include "stack/include/gap_api.h"
 #include "types/raw_address.h"
 
+namespace bluetooth::asha {
+
 constexpr uint16_t HA_INTERVAL_10_MS = 10;
 constexpr uint16_t HA_INTERVAL_20_MS = 20;
 
@@ -237,8 +239,7 @@ class HearingAid {
 public:
   virtual ~HearingAid() = default;
 
-  static void Initialize(bluetooth::hearing_aid::HearingAidCallbacks* callbacks,
-                         base::Closure initCb);
+  static void Initialize(bluetooth::asha::HearingAidCallbacks* callbacks, base::Closure initCb);
   static void CleanUp();
   static bool IsHearingAidRunning();
   static void DebugDump(int fd);
@@ -286,7 +287,10 @@ public:
   static void DebugDump(int fd);
 };
 
+}  // namespace bluetooth::asha
+
 namespace std {
 template <>
-struct formatter<connection_update_status_t> : enum_formatter<connection_update_status_t> {};
+struct formatter<bluetooth::asha::connection_update_status_t>
+    : enum_formatter<bluetooth::asha::connection_update_status_t> {};
 }  // namespace std

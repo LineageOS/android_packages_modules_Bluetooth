@@ -32,9 +32,9 @@
 #include "hardware/bt_hearing_aid.h"
 #include "types/raw_address.h"
 
-using bluetooth::hearing_aid::ConnectionState;
-using bluetooth::hearing_aid::HearingAidCallbacks;
-using bluetooth::hearing_aid::HearingAidInterface;
+using bluetooth::asha::ConnectionState;
+using bluetooth::asha::HearingAidCallbacks;
+using bluetooth::asha::HearingAidInterface;
 
 namespace android {
 static jmethodID method_onConnectionStateChanged;

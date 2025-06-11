@@ -49,18 +49,10 @@
 
 static std::map<const char*, bool> fake_osi_bool_props;
 
-namespace bluetooth {
-namespace hearing_aid {
-namespace internal {
+namespace bluetooth::asha {
 namespace {
 
 using base::HexEncode;
-
-using namespace bluetooth::hearing_aid;
-
-using ::bluetooth::hearing_aid::ConnectionState;
-using ::bluetooth::hearing_aid::HearingAidCallbacks;
-using ::bluetooth::hearing_aid::HearingAidInterface;
 
 using bluetooth::common::MessageLoopThread;
 using ::testing::_;
@@ -838,6 +830,4 @@ TEST_F(HearingAidTest, conn_update_after_service_changed_gatt_omitted_after_svc_
 }
 
 }  // namespace
-}  // namespace internal
-}  // namespace hearing_aid
-}  // namespace bluetooth
+}  // namespace bluetooth::asha
