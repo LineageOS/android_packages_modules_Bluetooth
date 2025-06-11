@@ -148,8 +148,6 @@ class BluetoothOppNotification {
 
     @VisibleForTesting static final int NOTIFICATION_ID_INBOUND_COMPLETE = -1000006;
 
-    static final int NOTIFICATION_ID_COMPLETE_SUMMARY = -1000007;
-
     private static final String NOTIFICATION_GROUP_KEY_PROGRESS = "PROGRESS";
 
     private static final String NOTIFICATION_GROUP_KEY_TRANSFER_COMPLETE = "TRANSFER_COMPLETE";
@@ -572,25 +570,6 @@ class BluetoothOppNotification {
                 Log.v(TAG, "inbound notification was removed.");
             }
         }
-
-        // When removing flag oppRemoveEmptyGroupNotification, remove the summary ID too.
-        if (!Flags.oppRemoveEmptyGroupNotification() && inboundNum > 0 && outboundNum > 0) {
-            Notification.Builder b =
-                    new Notification.Builder(mContext, OPP_NOTIFICATION_CHANNEL)
-                            .setGroup(NOTIFICATION_GROUP_KEY_TRANSFER_COMPLETE)
-                            .setGroupSummary(true)
-                            .setGroupAlertBehavior(Notification.GROUP_ALERT_CHILDREN)
-                            .setSmallIcon(R.drawable.ic_bluetooth_file_transfer_notification)
-                            .setColor(
-                                    mContext.getResources()
-                                            .getColor(
-                                                    android.R.color
-                                                            .system_notification_accent_color,
-                                                    mContext.getTheme()))
-                            .setLocalOnly(true);
-
-            mNotificationMgr.notify(NOTIFICATION_ID_COMPLETE_SUMMARY, b.build());
-        }
     }
 
     @VisibleForTesting
@@ -731,6 +710,5 @@ class BluetoothOppNotification {
         mNotificationMgr.cancel(NOTIFICATION_ID_PROGRESS);
         mNotificationMgr.cancel(NOTIFICATION_ID_OUTBOUND_COMPLETE);
         mNotificationMgr.cancel(NOTIFICATION_ID_INBOUND_COMPLETE);
-        mNotificationMgr.cancel(NOTIFICATION_ID_COMPLETE_SUMMARY);
     }
 }
