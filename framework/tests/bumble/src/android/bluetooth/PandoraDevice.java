@@ -66,6 +66,15 @@ public final class PandoraDevice extends ExternalResource {
         this("localhost", 7999);
     }
 
+    /**
+     * static method to create second pandora device on port 7998
+     *
+     * @return PandoraDevice object
+     */
+    public static PandoraDevice createSecondPandoraDevice() {
+        return new PandoraDevice("localhost", 7998);
+    }
+
     @Override
     protected void before() {
         Log.i(TAG, "factoryReset");
