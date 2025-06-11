@@ -633,8 +633,7 @@ void SnoopLogger::OpenNextSnoopLogFile() {
   auto last_file_path = get_last_log_path(snoop_log_path_);
 
 #ifdef __ANDROID__
-  if (com::android::bluetooth::flags::snoop_logger_recreate_logs_directory() &&
-      !create_log_directories()) {
+  if (!create_log_directories()) {
     log::error("Could not recreate log directory");
   }
 #endif  // __ANDROID__
@@ -1352,8 +1351,7 @@ void SnoopLogger::DumpSnoozLogToFile() {
   }
 
 #ifdef __ANDROID__
-  if (com::android::bluetooth::flags::snoop_logger_recreate_logs_directory() &&
-      !create_log_directories()) {
+  if (!create_log_directories()) {
     log::error("Could not recreate log directory");
   }
 #endif  // __ANDROID__

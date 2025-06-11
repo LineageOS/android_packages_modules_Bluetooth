@@ -1385,7 +1385,6 @@ TEST_P(SnoopLoggerTest, custom_socket_profiles_filtered_hfp_hf_test) {
 
 #ifdef __ANDROID__
 TEST_P(SnoopLoggerTest, recreate_log_directory_when_enabled_test) {
-  com::android::bluetooth::flags::provider_->snoop_logger_recreate_logs_directory(true);
   const testing::TestInfo* const test_info = testing::UnitTest::GetInstance()->current_test_info();
   const std::filesystem::path file_path = os::ParameterProvider::SnoopLogFilePath();
   const std::filesystem::path temp_dir_ = file_path.parent_path();
@@ -1415,7 +1414,6 @@ TEST_P(SnoopLoggerTest, recreate_log_directory_when_enabled_test) {
 }
 
 TEST_P(SnoopLoggerTest, recreate_log_directory_when_filtered_test) {
-  com::android::bluetooth::flags::provider_->snoop_logger_recreate_logs_directory(true);
   const testing::TestInfo* const test_info = testing::UnitTest::GetInstance()->current_test_info();
   const std::filesystem::path file_path = os::ParameterProvider::SnoopLogFilePath();
   const std::filesystem::path temp_dir_ = file_path.parent_path();
