@@ -18,7 +18,7 @@ package com.android.bluetooth.telephony;
 
 import static android.platform.test.flag.junit.DeviceFlagsValueProvider.createCheckFlagsRule;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.telephony.BluetoothInCallService.Result;
 import static com.android.bluetooth.telephony.BluetoothInCallService.TerminationReason;
@@ -68,9 +68,11 @@ import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.tbs.TbsService;
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
 
 import org.junit.After;
 import org.junit.Before;
@@ -83,6 +85,7 @@ import org.mockito.Mock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /** Tests for {@link BluetoothInCallService} */
@@ -92,8 +95,9 @@ public class BluetoothInCallServiceTest {
     private static final String TAG = BluetoothInCallServiceTest.class.getSimpleName();
 
     @Rule public final CheckFlagsRule mCheckFlagsRule = createCheckFlagsRule();
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(AdapterService.class);
 
+    @Mock private AdapterService mAdapterService;
     @Mock private TbsService mTbsService;
     @Mock private HeadsetService mHeadsetService;
     @Mock private BluetoothInCallService.CallInfo mCallInfo;
@@ -126,9 +130,15 @@ public class BluetoothInCallServiceTest {
 
     @Before
     public void setUp() {
-        doReturn(true).when(mTbsService).isAvailable();
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            ExtendedMockito.doReturn(mAdapterService)
+                    .when(() -> AdapterService.deprecatedGetAdapterService());
+            doReturn(Optional.of(mTbsService)).when(mAdapterService).getTbsService();
+        } else {
+            doReturn(true).when(mTbsService).isAvailable();
+            TbsService.setTbsService(mTbsService);
+        }
         doReturn(true).when(mHeadsetService).isAvailable();
-        TbsService.setTbsService(mTbsService);
         HeadsetService.setHeadsetService(mHeadsetService);
 
         doReturn(true).when(mCallInfo).isNullCall(null);
@@ -143,7 +153,9 @@ public class BluetoothInCallServiceTest {
 
     @After
     public void tearDown() {
-        TbsService.setTbsService(null);
+        if (!Flags.adapterServiceProfilesUseOptional()) {
+            TbsService.setTbsService(null);
+        }
         HeadsetService.setHeadsetService(null);
     }
 
