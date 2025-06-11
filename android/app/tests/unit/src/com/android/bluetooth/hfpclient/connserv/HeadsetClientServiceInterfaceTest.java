@@ -16,7 +16,7 @@
 
 package com.android.bluetooth.hfpclient;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -29,6 +29,10 @@ import android.os.Bundle;
 
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -37,13 +41,15 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /** Test cases for {@link HeadsetClientServiceInterface}. */
 @RunWith(AndroidJUnit4.class)
 public class HeadsetClientServiceInterfaceTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(AdapterService.class);
 
+    @Mock private AdapterService mAdapterService;
     @Mock private HeadsetClientService mMockHeadsetClientService;
 
     private static final String TEST_NUMBER = "000-111-2222";
@@ -71,14 +77,24 @@ public class HeadsetClientServiceInterfaceTest {
 
     @Before
     public void setUp() {
-        HeadsetClientService.setHeadsetClientService(mMockHeadsetClientService);
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            ExtendedMockito.doReturn(mAdapterService)
+                    .when(() -> AdapterService.deprecatedGetAdapterService());
+            doReturn(Optional.of(mMockHeadsetClientService))
+                    .when(mAdapterService)
+                    .getHeadsetClientService();
+        } else {
+            HeadsetClientService.setHeadsetClientService(mMockHeadsetClientService);
+        }
         mServiceInterface = new HeadsetClientServiceInterface();
     }
 
     @After
     public void tearDown() {
-        HeadsetClientService.setHeadsetClientService(null);
-        assertThat(HeadsetClientService.getHeadsetClientService()).isNull();
+        if (!Flags.adapterServiceProfilesUseOptional()) {
+            HeadsetClientService.setHeadsetClientService(null);
+            assertThat(HeadsetClientService.getHeadsetClientService()).isNull();
+        }
     }
 
     private void makeHeadsetClientServiceAvailable() {
