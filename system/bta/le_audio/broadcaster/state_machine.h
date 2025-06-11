@@ -116,8 +116,8 @@ struct BroadcastStateMachineConfig {
 class BroadcastStateMachine : public StateMachine<7> {
 public:
   static constexpr uint8_t kAdvSidUndefined = 0xFF;
-  static constexpr uint8_t kPaIntervalMax = 0xA0; /* 160 * 0.625 = 100ms */
-  static constexpr uint8_t kPaIntervalMin = 0x50; /* 80 * 0.625 = 50ms */
+  static constexpr uint8_t kPaIntervalMax = 0xA0; /* 160 * 1.25 = 200ms */
+  static constexpr uint8_t kPaIntervalMin = 0x50; /* 80 * 1.25 = 100ms */
   // LEA broadcast assigned register id, use positive number 0x1
   // this should not matter since
   // le_advertising_manager will maintain the reg_id together with client_id
