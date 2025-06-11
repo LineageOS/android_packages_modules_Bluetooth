@@ -332,3 +332,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "resolve_address_for_adv_report"
+    namespace: "bluetooth"
+    description: "Change address resolve timing to match between adv data and scan response."
+    bug: "424062882"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
