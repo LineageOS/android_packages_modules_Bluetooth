@@ -137,6 +137,9 @@ static void bta_dm_search_cancel() {
     /* If no Service Search going on then issue cancel remote name in case it is active */
     if (get_stack_rnr_interface().BTM_CancelRemoteDeviceName() != tBTM_STATUS::BTM_CMD_STARTED) {
       log::warn("Unable to cancel RNR");
+      if (com::android::bluetooth::flags::complete_disc_if_no_rnr()) {
+        bta_dm_search_cmpl();
+      }
     }
     /* bta_dm_search_cmpl is called when receiving the remote name cancel evt */
     if (!com::android::bluetooth::flags::
