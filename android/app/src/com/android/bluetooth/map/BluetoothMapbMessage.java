@@ -501,7 +501,8 @@ public abstract class BluetoothMapbMessage {
         this.mVersionString = "VERSION:" + version;
     }
 
-    public static BluetoothMapbMessage parse(InputStream bMsgStream, int appParamCharset)
+    public static BluetoothMapbMessage parse(
+            BluetoothMapService mapService, InputStream bMsgStream, int appParamCharset)
             throws IllegalArgumentException {
         BMsgReader reader;
         BluetoothMapbMessage newBMsg = null;
@@ -554,7 +555,7 @@ public abstract class BluetoothMapbMessage {
                     switch (type) {
                         case SMS_CDMA:
                         case SMS_GSM:
-                            newBMsg = new BluetoothMapbMessageSms();
+                            newBMsg = new BluetoothMapbMessageSms(mapService);
                             break;
                         case MMS:
                             newBMsg = new BluetoothMapbMessageMime();

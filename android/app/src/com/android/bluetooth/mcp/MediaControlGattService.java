@@ -51,6 +51,7 @@ import com.android.bluetooth.BluetoothEventLogger;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.internal.annotations.VisibleForTesting;
@@ -64,6 +65,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -158,7 +160,6 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     private BluetoothGattServerProxy mBluetoothGattServer;
     private BluetoothGattService mGattService = null;
     private MediaState mCurrentMediaState = MediaState.INACTIVE;
-    private LeAudioService mLeAudioService;
 
     private static String mcsUuidToString(UUID uuid) {
         if (uuid.equals(UUID_PLAYER_NAME)) {
@@ -1215,6 +1216,15 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         mEventLogger = new BluetoothEventLogger(200, TAG + " instance (CCID=" + ccid + "): ");
     }
 
+    // TODO(b/422543753) Delete on flag cleanup
+    Optional<LeAudioService> getLeAudioService() {
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            return mAdapterService.getLeAudioService();
+        } else {
+            return Optional.ofNullable(LeAudioService.getLeAudioService());
+        }
+    }
+
     protected boolean init(UUID scvUuid) {
         mFeatures = mCallbacks.onGetFeatureFlags();
 
@@ -1321,18 +1331,26 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                         + " request up");
 
         // TODO: Activate/deactivate devices with ActiveDeviceManager
-        if (mLeAudioService == null) {
-            mLeAudioService = LeAudioService.getLeAudioService();
-        }
         if (!isBroadcastActive() && req.opcode() == Request.Opcodes.PLAY) {
             if (mAdapterService.getActiveDevices(BluetoothProfile.A2DP).size() > 0) {
-                A2dpService.getA2dpService().removeActiveDevice(false);
+                if (Flags.adapterServiceProfilesUseOptional()) {
+                    mAdapterService
+                            .getA2dpService()
+                            .ifPresent(a2dp -> a2dp.removeActiveDevice(false));
+                } else {
+                    A2dpService.getA2dpService().removeActiveDevice(false);
+                }
             }
             if (mAdapterService.getActiveDevices(BluetoothProfile.HEARING_AID).size() > 0) {
-                HearingAidService.getHearingAidService().removeActiveDevice(false);
-            }
-            if (mLeAudioService != null) {
-                mLeAudioService.setActiveDevice(device);
+                if (Flags.adapterServiceProfilesUseOptional()) {
+                    mAdapterService
+                            .getHearingAidService()
+                            .ifPresent(hearingAid -> hearingAid.removeActiveDevice(false));
+                } else {
+                    HearingAidService.getHearingAidService().removeActiveDevice(false);
+                }
+            } else {
+                getLeAudioService().ifPresent(leAudio -> leAudio.setActiveDevice(device));
             }
         }
         mCallbacks.onMediaControlRequest(req);
@@ -1347,11 +1365,6 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     @VisibleForTesting
     void setBluetoothGattServerForTesting(BluetoothGattServerProxy proxy) {
         mBluetoothGattServer = proxy;
-    }
-
-    @VisibleForTesting
-    void setLeAudioServiceForTesting(LeAudioService leAudioService) {
-        mLeAudioService = leAudioService;
     }
 
     @SuppressLint("AndroidFrameworkRequiresPermission")
@@ -2102,7 +2115,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
      * @return {@code true} if is broadcasting audio, {@code false} otherwise
      */
     private boolean isBroadcastActive() {
-        return mLeAudioService != null && mLeAudioService.isBroadcastActive();
+        return getLeAudioService().map(leAudio -> leAudio.isBroadcastActive()).orElse(false);
     }
 
     @VisibleForTesting

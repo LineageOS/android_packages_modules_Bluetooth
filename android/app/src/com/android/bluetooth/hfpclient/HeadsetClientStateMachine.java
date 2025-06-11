@@ -86,6 +86,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -150,7 +151,7 @@ public class HeadsetClientStateMachine extends StateMachine {
 
     private final AdapterService mAdapterService;
     private final HeadsetClientService mService;
-    private final HeadsetService mHeadsetService;
+    private final Optional<HeadsetService> mHeadset;
 
     // Set of calls that represent the accurate state of calls that exists on AG and the calls that
     // are currently in process of being notified to the AG from HF.
@@ -859,7 +860,7 @@ public class HeadsetClientStateMachine extends StateMachine {
     HeadsetClientStateMachine(
             AdapterService adapterService,
             HeadsetClientService headsetClientService,
-            HeadsetService headsetService,
+            Optional<HeadsetService> headset,
             Looper looper,
             HeadsetClientNativeInterface nativeInterface) {
         super(TAG, looper);
@@ -867,7 +868,7 @@ public class HeadsetClientStateMachine extends StateMachine {
         mService = requireNonNull(headsetClientService);
         mNativeInterface = nativeInterface;
         mAudioManager = mService.getAudioManager();
-        mHeadsetService = headsetService;
+        mHeadset = headset;
 
         mVendorProcessor = new VendorCommandResponseProcessor(mService, mNativeInterface);
 
@@ -1028,8 +1029,8 @@ public class HeadsetClientStateMachine extends StateMachine {
                                 + " to Disconnected, mCurrentDevice="
                                 + mCurrentDevice);
             }
-            if (mHeadsetService != null && mCurrentDevice != null) {
-                mHeadsetService.updateInbandRinging(mCurrentDevice, false);
+            if (mHeadset.isPresent() && mCurrentDevice != null) {
+                mHeadset.get().updateInbandRinging(mCurrentDevice, false);
             }
             mCurrentDevice = null;
         }
@@ -1336,9 +1337,7 @@ public class HeadsetClientStateMachine extends StateMachine {
 
             if (mPrevState == mConnecting) {
                 broadcastConnectionState(mCurrentDevice, STATE_CONNECTED, STATE_CONNECTING);
-                if (mHeadsetService != null) {
-                    mHeadsetService.updateInbandRinging(mCurrentDevice, true);
-                }
+                mHeadset.ifPresent(headset -> headset.updateInbandRinging(mCurrentDevice, true));
             } else if (mPrevState != mAudioOn) {
                 String prevStateName = mPrevState == null ? "null" : mPrevState.getName();
                 error(

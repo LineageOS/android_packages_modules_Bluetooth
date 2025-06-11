@@ -53,16 +53,6 @@ flag {
 }
 
 flag {
-    name: "ignore_notify_when_already_connected"
-    namespace: "bluetooth"
-    description: "Flag to ignore connect state notification from Native to Java layer when already connected"
-    bug: "346679106"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "sco_state_machine_cleanup"
     namespace: "bluetooth"
     description: "Cleanup SCO SM if headset disconnected during opening."
@@ -187,3 +177,12 @@ flag {
     }
 }
 
+flag {
+    name: "merge_call_with_held_conference"
+    namespace: "bluetooth"
+    description: "Merge the active call with held conference call"
+    bug: "397374535"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

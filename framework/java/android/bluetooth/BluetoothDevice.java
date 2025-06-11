@@ -38,8 +38,6 @@ import android.bluetooth.annotations.RequiresBluetoothLocationPermission;
 import android.bluetooth.annotations.RequiresBluetoothScanPermission;
 import android.bluetooth.annotations.RequiresLegacyBluetoothAdminPermission;
 import android.bluetooth.annotations.RequiresLegacyBluetoothPermission;
-import android.bluetooth.EncryptionStatus;
-import android.bluetooth.EncryptionStatusParcel;
 import android.companion.AssociationRequest;
 import android.compat.annotation.ChangeId;
 import android.compat.annotation.EnabledSince;
@@ -1866,7 +1864,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *     {@link BluetoothAddress} containing {@link #ADDRESS_TYPE_UNKNOWN} device for the identity
      *     address type.
      */
-    @FlaggedApi(Flags.FLAG_IDENTITY_ADDRESS_TYPE_API)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     @NonNull
@@ -4068,7 +4065,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     }
 
     /** A data class for Bluetooth address and address type. */
-    @FlaggedApi(Flags.FLAG_IDENTITY_ADDRESS_TYPE_API)
     public static final class BluetoothAddress implements Parcelable {
         private final @Nullable String mAddress;
         private final @AddressType int mAddressType;

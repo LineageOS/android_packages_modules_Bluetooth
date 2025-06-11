@@ -38,11 +38,12 @@ import java.util.List;
 public class BluetoothMapMessageListing {
     private static final String TAG = BluetoothMapMessageListing.class.getSimpleName();
 
+    private final BluetoothMapService mMapService;
     private boolean mHasUnread = false;
-
     private List<BluetoothMapMessageListingElement> mList;
 
-    public BluetoothMapMessageListing() {
+    public BluetoothMapMessageListing(BluetoothMapService mapService) {
+        mMapService = mapService;
         mList = new ArrayList<BluetoothMapMessageListingElement>();
     }
 
@@ -102,9 +103,7 @@ public class BluetoothMapMessageListing {
         } else {
             isBenzCarkit =
                     DeviceWorkArounds.addressStartsWith(
-                            BluetoothMapService.getBluetoothMapService()
-                                    .getRemoteDevice()
-                                    .getAddress(),
+                            mMapService.getRemoteDevice().getAddress(),
                             DeviceWorkArounds.MERCEDES_BENZ_CARKIT);
         }
         try {
@@ -151,7 +150,7 @@ public class BluetoothMapMessageListing {
         /* Fix IOT issue to replace '&amp;' by '&', &lt; by < and '&gt; by '>' in MessageListing */
         if (!Utils.isInstrumentationTestMode()
                 && DeviceWorkArounds.addressStartsWith(
-                        BluetoothMapService.getBluetoothMapService().getRemoteDevice().getAddress(),
+                        mMapService.getRemoteDevice().getAddress(),
                         DeviceWorkArounds.BREZZA_ZDI_CARKIT)) {
             return sw.toString()
                     .replaceAll("&amp;", "&")

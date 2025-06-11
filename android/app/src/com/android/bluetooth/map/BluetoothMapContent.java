@@ -46,7 +46,6 @@ import com.android.bluetooth.SignedLongLong;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.map.BluetoothMapContract.ConversationColumns;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 import com.android.bluetooth.map.BluetoothMapbMessageMime.MimePart;
@@ -68,7 +67,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 // Next tag value for ContentProfileErrorReportUtils.report(): 15
@@ -156,6 +154,7 @@ public class BluetoothMapContent {
     private static final String INSERT_ADDRESS_TOKEN = "insert-address-token";
 
     private final AdapterService mAdapterService;
+    private final BluetoothMapService mMapService;
     private final ContentResolver mResolver;
     @VisibleForTesting final String mBaseUri;
     private final BluetoothMapAccountItem mAccount;
@@ -440,9 +439,11 @@ public class BluetoothMapContent {
 
     public BluetoothMapContent(
             AdapterService adapterService,
+            BluetoothMapService mapService,
             BluetoothMapAccountItem account,
             BluetoothMapMasInstance mas) {
         mAdapterService = requireNonNull(adapterService);
+        mMapService = mapService;
         mResolver = mAdapterService.getContentResolver();
         mMasInstance = mas;
         if (mResolver == null) {
@@ -1263,21 +1264,10 @@ public class BluetoothMapContent {
         if (Utils.isInstrumentationTestMode()) {
             isHondaCarkit = false;
         } else {
-            final Optional<BluetoothMapService> mapService;
-            if (Flags.adapterServiceProfilesUseOptional()) {
-                mapService = mAdapterService.getMapService();
-            } else {
-                mapService = Optional.ofNullable(BluetoothMapService.getBluetoothMapService());
-            }
-            if (mapService.isPresent()) {
-                isHondaCarkit =
-                        DeviceWorkArounds.addressStartsWith(
-                                mapService.get().getRemoteDevice().getAddress(),
-                                DeviceWorkArounds.HONDA_CARKIT);
-            } else {
-                isHondaCarkit = false;
-                Log.w(TAG, "setSubject: Unable to verify isHondaCarkit. MapService is unavailable");
-            }
+            isHondaCarkit =
+                    DeviceWorkArounds.addressStartsWith(
+                            mMapService.getRemoteDevice().getAddress(),
+                            DeviceWorkArounds.HONDA_CARKIT);
         }
         if (isHondaCarkit || (ap.getParameterMask() & MASK_SUBJECT) != 0) {
             if (fi.mMsgType == FilterInfo.TYPE_SMS) {
@@ -1317,7 +1307,7 @@ public class BluetoothMapContent {
 
     private BluetoothMapMessageListingElement element(
             Cursor c, FilterInfo fi, BluetoothMapAppParams ap) {
-        BluetoothMapMessageListingElement e = new BluetoothMapMessageListingElement();
+        BluetoothMapMessageListingElement e = new BluetoothMapMessageListingElement(mMapService);
         setHandle(e, c, fi);
         setDateTime(e, c, fi, ap);
         e.setType(getType(fi), (ap.getParameterMask() & MASK_TYPE) != 0);
@@ -2155,7 +2145,7 @@ public class BluetoothMapContent {
             BluetoothMapFolderElement folderElement, BluetoothMapAppParams ap) {
         Log.d(TAG, "msgListing: messageType = " + ap.getFilterMessageType());
 
-        BluetoothMapMessageListing bmList = new BluetoothMapMessageListing();
+        BluetoothMapMessageListing bmList = new BluetoothMapMessageListing(mMapService);
 
         /* We overwrite the parameter mask here if it is 0 or not present, as this
          * should cause all parameters to be included in the message list. */
@@ -3674,7 +3664,7 @@ public class BluetoothMapContent {
         int type, threadId;
         long time = -1;
         String msgBody;
-        BluetoothMapbMessageSms message = new BluetoothMapbMessageSms();
+        BluetoothMapbMessageSms message = new BluetoothMapbMessageSms(mMapService);
         TelephonyManager tm = mAdapterService.getSystemService(TelephonyManager.class);
 
         Cursor c = mResolver.query(Sms.CONTENT_URI, SMS_PROJECTION, "_ID = " + id, null, null);

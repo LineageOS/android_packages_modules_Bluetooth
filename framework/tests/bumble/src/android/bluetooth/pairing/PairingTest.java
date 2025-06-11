@@ -586,7 +586,6 @@ public class PairingTest {
      * <p>Expectation: Bumble device's identity address and type are present
      */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_IDENTITY_ADDRESS_TYPE_API)
     public void testBondLe_identityAddressWithType(@TestParameter boolean isRandom) {
         if (isRandom) {
             doTestIdentityAddressWithType(mRemoteLeDevice, OwnAddressType.RANDOM);
@@ -1075,10 +1074,10 @@ public class PairingTest {
             // Disconnect Bumble
             assertThat(mBumbleDevice.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
 
-        intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+            intentReceiver.verifyReceivedOrdered(
+                    hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
+                    hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                    hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
         }
         // delete keys at  bumble side
         mBumble.hostBlocking().factoryReset(Empty.getDefaultInstance());
@@ -1138,10 +1137,10 @@ public class PairingTest {
         if (mBumbleDevice.isConnected()) {
             // Disconnect Bumble
             assertThat(mBumbleDevice.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
-        intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+            intentReceiver.verifyReceivedOrdered(
+                    hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
+                    hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                    hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
         }
         // delete keys at  bumble side
         mBumble.hostBlocking().factoryReset(Empty.getDefaultInstance());

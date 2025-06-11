@@ -83,13 +83,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_gmap_client"
-    namespace: "bluetooth"
-    description: "enable Gaming Audio Profile"
-    bug: "353978074"
-}
-
-flag {
     name: "metadata_api_microphone_for_call_enabled"
     is_exported: true
     namespace: "bluetooth"

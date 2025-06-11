@@ -272,7 +272,9 @@ public class BluetoothMapService extends ConnectableProfile {
         boolean connected = false;
         for (int i = 0, c = mMasInstances.size(); i < c; i++) {
             try {
-                if (mMasInstances.valueAt(i).startObexServerSession(mBluetoothMnsObexClient)) {
+                if (mMasInstances
+                        .valueAt(i)
+                        .startObexServerSession(this, mBluetoothMnsObexClient)) {
                     connected = true;
                 }
             } catch (IOException e) {
@@ -519,7 +521,7 @@ public class BluetoothMapService extends ConnectableProfile {
                                 + mRemoteDevice
                                 + " automatically as trusted device");
                 if (mBluetoothMnsObexClient != null && masInst != null) {
-                    masInst.startObexServerSession(mBluetoothMnsObexClient);
+                    masInst.startObexServerSession(this, mBluetoothMnsObexClient);
                 } else {
                     startObexServerSessions();
                 }

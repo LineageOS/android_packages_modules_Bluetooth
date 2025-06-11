@@ -106,6 +106,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
     private static final int MAS_INSTANCE_INFORMATION_LENGTH = 200;
 
     private final AdapterService mAdapterService;
+    private final BluetoothMapService mMapService;
 
     private BluetoothMapFolderElement mCurrentFolder;
     private BluetoothMapContentObserver mObserver = null;
@@ -130,6 +131,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
 
     public BluetoothMapObexServer(
             AdapterService adapterService,
+            BluetoothMapService mapService,
             Handler callback,
             BluetoothMapContentObserver observer,
             BluetoothMapMasInstance mas,
@@ -138,6 +140,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
             throws RemoteException {
         super();
         mAdapterService = requireNonNull(adapterService);
+        mMapService = mapService;
         mCallback = callback;
         mObserver = observer;
         mEnableSmsMms = enableSmsMms;
@@ -165,7 +168,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                                 mCurrentFolder to root folder */
         mObserver.setFolderStructure(mCurrentFolder.getRoot());
 
-        mOutContent = new BluetoothMapContent(mAdapterService, mAccount, mMasInstance);
+        mOutContent = new BluetoothMapContent(mAdapterService, mMapService, mAccount, mMasInstance);
     }
 
     /** */
@@ -702,7 +705,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
             BluetoothMapbMessage message;
             bMsgStream = op.openInputStream();
             // Decode the messageBody
-            message = BluetoothMapbMessage.parse(bMsgStream, appParams.getCharset());
+            message = BluetoothMapbMessage.parse(mMapService, bMsgStream, appParams.getCharset());
             message.setVersionString(messageVersion);
             Log.d(
                     TAG,

@@ -30,14 +30,12 @@ import android.bluetooth.le.IAdvertisingSetCallback;
 import android.bluetooth.le.PeriodicAdvertisingParameters;
 import android.content.AttributionSource;
 import android.os.IBinder;
-import android.platform.test.flag.junit.FlagsParameterization;
-import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
+import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -45,18 +43,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
-import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
-import platform.test.runner.parameterized.Parameters;
-
-import java.util.List;
-
 /** Test cases for {@link AdvertiseManager}. */
 @SmallTest
-@RunWith(ParameterizedAndroidJunit4.class)
+@RunWith(AndroidJUnit4.class)
 public class AdvertiseManagerTest {
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-    @Rule public final SetFlagsRule mSetFlagsRule;
 
     @Mock private AttributionSource mAttributionSource;
     @Mock private AdapterService mAdapterService;
@@ -68,15 +59,6 @@ public class AdvertiseManagerTest {
 
     private AdvertiseManager mAdvertiseManager;
     private int mAdvertiserId;
-
-    @Parameters(name = "{0}")
-    public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.allCombinationsOf(Flags.FLAG_ADVERTISE_THREAD);
-    }
-
-    public AdvertiseManagerTest(FlagsParameterization flags) {
-        mSetFlagsRule = new SetFlagsRule(flags);
-    }
 
     @Before
     public void setUp() throws Exception {

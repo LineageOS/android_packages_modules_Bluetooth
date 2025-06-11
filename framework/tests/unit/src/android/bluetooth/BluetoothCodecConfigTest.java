@@ -18,6 +18,8 @@ package android.bluetooth;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import android.os.Parcel;
+
 import androidx.test.runner.AndroidJUnit4;
 
 import com.google.common.truth.Expect;
@@ -554,6 +556,44 @@ public class BluetoothCodecConfigTest {
                         3000,
                         4004);
         assertThat(bcc11_codec_specific4).isNotEqualTo(bcc1);
+    }
+
+    @Test
+    public void codecType_isNull() {
+        // The default extended codec type is null when using the Builder.
+        // The matching codec type is SOURCE_CODEC_TYPE_INVALID.
+        BluetoothCodecConfig c = new BluetoothCodecConfig.Builder().build();
+        assertThat(c.getExtendedCodecType()).isNull();
+        assertThat(c.getCodecType()).isEqualTo(BluetoothCodecConfig.SOURCE_CODEC_TYPE_INVALID);
+
+        // Writing a BluetoothCodecConfig with null extended codec type
+        // should preserve the invalid codec type.
+        Parcel parcel = Parcel.obtain();
+        c.writeToParcel(parcel, 0);
+        parcel.setDataPosition(0);
+        assertThat(BluetoothCodecConfig.CREATOR.createFromParcel(parcel)).isEqualTo(c);
+    }
+
+    @Test
+    public void codecType_isSbc() {
+        // The default extended codec type is null when using the Builder.
+        // The matching codec type is SOURCE_CODEC_TYPE_INVALID.
+        BluetoothCodecConfig c =
+                new BluetoothCodecConfig.Builder()
+                        .setCodecType(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC)
+                        .build();
+        assertThat(c.getExtendedCodecType().getNativeCodecType())
+                .isEqualTo(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC);
+        assertThat(c.getExtendedCodecType().getCodecId())
+                .isEqualTo(BluetoothCodecType.CODEC_ID_SBC);
+        assertThat(c.getCodecType()).isEqualTo(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC);
+
+        // Writing a BluetoothCodecConfig with non-null extended codec type
+        // should preserve the codec type.
+        Parcel parcel = Parcel.obtain();
+        c.writeToParcel(parcel, 0);
+        parcel.setDataPosition(0);
+        assertThat(BluetoothCodecConfig.CREATOR.createFromParcel(parcel)).isEqualTo(c);
     }
 
     private static BluetoothCodecConfig buildBluetoothCodecConfig(

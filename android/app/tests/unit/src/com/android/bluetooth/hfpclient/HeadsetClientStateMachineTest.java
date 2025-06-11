@@ -91,6 +91,7 @@ import org.mockito.Mock;
 import org.mockito.hamcrest.MockitoHamcrest;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /** Test cases for {@link HeadsetClientStateMachine}. */
@@ -144,7 +145,7 @@ public class HeadsetClientStateMachineTest {
                 new TestHeadsetClientStateMachine(
                         mAdapterService,
                         mHeadsetClientService,
-                        mHeadsetService,
+                        Optional.of(mHeadsetService),
                         mTestLooper.getLooper(),
                         mNativeInterface);
         mTestLooper.dispatchAll();
@@ -1588,10 +1589,10 @@ public class HeadsetClientStateMachineTest {
         TestHeadsetClientStateMachine(
                 AdapterService adapterService,
                 HeadsetClientService context,
-                HeadsetService headsetService,
+                Optional<HeadsetService> headset,
                 Looper looper,
                 HeadsetClientNativeInterface nativeInterface) {
-            super(adapterService, context, headsetService, looper, nativeInterface);
+            super(adapterService, context, headset, looper, nativeInterface);
         }
 
         public boolean doesSuperHaveDeferredMessages(int what) {

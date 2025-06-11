@@ -26,8 +26,6 @@ import android.telecom.PhoneAccount;
 import android.telecom.TelecomManager;
 import android.util.Log;
 
-import com.android.internal.annotations.VisibleForTesting;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -353,31 +351,6 @@ class HfpClientDeviceBlock {
         sb.append(" conference=").append(mConference);
         sb.append(">");
         return sb.toString();
-    }
-
-    /** Factory class for {@link HfpClientDeviceBlock} */
-    public static class Factory {
-        private static Factory sInstance = new Factory();
-
-        @VisibleForTesting
-        static void setInstance(Factory instance) {
-            sInstance = instance;
-        }
-
-        /** Returns an instance of {@link HfpClientDeviceBlock} */
-        public static HfpClientDeviceBlock build(
-                BluetoothDevice device,
-                HfpClientConnectionService connServ,
-                HeadsetClientServiceInterface serviceInterface) {
-            return sInstance.buildInternal(device, connServ, serviceInterface);
-        }
-
-        protected HfpClientDeviceBlock buildInternal(
-                BluetoothDevice device,
-                HfpClientConnectionService connServ,
-                HeadsetClientServiceInterface serviceInterface) {
-            return new HfpClientDeviceBlock(device, connServ, serviceInterface);
-        }
     }
 
     // Per-Device logging

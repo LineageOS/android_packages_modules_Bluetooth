@@ -930,7 +930,6 @@ public class AdapterServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_IDENTITY_ADDRESS_TYPE_API)
     public void testIdentityAddressType() {
         doEnable(false); // Need BluetoothAdapter for mAdapterService.getRemoteDevice
         RemoteDevices remoteDevices = mAdapterService.getRemoteDevices();

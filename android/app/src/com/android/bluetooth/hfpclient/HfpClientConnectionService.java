@@ -36,6 +36,7 @@ import android.telecom.TelecomManager;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.pbapclient.PbapClientService;
 
 import java.util.Arrays;
@@ -44,6 +45,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 public class HfpClientConnectionService extends ConnectionService {
     private static final String TAG = HfpClientConnectionService.class.getSimpleName();
@@ -150,10 +152,14 @@ public class HfpClientConnectionService extends ConnectionService {
                 .handleHeadsetClientConnectionStateChanged(device, oldState, newState);
         adapterService.notifyProfileConnectionStateChangeToGatt(
                 BluetoothProfile.HEADSET_CLIENT, oldState, newState);
-        if (PbapClientService.getPbapClientService() != null) {
-            PbapClientService.getPbapClientService()
-                    .handleHeadsetClientConnectionStateChanged(device, oldState, newState);
+        final Optional<PbapClientService> pbapClientService;
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            pbapClientService = adapterService.getPbapClientService();
+        } else {
+            pbapClientService = Optional.ofNullable(PbapClientService.getPbapClientService());
         }
+        pbapClientService.ifPresent(
+                pC -> pC.handleHeadsetClientConnectionStateChanged(device, oldState, newState));
         adapterService.updateProfileConnectionAdapterProperties(
                 device, BluetoothProfile.HEADSET_CLIENT, newState, oldState);
     }
@@ -342,8 +348,7 @@ public class HfpClientConnectionService extends ConnectionService {
             return null;
         }
 
-        HfpClientDeviceBlock block =
-                HfpClientDeviceBlock.Factory.build(device, this, mServiceInterface);
+        HfpClientDeviceBlock block = new HfpClientDeviceBlock(device, this, mServiceInterface);
         mDeviceBlocks.put(device, block);
         return block;
     }

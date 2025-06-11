@@ -736,10 +736,10 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         # Override L2CAP Channel Manager to control signaling
         self.ref1.device.l2cap_channel_manager = TestChannelManager(self.ref1.device)
 
-        # Connect and pair DUT -> RD1.
-        dut_ref1, ref1_dut = await asyncio.gather(
-            initiate_pairing(self.dut, self.ref1.address),
-            accept_pairing(self.ref1, self.dut.address),
+        # Connect and pair RD1 -> DUT.
+        ref1_dut, dut_ref1 = await asyncio.gather(
+            initiate_pairing(self.ref1, self.dut.address),
+            accept_pairing(self.dut, self.ref1.address),
         )
 
         # Retrieve Bumble connection object from Pandora connection token

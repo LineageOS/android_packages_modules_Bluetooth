@@ -166,6 +166,15 @@ android_robolectric_test {
         "framework-statsd.stubs.module_lib",
     ],
 
+    jacoco: {
+        include_filter: [
+            "android.bluetooth.**",
+            "com.android.bluetooth.**",
+            "com.android.server.bluetooth.**",
+        ],
+        exclude_filter: [],
+    },
+
     sdk_version: "test_current",
     test_suites: ["general-tests"],
     strict_mode: false,

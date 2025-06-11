@@ -151,26 +151,6 @@ flag {
 }
 
 flag {
-    name: "fix_unusable_adv_slot_due_to_map_access"
-    namespace: "bluetooth"
-    description: "Fixes the advertising slot becoming unusable due to incorrect map access via [] operator."
-    bug: "388615378"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "fix_bluetooth_gatt_getting_duplicate_services"
-    namespace: "bluetooth"
-    description: "Fixes BluetoothGatt getting duplicate GATT services"
-    bug: "391773937"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "prevent_concurrent_conn_param_updates"
     namespace: "bluetooth"
     description: "Makes only one connection parameter update can be processed at a time per device."
