@@ -31,6 +31,7 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasPackage;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.tests.bluetooth.Utils.FlagsWrapper;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -67,7 +68,6 @@ import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
 import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Telephony.Sms;
 import android.telephony.SmsManager;
@@ -199,14 +199,14 @@ public class MapClientStateMachineTest {
     }
 
     @Parameters(name = "{0}")
-    public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.progressionOf(
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(
                 Flags.FLAG_HANDLE_DELIVERY_SENDING_FAILURE_EVENTS,
                 Flags.FLAG_USE_ENTIRE_MESSAGE_HANDLE);
     }
 
-    public MapClientStateMachineTest(FlagsParameterization flags) {
-        mSetFlagsRule = new SetFlagsRule(flags);
+    public MapClientStateMachineTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
     }
 
     @Before

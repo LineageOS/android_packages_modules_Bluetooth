@@ -26,7 +26,6 @@ import android.os.Looper
 import android.os.UserHandle
 import android.platform.test.annotations.DisableFlags
 import android.platform.test.annotations.EnableFlags
-import android.platform.test.flag.junit.FlagsParameterization
 import android.platform.test.flag.junit.SetFlagsRule
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
@@ -54,6 +53,7 @@ import com.android.server.bluetooth.test.disableMode
 import com.android.server.bluetooth.test.disableSensitive
 import com.android.server.bluetooth.test.enableMode
 import com.android.server.bluetooth.test.enableSensitive
+import com.android.tests.bluetooth.Utils.FlagsWrapper
 import com.google.common.truth.Truth.assertThat
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TestTimeSource
@@ -771,25 +771,13 @@ class ModeListenerTest(flags: FlagsWrapper) {
             // IpcDataCache.setTestMode(false) // Doesn't work with parametric robolectric runner
         }
 
-        // Helps tests readability by removing the common prefix in the bluetooth flags name
-        class FlagsWrapper(internal val flags: FlagsParameterization) {
-            private val PREFIX = "com.android.bluetooth.flags."
-
-            override fun toString(): String {
-                return flags.mOverrides.entries
-                    .sortedBy { it.key }
-                    .joinToString(",") { "${it.key.removePrefix(PREFIX)}=${it.value}" }
-            }
-        }
-
         @JvmStatic
         @Parameters(name = "{0}")
         fun getParams(): List<FlagsWrapper> {
-            return FlagsParameterization.progressionOf(
-                    Flags.FLAG_ONEWAY_MEDIA_PROFILE,
-                    Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE,
-                )
-                .map { FlagsWrapper(it) }
+            return FlagsWrapper.progressionOf(
+                Flags.FLAG_ONEWAY_MEDIA_PROFILE,
+                Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE,
+            )
         }
     }
 }

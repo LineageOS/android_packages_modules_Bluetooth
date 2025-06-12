@@ -23,15 +23,13 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
-import static android.media.audio.Flags.FLAG_DEPRECATE_STREAM_BT_SCO;
-import static android.media.audio.Flags.FLAG_SCO_MANAGED_BY_AUDIO;
-import static android.media.audio.Flags.FLAG_UNIFY_ABSOLUTE_VOLUME_MANAGEMENT;
 
 import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockSystemPropertyGet;
 import static com.android.bluetooth.Utils.joinUninterruptibly;
 import static com.android.bluetooth.hfp.HeadsetStateMachine.HFP_VOLUME_CONTROL_ENABLED;
+import static com.android.tests.bluetooth.Utils.FlagsWrapper;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -71,7 +69,6 @@ import android.platform.test.annotations.RequiresFlagsDisabled;
 import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.platform.test.flag.junit.CheckFlagsRule;
 import android.platform.test.flag.junit.DeviceFlagsValueProvider;
-import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.CallLog;
 import android.provider.CallLog.Calls;
@@ -123,12 +120,12 @@ public class HeadsetStateMachineTest {
     public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
 
     @Parameters(name = "{0}")
-    public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.allCombinationsOf(FLAG_SCO_MANAGED_BY_AUDIO);
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(android.media.audio.Flags.FLAG_SCO_MANAGED_BY_AUDIO);
     }
 
-    public HeadsetStateMachineTest(FlagsParameterization flags) {
-        mSetFlagsRule = new SetFlagsRule(flags);
+    public HeadsetStateMachineTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
     }
 
     private HandlerThread mHandlerThread;
@@ -586,7 +583,7 @@ public class HeadsetStateMachineTest {
      * ScoManagedByAudioEnabled
      */
     @Test
-    @EnableFlags(FLAG_SCO_MANAGED_BY_AUDIO)
+    @EnableFlags(android.media.audio.Flags.FLAG_SCO_MANAGED_BY_AUDIO)
     public void testStateTransition_ConnectedToAudioConnecting_ConnectAudio_ScoManagedByAudio() {
         doReturn(true).when(mSystemInterface).isScoManagedByAudioEnabled();
 
@@ -1766,8 +1763,8 @@ public class HeadsetStateMachineTest {
         assertThat(mHeadsetStateMachine.mMicVolume).isEqualTo(1);
     }
 
-    @RequiresFlagsDisabled(FLAG_DEPRECATE_STREAM_BT_SCO)
     @Test
+    @RequiresFlagsDisabled(android.media.audio.Flags.FLAG_DEPRECATE_STREAM_BT_SCO)
     public void testProcessVolumeEvent_withVolumeTypeSpk() {
         when(mHeadsetService.getActiveDevice()).thenReturn(mDevice);
         AudioManager mockAudioManager = mock(AudioManager.class);
@@ -1780,8 +1777,8 @@ public class HeadsetStateMachineTest {
         verify(mockAudioManager).setStreamVolume(AudioManager.STREAM_BLUETOOTH_SCO, 2, 0);
     }
 
-    @RequiresFlagsEnabled(FLAG_DEPRECATE_STREAM_BT_SCO)
     @Test
+    @RequiresFlagsEnabled(android.media.audio.Flags.FLAG_DEPRECATE_STREAM_BT_SCO)
     public void testProcessVolumeEvent_withVolumeTypeSpkAndStreamVoiceCall() {
         when(mHeadsetService.getActiveDevice()).thenReturn(mDevice);
         AudioManager mockAudioManager = mock(AudioManager.class);
@@ -1854,8 +1851,8 @@ public class HeadsetStateMachineTest {
         mHeadsetStateMachine.mSpeakerVolume = originalVolume;
     }
 
-    @EnableFlags(FLAG_UNIFY_ABSOLUTE_VOLUME_MANAGEMENT)
     @Test
+    @EnableFlags(android.media.audio.Flags.FLAG_UNIFY_ABSOLUTE_VOLUME_MANAGEMENT)
     public void testVolumeChangeEvent_fromVolumeIndexWhenAudioOn() {
         setUpAudioOnState();
         int originalVolume = mHeadsetStateMachine.mSpeakerVolume;
@@ -2087,7 +2084,7 @@ public class HeadsetStateMachineTest {
     }
 
     @Test
-    @EnableFlags(FLAG_SCO_MANAGED_BY_AUDIO)
+    @EnableFlags(android.media.audio.Flags.FLAG_SCO_MANAGED_BY_AUDIO)
     public void testSetAudioParameters_isScoManagedByAudio() {
         doReturn(true).when(mSystemInterface).isScoManagedByAudioEnabled();
 

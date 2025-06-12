@@ -24,6 +24,7 @@ import static android.bluetooth.BluetoothProfile.HEADSET;
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
+import static com.android.tests.bluetooth.Utils.FlagsWrapper;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -51,7 +52,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.room.Room;
@@ -115,12 +115,12 @@ public final class DatabaseManagerTest {
     private DatabaseManager mDatabaseManager;
 
     @Parameters(name = "{0}")
-    public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.allCombinationsOf(Flags.FLAG_FACTORY_RESET_AT_BLUETOOTH_START);
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(Flags.FLAG_FACTORY_RESET_AT_BLUETOOTH_START);
     }
 
-    public DatabaseManagerTest(FlagsParameterization flags) {
-        mSetFlagsRule = new SetFlagsRule(flags);
+    public DatabaseManagerTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
     }
 
     @Before

@@ -32,6 +32,7 @@ import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.getBluetoothManager;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
+import static com.android.tests.bluetooth.Utils.FlagsWrapper;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -81,7 +82,6 @@ import android.os.UserManager;
 import android.permission.PermissionManager;
 import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
@@ -233,14 +233,14 @@ public class AdapterServiceTest {
     }
 
     @Parameters(name = "{0}")
-    public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.progressionOf(
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(
                 Flags.FLAG_LIMIT_USER_SWITCH_PROPAGATION,
                 Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE);
     }
 
-    public AdapterServiceTest(FlagsParameterization flags) {
-        mSetFlagsRule = new SetFlagsRule(flags);
+    public AdapterServiceTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
     }
 
     @Before
