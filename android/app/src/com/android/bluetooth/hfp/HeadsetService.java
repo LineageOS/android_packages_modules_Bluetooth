@@ -164,6 +164,7 @@ public class HeadsetService extends ConnectableProfile {
             new AudioManagerAudioDeviceCallback();
 
     private final AudioManagerDeviceVolumeListener mAudioManagerDeviceVolumeListener;
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static HeadsetService sHeadsetService;
 
     @VisibleForTesting boolean mIsAptXSwbEnabled = false;
@@ -594,6 +595,7 @@ public class HeadsetService extends ConnectableProfile {
     }
 
     // API methods
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized HeadsetService getHeadsetService() {
         if (sHeadsetService == null) {
             Log.w(TAG, "getHeadsetService(): service is NULL");
@@ -607,6 +609,7 @@ public class HeadsetService extends ConnectableProfile {
     }
 
     @VisibleForTesting
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized void setHeadsetService(HeadsetService instance) {
         logD("setHeadsetService(): set to: " + instance);
         sHeadsetService = instance;

@@ -43,6 +43,7 @@ import java.util.Optional;
 public class McpService extends ProfileService {
     private static final String TAG = Utils.BT_PREFIX + McpService.class.getSimpleName();
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static McpService sMcpService;
 
     private final MediaControlProfile mGmcs;
@@ -66,11 +67,13 @@ public class McpService extends ProfileService {
         return BluetoothProperties.isProfileMcpServerEnabled().orElse(false);
     }
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static synchronized void setMcpService(McpService instance) {
         Log.d(TAG, "setMcpService(): set to: " + instance);
         sMcpService = instance;
     }
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized McpService getMcpService() {
         if (sMcpService == null) {
             Log.w(TAG, "getMcpService(): service is NULL");

@@ -98,6 +98,7 @@ public class AvrcpControllerService extends ConnectableProfile {
     public static final int DEVICE_STATE_INACTIVE = 0;
     public static final int DEVICE_STATE_ACTIVE = 1;
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static AvrcpControllerService sService;
 
     private final Object mActiveDeviceLock = new Object();
@@ -198,12 +199,14 @@ public class AvrcpControllerService extends ConnectableProfile {
         return mBrowseTree;
     }
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized AvrcpControllerService getAvrcpControllerService() {
         return sService;
     }
 
     /** Testing API to inject a mock AvrcpControllerService */
     @VisibleForTesting
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized void setAvrcpControllerService(AvrcpControllerService service) {
         sService = service;
     }

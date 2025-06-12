@@ -132,6 +132,7 @@ public class LeAudioService extends ConnectableProfile {
     /* 5 seconds timeout for Broadcast streaming state transition */
     private static final int CREATE_BROADCAST_TIMEOUT_MS = 5000;
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static LeAudioService sLeAudioService;
 
     /** Indicates group audio support for none direction */
@@ -875,6 +876,7 @@ public class LeAudioService extends ConnectableProfile {
         mAudioManager.unregisterAudioDeviceCallback(mAudioManagerAudioDeviceCallback);
     }
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized LeAudioService getLeAudioService() {
         if (sLeAudioService == null) {
             Log.w(TAG, "getLeAudioService(): service is NULL");
@@ -889,6 +891,7 @@ public class LeAudioService extends ConnectableProfile {
 
     // TODO(b/422543753) Hide on flag cleanup
     @VisibleForTesting
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized void setLeAudioService(LeAudioService instance) {
         Log.d(TAG, "setLeAudioService(): set to: " + instance);
         sLeAudioService = instance;

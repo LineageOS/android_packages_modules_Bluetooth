@@ -48,6 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class A2dpSinkService extends ConnectableProfile {
     private static final String TAG = A2dpSinkService.class.getSimpleName();
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static A2dpSinkService sService;
 
     // This is also used as a lock for shared data in {@link A2dpSinkService}
@@ -110,12 +111,14 @@ public class A2dpSinkService extends ConnectableProfile {
         }
     }
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized A2dpSinkService getA2dpSinkService() {
         return sService;
     }
 
     /** Testing API to inject a mockA2dpSinkService. */
     @VisibleForTesting
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized void setA2dpSinkService(A2dpSinkService service) {
         sService = service;
     }

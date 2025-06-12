@@ -78,6 +78,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
     // Timeout for state machine thread join, to prevent potential ANR.
     private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1000;
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static CsipSetCoordinatorService sCsipSetCoordinatorService;
 
     private final Handler mHandler;
@@ -206,6 +207,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
      *
      * @return CsipSetCoordinatorService instance
      */
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized CsipSetCoordinatorService getCsipSetCoordinatorService() {
         if (sCsipSetCoordinatorService == null) {
             Log.w(TAG, "getCsipSetCoordinatorService(): service is NULL");
@@ -219,6 +221,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
         return sCsipSetCoordinatorService;
     }
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static synchronized void setCsipSetCoordinatorService(
             CsipSetCoordinatorService instance) {
         Log.d(TAG, "setCsipSetCoordinatorService(): set to: " + instance);

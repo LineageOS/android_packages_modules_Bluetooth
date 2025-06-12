@@ -83,6 +83,7 @@ public class VolumeControlService extends ConnectableProfile {
 
     private static final int GROUP_ID_INVALID = -1;
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static VolumeControlService sVolumeControlService;
 
     @VisibleForTesting
@@ -234,6 +235,7 @@ public class VolumeControlService extends ConnectableProfile {
      *
      * @return VolumeControlService instance
      */
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized VolumeControlService getVolumeControlService() {
         if (sVolumeControlService == null) {
             Log.w(TAG, "getVolumeControlService(): service is NULL");
@@ -248,6 +250,7 @@ public class VolumeControlService extends ConnectableProfile {
     }
 
     @VisibleForTesting
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     static synchronized void setVolumeControlService(VolumeControlService instance) {
         Log.d(TAG, "setVolumeControlService(): set to: " + instance);
         sVolumeControlService = instance;
