@@ -163,9 +163,6 @@ public class GattService extends ProfileService {
     @VisibleForTesting static final int RSSI_READ_THROTTLE_MS_MAX = 200;
     @VisibleForTesting static final int GATT_CLIENT_LIMIT_PER_APP = 32;
 
-    /** This is only used when Flags.onlyStartScanDuringBleOn() is true. */
-    private static GattService sGattService;
-
     /** List of our registered clients. */
     @VisibleForTesting ContextMap<IBluetoothGattCallback> mClientMap = new ContextMap<>();
 
@@ -277,10 +274,6 @@ public class GattService extends ProfileService {
                 new DistanceMeasurementManager(
                         mAdapterService, distanceMeasurementNativeInterface, looper);
 
-        if (Flags.onlyStartScanDuringBleOn()) {
-            setGattService(this);
-        }
-
         mSubrateLowParameters =
                 new int[] {
                     SystemProperties.getInt(
@@ -342,13 +335,6 @@ public class GattService extends ProfileService {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        if (Flags.onlyStartScanDuringBleOn() && sGattService == null) {
-            Log.w(TAG, "cleanup() called before initialization");
-            return;
-        }
-        if (Flags.onlyStartScanDuringBleOn()) {
-            setGattService(null);
-        }
         if (mScanController != null) {
             mScanController.cleanup();
         }
@@ -362,24 +348,6 @@ public class GattService extends ProfileService {
         mAdvertiseManager.cleanup();
         mDistanceMeasurementManager.cleanup();
         mHandlerThread.quit();
-    }
-
-    /** This is only used when Flags.onlyStartScanDuringBleOn() is true. */
-    public static synchronized GattService getGattService() {
-        if (sGattService == null) {
-            Log.w(TAG, "getGattService(): service is null");
-            return null;
-        }
-        if (!sGattService.isAvailable()) {
-            Log.w(TAG, "getGattService(): service is not available");
-            return null;
-        }
-        return sGattService;
-    }
-
-    private static synchronized void setGattService(GattService instance) {
-        Log.d(TAG, "setGattService(): set to: " + instance);
-        sGattService = instance;
     }
 
     @Nullable
