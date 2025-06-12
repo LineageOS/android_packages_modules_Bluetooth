@@ -52,6 +52,7 @@ public class BatteryService extends ConnectableProfile {
     // Timeout for state machine thread join, to prevent potential ANR.
     private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1_000;
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static BatteryService sBatteryService;
 
     private final HandlerThread mStateMachinesThread;
@@ -118,6 +119,7 @@ public class BatteryService extends ConnectableProfile {
     }
 
     /** Gets the BatteryService instance */
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized BatteryService getBatteryService() {
         if (sBatteryService == null) {
             Log.w(TAG, "getBatteryService(): service is NULL");
@@ -133,6 +135,7 @@ public class BatteryService extends ConnectableProfile {
 
     /** Sets the battery service instance. It should be called only for testing purpose. */
     @VisibleForTesting
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized void setBatteryService(BatteryService instance) {
         Log.d(TAG, "setBatteryService(): set to: " + instance);
         sBatteryService = instance;

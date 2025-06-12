@@ -74,6 +74,7 @@ public class HapClientService extends ConnectableProfile {
     private static final int MAX_HEARING_ACCESS_STATE_MACHINES = 10;
     private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1000;
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static HapClientService sHapClient;
 
     private final Map<BluetoothDevice, HapClientStateMachine> mStateMachines = new HashMap<>();
@@ -97,6 +98,7 @@ public class HapClientService extends ConnectableProfile {
     }
 
     @VisibleForTesting
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     static synchronized void setHapClient(HapClientService instance) {
         Log.d(TAG, "setHapClient(): set to: " + instance);
         sHapClient = instance;
@@ -107,6 +109,7 @@ public class HapClientService extends ConnectableProfile {
      *
      * @return HapClientService instance
      */
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized HapClientService getHapClientService() {
         if (sHapClient == null) {
             Log.w(TAG, "getHapClientService(): service is NULL");

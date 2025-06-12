@@ -202,6 +202,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                     + WHERE_CONFIRM_PENDING_INBOUND
                     + ")";
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static BluetoothOppService sBluetoothOppService;
 
     /*
@@ -320,6 +321,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
      * @return current instance of {@link BluetoothOppService}
      */
     @VisibleForTesting
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized BluetoothOppService getBluetoothOppService() {
         if (sBluetoothOppService == null) {
             Log.w(TAG, "getBluetoothOppService(): service is null");
@@ -342,6 +344,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         return sBluetoothOppService;
     }
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static synchronized void setBluetoothOppService(BluetoothOppService instance) {
         Log.d(TAG, "setBluetoothOppService(): set to: " + instance);
         sBluetoothOppService = instance;

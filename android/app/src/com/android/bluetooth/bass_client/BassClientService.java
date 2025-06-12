@@ -143,6 +143,7 @@ public class BassClientService extends ConnectableProfile {
         RESUMING // Broadcast during resume.
     }
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static BassClientService sService;
 
     private final Map<BluetoothDevice, BassClientStateMachine> mStateMachines = new HashMap<>();
@@ -819,6 +820,7 @@ public class BassClientService extends ConnectableProfile {
         Log.d(TAG, "Updated mSyncHandleToBroadcastIdMap: " + mSyncHandleToBroadcastIdMap);
     }
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static synchronized void setBassClientService(BassClientService instance) {
         Log.d(TAG, "setBassClientService(): set to: " + instance);
         sService = instance;
@@ -1409,6 +1411,7 @@ public class BassClientService extends ConnectableProfile {
      *
      * @return BassClientService instance
      */
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized BassClientService getBassClientService() {
         if (sService == null) {
             Log.w(TAG, "getBassClientService(): service is NULL");

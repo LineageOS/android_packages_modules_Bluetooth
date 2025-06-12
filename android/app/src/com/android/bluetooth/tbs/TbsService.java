@@ -44,6 +44,7 @@ import java.util.UUID;
 public class TbsService extends ProfileService {
     private static final String TAG = TbsService.class.getSimpleName();
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static TbsService sTbsService;
 
     private final Map<BluetoothDevice, Integer> mDeviceAuthorizations = new HashMap<>();
@@ -89,6 +90,7 @@ public class TbsService extends ProfileService {
      *
      * @return TbsService instance
      */
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized TbsService getTbsService() {
         if (sTbsService == null) {
             Log.w(TAG, "getTbsService: service is NULL");
@@ -103,6 +105,7 @@ public class TbsService extends ProfileService {
         return sTbsService;
     }
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized void setTbsService(TbsService instance) {
         Log.d(TAG, "setTbsService: set to=" + instance);
 
