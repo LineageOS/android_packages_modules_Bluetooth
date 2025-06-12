@@ -42,6 +42,7 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothUtils;
+import android.bluetooth.EncryptionStatus;
 import android.bluetooth.IBluetoothConnectionCallback;
 import android.content.Intent;
 import android.net.MacAddress;
@@ -421,27 +422,24 @@ public class RemoteDevices {
         private BluetoothSinkAudioPolicy mAudioPolicy;
 
         static class LinkState {
-            private int mConnectionHandle;
-
-            public record EncryptionAttributes(int keySize, int algorithm) {}
-
-            private EncryptionAttributes mEncryptionAttributes;
+            private final int mConnectionHandle;
+            private EncryptionStatus mEncryptionStatus;
 
             public LinkState(int handle) {
                 mConnectionHandle = handle;
-                mEncryptionAttributes = null;
+                mEncryptionStatus = null;
             }
 
             public int getConnectionHandle() {
                 return mConnectionHandle;
             }
 
-            public void setEncryptionAttributes(EncryptionAttributes encryptionAttributes) {
-                mEncryptionAttributes = encryptionAttributes;
+            public void setEncryptionStatus(EncryptionStatus encryptionStatus) {
+                mEncryptionStatus = encryptionStatus;
             }
 
-            public EncryptionAttributes getEncryptionAttributes() {
-                return mEncryptionAttributes;
+            public EncryptionStatus getEncryptionStatus() {
+                return mEncryptionStatus;
             }
         }
 
@@ -594,22 +592,22 @@ public class RemoteDevices {
          * @param keySize the encryption key size
          * @param algorithm the encryption algorithm (E0/AES)
          */
-        void setEncryptionAttributes(int transport, int keySize, int algorithm) {
+        void setEncryptionStatus(int transport, int keySize, int algorithm) {
             synchronized (mObject) {
                 if (transport == BluetoothDevice.TRANSPORT_AUTO) {
-                    errorLog("setEncryptionAttributes(): unexpected transport value " + transport);
+                    errorLog("setEncryptionStatus(): unexpected transport value " + transport);
                     return;
                 }
                 LinkState linkState = getLinkState(transport);
                 if (linkState == null) {
-                    errorLog("setEncryptionAttributes(): the device is not connected");
+                    errorLog("setEncryptionStatus(): the device is not connected");
                     return;
                 }
-                LinkState.EncryptionAttributes encDetails = null;
                 if (keySize > 0 && algorithm > 0) {
-                    encDetails = new LinkState.EncryptionAttributes(keySize, algorithm);
+                    linkState.setEncryptionStatus(new EncryptionStatus(keySize, algorithm));
+                } else {
+                    linkState.setEncryptionStatus(null);
                 }
-                linkState.setEncryptionAttributes(encDetails);
             }
         }
 
@@ -630,10 +628,10 @@ public class RemoteDevices {
             }
         }
 
-        LinkState.EncryptionAttributes getEncryptionAttributes(int transport) {
+        EncryptionStatus getEncryptionStatus(int transport) {
             synchronized (mObject) {
                 LinkState linkState = getLinkState(transport);
-                return (linkState == null) ? null : linkState.getEncryptionAttributes();
+                return (linkState == null) ? null : linkState.getEncryptionStatus();
             }
         }
 
@@ -1955,8 +1953,7 @@ public class RemoteDevices {
         }
 
         if (Flags.linkStatusApi()) {
-            getDeviceProperties(bluetoothDevice)
-                    .setEncryptionAttributes(transport, keySize, algorithm);
+            getDeviceProperties(bluetoothDevice).setEncryptionStatus(transport, keySize, algorithm);
         }
 
         Intent intent =
@@ -2456,20 +2453,9 @@ public class RemoteDevices {
                     .append(" LE:")
                     .append(connectedLe ? "Y" : "N")
                     .append("] [ Encryption status(BR/EDR): ")
-                    .append(
-                            connectedBrEdr
-                                    ? deviceProperties
-                                            .getEncryptionAttributes(
-                                                    BluetoothDevice.TRANSPORT_BREDR)
-                                            .toString()
-                                    : "N/A")
+                    .append(deviceProperties.getEncryptionStatus(BluetoothDevice.TRANSPORT_BREDR))
                     .append(" LE: ")
-                    .append(
-                            connectedLe
-                                    ? deviceProperties
-                                            .getEncryptionAttributes(BluetoothDevice.TRANSPORT_LE)
-                                            .toString()
-                                    : "N/A")
+                    .append(deviceProperties.getEncryptionStatus(BluetoothDevice.TRANSPORT_LE))
                     .append("] ")
                     .append(deviceProperties.getName())
                     .append("\n");

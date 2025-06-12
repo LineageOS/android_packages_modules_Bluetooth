@@ -139,7 +139,7 @@ public class HapClientStateMachineTest {
         sendAndDispatchMessage(MESSAGE_CONNECT);
         verifyConnectionStateIntent(STATE_CONNECTING, STATE_DISCONNECTED);
         assertThat(mStateMachine.getCurrentState())
-            .isInstanceOf(HapClientStateMachine.Connecting.class);
+                .isInstanceOf(HapClientStateMachine.Connecting.class);
 
         sendAndDispatchMessage(MESSAGE_CONNECT);
         mLooper.moveTimeForward(CONNECT_TIMEOUT.toMillis());

@@ -16,21 +16,21 @@
 
 package android.bluetooth;
 
+import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.SuppressLint;
 import android.annotation.SystemApi;
-import android.annotation.FlaggedApi;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.os.Build;
 import android.os.IBinder;
 
+import com.android.bluetooth.flags.Flags;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.List;
-
-import com.android.bluetooth.flags.Flags;
 
 /**
  * Public APIs for the Bluetooth Profiles.

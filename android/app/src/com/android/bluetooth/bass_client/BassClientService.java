@@ -2123,8 +2123,8 @@ public class BassClientService extends ConnectableProfile {
                 cancelActiveSync(syncHandleToRemove);
             }
 
-                mSyncFailureCounter.clear();
-                mTimeoutHandler.stopAll(MESSAGE_SYNC_LOST_TIMEOUT);
+            mSyncFailureCounter.clear();
+            mTimeoutHandler.stopAll(MESSAGE_SYNC_LOST_TIMEOUT);
 
             printAllSyncData();
 
