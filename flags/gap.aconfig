@@ -46,16 +46,6 @@ flag {
 }
 
 flag {
-    name: "le_impl_ack_pause_disarmed"
-    namespace: "bluetooth"
-    description: "Let le_impl AckPause when disarmed to prevent stuck in pausing state"
-    bug: "357024179"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "gatt_clear_cache_on_factory_reset"
     namespace: "bluetooth"
     description: "Clear GATT cache/hash on factory reset"

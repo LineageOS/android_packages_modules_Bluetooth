@@ -1595,8 +1595,6 @@ TEST_F(LeImplTest, direct_connection_after_direct_connection) {
 }
 
 TEST_F(LeImplTest, direct_connection_cancel_but_connected) {
-  com::android::bluetooth::flags::provider_->le_impl_ack_pause_disarmed(true);
-
   set_random_device_address_policy();
   controller_->AddSupported(OpCode::LE_EXTENDED_CREATE_CONNECTION);
 
