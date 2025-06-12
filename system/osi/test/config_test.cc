@@ -239,7 +239,11 @@ TEST_F(ConfigTest, checksum_read) {
   std::string checksum = "0x1234";
   base::FilePath file_path(filename.string());
 
+#if defined(TARGET_FLOSS) && BASE_VER >= 1344673
+  EXPECT_TRUE(base::WriteFile(file_path, checksum));
+#else
   EXPECT_EQ(base::WriteFile(file_path, checksum.data(), checksum.size()), (int)checksum.size());
+#endif  // defined(TARGET_FLOSS) && BASE_VER >= 1344673
 
   EXPECT_EQ(checksum_read(filename.c_str()), checksum.c_str());
 
