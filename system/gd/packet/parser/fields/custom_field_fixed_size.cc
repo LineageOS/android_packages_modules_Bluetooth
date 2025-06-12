@@ -50,7 +50,12 @@ int CustomFieldFixedSize::GenBounds(std::ostream& s, Size start_offset, Size end
 }
 
 void CustomFieldFixedSize::GenExtractor(std::ostream& s, int, bool) const {
-  s << "*" << GetName() << "_ptr = " << GetName() << "_it.extract<" << GetDataType() << ">();";
+  if (GetDataType() == "Address") {
+    s << "*" << GetName() << "_ptr = ::bluetooth::packet::extract" << GetDataType() << "("
+      << GetName() << "_it);";
+  } else {
+    s << "*" << GetName() << "_ptr = " << GetName() << "_it.extract<" << GetDataType() << ">();";
+  }
 }
 
 void CustomFieldFixedSize::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
@@ -58,8 +63,13 @@ void CustomFieldFixedSize::GenGetter(std::ostream& s, Size start_offset, Size en
   s << "ASSERT(was_validated_);";
 
   if (!start_offset.empty() && (start_offset.bits() % 8 == 0) && !start_offset.has_dynamic()) {
-    s << "return ((begin() + " << (start_offset.bits() / 8) << ").extract<" << GetDataType()
-      << ">());";
+    int offset = start_offset.bits() / 8;
+    if (GetDataType() == "Address") {
+      s << "auto it = begin() + " << offset << ";";
+      s << "return ::bluetooth::packet::extract" << GetDataType() << "(it);";
+    } else {
+      s << "return (begin() + " << offset << ").extract<" << GetDataType() << ">();";
+    }
     s << "}";
     return;
   }
@@ -81,7 +91,11 @@ void CustomFieldFixedSize::GenParameterValidator(std::ostream&) const {
 }
 
 void CustomFieldFixedSize::GenInserter(std::ostream& s) const {
-  s << "insert(" << GetName() << "_, i);";
+  if (GetDataType() == "Address") {
+    s << "::bluetooth::packet::insertAddress(" << GetName() << "_, i);";
+  } else {
+    s << "insert(" << GetName() << "_, i);";
+  }
 }
 
 void CustomFieldFixedSize::GenValidator(std::ostream&) const {

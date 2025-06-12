@@ -40,6 +40,32 @@ TypeDef::Type CustomFieldDef::GetDefinitionType() const { return TypeDef::Type::
 
 void CustomFieldDef::GenInclude(std::ostream& s) const {
   s << "#include \"" << include_ << util::CamelCaseToUnderScore(GetTypeName()) << ".h\"\n";
+
+  // Address benefits from ad-hoc parsing support in order to detach the type
+  // commonly used in the stack from PDL runtime definitions.
+  if (name_ == "Address") {
+    s << R"(
+  namespace bluetooth::packet {
+  namespace {
+    hci::Address extractAddress(Iterator<true>& it) {
+      hci::Address extracted_value{};
+      for (size_t i = 0; i < hci::Address::kLength; i++) {
+        extracted_value.data()[i] = *it;
+        ++it;
+      }
+      return extracted_value;
+    }
+
+    void insertAddress(const hci::Address& value, BitInserter& it) {
+      auto* raw_bytes = value.data();
+      for (size_t i = 0; i < hci::Address::kLength; i++) {
+        it.insert_byte(raw_bytes[i]);
+      }
+    }
+  }
+  }
+)";
+  }
 }
 
 void CustomFieldDef::GenUsing(std::ostream& s) const {
@@ -57,6 +83,12 @@ void CustomFieldDef::GenUsing(std::ostream& s) const {
 }
 
 void CustomFieldDef::GenFixedSizeCustomFieldCheck(std::ostream& s) const {
+  // Address benefits from ad-hoc parsing support in order to detach the type
+  // commonly used in the stack from PDL runtime definitions.
+  if (name_ == "Address") {
+    return;
+  }
+
   s << "static_assert(std::is_base_of_v<CustomFieldFixedSizeInterface<" << name_ << ">, " << name_
     << ">, \"";
   s << name_
