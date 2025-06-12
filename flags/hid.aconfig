@@ -10,26 +10,6 @@ flag {
 }
 
 flag {
-    name: "close_hid_if_uhid_ready_too_slow"
-    namespace: "bluetooth"
-    description: "Close HID if UHID takes too long to be ready"
-    bug: "362665394"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "dont_send_hid_set_idle"
-    namespace: "bluetooth"
-    description: "Don't send the SET IDLE HID message"
-    bug: "369310847"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "hogp_reconnection"
     namespace: "bluetooth"
     description: "Allow reconnection from HOGP device irrespective of disconnection reason"
@@ -44,16 +24,6 @@ flag {
     namespace: "bluetooth"
     description: "Properly cancel the pending connection to the already added devices"
     bug: "381135214"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "disconnect_hid_channels_serially"
-    namespace: "bluetooth"
-    description: "Only disconnect control channel after interrupt channel disconnection is acked"
-    bug: "387937345"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
