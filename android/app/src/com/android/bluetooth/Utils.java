@@ -58,6 +58,7 @@ import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.PowerExemptionManager;
 import android.os.Process;
@@ -1309,6 +1310,24 @@ public final class Utils {
             if (interrupted) {
                 Thread.currentThread().interrupt();
             }
+        }
+    }
+
+    public static void enforceMainLooperIsUsed() {
+        if (Utils.isInstrumentationTestMode()) {
+            return;
+        }
+        if (!Looper.getMainLooper().isCurrentThread()) {
+            throw new IllegalThreadStateException("Must be called on main thread");
+        }
+    }
+
+    public static void enforceMainLooperIsNotUsed() {
+        if (Utils.isInstrumentationTestMode()) {
+            return;
+        }
+        if (Looper.getMainLooper().isCurrentThread()) {
+            throw new IllegalThreadStateException("Must be called on main thread");
         }
     }
 }

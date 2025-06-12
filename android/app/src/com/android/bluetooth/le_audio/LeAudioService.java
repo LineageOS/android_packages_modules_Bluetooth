@@ -899,6 +899,16 @@ public class LeAudioService extends ConnectableProfile {
 
     @VisibleForTesting
     int getAudioDeviceGroupVolume(int groupId) {
+        if (Flags.vcpOnMainLooper()) {
+            int defaultValue = IBluetoothVolumeControl.VOLUME_CONTROL_UNKNOWN_VOLUME;
+            return getVolumeControlService()
+                    .map(
+                            vcs ->
+                                    vcs.syncPost(
+                                            v -> v.getAudioDeviceGroupVolume(groupId),
+                                            defaultValue))
+                    .orElse(defaultValue);
+        }
         final var volumeControl = getVolumeControlService();
         if (volumeControl.isEmpty()) {
             return IBluetoothVolumeControl.VOLUME_CONTROL_UNKNOWN_VOLUME;
@@ -1988,17 +1998,27 @@ public class LeAudioService extends ConnectableProfile {
     }
 
     void notifyVolumeControlServiceAboutActiveGroup(BluetoothDevice device) {
-        final var volumeControl = getVolumeControlService();
-        if (volumeControl.isEmpty()) {
+        final var vcs = getVolumeControlService();
+        if (vcs.isEmpty()) {
             return;
         }
 
+        if (Flags.vcpOnMainLooper()) {
+            if (mExposedActiveDevice != null) {
+                vcs.get().syncPost(v -> v.setGroupActive(getGroupId(mExposedActiveDevice), false));
+            }
+
+            if (device != null) {
+                vcs.get().syncPost(v -> v.setGroupActive(getGroupId(device), true));
+            }
+            return;
+        }
         if (mExposedActiveDevice != null) {
-            volumeControl.get().setGroupActive(getGroupId(mExposedActiveDevice), false);
+            vcs.get().setGroupActive(getGroupId(mExposedActiveDevice), false);
         }
 
         if (device != null) {
-            volumeControl.get().setGroupActive(getGroupId(device), true);
+            vcs.get().setGroupActive(getGroupId(device), true);
         }
     }
 
@@ -4560,10 +4580,13 @@ public class LeAudioService extends ConnectableProfile {
                         + connectionPolicy);
         final ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
 
-        final var volumeControl = getVolumeControlService();
-        if (volumeControl.isPresent()
-                && Utils.arrayContains(featureUuids, BluetoothUuid.VOLUME_CONTROL)) {
-            volumeControl.get().setConnectionPolicy(device, connectionPolicy);
+        final var vcs = getVolumeControlService();
+        if (vcs.isPresent() && Utils.arrayContains(featureUuids, BluetoothUuid.VOLUME_CONTROL)) {
+            if (Flags.vcpOnMainLooper()) {
+                vcs.get().syncPost(v -> v.setConnectionPolicy(device, connectionPolicy));
+            } else {
+                vcs.get().setConnectionPolicy(device, connectionPolicy);
+            }
         }
 
         final var hapClient = getHapClientService();
@@ -4773,25 +4796,26 @@ public class LeAudioService extends ConnectableProfile {
             }
         }
 
-        final var volumeControl = getVolumeControlService();
-        if (volumeControl.isEmpty()) {
+        final var vcs = getVolumeControlService();
+        if (vcs.isEmpty()) {
             return;
         }
+        final int groupForVolume;
         if (currentlyActiveGroupId == LE_AUDIO_GROUP_ID_INVALID
                 && !activeBroadcastSinks.isEmpty()) {
-            if (activeBroadcastSinks.stream().anyMatch(dev -> isPrimaryGroup(getGroupId(dev)))) {
-                Log.d(
-                        TAG,
-                        "Setting volume for broadcast sink primary group: "
-                                + mUnicastGroupIdDeactivatedForBroadcastTransition);
-                volumeControl
-                        .get()
-                        .setGroupVolume(mUnicastGroupIdDeactivatedForBroadcastTransition, volume);
-            } else {
+            if (!activeBroadcastSinks.stream().anyMatch(dev -> isPrimaryGroup(getGroupId(dev)))) {
                 Log.w(TAG, "Setting volume when no active or broadcast primary group");
+                return;
             }
+            groupForVolume = mUnicastGroupIdDeactivatedForBroadcastTransition;
+            Log.d(TAG, "Setting volume for broadcast sink primary group: " + groupForVolume);
         } else {
-            volumeControl.get().setGroupVolume(currentlyActiveGroupId, volume);
+            groupForVolume = currentlyActiveGroupId;
+        }
+        if (Flags.vcpOnMainLooper()) {
+            vcs.get().syncPost(v -> v.setGroupVolume(groupForVolume, volume));
+        } else {
+            vcs.get().setGroupVolume(groupForVolume, volume);
         }
     }
 
@@ -4990,8 +5014,14 @@ public class LeAudioService extends ConnectableProfile {
     }
 
     private void notifyGroupNodeAdded(BluetoothDevice device, int groupId) {
-        getVolumeControlService()
-                .ifPresent(volumeControl -> volumeControl.handleGroupNodeAdded(groupId, device));
+        if (Flags.vcpOnMainLooper()) {
+            getVolumeControlService()
+                    .ifPresent(vcs -> vcs.syncPost(v -> v.handleGroupNodeAdded(groupId, device)));
+        } else {
+            getVolumeControlService()
+                    .ifPresent(
+                            volumeControl -> volumeControl.handleGroupNodeAdded(groupId, device));
+        }
 
         synchronized (mLeAudioCallbacks) {
             int n = mLeAudioCallbacks.beginBroadcast();
