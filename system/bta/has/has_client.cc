@@ -971,7 +971,12 @@ public:
   void OnGroupOpCoordinatorTimeout(void* /*p*/) {
     log::error("Not all the devices notified their state change on time.");
 
-    /* Clear pending group operations */
+    if (com::android::bluetooth::flags::synchronize_preset_can_timeout()) {
+      for (auto op : pending_group_operation_timeouts_) {
+        callbacks_->OnActivePresetSelectError(op.second.operation.addr_or_group,
+                                              ErrorCode::TIMEOUT);
+      }
+    }
     pending_group_operation_timeouts_.clear();
     HasCtpGroupOpCoordinator::Cleanup();
   }
@@ -1583,8 +1588,15 @@ private:
     if (!device->isGattServiceValid()) {
       return;
     }
-    if (pending_group_operation_timeouts_.empty()) {
+    // Always report the current active preset to upper layer to reflect the remote state.
+    // Android may not always be aware of the origin of the changes and shouldn't delay the event
+    if (com::android::bluetooth::flags::synchronize_preset_can_timeout()) {
       callbacks_->OnActivePresetSelected(device->addr, device->currently_active_preset);
+    }
+    if (pending_group_operation_timeouts_.empty()) {
+      if (!com::android::bluetooth::flags::synchronize_preset_can_timeout()) {
+        callbacks_->OnActivePresetSelected(device->addr, device->currently_active_preset);
+      }
       return;
     }
     for (auto it = pending_group_operation_timeouts_.rbegin();
@@ -1609,8 +1621,10 @@ private:
           break;
       }
       if (group_op_coordinator.IsFullyCompleted()) {
-        callbacks_->OnActivePresetSelectedForGroup(group_op_coordinator.operation.GetGroupId(),
-                                                   device->currently_active_preset);
+        if (!com::android::bluetooth::flags::synchronize_preset_can_timeout()) {
+          callbacks_->OnActivePresetSelectedForGroup(group_op_coordinator.operation.GetGroupId(),
+                                                     device->currently_active_preset);
+        }
         pending_group_operation_timeouts_.erase(it->first);
       }
       if (matches) {

@@ -53,6 +53,7 @@ public class HapClientStackEvent {
     static final int STATUS_INVALID_PRESET_INDEX = 5;
     static final int STATUS_GROUP_OPERATION_NOT_SUPPORTED = 6;
     static final int STATUS_PROCEDURE_ALREADY_IN_PROGRESS = 7;
+    static final int STATUS_TIMEOUT = 8;
 
     // Supported features
     public static final int FEATURE_BIT_NUM_TYPE_MONAURAL =

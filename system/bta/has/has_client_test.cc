@@ -1124,6 +1124,7 @@ protected:
 class HasClientTest : public HasClientTestBase {
   void SetUp(void) override {
     com::android::bluetooth::flags::provider_->reset_flags();
+    com::android::bluetooth::flags::provider_->synchronize_preset_can_timeout(true);
     HasClientTestBase::SetUp();
     TestAppRegister();
   }
@@ -2521,7 +2522,10 @@ TEST_F(HasClientTest, test_select_group_preset_not_available_binaural_independen
   ASSERT_EQ(preset_details1.front().preset_index, active_preset_index1);
   ASSERT_EQ(preset_details2.front().preset_index, active_preset_index2);
 
-  EXPECT_CALL(callbacks, OnActivePresetSelectedForGroup(_, _)).Times(1);
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, preset_details1[1].preset_index))
+          .Times(1);
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, preset_details1[1].preset_index))
+          .Times(1);
 
   HasClient::Get()->SelectActivePreset(group_id, preset_details1[1].preset_index);
 }
@@ -2548,11 +2552,8 @@ TEST_F(HasClientTest, test_select_group_preset_valid_no_preset_sync_supported) {
           GetGroupId(test_address2, ::bluetooth::le_audio::uuid::kCapServiceUuid))
           .WillByDefault(Return(not_synced_group));
 
-  uint8_t group_active_preset_index = 0;
-  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, 55)).Times(0);
-  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, 55)).Times(0);
-  EXPECT_CALL(callbacks, OnActivePresetSelectedForGroup(not_synced_group, _))
-          .WillOnce(SaveArg<1>(&group_active_preset_index));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, 55)).Times(1);
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, 55)).Times(1);
 
   /* No locally synced opcodes support so expect both devices getting writes */
   EXPECT_CALL(gatt_queue, WriteCharacteristic(GetTestConnId(test_address1),
@@ -2563,7 +2564,6 @@ TEST_F(HasClientTest, test_select_group_preset_valid_no_preset_sync_supported) {
           .Times(1);
 
   HasClient::Get()->SelectActivePreset(not_synced_group, 55);
-  ASSERT_EQ(group_active_preset_index, 55);
 }
 
 TEST_F(HasClientTest, test_select_group_preset_valid_preset_sync_supported) {
@@ -2598,12 +2598,8 @@ TEST_F(HasClientTest, test_select_group_preset_valid_preset_sync_supported) {
   EXPECT_CALL(callbacks, OnActivePresetSelectError(_, ErrorCode::GROUP_OPERATION_NOT_SUPPORTED))
           .Times(0);
 
-  /* Expect callback from the group but not from the devices */
-  uint8_t group_active_preset_index = 0;
-  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, _)).Times(0);
-  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, _)).Times(0);
-  EXPECT_CALL(callbacks, OnActivePresetSelectedForGroup(synced_group, _))
-          .WillOnce(SaveArg<1>(&group_active_preset_index));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, 55)).Times(1);
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, 55)).Times(1);
 
   /* Expect Ctp write on on this device which forwards operation to the other */
   EXPECT_CALL(gatt_queue, WriteCharacteristic(test_conn_id1, HasDbBuilder::kPresetsCtpValHdl, _,
@@ -2614,7 +2610,6 @@ TEST_F(HasClientTest, test_select_group_preset_valid_preset_sync_supported) {
           .Times(1);
 
   HasClient::Get()->SelectActivePreset(synced_group, 55);
-  ASSERT_EQ(group_active_preset_index, 55);
 }
 
 TEST_F(HasClientTest, test_select_preset_invalid) {
@@ -2712,11 +2707,8 @@ TEST_F(HasClientTest, test_select_group_preset_next_no_preset_sync_supported) {
           GetGroupId(test_address2, ::bluetooth::le_audio::uuid::kCapServiceUuid))
           .WillByDefault(Return(not_synced_group));
 
-  uint8_t group_active_preset_index = 0;
-  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, 55)).Times(0);
-  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, 55)).Times(0);
-  EXPECT_CALL(callbacks, OnActivePresetSelectedForGroup(not_synced_group, _))
-          .WillOnce(SaveArg<1>(&group_active_preset_index));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, 55)).Times(1);
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, 55)).Times(1);
 
   /* No locally synced opcodes support so expect both devices getting writes */
   EXPECT_CALL(gatt_queue, WriteCharacteristic(GetTestConnId(test_address1),
@@ -2727,7 +2719,6 @@ TEST_F(HasClientTest, test_select_group_preset_next_no_preset_sync_supported) {
           .Times(1);
 
   HasClient::Get()->NextActivePreset(not_synced_group);
-  ASSERT_EQ(group_active_preset_index, 55);
 }
 
 TEST_F(HasClientTest, test_select_group_preset_next_preset_sync_supported) {
@@ -2762,12 +2753,8 @@ TEST_F(HasClientTest, test_select_group_preset_next_preset_sync_supported) {
   EXPECT_CALL(callbacks, OnActivePresetSelectError(_, ErrorCode::GROUP_OPERATION_NOT_SUPPORTED))
           .Times(0);
 
-  /* Expect callback from the group but not from the devices */
-  uint8_t group_active_preset_index = 0;
-  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, _)).Times(0);
-  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, _)).Times(0);
-  EXPECT_CALL(callbacks, OnActivePresetSelectedForGroup(synced_group, _))
-          .WillOnce(SaveArg<1>(&group_active_preset_index));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, 55));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, 55));
 
   /* Expect Ctp write on on this device which forwards operation to the other */
   EXPECT_CALL(gatt_queue, WriteCharacteristic(test_conn_id1, HasDbBuilder::kPresetsCtpValHdl, _,
@@ -2778,7 +2765,6 @@ TEST_F(HasClientTest, test_select_group_preset_next_preset_sync_supported) {
           .Times(1);
 
   HasClient::Get()->NextActivePreset(synced_group);
-  ASSERT_EQ(group_active_preset_index, 55);
 }
 
 TEST_F(HasClientTest, test_select_preset_prev) {
@@ -2835,11 +2821,8 @@ TEST_F(HasClientTest, test_select_group_preset_prev_no_preset_sync_supported) {
           GetGroupId(test_address2, ::bluetooth::le_audio::uuid::kCapServiceUuid))
           .WillByDefault(Return(not_synced_group));
 
-  uint8_t group_active_preset_index = 0;
-  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, 55)).Times(0);
-  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, 55)).Times(0);
-  EXPECT_CALL(callbacks, OnActivePresetSelectedForGroup(not_synced_group, _))
-          .WillOnce(SaveArg<1>(&group_active_preset_index));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, 55));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, 55));
 
   /* No locally synced opcodes support so expect both devices getting writes */
   EXPECT_CALL(gatt_queue, WriteCharacteristic(GetTestConnId(test_address1),
@@ -2850,7 +2833,6 @@ TEST_F(HasClientTest, test_select_group_preset_prev_no_preset_sync_supported) {
           .Times(1);
 
   HasClient::Get()->PreviousActivePreset(not_synced_group);
-  ASSERT_EQ(group_active_preset_index, 55);
 }
 
 TEST_F(HasClientTest, test_select_group_preset_prev_preset_sync_supported) {
@@ -2885,12 +2867,8 @@ TEST_F(HasClientTest, test_select_group_preset_prev_preset_sync_supported) {
   EXPECT_CALL(callbacks, OnActivePresetSelectError(_, ErrorCode::GROUP_OPERATION_NOT_SUPPORTED))
           .Times(0);
 
-  /* Expect callback from the group but not from the devices */
-  uint8_t group_active_preset_index = 0;
-  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, _)).Times(0);
-  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, _)).Times(0);
-  EXPECT_CALL(callbacks, OnActivePresetSelectedForGroup(synced_group, _))
-          .WillOnce(SaveArg<1>(&group_active_preset_index));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, 55));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, 55));
 
   /* Expect Ctp write on on this device which forwards operation to the other */
   EXPECT_CALL(gatt_queue, WriteCharacteristic(test_conn_id1, HasDbBuilder::kPresetsCtpValHdl, _,
@@ -2901,7 +2879,6 @@ TEST_F(HasClientTest, test_select_group_preset_prev_preset_sync_supported) {
           .Times(1);
 
   HasClient::Get()->PreviousActivePreset(synced_group);
-  ASSERT_EQ(group_active_preset_index, 55);
 }
 
 TEST_F(HasClientTest, test_select_has_no_presets) {
