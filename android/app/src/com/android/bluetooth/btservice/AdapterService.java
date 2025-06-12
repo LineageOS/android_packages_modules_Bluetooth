@@ -130,7 +130,6 @@ import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.InteropUtil.InteropFeature;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties.LinkState;
-import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties.LinkState.EncryptionAttributes;
 import com.android.bluetooth.btservice.bluetoothkeystore.BluetoothKeystoreNativeInterface;
 import com.android.bluetooth.btservice.bluetoothkeystore.BluetoothKeystoreService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -1241,7 +1240,7 @@ public class AdapterService extends Service {
             // `ON` state instead of `BLE_ON`. Here we ensure mGattService is set prior
             // to other Profiles using it.
             if (profileId == BluetoothProfile.GATT && Flags.onlyStartScanDuringBleOn()) {
-                mGattService = GattService.getGattService();
+                mGattService = (GattService) profileService;
             }
             onProfileServiceStateChanged(profileService, BluetoothAdapter.STATE_ON);
         } else if (state == BluetoothAdapter.STATE_OFF) {
