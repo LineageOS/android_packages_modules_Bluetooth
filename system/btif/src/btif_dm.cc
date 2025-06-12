@@ -289,8 +289,12 @@ static void btif_stats_add_bond_event(const RawAddress& bd_addr, bt_bond_functio
 static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status, const BD_NAME bd_name,
                               bool during_device_search);
 
-static bool btif_extract_uuids_in_adv_data(const uint8_t* p_ad, size_t ad_len, RawAddress& bdaddr,
-                                           std::list<Uuid>* p_uuid_list);
+static bool btif_extract_uuids_in_adv_data(const uint8_t* p_ad, size_t ad_len,
+                                           const RawAddress& bdaddr, std::list<Uuid>* p_uuid_list);
+
+static void add_advertised_uuids_to_properties(std::vector<bt_property_t>& bt_properties,
+                                               tBTA_DM_INQ_RES& inq_res,
+                                               std::vector<uint8_t>& uuids_value);
 
 /******************************************************************************
  *  Functions
@@ -1369,13 +1373,30 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
           break;
         }
 
-        bt_property_t bt_property[] = {
-                {BT_PROPERTY_BDADDR, sizeof(bdaddr), &bdaddr},
-                {BT_PROPERTY_REMOTE_RSSI, sizeof(p_search_data->inq_res.rssi),
-                 &(p_search_data->inq_res.rssi)},
-                {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type}};
-        GetInterfaceToProfiles()->events->invoke_device_found_cb(ARRAY_SIZE(bt_property),
-                                                                 bt_property);
+        if (com::android::bluetooth::flags::get_svc_uuids_from_ble_adv_data() &&
+            com::android::bluetooth::flags::get_svc_uuids_bugfix()) {
+          std::vector<bt_property_t> bt_properties;
+          bt_properties.push_back(bt_property_t{BT_PROPERTY_BDADDR, sizeof(bdaddr), &bdaddr});
+          bt_properties.push_back(bt_property_t{BT_PROPERTY_REMOTE_RSSI,
+                                                sizeof(p_search_data->inq_res.rssi),
+                                                &(p_search_data->inq_res.rssi)});
+          bt_properties.push_back(
+                  bt_property_t{BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type});
+
+          // Report the advertised Service UUIDs.
+          std::vector<uint8_t> uuids_value;
+          add_advertised_uuids_to_properties(bt_properties, p_search_data->inq_res, uuids_value);
+          GetInterfaceToProfiles()->events->invoke_device_found_cb(bt_properties.size(),
+                                                                   bt_properties.data());
+        } else {
+          bt_property_t bt_property[] = {
+                  {BT_PROPERTY_BDADDR, sizeof(bdaddr), &bdaddr},
+                  {BT_PROPERTY_REMOTE_RSSI, sizeof(p_search_data->inq_res.rssi),
+                   &(p_search_data->inq_res.rssi)},
+                  {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type}};
+          GetInterfaceToProfiles()->events->invoke_device_found_cb(ARRAY_SIZE(bt_property),
+                                                                   bt_property);
+        }
         break;
       }
 
@@ -1535,46 +1556,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
         // Scope needs to persist until `invoke_device_found_cb` below.
         std::vector<uint8_t> uuids_value;
         if (com::android::bluetooth::flags::get_svc_uuids_from_ble_adv_data()) {
-          uint8_t inq_result_type = p_search_data->inq_res.inq_result_type;
-          log::debug("Inquiry result type: {} ({})", inq_result_type, bdaddr);
-          bt_properties.push_back(bt_property_t{BT_PROPERTY_DISCOVERY_RESULT_TYPE,
-                                                sizeof(inq_result_type), &inq_result_type});
-
-          if (p_search_data->inq_res.p_eir) {
-            std::list<Uuid> uuids;
-            bool uuid_type_exists = btif_extract_uuids_in_adv_data(
-                    p_search_data->inq_res.p_eir, p_search_data->inq_res.eir_len, bdaddr, &uuids);
-
-            for (auto uuid : uuids) {
-              auto uuid_128bit = uuid.To128BitBE();
-              uuids_value.insert(uuids_value.end(), uuid_128bit.begin(), uuid_128bit.end());
-            }
-
-            if (com::android::bluetooth::flags::get_svc_uuids_bugfix() && uuids_value.empty()) {
-              // If there are no UUIDs, put the reason instead.
-              if (uuid_type_exists) {
-                log::debug("UUID types exist, but list is empty");
-                uuids_value.push_back(BT_REASON_FOR_NO_UUIDS_EMPTY_UUID_LIST);
-              } else {
-                log::debug("No UUID types exist");
-                uuids_value.push_back(BT_REASON_FOR_NO_UUIDS_NO_UUID_TYPES_EXIST);
-              }
-            }
-
-            tBT_TRANSPORT last_inq_result_transport =
-                    p_search_data->inq_res.last_inq_result_transport;
-            log::debug("last_inq_result_transport={}",
-                       bt_transport_text(last_inq_result_transport));
-
-            bt_property_type_t property_type =
-                    (last_inq_result_transport == BT_TRANSPORT_LE)
-                            ? BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA
-                            : BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE;
-
-            bt_properties.push_back(bt_property_t{property_type,
-                                                  static_cast<int>(uuids_value.size()),
-                                                  (void*)uuids_value.data()});
-          }
+          add_advertised_uuids_to_properties(bt_properties, p_search_data->inq_res, uuids_value);
         }
 
         // Floss needs appearance for metrics purposes
@@ -1629,6 +1611,68 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
 
 /*******************************************************************************
  *
+ * Function         add_advertised_uuids_to_properties
+ *
+ * Description      This function adds two properties into the given BT properties:
+ *                  - Discovery result type (BT_PROPERTY_DISCOVERY_RESULT_TYPE)
+ *                  - UUID data if it exists, or reason why it doesn't exist
+ *
+ * Parameters       bt_properties - The vector to store the properties
+ *                  inq_res - Inquiry result for the device
+ *                  uuids_value - An empty list to store uuid values
+ *                                (To maintain variable scope until invoke_device_found_cb)
+ ******************************************************************************/
+static void add_advertised_uuids_to_properties(std::vector<bt_property_t>& bt_properties,
+                                               tBTA_DM_INQ_RES& inq_res,
+                                               std::vector<uint8_t>& uuids_value) {
+  if (!com::android::bluetooth::flags::get_svc_uuids_from_ble_adv_data()) {
+    return;
+  }
+
+  if (!uuids_value.empty()) {
+    log::error("uuids_value is not empty!");
+    return;
+  }
+
+  const RawAddress bdaddr = inq_res.bd_addr;
+  log::debug("Inquiry result type: {} ({})", inq_res.inq_result_type, bdaddr);
+  bt_properties.push_back(bt_property_t{BT_PROPERTY_DISCOVERY_RESULT_TYPE,
+                                        sizeof(inq_res.inq_result_type), &inq_res.inq_result_type});
+
+  if (inq_res.p_eir) {
+    std::list<Uuid> uuids;
+    bool uuid_type_exists =
+            btif_extract_uuids_in_adv_data(inq_res.p_eir, inq_res.eir_len, bdaddr, &uuids);
+
+    for (auto uuid : uuids) {
+      auto uuid_128bit = uuid.To128BitBE();
+      uuids_value.insert(uuids_value.end(), uuid_128bit.begin(), uuid_128bit.end());
+    }
+
+    if (com::android::bluetooth::flags::get_svc_uuids_bugfix() && uuids_value.empty()) {
+      if (uuid_type_exists) {
+        log::debug("UUID types exist, but uuid list is empty");
+        uuids_value.push_back(BT_REASON_FOR_NO_UUIDS_EMPTY_UUID_LIST);
+      } else {
+        log::debug("No UUID types exist");
+        uuids_value.push_back(BT_REASON_FOR_NO_UUIDS_NO_UUID_TYPES_EXIST);
+      }
+    }
+
+    tBT_TRANSPORT last_inq_result_transport = inq_res.last_inq_result_transport;
+    log::debug("last_inq_result_transport={}", bt_transport_text(last_inq_result_transport));
+
+    bt_property_type_t property_type = (last_inq_result_transport == BT_TRANSPORT_LE)
+                                               ? BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA
+                                               : BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE;
+
+    bt_properties.push_back(bt_property_t{property_type, static_cast<int>(uuids_value.size()),
+                                          (void*)uuids_value.data()});
+  }
+}
+
+/*******************************************************************************
+ *
  * Function         btif_extract_uuids_in_adv_data
  *
  * Description      This function parses BLE advertising data (AD) or EIR and returns UUID list.
@@ -1646,8 +1690,8 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
  *                  Also returns false if p_uuid_list is invalid (i.e. not empty or points to null).
  *
  ******************************************************************************/
-static bool btif_extract_uuids_in_adv_data(const uint8_t* p_ad, size_t ad_len, RawAddress& bdaddr,
-                                           std::list<Uuid>* p_uuid_list) {
+static bool btif_extract_uuids_in_adv_data(const uint8_t* p_ad, size_t ad_len,
+                                           const RawAddress& bdaddr, std::list<Uuid>* p_uuid_list) {
   if (p_uuid_list == nullptr || !p_uuid_list->empty()) {
     log::error("p_uuid_list is null or not empty");
     return false;
