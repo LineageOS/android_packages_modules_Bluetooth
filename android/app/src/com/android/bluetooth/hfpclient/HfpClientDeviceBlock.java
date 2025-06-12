@@ -26,9 +26,13 @@ import android.telecom.PhoneAccount;
 import android.telecom.TelecomManager;
 import android.util.Log;
 
+import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 // Helper class that manages the call handling for one device. HfpClientConnectionService holds a
@@ -322,13 +326,19 @@ class HfpClientDeviceBlock {
     private static Bundle getScoStateFromDevice(BluetoothDevice device) {
         Bundle bundle = new Bundle();
 
-        HeadsetClientService headsetClientService = HeadsetClientService.getHeadsetClientService();
-        if (headsetClientService == null) {
+        final Optional<HeadsetClientService> headsetClient;
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            headsetClient =
+                    Optional.ofNullable(AdapterService.deprecatedGetAdapterService())
+                            .flatMap(AdapterService::getHeadsetClientService);
+        } else {
+            headsetClient = Optional.ofNullable(HeadsetClientService.getHeadsetClientService());
+        }
+        if (headsetClient.isEmpty()) {
             return bundle;
         }
 
-        bundle.putInt(KEY_SCO_STATE, headsetClientService.getAudioState(device));
-
+        bundle.putInt(KEY_SCO_STATE, headsetClient.get().getAudioState(device));
         return bundle;
     }
 
