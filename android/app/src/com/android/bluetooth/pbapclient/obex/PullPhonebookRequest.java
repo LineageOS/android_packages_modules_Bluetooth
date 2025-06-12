@@ -24,8 +24,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-final class RequestPullPhonebook extends PbapClientRequest {
-    private static final String TAG = RequestPullPhonebook.class.getSimpleName();
+final class PullPhonebookRequest extends PbapClientRequest {
+    private static final String TAG = PullPhonebookRequest.class.getSimpleName();
 
     private static final String TYPE = "x-bt/phonebook";
 
@@ -41,7 +41,7 @@ final class RequestPullPhonebook extends PbapClientRequest {
         return TYPE_PULL_PHONEBOOK;
     }
 
-    RequestPullPhonebook(String phonebook, PbapApplicationParameters params) {
+    PullPhonebookRequest(String phonebook, PbapApplicationParameters params) {
         mPhonebook = phonebook;
         mFormat = params.getVcardFormat();
         mMaxListCount = params.getMaxListCount();
