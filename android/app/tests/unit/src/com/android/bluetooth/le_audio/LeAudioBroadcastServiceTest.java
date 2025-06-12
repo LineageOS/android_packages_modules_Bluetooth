@@ -134,6 +134,7 @@ public class LeAudioBroadcastServiceTest {
     @Mock private IBinder mBinder;
 
     @Spy private LeAudioObjectsFactory mObjectsFactory = LeAudioObjectsFactory.getInstance();
+    // TODO(b/422543753) Delete on flag cleanup
     @Spy private ServiceFactory mServiceFactory = new ServiceFactory();
 
     private static final int CREATE_BROADCAST_TIMEOUT_MS = 6000;
@@ -222,10 +223,14 @@ public class LeAudioBroadcastServiceTest {
                         mLeAudioBroadcasterNativeInterface);
         mService.setAvailable(true);
 
-        mService.mServiceFactory = mServiceFactory;
-        when(mServiceFactory.getBassClientService()).thenReturn(mBassClientService);
-        // Set up the State Changed receiver
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            doReturn(Optional.of(mBassClientService)).when(mAdapterService).getBassClientService();
+        } else {
+            mService.mServiceFactory = mServiceFactory;
+            when(mServiceFactory.getBassClientService()).thenReturn(mBassClientService);
+        }
 
+        // Set up the State Changed receiver
         when(mAdapterService.getDeviceFromByte(Utils.getBytesFromAddress("FF:FF:FF:FF:FF:FF")))
                 .thenReturn(mBroadcastDevice);
     }

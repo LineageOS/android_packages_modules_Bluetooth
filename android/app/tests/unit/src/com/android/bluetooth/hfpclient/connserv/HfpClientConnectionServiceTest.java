@@ -20,7 +20,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
@@ -55,7 +55,9 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.pbapclient.PbapClientService;
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -70,14 +72,14 @@ import java.util.Optional;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class HfpClientConnectionServiceTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(AdapterService.class);
 
     @Mock private AdapterService mAdapterService;
     @Mock private PbapClientService mPbapClientService;
     @Mock private RemoteDevices mRemoteDevices;
-    @Mock private HeadsetClientService mMockHeadsetClientService;
-    @Mock private TelecomManager mMockTelecomManager;
-    @Mock private Resources mMockResources;
+    @Mock private HeadsetClientService mHeadsetClientService;
+    @Mock private TelecomManager mTelecomManager;
+    @Mock private Resources mResources;
 
     private static final String TEST_NUMBER = "000-111-2222";
 
@@ -96,13 +98,16 @@ public class HfpClientConnectionServiceTest {
                 .getRemoteDevice(anyString());
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
         if (Flags.adapterServiceProfilesUseOptional()) {
+            ExtendedMockito.doReturn(mAdapterService)
+                    .when(() -> AdapterService.deprecatedGetAdapterService());
+            doReturn(Optional.of(mHeadsetClientService))
+                    .when(mAdapterService)
+                    .getHeadsetClientService();
             doReturn(Optional.of(mPbapClientService)).when(mAdapterService).getPbapClientService();
+        } else {
+            when(mHeadsetClientService.isAvailable()).thenReturn(true);
+            HeadsetClientService.setHeadsetClientService(mHeadsetClientService);
         }
-
-        // Set a mocked HeadsetClientService for testing so we can insure the right functions were
-        // called through the service interface
-        when(mMockHeadsetClientService.isAvailable()).thenReturn(true);
-        HeadsetClientService.setHeadsetClientService(mMockHeadsetClientService);
 
         // Spy the connection service under test so we can mock some of the system services and keep
         // them from impacting the actual system. Note: Another way to do this would be to extend
@@ -116,16 +121,22 @@ public class HfpClientConnectionServiceTest {
         doReturn(mHfpClientConnectionService)
                 .when(mHfpClientConnectionService)
                 .getApplicationContext();
-        doReturn(mMockResources).when(mHfpClientConnectionService).getResources();
+        doReturn(mResources).when(mHfpClientConnectionService).getResources();
         doReturn(true)
-                .when(mMockResources)
+                .when(mResources)
                 .getBoolean(R.bool.hfp_client_connection_service_support_emergency_call);
 
-        mockGetSystemService(
-                mHfpClientConnectionService, TelecomManager.class, mMockTelecomManager);
-        doReturn(getPhoneAccount(mDevice)).when(mMockTelecomManager).getPhoneAccount(any());
+        mockGetSystemService(mHfpClientConnectionService, TelecomManager.class, mTelecomManager);
+        doReturn(getPhoneAccount(mDevice)).when(mTelecomManager).getPhoneAccount(any());
 
         mockGetBluetoothManager(mHfpClientConnectionService);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (!Flags.adapterServiceProfilesUseOptional()) {
+            HeadsetClientService.setHeadsetClientService(null);
+        }
     }
 
     private void createService() {
@@ -158,7 +169,7 @@ public class HfpClientConnectionServiceTest {
 
     @Test
     public void startServiceWithAlreadyConnectedDevice_blockIsCreated() throws Exception {
-        when(mMockHeadsetClientService.getConnectedDevices()).thenReturn(List.of(mDevice));
+        when(mHeadsetClientService.getConnectedDevices()).thenReturn(List.of(mDevice));
         createService();
         HfpClientDeviceBlock block = mHfpClientConnectionService.findBlockForDevice(mDevice);
         assertThat(block).isNotNull();
@@ -261,7 +272,7 @@ public class HfpClientConnectionServiceTest {
                         /* multiParty= */ false,
                         /* outgoing= */ true,
                         /* inBandRing= */ true);
-        doReturn(call).when(mMockHeadsetClientService).dial(mDevice, TEST_NUMBER);
+        doReturn(call).when(mHeadsetClientService).dial(mDevice, TEST_NUMBER);
 
         Bundle extras = new Bundle();
         extras.putParcelable(
@@ -318,7 +329,7 @@ public class HfpClientConnectionServiceTest {
 
     @Test
     public void onCreateIncomingConnection_phoneAccountIsNull_returnsNull() throws Exception {
-        doReturn(null).when(mMockTelecomManager).getPhoneAccount(any());
+        doReturn(null).when(mTelecomManager).getPhoneAccount(any());
         createService();
         setupDeviceConnection(mDevice);
 
@@ -349,7 +360,7 @@ public class HfpClientConnectionServiceTest {
 
     @Test
     public void onCreateOutgoingConnection_phoneAccountIsNull_returnsNull() throws Exception {
-        doReturn(null).when(mMockTelecomManager).getPhoneAccount(any());
+        doReturn(null).when(mTelecomManager).getPhoneAccount(any());
         createService();
         setupDeviceConnection(mDevice);
 
@@ -363,7 +374,7 @@ public class HfpClientConnectionServiceTest {
                         /* outgoing= */ true,
                         /* inBandRing= */ true);
 
-        doReturn(call).when(mMockHeadsetClientService).dial(mDevice, TEST_NUMBER);
+        doReturn(call).when(mHeadsetClientService).dial(mDevice, TEST_NUMBER);
 
         Bundle extras = new Bundle();
         extras.putParcelable(
@@ -383,7 +394,7 @@ public class HfpClientConnectionServiceTest {
 
     @Test
     public void onCreateUnknownConnection_phoneAccountIsNull_returnsNull() throws Exception {
-        doReturn(null).when(mMockTelecomManager).getPhoneAccount(any());
+        doReturn(null).when(mTelecomManager).getPhoneAccount(any());
         createService();
         setupDeviceConnection(mDevice);
 

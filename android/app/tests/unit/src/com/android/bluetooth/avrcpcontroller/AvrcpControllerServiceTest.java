@@ -104,7 +104,6 @@ public class AvrcpControllerServiceTest {
         if (Flags.adapterServiceProfilesUseOptional()) {
             doReturn(Optional.of(mA2dpSinkService)).when(mAdapterService).getA2dpSinkService();
         } else {
-            // Set a mock A2dpSinkService for audio focus calls
             A2dpSinkService.setA2dpSinkService(mA2dpSinkService);
         }
 
@@ -168,9 +167,12 @@ public class AvrcpControllerServiceTest {
 
     @Test
     public void setActiveDevice_whenA2dpSinkServiceIsNotInitialized_returnsFalse() {
-        A2dpSinkService.setA2dpSinkService(null);
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            doReturn(Optional.empty()).when(mAdapterService).getA2dpSinkService();
+        } else {
+            A2dpSinkService.setA2dpSinkService(null);
+        }
         assertThat(mService.setActiveDevice(mDevice1)).isFalse();
-
         assertThat(mService.getActiveDevice()).isNull();
     }
 
