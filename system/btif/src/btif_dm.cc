@@ -1536,7 +1536,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
         std::vector<uint8_t> uuids_value;
         if (com::android::bluetooth::flags::get_svc_uuids_from_ble_adv_data()) {
           uint8_t inq_result_type = p_search_data->inq_res.inq_result_type;
-          log::debug("Inquiry result type for {}[{}]", bdaddr, inq_result_type);
+          log::debug("Inquiry result type: {} ({})", inq_result_type, bdaddr);
           bt_properties.push_back(bt_property_t{BT_PROPERTY_DISCOVERY_RESULT_TYPE,
                                                 sizeof(inq_result_type), &inq_result_type});
 
@@ -1544,21 +1544,36 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
             std::list<Uuid> uuids;
             bool uuid_type_exists = btif_extract_uuids_in_adv_data(
                     p_search_data->inq_res.p_eir, p_search_data->inq_res.eir_len, bdaddr, &uuids);
-            if (uuid_type_exists) {
-              for (auto uuid : uuids) {
-                auto uuid_128bit = uuid.To128BitBE();
-                uuids_value.insert(uuids_value.end(), uuid_128bit.begin(), uuid_128bit.end());
-              }
 
-              bt_property_type_t property_type =
-                      (p_search_data->inq_res.last_inq_result_transport == BT_TRANSPORT_LE)
-                              ? BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA
-                              : BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE;
-
-              bt_properties.push_back(bt_property_t{
-                      property_type, static_cast<int>(uuids.size() * Uuid::kNumBytes128),
-                      (void*)uuids_value.data()});
+            for (auto uuid : uuids) {
+              auto uuid_128bit = uuid.To128BitBE();
+              uuids_value.insert(uuids_value.end(), uuid_128bit.begin(), uuid_128bit.end());
             }
+
+            if (com::android::bluetooth::flags::get_svc_uuids_bugfix() && uuids_value.empty()) {
+              // If there are no UUIDs, put the reason instead.
+              if (uuid_type_exists) {
+                log::debug("UUID types exist, but list is empty");
+                uuids_value.push_back(BT_REASON_FOR_NO_UUIDS_EMPTY_UUID_LIST);
+              } else {
+                log::debug("No UUID types exist");
+                uuids_value.push_back(BT_REASON_FOR_NO_UUIDS_NO_UUID_TYPES_EXIST);
+              }
+            }
+
+            tBT_TRANSPORT last_inq_result_transport =
+                    p_search_data->inq_res.last_inq_result_transport;
+            log::debug("last_inq_result_transport={}",
+                       bt_transport_text(last_inq_result_transport));
+
+            bt_property_type_t property_type =
+                    (last_inq_result_transport == BT_TRANSPORT_LE)
+                            ? BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA
+                            : BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE;
+
+            bt_properties.push_back(bt_property_t{property_type,
+                                                  static_cast<int>(uuids_value.size()),
+                                                  (void*)uuids_value.data()});
           }
         }
 
