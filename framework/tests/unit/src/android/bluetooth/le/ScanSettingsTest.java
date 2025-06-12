@@ -24,12 +24,6 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeTrue;
 
 import android.app.compat.CompatChanges;
-import android.platform.test.annotations.DisableFlags;
-import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.CheckFlagsRule;
-import android.platform.test.flag.junit.DeviceFlagsValueProvider;
-
-import com.android.bluetooth.flags.Flags;
 
 import libcore.junit.util.compat.CoreCompatChangeRule;
 import libcore.junit.util.compat.CoreCompatChangeRule.DisableCompatChanges;
@@ -44,8 +38,6 @@ import org.junit.runners.JUnit4;
 /** Test cases for {@link ScanSettings}. */
 @RunWith(JUnit4.class)
 public class ScanSettingsTest {
-    @Rule
-    public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
 
     @Rule public TestRule mCompatChangeRule = new CoreCompatChangeRule();
 
@@ -129,7 +121,6 @@ public class ScanSettingsTest {
 
     @Test
     @DisableCompatChanges(CHANGE_DEFAULT_TRACKABLE_ADV_NUMBER)
-    @DisableFlags(Flags.FLAG_CHANGE_DEFAULT_TRACKABLE_ADV_NUMBER)
     public void builderInitialize_changeDefaultDisabled() {
         ScanSettings settings = new ScanSettings.Builder().build();
 
@@ -138,10 +129,8 @@ public class ScanSettingsTest {
 
     @Test
     @EnableCompatChanges(CHANGE_DEFAULT_TRACKABLE_ADV_NUMBER)
-    @EnableFlags(Flags.FLAG_CHANGE_DEFAULT_TRACKABLE_ADV_NUMBER)
     public void builderInitialize_changeDefaultEnabled() {
         // Added assumption since in a few branches, changeID doesn't seem to be enabled
-        assumeTrue(Flags.changeDefaultTrackableAdvNumber());
         assumeTrue(CompatChanges.isChangeEnabled(CHANGE_DEFAULT_TRACKABLE_ADV_NUMBER));
 
         ScanSettings settings = new ScanSettings.Builder().build();

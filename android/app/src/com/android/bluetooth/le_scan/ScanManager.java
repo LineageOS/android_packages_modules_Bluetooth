@@ -1938,11 +1938,7 @@ public class ScanManager {
             case ScanSettings.MATCH_NUM_ONE_ADVERTISEMENT -> 1;
             case ScanSettings.MATCH_NUM_FEW_ADVERTISEMENT -> 2;
             case ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT -> {
-                if (Flags.changeDefaultTrackableAdvNumber()) {
-                    yield maxTotalTrackableAdvertisements / 4;
-                } else {
-                    yield maxTotalTrackableAdvertisements / 2;
-                }
+                yield maxTotalTrackableAdvertisements / 4;
             }
             default -> {
                 Log.d(TAG, "Invalid setting for getNumOfMatches() " + settings.getNumOfMatches());

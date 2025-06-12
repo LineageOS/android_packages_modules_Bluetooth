@@ -80,7 +80,6 @@ import android.os.Message;
 import android.os.ParcelUuid;
 import android.os.SystemProperties;
 import android.os.WorkSource;
-import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Settings;
@@ -1883,21 +1882,7 @@ public class ScanManagerTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_CHANGE_DEFAULT_TRACKABLE_ADV_NUMBER)
-    public void getNumOfTrackingAdvertisements_withMaxTrackable_flagEnabled() {
-        ScanSettings scanSettings;
-        scanSettings =
-                new ScanSettings.Builder()
-                        .setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT)
-                        .build();
-
-        assertThat(mScanManager.getNumOfTrackingAdvertisements(scanSettings))
-                .isEqualTo(DEFAULT_TOTAL_NUM_OF_TRACKABLE_ADVERTISEMENTS / 2);
-    }
-
-    @Test
-    @EnableFlags(Flags.FLAG_CHANGE_DEFAULT_TRACKABLE_ADV_NUMBER)
-    public void getNumOfTrackingAdvertisements_withMaxTrackable_flagDisabled() {
+    public void getNumOfTrackingAdvertisements_withMaxTrackableAdvertisement() {
         ScanSettings scanSettings;
         scanSettings =
                 new ScanSettings.Builder()
