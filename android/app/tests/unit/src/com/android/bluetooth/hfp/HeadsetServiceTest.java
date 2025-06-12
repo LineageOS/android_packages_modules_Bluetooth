@@ -188,10 +188,11 @@ public class HeadsetServiceTest {
                         })
                 .when(mObjectsFactory)
                 .makeStateMachine(any(), any(), any(), any(), any(), any());
-        doReturn(mSystemInterface).when(mObjectsFactory).makeSystemInterface(any(), any());
+        doReturn(mSystemInterface).when(mObjectsFactory).makeSystemInterface(any(), any(), any());
         mHeadsetService = new HeadsetService(mAdapterService, mNativeInterface);
         mHeadsetService.setAvailable(true);
-        verify(mObjectsFactory).makeSystemInterface(mAdapterService, mHeadsetService);
+        verify(mObjectsFactory)
+                .makeSystemInterface(eq(mAdapterService), eq(mHeadsetService), any());
         mHeadsetService.setForceScoAudio(true);
     }
 

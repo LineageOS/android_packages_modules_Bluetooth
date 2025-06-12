@@ -22,6 +22,7 @@ import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothDevice;
 import android.os.Handler;
+import android.os.Looper;
 import android.telephony.PhoneStateListener;
 import android.telephony.ServiceState;
 import android.telephony.SignalStrength;
@@ -79,7 +80,7 @@ public class HeadsetPhoneState {
 
     private HeadsetPhoneStateListener mPhoneStateListener;
 
-    HeadsetPhoneState(AdapterService adapterService, HeadsetService headsetService) {
+    HeadsetPhoneState(AdapterService adapterService, HeadsetService headsetService, Looper looper) {
         mAdapterService = requireNonNull(adapterService);
         mHeadsetService = requireNonNull(headsetService);
         mTelephonyManager =
@@ -90,7 +91,7 @@ public class HeadsetPhoneState {
                 requireNonNull(mAdapterService.getSystemService(SubscriptionManager.class));
 
         // Initialize subscription on the handler thread
-        mHandler = new Handler(headsetService.getStateMachinesThreadLooper());
+        mHandler = new Handler(looper);
         mSubscriptionManager.addOnSubscriptionsChangedListener(
                 mHandler::post, mOnSubscriptionsChangedListener);
     }
@@ -137,8 +138,7 @@ public class HeadsetPhoneState {
      * @param device remote device that subscribes to this phone state update
      * @param events events in {@link PhoneStateListener} to listen to
      */
-    @VisibleForTesting
-    public void listenForPhoneState(BluetoothDevice device, int events) {
+    void listenForPhoneState(BluetoothDevice device, int events) {
         synchronized (mDeviceEventMap) {
             int prevEvents = getTelephonyEventsToListen();
             if (events == PhoneStateListener.LISTEN_NONE) {

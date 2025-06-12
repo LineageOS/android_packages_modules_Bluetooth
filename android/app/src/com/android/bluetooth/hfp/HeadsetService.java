@@ -205,7 +205,8 @@ public class HeadsetService extends ConnectableProfile {
 
         // Step 3: Initialize system interface
         mSystemInterface =
-                HeadsetObjectsFactory.getInstance().makeSystemInterface(mAdapterService, this);
+                HeadsetObjectsFactory.getInstance()
+                        .makeSystemInterface(mAdapterService, this, mStateMachinesLooper);
         // Step 4: Initialize native interface
         mIsAptXSwbEnabled =
                 SystemProperties.getBoolean("bluetooth.hfp.codec_aptx_voice.enabled", false);
@@ -389,7 +390,7 @@ public class HeadsetService extends ConnectableProfile {
      * @return {@link Looper} for the state machine thread
      */
     @VisibleForTesting
-    public Looper getStateMachinesThreadLooper() {
+    Looper getStateMachinesThreadLooper() {
         return mStateMachinesThread.getLooper();
     }
 
@@ -2059,8 +2060,7 @@ public class HeadsetService extends ConnectableProfile {
      * @param fromState from which connection state is the change
      * @param toState to which connection state is the change
      */
-    @VisibleForTesting
-    public void onConnectionStateChangedFromStateMachine(
+    void onConnectionStateChangedFromStateMachine(
             BluetoothDevice device, int fromState, int toState) {
         if (fromState != STATE_CONNECTED && toState == STATE_CONNECTED) {
             updateInbandRinging(device, true);
@@ -2197,9 +2197,7 @@ public class HeadsetService extends ConnectableProfile {
      * @param fromState from which audio connection state is the change
      * @param toState to which audio connection state is the change
      */
-    @VisibleForTesting
-    public void onAudioStateChangedFromStateMachine(
-            BluetoothDevice device, int fromState, int toState) {
+    void onAudioStateChangedFromStateMachine(BluetoothDevice device, int fromState, int toState) {
         synchronized (mStateMachines) {
             if (toState == BluetoothHeadset.STATE_AUDIO_DISCONNECTED) {
                 if (fromState != BluetoothHeadset.STATE_AUDIO_DISCONNECTED) {

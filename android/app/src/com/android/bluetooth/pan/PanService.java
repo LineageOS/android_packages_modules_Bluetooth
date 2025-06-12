@@ -421,7 +421,6 @@ public class PanService extends ConnectableProfile {
         mHandler.sendMessage(msg);
     }
 
-    @VisibleForTesting
     void onControlStateChanged(int localRole, int state, int error, String ifname) {
         Log.d(TAG, "onControlStateChanged: " + state + ", error: " + error + ", ifname: " + ifname);
         if (error == 0) {

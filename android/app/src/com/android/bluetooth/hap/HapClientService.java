@@ -493,7 +493,6 @@ public class HapClientService extends ConnectableProfile {
         }
     }
 
-    @VisibleForTesting
     int getHapGroup(BluetoothDevice device) {
         final var csipSetCoordinator = getCsipSetCoordinatorService();
         if (csipSetCoordinator.isPresent()) {
@@ -508,13 +507,11 @@ public class HapClientService extends ConnectableProfile {
         return BluetoothCsipSetCoordinator.GROUP_ID_INVALID;
     }
 
-    @VisibleForTesting
     int getActivePresetIndex(BluetoothDevice device) {
         return mDeviceCurrentPresetMap.getOrDefault(
                 device, BluetoothHapClient.PRESET_INDEX_UNAVAILABLE);
     }
 
-    @VisibleForTesting
     BluetoothHapPresetInfo getActivePresetInfo(BluetoothDevice device) {
         int index = getActivePresetIndex(device);
         if (index == BluetoothHapClient.PRESET_INDEX_UNAVAILABLE) {
@@ -546,7 +543,6 @@ public class HapClientService extends ConnectableProfile {
         }
     }
 
-    @VisibleForTesting
     void selectPreset(BluetoothDevice device, int presetIndex) {
         if (presetIndex == BluetoothHapClient.PRESET_INDEX_UNAVAILABLE) {
             int status = BluetoothStatusCodes.ERROR_HAP_INVALID_PRESET_INDEX;
@@ -557,7 +553,6 @@ public class HapClientService extends ConnectableProfile {
         mNativeInterface.selectActivePreset(device, presetIndex);
     }
 
-    @VisibleForTesting
     void selectPresetForGroup(int groupId, int presetIndex) {
         if (!isGroupIdValid(groupId)) {
             int status = BluetoothStatusCodes.ERROR_CSIP_INVALID_GROUP_ID;
@@ -717,7 +712,6 @@ public class HapClientService extends ConnectableProfile {
                 .orElse(false);
     }
 
-    @VisibleForTesting
     void setPresetName(BluetoothDevice device, int presetIndex, String name) {
         if (!isPresetIndexValid(device, presetIndex)) {
             int status = BluetoothStatusCodes.ERROR_HAP_INVALID_PRESET_INDEX;
@@ -730,7 +724,6 @@ public class HapClientService extends ConnectableProfile {
         mNativeInterface.setPresetName(device, presetIndex, name);
     }
 
-    @VisibleForTesting
     void setPresetNameForGroup(int groupId, int presetIndex, String name) {
         if (!isGroupIdValid(groupId)) {
             int status = BluetoothStatusCodes.ERROR_CSIP_INVALID_GROUP_ID;
