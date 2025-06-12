@@ -14,7 +14,7 @@
 import asyncio
 import secrets
 
-from avatar import BumblePandoraDevice, PandoraDevice, PandoraDevices, asynchronous
+from avatar import BumblePandoraDevice, PandoraDevice, PandoraDevices, asynchronous, enableFlag
 from bumble.gatt import GATT_HEARING_ACCESS_SERVICE, GATT_AUDIO_STREAM_CONTROL_SERVICE, GATT_PUBLISHED_AUDIO_CAPABILITIES_SERVICE, GATT_COORDINATED_SET_IDENTIFICATION_SERVICE
 
 from bumble.profiles import hap
@@ -362,7 +362,6 @@ class HapTest(base_test.BaseTestClass):
         await self.dut_hap.SetActivePresetForGroup(connection=self.ref_left.to_ref,
                                                    index=bar_preset.index)
         await self.dut.aio.host.Disconnect(connection=self.ref_left.to_ref)
-        await asyncio.gather(self.ref_left.ref.reset())
 
     @asynchronous
     async def test__set_active_monaural__when_disconnecting__do_not_crash(self) -> None:
@@ -386,6 +385,42 @@ class HapTest(base_test.BaseTestClass):
         await self.dut_hap.SetActivePresetForGroup(connection=self.ref_left.to_ref,
                                                    index=bar_preset.index)
         await asyncio.sleep(3)  # TODO wait event
+
+        await self.ref_left.assert_active_preset(self.dut_hap, bar_preset)
+        await self.ref_right.assert_active_preset(self.dut_hap, bar_preset)
+
+    @asynchronous
+    @enableFlag('com.android.bluetooth.flags.synchronize_preset_can_timeout')
+    async def test__synchronize_operation_failed__when_selecting_preset__can_recover(self) -> None:
+        await self.setup_binaural()
+        await asyncio.sleep(1)  # TODO wait event
+
+        # remove synchronization capabilities
+        self.ref_left.has.other_server_in_binaural_set = None
+        self.ref_right.has.other_server_in_binaural_set = None
+
+        # preliminary check to be sure we are setting a new & different preset
+        await self.ref_left.assert_active_preset(self.dut_hap, foo_preset)
+
+        await self.dut_hap.SetActivePresetForGroup(connection=self.ref_left.to_ref,
+                                                   index=bar_preset.index)
+        await asyncio.sleep(3)  # TODO wait event
+        # Left is updated
+        await self.ref_left.assert_active_preset(self.dut_hap, bar_preset)
+
+        await asyncio.sleep(13)  # Timeout operation is 10 secondes
+
+        # As expected, only left preset has been updated
+        await self.ref_left.assert_active_preset(self.dut_hap, bar_preset)
+        await self.ref_right.assert_active_preset(self.dut_hap, foo_preset)
+
+        # restore synchronization capabilities
+        synchronize_has(self.ref_left, self.ref_right)
+
+        await self.dut_hap.SetActivePresetForGroup(connection=self.ref_left.to_ref,
+                                                   index=bar_preset.index)
+
+        await asyncio.sleep(13)  # TODO wait event + TODO this should be faster
 
         await self.ref_left.assert_active_preset(self.dut_hap, bar_preset)
         await self.ref_right.assert_active_preset(self.dut_hap, bar_preset)

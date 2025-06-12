@@ -1869,8 +1869,7 @@ class HeadsetStateMachine extends StateMachine {
      * @param silence true to enter silence mode, false on exit
      * @return true on success, false on error
      */
-    @VisibleForTesting
-    public boolean setSilenceDevice(boolean silence) {
+    boolean setSilenceDevice(boolean silence) {
         if (silence == mDeviceSilenced) {
             return false;
         }

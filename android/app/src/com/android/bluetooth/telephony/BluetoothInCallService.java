@@ -50,6 +50,7 @@ import android.util.Log;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.le_audio.ContentControlIdKeeper;
@@ -62,6 +63,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.SortedMap;
@@ -193,8 +195,8 @@ public class BluetoothInCallService extends InCallService {
                         intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
                 Log.d(TAG, "Bluetooth Adapter state: " + state);
                 if (state == BluetoothAdapter.STATE_ON) {
-                    registerBearer(TbsService.getTbsService());
-                    queryPhoneState(HeadsetService.getHeadsetService());
+                    registerBearer();
+                    queryPhoneState(getHeadsetService());
                 } else if (state == BluetoothAdapter.STATE_TURNING_OFF) {
                     clear();
                 }
@@ -232,10 +234,10 @@ public class BluetoothInCallService extends InCallService {
                 return;
             }
 
-            final var tbsService = TbsService.getTbsService();
+            final var tbs = getTbsService();
             Integer tbsCallState = getTbsCallState(call);
-            if (tbsService != null && tbsCallState != null) {
-                tbsService.callStateChanged(mCcid, call.getTbsCallId(), tbsCallState);
+            if (tbs.isPresent() && tbsCallState != null) {
+                tbs.get().callStateChanged(mCcid, call.getTbsCallId(), tbsCallState);
             }
 
             // If a BluetoothCall is being put on hold because of a new connecting call, ignore the
@@ -263,7 +265,7 @@ public class BluetoothInCallService extends InCallService {
                 return;
             }
             mLastState = state;
-            updateHeadsetWithCallState(HeadsetService.getHeadsetService(), false /* force */);
+            updateHeadsetWithCallState(getHeadsetService(), false /* force */);
         }
 
         @Override
@@ -274,14 +276,14 @@ public class BluetoothInCallService extends InCallService {
 
         @VisibleForTesting
         void onDetailsChanged(
-                HeadsetService headsetService, BluetoothCall call, Call.Details details) {
+                Optional<HeadsetService> headset, BluetoothCall call, Call.Details details) {
             if (mCallInfo.isNullCall(call)) {
                 return;
             }
             if (call.isExternalCall()) {
-                onCallRemoved(headsetService, call, false /* forceRemoveCallback */);
+                onCallRemoved(headset, call, false /* forceRemoveCallback */);
             } else {
-                onCallAdded(headsetService, call);
+                onCallAdded(headset, call);
             }
         }
 
@@ -289,13 +291,13 @@ public class BluetoothInCallService extends InCallService {
         public void onDetailsChanged(Call call, Call.Details details) {
             super.onDetailsChanged(call, details);
             onDetailsChanged(
-                    HeadsetService.getHeadsetService(),
+                    getHeadsetService(),
                     getBluetoothCallById(System.identityHashCode(call)),
                     details);
         }
 
         @VisibleForTesting
-        void onParentChanged(HeadsetService headsetService, BluetoothCall call) {
+        void onParentChanged(Optional<HeadsetService> headset, BluetoothCall call) {
             if (mCallInfo.isNullCall(call) || call.isExternalCall()) {
                 Log.w(TAG, "null call or external call");
                 return;
@@ -308,20 +310,21 @@ public class BluetoothInCallService extends InCallService {
                         "Ignoring onIsConferenceChanged from child BluetoothCall with new parent");
                 return;
             }
-            updateHeadsetWithCallState(headsetService, false /* force */);
+            updateHeadsetWithCallState(headset, false /* force */);
         }
 
         @Override
         public void onParentChanged(Call call, Call parent) {
             super.onParentChanged(call, parent);
             onParentChanged(
-                    HeadsetService.getHeadsetService(),
-                    getBluetoothCallById(System.identityHashCode(call)));
+                    getHeadsetService(), getBluetoothCallById(System.identityHashCode(call)));
         }
 
         @VisibleForTesting
         void onChildrenChanged(
-                HeadsetService headsetService, BluetoothCall call, List<BluetoothCall> children) {
+                Optional<HeadsetService> headset,
+                BluetoothCall call,
+                List<BluetoothCall> children) {
             if (mCallInfo.isNullCall(call) || call.isExternalCall()) {
                 Log.w(TAG, "null call or external call");
                 return;
@@ -334,14 +337,14 @@ public class BluetoothInCallService extends InCallService {
                 Log.d(TAG, "Ignoring onIsConferenceChanged from parent with only one child call");
                 return;
             }
-            updateHeadsetWithCallState(headsetService, false /* force */);
+            updateHeadsetWithCallState(headset, false /* force */);
         }
 
         @Override
         public void onChildrenChanged(Call call, List<Call> children) {
             super.onChildrenChanged(call, children);
             onChildrenChanged(
-                    HeadsetService.getHeadsetService(),
+                    getHeadsetService(),
                     getBluetoothCallById(System.identityHashCode(call)),
                     getBluetoothCallsByIds(BluetoothCall.getIds(children)));
         }
@@ -374,6 +377,26 @@ public class BluetoothInCallService extends InCallService {
         mAllowVideoAnswer =
                 SystemProperties.getBoolean("bluetooth.hfp.answer_call_with_video.enabled", false);
         mCallInfo = requireNonNullElseGet(callInfo, () -> new CallInfo());
+    }
+
+    // TODO(b/422543753) Delete on flag cleanup
+    Optional<TbsService> getTbsService() {
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            return Optional.ofNullable(AdapterService.deprecatedGetAdapterService())
+                    .flatMap(AdapterService::getTbsService);
+        } else {
+            return Optional.ofNullable(TbsService.getTbsService());
+        }
+    }
+
+    // TODO(b/422543753) Delete on flag cleanup
+    Optional<HeadsetService> getHeadsetService() {
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            return Optional.ofNullable(AdapterService.deprecatedGetAdapterService())
+                    .flatMap(AdapterService::getHeadsetService);
+        } else {
+            return Optional.ofNullable(HeadsetService.getHeadsetService());
+        }
     }
 
     public static BluetoothInCallService getInstance() {
@@ -522,10 +545,10 @@ public class BluetoothInCallService extends InCallService {
         }
     }
 
-    public boolean queryPhoneState(HeadsetService headsetService) {
+    public boolean queryPhoneState(Optional<HeadsetService> headset) {
         synchronized (LOCK) {
             Log.i(TAG, "queryPhoneState");
-            updateHeadsetWithCallState(headsetService, true);
+            updateHeadsetWithCallState(headset, true);
             return true;
         }
     }
@@ -576,7 +599,7 @@ public class BluetoothInCallService extends InCallService {
     }
 
     @VisibleForTesting
-    void onCallAdded(HeadsetService headsetService, BluetoothCall call) {
+    void onCallAdded(Optional<HeadsetService> headset, BluetoothCall call) {
         synchronized (LOCK) {
             if (call.isExternalCall()) {
                 Log.d(TAG, "onCallAdded: external call");
@@ -593,12 +616,12 @@ public class BluetoothInCallService extends InCallService {
                     mMaxNumberOfCalls =
                             Integer.max(mMaxNumberOfCalls, mBluetoothCallHashMap.size());
                 }
-                updateHeadsetWithCallState(headsetService, false /* force */);
+                updateHeadsetWithCallState(headset, false /* force */);
 
-                final var tbsService = TbsService.getTbsService();
+                final var tbs = getTbsService();
                 BluetoothLeCall tbsCall = createTbsCall(call);
-                if (tbsService != null && tbsCall != null) {
-                    tbsService.callAdded(mCcid, tbsCall);
+                if (tbs.isPresent() && tbsCall != null) {
+                    tbs.get().callAdded(mCcid, tbsCall);
                 }
             } else {
                 Log.i(TAG, "onCallAdded: call already exists");
@@ -636,7 +659,7 @@ public class BluetoothInCallService extends InCallService {
     @Override
     public void onCallAdded(Call call) {
         super.onCallAdded(call);
-        onCallAdded(HeadsetService.getHeadsetService(), new BluetoothCall(call));
+        onCallAdded(getHeadsetService(), new BluetoothCall(call));
     }
 
     /**
@@ -649,7 +672,7 @@ public class BluetoothInCallService extends InCallService {
      *     no longer external.
      */
     public void onCallRemoved(
-            HeadsetService headsetService, BluetoothCall call, boolean forceRemoveCallback) {
+            Optional<HeadsetService> headset, BluetoothCall call, boolean forceRemoveCallback) {
         synchronized (LOCK) {
             Log.i(TAG, "onCallRemoved, forceRemoveCallback=" + forceRemoveCallback);
             CallStateCallback callback = getCallback(call);
@@ -694,7 +717,7 @@ public class BluetoothInCallService extends InCallService {
                 }
             }
 
-            updateHeadsetWithCallState(headsetService, false /* force */);
+            updateHeadsetWithCallState(headset, false /* force */);
 
             if (Flags.maintainCallIndexAfterConference()
                     && mConferenceCallClccIndexMap.size() > 0) {
@@ -706,9 +729,9 @@ public class BluetoothInCallService extends InCallService {
                 }
             }
 
-            final var tbsService = TbsService.getTbsService();
-            if (tbsService != null) {
-                tbsService.callRemoved(mCcid, call.getTbsCallId(), getTbsTerminationReason(call));
+            final var tbs = getTbsService();
+            if (tbs.isPresent()) {
+                tbs.get().callRemoved(mCcid, call.getTbsCallId(), getTbsTerminationReason(call));
             }
         }
     }
@@ -721,8 +744,7 @@ public class BluetoothInCallService extends InCallService {
             Log.w(TAG, "onCallRemoved, BluetoothCall is removed before registered");
             return;
         }
-        onCallRemoved(
-                HeadsetService.getHeadsetService(), bluetoothCall, true /* forceRemoveCallback */);
+        onCallRemoved(getHeadsetService(), bluetoothCall, true /* forceRemoveCallback */);
     }
 
     @Override
@@ -742,7 +764,7 @@ public class BluetoothInCallService extends InCallService {
             IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
             intentFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
             registerReceiver(mBluetoothAdapterReceiver, intentFilter);
-            registerBearer(TbsService.getTbsService());
+            registerBearer();
             sInstance = this;
         }
     }
@@ -769,10 +791,7 @@ public class BluetoothInCallService extends InCallService {
             unregisterReceiver(mBluetoothAdapterReceiver);
             mBluetoothAdapterReceiver = null;
         }
-        final var tbsService = TbsService.getTbsService();
-        if (tbsService != null) {
-            tbsService.unregisterBearer(TAG);
-        }
+        getTbsService().ifPresent(tbs -> tbs.unregisterBearer(TAG));
         mCcid = ContentControlIdKeeper.CCID_INVALID;
         sInstance = null;
         mCallbacks.clear();
@@ -1145,7 +1164,7 @@ public class BluetoothInCallService extends InCallService {
                     && activeCall.can(Connection.CAPABILITY_SWAP_CONFERENCE)) {
                 activeCall.swapConference();
                 Log.i(TAG, "CDMA calls in conference swapped, updating headset");
-                updateHeadsetWithCallState(headsetService, true /* force */);
+                updateHeadsetWithCallState(Optional.ofNullable(headsetService), true /* force */);
                 return true;
             } else if (!mCallInfo.isNullCall(ringingCall)) {
                 int callState =
@@ -1189,22 +1208,24 @@ public class BluetoothInCallService extends InCallService {
         return false;
     }
 
-    private void registerBearer(TbsService tbsService) {
-        if (tbsService == null) {
+    private void registerBearer() {
+        final var tbs = getTbsService();
+        if (tbs.isEmpty()) {
             Log.i(TAG, "registerBearer skipped: No tbs service");
             return;
         }
 
-        tbsService.registerBearer(
-                TAG,
-                mBluetoothLeCallControlCallback,
-                TAG,
-                List.of("tel"),
-                Capability.HOLD_CALL,
-                getNetworkOperator(),
-                getBearerTechnology());
+        tbs.get()
+                .registerBearer(
+                        TAG,
+                        mBluetoothLeCallControlCallback,
+                        TAG,
+                        List.of("tel"),
+                        Capability.HOLD_CALL,
+                        getNetworkOperator(),
+                        getBearerTechnology());
 
-        sendTbsCurrentCallsList(tbsService);
+        sendTbsCurrentCallsList(tbs.get());
     }
 
     private void sendTbsCurrentCallsList(TbsService tbsService) {
@@ -1227,8 +1248,8 @@ public class BluetoothInCallService extends InCallService {
      *     state have occurred, {@code false} if the state should only be sent if the state has
      *     changed.
      */
-    private void updateHeadsetWithCallState(HeadsetService headsetService, boolean force) {
-        if (headsetService == null) {
+    private void updateHeadsetWithCallState(Optional<HeadsetService> headset, boolean force) {
+        if (headset.isEmpty()) {
             Log.i(TAG, "updateHeadsetWithCallState skipped: No headset service");
             return;
         }
@@ -1319,17 +1340,16 @@ public class BluetoothInCallService extends InCallService {
         // Some devices expect to see a DIALING state prior to seeing an ALERTING state
         // so we need to send it first.
         if (mBluetoothCallState != bluetoothCallState && bluetoothCallState == CallState.ALERTING) {
-            phoneStateChanged(headsetService, CallState.DIALING, ringingName);
+            phoneStateChanged(headset.get(), CallState.DIALING, ringingName);
         }
 
-        phoneStateChanged(headsetService, bluetoothCallState, ringingName);
+        phoneStateChanged(headset.get(), bluetoothCallState, ringingName);
 
         mBluetoothCallState = bluetoothCallState;
         mHeadsetUpdatedRecently = true;
     }
 
-    private void phoneStateChanged(
-            HeadsetService headsetService, int callState, String ringingName) {
+    private void phoneStateChanged(HeadsetService headset, int callState, String ringingName) {
         Log.i(
                 TAG,
                 "updateHeadsetWithCallState "
@@ -1337,7 +1357,7 @@ public class BluetoothInCallService extends InCallService {
                         + (" numHeld=" + mNumHeldCalls)
                         + (" callState=" + callState)
                         + (" ringingType=" + mRingingAddressType));
-        headsetService.phoneStateChanged(
+        headset.phoneStateChanged(
                 mNumActiveCalls,
                 mNumHeldCalls,
                 callState,
@@ -1743,10 +1763,9 @@ public class BluetoothInCallService extends InCallService {
                                             : VideoProfile.STATE_AUDIO_ONLY;
                             call.answer(callState);
                         }
-                        final var tbsService = TbsService.getTbsService();
-                        if (tbsService != null) {
-                            tbsService.requestResult(mCcid, requestId, result);
-                        }
+                        final var resultFinal = result;
+                        getTbsService()
+                                .ifPresent(tbs -> tbs.requestResult(mCcid, requestId, resultFinal));
                     }
                 }
 
@@ -1763,10 +1782,9 @@ public class BluetoothInCallService extends InCallService {
                             mIsTerminatedByClient = true;
                             call.disconnect();
                         }
-                        final var tbsService = TbsService.getTbsService();
-                        if (tbsService != null) {
-                            tbsService.requestResult(mCcid, requestId, result);
-                        }
+                        final var resultFinal = result;
+                        getTbsService()
+                                .ifPresent(tbs -> tbs.requestResult(mCcid, requestId, resultFinal));
                     }
                 }
 
@@ -1782,10 +1800,9 @@ public class BluetoothInCallService extends InCallService {
                         } else {
                             call.hold();
                         }
-                        final var tbsService = TbsService.getTbsService();
-                        if (tbsService != null) {
-                            tbsService.requestResult(mCcid, requestId, result);
-                        }
+                        final var resultFinal = result;
+                        getTbsService()
+                                .ifPresent(tbs -> tbs.requestResult(mCcid, requestId, resultFinal));
                     }
                 }
 
@@ -1801,19 +1818,19 @@ public class BluetoothInCallService extends InCallService {
                         } else {
                             call.unhold();
                         }
-                        final var tbsService = TbsService.getTbsService();
-                        if (tbsService != null) {
-                            tbsService.requestResult(mCcid, requestId, result);
-                        }
+                        final var resultFinal = result;
+                        getTbsService()
+                                .ifPresent(tbs -> tbs.requestResult(mCcid, requestId, resultFinal));
                     }
                 }
 
                 @Override
                 public void onPlaceCall(int requestId, ParcelUuid uuid, String uri) {
-                    final var tbsService = TbsService.getTbsService();
-                    if (tbsService != null) {
-                        tbsService.requestResult(mCcid, requestId, Result.ERROR_APPLICATION);
-                    }
+                    getTbsService()
+                            .ifPresent(
+                                    tbs ->
+                                            tbs.requestResult(
+                                                    mCcid, requestId, Result.ERROR_APPLICATION));
                 }
 
                 @Override
@@ -1832,11 +1849,9 @@ public class BluetoothInCallService extends InCallService {
                                     TAG,
                                     "TBS - onJoinCalls, join call number is invalid: "
                                             + callIds.size());
-                            final var tbsService = TbsService.getTbsService();
-                            if (tbsService != null) {
-                                tbsService.requestResult(
-                                        mCcid, requestId, Result.ERROR_UNKNOWN_CALL_ID);
-                            }
+                            final var result = Result.ERROR_UNKNOWN_CALL_ID;
+                            getTbsService()
+                                    .ifPresent(tbs -> tbs.requestResult(mCcid, requestId, result));
                             return;
                         }
 
@@ -1866,10 +1881,9 @@ public class BluetoothInCallService extends InCallService {
                             result = Result.ERROR_UNKNOWN_CALL_ID;
                         }
 
-                        final var tbsService = TbsService.getTbsService();
-                        if (tbsService != null) {
-                            tbsService.requestResult(mCcid, requestId, result);
-                        }
+                        final var resultFinal = result;
+                        getTbsService()
+                                .ifPresent(tbs -> tbs.requestResult(mCcid, requestId, resultFinal));
                     }
                 }
             };

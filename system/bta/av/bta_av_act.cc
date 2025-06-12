@@ -1409,10 +1409,8 @@ void bta_av_disable(tBTA_AV_CB* p_cb, tBTA_AV_DATA* /* p_data */) {
       p_cb->p_scb[xx]->link_signalling_timer = NULL;
       alarm_free(p_cb->p_scb[xx]->accept_signalling_timer);
       p_cb->p_scb[xx]->accept_signalling_timer = NULL;
-      if (com::android::bluetooth::flags::avdt_handle_signaling_on_peer_failure()) {
-        alarm_free(p_cb->p_scb[xx]->accept_open_timer);
-        p_cb->p_scb[xx]->accept_open_timer = NULL;
-      }
+      alarm_free(p_cb->p_scb[xx]->accept_open_timer);
+      p_cb->p_scb[xx]->accept_open_timer = NULL;
       hdr.layer_specific = xx + 1;
       bta_av_api_deregister((tBTA_AV_DATA*)&hdr);
       disabling_in_progress = true;

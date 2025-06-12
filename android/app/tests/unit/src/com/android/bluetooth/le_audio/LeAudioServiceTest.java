@@ -35,6 +35,7 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
+import static com.android.tests.bluetooth.Utils.FlagsWrapper;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -75,7 +76,6 @@ import android.os.ParcelUuid;
 import android.os.RemoteException;
 import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.sysprop.BluetoothProperties;
 
@@ -216,15 +216,15 @@ public class LeAudioServiceTest {
     private InOrder mInOrder;
 
     @Parameters(name = "{0}")
-    public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.progressionOf(
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(
                 Flags.FLAG_LEAUDIO_BROADCAST_PRIMARY_GROUP_SELECTION,
                 Flags.FLAG_LEAUDIO_BROADCAST_API_MANAGE_PRIMARY_GROUP,
                 Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK);
     }
 
-    public LeAudioServiceTest(FlagsParameterization flags) {
-        mSetFlagsRule = new SetFlagsRule(flags);
+    public LeAudioServiceTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
     }
 
     @Before

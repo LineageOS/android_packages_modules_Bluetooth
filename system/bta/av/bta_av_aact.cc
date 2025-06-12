@@ -875,9 +875,7 @@ void bta_av_cleanup(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* /* p_data */) {
   alarm_cancel(p_scb->avrc_ct_timer);
   alarm_cancel(p_scb->link_signalling_timer);
   alarm_cancel(p_scb->accept_signalling_timer);
-  if (com::android::bluetooth::flags::avdt_handle_signaling_on_peer_failure()) {
-    alarm_cancel(p_scb->accept_open_timer);
-  }
+  alarm_cancel(p_scb->accept_open_timer);
 
   if (p_scb->deregistering) {
     /* remove stream */
@@ -1010,9 +1008,7 @@ void bta_av_disconnect_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* /* p_data */) {
   alarm_cancel(p_scb->link_signalling_timer);
   alarm_cancel(p_scb->accept_signalling_timer);
   alarm_cancel(p_scb->avrc_ct_timer);
-  if (com::android::bluetooth::flags::avdt_handle_signaling_on_peer_failure()) {
-    alarm_cancel(p_scb->accept_open_timer);
-  }
+  alarm_cancel(p_scb->accept_open_timer);
   // conn_lcb is the index bitmask of all used LCBs, and since LCB and SCB use
   // the same index, it should be safe to use SCB index here.
   if ((bta_av_cb.conn_lcb & (1 << p_scb->hdi)) != 0) {
@@ -1120,18 +1116,16 @@ void bta_av_setconfig_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       p_scb->uuid_int = p_scb->open_api.uuid;
     }
     bta_av_discover_req(p_scb, NULL);
-    if (com::android::bluetooth::flags::avdt_handle_signaling_on_peer_failure()) {
-      // Set timer to initiate stream opening if peer doesn't
-      if (!p_scb->accept_open_timer) {
-        p_scb->accept_open_timer = alarm_new("accept_open_timer");
-      }
-      const uint64_t accept_open_timeout =
-              android::sysprop::bluetooth::A2dp::avdt_accept_open_timeout_ms().value_or(
-                      BTA_AV_ACCEPT_OPEN_TIMEOUT_MS);
-      log::debug("accept_open_timeout = {} ms", accept_open_timeout);
-      alarm_set_on_mloop(p_scb->accept_open_timer, accept_open_timeout,
-                         bta_av_accept_open_timer_cback, UINT_TO_PTR(p_scb->hdi));
+    // Set timer to initiate stream opening if peer doesn't
+    if (!p_scb->accept_open_timer) {
+      p_scb->accept_open_timer = alarm_new("accept_open_timer");
     }
+    const uint64_t accept_open_timeout =
+            android::sysprop::bluetooth::A2dp::avdt_accept_open_timeout_ms().value_or(
+                    BTA_AV_ACCEPT_OPEN_TIMEOUT_MS);
+    log::debug("accept_open_timeout = {} ms", accept_open_timeout);
+    alarm_set_on_mloop(p_scb->accept_open_timer, accept_open_timeout,
+                       bta_av_accept_open_timer_cback, UINT_TO_PTR(p_scb->hdi));
   }
 }
 
@@ -1151,9 +1145,7 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   log::verbose("peer {} bta_handle: 0x{:x}", p_scb->PeerAddress(), p_scb->hndl);
 
-  if (com::android::bluetooth::flags::avdt_handle_signaling_on_peer_failure()) {
-    alarm_cancel(p_scb->accept_open_timer);
-  }
+  alarm_cancel(p_scb->accept_open_timer);
   msg.hdr.layer_specific = p_scb->hndl;
   msg.is_up = true;
   msg.peer_addr = p_scb->PeerAddress();
@@ -2530,9 +2522,7 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   }
 
   suspend_rsp.status = BTA_AV_SUCCESS;
-  bool handle_bad_state = (err_code != AVDT_ERR_BAD_STATE) ||
-                          com::android::bluetooth::flags::avdt_handle_suspend_cfm_bad_state();
-  if (err_code && handle_bad_state) {
+  if (err_code) {
     suspend_rsp.status = BTA_AV_FAIL;
 
     log::error("suspend failed, closing connection");
@@ -3005,11 +2995,9 @@ void bta_av_open_at_inc(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     /* SNK did not start signalling or failed to complete the AVDT configuration in time. */
     /* API was called N seconds timeout. */
     /* We need to switch to INIT state and start opening connection. */
-    if (com::android::bluetooth::flags::avdt_handle_signaling_on_peer_failure()) {
-      // Reset peer device
-      bta_av_cco_close(p_scb, p_data);
-      alarm_cancel(p_scb->avrc_ct_timer);
-    }
+    // Reset peer device
+    bta_av_cco_close(p_scb, p_data);
+    alarm_cancel(p_scb->avrc_ct_timer);
     p_scb->coll_mask = 0;
     bta_av_set_scb_sst_init(p_scb);
 

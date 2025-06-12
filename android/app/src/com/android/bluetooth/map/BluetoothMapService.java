@@ -138,6 +138,7 @@ public class BluetoothMapService extends ConnectableProfile {
     private boolean mSdpSearchInitiated = false;
     private SdpMnsRecord mMnsRecord = null;
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static BluetoothMapService sBluetoothMapService;
 
     private static final ParcelUuid[] MAP_UUIDS = {
@@ -684,6 +685,7 @@ public class BluetoothMapService extends ConnectableProfile {
     /**
      * @return current instance of {@link BluetoothMapService}
      */
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized BluetoothMapService getBluetoothMapService() {
         if (sBluetoothMapService == null) {
             Log.w(TAG, "getBluetoothMapService(): service is null");
@@ -706,6 +708,7 @@ public class BluetoothMapService extends ConnectableProfile {
         return sBluetoothMapService;
     }
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static synchronized void setBluetoothMapService(BluetoothMapService instance) {
         Log.d(TAG, "setBluetoothMapService(): set to: " + instance);
         sBluetoothMapService = instance;

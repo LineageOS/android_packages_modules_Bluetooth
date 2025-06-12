@@ -73,6 +73,7 @@ public class HeadsetClientService extends ConnectableProfile {
     // Maximum number of devices we can try connecting to in one session
     private static final int MAX_STATE_MACHINES_POSSIBLE = 100;
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static HeadsetClientService sHeadsetClientService;
 
     // This is also used as a lock for shared data in {@link HeadsetClientService}
@@ -294,6 +295,7 @@ public class HeadsetClientService extends ConnectableProfile {
     }
 
     // API methods
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized HeadsetClientService getHeadsetClientService() {
         if (sHeadsetClientService == null) {
             Log.w(TAG, "getHeadsetClientService(): service is null");
@@ -308,6 +310,7 @@ public class HeadsetClientService extends ConnectableProfile {
 
     /** Set a {@link HeadsetClientService} instance. */
     @VisibleForTesting(visibility = VisibleForTesting.Visibility.PRIVATE)
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized void setHeadsetClientService(HeadsetClientService instance) {
         Log.d(TAG, "setHeadsetClientService(): set to: " + instance);
         sHeadsetClientService = instance;

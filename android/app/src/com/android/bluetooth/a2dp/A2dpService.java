@@ -79,6 +79,7 @@ public class A2dpService extends ConnectableProfile {
     // TODO(b/240635097): remove in U
     private static final int SOURCE_CODEC_TYPE_OPUS = 6;
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static A2dpService sA2dpService;
 
     private final A2dpNativeInterface mNativeInterface;
@@ -215,6 +216,7 @@ public class A2dpService extends ConnectableProfile {
         return mCompanionDeviceManager;
     }
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized A2dpService getA2dpService() {
         if (sA2dpService == null) {
             Log.w(TAG, "getA2dpService(): service is null");
@@ -227,6 +229,7 @@ public class A2dpService extends ConnectableProfile {
         return sA2dpService;
     }
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static synchronized void setA2dpService(A2dpService instance) {
         Log.d(TAG, "setA2dpService(): set to: " + instance);
         sA2dpService = instance;
@@ -344,7 +347,6 @@ public class A2dpService extends ConnectableProfile {
      *     for incoming connection request
      * @return true if connection is allowed, otherwise false
      */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
     public boolean okToConnect(BluetoothDevice device, boolean isOutgoingRequest) {
         Log.i(TAG, "okToConnect: device " + device + " isOutgoingRequest: " + isOutgoingRequest);
         // Check if this is an incoming connection in Quiet mode.

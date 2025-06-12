@@ -32,6 +32,7 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockSystemPropertyGet;
+import static com.android.tests.bluetooth.Utils.FlagsWrapper;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -72,7 +73,6 @@ import android.os.RemoteException;
 import android.os.SystemProperties;
 import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.telecom.PhoneAccount;
 
@@ -120,12 +120,12 @@ public class HeadsetServiceAndStateMachineTest {
     @Rule public final SetFlagsRule mSetFlagsRule;
 
     @Parameters(name = "{0}")
-    public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.allCombinationsOf(FLAG_SCO_MANAGED_BY_AUDIO);
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(FLAG_SCO_MANAGED_BY_AUDIO);
     }
 
-    public HeadsetServiceAndStateMachineTest(FlagsParameterization flags) {
-        mSetFlagsRule = new SetFlagsRule(flags);
+    public HeadsetServiceAndStateMachineTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
     }
 
     @Rule
@@ -227,7 +227,7 @@ public class HeadsetServiceAndStateMachineTest {
                 .when(mObjectsFactory)
                 .makeStateMachine(any(), any(), any(), any(), any(), any());
         // Mock methods in HeadsetObjectsFactory
-        doReturn(mSystemInterface).when(mObjectsFactory).makeSystemInterface(any(), any());
+        doReturn(mSystemInterface).when(mObjectsFactory).makeSystemInterface(any(), any(), any());
 
         mTestLooper = new TestLooper();
 
@@ -240,7 +240,8 @@ public class HeadsetServiceAndStateMachineTest {
                             mAudioDeviceCallbackArgumentCaptor.capture(), any());
         }
 
-        verify(mObjectsFactory).makeSystemInterface(mAdapterService, mHeadsetService);
+        verify(mObjectsFactory)
+                .makeSystemInterface(mAdapterService, mHeadsetService, mTestLooper.getLooper());
         verify(mNativeInterface).init(MAX_HEADSET_CONNECTIONS + 1, true /* inband ringtone */);
         verify(mNativeInterface).setIsScoManagedByAudio(scoManagedByAudio());
 

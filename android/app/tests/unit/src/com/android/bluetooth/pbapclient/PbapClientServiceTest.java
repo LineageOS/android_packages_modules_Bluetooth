@@ -26,6 +26,7 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.tests.bluetooth.Utils.FlagsWrapper;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -54,7 +55,6 @@ import android.net.Uri;
 import android.os.UserManager;
 import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.CallLog;
 import android.test.mock.MockContentProvider;
@@ -126,12 +126,12 @@ public class PbapClientServiceTest {
     private PbapClientService.PbapClientStateMachineCallback mDeviceCallback;
 
     @Parameters(name = "{0}")
-    public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.progressionOf(Flags.FLAG_PBAP_CLIENT_STORAGE_REFACTOR);
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(Flags.FLAG_PBAP_CLIENT_STORAGE_REFACTOR);
     }
 
-    public PbapClientServiceTest(FlagsParameterization flags) {
-        mSetFlagsRule = new SetFlagsRule(flags);
+    public PbapClientServiceTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
     }
 
     @Before

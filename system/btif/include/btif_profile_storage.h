@@ -26,9 +26,11 @@
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
+namespace bluetooth::asha {
 struct HearingDevice;
+}  // namespace bluetooth::asha
 
-void btif_storage_add_hearing_aid(const HearingDevice& dev_info);
+void btif_storage_add_hearing_aid(const bluetooth::asha::HearingDevice& dev_info);
 
 void btif_storage_add_leaudio_has_device(const RawAddress& address,
                                          std::vector<uint8_t> presets_bin, uint8_t features,

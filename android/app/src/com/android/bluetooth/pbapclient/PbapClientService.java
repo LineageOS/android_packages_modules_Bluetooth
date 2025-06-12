@@ -64,6 +64,7 @@ public class PbapClientService extends ConnectableProfile {
     // MAXIMUM_DEVICES set to 10 to prevent an excessive number of simultaneous devices.
     private static final int MAXIMUM_DEVICES = 10;
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static PbapClientService sPbapClientService;
 
     @VisibleForTesting
@@ -508,6 +509,7 @@ public class PbapClientService extends ConnectableProfile {
     // *********************************************************************************************
 
     /** Get the singleton instance of PbapClientService, if one exists */
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized PbapClientService getPbapClientService() {
         if (sPbapClientService == null) {
             Log.w(TAG, "getPbapClientService(): service is null");
@@ -526,6 +528,7 @@ public class PbapClientService extends ConnectableProfile {
      * <p>This function is meant to be used by tests only.
      */
     @VisibleForTesting
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     static synchronized void setPbapClientService(PbapClientService instance) {
         Log.v(TAG, "setPbapClientService(): set to: " + instance);
         sPbapClientService = instance;

@@ -96,7 +96,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="799"
+            line="777"
             column="9"/>
     </issue>
 
@@ -107,7 +107,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="799"
+            line="777"
             column="9"/>
     </issue>
 
@@ -118,7 +118,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="799"
+            line="777"
             column="9"/>
     </issue>
 
@@ -129,7 +129,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="799"
+            line="777"
             column="9"/>
     </issue>
 
@@ -244,545 +244,6 @@
     </issue>
 
     <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        mAvrcpController.onConnectionStateChanged("
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="118"
-            column="26"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        mAvrcpController.handlePlayerAppSetting(device, playerAttribRsp, rspLen);"
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="136"
-            column="26"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        mAvrcpController.handleSetAbsVolume(device, absVol, label);"
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="152"
-            column="26"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        mAvrcpController.handleRegisterNotificationAbsVol(device, label);"
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="160"
-            column="26"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        mAvrcpController.onTrackChanged(device, numAttributes, attributes, attribVals);"
-        errorLine2="                         ~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="168"
-            column="26"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        mAvrcpController.onPlayPositionChanged(device, songLen, currSongPosition);"
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="176"
-            column="26"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        mAvrcpController.onPlayStatusChanged(device, toPlaybackStateFromJni(playStatus));"
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="184"
-            column="26"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        mAvrcpController.handleChangeFolderRsp(device, count);"
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="215"
-            column="26"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        mAvrcpController.handleSetBrowsedPlayerRsp(device, items, depth);"
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="222"
-            column="26"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        mAvrcpController.handleSetAddressedPlayerRsp(device, status);"
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="229"
-            column="26"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        mAvrcpController.handleAddressedPlayerChanged(device, id);"
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="236"
-            column="26"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        mAvrcpController.handleNowPlayingContentChanged(device);"
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="242"
-            column="26"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        mAvrcpController.onAvailablePlayerChanged(device);"
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface.java"
-            line="248"
-            column="26"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            mRemoteDevices.addDeviceProperties(address);"
-        errorLine2="                           ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/BondStateMachine.java"
-            line="690"
-            column="28"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            mRemoteDevices.addDeviceProperties(address);"
-        errorLine2="                           ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/BondStateMachine.java"
-            line="720"
-            column="28"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                sm.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, stackEvent);"
-        errorLine2="                                                              ~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/csip/CsipSetCoordinatorService.java"
-            line="846"
-            column="63"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        return new HapClientServiceBinder(this);"
-        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hap/HapClientService.java"
-            line="157"
-            column="16"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        mHandler = new Handler(headsetService.getStateMachinesThreadLooper());"
-        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetPhoneState.java"
-            line="93"
-            column="47"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            if (stateMachine.getConnectionState() != STATE_DISCONNECTED) {"
-        errorLine2="                             ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="546"
-            column="30"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            int connectionState = stateMachine.getConnectionState();"
-        errorLine2="                                               ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="608"
-            column="48"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            int connectionState = stateMachine.getConnectionState();"
-        errorLine2="                                               ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="656"
-            column="48"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                if (stateMachine.getConnectionState() == STATE_CONNECTED) {"
-        errorLine2="                                 ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="675"
-            column="34"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            return stateMachine.getConnectionState();"
-        errorLine2="                                ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="723"
-            column="33"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            int connectionState = stateMachine.getConnectionState();"
-        errorLine2="                                               ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="847"
-            column="48"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            int connectionState = stateMachine.getConnectionState();"
-        errorLine2="                                               ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="935"
-            column="48"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            if (stateMachine.getConnectionState() != STATE_CONNECTED) {"
-        errorLine2="                             ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1334"
-            column="30"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            int connectionState = stateMachine.getConnectionState();"
-        errorLine2="                                               ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1906"
-            column="48"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within package private scope"
-        errorLine1="                if (a2dpService != null &amp;&amp; a2dpService.okToConnect(device, true)) {"
-        errorLine2="                                                       ~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="2363"
-            column="56"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            mHeadsetService.onConnectionStateChangedFromStateMachine(device, fromState, toState);"
-        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
-            line="352"
-            column="29"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            mHeadsetService.onAudioStateChangedFromStateMachine(device, fromState, toState);"
-        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
-            line="377"
-            column="29"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        mSystemInterface.getHeadsetPhoneState().listenForPhoneState(mDevice, events);"
-        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetStateMachine.java"
-            line="2785"
-            column="49"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            sm.sendMessage(HearingAidStateMachine.MESSAGE_STACK_EVENT, stackEvent);"
-        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hearingaid/HearingAidService.java"
-            line="598"
-            column="51"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This class should only be accessed from tests or within private scope"
-        errorLine1="    public LeAudioTmapGattServer getTmapGattServer(Context context) {"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/le_audio/LeAudioObjectsFactory.java"
-            line="67"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        return new LeAudioTmapGattServer("
-        errorLine2="               ^">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/le_audio/LeAudioObjectsFactory.java"
-            line="68"
-            column="16"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                new LeAudioTmapGattServer.BluetoothGattServerProxy(context));"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/le_audio/LeAudioObjectsFactory.java"
-            line="69"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This class should only be accessed from tests or within private scope"
-        errorLine1="    LeAudioTmapGattServer mTmapGattServer;"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/le_audio/LeAudioService.java"
-            line="207"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            mTmapGattServer.start(mTmapRoleMask);"
-        errorLine2="                            ~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/le_audio/LeAudioService.java"
-            line="640"
-            column="29"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            mTmapGattServer.stop();"
-        errorLine2="                            ~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/le_audio/LeAudioService.java"
-            line="728"
-            column="29"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                sm.sendMessage(LeAudioStateMachine.STACK_EVENT, stackEvent);"
-        errorLine2="                                                   ~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/le_audio/LeAudioService.java"
-            line="2777"
-            column="52"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                sm.sendMessage(LeAudioStateMachine.STACK_EVENT, stackEvent);"
-        errorLine2="                                                   ~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/le_audio/LeAudioService.java"
-            line="3525"
-            column="52"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                &amp;&amp; !TbsGatt.UUID_GTBS.equals(userUuid.getUuid())) {"
-        errorLine2="                            ~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/le_audio/LeAudioService.java"
-            line="4711"
-            column="29"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            mService.cleanupDevice(mDevice, this);"
-        errorLine2="                     ~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/mapclient/MceStateMachine.java"
-            line="288"
-            column="22"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="        mPanService.onControlStateChanged(localRole, convertHalState(halState), error, ifname);"
-        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/pan/PanNativeInterface.java"
-            line="65"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            if (!mAdapterService.isProfileSupported(dev, BluetoothProfile.LE_AUDIO)) {"
-        errorLine2="                                 ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/PhonePolicy.java"
-            line="197"
-            column="34"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            if (mAdapterService.isProfileSupported(dev, BluetoothProfile.HEARING_AID)) {"
-        errorLine2="                                ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/PhonePolicy.java"
-            line="202"
-            column="33"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                || !mAdapterService.isProfileSupported(device, BluetoothProfile.LE_AUDIO)) {"
-        errorLine2="                                    ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/PhonePolicy.java"
-            line="543"
-            column="37"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            a2dpService.setSilenceMode(device, state);"
-        errorLine2="                        ~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/SilenceDeviceManager.java"
-            line="236"
-            column="25"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="            headsetService.setSilenceMode(device, state);"
-        errorLine2="                           ~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/SilenceDeviceManager.java"
-            line="240"
-            column="28"/>
-    </issue>
-
-    <issue
-        id="VisibleForTests"
-        message="This method should only be accessed from tests or within private scope"
-        errorLine1="                        new ParcelUuid(TbsGatt.UUID_GTBS),"
-        errorLine2="                                               ~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/tbs/TbsGeneric.java"
-            line="177"
-            column="48"/>
-    </issue>
-
-    <issue
         id="ExportedReceiver"
         message="Exported receiver does not require permission"
         errorLine1="        &lt;receiver android:process=&quot;@string/process&quot; android:name=&quot;com.android.bluetooth.opp.BluetoothOppReceiver&quot; android:exported=&quot;true&quot; android:enabled=&quot;false&quot;>"
@@ -833,7 +294,7 @@
         errorLine2="                                  ~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="458"
+            line="457"
             column="35"/>
     </issue>
 
@@ -855,7 +316,7 @@
         errorLine2="                                  ~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/pbap/BluetoothPbapService.java"
-            line="572"
+            line="568"
             column="35"/>
     </issue>
 
@@ -866,7 +327,7 @@
         errorLine2="                                          ~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
-            line="509"
+            line="506"
             column="43"/>
     </issue>
 
@@ -877,7 +338,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/AdapterService.java"
-            line="4115"
+            line="4098"
             column="17"/>
     </issue>
 
@@ -888,7 +349,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="264"
+            line="262"
             column="13"/>
     </issue>
 
@@ -899,7 +360,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="447"
+            line="446"
             column="25"/>
     </issue>
 
@@ -932,7 +393,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/pbap/BluetoothPbapService.java"
-            line="556"
+            line="552"
             column="25"/>
     </issue>
 
@@ -943,7 +404,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
-            line="300"
+            line="297"
             column="13"/>
     </issue>
 
@@ -954,7 +415,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
-            line="498"
+            line="495"
             column="33"/>
     </issue>
 
@@ -965,7 +426,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/AdapterService.java"
-            line="898"
+            line="936"
             column="9"/>
     </issue>
 
@@ -976,18 +437,7 @@
         errorLine2="            ~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppManager.java"
-            line="86"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="StaticFieldLeak"
-        message="Do not place Android context classes in static fields (static reference to `BluetoothOppPreference` which has field `mContext` pointing to `Context`); this is a memory leak"
-        errorLine1="    private static BluetoothOppPreference sInstance;"
-        errorLine2="            ~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppPreference.java"
-            line="53"
+            line="87"
             column="13"/>
     </issue>
 
@@ -1042,7 +492,7 @@
         errorLine2="            ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppNotification.java"
-            line="224"
+            line="222"
             column="13"/>
     </issue>
 
@@ -1086,7 +536,7 @@
         errorLine2="            ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
-            line="460"
+            line="457"
             column="13"/>
     </issue>
 

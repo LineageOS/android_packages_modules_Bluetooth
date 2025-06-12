@@ -74,9 +74,7 @@ static void hidh_l2cif_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
 static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, uint16_t result, tL2CAP_CFG_INFO* p_cfg);
 static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
 static void hidh_l2cif_disconnect_cfm(uint16_t l2cap_cid, uint16_t result);
-static void hidh_l2cif_disconnect_cfm_actual(uint16_t l2cap_cid, uint16_t result);
 static void hidh_l2cif_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
-static bool hidh_l2cif_disconnect(uint16_t l2cap_cid);
 static void hidh_l2cif_cong_ind(uint16_t l2cap_cid, bool congested);
 static void hidh_on_l2cap_error(uint16_t l2cap_cid, uint16_t result);
 
@@ -170,11 +168,10 @@ tHID_STATUS hidh_conn_disconnect(uint8_t dhandle) {
     }
     /* Disconnect channels one by one */
     uint16_t cid = (p_hcon->intr_cid != 0 ? p_hcon->intr_cid : p_hcon->ctrl_cid);
-    if (!hidh_l2cif_disconnect(cid)) {
-      if (com::android::bluetooth::flags::disconnect_hid_channels_serially()) {
-        // call the disconnection callback directly because l2cap won't call it.
-        hidh_l2cif_disconnect_cfm_actual(cid, 0);
-      }
+    if (!stack::l2cap::get_interface().L2CA_DisconnectReq(cid)) {
+      // On failure, call the disconnection callback directly because l2cap won't call it.
+      log::warn("Unable to send L2CAP disconnect request cid:{}", cid);
+      hidh_l2cif_disconnect_cfm(cid, 0);
     }
 
     BTM_LogHistory(kBtmLogTag, hh_cb.devices[dhandle].addr, "Disconnecting", "local initiated");
@@ -571,20 +568,6 @@ static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
   }
 }
 
-// TODO: after disconnect_hid_channels_serially aflags is the default,
-//       remove this function and call L2CA_DisconnectReq directly.
-static bool hidh_l2cif_disconnect(uint16_t l2cap_cid) {
-  if (!stack::l2cap::get_interface().L2CA_DisconnectReq(l2cap_cid)) {
-    log::warn("Unable to send L2CAP disconnect request cid:{}", l2cap_cid);
-    return false;
-  }
-
-  if (!com::android::bluetooth::flags::disconnect_hid_channels_serially()) {
-    hidh_l2cif_disconnect_cfm_actual(l2cap_cid, 0);
-  }
-  return true;
-}
-
 /*******************************************************************************
  *
  * Function         hidh_l2cif_disconnect_cfm
@@ -596,15 +579,7 @@ static bool hidh_l2cif_disconnect(uint16_t l2cap_cid) {
  * Returns          void
  *
  ******************************************************************************/
-static void hidh_l2cif_disconnect_cfm(uint16_t l2cap_cid, uint16_t result) {
-  if (com::android::bluetooth::flags::disconnect_hid_channels_serially()) {
-    hidh_l2cif_disconnect_cfm_actual(l2cap_cid, result);
-  }
-}
-
-// TODO: after disconnect_hid_channels_serially aflags is the default,
-//       copy the body to hidh_l2cif_disconnect_cfm and remove this.
-static void hidh_l2cif_disconnect_cfm_actual(uint16_t l2cap_cid, uint16_t /* result */) {
+static void hidh_l2cif_disconnect_cfm(uint16_t l2cap_cid, uint16_t /* result */) {
   /* Find CCB based on CID */
   const uint8_t dhandle = find_conn_by_cid(l2cap_cid);
   if (dhandle == kHID_HOST_MAX_DEVICES) {

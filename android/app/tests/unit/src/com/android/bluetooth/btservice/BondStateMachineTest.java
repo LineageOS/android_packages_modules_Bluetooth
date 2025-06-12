@@ -23,6 +23,7 @@ import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
+import static com.android.tests.bluetooth.Utils.FlagsWrapper;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -48,7 +49,6 @@ import android.os.ParcelUuid;
 import android.os.UserHandle;
 import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
@@ -130,12 +130,12 @@ public class BondStateMachineTest {
     private int mVerifyCount = 0;
 
     @Parameters(name = "{0}")
-    public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.progressionOf(Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE);
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE);
     }
 
-    public BondStateMachineTest(FlagsParameterization flags) {
-        mSetFlagsRule = new SetFlagsRule(flags);
+    public BondStateMachineTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
     }
 
     @Before

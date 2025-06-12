@@ -403,7 +403,11 @@ bool checksum_save(const std::string& checksum, const std::string& filename) {
     goto error2;
   }
 
+#if defined(TARGET_FLOSS) && BASE_VER >= 1344673
+  if (!base::WriteFile(path, checksum)) {
+#else
   if (base::WriteFile(path, checksum.data(), checksum.size()) != (int)checksum.size()) {
+#endif // defined(TARGET_FLOSS) && BASE_VER >= 1344673
     log::error("unable to write file '{}", filename);
     goto error2;
   }

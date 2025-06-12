@@ -33,6 +33,7 @@ import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_HANDL
 import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_RESTART_BLUETOOTH_SERVICE;
 import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_RESTORE_USER_SETTING_OFF;
 import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_TIMEOUT_BIND;
+import static com.android.tests.bluetooth.Utils.FlagsWrapper;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -72,7 +73,6 @@ import android.os.test.TestLooper;
 import android.permission.PermissionManager;
 import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
@@ -100,58 +100,25 @@ import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
 import platform.test.runner.parameterized.Parameters;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @RunWith(ParameterizedAndroidJunit4.class)
 @SuppressLint("AndroidFrameworkRequiresPermission")
 public class BluetoothManagerServiceTest {
-
     @Rule public final SetFlagsRule mSetFlagsRule;
-
-    // Helps tests readability by removing the common prefix in the bluetooth flags name
-    static final class FlagsWrapper {
-        private static final String PREFIX = "com.android.bluetooth.flags.";
-
-        final FlagsParameterization mFlags;
-
-        FlagsWrapper(FlagsParameterization flags) {
-            mFlags = flags;
-        }
-
-        @Override
-        public String toString() {
-            return mFlags.mOverrides.entrySet().stream()
-                    .sorted(Map.Entry.comparingByKey())
-                    .map(FlagsWrapper::entryToString)
-                    .collect(Collectors.joining(","));
-        }
-
-        private static String entryToString(Map.Entry<String, Boolean> entry) {
-            String flagName = entry.getKey();
-            if (flagName.startsWith(PREFIX)) {
-                flagName = flagName.substring(PREFIX.length());
-            }
-            return flagName + "=" + entry.getValue();
-        }
-    }
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsParameterization.progressionOf(
-                        Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP,
-                        Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
-                        Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD,
-                        Flags.FLAG_CLEANUP_STARTING_USER,
-                        Flags.FLAG_USER_SWITCH_DURING_BLE_ON)
-                .stream()
-                .map(FlagsWrapper::new)
-                .collect(Collectors.toList());
+        return FlagsWrapper.progressionOf(
+                Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP,
+                Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
+                Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD,
+                Flags.FLAG_CLEANUP_STARTING_USER,
+                Flags.FLAG_USER_SWITCH_DURING_BLE_ON);
     }
 
     public BluetoothManagerServiceTest(FlagsWrapper flagsWrapper) {
-        mSetFlagsRule = new SetFlagsRule(flagsWrapper.mFlags);
+        mSetFlagsRule = new SetFlagsRule(flagsWrapper.getFlags());
     }
 
     private final Context mTargetContext =

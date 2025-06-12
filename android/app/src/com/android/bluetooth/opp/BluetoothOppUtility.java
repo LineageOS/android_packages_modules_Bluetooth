@@ -287,6 +287,9 @@ public class BluetoothOppUtility {
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         3);
                 Log.v(TAG, "no activity for handling ACTION_VIEW intent:  " + mimetype, ex);
+            } catch (SecurityException se) {
+                Log.e(TAG, "ACTION_VIEW intent failed due to a SecurityException:  " + se);
+                return;
             }
         } else {
             Intent in = new Intent(context, BluetoothOppBtErrorActivity.class);

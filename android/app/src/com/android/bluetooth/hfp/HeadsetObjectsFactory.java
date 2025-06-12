@@ -98,7 +98,7 @@ public class HeadsetObjectsFactory {
      * @return a system interface
      */
     public HeadsetSystemInterface makeSystemInterface(
-            AdapterService adapterService, HeadsetService headsetService) {
-        return new HeadsetSystemInterface(adapterService, headsetService);
+            AdapterService adapterService, HeadsetService headsetService, Looper looper) {
+        return new HeadsetSystemInterface(adapterService, headsetService, looper);
     }
 }

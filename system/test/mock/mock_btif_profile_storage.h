@@ -64,9 +64,9 @@ extern struct btif_storage_add_groups btif_storage_add_groups;
 // Params: const HearingDevice& dev_info
 // Return: void
 struct btif_storage_add_hearing_aid {
-  std::function<void(const HearingDevice& dev_info)> body{
-          [](const HearingDevice& /* dev_info */) {}};
-  void operator()(const HearingDevice& dev_info) { body(dev_info); }
+  std::function<void(const bluetooth::asha::HearingDevice& dev_info)> body{
+          [](const bluetooth::asha::HearingDevice& /* dev_info */) {}};
+  void operator()(const bluetooth::asha::HearingDevice& dev_info) { body(dev_info); }
 };
 extern struct btif_storage_add_hearing_aid btif_storage_add_hearing_aid;
 

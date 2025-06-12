@@ -48,7 +48,7 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
 
     static final int CONNECT = 1;
     static final int DISCONNECT = 2;
-    @VisibleForTesting static final int STACK_EVENT = 101;
+    static final int STACK_EVENT = 101;
     @VisibleForTesting static final int CONNECT_TIMEOUT = 201;
 
     // NOTE: the value is not "final" - it is modified in the unit tests

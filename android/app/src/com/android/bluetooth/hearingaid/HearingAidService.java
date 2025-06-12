@@ -66,6 +66,7 @@ public class HearingAidService extends ConnectableProfile {
     // Upper limit of all HearingAid devices: Bonded or Connected
     private static final int MAX_HEARING_AID_STATE_MACHINES = 10;
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static HearingAidService sHearingAidService;
 
     private final HearingAidNativeInterface mNativeInterface;
@@ -169,6 +170,7 @@ public class HearingAidService extends ConnectableProfile {
      *
      * @return HearingAidService instance
      */
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized HearingAidService getHearingAidService() {
         if (sHearingAidService == null) {
             Log.w(TAG, "getHearingAidService(): service is NULL");
@@ -183,6 +185,7 @@ public class HearingAidService extends ConnectableProfile {
     }
 
     @VisibleForTesting
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     static synchronized void setHearingAidService(HearingAidService instance) {
         Log.d(TAG, "setHearingAidService(): set to: " + instance);
         sHearingAidService = instance;

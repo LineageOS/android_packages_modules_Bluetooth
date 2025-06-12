@@ -95,6 +95,7 @@ public class HidHostService extends ConnectableProfile {
         }
     }
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static HidHostService sHidHostService;
 
     private final Map<BluetoothDevice, InputDevice> mInputDevices =
@@ -252,6 +253,7 @@ public class HidHostService extends ConnectableProfile {
         return STATE_DISCONNECTED;
     }
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized HidHostService getHidHostService() {
         if (sHidHostService == null) {
             Log.w(TAG, "getHidHostService(): service is null");
@@ -264,6 +266,7 @@ public class HidHostService extends ConnectableProfile {
         return sHidHostService;
     }
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static synchronized void setHidHostService(HidHostService instance) {
         Log.d(TAG, "setHidHostService(): set to: " + instance);
         sHidHostService = instance;

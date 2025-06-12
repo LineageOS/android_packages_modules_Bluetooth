@@ -45,6 +45,8 @@ void bluetooth::testing::stack::hearing_aid_audio_source::set_interface(
   interface_ = interface;
 }
 
+namespace bluetooth::asha {
+
 void HearingAidAudioSource::Start(const CodecConfiguration& codecConfiguration,
                                   HearingAidAudioReceiver* audioReceiver,
                                   uint16_t remote_delay_ms) {
@@ -72,3 +74,5 @@ void HearingAidAudioSource::CleanUp() {
 }
 
 void HearingAidAudioSource::DebugDump(int /*fd*/) { inc_func_call_count(__func__); }
+
+}  // namespace bluetooth::asha

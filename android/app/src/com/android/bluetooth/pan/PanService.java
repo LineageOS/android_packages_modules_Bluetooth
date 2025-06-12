@@ -62,6 +62,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PanService extends ConnectableProfile {
     private static final String TAG = PanService.class.getSimpleName();
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static PanService sPanService;
 
     private static final int BLUETOOTH_MAX_PAN_CONNECTIONS = 5;
@@ -143,6 +144,7 @@ public class PanService extends ConnectableProfile {
         return new PanServiceBinder(this);
     }
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     public static synchronized PanService getPanService() {
         if (sPanService == null) {
             Log.w(TAG, "getPanService(): service is null");
@@ -155,6 +157,7 @@ public class PanService extends ConnectableProfile {
         return sPanService;
     }
 
+    @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static synchronized void setPanService(PanService instance) {
         Log.d(TAG, "setPanService(): set to: " + instance);
         sPanService = instance;
@@ -418,7 +421,6 @@ public class PanService extends ConnectableProfile {
         mHandler.sendMessage(msg);
     }
 
-    @VisibleForTesting
     void onControlStateChanged(int localRole, int state, int error, String ifname) {
         Log.d(TAG, "onControlStateChanged: " + state + ", error: " + error + ", ifname: " + ifname);
         if (error == 0) {

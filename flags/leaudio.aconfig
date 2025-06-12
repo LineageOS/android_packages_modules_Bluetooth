@@ -162,16 +162,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_broadcast_receive_state_processing_refactor"
-    namespace: "bluetooth"
-    description: "Fix parsing empty receive states and refactor its processing"
-    bug: "380231464"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "dsa_hw_transparent_codec"
     namespace: "bluetooth"
     description: "Use trasparent codec for DSA hardware path"
@@ -216,16 +206,6 @@ flag {
     namespace: "bluetooth"
     description: "Use internal scan controller for BASS service scan"
     bug: "392953619"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_broadcast_prevent_resume_interruption"
-    namespace: "bluetooth"
-    description: "Prevent addSource/resumeSource iterruption by start/stop searching"
-    bug: "391773917"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -382,6 +362,16 @@ flag {
     namespace: "bluetooth"
     description: "Before sending Set Ecosystem Base Interval command, check that the controller actually supports it"
     bug: "422626923"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_broadcast_fix_autonomous_source_adding"
+    namespace: "bluetooth"
+    description: "Improve handling of broadcast autonomous source adding"
+    bug: "422399972"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

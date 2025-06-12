@@ -145,7 +145,7 @@ bool btif_storage_get_hearing_aid_prop(const RawAddress& address, uint8_t* capab
                                                    preparation_delay, codecs);
 }
 
-void btif_storage_add_hearing_aid(const HearingDevice& dev_info) {
+void btif_storage_add_hearing_aid(const asha::HearingDevice& dev_info) {
   log::assert_that(btif_storage_interface != nullptr, "Mock storage module not set!");
   return btif_storage_interface->AddHearingAid(&dev_info);
 }
