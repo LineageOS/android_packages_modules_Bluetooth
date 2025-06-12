@@ -2453,7 +2453,11 @@ public class LeAudioServiceTest {
     public void testHandleGroupIdleDuringCall() {
         BluetoothDevice headsetDevice = getTestDevice(5);
         HeadsetService headsetService = Mockito.mock(HeadsetService.class);
-        when(mServiceFactory.getHeadsetService()).thenReturn(headsetService);
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            doReturn(Optional.of(headsetService)).when(mAdapterService).getHeadsetService();
+        } else {
+            when(mServiceFactory.getHeadsetService()).thenReturn(headsetService);
+        }
 
         mService.mHfpHandoverDevice = null;
         mService.handleGroupIdleDuringCall();
