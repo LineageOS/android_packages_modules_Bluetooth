@@ -1,12 +1,6 @@
 package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
-flag {
-    name: "pbap_client_storage_refactor"
-    namespace: "bluetooth"
-    description: "Abstract away accounts/storage and change how contacts are passed and stored"
-    bug: "376461939"
-}
 
 flag {
     name: "pbap_client_contacts_caching"
