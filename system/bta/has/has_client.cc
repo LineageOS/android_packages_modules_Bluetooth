@@ -291,6 +291,8 @@ public:
     if (status == GATT_DATABASE_OUT_OF_SYNC) {
       log::info("Database out of sync for {}", device->addr);
       ClearDeviceInformationAndStartSearch(device);
+    } else {
+      log::warn("{}: operation was not a success: status={}", device->addr, status);
     }
   }
 
@@ -325,6 +327,8 @@ public:
     if (status == GATT_DATABASE_OUT_OF_SYNC) {
       log::info("Database out of sync for {}", device->addr);
       ClearDeviceInformationAndStartSearch(device);
+    } else {
+      log::warn("{}: operation was not a success: status={}", device->addr, status);
     }
   }
 
@@ -358,7 +362,7 @@ public:
       log::info("Database out of sync for {}", device->addr);
       ClearDeviceInformationAndStartSearch(device);
     } else {
-      log::error("Devices {}: Control point not usable. Disconnecting!", device->addr);
+      log::error("{}: Control point not usable, status={}. Disconnecting!", device->addr, status);
       CleanAndDisconnectByConnId(conn_id);
     }
   }
@@ -404,7 +408,7 @@ public:
       log::info("Database out of sync for {}", device->addr);
       ClearDeviceInformationAndStartSearch(device);
     } else {
-      log::error("Devices {}: Control point not usable. Disconnecting!", device->addr);
+      log::error("{}: Control point not usable, status={}. Disconnecting!", device->addr, status);
       CleanAndDisconnectByConnId(conn_id);
     }
   }
