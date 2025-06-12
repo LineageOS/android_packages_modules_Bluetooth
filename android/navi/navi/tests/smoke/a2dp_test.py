@@ -18,6 +18,7 @@ import asyncio
 import decimal
 import enum
 import functools
+import os
 import tempfile
 from typing import Iterable, TypeAlias
 import wave
@@ -36,6 +37,7 @@ from typing_extensions import override
 from navi.bumble_ext import a2dp as a2dp_ext
 from navi.tests import navi_test_base
 from navi.utils import android_constants
+from navi.utils import audio
 from navi.utils import bl4a_api
 from navi.utils import constants
 from navi.utils import matcher
@@ -148,7 +150,7 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
             avdtp_connections.put_nowait((server, ref_sinks))
 
         avdtp_listener = avdtp.Listener.for_device(self.ref.device)
-        avdtp_listener.on("connection", on_avdtp_connection)
+        avdtp_listener.on(avdtp_listener.EVENT_CONNECTION, on_avdtp_connection)
 
         ref_avrcp_delegator = AvrcpDelegate(supported_events=(avrcp.EventId.VOLUME_CHANGED,))
         ref_avrcp_protocol = avrcp.Protocol(ref_avrcp_delegator)
@@ -418,6 +420,9 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
                 await ref_sink.condition.wait_for(
                     lambda: ref_sink.last_command != LocalSinkWrapper.Command.START)
 
+            # Register the sink buffer to receive the packets.
+            buffer = a2dp_ext.register_sink_buffer(ref_sink.impl, preferred_codec)
+
             if issuer == _Issuer.DUT:
                 self.logger.info("[DUT] Start stream.")
                 self.dut.bt.audioPlaySine()
@@ -467,6 +472,26 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
             ):
                 await ref_sink.condition.wait_for(
                     lambda: ref_sink.last_command == LocalSinkWrapper.Command.SUSPEND)
+
+            if self.user_params.get("record_full_data") and buffer is not None:
+                self.logger.info("[DUT] Saving buffer.")
+                with open(
+                        os.path.join(
+                            self.current_test_info.output_path,
+                            f"a2dp_data.{preferred_codec.name.lower()}",
+                        ),
+                        "wb",
+                ) as f:
+                    f.write(buffer)
+
+            if (buffer is not None and preferred_codec != _A2dpCodec.LDAC and
+                    audio.SUPPORT_AUDIO_PROCESSING):
+                dominant_frequency = audio.get_dominant_frequency(buffer,
+                                                                  format=preferred_codec.name)
+                self.logger.info("Dominant frequency: %.2f", dominant_frequency)
+                # Dominant frequency is not accurate on emulator.
+                if not self.dut.device.is_emulator:
+                    self.assertAlmostEqual(dominant_frequency, 1000, delta=10)
 
     @navi_test_base.parameterized(_Issuer.DUT, _Issuer.REF)
     async def test_set_absolute_volume(self, issuer: _Issuer) -> None:

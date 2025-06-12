@@ -20,6 +20,7 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothQualityReport
 import android.bluetooth.le.AdvertiseCallback
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
@@ -45,11 +46,14 @@ import com.google.android.mobly.snippet.rpc.Rpc
 import com.google.android.mobly.snippet.rpc.RpcOptional
 import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.timeout
@@ -67,6 +71,8 @@ class BluetoothAdapterSnippet : Snippet {
     private val scanners = mutableMapOf<String, ScanCallback>()
     private val adapterState = MutableStateFlow(bluetoothAdapter.state)
     private val broadcastReceivers = mutableMapOf<String, BroadcastReceiver>()
+    private val bqrCallbacks =
+        mutableMapOf<String, BluetoothAdapter.BluetoothQualityReportReadyCallback>()
 
     init {
         instrumentation.uiAutomation.adoptShellPermissionIdentity()
@@ -91,24 +97,37 @@ class BluetoothAdapterSnippet : Snippet {
     /** Resets Bluetooth, waits for auto-restart, and returns whether everything succeeds. */
     @Rpc(description = "Completely reset Bluetooth")
     fun factoryReset(): Boolean = runBlocking {
+        val turningOff = async {
+            adapterState
+                .timeout(BLUETOOTH_ON_OFF_TIMEOUT)
+                .catch { exception ->
+                    if (exception is TimeoutCancellationException) {
+                        throw RuntimeException(
+                            "Bluetooth isn't turned off after ${BLUETOOTH_ON_OFF_TIMEOUT}, " +
+                                "final state=${BluetoothAdapter.nameForState(adapterState.value)}"
+                        )
+                    }
+                }
+                .first { it != BluetoothAdapter.STATE_OFF }
+        }
         val result = bluetoothAdapter.clearBluetooth()
         if (result) {
-            adapterState.timeout(BLUETOOTH_ON_OFF_TIMEOUT).firstOrNull {
-                it == BluetoothAdapter.STATE_OFF
-            }
-                ?: throw RuntimeException(
-                    "Bluetooth isn't turned off after ${BLUETOOTH_ON_OFF_TIMEOUT}, " +
-                        "final state=${BluetoothAdapter.nameForState(adapterState.value)}"
-                )
-            adapterState.timeout(BLUETOOTH_ON_OFF_TIMEOUT).firstOrNull {
-                it == BluetoothAdapter.STATE_ON
-            }
-                ?: throw RuntimeException(
-                    "Bluetooth isn't turned on after ${BLUETOOTH_ON_OFF_TIMEOUT}, " +
-                        "final state=${BluetoothAdapter.nameForState(adapterState.value)}"
-                )
+            turningOff.await()
+            adapterState
+                .timeout(BLUETOOTH_ON_OFF_TIMEOUT)
+                .catch { exception ->
+                    if (exception is TimeoutCancellationException) {
+                        throw RuntimeException(
+                            "Bluetooth isn't turned on after ${BLUETOOTH_ON_OFF_TIMEOUT}, " +
+                                "final state=${BluetoothAdapter.nameForState(adapterState.value)}"
+                        )
+                    }
+                }
+                .first { it == BluetoothAdapter.STATE_ON }
             // b/266611263: Delay to initialize the Bluetooth completely and to fix flakiness
             delay(1.seconds)
+        } else {
+            turningOff.cancel()
         }
         result
     }
@@ -530,6 +549,34 @@ class BluetoothAdapterSnippet : Snippet {
     @Rpc(description = "Set SIM Access Permission")
     fun setSimAccessPermission(address: String, permission: Int): Boolean =
         bluetoothAdapter.getRemoteDevice(address).setSimAccessPermission(permission)
+
+    /** Registers Bluetooth Quality Report Callback. */
+    @AsyncRpc(description = "Register Bluetooth Quality Report Callback")
+    fun registerBluetoothQualityReportCallback(callbackId: String) {
+        val callback =
+            object : BluetoothAdapter.BluetoothQualityReportReadyCallback {
+                override fun onBluetoothQualityReportReady(
+                    device: BluetoothDevice,
+                    report: BluetoothQualityReport,
+                    status: Int,
+                ) {
+                    postSnippetEvent(callbackId, SnippetConstants.BLUETOOTH_QUALITY_REPORT) {
+                        putString(SnippetConstants.FIELD_DEVICE, device.address)
+                        putInt(SnippetConstants.FIELD_STATUS, status)
+                        putParcelable(SnippetConstants.FIELD_REPORT, report)
+                    }
+                }
+            }
+        bluetoothAdapter.registerBluetoothQualityReportReadyCallback(context.mainExecutor, callback)
+        bqrCallbacks[callbackId] = callback
+    }
+
+    @Rpc(description = "Unregister Bluetooth Quality Report Callback")
+    fun unregisterBluetoothQualityReportCallback(callbackId: String) {
+        bqrCallbacks.remove(callbackId)?.let {
+            bluetoothAdapter.unregisterBluetoothQualityReportReadyCallback(it)
+        }
+    }
 
     companion object {
         const val TAG = "BluetoothAdapterSnippet"

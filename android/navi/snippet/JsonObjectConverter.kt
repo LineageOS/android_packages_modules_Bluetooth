@@ -20,6 +20,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
+import android.bluetooth.BluetoothQualityReport
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
 import android.bluetooth.le.AdvertisingSetParameters
@@ -120,6 +121,51 @@ class JsonObjectConverter : SnippetObjectConverter {
                     }
                     put(SnippetConstants.ADV_DATA_MANUFACTURER_DATA, jsonManufacturerSpecificData)
                 }
+            }
+        }
+
+    private fun BluetoothQualityReport.toJson(): JSONObject =
+        JSONObject().apply {
+            put(SnippetConstants.FIELD_ID, qualityReportId)
+            bqrCommon?.let {
+                val commonObj = JSONObject()
+                commonObj.put(SnippetConstants.PACKET_TYPE, it.packetType)
+                commonObj.put(SnippetConstants.CONNECTION_HANDLE, it.connectionHandle)
+                commonObj.put(SnippetConstants.CONNECTION_ROLE, it.connectionRole)
+                commonObj.put(SnippetConstants.TX_POWER_LEVEL, it.txPowerLevel)
+                commonObj.put(SnippetConstants.RSSI, it.rssi)
+                commonObj.put(SnippetConstants.SNR, it.snr)
+                commonObj.put(SnippetConstants.UNUSED_AFH_CHANNEL_COUNT, it.unusedAfhChannelCount)
+                commonObj.put(
+                    SnippetConstants.AFH_SELECT_UNIDEAL_CHANNEL_COUNT,
+                    it.afhSelectUnidealChannelCount,
+                )
+                commonObj.put(SnippetConstants.LSTO, it.lsto)
+                commonObj.put(SnippetConstants.PICONET_CLOCK, it.piconetClock)
+                commonObj.put(SnippetConstants.RETRANSMISSION_COUNT, it.retransmissionCount)
+                commonObj.put(SnippetConstants.NO_RX_COUNT, it.noRxCount)
+                commonObj.put(SnippetConstants.NAK_COUNT, it.nakCount)
+                commonObj.put(SnippetConstants.LAST_TX_ACK_TIMESTAMP, it.lastTxAckTimestamp)
+                commonObj.put(SnippetConstants.FLOW_OFF_COUNT, it.flowOffCount)
+                commonObj.put(SnippetConstants.LAST_FLOW_ON_TIMESTAMP, it.lastFlowOnTimestamp)
+                commonObj.put(SnippetConstants.OVERFLOW_COUNT, it.overflowCount)
+                commonObj.put(SnippetConstants.UNDERFLOW_COUNT, it.underflowCount)
+                commonObj.put(SnippetConstants.CAL_FAILED_ITEM_COUNT, it.calFailedItemCount)
+                // V6 fields
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                    commonObj.put(SnippetConstants.TX_TOTAL_PACKETS, it.txTotalPackets)
+                    commonObj.put(SnippetConstants.TX_UNACK_PACKETS, it.txUnackPackets)
+                    commonObj.put(SnippetConstants.TX_FLUSH_PACKETS, it.txFlushPackets)
+                    commonObj.put(
+                        SnippetConstants.TX_LAST_SUBEVENT_PACKETS,
+                        it.txLastSubeventPackets,
+                    )
+                    commonObj.put(SnippetConstants.CRC_ERROR_PACKETS, it.crcErrorPackets)
+                    commonObj.put(SnippetConstants.RX_DUP_PACKETS, it.rxDupPackets)
+                    commonObj.put(SnippetConstants.RX_UN_RECV_PACKETS, it.rxUnRecvPackets)
+                    commonObj.put(SnippetConstants.COEX_INFO_MASK, it.coexInfoMask)
+                }
+                put(SnippetConstants.FIELD_COMMON, commonObj)
             }
         }
 
@@ -350,6 +396,9 @@ class JsonObjectConverter : SnippetObjectConverter {
             return parameter.toJson()
         }
         if (parameter is ScanResult) {
+            return parameter.toJson()
+        }
+        if (parameter is BluetoothQualityReport) {
             return parameter.toJson()
         }
         return null

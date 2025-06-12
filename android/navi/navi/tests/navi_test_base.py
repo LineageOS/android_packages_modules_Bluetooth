@@ -24,7 +24,8 @@ import logging
 import pathlib
 import re
 import secrets
-from typing import Any, ClassVar, Never, TypeAlias, cast, final
+import sys
+from typing import Any, cast, ClassVar, final, Never, TypeAlias
 
 from absl.testing import absltest
 from bumble import pairing
@@ -37,6 +38,7 @@ from mobly import runtime_test_info
 from mobly import signals
 from mobly.controllers import android_device
 from mobly.controllers.android_device_lib import adb
+from mobly.controllers.android_device_lib import apk_utils
 from snippet_uiautomator import uiautomator
 from typing_extensions import override
 
@@ -209,6 +211,11 @@ def parameterized(*args_sets,) -> Callable[[Callable[..., Any]], Callable[..., A
             except TypeError as e:
                 raise ValueError(f"Invalid args: {args}. The signature is {signature}") from e
             testcase_name = ", ".join([getattr(arg, "name", None) or str(arg) for arg in args])
+            # Replace reserved characters with their Unicode equivalents.
+            if sys.platform == "win32":
+                testcase_name = (testcase_name.replace(">", "＞").replace("<", "＜").replace(
+                    ":", "：").replace('"', "'").replace("/", "／").replace("\\", "＼").replace(
+                        "|", "｜").replace("?", "？").replace("*", "＊"))
             param_sets[testcase_name] = (args, {})
         setattr(func, _NAVI_PARAMETERIZED, (False, param_sets))
         return func
@@ -692,8 +699,7 @@ class AndroidBumbleTestBase(BaseTestBase):
                     "run_identifier": f"[{manufacturer}-{self.dut.device.model}]",
                 }))
 
-    @override
-    def on_fail(self, record: records.TestResultRecord) -> None:
+    def _get_btsnoop_and_dumpsys(self) -> None:
         adb_snippets.download_btsnoop(
             device=self.dut.device,
             destination_base_path=self.current_test_info.output_path,
@@ -719,7 +725,7 @@ class AndroidBumbleTestBase(BaseTestBase):
                     filename_prefix="bumble",
                 )
 
-    @retry_lib.retry_on_exception(initial_delay_sec=1, num_retries=3)
+    @retry_lib.retry_on_exception()
     @override
     async def async_setup_test(self) -> None:
         # Make sure Bluetooth is enabled before factory reset.
@@ -740,12 +746,21 @@ class AndroidBumbleTestBase(BaseTestBase):
         self.assertTrue(self.dut.bt.enable())
 
     @override
+    def on_fail(self, record: records.TestResultRecord) -> None:
+        self._get_btsnoop_and_dumpsys()
+
+    @override
+    def on_pass(self, record: records.TestResultRecord) -> None:
+        if self.user_params.get("record_full_data"):
+            self._get_btsnoop_and_dumpsys()
+
+    @override
     async def async_teardown_class(self) -> None:
+        if (self.results.failed or self.results.error or self.user_params.get("record_full_data")):
+            self.dut.device.take_bug_report()
         await super().async_teardown_class()
         for ref in self._refs:
             ref.adapter.stop()
-        if self.results.failed or self.results.error:
-            self.dut.device.take_bug_report()
 
     @retry_lib.retry_on_exception(initial_delay_sec=1, num_retries=3)
     async def classic_connect_and_pair(self,
