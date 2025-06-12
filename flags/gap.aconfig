@@ -101,16 +101,6 @@ flag {
 }
 
 flag {
-    name: "gatt_queue_cleanup_connected"
-    namespace: "bluetooth"
-    description: "Cleans up BtaGattQueue when connected"
-    bug: "379007400"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "configure_scan_on_resume"
     namespace: "bluetooth"
     description: "Configure scan paramters when start scanning from onResume"
