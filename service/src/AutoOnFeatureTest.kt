@@ -78,12 +78,12 @@ class AutoOnFeatureTest {
     fun setUp() {
         Log.i("AutoOnFeatureTest", "\t--> setUp(${testName.getMethodName()})")
 
+        callback_count = 0
         enableUserSettings()
     }
 
     @After
     fun tearDown() {
-        callback_count = 0
         timer?.cancel()
         timer = null
         resetSavedTimer()

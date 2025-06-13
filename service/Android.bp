@@ -50,6 +50,7 @@ java_library {
         "src/Log.kt",
         "src/RadioModeListener.kt",
         "src/RolePermissionListener.kt",
+        "src/UserRestriction.kt",
         "src/airplane/ModeListener.kt",
         "src/satellite/ModeListener.kt",
     ],
@@ -135,6 +136,8 @@ android_robolectric_test {
         "src/RadioModeListenerTest.kt",
         "src/RolePermissionListener.kt",
         "src/RolePermissionListenerTest.kt",
+        "src/UserRestriction.kt",
+        "src/UserRestrictionTest.kt",
         "src/airplane/ModeListener.kt",
         "src/airplane/ModeListenerTest.kt",
         "src/satellite/ModeListener.kt",
@@ -163,6 +166,7 @@ android_robolectric_test {
     ],
 
     libs: [
+        "PlatformProperties",
         "framework-annotations-lib",
         "framework-statsd.stubs.module_lib",
     ],

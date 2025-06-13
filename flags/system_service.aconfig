@@ -109,6 +109,16 @@ flag {
 }
 
 flag {
+    name: "user_restriction_refactor"
+    namespace: "bluetooth"
+    description: "Move user restriction to Kotlin and properly check before any attempt to start Bluetooth"
+    bug: "420992261"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "wait_stack_role_before_starting"
     namespace: "bluetooth"
     description: "RoleManager is racing to give the SYSTEM_BLUETOOTH_STACK role prior to Bluetooth being started."

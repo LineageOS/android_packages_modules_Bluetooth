@@ -161,7 +161,7 @@ public class BluetoothManagerServiceTest {
         InstrumentationRegistry.getInstrumentation()
                 .getUiAutomation()
                 .adoptShellPermissionIdentity(
-                        android.Manifest.permission.INTERACT_ACROSS_USERS_FULL);
+                        android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE);
     }
 
     @Before

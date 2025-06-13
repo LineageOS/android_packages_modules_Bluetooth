@@ -303,6 +303,9 @@ class BluetoothManagerService {
     }
 
     public void onUserRestrictionsChanged(UserHandle userHandle) {
+        if (Flags.userRestrictionRefactor()) {
+            throw new IllegalStateException("userRestrictionRefactor is enabled");
+        }
         final boolean newBluetoothDisallowed =
                 mUserManager.hasUserRestrictionForUser(UserManager.DISALLOW_BLUETOOTH, userHandle);
         // Disallow Bluetooth sharing when either Bluetooth is disallowed or Bluetooth sharing
@@ -646,6 +649,10 @@ class BluetoothManagerService {
         // Observe BLE scan only mode settings change.
         BleScanSettingListener.initialize(mLooper, mContentResolver, this::onBleScanDisabled);
 
+        if (Flags.userRestrictionRefactor()) {
+            UserRestriction.initialize(mContext, mLooper, this::onBluetoothDisallowed);
+        }
+
         // Disable ASHA if BLE is not supported, overriding any system property
         if (!isBleSupported(mContext)) {
             mIsHearingAidProfileSupported = false;
@@ -668,7 +675,9 @@ class BluetoothManagerService {
         mContext.registerReceiver(mReceiver, filter, null, mHandler);
 
         IntentFilter filterUser = new IntentFilter();
-        filterUser.addAction(UserManager.ACTION_USER_RESTRICTIONS_CHANGED);
+        if (!Flags.userRestrictionRefactor()) {
+            filterUser.addAction(UserManager.ACTION_USER_RESTRICTIONS_CHANGED);
+        }
         if (!Flags.limitUserSwitchPropagation()) {
             filterUser.addAction(Intent.ACTION_USER_SWITCHED);
         }
@@ -726,6 +735,27 @@ class BluetoothManagerService {
         mDeviceConfigAllowAutoOn =
                 SystemProperties.getBoolean("bluetooth.server.automatic_turn_on", false);
         Log.d(TAG, "AutoOnFeature property=" + mDeviceConfigAllowAutoOn);
+    }
+
+    private Unit onBluetoothDisallowed() {
+        if (mState.oneOf(State.OFF)) {
+            return Unit.INSTANCE;
+        }
+
+        Log.i(TAG, "onBluetoothDisallowed: Shutting down");
+
+        clearBleApps();
+
+        mEnable = false;
+        mEnableExternal = false;
+        ActiveLogs.add(ENABLE_DISABLE_REASON_DISALLOWED, false);
+
+        if (mState.oneOf(State.BLE_ON)) {
+            bleOnToOff();
+        } else if (mState.oneOf(State.ON)) {
+            onToBleOn();
+        }
+        return Unit.INSTANCE;
     }
 
     private Unit onBleScanDisabled() {
@@ -1300,6 +1330,8 @@ class BluetoothManagerService {
                 TimeSource.Monotonic.INSTANCE);
 
         SatelliteModeListener.initialize(mLooper, mContentResolver, this::onSatelliteModeChanged);
+
+        UserRestriction.initializeUser(mCurrentUserContext);
 
         if (isBluetoothDisallowed()) {
             Log.i(TAG, "internalHandleOnBootPhase: Bluetooth is disallowed");
@@ -2274,6 +2306,9 @@ class BluetoothManagerService {
     }
 
     private boolean isBluetoothDisallowed() {
+        if (Flags.userRestrictionRefactor()) {
+            return !UserRestriction.isBluetoothAllowed();
+        }
         final long callingIdentity = Binder.clearCallingIdentity();
         try {
             return mContext.getSystemService(UserManager.class)
