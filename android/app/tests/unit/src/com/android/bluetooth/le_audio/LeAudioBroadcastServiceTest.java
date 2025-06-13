@@ -669,6 +669,9 @@ public class LeAudioBroadcastServiceTest {
 
         assertThat(mService.getAllBroadcastMetadata())
                 .containsExactly(state_event.broadcastMetadata);
+
+        assertThat(mService.getBroadcastMetadata(broadcastId))
+                .isEqualTo(state_event.broadcastMetadata);
     }
 
     @Test

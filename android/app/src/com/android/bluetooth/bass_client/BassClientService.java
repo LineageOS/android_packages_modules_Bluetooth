@@ -3518,9 +3518,7 @@ public class BassClientService extends ConnectableProfile {
             return false;
         }
 
-        final var wasFound =
-                leAudio.get().getAllBroadcastMetadata().stream()
-                        .anyMatch(meta -> meta.getBroadcastId() == broadcastId);
+        final var wasFound = leAudio.get().getBroadcastMetadata(broadcastId) != null;
 
         Log.d(TAG, "isLocalBroadcast=" + wasFound);
         return wasFound;
