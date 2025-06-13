@@ -39,6 +39,8 @@ types::AudioContexts GetAudioContextsFromSourceMetadata(
         const std::vector<struct playback_track_metadata_v7>& source_metadata);
 types::AudioContexts GetAudioContextsFromSinkMetadata(
         const std::vector<struct record_track_metadata_v7>& sink_metadata);
+size_t GetConfigurationHash(const bluetooth::le_audio::types::AudioSetConfiguration& conf);
+
 inline uint8_t GetTargetLatencyForAudioContext(types::LeAudioContextType ctx) {
   switch (ctx) {
     case types::LeAudioContextType::MEDIA:
