@@ -1802,7 +1802,7 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
     bta_hh_disc_cmpl();
   } else {
     if (com::android::bluetooth::flags::hogp_reconnection()) {
-      // reconnection is handled in btif_hh.cc:btif_hh_disconnected
+      // reconnection is handled in btif_hh.cc:btif_hh_acl_disconnected
       return;
     }
 

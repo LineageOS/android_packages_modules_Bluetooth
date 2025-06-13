@@ -1052,7 +1052,7 @@ void btif_hh_load_bonded_dev(const tAclLinkSpec& link_spec_ref, tBTA_HH_ATTR_MAS
   }
 }
 
-void btif_hh_disconnected(const RawAddress& addr, tBT_TRANSPORT transport) {
+void btif_hh_acl_disconnected(const RawAddress& addr, tBT_TRANSPORT transport) {
   if (!com::android::bluetooth::flags::hogp_reconnection()) {
     return;
   }

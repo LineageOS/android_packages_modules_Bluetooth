@@ -159,7 +159,7 @@ void btif_hh_service_registration(bool enable);
 void btif_hh_load_bonded_dev(const tAclLinkSpec& link_spec, tBTA_HH_ATTR_MASK attr_mask,
                              uint8_t sub_class, uint8_t app_id, tBTA_HH_DEV_DSCP_INFO dscp_info,
                              bool reconnect_allowed);
-void btif_hh_disconnected(const RawAddress& addr, tBT_TRANSPORT transport);
+void btif_hh_acl_disconnected(const RawAddress& addr, tBT_TRANSPORT transport);
 
 int bta_hh_co_write(int fd, uint8_t* rpt, uint16_t len);
 void bta_hh_co_close(btif_hh_device_t* p_dev);
