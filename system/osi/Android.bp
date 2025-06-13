@@ -134,10 +134,10 @@ cc_test {
     ],
     static_libs: [
         "bluetooth_flags_c_lib",
-        "libbluetooth-types",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_log",
+        "libbluetooth_types",
         "libbt-common",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",

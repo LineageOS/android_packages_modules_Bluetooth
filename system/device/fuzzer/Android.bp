@@ -45,10 +45,10 @@ cc_fuzz {
     ],
     static_libs: [
         "bluetooth_flags_c_lib",
-        "libbluetooth-types",
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_types",
         "libbtcore",
         "libbtdevice",
         "libchrome",

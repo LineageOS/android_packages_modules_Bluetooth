@@ -1,4 +1,3 @@
-// Bluetooth types
 package {
     // See: http://go/android-license-faq
     // A large-scale-change added 'default_applicable_licenses' to import
@@ -9,23 +8,19 @@ package {
 }
 
 cc_library_static {
-    name: "libbluetooth-types",
+    name: "libbluetooth_types",
     vendor_available: true,
     host_supported: true,
-    defaults: ["fluoride_defaults"],
-    cflags: [
-        /* we export all classes, so change default visibility, instead of having EXPORT_SYMBOL on each class*/
-        "-fvisibility=default",
+    defaults: [
+        "bluetooth_cflags",
+        "bluetooth_tidy",
     ],
     srcs: [
         "bluetooth/uuid.cc",
         "raw_address.cc",
     ],
     export_include_dirs: ["./"],
-    apex_available: [
-        "//apex_available:platform",
-        "com.android.bt",
-    ],
+    apex_available: ["com.android.bt"],
     min_sdk_version: "36",
 }
 
@@ -33,8 +28,8 @@ cc_test {
     name: "net_test_types",
     static_libs: [
         "libbase",
-        "libbluetooth-types",
         "libbluetooth_log",
+        "libbluetooth_types",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libosi", // strlcpy
     ],
