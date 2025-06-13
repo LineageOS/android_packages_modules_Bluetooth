@@ -158,7 +158,7 @@ public class ScanManager {
     // Hardcoded min number of hardware adv monitor slots for MSFT-enabled controllers
     private static final int MIN_NUM_MSFT_MONITOR_SLOTS = 20;
 
-    @VisibleForTesting final ClientHandler mHandler;
+    @VisibleForTesting final ClientHandler mClientHandler;
 
     private final Object mCurUsedTrackableAdvertisementsLock = new Object();
     private final Set<ScanClient> mRegularScanClients =
@@ -282,7 +282,7 @@ public class ScanManager {
         mPriorityMap.put(ScanSettings.SCAN_MODE_BALANCED, 4);
         mPriorityMap.put(ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY, 4);
         mPriorityMap.put(ScanSettings.SCAN_MODE_LOW_LATENCY, 5);
-        mHandler = new ClientHandler(looper);
+        mClientHandler = new ClientHandler(looper);
         mDisplayManager.registerDisplayListener(mDisplayListener, null);
         mScreenOn = isScreenOn();
         AppScanStats.setScreenState(mScreenOn);
@@ -317,7 +317,7 @@ public class ScanManager {
         mDisplayManager.unregisterDisplayListener(mDisplayListener);
 
         // Shut down the thread
-        mHandler.removeCallbacksAndMessages(null);
+        mClientHandler.removeCallbacksAndMessages(null);
 
         mAlarmManager.cancel(mBatchScanIntervalIntent);
         // Protect against multiple calls of cleanup.
@@ -401,7 +401,7 @@ public class ScanManager {
     }
 
     private void sendMessage(int what, ScanClient client) {
-        mHandler.obtainMessage(what, client).sendToTarget();
+        mClientHandler.obtainMessage(what, client).sendToTarget();
     }
 
     private boolean isFilteringSupported() {
@@ -2126,7 +2126,7 @@ public class ScanManager {
                         Message message = new Message();
                         message.what = MSG_IMPORTANCE_CHANGE;
                         message.obj = new UidImportance(uid, importance);
-                        mHandler.sendMessage(message);
+                        mClientHandler.sendMessage(message);
                     }
                 }
             };
@@ -2204,7 +2204,9 @@ public class ScanManager {
      */
     public void handleBluetoothProfileConnectionStateChanged(
             int profile, int fromState, int toState) {
-        mHandler.post(
-                () -> mHandler.handleProfileConnectionStateChanged(profile, fromState, toState));
+        mClientHandler.post(
+                () ->
+                        mClientHandler.handleProfileConnectionStateChanged(
+                                profile, fromState, toState));
     }
 }
