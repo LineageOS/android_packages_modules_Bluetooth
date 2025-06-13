@@ -251,7 +251,7 @@ static const tBTA_SYS_REG bta_hf_client_reg = {bta_hf_client_hdl_event, BTA_HfCl
  *
  ******************************************************************************/
 void bta_hf_client_cb_arr_init() {
-  memset(&bta_hf_client_cb_arr, 0, sizeof(tBTA_HF_CLIENT_CB_ARR));
+  bta_hf_client_cb_arr = tBTA_HF_CLIENT_CB_ARR{};
 
   // reset the handles and make the CBs non-allocated
   for (int i = 0; i < HF_CLIENT_MAX_DEVICES; i++) {

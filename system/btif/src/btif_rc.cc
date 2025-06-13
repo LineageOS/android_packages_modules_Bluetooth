@@ -2573,12 +2573,18 @@ static void cleanup_ctrl() {
     bt_rc_ctrl_callbacks = NULL;
   }
 
+  /*
+   * TODO: the void* casts are a workaround to silence a glibc+clang warning that memset
+   *       should not be used on complex data structures / classes.
+   */
   for (int idx = 0; idx < BTIF_RC_NUM_CONN; idx++) {
     alarm_free(btif_rc_cb.rc_multi_cb[idx].rc_play_status_timer);
-    memset(&btif_rc_cb.rc_multi_cb[idx], 0, sizeof(btif_rc_cb.rc_multi_cb[idx]));
+
+    void* ptr = static_cast<void*>(&btif_rc_cb.rc_multi_cb[idx]);
+    memset(ptr, 0, sizeof(btif_rc_cb.rc_multi_cb[idx]));
   }
 
-  memset(&btif_rc_cb.rc_multi_cb, 0, sizeof(btif_rc_cb.rc_multi_cb));
+  memset(static_cast<void*>(&btif_rc_cb.rc_multi_cb), 0, sizeof(btif_rc_cb.rc_multi_cb));
   log::verbose("completed");
 }
 
