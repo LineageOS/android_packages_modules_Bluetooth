@@ -159,6 +159,7 @@ import com.android.bluetooth.pbap.BluetoothPbapService;
 import com.android.bluetooth.pbapclient.PbapClientService;
 import com.android.bluetooth.sap.SapService;
 import com.android.bluetooth.sdp.SdpManager;
+import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.bluetooth.tbs.TbsService;
 import com.android.bluetooth.telephony.BluetoothInCallService;
 import com.android.bluetooth.vc.VolumeControlService;
@@ -291,6 +292,7 @@ public class AdapterService extends Service {
     private final GattNativeInterface mGattNativeInterface;
     private final AdvertiseManagerNativeInterface mAdvertiseManagerNativeInterface;
     private final DistanceMeasurementNativeInterface mDistanceMeasurementNativeInterface;
+    private final SdpManagerNativeInterface mSdpManagerNativeInterface;
     private final SilenceDeviceManager mSilenceDeviceManager;
     private final DatabaseManager mDatabaseManager;
     private final ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
@@ -383,6 +385,7 @@ public class AdapterService extends Service {
                 null,
                 null,
                 null,
+                null,
                 null);
     }
 
@@ -396,7 +399,8 @@ public class AdapterService extends Service {
             BluetoothHciVendorSpecificNativeInterface bluetoothHciVendorSpecificNativeInterface,
             GattNativeInterface gattNativeInterface,
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
-            DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
+            DistanceMeasurementNativeInterface distanceMeasurementNativeInterface,
+            SdpManagerNativeInterface sdpManagerNativeInterface) {
         this(
                 looper,
                 nativeInterface,
@@ -405,7 +409,8 @@ public class AdapterService extends Service {
                 bluetoothHciVendorSpecificNativeInterface,
                 gattNativeInterface,
                 advertiseManagerNativeInterface,
-                distanceMeasurementNativeInterface);
+                distanceMeasurementNativeInterface,
+                sdpManagerNativeInterface);
         attachBaseContext(ctx);
     }
 
@@ -417,7 +422,8 @@ public class AdapterService extends Service {
             BluetoothHciVendorSpecificNativeInterface bluetoothHciVendorSpecificNativeInterface,
             GattNativeInterface gattNativeInterface,
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
-            DistanceMeasurementNativeInterface distanceMeasurementNativeInterface) {
+            DistanceMeasurementNativeInterface distanceMeasurementNativeInterface,
+            SdpManagerNativeInterface sdpManagerNativeInterface) {
         mLooper = requireNonNull(looper);
         mHandler = new AdapterServiceHandler(mLooper);
         mNativeInterface = requireNonNull(nativeInterface);
@@ -439,6 +445,7 @@ public class AdapterService extends Service {
         mGattNativeInterface = gattNativeInterface;
         mAdvertiseManagerNativeInterface = advertiseManagerNativeInterface;
         mDistanceMeasurementNativeInterface = distanceMeasurementNativeInterface;
+        mSdpManagerNativeInterface = sdpManagerNativeInterface;
         mServiceFactory = new ServiceFactory();
         mSilenceDeviceManager = new SilenceDeviceManager(this, mServiceFactory, mLooper);
         mDatabaseManager = new DatabaseManager(this);
@@ -664,6 +671,10 @@ public class AdapterService extends Service {
 
     public RemoteDevices getRemoteDevices() {
         return mRemoteDevices;
+    }
+
+    public Optional<SdpManagerNativeInterface> getSdpManagerNativeInterface() {
+        return mSdpManager.map(SdpManager::getNativeInterface);
     }
 
     public SilenceDeviceManager getSilenceDeviceManager() {
@@ -952,7 +963,7 @@ public class AdapterService extends Service {
             mBluetoothHciVendorSpecificNativeInterface.init();
         }
 
-        mSdpManager = Optional.of(new SdpManager(this, mLooper));
+        mSdpManager = Optional.of(new SdpManager(this, mSdpManagerNativeInterface, mLooper));
 
         mDatabaseManager.start(MetadataDatabase.createDatabase(this));
 
