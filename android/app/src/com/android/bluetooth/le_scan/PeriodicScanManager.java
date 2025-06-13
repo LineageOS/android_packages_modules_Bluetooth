@@ -16,7 +16,7 @@
 
 package com.android.bluetooth.le_scan;
 
-import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringRunnable;
+import static com.android.bluetooth.Utils.callbackToApp;
 
 import static java.util.Objects.requireNonNull;
 
@@ -72,7 +72,6 @@ public class PeriodicScanManager {
 
     private volatile boolean mIsAvailable = true;
 
-    /** Constructor of {@link PeriodicScanManager}. */
     PeriodicScanManager(AdapterService service, Looper looper) {
         Log.d(TAG, "Periodic Scan Manager created");
         mAdapterService = requireNonNull(service);
@@ -185,7 +184,7 @@ public class PeriodicScanManager {
                                     e.getValue().timeout,
                                     e.getValue().deathRecipient,
                                     callback));
-                    sendToCallback(
+                    callbackToApp(
                             () ->
                                     callback.onSyncEstablished(
                                             syncHandle,
@@ -196,7 +195,7 @@ public class PeriodicScanManager {
                                             status));
 
                 } else {
-                    sendToCallback(
+                    callbackToApp(
                             () ->
                                     callback.onSyncEstablished(
                                             syncHandle,
@@ -224,7 +223,7 @@ public class PeriodicScanManager {
             PeriodicAdvertisingReport report =
                     new PeriodicAdvertisingReport(
                             syncHandle, txPower, rssi, dataStatus, ScanRecord.parseFromBytes(data));
-            sendToCallback(() -> callback.onPeriodicAdvertisingReport(report));
+            callbackToApp(() -> callback.onPeriodicAdvertisingReport(report));
         }
     }
 
@@ -240,7 +239,7 @@ public class PeriodicScanManager {
             synchronized (mSyncs) {
                 mSyncs.remove(binder);
             }
-            sendToCallback(() -> callback.onSyncLost(syncHandle));
+            callbackToApp(() -> callback.onSyncLost(syncHandle));
         }
     }
 
@@ -252,7 +251,7 @@ public class PeriodicScanManager {
             return;
         }
         for (IPeriodicAdvertisingCallback callback : callbacks) {
-            sendToCallback(() -> callback.onBigInfoAdvertisingReport(syncHandle, encrypted));
+            callbackToApp(() -> callback.onBigInfoAdvertisingReport(syncHandle, encrypted));
         }
     }
 
@@ -436,7 +435,6 @@ public class PeriodicScanManager {
             Log.w(TAG, "Unable to post sync task");
             return;
         }
-
         try {
             future.get(RUN_SYNC_WAIT_TIME_MS, TimeUnit.MILLISECONDS);
         } catch (InterruptedException | TimeoutException | ExecutionException e) {
@@ -450,9 +448,5 @@ public class PeriodicScanManager {
                 && !Utils.isInstrumentationTestMode()) {
             throw new IllegalStateException("Not on scan thread");
         }
-    }
-
-    private static void sendToCallback(RemoteExceptionIgnoringRunnable wrapper) {
-        wrapper.run();
     }
 }
