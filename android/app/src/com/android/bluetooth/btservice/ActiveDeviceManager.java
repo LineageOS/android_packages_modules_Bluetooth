@@ -47,12 +47,14 @@ import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * The active device manager is responsible for keeping track of the connected
@@ -1401,5 +1403,122 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
         setHfpActiveDevice(null);
         setHearingAidActiveDevice(null, true);
         setLeAudioActiveDevice(null, true);
+    }
+
+    private void getDevicesInfo(
+            StringBuilder sb, List<BluetoothDevice> devices, BluetoothDevice activeDevice) {
+        for (BluetoothDevice dev : devices) {
+            sb.append("      ");
+            if (dev == null) {
+                sb.append("NULL\n");
+                continue;
+            }
+            sb.append(dev).append(": ").append(mAdapterService.getRemoteName(dev));
+            if (activeDevice != null && Objects.equals(activeDevice, dev)) {
+                sb.append(" <- ACTIVE");
+            }
+            sb.append("\n");
+        }
+    }
+
+    private void getDevicesInfo(StringBuilder sb, BluetoothDevice device) {
+        if (device == null) {
+            sb.append("NULL\n");
+            return;
+        }
+        sb.append(device).append(": ").append(mAdapterService.getRemoteName(device)).append("\n");
+    }
+
+    protected void dump(PrintWriter writer) {
+        StringBuilder sb = new StringBuilder();
+
+        synchronized (mLock) {
+            sb.append("  Audio mode: ").append(mAudioManager.getMode()).append("\n");
+            sb.append("  Dual mode audio: ").append(Utils.isDualModeAudioEnabled()).append("\n");
+            sb.append("  Broadcasting: ").append(isBroadcastingAudio()).append("\n");
+            sb.append("  Pending active device: ");
+            getDevicesInfo(sb, mPendingActiveDevice);
+            sb.append("  Classic device to be activated: ");
+            getDevicesInfo(sb, mClassicDeviceToBeActivated);
+            sb.append("  Classic device not to be activated: ");
+            getDevicesInfo(sb, mClassicDeviceNotToBeActivated);
+
+            sb.append("  A2DP:\n");
+            sb.append("    Connected: ").append(mA2dpConnectedDevices.size()).append("\n");
+            getDevicesInfo(sb, mA2dpConnectedDevices, mA2dpActiveDevice);
+            sb.append("    Active: ");
+            getDevicesInfo(sb, mA2dpActiveDevice);
+            sb.append("    Fallback: ");
+            final var a2dpService = getA2dpService();
+            BluetoothDevice a2dpFallbackDevice = null;
+            if (!a2dpService.isEmpty()) {
+                a2dpFallbackDevice = a2dpService.get().getFallbackDevice();
+            }
+            getDevicesInfo(sb, a2dpFallbackDevice);
+            sb.append("    Most recent: ");
+            BluetoothDevice recentlyConnectedA2dpDevice =
+                    mDatabaseManager.getMostRecentlyConnectedDevicesInList(mA2dpConnectedDevices);
+            getDevicesInfo(sb, recentlyConnectedA2dpDevice);
+
+            sb.append("  HFP:\n");
+            sb.append("    Connected: ").append(mHfpConnectedDevices.size()).append("\n");
+            getDevicesInfo(sb, mHfpConnectedDevices, mHfpActiveDevice);
+            sb.append("    Active: ");
+            getDevicesInfo(sb, mHfpActiveDevice);
+            sb.append("    Fallback: ");
+            final var headsetService = getHeadsetService();
+            BluetoothDevice headsetFallbackDevice = null;
+            if (!headsetService.isEmpty()) {
+                headsetFallbackDevice = headsetService.get().getFallbackDevice();
+            }
+            getDevicesInfo(sb, headsetFallbackDevice);
+            sb.append("    Most recent: ");
+            BluetoothDevice recentlyConnectedHfpDevice =
+                    mDatabaseManager.getMostRecentlyConnectedDevicesInList(mHfpConnectedDevices);
+            getDevicesInfo(sb, recentlyConnectedHfpDevice);
+
+            sb.append("  HA:\n");
+            sb.append("    Connected: ").append(mHearingAidConnectedDevices.size()).append("\n");
+            getDevicesInfo(sb, mHearingAidConnectedDevices, null);
+            sb.append("    Active: ").append(mHearingAidActiveDevices.size()).append("\n");
+            getDevicesInfo(
+                    sb, mHearingAidActiveDevices.stream().collect(Collectors.toList()), null);
+            sb.append("    Most recent: ");
+            BluetoothDevice recentlyConnectedHaDevice =
+                    mDatabaseManager.getMostRecentlyConnectedDevicesInList(
+                            mHearingAidConnectedDevices);
+            getDevicesInfo(sb, recentlyConnectedHaDevice);
+
+            sb.append("  LE Audio:\n");
+            sb.append("    Connected: ").append(mLeAudioConnectedDevices.size()).append("\n");
+            getDevicesInfo(sb, mLeAudioConnectedDevices, mLeAudioActiveDevice);
+            sb.append("    Active: ");
+            getDevicesInfo(sb, mLeAudioActiveDevice);
+            sb.append("    Most recent: ");
+            BluetoothDevice recentlyConnectedLeAudioDevice =
+                    mDatabaseManager.getMostRecentlyConnectedDevicesInList(
+                            mLeAudioConnectedDevices);
+            getDevicesInfo(sb, recentlyConnectedLeAudioDevice);
+
+            sb.append("  LE HA:\n");
+            sb.append("    Connected: ").append(mLeHearingAidConnectedDevices.size()).append("\n");
+            getDevicesInfo(sb, mLeHearingAidConnectedDevices, mLeHearingAidActiveDevice);
+            sb.append("    Active: ");
+            getDevicesInfo(sb, mLeHearingAidActiveDevice);
+            sb.append("    Most recent: ");
+            BluetoothDevice recentlyConnectedLeHaDevice =
+                    mDatabaseManager.getMostRecentlyConnectedDevicesInList(
+                            mLeHearingAidConnectedDevices);
+            getDevicesInfo(sb, recentlyConnectedLeHaDevice);
+            sb.append("    Pending active: ")
+                    .append(mPendingLeHearingAidActiveDevice.size())
+                    .append("\n");
+            getDevicesInfo(sb, mPendingLeHearingAidActiveDevice, null);
+        }
+
+        writer.println("");
+        writer.println(TAG);
+        writer.println(sb.toString());
+        writer.println("");
     }
 }
