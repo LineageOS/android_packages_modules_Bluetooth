@@ -626,6 +626,23 @@ public:
 
   /*******************************************************************************
    **
+   ** Function         L2CA_LockBleConnParamsForLeAudioSubrate
+   **
+   ** Description:     When called with lock=true, LE connection parameters will
+   **                  be locked on LE Audio subrate capable device, and we won't
+   **                  accept request to change it from remote. When called with
+   **                  lock=false, parameters are relaxed.
+   **
+   ** Parameters:      bd_addr: Peer bluetooth device address
+   **                  lock: Determines the lock the update from the remote side
+   **
+   ** Returns          void
+   **
+   ******************************************************************************/
+  virtual void L2CA_LockBleConnParamsForLeAudioSubrate(const RawAddress& bd_addr, bool lock) = 0;
+
+  /*******************************************************************************
+   **
    ** Function         L2CA_Consolidate
    **
    ** Description      This function consolidates two addresses.

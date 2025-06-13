@@ -103,6 +103,7 @@ public:
                                               uint16_t min_ce_len, uint16_t max_ce_len) override;
   void L2CA_LockBleConnParamsForServiceDiscovery(const RawAddress& bd_addr, bool lock) override;
   void L2CA_LockBleConnParamsForProfileConnection(const RawAddress& bd_addr, bool lock) override;
+  void L2CA_LockBleConnParamsForLeAudioSubrate(const RawAddress& bd_addr, bool lock) override;
   [[nodiscard]] tHCI_ROLE L2CA_GetBleConnRole(const RawAddress& bd_addr) override;
   [[nodiscard]] uint16_t L2CA_GetBleConnInterval(const RawAddress& bd_addr) override;
   [[nodiscard]] bool L2CA_SetLeGattTimeout(const RawAddress& bd_addr, uint16_t idle_tout) override;

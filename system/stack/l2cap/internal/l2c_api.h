@@ -694,6 +694,12 @@ void L2CA_LockBleConnParamsForServiceDiscovery(const RawAddress& rem_bda, bool l
  */
 void L2CA_LockBleConnParamsForProfileConnection(const RawAddress& rem_bda, bool lock);
 
+/* When called with lock=true, LE connection parameters will be locked on
+ * le audio subrate capable device, and we won't accept request to change it from remote. When
+ * called with lock=false, parameters are relaxed.
+ */
+void L2CA_LockBleConnParamsForLeAudioSubrate(const RawAddress& rem_bda, bool lock);
+
 /*******************************************************************************
  *
  * Function         L2CA_GetBleConnRole
