@@ -60,6 +60,8 @@ public:
   virtual bool MaybeResolveAddress(RawAddress* bda, tBLE_ADDR_TYPE* bda_type) = 0;
   virtual bool BTM_RandomPseudoToIdentityAddr(RawAddress* random_pseudo,
                                               uint8_t* p_static_addr_type) = 0;
+  virtual bool AclPeerSupportsBleConnectionSubrating(const RawAddress& random_pseudo) = 0;
+  virtual bool AclPeerSupportsBleConnectionSubratingHost(const RawAddress& random_pseudo) = 0;
 
   virtual ~BtmInterface() = default;
 };
@@ -105,6 +107,8 @@ public:
   MOCK_METHOD((bool), MaybeResolveAddress, (RawAddress* bda, tBLE_ADDR_TYPE* bda_type), (override));
   MOCK_METHOD((bool), BTM_RandomPseudoToIdentityAddr,
               (RawAddress* random_pseudo, uint8_t* p_static_addr_type), (override));
+  MOCK_METHOD((bool), AclPeerSupportsBleConnectionSubrating, (const RawAddress& bd_addr), (override));
+  MOCK_METHOD((bool), AclPeerSupportsBleConnectionSubratingHost, (const RawAddress& bd_addr), (override));
 };
 
 /**
