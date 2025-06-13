@@ -25,6 +25,7 @@
 #define LOG_TAG "stack::sdp"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -36,7 +37,6 @@
 #include "stack/include/sdpdefs.h"
 #include "stack/sdp/sdp_discovery_db.h"
 #include "stack/sdp/sdpint.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 using bluetooth::Uuid;

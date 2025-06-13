@@ -26,11 +26,11 @@
 
 #include <base/functional/bind.h>
 #include <base/location.h>
+#include <bluetooth/types/uuid.h>
 
 #include "bta/sdp/bta_sdp_int.h"
 #include "internal_include/bt_target.h"
 #include "stack/include/main_thread.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 /*****************************************************************************

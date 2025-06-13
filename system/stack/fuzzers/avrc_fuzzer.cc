@@ -16,6 +16,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include <cstdint>
@@ -32,7 +33,6 @@
 #include "test/mock/mock_stack_btm_dev.h"
 #include "test/mock/mock_stack_l2cap_api.h"
 #include "test/mock/mock_stack_l2cap_interface.h"
-#include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;

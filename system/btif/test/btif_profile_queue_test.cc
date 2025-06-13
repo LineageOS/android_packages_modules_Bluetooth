@@ -20,11 +20,11 @@
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <base/location.h>
+#include <bluetooth/types/uuid.h>
 #include <gtest/gtest.h>
 
 #include "btif/include/btif_common.h"
 #include "btif/include/stack_manager_t.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 typedef void(tBTIF_CBACK)(uint16_t event, char* p_param);

@@ -18,8 +18,8 @@
 #include "bta_gatt_api_mock.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 using namespace bluetooth;

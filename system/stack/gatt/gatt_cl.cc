@@ -25,6 +25,7 @@
 #define LOG_TAG "bluetooth"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <string.h>
 
 #include "gatt_int.h"
@@ -36,7 +37,6 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/l2cdefs.h"
-#include "types/bluetooth/uuid.h"
 
 #define GATT_WRITE_LONG_HDR_SIZE 5 /* 1 opcode + 2 handle + 2 offset */
 #define GATT_READ_CHAR_VALUE_HDL (GATT_READ_CHAR_VALUE | 0x80)

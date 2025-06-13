@@ -18,12 +18,11 @@
 
 #include "gatt/database_builder.h"
 
+#include <bluetooth/types/uuid.h>
 #include <gtest/gtest.h>
 
 #include <iterator>
 #include <utility>
-
-#include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
 

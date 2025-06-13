@@ -25,8 +25,9 @@
 #include <functional>
 
 // Original included files, if any
+#include <bluetooth/types/uuid.h>
+
 #include "bta/include/bta_sdp_api.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 // Original usings

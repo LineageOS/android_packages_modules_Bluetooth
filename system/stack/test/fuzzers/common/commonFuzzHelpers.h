@@ -17,13 +17,13 @@
 #ifndef BT_STACK_FUZZ_COMMON_HELPERS_H_
 #define BT_STACK_FUZZ_COMMON_HELPERS_H_
 
+#include <bluetooth/types/uuid.h>
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include <cstring>  // For memcpy
 #include <functional>
 #include <vector>
 
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 // Calls a function from the ops_vector

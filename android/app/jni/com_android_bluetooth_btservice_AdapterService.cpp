@@ -19,6 +19,7 @@
 
 #include <android/log.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <jni.h>
 #include <nativehelper/JNIHelp.h>
 #include <nativehelper/JNIPlatformHelp.h>
@@ -40,7 +41,6 @@
 #include "hardware/bluetooth.h"
 #include "hardware/bt_sock.h"
 #include "types/ble_address_with_type.h"
-#include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
 extern bt_interface_t bluetoothInterface;

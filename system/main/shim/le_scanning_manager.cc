@@ -21,6 +21,7 @@
 #include <base/functional/bind.h>
 #include <base/threading/thread.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <hardware/bluetooth.h>
 
@@ -49,7 +50,6 @@
 #include "storage/le_device.h"
 #include "storage/storage_module.h"
 #include "types/ble_address_with_type.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 using namespace bluetooth;

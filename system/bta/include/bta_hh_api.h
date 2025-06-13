@@ -19,6 +19,7 @@
 #define BTA_HH_API_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 
 #include <cstdint>
 #include <string>
@@ -29,7 +30,6 @@
 #include "stack/include/hiddefs.h"
 #include "stack/include/l2cap_types.h"
 #include "types/ble_address_with_type.h"
-#include "types/bluetooth/uuid.h"
 
 /*****************************************************************************
  *  Constants and Type Definitions

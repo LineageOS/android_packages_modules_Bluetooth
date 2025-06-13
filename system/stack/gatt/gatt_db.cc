@@ -23,13 +23,13 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <string.h>
 
 #include "gatt_int.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/l2cap_types.h"
-#include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;

@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "types/bluetooth/uuid.h"
+#include <bluetooth/types/uuid.h>
 
 namespace ras {
 static const uint16_t kFeatureSize = 0x04;

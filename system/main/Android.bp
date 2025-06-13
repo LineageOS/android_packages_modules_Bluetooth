@@ -49,6 +49,7 @@ cc_library_static {
         "libbluetooth_gd",
         "libbluetooth_log",
         "libbluetooth_metrics",
+        "libbluetooth_types",
         "libcom.android.sysprop.bluetooth.wrapped",
     ],
     header_libs: ["libbluetooth_headers"],

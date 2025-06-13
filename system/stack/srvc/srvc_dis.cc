@@ -19,6 +19,7 @@
 #define LOG_TAG "bt_srvc"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 
 #include "gatt_api.h"
@@ -29,7 +30,6 @@
 #include "srvc_eng_int.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 using namespace bluetooth;

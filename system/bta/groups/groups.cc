@@ -16,6 +16,7 @@
  */
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <stdio.h>
 
 #include <algorithm>
@@ -36,7 +37,6 @@
 #include "bta_groups.h"
 #include "btif/include/btif_profile_storage.h"
 #include "stack/include/bt_types.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 using bluetooth::Uuid;

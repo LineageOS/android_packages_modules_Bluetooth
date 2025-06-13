@@ -23,6 +23,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <stdint.h>
 
 #include <bit>
@@ -38,7 +39,6 @@
 #include "osi/include/alarm.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_iso_api_types.h"
-#include "types/bluetooth/uuid.h"
 
 namespace bluetooth::le_audio {
 

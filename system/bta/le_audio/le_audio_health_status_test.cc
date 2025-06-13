@@ -19,12 +19,12 @@
 #include <base/functional/callback.h>
 #include <base/functional/callback_forward.h>
 #include <base/functional/callback_helpers.h>
+#include <bluetooth/types/uuid.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "bta/include/bta_groups.h"
 #include "test/common/mock_functions.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 using bluetooth::groups::kGroupUnknown;

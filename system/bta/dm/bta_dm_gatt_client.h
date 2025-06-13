@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/types/uuid.h>
+
 #include <cstdint>
 #include <string>
 
@@ -23,7 +25,6 @@
 #include "gd/common/circular_buffer.h"
 #include "include/hardware/bt_common_types.h"
 #include "stack/include/btm_ble_api_types.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 //

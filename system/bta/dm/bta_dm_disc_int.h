@@ -17,6 +17,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 
 #include <queue>
 #include <string>
@@ -27,7 +28,6 @@
 #include "macros.h"
 #include "stack/include/sdp_status.h"
 #include "stack/sdp/sdp_discovery_db.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 #define BTA_SERVICE_ID_TO_SERVICE_MASK(id) (1 << (id))

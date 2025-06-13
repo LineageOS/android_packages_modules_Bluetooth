@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/uuid.h>
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include <cstdint>
@@ -30,7 +31,6 @@
 #include "test/mock/mock_btif_config.h"
 #include "test/mock/mock_stack_l2cap_api.h"
 #include "test/mock/mock_stack_l2cap_interface.h"
-#include "types/bluetooth/uuid.h"
 
 using ::testing::NiceMock;
 using ::testing::Unused;
