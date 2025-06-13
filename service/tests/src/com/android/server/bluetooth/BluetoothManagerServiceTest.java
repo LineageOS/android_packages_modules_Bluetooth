@@ -360,27 +360,24 @@ public class BluetoothManagerServiceTest {
         endTest();
     }
 
-    private BluetoothManagerService.BluetoothServiceConnection acceptBluetoothBinding() {
+    private ServiceConnection acceptBluetoothBinding() {
         ComponentName compName =
                 new ComponentName("", "com.android.bluetooth.btservice.AdapterService");
 
-        ArgumentCaptor<BluetoothManagerService.BluetoothServiceConnection> captor =
-                ArgumentCaptor.forClass(BluetoothManagerService.BluetoothServiceConnection.class);
+        var captor = ArgumentCaptor.forClass(ServiceConnection.class);
         mInOrder.verify(mContext)
                 .bindServiceAsUser(
                         any(Intent.class), captor.capture(), anyInt(), any(UserHandle.class));
         assertThat(captor.getAllValues()).hasSize(1);
 
-        BluetoothManagerService.BluetoothServiceConnection serviceConnection =
-                captor.getAllValues().get(0);
+        var serviceConnection = captor.getAllValues().get(0);
         serviceConnection.onServiceConnected(compName, mBinder);
         syncHandler(MESSAGE_BLUETOOTH_SERVICE_CONNECTED);
         return serviceConnection;
     }
 
     private IBluetoothCallback captureBluetoothCallback() throws Exception {
-        ArgumentCaptor<IBluetoothCallback> captor =
-                ArgumentCaptor.forClass(IBluetoothCallback.class);
+        var captor = ArgumentCaptor.forClass(IBluetoothCallback.class);
         mInOrder.verify(mAdapterBinder).registerCallback(captor.capture());
         assertThat(captor.getAllValues()).hasSize(1);
         return captor.getValue();
@@ -540,8 +537,7 @@ public class BluetoothManagerServiceTest {
             syncHandler(MESSAGE_ENABLE);
         }
 
-        BluetoothManagerService.BluetoothServiceConnection serviceConnection =
-                acceptBluetoothBinding();
+        var serviceConnection = acceptBluetoothBinding();
 
         IBluetoothCallback btCallback = captureBluetoothCallback();
         mInOrder.verify(mAdapterBinder).offToBleOn(anyBoolean(), anyString());
@@ -864,6 +860,76 @@ public class BluetoothManagerServiceTest {
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
         endTest();
+    }
+
+    @Test
+    @EnableFlags({
+        Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP,
+        Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
+        Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD,
+        Flags.FLAG_CLEANUP_STARTING_USER,
+        Flags.FLAG_USER_SWITCH_DURING_BLE_ON
+    })
+    public void bleBinderDeath_whenBleOn_isOff() throws Exception {
+        mManagerService.enableBle("bleBinderDeath_whenBleOn_isOff", mBleBinder);
+        IBluetoothCallback btCallback = transition_offToBleOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.BLE_ON);
+
+        var captor = ArgumentCaptor.forClass(IBinder.DeathRecipient.class);
+        verify(mBleBinder).linkToDeath(captor.capture(), anyInt());
+        captor.getValue().binderDied();
+        syncHandler(0); // To post from the binder death
+
+        transition_bleOnToOff(btCallback);
+        assertThat(mManagerService.getState()).isEqualTo(State.OFF);
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags({
+        Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP,
+        Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
+        Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD,
+        Flags.FLAG_CLEANUP_STARTING_USER,
+        Flags.FLAG_USER_SWITCH_DURING_BLE_ON
+    })
+    public void bleBinderDeath_whenOn_staysOn() throws Exception {
+        mManagerService.enable("bleBinderDeath_whenOn_staysOn");
+        transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        mManagerService.enableBle("bleBinderDeath_whenOn_staysOn", mBleBinder);
+
+        var captor = ArgumentCaptor.forClass(IBinder.DeathRecipient.class);
+        verify(mBleBinder).linkToDeath(captor.capture(), anyInt());
+        captor.getValue().binderDied();
+        syncHandler(0); // To post from the binder death
+
+        endTest(); // Nothing happen
+    }
+
+    @Test
+    @EnableFlags({
+        Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP,
+        Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
+        Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD,
+        Flags.FLAG_CLEANUP_STARTING_USER,
+        Flags.FLAG_USER_SWITCH_DURING_BLE_ON
+    })
+    public void bleBinderDeath_whenOtherApp_staysOn() throws Exception {
+        mManagerService.enableBle("bleBinderDeath_whenOtherApp_staysOn", mBleBinder);
+        transition_offToBleOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.BLE_ON);
+
+        mManagerService.enableBle("other_bleBinderDeath_whenOtherApp_staysOn", mock(IBinder.class));
+
+        var captor = ArgumentCaptor.forClass(IBinder.DeathRecipient.class);
+        verify(mBleBinder).linkToDeath(captor.capture(), anyInt());
+        captor.getValue().binderDied();
+        syncHandler(0); // To post from the binder death
+
+        endTest(); // Nothing happen
     }
 
     @SafeVarargs
