@@ -341,7 +341,12 @@ void Stack::Dump(int fd, std::promise<void> promise) const {
 }
 
 void Stack::handle_start_up(std::promise<void> promise) {
-  pimpl_ = std::make_unique<Stack::impl>(stack_handler_);
+  if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+    pimpl_ = std::make_unique<Stack::impl>(new Handler(stack_thread_));
+  } else {
+    pimpl_ = std::make_unique<Stack::impl>(stack_handler_);
+  }
+
   promise.set_value();
 }
 
