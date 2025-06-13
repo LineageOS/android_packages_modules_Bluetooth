@@ -20,6 +20,7 @@ import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_AIRPLANE_MODE;
 import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_DIED;
 import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST;
+import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_AUTO_ON;
 import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_CRASH;
 import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_DISALLOWED;
 import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_FACTORY_RESET;
@@ -1176,7 +1177,7 @@ class BluetoothManagerService {
             return Unit.INSTANCE;
         }
         sendToggleNotification("auto_on_bt_enabled_notification");
-        enable("BluetoothSystemServer/AutoOn");
+        enable(ENABLE_DISABLE_REASON_AUTO_ON, mContext.getPackageName());
         return Unit.INSTANCE;
     }
 
@@ -1203,11 +1204,11 @@ class BluetoothManagerService {
     }
 
     boolean enableFromBinder(String packageName) {
-        return postAndWait(() -> enable(packageName));
+        return postAndWait(() -> enable(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName));
     }
 
     @VisibleForTesting
-    boolean enable(String packageName) {
+    boolean enable(int reason, String packageName) {
         Log.d(
                 TAG,
                 ("enable(" + packageName + "):")
@@ -1229,7 +1230,7 @@ class BluetoothManagerService {
         mEnableExternal = true;
         AirplaneModeListener.notifyUserToggledBluetooth(
                 mContentResolver, mCurrentUserContext, true);
-        sendEnableMsg(false, ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName);
+        sendEnableMsg(false, reason, packageName);
         return true;
     }
 
