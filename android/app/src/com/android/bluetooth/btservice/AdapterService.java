@@ -316,7 +316,7 @@ public class AdapterService extends Service {
     private AdapterSuspend mAdapterSuspend;
 
     /* TODO: Consider to remove the search API from this class, if changed to use call-back */
-    private SdpManager mSdpManager = null;
+    private Optional<SdpManager> mSdpManager = Optional.empty();
 
     private boolean mNativeAvailable;
     private boolean mCleaningUp;
@@ -952,7 +952,7 @@ public class AdapterService extends Service {
             mBluetoothHciVendorSpecificNativeInterface.init();
         }
 
-        mSdpManager = new SdpManager(this, mLooper);
+        mSdpManager = Optional.of(new SdpManager(this, mLooper));
 
         mDatabaseManager.start(MetadataDatabase.createDatabase(this));
 
@@ -1409,10 +1409,8 @@ public class AdapterService extends Service {
             mRemoteDevices.reset();
         }
 
-        if (mSdpManager != null) {
-            mSdpManager.cleanup();
-            mSdpManager = null;
-        }
+        mSdpManager.ifPresent(SdpManager::cleanup);
+        mSdpManager = Optional.empty();
 
         if (mNativeAvailable) {
             Log.d(TAG, "cleanup() - Cleaning up adapter native");
@@ -1570,11 +1568,8 @@ public class AdapterService extends Service {
     }
 
     public boolean sdpSearch(BluetoothDevice device, ParcelUuid uuid) {
-        if (mSdpManager == null) {
-            return false;
-        }
-        mSdpManager.sdpSearch(device, uuid);
-        return true;
+        mSdpManager.ifPresent(sdpManager -> sdpManager.sdpSearch(device, uuid));
+        return mSdpManager.isPresent();
     }
 
     void stateChangeCallback(int status) {
