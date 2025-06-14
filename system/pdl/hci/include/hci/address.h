@@ -25,7 +25,6 @@
 #include <ostream>
 #include <string>
 
-#include "packet/custom_field_fixed_size_interface.h"
 #include "storage/serializable.h"
 
 class RawAddress;
@@ -33,8 +32,7 @@ class RawAddress;
 namespace bluetooth {
 namespace hci {
 
-class Address final : public packet::CustomFieldFixedSizeInterface<Address>,
-                      public storage::Serializable<Address> {
+class Address final : public storage::Serializable<Address> {
 public:
   static constexpr size_t kLength = 6;
 
@@ -49,9 +47,8 @@ public:
   Address(std::initializer_list<uint8_t> l);
   Address(const RawAddress& address);
 
-  // CustomFieldFixedSizeInterface methods
-  inline uint8_t* data() override { return address.data(); }
-  inline const uint8_t* data() const override { return address.data(); }
+  uint8_t* data() { return address.data(); }
+  const uint8_t* data() const { return address.data(); }
 
   // storage::Serializable methods
   std::string ToString() const override;
@@ -84,6 +81,7 @@ public:
 
   static const Address kEmpty;  // 00:00:00:00:00:00
   static const Address kAny;    // FF:FF:FF:FF:FF:FF
+
 private:
   std::string _ToMaskedColonSepHexString(int bytes_to_mask) const;
 };

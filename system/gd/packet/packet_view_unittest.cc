@@ -21,13 +21,27 @@
 #include <forward_list>
 #include <memory>
 
-#include "hci/address.h"
+#include "packet/custom_field_fixed_size_interface.h"
 #include "packet/iterator.h"
 
-using bluetooth::hci::Address;
 using bluetooth::packet::PacketView;
 using bluetooth::packet::View;
 using std::vector;
+
+struct Custom : public bluetooth::packet::CustomFieldFixedSizeInterface<Custom> {
+public:
+  static constexpr size_t kLength = 6;
+  std::array<uint8_t, kLength> value;
+
+  Custom(std::initializer_list<uint8_t> l) {
+    std::copy(l.begin(), std::min(l.begin() + kLength, l.end()), data());
+  }
+
+  inline uint8_t* data() override { return value.data(); }
+  inline const uint8_t* data() const override { return value.data(); }
+
+  bool operator==(Custom const& other) const { return value == other.value; }
+};
 
 namespace {
 vector<uint8_t> count_all = {
@@ -145,8 +159,8 @@ TEST(IteratorExtractTest, extractLeTest) {
   ASSERT_EQ(0x06050403u, general_case.extract<uint32_t>());
   ASSERT_EQ(0x0e0d0c0b0a090807u, general_case.extract<uint64_t>());
   ASSERT_EQ(0x0f, general_case.extract<uint8_t>());
-  Address raw({0x10, 0x11, 0x12, 0x13, 0x14, 0x15});
-  ASSERT_EQ(raw, general_case.extract<Address>());
+  Custom raw({0x10, 0x11, 0x12, 0x13, 0x14, 0x15});
+  ASSERT_EQ(raw, general_case.extract<Custom>());
   ASSERT_EQ(0x16, general_case.extract<uint8_t>());
 }
 
@@ -160,8 +174,8 @@ TEST(IteratorExtractTest, extractBeTest) {
   ASSERT_EQ(0x03040506u, general_case.extract<uint32_t>());
   ASSERT_EQ(0x0708090a0b0c0d0eu, general_case.extract<uint64_t>());
   ASSERT_EQ(0x0f, general_case.extract<uint8_t>());
-  Address raw({0x15, 0x14, 0x13, 0x12, 0x11, 0x10});
-  ASSERT_EQ(raw, general_case.extract<Address>());
+  Custom raw({0x15, 0x14, 0x13, 0x12, 0x11, 0x10});
+  ASSERT_EQ(raw, general_case.extract<Custom>());
   ASSERT_EQ(0x16, general_case.extract<uint8_t>());
 }
 
