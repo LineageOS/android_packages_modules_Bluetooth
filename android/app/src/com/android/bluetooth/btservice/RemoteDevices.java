@@ -1030,7 +1030,7 @@ public class RemoteDevices {
             }
         }
 
-        public void setOnheadDetectionEnabledState(int enabledState) {
+        public void setOnHeadDetectionEnabledState(int enabledState) {
             synchronized (mObject) {
                 this.mOnHeadDetectionEnabledState = enabledState;
             }

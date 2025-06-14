@@ -139,6 +139,7 @@ class BassClientStateMachine extends StateMachine {
 
     @VisibleForTesting BluetoothDevice mDevice;
 
+    private State mCurrentState = mDisconnected;
     private boolean mIsAllowedList = false;
     private int mLastConnectionState = -1;
     @VisibleForTesting boolean mMTUChangeRequested = false;
@@ -1161,6 +1162,7 @@ class BassClientStateMachine extends StateMachine {
     class Disconnected extends State {
         @Override
         public void enter() {
+            mCurrentState = this;
             Log.d(
                     TAG,
                     "Enter Disconnected("
@@ -1253,6 +1255,7 @@ class BassClientStateMachine extends StateMachine {
     class Connecting extends State {
         @Override
         public void enter() {
+            mCurrentState = this;
             Log.d(
                     TAG,
                     "Enter Connecting("
@@ -1637,6 +1640,7 @@ class BassClientStateMachine extends StateMachine {
     class Connected extends State {
         @Override
         public void enter() {
+            mCurrentState = this;
             Log.d(
                     TAG,
                     "Enter Connected("
@@ -2127,6 +2131,7 @@ class BassClientStateMachine extends StateMachine {
     class ConnectedProcessing extends State {
         @Override
         public void enter() {
+            mCurrentState = this;
             Log.d(
                     TAG,
                     "Enter ConnectedProcessing("
@@ -2263,10 +2268,7 @@ class BassClientStateMachine extends StateMachine {
     }
 
     int getConnectionState() {
-        String currentState = "Unknown";
-        if (getCurrentState() != null) {
-            currentState = getCurrentState().getName();
-        }
+        String currentState = mCurrentState.getName();
         return switch (currentState) {
             case "Disconnected" -> STATE_DISCONNECTED;
             case "Connecting" -> STATE_CONNECTING;
@@ -2295,7 +2297,7 @@ class BassClientStateMachine extends StateMachine {
     }
 
     synchronized boolean isConnected() {
-        return (getCurrentState() == mConnected) || (getCurrentState() == mConnectedProcessing);
+        return (mCurrentState == mConnected) || (mCurrentState == mConnectedProcessing);
     }
 
     public static String messageWhatToString(int what) {
@@ -2339,6 +2341,7 @@ class BassClientStateMachine extends StateMachine {
     /** Dump info */
     public void dump(StringBuilder sb) {
         ProfileService.println(sb, "mDevice: " + mDevice);
+        ProfileService.println(sb, "mCurrentState: " + mCurrentState.getName());
         ProfileService.println(sb, "  StateMachine: " + this);
         // Dump the state machine logs
         StringWriter stringWriter = new StringWriter();

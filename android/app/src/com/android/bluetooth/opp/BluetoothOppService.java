@@ -68,7 +68,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
-import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ObexTransport;
 
@@ -501,8 +500,8 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         stopListeners();
         mServerSocket = ObexServerSockets.createInsecure(mAdapterService, this);
         acceptNewConnections();
-        SdpManagerNativeInterface nativeInterface = SdpManagerNativeInterface.getInstance();
-        if (!nativeInterface.isAvailable()) {
+        final var nativeInterface = mAdapterService.getSdpManagerNativeInterface();
+        if (nativeInterface.isEmpty()) {
             Log.e(TAG, "ERROR:serverSocket: SdpManagerNativeInterface is not available");
             ContentProfileErrorReportUtils.report(
                     mProfileId,
@@ -521,12 +520,14 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
             return;
         }
         mOppSdpHandle =
-                nativeInterface.createOppOpsRecord(
-                        "OBEX Object Push",
-                        mServerSocket.getRfcommChannel(),
-                        mServerSocket.getL2capPsm(),
-                        0x0102,
-                        SUPPORTED_OPP_FORMAT);
+                nativeInterface
+                        .get()
+                        .createOppOpsRecord(
+                                "OBEX Object Push",
+                                mServerSocket.getRfcommChannel(),
+                                mServerSocket.getL2capPsm(),
+                                0x0102,
+                                SUPPORTED_OPP_FORMAT);
         Log.d(TAG, "mOppSdpHandle :" + mOppSdpHandle);
     }
 
@@ -1321,10 +1322,10 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
     }
 
     private void stopListeners() {
-        SdpManagerNativeInterface nativeInterface = SdpManagerNativeInterface.getInstance();
-        if (mOppSdpHandle >= 0 && nativeInterface.isAvailable()) {
+        final var nativeInterface = mAdapterService.getSdpManagerNativeInterface();
+        if (mOppSdpHandle >= 0 && nativeInterface.isPresent()) {
             Log.d(TAG, "Removing SDP record mOppSdpHandle :" + mOppSdpHandle);
-            boolean status = nativeInterface.removeSdpRecord(mOppSdpHandle);
+            boolean status = nativeInterface.get().removeSdpRecord(mOppSdpHandle);
             Log.d(TAG, "RemoveSDPRecord returns " + status);
             mOppSdpHandle = -1;
         }

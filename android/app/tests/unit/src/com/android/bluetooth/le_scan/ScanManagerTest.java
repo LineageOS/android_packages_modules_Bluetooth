@@ -271,7 +271,7 @@ public class ScanManagerTest {
     }
 
     private void sendMessageWaitForProcessed(Message msg) {
-        mScanManager.mHandler.sendMessage(msg);
+        mScanManager.mClientHandler.sendMessage(msg);
         mLooper.dispatchAll();
     }
 
@@ -721,9 +721,10 @@ public class ScanManagerTest {
 
         // Put a timeout message in the queue to emulate the scan being started already
         Message timeoutMessage =
-                mScanManager.mHandler.obtainMessage(ScanManager.MSG_SCAN_TIMEOUT, client);
-        mScanManager.mHandler.sendMessageDelayed(timeoutMessage, DEFAULT_SCAN_TIMEOUT_MILLIS / 2);
-        mScanManager.mHandler.sendMessage(createStartStopScanMessage(true, client));
+                mScanManager.mClientHandler.obtainMessage(ScanManager.MSG_SCAN_TIMEOUT, client);
+        mScanManager.mClientHandler.sendMessageDelayed(
+                timeoutMessage, DEFAULT_SCAN_TIMEOUT_MILLIS / 2);
+        mScanManager.mClientHandler.sendMessage(createStartStopScanMessage(true, client));
         // Dispatching all messages only runs start scan
         assertThat(mLooper.dispatchAll()).isEqualTo(1);
 

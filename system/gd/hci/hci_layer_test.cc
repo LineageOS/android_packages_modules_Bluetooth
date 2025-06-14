@@ -560,9 +560,9 @@ TEST_F(HciTest, createConnectionTest) {
   ASSERT_TRUE(acl_view_result.has_value());
   auto acl_view = *acl_view_result;
   ASSERT_TRUE(acl_view.IsValid());
-  ASSERT_EQ(bd_addr.length() + sizeof(handle), acl_view.GetPayload().size());
+  ASSERT_EQ(Address::kLength + sizeof(handle), acl_view.GetPayload().size());
   auto itr = acl_view.GetPayload().begin();
-  ASSERT_EQ(bd_addr, itr.extract<Address>());
+  ASSERT_EQ(bd_addr, packet::extractAddress(itr));
   ASSERT_EQ(handle, itr.extract<uint16_t>());
 
   // Send an ACL packet from DependsOnHci
@@ -579,10 +579,10 @@ TEST_F(HciTest, createConnectionTest) {
   ASSERT_TRUE(sent_acl.has_value());
   AclView sent_acl_view = AclView::Create(*sent_acl);
   ASSERT_TRUE(sent_acl_view.IsValid());
-  ASSERT_EQ(bd_addr.length() + sizeof(handle), sent_acl_view.GetPayload().size());
+  ASSERT_EQ(Address::kLength + sizeof(handle), sent_acl_view.GetPayload().size());
   auto sent_itr = sent_acl_view.GetPayload().begin();
   ASSERT_EQ(handle, sent_itr.extract<uint16_t>());
-  ASSERT_EQ(bd_addr, sent_itr.extract<Address>());
+  ASSERT_EQ(bd_addr, packet::extractAddress(sent_itr));
 }
 
 TEST_F(HciTest, receiveMultipleAclPackets) {
@@ -606,9 +606,9 @@ TEST_F(HciTest, receiveMultipleAclPackets) {
     ASSERT_TRUE(acl_opt.has_value());
     auto acl_view = *acl_opt;
     ASSERT_TRUE(acl_view.IsValid());
-    ASSERT_EQ(bd_addr.length() + sizeof(handle) + sizeof(i), acl_view.GetPayload().size());
+    ASSERT_EQ(Address::kLength + sizeof(handle) + sizeof(i), acl_view.GetPayload().size());
     auto itr = acl_view.GetPayload().begin();
-    ASSERT_EQ(bd_addr, itr.extract<Address>());
+    ASSERT_EQ(bd_addr, packet::extractAddress(itr));
     ASSERT_EQ(handle, itr.extract<uint16_t>());
     ASSERT_EQ(i, itr.extract<uint16_t>());
   }

@@ -16,52 +16,22 @@
 
 package com.android.bluetooth.sdp;
 
-import com.android.internal.annotations.GuardedBy;
-import com.android.internal.annotations.VisibleForTesting;
-
 /** Native interface to be used by SdpManager */
 public class SdpManagerNativeInterface {
     private static final String TAG = SdpManagerNativeInterface.class.getSimpleName();
 
-    @GuardedBy("INSTANCE_LOCK")
-    private static SdpManagerNativeInterface sInstance;
+    private final SdpManager mSdpManager;
 
-    private static final Object INSTANCE_LOCK = new Object();
-
-    private SdpManager mSdpManager;
-    private boolean mNativeAvailable = false;
-
-    /** This class is a singleton because native library should only be loaded once */
-    public static SdpManagerNativeInterface getInstance() {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new SdpManagerNativeInterface();
-            }
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    public static void setInstance(SdpManagerNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
-    }
-
-    void init(SdpManager sdpManager) {
+    SdpManagerNativeInterface(SdpManager sdpManager) {
         mSdpManager = sdpManager;
+    }
+
+    void init() {
         initializeNative();
-        mNativeAvailable = true;
     }
 
     void cleanup() {
-        mNativeAvailable = false;
         cleanupNative();
-    }
-
-    public boolean isAvailable() {
-        return mNativeAvailable;
     }
 
     void sdpSearch(byte[] address, byte[] uuid) {
@@ -95,9 +65,6 @@ public class SdpManagerNativeInterface {
             int version,
             int msgTypes,
             int features) {
-        if (!mNativeAvailable) {
-            throw new RuntimeException(TAG + " mNativeAvailable == false - native not initialized");
-        }
         return sdpCreateMapMasRecordNative(
                 serviceName, masId, rfcommChannel, l2capPsm, version, msgTypes, features);
     }
@@ -120,9 +87,6 @@ public class SdpManagerNativeInterface {
      */
     public int createMapMnsRecord(
             String serviceName, int rfcommChannel, int l2capPsm, int version, int features) {
-        if (!mNativeAvailable) {
-            throw new RuntimeException(TAG + " mNativeAvailable == false - native not initialized");
-        }
         return sdpCreateMapMnsRecordNative(serviceName, rfcommChannel, l2capPsm, version, features);
     }
 
@@ -138,9 +102,6 @@ public class SdpManagerNativeInterface {
      *     BluetoothSockets, hence SDP record cleanup is a separate process.
      */
     public int createPbapPceRecord(String serviceName, int version) {
-        if (!mNativeAvailable) {
-            throw new RuntimeException(TAG + " mNativeAvailable == false - native not initialized");
-        }
         return sdpCreatePbapPceRecordNative(serviceName, version);
     }
 
@@ -169,9 +130,6 @@ public class SdpManagerNativeInterface {
             int version,
             int repositories,
             int features) {
-        if (!mNativeAvailable) {
-            throw new RuntimeException(TAG + " mNativeAvailable == false - native not initialized");
-        }
         return sdpCreatePbapPseRecordNative(
                 serviceName, rfcommChannel, l2capPsm, version, repositories, features);
     }
@@ -195,9 +153,6 @@ public class SdpManagerNativeInterface {
      */
     public int createOppOpsRecord(
             String serviceName, int rfcommChannel, int l2capPsm, int version, byte[] formatsList) {
-        if (!mNativeAvailable) {
-            throw new RuntimeException(TAG + " mNativeAvailable == false - native not initialized");
-        }
         return sdpCreateOppOpsRecordNative(
                 serviceName, rfcommChannel, l2capPsm, version, formatsList);
     }
@@ -216,9 +171,6 @@ public class SdpManagerNativeInterface {
      *     BluetoothSockets, hence SDP record cleanup is a separate process.
      */
     public int createSapsRecord(String serviceName, int rfcommChannel, int version) {
-        if (!mNativeAvailable) {
-            throw new RuntimeException(TAG + " mNativeAvailable == false - native not initialized");
-        }
         return sdpCreateSapsRecordNative(serviceName, rfcommChannel, version);
     }
 
@@ -231,9 +183,6 @@ public class SdpManagerNativeInterface {
      *     not known/have already been removed.
      */
     public boolean removeSdpRecord(int recordId) {
-        if (!mNativeAvailable) {
-            throw new RuntimeException(TAG + " mNativeAvailable == false - native not initialized");
-        }
         return sdpRemoveSdpRecordNative(recordId);
     }
 

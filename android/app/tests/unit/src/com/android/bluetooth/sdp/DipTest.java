@@ -38,7 +38,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AbstractionLayer;
 import com.android.bluetooth.btservice.AdapterService;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -64,19 +63,13 @@ public class DipTest {
 
     @Before
     public void setUp() throws Exception {
-        SdpManagerNativeInterface.setInstance(mNativeInterface);
         doReturn("00:01:02:03:04:05").when(mAdapterService).getIdentityAddress("00:01:02:03:04:05");
 
         if (Looper.myLooper() == null) {
             Looper.prepare();
         }
 
-        mSdpManager = new SdpManager(mAdapterService);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        SdpManagerNativeInterface.setInstance(null);
+        mSdpManager = new SdpManager(mAdapterService, mNativeInterface);
     }
 
     private static void verifyDipSdpRecordIntent(

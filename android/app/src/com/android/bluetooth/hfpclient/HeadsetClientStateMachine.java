@@ -147,6 +147,7 @@ public class HeadsetClientStateMachine extends StateMachine {
     private final Connected mConnected;
     private final Disconnecting mDisconnecting;
     private final AudioOn mAudioOn;
+    private State mCurrentState;
     private State mPrevState;
 
     private final AdapterService mAdapterService;
@@ -920,6 +921,7 @@ public class HeadsetClientStateMachine extends StateMachine {
         mConnected = new Connected();
         mAudioOn = new AudioOn();
         mDisconnecting = new Disconnecting();
+        mCurrentState = mDisconnected;
 
         addState(mDisconnected);
         addState(mConnecting);
@@ -981,6 +983,7 @@ public class HeadsetClientStateMachine extends StateMachine {
     class Disconnected extends State {
         @Override
         public void enter() {
+            mCurrentState = this;
             debug(
                     "Enter Disconnected: from state="
                             + mPrevState
@@ -1123,6 +1126,7 @@ public class HeadsetClientStateMachine extends StateMachine {
     class Connecting extends State {
         @Override
         public void enter() {
+            mCurrentState = this;
             debug("Enter Connecting: " + getMessageName(getCurrentMessage().what));
             // This message is either consumed in processMessage or
             // removed in exit. It is safe to send a CONNECTING_TIMEOUT here since
@@ -1330,6 +1334,7 @@ public class HeadsetClientStateMachine extends StateMachine {
 
         @Override
         public void enter() {
+            mCurrentState = this;
             debug("Enter Connected: " + getMessageName(getCurrentMessage().what));
             mAudioWbs = false;
             mAudioSWB = false;
@@ -1895,6 +1900,7 @@ public class HeadsetClientStateMachine extends StateMachine {
     class Disconnecting extends State {
         @Override
         public void enter() {
+            mCurrentState = this;
             debug(
                     "Disconnecting: enter disconnecting from state="
                             + mPrevState
@@ -1986,6 +1992,7 @@ public class HeadsetClientStateMachine extends StateMachine {
     class AudioOn extends State {
         @Override
         public void enter() {
+            mCurrentState = this;
             debug("Enter AudioOn: " + getMessageName(getCurrentMessage().what));
             broadcastAudioState(
                     mCurrentDevice,
@@ -2125,7 +2132,7 @@ public class HeadsetClientStateMachine extends StateMachine {
             return STATE_DISCONNECTED;
         }
 
-        IState currentState = getCurrentState();
+        IState currentState = mCurrentState;
         if (currentState == mConnecting) {
             return STATE_CONNECTING;
         }
@@ -2289,8 +2296,7 @@ public class HeadsetClientStateMachine extends StateMachine {
     }
 
     boolean isConnected() {
-        IState currentState = getCurrentState();
-        return (currentState == mConnected || currentState == mAudioOn);
+        return (mCurrentState == mConnected || mCurrentState == mAudioOn);
     }
 
     List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
@@ -2334,7 +2340,7 @@ public class HeadsetClientStateMachine extends StateMachine {
     }
 
     boolean isAudioOn() {
-        return (getCurrentState() == mAudioOn);
+        return (mCurrentState == mAudioOn);
     }
 
     synchronized int getAudioState(BluetoothDevice device) {

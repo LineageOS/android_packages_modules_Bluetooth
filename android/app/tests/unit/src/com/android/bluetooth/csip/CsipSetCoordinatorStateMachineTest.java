@@ -30,22 +30,19 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.content.Intent;
-import android.os.HandlerThread;
-import android.os.Message;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.TestLooper;
 
 import org.junit.*;
 import org.junit.Rule;
@@ -63,32 +60,23 @@ public class CsipSetCoordinatorStateMachineTest {
     @Mock private CsipSetCoordinatorService mService;
     @Mock private CsipSetCoordinatorNativeInterface mNativeInterface;
 
-    private static final int TIMEOUT_MS = 1000;
-
     private final BluetoothDevice mDevice = getTestDevice(89);
 
-    private HandlerThread mHandlerThread;
+    private TestLooper mLooper;
     private CsipSetCoordinatorStateMachine mStateMachine;
 
     @Before
     public void setUp() throws Exception {
-        // Set up thread and looper
-        mHandlerThread = new HandlerThread("CsipSetCoordinatorServiceTestHandlerThread");
-        mHandlerThread.start();
+        mLooper = new TestLooper();
         mStateMachine =
-                spy(
-                        new CsipSetCoordinatorStateMachine(
-                                mDevice, mService, mNativeInterface, mHandlerThread.getLooper()));
-
-        // Override the timeout value to speed up the test
-        CsipSetCoordinatorStateMachine.sConnectTimeoutMs = 1000;
+                new CsipSetCoordinatorStateMachine(
+                        mDevice, mService, mNativeInterface, mLooper.getLooper());
         mStateMachine.start();
     }
 
     @After
     public void tearDown() throws Exception {
         mStateMachine.doQuit();
-        mHandlerThread.quit();
     }
 
     /** Test that default state is disconnected */
@@ -117,10 +105,10 @@ public class CsipSetCoordinatorStateMachineTest {
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         connStCh.device = mDevice;
         connStCh.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED;
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, connStCh);
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, connStCh);
 
         // Verify that no connection state broadcast is executed
-        verify(mService, after(TIMEOUT_MS).never()).sendBroadcast(any(Intent.class), anyString());
+        verify(mService, never()).sendBroadcast(any(Intent.class), anyString());
         // Check that we are in Disconnected state
         assertThat(mStateMachine.getCurrentState())
                 .isInstanceOf(CsipSetCoordinatorStateMachine.Disconnected.class);
@@ -137,12 +125,11 @@ public class CsipSetCoordinatorStateMachineTest {
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         connStCh.device = mDevice;
         connStCh.valueInt1 = connStCh.CONNECTION_STATE_CONNECTING;
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, connStCh);
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, connStCh);
 
         // Verify that one connection state broadcast is executed
         ArgumentCaptor<Intent> intentArgument1 = ArgumentCaptor.forClass(Intent.class);
-        verify(mService, timeout(TIMEOUT_MS).times(1))
-                .sendBroadcast(intentArgument1.capture(), anyString());
+        verify(mService).sendBroadcast(intentArgument1.capture(), anyString());
         assertThat(intentArgument1.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1))
                 .isEqualTo(STATE_CONNECTING);
 
@@ -155,14 +142,13 @@ public class CsipSetCoordinatorStateMachineTest {
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         connCompletedEvent.device = mDevice;
         connCompletedEvent.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED;
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, connCompletedEvent);
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, connCompletedEvent);
 
         // Verify that the expected number of broadcasts are executed:
         // - two calls to broadcastConnectionState(): Disconnected -> Connecting ->
         // Connected
         ArgumentCaptor<Intent> intentArgument2 = ArgumentCaptor.forClass(Intent.class);
-        verify(mService, timeout(TIMEOUT_MS).times(2))
-                .sendBroadcast(intentArgument2.capture(), anyString());
+        verify(mService, times(2)).sendBroadcast(intentArgument2.capture(), anyString());
 
         assertThat(mStateMachine.getCurrentState())
                 .isInstanceOf(CsipSetCoordinatorStateMachine.Connected.class);
@@ -176,25 +162,25 @@ public class CsipSetCoordinatorStateMachineTest {
         doReturn(true).when(mNativeInterface).disconnect(any(BluetoothDevice.class));
 
         // Send a connect request
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.CONNECT, mDevice);
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.CONNECT, mDevice);
 
         // Verify that one connection state broadcast is executed
         ArgumentCaptor<Intent> intentArgument1 = ArgumentCaptor.forClass(Intent.class);
-        verify(mService, timeout(TIMEOUT_MS).times(1))
-                .sendBroadcast(intentArgument1.capture(), anyString());
+        verify(mService).sendBroadcast(intentArgument1.capture(), anyString());
         assertThat(intentArgument1.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1))
                 .isEqualTo(STATE_CONNECTING);
-
         assertThat(mStateMachine.getCurrentState())
                 .isInstanceOf(CsipSetCoordinatorStateMachine.Connecting.class);
 
+        // Trigger timeout
+        mLooper.moveTimeForward(CsipSetCoordinatorStateMachine.sConnectTimeoutMs);
+        mLooper.dispatchAll();
+
         // Verify that one connection state broadcast is executed
         ArgumentCaptor<Intent> intentArgument2 = ArgumentCaptor.forClass(Intent.class);
-        verify(mService, timeout(CsipSetCoordinatorStateMachine.sConnectTimeoutMs * 2L).times(2))
-                .sendBroadcast(intentArgument2.capture(), anyString());
+        verify(mService, times(2)).sendBroadcast(intentArgument2.capture(), anyString());
         assertThat(intentArgument2.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1))
                 .isEqualTo(STATE_DISCONNECTED);
-
         assertThat(mStateMachine.getCurrentState())
                 .isInstanceOf(CsipSetCoordinatorStateMachine.Disconnected.class);
         verify(mNativeInterface).disconnect(eq(mDevice));
@@ -213,25 +199,25 @@ public class CsipSetCoordinatorStateMachineTest {
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         connStCh.device = mDevice;
         connStCh.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTING;
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, connStCh);
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, connStCh);
 
         // Verify that one connection state broadcast is executed
         ArgumentCaptor<Intent> intentArgument1 = ArgumentCaptor.forClass(Intent.class);
-        verify(mService, timeout(TIMEOUT_MS).times(1))
-                .sendBroadcast(intentArgument1.capture(), anyString());
+        verify(mService).sendBroadcast(intentArgument1.capture(), anyString());
         assertThat(intentArgument1.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1))
                 .isEqualTo(STATE_CONNECTING);
-
         assertThat(mStateMachine.getCurrentState())
                 .isInstanceOf(CsipSetCoordinatorStateMachine.Connecting.class);
 
+        // Trigger timeout
+        mLooper.moveTimeForward(CsipSetCoordinatorStateMachine.sConnectTimeoutMs);
+        mLooper.dispatchAll();
+
         // Verify that one connection state broadcast is executed
         ArgumentCaptor<Intent> intentArgument2 = ArgumentCaptor.forClass(Intent.class);
-        verify(mService, timeout(CsipSetCoordinatorStateMachine.sConnectTimeoutMs * 2L).times(2))
-                .sendBroadcast(intentArgument2.capture(), anyString());
+        verify(mService, times(2)).sendBroadcast(intentArgument2.capture(), anyString());
         assertThat(intentArgument2.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1))
                 .isEqualTo(STATE_DISCONNECTED);
-
         assertThat(mStateMachine.getCurrentState())
                 .isInstanceOf(CsipSetCoordinatorStateMachine.Disconnected.class);
         verify(mNativeInterface).disconnect(eq(mDevice));
@@ -257,27 +243,24 @@ public class CsipSetCoordinatorStateMachineTest {
 
     @Test
     public void testProcessDisconnectMessage_onDisconnectedState() {
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.DISCONNECT);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.DISCONNECT);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTED);
     }
 
     @Test
     public void testProcessConnectMessage_onDisconnectedState() {
         allowConnection(false);
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.CONNECT);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.CONNECT);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTED);
 
         allowConnection(false);
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.CONNECT);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.CONNECT);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTED);
 
         allowConnection(true);
         doReturn(true).when(mNativeInterface).connect(any(BluetoothDevice.class));
         sendMessageAndVerifyTransition(
-                mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.CONNECT),
+                CsipSetCoordinatorStateMachine.CONNECT,
                 CsipSetCoordinatorStateMachine.Connecting.class);
     }
 
@@ -286,24 +269,21 @@ public class CsipSetCoordinatorStateMachineTest {
         allowConnection(false);
 
         CsipSetCoordinatorStackEvent event = new CsipSetCoordinatorStackEvent(-1);
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTED);
 
         event =
                 new CsipSetCoordinatorStackEvent(
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED;
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTED);
 
         event =
                 new CsipSetCoordinatorStackEvent(
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTING;
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTED);
         verify(mNativeInterface).disconnect(mDevice);
 
@@ -312,8 +292,7 @@ public class CsipSetCoordinatorStateMachineTest {
                 new CsipSetCoordinatorStackEvent(
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED;
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTED);
         verify(mNativeInterface).disconnect(mDevice);
 
@@ -321,16 +300,14 @@ public class CsipSetCoordinatorStateMachineTest {
                 new CsipSetCoordinatorStackEvent(
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTING;
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTED);
 
         event =
                 new CsipSetCoordinatorStackEvent(
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = -1;
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTED);
     }
 
@@ -342,7 +319,8 @@ public class CsipSetCoordinatorStateMachineTest {
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTING;
         sendMessageAndVerifyTransition(
-                mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event),
+                CsipSetCoordinatorStateMachine.STACK_EVENT,
+                event,
                 CsipSetCoordinatorStateMachine.Connecting.class);
     }
 
@@ -354,15 +332,15 @@ public class CsipSetCoordinatorStateMachineTest {
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED;
         sendMessageAndVerifyTransition(
-                mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event),
+                CsipSetCoordinatorStateMachine.STACK_EVENT,
+                event,
                 CsipSetCoordinatorStateMachine.Connected.class);
     }
 
     @Test
     public void testProcessConnectMessage_onConnectingState() {
         initToConnectingState();
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.CONNECT);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.CONNECT);
         assertThat(
                         mStateMachine.doesSuperHaveDeferredMessages(
                                 CsipSetCoordinatorStateMachine.CONNECT))
@@ -372,39 +350,38 @@ public class CsipSetCoordinatorStateMachineTest {
     @Test
     public void testProcessConnectTimeoutMessage_onConnectingState() {
         initToConnectingState();
-        Message msg = mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.CONNECT_TIMEOUT);
-        sendMessageAndVerifyTransition(msg, CsipSetCoordinatorStateMachine.Disconnected.class);
+        sendMessageAndVerifyTransition(
+                CsipSetCoordinatorStateMachine.CONNECT_TIMEOUT,
+                CsipSetCoordinatorStateMachine.Disconnected.class);
     }
 
     @Test
     public void testProcessDisconnectMessage_onConnectingState() {
         initToConnectingState();
-        Message msg = mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.DISCONNECT);
-        sendMessageAndVerifyTransition(msg, CsipSetCoordinatorStateMachine.Disconnected.class);
+        sendMessageAndVerifyTransition(
+                CsipSetCoordinatorStateMachine.DISCONNECT,
+                CsipSetCoordinatorStateMachine.Disconnected.class);
     }
 
     @Test
     public void testStackEvent_withoutStateChange_onConnectingState() {
         initToConnectingState();
         CsipSetCoordinatorStackEvent event = new CsipSetCoordinatorStackEvent(-1);
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_CONNECTING);
 
         event =
                 new CsipSetCoordinatorStackEvent(
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTING;
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_CONNECTING);
 
         event =
                 new CsipSetCoordinatorStackEvent(
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = 10000;
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_CONNECTING);
     }
 
@@ -416,7 +393,8 @@ public class CsipSetCoordinatorStateMachineTest {
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED;
         sendMessageAndVerifyTransition(
-                mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event),
+                CsipSetCoordinatorStateMachine.STACK_EVENT,
+                event,
                 CsipSetCoordinatorStateMachine.Disconnected.class);
     }
 
@@ -428,7 +406,8 @@ public class CsipSetCoordinatorStateMachineTest {
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED;
         sendMessageAndVerifyTransition(
-                mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event),
+                CsipSetCoordinatorStateMachine.STACK_EVENT,
+                event,
                 CsipSetCoordinatorStateMachine.Connected.class);
     }
 
@@ -440,15 +419,15 @@ public class CsipSetCoordinatorStateMachineTest {
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTING;
         sendMessageAndVerifyTransition(
-                mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event),
+                CsipSetCoordinatorStateMachine.STACK_EVENT,
+                event,
                 CsipSetCoordinatorStateMachine.Disconnecting.class);
     }
 
     @Test
     public void testProcessConnectMessage_onConnectedState() {
         initToConnectedState();
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.CONNECT);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.CONNECT);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_CONNECTED);
     }
 
@@ -457,7 +436,7 @@ public class CsipSetCoordinatorStateMachineTest {
         initToConnectedState();
         doReturn(true).when(mNativeInterface).disconnect(any(BluetoothDevice.class));
         sendMessageAndVerifyTransition(
-                mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.DISCONNECT),
+                CsipSetCoordinatorStateMachine.DISCONNECT,
                 CsipSetCoordinatorStateMachine.Disconnecting.class);
     }
 
@@ -466,7 +445,7 @@ public class CsipSetCoordinatorStateMachineTest {
         initToConnectedState();
         doReturn(false).when(mNativeInterface).disconnect(any(BluetoothDevice.class));
         sendMessageAndVerifyTransition(
-                mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.DISCONNECT),
+                CsipSetCoordinatorStateMachine.DISCONNECT,
                 CsipSetCoordinatorStateMachine.Disconnected.class);
     }
 
@@ -474,16 +453,14 @@ public class CsipSetCoordinatorStateMachineTest {
     public void testStackEvent_withoutStateChange_onConnectedState() {
         initToConnectedState();
         CsipSetCoordinatorStackEvent event = new CsipSetCoordinatorStackEvent(-1);
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_CONNECTED);
 
         event =
                 new CsipSetCoordinatorStackEvent(
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTING;
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_CONNECTED);
     }
 
@@ -495,7 +472,8 @@ public class CsipSetCoordinatorStateMachineTest {
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED;
         sendMessageAndVerifyTransition(
-                mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event),
+                CsipSetCoordinatorStateMachine.STACK_EVENT,
+                event,
                 CsipSetCoordinatorStateMachine.Disconnected.class);
     }
 
@@ -507,16 +485,15 @@ public class CsipSetCoordinatorStateMachineTest {
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTING;
         sendMessageAndVerifyTransition(
-                mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event),
+                CsipSetCoordinatorStateMachine.STACK_EVENT,
+                event,
                 CsipSetCoordinatorStateMachine.Disconnecting.class);
     }
 
     @Test
     public void testProcessConnectMessage_onDisconnectingState() {
         initToDisconnectingState();
-        Message msg = mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.CONNECT);
-        mStateMachine.sendMessage(msg);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.CONNECT);
         assertThat(
                         mStateMachine.doesSuperHaveDeferredMessages(
                                 CsipSetCoordinatorStateMachine.CONNECT))
@@ -526,16 +503,15 @@ public class CsipSetCoordinatorStateMachineTest {
     @Test
     public void testProcessConnectTimeoutMessage_onDisconnectingState() {
         initToConnectingState();
-        Message msg = mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.CONNECT_TIMEOUT);
-        sendMessageAndVerifyTransition(msg, CsipSetCoordinatorStateMachine.Disconnected.class);
+        sendMessageAndVerifyTransition(
+                CsipSetCoordinatorStateMachine.CONNECT_TIMEOUT,
+                CsipSetCoordinatorStateMachine.Disconnected.class);
     }
 
     @Test
     public void testProcessDisconnectMessage_onDisconnectingState() {
         initToDisconnectingState();
-        Message msg = mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.DISCONNECT);
-        mStateMachine.sendMessage(msg);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.DISCONNECT);
         assertThat(
                         mStateMachine.doesSuperHaveDeferredMessages(
                                 CsipSetCoordinatorStateMachine.DISCONNECT))
@@ -546,8 +522,7 @@ public class CsipSetCoordinatorStateMachineTest {
     public void testStackEvent_withoutStateChange_onDisconnectingState() {
         initToDisconnectingState();
         CsipSetCoordinatorStackEvent event = new CsipSetCoordinatorStackEvent(-1);
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTING);
 
         allowConnection(false);
@@ -555,8 +530,7 @@ public class CsipSetCoordinatorStateMachineTest {
                 new CsipSetCoordinatorStackEvent(
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED;
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
         verify(mNativeInterface).disconnect(any());
 
         Mockito.clearInvocations(mNativeInterface);
@@ -564,24 +538,21 @@ public class CsipSetCoordinatorStateMachineTest {
                 new CsipSetCoordinatorStackEvent(
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTING;
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
         verify(mNativeInterface).disconnect(any());
 
         event =
                 new CsipSetCoordinatorStackEvent(
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTING;
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTING);
 
         event =
                 new CsipSetCoordinatorStackEvent(
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = 10000;
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTING);
     }
 
@@ -594,7 +565,8 @@ public class CsipSetCoordinatorStateMachineTest {
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED;
         sendMessageAndVerifyTransition(
-                mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event),
+                CsipSetCoordinatorStateMachine.STACK_EVENT,
+                event,
                 CsipSetCoordinatorStateMachine.Connected.class);
     }
 
@@ -606,8 +578,7 @@ public class CsipSetCoordinatorStateMachineTest {
                 new CsipSetCoordinatorStackEvent(
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED;
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
         verify(mNativeInterface).disconnect(any());
     }
 
@@ -620,7 +591,8 @@ public class CsipSetCoordinatorStateMachineTest {
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTING;
         sendMessageAndVerifyTransition(
-                mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event),
+                CsipSetCoordinatorStateMachine.STACK_EVENT,
+                event,
                 CsipSetCoordinatorStateMachine.Connecting.class);
     }
 
@@ -632,8 +604,7 @@ public class CsipSetCoordinatorStateMachineTest {
                 new CsipSetCoordinatorStackEvent(
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED;
-        mStateMachine.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
-        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+        sendAndDispatchMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event);
         verify(mNativeInterface).disconnect(any());
     }
 
@@ -644,7 +615,8 @@ public class CsipSetCoordinatorStateMachineTest {
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTING;
         sendMessageAndVerifyTransition(
-                mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event),
+                CsipSetCoordinatorStateMachine.STACK_EVENT,
+                event,
                 CsipSetCoordinatorStateMachine.Connecting.class);
         allowConnection(false);
     }
@@ -656,7 +628,8 @@ public class CsipSetCoordinatorStateMachineTest {
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED;
         sendMessageAndVerifyTransition(
-                mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event),
+                CsipSetCoordinatorStateMachine.STACK_EVENT,
+                event,
                 CsipSetCoordinatorStateMachine.Connected.class);
         allowConnection(false);
     }
@@ -668,15 +641,29 @@ public class CsipSetCoordinatorStateMachineTest {
                         CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt1 = CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTING;
         sendMessageAndVerifyTransition(
-                mStateMachine.obtainMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, event),
+                CsipSetCoordinatorStateMachine.STACK_EVENT,
+                event,
                 CsipSetCoordinatorStateMachine.Disconnecting.class);
     }
 
-    private <T> void sendMessageAndVerifyTransition(Message msg, Class<T> type) {
+    private <T> void sendMessageAndVerifyTransition(int what, Class<T> type) {
+        sendMessageAndVerifyTransition(what, null, type);
+    }
+
+    private <T> void sendMessageAndVerifyTransition(int what, Object obj, Class<T> type) {
         Mockito.clearInvocations(mService);
-        mStateMachine.sendMessage(msg);
+        sendAndDispatchMessage(what, obj);
         // Verify that one connection state broadcast is executed
-        verify(mService, timeout(TIMEOUT_MS)).sendBroadcast(any(Intent.class), anyString());
+        verify(mService).sendBroadcast(any(Intent.class), anyString());
         assertThat(mStateMachine.getCurrentState()).isInstanceOf(type);
+    }
+
+    private void sendAndDispatchMessage(int what) {
+        sendAndDispatchMessage(what, null);
+    }
+
+    private void sendAndDispatchMessage(int what, Object obj) {
+        mStateMachine.sendMessage(what, obj);
+        mLooper.dispatchAll();
     }
 }
