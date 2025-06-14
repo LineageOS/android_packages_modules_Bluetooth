@@ -18,6 +18,7 @@ package com.android.server.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_AIRPLANE_MODE;
+import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_DIED;
 import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST;
 import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_CRASH;
 import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_DISALLOWED;
@@ -860,7 +861,7 @@ class BluetoothManagerService {
         return mState.get();
     }
 
-    class ClientDeathRecipient implements IBinder.DeathRecipient {
+    private class ClientDeathRecipient implements IBinder.DeathRecipient {
         private final String mPackageName;
         private final IBinder mBinder;
 
@@ -878,10 +879,16 @@ class BluetoothManagerService {
             mBinder = null;
         }
 
+        @Override
         public void binderDied() {
             if (Flags.bleDeathRecipientThread()) {
                 Log.w(TAG, "Binder is dead - posting the unregister of " + mPackageName);
-                mHandler.post(() -> removeBleApp(mBinder, mPackageName));
+                mHandler.post(
+                        () ->
+                                removeBleApp(
+                                        ENABLE_DISABLE_REASON_APPLICATION_DIED,
+                                        mBinder,
+                                        mPackageName));
                 return;
             }
             Log.w(TAG, "Binder is dead - unregister " + mPackageName);
@@ -896,7 +903,8 @@ class BluetoothManagerService {
             }
         }
 
-        public String getPackageName() {
+        @Override
+        public String toString() {
             return mPackageName;
         }
     }
@@ -955,8 +963,8 @@ class BluetoothManagerService {
         Log.v(TAG, header + "Monitoring lifecycle");
     }
 
-    private void removeBleApp(IBinder token, String packageName) {
-        String header = "removeBleApp(" + token + ", " + packageName + "): ";
+    private void removeBleApp(int reason, IBinder token, String packageName) {
+        String header = "removeBleApp(" + reason + ", " + token + ", " + packageName + "): ";
         ClientDeathRecipient r = mBleApps.get(token);
         if (r == null) {
             Log.v(TAG, header + "Lifecycle is already un-monitored");
@@ -965,6 +973,7 @@ class BluetoothManagerService {
         token.unlinkToDeath(r, 0);
         mBleApps.remove(token);
         Log.d(TAG, header + "Lifecycle no longer monitored");
+        bleOnToOffIfNeeded(reason, packageName);
     }
 
     private int updateBleAppCount(IBinder token, boolean enable, String packageName) {
@@ -1061,27 +1070,36 @@ class BluetoothManagerService {
         }
 
         if (Flags.bleDeathRecipientThread()) {
-            removeBleApp(token, packageName);
+            removeBleApp(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, token, packageName);
         } else {
             updateBleAppCount(token, false, packageName);
-        }
-
-        if (mState.oneOf(State.BLE_ON) && !isBleAppPresent()) {
-            if (Flags.userSwitchDuringBleOn()) {
-                mEnable = false;
-                ActiveLogs.add(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, false, packageName, true);
-                sendBrEdrDownCallback();
-                return true;
-            }
-            if (mEnable) {
-                disableBleScanMode();
-            }
-            if (!mEnableExternal) {
-                ActiveLogs.add(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, false, packageName, true);
-                sendBrEdrDownCallback();
-            }
+            bleOnToOffIfNeeded(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName);
         }
         return true;
+    }
+
+    private void bleOnToOffIfNeeded(int reason, String packageName) {
+        if (!mState.oneOf(State.BLE_ON)) {
+            Log.d(TAG, "bleOnToOffIfNeeded: Incorrect state=" + mState);
+            return;
+        }
+        if (isBleAppPresent()) {
+            Log.d(TAG, "bleOnToOffIfNeeded: Needed by other apps=" + mBleApps);
+            return;
+        }
+        if (Flags.userSwitchDuringBleOn()) {
+            mEnable = false;
+            ActiveLogs.add(reason, false, packageName, true);
+            bleOnToOff();
+            return;
+        }
+        if (mEnable) {
+            disableBleScanMode();
+        }
+        if (!mEnableExternal) {
+            ActiveLogs.add(reason, false, packageName, true);
+            bleOnToOff();
+        }
     }
 
     // Clear all apps using BLE scan only mode.
@@ -2436,7 +2454,7 @@ class BluetoothManagerService {
         writer.println("");
         writer.println("Number of Ble app registered: " + mBleApps.size());
         for (ClientDeathRecipient app : mBleApps.values()) {
-            writer.println("  " + app.getPackageName());
+            writer.println("  " + app);
         }
 
         writer.println("");
