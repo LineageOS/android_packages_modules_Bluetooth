@@ -1519,18 +1519,18 @@ public class RemoteDevices {
      * Callback to associate an LE-only device's RPA with its identity address and identity address
      * type
      *
-     * @param mainAddress the device's RPA
-     * @param secondaryAddress the device's identity address
+     * @param pseudoAddress the device's RPA
+     * @param identityAddress the device's identity address
      * @param identityAddressType the device's identity address type from native
      */
     void leAddressAssociateCallback(
-            byte[] mainAddress, byte[] secondaryAddress, int identityAddressType) {
+            byte[] pseudoAddress, byte[] identityAddress, int identityAddressType) {
         DeviceProperties deviceProperties;
-        BluetoothDevice device = getDevice(mainAddress);
+        BluetoothDevice device = getDevice(pseudoAddress);
         if (device == null) {
             // Address association happens only for the random device addresses
             deviceProperties =
-                    addDeviceProperties(mainAddress, BluetoothDevice.ADDRESS_TYPE_RANDOM);
+                    addDeviceProperties(pseudoAddress, BluetoothDevice.ADDRESS_TYPE_RANDOM);
             device = deviceProperties.getDevice();
         } else {
             deviceProperties = getDeviceProperties(device);
@@ -1539,8 +1539,8 @@ public class RemoteDevices {
                 TAG,
                 "leAddressAssociateCallback device: "
                         + device
-                        + ", secondaryAddress:"
-                        + Utils.getRedactedAddressStringFromByte(secondaryAddress)
+                        + ", identityAddress:"
+                        + Utils.getRedactedAddressStringFromByte(identityAddress)
                         + ", identityAddressType="
                         + identityAddressType);
 
@@ -1555,8 +1555,12 @@ public class RemoteDevices {
                         yield BluetoothDevice.ADDRESS_TYPE_UNKNOWN;
                     }
                 };
-        deviceProperties.setIdentityAddress(
-                Utils.getAddressStringFromByte(secondaryAddress), addressType);
+
+        String identityAddressString = Utils.getAddressStringFromByte(identityAddress);
+        deviceProperties.setIdentityAddress(identityAddressString, addressType);
+        if (Flags.leAddressMapUpdate()) {
+            mAddressMap.put(identityAddressString, Utils.getAddressStringFromByte(pseudoAddress));
+        }
     }
 
     void aclStateChangeCallback(
