@@ -1384,7 +1384,6 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         return service.getAdapterProperties().isActivityAndEnergyReportingSupported();
     }
 
-
     @Override
     public boolean registerMetadataListener(
             IBluetoothMetadataListener listener, BluetoothDevice device, AttributionSource source) {
@@ -1996,11 +1995,11 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
-        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "setOnheadDetectionEnabled")) {
+        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "setOnHeadDetectionEnabled")) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
         }
         if (!checkConnectPermissionForDataDelivery(
-                service, source, TAG, "setOnheadDetectionEnabled")) {
+                service, source, TAG, "setOnHeadDetectionEnabled")) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
 
@@ -2009,7 +2008,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (deviceProp == null) {
             return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
         }
-        deviceProp.setOnheadDetectionEnabledState(enabledState);
+        deviceProp.setOnHeadDetectionEnabledState(enabledState);
         Log.d(
                 TAG,
                 "Successfully set on-head detection enabled state for device "
