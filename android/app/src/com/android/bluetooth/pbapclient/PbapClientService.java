@@ -39,7 +39,6 @@ import android.util.Log;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -169,12 +168,13 @@ public class PbapClientService extends ConnectableProfile {
      * up when we shutdown.
      */
     private void registerSdpRecord() {
-        SdpManagerNativeInterface nativeInterface = SdpManagerNativeInterface.getInstance();
-        if (!nativeInterface.isAvailable()) {
+        final var nativeInterface = mAdapterService.getSdpManagerNativeInterface();
+        if (nativeInterface.isEmpty()) {
             Log.e(TAG, "SdpManagerNativeInterface is not available");
             return;
         }
-        mSdpHandle = nativeInterface.createPbapPceRecord(SERVICE_NAME, PbapSdpRecord.VERSION_1_2);
+        mSdpHandle =
+                nativeInterface.get().createPbapPceRecord(SERVICE_NAME, PbapSdpRecord.VERSION_1_2);
     }
 
     /**
@@ -189,8 +189,8 @@ public class PbapClientService extends ConnectableProfile {
         }
         int sdpHandle = mSdpHandle;
         mSdpHandle = -1;
-        SdpManagerNativeInterface nativeInterface = SdpManagerNativeInterface.getInstance();
-        if (!nativeInterface.isAvailable()) {
+        final var nativeInterface = mAdapterService.getSdpManagerNativeInterface();
+        if (nativeInterface.isEmpty()) {
             Log.e(
                     TAG,
                     "cleanUpSdpRecord failed, SdpManagerNativeInterface is not available,"
@@ -199,7 +199,7 @@ public class PbapClientService extends ConnectableProfile {
             return;
         }
         Log.i(TAG, "cleanUpSdpRecord, mSdpHandle=" + sdpHandle);
-        if (!nativeInterface.removeSdpRecord(sdpHandle)) {
+        if (!nativeInterface.get().removeSdpRecord(sdpHandle)) {
             Log.e(TAG, "cleanUpSdpRecord, removeSdpRecord failed, sdpHandle=" + sdpHandle);
         }
     }

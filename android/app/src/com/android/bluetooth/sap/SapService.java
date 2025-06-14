@@ -54,7 +54,6 @@ import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
-import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.io.IOException;
@@ -154,10 +153,10 @@ public class SapService extends ConnectableProfile
     }
 
     private void removeSdpRecord() {
-        SdpManagerNativeInterface nativeInterface = SdpManagerNativeInterface.getInstance();
-        if (mSdpHandle >= 0 && nativeInterface.isAvailable()) {
+        final var nativeInterface = mAdapterService.getSdpManagerNativeInterface();
+        if (mSdpHandle >= 0 && nativeInterface.isPresent()) {
             Log.v(TAG, "Removing SDP record handle: " + mSdpHandle);
-            nativeInterface.removeSdpRecord(mSdpHandle);
+            nativeInterface.get().removeSdpRecord(mSdpHandle);
             mSdpHandle = -1;
         }
     }
@@ -191,8 +190,15 @@ public class SapService extends ConnectableProfile
                         mAdapter.listenUsingRfcommOn(
                                 BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP, true, true);
                 removeSdpRecord();
+
+                final var nativeInterface = mAdapterService.getSdpManagerNativeInterface();
+                if (nativeInterface.isEmpty()) {
+                    Log.e(TAG, "SdpManagerNativeInterface is not available");
+                    break;
+                }
                 mSdpHandle =
-                        SdpManagerNativeInterface.getInstance()
+                        nativeInterface
+                                .get()
                                 .createSapsRecord(
                                         SDP_SAP_SERVICE_NAME,
                                         mServerSocket.getChannel(),

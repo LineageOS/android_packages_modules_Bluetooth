@@ -65,7 +65,6 @@ import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.InteropUtil;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.bluetooth.util.DevicePolicyUtils;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -415,8 +414,15 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
                         ? SDP_PBAP_SUPPORTED_REPOSITORIES_WITH_SIM
                         : SDP_PBAP_SUPPORTED_REPOSITORIES_WITHOUT_SIM;
 
+        final var nativeInterface = mAdapterService.getSdpManagerNativeInterface();
+        if (nativeInterface.isEmpty()) {
+            Log.e(TAG, "SdpManagerNativeInterface is not available");
+            return;
+        }
+
         mSdpHandle =
-                SdpManagerNativeInterface.getInstance()
+                nativeInterface
+                        .get()
                         .createPbapPseRecord(
                                 "OBEX Phonebook Access Server",
                                 mServerSockets.getRfcommChannel(),
@@ -435,16 +441,16 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
         }
         int sdpHandle = mSdpHandle;
         mSdpHandle = -1;
-        SdpManagerNativeInterface nativeInterface = SdpManagerNativeInterface.getInstance();
+        final var nativeInterface = mAdapterService.getSdpManagerNativeInterface();
         Log.d(TAG, "cleanUpSdpRecord, mSdpHandle=" + sdpHandle);
-        if (!nativeInterface.isAvailable()) {
+        if (nativeInterface.isEmpty()) {
             Log.e(TAG, "SdpManagerNativeInterface is not available");
             ContentProfileErrorReportUtils.report(
                     mProfileId,
                     BluetoothProtoEnums.BLUETOOTH_PBAP_SERVICE,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
                     4);
-        } else if (!nativeInterface.removeSdpRecord(sdpHandle)) {
+        } else if (!nativeInterface.get().removeSdpRecord(sdpHandle)) {
             Log.w(TAG, "cleanUpSdpRecord, removeSdpRecord failed, sdpHandle=" + sdpHandle);
             ContentProfileErrorReportUtils.report(
                     mProfileId,

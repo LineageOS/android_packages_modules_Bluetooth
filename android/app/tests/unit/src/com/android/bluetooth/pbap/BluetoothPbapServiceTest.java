@@ -55,7 +55,6 @@ import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 
 import org.junit.After;
 import org.junit.Before;
@@ -77,7 +76,6 @@ public class BluetoothPbapServiceTest {
     @Mock private AdapterService mAdapterService;
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private NotificationManager mNotificationManager;
-    @Mock private SdpManagerNativeInterface mSdpManagerNativeInterface;
     @Mock private SharedPreferences mSharedPreferences;
     @Spy private BluetoothMethodProxy mMethodProxy = BluetoothMethodProxy.getInstance();
 
@@ -102,7 +100,6 @@ public class BluetoothPbapServiceTest {
         doReturn(List.of()).when(manager).getAllProfiles();
 
         mTestLooper = new TestLooper();
-        SdpManagerNativeInterface.setInstance(mSdpManagerNativeInterface);
         BluetoothMethodProxy.setInstanceForTesting(mMethodProxy);
         doReturn(mTestLooper.getLooper()).when(mMethodProxy).handlerThreadGetLooper(any());
         doNothing().when(mMethodProxy).threadStart(any());
@@ -121,7 +118,6 @@ public class BluetoothPbapServiceTest {
     public void tearDown() throws Exception {
         mTestLooper.stopAutoDispatchAndIgnoreExceptions();
         BluetoothMethodProxy.setInstanceForTesting(null);
-        SdpManagerNativeInterface.setInstance(null);
         mService.cleanup();
     }
 
