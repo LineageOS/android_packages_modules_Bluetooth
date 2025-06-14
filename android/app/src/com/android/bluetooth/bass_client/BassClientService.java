@@ -27,6 +27,7 @@ import static com.android.bluetooth.flags.Flags.leaudioBassScanWithInternalScanC
 import static com.android.bluetooth.flags.Flags.leaudioBisSyncControl;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastAllowMonitoringOnResume;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastApiGetLocalMetadata;
+import static com.android.bluetooth.flags.Flags.leaudioBroadcastFixAutonomousSourceAdding;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal;
 import static com.android.bluetooth.flags.Flags.leaudioMonitorUnicastSourceWhenManagedByBroadcastDelegator;
 
@@ -1115,7 +1116,7 @@ public class BassClientService extends ConnectableProfile {
 
         boolean isAssistantActive;
         if (leaudioMonitorUnicastSourceWhenManagedByBroadcastDelegator()) {
-            isAssistantActive = hasPrimaryDeviceManagedExternalBroadcast();
+            isAssistantActive = isPrimaryDeviceSyncedToExternalBroadcast();
         } else {
             isAssistantActive = areReceiversReceivingOnlyExternalBroadcast(getConnectedDevices());
         }
@@ -3517,9 +3518,7 @@ public class BassClientService extends ConnectableProfile {
             return false;
         }
 
-        final var wasFound =
-                leAudio.get().getAllBroadcastMetadata().stream()
-                        .anyMatch(meta -> meta.getBroadcastId() == broadcastId);
+        final var wasFound = leAudio.get().getBroadcastMetadata(broadcastId) != null;
 
         Log.d(TAG, "isLocalBroadcast=" + wasFound);
         return wasFound;
@@ -3682,8 +3681,12 @@ public class BassClientService extends ConnectableProfile {
                     "Modify Broadcast Source (suspend): "
                             + ("device: " + device)
                             + (", sourceId: " + sourceId)
-                            + (", updatedBroadcastId: " + metadata.getBroadcastId())
-                            + (", updatedBroadcastName: " + metadata.getBroadcastName()));
+                            + (", updatedBroadcastId: "
+                                    + (metadata != null
+                                            ? metadata.getBroadcastId()
+                                            : BassConstants.INVALID_BROADCAST_ID))
+                            + (", updatedBroadcastName: "
+                                    + (metadata != null ? metadata.getBroadcastName() : "")));
             Message message = sm.obtainMessage(BassClientStateMachine.UPDATE_BCAST_SOURCE);
             message.arg1 = sourceId;
 
@@ -4232,7 +4235,7 @@ public class BassClientService extends ConnectableProfile {
 
         if (status == STATUS_LOCAL_STREAM_REQUESTED) {
             if ((leaudioMonitorUnicastSourceWhenManagedByBroadcastDelegator()
-                            && hasPrimaryDeviceManagedExternalBroadcast())
+                            && isPrimaryDeviceSyncedToExternalBroadcast())
                     || (!leaudioMonitorUnicastSourceWhenManagedByBroadcastDelegator()
                             && areReceiversReceivingOnlyExternalBroadcast(getConnectedDevices()))) {
                 cacheSuspendingSources(BassConstants.INVALID_BROADCAST_ID);
@@ -4280,7 +4283,7 @@ public class BassClientService extends ConnectableProfile {
         return false;
     }
 
-    public boolean hasPrimaryDeviceManagedExternalBroadcast() {
+    public boolean isPrimaryDeviceSyncedToExternalBroadcast() {
         final var leAudio = getLeAudioService();
         if (leAudio.isEmpty()) {
             Log.e(TAG, "no LeAudioService");
@@ -4292,16 +4295,23 @@ public class BassClientService extends ConnectableProfile {
                 continue;
             }
 
-            Map<Integer, BluetoothLeBroadcastMetadata> entry = mBroadcastMetadataMap.get(device);
+            if (leaudioBroadcastFixAutonomousSourceAdding()) {
+                if (getAllSources(device).stream().anyMatch(rs -> !isLocalBroadcast(rs))) {
+                    return true;
+                }
+            } else {
+                Map<Integer, BluetoothLeBroadcastMetadata> entry =
+                        mBroadcastMetadataMap.get(device);
 
-            /* null means that this source was not added or modified by assistant */
-            if (entry == null) {
-                continue;
-            }
+                /* null means that this source was not added or modified by assistant */
+                if (entry == null) {
+                    continue;
+                }
 
-            /* Assistant manages some external broadcast */
-            if (entry.values().stream().anyMatch(e -> !isLocalBroadcast(e))) {
-                return true;
+                /* Assistant manages some external broadcast */
+                if (entry.values().stream().anyMatch(e -> !isLocalBroadcast(e))) {
+                    return true;
+                }
             }
         }
 

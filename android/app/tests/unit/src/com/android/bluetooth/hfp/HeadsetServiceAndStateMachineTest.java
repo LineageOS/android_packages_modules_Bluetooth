@@ -109,6 +109,7 @@ import platform.test.runner.parameterized.Parameters;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /** Test cases for {@link HeadsetServiceAndStateMachine}. */
@@ -135,7 +136,7 @@ public class HeadsetServiceAndStateMachineTest {
 
     @Mock private HeadsetNativeInterface mNativeInterface;
     @Mock private LeAudioService mLeAudioService;
-    @Mock private ServiceFactory mServiceFactory;
+    @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
     @Mock private AdapterService mAdapterService;
     @Mock private ActiveDeviceManager mActiveDeviceManager;
     @Mock private SilenceDeviceManager mSilenceDeviceManager;
@@ -1722,10 +1723,14 @@ public class HeadsetServiceAndStateMachineTest {
     public void testHfpOnlyHandoverToLeAudioAfterScoDisconnect() {
         BluetoothDevice device = getTestDevice(0);
 
-        assertThat(mHeadsetService.mFactory).isNotNull();
-        mHeadsetService.mFactory = mServiceFactory;
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
+        } else {
+            assertThat(mHeadsetService.mFactory).isNotNull();
+            mHeadsetService.mFactory = mServiceFactory;
+            doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
+        }
 
-        doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
         doReturn(List.of(device)).when(mLeAudioService).getConnectedDevices();
         List<BluetoothDevice> activeDeviceList = new ArrayList<>();
         activeDeviceList.add(null);
@@ -1805,10 +1810,14 @@ public class HeadsetServiceAndStateMachineTest {
     public void testStopVoiceRecognitionBeforeStop_returnsFalse() {
         BluetoothDevice device = getTestDevice(0);
 
-        assertThat(mHeadsetService.mFactory).isNotNull();
-        mHeadsetService.mFactory = mServiceFactory;
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
+        } else {
+            assertThat(mHeadsetService.mFactory).isNotNull();
+            mHeadsetService.mFactory = mServiceFactory;
+            doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
+        }
 
-        doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
         doReturn(List.of(device)).when(mLeAudioService).getConnectedDevices();
         List<BluetoothDevice> activeDeviceList = new ArrayList<>();
         activeDeviceList.add(null);

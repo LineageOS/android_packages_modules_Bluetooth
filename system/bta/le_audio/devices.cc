@@ -40,6 +40,7 @@
 #include "bta_gatt_queue.h"
 #include "btif/include/btif_storage.h"
 #include "btm_ble_api_types.h"
+#include "btm_iso_api.h"
 #include "btm_iso_api_types.h"
 #include "common/strings.h"
 #include "gatt_api.h"
@@ -1377,6 +1378,29 @@ void LeAudioDevice::SetDsaDataPathState(types::DataPathState state) { dsa_.state
 uint16_t LeAudioDevice::GetDsaCisHandle(void) { return dsa_.cis_handle; }
 
 void LeAudioDevice::SetDsaCisHandle(uint16_t cis_handle) { dsa_.cis_handle = cis_handle; }
+
+static void link_quality_cb(void* data) {
+  uint16_t cis_handle = *((uint16_t*)data);
+  hci::IsoManager::GetInstance()->ReadIsoLinkQuality(cis_handle);
+}
+
+void LeAudioDevice::FreeLinkQualityReports(void) {
+  if (link_quality_timer == nullptr) {
+    return;
+  }
+  log::verbose("");
+  alarm_free(link_quality_timer);
+  link_quality_timer = nullptr;
+}
+
+void LeAudioDevice::StartLinkQualityReports(uint16_t cis_handle) {
+  log::verbose("");
+  FreeLinkQualityReports();
+  link_quality_timer = alarm_new_periodic("le_audio_cis_link_quality");
+  link_quality_timer_data = cis_handle;
+  alarm_set_on_mloop(link_quality_timer, linkQualityCheckInterval, link_quality_cb,
+                     &link_quality_timer_data);
+}
 
 /* LeAudioDevices Class methods implementation */
 void LeAudioDevices::Add(const RawAddress& address, DeviceConnectState state, int group_id) {

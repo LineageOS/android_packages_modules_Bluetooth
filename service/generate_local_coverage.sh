@@ -40,6 +40,8 @@ rm -rf $(find ${COVERAGE_TMP_FOLDER}/ServiceBluetoothRobo_unzip -iname "*test*")
 rm -rf ${COVERAGE_TMP_FOLDER}/ServiceBluetoothRobo_unzip/com/android/server/bluetooth/'BluetoothAdapterState$waitForState$3$invokeSuspend$$inlined$filter$1.class'
 # shellcheck disable=SC2016
 rm -rf ${COVERAGE_TMP_FOLDER}/ServiceBluetoothRobo_unzip/com/android/server/bluetooth/'BluetoothAdapterState$waitForState$3$invokeSuspend$$inlined$filter$1$2.class'
+# shellcheck disable=SC2016
+rm -rf ${COVERAGE_TMP_FOLDER}/ServiceBluetoothRobo_unzip/com/android/server/bluetooth/'BluetoothAdapterState$waitForState$3$invokeSuspend$$inlined$filter$1$2$1.class'
 rm -rf ${COVERAGE_TMP_FOLDER}/ServiceBluetoothRobo_unzip/com/android/server/bluetooth/R.class
 
 # Generate report:

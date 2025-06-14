@@ -4350,6 +4350,9 @@ public class AdapterService extends Service {
         writer.println();
         mAdapterProperties.dump(fd, writer, args);
         mRemoteDevices.dump(writer);
+        if (mActiveDeviceManager != null) {
+            mActiveDeviceManager.dump(writer);
+        }
 
         writer.println("ScanMode: " + scanModeName(getScanMode()));
         StringBuilder sb = new StringBuilder();

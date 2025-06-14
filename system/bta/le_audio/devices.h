@@ -256,6 +256,9 @@ public:
     return gmap_client_->IsGmapClientEnabled();
   }
 
+  void StartLinkQualityReports(uint16_t cis_handle);
+  void FreeLinkQualityReports(void);
+
 private:
   types::BidirectionalPair<types::AudioContexts> avail_contexts_;
   types::BidirectionalPair<types::AudioContexts> supp_contexts_;
@@ -266,6 +269,7 @@ private:
     bool reduced_sdu;  // TODO: Remove when earbud implementations move to approved DSA 2.0 standard
   } dsa_;
 
+  static constexpr int linkQualityCheckInterval = 4000;
   static constexpr char kLeAudioDeviceAllowListProp[] = "persist.bluetooth.leaudio.allow_list";
 
   void DumpPacsDebugState(std::stringstream& stream, types::PublishedAudioCapabilities pacs);

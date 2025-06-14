@@ -269,13 +269,7 @@ public:
     std::vector<RawAddress> devices = {device->address};
     device->DeregisterNotifications(gatt_if_);
 
-    if (com::android::bluetooth::flags::vcp_allow_set_same_volume_if_pending()) {
-      RemoveNotStartedPendingOperations(devices, bluetooth::groups::kGroupUnknown, {});
-    } else {
-      RemoveNotStartedPendingOperations(devices, bluetooth::groups::kGroupUnknown,
-                                        {kControlPointOpcodeVolumeDown, kControlPointOpcodeVolumeUp,
-                                         kControlPointOpcodeSetAbsoluteVolume});
-    }
+    RemoveNotStartedPendingOperations(devices, bluetooth::groups::kGroupUnknown, {});
 
     device->ResetHandles();
     if (search_request) {
@@ -1157,18 +1151,11 @@ public:
       if (dev != nullptr) {
         bluetooth::log::debug("Address: {}: isReady: {}", dev->address, dev->IsReady());
         std::vector<RawAddress> devices = {dev->address};
-        if (!com::android::bluetooth::flags::vcp_allow_set_same_volume_if_pending()) {
-          if (dev->IsReady() && (dev->mute != mute)) {
-            PrepareVolumeControlOperation(devices, bluetooth::groups::kGroupUnknown, false, opcode,
-                                          arg);
-          }
-        } else {
-          RemoveNotStartedPendingOperations(devices, bluetooth::groups::kGroupUnknown,
-                                            {kControlPointOpcodeMute, kControlPointOpcodeUnmute});
-          if (IsMuteOrUnmuteRequired(dev, mute)) {
-            PrepareVolumeControlOperation(devices, bluetooth::groups::kGroupUnknown, false, opcode,
-                                          arg);
-          }
+        RemoveNotStartedPendingOperations(devices, bluetooth::groups::kGroupUnknown,
+                                          {kControlPointOpcodeMute, kControlPointOpcodeUnmute});
+        if (IsMuteOrUnmuteRequired(dev, mute)) {
+          PrepareVolumeControlOperation(devices, bluetooth::groups::kGroupUnknown, false, opcode,
+                                        arg);
         }
       }
     } else {
@@ -1194,16 +1181,13 @@ public:
         return;
       }
 
-      if (com::android::bluetooth::flags::vcp_allow_set_same_volume_if_pending()) {
-        RemoveNotStartedPendingOperations(devices, group_id,
-                                          {kControlPointOpcodeMute, kControlPointOpcodeUnmute});
-      }
+      RemoveNotStartedPendingOperations(devices, group_id,
+                                        {kControlPointOpcodeMute, kControlPointOpcodeUnmute});
 
       bool muteNotChanged = false;
       bool deviceNotReady = false;
 
-      if (com::android::bluetooth::flags::vcp_handle_group_id_internally() &&
-          com::android::bluetooth::flags::vcp_allow_set_same_volume_if_pending()) {
+      if (com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
         devices.clear();
         for (auto groupDevice : volume_control_devices_.getGroupDevices(group_id)) {
           if (IsMuteOrUnmuteRequired(groupDevice, mute)) {
@@ -1221,20 +1205,11 @@ public:
             continue;
           }
 
-          if (!com::android::bluetooth::flags::vcp_allow_set_same_volume_if_pending()) {
-            if (!dev->IsReady() || (dev->mute == mute)) {
-              it = devices.erase(it);
-              muteNotChanged = muteNotChanged ? muteNotChanged : (dev->mute == mute);
-              deviceNotReady = deviceNotReady ? deviceNotReady : !dev->IsReady();
-              continue;
-            }
-          } else {
-            if (!IsMuteOrUnmuteRequired(dev, mute)) {
-              it = devices.erase(it);
-              muteNotChanged = muteNotChanged ? muteNotChanged : (dev->mute == mute);
-              deviceNotReady = deviceNotReady ? deviceNotReady : !dev->IsReady();
-              continue;
-            }
+          if (!IsMuteOrUnmuteRequired(dev, mute)) {
+            it = devices.erase(it);
+            muteNotChanged = muteNotChanged ? muteNotChanged : (dev->mute == mute);
+            deviceNotReady = deviceNotReady ? deviceNotReady : !dev->IsReady();
+            continue;
           }
           it++;
         }
@@ -1275,24 +1250,13 @@ public:
       if (dev != nullptr) {
         bluetooth::log::debug("Address: {}: isReady: {}", dev->address, dev->IsReady());
         std::vector<RawAddress> devices = {dev->address};
-        if (!com::android::bluetooth::flags::vcp_allow_set_same_volume_if_pending()) {
-          if (dev->IsReady() && (dev->volume != volume)) {
-            RemoveNotStartedPendingOperations(
-                    devices, bluetooth::groups::kGroupUnknown,
-                    {kControlPointOpcodeVolumeDown, kControlPointOpcodeVolumeUp,
-                     kControlPointOpcodeSetAbsoluteVolume});
-            PrepareVolumeControlOperation(devices, bluetooth::groups::kGroupUnknown, false, opcode,
-                                          arg);
-          }
-        } else {
-          RemoveNotStartedPendingOperations(
-                  devices, bluetooth::groups::kGroupUnknown,
-                  {kControlPointOpcodeVolumeDown, kControlPointOpcodeVolumeUp,
-                   kControlPointOpcodeSetAbsoluteVolume});
-          if (IsSetAbsoluteVolumeRequired(dev, volume)) {
-            PrepareVolumeControlOperation(devices, bluetooth::groups::kGroupUnknown, false, opcode,
-                                          arg);
-          }
+        RemoveNotStartedPendingOperations(
+                devices, bluetooth::groups::kGroupUnknown,
+                {kControlPointOpcodeVolumeDown, kControlPointOpcodeVolumeUp,
+                 kControlPointOpcodeSetAbsoluteVolume});
+        if (IsSetAbsoluteVolumeRequired(dev, volume)) {
+          PrepareVolumeControlOperation(devices, bluetooth::groups::kGroupUnknown, false, opcode,
+                                        arg);
         }
       }
     } else {
@@ -1318,18 +1282,14 @@ public:
         return;
       }
 
-      if (com::android::bluetooth::flags::vcp_allow_set_same_volume_if_pending()) {
-        RemoveNotStartedPendingOperations(
-                devices, group_id,
-                {kControlPointOpcodeVolumeDown, kControlPointOpcodeVolumeUp,
-                 kControlPointOpcodeSetAbsoluteVolume});
-      }
+      RemoveNotStartedPendingOperations(devices, group_id,
+                                        {kControlPointOpcodeVolumeDown, kControlPointOpcodeVolumeUp,
+                                         kControlPointOpcodeSetAbsoluteVolume});
 
       bool volumeNotChanged = false;
       bool deviceNotReady = false;
 
-      if (com::android::bluetooth::flags::vcp_handle_group_id_internally() &&
-          com::android::bluetooth::flags::vcp_allow_set_same_volume_if_pending()) {
+      if (com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
         devices.clear();
         for (auto groupDevice : volume_control_devices_.getGroupDevices(group_id)) {
           if (IsSetAbsoluteVolumeRequired(groupDevice, volume)) {
@@ -1348,20 +1308,11 @@ public:
             continue;
           }
 
-          if (!com::android::bluetooth::flags::vcp_allow_set_same_volume_if_pending()) {
-            if (!dev->IsReady() || (dev->volume == volume)) {
-              it = devices.erase(it);
-              volumeNotChanged = volumeNotChanged ? volumeNotChanged : (dev->volume == volume);
-              deviceNotReady = deviceNotReady ? deviceNotReady : !dev->IsReady();
-              continue;
-            }
-          } else {
-            if (!IsSetAbsoluteVolumeRequired(dev, volume)) {
-              it = devices.erase(it);
-              volumeNotChanged = volumeNotChanged ? volumeNotChanged : (dev->volume == volume);
-              deviceNotReady = deviceNotReady ? deviceNotReady : !dev->IsReady();
-              continue;
-            }
+          if (!IsSetAbsoluteVolumeRequired(dev, volume)) {
+            it = devices.erase(it);
+            volumeNotChanged = volumeNotChanged ? volumeNotChanged : (dev->volume == volume);
+            deviceNotReady = deviceNotReady ? deviceNotReady : !dev->IsReady();
+            continue;
           }
           it++;
         }
@@ -1375,12 +1326,6 @@ public:
         return;
       }
 
-      if (!com::android::bluetooth::flags::vcp_allow_set_same_volume_if_pending()) {
-        RemoveNotStartedPendingOperations(
-                devices, group_id,
-                {kControlPointOpcodeVolumeDown, kControlPointOpcodeVolumeUp,
-                 kControlPointOpcodeSetAbsoluteVolume});
-      }
       PrepareVolumeControlOperation(devices, group_id, false, opcode, arg);
     }
 

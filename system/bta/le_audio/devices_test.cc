@@ -35,6 +35,8 @@
 #include "stack/btm/btm_int_types.h"
 #include "test/mock/mock_main_shim_entry.h"
 
+using bluetooth::le_audio::utils::GetConfigurationHash;
+
 const tBLE_BD_ADDR BTM_Sec_GetAddressWithType(const RawAddress& bd_addr) {
   return tBLE_BD_ADDR{.type = BLE_ADDR_PUBLIC, .bda = bd_addr};
 }
@@ -1438,6 +1440,35 @@ TEST_P(LeAudioAseConfigurationTest, test_get_codec_config_call) {
   EXPECT_CALL(*mock_codec_manager_, GetCodecConfig(_, _)).Times(0);
   group_->GetConfiguration(LeAudioContextType::MEDIA);
   testing::Mock::VerifyAndClearExpectations(mock_codec_manager_);
+}
+
+TEST_P(LeAudioAseConfigurationTest, test_hash_function) {
+  auto full_set_configuration = getSpecificConfiguration(
+          "Two-OneChan-SnkAse-Lc3_16_2-One-OneChan-SrcAse-Lc3_16_2_Low_Latency",
+          LeAudioContextType::CONVERSATIONAL);
+  auto single_set_configuration = getSpecificConfiguration(
+          "One-OneChan-SnkAse-Lc3_16_2-One-OneChan-SrcAse-Lc3_16_2_Low_Latency",
+          LeAudioContextType::CONVERSATIONAL);
+  auto full_set_configuration_32 = getSpecificConfiguration(
+          "Two-OneChan-SnkAse-Lc3_32_2-One-OneChan-SrcAse-Lc3_32_2_Low_Latency",
+          LeAudioContextType::CONVERSATIONAL);
+  auto single_set_configuration_32 = getSpecificConfiguration(
+          "One-OneChan-SnkAse-Lc3_32_2-One-OneChan-SrcAse-Lc3_32_2_Low_Latency",
+          LeAudioContextType::CONVERSATIONAL);
+
+  auto full_set_configuration_media = getSpecificConfiguration(
+          "Two-OneChan-SnkAse-Lc3_16_2_Balanced_Reliability", LeAudioContextType::MEDIA);
+
+  ASSERT_EQ(utils::GetConfigurationHash(*full_set_configuration),
+            utils::GetConfigurationHash(*single_set_configuration));
+  ASSERT_EQ(utils::GetConfigurationHash(*full_set_configuration_32),
+            utils::GetConfigurationHash(*single_set_configuration_32));
+  ASSERT_NE(utils::GetConfigurationHash(*full_set_configuration_32),
+            utils::GetConfigurationHash(*single_set_configuration));
+  ASSERT_NE(utils::GetConfigurationHash(*full_set_configuration),
+            utils::GetConfigurationHash(*single_set_configuration_32));
+  ASSERT_NE(utils::GetConfigurationHash(*full_set_configuration),
+            utils::GetConfigurationHash(*full_set_configuration_media));
 }
 
 TEST_P(LeAudioAseConfigurationTest, test_context_update) {

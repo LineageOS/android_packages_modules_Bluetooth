@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "vcp_allow_set_same_volume_if_pending"
-    namespace: "bluetooth"
-    description: "Allow to set the same volume during already pending operation"
-    bug: "386758535"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "vcp_handle_group_id_internally"
     namespace: "bluetooth"
     description: "Handle group id internally"

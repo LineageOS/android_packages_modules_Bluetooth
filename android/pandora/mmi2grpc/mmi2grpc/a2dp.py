@@ -745,7 +745,7 @@ class A2DPProxy(ProfileProxy):
             # The PTS expects the host stack to start the stream for the above
             # listed tests.
             self.a2dp.Start(source=self.source)
-            self.audio.start(duration_s=30.)
+            self.audio.start(duration_s=60.)
 
         return "OK"
 

@@ -316,13 +316,13 @@ class PbapClientObexClient {
 
     /** Enqueue a request to download the size of a phonebook */
     public void requestPhonebookMetadata(String phonebook, PbapApplicationParameters params) {
-        RequestPullPhonebookMetadata request = new RequestPullPhonebookMetadata(phonebook, params);
+        PullPhonebookMetadataRequest request = new PullPhonebookMetadataRequest(phonebook, params);
         mHandler.obtainMessage(MSG_REQUEST, request).sendToTarget();
     }
 
     /** Enqueue a request to download the contents of a phonebook */
     public void requestDownloadPhonebook(String phonebook, PbapApplicationParameters params) {
-        RequestPullPhonebook request = new RequestPullPhonebook(phonebook, params);
+        PullPhonebookRequest request = new PullPhonebookRequest(phonebook, params);
         mHandler.obtainMessage(MSG_REQUEST, request).sendToTarget();
     }
 
@@ -567,14 +567,14 @@ class PbapClientObexClient {
         debug("Notifying caller of request result - " + request.toString());
         switch (type) {
             case PbapClientRequest.TYPE_PULL_PHONEBOOK_METADATA -> {
-                phonebook = ((RequestPullPhonebookMetadata) request).getPhonebook();
+                phonebook = ((PullPhonebookMetadataRequest) request).getPhonebook();
                 PbapPhonebookMetadata metadata =
-                        ((RequestPullPhonebookMetadata) request).getMetadata();
+                        ((PullPhonebookMetadataRequest) request).getMetadata();
                 mCallback.onGetPhonebookMetadataComplete(responseCode, phonebook, metadata);
             }
             case PbapClientRequest.TYPE_PULL_PHONEBOOK -> {
-                phonebook = ((RequestPullPhonebook) request).getPhonebook();
-                PbapPhonebook contacts = ((RequestPullPhonebook) request).getContacts();
+                phonebook = ((PullPhonebookRequest) request).getPhonebook();
+                PbapPhonebook contacts = ((PullPhonebookRequest) request).getContacts();
                 mCallback.onPhonebookContactsDownloaded(responseCode, phonebook, contacts);
             }
             default -> {} // Nothing to do

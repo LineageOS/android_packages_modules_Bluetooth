@@ -50,7 +50,7 @@ public class HeadsetClientServiceInterfaceTest {
     @Rule public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(AdapterService.class);
 
     @Mock private AdapterService mAdapterService;
-    @Mock private HeadsetClientService mMockHeadsetClientService;
+    @Mock private HeadsetClientService mHeadsetClientService;
 
     private static final String TEST_NUMBER = "000-111-2222";
     private static final byte TEST_CODE = 0;
@@ -77,15 +77,6 @@ public class HeadsetClientServiceInterfaceTest {
 
     @Before
     public void setUp() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            ExtendedMockito.doReturn(mAdapterService)
-                    .when(() -> AdapterService.deprecatedGetAdapterService());
-            doReturn(Optional.of(mMockHeadsetClientService))
-                    .when(mAdapterService)
-                    .getHeadsetClientService();
-        } else {
-            HeadsetClientService.setHeadsetClientService(mMockHeadsetClientService);
-        }
         mServiceInterface = new HeadsetClientServiceInterface();
     }
 
@@ -98,9 +89,18 @@ public class HeadsetClientServiceInterfaceTest {
     }
 
     private void makeHeadsetClientServiceAvailable() {
-        when(mMockHeadsetClientService.isAvailable()).thenReturn(true);
-        assertThat(HeadsetClientService.getHeadsetClientService())
-                .isEqualTo(mMockHeadsetClientService);
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            ExtendedMockito.doReturn(mAdapterService)
+                    .when(() -> AdapterService.deprecatedGetAdapterService());
+            doReturn(Optional.of(mHeadsetClientService))
+                    .when(mAdapterService)
+                    .getHeadsetClientService();
+        } else {
+            when(mHeadsetClientService.isAvailable()).thenReturn(true);
+            HeadsetClientService.setHeadsetClientService(mHeadsetClientService);
+            assertThat(HeadsetClientService.getHeadsetClientService())
+                    .isEqualTo(mHeadsetClientService);
+        }
     }
 
     @Test
@@ -108,7 +108,7 @@ public class HeadsetClientServiceInterfaceTest {
         assertThat(mServiceInterface.dial(mDevice, TEST_NUMBER)).isNull();
         makeHeadsetClientServiceAvailable();
 
-        doReturn(mTestCall).when(mMockHeadsetClientService).dial(mDevice, TEST_NUMBER);
+        doReturn(mTestCall).when(mHeadsetClientService).dial(mDevice, TEST_NUMBER);
         assertThat(mServiceInterface.dial(mDevice, TEST_NUMBER)).isEqualTo(mTestCall);
     }
 
@@ -117,9 +117,9 @@ public class HeadsetClientServiceInterfaceTest {
         assertThat(mServiceInterface.enterPrivateMode(mDevice, TEST_CALL_INDEX)).isFalse();
         makeHeadsetClientServiceAvailable();
 
-        doReturn(false).when(mMockHeadsetClientService).enterPrivateMode(mDevice, TEST_CALL_INDEX);
+        doReturn(false).when(mHeadsetClientService).enterPrivateMode(mDevice, TEST_CALL_INDEX);
         assertThat(mServiceInterface.enterPrivateMode(mDevice, TEST_CALL_INDEX)).isFalse();
-        doReturn(true).when(mMockHeadsetClientService).enterPrivateMode(mDevice, TEST_CALL_INDEX);
+        doReturn(true).when(mHeadsetClientService).enterPrivateMode(mDevice, TEST_CALL_INDEX);
         assertThat(mServiceInterface.enterPrivateMode(mDevice, TEST_CALL_INDEX)).isTrue();
     }
 
@@ -128,9 +128,9 @@ public class HeadsetClientServiceInterfaceTest {
         assertThat(mServiceInterface.sendDTMF(mDevice, TEST_CODE)).isFalse();
         makeHeadsetClientServiceAvailable();
 
-        doReturn(false).when(mMockHeadsetClientService).sendDTMF(mDevice, TEST_CODE);
+        doReturn(false).when(mHeadsetClientService).sendDTMF(mDevice, TEST_CODE);
         assertThat(mServiceInterface.sendDTMF(mDevice, TEST_CODE)).isFalse();
-        doReturn(true).when(mMockHeadsetClientService).sendDTMF(mDevice, TEST_CODE);
+        doReturn(true).when(mHeadsetClientService).sendDTMF(mDevice, TEST_CODE);
         assertThat(mServiceInterface.sendDTMF(mDevice, TEST_CODE)).isTrue();
     }
 
@@ -139,9 +139,9 @@ public class HeadsetClientServiceInterfaceTest {
         assertThat(mServiceInterface.terminateCall(mDevice, mTestCall)).isFalse();
         makeHeadsetClientServiceAvailable();
 
-        doReturn(true).when(mMockHeadsetClientService).terminateCall(mDevice, mTestCall.getUUID());
+        doReturn(true).when(mHeadsetClientService).terminateCall(mDevice, mTestCall.getUUID());
         assertThat(mServiceInterface.terminateCall(mDevice, mTestCall)).isTrue();
-        doReturn(false).when(mMockHeadsetClientService).terminateCall(mDevice, mTestCall.getUUID());
+        doReturn(false).when(mHeadsetClientService).terminateCall(mDevice, mTestCall.getUUID());
         assertThat(mServiceInterface.terminateCall(mDevice, mTestCall)).isFalse();
     }
 
@@ -150,9 +150,9 @@ public class HeadsetClientServiceInterfaceTest {
         assertThat(mServiceInterface.holdCall(mDevice)).isFalse();
         makeHeadsetClientServiceAvailable();
 
-        doReturn(false).when(mMockHeadsetClientService).holdCall(mDevice);
+        doReturn(false).when(mHeadsetClientService).holdCall(mDevice);
         assertThat(mServiceInterface.holdCall(mDevice)).isFalse();
-        doReturn(true).when(mMockHeadsetClientService).holdCall(mDevice);
+        doReturn(true).when(mHeadsetClientService).holdCall(mDevice);
         assertThat(mServiceInterface.holdCall(mDevice)).isTrue();
     }
 
@@ -161,9 +161,9 @@ public class HeadsetClientServiceInterfaceTest {
         assertThat(mServiceInterface.acceptCall(mDevice, TEST_FLAGS)).isFalse();
         makeHeadsetClientServiceAvailable();
 
-        doReturn(false).when(mMockHeadsetClientService).acceptCall(mDevice, TEST_FLAGS);
+        doReturn(false).when(mHeadsetClientService).acceptCall(mDevice, TEST_FLAGS);
         assertThat(mServiceInterface.acceptCall(mDevice, TEST_CODE)).isFalse();
-        doReturn(true).when(mMockHeadsetClientService).acceptCall(mDevice, TEST_FLAGS);
+        doReturn(true).when(mHeadsetClientService).acceptCall(mDevice, TEST_FLAGS);
         assertThat(mServiceInterface.acceptCall(mDevice, TEST_CODE)).isTrue();
     }
 
@@ -172,9 +172,9 @@ public class HeadsetClientServiceInterfaceTest {
         assertThat(mServiceInterface.rejectCall(mDevice)).isFalse();
         makeHeadsetClientServiceAvailable();
 
-        doReturn(false).when(mMockHeadsetClientService).rejectCall(mDevice);
+        doReturn(false).when(mHeadsetClientService).rejectCall(mDevice);
         assertThat(mServiceInterface.rejectCall(mDevice)).isFalse();
-        doReturn(true).when(mMockHeadsetClientService).rejectCall(mDevice);
+        doReturn(true).when(mHeadsetClientService).rejectCall(mDevice);
         assertThat(mServiceInterface.rejectCall(mDevice)).isTrue();
     }
 
@@ -183,9 +183,9 @@ public class HeadsetClientServiceInterfaceTest {
         assertThat(mServiceInterface.connectAudio(mDevice)).isFalse();
         makeHeadsetClientServiceAvailable();
 
-        doReturn(false).when(mMockHeadsetClientService).connectAudio(mDevice);
+        doReturn(false).when(mHeadsetClientService).connectAudio(mDevice);
         assertThat(mServiceInterface.connectAudio(mDevice)).isFalse();
-        doReturn(true).when(mMockHeadsetClientService).connectAudio(mDevice);
+        doReturn(true).when(mHeadsetClientService).connectAudio(mDevice);
         assertThat(mServiceInterface.connectAudio(mDevice)).isTrue();
     }
 
@@ -194,9 +194,9 @@ public class HeadsetClientServiceInterfaceTest {
         assertThat(mServiceInterface.disconnectAudio(mDevice)).isFalse();
         makeHeadsetClientServiceAvailable();
 
-        doReturn(false).when(mMockHeadsetClientService).disconnectAudio(mDevice);
+        doReturn(false).when(mHeadsetClientService).disconnectAudio(mDevice);
         assertThat(mServiceInterface.disconnectAudio(mDevice)).isFalse();
-        doReturn(true).when(mMockHeadsetClientService).disconnectAudio(mDevice);
+        doReturn(true).when(mHeadsetClientService).disconnectAudio(mDevice);
         assertThat(mServiceInterface.disconnectAudio(mDevice)).isTrue();
     }
 
@@ -206,7 +206,7 @@ public class HeadsetClientServiceInterfaceTest {
         assertThat(mServiceInterface.getCurrentAgFeatures(mDevice)).isNull();
         makeHeadsetClientServiceAvailable();
 
-        doReturn(features).when(mMockHeadsetClientService).getCurrentAgFeatures(mDevice);
+        doReturn(features).when(mHeadsetClientService).getCurrentAgFeatures(mDevice);
         assertThat(mServiceInterface.getCurrentAgFeatures(mDevice)).isEqualTo(features);
     }
 
@@ -215,7 +215,7 @@ public class HeadsetClientServiceInterfaceTest {
         assertThat(mServiceInterface.getCurrentAgEvents(mDevice)).isNull();
         makeHeadsetClientServiceAvailable();
 
-        doReturn(TEST_BUNDLE).when(mMockHeadsetClientService).getCurrentAgEvents(mDevice);
+        doReturn(TEST_BUNDLE).when(mHeadsetClientService).getCurrentAgEvents(mDevice);
         assertThat(mServiceInterface.getCurrentAgEvents(mDevice)).isEqualTo(TEST_BUNDLE);
     }
 
@@ -225,7 +225,7 @@ public class HeadsetClientServiceInterfaceTest {
         assertThat(mServiceInterface.getConnectedDevices()).isNull();
         makeHeadsetClientServiceAvailable();
 
-        doReturn(devices).when(mMockHeadsetClientService).getConnectedDevices();
+        doReturn(devices).when(mHeadsetClientService).getConnectedDevices();
         assertThat(mServiceInterface.getConnectedDevices()).isEqualTo(devices);
     }
 
@@ -235,7 +235,7 @@ public class HeadsetClientServiceInterfaceTest {
         makeHeadsetClientServiceAvailable();
 
         List<HfpClientCall> calls = List.of(mTestCall);
-        doReturn(calls).when(mMockHeadsetClientService).getCurrentCalls(mDevice);
+        doReturn(calls).when(mHeadsetClientService).getCurrentCalls(mDevice);
         assertThat(mServiceInterface.getCurrentCalls(mDevice)).isEqualTo(calls);
     }
 
@@ -245,11 +245,11 @@ public class HeadsetClientServiceInterfaceTest {
         assertThat(mServiceInterface.hasHfpClientEcc(mDevice)).isFalse();
         makeHeadsetClientServiceAvailable();
 
-        doReturn(features).when(mMockHeadsetClientService).getCurrentAgFeatures(mDevice);
+        doReturn(features).when(mHeadsetClientService).getCurrentAgFeatures(mDevice);
         assertThat(mServiceInterface.hasHfpClientEcc(mDevice)).isFalse();
 
         Set<Integer> featuresWithEcc = Set.of(HeadsetClientHalConstants.PEER_FEAT_ECC);
-        doReturn(featuresWithEcc).when(mMockHeadsetClientService).getCurrentAgFeatures(mDevice);
+        doReturn(featuresWithEcc).when(mHeadsetClientService).getCurrentAgFeatures(mDevice);
         assertThat(mServiceInterface.hasHfpClientEcc(mDevice)).isTrue();
     }
 }

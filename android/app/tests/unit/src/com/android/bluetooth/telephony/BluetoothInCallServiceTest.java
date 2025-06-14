@@ -134,13 +134,13 @@ public class BluetoothInCallServiceTest {
             ExtendedMockito.doReturn(mAdapterService)
                     .when(() -> AdapterService.deprecatedGetAdapterService());
             doReturn(Optional.of(mTbsService)).when(mAdapterService).getTbsService();
+            doReturn(Optional.of(mHeadsetService)).when(mAdapterService).getHeadsetService();
         } else {
             doReturn(true).when(mTbsService).isAvailable();
             TbsService.setTbsService(mTbsService);
             doReturn(true).when(mHeadsetService).isAvailable();
             HeadsetService.setHeadsetService(mHeadsetService);
         }
-
         doReturn(true).when(mCallInfo).isNullCall(null);
         doReturn(false).when(mCallInfo).isNullCall(notNull());
 
