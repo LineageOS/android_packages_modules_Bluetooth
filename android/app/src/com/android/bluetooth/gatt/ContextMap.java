@@ -79,14 +79,13 @@ class ContextMap<C extends IInterface> {
     /** Application entry mapping UUIDs to appIDs and callbacks. */
     class App {
         public final UUID uuid;
+        private final C mCallback;
         public final int uid;
         public final String packageName;
+        private final int mTransport;
         @Nullable public final String attributionTag;
 
         public int id;
-        public C callback;
-
-        public int transport;
 
         /** Flag to signal that transport is congested */
         public Boolean isCongested = false;
@@ -105,21 +104,29 @@ class ContextMap<C extends IInterface> {
                 int transport,
                 AttributionSource source) {
             this.uuid = uuid;
-            this.callback = callback;
+            this.mCallback = callback;
             this.uid = appUid;
             this.packageName = packageName;
-            this.transport = transport;
+            this.mTransport = transport;
             attributionTag = getLastAttributionTag(source);
+        }
+
+        C getCallback() {
+            return mCallback;
+        }
+
+        int getTransport() {
+            return mTransport;
         }
 
         /** Link death recipient */
         public void linkToDeath(IBinder.DeathRecipient deathRecipient) {
             // It might not be a binder object
-            if (callback == null) {
+            if (mCallback == null) {
                 return;
             }
             try {
-                callback.asBinder().linkToDeath(deathRecipient, 0);
+                mCallback.asBinder().linkToDeath(deathRecipient, 0);
                 mDeathRecipient = deathRecipient;
             } catch (RemoteException e) {
                 Log.e(TAG, "Unable to link deathRecipient for app id " + id);
@@ -130,7 +137,7 @@ class ContextMap<C extends IInterface> {
         public void unlinkToDeath() {
             if (mDeathRecipient != null) {
                 try {
-                    callback.asBinder().unlinkToDeath(mDeathRecipient, 0);
+                    mCallback.asBinder().unlinkToDeath(mDeathRecipient, 0);
                 } catch (NoSuchElementException e) {
                     Log.e(TAG, "Unable to unlink deathRecipient for app id " + id);
                 }
@@ -163,7 +170,7 @@ class ContextMap<C extends IInterface> {
         AppRecord(App app) {
             uuid = app.uuid;
             packageName = app.packageName;
-            transport = app.transport;
+            transport = app.getTransport();
             attributionTag = app.attributionTag;
             registerTime = Instant.now();
         }
@@ -183,7 +190,7 @@ class ContextMap<C extends IInterface> {
                     .append(", appName: ")
                     .append(packageName)
                     .append(", transport: ")
-                    .append(transport);
+                    .append(transportToString(transport));
             if (attributionTag != null) {
                 sb.append(", tag: ").append(attributionTag);
             }
@@ -296,7 +303,7 @@ class ContextMap<C extends IInterface> {
         List<C> appIds = new ArrayList();
         synchronized (mAppsLock) {
             for (App entry : mApps) {
-                appIds.add(entry.callback);
+                appIds.add(entry.getCallback());
             }
         }
         return appIds;
@@ -349,7 +356,8 @@ class ContextMap<C extends IInterface> {
 
     /** Get an application context by its callback object. */
     public App getByCallbackId(C callbackId) {
-        App app = getAppByPredicate(entry -> entry.callback.asBinder() == callbackId.asBinder());
+        App app =
+                getAppByPredicate(entry -> entry.getCallback().asBinder() == callbackId.asBinder());
         if (app == null) {
             Log.e(TAG, "Context not found for callbackID " + callbackId);
         }
