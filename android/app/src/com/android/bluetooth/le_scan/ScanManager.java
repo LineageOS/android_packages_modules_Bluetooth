@@ -64,7 +64,6 @@ import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayDeque;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -161,12 +160,9 @@ public class ScanManager {
     @VisibleForTesting final ClientHandler mClientHandler;
 
     private final Object mCurUsedTrackableAdvertisementsLock = new Object();
-    private final Set<ScanClient> mRegularScanClients =
-            Collections.newSetFromMap(new ConcurrentHashMap<ScanClient, Boolean>());
-    private final Set<ScanClient> mBatchClients =
-            Collections.newSetFromMap(new ConcurrentHashMap<ScanClient, Boolean>());
-    private final Set<ScanClient> mSuspendedScanClients =
-            Collections.newSetFromMap(new ConcurrentHashMap<ScanClient, Boolean>());
+    private final Set<ScanClient> mRegularScanClients = ConcurrentHashMap.newKeySet();
+    private final Set<ScanClient> mBatchClients = ConcurrentHashMap.newKeySet();
+    private final Set<ScanClient> mSuspendedScanClients = ConcurrentHashMap.newKeySet();
     private final SparseIntArray mPriorityMap = new SparseIntArray();
     private final SparseBooleanArray mIsUidForegroundMap = new SparseBooleanArray();
 
