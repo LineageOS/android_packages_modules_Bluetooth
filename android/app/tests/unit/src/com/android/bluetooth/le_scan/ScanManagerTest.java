@@ -90,6 +90,7 @@ import android.util.SparseIntArray;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.TestLooper;
@@ -99,9 +100,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
-
-import com.google.testing.junit.testparameterinjector.TestParameter;
-import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 import org.junit.After;
 import org.junit.Before;
@@ -122,7 +120,7 @@ import java.util.UUID;
 
 /** Test cases for {@link ScanManager}. */
 @SmallTest
-@RunWith(TestParameterInjector.class)
+@RunWith(AndroidJUnit4.class)
 public class ScanManagerTest {
     private static final String TAG = ScanManagerTest.class.getSimpleName();
 
@@ -1894,32 +1892,38 @@ public class ScanManagerTest {
                 .isEqualTo(DEFAULT_TOTAL_NUM_OF_TRACKABLE_ADVERTISEMENTS / 4);
     }
 
-    // PHY_LE_1M: 1, PHY_LE_CODED: 3, PHY_LE_ALL_SUPPORTED: 255
     @Test
-    public void startScan_basicPhyTest(@TestParameter({"1", "3", "255"}) int phy) {
+    public void startScan_withPhy1M() {
+        verifyPhyScanForAllScanModes(
+                PHY_LE_1M,
+                /* expectedPhyMask= */ PHY_LE_1M_MASK,
+                /* expect1m= */ true,
+                /* expectCoded= */ false);
+    }
+
+    @Test
+    public void startScan_withPhyCoded() {
+        verifyPhyScanForAllScanModes(
+                PHY_LE_CODED,
+                /* expectedPhyMask= */ PHY_LE_CODED_MASK,
+                /* expect1m= */ false,
+                /* expectCoded= */ true);
+    }
+
+    @Test
+    public void startScan_withAllSupportedPhys() {
+        verifyPhyScanForAllScanModes(
+                PHY_LE_ALL_SUPPORTED,
+                /* expectedPhyMask= */ PHY_LE_1M_MASK | PHY_LE_CODED_MASK,
+                /* expect1m= */ true,
+                /* expectCoded= */ true);
+    }
+
+    // PHY_LE_1M: 1, PHY_LE_CODED: 3, PHY_LE_ALL_SUPPORTED: 255
+    private void verifyPhyScanForAllScanModes(
+            int phy, int expectedPhyMask, boolean expect1m, boolean expectCoded) {
         final boolean isFiltered = false;
         final boolean isEmptyFilter = false;
-        final boolean expect1m;
-        final boolean expectCoded;
-        final int expectedPhyMask;
-        switch (phy) {
-            case PHY_LE_1M:
-                expectedPhyMask = PHY_LE_1M_MASK;
-                expect1m = true;
-                expectCoded = false;
-                break;
-            case PHY_LE_CODED:
-                expectedPhyMask = PHY_LE_CODED_MASK;
-                expectCoded = true;
-                expect1m = false;
-                break;
-            case PHY_LE_ALL_SUPPORTED:
-            default:
-                expectedPhyMask = PHY_LE_1M_MASK | PHY_LE_CODED_MASK;
-                expect1m = true;
-                expectCoded = true;
-                break;
-        }
 
         defaultScanMode.forEach(
                 (scanMode, expectedScanMode) -> {
