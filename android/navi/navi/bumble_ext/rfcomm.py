@@ -14,7 +14,7 @@
 """Extended RFCOMM implemenatation from Bumble."""
 
 from collections.abc import Callable
-from typing import TypeAlias
+from typing import Self, TypeAlias
 
 from bumble import device as bumble_device
 from bumble import l2cap
@@ -75,7 +75,7 @@ class Multiplexer(rfcomm.Multiplexer):
                 self.dlcs[pn.dlci] = dlc
 
                 # Re-emit the handshake completion event
-                dlc.on('open', lambda: self.dlc_callback(dlc))
+                dlc.on(dlc.EVENT_OPEN, lambda: self.dlc_callback(dlc))
 
                 # Respond to complete the handshake
                 dlc.accept()
@@ -110,6 +110,34 @@ class Multiplexer(rfcomm.Multiplexer):
 class Manager:
     """Manager for RFCOMM."""
 
+    @classmethod
+    def find_from_device(cls, device: bumble_device.Device) -> Self | None:
+        """Returns the RFCOMM manager from the device.
+
+    Args:
+      device: The Bumble device to get the RFCOMM server from.
+
+    Returns:
+      The RFCOMM server from the device, or None if not found.
+    """
+        if ((server := device.l2cap_channel_manager.servers.get(rfcomm.RFCOMM_PSM)) and
+                server.handler and (obj := getattr(server.handler, '__self__', None)) and
+                isinstance(obj, Manager)):
+            return obj
+        return None
+
+    @classmethod
+    def find_or_create(cls, device: bumble_device.Device) -> Self:
+        """Returns the RFCOMM manager from the device or creates a new one.
+
+    Args:
+      device: The Bumble device to get the RFCOMM server from.
+
+    Returns:
+      The RFCOMM manager from the device.
+    """
+        return cls.find_from_device(device) or cls(device)
+
     def __init__(self, device: bumble_device.Device):
         self.device = device
         self.acceptors: dict[int, Callable[[rfcomm.DLC], None]] = {}
@@ -124,7 +152,10 @@ class Manager:
 
     def _on_l2cap_connection(self, l2cap_channel: l2cap.ClassicChannel) -> None:
         _logger.debug('+++ new L2CAP connection: %s', l2cap_channel)
-        l2cap_channel.on('open', lambda: self._on_l2cap_channel_open(l2cap_channel))
+        l2cap_channel.on(
+            l2cap_channel.EVENT_OPEN,
+            lambda: self._on_l2cap_channel_open(l2cap_channel),
+        )
 
     def _on_l2cap_channel_open(self, l2cap_channel: l2cap.ClassicChannel) -> None:
         _logger.debug('$$$ L2CAP channel open: %s', l2cap_channel)

@@ -787,3 +787,26 @@ class DistanceMeasurementMethodId(enum.IntEnum):
     AUTO = 0
     RSSI = 1
     CHANNEL_SOUNDING = 2
+
+
+class BluetoothQualityReportId(enum.IntEnum):
+    """android.bluetooth.BluetoothQualityReport.QUALITY_REPORT_ID_*."""
+
+    MONITOR = 0x01
+    APPROACH_LSTO = 0x02
+    A2DP_CHOPPY = 0x03
+    SCO_CHOPPY = 0x04
+    ENERGY_MONITOR = 0x06
+    CONN_FAIL = 0x08
+    RF_STATS = 0x09
+
+
+class LeSubrateMode(enum.IntEnum):
+    """android.bluetooth.BluetoothGatt.SubrateMode."""
+
+    OFF = 0
+    LOW = 1
+    BALANCED = 2
+    HIGH = 3
+    SYSTEM_UPDATE = 99
+    NOT_UPDATED = 255

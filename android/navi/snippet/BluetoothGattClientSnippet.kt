@@ -367,6 +367,18 @@ class BluetoothGattClientSnippet : Snippet {
         return client.requestMtu(mtu)
     }
 
+    /** Requests subrate mode of GATT connection [cookie] to [mode], and returns the status code. */
+    @Rpc(description = "Request subrate mode")
+    fun gattRequestSubrateMode(cookie: String, mode: Int): Int {
+        val client =
+            gattClients[cookie] ?: throw IllegalArgumentException("Client $cookie doesn't exist!")
+        // TODO: Remove reflection once the API is available in the stable SDK.
+        return BluetoothGatt::class
+            .java
+            .getMethod("requestSubrateMode", Int::class.java)
+            .invoke(client, mode) as Int
+    }
+
     companion object {
         const val TAG = "BluetoothGattClientSnippet"
 

@@ -225,8 +225,7 @@ class AndroidCrownAdapter(CrownAdapter):
         abi_type = self.ad.adb.getprop('ro.product.cpu.abi')
         file_path = resources.GetResourceFilename(_HCI_PROXY_G3_PATH_PREFIX + abi_type)
         self.ad.adb.push([file_path, _HCI_PROXY_DEVICE_PATH], timeout=60)
-        if b'ok' not in self.ad.adb.shell(f'test -x {_HCI_PROXY_DEVICE_PATH} && echo ok'):
-            self.ad.adb.shell(f'chmod +x {_HCI_PROXY_DEVICE_PATH}')
+        self.ad.adb.shell(f'chmod +x {_HCI_PROXY_DEVICE_PATH}')
 
         self._hci_proxy_process = subprocess.Popen(
             [
@@ -240,6 +239,8 @@ class AndroidCrownAdapter(CrownAdapter):
             stderr=subprocess.PIPE,
             stdin=subprocess.PIPE,
         )
+        # Wait for HCI proxy to start.
+        time.sleep(1.0)
 
         if sys.platform == 'linux':
             # Select a random socket name to avoid collision.
