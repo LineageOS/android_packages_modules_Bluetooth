@@ -52,35 +52,29 @@ import java.util.function.Predicate;
  *
  * @param <C> the callback type (must implement {@link IInterface}) for this map
  */
-public class ContextMap<C extends IInterface> {
+class ContextMap<C extends IInterface> {
     private static final String TAG =
             GattServiceConfig.TAG_PREFIX + ContextMap.class.getSimpleName();
 
     private static final int MAX_LAST_RECORDS = 5;
 
-    /** Connection class helps map connection IDs to devices. */
-    record Connection(
-            int connId, BluetoothDevice device, int transport, int appId, long startTime) {
-        Connection(int connId, BluetoothDevice device, int transport, int appId) {
-            this(connId, device, transport, appId, SystemClock.elapsedRealtime());
-        }
+    /** Our internal application list */
+    private final Object mAppsLock = new Object();
 
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Connection<")
-                    .append("conn_id: ")
-                    .append(connId)
-                    .append(", device: ")
-                    .append(device)
-                    .append(", transport: ")
-                    .append(transportToString(transport))
-                    .append(", app_id: ")
-                    .append(appId)
-                    .append(">");
-            return sb.toString();
-        }
-    }
+    @GuardedBy("mAppsLock")
+    private final List<App> mApps = new ArrayList<>();
+
+    @GuardedBy("mAppsLock")
+    private final List<AppRecord> mOngoingRecords = new ArrayList<>();
+
+    @GuardedBy("mAppsLock")
+    private final List<AppRecord> mLastRecords = new ArrayList<>();
+
+    private final Object mConnectionsLock = new Object();
+
+    /** Internal list of connected devices */
+    @GuardedBy("mConnectionsLock")
+    private final List<Connection> mConnections = new ArrayList<>();
 
     /** Application entry mapping UUIDs to appIDs and callbacks. */
     class App {
@@ -103,7 +97,7 @@ public class ContextMap<C extends IInterface> {
         private final List<CallbackInfo> mCongestionQueue = new ArrayList<>();
 
         /** Creates a new app context. */
-        App(
+        private App(
                 UUID uuid,
                 C callback,
                 int appUid,
@@ -198,6 +192,30 @@ public class ContextMap<C extends IInterface> {
         }
     }
 
+    /** Connection class helps map connection IDs to devices. */
+    record Connection(
+            int connId, BluetoothDevice device, int transport, int appId, long startTime) {
+        Connection(int connId, BluetoothDevice device, int transport, int appId) {
+            this(connId, device, transport, appId, SystemClock.elapsedRealtime());
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Connection<")
+                    .append("conn_id: ")
+                    .append(connId)
+                    .append(", device: ")
+                    .append(device)
+                    .append(", transport: ")
+                    .append(transportToString(transport))
+                    .append(", app_id: ")
+                    .append(appId)
+                    .append(">");
+            return sb.toString();
+        }
+    }
+
     public enum RemoveReason {
         REASON_UNREGISTER_ALL,
         REASON_UNREGISTER_CLIENT,
@@ -207,23 +225,6 @@ public class ContextMap<C extends IInterface> {
 
         REASON_UNKNOWN
     }
-
-    /** Our internal application list */
-    private final Object mAppsLock = new Object();
-
-    @GuardedBy("mAppsLock")
-    private final List<App> mApps = new ArrayList<>();
-
-    @GuardedBy("mAppsLock")
-    private final List<AppRecord> mOngoingRecords = new ArrayList<>();
-
-    @GuardedBy("mAppsLock")
-    private final List<AppRecord> mLastRecords = new ArrayList<>();
-
-    /** Internal list of connected devices */
-    private final List<Connection> mConnections = new ArrayList<>();
-
-    private final Object mConnectionsLock = new Object();
 
     /** Add an entry to the application context list. */
     public App add(
