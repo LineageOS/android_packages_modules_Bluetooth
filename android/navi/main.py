@@ -18,9 +18,11 @@ from mobly import suite_runner
 from navi.tests.smoke import a2dp_test
 from navi.tests.smoke import asha_test
 from navi.tests.smoke import classic_host_test
+from navi.tests.smoke import classic_pairing_test
 from navi.tests.smoke import gatt_client_test
 from navi.tests.smoke import gatt_server_test
 from navi.tests.smoke import hfp_ag_test
+from navi.tests.smoke import hfp_hf_test
 from navi.tests.smoke import hid_test
 from navi.tests.smoke import hogp_test
 from navi.tests.smoke import l2cap_test
@@ -40,9 +42,11 @@ if __name__ == "__main__":
         a2dp_test.A2dpTest,
         asha_test.AshaTest,
         classic_host_test.ClassicHostTest,
+        classic_pairing_test.ClassicPairingTest,
         gatt_client_test.GattClientTest,
         gatt_server_test.GattServerTest,
         hfp_ag_test.HfpAgTest,
+        hfp_hf_test.HfpHfTest,
         hid_test.HidTest,
         hogp_test.HogpTest,
         l2cap_test.L2capTest,

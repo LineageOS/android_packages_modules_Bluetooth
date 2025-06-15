@@ -89,6 +89,7 @@ class Module(enum.Enum):
     MAP = enum.auto()
     SAP = enum.auto()
     PLAYER = enum.auto()
+    BQR = enum.auto()
 
 
 @dataclasses.dataclass
@@ -155,6 +156,8 @@ class CallbackHandler:
                 handler = snippet.registerBassCallback()
             case Module.PLAYER:
                 handler = snippet.registerPlayerListener()
+            case Module.BQR:
+                handler = snippet.registerBluetoothQualityReportCallback()
             case _:
                 raise ValueError(f'Unsupported module: {module}')
         return cls(snippet=snippet, handler=handler, module=module)
@@ -188,6 +191,8 @@ class CallbackHandler:
                 self.snippet.unregisterBassCallback(self.handler.callback_id)
             case Module.PLAYER:
                 self.snippet.unregisterPlayerListener(self.handler.callback_id)
+            case Module.BQR:
+                self.snippet.unregisterBluetoothQualityReportCallback(self.handler.callback_id)
             case _:
                 raise ValueError(f'Unsupported module: {self.module}')
 
@@ -221,6 +226,10 @@ class CallbackHandler:
             timeout = timeout.total_seconds()
         if isinstance(event, type):
             match_msg = ''
+            if predicate:
+                # inspect.getsource may raise OSError if source unavailable.
+                with contextlib.suppress(OSError):
+                    match_msg = f'matching `{inspect.getsource(predicate).strip()}`'
             event_class = event
         else:
             match_msg = f'== {event}'
@@ -1073,6 +1082,63 @@ class ScanResult(JsonDeserializableEvent):
                 snippet_constants.ADV_DATA_SERVICE_SOLICITATION_UUIDS),
             service_data=service_data,
             manufacturer_data=manufacturer_data,
+        )
+
+
+@dataclasses.dataclass
+class BluetoothQualityReportReady(JsonDeserializableEvent):
+    """Dataclass for Bluetooth Quality Report Ready event metadata."""
+
+    @dataclasses.dataclass
+    class Common:
+        """Common fields for Bluetooth Quality Report."""
+
+        packet_type: int
+        connection_handle: int
+        connection_role: int
+        tx_power_level: int
+        rssi: int
+        snr: int
+        unused_afh_channel_count: int
+        afh_select_unideal_channel_count: int
+        lsto: int
+        piconet_clock: int
+        retransmission_count: int
+        no_rx_count: int
+        nak_count: int
+        last_tx_ack_timestamp: int
+        flow_off_count: int
+        last_flow_on_timestamp: int
+        overflow_count: int
+        underflow_count: int
+        cal_failed_item_count: int
+        # V6 fields
+        tx_total_packets: int | None = None
+        tx_unack_packets: int | None = None
+        tx_flush_packets: int | None = None
+        tx_last_subevent_packets: int | None = None
+        crc_error_packets: int | None = None
+        rx_dup_packets: int | None = None
+        rx_un_recv_packets: int | None = None
+        coex_info_mask: int | None = None
+
+    device: str
+    quality_report_id: int
+    status: int
+    common: Common | None
+
+    EVENT_NAME = snippet_constants.BLUETOOTH_QUALITY_REPORT
+
+    @override
+    @classmethod
+    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
+        report = mapping[snippet_constants.FIELD_REPORT]
+        return cls(
+            device=mapping[snippet_constants.FIELD_DEVICE],
+            status=mapping[snippet_constants.FIELD_STATUS],
+            quality_report_id=report[snippet_constants.FIELD_ID],
+            common=(cls.Common(**report[snippet_constants.FIELD_COMMON])
+                    if snippet_constants.FIELD_COMMON in report else None),
         )
 
 
@@ -2045,6 +2111,23 @@ class GattClient(CallbackHandler):
             android_constants.Phy(event.data[snippet_constants.FIELD_TX_PHY]),
             android_constants.Phy(event.data[snippet_constants.FIELD_RX_PHY]),
         )
+
+    async def request_subrate_mode(
+            self, mode: android_constants.LeSubrateMode) -> android_constants.LeSubrateMode:
+        """Requests LE Subrate Mode.
+
+    Args:
+      mode: Target subrate mode.
+
+    Returns:
+      Updated subrate mode.
+
+    Raises:
+      ConnectionError: Unable to request subrate mode.
+    """
+        self.snippet.gattRequestSubrateMode(self.handler.callback_id, mode)
+        # TODO: Wait for subrate mode update event.
+        return mode
 
 
 _EVENT = TypeVar('_EVENT', bound=JsonDeserializableEvent)

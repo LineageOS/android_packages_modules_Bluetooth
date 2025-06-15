@@ -250,13 +250,13 @@ def register_sink_buffer(sink: avdtp.LocalSink, codec: A2dpCodec) -> bytearray |
     match codec:
         case A2dpCodec.SBC:
 
-            @sink.on('rtp_packet')
+            @sink.on(avdtp.LocalSink.EVENT_RTP_PACKET)
             def _(packet: avdtp.MediaPacket) -> None:
                 buffer.extend(packet.payload[1:])
 
         case A2dpCodec.AAC:
 
-            @sink.on('rtp_packet')
+            @sink.on(avdtp.LocalSink.EVENT_RTP_PACKET)
             def _(packet: avdtp.MediaPacket) -> None:
                 buffer.extend(codecs.AacAudioRtpPacket.from_bytes(packet.payload).to_adts())
 
@@ -268,11 +268,18 @@ def register_sink_buffer(sink: avdtp.LocalSink, codec: A2dpCodec) -> bytearray |
             sink.on_avdtp_packet = on_avdtp_packet  # type: ignore[method-assign]
             if sink.stream and sink.stream.rtp_channel:
                 sink.stream.rtp_channel.sink = sink.on_avdtp_packet
+
         case A2dpCodec.APTX_HD:
 
-            @sink.on('rtp_packet')
+            @sink.on(avdtp.LocalSink.EVENT_RTP_PACKET)
             def _(packet: avdtp.MediaPacket) -> None:
                 buffer.extend(packet.payload)
+
+        case A2dpCodec.LDAC:
+
+            @sink.on(avdtp.LocalSink.EVENT_RTP_PACKET)
+            def _(packet: avdtp.MediaPacket) -> None:
+                buffer.extend(packet.payload[1:])
 
         case _:
             # Unexpected codec or no decoder.

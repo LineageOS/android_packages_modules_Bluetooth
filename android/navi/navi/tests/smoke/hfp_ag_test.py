@@ -31,6 +31,7 @@ from typing_extensions import override
 from navi.bumble_ext import hfp as hfp_ext
 from navi.tests import navi_test_base
 from navi.utils import android_constants
+from navi.utils import audio
 from navi.utils import bl4a_api
 from navi.utils import constants
 
@@ -288,10 +289,15 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
                 self.dut.getprop(_PROPERTY_SWB_SUPPORTED) == "true"):
             preferred_codec = _AudioCodec.LC3_SWB
             # Sample rate is defined in HFP 1.9 spec.
+            sample_rate = 32000
         elif _AudioCodec.MSBC in supported_audio_codecs:
             preferred_codec = _AudioCodec.MSBC
+            sample_rate = 16000
         else:
             preferred_codec = _AudioCodec.CVSD
+            sample_rate = 8000
+        # PCM frame size = sample_rate * frame_duration (7.5ms) * sample_width (2)
+        pcm_frame_size = int(sample_rate * _HFP_FRAME_DURATION * 2)
 
         dut_hfp_cb = self.dut.bl4a.register_callback(_Module.HFP_AG)
         dut_telecom_cb = self.dut.bl4a.register_callback(_Module.TELECOM)
@@ -314,7 +320,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
             ref_hfp_protocol = await ref_hfp_protocol_queue.get()
 
         sco_links = asyncio.Queue[device.ScoLink]()
-        self.ref.device.on("sco_connection", sco_links.put_nowait)
+        self.ref.device.on(self.ref.device.EVENT_SCO_CONNECTION, sco_links.put_nowait)
 
         self.logger.info("[DUT] Add call.")
         with self.dut.bl4a.make_phone_call(
@@ -330,7 +336,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
 
             async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
                 self.logger.info("[REF] Wait for SCO connected.")
-                await sco_links.get()
+                sco_link = await sco_links.get()
 
                 self.assertEqual(ref_hfp_protocol.active_codec, preferred_codec)
 
@@ -339,6 +345,48 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
             self.logger.info("[DUT] Start recording.")
             recorder = await asyncio.to_thread(
                 lambda: self.dut.bl4a.start_audio_recording(_RECORDING_PATH))
+            # Make sure the recorder is closed after the test.
+            self.test_case_context.push(recorder)
+
+            esco_parameters = await ref_hfp_protocol.get_esco_parameters()
+            check_audio_correctness = (
+                # We don't support transparent audio packets for now.
+                esco_parameters.input_coding_format.codec_id == hci.CodecID.LINEAR_PCM
+                # Skip audio correctness check on emulators.
+                and not self.dut.device.is_emulator and audio.SUPPORT_AUDIO_PROCESSING)
+            ref_sink_buffer = bytearray()
+            if check_audio_correctness:
+                sine_tone_batch_iterator = itertools.cycle(
+                    audio.batched(
+                        audio.generate_sine_tone(
+                            frequency=1000,
+                            duration=1.0,
+                            sample_rate=sample_rate,
+                            data_type="int16",
+                        ),
+                        n=pcm_frame_size,
+                    ))
+
+                async def source_streamer() -> None:
+                    while sco_link.handle in self.ref.device.sco_links:
+                        tx_data = next(sine_tone_batch_iterator)
+                        for offset in range(0, len(tx_data), _MAX_FRAME_SIZE):
+                            buffer = tx_data[offset:offset + _MAX_FRAME_SIZE]
+                            self.ref.device.host.send_hci_packet(
+                                hci.HCI_SynchronousDataPacket(
+                                    connection_handle=sco_link.handle,
+                                    packet_status=0,
+                                    data_total_length=len(buffer),
+                                    data=bytes(buffer),
+                                ))
+                        # Sleep for 90% of the frame duration, or packets might be dropped.
+                        await asyncio.sleep(_HFP_FRAME_DURATION * 0.9)
+
+                def on_sco_packet(packet: hci.HCI_SynchronousDataPacket) -> None:
+                    ref_sink_buffer.extend(packet.data)
+
+                sco_link.sink = on_sco_packet
+                sco_link.abort_on(sco_link.EVENT_DISCONNECTION, source_streamer())
 
             # Streaming for 5 seconds.
             await asyncio.sleep(5.0)
@@ -352,6 +400,26 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
 
         self.logger.info("[DUT] Stop recording.")
         await asyncio.to_thread(recorder.close)
+
+        # Get recording from DUT.
+        rx_received_buffer = self.dut.adb.shell([
+            "cat",
+            f"/data/media/{self.dut.adb.current_user_id}/Recordings/record.wav",
+        ])
+
+        if check_audio_correctness:
+            tx_dominant_frequency = audio.get_dominant_frequency(
+                ref_sink_buffer,
+                format="pcm",
+                frame_rate=sample_rate,
+                channels=1,
+                sample_width=2,  # 16-bit
+            )
+            self.logger.info("[Tx] Dominant frequency: %.2f", tx_dominant_frequency)
+            self.assertAlmostEqual(tx_dominant_frequency, 1000, delta=10)
+            rx_dominant_frequency = audio.get_dominant_frequency(rx_received_buffer, format="wav")
+            self.logger.info("[Rx] Dominant frequency: %.2f", rx_dominant_frequency)
+            self.assertAlmostEqual(rx_dominant_frequency, 1000, delta=10)
 
     @navi_test_base.parameterized(_CallAnswer.ACCEPT, _CallAnswer.REJECT)
     async def test_answer_call_from_ref(self, call_answer: _CallAnswer) -> None:
@@ -477,7 +545,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
         def on_ag_indicator(ag_indicator: hfp.AgIndicatorState) -> None:
             ag_indicators[ag_indicator.indicator].put_nowait(ag_indicator.current_status)
 
-        ref_hfp_protocol.on("ag_indicator", on_ag_indicator)
+        ref_hfp_protocol.on(ref_hfp_protocol.EVENT_AG_INDICATOR, on_ag_indicator)
 
         self.logger.info("[DUT] Make phone call.")
         with self.dut.bl4a.make_phone_call(_CALLER_NAME, _CALLER_NUMBER, direction) as call:
@@ -630,6 +698,8 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
     """
         if self._is_ranchu_emulator(self.dut.device):
             self.skipTest("Volume control is not supported on Ranchu emulator")
+        if self.dut.device.is_emulator and issuer == constants.TestRole.DUT:
+            self.skipTest("b/420835576: Volume control from DUT is broken")
 
         # [REF] Setup HFP.
         hfp_configuration = hfp.HfConfiguration(
@@ -672,7 +742,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
 
                 if issuer == constants.TestRole.DUT:
                     volumes = asyncio.Queue[int]()
-                    ref_hfp_protocol.on("speaker_volume", volumes.put_nowait)
+                    ref_hfp_protocol.on(ref_hfp_protocol.EVENT_SPEAKER_VOLUME, volumes.put_nowait)
 
                     self.logger.info("[DUT] Set volume to %d.", expected_volume)
                     self.dut.bt.setVolume(_STREAM_TYPE_CALL, expected_volume)
@@ -731,7 +801,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
         def on_ag_indicator(ag_indicator: hfp.AgIndicatorState) -> None:
             ag_indicators[ag_indicator.indicator].put_nowait(ag_indicator.current_status)
 
-        ref_hfp_protocol.on("ag_indicator", on_ag_indicator)
+        ref_hfp_protocol.on(ref_hfp_protocol.EVENT_AG_INDICATOR, on_ag_indicator)
 
         self.logger.info("[DUT] Make incoming call.")
         with self.dut.bl4a.make_phone_call(
@@ -802,7 +872,7 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
         def on_ag_indicator(ag_indicator: hfp.AgIndicatorState) -> None:
             ag_indicators[ag_indicator.indicator].put_nowait(ag_indicator.current_status)
 
-        ref_hfp_protocol.on("ag_indicator", on_ag_indicator)
+        ref_hfp_protocol.on(ref_hfp_protocol.EVENT_AG_INDICATOR, on_ag_indicator)
 
         self.logger.info("[DUT] Make incoming call.")
         with (
