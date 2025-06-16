@@ -19,6 +19,7 @@ package android.bluetooth;
 import android.annotation.FlaggedApi;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -91,6 +92,7 @@ public final class BluetoothCodecType implements Parcelable {
     }
 
     /** Returns if the codec type is mandatory in the Bluetooth specification. */
+    @RequiresNoPermission
     public boolean isMandatoryCodec() {
         return mNativeCodecType == BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC;
     }
@@ -111,11 +113,13 @@ public final class BluetoothCodecType implements Parcelable {
      *   <li>Bits 24-39: Vendor-defined codec ID, set to 0, if octet 0 is not 0xFF.
      * </ul>
      */
+    @RequiresNoPermission
     public long getCodecId() {
         return mCodecId;
     }
 
     /** Returns the codec name. */
+    @RequiresNoPermission
     public @NonNull String getCodecName() {
         return mCodecName;
     }
@@ -126,6 +130,7 @@ public final class BluetoothCodecType implements Parcelable {
      *
      * @hide
      */
+    @RequiresNoPermission
     public int getNativeCodecType() {
         return mNativeCodecType;
     }

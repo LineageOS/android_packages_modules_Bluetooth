@@ -18,6 +18,7 @@ import static java.util.Objects.requireNonNull;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -186,9 +187,9 @@ public final class OobData implements Parcelable {
          * @throws NullPointerException if deviceName is null.
          * @hide
          */
-        @NonNull
         @SystemApi
-        public LeBuilder setDeviceName(@NonNull byte[] deviceName) {
+        @RequiresNoPermission
+        public @NonNull LeBuilder setDeviceName(@NonNull byte[] deviceName) {
             requireNonNull(deviceName);
             this.mDeviceName = deviceName;
             return this;
@@ -305,9 +306,9 @@ public final class OobData implements Parcelable {
          * @throws NullPointerException if leTemporaryKey is null.
          * @hide
          */
-        @NonNull
         @SystemApi
-        public LeBuilder setLeTemporaryKey(@NonNull byte[] leTemporaryKey) {
+        @RequiresNoPermission
+        public @NonNull LeBuilder setLeTemporaryKey(@NonNull byte[] leTemporaryKey) {
             requireNonNull(leTemporaryKey);
             if (leTemporaryKey.length != LE_TK_OCTETS) {
                 throw new IllegalArgumentException(
@@ -325,9 +326,9 @@ public final class OobData implements Parcelable {
          * @throws NullPointerException if randomizerHash is null.
          * @hide
          */
-        @NonNull
         @SystemApi
-        public LeBuilder setRandomizerHash(@NonNull byte[] randomizerHash) {
+        @RequiresNoPermission
+        public @NonNull LeBuilder setRandomizerHash(@NonNull byte[] randomizerHash) {
             requireNonNull(randomizerHash);
             if (randomizerHash.length != OobData.RANDOMIZER_OCTETS) {
                 throw new IllegalArgumentException(
@@ -353,9 +354,9 @@ public final class OobData implements Parcelable {
          * @throws IllegalArgumentException for invalid flag
          * @hide
          */
-        @NonNull
         @SystemApi
-        public LeBuilder setLeFlags(@LeFlag int leFlags) {
+        @RequiresNoPermission
+        public @NonNull LeBuilder setLeFlags(@LeFlag int leFlags) {
             if (leFlags < LE_FLAG_LIMITED_DISCOVERY_MODE || leFlags > LE_FLAG_SIMULTANEOUS_HOST) {
                 throw new IllegalArgumentException("leFlags must be a valid value.");
             }
@@ -370,9 +371,9 @@ public final class OobData implements Parcelable {
          * @throws IllegalStateException if either of the 2 required fields were not set.
          * @hide
          */
-        @NonNull
         @SystemApi
-        public OobData build() {
+        @RequiresNoPermission
+        public @NonNull OobData build() {
             final OobData oob =
                     new OobData(
                             this.mDeviceAddressWithType,
@@ -524,9 +525,9 @@ public final class OobData implements Parcelable {
          * @throws NullPointerException if randomizerHash is null.
          * @hide
          */
-        @NonNull
         @SystemApi
-        public ClassicBuilder setRandomizerHash(@NonNull byte[] randomizerHash) {
+        @RequiresNoPermission
+        public @NonNull ClassicBuilder setRandomizerHash(@NonNull byte[] randomizerHash) {
             requireNonNull(randomizerHash);
             if (randomizerHash.length != OobData.RANDOMIZER_OCTETS) {
                 throw new IllegalArgumentException(
@@ -548,9 +549,9 @@ public final class OobData implements Parcelable {
          * @throws NullPointerException if deviceName is null
          * @hide
          */
-        @NonNull
         @SystemApi
-        public ClassicBuilder setDeviceName(@NonNull byte[] deviceName) {
+        @RequiresNoPermission
+        public @NonNull ClassicBuilder setDeviceName(@NonNull byte[] deviceName) {
             requireNonNull(deviceName);
             this.mDeviceName = deviceName;
             return this;
@@ -570,9 +571,9 @@ public final class OobData implements Parcelable {
          * @throws NullPointerException if classOfDevice is null.
          * @hide
          */
-        @NonNull
         @SystemApi
-        public ClassicBuilder setClassOfDevice(@NonNull byte[] classOfDevice) {
+        @RequiresNoPermission
+        public @NonNull ClassicBuilder setClassOfDevice(@NonNull byte[] classOfDevice) {
             requireNonNull(classOfDevice);
             if (classOfDevice.length != OobData.CLASS_OF_DEVICE_OCTETS) {
                 throw new IllegalArgumentException(
@@ -590,9 +591,9 @@ public final class OobData implements Parcelable {
          * @return {@link OobData} with previously given builder values.
          * @hide
          */
-        @NonNull
         @SystemApi
-        public OobData build() {
+        @RequiresNoPermission
+        public @NonNull OobData build() {
             final OobData oob =
                     new OobData(
                             this.mClassicLength,
@@ -656,9 +657,9 @@ public final class OobData implements Parcelable {
      *     Type. For LE there are more choices for Address Type.
      * @hide
      */
-    @NonNull
     @SystemApi
-    public byte[] getDeviceAddressWithType() {
+    @RequiresNoPermission
+    public @NonNull byte[] getDeviceAddressWithType() {
         return mDeviceAddressWithType;
     }
 
@@ -667,9 +668,9 @@ public final class OobData implements Parcelable {
      *     identity to the controller.
      * @hide
      */
-    @NonNull
     @SystemApi
-    public byte[] getConfirmationHash() {
+    @RequiresNoPermission
+    public @NonNull byte[] getConfirmationHash() {
         return mConfirmationHash;
     }
 
@@ -678,9 +679,9 @@ public final class OobData implements Parcelable {
      *     of the controller.
      * @hide
      */
-    @NonNull
     @SystemApi
-    public byte[] getRandomizerHash() {
+    @RequiresNoPermission
+    public @NonNull byte[] getRandomizerHash() {
         return mRandomizerHash;
     }
 
@@ -689,9 +690,9 @@ public final class OobData implements Parcelable {
      *     <p>Also, this will be populated with the LE Local Name if the data is for LE.
      * @hide
      */
-    @Nullable
     @SystemApi
-    public byte[] getDeviceName() {
+    @RequiresNoPermission
+    public @Nullable byte[] getDeviceName() {
         return mDeviceName;
     }
 
@@ -700,9 +701,9 @@ public final class OobData implements Parcelable {
      *     including these octets.
      * @hide
      */
-    @NonNull
     @SystemApi
-    public byte[] getClassicLength() {
+    @RequiresNoPermission
+    public @NonNull byte[] getClassicLength() {
         return mClassicLength;
     }
 
@@ -711,9 +712,9 @@ public final class OobData implements Parcelable {
      *     <p>Does not indicate services available; for display only.
      * @hide
      */
-    @NonNull
     @SystemApi
-    public byte[] getClassOfDevice() {
+    @RequiresNoPermission
+    public @NonNull byte[] getClassOfDevice() {
         return mClassOfDevice;
     }
 
@@ -721,9 +722,9 @@ public final class OobData implements Parcelable {
      * @return Temporary Key used for LE pairing.
      * @hide
      */
-    @Nullable
     @SystemApi
-    public byte[] getLeTemporaryKey() {
+    @RequiresNoPermission
+    public @Nullable byte[] getLeTemporaryKey() {
         return mLeTemporaryKey;
     }
 
@@ -732,9 +733,9 @@ public final class OobData implements Parcelable {
      *     of icons or text to display regarding the device.
      * @hide
      */
-    @Nullable
     @SystemApi
-    public byte[] getLeAppearance() {
+    @RequiresNoPermission
+    public @Nullable byte[] getLeAppearance() {
         return mLeAppearance;
     }
 
@@ -750,8 +751,8 @@ public final class OobData implements Parcelable {
      * @hide
      */
     @SystemApi
-    @LeFlag
-    public int getLeFlags() {
+    @RequiresNoPermission
+    public @LeFlag int getLeFlags() {
         return mLeFlags;
     }
 
@@ -765,6 +766,7 @@ public final class OobData implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @LeRole int getLeDeviceRole() {
         return mLeDeviceRole;
     }
@@ -862,7 +864,7 @@ public final class OobData implements Parcelable {
      * @hide
      */
     @Override
-    public @NonNull String toString() {
+    public String toString() {
         return "OobData: \n\t"
                 // Both
                 + "Device Address With Type: "
