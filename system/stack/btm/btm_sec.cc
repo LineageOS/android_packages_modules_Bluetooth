@@ -3340,7 +3340,7 @@ static uint8_t get_min_enc_key_size() {
 static void read_encryption_key_size_complete_after_encryption_change(uint8_t status,
                                                                       uint16_t handle,
                                                                       uint8_t key_size) {
-  if (status == HCI_ERR_INSUFFCIENT_SECURITY) {
+  if (status == HCI_ERR_INSUFFICIENT_SECURITY) {
     /* If remote device stop the encryption before we call "Read Encryption Key
      * Size", we might receive Insufficient Security, which means that link is
      * no longer encrypted. */
@@ -3930,7 +3930,7 @@ void btm_sec_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr, tHC
 
 static void read_encryption_key_size_complete_after_key_refresh(uint8_t status, uint16_t handle,
                                                                 uint8_t key_size) {
-  if (status == HCI_ERR_INSUFFCIENT_SECURITY) {
+  if (status == HCI_ERR_INSUFFICIENT_SECURITY) {
     /* If remote device stop the encryption before we call "Read Encryption Key
      * Size", we might receive Insufficient Security, which means that link is
      * no longer encrypted. */
