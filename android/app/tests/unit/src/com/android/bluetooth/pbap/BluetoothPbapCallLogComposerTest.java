@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.pbap;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.pbap.BluetoothPbapCallLogComposer.FAILURE_REASON_FAILED_TO_GET_DATABASE_INFO;
 import static com.android.bluetooth.pbap.BluetoothPbapCallLogComposer.FAILURE_REASON_NOT_INITIALIZED;
 import static com.android.bluetooth.pbap.BluetoothPbapCallLogComposer.FAILURE_REASON_NO_ENTRY;
@@ -40,6 +39,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;

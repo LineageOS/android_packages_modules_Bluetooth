@@ -16,8 +16,6 @@
 
 package com.android.bluetooth.mapclient;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
@@ -31,6 +29,7 @@ import com.android.bluetooth.map.BluetoothMapMessageListingElement;
 import com.android.bluetooth.map.BluetoothMapService;
 import com.android.bluetooth.map.BluetoothMapUtils;
 import com.android.obex.HeaderSet;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;

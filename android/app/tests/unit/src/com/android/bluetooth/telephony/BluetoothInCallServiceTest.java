@@ -18,7 +18,6 @@ package com.android.bluetooth.telephony;
 
 import static android.platform.test.flag.junit.DeviceFlagsValueProvider.createCheckFlagsRule;
 
-import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.telephony.BluetoothInCallService.Result;
 import static com.android.bluetooth.telephony.BluetoothInCallService.TerminationReason;
@@ -73,6 +72,7 @@ import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.tbs.TbsService;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
+import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.junit.After;
 import org.junit.Before;

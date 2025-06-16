@@ -24,8 +24,8 @@ import android.bluetooth.le.PeriodicAdvertisingParameters
 import android.content.AttributionSource
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import com.android.bluetooth.TestUtils.MockitoRule
 import com.android.bluetooth.btservice.AdapterService
+import com.android.tests.bluetooth.MockitoRule
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test

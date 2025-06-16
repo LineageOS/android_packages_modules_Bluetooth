@@ -20,8 +20,6 @@ import static android.bluetooth.BluetoothA2dp.OPTIONAL_CODECS_NOT_SUPPORTED;
 import static android.bluetooth.BluetoothA2dp.OPTIONAL_CODECS_PREF_DISABLED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
@@ -49,6 +47,7 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.btservice.storage.Metadata;
 import com.android.bluetooth.btservice.storage.MetadataDatabase;
 import com.android.bluetooth.opp.BluetoothShare;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;

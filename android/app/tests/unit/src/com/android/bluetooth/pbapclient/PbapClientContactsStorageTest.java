@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.pbapclient;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getBluetoothManager;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
@@ -44,6 +43,7 @@ import android.util.SparseArray;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.tests.bluetooth.MockitoRule;
 import com.android.vcard.VCardConfig;
 import com.android.vcard.VCardConstants;
 import com.android.vcard.VCardEntry;

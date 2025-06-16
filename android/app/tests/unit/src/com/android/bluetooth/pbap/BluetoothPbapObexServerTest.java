@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.pbap;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.obex.ApplicationParameter.TRIPLET_LENGTH.FORMAT_LENGTH;
 import static com.android.obex.ApplicationParameter.TRIPLET_LENGTH.LISTSTARTOFFSET_LENGTH;
 import static com.android.obex.ApplicationParameter.TRIPLET_LENGTH.ORDER_LENGTH;
@@ -65,6 +64,7 @@ import com.android.obex.ApplicationParameter;
 import com.android.obex.HeaderSet;
 import com.android.obex.Operation;
 import com.android.obex.ResponseCodes;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;

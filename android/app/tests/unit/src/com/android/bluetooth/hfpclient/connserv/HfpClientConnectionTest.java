@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.hfpclient;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -36,6 +35,8 @@ import android.telecom.PhoneAccount;
 import android.telecom.TelecomManager;
 
 import androidx.test.filters.MediumTest;
+
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;

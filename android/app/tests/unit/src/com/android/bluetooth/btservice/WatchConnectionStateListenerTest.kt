@@ -23,9 +23,9 @@ import android.content.pm.PackageManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.android.bluetooth.TestLooper
-import com.android.bluetooth.TestUtils.MockitoRule
 import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.TestUtils.mockGetSystemService
+import com.android.tests.bluetooth.MockitoRule
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test

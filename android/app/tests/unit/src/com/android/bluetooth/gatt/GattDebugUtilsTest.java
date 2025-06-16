@@ -16,8 +16,6 @@
 
 package com.android.bluetooth.gatt;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.verify;
@@ -26,6 +24,8 @@ import android.content.Intent;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
+
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Rule;
 import org.junit.Test;

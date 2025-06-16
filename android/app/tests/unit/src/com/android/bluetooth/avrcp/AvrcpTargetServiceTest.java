@@ -18,7 +18,6 @@ package com.android.bluetooth.avrcp;
 
 import static android.Manifest.permission.MEDIA_CONTENT_CONTROL;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -45,6 +44,7 @@ import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.audio_util.Image;
 import com.android.bluetooth.audio_util.Metadata;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;

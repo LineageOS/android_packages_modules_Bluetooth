@@ -28,9 +28,9 @@ import android.os.WorkSource
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
-import com.android.bluetooth.TestUtils.MockitoRule
 import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.btservice.AdapterService
+import com.android.tests.bluetooth.MockitoRule
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
