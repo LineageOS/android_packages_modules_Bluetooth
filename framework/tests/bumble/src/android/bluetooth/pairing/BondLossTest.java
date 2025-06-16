@@ -70,11 +70,16 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.hamcrest.MockitoHamcrest;
 
+import pandora.HostProto.ConnectRequest;
+import pandora.HostProto.ConnectResponse;
 import pandora.HostProto.ConnectabilityMode;
 import pandora.HostProto.SetConnectabilityModeRequest;
 import pandora.SecurityProto.DeleteBondRequest;
 import pandora.SecurityProto.PairingEvent;
 import pandora.SecurityProto.PairingEventAnswer;
+import pandora.SecurityProto.SecureRequest;
+import pandora.SecurityProto.SecureResponse;
+import pandora.SecurityProto.SecurityLevel;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -215,6 +220,79 @@ public class BondLossTest {
                 hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
+        assertThat(sAdapter.getBondedDevices()).contains(mBumbleDevice);
+        verifyNoMoreInteractions(mReceiver);
+        unregisterIntentActions(
+                BluetoothDevice.ACTION_ACL_CONNECTED,
+                BluetoothDevice.ACTION_ACL_DISCONNECTED,
+                BluetoothDevice.ACTION_KEY_MISSING);
+    }
+
+    /**
+     * Test Remote initiated pairing on the BREDR device
+     *
+     * <p>Prerequisites:
+     *
+     * <ol>
+     *   <li>Bumble and Android are bonded
+     * </ol>
+     *
+     * <p>Steps:
+     *
+     * <ol>
+     *   <li>1. Bumble deletes the pairing info.
+     *   <li>2. Bumble initiate connection over BREDR.
+     *   <li>3. Android disconnect from Bumble.
+     *   <li>4. Android verifies ACTION_KEY_MISSING intent.
+     *   <li>5. Android verifies Bumble device is in bonded device list.
+     * </ol>
+     */
+    @Test
+    public void testBondBredrBondLoss_RemoteInitiatedPairing() throws Exception {
+        registerIntentActions(
+                BluetoothDevice.ACTION_ACL_CONNECTED,
+                BluetoothDevice.ACTION_ACL_DISCONNECTED,
+                BluetoothDevice.ACTION_KEY_MISSING);
+
+        testStep_BondBredr();
+        byte[] address = Utils.addressBytesFromString(sAdapter.getAddress());
+        mBumble.securityStorageBlocking()
+                .deleteBond(
+                        DeleteBondRequest.newBuilder()
+                                .setPublic(ByteString.copyFrom(address))
+                                .build());
+        mBumble.hostBlocking().reset(Empty.getDefaultInstance());
+
+        ConnectResponse connRsp =
+                mBumble.hostBlocking()
+                        .connect(
+                                ConnectRequest.newBuilder()
+                                        .setAddress(ByteString.copyFrom(address))
+                                        .build());
+        // Start pairing from Bumble
+        StreamObserverSpliterator<SecureRequest, SecureResponse> responseObserver =
+                new StreamObserverSpliterator<>();
+        mBumble.security()
+                .secure(
+                        SecureRequest.newBuilder()
+                                .setConnection(connRsp.getConnection())
+                                .setClassic(SecurityLevel.LEVEL3)
+                                .build(),
+                        responseObserver);
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
+
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_KEY_MISSING),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
+        // Wait for the ACL to get disconnected
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
+
         assertThat(sAdapter.getBondedDevices()).contains(mBumbleDevice);
         verifyNoMoreInteractions(mReceiver);
         unregisterIntentActions(
