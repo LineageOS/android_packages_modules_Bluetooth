@@ -168,6 +168,8 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.BackgroundThread;
 import com.android.modules.utils.BytesMatcher;
 
+import libcore.util.SneakyThrow;
+
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -195,9 +197,14 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 public class AdapterService extends Service {
@@ -449,6 +456,22 @@ public class AdapterService extends Service {
         mServiceFactory = new ServiceFactory();
         mSilenceDeviceManager = new SilenceDeviceManager(this, mServiceFactory, mLooper);
         mDatabaseManager = new DatabaseManager(this);
+    }
+
+    <T> T syncPost(Supplier<T> supplier, T defaultValue) {
+        Utils.enforceMainLooperIsNotUsed();
+
+        FutureTask<T> task = new FutureTask(supplier::get);
+        mHandler.post(task);
+        try {
+            // Any method calling postAndWait should most likely be done in under 1 seconds.
+            return task.get(1, TimeUnit.SECONDS);
+        } catch (TimeoutException | InterruptedException e) {
+            SneakyThrow.sneakyThrow(e);
+        } catch (ExecutionException e) {
+            SneakyThrow.sneakyThrow(e.getCause());
+        }
+        return defaultValue;
     }
 
     @Deprecated // Do not expand this method usage and use injection pattern when needed.

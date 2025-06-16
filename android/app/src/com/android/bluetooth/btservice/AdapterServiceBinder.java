@@ -70,6 +70,7 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
+import com.android.bluetooth.flags.Flags;
 
 import libcore.util.SneakyThrow;
 
@@ -680,6 +681,14 @@ class AdapterServiceBinder extends IBluetooth.Stub {
                                 .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__INITIATOR_CONNECTION,
                         BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__START,
                         source.getUid());
+
+        if (Flags.vcpOnMainLooper()) {
+            return service.syncPost(
+                    () -> {
+                        return service.connectAllEnabledProfiles(device);
+                    },
+                    BluetoothStatusCodes.ERROR_TIMEOUT);
+        }
 
         try {
             return service.connectAllEnabledProfiles(device);

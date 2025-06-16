@@ -5038,14 +5038,7 @@ public class LeAudioService extends ConnectableProfile {
     }
 
     private void notifyGroupNodeAdded(BluetoothDevice device, int groupId) {
-        if (Flags.vcpOnMainLooper()) {
-            getVolumeControlService()
-                    .ifPresent(vcs -> vcs.syncPost(v -> v.handleGroupNodeAdded(groupId, device)));
-        } else {
-            getVolumeControlService()
-                    .ifPresent(
-                            volumeControl -> volumeControl.handleGroupNodeAdded(groupId, device));
-        }
+        getVolumeControlService().ifPresent(vcs -> vcs.handleGroupNodeAdded(groupId, device));
 
         synchronized (mLeAudioCallbacks) {
             int n = mLeAudioCallbacks.beginBroadcast();
