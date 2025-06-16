@@ -101,16 +101,6 @@ flag {
 }
 
 flag {
-    name: "gatt_queue_cleanup_connected"
-    namespace: "bluetooth"
-    description: "Cleans up BtaGattQueue when connected"
-    bug: "379007400"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "configure_scan_on_resume"
     namespace: "bluetooth"
     description: "Configure scan paramters when start scanning from onResume"
@@ -135,26 +125,6 @@ flag {
     namespace: "bluetooth"
     description: "Send ATT_EXECUTE_WRITE_RSP when no pending write requests"
     bug: "385118069"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "change_default_trackable_adv_number"
-    namespace: "bluetooth"
-    description: "Change the default value for number of trackable advertisements for onFound"
-    bug: "389568695"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "prevent_concurrent_conn_param_updates"
-    namespace: "bluetooth"
-    description: "Makes only one connection parameter update can be processed at a time per device."
-    bug: "397316770"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

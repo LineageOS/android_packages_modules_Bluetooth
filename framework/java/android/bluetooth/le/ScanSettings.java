@@ -365,8 +365,7 @@ public final class ScanSettings implements Parcelable {
 
         // Instance initializer for mNumOfMatchesPerFilter
         {
-            if (Flags.changeDefaultTrackableAdvNumber()
-                    && CompatChanges.isChangeEnabled(CHANGE_DEFAULT_TRACKABLE_ADV_NUMBER)) {
+            if (CompatChanges.isChangeEnabled(CHANGE_DEFAULT_TRACKABLE_ADV_NUMBER)) {
                 mNumOfMatchesPerFilter = MATCH_NUM_FEW_ADVERTISEMENT;
             }
         }

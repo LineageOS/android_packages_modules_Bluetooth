@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.hfp;
 
-
 import android.bluetooth.BluetoothDevice;
 
 import com.android.bluetooth.Utils;

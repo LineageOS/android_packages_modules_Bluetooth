@@ -16,16 +16,11 @@
 
 package android.bluetooth;
 
-import static android.Manifest.permission.BLUETOOTH_CONNECT;
-
 import android.annotation.FlaggedApi;
-import android.annotation.IntDef;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
-import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothDevice.EncryptionAlgorithm;
-
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -39,13 +34,21 @@ import com.android.bluetooth.flags.Flags;
  */
 @FlaggedApi(Flags.FLAG_LINK_STATUS_API)
 public final class EncryptionStatus {
-    private final int keySize;
-    private final int algorithm;
+    private final InnerParcel mParcel;
 
     public EncryptionStatus(
             @IntRange(from = 1, to = 16) int keySize, @EncryptionAlgorithm int algorithm) {
-        this.keySize = keySize;
-        this.algorithm = algorithm;
+        mParcel = new InnerParcel(keySize, algorithm);
+    }
+
+    private EncryptionStatus(InnerParcel p) {
+        mParcel = p;
+    }
+
+    /** @hide */
+    @RequiresNoPermission
+    public InnerParcel getParcel() {
+        return mParcel;
     }
 
     /**
@@ -54,7 +57,7 @@ public final class EncryptionStatus {
      */
     @RequiresNoPermission
     public @IntRange(from = 1, to = 16) int getKeySize() {
-        return keySize;
+        return mParcel.mKeySize;
     }
 
     /**
@@ -62,11 +65,61 @@ public final class EncryptionStatus {
      */
     @RequiresNoPermission
     public @EncryptionAlgorithm int getAlgorithm() {
-        return algorithm;
+        return mParcel.mAlgorithm;
     }
 
     @Override
     public String toString() {
-        return "EncryptionStatus{keySize=" + keySize + ", algorithm=" + algorithm + "}";
+        return "EncryptionStatus{keySize="
+                + mParcel.mKeySize
+                + ", algorithm="
+                + mParcel.mAlgorithm
+                + "}";
+    }
+
+    /** @hide */
+    public static final class InnerParcel implements Parcelable {
+        private final int mKeySize;
+        private final int mAlgorithm;
+
+        private InnerParcel(@NonNull Parcel in) {
+            this(in.readInt(), in.readInt());
+        }
+
+        public InnerParcel(int keySize, int algorithm) {
+            mKeySize = keySize;
+            mAlgorithm = algorithm;
+        }
+
+        /**
+         * @return the {@link EncryptionStatus} associated with this parcel
+         */
+        @FlaggedApi(Flags.FLAG_LINK_STATUS_API)
+        public @NonNull EncryptionStatus toEncryptionStatus() {
+            return new EncryptionStatus(this);
+        }
+
+        @Override
+        public void writeToParcel(@NonNull Parcel out, int flags) {
+            out.writeInt(mKeySize);
+            out.writeInt(mAlgorithm);
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        /** {@link Parcelable.Creator} interface implementation. */
+        public static final @NonNull Parcelable.Creator<InnerParcel> CREATOR =
+                new Parcelable.Creator<InnerParcel>() {
+                    public @NonNull InnerParcel createFromParcel(Parcel in) {
+                        return new InnerParcel(in);
+                    }
+
+                    public @NonNull InnerParcel[] newArray(int size) {
+                        return new InnerParcel[size];
+                    }
+                };
     }
 }

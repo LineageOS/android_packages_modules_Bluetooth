@@ -1327,7 +1327,7 @@ public final class Utils {
             return;
         }
         if (Looper.getMainLooper().isCurrentThread()) {
-            throw new IllegalThreadStateException("Must be called on main thread");
+            throw new IllegalThreadStateException("Must NOT be called on main thread");
         }
     }
 }

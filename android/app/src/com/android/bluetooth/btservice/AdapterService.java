@@ -74,7 +74,7 @@ import android.bluetooth.BluetoothSocket;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUtils;
 import android.bluetooth.BufferConstraints;
-import android.bluetooth.EncryptionStatusParcel;
+import android.bluetooth.EncryptionStatus;
 import android.bluetooth.IBluetoothCallback;
 import android.bluetooth.IBluetoothConnectionCallback;
 import android.bluetooth.IBluetoothMetadataListener;
@@ -129,7 +129,6 @@ import com.android.bluetooth.bas.BatteryService;
 import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.InteropUtil.InteropFeature;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
-import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties.LinkState;
 import com.android.bluetooth.btservice.bluetoothkeystore.BluetoothKeystoreNativeInterface;
 import com.android.bluetooth.btservice.bluetoothkeystore.BluetoothKeystoreService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -168,6 +167,8 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.BackgroundThread;
 import com.android.modules.utils.BytesMatcher;
 
+import libcore.util.SneakyThrow;
+
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -195,9 +196,14 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 public class AdapterService extends Service {
@@ -449,6 +455,22 @@ public class AdapterService extends Service {
         mServiceFactory = new ServiceFactory();
         mSilenceDeviceManager = new SilenceDeviceManager(this, mServiceFactory, mLooper);
         mDatabaseManager = new DatabaseManager(this);
+    }
+
+    <T> T syncPost(Supplier<T> supplier, T defaultValue) {
+        Utils.enforceMainLooperIsNotUsed();
+
+        FutureTask<T> task = new FutureTask(supplier::get);
+        mHandler.post(task);
+        try {
+            // Any method calling postAndWait should most likely be done in under 1 seconds.
+            return task.get(1, TimeUnit.SECONDS);
+        } catch (TimeoutException | InterruptedException e) {
+            SneakyThrow.sneakyThrow(e);
+        } catch (ExecutionException e) {
+            SneakyThrow.sneakyThrow(e.getCause());
+        }
+        return defaultValue;
     }
 
     @Deprecated // Do not expand this method usage and use injection pattern when needed.
@@ -4984,21 +5006,12 @@ public class AdapterService extends Service {
      * @param transport the transport to get the link status for
      * @return the link status of the given transport
      */
-    public EncryptionStatusParcel getEncryptionStatus(BluetoothDevice device, int transport) {
+    public EncryptionStatus getEncryptionStatus(BluetoothDevice device, int transport) {
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         if (deviceProp == null) {
             return null;
         }
-        LinkState.EncryptionAttributes encryptionAttributes =
-                deviceProp.getEncryptionAttributes(transport);
-        EncryptionStatusParcel deviceEncryptionStatusParcel = null;
-
-        if (encryptionAttributes != null) {
-            deviceEncryptionStatusParcel =
-                    new EncryptionStatusParcel(
-                            encryptionAttributes.keySize(), encryptionAttributes.algorithm());
-        }
-        return deviceEncryptionStatusParcel;
+        return deviceProp.getEncryptionStatus(transport);
     }
 
     /**

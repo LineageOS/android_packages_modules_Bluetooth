@@ -45,7 +45,7 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothStatusCodes;
-import android.bluetooth.EncryptionStatusParcel;
+import android.bluetooth.EncryptionStatus;
 import android.bluetooth.IBluetooth;
 import android.bluetooth.IBluetoothActivityEnergyInfoListener;
 import android.bluetooth.IBluetoothConnectionCallback;
@@ -70,6 +70,7 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
+import com.android.bluetooth.flags.Flags;
 
 import libcore.util.SneakyThrow;
 
@@ -680,6 +681,14 @@ class AdapterServiceBinder extends IBluetooth.Stub {
                                 .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__INITIATOR_CONNECTION,
                         BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__START,
                         source.getUid());
+
+        if (Flags.vcpOnMainLooper()) {
+            return service.syncPost(
+                    () -> {
+                        return service.connectAllEnabledProfiles(device);
+                    },
+                    BluetoothStatusCodes.ERROR_TIMEOUT);
+        }
 
         try {
             return service.connectAllEnabledProfiles(device);
@@ -2123,17 +2132,25 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
-    public EncryptionStatusParcel getEncryptionStatus(
+    public EncryptionStatus.InnerParcel getEncryptionStatus(
             BluetoothDevice device, AttributionSource source, int transport) {
         AdapterService service = getService();
         if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
             throw new IllegalArgumentException("device cannot have an invalid address");
         }
+
+        if (service == null) {
+            return null;
+        }
         if (!checkConnectPermissionForDataDelivery(service, source, TAG, "getEncryptionStatus")) {
             return null;
         }
 
-        return service == null ? null : service.getEncryptionStatus(device, transport);
+        EncryptionStatus enc = service.getEncryptionStatus(device, transport);
+        if (enc == null) {
+            return null;
+        }
+        return enc.getParcel();
     }
 
     @Override
@@ -2142,10 +2159,13 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
             throw new IllegalArgumentException("device cannot have an invalid address");
         }
+        if (service == null) {
+            return false;
+        }
         if (!checkConnectPermissionForDataDelivery(service, source, TAG, "isConnected")) {
             return false;
         }
 
-        return service == null ? false : service.isConnected(device, transport);
+        return service.isConnected(device, transport);
     }
 }

@@ -53,20 +53,14 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
     @Retention(RetentionPolicy.SOURCE)
     public @interface SourceCodecType {};
 
-    /**
-     * Source codec type for LC3.
-     */
+    /** Source codec type for LC3. */
     public static final int SOURCE_CODEC_TYPE_LC3 = 0;
 
-    /**
-     * Source codec type for Opus.
-     */
+    /** Source codec type for Opus. */
     @FlaggedApi(Flags.FLAG_LEAUDIO_ADD_OPUS_CODEC_TYPE)
     public static final int SOURCE_CODEC_TYPE_OPUS = 1;
 
-    /**
-     * Source codec type for Opus High Resolution.
-     */
+    /** Source codec type for Opus High Resolution. */
     @FlaggedApi(Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API)
     public static final int SOURCE_CODEC_TYPE_OPUS_HI_RES = 2;
 

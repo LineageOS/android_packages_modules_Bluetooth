@@ -18,6 +18,7 @@ package com.android.bluetooth.btservice;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+import static android.bluetooth.BluetoothProfile.VOLUME_CONTROL;
 
 import static com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__BOND_RETRY;
 import static com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__FAIL;
@@ -781,8 +782,20 @@ final class BondStateMachine extends StateMachine {
                     .stream()
                     .flatMap(Optional::stream)
                     .forEach(
-                            profile ->
-                                    profile.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN));
+                            profile -> {
+                                if (profile.getProfileId() == VOLUME_CONTROL
+                                        && Flags.vcpOnMainLooper()
+                                        && !Flags.bondStateMachineLooper()) {
+                                    ((VolumeControlService) profile)
+                                            .syncPost(
+                                                    vcs ->
+                                                            vcs.setConnectionPolicy(
+                                                                    device,
+                                                                    CONNECTION_POLICY_UNKNOWN));
+                                } else {
+                                    profile.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
+                                }
+                            });
         } else {
             HidHostService hidService = HidHostService.getHidHostService();
             A2dpService a2dpService = A2dpService.getA2dpService();
@@ -823,7 +836,12 @@ final class BondStateMachine extends StateMachine {
                 csipSetCoordinatorService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
             }
             if (volumeControlService != null) {
-                volumeControlService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
+                if (Flags.vcpOnMainLooper() && !Flags.bondStateMachineLooper()) {
+                    volumeControlService.syncPost(
+                            vcs -> vcs.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN));
+                } else {
+                    volumeControlService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
+                }
             }
             if (hapClientService != null) {
                 hapClientService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);

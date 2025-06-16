@@ -36,6 +36,7 @@ import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
+import android.bluetooth.EncryptionStatus;
 import android.companion.CompanionDeviceManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -800,38 +801,35 @@ public class RemoteDevicesTest {
                 .isEqualTo(newBatteryLevel);
     }
 
-    @EnableFlags(Flags.FLAG_LINK_STATUS_API)
     @Test
+    @EnableFlags(Flags.FLAG_LINK_STATUS_API)
     public void testLinkState_bredr() {
+        final int transport = BluetoothDevice.TRANSPORT_BREDR;
+
         // Prepare the base device property
         if (mRemoteDevices.getDeviceProperties(mDevice) == null) {
             mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
         }
 
-        // validate the connected state
+        // Validate the connected state
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(mDevice);
-        deviceProp.setConnected(BluetoothDevice.TRANSPORT_BREDR, 1);
-        assertThat(deviceProp.getConnectionHandle(BluetoothDevice.TRANSPORT_BREDR)).isEqualTo(1);
+        deviceProp.setConnected(transport, 1);
+        assertThat(deviceProp.getConnectionHandle(transport)).isEqualTo(1);
 
-        // Validate the encryption attributes
-        deviceProp.setEncryptionAttributes(
-                BluetoothDevice.TRANSPORT_BREDR, 10, BluetoothDevice.ENCRYPTION_ALGORITHM_AES);
-        DeviceProperties.LinkState.EncryptionAttributes encryptionAttributes =
-                deviceProp.getEncryptionAttributes(BluetoothDevice.TRANSPORT_BREDR);
-        assertThat(encryptionAttributes.algorithm())
+        // Validate encryption
+        deviceProp.setEncryptionStatus(transport, 10, BluetoothDevice.ENCRYPTION_ALGORITHM_AES);
+        EncryptionStatus encryptionStatus = deviceProp.getEncryptionStatus(transport);
+        assertThat(encryptionStatus.getAlgorithm())
                 .isEqualTo(BluetoothDevice.ENCRYPTION_ALGORITHM_AES);
-        assertThat(encryptionAttributes.keySize()).isEqualTo(10);
+        assertThat(encryptionStatus.getKeySize()).isEqualTo(10);
 
-        // Set invalid encryption attributes, it should be null now.
-        deviceProp.setEncryptionAttributes(
-                BluetoothDevice.TRANSPORT_BREDR, 0, BluetoothDevice.ENCRYPTION_ALGORITHM_E0);
-        encryptionAttributes = deviceProp.getEncryptionAttributes(BluetoothDevice.TRANSPORT_BREDR);
-        assertThat(encryptionAttributes).isNull();
+        // Invalid encryption should be null
+        deviceProp.setEncryptionStatus(transport, 0, BluetoothDevice.ENCRYPTION_ALGORITHM_E0);
+        assertThat(deviceProp.getEncryptionStatus(transport)).isNull();
 
         // Set disconnected, and validate the state.
-        deviceProp.setDisconnected(BluetoothDevice.TRANSPORT_BREDR);
-        assertThat(deviceProp.getConnectionHandle(BluetoothDevice.TRANSPORT_BREDR))
-                .isEqualTo(BluetoothDevice.ERROR);
+        deviceProp.setDisconnected(transport);
+        assertThat(deviceProp.getConnectionHandle(transport)).isEqualTo(BluetoothDevice.ERROR);
     }
 
     private void verifyBatteryLevelUpdate(int batteryLevel) {

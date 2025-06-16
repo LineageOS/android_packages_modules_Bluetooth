@@ -1021,22 +1021,19 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                 csipSetCoordinator.get().connect(device);
             }
         }
-        if (volumeControl.isPresent() && Flags.vcpOnMainLooper()) {
-            volumeControl
-                    .get()
-                    .syncPost(
-                            vcs -> {
-                                List<BluetoothDevice> vcConnDevList = vcs.getConnectedDevices();
-                                if (!vcConnDevList.contains(device)
-                                        && (vcs.getConnectionPolicy(device)
-                                                == CONNECTION_POLICY_ALLOWED)
-                                        && (vcs.getConnectionState(device) == STATE_DISCONNECTED)) {
-                                    Log.d(TAG, log + "Retrying VCP connection");
-                                    vcs.connect(device);
-                                }
-                            });
+        if (Flags.vcpOnMainLooper()) {
+            volumeControl.ifPresent(
+                    vcs -> {
+                        List<BluetoothDevice> vcConnDevList = vcs.getConnectedDevices();
+                        if (!vcConnDevList.contains(device)
+                                && (vcs.getConnectionPolicy(device) == CONNECTION_POLICY_ALLOWED)
+                                && (vcs.getConnectionState(device) == STATE_DISCONNECTED)) {
+                            Log.d(TAG, log + "Retrying VCP connection");
+                            vcs.connect(device);
+                        }
+                    });
         }
-        if (volumeControl.isPresent() && !Flags.vcpOnMainLooper()) {
+        if (!Flags.vcpOnMainLooper() && volumeControl.isPresent()) {
             List<BluetoothDevice> vcConnDevList = volumeControl.get().getConnectedDevices();
             if (!vcConnDevList.contains(device)
                     && (volumeControl.get().getConnectionPolicy(device)
