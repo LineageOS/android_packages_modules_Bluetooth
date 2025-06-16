@@ -89,6 +89,7 @@ public:
                                      std::vector<bluetooth::hal::VendorSpecificCharacteristic>
                                              vendor_specific_characteristics) = 0;
   virtual void OnHandleVendorSpecificReplyComplete(Address address, bool success) = 0;
+  virtual void OnRangingHardwareOffloadEnabled() = 0;
 };
 
 class DistanceMeasurementManager {

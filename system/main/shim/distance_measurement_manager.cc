@@ -149,6 +149,10 @@ public:
                                      std::move(raw_data)));
   }
 
+  void OnRangingHardwareOffloadEnabled() override {
+    bluetooth::ras::GetRasClient()->NotifyRangingHardwareOffloadEnabled();
+  }
+
   void OnVendorSpecificCharacteristics(std::vector<bluetooth::hal::VendorSpecificCharacteristic>
                                                vendor_specific_characteristics) override {
     std::vector<bluetooth::ras::VendorSpecificCharacteristic> ras_vendor_specific_characteristics;

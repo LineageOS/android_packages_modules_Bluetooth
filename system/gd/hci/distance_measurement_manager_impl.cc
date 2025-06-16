@@ -44,6 +44,7 @@ using namespace bluetooth::ras;
 using android::bluetooth::ChannelSoundingSecurityLevel;
 using android::bluetooth::ChannelSoundingStopReason;
 using bluetooth::hal::ProcedureDataV2;
+using bluetooth::hal::RangingSessionType;
 using bluetooth::hci::acl_manager::PacketViewForRecombination;
 
 namespace bluetooth {
@@ -597,6 +598,12 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
     it->second.state = CsTrackerState::RAS_CONNECTED;
 
     if (ranging_hal_->IsBound()) {
+      auto session_types = ranging_hal_->GetSupportedSessionTypes();
+      for (auto session_type : session_types) {
+        if (session_type == RangingSessionType::HARDWARE_OFFLOAD_DATA_PARSING) {
+          distance_measurement_callbacks_->OnRangingHardwareOffloadEnabled();
+        }
+      }
       ranging_hal_->OpenSession(connection_handle, att_handle, vendor_specific_data,
                                 static_cast<uint8_t>(it->second.sight_type),
                                 static_cast<uint8_t>(it->second.location_type));
