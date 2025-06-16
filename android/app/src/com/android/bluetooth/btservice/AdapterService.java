@@ -4095,6 +4095,32 @@ public class AdapterService extends Service {
         }
     }
 
+    List<BluetoothDevice> getConnectedMediaDevices(int profile) {
+        List<BluetoothDevice> connectedDevices = new ArrayList<>();
+        switch (profile) {
+            case BluetoothProfile.A2DP -> {
+                final var a2dp = getA2dpService();
+                if (a2dp.isPresent()) {
+                    connectedDevices = a2dp.get().getConnectedDevices();
+                }
+            }
+            case BluetoothProfile.HEARING_AID -> {
+                final var hearingAid = getHearingAidService();
+                if (hearingAid.isPresent()) {
+                    connectedDevices = hearingAid.get().getConnectedDevices();
+                }
+            }
+            case BluetoothProfile.LE_AUDIO -> {
+                final var leAudio = getLeAudioService();
+                if (leAudio.isPresent()) {
+                    connectedDevices = leAudio.get().getConnectedDevices();
+                }
+            }
+            default -> Log.e(TAG, "getConnectedMediaDevices: profile value is not valid");
+        }
+        return connectedDevices;
+    }
+
     void updatePhonePolicyOnAclConnect(BluetoothDevice device) {
         mPhonePolicy.ifPresent(policy -> policy.handleAclConnected(device));
     }
@@ -4132,6 +4158,9 @@ public class AdapterService extends Service {
         mPhonePolicy.ifPresent(
                 policy ->
                         policy.profileConnectionStateChanged(profile, device, fromState, toState));
+        if (Flags.adapterSuspendMgmt()) {
+            mAdapterSuspend.profileConnectionStateChanged(profile, device, fromState, toState);
+        }
         if (!Flags.onewayMediaProfile()) {
             return;
         }
