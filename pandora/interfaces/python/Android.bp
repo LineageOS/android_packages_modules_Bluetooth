@@ -139,6 +139,10 @@ filegroup {
     exclude_srcs: [
         ":pandora_interfaces-python-stubs",
     ],
+    visibility: [
+        "//packages/modules/Bluetooth:__subpackages__",
+        "//vendor:__subpackages__",
+    ],
 }
 
 filegroup {
