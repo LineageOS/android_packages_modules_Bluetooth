@@ -80,7 +80,7 @@ public class ContextMapTest {
         ContextMap<IBluetoothGattCallback> contextMap = getMapWithAppAndConnection();
         App contextMapById = contextMap.getById(APP_ID1);
         assertThat(contextMapById.packageName).isEqualTo(APP_NAME);
-        assertThat(contextMapById.callback).isEqualTo(mMockCallback);
+        assertThat(contextMapById.getCallback()).isEqualTo(mMockCallback);
         assertThat(contextMapById.uuid).isEqualTo(RANDOM_UUID1);
         App contextMapByUuid = contextMap.getByUuid(RANDOM_UUID1);
         assertThat(contextMapByUuid.packageName).isEqualTo(APP_NAME);
@@ -185,9 +185,21 @@ public class ContextMapTest {
 
     private ContextMap<IBluetoothGattCallback> getMapWithAppAndConnection() {
         ContextMap<IBluetoothGattCallback> contextMap = new ContextMap<>();
-        App app = contextMap.add(RANDOM_UUID1, mMockCallback, BluetoothDevice.TRANSPORT_LE, mAdapterService, mAttributionSource);
+        App app =
+                contextMap.add(
+                        RANDOM_UUID1,
+                        mMockCallback,
+                        BluetoothDevice.TRANSPORT_LE,
+                        mAdapterService,
+                        mAttributionSource);
         app.id = APP_ID1;
-        app = contextMap.add(RANDOM_UUID2, mMockCallback, BluetoothDevice.TRANSPORT_LE, mAdapterService, mAttributionSource);
+        app =
+                contextMap.add(
+                        RANDOM_UUID2,
+                        mMockCallback,
+                        BluetoothDevice.TRANSPORT_LE,
+                        mAdapterService,
+                        mAttributionSource);
         app.id = APP_ID2;
 
         contextMap.addConnection(APP_ID1, CONN_ID1, BluetoothDevice.TRANSPORT_LE, mDevice1);

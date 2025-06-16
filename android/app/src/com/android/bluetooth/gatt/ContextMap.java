@@ -52,47 +52,40 @@ import java.util.function.Predicate;
  *
  * @param <C> the callback type (must implement {@link IInterface}) for this map
  */
-public class ContextMap<C extends IInterface> {
+class ContextMap<C extends IInterface> {
     private static final String TAG =
             GattServiceConfig.TAG_PREFIX + ContextMap.class.getSimpleName();
 
     private static final int MAX_LAST_RECORDS = 5;
 
-    /** Connection class helps map connection IDs to devices. */
-    record Connection(
-            int connId, BluetoothDevice device, int transport, int appId, long startTime) {
-        Connection(int connId, BluetoothDevice device, int transport, int appId) {
-            this(connId, device, transport, appId, SystemClock.elapsedRealtime());
-        }
+    /** Our internal application list */
+    private final Object mAppsLock = new Object();
 
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Connection<")
-                    .append("conn_id: ")
-                    .append(connId)
-                    .append(", device: ")
-                    .append(device)
-                    .append(", transport: ")
-                    .append(transportToString(transport))
-                    .append(", app_id: ")
-                    .append(appId)
-                    .append(">");
-            return sb.toString();
-        }
-    }
+    @GuardedBy("mAppsLock")
+    private final List<App> mApps = new ArrayList<>();
+
+    @GuardedBy("mAppsLock")
+    private final List<AppRecord> mOngoingRecords = new ArrayList<>();
+
+    @GuardedBy("mAppsLock")
+    private final List<AppRecord> mLastRecords = new ArrayList<>();
+
+    private final Object mConnectionsLock = new Object();
+
+    /** Internal list of connected devices */
+    @GuardedBy("mConnectionsLock")
+    private final List<Connection> mConnections = new ArrayList<>();
 
     /** Application entry mapping UUIDs to appIDs and callbacks. */
     class App {
         public final UUID uuid;
+        private final C mCallback;
         public final int uid;
         public final String packageName;
+        private final int mTransport;
         @Nullable public final String attributionTag;
 
         public int id;
-        public C callback;
-
-        public int transport;
 
         /** Flag to signal that transport is congested */
         public Boolean isCongested = false;
@@ -103,7 +96,7 @@ public class ContextMap<C extends IInterface> {
         private final List<CallbackInfo> mCongestionQueue = new ArrayList<>();
 
         /** Creates a new app context. */
-        App(
+        private App(
                 UUID uuid,
                 C callback,
                 int appUid,
@@ -111,21 +104,29 @@ public class ContextMap<C extends IInterface> {
                 int transport,
                 AttributionSource source) {
             this.uuid = uuid;
-            this.callback = callback;
+            this.mCallback = callback;
             this.uid = appUid;
             this.packageName = packageName;
-            this.transport = transport;
+            this.mTransport = transport;
             attributionTag = getLastAttributionTag(source);
+        }
+
+        C getCallback() {
+            return mCallback;
+        }
+
+        int getTransport() {
+            return mTransport;
         }
 
         /** Link death recipient */
         public void linkToDeath(IBinder.DeathRecipient deathRecipient) {
             // It might not be a binder object
-            if (callback == null) {
+            if (mCallback == null) {
                 return;
             }
             try {
-                callback.asBinder().linkToDeath(deathRecipient, 0);
+                mCallback.asBinder().linkToDeath(deathRecipient, 0);
                 mDeathRecipient = deathRecipient;
             } catch (RemoteException e) {
                 Log.e(TAG, "Unable to link deathRecipient for app id " + id);
@@ -136,7 +137,7 @@ public class ContextMap<C extends IInterface> {
         public void unlinkToDeath() {
             if (mDeathRecipient != null) {
                 try {
-                    callback.asBinder().unlinkToDeath(mDeathRecipient, 0);
+                    mCallback.asBinder().unlinkToDeath(mDeathRecipient, 0);
                 } catch (NoSuchElementException e) {
                     Log.e(TAG, "Unable to unlink deathRecipient for app id " + id);
                 }
@@ -169,7 +170,7 @@ public class ContextMap<C extends IInterface> {
         AppRecord(App app) {
             uuid = app.uuid;
             packageName = app.packageName;
-            transport = app.transport;
+            transport = app.getTransport();
             attributionTag = app.attributionTag;
             registerTime = Instant.now();
         }
@@ -189,11 +190,35 @@ public class ContextMap<C extends IInterface> {
                     .append(", appName: ")
                     .append(packageName)
                     .append(", transport: ")
-                    .append(transport);
+                    .append(transportToString(transport));
             if (attributionTag != null) {
                 sb.append(", tag: ").append(attributionTag);
             }
             sb.append(", reason: ").append(reason).append(">");
+            return sb.toString();
+        }
+    }
+
+    /** Connection class helps map connection IDs to devices. */
+    record Connection(
+            int connId, BluetoothDevice device, int transport, int appId, long startTime) {
+        Connection(int connId, BluetoothDevice device, int transport, int appId) {
+            this(connId, device, transport, appId, SystemClock.elapsedRealtime());
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Connection<")
+                    .append("conn_id: ")
+                    .append(connId)
+                    .append(", device: ")
+                    .append(device)
+                    .append(", transport: ")
+                    .append(transportToString(transport))
+                    .append(", app_id: ")
+                    .append(appId)
+                    .append(">");
             return sb.toString();
         }
     }
@@ -207,23 +232,6 @@ public class ContextMap<C extends IInterface> {
 
         REASON_UNKNOWN
     }
-
-    /** Our internal application list */
-    private final Object mAppsLock = new Object();
-
-    @GuardedBy("mAppsLock")
-    private final List<App> mApps = new ArrayList<>();
-
-    @GuardedBy("mAppsLock")
-    private final List<AppRecord> mOngoingRecords = new ArrayList<>();
-
-    @GuardedBy("mAppsLock")
-    private final List<AppRecord> mLastRecords = new ArrayList<>();
-
-    /** Internal list of connected devices */
-    private final List<Connection> mConnections = new ArrayList<>();
-
-    private final Object mConnectionsLock = new Object();
 
     /** Add an entry to the application context list. */
     public App add(
@@ -295,7 +303,7 @@ public class ContextMap<C extends IInterface> {
         List<C> appIds = new ArrayList();
         synchronized (mAppsLock) {
             for (App entry : mApps) {
-                appIds.add(entry.callback);
+                appIds.add(entry.getCallback());
             }
         }
         return appIds;
@@ -348,7 +356,8 @@ public class ContextMap<C extends IInterface> {
 
     /** Get an application context by its callback object. */
     public App getByCallbackId(C callbackId) {
-        App app = getAppByPredicate(entry -> entry.callback.asBinder() == callbackId.asBinder());
+        App app =
+                getAppByPredicate(entry -> entry.getCallback().asBinder() == callbackId.asBinder());
         if (app == null) {
             Log.e(TAG, "Context not found for callbackID " + callbackId);
         }
