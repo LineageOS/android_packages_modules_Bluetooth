@@ -477,6 +477,7 @@ void bta_ag_api_disable() {
   if (bta_ag_is_sco_managed_by_audio()) {
     // Stop session if not done
     bta_clear_active_device();
+    bta_ag_release_hfp_client_interface();
   }
 
   if (!do_dereg) {
