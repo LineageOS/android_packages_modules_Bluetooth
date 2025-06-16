@@ -420,6 +420,8 @@ TEST_F(LeAudioClientAudioTest, testLeAudioClientAudioSinkSuspend) {
    */
   EXPECT_CALL(mock_hal_source_event_receiver_, OnAudioSuspend()).Times(1);
   ASSERT_TRUE(source_audio_hal_stream_cb.on_suspend_());
+
+  audio_sink_instance_->Stop();
 }
 
 TEST_F(LeAudioClientAudioTest, testAudioHalClientSuspend) {
@@ -433,6 +435,8 @@ TEST_F(LeAudioClientAudioTest, testAudioHalClientSuspend) {
    */
   EXPECT_CALL(mock_hal_sink_event_receiver_, OnAudioSuspend()).Times(1);
   ASSERT_TRUE(sink_audio_hal_stream_cb.on_suspend_());
+
+  audio_source_instance_->Stop();
 }
 
 TEST_F(LeAudioClientAudioTest, testLeAudioClientAudioSinkResume) {
@@ -447,6 +451,8 @@ TEST_F(LeAudioClientAudioTest, testLeAudioClientAudioSinkResume) {
   EXPECT_CALL(mock_hal_source_event_receiver_, OnAudioResume()).Times(1);
   bool start_media_task = false;
   ASSERT_TRUE(source_audio_hal_stream_cb.on_resume_(start_media_task));
+
+  audio_sink_instance_->Stop();
 }
 
 TEST_F(LeAudioClientAudioTest, testAudioHalClientResumeStartSourceTask) {
@@ -522,6 +528,8 @@ TEST_F(LeAudioClientAudioTest, testAudioHalClientResumeStartSourceTask) {
 
   // Verify if we got just right amount of data in the callback call
   ASSERT_EQ(media_data_to_send.size(), calculated_bytes_per_tick);
+
+  audio_source_instance_->Stop();
 }
 
 TEST_F(LeAudioClientAudioTest, testAudioHalClientResume) {
@@ -536,4 +544,6 @@ TEST_F(LeAudioClientAudioTest, testAudioHalClientResume) {
   EXPECT_CALL(mock_hal_sink_event_receiver_, OnAudioResume()).Times(1);
   bool start_media_task = false;
   ASSERT_TRUE(sink_audio_hal_stream_cb.on_resume_(start_media_task));
+
+  audio_source_instance_->Stop();
 }
