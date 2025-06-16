@@ -209,6 +209,9 @@ public class AdapterSuspend {
             mAdapterService.setScanMode(SCAN_MODE_NONE, "handleSuspend");
         }
         if (mDisconnectAclOnSuspend) {
+            mAdapterService
+                    .getLeAudioService()
+                    .ifPresent(leAudio -> leAudio.setSystemSuspended(true));
             mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
             mAdapterNativeInterface.clearEventFilter();
             mAdapterNativeInterface.clearFilterAcceptList();
@@ -225,6 +228,9 @@ public class AdapterSuspend {
         long mask = 0;
         long leMask = 0;
         if (mDisconnectAclOnSuspend) {
+            mAdapterService
+                    .getLeAudioService()
+                    .ifPresent(leAudio -> leAudio.setSystemSuspended(false));
             mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
             mAdapterNativeInterface.clearEventFilter();
             mAdapterNativeInterface.restoreFilterAcceptList();
