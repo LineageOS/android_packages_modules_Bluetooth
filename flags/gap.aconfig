@@ -131,16 +131,6 @@ flag {
 }
 
 flag {
-    name: "prevent_concurrent_conn_param_updates"
-    namespace: "bluetooth"
-    description: "Makes only one connection parameter update can be processed at a time per device."
-    bug: "397316770"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "distance_measurement_thread"
     namespace: "bluetooth"
     description: "Makes distance measurement operations run on one thread."
