@@ -461,10 +461,21 @@ public class AdapterService extends Service {
     <T> T syncPost(Supplier<T> supplier, T defaultValue) {
         Utils.enforceMainLooperIsNotUsed();
 
-        FutureTask<T> task = new FutureTask(supplier::get);
-        mHandler.post(task);
+        final FutureTask<T> task =
+                new FutureTask<>(
+                        () -> {
+                            if (!isAvailable()) {
+                                return defaultValue;
+                            }
+                            return supplier.get();
+                        });
+        if (!mHandler.post(task)) {
+            Log.w(TAG, "Failed to post task to handler");
+            Log.d(TAG, Log.getStackTraceString(new Throwable()));
+            return defaultValue;
+        }
         try {
-            // Any method calling postAndWait should most likely be done in under 1 seconds.
+            // Any method calling syncPost should most likely be done in under 1 seconds.
             return task.get(1, TimeUnit.SECONDS);
         } catch (TimeoutException | InterruptedException e) {
             SneakyThrow.sneakyThrow(e);
