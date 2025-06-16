@@ -471,12 +471,14 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     /**
      * Contains the reason for the bond loss.
      *
-     * <ul> Possible values are:
-     *   <li> {@link #BOND_LOSS_REASON_UNKNOWN}
-     *   <li> {@link #BOND_LOSS_REASON_BREDR_AUTH_FAILURE}
-     *   <li> {@link #BOND_LOSS_REASON_BREDR_INCOMING_PAIRING}
-     *   <li> {@link #BOND_LOSS_REASON_LE_ENCRYPT_FAILURE}
-     *   <li> {@link #BOND_LOSS_REASON_LE_INCOMING_PAIRING}
+     * <ul>
+     *   Possible values are:
+     *   <li>{@link #BOND_LOSS_REASON_UNKNOWN}
+     *   <li>{@link #BOND_LOSS_REASON_BREDR_AUTH_FAILURE}
+     *   <li>{@link #BOND_LOSS_REASON_BREDR_INCOMING_PAIRING}
+     *   <li>{@link #BOND_LOSS_REASON_LE_ENCRYPT_FAILURE}
+     *   <li>{@link #BOND_LOSS_REASON_LE_INCOMING_PAIRING}
+     * </ul>
      */
     @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
     @SuppressLint("ActionValue")
@@ -4024,7 +4026,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else {
             try {
-                EncryptionStatusParcel parcel =
+                EncryptionStatus.InnerParcel parcel =
                         service.getEncryptionStatus(this, mAttributionSource, transport);
                 return (parcel != null) ? parcel.toEncryptionStatus() : null;
             } catch (RemoteException e) {

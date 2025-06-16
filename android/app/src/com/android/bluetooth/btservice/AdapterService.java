@@ -74,7 +74,7 @@ import android.bluetooth.BluetoothSocket;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUtils;
 import android.bluetooth.BufferConstraints;
-import android.bluetooth.EncryptionStatusParcel;
+import android.bluetooth.EncryptionStatus;
 import android.bluetooth.IBluetoothCallback;
 import android.bluetooth.IBluetoothConnectionCallback;
 import android.bluetooth.IBluetoothMetadataListener;
@@ -129,7 +129,6 @@ import com.android.bluetooth.bas.BatteryService;
 import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.InteropUtil.InteropFeature;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
-import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties.LinkState;
 import com.android.bluetooth.btservice.bluetoothkeystore.BluetoothKeystoreNativeInterface;
 import com.android.bluetooth.btservice.bluetoothkeystore.BluetoothKeystoreService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -5007,21 +5006,12 @@ public class AdapterService extends Service {
      * @param transport the transport to get the link status for
      * @return the link status of the given transport
      */
-    public EncryptionStatusParcel getEncryptionStatus(BluetoothDevice device, int transport) {
+    public EncryptionStatus getEncryptionStatus(BluetoothDevice device, int transport) {
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         if (deviceProp == null) {
             return null;
         }
-        LinkState.EncryptionAttributes encryptionAttributes =
-                deviceProp.getEncryptionAttributes(transport);
-        EncryptionStatusParcel deviceEncryptionStatusParcel = null;
-
-        if (encryptionAttributes != null) {
-            deviceEncryptionStatusParcel =
-                    new EncryptionStatusParcel(
-                            encryptionAttributes.keySize(), encryptionAttributes.algorithm());
-        }
-        return deviceEncryptionStatusParcel;
+        return deviceProp.getEncryptionStatus(transport);
     }
 
     /**

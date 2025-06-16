@@ -45,7 +45,7 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothStatusCodes;
-import android.bluetooth.EncryptionStatusParcel;
+import android.bluetooth.EncryptionStatus;
 import android.bluetooth.IBluetooth;
 import android.bluetooth.IBluetoothActivityEnergyInfoListener;
 import android.bluetooth.IBluetoothConnectionCallback;
@@ -2132,17 +2132,25 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
-    public EncryptionStatusParcel getEncryptionStatus(
+    public EncryptionStatus.InnerParcel getEncryptionStatus(
             BluetoothDevice device, AttributionSource source, int transport) {
         AdapterService service = getService();
         if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
             throw new IllegalArgumentException("device cannot have an invalid address");
         }
+
+        if (service == null) {
+            return null;
+        }
         if (!checkConnectPermissionForDataDelivery(service, source, TAG, "getEncryptionStatus")) {
             return null;
         }
 
-        return service == null ? null : service.getEncryptionStatus(device, transport);
+        EncryptionStatus enc = service.getEncryptionStatus(device, transport);
+        if (enc == null) {
+            return null;
+        }
+        return enc.getParcel();
     }
 
     @Override
@@ -2151,10 +2159,13 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
             throw new IllegalArgumentException("device cannot have an invalid address");
         }
+        if (service == null) {
+            return false;
+        }
         if (!checkConnectPermissionForDataDelivery(service, source, TAG, "isConnected")) {
             return false;
         }
 
-        return service == null ? false : service.isConnected(device, transport);
+        return service.isConnected(device, transport);
     }
 }

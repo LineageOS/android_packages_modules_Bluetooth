@@ -235,7 +235,6 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
         mBatch.registerListener(this);
     }
 
-
     public int getBatchId() {
         return mBatch.mId;
     }
