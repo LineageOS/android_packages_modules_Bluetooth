@@ -1950,9 +1950,7 @@ private:
     }
 
     device->conn_id = evt.conn_id;
-    if (com::android::bluetooth::flags::gatt_queue_cleanup_connected()) {
-      BtaGattQueue::Clean(evt.conn_id);
-    }
+    BtaGattQueue::Clean(evt.conn_id);
     if (BTM_SecIsLeSecurityPending(device->addr)) {
       /* if security collision happened, wait for encryption done
        * (BTA_GATTC_ENC_CMPL_CB_EVT)
