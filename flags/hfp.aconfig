@@ -186,3 +186,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "send_ok_on_no_action_on_chld"
+    namespace: "bluetooth"
+    description: "Send OK on no action perfomed on CHLD instead of ERROR"
+    bug: "424860125"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
