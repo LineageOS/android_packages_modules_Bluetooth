@@ -556,7 +556,8 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
             open_source(self.dut_a2dp, dut_ref1))
 
         # Start streaming to RD1.
-        await asyncio.gather(self.dut_a2dp.Start(source=dut_ref1_source), channel.accept_start())
+        await asyncio.gather(self.dut_a2dp.Start(source=dut_ref1_source),
+                             channel.accept_start(timeout=5.0))
 
         generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
         await self.dut_a2dp.PlaybackAudio(generated_audio)
@@ -1208,7 +1209,8 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                                                   open_source(self.dut_a2dp, dut_ref1))
 
         # Start streaming to RD1.
-        await asyncio.gather(self.dut_a2dp.Start(source=dut_ref1_source), channel.accept_start())
+        await asyncio.gather(self.dut_a2dp.Start(source=dut_ref1_source),
+                             channel.accept_start(timeout=5.0))
 
         # Verify that audio is received on the transport channel.
         generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
