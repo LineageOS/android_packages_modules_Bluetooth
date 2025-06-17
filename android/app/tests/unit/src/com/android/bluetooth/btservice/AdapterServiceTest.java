@@ -23,6 +23,7 @@ import static android.bluetooth.BluetoothAdapter.STATE_OFF;
 import static android.bluetooth.BluetoothAdapter.STATE_ON;
 import static android.bluetooth.BluetoothAdapter.STATE_TURNING_OFF;
 import static android.bluetooth.BluetoothAdapter.STATE_TURNING_ON;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
@@ -1167,7 +1168,7 @@ public class AdapterServiceTest {
 
         mAdapterService.notifyGattClientDisconnect(clientIf, mDevice1);
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, true);
-        orderNative.verify(mNativeInterface).disconnectAcl(any(), eq(BluetoothDevice.TRANSPORT_LE));
+        orderNative.verify(mNativeInterface).disconnectAcl(any(), eq(TRANSPORT_LE));
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode).isEmpty();
     }
 
@@ -1213,9 +1214,7 @@ public class AdapterServiceTest {
         // Disconnect second client to device
         mAdapterService.notifyGattClientDisconnect(clientIfTwo, mDevice1);
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, true);
-        orderNative
-                .verify(mNativeInterface, times(1))
-                .disconnectAcl(any(), eq(BluetoothDevice.TRANSPORT_LE));
+        orderNative.verify(mNativeInterface, times(1)).disconnectAcl(any(), eq(TRANSPORT_LE));
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode).isEmpty();
     }
 
@@ -1262,9 +1261,7 @@ public class AdapterServiceTest {
         // Disconnect second device
         mAdapterService.notifyGattClientDisconnect(clientIfTwo, mDevice2);
         order.verify(mMockLeAudioService).setAutoActiveModeState(groupId, true);
-        orderNative
-                .verify(mNativeInterface, times(2))
-                .disconnectAcl(any(), eq(BluetoothDevice.TRANSPORT_LE));
+        orderNative.verify(mNativeInterface, times(2)).disconnectAcl(any(), eq(TRANSPORT_LE));
         assertThat(mAdapterService.mLeGattClientsControllingAutoActiveMode).isEmpty();
     }
 

@@ -18,6 +18,7 @@ package com.android.bluetooth.bass_client;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
@@ -1080,7 +1081,7 @@ class BassClientStateMachine extends StateMachine {
                         mService,
                         autoConnect,
                         mGattCallback,
-                        BluetoothDevice.TRANSPORT_LE,
+                        TRANSPORT_LE,
                         (BluetoothDevice.PHY_LE_1M_MASK
                                 | BluetoothDevice.PHY_LE_2M_MASK
                                 | BluetoothDevice.PHY_LE_CODED_MASK),

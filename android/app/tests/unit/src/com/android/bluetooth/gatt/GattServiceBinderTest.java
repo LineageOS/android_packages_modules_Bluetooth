@@ -16,6 +16,7 @@
 
 package com.android.bluetooth.gatt;
 
+import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
 import static com.android.bluetooth.TestUtils.getTestDevice;
@@ -77,7 +78,7 @@ public class GattServiceBinderTest {
     public void registerClient() {
         UUID uuid = UUID.randomUUID();
         boolean eattSupport = true;
-        int transport = BluetoothDevice.TRANSPORT_LE;
+        int transport = TRANSPORT_LE;
 
         mBinder.registerClient(
                 new ParcelUuid(uuid), mGattCallback, eattSupport, transport, mAttributionSource);
@@ -324,7 +325,7 @@ public class GattServiceBinderTest {
     public void registerServer() {
         UUID uuid = UUID.randomUUID();
         boolean eattSupport = true;
-        int transport = BluetoothDevice.TRANSPORT_LE;
+        int transport = TRANSPORT_LE;
 
         mBinder.registerServer(
                 new ParcelUuid(uuid),

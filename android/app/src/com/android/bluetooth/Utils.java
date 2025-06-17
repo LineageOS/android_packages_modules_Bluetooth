@@ -27,6 +27,9 @@ import static android.Manifest.permission.NETWORK_SETUP_WIZARD;
 import static android.Manifest.permission.RADIO_SCAN_WITHOUT_LOCATION;
 import static android.Manifest.permission.RENOUNCE_PERMISSIONS;
 import static android.Manifest.permission.WRITE_SMS;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringRunnable;
 import static android.bluetooth.BluetoothUtils.USER_HANDLE_NULL;
 import static android.content.pm.PackageManager.GET_PERMISSIONS;
@@ -248,9 +251,9 @@ public final class Utils {
     /** Convert a BluetoothDevice transport constant to a string for printing in debug lines */
     public static String transportToString(int transport) {
         return switch (transport) {
-            case BluetoothDevice.TRANSPORT_AUTO -> "AUTO";
-            case BluetoothDevice.TRANSPORT_BREDR -> "BR/EDR";
-            case BluetoothDevice.TRANSPORT_LE -> "LE";
+            case TRANSPORT_AUTO -> "AUTO";
+            case TRANSPORT_BREDR -> "BR/EDR";
+            case TRANSPORT_LE -> "LE";
             default -> "Unknown transport (" + transport + ")";
         };
     }
