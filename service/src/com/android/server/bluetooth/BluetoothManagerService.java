@@ -683,7 +683,7 @@ class BluetoothManagerService {
             filterUser.addAction(Intent.ACTION_USER_SWITCHED);
         }
         filterUser.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
-        if (!Flags.userRestrictionRefactor() && !Flags.limitUserSwitchPropagation()) {
+        if (!Flags.userRestrictionRefactor() || !Flags.limitUserSwitchPropagation()) {
             mContext.registerReceiverForAllUsers(
                     new BroadcastReceiver() {
                         @Override
