@@ -1023,12 +1023,18 @@ BtaAvCo::GetProviderCodecConfiguration(BtaAvCoPeer* p_peer) {
   }
 
   // Get the configuration of the preferred codec as codec hint.
-  btav_a2dp_codec_config_t codec_config =
-          p_peer->GetCodecs()->orderedSourceCodecs().front()->getCodecUserConfig();
+  auto a2dp_codec_config = p_peer->GetCodecs()->orderedSourceCodecs().front();
+
+  auto a2dp_codec_user_config = a2dp_codec_config->getCodecUserConfig();
+  if (!::bluetooth::audio::a2dp::provider::supports_codec(a2dp_codec_config->codecIndex())) {
+    log::debug("User preferred codec not supported by the provider: {}",
+               a2dp_codec_user_config.codec_type);
+    return std::nullopt;
+  }
 
   // Pass all gathered codec capabilities to the provider
-  return ::bluetooth::audio::a2dp::provider::get_a2dp_configuration(p_peer->addr, a2dp_remote_caps,
-                                                                    codec_config);
+  return ::bluetooth::audio::a2dp::provider::get_a2dp_configuration(
+          p_peer->addr, a2dp_remote_caps, a2dp_codec_user_config, a2dp_codec_config->codecId());
 }
 
 BtaAvCoSep* BtaAvCo::SelectProviderCodecConfiguration(

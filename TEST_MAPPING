@@ -63,7 +63,7 @@
       "name": "bluetooth_ras_test"
     },
     {
-      "name": "bluetooth-test-audio-hal-a2dp-provider-info"
+      "name": "bluetooth-test-audio-hal-a2dp"
     },
     {
       "name": "bluetooth-test-audio-hal-aidl-leaudio-utils"
@@ -279,7 +279,7 @@
       "name": "bluetooth_ras_test"
     },
     {
-      "name": "bluetooth-test-audio-hal-a2dp-provider-info"
+      "name": "bluetooth-test-audio-hal-a2dp"
     },
     {
       "name": "bluetooth-test-audio-hal-aidl-leaudio-utils"

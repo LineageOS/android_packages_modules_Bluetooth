@@ -119,14 +119,19 @@ struct get_a2dp_configuration {
   static std::optional<a2dp_configuration> return_value;
   std::function<std::optional<a2dp_configuration>(
           RawAddress peer_address, std::vector<a2dp_remote_capabilities> const& remote_seps,
-          btav_a2dp_codec_config_t const& user_preferences)>
+          btav_a2dp_codec_config_t const& user_preferences,
+          ::bluetooth::a2dp::CodecId user_preferred_codec_id)>
           body{[](RawAddress /* peer_address */,
                   std::vector<a2dp_remote_capabilities> const& /* remote_seps */,
-                  btav_a2dp_codec_config_t const& /* user_preferences */) { return return_value; }};
+                  btav_a2dp_codec_config_t const& /* user_preferences */,
+                  ::bluetooth::a2dp::CodecId /* user_preferred_codec_id */) {
+            return return_value;
+          }};
   std::optional<a2dp_configuration> operator()(
           RawAddress peer_address, std::vector<a2dp_remote_capabilities> const& remote_seps,
-          btav_a2dp_codec_config_t const& user_preferences) {
-    return body(peer_address, remote_seps, user_preferences);
+          btav_a2dp_codec_config_t const& user_preferences,
+          ::bluetooth::a2dp::CodecId user_preferred_codec_id) {
+    return body(peer_address, remote_seps, user_preferences, user_preferred_codec_id);
   }
 };
 extern struct get_a2dp_configuration get_a2dp_configuration;
