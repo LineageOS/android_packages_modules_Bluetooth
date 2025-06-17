@@ -21,13 +21,19 @@ import org.junit.runners.model.FrameworkMethod
 import org.junit.runners.model.Statement
 import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnit
+import org.mockito.quality.Strictness
 
 /** Wrapper around MockitoJUnit.rule() to clear the inline mock at the end of the test. */
 class MockitoRule : MethodRule {
-    private val mMockitoRule = MockitoJUnit.rule()
+    private val mockitoRule = MockitoJUnit.rule()
+
+    public fun strictness(strictness: Strictness): MockitoRule {
+        mockitoRule.strictness(strictness)
+        return this
+    }
 
     override fun apply(base: Statement, method: FrameworkMethod, target: Any): Statement {
-        val nestedStatement = mMockitoRule.apply(base, method, target)
+        val nestedStatement = mockitoRule.apply(base, method, target)
 
         return object : Statement() {
             @Throws(Throwable::class)

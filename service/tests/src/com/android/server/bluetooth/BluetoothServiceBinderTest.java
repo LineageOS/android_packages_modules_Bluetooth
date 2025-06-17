@@ -37,6 +37,7 @@ import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.quality.Strictness.STRICT_STUBS;
 
 import android.annotation.SuppressLint;
 import android.app.AppOpsManager;
@@ -89,7 +90,7 @@ public class BluetoothServiceBinderTest {
     private static final String READ_COMPAT_CHANGE_CONFIG =
             "android.permission.READ_COMPAT_CHANGE_CONFIG";
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule().strictness(STRICT_STUBS);
     @Rule public TestRule compatChangeRule = new PlatformCompatChangeRule();
 
     @Rule public final SetFlagsRule mSetFlagsRule;
