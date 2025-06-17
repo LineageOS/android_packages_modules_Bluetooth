@@ -30,6 +30,7 @@
 
 #include "btif/include/btif_hh.h"
 #include "hal/hci_hal.h"
+#include "hci/acl_manager/acl_manager_classic_mock.h"
 #include "hci/acl_manager/classic_acl_connection.h"
 #include "hci/acl_manager/connection_management_callbacks.h"
 #include "hci/acl_manager/le_acl_connection.h"
@@ -324,6 +325,8 @@ protected:
 
     /* extern */ test::mock_controller_ =
             std::make_unique<bluetooth::hci::testing::MockController>();
+    /* extern */ test::mock_acl_manager_classic_ =
+            std::make_unique<bluetooth::hci::acl_manager::testing::MockAclManagerClassic>();
     /* extern */ test::mock_acl_manager_ =
             std::make_unique<bluetooth::hci::testing::MockAclManager>();
     /* extern */ test::mock_le_scanning_manager_ =
@@ -334,8 +337,9 @@ protected:
             new bluetooth::hci::testing::MockDistanceMeasurementManager();
   }
   void TearDown() override {
-    test::mock_controller_.reset();
     test::mock_acl_manager_.release();
+    test::mock_acl_manager_classic_.release();
+    test::mock_controller_.reset();
     delete test::mock_le_advertising_manager_;
     test::mock_le_advertising_manager_ = nullptr;
     delete test::mock_le_scanning_manager_;
@@ -356,7 +360,7 @@ protected:
 
   // Convenience method to create ACL objects
   std::unique_ptr<shim::Acl> MakeAcl() {
-    EXPECT_CALL(*test::mock_acl_manager_, RegisterCallbacks(_, _)).Times(1);
+    EXPECT_CALL(*test::mock_acl_manager_classic_, RegisterCallbacks(_, _)).Times(1);
     EXPECT_CALL(*test::mock_acl_manager_, RegisterLeCallbacks(_, _)).Times(1);
     EXPECT_CALL(*test::mock_controller_, RegisterCompletedMonitorAclPacketsCallback(_)).Times(1);
     EXPECT_CALL(*test::mock_controller_, UnregisterCompletedMonitorAclPacketsCallback).Times(1);
@@ -373,7 +377,7 @@ protected:
     acl_ = MakeAcl();
 
     // Create connection
-    EXPECT_CALL(*test::mock_acl_manager_, CreateConnection(_)).Times(1);
+    EXPECT_CALL(*test::mock_acl_manager_classic_, CreateConnection(_)).Times(1);
     acl_->CreateClassicConnection(address);
 
     // Respond with a mock connection created
@@ -444,7 +448,7 @@ TEST_F(MainShimTest, connect_and_disconnect) {
   auto acl = MakeAcl();
 
   // Create connection
-  EXPECT_CALL(*test::mock_acl_manager_, CreateConnection(_)).Times(1);
+  EXPECT_CALL(*test::mock_acl_manager_classic_, CreateConnection(_)).Times(1);
   acl->CreateClassicConnection(address);
 
   // Respond with a mock connection created

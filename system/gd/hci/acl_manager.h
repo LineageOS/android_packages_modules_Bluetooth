@@ -34,20 +34,10 @@ public:
   virtual void Dump(int /*fd*/) const = 0;
 
   // Should register only once when user module starts.
-  // Generates OnConnectSuccess when an incoming connection is established.
-  virtual void RegisterCallbacks(acl_manager::ConnectionCallbacks* callbacks,
-                                 os::Handler* handler) = 0;
-  virtual void UnregisterCallbacks(acl_manager::ConnectionCallbacks* callbacks,
-                                   std::promise<void> promise) = 0;
-
-  // Should register only once when user module starts.
   virtual void RegisterLeCallbacks(acl_manager::LeConnectionCallbacks* callbacks,
                                    os::Handler* handler) = 0;
   virtual void UnregisterLeCallbacks(acl_manager::LeConnectionCallbacks* callbacks,
                                      std::promise<void> promise) = 0;
-
-  // Generates OnConnectSuccess if connected, or OnConnectFail otherwise
-  virtual void CreateConnection(Address address) = 0;
 
   // Generates OnLeConnectSuccess if connected, or OnLeConnectFail otherwise
   virtual void CreateLeConnection(AddressWithType address_with_type, bool is_direct,
@@ -64,10 +54,6 @@ public:
           Octet16 rotation_irk, std::chrono::milliseconds minimum_rotation_time,
           std::chrono::milliseconds maximum_rotation_time) = 0;
 
-  // Generates OnConnectFail with error code "terminated by local host 0x16" if
-  // cancelled, or OnConnectSuccess if not successfully cancelled and already
-  // connected
-  virtual void CancelConnect(Address address) = 0;
   virtual void RemoveFromBackgroundList(AddressWithType address_with_type) = 0;
 
   virtual void CancelLeConnect(AddressWithType address_with_type) = 0;
@@ -80,11 +66,6 @@ public:
   virtual void RemoveDeviceFromResolvingList(AddressWithType address_with_type) = 0;
   virtual void ClearResolvingList() = 0;
 
-  virtual void CentralLinkKey(KeyFlag key_flag) = 0;
-  virtual void SwitchRole(Address address, Role role) = 0;
-  virtual uint16_t ReadDefaultLinkPolicySettings() = 0;
-  virtual void WriteDefaultLinkPolicySettings(uint16_t default_link_policy_settings) = 0;
-
   // Callback from Advertising Manager to notify the advitiser (local) address
   virtual void OnAdvertisingSetTerminated(ErrorCode status, uint16_t conn_handle,
                                           uint8_t adv_set_id, hci::AddressWithType adv_address,
@@ -93,7 +74,6 @@ public:
   virtual LeAddressManager* GetLeAddressManager() = 0;
 
   // Virtual ACL disconnect emitted during suspend.
-  virtual void OnClassicSuspendInitiatedDisconnect(uint16_t handle, ErrorCode reason) = 0;
   virtual void OnLeSuspendInitiatedDisconnect(uint16_t handle, ErrorCode reason) = 0;
   virtual void SetSystemSuspendState(bool suspended) = 0;
   virtual Address HACK_GetLeAddress(uint16_t connection_handle) = 0;

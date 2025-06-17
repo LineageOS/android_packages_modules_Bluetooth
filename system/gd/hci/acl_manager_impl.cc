@@ -29,6 +29,8 @@
 
 #include "common/bidi_queue.h"
 #include "common/byte_array.h"
+#include "hci/acl_manager/classic_acl_count_provider.h"
+#include "hci/acl_manager/classic_acl_data_consumer.h"
 #include "storage/config_keys.h"
 #include "storage/storage_module.h"
 
@@ -41,7 +43,6 @@ constexpr uint16_t kSamsungDebugHandle = 0xeef;
 using common::Bind;
 using common::BindOnce;
 
-using acl_manager::classic_impl;
 using acl_manager::ConnectionCallbacks;
 
 using acl_manager::le_impl;
@@ -54,16 +55,16 @@ constexpr bool crash_on_unknown_handle = false;
 constexpr std::chrono::seconds kWaitBeforeDroppingUnknownAcl{1};
 
 AclManagerImpl::AclManagerImpl(os::Handler* handler, HciInterface& hci, Controller& controller,
-                               AclScheduler& acl_scheduler,
-                               RemoteNameRequestModule& remote_name_request_module,
-                               storage::StorageModule& storage_module)
+                               storage::StorageModule& storage_module,
+                               acl_manager::RoundRobinScheduler& round_robin_scheduler,
+                               acl_manager::ClassicAclCountProvider& classic_acl_count_provider,
+                               acl_manager::ClassicAclDataConsumer& classic_acl_data_consumer)
     : handler_(handler),
       storage_module_(storage_module),
-      round_robin_scheduler_(handler_, controller, hci.GetAclQueueEnd()),
-      classic_impl_(hci, handler_, round_robin_scheduler_, crash_on_unknown_handle, acl_scheduler,
-                    remote_name_request_module),
-      le_impl_(hci, controller, handler_, round_robin_scheduler_, storage_module,
-               crash_on_unknown_handle, &classic_impl_) {
+      round_robin_scheduler_(round_robin_scheduler),
+      classic_acl_data_consumer_(classic_acl_data_consumer),
+      le_impl_(hci, controller, handler_, round_robin_scheduler, storage_module,
+               crash_on_unknown_handle, classic_acl_count_provider) {
   hci_queue_end_ = hci.GetAclQueueEnd();
   hci_queue_end_->RegisterDequeue(
           handler_, common::Bind(&AclManagerImpl::dequeue_and_route_acl_packet_to_connection,
@@ -76,10 +77,11 @@ void AclManagerImpl::retry_unknown_acl(bool timed_out) {
   std::vector<AclView> unsent_packets;
   for (const auto& itr : waiting_packets_) {
     auto handle = itr.GetHandle();
-    if (!classic_impl_.send_packet_upward(handle,
-                                          [itr](struct acl_manager::assembler* assembler) {
-                                            assembler->on_incoming_packet(itr);
-                                          }) &&
+    if (!classic_acl_data_consumer_.SendPacketUpward(
+                handle,
+                [itr](struct acl_manager::assembler* assembler) {
+                  assembler->on_incoming_packet(itr);
+                }) &&
         !le_impl_.send_packet_upward(handle, [itr](struct acl_manager::assembler* assembler) {
           assembler->on_incoming_packet(itr);
         })) {
@@ -117,9 +119,10 @@ void AclManagerImpl::dequeue_and_route_acl_packet_to_connection() {
   if (handle == kQualcommDebugHandle || handle == kSamsungDebugHandle) {
     return;
   }
-  if (classic_impl_.send_packet_upward(handle, [&packet](struct acl_manager::assembler* assembler) {
-        assembler->on_incoming_packet(*packet);
-      })) {
+  if (classic_acl_data_consumer_.SendPacketUpward(
+              handle, [&packet](struct acl_manager::assembler* assembler) {
+                assembler->on_incoming_packet(*packet);
+              })) {
     return;
   }
   if (le_impl_.send_packet_upward(handle, [&packet](struct acl_manager::assembler* assembler) {
@@ -138,21 +141,6 @@ void AclManagerImpl::dequeue_and_route_acl_packet_to_connection() {
           kWaitBeforeDroppingUnknownAcl);
 }
 
-void AclManagerImpl::RegisterCallbacks(ConnectionCallbacks* callbacks, os::Handler* handler) {
-  log::assert_that(callbacks != nullptr && handler != nullptr,
-                   "assert failed: callbacks != nullptr && handler != nullptr");
-  handler_->Post(common::BindOnce(&classic_impl::handle_register_callbacks,
-                                  common::Unretained(&classic_impl_), common::Unretained(callbacks),
-                                  common::Unretained(handler)));
-}
-
-void AclManagerImpl::UnregisterCallbacks(ConnectionCallbacks* callbacks,
-                                         std::promise<void> promise) {
-  log::assert_that(callbacks != nullptr, "assert failed: callbacks != nullptr");
-  handler_->CallOn(&classic_impl_, &classic_impl::handle_unregister_callbacks,
-                   common::Unretained(callbacks), std::move(promise));
-}
-
 void AclManagerImpl::RegisterLeCallbacks(LeConnectionCallbacks* callbacks, os::Handler* handler) {
   log::assert_that(callbacks != nullptr && handler != nullptr,
                    "assert failed: callbacks != nullptr && handler != nullptr");
@@ -165,10 +153,6 @@ void AclManagerImpl::UnregisterLeCallbacks(LeConnectionCallbacks* callbacks,
   log::assert_that(callbacks != nullptr, "assert failed: callbacks != nullptr");
   handler_->CallOn(&le_impl_, &le_impl::handle_unregister_le_callbacks,
                    common::Unretained(callbacks), std::move(promise));
-}
-
-void AclManagerImpl::CreateConnection(Address address) {
-  handler_->CallOn(&classic_impl_, &classic_impl::create_connection, address);
 }
 
 void AclManagerImpl::CreateLeConnection(AddressWithType address_with_type, bool is_direct,
@@ -208,10 +192,6 @@ void AclManagerImpl::SetPrivacyPolicyForInitiatorAddressForTest(
                    maximum_rotation_time);
 }
 
-void AclManagerImpl::CancelConnect(Address address) {
-  handler_->CallOn(&classic_impl_, &classic_impl::cancel_connect, address);
-}
-
 void AclManagerImpl::CancelLeConnect(AddressWithType address_with_type) {
   handler_->CallOn(&le_impl_, &le_impl::remove_device_from_background_connection_list,
                    address_with_type);
@@ -242,25 +222,6 @@ void AclManagerImpl::ClearResolvingList() {
   handler_->CallOn(&le_impl_, &le_impl::clear_resolving_list);
 }
 
-void AclManagerImpl::CentralLinkKey(KeyFlag key_flag) {
-  handler_->CallOn(&classic_impl_, &classic_impl::central_link_key, key_flag);
-}
-
-void AclManagerImpl::SwitchRole(Address address, Role role) {
-  handler_->CallOn(&classic_impl_, &classic_impl::switch_role, address, role);
-}
-
-uint16_t AclManagerImpl::ReadDefaultLinkPolicySettings() {
-  log::assert_that(default_link_policy_settings_ != 0xffff, "Settings were never written");
-  return default_link_policy_settings_;
-}
-
-void AclManagerImpl::WriteDefaultLinkPolicySettings(uint16_t default_link_policy_settings) {
-  default_link_policy_settings_ = default_link_policy_settings;
-  handler_->CallOn(&classic_impl_, &classic_impl::write_default_link_policy_settings,
-                   default_link_policy_settings);
-}
-
 void AclManagerImpl::OnAdvertisingSetTerminated(ErrorCode status, uint16_t conn_handle,
                                                 uint8_t adv_set_id,
                                                 hci::AddressWithType adv_address,
@@ -269,10 +230,6 @@ void AclManagerImpl::OnAdvertisingSetTerminated(ErrorCode status, uint16_t conn_
     handler_->CallOn(&le_impl_, &le_impl::OnAdvertisingSetTerminated, conn_handle, adv_set_id,
                      adv_address, is_discoverable);
   }
-}
-
-void AclManagerImpl::OnClassicSuspendInitiatedDisconnect(uint16_t handle, ErrorCode reason) {
-  handler_->CallOn(&classic_impl_, &classic_impl::on_classic_disconnect, handle, reason);
 }
 
 void AclManagerImpl::OnLeSuspendInitiatedDisconnect(uint16_t handle, ErrorCode reason) {
@@ -284,10 +241,6 @@ void AclManagerImpl::SetSystemSuspendState(bool suspended) {
 }
 
 LeAddressManager* AclManagerImpl::GetLeAddressManager() { return le_impl_.le_address_manager_; }
-
-uint16_t AclManagerImpl::HACK_GetHandle(Address address) {
-  return classic_impl_.HACK_get_handle(address);
-}
 
 Address AclManagerImpl::HACK_GetLeAddress(uint16_t connection_handle) {
   return le_impl_.HACK_get_address(connection_handle);
