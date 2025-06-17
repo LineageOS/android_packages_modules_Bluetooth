@@ -19,6 +19,7 @@
 #pragma once
 
 #include <cstdint>
+#include <format>
 #include <string>
 
 struct tREMOTE_VERSION_INFO {
@@ -26,6 +27,7 @@ struct tREMOTE_VERSION_INFO {
   uint16_t lmp_subversion{0};
   uint16_t manufacturer{0};
   bool valid{false};
+
   std::string ToString() const {
     return (valid) ? std::format("{:02}-{:05}-{:05}", lmp_version, lmp_subversion, manufacturer)
                    : std::string("UNKNOWN");

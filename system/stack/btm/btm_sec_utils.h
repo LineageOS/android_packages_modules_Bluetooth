@@ -15,10 +15,11 @@
  */
 #pragma once
 
+#include <bluetooth/types/remote_version.h>
+
 #include "stack/btm/btm_sec_int_types.h"
 #include "stack/btm/security_device_record.h"
 #include "types/raw_address.h"
-#include "types/remote_version_type.h"
 
 bool concurrentPeerAuthIsEnabled();
 bool handleUnexpectedEncryptionChange();
