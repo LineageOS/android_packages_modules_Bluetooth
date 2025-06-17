@@ -30,7 +30,6 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
@@ -99,6 +98,7 @@ import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.le_scan.ScanController;
+import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.common.truth.Expect;
 

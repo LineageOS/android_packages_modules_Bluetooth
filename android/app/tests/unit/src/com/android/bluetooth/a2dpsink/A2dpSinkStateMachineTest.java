@@ -24,7 +24,6 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -41,6 +40,7 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;

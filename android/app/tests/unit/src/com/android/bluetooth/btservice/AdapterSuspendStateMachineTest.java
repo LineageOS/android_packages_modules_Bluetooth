@@ -15,7 +15,6 @@
  */
 package com.android.bluetooth.btservice;
 
-import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.btservice.AdapterSuspendStateMachine.MSG_CLOSED;
 import static com.android.bluetooth.btservice.AdapterSuspendStateMachine.MSG_SCREEN_OFF;
 import static com.android.bluetooth.btservice.AdapterSuspendStateMachine.MSG_SCREEN_ON;
@@ -37,6 +36,7 @@ import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterSuspendStateMachine.ActiveState;
 import com.android.bluetooth.btservice.AdapterSuspendStateMachine.BusyState;
 import com.android.bluetooth.btservice.AdapterSuspendStateMachine.SuspendedState;
+import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;

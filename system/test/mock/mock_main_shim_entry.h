@@ -17,6 +17,7 @@
 #include <functional>
 #include <memory>
 
+#include "hci/acl_manager/acl_manager_classic_mock.h"
 #include "hci/acl_manager_mock.h"
 #include "hci/controller_mock.h"
 #include "hci/distance_measurement_manager_mock.h"
@@ -30,6 +31,8 @@ namespace hci {
 namespace testing {
 
 extern std::unique_ptr<MockAclManager> mock_acl_manager_;
+extern std::unique_ptr<bluetooth::hci::acl_manager::testing::MockAclManagerClassic>
+        mock_acl_manager_classic_;
 extern std::unique_ptr<MockController> mock_controller_;
 extern std::unique_ptr<MockHciLayer> mock_hci_layer_;
 extern os::Handler* mock_gd_shim_handler_;

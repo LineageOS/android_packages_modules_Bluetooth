@@ -16,8 +16,6 @@
 
 package com.android.bluetooth.map;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-
 import static com.google.common.truth.Truth.assertThat;
 
 import android.util.Xml;
@@ -25,6 +23,7 @@ import android.util.Xml;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.Utils;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;

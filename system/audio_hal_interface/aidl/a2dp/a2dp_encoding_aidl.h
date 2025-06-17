@@ -131,7 +131,8 @@ std::optional<::bluetooth::audio::a2dp::provider::a2dp_configuration> get_a2dp_c
         RawAddress peer_address,
         std::vector<::bluetooth::audio::a2dp::provider::a2dp_remote_capabilities> const&
                 remote_seps,
-        btav_a2dp_codec_config_t const& user_preferences);
+        btav_a2dp_codec_config_t const& user_preferences,
+        ::bluetooth::a2dp::CodecId user_preferred_codec_id);
 
 /***
  * Query the codec parameters from the audio HAL.
@@ -139,7 +140,7 @@ std::optional<::bluetooth::audio::a2dp::provider::a2dp_configuration> get_a2dp_c
  * received from the peer and decide whether accept
  * the it or not.
  ***/
-tA2DP_STATUS parse_a2dp_configuration(btav_a2dp_codec_index_t codec_index,
+tA2DP_STATUS parse_a2dp_configuration(::bluetooth::a2dp::CodecId codec_id,
                                       const uint8_t* codec_info,
                                       btav_a2dp_codec_config_t* codec_parameters,
                                       std::vector<uint8_t>* vendor_specific_parameters);

@@ -94,7 +94,7 @@ public class RemoteDevices {
     private static final String LOG_SOURCE_DIS = "DIS";
 
     private final LinkedHashMap<String, DeviceProperties> mDevices;
-    private final HashMap<String, String> mDualDevicesMap;
+    private final HashMap<String, String> mAddressMap; // Identity address to pseudo address map
     private final WatchConnectionStateListener mWatchConnectionStateListener;
 
     /**
@@ -160,7 +160,7 @@ public class RemoteDevices {
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mSdpTracker = new ArrayList<>();
         mDevices = new LinkedHashMap<>(MAX_DEVICE_QUEUE_SIZE);
-        mDualDevicesMap = new HashMap<>();
+        mAddressMap = new HashMap<>();
         mHandler = new RemoteDevicesHandler(looper);
         mMainHandler = new Handler(Looper.getMainLooper());
         if (Flags.watchDeviceOverrideAirplaneMode()) {
@@ -250,7 +250,7 @@ public class RemoteDevices {
             mDevices.clear();
         }
 
-        mDualDevicesMap.clear();
+        mAddressMap.clear();
     }
 
     @Override
@@ -264,7 +264,7 @@ public class RemoteDevices {
         }
 
         synchronized (mDevices) {
-            String address = mDualDevicesMap.get(device.getAddress());
+            String address = mAddressMap.get(device.getAddress());
             // If the device is not in the dual map, use its original address
             if (address == null || mDevices.get(address) == null) {
                 address = device.getAddress();
@@ -317,7 +317,7 @@ public class RemoteDevices {
         if (address == null) {
             return null;
         }
-        String deviceAddress = mDualDevicesMap.get(address);
+        String deviceAddress = mAddressMap.get(address);
         // If the device is not in the dual map, use its original address
         if (deviceAddress == null || mDevices.get(deviceAddress) == null) {
             deviceAddress = address;
@@ -1510,7 +1510,7 @@ public class RemoteDevices {
         deviceProperties.setIdentityAddress(
                 Utils.getAddressStringFromByte(secondaryAddress),
                 BluetoothDevice.ADDRESS_TYPE_PUBLIC);
-        mDualDevicesMap.put(
+        mAddressMap.put(
                 deviceProperties.getIdentityAddress().getAddress(),
                 Utils.getAddressStringFromByte(mainAddress));
     }
@@ -1765,7 +1765,7 @@ public class RemoteDevices {
     private void removeDeviceProperties(String address) {
         DeviceProperties deviceProperties = mDevices.get(address);
         if (deviceProperties != null) {
-            String pseudoAddress = mDualDevicesMap.get(address);
+            String pseudoAddress = mAddressMap.get(address);
             if (pseudoAddress != null) {
                 deviceProperties = mDevices.get(pseudoAddress);
             }
@@ -1789,8 +1789,8 @@ public class RemoteDevices {
             mDevices.remove(address);
 
             // Remove from dual mode device mappings
-            mDualDevicesMap.values().remove(address);
-            mDualDevicesMap.remove(address);
+            mAddressMap.values().remove(address);
+            mAddressMap.remove(address);
         }
     }
 

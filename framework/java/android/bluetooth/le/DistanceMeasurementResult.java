@@ -20,6 +20,7 @@ import android.annotation.FlaggedApi;
 import android.annotation.FloatRange;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -159,6 +160,7 @@ public final class DistanceMeasurementResult implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public double getResultMeters() {
         return mMeters;
     }
@@ -172,8 +174,8 @@ public final class DistanceMeasurementResult implements Parcelable {
      * @hide
      */
     @SystemApi
-    @FloatRange(from = 0.0)
-    public double getErrorMeters() {
+    @RequiresNoPermission
+    public @FloatRange(from = 0.0) double getErrorMeters() {
         return mErrorMeters;
     }
 
@@ -197,8 +199,8 @@ public final class DistanceMeasurementResult implements Parcelable {
      * @hide
      */
     @SystemApi
-    @FloatRange(from = 0.0, to = 360.0)
-    public double getAzimuthAngle() {
+    @RequiresNoPermission
+    public @FloatRange(from = 0.0, to = 360.0) double getAzimuthAngle() {
         return mAzimuthAngle;
     }
 
@@ -211,6 +213,7 @@ public final class DistanceMeasurementResult implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public double getErrorAzimuthAngle() {
         return mErrorAzimuthAngle;
     }
@@ -228,8 +231,8 @@ public final class DistanceMeasurementResult implements Parcelable {
      * @hide
      */
     @SystemApi
-    @FloatRange(from = -90.0, to = 90.0)
-    public double getAltitudeAngle() {
+    @RequiresNoPermission
+    public @FloatRange(from = -90.0, to = 90.0) double getAltitudeAngle() {
         return mAltitudeAngle;
     }
 
@@ -242,6 +245,7 @@ public final class DistanceMeasurementResult implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public double getErrorAltitudeAngle() {
         return mErrorAltitudeAngle;
     }
@@ -254,6 +258,7 @@ public final class DistanceMeasurementResult implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public double getDelaySpreadMeters() {
         return mDelaySpreadMeters;
     }
@@ -266,8 +271,8 @@ public final class DistanceMeasurementResult implements Parcelable {
      * @hide
      */
     @SystemApi
-    @FloatRange(from = 0.0, to = 1.0)
-    public double getConfidenceLevel() {
+    @RequiresNoPermission
+    public @FloatRange(from = 0.0, to = 1.0) double getConfidenceLevel() {
         return mConfidenceLevel;
     }
 
@@ -278,8 +283,8 @@ public final class DistanceMeasurementResult implements Parcelable {
      * @hide
      */
     @SystemApi
-    @Nadm
-    public int getDetectedAttackLevel() {
+    @RequiresNoPermission
+    public @Nadm int getDetectedAttackLevel() {
         return mDetectedAttackLevel;
     }
 
@@ -292,6 +297,7 @@ public final class DistanceMeasurementResult implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public double getVelocityMetersPerSecond() {
         return mVelocityMetersPerSecond;
     }
@@ -305,6 +311,7 @@ public final class DistanceMeasurementResult implements Parcelable {
      */
     @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING_25Q2_APIS)
     @SystemApi
+    @RequiresNoPermission
     public long getMeasurementTimestampNanos() {
         return mMeasurementTimestampNanos;
     }
@@ -441,8 +448,8 @@ public final class DistanceMeasurementResult implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setAzimuthAngle(@FloatRange(from = 0.0, to = 360.0) double angle) {
+        @RequiresNoPermission
+        public @NonNull Builder setAzimuthAngle(@FloatRange(from = 0.0, to = 360.0) double angle) {
             if (angle > 360.0 || angle < 0.0) {
                 throw new IllegalArgumentException(
                         "angle must be in the range from 0.0 to 360.0 : " + angle);
@@ -459,8 +466,9 @@ public final class DistanceMeasurementResult implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setErrorAzimuthAngle(@FloatRange(from = 0.0, to = 360.0) double angle) {
+        @RequiresNoPermission
+        public @NonNull Builder setErrorAzimuthAngle(
+                @FloatRange(from = 0.0, to = 360.0) double angle) {
             if (angle > 360.0 || angle < 0.0) {
                 throw new IllegalArgumentException(
                         "error angle must be in the range from 0.0 to 360.0 : " + angle);
@@ -477,8 +485,9 @@ public final class DistanceMeasurementResult implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setAltitudeAngle(@FloatRange(from = -90.0, to = 90.0) double angle) {
+        @RequiresNoPermission
+        public @NonNull Builder setAltitudeAngle(
+                @FloatRange(from = -90.0, to = 90.0) double angle) {
             if (angle > 90.0 || angle < -90.0) {
                 throw new IllegalArgumentException(
                         "angle must be in the range from -90.0 to 90.0 : " + angle);
@@ -495,8 +504,9 @@ public final class DistanceMeasurementResult implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setErrorAltitudeAngle(@FloatRange(from = 0.0, to = 180.0) double angle) {
+        @RequiresNoPermission
+        public @NonNull Builder setErrorAltitudeAngle(
+                @FloatRange(from = 0.0, to = 180.0) double angle) {
             if (angle > 180.0 || angle < 0.0) {
                 throw new IllegalArgumentException(
                         "error angle must be in the range from 0.0 to 180.0 : " + angle);
@@ -513,8 +523,8 @@ public final class DistanceMeasurementResult implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setDelaySpreadMeters(double delaySpreadMeters) {
+        @RequiresNoPermission
+        public @NonNull Builder setDelaySpreadMeters(double delaySpreadMeters) {
             if (delaySpreadMeters < 0.0) {
                 throw new IllegalArgumentException("delaySpreadMeters must be > 0.0");
             }
@@ -531,8 +541,8 @@ public final class DistanceMeasurementResult implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setConfidenceLevel(
+        @RequiresNoPermission
+        public @NonNull Builder setConfidenceLevel(
                 @FloatRange(from = 0.0, to = 1.0) double confidenceLevel) {
             if (confidenceLevel > 1.0 || confidenceLevel < 0.0) {
                 throw new IllegalArgumentException(
@@ -552,8 +562,8 @@ public final class DistanceMeasurementResult implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setDetectedAttackLevel(@Nadm int detectedAttackLevel) {
+        @RequiresNoPermission
+        public @NonNull Builder setDetectedAttackLevel(@Nadm int detectedAttackLevel) {
             if (!List.of(
                             NADM_ATTACK_IS_EXTREMELY_UNLIKELY,
                             NADM_ATTACK_IS_VERY_UNLIKELY,
@@ -579,8 +589,8 @@ public final class DistanceMeasurementResult implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setVelocityMetersPerSecond(double velocityMetersPerSecond) {
+        @RequiresNoPermission
+        public @NonNull Builder setVelocityMetersPerSecond(double velocityMetersPerSecond) {
             mVelocityMetersPerSecond = velocityMetersPerSecond;
             return this;
         }
@@ -593,8 +603,8 @@ public final class DistanceMeasurementResult implements Parcelable {
          */
         @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING_25Q2_APIS)
         @SystemApi
-        @NonNull
-        public Builder setMeasurementTimestampNanos(long measurementTimestampNanos) {
+        @RequiresNoPermission
+        public @NonNull Builder setMeasurementTimestampNanos(long measurementTimestampNanos) {
             mMeasurementTimestampNanos = measurementTimestampNanos;
             return this;
         }
@@ -606,8 +616,8 @@ public final class DistanceMeasurementResult implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public DistanceMeasurementResult build() {
+        @RequiresNoPermission
+        public @NonNull DistanceMeasurementResult build() {
             return new DistanceMeasurementResult(
                     mMeters,
                     mErrorMeters,

@@ -19,7 +19,6 @@ package com.android.bluetooth.btservice;
 import static android.bluetooth.BluetoothAdapter.SCAN_MODE_CONNECTABLE;
 import static android.bluetooth.BluetoothAdapter.SCAN_MODE_NONE;
 
-import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.mockSystemPropertyGet;
 import static com.android.bluetooth.btservice.AdapterSuspend.BLUETOOTH_SUSPEND_DISCONNECT_ACL;
 import static com.android.bluetooth.btservice.AdapterSuspend.BLUETOOTH_SUSPEND_SCAN_MODE_NONE;
@@ -43,6 +42,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
+import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;

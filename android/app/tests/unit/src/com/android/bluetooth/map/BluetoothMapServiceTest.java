@@ -18,7 +18,6 @@ package com.android.bluetooth.map;
 
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
@@ -38,6 +37,7 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;

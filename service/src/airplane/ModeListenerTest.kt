@@ -53,7 +53,7 @@ import com.android.server.bluetooth.test.disableMode
 import com.android.server.bluetooth.test.disableSensitive
 import com.android.server.bluetooth.test.enableMode
 import com.android.server.bluetooth.test.enableSensitive
-import com.android.tests.bluetooth.Utils.FlagsWrapper
+import com.android.tests.bluetooth.FlagsWrapper
 import com.google.common.truth.Truth.assertThat
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TestTimeSource

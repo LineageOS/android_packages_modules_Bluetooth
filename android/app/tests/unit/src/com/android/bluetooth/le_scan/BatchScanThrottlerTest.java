@@ -18,7 +18,6 @@ package com.android.bluetooth.le_scan;
 
 import static android.bluetooth.le.ScanSettings.SCAN_MODE_BALANCED;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.le_scan.ScanController.DEFAULT_REPORT_DELAY_FLOOR;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -30,6 +29,7 @@ import android.platform.test.flag.junit.SetFlagsRule;
 import androidx.test.filters.SmallTest;
 
 import com.android.bluetooth.TestUtils.FakeTimeProvider;
+import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;

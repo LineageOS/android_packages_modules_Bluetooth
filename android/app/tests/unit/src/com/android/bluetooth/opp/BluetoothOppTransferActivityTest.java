@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.opp;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.opp.BluetoothOppTestUtils.CursorMockData;
 import static com.android.bluetooth.opp.BluetoothOppTransferActivity.DIALOG_RECEIVE_COMPLETE_FAIL;
 import static com.android.bluetooth.opp.BluetoothOppTransferActivity.DIALOG_RECEIVE_COMPLETE_SUCCESS;
@@ -42,6 +41,7 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.TestUtils;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;

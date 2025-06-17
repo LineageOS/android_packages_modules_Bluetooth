@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.avrcp;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.avrcp.AvrcpVolumeManager.AVRCP_MAX_VOL;
@@ -41,6 +40,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;

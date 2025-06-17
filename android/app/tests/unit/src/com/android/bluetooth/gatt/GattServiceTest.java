@@ -18,7 +18,6 @@ package com.android.bluetooth.gatt;
 
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
@@ -66,11 +65,11 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils.FakeTimeProvider;
-import com.android.bluetooth.TestUtils.MockitoRule;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_scan.ScanController;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;

@@ -16,10 +16,8 @@
 
 package com.android.bluetooth.btservice;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
-import static com.android.tests.bluetooth.Utils.FlagsWrapper;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -41,6 +39,8 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
+import com.android.tests.bluetooth.FlagsWrapper;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;

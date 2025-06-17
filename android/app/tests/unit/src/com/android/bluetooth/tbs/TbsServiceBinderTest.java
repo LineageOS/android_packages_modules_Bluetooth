@@ -16,8 +16,6 @@
 
 package com.android.bluetooth.tbs;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,6 +27,8 @@ import android.os.ParcelUuid;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
+
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;

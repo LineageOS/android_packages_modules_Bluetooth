@@ -17,6 +17,7 @@
 package android.bluetooth.le;
 
 import android.annotation.NonNull;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -34,14 +35,17 @@ public final class ResultStorageDescriptor implements Parcelable {
     private int mOffset;
     private int mLength;
 
+    @RequiresNoPermission
     public int getType() {
         return mType;
     }
 
+    @RequiresNoPermission
     public int getOffset() {
         return mOffset;
     }
 
+    @RequiresNoPermission
     public int getLength() {
         return mLength;
     }

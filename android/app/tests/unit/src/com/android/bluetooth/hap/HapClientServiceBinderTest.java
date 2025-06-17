@@ -19,7 +19,6 @@ package com.android.bluetooth.hap;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static org.junit.Assert.assertThrows;
@@ -33,6 +32,8 @@ import android.content.AttributionSource;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
+
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;

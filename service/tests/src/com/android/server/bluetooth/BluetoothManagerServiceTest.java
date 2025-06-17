@@ -33,7 +33,6 @@ import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_HANDL
 import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_RESTART_BLUETOOTH_SERVICE;
 import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_RESTORE_USER_SETTING_OFF;
 import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_TIMEOUT_BIND;
-import static com.android.tests.bluetooth.Utils.FlagsWrapper;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -49,7 +48,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.validateMockitoUsage;
 import static org.mockito.Mockito.verify;
 
 import android.annotation.SuppressLint;
@@ -81,6 +79,8 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.flags.Flags;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
+import com.android.tests.bluetooth.FlagsWrapper;
+import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
@@ -92,8 +92,6 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoSession;
 import org.mockito.hamcrest.MockitoHamcrest;
 
 import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
@@ -107,6 +105,9 @@ import java.util.stream.IntStream;
 public class BluetoothManagerServiceTest {
     @Rule public final SetFlagsRule mSetFlagsRule;
 
+    @Rule
+    public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(BluetoothProperties.class);
+
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
         return FlagsWrapper.progressionOf(
@@ -114,7 +115,8 @@ public class BluetoothManagerServiceTest {
                 Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
                 Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD,
                 Flags.FLAG_CLEANUP_STARTING_USER,
-                Flags.FLAG_USER_SWITCH_DURING_BLE_ON);
+                Flags.FLAG_USER_SWITCH_DURING_BLE_ON,
+                Flags.FLAG_USER_RESTRICTION_REFACTOR);
     }
 
     public BluetoothManagerServiceTest(FlagsWrapper flagsWrapper) {
@@ -166,7 +168,6 @@ public class BluetoothManagerServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         mInOrder = inOrder(mContext, mManagerCallback, mAdapterBinder);
 
         IpcDataCache<IBluetoothManager, Integer> testCache =
@@ -227,10 +228,6 @@ public class BluetoothManagerServiceTest {
         doReturn(mAdapterService).when(mAdapterBinder).getAdapterBinder();
         doReturn(mBinder).when(mAdapterService).asBinder();
 
-        doReturn(mock(Intent.class))
-                .when(mContext)
-                .registerReceiverForAllUsers(any(), any(), eq(null), eq(null));
-
         doReturn(true)
                 .when(mContext)
                 .bindServiceAsUser(
@@ -257,10 +254,8 @@ public class BluetoothManagerServiceTest {
     }
 
     private void endTest() {
-        mLooper.moveTimeForward(120_000); // 120 seconds
-
+        mLooper.moveTimeForward(120_000);
         assertThat(mLooper.nextMessage()).isNull();
-        validateMockitoUsage();
     }
 
     /**
@@ -293,15 +288,13 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_USER_RESTRICTION_REFACTOR)
     public void onUserRestrictionsChanged_disallowBluetooth_onlySendDisableMessageOnSystemUser()
             throws InterruptedException {
         // Mimic the case when restriction settings changed
         doReturn(true)
                 .when(mUserManager)
                 .hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
-        doReturn(false)
-                .when(mUserManager)
-                .hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH_SHARING), any());
 
         // Check if disable message sent once for system user only
 
@@ -314,6 +307,32 @@ public class BluetoothManagerServiceTest {
         if (!Flags.systemServerRemoveExtraThreadJump()) {
             syncHandler(MESSAGE_DISABLE);
         }
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags({
+        Flags.FLAG_USER_RESTRICTION_REFACTOR,
+        Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP,
+        Flags.FLAG_LIMIT_USER_SWITCH_PROPAGATION,
+    })
+    public void onUserRestrictionsChanged_whenOn_turnOff() throws Exception {
+        mManagerService.enable("onUserRestrictionsChanged_whenOn_turnOff");
+        IBluetoothCallback btCallback = transition_offToOn();
+
+        doReturn(true).when(mUserManager).hasUserRestriction(eq(UserManager.DISALLOW_BLUETOOTH));
+
+        mLooper.getNewExecutor()
+                .execute(
+                        () ->
+                                UserRestriction.handleRestrictionChange(
+                                        mContext,
+                                        UserHandle.SYSTEM,
+                                        mManagerService::onBluetoothDisallowed));
+        assertThat(mLooper.dispatchAll()).isEqualTo(1);
+        transition_onToOff(btCallback);
+        assertThat(mManagerService.getState()).isEqualTo(State.OFF);
 
         endTest();
     }
@@ -692,19 +711,11 @@ public class BluetoothManagerServiceTest {
 
     @Test
     public void factoryReset_whileBtOff_savePropertyForLater() throws Exception {
-        MockitoSession mockingSession =
-                ExtendedMockito.mockitoSession()
-                        .mockStatic(BluetoothProperties.class)
-                        .startMocking();
-        try {
-            mManagerService.factoryReset(0);
-            if (Flags.factoryResetClearAdditionalData()) {
-                ExtendedMockito.verify(() -> BluetoothProperties.snoop_log_mode(null));
-            }
-            ExtendedMockito.verify(() -> BluetoothProperties.factory_reset(true));
-        } finally {
-            mockingSession.finishMocking();
+        mManagerService.factoryReset(0);
+        if (Flags.factoryResetClearAdditionalData()) {
+            ExtendedMockito.verify(() -> BluetoothProperties.snoop_log_mode(null));
         }
+        ExtendedMockito.verify(() -> BluetoothProperties.factory_reset(true));
 
         endTest();
     }
@@ -717,17 +728,9 @@ public class BluetoothManagerServiceTest {
         IBluetoothCallback btCallback = transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
-        MockitoSession mockingSession =
-                ExtendedMockito.mockitoSession()
-                        .mockStatic(BluetoothProperties.class)
-                        .startMocking();
-        try {
-            mManagerService.factoryReset(0);
-            if (Flags.factoryResetClearAdditionalData()) {
-                ExtendedMockito.verify(() -> BluetoothProperties.snoop_log_mode(null));
-            }
-        } finally {
-            mockingSession.finishMocking();
+        mManagerService.factoryReset(0);
+        if (Flags.factoryResetClearAdditionalData()) {
+            ExtendedMockito.verify(() -> BluetoothProperties.snoop_log_mode(null));
         }
         verify(mAdapterBinder).factoryReset();
 
@@ -748,19 +751,11 @@ public class BluetoothManagerServiceTest {
         IBluetoothCallback btCallback = transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
-        MockitoSession mockingSession =
-                ExtendedMockito.mockitoSession()
-                        .mockStatic(BluetoothProperties.class)
-                        .startMocking();
-        try {
-            mManagerService.factoryReset(0);
-            if (Flags.factoryResetClearAdditionalData()) {
-                ExtendedMockito.verify(() -> BluetoothProperties.snoop_log_mode(null));
-            }
-            ExtendedMockito.verify(() -> BluetoothProperties.factory_reset(true));
-        } finally {
-            mockingSession.finishMocking();
+        mManagerService.factoryReset(0);
+        if (Flags.factoryResetClearAdditionalData()) {
+            ExtendedMockito.verify(() -> BluetoothProperties.snoop_log_mode(null));
         }
+        ExtendedMockito.verify(() -> BluetoothProperties.factory_reset(true));
 
         transition_onToOff(btCallback);
         transition_offToOn();

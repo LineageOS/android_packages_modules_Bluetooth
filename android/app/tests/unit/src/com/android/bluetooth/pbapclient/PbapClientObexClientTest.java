@@ -21,7 +21,6 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getBluetoothManager;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
@@ -48,6 +47,7 @@ import com.android.obex.HeaderSet;
 import com.android.obex.ObexTransport;
 import com.android.obex.Operation;
 import com.android.obex.ResponseCodes;
+import com.android.tests.bluetooth.MockitoRule;
 import com.android.vcard.VCardEntry;
 
 import org.junit.After;

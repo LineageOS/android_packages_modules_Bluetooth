@@ -33,6 +33,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.gatt.GattService;
 import com.android.bluetooth.le_audio.LeAudioService;
 
 import java.util.HashMap;
@@ -47,11 +48,22 @@ public class TbsService extends ProfileService {
     @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static TbsService sTbsService;
 
+    // TODO(b/422543753) Available only on `Flags.adapterServiceProfilesUseOptional()`
+    private final GattService unusedGattService;
     private final Map<BluetoothDevice, Integer> mDeviceAuthorizations = new HashMap<>();
     private final TbsGeneric mTbsGeneric;
 
     public TbsService(AdapterService adapterService) {
+        this(adapterService, null);
+    }
+
+    public TbsService(AdapterService adapterService, GattService gattService) {
         super(BluetoothProfile.LE_CALL_CONTROL, requireNonNull(adapterService));
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            unusedGattService = requireNonNull(gattService);
+        } else {
+            unusedGattService = null;
+        }
 
         // Mark service as started
         setTbsService(this);

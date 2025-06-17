@@ -19,10 +19,10 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <cstring>
 #include <initializer_list>
 #include <optional>
-#include <ostream>
 #include <string>
 
 #include "storage/serializable.h"

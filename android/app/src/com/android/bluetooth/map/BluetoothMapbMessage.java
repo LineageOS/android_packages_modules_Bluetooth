@@ -544,6 +544,10 @@ public abstract class BluetoothMapbMessage {
                 String[] arg = COLON.split(line);
                 if (arg != null && arg.length == 2) {
                     String value = arg[1].trim();
+                    // Some carkits have typo.
+                    if (value.equals("SMS_CMDA")) {
+                        value = "SMS_CDMA";
+                    }
                     /* Will throw IllegalArgumentException if value is wrong */
                     type = TYPE.valueOf(value);
                     if (appParamCharset == BluetoothMapAppParams.CHARSET_NATIVE

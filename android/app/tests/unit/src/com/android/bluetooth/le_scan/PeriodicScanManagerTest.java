@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.le_scan;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
@@ -38,6 +37,7 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;

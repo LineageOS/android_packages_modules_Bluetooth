@@ -48,16 +48,12 @@ import androidx.test.uiautomator.UiDevice;
 import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
-import com.android.dx.mockito.inline.extended.StaticMockitoSession;
 import com.android.dx.mockito.inline.extended.StaticMockitoSessionBuilder;
 
-import org.junit.rules.MethodRule;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
-import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
 import org.mockito.quality.Strictness;
 
 import java.time.Duration;
@@ -415,75 +411,6 @@ public class TestUtils {
                                     + retryCount
                                     + " failures");
                     throw caughtThrowable;
-                }
-            };
-        }
-    }
-
-    /** Wrapper around MockitoJUnit.rule() to clear the inline mock at the end of the test. */
-    public static class MockitoRule implements MethodRule {
-        private final org.mockito.junit.MockitoRule mMockitoRule = MockitoJUnit.rule();
-
-        public Statement apply(Statement base, FrameworkMethod method, Object target) {
-            Statement nestedStatement = mMockitoRule.apply(base, method, target);
-
-            return new Statement() {
-                @Override
-                public void evaluate() throws Throwable {
-                    nestedStatement.evaluate();
-
-                    // Prevent OutOfMemory errors due to mock maker leaks.
-                    // See https://github.com/mockito/mockito/issues/1614, b/259280359, b/396177821
-                    Mockito.framework().clearInlineMocks();
-                }
-            };
-        }
-    }
-
-    /** Similar to {@link MockitoRule}, but allows mocking static methods. */
-    public static class StaticMockitoRule implements MethodRule {
-        private final Class<?>[] mClasses;
-
-        public StaticMockitoRule(Class<?>... classes) {
-            mClasses = classes;
-        }
-
-        @Override
-        public Statement apply(Statement base, FrameworkMethod method, Object target) {
-            return new Statement() {
-                public void evaluate() throws Throwable {
-                    StaticMockitoSessionBuilder builder =
-                            ExtendedMockito.mockitoSession()
-                                    .name(
-                                            target.getClass().getSimpleName()
-                                                    + "."
-                                                    + method.getName())
-                                    .initMocks(target)
-                                    .strictness(Strictness.LENIENT);
-
-                    for (Class<?> clazz : mClasses) {
-                        builder.mockStatic(clazz);
-                    }
-
-                    StaticMockitoSession session = builder.startMocking();
-
-                    Throwable testFailure;
-                    try {
-                        base.evaluate();
-                        testFailure = null;
-                    } catch (Throwable throwable) {
-                        testFailure = throwable;
-                    }
-
-                    session.finishMocking(testFailure);
-
-                    // Prevent OutOfMemory errors due to mock maker leaks.
-                    // See https://github.com/mockito/mockito/issues/1614, b/259280359, b/396177821
-                    Mockito.framework().clearInlineMocks();
-
-                    if (testFailure != null) {
-                        throw testFailure;
-                    }
                 }
             };
         }

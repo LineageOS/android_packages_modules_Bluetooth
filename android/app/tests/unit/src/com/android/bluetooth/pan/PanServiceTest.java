@@ -26,7 +26,6 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static android.net.TetheringManager.TETHERING_BLUETOOTH;
 import static android.net.TetheringManager.TETHER_ERROR_SERVICE_UNAVAIL;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
@@ -53,6 +52,7 @@ import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.pan.PanService.BluetoothPanDevice;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;

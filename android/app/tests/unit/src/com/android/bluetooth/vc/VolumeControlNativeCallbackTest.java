@@ -18,7 +18,6 @@ package com.android.bluetooth.vc;
 
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED;
 import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_DEVICE_AVAILABLE;
 import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_EXT_AUDIO_OUT_DESCRIPTION_CHANGED;
@@ -39,6 +38,7 @@ import androidx.test.filters.SmallTest;
 
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
+import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.common.truth.Expect;
 

@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.sap;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.sap.SapMessage.CON_STATUS_ERROR_CONNECTION;
 import static com.android.bluetooth.sap.SapMessage.CON_STATUS_OK;
 import static com.android.bluetooth.sap.SapMessage.CON_STATUS_OK_ONGOING_CALL;
@@ -69,6 +68,8 @@ import android.telephony.TelephonyManager;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
+
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;

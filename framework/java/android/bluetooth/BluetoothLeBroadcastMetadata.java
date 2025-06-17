@@ -22,6 +22,7 @@ import android.annotation.IntDef;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -218,6 +219,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @BluetoothDevice.AddressType int getSourceAddressType() {
         return mSourceAddressType;
     }
@@ -230,6 +232,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @NonNull BluetoothDevice getSourceDevice() {
         return mSourceDevice;
     }
@@ -243,6 +246,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public int getSourceAdvertisingSid() {
         return mSourceAdvertisingSid;
     }
@@ -254,6 +258,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public int getBroadcastId() {
         return mBroadcastId;
     }
@@ -273,6 +278,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public int getPaSyncInterval() {
         return mPaSyncInterval;
     }
@@ -284,6 +290,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public boolean isEncrypted() {
         return mIsEncrypted;
     }
@@ -295,6 +302,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public boolean isPublicBroadcast() {
         return mIsPublicBroadcast;
     }
@@ -306,6 +314,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @Nullable String getBroadcastName() {
         return mBroadcastName;
     }
@@ -325,6 +334,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @Nullable byte[] getBroadcastCode() {
         return mBroadcastCode;
     }
@@ -338,6 +348,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @IntRange(from = 0, to = 0xFFFFFF) int getPresentationDelayMicros() {
         return mPresentationDelayMicros;
     }
@@ -349,6 +360,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @AudioConfigQuality int getAudioConfigQuality() {
         return mAudioConfigQuality;
     }
@@ -371,6 +383,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @IntRange(from = -127, to = 127) int getRssi() {
         return mRssi;
     }
@@ -383,6 +396,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @Nullable BluetoothLeAudioContentMetadata getPublicBroadcastMetadata() {
         return mPublicBroadcastMetadata;
     }
@@ -395,6 +409,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @NonNull List<BluetoothLeBroadcastSubgroup> getSubgroups() {
         return mSubgroups;
     }
@@ -570,8 +585,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setSourceDevice(
+        @RequiresNoPermission
+        public @NonNull Builder setSourceDevice(
                 @NonNull BluetoothDevice sourceDevice,
                 @BluetoothDevice.AddressType int sourceAddressType) {
             if (sourceAddressType == BluetoothDevice.ADDRESS_TYPE_UNKNOWN) {
@@ -599,6 +614,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder setSourceAdvertisingSid(int sourceAdvertisingSid) {
             mSourceAdvertisingSid = sourceAdvertisingSid;
             return this;
@@ -612,6 +628,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder setBroadcastId(int broadcastId) {
             mBroadcastId = broadcastId;
             return this;
@@ -626,6 +643,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder setPaSyncInterval(int paSyncInterval) {
             mPaSyncInterval = paSyncInterval;
             return this;
@@ -643,6 +661,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder setEncrypted(boolean isEncrypted) {
             mIsEncrypted = isEncrypted;
             return this;
@@ -657,6 +676,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder setPublicBroadcast(boolean isPublicBroadcast) {
             mIsPublicBroadcast = isPublicBroadcast;
             return this;
@@ -671,6 +691,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder setBroadcastName(@Nullable String broadcastName) {
             mBroadcastName = broadcastName;
             return this;
@@ -692,6 +713,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder setBroadcastCode(@Nullable byte[] broadcastCode) {
             mBroadcastCode = broadcastCode;
             return this;
@@ -710,8 +732,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setPresentationDelayMicros(
+        @RequiresNoPermission
+        public @NonNull Builder setPresentationDelayMicros(
                 @IntRange(from = 0, to = 0xFFFFFF) int presentationDelayMicros) {
             if (presentationDelayMicros < 0 || presentationDelayMicros >= 0xFFFFFF) {
                 throw new IllegalArgumentException(
@@ -731,8 +753,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setAudioConfigQuality(@AudioConfigQuality int audioConfigQuality) {
+        @RequiresNoPermission
+        public @NonNull Builder setAudioConfigQuality(@AudioConfigQuality int audioConfigQuality) {
             mAudioConfigQuality = audioConfigQuality;
             return this;
         }
@@ -750,8 +772,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setRssi(@IntRange(from = -127, to = 127) int rssi) {
+        @RequiresNoPermission
+        public @NonNull Builder setRssi(@IntRange(from = -127, to = 127) int rssi) {
             if (rssi < -127 || rssi > 127) {
                 throw new IllegalArgumentException("illegal rssi " + rssi);
             }
@@ -769,8 +791,8 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setPublicBroadcastMetadata(
+        @RequiresNoPermission
+        public @NonNull Builder setPublicBroadcastMetadata(
                 @Nullable BluetoothLeAudioContentMetadata publicBroadcastMetadata) {
             mPublicBroadcastMetadata = publicBroadcastMetadata;
             return this;
@@ -785,6 +807,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder addSubgroup(@NonNull BluetoothLeBroadcastSubgroup subgroup) {
             requireNonNull(subgroup);
             mSubgroups.add(subgroup);
@@ -799,6 +822,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder clearSubgroup() {
             mSubgroups.clear();
             return this;
@@ -813,6 +837,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull BluetoothLeBroadcastMetadata build() {
             if (mSourceAddressType == BluetoothDevice.ADDRESS_TYPE_UNKNOWN) {
                 throw new IllegalArgumentException("SourceAddressTyp cannot be unknown");

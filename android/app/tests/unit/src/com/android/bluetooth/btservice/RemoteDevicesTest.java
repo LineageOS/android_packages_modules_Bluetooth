@@ -8,11 +8,9 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
-import static com.android.tests.bluetooth.Utils.FlagsWrapper;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -55,6 +53,8 @@ import com.android.bluetooth.bas.BatteryService;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetHalConstants;
+import com.android.tests.bluetooth.FlagsWrapper;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;

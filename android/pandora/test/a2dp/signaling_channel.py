@@ -50,7 +50,8 @@ class SignalingChannel(pyee.EventEmitter):
     role: RoleType = None
     acp_seid: int = 0
     int_seid: int = 0
-    channel_opened_future: asyncio.Future[None] | None = None
+    signaling_channel_opened_future: asyncio.Future[None] | None = None
+    transport_channel_opened_future: asyncio.Future[None] | None = None
 
     def __init__(self, connection: bumble.device.Connection):
         super().__init__()
@@ -60,13 +61,15 @@ class SignalingChannel(pyee.EventEmitter):
         self.once('connection', self._on_avdtp_connection)
 
     def __str__(self):
-        return (f"SignalingChannel(\n"
-                f"  Connection: {self.connection},\n"
-                f"  role: {self.role},\n"
-                f"  acp_seid: {self.acp_seid},\n"
-                f"  int_seid: {self.int_seid},\n"
-                f"  waiting for channel to open: {self.channel_opened_future is not None}\n"
-                f")")
+        return (
+            f"SignalingChannel(\n"
+            f"  Connection: {self.connection},\n"
+            f"  role: {self.role},\n"
+            f"  acp_seid: {self.acp_seid},\n"
+            f"  int_seid: {self.int_seid},\n"
+            f"  waiting for channel to open: {self.signaling_channel_opened_future is not None},\n"
+            f"  waiting for transport channel to open: {self.transport_channel_opened_future is not None}\n"
+            f")")
 
     @classmethod
     async def initiate(cls, connection: bumble.device.Connection) -> SignalingChannel:
@@ -82,23 +85,40 @@ class SignalingChannel(pyee.EventEmitter):
 
     def _on_avdtp_connection(self) -> None:
         logger.info("AVDT signaling channel opened")
-        assert self.channel_opened_future
-        self.channel_opened_future.set_result(None)
+        assert self.signaling_channel_opened_future
+        self.signaling_channel_opened_future.set_result(None)
 
     async def wait_signaling_channel_connected(self, timeout: float = 5):
         if (self.role != "acceptor"):
             raise ValueError("wait_signaling_channel_connected failed. role is not acceptor")
 
-        self.channel_opened_future = asyncio.get_running_loop().create_future()
+        if self.signaling_channel_opened_future == None:
+            self.signaling_channel_opened_future = asyncio.get_running_loop().create_future()
         logger.debug("wait_signaling_channel_connected: future gathered")
 
         try:
-            await asyncio.wait_for(self.channel_opened_future, timeout=timeout)
+            await asyncio.wait_for(self.signaling_channel_opened_future, timeout=timeout)
             logger.debug("wait_signaling_channel_connected: future cleanup")
-            self.channel_opened_future = None
+            self.signaling_channel_opened_future = None
         except TimeoutError:
             raise TimeoutError(
                 "TimeoutError while waiting for AVDT signaling channel to open") from None
+
+    async def wait_transport_channel_connected(self, timeout: float = 5):
+        if (self.role != "acceptor"):
+            raise ValueError("wait_transport_channel_connected failed. role is not acceptor")
+
+        if self.transport_channel_opened_future == None:
+            self.transport_channel_opened_future = asyncio.get_running_loop().create_future()
+        logger.debug("wait_transport_channel_connected: future gathered")
+
+        try:
+            await asyncio.wait_for(self.transport_channel_opened_future, timeout=timeout)
+            logger.debug("wait_transport_channel_connected: future cleanup")
+            self.transport_channel_opened_future = None
+        except TimeoutError:
+            raise TimeoutError(
+                "TimeoutError while waiting for AVDT transport channel to open") from None
 
     async def disconnect(self):
         if not self.signaling_channel:
@@ -122,7 +142,14 @@ class SignalingChannel(pyee.EventEmitter):
                             expected_sig: typing.Union[av.SignalingPacket, type],
                             timeout: float = 3) -> av.SignalingPacket:
         if not self.signaling_channel:
-            raise AttributeError("Signaling channel is None")
+            if (self.role != "acceptor"):
+                raise AttributeError("Signaling channel is None")
+
+            try:
+                logger.info("Waiting for transport channel")
+                await self.wait_signaling_channel_connected()
+            except TimeoutError:
+                raise AttributeError("Signaling channel is None")
 
         try:
             packet = await asyncio.wait_for(self.signaling_queue.get(), timeout=timeout)
@@ -153,7 +180,14 @@ class SignalingChannel(pyee.EventEmitter):
 
     async def expect_media(self, timeout: float = 3.0) -> avdtp.MediaPacket:
         if not self.transport_channel:
-            raise AttributeError("Transport channel is None")
+            if self.role != "acceptor":
+                raise AttributeError("Transport channel is None")
+
+            try:
+                logger.info("Waiting for transport channel")
+                await self.wait_transport_channel_connected()
+            except (TimeoutError, ValueError):
+                raise AttributeError("Transport channel is None")
 
         try:
             packet = await asyncio.wait_for(self.transport_queue.get(), timeout=timeout)
@@ -223,6 +257,8 @@ class SignalingChannel(pyee.EventEmitter):
                 logger.info(f"RTP opened on channel {self.transport_channel}")
                 # Register to receive PDUs from the channel
                 self.transport_channel.sink = self._on_avdtp_packet
+                assert self.transport_channel_opened_future
+                self.transport_channel_opened_future.set_result(None)
 
             def _on_channel_close():
                 logger.info('RTP channel closed')

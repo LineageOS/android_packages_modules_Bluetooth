@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.btservice;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -39,6 +38,7 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMetricsProto.BluetoothRemoteDeviceInformation;
 import com.android.bluetooth.BluetoothStatsLog;
+import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;

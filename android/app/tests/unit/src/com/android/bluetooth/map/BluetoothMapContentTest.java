@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.map;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -50,6 +49,7 @@ import com.android.bluetooth.SignedLongLong;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.map.BluetoothMapContent.FilterInfo;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
+import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.android.mms.pdu.PduHeaders;
 

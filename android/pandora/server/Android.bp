@@ -38,6 +38,11 @@ java_library_static {
 android_test_helper_app {
     name: "PandoraServer",
 
+    visibility: [
+        "//packages/modules/Bluetooth:__subpackages__",
+        "//vendor:__subpackages__",
+    ],
+
     static_libs: [
         "PandoraServerLib",
     ],

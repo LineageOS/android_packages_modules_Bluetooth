@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include "fuzz/helpers.h"
+#include "hci/acl_manager/acl_manager_classic_impl.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager_impl.h"
 #include "hci/controller_mock.h"
@@ -32,7 +33,9 @@ using bluetooth::hci::AclManagerImpl;
 using bluetooth::hci::HciLayer;
 using bluetooth::hci::RemoteNameRequestModule;
 using bluetooth::hci::RemoteNameRequestModuleMock;
+using bluetooth::hci::acl_manager::AclManagerClassicImpl;
 using bluetooth::hci::acl_manager::AclScheduler;
+using bluetooth::hci::acl_manager::RoundRobinScheduler;
 using bluetooth::hci::fuzz::FuzzHciLayer;
 using bluetooth::hci::testing::MockController;
 using bluetooth::os::Handler;
@@ -64,10 +67,15 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   std::unique_ptr<RemoteNameRequestModule> test_rnr_ =
           std::make_unique<RemoteNameRequestModuleMock>();
   std::unique_ptr<StorageModule> test_storage_ = std::make_unique<StorageModule>(&client_handler_);
-
-  std::unique_ptr<AclManagerImpl> acl_manager =
-          std::make_unique<AclManagerImpl>(&client_handler_, *fuzzHci, *test_controller_,
-                                           *test_acl_scheduler_, *test_rnr_, *test_storage_);
+  std::unique_ptr<RoundRobinScheduler> test_round_robin_scheduler_ =
+          std::make_unique<RoundRobinScheduler>(&client_handler_, *test_controller_,
+                                                fuzzHci->GetAclQueueEnd());
+  std::unique_ptr<AclManagerClassicImpl> acl_manager_classic_ =
+          std::make_unique<AclManagerClassicImpl>(&client_handler_, *fuzzHci, *test_acl_scheduler_,
+                                                  *test_rnr_, *test_round_robin_scheduler_);
+  std::unique_ptr<AclManagerImpl> acl_manager = std::make_unique<AclManagerImpl>(
+          &client_handler_, *fuzzHci, *test_controller_, *test_storage_,
+          *test_round_robin_scheduler_, *acl_manager_classic_, *acl_manager_classic_);
 
   fuzzHci->TurnOffAutoReply();
   uint64_t totalAdvanceTime = 0;
@@ -93,6 +101,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   }
 
   acl_manager.reset();
+  acl_manager_classic_.reset();
+  test_round_robin_scheduler_.reset();
   test_storage_.reset();
   test_rnr_.reset();
   test_acl_scheduler_.reset();

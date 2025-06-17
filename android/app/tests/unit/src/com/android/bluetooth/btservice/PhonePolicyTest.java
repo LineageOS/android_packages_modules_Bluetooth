@@ -24,7 +24,6 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
-import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
 import static com.android.bluetooth.TestUtils.mockSystemPropertyGet;
@@ -69,6 +68,7 @@ import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.bluetooth.le_audio.LeAudioService;
+import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.junit.After;
 import org.junit.Before;

@@ -18,7 +18,6 @@ package com.android.bluetooth.map;
 
 import static android.content.pm.PackageManager.FEATURE_TELEPHONY_MESSAGING;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -37,6 +36,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.map.BluetoothMapSmsPdu.SmsPdu;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;

@@ -20,7 +20,6 @@ import static androidx.test.espresso.intent.Intents.intended;
 import static androidx.test.espresso.intent.Intents.intending;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.anyIntent;
 
-import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.opp.BluetoothOppManager.ALLOWED_INSERT_SHARE_THREAD_NUMBER;
 import static com.android.bluetooth.opp.BluetoothOppManager.OPP_PREFERENCE_FILE;
@@ -48,6 +47,7 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
+import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.junit.After;
 import org.junit.Before;

@@ -1488,6 +1488,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull BluetoothDevice getDevice() {
             return mDevice;
         }
@@ -1499,6 +1500,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public boolean isServiceAvailable() {
             return mIsServiceAvailable;
         }
@@ -1511,6 +1513,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @Nullable String getNetworkOperatorName() {
             return mOperatorName;
         }
@@ -1531,6 +1534,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @IntRange(from = 0, to = 5) int getSignalStrength() {
             return mSignalStrength;
         }
@@ -1543,6 +1547,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public boolean isRoaming() {
             return mIsRoaming;
         }

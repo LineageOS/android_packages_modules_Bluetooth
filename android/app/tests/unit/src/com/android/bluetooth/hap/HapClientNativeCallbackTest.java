@@ -18,8 +18,6 @@ package com.android.bluetooth.hap;
 
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothHapPresetInfo;
@@ -27,6 +25,7 @@ import android.bluetooth.BluetoothHapPresetInfo;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.common.truth.Expect;
 

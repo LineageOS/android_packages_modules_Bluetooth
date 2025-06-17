@@ -32,10 +32,8 @@ import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
-import static com.android.tests.bluetooth.Utils.FlagsWrapper;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -100,6 +98,8 @@ import com.android.bluetooth.le_scan.ScanController;
 import com.android.bluetooth.mcp.McpService;
 import com.android.bluetooth.tbs.TbsService;
 import com.android.bluetooth.vc.VolumeControlService;
+import com.android.tests.bluetooth.FlagsWrapper;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;

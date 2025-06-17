@@ -17,7 +17,7 @@
 package android.bluetooth;
 
 import android.annotation.NonNull;
-import android.bluetooth.annotations.RequiresLegacyBluetoothPermission;
+import android.annotation.RequiresNoPermission;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.os.Build;
 import android.os.Parcel;
@@ -209,7 +209,7 @@ public class BluetoothGattService implements Parcelable {
      * @param service The service to be added
      * @return true, if the included service was added to the service
      */
-    @RequiresLegacyBluetoothPermission
+    @RequiresNoPermission
     public boolean addService(BluetoothGattService service) {
         mIncludedServices.add(service);
         return true;
@@ -221,7 +221,7 @@ public class BluetoothGattService implements Parcelable {
      * @param characteristic The characteristics to be added
      * @return true, if the characteristic was added to the service
      */
-    @RequiresLegacyBluetoothPermission
+    @RequiresNoPermission
     public boolean addCharacteristic(BluetoothGattCharacteristic characteristic) {
         mCharacteristics.add(characteristic);
         characteristic.setService(this);
@@ -249,6 +249,7 @@ public class BluetoothGattService implements Parcelable {
      * @hide
      */
     @UnsupportedAppUsage
+    @RequiresNoPermission
     public void setInstanceId(int instanceId) {
         mInstanceId = instanceId;
     }
@@ -268,6 +269,7 @@ public class BluetoothGattService implements Parcelable {
      *
      * @hide
      */
+    @RequiresNoPermission
     public void setHandles(int handles) {
         mHandles = handles;
     }
@@ -277,6 +279,7 @@ public class BluetoothGattService implements Parcelable {
      *
      * @hide
      */
+    @RequiresNoPermission
     public void addIncludedService(BluetoothGattService includedService) {
         mIncludedServices.add(includedService);
     }
@@ -286,6 +289,7 @@ public class BluetoothGattService implements Parcelable {
      *
      * @return UUID of this service
      */
+    @RequiresNoPermission
     public UUID getUuid() {
         return mUuid;
     }
@@ -298,11 +302,13 @@ public class BluetoothGattService implements Parcelable {
      *
      * @return Instance ID of this service
      */
+    @RequiresNoPermission
     public int getInstanceId() {
         return mInstanceId;
     }
 
     /** Get the type of this service (primary/secondary) */
+    @RequiresNoPermission
     public int getType() {
         return mServiceType;
     }
@@ -312,6 +318,7 @@ public class BluetoothGattService implements Parcelable {
      *
      * @return List of included services or empty list if no included services were discovered.
      */
+    @RequiresNoPermission
     public List<BluetoothGattService> getIncludedServices() {
         return mIncludedServices;
     }
@@ -321,6 +328,7 @@ public class BluetoothGattService implements Parcelable {
      *
      * @return Characteristics included in this service
      */
+    @RequiresNoPermission
     public List<BluetoothGattCharacteristic> getCharacteristics() {
         return mCharacteristics;
     }
@@ -338,6 +346,7 @@ public class BluetoothGattService implements Parcelable {
      * @return GATT characteristic object or null if no characteristic with the given UUID was
      *     found.
      */
+    @RequiresNoPermission
     public BluetoothGattCharacteristic getCharacteristic(UUID uuid) {
         for (BluetoothGattCharacteristic characteristic : mCharacteristics) {
             if (uuid.equals(characteristic.getUuid())) {
@@ -352,6 +361,7 @@ public class BluetoothGattService implements Parcelable {
      *
      * @hide
      */
+    @RequiresNoPermission
     public boolean isAdvertisePreferred() {
         return mAdvertisePreferred;
     }
@@ -362,6 +372,7 @@ public class BluetoothGattService implements Parcelable {
      * @hide
      */
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
+    @RequiresNoPermission
     public void setAdvertisePreferred(boolean advertisePreferred) {
         mAdvertisePreferred = advertisePreferred;
     }

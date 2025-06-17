@@ -137,6 +137,9 @@ static void bta_dm_search_cancel() {
     /* If no Service Search going on then issue cancel remote name in case it is active */
     if (get_stack_rnr_interface().BTM_CancelRemoteDeviceName() != tBTM_STATUS::BTM_CMD_STARTED) {
       log::warn("Unable to cancel RNR");
+      if (com::android::bluetooth::flags::complete_disc_if_no_rnr()) {
+        bta_dm_search_cmpl();
+      }
     }
     /* bta_dm_search_cmpl is called when receiving the remote name cancel evt */
   } else {
@@ -492,7 +495,7 @@ static void bta_dm_discover_name(const RawAddress& remote_bd_addr) {
     log::verbose("appl_knows_rem_name {}", bta_dm_search_cb.p_btm_inq_info->appl_knows_rem_name);
   }
   if (((bta_dm_search_cb.p_btm_inq_info) &&
-       (bta_dm_search_cb.p_btm_inq_info->results.device_type == BT_DEVICE_TYPE_BLE) &&
+       (bta_dm_search_cb.p_btm_inq_info->results.inq_result_type == BT_DEVICE_TYPE_BLE) &&
        (bta_dm_search_get_state() == BTA_DM_SEARCH_ACTIVE)) ||
       (transport == BT_TRANSPORT_LE &&
        interop_match_addr(INTEROP_DISABLE_NAME_REQUEST, &bta_dm_search_cb.peer_bdaddr))) {

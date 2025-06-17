@@ -22,6 +22,7 @@ import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -198,51 +199,61 @@ public final class AdvertisingSetParameters implements Parcelable {
     }
 
     /** Returns whether the advertisement will be connectable. */
+    @RequiresNoPermission
     public boolean isConnectable() {
         return mConnectable;
     }
 
     /** Returns whether the advertisement will be discoverable. */
+    @RequiresNoPermission
     public boolean isDiscoverable() {
         return mDiscoverable;
     }
 
     /** Returns whether the advertisement will be scannable. */
+    @RequiresNoPermission
     public boolean isScannable() {
         return mScannable;
     }
 
     /** Returns whether the legacy advertisement will be used. */
+    @RequiresNoPermission
     public boolean isLegacy() {
         return mIsLegacy;
     }
 
     /** Returns whether the advertisement will be anonymous. */
+    @RequiresNoPermission
     public boolean isAnonymous() {
         return mIsAnonymous;
     }
 
     /** Returns whether the TX Power will be included. */
+    @RequiresNoPermission
     public boolean includeTxPower() {
         return mIncludeTxPower;
     }
 
     /** Returns the primary advertising phy. */
+    @RequiresNoPermission
     public int getPrimaryPhy() {
         return mPrimaryPhy;
     }
 
     /** Returns the secondary advertising phy. */
+    @RequiresNoPermission
     public int getSecondaryPhy() {
         return mSecondaryPhy;
     }
 
     /** Returns the advertising interval. */
+    @RequiresNoPermission
     public int getInterval() {
         return mInterval;
     }
 
     /** Returns the TX power level for advertising. */
+    @RequiresNoPermission
     public int getTxPowerLevel() {
         return mTxPowerLevel;
     }
@@ -252,6 +263,7 @@ public final class AdvertisingSetParameters implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @AddressTypeStatus int getOwnAddressType() {
         return mOwnAddressType;
     }
@@ -263,6 +275,7 @@ public final class AdvertisingSetParameters implements Parcelable {
      */
     @FlaggedApi(Flags.FLAG_DIRECTED_ADVERTISING_API)
     @SystemApi
+    @RequiresNoPermission
     public boolean isDirected() {
         return mIsDirected;
     }
@@ -274,6 +287,7 @@ public final class AdvertisingSetParameters implements Parcelable {
      */
     @FlaggedApi(Flags.FLAG_DIRECTED_ADVERTISING_API)
     @SystemApi
+    @RequiresNoPermission
     public boolean isHighDutyCycle() {
         return mIsHighDutyCycle;
     }
@@ -285,6 +299,7 @@ public final class AdvertisingSetParameters implements Parcelable {
      */
     @FlaggedApi(Flags.FLAG_DIRECTED_ADVERTISING_API)
     @SystemApi
+    @RequiresNoPermission
     public @Nullable String getPeerAddress() {
         return mPeerAddress;
     }
@@ -296,6 +311,7 @@ public final class AdvertisingSetParameters implements Parcelable {
      */
     @FlaggedApi(Flags.FLAG_DIRECTED_ADVERTISING_API)
     @SystemApi
+    @RequiresNoPermission
     public @AddressType int getPeerAddressType() {
         return mPeerAddressType;
     }
@@ -396,6 +412,7 @@ public final class AdvertisingSetParameters implements Parcelable {
          * @param connectable Controls whether the advertisement type will be connectable (true) or
          *     non-connectable (false).
          */
+        @RequiresNoPermission
         public Builder setConnectable(boolean connectable) {
             mConnectable = connectable;
             return this;
@@ -409,6 +426,7 @@ public final class AdvertisingSetParameters implements Parcelable {
          * @param discoverable Controls whether the advertisement type will be discoverable ({@code
          *     true}) or non-discoverable ({@code false}).
          */
+        @RequiresNoPermission
         public @NonNull Builder setDiscoverable(boolean discoverable) {
             mDiscoverable = discoverable;
             return this;
@@ -422,6 +440,7 @@ public final class AdvertisingSetParameters implements Parcelable {
          * @param scannable Controls whether the advertisement type will be scannable (true) or
          *     non-scannable (false).
          */
+        @RequiresNoPermission
         public Builder setScannable(boolean scannable) {
             mScannable = scannable;
             return this;
@@ -432,6 +451,7 @@ public final class AdvertisingSetParameters implements Parcelable {
          *
          * @param isLegacy whether legacy advertising mode should be used.
          */
+        @RequiresNoPermission
         public Builder setLegacyMode(boolean isLegacy) {
             mIsLegacy = isLegacy;
             return this;
@@ -445,6 +465,7 @@ public final class AdvertisingSetParameters implements Parcelable {
          *
          * @param isAnonymous whether anonymous advertising should be used.
          */
+        @RequiresNoPermission
         public Builder setAnonymous(boolean isAnonymous) {
             mIsAnonymous = isAnonymous;
             return this;
@@ -457,6 +478,7 @@ public final class AdvertisingSetParameters implements Parcelable {
          *
          * @param includeTxPower whether TX power should be included in extended header
          */
+        @RequiresNoPermission
         public Builder setIncludeTxPower(boolean includeTxPower) {
             mIncludeTxPower = includeTxPower;
             return this;
@@ -474,6 +496,7 @@ public final class AdvertisingSetParameters implements Parcelable {
          *     BluetoothDevice#PHY_LE_1M} or {@link BluetoothDevice#PHY_LE_CODED}.
          * @throws IllegalArgumentException If the primaryPhy is invalid.
          */
+        @RequiresNoPermission
         public Builder setPrimaryPhy(int primaryPhy) {
             if (primaryPhy != BluetoothDevice.PHY_LE_1M
                     && primaryPhy != BluetoothDevice.PHY_LE_CODED) {
@@ -497,6 +520,7 @@ public final class AdvertisingSetParameters implements Parcelable {
          *     BluetoothDevice#PHY_LE_CODED}.
          * @throws IllegalArgumentException If the secondaryPhy is invalid.
          */
+        @RequiresNoPermission
         public Builder setSecondaryPhy(int secondaryPhy) {
             if (secondaryPhy != BluetoothDevice.PHY_LE_1M
                     && secondaryPhy != BluetoothDevice.PHY_LE_2M
@@ -517,6 +541,7 @@ public final class AdvertisingSetParameters implements Parcelable {
          *     AdvertisingSetParameters#INTERVAL_HIGH}.
          * @throws IllegalArgumentException If the interval is invalid.
          */
+        @RequiresNoPermission
         public Builder setInterval(int interval) {
             if (interval < INTERVAL_MIN || interval > INTERVAL_MAX) {
                 throw new IllegalArgumentException("unknown interval " + interval);
@@ -536,6 +561,7 @@ public final class AdvertisingSetParameters implements Parcelable {
          *     AdvertisingSetParameters#TX_POWER_HIGH}.
          * @throws IllegalArgumentException If the {@code txPowerLevel} is invalid.
          */
+        @RequiresNoPermission
         public Builder setTxPowerLevel(int txPowerLevel) {
             if (txPowerLevel < TX_POWER_MIN || txPowerLevel > TX_POWER_MAX) {
                 throw new IllegalArgumentException("unknown txPowerLevel " + txPowerLevel);
@@ -554,6 +580,7 @@ public final class AdvertisingSetParameters implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder setOwnAddressType(@AddressTypeStatus int ownAddressType) {
             if (ownAddressType < AdvertisingSetParameters.ADDRESS_TYPE_DEFAULT
                     || ownAddressType
@@ -574,6 +601,7 @@ public final class AdvertisingSetParameters implements Parcelable {
          */
         @FlaggedApi(Flags.FLAG_DIRECTED_ADVERTISING_API)
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder setDirected(boolean isDirected) {
             mIsDirected = isDirected;
             return this;
@@ -589,6 +617,7 @@ public final class AdvertisingSetParameters implements Parcelable {
          */
         @FlaggedApi(Flags.FLAG_DIRECTED_ADVERTISING_API)
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder setHighDutyCycle(boolean isHighDutyCycle) {
             mIsHighDutyCycle = isHighDutyCycle;
             return this;
@@ -605,6 +634,7 @@ public final class AdvertisingSetParameters implements Parcelable {
          */
         @FlaggedApi(Flags.FLAG_DIRECTED_ADVERTISING_API)
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder setPeerAddress(@NonNull String peerAddress) {
             requireNonNull(peerAddress);
             if (!BluetoothAdapter.checkBluetoothAddress(peerAddress)) {
@@ -626,6 +656,7 @@ public final class AdvertisingSetParameters implements Parcelable {
          */
         @FlaggedApi(Flags.FLAG_DIRECTED_ADVERTISING_API)
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder setPeerAddressType(@AddressType int peerAddressType) {
             if (!List.of(BluetoothDevice.ADDRESS_TYPE_PUBLIC, BluetoothDevice.ADDRESS_TYPE_RANDOM)
                     .contains(peerAddressType)) {
@@ -640,6 +671,7 @@ public final class AdvertisingSetParameters implements Parcelable {
          *
          * @throws IllegalStateException if invalid combination of parameters is used.
          */
+        @RequiresNoPermission
         public AdvertisingSetParameters build() {
             if (mIsLegacy) {
                 if (mIsAnonymous) {

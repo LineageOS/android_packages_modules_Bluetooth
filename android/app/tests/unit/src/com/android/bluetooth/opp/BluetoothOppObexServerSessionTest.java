@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.opp;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
@@ -50,6 +49,7 @@ import com.android.bluetooth.BluetoothObexTransport;
 import com.android.obex.HeaderSet;
 import com.android.obex.Operation;
 import com.android.obex.ResponseCodes;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Assume;

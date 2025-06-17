@@ -34,6 +34,7 @@
 #include "hal/ranging_hal_impl.h"
 #include "hal/snoop_logger.h"
 #include "hal/socket_hal_impl.h"
+#include "hci/acl_manager/acl_manager_classic_impl.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager_impl.h"
 #include "hci/controller_impl.h"
@@ -80,8 +81,11 @@ struct Stack::impl {
         controller_(handler, &hci_layer_),
         acl_scheduler_(handler),
         remote_name_request_(handler, hci_layer_, acl_scheduler_),
-        acl_manager_(handler, hci_layer_, controller_, acl_scheduler_, remote_name_request_,
-                     storage_),
+        round_robin_scheduler_(handler, controller_, hci_layer_.GetAclQueueEnd()),
+        acl_manager_classic_(handler, hci_layer_, acl_scheduler_, remote_name_request_,
+                             round_robin_scheduler_),
+        acl_manager_(handler, hci_layer_, controller_, storage_, round_robin_scheduler_,
+                     acl_manager_classic_, acl_manager_classic_),
         le_scanning_manager_(handler, &hci_layer_, &controller_, acl_manager_.GetLeAddressManager(),
                              &storage_),
         msft_extension_manager_(handler, &hci_hal_, &hci_layer_),
@@ -122,6 +126,8 @@ struct Stack::impl {
   hci::ControllerImpl controller_;
   hci::acl_manager::AclScheduler acl_scheduler_;
   hci::RemoteNameRequestModuleImpl remote_name_request_;
+  hci::acl_manager::RoundRobinScheduler round_robin_scheduler_;
+  hci::acl_manager::AclManagerClassicImpl acl_manager_classic_;
   hci::AclManagerImpl acl_manager_;
   hci::LeScanningManagerImpl le_scanning_manager_;
   hci::MsftExtensionManager msft_extension_manager_;
@@ -291,6 +297,12 @@ hci::AclManager* Stack::GetAclManager() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
   return &pimpl_->acl_manager_;
+}
+
+hci::acl_manager::AclManagerClassic* Stack::GetAclManagerClassic() const {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  log::assert_that(is_running_, "assert failed: is_running_");
+  return &pimpl_->acl_manager_classic_;
 }
 
 hci::MsftExtensionManager* Stack::GetMsftExtensionManager() const {

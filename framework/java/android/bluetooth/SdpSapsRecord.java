@@ -16,6 +16,7 @@
 
 package android.bluetooth;
 
+import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -42,14 +43,17 @@ public class SdpSapsRecord implements Parcelable {
         return 0;
     }
 
+    @RequiresNoPermission
     public int getRfcommCannelNumber() {
         return mRfcommChannelNumber;
     }
 
+    @RequiresNoPermission
     public int getProfileVersion() {
         return mProfileVersion;
     }
 
+    @RequiresNoPermission
     public String getServiceName() {
         return mServiceName;
     }

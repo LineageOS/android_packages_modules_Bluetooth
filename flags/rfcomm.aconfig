@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "allow_free_last_scn"
-    namespace: "bluetooth"
-    description: "Allow SCN 30 to be freed"
-    bug: "372923869"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "indicate_rfcomm_connection_complete_after_msc"
     namespace: "bluetooth"
     description: "Indicate RFCOMM connection complete after sending Modem Status Command"

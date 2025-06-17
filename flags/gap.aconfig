@@ -26,30 +26,10 @@ flag {
 }
 
 flag {
-    name: "gatt_callback_on_failure"
-    namespace: "bluetooth"
-    description: "Invoke callbacks on early failure from the native stack"
-    bug: "356550596"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "le_scan_msft_support"
     namespace: "bluetooth"
     description: "Support MSFT HCI extension for LE Scanning. go/bt-msft-aosp-dd"
     bug: "365787977"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "le_impl_ack_pause_disarmed"
-    namespace: "bluetooth"
-    description: "Let le_impl AckPause when disarmed to prevent stuck in pausing state"
-    bug: "357024179"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -115,16 +95,6 @@ flag {
     namespace: "bluetooth"
     description: "Unregister gatt client when disconneted to prevent client leaks"
     bug: "380388092"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "fix_execute_write_no_pending"
-    namespace: "bluetooth"
-    description: "Send ATT_EXECUTE_WRITE_RSP when no pending write requests"
-    bug: "385118069"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

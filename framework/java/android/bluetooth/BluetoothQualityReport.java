@@ -24,6 +24,7 @@ import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -358,6 +359,7 @@ public final class BluetoothQualityReport implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @QualityReportId int getQualityReportId() {
         return mBqrCommon.getQualityReportId();
     }
@@ -369,6 +371,7 @@ public final class BluetoothQualityReport implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public static @NonNull String qualityReportIdToString(@QualityReportId int id) {
         return BqrCommon.qualityReportIdToString(id);
     }
@@ -380,6 +383,7 @@ public final class BluetoothQualityReport implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @Nullable String getRemoteAddress() {
         return mAddr;
     }
@@ -391,6 +395,7 @@ public final class BluetoothQualityReport implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public int getLmpVersion() {
         return mLmpVer;
     }
@@ -402,6 +407,7 @@ public final class BluetoothQualityReport implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public int getLmpSubVersion() {
         return mLmpSubVer;
     }
@@ -413,6 +419,7 @@ public final class BluetoothQualityReport implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public int getManufacturerId() {
         return mManufacturerId;
     }
@@ -424,6 +431,7 @@ public final class BluetoothQualityReport implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @Nullable String getRemoteName() {
         return mName;
     }
@@ -435,6 +443,7 @@ public final class BluetoothQualityReport implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @NonNull BluetoothClass getBluetoothClass() {
         return mBluetoothClass;
     }
@@ -446,6 +455,7 @@ public final class BluetoothQualityReport implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @Nullable BqrCommon getBqrCommon() {
         return mBqrCommon;
     }
@@ -466,6 +476,7 @@ public final class BluetoothQualityReport implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @Nullable Parcelable getBqrEvent() {
         if (mBqrCommon == null) {
             return null;
@@ -545,7 +556,6 @@ public final class BluetoothQualityReport implements Parcelable {
 
     /** BluetoothQualityReport to String. */
     @Override
-    @NonNull
     public String toString() {
         String str;
         str =
@@ -618,9 +628,9 @@ public final class BluetoothQualityReport implements Parcelable {
          * @param remoteAddr the Remote Device Address (big-endian) attribute
          * @hide
          */
-        @NonNull
         @SystemApi
-        public Builder setRemoteAddress(@Nullable String remoteAddr) {
+        @RequiresNoPermission
+        public @NonNull Builder setRemoteAddress(@Nullable String remoteAddr) {
             if (!BluetoothAdapter.checkBluetoothAddress(remoteAddr)) {
                 Log.d(TAG, "remote address is not a valid bluetooth address: " + remoteAddr);
             } else {
@@ -636,9 +646,9 @@ public final class BluetoothQualityReport implements Parcelable {
          * @param lmpVer the Link Manager Protocol Version attribute
          * @hide
          */
-        @NonNull
         @SystemApi
-        public Builder setLmpVersion(int lmpVer) {
+        @RequiresNoPermission
+        public @NonNull Builder setLmpVersion(int lmpVer) {
             this.lmpVer = lmpVer;
             return this;
         }
@@ -650,9 +660,9 @@ public final class BluetoothQualityReport implements Parcelable {
          * @param lmpSubVer the Link Manager Protocol SubVersion attribute
          * @hide
          */
-        @NonNull
         @SystemApi
-        public Builder setLmpSubVersion(int lmpSubVer) {
+        @RequiresNoPermission
+        public @NonNull Builder setLmpSubVersion(int lmpSubVer) {
             this.lmpSubVer = lmpSubVer;
             return this;
         }
@@ -664,9 +674,9 @@ public final class BluetoothQualityReport implements Parcelable {
          * @param manufacturerId the Manufacturer Id attribute
          * @hide
          */
-        @NonNull
         @SystemApi
-        public Builder setManufacturerId(int manufacturerId) {
+        @RequiresNoPermission
+        public @NonNull Builder setManufacturerId(int manufacturerId) {
             this.manufacturerId = manufacturerId;
             return this;
         }
@@ -678,9 +688,9 @@ public final class BluetoothQualityReport implements Parcelable {
          * @param remoteName the Remote Device Name attribute
          * @hide
          */
-        @NonNull
         @SystemApi
-        public Builder setRemoteName(@Nullable String remoteName) {
+        @RequiresNoPermission
+        public @NonNull Builder setRemoteName(@Nullable String remoteName) {
             if (remoteName == null) {
                 Log.d(TAG, "remote name is null");
             } else {
@@ -696,9 +706,9 @@ public final class BluetoothQualityReport implements Parcelable {
          * @param bluetoothClass the Remote Class of Device attribute
          * @hide
          */
-        @NonNull
         @SystemApi
-        public Builder setBluetoothClass(@Nullable BluetoothClass bluetoothClass) {
+        @RequiresNoPermission
+        public @NonNull Builder setBluetoothClass(@Nullable BluetoothClass bluetoothClass) {
             if (bluetoothClass == null) {
                 Log.d(TAG, "remote bluetooth class is null");
             } else {
@@ -714,9 +724,9 @@ public final class BluetoothQualityReport implements Parcelable {
          * @throws IllegalArgumentException Unsupported Quality Report Id or invalid raw data
          * @hide
          */
-        @NonNull
         @SystemApi
-        public BluetoothQualityReport build() {
+        @RequiresNoPermission
+        public @NonNull BluetoothQualityReport build() {
             return new BluetoothQualityReport(
                     remoteAddr,
                     lmpVer,
@@ -893,6 +903,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getPacketType() {
             return mPacketType;
         }
@@ -905,6 +916,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public static @Nullable String packetTypeToString(int packetType) {
             PacketType type = PacketType.fromOrdinal(packetType);
             return type.toString();
@@ -917,6 +929,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getConnectionHandle() {
             return mConnectionHandle;
         }
@@ -952,8 +965,8 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
-        @ConnectionRole
-        public int getConnectionRole() {
+        @RequiresNoPermission
+        public @ConnectionRole int getConnectionRole() {
             return mConnectionRole;
         }
 
@@ -965,6 +978,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public static @NonNull String connectionRoleToString(int connectionRole) {
             if (connectionRole == CONNECTION_ROLE_CENTRAL) {
                 return "Central";
@@ -982,6 +996,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getTxPowerLevel() {
             return mTxPowerLevel;
         }
@@ -993,6 +1008,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getRssi() {
             return mRssi;
         }
@@ -1004,6 +1020,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getSnr() {
             return mSnr;
         }
@@ -1015,6 +1032,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getUnusedAfhChannelCount() {
             return mUnusedAfhChannelCount;
         }
@@ -1027,6 +1045,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getAfhSelectUnidealChannelCount() {
             return mAfhSelectUnidealChannelCount;
         }
@@ -1038,6 +1057,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getLsto() {
             return mLsto;
         }
@@ -1050,6 +1070,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getPiconetClock() {
             return mPiconetClock;
         }
@@ -1061,6 +1082,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getRetransmissionCount() {
             return mRetransmissionCount;
         }
@@ -1072,6 +1094,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getNoRxCount() {
             return mNoRxCount;
         }
@@ -1083,6 +1106,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getNakCount() {
             return mNakCount;
         }
@@ -1094,6 +1118,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getLastTxAckTimestamp() {
             return mLastTxAckTimestamp;
         }
@@ -1105,6 +1130,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getFlowOffCount() {
             return mFlowOffCount;
         }
@@ -1116,6 +1142,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getLastFlowOnTimestamp() {
             return mLastFlowOnTimestamp;
         }
@@ -1128,6 +1155,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getOverflowCount() {
             return mOverflowCount;
         }
@@ -1139,6 +1167,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getUnderflowCount() {
             return mUnderflowCount;
         }
@@ -1150,6 +1179,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getCalFailedItemCount() {
             return mCalFailedItemCount;
         }
@@ -1162,6 +1192,7 @@ public final class BluetoothQualityReport implements Parcelable {
          */
         @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
         @SystemApi
+        @RequiresNoPermission
         public long getTxTotalPackets() {
             return mTxTotalPackets;
         }
@@ -1174,6 +1205,7 @@ public final class BluetoothQualityReport implements Parcelable {
          */
         @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
         @SystemApi
+        @RequiresNoPermission
         public long getTxUnackPackets() {
             return mTxUnackPackets;
         }
@@ -1186,6 +1218,7 @@ public final class BluetoothQualityReport implements Parcelable {
          */
         @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
         @SystemApi
+        @RequiresNoPermission
         public long getTxFlushPackets() {
             return mTxFlushPackets;
         }
@@ -1199,6 +1232,7 @@ public final class BluetoothQualityReport implements Parcelable {
          */
         @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
         @SystemApi
+        @RequiresNoPermission
         public long getTxLastSubeventPackets() {
             return mTxLastSubeventPackets;
         }
@@ -1212,6 +1246,7 @@ public final class BluetoothQualityReport implements Parcelable {
          */
         @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
         @SystemApi
+        @RequiresNoPermission
         public long getCrcErrorPackets() {
             return mCrcErrorPackets;
         }
@@ -1224,6 +1259,7 @@ public final class BluetoothQualityReport implements Parcelable {
          */
         @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
         @SystemApi
+        @RequiresNoPermission
         public long getRxDupPackets() {
             return mRxDupPackets;
         }
@@ -1237,6 +1273,7 @@ public final class BluetoothQualityReport implements Parcelable {
          */
         @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
         @SystemApi
+        @RequiresNoPermission
         public long getRxUnRecvPackets() {
             return mRxUnRecvPackets;
         }
@@ -1249,6 +1286,7 @@ public final class BluetoothQualityReport implements Parcelable {
          */
         @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
         @SystemApi
+        @RequiresNoPermission
         public int getCoexInfoMask() {
             return mCoexInfoMask;
         }
@@ -1312,7 +1350,6 @@ public final class BluetoothQualityReport implements Parcelable {
 
         /** BqrCommon to String. */
         @Override
-        @NonNull
         public String toString() {
             String str;
             str =
@@ -1450,6 +1487,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getConnState() {
             return mConnState;
         }
@@ -1462,6 +1500,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public static @Nullable String connStateToString(int connectionState) {
             return ConnState.toString(connectionState);
         }
@@ -1473,6 +1512,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getBasebandStats() {
             return mBasebandStats;
         }
@@ -1484,6 +1524,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getSlotsUsed() {
             return mSlotsUsed;
         }
@@ -1495,6 +1536,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getCxmDenials() {
             return mCxmDenials;
         }
@@ -1506,6 +1548,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getTxSkipped() {
             return mTxSkipped;
         }
@@ -1517,6 +1560,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getRfLoss() {
             return mRfLoss;
         }
@@ -1528,6 +1572,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getNativeClock() {
             return mNativeClock;
         }
@@ -1539,6 +1584,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getLastTxAckTimestamp() {
             return mLastTxAckTimestamp;
         }
@@ -1581,7 +1627,6 @@ public final class BluetoothQualityReport implements Parcelable {
 
         /** BqrVsLsto to String. */
         @Override
-        @NonNull
         public String toString() {
             String str;
             str =
@@ -1664,6 +1709,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getArrivalTime() {
             return mArrivalTime;
         }
@@ -1675,6 +1721,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getScheduleTime() {
             return mScheduleTime;
         }
@@ -1686,6 +1733,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getGlitchCount() {
             return mGlitchCount;
         }
@@ -1697,6 +1745,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getTxCxmDenials() {
             return mTxCxmDenials;
         }
@@ -1708,6 +1757,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getRxCxmDenials() {
             return mRxCxmDenials;
         }
@@ -1719,6 +1769,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getAclTxQueueLength() {
             return mAclTxQueueLength;
         }
@@ -1730,6 +1781,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getLinkQuality() {
             return mLinkQuality;
         }
@@ -1742,6 +1794,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public static @Nullable String linkQualityToString(int linkQuality) {
             LinkQuality q = LinkQuality.fromOrdinal(linkQuality);
             return q.toString();
@@ -1784,7 +1837,6 @@ public final class BluetoothQualityReport implements Parcelable {
 
         /** BqrVsA2dpChoppy to String. */
         @Override
-        @NonNull
         public String toString() {
             String str;
             str =
@@ -1898,6 +1950,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getGlitchCount() {
             return mGlitchCount;
         }
@@ -1910,6 +1963,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getIntervalEsco() {
             return mIntervalEsco;
         }
@@ -1922,6 +1976,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getWindowEsco() {
             return mWindowEsco;
         }
@@ -1934,6 +1989,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getAirFormat() {
             return mAirFormat;
         }
@@ -1946,6 +2002,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public static @Nullable String airFormatToString(int airFormat) {
             AirMode m = AirMode.fromOrdinal(airFormat);
             return m.toString();
@@ -1958,6 +2015,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getInstanceCount() {
             return mInstanceCount;
         }
@@ -1969,6 +2027,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getTxCxmDenials() {
             return mTxCxmDenials;
         }
@@ -1980,6 +2039,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getRxCxmDenials() {
             return mRxCxmDenials;
         }
@@ -1991,6 +2051,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getTxAbortCount() {
             return mTxAbortCount;
         }
@@ -2002,6 +2063,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getLateDispatch() {
             return mLateDispatch;
         }
@@ -2013,6 +2075,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getMicIntrMiss() {
             return mMicIntrMiss;
         }
@@ -2024,6 +2087,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getLpaIntrMiss() {
             return mLpaIntrMiss;
         }
@@ -2035,6 +2099,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getSprIntrMiss() {
             return mSprIntrMiss;
         }
@@ -2046,6 +2111,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getPlcFillCount() {
             return mPlcFillCount;
         }
@@ -2057,6 +2123,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getPlcDiscardCount() {
             return mPlcDiscardCount;
         }
@@ -2068,6 +2135,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getMissedInstanceCount() {
             return mMissedInstanceCount;
         }
@@ -2079,6 +2147,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getTxRetransmitSlotCount() {
             return mTxRetransmitSlotCount;
         }
@@ -2090,6 +2159,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getRxRetransmitSlotCount() {
             return mRxRetransmitSlotCount;
         }
@@ -2101,6 +2171,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getGoodRxFrameCount() {
             return mGoodRxFrameCount;
         }
@@ -2153,7 +2224,6 @@ public final class BluetoothQualityReport implements Parcelable {
 
         /** BqrVsScoChoppy to String. */
         @Override
-        @NonNull
         public String toString() {
             String str;
             str =
@@ -2288,8 +2358,8 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
-        @ConnectFailId
-        public int getFailReason() {
+        @RequiresNoPermission
+        public @ConnectFailId int getFailReason() {
             return mFailReason;
         }
 
@@ -2330,6 +2400,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public static @NonNull String connectFailIdToString(@ConnectFailId int id) {
             return switch (id) {
                 case CONNECT_FAIL_ID_NO_ERROR -> "No error";
@@ -2343,7 +2414,6 @@ public final class BluetoothQualityReport implements Parcelable {
 
         /** BqrConnectFail to String. */
         @Override
-        @NonNull
         public String toString() {
             String str;
             str =
@@ -2463,6 +2533,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getAverageCurrentConsumptionMicroamps() {
             return mAvgCurrentConsume;
         }
@@ -2475,8 +2546,8 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
-        @DurationMillisLong
-        public long getIdleStateTotalTimeMillis() {
+        @RequiresNoPermission
+        public @DurationMillisLong long getIdleStateTotalTimeMillis() {
             return mIdleTotalTime;
         }
 
@@ -2487,6 +2558,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getIdleStateEnterCount() {
             return mIdleStateEnterCount;
         }
@@ -2499,8 +2571,8 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
-        @DurationMillisLong
-        public long getActiveStateTotalTimeMillis() {
+        @RequiresNoPermission
+        public @DurationMillisLong long getActiveStateTotalTimeMillis() {
             return mActiveTotalTime;
         }
 
@@ -2511,6 +2583,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getActiveStateEnterCount() {
             return mActiveStateEnterCount;
         }
@@ -2523,8 +2596,8 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
-        @DurationMillisLong
-        public long getBredrTxTotalTimeMillis() {
+        @RequiresNoPermission
+        public @DurationMillisLong long getBredrTxTotalTimeMillis() {
             return mBredrTxTotalTime;
         }
 
@@ -2535,6 +2608,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getBredrTxStateEnterCount() {
             return mBredrTxStateEnterCount;
         }
@@ -2546,6 +2620,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getBredrAverageTxPowerLeveldBm() {
             return mBredrTxAvgPowerLevel;
         }
@@ -2558,8 +2633,8 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
-        @DurationMillisLong
-        public long getBredrRxTotalTimeMillis() {
+        @RequiresNoPermission
+        public @DurationMillisLong long getBredrRxTotalTimeMillis() {
             return mBredrRxTotalTime;
         }
 
@@ -2570,6 +2645,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getBredrRxStateEnterCount() {
             return mBredrRxStateEnterCount;
         }
@@ -2582,8 +2658,8 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
-        @DurationMillisLong
-        public long getLeTsTotalTimeMillis() {
+        @RequiresNoPermission
+        public @DurationMillisLong long getLeTsTotalTimeMillis() {
             return mLeTxTotalTime;
         }
 
@@ -2594,6 +2670,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getLeTxStateEnterCount() {
             return mLeTxStateEnterCount;
         }
@@ -2605,6 +2682,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getLeAverageTxPowerLeveldBm() {
             return mLeTxAvgPowerLevel;
         }
@@ -2617,8 +2695,8 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
-        @DurationMillisLong
-        public long getLeRxTotalTimeMillis() {
+        @RequiresNoPermission
+        public @DurationMillisLong long getLeRxTotalTimeMillis() {
             return mLeRxTotalTime;
         }
 
@@ -2629,6 +2707,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getLeRxStateEnterCount() {
             return mLeRxStateEnterCount;
         }
@@ -2641,8 +2720,8 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
-        @DurationMillisLong
-        public long getPowerDataTotalTimeMillis() {
+        @RequiresNoPermission
+        public @DurationMillisLong long getPowerDataTotalTimeMillis() {
             return mReportTotalTime;
         }
 
@@ -2654,8 +2733,8 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
-        @DurationMillisLong
-        public long getRxSingleChainActiveDurationMillis() {
+        @RequiresNoPermission
+        public @DurationMillisLong long getRxSingleChainActiveDurationMillis() {
             return mRxActiveOneChainTime;
         }
 
@@ -2667,8 +2746,8 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
-        @DurationMillisLong
-        public long getRxDualChainActiveDurationMillis() {
+        @RequiresNoPermission
+        public @DurationMillisLong long getRxDualChainActiveDurationMillis() {
             return mRxActiveTwoChainTime;
         }
 
@@ -2680,8 +2759,8 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
-        @DurationMillisLong
-        public long getTxInternalPaSingleChainActiveDurationMillis() {
+        @RequiresNoPermission
+        public @DurationMillisLong long getTxInternalPaSingleChainActiveDurationMillis() {
             return mTxiPaActiveOneChainTime;
         }
 
@@ -2693,8 +2772,8 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
-        @DurationMillisLong
-        public long getTxInternalPaDualChainActiveDurationMillis() {
+        @RequiresNoPermission
+        public @DurationMillisLong long getTxInternalPaDualChainActiveDurationMillis() {
             return mTxiPaActiveTwoChainTime;
         }
 
@@ -2706,8 +2785,8 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
-        @DurationMillisLong
-        public long getTxExternalPaSingleChainActiveDurationMillis() {
+        @RequiresNoPermission
+        public @DurationMillisLong long getTxExternalPaSingleChainActiveDurationMillis() {
             return mTxePaActiveOneChainTime;
         }
 
@@ -2719,8 +2798,8 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
-        @DurationMillisLong
-        public long getTxExternalPaDualChainActiveDurationMillis() {
+        @RequiresNoPermission
+        public @DurationMillisLong long getTxExternalPaDualChainActiveDurationMillis() {
             return mTxePaActiveTwoChainTime;
         }
 
@@ -2776,7 +2855,6 @@ public final class BluetoothQualityReport implements Parcelable {
 
         /** BqrVsLsto to String. */
         @Override
-        @NonNull
         public String toString() {
             return "  BqrEnergyMonitor: {\n"
                     + "    AvgCurrentConsume: "
@@ -2929,6 +3007,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getExtensionInfo() {
             return mExtensionInfo;
         }
@@ -2941,8 +3020,8 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
-        @DurationMillisLong
-        public long getPerformanceDurationMillis() {
+        @RequiresNoPermission
+        public @DurationMillisLong long getPerformanceDurationMillis() {
             return mReportTimePeriod;
         }
 
@@ -2953,6 +3032,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getTxPowerInternalPaBeamformingCount() {
             return mTxPoweriPaBf;
         }
@@ -2964,6 +3044,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getTxPowerExternalPaBeamformingCount() {
             return mTxPowerePaBf;
         }
@@ -2975,6 +3056,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getTxPowerInternalPaDiversityCount() {
             return mTxPoweriPaDiv;
         }
@@ -2986,6 +3068,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getTxPowerExternalPaDiversityCount() {
             return mTxPowerePaDiv;
         }
@@ -2998,6 +3081,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getPacketsWithRssiAboveMinus50dBm() {
             return mRssiChainOver50;
         }
@@ -3010,6 +3094,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getPacketsWithRssi50To55dBm() {
             return mRssiChain50To55;
         }
@@ -3022,6 +3107,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getPacketsWithRssi55To60dBm() {
             return mRssiChain55To60;
         }
@@ -3034,6 +3120,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getPacketsWithRssi60To65dBm() {
             return mRssiChain60To65;
         }
@@ -3046,6 +3133,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getPacketsWithRssi65To70dBm() {
             return mRssiChain65To70;
         }
@@ -3058,6 +3146,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getPacketsWithRssi70To75dBm() {
             return mRssiChain70To75;
         }
@@ -3070,6 +3159,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getPacketsWithRssi75To80dBm() {
             return mRssiChain75To80;
         }
@@ -3082,6 +3172,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getPacketsWithRssi80To85dBm() {
             return mRssiChain80To85;
         }
@@ -3094,6 +3185,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getPacketsWithRssi85To90dBm() {
             return mRssiChain85To90;
         }
@@ -3106,6 +3198,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getPacketsWithRssiBelowMinus90dBm() {
             return mRssiChainUnder90;
         }
@@ -3118,6 +3211,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getPacketsWithRssiDeltaBelow2dBm() {
             return mRssiDeltaUnder2;
         }
@@ -3130,6 +3224,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getPacketsWithRssiDelta2To5dBm() {
             return mRssiDelta2To5;
         }
@@ -3142,6 +3237,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getPacketsWithRssiDelta5To8dBm() {
             return mRssiDelta5To8;
         }
@@ -3154,6 +3250,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getPacketsWithRssiDelta8To11dBm() {
             return mRssiDelta8To11;
         }
@@ -3165,6 +3262,7 @@ public final class BluetoothQualityReport implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public long getPacketsWithRssiDeltaAbove11dBm() {
             return mRssiDeltaOver11;
         }
@@ -3220,7 +3318,6 @@ public final class BluetoothQualityReport implements Parcelable {
 
         /** BqrVsLsto to String. */
         @Override
-        @NonNull
         public String toString() {
             return "  BqrRfStats: {\n"
                     + "    mExtensionInfo: "

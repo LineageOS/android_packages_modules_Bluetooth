@@ -20,7 +20,6 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
-import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
@@ -56,6 +55,7 @@ import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.pbapclient.PbapClientService;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
+import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.junit.After;
 import org.junit.Before;

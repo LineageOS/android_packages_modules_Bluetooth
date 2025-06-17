@@ -220,6 +220,7 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB* p_clcb) {
     p_srcb->connected = false;
     p_srcb->state = BTA_GATTC_SERV_IDLE;
     p_srcb->mtu = 0;
+    p_srcb->in_use = false;
 
     // clear reallocating
     p_srcb->gatt_database.Clear();

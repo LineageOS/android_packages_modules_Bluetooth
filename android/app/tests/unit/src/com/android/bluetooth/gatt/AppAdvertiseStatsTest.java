@@ -18,8 +18,6 @@ package com.android.bluetooth.gatt;
 
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.eq;
@@ -38,6 +36,7 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.btservice.MetricsLogger;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;

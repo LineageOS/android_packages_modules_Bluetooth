@@ -95,6 +95,7 @@ public final class EncryptionStatus {
          * @return the {@link EncryptionStatus} associated with this parcel
          */
         @FlaggedApi(Flags.FLAG_LINK_STATUS_API)
+        @RequiresNoPermission
         public @NonNull EncryptionStatus toEncryptionStatus() {
             return new EncryptionStatus(this);
         }

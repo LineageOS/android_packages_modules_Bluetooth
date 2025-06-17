@@ -19,7 +19,6 @@ package com.android.bluetooth.le_scan;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
@@ -62,6 +61,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import com.android.bluetooth.TestUtils.FakeTimeProvider;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
+import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.protobuf.ByteString;
 import com.google.testing.junit.testparameterinjector.TestParameter;

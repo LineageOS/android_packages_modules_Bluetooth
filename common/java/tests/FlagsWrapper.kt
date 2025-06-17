@@ -18,22 +18,20 @@ package com.android.tests.bluetooth
 
 import android.platform.test.flag.junit.FlagsParameterization
 
-object Utils {
-    /** Improve parametric test name readability by removing the common flag prefix */
-    class FlagsWrapper(val flags: FlagsParameterization) {
-        private val PREFIX = "com.android.bluetooth.flags."
+/** Improve parametric test name readability by removing the common flag prefix */
+class FlagsWrapper(val flags: FlagsParameterization) {
+    private val PREFIX = "com.android.bluetooth.flags."
 
-        override fun toString(): String {
-            return flags.mOverrides.entries
-                .sortedBy { it.key }
-                .joinToString(",") { "${it.key.removePrefix(PREFIX)}=${it.value}" }
-        }
+    override fun toString(): String {
+        return flags.mOverrides.entries
+            .sortedBy { it.key }
+            .joinToString(",") { "${it.key.removePrefix(PREFIX)}=${it.value}" }
+    }
 
-        companion object {
-            @JvmStatic
-            fun progressionOf(vararg flags: String): List<FlagsWrapper> {
-                return FlagsParameterization.progressionOf(*flags).map { FlagsWrapper(it) }
-            }
+    companion object {
+        @JvmStatic
+        fun progressionOf(vararg flags: String): List<FlagsWrapper> {
+            return FlagsParameterization.progressionOf(*flags).map { FlagsWrapper(it) }
         }
     }
 }

@@ -556,7 +556,8 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
             open_source(self.dut_a2dp, dut_ref1))
 
         # Start streaming to RD1.
-        await asyncio.gather(self.dut_a2dp.Start(source=dut_ref1_source), channel.accept_start())
+        await asyncio.gather(self.dut_a2dp.Start(source=dut_ref1_source),
+                             channel.accept_start(timeout=5.0))
 
         generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
         await self.dut_a2dp.PlaybackAudio(generated_audio)
@@ -1168,10 +1169,10 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         2. Setup the acceptor expectations on signalling channel
         3. Start streaming
         4. Reconfigure codec from AAC to SBC
-        4. Check the codec reconfigured and stream resumed
+        5. Check the codec reconfigured and stream resumed
         """
 
-        # Connect and pair RD1.
+        logger.info("<< 1. Pair and Connect RD1 >>")
         dut_ref1, ref1_dut = await asyncio.gather(
             initiate_pairing(self.dut, self.ref1.address),
             accept_pairing(self.ref1, self.dut.address),
@@ -1203,25 +1204,28 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
             await channel.accept_set_configuration(acceptor_configuration_aac)
             await channel.accept_open()
 
+        logger.info("<< 2. Setup the acceptor expectations on signalling channel >>")
         # Connect AVDTP to RD1.
         _, dut_ref1_source = await asyncio.gather(accept_open_stream_with_aac(channel),
                                                   open_source(self.dut_a2dp, dut_ref1))
 
+        logger.info("<< 3. Start streaming >>")
         # Start streaming to RD1.
-        await asyncio.gather(self.dut_a2dp.Start(source=dut_ref1_source), channel.accept_start())
+        await asyncio.gather(self.dut_a2dp.Start(source=dut_ref1_source),
+                             channel.accept_start(timeout=5.0))
 
         # Verify that audio is received on the transport channel.
         generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
         self.dut_a2dp.PlaybackAudio(generated_audio)
-        logger.info(f"Receive AAC audio data.")
+        logger.debug("Receive AAC audio data.")
         await channel.receive_audio_data(test_log_path=self.log_path,
                                          filename="aac",
                                          duration_s=1.0)
-        logger.info(f"Finished receiving AAC audio data.")
+        logger.debug("Finished receiving AAC audio data.")
 
         # Get current codec status
         configurationResponse = await self.dut_a2dp.GetConfiguration(connection=dut_ref1)
-        logger.info(f"Current codec configuration: {configurationResponse.configuration}")
+        logger.debug(f"Current codec configuration: {configurationResponse.configuration}")
         assert configurationResponse.configuration.id.HasField('mpeg_aac')
 
         new_configuration = Configuration(id=CodecId(sbc=empty_pb2.Empty()),
@@ -1230,13 +1234,12 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                                                                      bit_depth=16))
 
         async def handle_reconfiguration(channel: SignalingChannel):
-            logger.info(f"Waiting for suspend")
+            logger.info("handle_reconfiguration")
             await channel.accept_suspend()
 
             # Discard the received audio data from internal queue
             channel.discard_audio_data()
 
-            logger.info(f"Waiting for close")
             await channel.accept_close()
 
             acceptor_configuration_sbc = [
@@ -1247,29 +1250,28 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
                     media_codec_type=0x00,  # SBC
                     media_codec_specific_information_elements=ANY)
             ]
-            logger.info(f"Waiting for set configuration")
             await channel.accept_set_configuration(acceptor_configuration_sbc)
-            logger.info(f"Waiting for open")
             await channel.accept_open()
-            logger.info(f"Waiting for start")
             await channel.accept_start(timeout=8.0)
 
+        logger.info("4. Reconfigure codec from AAC to SBC")
         # Set new codec
-        logger.info(f"Switching to codec: {new_configuration}")
+        logger.debug(f"Switching to codec: {new_configuration}")
         await asyncio.gather(
             self.dut_a2dp.SetConfiguration(connection=dut_ref1, configuration=new_configuration),
             handle_reconfiguration(channel))
 
+        logger.info("5. Check the codec reconfigured and stream resumed")
         # Get current codec status
         configurationResponse = await self.dut_a2dp.GetConfiguration(connection=dut_ref1)
-        logger.info(f"Current codec configuration: {configurationResponse.configuration}")
+        logger.debug(f"Current codec configuration: {configurationResponse.configuration}")
         assert configurationResponse.configuration.id.HasField('sbc')
 
-        logger.info(f"Receive SBC audio data.")
+        logger.debug("Receive SBC audio data.")
         await channel.receive_audio_data(test_log_path=self.log_path,
                                          filename="sbc",
                                          duration_s=1.0)
-        logger.info(f"Finished receiving SBC audio data.")
+        logger.debug("Finished receiving SBC audio data.")
 
         # # Stop streaming to RD1.
         await asyncio.gather(self.dut_a2dp.Suspend(source=dut_ref1_source),

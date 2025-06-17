@@ -16,8 +16,6 @@
 
 package com.android.bluetooth.pbap;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
@@ -40,6 +38,7 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.obex.Operation;
 import com.android.obex.ResponseCodes;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;
