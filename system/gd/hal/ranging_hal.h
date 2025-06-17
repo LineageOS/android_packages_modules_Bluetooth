@@ -43,6 +43,14 @@ enum class RangingSessionType : uint8_t {
   HARDWARE_OFFLOAD_DATA_PARSING
 };
 
+enum class Reason : uint8_t {
+  LOCAL_STACK_REQUEST,
+  HAL_INITIATED,
+  HARDWARE_INITIATED,
+  ERROR_INVALID_PARAMETER,
+  ERROR_UNKNOWN,
+};
+
 struct VendorSpecificCharacteristic {
   std::array<uint8_t, 16> characteristicUuid_;
   std::vector<uint8_t> value_;
@@ -304,6 +312,7 @@ public:
   virtual void OnOpenFailed(uint16_t connection_handle) = 0;
   virtual void OnHandleVendorSpecificReplyComplete(uint16_t connection_handle, bool success) = 0;
   virtual void OnResult(uint16_t connection_handle, const RangingResult& ranging_result) = 0;
+  virtual void OnClosed(uint16_t connection_handle, Reason reason) = 0;
 };
 
 class RangingHal {

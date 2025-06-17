@@ -1783,6 +1783,47 @@ INSTANTIATE_TEST_SUITE_P(GetSupportedSessionTypesTests,
                            return info.param.test_name;
                          });
 
+TEST_F(DistanceMeasurementManagerTest, ranging_hal_on_closed_before_started) {
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillRasConnectedEvent(params);
+
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+              OnDistanceMeasurementStopped(params.responder_addr,
+                                           DistanceMeasurementErrorCode::REASON_INTERNAL_ERROR,
+                                           DistanceMeasurementMethod::METHOD_CS))
+          .Times(0);
+
+  cs_requester_.mock_ranging_hal_->GetRangingHalCallback()->OnClosed(params.connection_handle,
+                                                                     hal::Reason::ERROR_UNKNOWN);
+  cs_requester_.sync_client_handler();
+}
+
+TEST_F(DistanceMeasurementManagerTest, ranging_hal_on_closed_after_started) {
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+  cs_requester_.sync_client_handler();
+  cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
+
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+              OnDistanceMeasurementStopped(params.responder_addr,
+                                           DistanceMeasurementErrorCode::REASON_INTERNAL_ERROR,
+                                           DistanceMeasurementMethod::METHOD_CS))
+          .Times(1);
+
+  cs_requester_.mock_ranging_hal_->GetRangingHalCallback()->OnClosed(params.connection_handle,
+                                                                     hal::Reason::ERROR_UNKNOWN);
+
+  CsProcedureEnableCompleteEvent complete_event;
+  cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+  cs_requester_.test_hci_layer_->IncomingEvent(LeCsProcedureEnableStatusBuilder::Create(
+          /*status=*/ErrorCode::SUCCESS, /*num_hci_command_packets=*/0xff));
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetProcedureEnableCompleteEvent(
+          params.connection_handle, Enable::DISABLED, complete_event));
+
+  cs_requester_.sync_client_handler();
+  cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
+}
+
 }  // namespace
 }  // namespace hci
 }  // namespace bluetooth

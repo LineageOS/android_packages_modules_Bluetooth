@@ -124,6 +124,7 @@ public:
   ::ndk::ScopedAStatus onClose(::aidl::android::hardware::bluetooth::ranging::Reason in_reason) {
     log::info("reason {}", (uint16_t)in_reason);
     bluetooth_channel_sounding_session_ = nullptr;
+    ranging_hal_callback_->OnClosed(connection_handle_, static_cast<hal::Reason>(in_reason));
     return ::ndk::ScopedAStatus::ok();
   }
   ::ndk::ScopedAStatus onCloseFailed(
