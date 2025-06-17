@@ -379,4 +379,4 @@ uint16_t AVRC_RemoveRecord(uint32_t sdp_handle) {
  * Returns          void
  *
  ******************************************************************************/
-void AVRC_Init(void) { memset(&avrc_cb, 0, sizeof(tAVRC_CB)); }
+void AVRC_Init(void) { avrc_cb = tAVRC_CB{}; }
