@@ -167,16 +167,22 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
 
     private Thread mThreadUpdateSecVersionCounter;
 
+    // TODO(b/422543753) Delete on flag cleanup
     public BluetoothPbapService(AdapterService adapterService) {
         this(requireNonNull(adapterService), null);
     }
 
-    @VisibleForTesting
-    BluetoothPbapService(AdapterService adapterService, NotificationManager notificationManager) {
+    public BluetoothPbapService(
+            AdapterService adapterService, NotificationManager notificationManager) {
         super(BluetoothProfile.PBAP, requireNonNull(adapterService));
-        mNotificationManager =
-                requireNonNullElseGet(
-                        notificationManager, () -> obtainSystemService(NotificationManager.class));
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            mNotificationManager = requireNonNull(notificationManager);
+        } else {
+            mNotificationManager =
+                    requireNonNullElseGet(
+                            notificationManager,
+                            () -> obtainSystemService(NotificationManager.class));
+        }
 
         IntentFilter userFilter = new IntentFilter();
         userFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
@@ -749,9 +755,10 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
 
         PbapStateMachine sm =
                 new PbapStateMachine(
-                        this,
-                        mHandlerThread.getLooper(),
                         mAdapterService,
+                        this,
+                        mNotificationManager,
+                        mHandlerThread.getLooper(),
                         remoteDevice,
                         socket,
                         mSessionStatusHandler,

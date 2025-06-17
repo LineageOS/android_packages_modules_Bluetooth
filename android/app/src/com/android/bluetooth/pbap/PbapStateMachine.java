@@ -87,8 +87,9 @@ public class PbapStateMachine extends StateMachine {
     /** Used to limit PBAP OBEX maximum packet size in order to reduce transaction time. */
     private static final int PBAP_OBEX_MAXIMUM_PACKET_SIZE = 8192;
 
-    private final BluetoothPbapService mService;
     private final AdapterService mAdapterService;
+    private final BluetoothPbapService mService;
+    private final NotificationManager mNotificationManager;
 
     private final WaitingForAuth mWaitingForAuth = new WaitingForAuth();
     private final Finished mFinished = new Finished();
@@ -103,21 +104,22 @@ public class PbapStateMachine extends StateMachine {
     private final int mNotificationId;
 
     PbapStateMachine(
-            @NonNull BluetoothPbapService service,
-            Looper looper,
             AdapterService adapterService,
+            BluetoothPbapService service,
+            NotificationManager notificationManager,
+            Looper looper,
             @NonNull BluetoothDevice device,
             @NonNull BluetoothSocket connSocket,
             Handler pbapHandler,
             int notificationId) {
         super(TAG, looper);
-
         // Let the logging framework enforce the log level. TAG is set above in the parent
         // constructor.
         setDbg(true);
 
-        mService = service;
         mAdapterService = requireNonNull(adapterService);
+        mService = requireNonNull(service);
+        mNotificationManager = notificationManager;
         mRemoteDevice = device;
         mServiceHandler = pbapHandler;
         mConnSocket = connSocket;
@@ -396,13 +398,12 @@ public class PbapStateMachine extends StateMachine {
         }
 
         private void createPbapNotification() {
-            NotificationManager nm = mService.getSystemService(NotificationManager.class);
             NotificationChannel notificationChannel =
                     new NotificationChannel(
                             PBAP_OBEX_NOTIFICATION_CHANNEL,
                             mService.getString(R.string.pbap_notification_group),
                             NotificationManager.IMPORTANCE_HIGH);
-            nm.createNotificationChannel(notificationChannel);
+            mNotificationManager.createNotificationChannel(notificationChannel);
 
             // Create an intent triggered by clicking on the status icon.
             Intent clickIntent = new Intent();
@@ -445,12 +446,11 @@ public class PbapStateMachine extends StateMachine {
                                             PendingIntent.FLAG_IMMUTABLE))
                             .setLocalOnly(true)
                             .build();
-            nm.notify(mNotificationId, notification);
+            mNotificationManager.notify(mNotificationId, notification);
         }
 
         private void removePbapNotification(int id) {
-            NotificationManager nm = mService.getSystemService(NotificationManager.class);
-            nm.cancel(id);
+            mNotificationManager.cancel(id);
         }
 
         private synchronized void notifyAuthCancelled() {

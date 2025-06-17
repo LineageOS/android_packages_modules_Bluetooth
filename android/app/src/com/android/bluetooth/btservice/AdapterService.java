@@ -51,6 +51,7 @@ import android.annotation.Nullable;
 import android.annotation.RequiresPermission;
 import android.annotation.SuppressLint;
 import android.app.AppOpsManager;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.app.admin.DevicePolicyManager;
@@ -1297,7 +1298,8 @@ public class AdapterService extends Service {
             case BluetoothProfile.MCP_SERVER -> new McpService(this);
             case BluetoothProfile.OPP -> new BluetoothOppService(this);
             case BluetoothProfile.PAN -> new PanService(this);
-            case BluetoothProfile.PBAP -> new BluetoothPbapService(this);
+            case BluetoothProfile.PBAP ->
+                    new BluetoothPbapService(this, getSystemService(NotificationManager.class));
             case BluetoothProfile.PBAP_CLIENT -> new PbapClientService(this);
             case BluetoothProfile.SAP -> new SapService(this);
             case BluetoothProfile.VOLUME_CONTROL -> new VolumeControlService(this);
