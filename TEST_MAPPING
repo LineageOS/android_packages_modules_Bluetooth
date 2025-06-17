@@ -16,30 +16,6 @@
       "name": "ServiceBluetoothTests"
     },
     // Device only tests
-    {
-      "name": "net_test_bluetooth"
-    },
-    {
-      "name": "net_test_btif_hf_client_service"
-    },
-    {
-      "name": "net_test_btif_profile_queue"
-    },
-    {
-      "name": "net_test_device"
-    },
-    {
-      "name": "net_test_device_iot_config"
-    },
-    {
-      "name": "net_test_hci"
-    },
-    {
-      "name": "net_test_stack"
-    },
-    {
-      "name": "net_test_stack_ad_parser"
-    },
     // go/a-unit-tests tests
     // These tests run on the host in the CI automatically.
     // Run the one that are available on the device on the
@@ -232,30 +208,6 @@
       "name": "ServiceBluetoothTests"
     },
     // Device only tests
-    {
-      "name": "net_test_bluetooth"
-    },
-    {
-      "name": "net_test_btif_hf_client_service"
-    },
-    {
-      "name": "net_test_btif_profile_queue"
-    },
-    {
-      "name": "net_test_device"
-    },
-    {
-      "name": "net_test_device_iot_config"
-    },
-    {
-      "name": "net_test_hci"
-    },
-    {
-      "name": "net_test_stack"
-    },
-    {
-      "name": "net_test_stack_ad_parser"
-    },
     // go/a-unit-tests tests
     // These tests run on the host in the CI automatically.
     // Run the one that are available on the device on the
@@ -445,9 +397,6 @@
     },
     // device only tests
     {
-      "name": "net_test_bluetooth"
-    },
-    {
       "name": "net_test_bta"
     },
     {
@@ -457,28 +406,10 @@
       "name": "net_test_btif"
     },
     {
-      "name": "net_test_btif_hf_client_service"
-    },
-    {
-      "name": "net_test_btif_profile_queue"
-    },
-    {
       "name": "net_test_btif_avrcp_audio_track"
     },
     {
-      "name": "net_test_device"
-    },
-    {
-      "name": "net_test_device_iot_config"
-    },
-    {
       "name": "net_test_conn_multiplexing"
-    },
-    {
-      "name": "net_test_stack"
-    },
-    {
-      "name": "net_test_stack_ad_parser"
     },
     // go/a-unit-tests tests
     // These tests run on the host in the CI automatically.
