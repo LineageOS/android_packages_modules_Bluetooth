@@ -18,6 +18,7 @@
 package android.bluetooth;
 
 import android.annotation.NonNull;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -68,6 +69,7 @@ public final class BluetoothHapPresetInfo implements Parcelable {
      *
      * @return Preset index
      */
+    @RequiresNoPermission
     public int getIndex() {
         return mPresetIndex;
     }
@@ -77,6 +79,7 @@ public final class BluetoothHapPresetInfo implements Parcelable {
      *
      * @return Preset name
      */
+    @RequiresNoPermission
     public @NonNull String getName() {
         return mPresetName;
     }
@@ -86,6 +89,7 @@ public final class BluetoothHapPresetInfo implements Parcelable {
      *
      * @return If preset is writable
      */
+    @RequiresNoPermission
     public boolean isWritable() {
         return mIsWritable;
     }
@@ -95,6 +99,7 @@ public final class BluetoothHapPresetInfo implements Parcelable {
      *
      * @return If preset is available
      */
+    @RequiresNoPermission
     public boolean isAvailable() {
         return mIsAvailable;
     }
@@ -167,6 +172,7 @@ public final class BluetoothHapPresetInfo implements Parcelable {
          * @param isWritable whether preset is writable
          * @return the same Builder instance
          */
+        @RequiresNoPermission
         public @NonNull Builder setWritable(boolean isWritable) {
             mIsWritable = isWritable;
             return this;
@@ -178,6 +184,7 @@ public final class BluetoothHapPresetInfo implements Parcelable {
          * @param isAvailable whether preset is currently available to select
          * @return the same Builder instance
          */
+        @RequiresNoPermission
         public @NonNull Builder setAvailable(boolean isAvailable) {
             mIsAvailable = isAvailable;
             return this;
@@ -188,6 +195,7 @@ public final class BluetoothHapPresetInfo implements Parcelable {
          *
          * @return new BluetoothHapPresetInfo built
          */
+        @RequiresNoPermission
         public @NonNull BluetoothHapPresetInfo build() {
             return new BluetoothHapPresetInfo(mPresetIndex, mPresetName, mIsWritable, mIsAvailable);
         }

@@ -17,6 +17,7 @@
 package android.bluetooth;
 
 import android.annotation.NonNull;
+import android.annotation.RequiresNoPermission;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.os.Parcel;
 import android.os.ParcelUuid;
@@ -170,6 +171,7 @@ public class BluetoothGattDescriptor implements Parcelable {
      *
      * @return The characteristic.
      */
+    @RequiresNoPermission
     public BluetoothGattCharacteristic getCharacteristic() {
         return mCharacteristic;
     }
@@ -189,6 +191,7 @@ public class BluetoothGattDescriptor implements Parcelable {
      *
      * @return UUID of this descriptor
      */
+    @RequiresNoPermission
     public UUID getUuid() {
         return mUuid;
     }
@@ -202,6 +205,7 @@ public class BluetoothGattDescriptor implements Parcelable {
      * @return Instance ID of this descriptor
      * @hide
      */
+    @RequiresNoPermission
     public int getInstanceId() {
         return mInstance;
     }
@@ -211,6 +215,7 @@ public class BluetoothGattDescriptor implements Parcelable {
      *
      * @hide
      */
+    @RequiresNoPermission
     public void setInstanceId(int instanceId) {
         mInstance = instanceId;
     }
@@ -220,6 +225,7 @@ public class BluetoothGattDescriptor implements Parcelable {
      *
      * @return Permissions of this descriptor
      */
+    @RequiresNoPermission
     public int getPermissions() {
         return mPermissions;
     }
@@ -235,6 +241,7 @@ public class BluetoothGattDescriptor implements Parcelable {
      * @deprecated Use {@link BluetoothGatt#readDescriptor(BluetoothGattDescriptor)} instead
      */
     @Deprecated
+    @RequiresNoPermission
     public byte[] getValue() {
         return mValue;
     }
@@ -253,6 +260,7 @@ public class BluetoothGattDescriptor implements Parcelable {
      *     BluetoothGatt#writeDescriptor(BluetoothGattDescriptor, byte[])}
      */
     @Deprecated
+    @RequiresNoPermission
     public boolean setValue(byte[] value) {
         mValue = value;
         return true;

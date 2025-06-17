@@ -15,6 +15,7 @@
 
 package android.bluetooth;
 
+import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -68,10 +69,12 @@ public class SdpRecord implements Parcelable {
                 }
             };
 
+    @RequiresNoPermission
     public byte[] getRawData() {
         return mRawData;
     }
 
+    @RequiresNoPermission
     public int getRawSize() {
         return mRawSize;
     }

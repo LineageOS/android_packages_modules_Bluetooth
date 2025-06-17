@@ -18,6 +18,7 @@ package android.bluetooth;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -87,6 +88,7 @@ public final class BufferConstraints implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @Nullable BufferConstraint forCodec(@BluetoothCodecConfig.SourceCodecType int codec) {
         return mBufferConstraints.get(codec);
     }

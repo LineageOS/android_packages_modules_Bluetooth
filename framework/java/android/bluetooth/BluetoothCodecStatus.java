@@ -18,6 +18,7 @@ package android.bluetooth;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -103,6 +104,7 @@ public final class BluetoothCodecStatus implements Parcelable {
      * @param codecConfig the codec config to compare against
      * @return {@code true} if the codec config matches, {@code false} otherwise
      */
+    @RequiresNoPermission
     public boolean isCodecConfigSelectable(@Nullable BluetoothCodecConfig codecConfig) {
         if (codecConfig == null
                 || !codecConfig.hasSingleSampleRate()
@@ -188,11 +190,13 @@ public final class BluetoothCodecStatus implements Parcelable {
     }
 
     /** Returns the current codec configuration. */
+    @RequiresNoPermission
     public @Nullable BluetoothCodecConfig getCodecConfig() {
         return mCodecConfig;
     }
 
     /** Returns the codecs local capabilities. */
+    @RequiresNoPermission
     public @NonNull List<BluetoothCodecConfig> getCodecsLocalCapabilities() {
         return (mCodecsLocalCapabilities == null)
                 ? Collections.emptyList()
@@ -200,6 +204,7 @@ public final class BluetoothCodecStatus implements Parcelable {
     }
 
     /** Returns the codecs selectable capabilities. */
+    @RequiresNoPermission
     public @NonNull List<BluetoothCodecConfig> getCodecsSelectableCapabilities() {
         return (mCodecsSelectableCapabilities == null)
                 ? Collections.emptyList()
@@ -218,6 +223,7 @@ public final class BluetoothCodecStatus implements Parcelable {
          * @param codecConfig of this codec status
          * @return the same Builder instance
          */
+        @RequiresNoPermission
         public @NonNull Builder setCodecConfig(@NonNull BluetoothCodecConfig codecConfig) {
             mCodecConfig = codecConfig;
             return this;
@@ -229,6 +235,7 @@ public final class BluetoothCodecStatus implements Parcelable {
          * @param codecsLocalCapabilities of this codec status
          * @return the same Builder instance
          */
+        @RequiresNoPermission
         public @NonNull Builder setCodecsLocalCapabilities(
                 @NonNull List<BluetoothCodecConfig> codecsLocalCapabilities) {
             mCodecsLocalCapabilities = codecsLocalCapabilities;
@@ -241,6 +248,7 @@ public final class BluetoothCodecStatus implements Parcelable {
          * @param codecsSelectableCapabilities of this codec status
          * @return the same Builder instance
          */
+        @RequiresNoPermission
         public @NonNull Builder setCodecsSelectableCapabilities(
                 @NonNull List<BluetoothCodecConfig> codecsSelectableCapabilities) {
             mCodecsSelectableCapabilities = codecsSelectableCapabilities;
@@ -252,6 +260,7 @@ public final class BluetoothCodecStatus implements Parcelable {
          *
          * @return new BluetoothCodecStatus built
          */
+        @RequiresNoPermission
         public @NonNull BluetoothCodecStatus build() {
             return new BluetoothCodecStatus(
                     mCodecConfig, mCodecsLocalCapabilities, mCodecsSelectableCapabilities);

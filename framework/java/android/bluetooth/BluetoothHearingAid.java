@@ -102,6 +102,7 @@ public final class BluetoothHearingAid implements BluetoothProfile {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @DeviceMode int getDeviceMode() {
             if (VDBG) Log.v(TAG, "getDeviceMode()");
             return (mCapability >> 1) & 1;
@@ -118,6 +119,7 @@ public final class BluetoothHearingAid implements BluetoothProfile {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @DeviceSide int getDeviceSide() {
             if (VDBG) Log.v(TAG, "getDeviceSide()");
             return mCapability & 1;
@@ -131,6 +133,7 @@ public final class BluetoothHearingAid implements BluetoothProfile {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public boolean isCsipSupported() {
             if (VDBG) Log.v(TAG, "isCsipSupported()");
             return ((mCapability >> 2) & 1) != 0;
@@ -142,6 +145,7 @@ public final class BluetoothHearingAid implements BluetoothProfile {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public int getTruncatedHiSyncId() {
             if (VDBG) Log.v(TAG, "getTruncatedHiSyncId: " + mTruncatedHiSyncId);
             return mTruncatedHiSyncId;
@@ -157,6 +161,7 @@ public final class BluetoothHearingAid implements BluetoothProfile {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public boolean isInPairWith(@Nullable AdvertisementServiceData data) {
             if (VDBG) Log.v(TAG, "isInPairWith()");
             if (data == null) {

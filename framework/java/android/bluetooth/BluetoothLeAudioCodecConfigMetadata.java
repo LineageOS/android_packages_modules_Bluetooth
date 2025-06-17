@@ -38,6 +38,7 @@ import static android.bluetooth.BluetoothLeAudioCodecConfig.SampleRate;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.bluetooth.BluetoothLeAudioCodecConfig.FrameDuration;
 import android.bluetooth.BluetoothLeAudioCodecConfig.SampleRate;
@@ -148,6 +149,7 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public long getAudioLocation() {
         return mAudioLocation;
     }
@@ -163,6 +165,7 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @SampleRate int getSampleRate() {
         return mSampleRate;
     }
@@ -178,6 +181,7 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @FrameDuration int getFrameDuration() {
         return mFrameDuration;
     }
@@ -190,6 +194,7 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public int getOctetsPerFrame() {
         return mOctetsPerFrame;
     }
@@ -205,6 +210,7 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @NonNull byte[] getRawMetadata() {
         return mRawMetadata;
     }
@@ -277,6 +283,7 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
      */
     @SystemApi
     @NonNull
+    @RequiresNoPermission
     public static BluetoothLeAudioCodecConfigMetadata fromRawBytes(@NonNull byte[] rawBytes) {
         if (rawBytes == null) {
             throw new IllegalArgumentException("Raw bytes cannot be null");
@@ -366,8 +373,8 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setAudioLocation(long audioLocation) {
+        @RequiresNoPermission
+        public @NonNull Builder setAudioLocation(long audioLocation) {
             mAudioLocation = audioLocation;
             return this;
         }
@@ -384,8 +391,8 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setSampleRate(@SampleRate int sampleRate) {
+        @RequiresNoPermission
+        public @NonNull Builder setSampleRate(@SampleRate int sampleRate) {
             if (sampleRate != SAMPLE_RATE_NONE
                     && sampleRate != SAMPLE_RATE_8000
                     && sampleRate != SAMPLE_RATE_11025
@@ -418,8 +425,8 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setFrameDuration(@FrameDuration int frameDuration) {
+        @RequiresNoPermission
+        public @NonNull Builder setFrameDuration(@FrameDuration int frameDuration) {
             if (frameDuration != FRAME_DURATION_NONE
                     && frameDuration != FRAME_DURATION_7500
                     && frameDuration != FRAME_DURATION_10000) {
@@ -439,8 +446,8 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setOctetsPerFrame(int octetsPerFrame) {
+        @RequiresNoPermission
+        public @NonNull Builder setOctetsPerFrame(int octetsPerFrame) {
             if (octetsPerFrame < 0) {
                 throw new IllegalArgumentException("Invalid octetsPerFrame " + octetsPerFrame);
             }
@@ -456,6 +463,7 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull BluetoothLeAudioCodecConfigMetadata build() {
             List<TypeValueEntry> entries = new ArrayList<>();
             if (mRawMetadata != null) {

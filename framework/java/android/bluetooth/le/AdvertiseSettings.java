@@ -17,6 +17,7 @@
 package android.bluetooth.le;
 
 import android.annotation.NonNull;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.bluetooth.le.AdvertisingSetParameters.AddressTypeStatus;
 import android.os.Parcel;
@@ -102,26 +103,31 @@ public final class AdvertiseSettings implements Parcelable {
     }
 
     /** Returns the advertise mode. */
+    @RequiresNoPermission
     public int getMode() {
         return mAdvertiseMode;
     }
 
     /** Returns the TX power level for advertising. */
+    @RequiresNoPermission
     public int getTxPowerLevel() {
         return mAdvertiseTxPowerLevel;
     }
 
     /** Returns whether the advertisement will indicate connectable. */
+    @RequiresNoPermission
     public boolean isConnectable() {
         return mAdvertiseConnectable;
     }
 
     /** Returns whether the advertisement will be discoverable. */
+    @RequiresNoPermission
     public boolean isDiscoverable() {
         return mAdvertiseDiscoverable;
     }
 
     /** Returns the advertising time limit in milliseconds. */
+    @RequiresNoPermission
     public int getTimeout() {
         return mAdvertiseTimeoutMillis;
     }
@@ -131,6 +137,7 @@ public final class AdvertiseSettings implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @AddressTypeStatus int getOwnAddressType() {
         return mOwnAddressType;
     }
@@ -198,6 +205,7 @@ public final class AdvertiseSettings implements Parcelable {
          *     AdvertiseSettings#ADVERTISE_MODE_LOW_LATENCY}.
          * @throws IllegalArgumentException If the advertiseMode is invalid.
          */
+        @RequiresNoPermission
         public Builder setAdvertiseMode(int advertiseMode) {
             if (advertiseMode < ADVERTISE_MODE_LOW_POWER
                     || advertiseMode > ADVERTISE_MODE_LOW_LATENCY) {
@@ -217,6 +225,7 @@ public final class AdvertiseSettings implements Parcelable {
          *     AdvertiseSettings#ADVERTISE_TX_POWER_HIGH}.
          * @throws IllegalArgumentException If the {@code txPowerLevel} is invalid.
          */
+        @RequiresNoPermission
         public Builder setTxPowerLevel(int txPowerLevel) {
             if (txPowerLevel < ADVERTISE_TX_POWER_ULTRA_LOW
                     || txPowerLevel > ADVERTISE_TX_POWER_HIGH) {
@@ -233,6 +242,7 @@ public final class AdvertiseSettings implements Parcelable {
          * @param connectable Controls whether the advertisement type will be connectable (true) or
          *     non-connectable (false).
          */
+        @RequiresNoPermission
         public Builder setConnectable(boolean connectable) {
             mConnectable = connectable;
             return this;
@@ -244,6 +254,7 @@ public final class AdvertiseSettings implements Parcelable {
          * @param discoverable Controls whether the advertisement type will be discoverable ({@code
          *     true}) or non-discoverable ({@code false}).
          */
+        @RequiresNoPermission
         public @NonNull Builder setDiscoverable(boolean discoverable) {
             mDiscoverable = discoverable;
             return this;
@@ -256,6 +267,7 @@ public final class AdvertiseSettings implements Parcelable {
          *     of 0 will disable the time limit.
          * @throws IllegalArgumentException If the provided timeout is over 180000 ms.
          */
+        @RequiresNoPermission
         public Builder setTimeout(int timeoutMillis) {
             if (timeoutMillis < 0 || timeoutMillis > LIMITED_ADVERTISING_MAX_MILLIS) {
                 throw new IllegalArgumentException(
@@ -277,6 +289,7 @@ public final class AdvertiseSettings implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder setOwnAddressType(@AddressTypeStatus int ownAddressType) {
             if (ownAddressType < AdvertisingSetParameters.ADDRESS_TYPE_DEFAULT
                     || ownAddressType
@@ -288,6 +301,7 @@ public final class AdvertiseSettings implements Parcelable {
         }
 
         /** Build the {@link AdvertiseSettings} object. */
+        @RequiresNoPermission
         public AdvertiseSettings build() {
             return new AdvertiseSettings(
                     mMode,

@@ -18,6 +18,7 @@ package android.bluetooth;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -97,6 +98,7 @@ public final class BluetoothAudioConfig implements Parcelable {
      *
      * @return sample rate
      */
+    @RequiresNoPermission
     public int getSampleRate() {
         return mSampleRate;
     }
@@ -107,6 +109,7 @@ public final class BluetoothAudioConfig implements Parcelable {
      *
      * @return channel configuration
      */
+    @RequiresNoPermission
     public int getChannelConfig() {
         return mChannelConfig;
     }
@@ -117,6 +120,7 @@ public final class BluetoothAudioConfig implements Parcelable {
      *
      * @return audio format
      */
+    @RequiresNoPermission
     public int getAudioFormat() {
         return mAudioFormat;
     }

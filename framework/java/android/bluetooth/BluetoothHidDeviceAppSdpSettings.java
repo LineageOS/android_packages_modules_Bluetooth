@@ -17,6 +17,7 @@
 package android.bluetooth;
 
 import android.annotation.NonNull;
+import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.EventLog;
@@ -52,6 +53,7 @@ public final class BluetoothHidDeviceAppSdpSettings implements Parcelable {
      *     href="www.usb.org/developers/hidpage/HID1_11.pdf">
      *     www.usb.org/developers/hidpage/HID1_11.pdf Chapter 6</a> Maximum length is 2048 bytes.
      */
+    @RequiresNoPermission
     public BluetoothHidDeviceAppSdpSettings(
             String name, String description, String provider, byte subclass, byte[] descriptors) {
         mName = name;
@@ -67,22 +69,27 @@ public final class BluetoothHidDeviceAppSdpSettings implements Parcelable {
         mDescriptors = descriptors.clone();
     }
 
+    @RequiresNoPermission
     public String getName() {
         return mName;
     }
 
+    @RequiresNoPermission
     public String getDescription() {
         return mDescription;
     }
 
+    @RequiresNoPermission
     public String getProvider() {
         return mProvider;
     }
 
+    @RequiresNoPermission
     public byte getSubclass() {
         return mSubclass;
     }
 
+    @RequiresNoPermission
     public byte[] getDescriptors() {
         return mDescriptors;
     }
