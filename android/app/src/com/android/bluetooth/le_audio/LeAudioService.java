@@ -118,6 +118,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -2021,22 +2022,12 @@ public class LeAudioService extends ConnectableProfile {
         mExposedActiveDevice = device;
     }
 
-    void notifyVolumeControlServiceAboutActiveGroup(BluetoothDevice device) {
+    private void notifyVolumeControlServiceAboutActiveGroup(BluetoothDevice device) {
         final var vcs = getVolumeControlService();
         if (vcs.isEmpty()) {
             return;
         }
 
-        if (Flags.vcpOnMainLooper()) {
-            if (mExposedActiveDevice != null) {
-                vcs.get().syncPost(v -> v.setGroupActive(getGroupId(mExposedActiveDevice), false));
-            }
-
-            if (device != null) {
-                vcs.get().syncPost(v -> v.setGroupActive(getGroupId(device), true));
-            }
-            return;
-        }
         if (mExposedActiveDevice != null) {
             vcs.get().setGroupActive(getGroupId(mExposedActiveDevice), false);
         }
@@ -2496,7 +2487,22 @@ public class LeAudioService extends ConnectableProfile {
              * When adding new device, wait with notification until AudioManager is ready
              * with adding the device.
              */
-            notifyActiveDeviceChanged(null);
+            if (!Flags.vcpOnMainLooper()) {
+                notifyActiveDeviceChanged(null);
+            } else {
+                Utils.enforceMainLooperIsNotUsed();
+                var future = new CompletableFuture<Void>();
+                mHandler.post(
+                        () -> {
+                            notifyActiveDeviceChanged(null);
+                            future.complete(null);
+                        });
+                try {
+                    future.get();
+                } catch (Exception e) {
+                    Log.wtf(TAG, "Can't execute notifyActiveDeviceChanged on main thread", e);
+                }
+            }
         }
 
         return mActiveAudioOutDevice != null || mActiveAudioInDevice != null;
