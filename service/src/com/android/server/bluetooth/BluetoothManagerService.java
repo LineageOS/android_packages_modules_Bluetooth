@@ -683,34 +683,36 @@ class BluetoothManagerService {
             filterUser.addAction(Intent.ACTION_USER_SWITCHED);
         }
         filterUser.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
-        mContext.registerReceiverForAllUsers(
-                new BroadcastReceiver() {
-                    @Override
-                    public void onReceive(Context context, Intent intent) {
-                        switch (intent.getAction()) {
-                            case Intent.ACTION_USER_SWITCHED:
-                                if (Flags.limitUserSwitchPropagation()) {
-                                    throw new IllegalStateException(
-                                            "limitUserSwitchPropagation is activated");
-                                }
-                                int foregroundUserId =
-                                        intent.getIntExtra(Intent.EXTRA_USER_HANDLE, 0);
-                                propagateForegroundUserId(foregroundUserId);
-                                break;
-                            case UserManager.ACTION_USER_RESTRICTIONS_CHANGED:
-                                onUserRestrictionsChanged(getSendingUser());
-                                break;
-                            default:
-                                Log.e(
-                                        TAG,
-                                        "Unknown broadcast received in BluetoothManagerService"
-                                                + " receiver registered across all users");
+        if (!Flags.userRestrictionRefactor() && !Flags.limitUserSwitchPropagation()) {
+            mContext.registerReceiverForAllUsers(
+                    new BroadcastReceiver() {
+                        @Override
+                        public void onReceive(Context context, Intent intent) {
+                            switch (intent.getAction()) {
+                                case Intent.ACTION_USER_SWITCHED:
+                                    if (Flags.limitUserSwitchPropagation()) {
+                                        throw new IllegalStateException(
+                                                "limitUserSwitchPropagation is activated");
+                                    }
+                                    int foregroundUserId =
+                                            intent.getIntExtra(Intent.EXTRA_USER_HANDLE, 0);
+                                    propagateForegroundUserId(foregroundUserId);
+                                    break;
+                                case UserManager.ACTION_USER_RESTRICTIONS_CHANGED:
+                                    onUserRestrictionsChanged(getSendingUser());
+                                    break;
+                                default:
+                                    Log.e(
+                                            TAG,
+                                            "Unknown broadcast received in BluetoothManagerService"
+                                                    + " receiver registered across all users");
+                            }
                         }
-                    }
-                },
-                filterUser,
-                null,
-                mHandler);
+                    },
+                    filterUser,
+                    null,
+                    mHandler);
+        }
 
         mName =
                 BluetoothServerProxy.getInstance()
@@ -738,7 +740,8 @@ class BluetoothManagerService {
         Log.d(TAG, "AutoOnFeature property=" + mDeviceConfigAllowAutoOn);
     }
 
-    private Unit onBluetoothDisallowed() {
+    @VisibleForTesting
+    Unit onBluetoothDisallowed() {
         if (mState.oneOf(State.OFF)) {
             return Unit.INSTANCE;
         }
