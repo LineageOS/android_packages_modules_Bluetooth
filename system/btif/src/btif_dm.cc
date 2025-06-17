@@ -67,7 +67,7 @@
 #include "common/lru_cache.h"
 #include "common/strings.h"
 #include "device/include/interop.h"
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/acl_manager_le.h"
 #include "hci/controller.h"
 #include "hci/le_rand_callback.h"
 #include "internal_include/bt_target.h"
@@ -2273,7 +2273,7 @@ static void btif_add_local_irk_to_resolving_list() {
       return;
     }
     log::info("RPA offload is supported, add local IRK to resolving list");
-    bluetooth::shim::GetAclManager()->AddDeviceToResolvingList(
+    bluetooth::shim::GetAclManagerLe()->AddDeviceToResolvingList(
             {bluetooth::hci::Address::kEmpty, bluetooth::hci::AddressType::PUBLIC_DEVICE_ADDRESS},
             all_zero_peer_irk, ble_local_key_cb.id_keys.irk);
   }

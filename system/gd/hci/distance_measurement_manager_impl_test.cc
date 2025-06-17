@@ -26,7 +26,7 @@
 #include "common/strings.h"
 #include "hal/ranging_hal.h"
 #include "hal/ranging_hal_mock.h"
-#include "hci/acl_manager_mock.h"
+#include "hci/acl_manager/acl_manager_le_mock.h"
 #include "hci/address.h"
 #include "hci/controller_mock.h"
 #include "hci/distance_measurement_manager_mock.h"

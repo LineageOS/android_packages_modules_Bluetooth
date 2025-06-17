@@ -17,7 +17,7 @@
 
 #include <gmock/gmock.h>
 
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/acl_manager_le.h"
 
 // Unit test interfaces
 namespace bluetooth {
@@ -41,7 +41,7 @@ public:
   mutable common::BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder> acl_queue_{10};
 };
 
-class MockAclManager : public AclManager {
+class MockAclManager : public AclManagerLe {
 public:
   MOCK_METHOD(void, Dump, (int /*fd*/), (const override));
   MOCK_METHOD(void, RegisterLeCallbacks,

@@ -30,7 +30,7 @@
 #include <memory>
 #include <set>
 
-#include "gd/hci/acl_manager.h"
+#include "gd/hci/acl_manager/acl_manager_le.h"
 #include "gd/hci/controller.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/entry.h"
@@ -78,14 +78,14 @@ namespace {
 static void ACL_AcceptLeConnectionFrom(const tBLE_BD_ADDR& legacy_address_with_type, bool is_direct,
                                        bool prefer_relax_mode) {
   BTM_LogHistory(kBtmLogTagACL, legacy_address_with_type, "Allow connection from", "Le");
-  bluetooth::shim::GetAclManager()->CreateLeConnection(
+  bluetooth::shim::GetAclManagerLe()->CreateLeConnection(
           bluetooth::ToAddressWithTypeFromLegacy(legacy_address_with_type), is_direct,
           prefer_relax_mode);
 }
 
 static void ACL_IgnoreLeConnectionFrom(const tBLE_BD_ADDR& legacy_address_with_type) {
   BTM_LogHistory(kBtmLogTagACL, legacy_address_with_type, "Ignore connection from", "Le");
-  bluetooth::shim::GetAclManager()->CancelLeConnect(
+  bluetooth::shim::GetAclManagerLe()->CancelLeConnect(
           bluetooth::ToAddressWithTypeFromLegacy(legacy_address_with_type));
 }
 }  // namespace
@@ -468,7 +468,7 @@ void reset(bool after_reset) {
   bgconn_dev.clear();
   if (!after_reset) {
     target_announcements_filtering_set(false);
-    bluetooth::shim::GetAclManager()->ClearFilterAcceptList();
+    bluetooth::shim::GetAclManagerLe()->ClearFilterAcceptList();
   }
 }
 

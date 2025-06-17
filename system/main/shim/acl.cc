@@ -39,8 +39,8 @@
 #include "common/bind.h"
 #include "common/strings.h"
 #include "common/sync_map_count.h"
-#include "hci/acl_manager.h"
 #include "hci/acl_manager/acl_connection.h"
+#include "hci/acl_manager/acl_manager_le.h"
 #include "hci/acl_manager/classic_acl_connection.h"
 #include "hci/acl_manager/connection_management_callbacks.h"
 #include "hci/acl_manager/le_acl_connection.h"
@@ -861,7 +861,7 @@ struct shim::Acl::impl {
     for (auto& handle : disconnect_handles) {
       auto found = handle_to_le_connection_map_.find(handle);
       if (found != handle_to_le_connection_map_.end()) {
-        GetAclManager()->OnLeSuspendInitiatedDisconnect(
+        GetAclManagerLe()->OnLeSuspendInitiatedDisconnect(
                 found->first, hci::ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST);
       }
     }
@@ -963,7 +963,7 @@ struct shim::Acl::impl {
     if (com::android::bluetooth::flags::remove_device_with_connection_manager()) {
       connection_manager::remove_unconditional(ToRawAddress(remote_address_with_type.GetAddress()));
     } else {
-      GetAclManager()->RemoveFromBackgroundList(remote_address_with_type);
+      GetAclManagerLe()->RemoveFromBackgroundList(remote_address_with_type);
     }
     connection->second->InitiateDisconnect(ToDisconnectReasonFromLegacy(reason));
     log::debug("Disconnection initiated le remote:{} handle:{}", remote_address_with_type, handle);
@@ -1042,9 +1042,11 @@ struct shim::Acl::impl {
     return;
   }
 
-  void clear_acceptlist() { GetAclManager()->ClearFilterAcceptList(); }
+  void clear_acceptlist() { GetAclManagerLe()->ClearFilterAcceptList(); }
 
-  void SetSystemSuspendState(bool suspended) { GetAclManager()->SetSystemSuspendState(suspended); }
+  void SetSystemSuspendState(bool suspended) {
+    GetAclManagerLe()->SetSystemSuspendState(suspended);
+  }
 
   void DumpConnectionHistory() const {
     std::vector<std::string> history = connection_history_.ReadElementsAsString();
@@ -1177,7 +1179,7 @@ shim::Acl::Acl(os::Handler* handler, const acl_interface_t& acl_interface)
   ValidateAclInterface(acl_interface_);
   pimpl_ = std::make_unique<Acl::impl>();
   GetAclManagerClassic()->RegisterCallbacks(this, handler_);
-  GetAclManager()->RegisterLeCallbacks(this, handler_);
+  GetAclManagerLe()->RegisterLeCallbacks(this, handler_);
   GetController()->RegisterCompletedMonitorAclPacketsCallback(
           handler->BindOn(this, &Acl::on_incoming_acl_credits));
   shim::RegisterDumpsysFunction(static_cast<void*>(this), [this](int fd) { Dump(fd); });
@@ -1539,7 +1541,7 @@ void shim::Acl::FinalShutdown() {
 
   promise = std::promise<void>();
   future = promise.get_future();
-  GetAclManager()->UnregisterLeCallbacks(this, std::move(promise));
+  GetAclManagerLe()->UnregisterLeCallbacks(this, std::move(promise));
   future.wait();
   log::debug("Unregistered le callbacks from gd acl manager");
 

@@ -19,8 +19,8 @@
 #include <functional>
 #include <mutex>
 
-#include "hci/acl_manager.h"
 #include "hci/acl_manager/acl_manager_classic.h"
+#include "hci/acl_manager/acl_manager_le.h"
 #include "hci/distance_measurement_manager.h"
 #include "hci/hci_interface.h"
 #include "hci/le_advertising_manager.h"
@@ -74,7 +74,7 @@ public:
   virtual hci::Controller* GetController() const;
   virtual hci::RemoteNameRequestModule* GetRemoteNameRequest() const;
   virtual hci::acl_manager::AclManagerClassic* GetAclManagerClassic() const;
-  virtual hci::AclManager* GetAclManager() const;
+  virtual hci::AclManagerLe* GetAclManagerLe() const;
   virtual hci::MsftExtensionManager* GetMsftExtensionManager() const;
   virtual hci::LeScanningManager* GetLeScanningManager() const;
   virtual hci::LeAdvertisingManager* GetLeAdvertisingManager() const;

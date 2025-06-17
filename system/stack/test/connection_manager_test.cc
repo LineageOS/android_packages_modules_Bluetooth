@@ -12,7 +12,7 @@
 
 #include <memory>
 
-#include "gd/hci/acl_manager_mock.h"
+#include "gd/hci/acl_manager/acl_manager_le_mock.h"
 #include "osi/include/alarm.h"
 #include "osi/test/alarm_mock.h"
 #include "test/mock/mock_main_shim_entry.h"

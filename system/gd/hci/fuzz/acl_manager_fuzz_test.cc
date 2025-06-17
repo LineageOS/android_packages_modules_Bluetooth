@@ -20,8 +20,8 @@
 
 #include "fuzz/helpers.h"
 #include "hci/acl_manager/acl_manager_classic_impl.h"
+#include "hci/acl_manager/acl_manager_le_impl.h"
 #include "hci/acl_manager/acl_scheduler.h"
-#include "hci/acl_manager_impl.h"
 #include "hci/controller_mock.h"
 #include "hci/fuzz/fuzz_hci_layer.h"
 #include "hci/hci_layer.h"
@@ -29,11 +29,11 @@
 #include "os/fake_timer/fake_timerfd.h"
 
 using bluetooth::fuzz::GetArbitraryBytes;
-using bluetooth::hci::AclManagerImpl;
 using bluetooth::hci::HciLayer;
 using bluetooth::hci::RemoteNameRequestModule;
 using bluetooth::hci::RemoteNameRequestModuleMock;
 using bluetooth::hci::acl_manager::AclManagerClassicImpl;
+using bluetooth::hci::acl_manager::AclManagerLeImpl;
 using bluetooth::hci::acl_manager::AclScheduler;
 using bluetooth::hci::acl_manager::RoundRobinScheduler;
 using bluetooth::hci::fuzz::FuzzHciLayer;
@@ -73,7 +73,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   std::unique_ptr<AclManagerClassicImpl> acl_manager_classic_ =
           std::make_unique<AclManagerClassicImpl>(&client_handler_, *fuzzHci, *test_acl_scheduler_,
                                                   *test_rnr_, *test_round_robin_scheduler_);
-  std::unique_ptr<AclManagerImpl> acl_manager = std::make_unique<AclManagerImpl>(
+  std::unique_ptr<AclManagerLeImpl> acl_manager = std::make_unique<AclManagerLeImpl>(
           &client_handler_, *fuzzHci, *test_controller_, *test_storage_,
           *test_round_robin_scheduler_, *acl_manager_classic_);
 
