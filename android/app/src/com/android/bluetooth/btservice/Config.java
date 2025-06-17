@@ -84,7 +84,20 @@ public class Config {
         BluetoothProfile.LE_CALL_CONTROL,
     };
 
-    /** List of profile services with the profile-supported resource flag and bit mask. */
+    /**
+     * List of profile services with the profile-supported resource flag and bit mask.
+     *
+     * <p><b>CRITICAL:</b> The order of profiles in this array is significant and MUST be
+     * maintained. Some profile services depend on other services being started first. For example,
+     * {@link TbsService} requires {@link GattService} to be available during its construction.
+     *
+     * <p>To satisfy these dependencies, {@link GattService} is intentionally placed at the
+     * beginning of this array to ensure it is initialized before any profiles that depend on it. Do
+     * not reorder entries in this list without a full understanding of the profile service
+     * dependency graph, as doing so will cause runtime crashes.
+     *
+     * @see com.android.bluetooth.btservice.AdapterService#startProfileServices()
+     */
     private static final ProfileConfig[] PROFILE_SERVICES_AND_FLAGS =
             new ProfileConfig[] {
                 // Prioritize GattService startup by making it the first Profile to
