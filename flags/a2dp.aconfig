@@ -105,3 +105,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "a2dp_set_configuration_during_discovery"
+    namespace: "bluetooth"
+    description: "Accept AVDTP SetConfiguration during ongoing AVDTP Discovery"
+    bug: "425738557"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
