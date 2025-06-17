@@ -243,13 +243,13 @@ std::optional<a2dp_configuration> get_a2dp_configuration(
 // In case any of these checks fails, the corresponding A2DP
 // status is returned. If the configuration is valid and supported,
 // A2DP_OK is returned.
-tA2DP_STATUS parse_a2dp_configuration(btav_a2dp_codec_index_t codec_index,
+tA2DP_STATUS parse_a2dp_configuration(::bluetooth::a2dp::CodecId codec_id,
                                       const uint8_t* codec_info,
                                       btav_a2dp_codec_config_t* codec_parameters,
                                       std::vector<uint8_t>* vendor_specific_parameters) {
   return (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::AIDL)
                  ? aidl::a2dp::provider::parse_a2dp_configuration(
-                           codec_index, codec_info, codec_parameters, vendor_specific_parameters)
+                           codec_id, codec_info, codec_parameters, vendor_specific_parameters)
                  : A2DP_FAIL;
 }
 

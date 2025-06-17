@@ -195,7 +195,7 @@ std::optional<a2dp_configuration> get_a2dp_configuration(
 // The HAL is expected to parse the codec configuration
 // received from the peer and decide whether accept
 // the it or not.
-tA2DP_STATUS parse_a2dp_configuration(btav_a2dp_codec_index_t codec_index,
+tA2DP_STATUS parse_a2dp_configuration(::bluetooth::a2dp::CodecId codec_id,
                                       const uint8_t* codec_info,
                                       btav_a2dp_codec_config_t* codec_parameters,
                                       std::vector<uint8_t>* vendor_specific_parameters);
