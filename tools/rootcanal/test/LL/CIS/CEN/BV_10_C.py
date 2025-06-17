@@ -253,6 +253,12 @@ class Test(ControllerTest):
                                          sequence_number=42,
                                          data=iso_sdu))
 
+        await self.expect_evt(
+            hci.NumberOfCompletedPackets(completed_packets=[
+                hci.CompletedPackets(connection_handle=cis_connection_handle_1,
+                                     host_num_of_completed_packets=1)
+            ]))
+
         # 4. Lower Tester 2 receives the payload PDU in the first subevent on CIS(2).
         # 5. Lower Tester 2 sends an Ack T_IFS after receiving the payload PDU.
         controller.send_iso(
@@ -270,6 +276,12 @@ class Test(ControllerTest):
                                          cis_id=cis_id_2,
                                          sequence_number=42,
                                          data=iso_sdu))
+
+        await self.expect_evt(
+            hci.NumberOfCompletedPackets(completed_packets=[
+                hci.CompletedPackets(connection_handle=cis_connection_handle_2,
+                                     host_num_of_completed_packets=1)
+            ]))
 
         # 6. If Table 4.139 specifies a BN of 2 or 3, when CIS(1) subevent interval ends, repeat steps 1–3 in
         # the next subevent.

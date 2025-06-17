@@ -205,5 +205,11 @@ class Test(ControllerTest):
                                          sequence_number=42,
                                          data=iso_sdu))
 
+        await self.expect_evt(
+            hci.NumberOfCompletedPackets(completed_packets=[
+                hci.CompletedPackets(connection_handle=cis_connection_handle,
+                                     host_num_of_completed_packets=1)
+            ]))
+
         # 10. Repeat step 9 for 50 ÷ BN isochronous events starting with the first event where a CIS data PDU
         # with nonzero payload is received.
