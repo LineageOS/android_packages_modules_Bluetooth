@@ -1234,8 +1234,7 @@ static void bta_gattc_cfg_mtu_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_OP_
 /** operation completed */
 void bta_gattc_op_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   if (p_clcb->p_q_cmd == NULL) {
-    if (com::android::bluetooth::flags::gatt_callback_on_failure() &&
-        p_data->op_cmpl.op_code == GATTC_OPTYPE_CONFIG) {
+    if (p_data->op_cmpl.op_code == GATTC_OPTYPE_CONFIG) {
       bta_gattc_cfg_mtu_cmpl(p_clcb, &p_data->op_cmpl);
       return;
     }

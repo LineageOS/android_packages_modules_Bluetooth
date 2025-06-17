@@ -576,7 +576,6 @@ public class GattClientTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_GATT_CALLBACK_ON_FAILURE)
     public void requestMtu_invalidParameter_isFalse() {
         BluetoothGattCallback gattCallback = mock(BluetoothGattCallback.class);
         BluetoothGatt gatt = connectGattAndWaitConnection(gattCallback);
