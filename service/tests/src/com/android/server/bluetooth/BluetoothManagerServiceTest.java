@@ -115,7 +115,8 @@ public class BluetoothManagerServiceTest {
                 Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
                 Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD,
                 Flags.FLAG_CLEANUP_STARTING_USER,
-                Flags.FLAG_USER_SWITCH_DURING_BLE_ON);
+                Flags.FLAG_USER_SWITCH_DURING_BLE_ON,
+                Flags.FLAG_USER_RESTRICTION_REFACTOR);
     }
 
     public BluetoothManagerServiceTest(FlagsWrapper flagsWrapper) {
@@ -227,10 +228,6 @@ public class BluetoothManagerServiceTest {
         doReturn(mAdapterService).when(mAdapterBinder).getAdapterBinder();
         doReturn(mBinder).when(mAdapterService).asBinder();
 
-        doReturn(mock(Intent.class))
-                .when(mContext)
-                .registerReceiverForAllUsers(any(), any(), eq(null), eq(null));
-
         doReturn(true)
                 .when(mContext)
                 .bindServiceAsUser(
@@ -291,15 +288,13 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_USER_RESTRICTION_REFACTOR)
     public void onUserRestrictionsChanged_disallowBluetooth_onlySendDisableMessageOnSystemUser()
             throws InterruptedException {
         // Mimic the case when restriction settings changed
         doReturn(true)
                 .when(mUserManager)
                 .hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
-        doReturn(false)
-                .when(mUserManager)
-                .hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH_SHARING), any());
 
         // Check if disable message sent once for system user only
 
@@ -312,6 +307,32 @@ public class BluetoothManagerServiceTest {
         if (!Flags.systemServerRemoveExtraThreadJump()) {
             syncHandler(MESSAGE_DISABLE);
         }
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags({
+        Flags.FLAG_USER_RESTRICTION_REFACTOR,
+        Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP,
+        Flags.FLAG_LIMIT_USER_SWITCH_PROPAGATION,
+    })
+    public void onUserRestrictionsChanged_whenOn_turnOff() throws Exception {
+        mManagerService.enable("onUserRestrictionsChanged_whenOn_turnOff");
+        IBluetoothCallback btCallback = transition_offToOn();
+
+        doReturn(true).when(mUserManager).hasUserRestriction(eq(UserManager.DISALLOW_BLUETOOTH));
+
+        mLooper.getNewExecutor()
+                .execute(
+                        () ->
+                                UserRestriction.handleRestrictionChange(
+                                        mContext,
+                                        UserHandle.SYSTEM,
+                                        mManagerService::onBluetoothDisallowed));
+        assertThat(mLooper.dispatchAll()).isEqualTo(1);
+        transition_onToOff(btCallback);
+        assertThat(mManagerService.getState()).isEqualTo(State.OFF);
 
         endTest();
     }

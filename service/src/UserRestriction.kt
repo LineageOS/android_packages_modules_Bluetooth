@@ -30,6 +30,7 @@ import android.os.Process
 import android.os.UserHandle
 import android.os.UserManager
 import android.sysprop.BluetoothProperties
+import com.android.internal.annotations.VisibleForTesting
 
 private const val TAG = "UserRestriction"
 
@@ -56,20 +57,7 @@ object UserRestriction {
         val receiver =
             object : BroadcastReceiver() {
                 override fun onReceive(ctx: Context, intent: Intent) {
-                    isBluetoothAllowed = isBluetoothAllowed(context)
-                    val user = getSendingUser()
-                    val userContext = context.createContextAsUser(user, 0)
-                    val isBluetoothSharingAllowed =
-                        isBluetoothAllowed && isBluetoothSharingAllowed(userContext)
-
-                    updateOppLauncherComponentState(userContext, isBluetoothSharingAllowed)
-
-                    // DISALLOW_BLUETOOTH can only be set by DO or PO on the system user.
-                    // Only trigger once instead of for all users
-                    if (UserHandle.SYSTEM.equals(user) && !isBluetoothAllowed) {
-                        Log.i(TAG, "Bluetooth is not allowed")
-                        callback()
-                    }
+                    handleRestrictionChange(context, getSendingUser(), callback)
                 }
             }
 
@@ -84,6 +72,24 @@ object UserRestriction {
         )
 
         isBluetoothAllowed = isBluetoothAllowed(context)
+    }
+
+    @JvmStatic
+    @VisibleForTesting
+    fun handleRestrictionChange(context: Context, fromUser: UserHandle, callback: () -> Unit) {
+        isBluetoothAllowed = isBluetoothAllowed(context)
+        val userContext = context.createContextAsUser(fromUser, 0)
+        val isBluetoothSharingAllowed = isBluetoothAllowed && isBluetoothSharingAllowed(userContext)
+
+        updateOppLauncherComponentState(userContext, isBluetoothSharingAllowed)
+
+        Log.i(TAG, "handleRestrictionChange for user $fromUser, is allowed: $isBluetoothAllowed")
+        // DISALLOW_BLUETOOTH can only be set by DO or PO on the system user.
+        // Only trigger once instead of for all users
+        if (UserHandle.SYSTEM.equals(fromUser) && !isBluetoothAllowed) {
+            Log.i(TAG, "Bluetooth is not allowed")
+            callback()
+        }
     }
 
     @JvmStatic
