@@ -121,16 +121,6 @@ flag {
 }
 
 flag {
-    name: "fix_execute_write_no_pending"
-    namespace: "bluetooth"
-    description: "Send ATT_EXECUTE_WRITE_RSP when no pending write requests"
-    bug: "385118069"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "distance_measurement_thread"
     namespace: "bluetooth"
     description: "Makes distance measurement operations run on one thread."
