@@ -83,10 +83,10 @@ cc_test {
         "liblog",
     ],
     static_libs: [
-        "libbluetooth-types",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_types",
         "libbt-common",
         "libchrome",
         "libevent",

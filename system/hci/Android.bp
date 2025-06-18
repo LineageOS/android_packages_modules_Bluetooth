@@ -59,8 +59,8 @@ cc_test {
         "liblog",
     ],
     static_libs: [
-        "libbluetooth-types",
         "libbluetooth_log",
+        "libbluetooth_types",
         "libbt-hci",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",

@@ -57,9 +57,9 @@ cc_test {
         "liblog",
     ],
     static_libs: [
-        "libbluetooth-types",
         "libbluetooth_gd",
         "libbluetooth_log",
+        "libbluetooth_types",
         "libbtcore",
         "libbtdevice",
         "libchrome",
@@ -95,8 +95,8 @@ cc_test {
         "liblog",
     ],
     static_libs: [
-        "libbluetooth-types",
         "libbluetooth_log",
+        "libbluetooth_types",
         "libbtcore",
         "libbtdevice",
         "libchrome",
