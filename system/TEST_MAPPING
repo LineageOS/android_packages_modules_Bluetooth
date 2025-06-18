@@ -13,6 +13,30 @@
     },
     {
       "name": "bluetooth_test_gd_unit"
+    },
+    {
+      "name": "net_test_bluetooth"
+    },
+    {
+      "name": "net_test_btif_hf_client_service"
+    },
+    {
+      "name": "net_test_btif_profile_queue"
+    },
+    {
+      "name": "net_test_device"
+    },
+    {
+      "name": "net_test_device_iot_config"
+    },
+    {
+      "name": "net_test_hci"
+    },
+    {
+      "name": "net_test_stack"
+    },
+    {
+      "name": "net_test_stack_ad_parser"
     }
   ],
   "presubmit": [
@@ -27,6 +51,30 @@
     },
     {
       "name": "bluetooth_test_gd_unit"
+    },
+    {
+      "name": "net_test_bluetooth"
+    },
+    {
+      "name": "net_test_btif_hf_client_service"
+    },
+    {
+      "name": "net_test_btif_profile_queue"
+    },
+    {
+      "name": "net_test_device"
+    },
+    {
+      "name": "net_test_device_iot_config"
+    },
+    {
+      "name": "net_test_hci"
+    },
+    {
+      "name": "net_test_stack"
+    },
+    {
+      "name": "net_test_stack_ad_parser"
     }
   ],
   "hwasan-presubmit": [
@@ -50,6 +98,30 @@
     },
     {
       "name": "l2cap-fuzzer-validation-test"
+    },
+    {
+      "name": "net_test_bluetooth"
+    },
+    {
+      "name": "net_test_btif_hf_client_service"
+    },
+    {
+      "name": "net_test_btif_profile_queue"
+    },
+    {
+      "name": "net_test_device"
+    },
+    {
+      "name": "net_test_device_iot_config"
+    },
+    {
+      "name": "net_test_hci"
+    },
+    {
+      "name": "net_test_stack"
+    },
+    {
+      "name": "net_test_stack_ad_parser"
     }
   ]
 }
