@@ -1784,7 +1784,7 @@ public class HeadsetService extends ConnectableProfile {
                                 + " as active");
                 return false;
             }
-            if (!mSystemInterface.activateVoiceRecognition()) {
+            if (!mSystemInterface.activateVoiceRecognition(fromDevice)) {
                 Log.w(TAG, "startVoiceRecognitionByHeadset: failed request from " + fromDevice);
                 return false;
             }

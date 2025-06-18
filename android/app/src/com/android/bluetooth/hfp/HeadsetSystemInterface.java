@@ -20,6 +20,7 @@ import static android.media.audio.Flags.scoManagedByAudio;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
@@ -352,9 +353,12 @@ class HeadsetSystemInterface {
      *     {@link HeadsetService#startVoiceRecognition(BluetoothDevice)}, false if failed to
      *     activate
      */
-    boolean activateVoiceRecognition() {
+    boolean activateVoiceRecognition(BluetoothDevice fromDevice) {
         Intent intent = new Intent(Intent.ACTION_VOICE_COMMAND);
+        intent.putExtra(BluetoothDevice.EXTRA_DEVICE, fromDevice);
+        intent.putExtra(BluetoothProfile.EXTRA_PROFILE, BluetoothProfile.HEADSET);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        Log.d(TAG, "activateVoiceRecognition, fromDevice: " + fromDevice);
         try {
             mHeadsetService.startActivity(intent);
         } catch (ActivityNotFoundException e) {
