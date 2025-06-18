@@ -46,15 +46,22 @@ public class PlayerSettingsManager {
         mControllerCallback = new MediaControllerCallback();
 
         MediaPlayerWrapper wrapper = mMediaPlayerList.getActivePlayer();
-        if (wrapper != null) {
+        if (wrapper != null && wrapper.getSessionToken() != null) {
+            MediaSessionCompat.Token sessionToken =
+                    MediaSessionCompat.Token.fromToken(wrapper.getSessionToken());
+            if (sessionToken == null) {
+                Log.w(TAG, "PlayerSettingsManager sessionToken is null");
+                return;
+            }
             mActivePlayerController =
                     new MediaControllerCompat(
                             mService,
-                            MediaSessionCompat.Token.fromToken(wrapper.getSessionToken()));
+                            sessionToken);
             if (!registerMediaControllerCallback(mActivePlayerController, mControllerCallback)) {
                 mActivePlayerController = null;
             }
         } else {
+            Log.i(TAG, "PlayerSettingsManager : no registered callback");
             mActivePlayerController = null;
         }
     }
@@ -72,17 +79,23 @@ public class PlayerSettingsManager {
         if (mActivePlayerController != null) {
             unregisterMediaControllerCallback(mActivePlayerController, mControllerCallback);
         }
-        if (mediaPlayerWrapper != null) {
+        if (mediaPlayerWrapper != null && mediaPlayerWrapper.getSessionToken() != null) {
+            MediaSessionCompat.Token sessionToken =
+                    MediaSessionCompat.Token.fromToken(mediaPlayerWrapper.getSessionToken());
+            if (sessionToken == null) {
+                Log.w(TAG, "activePlayerChanged sessionToken is null");
+                return;
+            }
             mActivePlayerController =
                     new MediaControllerCompat(
                             mService,
-                            MediaSessionCompat.Token.fromToken(
-                                    mediaPlayerWrapper.getSessionToken()));
+                            sessionToken);
             if (!registerMediaControllerCallback(mActivePlayerController, mControllerCallback)) {
                 mActivePlayerController = null;
                 updateRemoteDevice();
             }
         } else {
+            Log.i(TAG, "activePlayerChanged : no registered callback");
             mActivePlayerController = null;
             updateRemoteDevice();
         }
