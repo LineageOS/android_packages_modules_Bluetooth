@@ -20,11 +20,15 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageInfo
+import android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+import android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED
 import android.os.Looper
 import android.os.Process
 import android.os.UserHandle
 import android.os.UserManager
 import androidx.test.core.app.ApplicationProvider
+import com.android.server.bluetooth.UserRestriction.bluetoothSharingState
+import com.android.server.bluetooth.UserRestriction.handleRestrictionChange
 import com.android.server.bluetooth.UserRestriction.initialize
 import com.android.server.bluetooth.UserRestriction.initializeUser
 import com.android.server.bluetooth.UserRestriction.isBluetoothAllowed
@@ -53,6 +57,7 @@ class UserRestrictionTest {
     private val emptyInfo = PackageInfo().apply { packageName = "my_empty_package" }
 
     @Before
+    @Suppress("DEPRECATION")
     fun setUp() {
         callback_count = 0
         shadowOf(context.packageManager)
@@ -75,6 +80,14 @@ class UserRestrictionTest {
         shadowOf(userManager).setUserRestriction(user, restriction, status)
     }
 
+    private fun disallowBluetooth() = setUserRestriction(UserManager.DISALLOW_BLUETOOTH, true)
+
+    private fun allowBluetooth() = setUserRestriction(UserManager.DISALLOW_BLUETOOTH, false)
+
+    private fun disallowSharing() = setUserRestriction(UserManager.DISALLOW_BLUETOOTH_SHARING, true)
+
+    private fun allowSharing() = setUserRestriction(UserManager.DISALLOW_BLUETOOTH_SHARING, false)
+
     private fun start() {
         initialize(context, looper) { callback_count++ }
         initializeUser(context)
@@ -89,7 +102,7 @@ class UserRestrictionTest {
 
     @Test
     fun initialize_whenDisallowed_isDisallowed() {
-        setUserRestriction(UserManager.DISALLOW_BLUETOOTH, true)
+        disallowBluetooth()
         start()
         assertThat(isBluetoothAllowed).isFalse()
         assertThat(callback_count).isEqualTo(0)
@@ -99,7 +112,7 @@ class UserRestrictionTest {
     fun disallowUser_whenAllowed_triggerCallback() {
         start()
 
-        setUserRestriction(UserManager.DISALLOW_BLUETOOTH, true)
+        disallowBluetooth()
         context.sendBroadcast(Intent(UserManager.ACTION_USER_RESTRICTIONS_CHANGED))
         shadowOf(looper).idle()
 
@@ -108,12 +121,24 @@ class UserRestrictionTest {
     }
 
     @Test
+    fun disallowNonMainUser_whenAllowed_doNotTriggerCallback() {
+        val user = UserHandle.of(42)
+        start()
+
+        setUserRestriction(UserManager.DISALLOW_BLUETOOTH, true, user)
+        handleRestrictionChange(context, user) { callback_count++ }
+
+        assertThat(isBluetoothAllowed).isTrue()
+        assertThat(callback_count).isEqualTo(0)
+    }
+
+    @Test
     fun allowUser_whenDisallowed_doNotTriggerCallback() {
-        setUserRestriction(UserManager.DISALLOW_BLUETOOTH, true)
+        disallowBluetooth()
 
         start()
 
-        setUserRestriction(UserManager.DISALLOW_BLUETOOTH, false)
+        allowBluetooth()
         context.sendBroadcast(Intent(UserManager.ACTION_USER_RESTRICTIONS_CHANGED))
         shadowOf(looper).idle()
 
@@ -122,30 +147,63 @@ class UserRestrictionTest {
     }
 
     @Test
-    fun disallowUserSharing_whenAllowed_doNotTriggerCallback() {
+    fun disallowUserSharing_whenAllowed_sharingIsDisableAndNoCallback() {
         start()
 
-        setUserRestriction(UserManager.DISALLOW_BLUETOOTH_SHARING, true)
+        disallowSharing()
         context.sendBroadcast(Intent(UserManager.ACTION_USER_RESTRICTIONS_CHANGED))
         shadowOf(looper).idle()
 
         assertThat(isBluetoothAllowed).isTrue()
+        assertThat(bluetoothSharingState).isEqualTo(COMPONENT_ENABLED_STATE_DISABLED)
         assertThat(callback_count).isEqualTo(0)
     }
 
     @Test
-    fun allowUserSharing_whenDisallowed_doNotTriggerCallback() {
+    fun disallowUserSharing_whenDisallowed_doNothing() {
+        disallowBluetooth()
+
+        start()
+
+        disallowSharing()
+        context.sendBroadcast(Intent(UserManager.ACTION_USER_RESTRICTIONS_CHANGED))
+        shadowOf(looper).idle()
+
+        assertThat(isBluetoothAllowed).isFalse()
+        assertThat(bluetoothSharingState).isEqualTo(COMPONENT_ENABLED_STATE_DISABLED)
+        assertThat(callback_count).isEqualTo(0)
+    }
+
+    @Test
+    fun allowUserSharing_whenSharingDisallowed_sharingAllowedAndNoCallback() {
         ShadowSystemProperties.override("bluetooth.profile.opp.enabled", "true")
-
-        setUserRestriction(UserManager.DISALLOW_BLUETOOTH_SHARING, true)
+        disallowSharing()
 
         start()
 
-        setUserRestriction(UserManager.DISALLOW_BLUETOOTH_SHARING, false)
+        allowSharing()
         context.sendBroadcast(Intent(UserManager.ACTION_USER_RESTRICTIONS_CHANGED))
         shadowOf(looper).idle()
 
         assertThat(isBluetoothAllowed).isTrue()
+        assertThat(bluetoothSharingState).isEqualTo(COMPONENT_ENABLED_STATE_ENABLED)
+        assertThat(callback_count).isEqualTo(0)
+    }
+
+    @Test
+    fun allowUserSharing_whenDisallowed_sharingStayDisableAndNoCallback() {
+        ShadowSystemProperties.override("bluetooth.profile.opp.enabled", "true")
+        disallowSharing()
+        disallowBluetooth()
+
+        start()
+
+        allowSharing()
+        context.sendBroadcast(Intent(UserManager.ACTION_USER_RESTRICTIONS_CHANGED))
+        shadowOf(looper).idle()
+
+        assertThat(isBluetoothAllowed).isFalse()
+        assertThat(bluetoothSharingState).isEqualTo(COMPONENT_ENABLED_STATE_DISABLED)
         assertThat(callback_count).isEqualTo(0)
     }
 }
