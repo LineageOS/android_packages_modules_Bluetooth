@@ -2015,7 +2015,8 @@ public class RemoteDevices {
         // Some apps expect service discovery to be performed on all connected transports.
         if (deviceProperties != null
                 && transport == TRANSPORT_AUTO
-                && serviceDiscoveryIopFixNeeded(device)) {
+                && (Flags.serviceDiscoveryOnConnectedTransport()
+                        || serviceDiscoveryIopFixNeeded(device))) {
             boolean startedLeServiceDiscovery = false;
             boolean startedBredrServiceDiscovery = false;
             if (deviceProperties.getConnectionHandle(TRANSPORT_LE) != BluetoothDevice.ERROR) {
@@ -2348,11 +2349,12 @@ public class RemoteDevices {
         return false;
     }
 
+    // TODO (b/419542108): Remove when the flag service_discovery_on_connected_transport is released
     private static final String[] SERVICE_DISCOVERY_IOP_PACKAGES = {
         "com.sony.songpal.",
     };
 
-    // TODO (b/395011801): Remove when fetchUuidsWithSdp(transport) is upgraded to public API
+    // TODO (b/419542108): Remove when the flag service_discovery_on_connected_transport is released
     public boolean serviceDiscoveryIopFixNeeded(BluetoothDevice device) {
         return packageAssociated(device, SERVICE_DISCOVERY_IOP_PACKAGES);
     }
