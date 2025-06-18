@@ -18,6 +18,7 @@ package com.android.bluetooth.hid;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
@@ -144,7 +145,7 @@ class HidHostServiceBinder extends IBluetoothHidHost.Stub implements IProfileSer
     public int getPreferredTransport(BluetoothDevice device, AttributionSource source) {
         HidHostService service = getService(source);
         if (service == null) {
-            return BluetoothDevice.TRANSPORT_AUTO;
+            return TRANSPORT_AUTO;
         }
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         return service.getPreferredTransport(device);

@@ -16,6 +16,9 @@
 
 package com.android.bluetooth.gatt;
 
+import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
+
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -102,7 +105,7 @@ public class ContextMapTest {
         assertThat(connections).hasSize(1);
         assertThat(connections.get(0).connId()).isEqualTo(CONN_ID1);
         assertThat(connections.get(0).device()).isEqualTo(mDevice1);
-        assertThat(connections.get(0).transport()).isEqualTo(BluetoothDevice.TRANSPORT_LE);
+        assertThat(connections.get(0).transport()).isEqualTo(TRANSPORT_LE);
         assertThat(connections.get(0).appId()).isEqualTo(APP_ID1);
 
         connections = contextMap.getConnectionsByDevice(APP_ID2, mDevice2);
@@ -110,12 +113,12 @@ public class ContextMapTest {
         assertThat(connections).hasSize(2);
         assertThat(connections.get(0).connId()).isEqualTo(CONN_ID2);
         assertThat(connections.get(0).device()).isEqualTo(mDevice2);
-        assertThat(connections.get(0).transport()).isEqualTo(BluetoothDevice.TRANSPORT_BREDR);
+        assertThat(connections.get(0).transport()).isEqualTo(TRANSPORT_BREDR);
         assertThat(connections.get(0).appId()).isEqualTo(APP_ID2);
 
         assertThat(connections.get(1).connId()).isEqualTo(CONN_ID3);
         assertThat(connections.get(1).device()).isEqualTo(mDevice2);
-        assertThat(connections.get(1).transport()).isEqualTo(BluetoothDevice.TRANSPORT_LE);
+        assertThat(connections.get(1).transport()).isEqualTo(TRANSPORT_LE);
         assertThat(connections.get(1).appId()).isEqualTo(APP_ID2);
 
         assertThat(contextMap.getConnectionsByDevice(APP_ID1, mDevice2)).isEmpty();
@@ -131,7 +134,7 @@ public class ContextMapTest {
         assertThat(connections).hasSize(1);
         assertThat(connections.get(0).connId()).isEqualTo(CONN_ID1);
         assertThat(connections.get(0).device()).isEqualTo(mDevice1);
-        assertThat(connections.get(0).transport()).isEqualTo(BluetoothDevice.TRANSPORT_LE);
+        assertThat(connections.get(0).transport()).isEqualTo(TRANSPORT_LE);
         assertThat(connections.get(0).appId()).isEqualTo(APP_ID1);
         assertThat(contextMap.getConnectionByApp(APP_ID2)).hasSize(2);
         assertThat(contextMap.getConnectionByApp(123456)).isEmpty();
@@ -189,7 +192,7 @@ public class ContextMapTest {
                 contextMap.add(
                         RANDOM_UUID1,
                         mMockCallback,
-                        BluetoothDevice.TRANSPORT_LE,
+                        TRANSPORT_LE,
                         mAdapterService,
                         mAttributionSource);
         app.id = APP_ID1;
@@ -197,15 +200,15 @@ public class ContextMapTest {
                 contextMap.add(
                         RANDOM_UUID2,
                         mMockCallback,
-                        BluetoothDevice.TRANSPORT_LE,
+                        TRANSPORT_LE,
                         mAdapterService,
                         mAttributionSource);
         app.id = APP_ID2;
 
-        contextMap.addConnection(APP_ID1, CONN_ID1, BluetoothDevice.TRANSPORT_LE, mDevice1);
+        contextMap.addConnection(APP_ID1, CONN_ID1, TRANSPORT_LE, mDevice1);
 
-        contextMap.addConnection(APP_ID2, CONN_ID2, BluetoothDevice.TRANSPORT_BREDR, mDevice2);
-        contextMap.addConnection(APP_ID2, CONN_ID3, BluetoothDevice.TRANSPORT_LE, mDevice2);
+        contextMap.addConnection(APP_ID2, CONN_ID2, TRANSPORT_BREDR, mDevice2);
+        contextMap.addConnection(APP_ID2, CONN_ID3, TRANSPORT_LE, mDevice2);
 
         assertThat(contextMap.getConnectedMap()).isNotEmpty();
         assertThat(contextMap.getAllAppsIds()).isNotEmpty();

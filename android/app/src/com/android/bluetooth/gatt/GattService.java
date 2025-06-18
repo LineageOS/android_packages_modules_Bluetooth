@@ -18,6 +18,8 @@ package com.android.bluetooth.gatt;
 
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
@@ -1110,7 +1112,7 @@ public class GattService extends ProfileService {
             }
         }
 
-        if (transport != BluetoothDevice.TRANSPORT_BREDR && isDirect && !opportunistic) {
+        if (transport != TRANSPORT_BREDR && isDirect && !opportunistic) {
             String attributionTag = getLastAttributionTag(source);
             if (packageName != null) {
                 for (Map.Entry<String, String> entry :
@@ -2451,7 +2453,7 @@ public class GattService extends ProfileService {
             // The list is sorted by oldest first. Grab the oldest bearer that matches our transport
             // preference. If the transport is AUTO then use the oldest bearer available
             for (ContextMap.Connection connection : connections) {
-                if (transportPreference == BluetoothDevice.TRANSPORT_AUTO
+                if (transportPreference == TRANSPORT_AUTO
                         || transportPreference == connection.transport()) {
                     connId = connection.connId();
                     break;

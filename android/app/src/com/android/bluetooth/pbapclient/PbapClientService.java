@@ -16,6 +16,7 @@
 
 package com.android.bluetooth.pbapclient;
 
+import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
@@ -335,7 +336,7 @@ public class PbapClientService extends ConnectableProfile {
                         + ", transport="
                         + transport);
 
-        if (transport != BluetoothDevice.TRANSPORT_BREDR) {
+        if (transport != TRANSPORT_BREDR) {
             return;
         }
 
