@@ -17,6 +17,7 @@
 #pragma once
 
 #include <complex>
+#include <cstdint>
 
 #include "hci/hci_packets.h"
 
@@ -35,6 +36,19 @@ enum RangingHalVersion {
   V_UNKNOWN = 0,
   V_1 = 1,
   V_2 = 2,
+};
+
+enum class RangingSessionType : uint8_t {
+  SOFTWARE_STACK_DATA_PARSING = 0,
+  HARDWARE_OFFLOAD_DATA_PARSING
+};
+
+enum class Reason : uint8_t {
+  LOCAL_STACK_REQUEST,
+  HAL_INITIATED,
+  HARDWARE_INITIATED,
+  ERROR_INVALID_PARAMETER,
+  ERROR_UNKNOWN,
 };
 
 struct VendorSpecificCharacteristic {
@@ -298,6 +312,7 @@ public:
   virtual void OnOpenFailed(uint16_t connection_handle) = 0;
   virtual void OnHandleVendorSpecificReplyComplete(uint16_t connection_handle, bool success) = 0;
   virtual void OnResult(uint16_t connection_handle, const RangingResult& ranging_result) = 0;
+  virtual void OnClosed(uint16_t connection_handle, Reason reason) = 0;
 };
 
 class RangingHal {
@@ -327,6 +342,7 @@ public:
                                   const ProcedureDataV2& procedure_data,
                                   uint16_t procedure_counter) = 0;
   virtual bool IsAbortedProcedureRequired(uint16_t connection_handle) = 0;
+  virtual std::vector<RangingSessionType> GetSupportedSessionTypes() = 0;
 };
 
 }  // namespace hal

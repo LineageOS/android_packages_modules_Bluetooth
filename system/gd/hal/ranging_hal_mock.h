@@ -50,6 +50,7 @@ public:
               (uint16_t connection_handle, hci::CsRole local_cs_role,
                const ProcedureDataV2& procedure_data, uint16_t procedure_counter));
   MOCK_METHOD(bool, IsAbortedProcedureRequired, (uint16_t connection_handle));
+  MOCK_METHOD(std::vector<RangingSessionType>, GetSupportedSessionTypes, ());
 
   void RegisterCallback(RangingHalCallback* callback) override { ranging_hal_callback_ = callback; }
   RangingHalCallback* GetRangingHalCallback() { return ranging_hal_callback_; }

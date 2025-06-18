@@ -87,6 +87,7 @@ public:
   virtual void SendVendorSpecificReply(
           const RawAddress& address,
           const std::vector<VendorSpecificCharacteristic>& vendor_specific_data) = 0;
+  virtual void NotifyRangingHardwareOffloadEnabled() = 0;
 };
 
 RasClient* GetRasClient();

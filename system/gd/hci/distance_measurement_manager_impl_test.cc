@@ -22,6 +22,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <string>
+#include <vector>
+
 #include "common/bind.h"
 #include "common/strings.h"
 #include "hal/ranging_hal.h"
@@ -38,6 +41,7 @@
 #include "ras/ras_packets.h"
 
 using android::bluetooth::ChannelSoundingStopReason;
+using bluetooth::hal::RangingSessionType;
 using bluetooth::os::fake_timer::fake_timerfd_advance;
 using bluetooth::os::fake_timer::fake_timerfd_reset;
 using bluetooth::packet::BitInserter;
@@ -45,6 +49,9 @@ using testing::_;
 using testing::AtLeast;
 using testing::Return;
 using testing::Sequence;
+using testing::Test;
+using testing::TestParamInfo;
+using testing::Values;
 using testing::WithParamInterface;
 
 namespace {
@@ -635,7 +642,7 @@ struct CsModule {
   }
 };
 
-class DistanceMeasurementManagerTest : public ::testing::Test {
+class DistanceMeasurementManagerTest : public Test {
 protected:
   void SetUp() override {
     metrics_ = std::make_shared<metrics::MockMetrics>();
@@ -1560,10 +1567,10 @@ TEST_P(DistanceMeasurementManagerInvalidRasTest, invalid_ras_segment_data) {
 }
 
 INSTANTIATE_TEST_SUITE_P(invalid_ras_segment, DistanceMeasurementManagerInvalidRasTest,
-                         ::testing::Values(InvalidRasTestingItem::RANGING_DONE_STATUS,
-                                           InvalidRasTestingItem::SUBEVENT_DONE_STATUS,
-                                           InvalidRasTestingItem::RANGING_ABORT_REASON,
-                                           InvalidRasTestingItem::SUBEVENT_ABORT_REASON));
+                         Values(InvalidRasTestingItem::RANGING_DONE_STATUS,
+                                InvalidRasTestingItem::SUBEVENT_DONE_STATUS,
+                                InvalidRasTestingItem::RANGING_ABORT_REASON,
+                                InvalidRasTestingItem::SUBEVENT_ABORT_REASON));
 
 struct RttTypeParams {
   CsRttType rtt_type;
@@ -1685,10 +1692,10 @@ TEST_P(DistanceMeasurementManagerRttTest, complete_mode3_procedure) {
 }
 
 INSTANTIATE_TEST_SUITE_P(complete_mode1_mode3_procedure, DistanceMeasurementManagerRttTest,
-                         ::testing::Values(CsRttType::RTT_WITH_32_BIT_SOUNDING_SEQUENCE,
-                                           CsRttType::RTT_WITH_96_BIT_SOUNDING_SEQUENCE,
-                                           CsRttType::RTT_AA_ONLY,
-                                           CsRttType::RTT_WITH_32_BIT_RANDOM_SEQUENCE));
+                         Values(CsRttType::RTT_WITH_32_BIT_SOUNDING_SEQUENCE,
+                                CsRttType::RTT_WITH_96_BIT_SOUNDING_SEQUENCE,
+                                CsRttType::RTT_AA_ONLY,
+                                CsRttType::RTT_WITH_32_BIT_RANDOM_SEQUENCE));
 
 TEST_F(DistanceMeasurementManagerTest, get_rssi_result_success) {
   cs_requester_.ReceivedReadLocalCapabilitiesComplete();
@@ -1730,6 +1737,91 @@ TEST_F(DistanceMeasurementManagerTest, get_rssi_result_success) {
           /*num_hci_command_packets=*/128, ErrorCode::SUCCESS, params.connection_handle, rssi));
   fake_timerfd_reset();
   cs_requester_.sync_client_handler();
+}
+
+struct GetSupportedSessionTypesTestParams {
+  std::vector<RangingSessionType> session_types;
+  bool expect_offload_enabled_called;
+  std::string test_name;
+};
+
+class DistanceMeasurementManagerGetSupportedSessionTypesTest
+    : public DistanceMeasurementManagerTest,
+      public WithParamInterface<GetSupportedSessionTypesTestParams> {};
+
+TEST_P(DistanceMeasurementManagerGetSupportedSessionTypesTest, VerifyOffloadCallback) {
+  const auto& params = GetParam();
+  EXPECT_CALL(*cs_requester_.mock_ranging_hal_, GetSupportedSessionTypes())
+          .WillOnce(Return(params.session_types));
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_, OnRangingHardwareOffloadEnabled())
+          .Times(params.expect_offload_enabled_called ? 1 : 0);
+
+  StartMeasurementParameters measuremet_params;
+  cs_requester_.StartMeasurementTillRasConnectedEvent(measuremet_params);
+
+  cs_requester_.sync_client_handler();
+}
+
+INSTANTIATE_TEST_SUITE_P(GetSupportedSessionTypesTests,
+                         DistanceMeasurementManagerGetSupportedSessionTypesTest,
+                         Values(
+                                 GetSupportedSessionTypesTestParams{
+                                         {RangingSessionType::HARDWARE_OFFLOAD_DATA_PARSING},
+                                         true,
+                                         "HardwareOffloadEnabled"},
+                                 GetSupportedSessionTypesTestParams{
+                                         {RangingSessionType::SOFTWARE_STACK_DATA_PARSING},
+                                         false,
+                                         "SoftwareParsingOnly"},
+                                 GetSupportedSessionTypesTestParams{{}, false, "Empty"},
+                                 GetSupportedSessionTypesTestParams{
+                                         {RangingSessionType::SOFTWARE_STACK_DATA_PARSING,
+                                          RangingSessionType::HARDWARE_OFFLOAD_DATA_PARSING},
+                                         true,
+                                         "HardwareAndSoftware"}),
+                         [](const TestParamInfo<GetSupportedSessionTypesTestParams>& info) {
+                           return info.param.test_name;
+                         });
+
+TEST_F(DistanceMeasurementManagerTest, ranging_hal_on_closed_before_started) {
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillRasConnectedEvent(params);
+
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+              OnDistanceMeasurementStopped(params.responder_addr,
+                                           DistanceMeasurementErrorCode::REASON_INTERNAL_ERROR,
+                                           DistanceMeasurementMethod::METHOD_CS))
+          .Times(0);
+
+  cs_requester_.mock_ranging_hal_->GetRangingHalCallback()->OnClosed(params.connection_handle,
+                                                                     hal::Reason::ERROR_UNKNOWN);
+  cs_requester_.sync_client_handler();
+}
+
+TEST_F(DistanceMeasurementManagerTest, ranging_hal_on_closed_after_started) {
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+  cs_requester_.sync_client_handler();
+  cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
+
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+              OnDistanceMeasurementStopped(params.responder_addr,
+                                           DistanceMeasurementErrorCode::REASON_INTERNAL_ERROR,
+                                           DistanceMeasurementMethod::METHOD_CS))
+          .Times(1);
+
+  cs_requester_.mock_ranging_hal_->GetRangingHalCallback()->OnClosed(params.connection_handle,
+                                                                     hal::Reason::ERROR_UNKNOWN);
+
+  CsProcedureEnableCompleteEvent complete_event;
+  cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+  cs_requester_.test_hci_layer_->IncomingEvent(LeCsProcedureEnableStatusBuilder::Create(
+          /*status=*/ErrorCode::SUCCESS, /*num_hci_command_packets=*/0xff));
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetProcedureEnableCompleteEvent(
+          params.connection_handle, Enable::DISABLED, complete_event));
+
+  cs_requester_.sync_client_handler();
+  cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
 }
 
 }  // namespace

@@ -44,6 +44,7 @@ using namespace bluetooth::ras;
 using android::bluetooth::ChannelSoundingSecurityLevel;
 using android::bluetooth::ChannelSoundingStopReason;
 using bluetooth::hal::ProcedureDataV2;
+using bluetooth::hal::RangingSessionType;
 using bluetooth::hci::acl_manager::PacketViewForRecombination;
 
 namespace bluetooth {
@@ -282,6 +283,26 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
             cs_requester_trackers_[connection_handle].address, REASON_INTERNAL_ERROR, METHOD_CS);
     report_session_metrics_on_stop(*cs_requester_trackers_[connection_handle].requester_metrics_,
                                    ChannelSoundingStopReason::REASON_HAL_OPEN_FAILED);
+  }
+
+  void OnClosed(uint16_t connection_handle, hal::Reason reason) {
+    if (cs_requester_trackers_.find(connection_handle) == cs_requester_trackers_.end()) {
+      log::error("Can't find CS tracker for connection_handle {}", connection_handle);
+      return;
+    }
+    log::info("Session closed, connection_handle: {}, reason: {}", connection_handle,
+              static_cast<uint8_t>(reason));
+    auto& tracker = cs_requester_trackers_[connection_handle];
+    if (tracker.measurement_ongoing && tracker.local_start) {
+      cs_requester_trackers_[connection_handle].procedure_schedule_guard_alarm->Cancel();
+      send_le_cs_procedure_enable(connection_handle, Enable::DISABLED);
+      distance_measurement_callbacks_->OnDistanceMeasurementStopped(
+              tracker.address, REASON_INTERNAL_ERROR, METHOD_CS);
+    }
+    reset_tracker_on_stopped(tracker);
+    // TODO: b/425866868 - Add ChannelSoundingStopReason for session close.
+    report_session_metrics_on_stop(*tracker.requester_metrics_,
+                                   ChannelSoundingStopReason::REASON_UNSPECIFIED);
   }
 
   void OnHandleVendorSpecificReplyComplete(uint16_t connection_handle, bool success) {
@@ -597,6 +618,12 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
     it->second.state = CsTrackerState::RAS_CONNECTED;
 
     if (ranging_hal_->IsBound()) {
+      auto session_types = ranging_hal_->GetSupportedSessionTypes();
+      for (auto session_type : session_types) {
+        if (session_type == RangingSessionType::HARDWARE_OFFLOAD_DATA_PARSING) {
+          distance_measurement_callbacks_->OnRangingHardwareOffloadEnabled();
+        }
+      }
       ranging_hal_->OpenSession(connection_handle, att_handle, vendor_specific_data,
                                 static_cast<uint8_t>(it->second.sight_type),
                                 static_cast<uint8_t>(it->second.location_type));
