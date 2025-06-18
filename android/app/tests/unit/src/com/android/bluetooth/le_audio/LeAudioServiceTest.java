@@ -42,6 +42,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
@@ -124,6 +125,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /** Test cases for {@link LeAudioService}. */
@@ -327,6 +329,14 @@ public class LeAudioServiceTest {
             doReturn(mMcpService).when(mServiceFactory).getMcpService();
             doReturn(mVolumeControlService).when(mServiceFactory).getVolumeControlService();
         }
+        doCallRealMethod().when(mVolumeControlService).syncPost(any());
+        doAnswer(
+                        inv -> {
+                            return ((Function<VolumeControlService, ?>) inv.getArgument(0))
+                                    .apply(mVolumeControlService);
+                        })
+                .when(mVolumeControlService)
+                .syncPost(any(), any());
 
         mService =
                 new LeAudioService(
