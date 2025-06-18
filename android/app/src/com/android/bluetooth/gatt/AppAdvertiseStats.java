@@ -47,7 +47,8 @@ import java.util.Map;
 
 /** AdvStats class helps keep track of information about advertising on a per application basis. */
 class AppAdvertiseStats {
-    private static final String TAG = AppAdvertiseStats.class.getSimpleName();
+    private static final String TAG =
+            GattServiceConfig.TAG_PREFIX + AppAdvertiseStats.class.getSimpleName();
 
     private static final DateTimeFormatter sDateFormat =
             DateTimeFormatter.ofPattern("MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
