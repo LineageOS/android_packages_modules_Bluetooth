@@ -198,6 +198,32 @@ public class LeAudioServiceTest {
                                     | BluetoothLeAudioCodecConfig.SAMPLE_RATE_16000)
                     .build();
 
+    private static final BluetoothLeAudioCodecConfig OPUS_48KHZ_CONFIG =
+            new BluetoothLeAudioCodecConfig.Builder()
+                    .setCodecType(BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_OPUS)
+                    .setCodecPriority(BluetoothLeAudioCodecConfig.CODEC_PRIORITY_DEFAULT + 1)
+                    .setSampleRate(BluetoothLeAudioCodecConfig.SAMPLE_RATE_48000)
+                    .setBitsPerSample(BluetoothLeAudioCodecConfig.BITS_PER_SAMPLE_24)
+                    .setChannelCount(BluetoothLeAudioCodecConfig.CHANNEL_COUNT_2)
+                    .setFrameDuration(BluetoothLeAudioCodecConfig.FRAME_DURATION_10000)
+                    .setOctetsPerFrame(90)
+                    .setMinOctetsPerFrame(90)
+                    .setMaxOctetsPerFrame(100)
+                    .build();
+
+    private static final BluetoothLeAudioCodecConfig OPUS_HI_RES_96KHZ_CONFIG =
+            new BluetoothLeAudioCodecConfig.Builder()
+                    .setCodecType(BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_OPUS_HI_RES)
+                    .setCodecPriority(BluetoothLeAudioCodecConfig.CODEC_PRIORITY_HIGHEST)
+                    .setSampleRate(BluetoothLeAudioCodecConfig.SAMPLE_RATE_96000)
+                    .setBitsPerSample(BluetoothLeAudioCodecConfig.BITS_PER_SAMPLE_24)
+                    .setChannelCount(BluetoothLeAudioCodecConfig.CHANNEL_COUNT_2)
+                    .setFrameDuration(BluetoothLeAudioCodecConfig.FRAME_DURATION_20000)
+                    .setOctetsPerFrame(100)
+                    .setMinOctetsPerFrame(90)
+                    .setMaxOctetsPerFrame(120)
+                    .build();
+
     private static final List<BluetoothLeAudioCodecConfig> INPUT_CAPABILITIES_CONFIG =
             List.of(LC3_48KHZ_16KHZ_CONFIG);
 
@@ -212,6 +238,9 @@ public class LeAudioServiceTest {
 
     private static final List<BluetoothLeAudioCodecConfig> OUTPUT_SELECTABLE_CONFIG =
             List.of(LC3_48KHZ_16KHZ_CONFIG);
+
+    private static final List<BluetoothLeAudioCodecConfig> OPUS_SELECTABLE_CONFIGS =
+            List.of(LC3_48KHZ_16KHZ_CONFIG, OPUS_48KHZ_CONFIG, OPUS_HI_RES_96KHZ_CONFIG);
 
     private InOrder mInOrder;
 
@@ -3209,6 +3238,238 @@ public class LeAudioServiceTest {
         verify(mNativeInterface)
                 .setGroupAllowedContextMask(
                         groupId, BluetoothLeAudio.CONTEXTS_ALL, BluetoothLeAudio.CONTEXTS_ALL);
+    }
+
+    @Test
+    @EnableFlags({
+        Flags.FLAG_LEAUDIO_ADD_OPUS_CODEC_TYPE,
+        Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API
+    })
+    public void testSetCodecConfigPreference() {
+        // Not connected device
+        assertThat(mService.setActiveDevice(mSingleDevice)).isFalse();
+
+        // Connect device
+        connectTestDevice(mSingleDevice, TEST_GROUP_ID);
+
+        // Add location support
+        injectAudioConfChanged(
+                mSingleDevice,
+                TEST_GROUP_ID,
+                BluetoothLeAudio.CONTEXT_TYPE_RINGTONE,
+                0x01 /*AUDIO_DIRECTION_OUTPUT_BIT*/);
+
+        assertThat(mService.setActiveDevice(mSingleDevice)).isTrue();
+        verify(mNativeInterface).groupSetActive(TEST_GROUP_ID);
+
+        // Set group and device as active
+        injectGroupStatusChange(TEST_GROUP_ID, LeAudioStackEvent.GROUP_STATUS_ACTIVE);
+
+        // Set the initial group codec status
+        injectGroupSelectableCodecConfigChanged(
+                TEST_GROUP_ID, OPUS_SELECTABLE_CONFIGS, OPUS_SELECTABLE_CONFIGS);
+        injectGroupCurrentCodecConfigChanged(TEST_GROUP_ID, LC3_16KHZ_CONFIG, LC3_48KHZ_CONFIG);
+
+        // Update of codec config preference with LC3_16KHZ_CONFIG
+        mService.setCodecConfigPreference(TEST_GROUP_ID, LC3_16KHZ_CONFIG, LC3_16KHZ_CONFIG);
+        verify(mDatabaseManager)
+                .setLeAudioUnicastOutputCodecPreferenceList(
+                        mSingleDevice, List.of(LC3_16KHZ_CONFIG));
+        verify(mDatabaseManager)
+                .setLeAudioUnicastInputCodecPreferenceList(
+                        mSingleDevice, List.of(LC3_16KHZ_CONFIG));
+
+        // Update of codec config preference with OPUS_48KHZ_CONFIG
+        mService.setCodecConfigPreference(TEST_GROUP_ID, OPUS_48KHZ_CONFIG, OPUS_48KHZ_CONFIG);
+        verify(mDatabaseManager)
+                .setLeAudioUnicastOutputCodecPreferenceList(
+                        mSingleDevice, List.of(LC3_16KHZ_CONFIG, OPUS_48KHZ_CONFIG));
+        verify(mDatabaseManager)
+                .setLeAudioUnicastInputCodecPreferenceList(
+                        mSingleDevice, List.of(LC3_16KHZ_CONFIG, OPUS_48KHZ_CONFIG));
+
+        // Update of codec config preference with OPUS_HI_RES_96KHZ_CONFIG
+        mService.setCodecConfigPreference(
+                TEST_GROUP_ID, OPUS_HI_RES_96KHZ_CONFIG, OPUS_HI_RES_96KHZ_CONFIG);
+        verify(mDatabaseManager)
+                .setLeAudioUnicastOutputCodecPreferenceList(
+                        mSingleDevice,
+                        List.of(LC3_16KHZ_CONFIG, OPUS_48KHZ_CONFIG, OPUS_HI_RES_96KHZ_CONFIG));
+        verify(mDatabaseManager)
+                .setLeAudioUnicastInputCodecPreferenceList(
+                        mSingleDevice,
+                        List.of(LC3_16KHZ_CONFIG, OPUS_48KHZ_CONFIG, OPUS_HI_RES_96KHZ_CONFIG));
+    }
+
+    @Test
+    @EnableFlags({
+        Flags.FLAG_LEAUDIO_ADD_OPUS_CODEC_TYPE,
+        Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API
+    })
+    public void testCodecConfigPreferenceRestore() {
+        // Not connected device
+        assertThat(mService.setActiveDevice(mSingleDevice)).isFalse();
+
+        // Connect device
+        connectTestDevice(mSingleDevice, TEST_GROUP_ID);
+
+        // Add location support
+        injectAudioConfChanged(
+                mSingleDevice,
+                TEST_GROUP_ID,
+                BluetoothLeAudio.CONTEXT_TYPE_RINGTONE,
+                0x01 /*AUDIO_DIRECTION_OUTPUT_BIT*/);
+
+        assertThat(mService.setActiveDevice(mSingleDevice)).isTrue();
+        verify(mNativeInterface).groupSetActive(TEST_GROUP_ID);
+
+        ArgumentCaptor<List<BluetoothLeAudioCodecConfig>> inputCodecDatabase =
+                ArgumentCaptor.forClass((Class) List.class);
+        ArgumentCaptor<List<BluetoothLeAudioCodecConfig>> outputCodecDatabase =
+                ArgumentCaptor.forClass((Class) List.class);
+
+        // Set group and device as active
+        injectGroupStatusChange(TEST_GROUP_ID, LeAudioStackEvent.GROUP_STATUS_ACTIVE);
+
+        // Set the initial group codec status
+        injectGroupSelectableCodecConfigChanged(
+                TEST_GROUP_ID, OPUS_SELECTABLE_CONFIGS, OPUS_SELECTABLE_CONFIGS);
+        injectGroupCurrentCodecConfigChanged(TEST_GROUP_ID, LC3_16KHZ_CONFIG, LC3_48KHZ_CONFIG);
+
+        mService.setCodecConfigPreference(TEST_GROUP_ID, LC3_16KHZ_CONFIG, LC3_16KHZ_CONFIG);
+        mService.setCodecConfigPreference(TEST_GROUP_ID, OPUS_48KHZ_CONFIG, OPUS_48KHZ_CONFIG);
+        mService.setCodecConfigPreference(
+                TEST_GROUP_ID, OPUS_HI_RES_96KHZ_CONFIG, OPUS_HI_RES_96KHZ_CONFIG);
+        verify(mDatabaseManager, times(3))
+                .setLeAudioUnicastOutputCodecPreferenceList(
+                        eq(mSingleDevice), outputCodecDatabase.capture());
+        verify(mDatabaseManager, times(3))
+                .setLeAudioUnicastInputCodecPreferenceList(
+                        eq(mSingleDevice), inputCodecDatabase.capture());
+
+        reset(mNativeInterface);
+        reset(mAudioManager);
+        reset(mDatabaseManager);
+
+        // Mock the persistent storage content for the group reactivation
+        doReturn(outputCodecDatabase.getValue())
+                .when(mDatabaseManager)
+                .getLeAudioUnicastOutputCodecPreferenceList(mSingleDevice);
+        doReturn(inputCodecDatabase.getValue())
+                .when(mDatabaseManager)
+                .getLeAudioUnicastInputCodecPreferenceList(mSingleDevice);
+        injectGroupStatusChange(TEST_GROUP_ID, LeAudioStackEvent.GROUP_STATUS_INACTIVE);
+
+        // Set group and device as active.
+        injectGroupStatusChange(TEST_GROUP_ID, LeAudioStackEvent.GROUP_STATUS_ACTIVE);
+        injectGroupSelectableCodecConfigChanged(
+                TEST_GROUP_ID, OPUS_SELECTABLE_CONFIGS, OPUS_SELECTABLE_CONFIGS);
+        injectGroupCurrentCodecConfigChanged(
+                TEST_GROUP_ID, OPUS_HI_RES_96KHZ_CONFIG, OPUS_HI_RES_96KHZ_CONFIG);
+
+        // Verify if preferences were retrieved and reapplied to native
+        verify(mDatabaseManager).getLeAudioUnicastInputCodecPreferenceList(mSingleDevice);
+        verify(mDatabaseManager).getLeAudioUnicastOutputCodecPreferenceList(mSingleDevice);
+        verify(mNativeInterface)
+                .setCodecConfigPreference(TEST_GROUP_ID, LC3_16KHZ_CONFIG, LC3_16KHZ_CONFIG);
+        verify(mNativeInterface)
+                .setCodecConfigPreference(TEST_GROUP_ID, OPUS_48KHZ_CONFIG, OPUS_48KHZ_CONFIG);
+        verify(mNativeInterface)
+                .setCodecConfigPreference(
+                        TEST_GROUP_ID, OPUS_HI_RES_96KHZ_CONFIG, OPUS_HI_RES_96KHZ_CONFIG);
+    }
+
+    @Test
+    @EnableFlags({
+        Flags.FLAG_LEAUDIO_ADD_OPUS_CODEC_TYPE,
+        Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API
+    })
+    public void testSetGetCodecConfigPreferenceOpus() {
+        // Not connected device
+        assertThat(mService.setActiveDevice(mSingleDevice)).isFalse();
+
+        // Connect device
+        connectTestDevice(mSingleDevice, TEST_GROUP_ID);
+
+        // Add location support
+        injectAudioConfChanged(
+                mSingleDevice,
+                TEST_GROUP_ID,
+                BluetoothLeAudio.CONTEXT_TYPE_RINGTONE,
+                0x01 /*AUDIO_DIRECTION_OUTPUT_BIT*/);
+
+        assertThat(mService.setActiveDevice(mSingleDevice)).isTrue();
+        verify(mNativeInterface).groupSetActive(TEST_GROUP_ID);
+
+        ArgumentCaptor<List<BluetoothLeAudioCodecConfig>> inputCodecDatabase =
+                ArgumentCaptor.forClass((Class) List.class);
+        ArgumentCaptor<List<BluetoothLeAudioCodecConfig>> outputCodecDatabase =
+                ArgumentCaptor.forClass((Class) List.class);
+
+        // Set group and device as active
+        injectGroupStatusChange(TEST_GROUP_ID, LeAudioStackEvent.GROUP_STATUS_ACTIVE);
+
+        // Set the initial group codec status
+        injectGroupSelectableCodecConfigChanged(
+                TEST_GROUP_ID, OPUS_SELECTABLE_CONFIGS, OPUS_SELECTABLE_CONFIGS);
+        injectGroupCurrentCodecConfigChanged(TEST_GROUP_ID, OPUS_48KHZ_CONFIG, OPUS_48KHZ_CONFIG);
+
+        // Note: Opus and Opus Hi-res are a different codecs at the API level, but still the same
+        // codec at the Bluetooth specification level. If we have both flavors of the Opus codec
+        // configuration priorities set by the API, we should call to native only with the higher
+        // codec priority of the two, since the BT Audio HAL receives the same Bluetooth domain
+        // codec identifier when setting the priority for both.
+        // Make sure the lower-priority OPUS will not override the Hi-res priority
+        mService.setCodecConfigPreference(
+                TEST_GROUP_ID, OPUS_HI_RES_96KHZ_CONFIG, OPUS_HI_RES_96KHZ_CONFIG);
+        mService.setCodecConfigPreference(TEST_GROUP_ID, OPUS_48KHZ_CONFIG, OPUS_48KHZ_CONFIG);
+
+        verify(mDatabaseManager, times(2))
+                .setLeAudioUnicastOutputCodecPreferenceList(
+                        eq(mSingleDevice), outputCodecDatabase.capture());
+        verify(mDatabaseManager, times(2))
+                .setLeAudioUnicastInputCodecPreferenceList(
+                        eq(mSingleDevice), inputCodecDatabase.capture());
+
+        assertThat(outputCodecDatabase.getValue().size()).isEqualTo(2);
+        assertThat(inputCodecDatabase.getValue().size()).isEqualTo(2);
+
+        // Make sure that Opus Hi-res preference with a higher prio than Opus was not overridden
+        verify(mNativeInterface, times(1))
+                .setCodecConfigPreference(
+                        TEST_GROUP_ID, OPUS_HI_RES_96KHZ_CONFIG, OPUS_HI_RES_96KHZ_CONFIG);
+        verify(mNativeInterface, times(0))
+                .setCodecConfigPreference(TEST_GROUP_ID, OPUS_48KHZ_CONFIG, OPUS_48KHZ_CONFIG);
+
+        reset(mNativeInterface);
+        reset(mAudioManager);
+        reset(mDatabaseManager);
+
+        // Mock the persistent storage content for the group reactivation
+        doReturn(outputCodecDatabase.getValue())
+                .when(mDatabaseManager)
+                .getLeAudioUnicastOutputCodecPreferenceList(mSingleDevice);
+        doReturn(inputCodecDatabase.getValue())
+                .when(mDatabaseManager)
+                .getLeAudioUnicastInputCodecPreferenceList(mSingleDevice);
+        injectGroupStatusChange(TEST_GROUP_ID, LeAudioStackEvent.GROUP_STATUS_INACTIVE);
+
+        // Set group and device as active.
+        injectGroupStatusChange(TEST_GROUP_ID, LeAudioStackEvent.GROUP_STATUS_ACTIVE);
+        injectGroupSelectableCodecConfigChanged(
+                TEST_GROUP_ID, OPUS_SELECTABLE_CONFIGS, OPUS_SELECTABLE_CONFIGS);
+        injectGroupCurrentCodecConfigChanged(
+                TEST_GROUP_ID, OPUS_HI_RES_96KHZ_CONFIG, OPUS_HI_RES_96KHZ_CONFIG);
+
+        // Verify if preferences were retrieved and reapplied to native
+        verify(mDatabaseManager).getLeAudioUnicastInputCodecPreferenceList(mSingleDevice);
+        verify(mDatabaseManager).getLeAudioUnicastOutputCodecPreferenceList(mSingleDevice);
+        // Make sure the regular Opus does not override the higher prio Opus Hi-res preference
+        verify(mNativeInterface, times(0))
+                .setCodecConfigPreference(TEST_GROUP_ID, OPUS_48KHZ_CONFIG, OPUS_48KHZ_CONFIG);
+        verify(mNativeInterface)
+                .setCodecConfigPreference(
+                        TEST_GROUP_ID, OPUS_HI_RES_96KHZ_CONFIG, OPUS_HI_RES_96KHZ_CONFIG);
     }
 
     /** Test managing broadcast to unicast fallback group */
