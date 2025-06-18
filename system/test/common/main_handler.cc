@@ -47,7 +47,7 @@ bt_status_t do_in_main_thread(base::OnceClosure task) {
 }
 
 bt_status_t do_in_main_thread_delayed(base::OnceClosure task, std::chrono::microseconds delay) {
-  bluetooth::log::assert_that(!main_thread.DoInThreadDelayed(std::move(task), delay),
+  bluetooth::log::assert_that(main_thread.DoInThreadDelayed(std::move(task), delay),
                               "Unable to run on main thread delayed");
   return BT_STATUS_SUCCESS;
 }
