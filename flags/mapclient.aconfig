@@ -36,7 +36,7 @@ flag {
     name: "map_mime_multipart"
     namespace: "bluetooth"
     description: "double quote boundary when encoding header"
-    bug: "4424374330"
+    bug: "424374330"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
