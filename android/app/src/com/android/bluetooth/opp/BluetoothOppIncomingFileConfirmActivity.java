@@ -83,7 +83,6 @@ public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        setTheme(R.style.Theme_Material_Settings_Floating);
         Log.v(TAG, "onCreate(): action = " + getIntent().getAction());
         super.onCreate(savedInstanceState);
 
