@@ -51,6 +51,9 @@ object UserRestriction {
     var isBluetoothAllowed = false
         private set
 
+    var bluetoothSharingState = PackageManager.COMPONENT_ENABLED_STATE_DEFAULT
+        private set
+
     /** Listen on User restriction and trigger the callback when Bluetooth is not allowed */
     @JvmStatic
     fun initialize(context: Context, looper: Looper, callback: () -> Unit) {
@@ -71,19 +74,29 @@ object UserRestriction {
             Handler(looper),
         )
 
-        isBluetoothAllowed = isBluetoothAllowed(context)
+        isBluetoothAllowed = !hasBluetoothRestriction(context)
     }
 
     @JvmStatic
     @VisibleForTesting
     fun handleRestrictionChange(context: Context, fromUser: UserHandle, callback: () -> Unit) {
-        isBluetoothAllowed = isBluetoothAllowed(context)
-        val userContext = context.createContextAsUser(fromUser, 0)
-        val isBluetoothSharingAllowed = isBluetoothAllowed && isBluetoothSharingAllowed(userContext)
+        val wasBluetoothAllowed = isBluetoothAllowed
+        isBluetoothAllowed = !hasBluetoothRestriction(context)
 
-        updateOppLauncherComponentState(userContext, isBluetoothSharingAllowed)
+        if (!isBluetoothAllowed && !wasBluetoothAllowed) {
+            // When Bluetooth was not allowed and is still not allowed, there will be nothing else
+            // to do as both Bluetooth and Sharing are not allowed.
+            // But if Bluetooth was allowed and is still allowed, we need to check for an eventual
+            // Sharing restriction.
+            // This is why the check is `&&` and not `==`
+            Log.v(TAG, "Bluetooth was already not allowed. Nothing more to do")
+            return
+        }
+
+        updateOppLauncherComponentState(context.createContextAsUser(fromUser, 0))
 
         Log.i(TAG, "handleRestrictionChange for user $fromUser, is allowed: $isBluetoothAllowed")
+
         // DISALLOW_BLUETOOTH can only be set by DO or PO on the system user.
         // Only trigger once instead of for all users
         if (UserHandle.SYSTEM.equals(fromUser) && !isBluetoothAllowed) {
@@ -94,26 +107,21 @@ object UserRestriction {
 
     @JvmStatic
     fun initializeUser(userContext: Context) {
-        val isBluetoothSharingAllowed = isBluetoothAllowed && isBluetoothSharingAllowed(userContext)
-
-        updateOppLauncherComponentState(userContext, isBluetoothSharingAllowed)
+        updateOppLauncherComponentState(userContext)
     }
 
     /**
-     * Disables BluetoothOppLauncherActivity component, so the Bluetooth sharing option is not
-     * offered to the user if Bluetooth or sharing is disallowed. Puts the component to its default
-     * state if Bluetooth is not disallowed.
+     * Manages Opp Activity components, so the Bluetooth sharing option is not offered to the user
+     * if Bluetooth or sharing is disallowed. Puts the component to its default state if Bluetooth
+     * is not disallowed.
      */
-    private fun updateOppLauncherComponentState(userContext: Context, sharingAllowed: Boolean) {
-        val newState =
-            if (!sharingAllowed) {
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-            } else if (BluetoothProperties.isProfileOppEnabled().orElse(false)) {
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-            } else {
-                PackageManager.COMPONENT_ENABLED_STATE_DEFAULT
-            }
-
+    private fun updateOppLauncherComponentState(userContext: Context) {
+        val previousBluetoothSharingState = bluetoothSharingState
+        bluetoothSharingState = getBluetoothSharingState(userContext)
+        if (previousBluetoothSharingState == bluetoothSharingState) {
+            Log.v(TAG, "Bluetooth sharing state is already $bluetoothSharingState")
+            return
+        }
         val bluetoothPackageName = getBluetoothPackageName(userContext)
 
         oppActivities.forEach { activityName ->
@@ -121,7 +129,7 @@ object UserRestriction {
                 .getPackageManager()
                 .setComponentEnabledSetting(
                     ComponentName(bluetoothPackageName, activityName),
-                    newState,
+                    bluetoothSharingState,
                     PackageManager.DONT_KILL_APP,
                 )
         }
@@ -158,13 +166,28 @@ object UserRestriction {
             .packageName
     }
 
-    private fun isBluetoothAllowed(systemContext: Context): Boolean =
-        !systemContext
+    private fun getBluetoothSharingState(userContext: Context): Int {
+        if (!isBluetoothAllowed) {
+            return PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+        }
+        if (
+            userContext
+                .getSystemService(UserManager::class.java)
+                .hasUserRestriction(UserManager.DISALLOW_BLUETOOTH_SHARING)
+        ) {
+            Log.v(TAG, "Sharing is disallowed due to user restriction")
+            return PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+        }
+        if (!BluetoothProperties.isProfileOppEnabled().orElse(false)) {
+            Log.v(TAG, "Sharing is set to default due to Opp profile not enabled")
+            return PackageManager.COMPONENT_ENABLED_STATE_DEFAULT
+        }
+        Log.v(TAG, "Sharing is allowed")
+        return PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+    }
+
+    private fun hasBluetoothRestriction(systemContext: Context): Boolean =
+        systemContext
             .getSystemService(UserManager::class.java)
             .hasUserRestriction(UserManager.DISALLOW_BLUETOOTH)
-
-    private fun isBluetoothSharingAllowed(userContext: Context): Boolean =
-        !userContext
-            .getSystemService(UserManager::class.java)
-            .hasUserRestriction(UserManager.DISALLOW_BLUETOOTH_SHARING)
 }
