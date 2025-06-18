@@ -55,6 +55,7 @@ static_library("libbluetooth_gd") {
     "hci/acl_manager_impl.cc",
     "hci/acl_manager/acl_connection.cc",
     "hci/acl_manager/acl_fragmenter.cc",
+    "hci/acl_manager/acl_manager_classic_impl.cc",
     "hci/acl_manager/acl_scheduler.cc",
     "hci/acl_manager/classic_acl_connection.cc",
     "hci/acl_manager/le_acl_connection.cc",
