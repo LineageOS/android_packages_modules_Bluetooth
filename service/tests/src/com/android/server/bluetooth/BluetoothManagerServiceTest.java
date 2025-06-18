@@ -228,13 +228,7 @@ public class BluetoothManagerServiceTest {
         doReturn(mAdapterService).when(mAdapterBinder).getAdapterBinder();
         doReturn(mBinder).when(mAdapterService).asBinder();
 
-        doReturn(true)
-                .when(mContext)
-                .bindServiceAsUser(
-                        any(Intent.class),
-                        any(ServiceConnection.class),
-                        anyInt(),
-                        any(UserHandle.class));
+        doReturn(true).when(mContext).bindServiceAsUser(any(), any(), anyInt(), any());
         doNothing().when(mContext).unbindService(any());
 
         BluetoothServerProxy.setInstanceForTesting(mBluetoothServerProxy);
@@ -338,24 +332,21 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    public void enable_bindFailure_removesTimeout() throws Exception {
-        doReturn(false)
-                .when(mContext)
-                .bindServiceAsUser(
-                        any(Intent.class),
-                        any(ServiceConnection.class),
-                        anyInt(),
-                        any(UserHandle.class));
+    public void enable_bindFailure_removesTimeoutAndStaysOff() throws Exception {
+        doReturn(false).when(mContext).bindServiceAsUser(any(), any(), anyInt(), any());
         mManagerService.enableBle("enable_bindFailure_removesTimeout", mBleBinder);
         if (!Flags.systemServerRemoveExtraThreadJump()) {
             syncHandler(MESSAGE_ENABLE);
         }
-        verify(mContext).unbindService(any());
+        if (Flags.userSwitchDuringBleOn()) {
+            verifyBleStateIntentSent(State.OFF, State.BLE_TURNING_ON);
+        }
         mInOrder.verify(mContext).unbindService(any());
+        if (Flags.userSwitchDuringBleOn()) {
+            verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
+        }
 
-        // TODO(b/280518177): Failed to start should be noted / reported in metrics
-        // Maybe show a popup or a crash notification
-        // Should we attempt to re-bind ?
+        assertThat(mManagerService.getState()).isEqualTo(State.OFF);
 
         endTest();
     }
@@ -384,9 +375,7 @@ public class BluetoothManagerServiceTest {
                 new ComponentName("", "com.android.bluetooth.btservice.AdapterService");
 
         var captor = ArgumentCaptor.forClass(ServiceConnection.class);
-        mInOrder.verify(mContext)
-                .bindServiceAsUser(
-                        any(Intent.class), captor.capture(), anyInt(), any(UserHandle.class));
+        mInOrder.verify(mContext).bindServiceAsUser(any(), captor.capture(), anyInt(), any());
         assertThat(captor.getAllValues()).hasSize(1);
 
         var serviceConnection = captor.getAllValues().get(0);
