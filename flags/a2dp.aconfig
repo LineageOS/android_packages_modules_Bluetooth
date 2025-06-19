@@ -117,8 +117,15 @@ flag {
 }
 
 flag {
-   name: "lhdc_codec_support"
-   namespace: "bluetooth"
-   description: "Implement support for the LHDCv5 codec"
-   bug: "423977897"
+    name: "lhdc_codec_support"
+    namespace: "bluetooth"
+    description: "Implement support for the LHDCv5 codec"
+    bug: "423977897"
+}
+
+flag {
+    name: "a2dp_delay_report_in_dumpsys"
+    namespace: "bluetooth"
+    description: "Log AVDTP delay report events in dumpsys"
+    bug: "426021684"
 }
