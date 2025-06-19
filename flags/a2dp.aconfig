@@ -115,3 +115,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+   name: "lhdc_codec_support"
+   namespace: "bluetooth"
+   description: "Implement support for the LHDCv5 codec"
+   bug: "423977897"
+}
