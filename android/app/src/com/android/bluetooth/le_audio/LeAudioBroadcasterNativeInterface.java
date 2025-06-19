@@ -201,6 +201,18 @@ public class LeAudioBroadcasterNativeInterface {
         getBroadcastMetadataNative(broadcastId);
     }
 
+    /**
+     * Sends parameters to native stack to set the BIG Channel Map by map classification of sink.
+     * This method calls the corresponding private native method.
+     *
+     * @param action The action for set BIG channel map classification.
+     * @param sink The Bluetooth device of the sink device.
+     * @param broadcastId The Broadcast ID.
+     */
+    void setBigChannelMapClassification(int action, BluetoothDevice sink, int broadcastId) {
+        setBigChannelMapClassificationNative(action, Utils.getByteAddress(sink), broadcastId);
+    }
+
     // Native methods that call into the JNI interface
     private native void initNative();
 
@@ -228,4 +240,7 @@ public class LeAudioBroadcasterNativeInterface {
     private native void destroyBroadcastNative(int broadcastId);
 
     private native void getBroadcastMetadataNative(int broadcastId);
+
+    private native void setBigChannelMapClassificationNative(
+            int action, byte[] sinkAddr, int broadcastId);
 }

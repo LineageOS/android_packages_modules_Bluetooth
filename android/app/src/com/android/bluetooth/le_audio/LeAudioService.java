@@ -31,6 +31,7 @@ import static com.android.bluetooth.BluetoothStatsLog.BROADCAST_AUDIO_SESSION_RE
 import static com.android.bluetooth.bass_client.BassConstants.INVALID_BROADCAST_ID;
 import static com.android.bluetooth.flags.Flags.doNotHardcodeTmapRoleMask;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastCreationTimeoutFix;
+import static com.android.bluetooth.flags.Flags.leaudioBroadcastSourceChannelMapClassification;
 import static com.android.bluetooth.flags.Flags.leaudioIntentBroadcastInStateMachineCleanup;
 
 import static java.util.Objects.requireNonNull;
@@ -82,6 +83,7 @@ import com.android.bluetooth.BluetoothEventLogger;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.bass_client.BassClientService;
+import com.android.bluetooth.bass_client.BassClientService.SetBigChannelMapClassificationAction;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.Config;
 import com.android.bluetooth.btservice.MetricsLogger;
@@ -1477,6 +1479,43 @@ public class LeAudioService extends ConnectableProfile {
             mBroadcastIdDeactivatedForUnicastTransition = Optional.empty();
         }
         mLeAudioBroadcasterNativeInterface.get().destroyBroadcast(broadcastId);
+    }
+
+    /**
+     * Sends parameters to native stack to set the BIG Channel Map by channel classification of sink
+     * device.
+     *
+     * <p>This public method calls the native interface to bridge to JNI.
+     *
+     * @param action The action for set BIG channel map classification.
+     * @param sink The Bluetooth device of the sink device.
+     * @param broadcastId The Broadcast ID.
+     */
+    public void setBigChannelMapClassification(int action, BluetoothDevice sink, int broadcastId) {
+        if (!leaudioBroadcastSourceChannelMapClassification()) {
+            return;
+        }
+
+        if (!mLeAudioBroadcasterNativeInterface.isPresent()) {
+            Log.w(TAG, "Native interface not available.");
+            return;
+        }
+
+        LeAudioBroadcastDescriptor descriptor = mBroadcastDescriptors.get(broadcastId);
+        if (descriptor == null) {
+            Log.e(TAG, "No valid descriptor for broadcastId: " + broadcastId);
+            return;
+        }
+
+        if (action == SetBigChannelMapClassificationAction.NO_ACTION.getValue()) {
+            Log.e(TAG, "NO_ACTION for SetBigChannelMapClassification");
+            return;
+        }
+
+        // Call the Native Interface
+        mLeAudioBroadcasterNativeInterface
+                .get()
+                .setBigChannelMapClassification(action, sink, broadcastId);
     }
 
     /**

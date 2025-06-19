@@ -8253,4 +8253,92 @@ public class BassClientServiceTest {
                         any(),
                         any(BroadcastOptions.class));
     }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_SOURCE_CHANNEL_MAP_CLASSIFICATION)
+    public void testNotifyReceiveStateChanged_addClientForBigChannelMap() {
+        // Mock that the broadcast is local
+        when(mLeAudioService.getBroadcastMetadata(anyInt())).thenReturn(mBroadcastMetadata1);
+        prepareConnectedDeviceGroup();
+
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
+
+        // Verify that setBigChannelMapClassification is called with ADD action
+        verify(mLeAudioService)
+                .setBigChannelMapClassification(
+                        eq(BassClientService.SetBigChannelMapClassificationAction.ADD.getValue()),
+                        eq(mCurrentDevice),
+                        eq(mBroadcastMetadata1.getBroadcastId()));
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_SOURCE_CHANNEL_MAP_CLASSIFICATION)
+    public void testNotifyReceiveStateChanged_deleteClientForBigChannelMap() {
+        // Mock that the broadcast is local
+        when(mLeAudioService.getBroadcastMetadata(anyInt())).thenReturn(mBroadcastMetadata1);
+        prepareConnectedDeviceGroup();
+
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
+
+        // Clear the mock so we can focus on verifying the DELETE action.
+        clearInvocations(mLeAudioService);
+
+        // Create a new metadata object with a null device to simulate removal.
+        BluetoothLeBroadcastMetadata emptyMetadata =
+                new BluetoothLeBroadcastMetadata.Builder(mBroadcastMetadata1)
+                        .setSourceDevice(
+                        getRealDevice("00:00:00:00:00:00", ADDRESS_TYPE_PUBLIC),
+                        ADDRESS_TYPE_PUBLIC).build();
+
+        // Inject a state change using the empty metadata
+        // This should cause `isEmptyBluetoothDevice` to be true, and `newSyncStatus` to be
+        // `NOT_SYNCED`
+        injectRemoteSourceStateChanged(
+                emptyMetadata, /* isPaSynced */ false, /* isBisSynced */ false);
+
+        // Verify that setBigChannelMapClassification is called with DELETE action
+        verify(mLeAudioService)
+                .setBigChannelMapClassification(
+                        eq(BassClientService.SetBigChannelMapClassificationAction.DELETE
+                                                                                .getValue()),
+                        eq(mCurrentDevice),
+                        eq(mBroadcastMetadata1.getBroadcastId()));
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_SOURCE_CHANNEL_MAP_CLASSIFICATION)
+    public void testNotifyReceiveStateChanged_notLocalBroadcast_doNothing() {
+        // Mock that the broadcast is not local
+        when(mLeAudioService.getBroadcastMetadata(anyInt())).thenReturn(null);
+        prepareConnectedDeviceGroup();
+
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ true, /* isBisSynced */ false);
+
+        // Verify that setBigChannelMapClassification is never called
+        verify(mLeAudioService, never())
+                .setBigChannelMapClassification(anyInt(), any(BluetoothDevice.class), anyInt());
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_SOURCE_CHANNEL_MAP_CLASSIFICATION)
+    public void testNotifyReceiveStateChanged_noTargetPaSyncStateChange_doNothing() {
+        when(mLeAudioService.getBroadcastMetadata(anyInt())).thenReturn(mBroadcastMetadata1);
+        prepareConnectedDeviceGroup();
+
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
+
+        // Verify that setBigChannelMapClassification is never called
+        verify(mLeAudioService, never())
+                .setBigChannelMapClassification(anyInt(), any(BluetoothDevice.class), anyInt());
+    }
 }
