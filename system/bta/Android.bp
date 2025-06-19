@@ -44,6 +44,7 @@ filegroup {
         "dm/bta_dm_pm.cc",
         "dm/bta_dm_sec.cc",
         "dm/bta_dm_sec_api.cc",
+        "dm/sniff_offload/sniff_offload_vsc_sender.cc",
     ],
 }
 
