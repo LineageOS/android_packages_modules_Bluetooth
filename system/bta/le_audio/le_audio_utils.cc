@@ -36,6 +36,30 @@ using bluetooth::le_audio::types::LeAudioContextType;
 namespace bluetooth::le_audio {
 namespace utils {
 
+size_t GetConfigurationHash(const bluetooth::le_audio::types::AudioSetConfiguration& conf) {
+  /* This has should be use to represent CIG configuration. We want to use it to check
+   * if changing configuration requires CIG reconfiguration
+   */
+
+  std::vector<uint8_t> value_to_hash;
+  auto target_latency = conf.getTargetLatency();
+  auto max_sdu = conf.getMaxSdu();
+
+  value_to_hash.push_back(target_latency.sink);
+  value_to_hash.push_back(target_latency.source);
+  value_to_hash.push_back(static_cast<uint8_t>(max_sdu.sink));
+  value_to_hash.push_back(static_cast<uint8_t>(max_sdu.sink >> 8));
+  value_to_hash.push_back(static_cast<uint8_t>(max_sdu.source));
+  value_to_hash.push_back(static_cast<uint8_t>(max_sdu.source >> 8));
+  value_to_hash.push_back(conf.packing);
+
+  auto hash = std::hash<std::string_view>{}(
+          {reinterpret_cast<const char*>(value_to_hash.data()), value_to_hash.size()});
+
+  log::info("{}, hash: {:#x}", conf.name, hash);
+  return hash;
+}
+
 /* The returned LeAudioContextType should have its entry in the
  * AudioSetConfigurationProvider's ContextTypeToScenario mapping table.
  * Otherwise the AudioSetConfigurationProvider will fall back
