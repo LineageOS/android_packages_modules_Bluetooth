@@ -1433,6 +1433,11 @@ void shim::Acl::OnLeConnectSuccess(hci::AddressWithType address_with_type,
     log::info("Disconnected ACL after connection canceled");
     BTM_LogHistory(kBtmLogTag, ToLegacyAddressWithType(address_with_type), "Connection canceled",
                    "Le");
+
+    if (com::android::bluetooth::flags::gatt_failure_callback_on_cancel()) {
+      // When reporting back, remote becomes local.
+      OnLeConnectFail(address_with_type, hci::ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST);
+    }
     return;
   }
 
