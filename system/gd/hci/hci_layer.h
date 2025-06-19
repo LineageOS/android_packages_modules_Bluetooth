@@ -135,6 +135,9 @@ public:
   std::unique_ptr<InquiryInterface> GetInquiryInterface(
           common::ContextualCallback<void(EventView)> event_handler) override;
 
+  void SetLeAclDataConsumer(LeAclDataConsumer* le_acl_data_consumer) override;
+  void SetClassicAclDataConsumer(ClassicAclDataConsumer* classic_acl_data_consumer) override;
+
   static constexpr std::chrono::milliseconds kHciTimeoutMs = std::chrono::milliseconds(2000);
   static constexpr std::chrono::milliseconds kHciTimeoutRestartMs = std::chrono::milliseconds(5000);
 

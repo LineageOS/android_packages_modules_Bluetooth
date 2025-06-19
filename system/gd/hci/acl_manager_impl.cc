@@ -18,127 +18,38 @@
 
 #include <bluetooth/log.h>
 
-#include <atomic>
 #include <format>
-#include <future>
-#include <mutex>
 #include <string>
-#include <unordered_set>
-#include <utility>
-#include <vector>
 
-#include "common/bidi_queue.h"
 #include "common/byte_array.h"
-#include "hci/acl_manager/classic_acl_count_provider.h"
-#include "hci/acl_manager/classic_acl_data_consumer.h"
+#include "hci/acl_manager/le_impl.h"
 #include "storage/config_keys.h"
 #include "storage/storage_module.h"
 
 namespace bluetooth {
 namespace hci {
 
-constexpr uint16_t kQualcommDebugHandle = 0xedc;
-constexpr uint16_t kSamsungDebugHandle = 0xeef;
-
 using common::Bind;
 using common::BindOnce;
-
-using acl_manager::ConnectionCallbacks;
 
 using acl_manager::le_impl;
 using acl_manager::LeConnectionCallbacks;
 
-using acl_manager::AclScheduler;
 using acl_manager::RoundRobinScheduler;
 
 constexpr bool crash_on_unknown_handle = false;
-constexpr std::chrono::seconds kWaitBeforeDroppingUnknownAcl{1};
 
-AclManagerImpl::AclManagerImpl(os::Handler* handler, HciInterface& hci, Controller& controller,
-                               storage::StorageModule& storage_module,
+AclManagerImpl::AclManagerImpl(os::Handler* handler, hci::HciInterface& hci,
+                               hci::Controller& controller, storage::StorageModule& storage_module,
                                acl_manager::RoundRobinScheduler& round_robin_scheduler,
-                               acl_manager::ClassicAclCountProvider& classic_acl_count_provider,
-                               acl_manager::ClassicAclDataConsumer& classic_acl_data_consumer)
+                               acl_manager::ClassicAclCountProvider& classic_acl_count_provider)
     : handler_(handler),
       storage_module_(storage_module),
       round_robin_scheduler_(round_robin_scheduler),
-      classic_acl_data_consumer_(classic_acl_data_consumer),
       le_impl_(hci, controller, handler_, round_robin_scheduler, storage_module,
                crash_on_unknown_handle, classic_acl_count_provider) {
-  hci_queue_end_ = hci.GetAclQueueEnd();
-  hci_queue_end_->RegisterDequeue(
-          handler_, common::Bind(&AclManagerImpl::dequeue_and_route_acl_packet_to_connection,
-                                 common::Unretained(this)));
-}
-
-AclManagerImpl::~AclManagerImpl() { hci_queue_end_->UnregisterDequeue(); }
-
-void AclManagerImpl::retry_unknown_acl(bool timed_out) {
-  std::vector<AclView> unsent_packets;
-  for (const auto& itr : waiting_packets_) {
-    auto handle = itr.GetHandle();
-    if (!classic_acl_data_consumer_.SendPacketUpward(
-                handle,
-                [itr](struct acl_manager::assembler* assembler) {
-                  assembler->on_incoming_packet(itr);
-                }) &&
-        !le_impl_.send_packet_upward(handle, [itr](struct acl_manager::assembler* assembler) {
-          assembler->on_incoming_packet(itr);
-        })) {
-      if (!timed_out) {
-        unsent_packets.push_back(itr);
-      } else {
-        log::error("Dropping packet of size {} to unknown connection 0x{:x}", itr.size(),
-                   itr.GetHandle());
-      }
-    }
-  }
-  waiting_packets_ = std::move(unsent_packets);
-}
-
-void AclManagerImpl::on_unknown_acl_timer() {
-  log::info("Timer fired!");
-  retry_unknown_acl(/* timed_out = */ true);
-  unknown_acl_alarm_.reset();
-}
-
-  // Invoked from some external Queue Reactable context 2
-void AclManagerImpl::dequeue_and_route_acl_packet_to_connection() {
-  // Retry any waiting packets first
-  if (!waiting_packets_.empty()) {
-    retry_unknown_acl(/* timed_out = */ false);
-  }
-
-  auto packet = hci_queue_end_->TryDequeue();
-  log::assert_that(packet != nullptr, "assert failed: packet != nullptr");
-  if (!packet->IsValid()) {
-    log::info("Dropping invalid packet of size {}", packet->size());
-    return;
-  }
-  uint16_t handle = packet->GetHandle();
-  if (handle == kQualcommDebugHandle || handle == kSamsungDebugHandle) {
-    return;
-  }
-  if (classic_acl_data_consumer_.SendPacketUpward(
-              handle, [&packet](struct acl_manager::assembler* assembler) {
-                assembler->on_incoming_packet(*packet);
-              })) {
-    return;
-  }
-  if (le_impl_.send_packet_upward(handle, [&packet](struct acl_manager::assembler* assembler) {
-        assembler->on_incoming_packet(*packet);
-      })) {
-    return;
-  }
-  if (unknown_acl_alarm_ == nullptr) {
-    unknown_acl_alarm_.reset(new os::Alarm(&handler_->thread()));
-  }
-  waiting_packets_.push_back(*packet);
-  log::info("Saving packet of size {} to unknown connection 0x{:x}", packet->size(),
-            packet->GetHandle());
-  unknown_acl_alarm_->Schedule(
-          BindOnce(&AclManagerImpl::on_unknown_acl_timer, common::Unretained(this)),
-          kWaitBeforeDroppingUnknownAcl);
+  log::info("constructing AclManagerImpl");
+  hci.SetLeAclDataConsumer(this);
 }
 
 void AclManagerImpl::RegisterLeCallbacks(LeConnectionCallbacks* callbacks, os::Handler* handler) {

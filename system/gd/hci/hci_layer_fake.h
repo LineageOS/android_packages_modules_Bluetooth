@@ -23,6 +23,7 @@
 #include <queue>
 #include <vector>
 
+#include "hci/hci_data_router.h"
 #include "hci/hci_layer.h"
 
 namespace bluetooth {
@@ -93,6 +94,9 @@ public:
 
   void Disconnect(uint16_t handle, ErrorCode reason) override;
 
+  void SetLeAclDataConsumer(LeAclDataConsumer* le_acl_data_consumer) override;
+  void SetClassicAclDataConsumer(ClassicAclDataConsumer* classic_acl_data_consumer) override;
+
   os::Handler* handler_;
 
 private:
@@ -121,6 +125,8 @@ private:
 
   CommandView empty_command_view_ GUARDED_BY(mutex_) = CommandView::Create(
           PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>()));
+
+  HciDataRouter router_;
 };
 
 }  // namespace hci
