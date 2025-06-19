@@ -75,7 +75,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
                                                   *test_rnr_, *test_round_robin_scheduler_);
   std::unique_ptr<AclManagerImpl> acl_manager = std::make_unique<AclManagerImpl>(
           &client_handler_, *fuzzHci, *test_controller_, *test_storage_,
-          *test_round_robin_scheduler_, *acl_manager_classic_, *acl_manager_classic_);
+          *test_round_robin_scheduler_, *acl_manager_classic_);
 
   fuzzHci->TurnOffAutoReply();
   uint64_t totalAdvanceTime = 0;

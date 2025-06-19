@@ -286,8 +286,98 @@ impl IsoManager {
         self.acl_connections.insert(acl_connection_handle, role);
     }
 
-    pub fn remove_acl_connection(&mut self, acl_connection_handle: u16) {
+    pub fn remove_acl_connection(&mut self, acl_connection_handle: u16, reason: hci::ErrorCode) {
+        // Remove the ACL connection.
         self.acl_connections.remove(&acl_connection_handle);
+
+        // Notify of CIS disconnection for connected or initiated CISes.
+        for cis in self.cis_connections.values() {
+            if cis.acl_connection_handle != Some(acl_connection_handle) {
+                continue;
+            }
+
+            match cis.state {
+                // When the CIS is fully connected, disconnection is notified
+                // with Disconnection Complete event.
+                CisState::Connected => self.send_hci_event(hci::DisconnectionCompleteBuilder {
+                    status: hci::ErrorCode::Success,
+                    connection_handle: cis.cis_connection_handle,
+                    reason,
+                }),
+
+                // When the CIS connection has been locally initiated, disconnection
+                // is notified with LE Cis Established event with error status.
+                // Similarly, when a remote CIS connection request has been accepted
+                // by the Host, the status must be notified with LE Cis Established.
+                CisState::PendingRsp | CisState::PendingInd => {
+                    self.send_hci_event(hci::LeCisEstablishedV1Builder {
+                        status: reason,
+                        connection_handle: cis.cis_connection_handle,
+                        cig_sync_delay: 0,
+                        cis_sync_delay: 0,
+                        transport_latency_c_to_p: 0,
+                        transport_latency_p_to_c: 0,
+                        phy_c_to_p: hci::SecondaryPhyType::NoPackets,
+                        phy_p_to_c: hci::SecondaryPhyType::NoPackets,
+                        nse: 0,
+                        bn_p_to_c: 0,
+                        bn_c_to_p: 0,
+                        ft_p_to_c: 0,
+                        ft_c_to_p: 0,
+                        max_pdu_p_to_c: 0,
+                        max_pdu_c_to_p: 0,
+                        iso_interval: 0,
+                    })
+                }
+
+                _ => (),
+            }
+        }
+
+        // Send LE Cis Established events with an error reason for pending CIS
+        // connection requests.
+        for cis in &self.cis_connection_requests {
+            if cis.acl_connection_handle != acl_connection_handle {
+                continue;
+            }
+
+            self.send_hci_event(hci::LeCisEstablishedV1Builder {
+                status: reason,
+                connection_handle: cis.cis_connection_handle,
+                cig_sync_delay: 0,
+                cis_sync_delay: 0,
+                transport_latency_c_to_p: 0,
+                transport_latency_p_to_c: 0,
+                phy_c_to_p: hci::SecondaryPhyType::NoPackets,
+                phy_p_to_c: hci::SecondaryPhyType::NoPackets,
+                nse: 0,
+                bn_p_to_c: 0,
+                bn_c_to_p: 0,
+                ft_p_to_c: 0,
+                ft_c_to_p: 0,
+                max_pdu_p_to_c: 0,
+                max_pdu_c_to_p: 0,
+                iso_interval: 0,
+            });
+        }
+
+        // Drop peripheral CIS connections on the removed ACL connection.
+        self.cis_connections.retain(|_, cis| {
+            cis.role == hci::Role::Central
+                || cis.acl_connection_handle != Some(acl_connection_handle)
+        });
+
+        // Reset the state of central CIS connections.
+        for cis in self.cis_connections.values_mut() {
+            if cis.acl_connection_handle == Some(acl_connection_handle) {
+                cis.acl_connection_handle = None;
+                cis.state = CisState::Configuration;
+            }
+        }
+
+        // Drop pending CIS connection requests.
+        self.cis_connection_requests
+            .retain(|cis| cis.acl_connection_handle != acl_connection_handle);
     }
 
     // Returns the first unused handle in the range 0xe00..0xefe.

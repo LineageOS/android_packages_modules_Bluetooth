@@ -24,10 +24,12 @@
 #include "hci/acl_connection_interface.h"
 #include "hci/address.h"
 #include "hci/class_of_device.h"
+#include "hci/classic_acl_data_consumer.h"
 #include "hci/distance_measurement_interface.h"
 #include "hci/hci_packets.h"
 #include "hci/inquiry_interface.h"
 #include "hci/le_acl_connection_interface.h"
+#include "hci/le_acl_data_consumer.h"
 #include "hci/le_advertising_interface.h"
 #include "hci/le_iso_interface.h"
 #include "hci/le_scanning_interface.h"
@@ -124,6 +126,10 @@ public:
 
   virtual std::unique_ptr<InquiryInterface> GetInquiryInterface(
           common::ContextualCallback<void(EventView)> event_handler) = 0;
+
+  virtual void SetLeAclDataConsumer(LeAclDataConsumer* le_acl_data_consumer) = 0;
+
+  virtual void SetClassicAclDataConsumer(ClassicAclDataConsumer* classic_acl_data_consumer) = 0;
 };
 
 }  // namespace hci

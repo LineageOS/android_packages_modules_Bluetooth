@@ -2565,12 +2565,14 @@ void LinkLayerController::IncomingDisconnectPacket(model::packets::LinkLayerPack
           "GetHandle() returned invalid handle 0x{:x}", handle);
 
   uint8_t reason = disconnect.GetReason();
-  SendDisconnectionCompleteEvent(handle, ErrorCode(reason));
   if (is_br_edr) {
     ASSERT(link_manager_remove_link(lm_.get(), reinterpret_cast<uint8_t(*)[6]>(peer.data())));
   } else {
-    ASSERT(link_layer_remove_link(ll_.get(), handle));
+    // Will optionally notify CIS disconnections.
+    ASSERT(link_layer_remove_link(ll_.get(), handle, reason));
   }
+
+  SendDisconnectionCompleteEvent(handle, ErrorCode(reason));
 }
 
 void LinkLayerController::IncomingInquiryPacket(model::packets::LinkLayerPacketView incoming,
@@ -5247,7 +5249,7 @@ ErrorCode LinkLayerController::Disconnect(uint16_t handle, ErrorCode host_reason
     ASSERT(link_manager_remove_link(lm_.get(),
                                     reinterpret_cast<uint8_t(*)[6]>(remote.GetAddress().data())));
   } else {
-    ASSERT(link_layer_remove_link(ll_.get(), handle));
+    ASSERT(link_layer_remove_link(ll_.get(), handle, static_cast<uint8_t>(controller_reason)));
   }
   return ErrorCode::SUCCESS;
 }

@@ -18,14 +18,7 @@
 
 #include <bluetooth/log.h>
 
-#include <atomic>
-#include <format>
 #include <future>
-#include <mutex>
-#include <string>
-#include <unordered_set>
-#include <utility>
-#include <vector>
 
 namespace bluetooth::hci::acl_manager {
 
@@ -49,7 +42,9 @@ AclManagerClassicImpl::AclManagerClassicImpl(os::Handler* handler, HciInterface&
                                              RoundRobinScheduler& round_robin_scheduler)
     : handler_(handler),
       classic_impl_(hci, handler_, round_robin_scheduler, crash_on_unknown_handle, acl_scheduler,
-                    remote_name_request_module) {}
+                    remote_name_request_module) {
+  hci.SetClassicAclDataConsumer(this);
+}
 
 AclManagerClassicImpl::~AclManagerClassicImpl() {}
 

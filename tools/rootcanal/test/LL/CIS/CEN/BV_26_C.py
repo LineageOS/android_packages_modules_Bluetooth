@@ -201,6 +201,12 @@ class Test(ControllerTest):
                                          sequence_number=42,
                                          data=iso_sdu))
 
+        await self.expect_evt(
+            hci.NumberOfCompletedPackets(completed_packets=[
+                hci.CompletedPackets(connection_handle=cis_connection_handle,
+                                     host_num_of_completed_packets=1)
+            ]))
+
         # 9. The Upper Tester sends an HCI_Disconnect command to the IUT with Reason set to any valid
         # value and Connection_Handle set to the connection handle of the active CIS and receives a
         # successful HCI_Command_Status event in response.

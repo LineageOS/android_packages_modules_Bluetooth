@@ -21,6 +21,7 @@ package com.android.server.bluetooth
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_AIRPLANE_MODE
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_DIED
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST
+import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_AUTO_ON
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_CRASH
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_DISALLOWED
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_FACTORY_RESET
@@ -123,6 +124,7 @@ private fun getEnableDisableReasonString(reason: Int): String {
         ENABLE_DISABLE_REASON_AIRPLANE_MODE -> "AIRPLANE_MODE"
         ENABLE_DISABLE_REASON_APPLICATION_DIED -> "APPLICATION_DIED"
         ENABLE_DISABLE_REASON_APPLICATION_REQUEST -> "APPLICATION_REQUEST"
+        ENABLE_DISABLE_REASON_AUTO_ON -> "AUTO_ON"
         ENABLE_DISABLE_REASON_CRASH -> "CRASH"
         ENABLE_DISABLE_REASON_DISALLOWED -> "DISALLOWED"
         ENABLE_DISABLE_REASON_FACTORY_RESET -> "FACTORY_RESET"

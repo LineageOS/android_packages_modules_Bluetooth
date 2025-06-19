@@ -280,8 +280,7 @@ public class BassClientStateMachineTest {
     }
 
     @Test
-    @Ignore("b/418311373") // The DISCONNECT message is defer and it stays in connecting
-    public void disconnect_whenConnecting_isDisconnected() {
+    public void disconnect_whenConnecting_receiveConnected_isDisconnected() {
         allowConnection(true);
         allowConnectGatt(true);
 
@@ -289,9 +288,16 @@ public class BassClientStateMachineTest {
         mLooper.dispatchAll();
         verifyConnectionStateIntent(STATE_CONNECTING, STATE_DISCONNECTED);
 
+        // Message is deferred
         mStateMachine.sendMessage(DISCONNECT);
         mLooper.dispatchAll();
-        verifyConnectionStateIntent(STATE_DISCONNECTED, STATE_CONNECTING);
+
+        mStateMachine.mBluetoothGatt = mBluetoothGatt;
+        mStateMachine.sendMessage(CONNECTION_STATE_CHANGED, Integer.valueOf(STATE_CONNECTED));
+        mLooper.dispatchNext();
+        verifyConnectionStateIntent(STATE_CONNECTED, STATE_CONNECTING);
+        mLooper.dispatchAll();
+        verifyConnectionStateIntent(STATE_DISCONNECTED, STATE_CONNECTED);
     }
 
     @Test

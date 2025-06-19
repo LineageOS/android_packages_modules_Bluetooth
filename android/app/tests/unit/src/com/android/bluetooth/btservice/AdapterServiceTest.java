@@ -645,14 +645,22 @@ public class AdapterServiceTest {
 
         mLooper.moveTimeForward(120_000); // Skip time so the timeout fires
         syncHandler(AdapterState.BLE_START_TIMEOUT);
+
+        // After the timeout, the state transitions to BLE_TURNING_OFF
+        verifyStateChange(STATE_BLE_TURNING_ON, STATE_BLE_TURNING_OFF);
         assertThat(mAdapterService.getBluetoothGatt()).isNull();
 
+        // The shutdown sequence for GATT profile posts these messages
+        syncHandler(MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
+        syncHandler(MESSAGE_PROFILE_SERVICE_UNREGISTERED);
+
+        // Simulate the native stack confirming shutdown
+        mAdapterService.stateChangeCallback(AbstractionLayer.BT_STATE_OFF);
         syncHandler(AdapterState.BLE_STOPPED);
+
         // When reaching the OFF state, the cleanup is called that will destroy the state machine of
         // the adapterService. Destroying state machine send a -1 event on the handler
         syncHandler(-1);
-        syncHandler(MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
-        syncHandler(MESSAGE_PROFILE_SERVICE_UNREGISTERED);
 
         verifyStateChange(STATE_BLE_TURNING_OFF, STATE_OFF);
         assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);

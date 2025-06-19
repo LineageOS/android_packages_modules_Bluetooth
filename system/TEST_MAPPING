@@ -115,9 +115,6 @@
       "name": "net_test_device_iot_config"
     },
     {
-      "name": "net_test_hci"
-    },
-    {
       "name": "net_test_stack"
     },
     {

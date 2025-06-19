@@ -1989,7 +1989,7 @@ public class LeAudioService extends ConnectableProfile {
                         + newState
                         + ")");
 
-        mAdapterService.notifyProfileConnectionStateChangeToGatt(mProfileId, prevState, newState);
+        mAdapterService.notifyProfileConnectionStateChangeToScan(mProfileId, prevState, newState);
         mAdapterService.handleProfileConnectionStateChange(mProfileId, device, prevState, newState);
         mAdapterService
                 .getActiveDeviceManager()

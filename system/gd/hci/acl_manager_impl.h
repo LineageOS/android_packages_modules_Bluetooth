@@ -20,9 +20,7 @@
 #include <memory>
 
 #include "hci/acl_manager.h"
-#include "hci/acl_manager/acl_scheduler.h"
-#include "hci/acl_manager/classic_acl_data_consumer.h"
-#include "hci/acl_manager/connection_callbacks.h"
+#include "hci/acl_manager/classic_acl_count_provider.h"
 #include "hci/acl_manager/le_connection_callbacks.h"
 #include "hci/acl_manager/le_impl.h"
 #include "hci/acl_manager/round_robin_scheduler.h"
@@ -31,9 +29,9 @@
 #include "hci/controller.h"
 #include "hci/hci_interface.h"
 #include "hci/hci_packets.h"
+#include "hci/le_acl_data_consumer.h"
 #include "hci/le_address_manager.h"
 #include "hci/le_on_advertising_set_terminated_interface.h"
-#include "hci/remote_name_request.h"
 #include "os/handler.h"
 #include "storage/storage_module.h"
 
@@ -49,16 +47,17 @@ bool L2CA_SetAclPriority(uint16_t, bool);
 
 namespace hci {
 
-class AclManagerImpl : public AclManager, public hci::OnAdvertisingSetTerminatedInterface {
+class AclManagerImpl : public AclManager,
+                       public hci::OnAdvertisingSetTerminatedInterface,
+                       public LeAclDataConsumer {
   friend class bluetooth::shim::legacy::Acl;
   friend bool bluetooth::shim::L2CA_SetAclPriority(uint16_t, bool);
 
 public:
-  AclManagerImpl(os::Handler* handler, HciInterface& hci_interface, Controller& controller,
-                 storage::StorageModule& storage_module,
+  AclManagerImpl(os::Handler* handler, hci::HciInterface& hci_interface,
+                 hci::Controller& controller, storage::StorageModule& storage_module,
                  acl_manager::RoundRobinScheduler& round_robin_scheduler,
-                 acl_manager::ClassicAclCountProvider& classic_acl_count_provider,
-                 acl_manager::ClassicAclDataConsumer& classic_acl_data_consumer);
+                 acl_manager::ClassicAclCountProvider& classic_acl_count_provider);
   AclManagerImpl(const AclManagerImpl&) = delete;
   AclManagerImpl& operator=(const AclManagerImpl&) = delete;
 
@@ -68,7 +67,7 @@ public:
   // compiling AclManagerImpl's destructor. Hence we need to forward declare the
   // destructor for AclManagerImpl to delay compiling AclManagerImpl's destructor until
   // it starts linking the .cc file.
-  virtual ~AclManagerImpl();
+  virtual ~AclManagerImpl() {}
 
   void Dump(int fd) const override;
 
@@ -117,27 +116,23 @@ public:
 
   Address HACK_GetLeAddress(uint16_t connection_handle) override;
 
+  // LeAclDataConsumer
+  bool SendPacketUpward(uint16_t handle,
+                        std::function<void(struct acl_manager::assembler* assembler)> cb) override {
+    return le_impl_.send_packet_upward(handle, cb);
+  }
+
 private:
   void HACK_SetAclTxPriority(uint8_t handle, bool high_priority);
 
   template <typename OutputT>
   void dump(OutputT&& out) const;
 
-  void retry_unknown_acl(bool timed_out);
-  void on_unknown_acl_timer();
-  void dequeue_and_route_acl_packet_to_connection();
-
   os::Handler* handler_ = nullptr;
   storage::StorageModule& storage_module_;
   acl_manager::RoundRobinScheduler& round_robin_scheduler_;
-  acl_manager::ClassicAclDataConsumer& classic_acl_data_consumer_;
-
-  std::unique_ptr<os::Alarm> unknown_acl_alarm_;
-  std::vector<AclView> waiting_packets_;
 
   acl_manager::le_impl le_impl_;
-
-  common::BidiQueueEnd<AclBuilder, AclView>* hci_queue_end_ = nullptr;
 };
 
 }  // namespace hci

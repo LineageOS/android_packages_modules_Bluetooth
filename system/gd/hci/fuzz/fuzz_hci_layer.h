@@ -151,6 +151,9 @@ public:
 
   void injectArbitrary(FuzzedDataProvider& fdp);
 
+  void SetLeAclDataConsumer(LeAclDataConsumer*) override {}
+  void SetClassicAclDataConsumer(ClassicAclDataConsumer*) override {}
+
 protected:
 private:
   void injectAclData(std::vector<uint8_t> data);
