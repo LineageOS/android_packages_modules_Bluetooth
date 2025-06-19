@@ -1345,6 +1345,44 @@ TEST_F(CodecManagerTestHost, test_dont_call_hal_for_config) {
           });
 }
 
+TEST_F(CodecManagerTestAdsp, test_hal_client_set_unset) {
+  osi_property_set_bool(kPropLeAudioCodecExtensibility, true);
+
+  // Set the offloader capabilities
+  std::vector<AudioSetConfiguration> offload_capabilities;
+  set_mock_offload_capabilities(offload_capabilities);
+
+  const std::vector<bluetooth::le_audio::btle_audio_codec_config_t> offloading_preference = {};
+  codec_manager->Start(offloading_preference);
+  codec_manager->UpdateActiveUnicastAudioHalClient(mock_le_audio_source_hal_client_,
+                                                   mock_le_audio_sink_hal_client_, true);
+
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, GetUnicastConfig(_)).Times(1);
+  codec_manager->GetCodecConfig(
+          {.audio_context_type = types::LeAudioContextType::MEDIA},
+          [&](const CodecManager::UnicastConfigurationRequirements& /*requirements*/,
+              const types::AudioSetConfigurations* /*confs*/)
+                  -> std::unique_ptr<types::AudioSetConfiguration> {
+            // In this case the chosen configuration doesn't matter - select none
+            return nullptr;
+          });
+  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+
+  // Unset the hal client references and expect the call to be handled gracefully
+  codec_manager->UpdateActiveUnicastAudioHalClient(mock_le_audio_source_hal_client_,
+                                                   mock_le_audio_sink_hal_client_, false);
+
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, GetUnicastConfig(_)).Times(0);
+  codec_manager->GetCodecConfig(
+          {.audio_context_type = types::LeAudioContextType::MEDIA},
+          [&](const CodecManager::UnicastConfigurationRequirements& /*requirements*/,
+              const types::AudioSetConfigurations* /*confs*/)
+                  -> std::unique_ptr<types::AudioSetConfiguration> {
+            // In this case the chosen configuration doesn't matter - select none
+            return nullptr;
+          });
+}
+
 TEST_F(CodecManagerTestAdsp, testStreamConfigurationVendor) {
   osi_property_set_bool(kPropLeAudioCodecExtensibility, true);
 

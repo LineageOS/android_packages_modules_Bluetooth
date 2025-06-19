@@ -565,6 +565,10 @@ public:
           const CodecManager::UnicastConfigurationRequirements& requirements,
           CodecManager::UnicastConfigurationProvider provider) {
     if (IsUsingCodecExtensibility()) {
+      if (unicast_local_source_hal_client == nullptr) {
+        log::warn("No HAL client available. Potentially no active device is currently set.");
+        return nullptr;
+      }
       auto hal_config = unicast_local_source_hal_client->GetUnicastConfig(requirements);
       if (hal_config) {
         return std::make_unique<AudioSetConfiguration>(*hal_config);
