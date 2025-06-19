@@ -30,6 +30,7 @@
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/uuid.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <cstdio>
@@ -203,7 +204,8 @@ RobustCachingSupport GetRobustCachingSupport(const tBTA_GATTC_CLCB* p_clcb,
     return GATT_ERROR;
   }
 
-  if (p_clcb->transport == BT_TRANSPORT_LE) {
+  if (p_clcb->transport == BT_TRANSPORT_LE ||
+      com::android::bluetooth::flags::br_edr_discover_gatt_services_over_gatt()) {
     return GATTC_Discover(conn_id, disc_type, 0x0001, 0xFFFF);
   }
 
