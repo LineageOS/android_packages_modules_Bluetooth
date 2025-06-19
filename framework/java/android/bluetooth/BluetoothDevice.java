@@ -623,7 +623,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     public static final int ENCRYPTION_ALGORITHM_AES = 2;
 
     /** Indicates link was encrypted using unknown algorithm */
-    @FlaggedApi(Flags.FLAG_ENCRYPTION_CHANGE_BROADCAST)
+    @FlaggedApi(Flags.FLAG_LINK_STATUS_API)
     public static final int ENCRYPTION_ALGORITHM_UNKNOWN = 3;
 
     /**
