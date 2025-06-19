@@ -1210,6 +1210,8 @@ struct ControllerImpl::impl {
         return vendor_capabilities_.bluetooth_quality_report_support_ == 0x01;
       case OpCode::DYNAMIC_AUDIO_BUFFER:
         return vendor_capabilities_.dynamic_audio_buffer_support_ > 0x00;
+      case OpCode::LE_SET_BIG_CHANNEL_MAP_CLASSIFICATION:
+        return false;
       // Before MSFT extension is fully supported, return false for the following MSFT_OPCODE_XXXX
       // for now.
       case OpCode::MSFT_OPCODE_INTEL:

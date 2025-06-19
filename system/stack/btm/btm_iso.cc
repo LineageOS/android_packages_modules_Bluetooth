@@ -145,6 +145,22 @@ void IsoManager::TerminateBig(uint8_t big_handle, uint8_t reason) {
   }
 }
 
+/**
+ * @brief Set the BIG Channel Map Classification by Connection Handles.
+ *
+ * @param action The action to perform.
+ * @param big_handle The BIG handle.
+ * @param num_handles The number of connection handles.
+ * @param handles The vector of connection handles.
+ */
+void IsoManager::SetBigChannelMapClassificationByConnHandles(uint8_t action, uint8_t big_handle,
+                                                             uint8_t num_handles,
+                                                             const std::vector<uint16_t>& handles) {
+  if (pimpl_->IsRunning()) {
+    pimpl_->iso_impl_->set_big_channel_map_classification(action, big_handle, num_handles, handles);
+  }
+}
+
 void IsoManager::HandleIsoData(void* p_msg) {
   if (pimpl_->IsRunning()) {
     pimpl_->iso_impl_->handle_iso_data(static_cast<BT_HDR*>(p_msg));

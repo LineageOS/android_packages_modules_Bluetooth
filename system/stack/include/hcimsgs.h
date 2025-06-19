@@ -400,4 +400,8 @@ void btsnd_hcic_ble_set_default_periodic_advertising_sync_transfer_params(
 void btsnd_hcic_configure_data_path(hci_data_direction_t data_path_direction, uint8_t data_path_id,
                                     std::vector<uint8_t> vendor_config);
 
+void btsnd_hcic_ble_set_big_channel_map_classification_vsc(uint8_t action, uint8_t big_handle,
+                                                       uint8_t num_handles,
+                                                       const std::vector<uint16_t>& handles);
+
 #endif

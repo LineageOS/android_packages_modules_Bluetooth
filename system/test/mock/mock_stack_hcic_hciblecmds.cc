@@ -78,6 +78,8 @@ struct btsnd_hcic_ble_req_peer_sca btsnd_hcic_ble_req_peer_sca;
 struct btsnd_hcic_ble_set_cig_params btsnd_hcic_ble_set_cig_params;
 struct btsnd_hcic_ble_setup_iso_data_path btsnd_hcic_ble_setup_iso_data_path;
 struct btsnd_hcic_ble_term_big btsnd_hcic_ble_term_big;
+struct btsnd_hcic_ble_set_big_channel_map_classification_vsc
+        btsnd_hcic_ble_set_big_channel_map_classification_vsc;
 
 }  // namespace stack_hcic_hciblecmds
 }  // namespace mock
@@ -291,6 +293,13 @@ void btsnd_hcic_ble_setup_iso_data_path(uint16_t iso_handle, uint8_t data_path_d
 void btsnd_hcic_ble_term_big(uint8_t big_handle, uint8_t reason) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_term_big(big_handle, reason);
+}
+void btsnd_hcic_ble_set_big_channel_map_classification_vsc(uint8_t action, uint8_t big_handle,
+                                                       uint8_t num_handles,
+                                                       const std::vector<uint16_t>& handles) {
+  inc_func_call_count(__func__);
+  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_set_big_channel_map_classification_vsc(
+          action, big_handle, num_handles, handles);
 }
 // Mocked functions complete
 // END mockcify generation
