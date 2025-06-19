@@ -71,7 +71,6 @@ import com.android.bluetooth.TestUtils.FakeTimeProvider;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.le_scan.ScanController;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
@@ -106,7 +105,6 @@ public class GattServiceTest {
     @Mock private IBluetoothGattServerCallback mGattServerCallback;
     @Mock private IBluetoothGattServerCallback mGattServerCallback2;
     @Mock private ContextMap<IBluetoothGattServerCallback> mServerMap;
-    @Mock private ScanController mScanController;
     @Mock private Set<BluetoothDevice> mReliableQueue;
     @Mock private AdvertiseManagerNativeInterface mAdvertiseManagerNativeInterface;
     @Mock private DistanceMeasurementNativeInterface mDistanceMeasurementNativeInterface;
@@ -236,7 +234,6 @@ public class GattServiceTest {
                         mNativeInterface,
                         mAdvertiseManagerNativeInterface,
                         mDistanceMeasurementNativeInterface,
-                        mScanController,
                         mTimeProvider);
 
         mService.mClientMap = mClientMap;
@@ -265,7 +262,6 @@ public class GattServiceTest {
                             mNativeInterface,
                             mAdvertiseManagerNativeInterface,
                             mDistanceMeasurementNativeInterface,
-                            mScanController,
                             mTimeProvider);
         }
     }
