@@ -16,6 +16,7 @@
 
 package com.android.bluetooth.hid;
 
+import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
@@ -106,7 +107,7 @@ public class HidHostServiceBinderTest {
 
     @Test
     public void setPreferredTransport_callsServiceMethod() {
-        int preferredTransport = BluetoothDevice.TRANSPORT_AUTO;
+        int preferredTransport = TRANSPORT_AUTO;
 
         mBinder.setPreferredTransport(mDevice, preferredTransport, mAttributionSource);
         verify(mService).setPreferredTransport(mDevice, preferredTransport);

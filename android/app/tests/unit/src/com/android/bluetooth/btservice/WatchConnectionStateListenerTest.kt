@@ -17,7 +17,8 @@
 package com.android.bluetooth.btservice
 
 import android.bluetooth.BluetoothClass.Device.WEARABLE_WRIST_WATCH
-import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.TRANSPORT_BREDR
+import android.bluetooth.BluetoothDevice.TRANSPORT_LE
 import android.companion.CompanionDeviceManager
 import android.content.pm.PackageManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -67,7 +68,7 @@ class WatchConnectionStateListenerTest {
     fun connectAWatch_whenNotConnected_triggerCallback() {
         doReturn(WEARABLE_WRIST_WATCH).whenever(adapterService).getRemoteClass(any())
 
-        listener.onDeviceConnected(device, BluetoothDevice.TRANSPORT_BREDR)
+        listener.onDeviceConnected(device, TRANSPORT_BREDR)
         inOrder.verify(adapterService).updateWatchConnection(true)
     }
 
@@ -75,7 +76,7 @@ class WatchConnectionStateListenerTest {
     fun disconnectAWatch_whenConnected_triggerCallback() {
         connectAWatch_whenNotConnected_triggerCallback()
 
-        listener.onDeviceDisconnected(device, BluetoothDevice.TRANSPORT_BREDR)
+        listener.onDeviceDisconnected(device, TRANSPORT_BREDR)
         inOrder.verify(adapterService).updateWatchConnection(false)
     }
 
@@ -83,8 +84,8 @@ class WatchConnectionStateListenerTest {
     fun leSpuriousConnection_whenConnected_notTriggerCallback() {
         connectAWatch_whenNotConnected_triggerCallback()
 
-        listener.onDeviceConnected(device, BluetoothDevice.TRANSPORT_LE)
-        listener.onDeviceDisconnected(device, BluetoothDevice.TRANSPORT_LE)
+        listener.onDeviceConnected(device, TRANSPORT_LE)
+        listener.onDeviceDisconnected(device, TRANSPORT_LE)
         inOrder.verify(adapterService, never()).updateWatchConnection(anyBoolean())
     }
 
@@ -92,9 +93,9 @@ class WatchConnectionStateListenerTest {
     fun leSpuriousConnection_whenNotConnected_triggerCallback() {
         doReturn(WEARABLE_WRIST_WATCH).whenever(adapterService).getRemoteClass(any())
 
-        listener.onDeviceConnected(device, BluetoothDevice.TRANSPORT_LE)
+        listener.onDeviceConnected(device, TRANSPORT_LE)
         inOrder.verify(adapterService).updateWatchConnection(true)
-        listener.onDeviceDisconnected(device, BluetoothDevice.TRANSPORT_LE)
+        listener.onDeviceDisconnected(device, TRANSPORT_LE)
         inOrder.verify(adapterService).updateWatchConnection(false)
     }
 }

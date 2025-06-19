@@ -33,6 +33,7 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/sec_hci_link_interface.h"
 #include "stack/test/btm/btm_test_fixtures.h"
+#include "test/common/main_handler.h"
 #include "test/mock/mock_main_shim_entry.h"
 #include "types/raw_address.h"
 
@@ -93,10 +94,14 @@ class StackBtmSecWithInitFreeTest : public StackBtmSecWithQueuesTest {
 public:
 protected:
   void SetUp() override {
+    main_thread_start_up();
+    post_on_bt_main([]() { log::info("Main thread started up"); });
     StackBtmSecWithQueuesTest::SetUp();
     BTM_Sec_Init();
   }
   void TearDown() override {
+    post_on_bt_main([]() { log::info("Main thread shutting down"); });
+    main_thread_shut_down();
     BTM_Sec_Free();
     StackBtmSecWithQueuesTest::TearDown();
   }

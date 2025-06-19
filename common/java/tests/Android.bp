@@ -27,4 +27,7 @@ java_library {
         "mockito-kotlin2",
         "mockito-target-extended",
     ],
+    sdk_version: "module_current",
+    min_sdk_version: "36",
+    target_sdk_version: "current",
 }

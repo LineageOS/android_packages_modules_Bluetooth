@@ -683,7 +683,7 @@ class BluetoothManagerService {
             filterUser.addAction(Intent.ACTION_USER_SWITCHED);
         }
         filterUser.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
-        if (!Flags.userRestrictionRefactor() && !Flags.limitUserSwitchPropagation()) {
+        if (!Flags.userRestrictionRefactor() || !Flags.limitUserSwitchPropagation()) {
             mContext.registerReceiverForAllUsers(
                     new BroadcastReceiver() {
                         @Override
@@ -1955,6 +1955,11 @@ class BluetoothManagerService {
         if (!mContext.bindServiceAsUser(intent, mConnection, flags, mCurrentUser)) {
             Log.e(TAG, "Fail to bind to intent=" + intent);
             mContext.unbindService(mConnection);
+            if (Flags.userSwitchDuringBleOn()) {
+                bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
+                clearBleApps();
+                ActiveLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false);
+            }
             return;
         }
         mHandler.sendEmptyMessageDelayed(MESSAGE_TIMEOUT_BIND, TIMEOUT_BIND_MS);
@@ -1976,6 +1981,10 @@ class BluetoothManagerService {
             Log.e(TAG, "Fail to bind to intent=" + intent);
             mContext.unbindService(mConnection);
             mHandler.removeMessages(MESSAGE_TIMEOUT_BIND);
+            if (Flags.userSwitchDuringBleOn()) {
+                bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
+                clearBleApps();
+            }
         }
     }
 

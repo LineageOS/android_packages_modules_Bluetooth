@@ -47,9 +47,4 @@
 
     <style name="dialog" parent="android:style/Theme.Material.Light.Dialog.Alert"/>
 
-    <!--
-        TODO(b/309578419): Make activities handle insets properly and then remove this.
-    -->
-    <style name="OptOutEdgeToEdgeEnforcement" />
-
 </resources>

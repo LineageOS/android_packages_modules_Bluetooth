@@ -27,6 +27,7 @@ import static android.bluetooth.BluetoothAdapter.nameForState;
 import static android.bluetooth.BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
 import static android.bluetooth.BluetoothDevice.BOND_BONDED;
 import static android.bluetooth.BluetoothDevice.BOND_NONE;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
@@ -51,6 +52,7 @@ import android.annotation.Nullable;
 import android.annotation.RequiresPermission;
 import android.annotation.SuppressLint;
 import android.app.AppOpsManager;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.app.admin.DevicePolicyManager;
@@ -1297,7 +1299,8 @@ public class AdapterService extends Service {
             case BluetoothProfile.MCP_SERVER -> new McpService(this);
             case BluetoothProfile.OPP -> new BluetoothOppService(this);
             case BluetoothProfile.PAN -> new PanService(this);
-            case BluetoothProfile.PBAP -> new BluetoothPbapService(this);
+            case BluetoothProfile.PBAP ->
+                    new BluetoothPbapService(this, getSystemService(NotificationManager.class));
             case BluetoothProfile.PBAP_CLIENT -> new PbapClientService(this);
             case BluetoothProfile.SAP -> new SapService(this);
             case BluetoothProfile.VOLUME_CONTROL -> new VolumeControlService(this);
@@ -3156,7 +3159,7 @@ public class AdapterService extends Service {
                  * as well especially those which might keep the connection
                  */
                 if ((getConnectionState(dev) & leConnectedState) != 0) {
-                    mNativeInterface.disconnectAcl(dev, BluetoothDevice.TRANSPORT_LE);
+                    mNativeInterface.disconnectAcl(dev, TRANSPORT_LE);
                 }
             }
         }

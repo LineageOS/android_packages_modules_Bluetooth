@@ -1317,12 +1317,25 @@ tA2DP_STATUS BtaAvCo::SetCodecOtaConfig(BtaAvCoPeer* p_peer, const uint8_t* p_ot
   // Find the peer SEP codec to use
   const BtaAvCoSep* p_sink = peer_cache_->FindPeerSink(
           p_peer, A2DP_SourceCodecIndex(p_ota_codec_config), ContentProtectFlag());
-  if ((p_peer->num_sup_sinks > 0) && (p_sink == nullptr)) {
-    // There are no peer SEPs if we didn't do the discovery procedure yet.
-    // We have all the information we need from the peer, so we can
-    // proceed with the OTA codec configuration.
-    log::error("peer {} : cannot find peer SEP to configure", p_peer->addr);
-    return AVDTP_UNSUPPORTED_CONFIGURATION;
+
+  if (!com::android::bluetooth::flags::a2dp_set_configuration_during_discovery()) {
+    if ((p_peer->num_sup_sinks > 0) && (p_sink == nullptr)) {
+      // There are no peer SEPs if we didn't do the discovery procedure yet.
+      // We have all the information we need from the peer, so we can
+      // proceed with the OTA codec configuration.
+      log::error("peer {} : cannot find peer SEP to configure", p_peer->addr);
+      return AVDTP_UNSUPPORTED_CONFIGURATION;
+    }
+  } else {
+    bool is_discovery_completed =
+            p_peer->num_sinks > 0 && p_peer->num_sinks == p_peer->num_rx_sinks;
+    if (is_discovery_completed && p_sink == nullptr) {
+      // There are no peer SEPs if we didn't do the discovery procedure yet.
+      // We have all the information we need from the peer, so we can
+      // proceed with the OTA codec configuration.
+      log::error("peer {} : cannot find peer SEP to configure", p_peer->addr);
+      return AVDTP_UNSUPPORTED_CONFIGURATION;
+    }
   }
 
   tA2DP_ENCODER_INIT_PEER_PARAMS peer_params;

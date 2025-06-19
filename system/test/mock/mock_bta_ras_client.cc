@@ -24,6 +24,7 @@ class MockRasClient : public bluetooth::ras::RasClient {
           const RawAddress& /* address */,
           const std::vector<bluetooth::ras::VendorSpecificCharacteristic>& /*vendor_specific_data*/)
           override {}
+  void NotifyRangingHardwareOffloadEnabled() override {}
 };
 
 namespace bluetooth {

@@ -17,6 +17,9 @@
 package com.android.bluetooth.hid;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
@@ -67,12 +70,12 @@ public class HidHostService extends ConnectableProfile {
             ParcelUuid.fromString(ANDROID_HEADTRACKER_UUID_STR);
 
     private static class InputDevice {
-        int mSelectedTransport = BluetoothDevice.TRANSPORT_AUTO;
+        int mSelectedTransport = TRANSPORT_AUTO;
         private int mHidState = STATE_DISCONNECTED;
         private int mHogpState = STATE_DISCONNECTED;
 
         int getState(int transport) {
-            return (transport == BluetoothDevice.TRANSPORT_LE) ? mHogpState : mHidState;
+            return (transport == TRANSPORT_LE) ? mHogpState : mHidState;
         }
 
         int getState() {
@@ -80,7 +83,7 @@ public class HidHostService extends ConnectableProfile {
         }
 
         void setState(int transport, int state) {
-            if (transport == BluetoothDevice.TRANSPORT_LE) {
+            if (transport == TRANSPORT_LE) {
                 mHogpState = state;
             } else {
                 mHidState = state;
@@ -154,8 +157,8 @@ public class HidHostService extends ConnectableProfile {
         if (mInputDevices != null) {
             for (BluetoothDevice device : mInputDevices.keySet()) {
                 // Set both HID and HOGP connection states to disconnected
-                updateConnectionState(device, BluetoothDevice.TRANSPORT_LE, STATE_DISCONNECTED);
-                updateConnectionState(device, BluetoothDevice.TRANSPORT_BREDR, STATE_DISCONNECTED);
+                updateConnectionState(device, TRANSPORT_LE, STATE_DISCONNECTED);
+                updateConnectionState(device, TRANSPORT_BREDR, STATE_DISCONNECTED);
             }
             mInputDevices.clear();
         }
@@ -166,13 +169,13 @@ public class HidHostService extends ConnectableProfile {
     private byte[] getByteAddress(BluetoothDevice device, int transport) {
         final ParcelUuid[] uuids = mAdapterService.getRemoteUuids(device);
 
-        if (transport == BluetoothDevice.TRANSPORT_LE) {
+        if (transport == TRANSPORT_LE) {
             // Use pseudo address when HOGP is to be used
             return Utils.getByteAddress(device);
-        } else if (transport == BluetoothDevice.TRANSPORT_BREDR) {
+        } else if (transport == TRANSPORT_BREDR) {
             // Use BR/EDR address if HID is to be used
             return Utils.getByteBrEdrAddress(mAdapterService, device);
-        } else { // BluetoothDevice.TRANSPORT_AUTO
+        } else { // TRANSPORT_AUTO
             boolean hidSupported = Utils.arrayContains(uuids, BluetoothUuid.HID);
             // Prefer HID over HOGP
             if (hidSupported) {
@@ -211,7 +214,7 @@ public class HidHostService extends ConnectableProfile {
             return inputDevice.mSelectedTransport;
         }
 
-        return BluetoothDevice.TRANSPORT_AUTO;
+        return TRANSPORT_AUTO;
     }
 
     /**
@@ -549,7 +552,7 @@ public class HidHostService extends ConnectableProfile {
         InputDevice inputDevice = mInputDevices.get(device);
         if (inputDevice != null) {
             // Update transport if it was not resolved already
-            if (inputDevice.mSelectedTransport == BluetoothDevice.TRANSPORT_AUTO) {
+            if (inputDevice.mSelectedTransport == TRANSPORT_AUTO) {
                 inputDevice.mSelectedTransport = transport;
                 setTransport(device, transport);
             }
@@ -799,11 +802,10 @@ public class HidHostService extends ConnectableProfile {
         boolean hogpSupported = Utils.arrayContains(uuids, BluetoothUuid.HOGP);
         boolean headtrackerSupported =
                 Utils.arrayContains(uuids, HidHostService.ANDROID_HEADTRACKER_UUID);
-        if (transport == BluetoothDevice.TRANSPORT_BREDR && !hidSupported) {
+        if (transport == TRANSPORT_BREDR && !hidSupported) {
             Log.w(TAG, "device " + device + " does not support HID");
             return false;
-        } else if (transport == BluetoothDevice.TRANSPORT_LE
-                && !(hogpSupported || headtrackerSupported)) {
+        } else if (transport == TRANSPORT_LE && !(hogpSupported || headtrackerSupported)) {
             Log.w(TAG, "device " + device + " does not support HOGP");
             return false;
         }
@@ -1011,7 +1013,7 @@ public class HidHostService extends ConnectableProfile {
             return;
         }
 
-        if (transport == BluetoothDevice.TRANSPORT_AUTO) {
+        if (transport == TRANSPORT_AUTO) {
             Log.w(
                     TAG,
                     "updateConnectionState: requested with AUTO transport"

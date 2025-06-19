@@ -31,6 +31,7 @@
 #include "bta/include/bta_ras_api.h"
 #include "bta/ras/ras_types.h"
 #include "btm_ble_api_types.h"
+#include "com_android_bluetooth_flags.h"
 #include "gatt/database.h"
 #include "gatt_api.h"
 #include "gattdefs.h"
@@ -916,8 +917,20 @@ public:
     return nullptr;
   }
 
+  void NotifyRangingHardwareOffloadEnabled() { is_ranging_hardware_offload_enabled_ = true; }
+
   void SetTimeOutAlarm(std::shared_ptr<RasTracker> tracker, uint16_t interval_ms,
                        TimeoutType timeout_type) {
+    if (tracker->ranging_type_ == RangingType::REAL_TIME) {
+      if (com::android::bluetooth::flags::channel_sounding_offload() &&
+          is_ranging_hardware_offload_enabled_) {
+        log::info(
+                "Channel sounding offload is enabled and ranging type is "
+                "REAL_TIME, not setting timeout alarm for tracker address {}.",
+                tracker->address_for_cs_);
+        return;
+      }
+    }
     log::debug("ranging_type_: {}, timeout_type: {}", (uint8_t)tracker->ranging_type_,
                (uint8_t)timeout_type);
     tracker->timeout_type_ = timeout_type;
@@ -971,6 +984,7 @@ private:
   std::unordered_map<RawAddress, CachedRasData> cached_data_;
   GattReadCallbackData gatt_read_callback_data_{true};
   GattWriteCallbackData gatt_write_callback_data_{CallbackDataType::VENDOR_SPECIFIC_REPLY};
+  bool is_ranging_hardware_offload_enabled_{false};
 };
 
 }  // namespace

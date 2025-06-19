@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.mapclient;
 
+import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
@@ -280,7 +282,7 @@ public class MapClientServiceTest {
         mService.getInstanceMap().put(mRemoteDevice, sm);
         when(sm.getState()).thenReturn(connectionState);
 
-        mService.aclDisconnected(mRemoteDevice, BluetoothDevice.TRANSPORT_LE);
+        mService.aclDisconnected(mRemoteDevice, TRANSPORT_LE);
         mTestLooper.dispatchAll();
 
         verify(sm, never()).disconnect();
@@ -293,7 +295,7 @@ public class MapClientServiceTest {
         mService.getInstanceMap().put(mRemoteDevice, sm);
         when(sm.getState()).thenReturn(connectionState);
 
-        mService.aclDisconnected(mRemoteDevice, BluetoothDevice.TRANSPORT_BREDR);
+        mService.aclDisconnected(mRemoteDevice, TRANSPORT_BREDR);
         mTestLooper.dispatchAll();
 
         verify(sm).disconnect();
