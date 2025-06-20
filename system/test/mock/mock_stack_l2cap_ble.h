@@ -72,6 +72,15 @@ struct L2CA_LockBleConnParamsForProfileConnection {
   void operator()(const RawAddress& rem_bda, bool enable) { return body(rem_bda, enable); }
 };
 extern struct L2CA_LockBleConnParamsForProfileConnection L2CA_LockBleConnParamsForProfileConnection;
+// Name: L2CA_LockBleConnParamsForLeAudioSubrate
+// Params: const RawAddress& rem_bda, bool enable
+// Returns: void
+struct L2CA_LockBleConnParamsForLeAudioSubrate {
+  std::function<void(const RawAddress& rem_bda, bool lock)> body{
+          [](const RawAddress& /* rem_bda */, bool /* lock */) { return false; }};
+  void operator()(const RawAddress& rem_bda, bool enable) { return body(rem_bda, enable); }
+};
+extern struct L2CA_LockBleConnParamsForLeAudioSubrate L2CA_LockBleConnParamsForLeAudioSubrate;
 struct L2CA_ConsolidateParams {
   std::function<void(const RawAddress& identity_addr, const RawAddress& rpa)> body{
           [](const RawAddress& /* identity_addr */, const RawAddress& /* rpa */) { return false; }};

@@ -139,6 +139,7 @@ using bluetooth::le_audio::LeAudioHealthStatus;
 using bluetooth::le_audio::LeAudioRecommendationActionCb;
 using bluetooth::le_audio::LeAudioSinkAudioHalClient;
 using bluetooth::le_audio::LeAudioSourceAudioHalClient;
+using bluetooth::le_audio::SubrateState;
 using bluetooth::le_audio::UnicastMonitorModeStatus;
 using bluetooth::le_audio::types::ase;
 using bluetooth::le_audio::types::AseState;
@@ -2627,12 +2628,11 @@ public:
                   leAudioDevice->address_, currConnInterval);
         alarm_cancel(leAudioDevice->update_to_relaxed_conn_interval_timer);
 
-        stack::l2cap::get_interface().L2CA_UpdateBleConnParams(
-          leAudioDevice->address_,
-          currConnInterval,
-          currConnInterval,
-          BTM_BLE_CONN_PERIPHERAL_LATENCY_DEF,
-          BTM_BLE_CONN_TIMEOUT_DEF, 0, 0);
+        if (leAudioDevice->subrate_state_ == SubrateState::DISABLED) {
+          stack::l2cap::get_interface().L2CA_UpdateBleConnParams(
+                  leAudioDevice->address_, currConnInterval, currConnInterval,
+                  BTM_BLE_CONN_PERIPHERAL_LATENCY_DEF, BTM_BLE_CONN_TIMEOUT_DEF, 0, 0);
+        }
         stack::l2cap::get_interface().
           L2CA_LockBleConnParamsForProfileConnection(leAudioDevice->address_, false);
       }
@@ -2873,6 +2873,8 @@ public:
       return;
     }
 
+    leAudioDevice->StartConnSubrate();
+
     if (leAudioDevice->encrypted_) {
       log::info("link already encrypted, nothing to do");
       return;
@@ -3050,6 +3052,7 @@ public:
     auto connection_state = leAudioDevice->GetConnectionState();
 
     leAudioDevice->SetConnectionState(DeviceConnectState::DISCONNECTED);
+    leAudioDevice->StopConnSubrate();
 
     groupStateMachine_->ProcessHciNotifAclDisconnected(group, leAudioDevice);
 
@@ -3262,6 +3265,24 @@ public:
     if (status == 0) {
       leAudioDevice->acl_phy_update_done_ = true;
     }
+  }
+
+  void OnConnParameterUpdate(uint16_t conn_id, tGATT_STATUS status) {
+    LeAudioDevice* leAudioDevice = leAudioDevices_.FindByConnId(conn_id);
+    if (leAudioDevice == nullptr) {
+      return;
+    }
+
+    leAudioDevice->OnConnParameterUpdate(status);
+  }
+
+  void OnSubrateChanged(uint16_t conn_id, tGATT_STATUS status) {
+    LeAudioDevice* leAudioDevice = leAudioDevices_.FindByConnId(conn_id);
+    if (leAudioDevice == nullptr) {
+      return;
+    }
+
+    leAudioDevice->OnSubrateChanged(status);
   }
 
   void OnGattServiceDiscoveryDone(const RawAddress& address) {
@@ -7192,6 +7213,12 @@ void le_audio_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
     case BTA_GATTC_PHY_UPDATE_EVT:
       instance->OnPhyUpdate(p_data->phy_update.conn_id, p_data->phy_update.tx_phy,
                             p_data->phy_update.rx_phy, p_data->phy_update.status);
+      break;
+    case BTA_GATTC_CONN_UPDATE_EVT:
+      instance->OnConnParameterUpdate(p_data->conn_update.conn_id, p_data->conn_update.status);
+      break;
+    case BTA_GATTC_SUBRATE_CHG_EVT:
+      instance->OnSubrateChanged(p_data->subrate_chg.conn_id, p_data->subrate_chg.status);
       break;
     default:
       break;

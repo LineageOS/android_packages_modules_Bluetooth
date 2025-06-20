@@ -95,6 +95,8 @@ public:
               (const RawAddress& bd_addr, bool lock));
   MOCK_METHOD(void, L2CA_LockBleConnParamsForProfileConnection,
               (const RawAddress& bd_addr, bool lock));
+  MOCK_METHOD(void, L2CA_LockBleConnParamsForLeAudioSubrate,
+              (const RawAddress& bd_addr, bool lock));
   MOCK_METHOD(tHCI_ROLE, L2CA_GetBleConnRole, (const RawAddress& bd_addr));
   MOCK_METHOD(uint16_t, L2CA_GetBleConnInterval, (const RawAddress& bd_addr));
   MOCK_METHOD(bool, L2CA_SetLeGattTimeout, (const RawAddress& bd_addr, uint16_t idle_tout));

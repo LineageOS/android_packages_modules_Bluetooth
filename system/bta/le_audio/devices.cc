@@ -17,6 +17,7 @@
 
 #include "devices.h"
 
+#include <android_bluetooth_sysprop.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
@@ -42,6 +43,7 @@
 #include "btm_ble_api_types.h"
 #include "btm_iso_api.h"
 #include "btm_iso_api_types.h"
+#include "common/le_conn_params.h"
 #include "common/strings.h"
 #include "gatt_api.h"
 #include "hardware/bluetooth.h"
@@ -57,12 +59,14 @@
 #include "osi/include/alarm.h"
 #include "osi/include/properties.h"
 #include "stack/include/btm_client_interface.h"
+#include "stack/include/l2cap_interface.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 using bluetooth::hci::kIsoCigPhy1M;
 using bluetooth::hci::kIsoCigPhy2M;
 using bluetooth::le_audio::DeviceConnectState;
+using bluetooth::le_audio::SubrateState;
 using bluetooth::le_audio::types::ase;
 using bluetooth::le_audio::types::AseState;
 using bluetooth::le_audio::types::AudioContexts;
@@ -103,6 +107,32 @@ std::ostream& operator<<(std::ostream& os, const DeviceConnectState& state) {
       break;
     case DeviceConnectState::CONNECTED_AUTOCONNECT_GETTING_READY:
       char_value_ = "CONNECTED_AUTOCONNECT_GETTING_READY";
+      break;
+  }
+
+  os << char_value_ << " (" << "0x" << std::setfill('0') << std::setw(2) << static_cast<int>(state)
+     << ")";
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const SubrateState& state) {
+  const char* char_value_ = "UNKNOWN";
+
+  switch (state) {
+    case SubrateState::DISABLED:
+      char_value_ = "DISABLED";
+      break;
+    case SubrateState::PENDING_ENABLING_CONN_UPDATE:
+      char_value_ = "PENDING_ENABLING_CONN_UPDATE";
+      break;
+    case SubrateState::PENDING_ENABLING_CONN_UPDATE_COMPLETE:
+      char_value_ = "PENDING_ENABLING_CONN_UPDATE_COMPLETE";
+      break;
+    case SubrateState::PENDING_ENABLING_SUBRATE_UPDATE:
+      char_value_ = "PENDING_ENABLING_SUBRATE_UPDATE";
+      break;
+    case SubrateState::ENABLED:
+      char_value_ = "ENABLED";
       break;
   }
 
@@ -482,6 +512,12 @@ void LeAudioDevice::SetConnectionState(DeviceConnectState state) {
 }
 
 DeviceConnectState LeAudioDevice::GetConnectionState(void) { return connection_state_; }
+
+void LeAudioDevice::SetSubrateState(SubrateState state) {
+  log::debug("{}, {} --> {}", address_, bluetooth::common::ToString(subrate_state_),
+             bluetooth::common::ToString(state));
+  subrate_state_ = state;
+}
 
 void LeAudioDevice::ClearPACs(void) {
   snk_pacs_.clear();
@@ -1400,6 +1436,129 @@ void LeAudioDevice::StartLinkQualityReports(uint16_t cis_handle) {
   link_quality_timer_data = cis_handle;
   alarm_set_on_mloop(link_quality_timer, linkQualityCheckInterval, link_quality_cb,
                      &link_quality_timer_data);
+}
+
+void LeAudioDevice::StartConnSubrate() {
+  if (!com::android::bluetooth::flags::leaudio_connection_subrating()) {
+    return;
+  }
+
+  log::verbose(
+          " Subrate flag enabled. local conrtoller - {}, {}: remote controller - {}, remote host - "
+          "{}",
+          bluetooth::shim::GetController()->SupportsBleConnectionSubrating(), address_,
+          acl_peer_supports_ble_connection_subrating(address_),
+          acl_peer_supports_ble_connection_subrating_host(address_));
+  if (!bluetooth::shim::GetController()->SupportsBleConnectionSubrating() ||
+      !acl_peer_supports_ble_connection_subrating(address_) ||
+      !acl_peer_supports_ble_connection_subrating_host(address_)) {
+    return;
+  }
+
+  if (subrate_state_ == SubrateState::ENABLED ||
+      subrate_state_ == SubrateState::PENDING_ENABLING_CONN_UPDATE ||
+      subrate_state_ == SubrateState::PENDING_ENABLING_SUBRATE_UPDATE) {
+    return;
+  }
+
+  uint16_t curr_conn_interval = stack::l2cap::get_interface().L2CA_GetBleConnInterval(address_);
+  if (curr_conn_interval > LeConnectionParameters::GetMaxConnIntervalLeIsoAggressive() ||
+      curr_conn_interval < LeConnectionParameters::GetMinConnIntervalLeIsoAggressive()) {
+    log::verbose("Curr_conn_interval {}", curr_conn_interval);
+    if (subrate_state_ == SubrateState::DISABLED) {
+      stack::l2cap::get_interface().L2CA_UpdateBleConnParams(
+              address_, LeConnectionParameters::GetMinConnIntervalLeIsoAggressive(),
+              LeConnectionParameters::GetMaxConnIntervalLeIsoAggressive(),
+              BTM_BLE_CONN_PERIPHERAL_LATENCY_DEF, BTM_BLE_CONN_TIMEOUT_DEF, 0, 0);
+      stack::l2cap::get_interface().L2CA_LockBleConnParamsForLeAudioSubrate(address_, true);
+      SetSubrateState(SubrateState::PENDING_ENABLING_CONN_UPDATE);
+      return;
+    } else if (subrate_state_ == SubrateState::PENDING_ENABLING_CONN_UPDATE_COMPLETE) {
+      log::error(
+              "Pending on the subrate update, but the connection interval is incorrect. "
+              "Reset the state");
+      StopConnSubrate();
+      return;
+    }
+  }
+
+  uint32_t max_subrate =
+          android::sysprop::bluetooth::Ble::subrate_le_audio_mode_max_subrate().value_or(
+                  kDefaultSubrateLeAudioModeMaxSubrate);
+  uint32_t min_subrate =
+          android::sysprop::bluetooth::Ble::subrate_le_audio_mode_min_subrate().value_or(
+                  kDefaultSubrateLeAudioModeMinSubrate);
+  uint32_t cont_number =
+          android::sysprop::bluetooth::Ble::subrate_le_audio_mode_cont_number().value_or(
+                  kDefaultSubrateLeAudioModeContNumber);
+  uint32_t supervision_timeout = 2 * curr_conn_interval * max_subrate / 10;
+  if (supervision_timeout < 500) {
+    supervision_timeout = 500;
+  }
+
+  log::info(
+          "{}, current_interval: {} ms, request subrating "
+          "with max subrate: {}, min subrate: {}, continuation number: {}, timeout: "
+          "{}",
+          address_, 1.25 * curr_conn_interval, max_subrate, min_subrate, cont_number,
+          10 * supervision_timeout);
+
+  if (min_subrate > max_subrate || cont_number >= max_subrate || min_subrate > 500 ||
+      max_subrate > 500) {
+    log::error("Invalid subrate setting");
+    return;
+  }
+
+  stack::l2cap::get_interface().L2CA_SubrateRequest(address_, min_subrate, max_subrate, 0,
+                                                    cont_number, supervision_timeout);
+  stack::l2cap::get_interface().L2CA_LockBleConnParamsForLeAudioSubrate(address_, true);
+  SetSubrateState(SubrateState::PENDING_ENABLING_SUBRATE_UPDATE);
+}
+
+void LeAudioDevice::StopConnSubrate() {
+  log::verbose("");
+  if (subrate_state_ == SubrateState::DISABLED) {
+    return;
+  }
+
+  stack::l2cap::get_interface().L2CA_LockBleConnParamsForLeAudioSubrate(address_, false);
+  SetSubrateState(SubrateState::DISABLED);
+}
+
+void LeAudioDevice::OnConnParameterUpdate(tGATT_STATUS status) {
+  if (subrate_state_ == SubrateState::DISABLED) {
+    return;
+  }
+
+  log::verbose(" status: {}, subrate state: {}", status,
+               bluetooth::common::ToString(subrate_state_));
+
+  if (status != GATT_SUCCESS) {
+    log::error("Connection parameter change failed");
+    StopConnSubrate();
+    return;
+  }
+
+  SetSubrateState(SubrateState::PENDING_ENABLING_CONN_UPDATE_COMPLETE);
+  StartConnSubrate();
+}
+
+void LeAudioDevice::OnSubrateChanged(tGATT_STATUS status) {
+  if (subrate_state_ == SubrateState::DISABLED) {
+    log::error("Subrate event changed as the subrate state is disabled");
+    return;
+  }
+
+  log::verbose(" status: {}, subrate state: {}", status,
+               bluetooth::common::ToString(subrate_state_));
+
+  if (status != GATT_SUCCESS) {
+    log::error("Subrate change failed");
+    StopConnSubrate();
+    return;
+  }
+
+  SetSubrateState(SubrateState::ENABLED);
 }
 
 /* LeAudioDevices Class methods implementation */

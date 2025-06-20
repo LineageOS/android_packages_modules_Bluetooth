@@ -61,7 +61,25 @@ enum class DeviceConnectState : uint8_t {
   CONNECTED_AUTOCONNECT_GETTING_READY,
 };
 
+enum class SubrateState : uint8_t {
+  /* Initial state*/
+  DISABLED,
+  /* Pending on the LE Audio aggresive connection parameter update */
+  PENDING_ENABLING_CONN_UPDATE,
+  /* Pending on the LE Audio aggresive connection parameter update complete */
+  PENDING_ENABLING_CONN_UPDATE_COMPLETE,
+  /* Pending on the subrate update proceduce complete */
+  PENDING_ENABLING_SUBRATE_UPDATE,
+  /* When the host receive the subrate change event with success */
+  ENABLED,
+};
+
+static constexpr uint16_t kDefaultSubrateLeAudioModeMaxSubrate = 2;
+static constexpr uint16_t kDefaultSubrateLeAudioModeMinSubrate = 2;
+static constexpr uint16_t kDefaultSubrateLeAudioModeContNumber = 1;
+
 std::ostream& operator<<(std::ostream& os, const DeviceConnectState& state);
+std::ostream& operator<<(std::ostream& os, const SubrateState& state);
 
 /* Class definitions */
 
@@ -109,6 +127,7 @@ public:
   bool acl_asymmetric_;
   bool acl_phy_update_done_;
   std::unique_ptr<GmapClient> gmap_client_;
+  SubrateState subrate_state_;
 
   alarm_t* link_quality_timer;
   uint16_t link_quality_timer_data;
@@ -135,6 +154,7 @@ public:
         allowlist_flag_(false),
         acl_asymmetric_(false),
         acl_phy_update_done_(false),
+        subrate_state_(SubrateState::DISABLED),
         link_quality_timer(nullptr),
         last_ase_ctp_command_sent(0x00),
         update_to_relaxed_conn_interval_timer(alarm_new(
@@ -255,6 +275,10 @@ public:
     }
     return gmap_client_->IsGmapClientEnabled();
   }
+  void StartConnSubrate();
+  void StopConnSubrate();
+  void OnConnParameterUpdate(tGATT_STATUS status);
+  void OnSubrateChanged(tGATT_STATUS status);
 
   void StartLinkQualityReports(uint16_t cis_handle);
   void FreeLinkQualityReports(void);
@@ -274,6 +298,7 @@ private:
 
   void DumpPacsDebugState(std::stringstream& stream, types::PublishedAudioCapabilities pacs);
   void ParseHeadtrackingCodec(const struct types::acs_ac_record& pac);
+  void SetSubrateState(SubrateState state);
 };
 
 /* LeAudioDevices class represents a wraper helper over all devices in le audio
