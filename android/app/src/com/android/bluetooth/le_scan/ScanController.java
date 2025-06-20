@@ -142,6 +142,7 @@ public class ScanController {
             PeriodicScanManager periodicScanManager,
             ScannerMap scannerMap,
             TimeProvider timeProvider) {
+        Log.d(TAG, "Created with Flags.scanControllerThread: " + Flags.scanControllerThread());
         mAdapterService = requireNonNull(service);
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mScanRadioStats = new ScanRadioStats(timeProvider);
