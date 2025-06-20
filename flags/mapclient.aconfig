@@ -41,3 +41,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "map_continue_operation"
+    namespace: "bluetooth"
+    description: "Continue operation for a put operation to handle large MMS."
+    bug: "422499403"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
