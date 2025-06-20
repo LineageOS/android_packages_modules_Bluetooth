@@ -65,11 +65,6 @@ public:
   virtual void RemoveDeviceFromResolvingList(AddressWithType address_with_type) = 0;
   virtual void ClearResolvingList() = 0;
 
-  // Callback from Advertising Manager to notify the advitiser (local) address
-  virtual void OnAdvertisingSetTerminated(ErrorCode status, uint16_t conn_handle,
-                                          uint8_t adv_set_id, hci::AddressWithType adv_address,
-                                          bool is_discoverable) = 0;
-
   virtual LeAddressManager* GetLeAddressManager() = 0;
 
   // Virtual ACL disconnect emitted during suspend.
