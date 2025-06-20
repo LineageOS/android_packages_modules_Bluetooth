@@ -845,29 +845,15 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
             return;
         }
 
-        if (Flags.autoConnectOnMultipleHfpWhenNoA2dpDevice()) {
-            final List<BluetoothDevice> mostRecentlyConnectedHfpDevices =
-                    mDatabaseManager.getMostRecentlyActiveHfpDevices();
-            for (BluetoothDevice hfpDevice : mostRecentlyConnectedHfpDevices) {
-                Log.d(TAG, log + "Attempting HFP device" + hfpDevice);
-                autoConnectHeadset(hfpDevice);
-            }
-            if (mostRecentlyConnectedHfpDevices.size() == 0) {
-                Log.d(TAG, log + "No hfp device to connect");
-            }
-            return;
+        final List<BluetoothDevice> mostRecentlyConnectedHfpDevices =
+                mDatabaseManager.getMostRecentlyActiveHfpDevices();
+        for (BluetoothDevice hfpDevice : mostRecentlyConnectedHfpDevices) {
+            Log.d(TAG, log + "Attempting HFP device" + hfpDevice);
+            autoConnectHeadset(hfpDevice);
         }
-        Log.d(TAG, log + "Multi HFP is not enabled");
-
-        // Try to autoConnect with Hfp only if there was no a2dp valid device
-        final BluetoothDevice mostRecentlyConnectedHfpDevice =
-                mDatabaseManager.getMostRecentlyActiveHfpDevice();
-        if (mostRecentlyConnectedHfpDevice != null) {
-            Log.d(TAG, log + "Attempting most recent HFP device" + mostRecentlyConnectedHfpDevice);
-            autoConnectHeadset(mostRecentlyConnectedHfpDevice);
-            return;
+        if (mostRecentlyConnectedHfpDevices.size() == 0) {
+            Log.d(TAG, log + "No hfp device to connect");
         }
-        Log.i(TAG, log + "No device to reconnect to");
     }
 
     private void autoConnectA2dp(BluetoothDevice device) {

@@ -48,7 +48,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
@@ -569,7 +568,6 @@ public final class DatabaseManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE)
     public void testSetConnectionHeadset() {
         // Verify pre-conditions to ensure a fresh test
         assertThat(mDatabaseManager.mMetadataCache).isEmpty();
@@ -592,6 +590,7 @@ public final class DatabaseManagerTest {
         mDatabaseManager.setConnection(mDevice2, BluetoothProfile.HEADSET);
         // Wait for database update
         TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
+        // In this case, "active" is considered connected so check that both devices are connected
         assertThat(mDatabaseManager.mMetadataCache.get(mDevice1.getAddress()).isActiveHfpDevice)
                 .isTrue();
         assertThat(mDatabaseManager.mMetadataCache.get(mDevice2.getAddress()).isActiveHfpDevice)
@@ -625,7 +624,6 @@ public final class DatabaseManagerTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE)
     public void testSetConnection() {
         // Verify pre-conditions to ensure a fresh test
         assertThat(mDatabaseManager.mMetadataCache).isEmpty();
