@@ -42,8 +42,10 @@ filegroup {
         "dm/bta_dm_gatt_client.cc",
         "dm/bta_dm_main.cc",
         "dm/bta_dm_pm.cc",
+        "dm/bta_dm_pm_offload.cc",
         "dm/bta_dm_sec.cc",
         "dm/bta_dm_sec_api.cc",
+        "dm/sniff_offload/sniff_offload.cc",
         "dm/sniff_offload/sniff_offload_config_reader.cc",
         "dm/sniff_offload/sniff_offload_vsc_sender.cc",
     ],
@@ -248,6 +250,8 @@ cc_test {
         ":TestMockStackPan",
         ":TestMockStackRfcomm",
         ":TestMockStackRnr",
+        "dm/sniff_offload/sniff_offload.cc",
+        "dm/sniff_offload/sniff_offload_test.cc",
         "test/bta_ag_sco_test.cc",
         "test/bta_ag_test.cc",
         "test/bta_api_test.cc",
@@ -1658,19 +1662,19 @@ cc_test {
     name: "sniff_offload_config_reader_test",
     team: "trendy_team_bluetooth",
     srcs: [
-        "test/common/bta_dm_cfg_mock.cc",
         "dm/sniff_offload/sniff_offload_config_reader.cc",
         "dm/sniff_offload/sniff_offload_config_reader_test.cc",
+        "test/common/bta_dm_cfg_mock.cc",
     ],
 
     include_dirs: [
         "packages/modules/Bluetooth/system",
-        "packages/modules/Bluetooth/system/bta/include",
-        "packages/modules/Bluetooth/system/bta/sys",
         "packages/modules/Bluetooth/system/bta/dm",
         "packages/modules/Bluetooth/system/bta/dm/sniff_offload",
-        "packages/modules/Bluetooth/system/stack/include",
+        "packages/modules/Bluetooth/system/bta/include",
+        "packages/modules/Bluetooth/system/bta/sys",
         "packages/modules/Bluetooth/system/gd",
+        "packages/modules/Bluetooth/system/stack/include",
     ],
 
     shared_libs: [
@@ -1680,8 +1684,8 @@ cc_test {
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
         "libbluetooth_gd",
-        "libbluetooth_types",
         "libbluetooth_log",
+        "libbluetooth_types",
         "libgtest",
         "libgtest_main",
     ],

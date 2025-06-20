@@ -49,6 +49,17 @@ struct SniffOffloadParameters {
             link_idle_timeout, subrate_max_latency, min_remote_timeout, min_local_timeout,
             allow_exit_on_rx, allow_exit_on_tx);
   }
+
+  bool operator==(const SniffOffloadParameters& other) const {
+    return sniff_max_interval == other.sniff_max_interval &&
+           sniff_min_interval == other.sniff_min_interval &&
+           sniff_attempts == other.sniff_attempts && sniff_timeout == other.sniff_timeout &&
+           link_idle_timeout == other.link_idle_timeout &&
+           subrate_max_latency == other.subrate_max_latency &&
+           min_remote_timeout == other.min_remote_timeout &&
+           min_local_timeout == other.min_local_timeout &&
+           allow_exit_on_rx == other.allow_exit_on_rx && allow_exit_on_tx == other.allow_exit_on_tx;
+  }
 };
 
 enum class Priority : uint8_t {
