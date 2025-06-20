@@ -21,7 +21,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/acl_manager_le.h"
 #include "hci/controller.h"
 #include "hci/event_checkers.h"
 #include "hci/hci_layer.h"
@@ -1632,7 +1632,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   os::Handler* handler_;
   HciInterface* hci_layer_;
   Controller* controller_;
-  AclManager* acl_manager_;
+  AclManagerLe* acl_manager_;
   ScanApiType api_type_;
   storage::StorageModule* storage_module_;
   LeScanningInterface* le_scanning_interface_;

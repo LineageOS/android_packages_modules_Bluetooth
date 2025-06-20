@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "hci/acl_manager/connection_callbacks.h"
 #include "hci/acl_manager/le_connection_callbacks.h"
 #include "hci/address.h"
 #include "hci/address_with_type.h"
@@ -27,9 +26,9 @@
 namespace bluetooth {
 namespace hci {
 
-class AclManager {
+class AclManagerLe {
 public:
-  virtual ~AclManager() = default;
+  virtual ~AclManagerLe() = default;
 
   virtual void Dump(int /*fd*/) const = 0;
 

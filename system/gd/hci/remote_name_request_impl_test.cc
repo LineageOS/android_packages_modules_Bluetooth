@@ -290,7 +290,7 @@ TEST_F(RemoteNameRequestModuleTest, DISABLED_SendCommandThenCancelItCallbackInte
                                                         std::array<uint8_t, 248>{}))));
 }
 
-// This test should be replaced with the above one, so we test the integration of AclManager and
+// This test should be replaced with the above one, so we test the integration of AclManagerLe and
 // RnrModule
 TEST_F(RemoteNameRequestModuleTest, SendCommandThenCancelItCallbackInteropWorkaround) {
   auto promise = std::promise<std::tuple<ErrorCode, std::array<uint8_t, 248>>>{};

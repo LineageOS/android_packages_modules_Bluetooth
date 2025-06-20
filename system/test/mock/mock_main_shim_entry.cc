@@ -17,7 +17,7 @@
 #include "test/mock/mock_main_shim_entry.h"
 
 #include "hci/acl_manager/acl_manager_classic_mock.h"
-#include "hci/acl_manager_mock.h"
+#include "hci/acl_manager/acl_manager_le_mock.h"
 #include "hci/controller_mock.h"
 #include "hci/distance_measurement_manager_mock.h"
 #include "hci/hci_interface.h"
@@ -60,7 +60,7 @@ class Dumpsys;
 
 namespace shim {
 
-hci::AclManager* GetAclManager() { return hci::testing::mock_acl_manager_.get(); }
+hci::AclManagerLe* GetAclManagerLe() { return hci::testing::mock_acl_manager_.get(); }
 hci::acl_manager::AclManagerClassic* GetAclManagerClassic() {
   return hci::testing::mock_acl_manager_classic_.get();
 }

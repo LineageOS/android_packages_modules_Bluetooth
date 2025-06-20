@@ -29,7 +29,7 @@
 #include "channel_sounding/cs_metrics.h"
 #include "common/strings.h"
 #include "hal/ranging_hal.h"
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/acl_manager_le.h"
 #include "hci/controller.h"
 #include "hci/distance_measurement_interface.h"
 #include "hci/event_checkers.h"
@@ -341,7 +341,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
   }
 
   impl(os::Handler* handler, hci::HciInterface* hci_layer, hci::Controller* controller,
-       hci::AclManager* acl_manager, hal::RangingHal* ranging_hal) {
+       hci::AclManagerLe* acl_manager, hal::RangingHal* ranging_hal) {
     handler_ = handler;
     controller_ = controller;
     ranging_hal_ = ranging_hal;
@@ -2948,7 +2948,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
   hal::RangingHal* ranging_hal_ = nullptr;
   hci::Controller* controller_ = nullptr;
   hci::HciInterface* hci_layer_ = nullptr;
-  hci::AclManager* acl_manager_ = nullptr;
+  hci::AclManagerLe* acl_manager_ = nullptr;
   hci::DistanceMeasurementInterface* distance_measurement_interface_ = nullptr;
   std::unordered_map<Address, RSSITracker> rssi_trackers;
   std::unordered_map<uint16_t, CsTracker> cs_requester_trackers_;
@@ -2980,7 +2980,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
 DistanceMeasurementManagerImpl::DistanceMeasurementManagerImpl(os::Handler* handler,
                                                                hci::HciInterface* hci_layer,
                                                                hci::Controller* controller,
-                                                               hci::AclManager* acl_manager,
+                                                               hci::AclManagerLe* acl_manager,
                                                                hal::RangingHal* ranging_hal) {
   pimpl_ = std::make_unique<impl>(handler, hci_layer, controller, acl_manager, ranging_hal);
 }

@@ -24,7 +24,7 @@
 #include <future>
 #include <optional>
 
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/acl_manager_le.h"
 #include "hci/remote_name_request.h"
 #include "main/shim/acl.h"
 #include "main/shim/entry.h"
@@ -99,7 +99,7 @@ void bluetooth::shim::ACL_ConfigureLePrivacy(bool is_le_privacy_enabled) {
   auto maximum_rotation_time = std::chrono::minutes(
           android::sysprop::bluetooth::Ble::random_address_rotation_interval_max().value_or(15));
 
-  Stack::GetInstance()->GetAclManager()->SetPrivacyPolicyForInitiatorAddress(
+  Stack::GetInstance()->GetAclManagerLe()->SetPrivacyPolicyForInitiatorAddress(
           address_policy, empty_address_with_type, minimum_rotation_time, maximum_rotation_time);
 }
 

@@ -17,7 +17,7 @@
 #include "main/shim/entry.h"
 
 #include "hal/snoop_logger.h"
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/acl_manager_le.h"
 #include "hci/controller.h"
 #include "hci/distance_measurement_manager.h"
 #include "hci/hci_interface.h"
@@ -65,7 +65,7 @@ storage::StorageModule* GetStorage() { return Stack::GetInstance()->GetStorage()
 hci::acl_manager::AclManagerClassic* GetAclManagerClassic() {
   return Stack::GetInstance()->GetAclManagerClassic();
 }
-hci::AclManager* GetAclManager() { return Stack::GetInstance()->GetAclManager(); }
+hci::AclManagerLe* GetAclManagerLe() { return Stack::GetInstance()->GetAclManagerLe(); }
 
 hci::MsftExtensionManager* GetMsftExtensionManager() {
   return Stack::GetInstance()->GetMsftExtensionManager();
