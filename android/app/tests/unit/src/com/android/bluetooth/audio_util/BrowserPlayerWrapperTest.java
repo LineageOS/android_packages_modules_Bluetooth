@@ -83,7 +83,6 @@ public class BrowserPlayerWrapperTest {
     private HandlerThread mThread;
 
     @Mock Context mMockContext;
-    private Context mTargetContext;
     private final Resources mTestResources = TestUtils.getTestApplicationResources();
     private MockContentResolver mTestContentResolver;
 
@@ -102,8 +101,8 @@ public class BrowserPlayerWrapperTest {
     @Before
     public void setUp() {
         mTestBitmap = loadImage(R.raw.image_200_200);
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
-        mTestContentResolver = new MockContentResolver(mTargetContext);
+        final var context = InstrumentationRegistry.getInstrumentation().getContext();
+        mTestContentResolver = new MockContentResolver(context);
         mTestContentResolver.addProvider(
                 TEST_AUTHORITY,
                 new MockContentProvider() {
@@ -137,7 +136,6 @@ public class BrowserPlayerWrapperTest {
         mThread = null;
         mTestContentResolver = null;
         mTestBitmap = null;
-        mTargetContext = null;
         Util.UriImagesSupport.sValue = false;
     }
 

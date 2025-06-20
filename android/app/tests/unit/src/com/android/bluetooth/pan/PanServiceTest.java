@@ -76,15 +76,14 @@ public class PanServiceTest {
     private static final int TIMEOUT_MS = 5_000;
 
     private final BluetoothDevice mRemoteDevice = getTestDevice(0);
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
 
     private PanService mService;
     private TestLooper mTestLooper;
 
     @Before
     public void setUp() {
-        doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();
+        doReturn(mContext.getResources()).when(mAdapterService).getResources();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         mockGetSystemService(mAdapterService, UserManager.class, mMockUserManager);
         mockGetSystemService(mAdapterService, TetheringManager.class);

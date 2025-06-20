@@ -53,19 +53,17 @@ public class BluetoothMapbMessageSmsTest {
     private static final String TEST_MESSAGE = "test";
     private static final String TEST_ADDRESS = "12";
 
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
 
     private List<SmsPdu> TEST_SMS_BODY_PDUS;
 
     @Before
     public void setUp() {
         // Do not run test if sms is not supported
-        PackageManager packageManager = mTargetContext.getPackageManager();
+        PackageManager packageManager = mContext.getPackageManager();
         Assume.assumeTrue(packageManager.hasSystemFeature(FEATURE_TELEPHONY_MESSAGING));
 
-        TEST_SMS_BODY_PDUS =
-                BluetoothMapSmsPdu.getSubmitPdus(mTargetContext, TEST_MESSAGE, TEST_ADDRESS);
+        TEST_SMS_BODY_PDUS = BluetoothMapSmsPdu.getSubmitPdus(mContext, TEST_MESSAGE, TEST_ADDRESS);
     }
 
     @Test
