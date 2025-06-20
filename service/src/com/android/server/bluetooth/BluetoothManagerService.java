@@ -137,15 +137,6 @@ class BluetoothManagerService {
     // Delay for retrying enable and disable in msec
     @VisibleForTesting static final int ENABLE_DISABLE_DELAY_MS = 300 * HW_MULTIPLIER;
 
-    // TODO: b/402209603 remove along with system_server_remove_extra_thread_jump
-    @VisibleForTesting static final int MESSAGE_ENABLE = 1;
-    // TODO: b/402209603 remove along with system_server_remove_extra_thread_jump
-    @VisibleForTesting static final int MESSAGE_DISABLE = 2;
-
-    // TODO: b/402209603 remove along with system_server_remove_extra_thread_jump
-    @VisibleForTesting static final int MESSAGE_HANDLE_ENABLE_DELAYED = 3;
-
-    // TODO: b/402209603 remove along with system_server_remove_extra_thread_jump
     @VisibleForTesting static final int MESSAGE_HANDLE_DISABLE_DELAYED = 4;
 
     @VisibleForTesting static final int MESSAGE_BLUETOOTH_SERVICE_CONNECTED = 40;
@@ -410,23 +401,13 @@ class BluetoothManagerService {
         } else if (state != State.ON && state != State.OFF && state != State.BLE_ON) {
             // Bluetooth is turning state
             return ADD_PROXY_DELAY_MS;
-        } else if ((!Flags.systemServerRemoveExtraThreadJump()
-                        && (mHandler.hasMessages(MESSAGE_ENABLE)
-                                || mHandler.hasMessages(MESSAGE_DISABLE)))
-                || mHandler.hasMessages(MESSAGE_HANDLE_ENABLE_DELAYED)
-                || mHandler.hasMessages(MESSAGE_HANDLE_DISABLE_DELAYED)
+        } else if (mHandler.hasMessages(MESSAGE_HANDLE_DISABLE_DELAYED)
                 || mHandler.hasMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE)
                 || isBinding()
                 || mNextUser != null) {
             Log.d(
                     TAG,
                     "Busy reason:"
-                            + " ENABLE="
-                            + mHandler.hasMessages(MESSAGE_ENABLE)
-                            + " DISABLE="
-                            + mHandler.hasMessages(MESSAGE_DISABLE)
-                            + " HANDLE_ENABLE_DELAYED="
-                            + mHandler.hasMessages(MESSAGE_HANDLE_ENABLE_DELAYED)
                             + " HANDLE_DISABLE_DELAYED="
                             + mHandler.hasMessages(MESSAGE_HANDLE_DISABLE_DELAYED)
                             + " RESTART_BLUETOOTH_SERVICE="
@@ -1465,7 +1446,6 @@ class BluetoothManagerService {
     }
 
     private final BluetoothServiceConnection mConnection = new BluetoothServiceConnection();
-    private int mWaitForEnableRetry;
     private int mWaitForDisableRetry;
 
     @VisibleForTesting
@@ -1477,44 +1457,10 @@ class BluetoothManagerService {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case MESSAGE_ENABLE -> {
-                    if (Flags.systemServerRemoveExtraThreadJump()) {
-                        break;
-                    }
-
-                    boolean quietEnable = msg.arg1 != 0;
-                    boolean isBle = msg.arg2 != 0;
-
-                    Log.d(
-                            TAG,
-                            ("MESSAGE_ENABLE(quietEnable=" + quietEnable + ", isBle=" + isBle + ")")
-                                    + (": mAdapter=" + mAdapter));
-
-                    handleEnableMessage(quietEnable, isBle);
-                }
-                case MESSAGE_DISABLE -> {
-                    if (Flags.systemServerRemoveExtraThreadJump()) {
-                        break;
-                    }
-
-                    Log.d(TAG, "MESSAGE_DISABLE: mAdapter=" + mAdapter);
-
-                    handleDisableMessage();
-                }
-                case MESSAGE_HANDLE_ENABLE_DELAYED -> {
-                    Log.d(TAG, "MESSAGE_HANDLE_ENABLE_DELAYED: mAdapter=" + mAdapter);
-
-                    handleEnableDelayed();
-                }
                 case MESSAGE_HANDLE_DISABLE_DELAYED -> {
-                    boolean disabling = (msg.arg1 == 1);
+                    Log.d(TAG, "MESSAGE_HANDLE_DISABLE_DELAYED: mAdapter=" + mAdapter);
 
-                    Log.d(
-                            TAG,
-                            ("MESSAGE_HANDLE_DISABLE_DELAYED(disabling=" + disabling + ")")
-                                    + (": mAdapter=" + mAdapter));
-
-                    handleDisableDelayed(disabling);
+                    handleDisableDelayed();
                 }
                 case MESSAGE_RESTORE_USER_SETTING_OFF -> {
                     if (!mEnable) {
@@ -1540,7 +1486,7 @@ class BluetoothManagerService {
                     IBinder service = (IBinder) msg.obj;
 
                     // Handle case where disable was called before binding complete.
-                    if (Flags.systemServerRemoveExtraThreadJump() && !isBinding() && !mEnable) {
+                    if (!isBinding() && !mEnable) {
                         Log.d(TAG, "MESSAGE_BLUETOOTH_SERVICE_CONNECTED: after cancelling binding");
                         AdapterBinder adapter =
                                 BluetoothServerProxy.getInstance().createAdapterBinder(service);
@@ -1565,11 +1511,6 @@ class BluetoothManagerService {
                     }
 
                     propagateOffToBleOn(mHciInstanceName);
-
-                    if (!Flags.systemServerRemoveExtraThreadJump() && !mEnable) {
-                        waitForState(State.ON);
-                        onToBleOn();
-                    }
                 }
                 case MESSAGE_BLUETOOTH_STATE_CHANGE -> {
                     int prevState = msg.arg1;
@@ -1605,26 +1546,12 @@ class BluetoothManagerService {
                             // When performing FactoryReset, we currently depend on this to restart
                             if (mEnable && !isBinding()) {
                                 Log.d(TAG, "Entering State.OFF but mEnabled is true; restarting.");
-                                if (!Flags.systemServerRemoveExtraThreadJump()) {
-                                    waitForState(State.OFF);
-                                    mHandler.sendEmptyMessageDelayed(
-                                            MESSAGE_RESTART_BLUETOOTH_SERVICE,
-                                            getServiceRestartMs());
-                                } else {
-                                    handleRestartMessage();
-                                }
+                                handleRestartMessage();
                             }
                         } else {
                             if (mEnable) {
                                 Log.d(TAG, "Entering State.OFF but mEnabled is true; restarting.");
-                                if (!Flags.systemServerRemoveExtraThreadJump()) {
-                                    waitForState(State.OFF);
-                                    mHandler.sendEmptyMessageDelayed(
-                                            MESSAGE_RESTART_BLUETOOTH_SERVICE,
-                                            getServiceRestartMs());
-                                } else {
-                                    handleRestartMessage();
-                                }
+                                handleRestartMessage();
                             }
                         }
                     }
@@ -1757,16 +1684,6 @@ class BluetoothManagerService {
             return;
         }
 
-        if (!Flags.systemServerRemoveExtraThreadJump()
-                && (mHandler.hasMessages(MESSAGE_HANDLE_DISABLE_DELAYED)
-                        || mHandler.hasMessages(MESSAGE_HANDLE_ENABLE_DELAYED))) {
-            // We are handling enable or disable right now, wait for it.
-            mHandler.sendMessageDelayed(
-                    mHandler.obtainMessage(MESSAGE_ENABLE, quietEnable ? 1 : 0, isBle ? 1 : 0),
-                    ENABLE_DISABLE_DELAY_MS);
-            return;
-        }
-
         mHandler.removeMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE);
         mEnable = true;
 
@@ -1790,42 +1707,14 @@ class BluetoothManagerService {
             return;
         }
 
-        if (!Flags.systemServerRemoveExtraThreadJump() && mAdapter != null) {
-            // TODO: b/339548431 - Adapt this after removal of Flags.explicitKillFromSystemServer
-            //
-            // We need to wait until transitioned to State.OFF and the previous Bluetooth process
-            // has exited. The waiting period has three components:
-            // (a) Wait until the local state is State.OFF. This is accomplished by sending delay a
-            //     message MESSAGE_HANDLE_ENABLE_DELAYED
-            // (b) Wait until the State.OFF state is updated to all components.
-            // (c) Wait until the Bluetooth process exits, and ActivityManager detects it.
-            //
-            // The waiting for (b) and (c) is accomplished by delaying the
-            // MESSAGE_RESTART_BLUETOOTH_SERVICE message. The delay time is backed off if Bluetooth
-            // continuously failed to turn on itself.
-            mWaitForEnableRetry = 0;
-            mHandler.sendEmptyMessageDelayed(
-                    MESSAGE_HANDLE_ENABLE_DELAYED, ENABLE_DISABLE_DELAY_MS);
-            return;
-        }
-
         mQuietEnable = quietEnable;
         handleEnable();
     }
 
     private void handleDisableMessage() {
-        if (!Flags.systemServerRemoveExtraThreadJump()
-                && (mHandler.hasMessages(MESSAGE_HANDLE_DISABLE_DELAYED)
-                        || isBinding()
-                        || mHandler.hasMessages(MESSAGE_HANDLE_ENABLE_DELAYED))) {
-            // We are handling enable or disable right now, wait for it.
-            mHandler.sendEmptyMessageDelayed(MESSAGE_DISABLE, ENABLE_DISABLE_DELAY_MS);
-            return;
-        }
-
         mHandler.removeMessages(MESSAGE_RESTART_BLUETOOTH_SERVICE);
 
-        if (Flags.systemServerRemoveExtraThreadJump() && isBinding()) {
+        if (isBinding()) {
             Log.d(TAG, "Disable while binding");
             mEnable = false;
             mContext.unbindService(mConnection);
@@ -1834,19 +1723,13 @@ class BluetoothManagerService {
                 bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
             }
             mHandler.removeMessages(MESSAGE_BLUETOOTH_SERVICE_CONNECTED);
-        } else if (Flags.systemServerRemoveExtraThreadJump()
-                && mState.oneOf(State.BLE_TURNING_ON)) {
+        } else if (mState.oneOf(State.BLE_TURNING_ON)) {
             Log.d(TAG, "Disable while BLE_TURNING_ON");
             mEnable = false;
             bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
         } else if (mEnable && mAdapter != null) {
             mWaitForDisableRetry = 0;
-            if (Flags.systemServerRemoveExtraThreadJump()) {
-                handleDisableDelayed(false);
-            } else {
-                mHandler.sendEmptyMessageDelayed(
-                        MESSAGE_HANDLE_DISABLE_DELAYED, ENABLE_DISABLE_DELAY_MS);
-            }
+            handleDisableDelayed();
         } else {
             mEnable = false;
             onToBleOn();
@@ -2025,73 +1908,23 @@ class BluetoothManagerService {
         return Unit.INSTANCE;
     }
 
-    private void handleEnableDelayed() {
-        // The Bluetooth is turning off, wait for State.OFF
-        if (!mState.oneOf(State.OFF)) {
-            if (mWaitForEnableRetry < MAX_WAIT_FOR_ENABLE_DISABLE_RETRIES) {
-                mWaitForEnableRetry++;
+    private void handleDisableDelayed() {
+        // The Bluetooth is turning on, wait for State.ON
+        if (!mState.oneOf(State.ON)) {
+            if (mWaitForDisableRetry < MAX_WAIT_FOR_ENABLE_DISABLE_RETRIES) {
+                mWaitForDisableRetry++;
                 mHandler.sendEmptyMessageDelayed(
-                        MESSAGE_HANDLE_ENABLE_DELAYED, ENABLE_DISABLE_DELAY_MS);
+                        MESSAGE_HANDLE_DISABLE_DELAYED, ENABLE_DISABLE_DELAY_MS);
                 return;
             } else {
-                Log.e(TAG, "Wait for State.OFF timeout");
+                Log.e(TAG, "Wait for State.ON timeout");
             }
         }
-        if (Flags.systemServerRemoveExtraThreadJump()) {
-            handleEnable();
-            return;
-        }
-        // Either state is changed to State.OFF or reaches the maximum retry, we
+        // Either state is changed to State.ON or reaches the maximum retry, we
         // should move forward to the next step.
-        mWaitForEnableRetry = 0;
-        mHandler.sendEmptyMessageDelayed(MESSAGE_RESTART_BLUETOOTH_SERVICE, getServiceRestartMs());
-        Log.d(TAG, "Handle enable is finished");
-    }
-
-    private void handleDisableDelayed(boolean disabling) {
-        if (Flags.systemServerRemoveExtraThreadJump() && disabling) {
-            return;
-        }
-        if (!disabling) {
-            // The Bluetooth is turning on, wait for State.ON
-            if (!mState.oneOf(State.ON)) {
-                if (mWaitForDisableRetry < MAX_WAIT_FOR_ENABLE_DISABLE_RETRIES) {
-                    mWaitForDisableRetry++;
-                    mHandler.sendEmptyMessageDelayed(
-                            MESSAGE_HANDLE_DISABLE_DELAYED, ENABLE_DISABLE_DELAY_MS);
-                    return;
-                } else {
-                    Log.e(TAG, "Wait for State.ON timeout");
-                }
-            }
-            // Either state is changed to State.ON or reaches the maximum retry, we
-            // should move forward to the next step.
-            mWaitForDisableRetry = 0;
-            mEnable = false;
-            onToBleOn();
-            if (!Flags.systemServerRemoveExtraThreadJump()) {
-                // Wait for state exiting State.ON
-                Message disableDelayedMsg =
-                        mHandler.obtainMessage(MESSAGE_HANDLE_DISABLE_DELAYED, 1, 0);
-                mHandler.sendMessageDelayed(disableDelayedMsg, ENABLE_DISABLE_DELAY_MS);
-            }
-        } else {
-            // The Bluetooth is turning off, wait for exiting State.ON
-            if (mState.oneOf(State.ON)) {
-                if (mWaitForDisableRetry < MAX_WAIT_FOR_ENABLE_DISABLE_RETRIES) {
-                    mWaitForDisableRetry++;
-                    Message disableDelayedMsg =
-                            mHandler.obtainMessage(MESSAGE_HANDLE_DISABLE_DELAYED, 1, 0);
-                    mHandler.sendMessageDelayed(disableDelayedMsg, ENABLE_DISABLE_DELAY_MS);
-                    return;
-                } else {
-                    Log.e(TAG, "Wait for exiting State.ON timeout");
-                }
-            }
-            // Either state is exited from State.ON or reaches the maximum retry, we
-            // should move forward to the next step.
-            Log.d(TAG, "Handle disable is finished");
-        }
+        mWaitForDisableRetry = 0;
+        mEnable = false;
+        onToBleOn();
     }
 
     private void propagateOffToBleOn(String hciInstanceName) {
@@ -2250,13 +2083,8 @@ class BluetoothManagerService {
     }
 
     private void sendDisableMsg(int reason, String packageName) {
-        if (!Flags.systemServerRemoveExtraThreadJump()) {
-            mHandler.sendEmptyMessage(MESSAGE_DISABLE);
-        }
         ActiveLogs.add(reason, false, packageName, false);
-        if (Flags.systemServerRemoveExtraThreadJump()) {
-            handleDisableMessage();
-        }
+        handleDisableMessage();
     }
 
     private void sendEnableMsg(boolean quietMode, int reason) {
@@ -2268,14 +2096,9 @@ class BluetoothManagerService {
     }
 
     private void sendEnableMsg(boolean quietMode, int reason, String packageName, boolean isBle) {
-        if (!Flags.systemServerRemoveExtraThreadJump()) {
-            mHandler.obtainMessage(MESSAGE_ENABLE, quietMode ? 1 : 0, isBle ? 1 : 0).sendToTarget();
-        }
         ActiveLogs.add(reason, true, packageName, isBle);
         mLastEnabledTime = Instant.now();
-        if (Flags.systemServerRemoveExtraThreadJump()) {
-            handleEnableMessage(quietMode, isBle);
-        }
+        handleEnableMessage(quietMode, isBle);
     }
 
     private void addCrashLog() {

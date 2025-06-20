@@ -99,16 +99,6 @@ flag {
 }
 
 flag {
-    name: "system_server_remove_extra_thread_jump"
-    namespace: "bluetooth"
-    description: "Methods are unnecessarily re-posting on the system server thread"
-    bug: "402209603"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "user_restriction_refactor"
     namespace: "bluetooth"
     description: "Move user restriction to Kotlin and properly check before any attempt to start Bluetooth"
