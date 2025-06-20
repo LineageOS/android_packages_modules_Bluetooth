@@ -163,8 +163,7 @@ public class LeAudioServiceTest {
     private static final String TEST_BROADCAST_NAME = "Name Test";
 
     private final HashSet<BluetoothDevice> mBondedDevices = new HashSet<>();
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothDevice mLeftDevice = getTestDevice(0);
     private final BluetoothDevice mRightDevice = getTestDevice(1);
     private final BluetoothDevice mSingleDevice = getTestDevice(2);
@@ -264,7 +263,7 @@ public class LeAudioServiceTest {
         mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
         doReturn(mAdapterService).when(mAdapterService).getApplicationContext();
         doReturn(mAdapterService).when(mAdapterService).createContextAsUser(any(), anyInt());
-        doReturn(mTargetContext.getContentResolver()).when(mAdapterService).getContentResolver();
+        doReturn(mContext.getContentResolver()).when(mAdapterService).getContentResolver();
         doReturn(MAX_LE_AUDIO_CONNECTIONS).when(mAdapterService).getMaxConnectedAudioDevices();
 
         injectSupportedProfilesBitMask(

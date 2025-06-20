@@ -80,10 +80,8 @@ public class BluetoothPbapServiceTest {
     @Spy private BluetoothMethodProxy mMethodProxy = BluetoothMethodProxy.getInstance();
 
     private final BluetoothDevice mRemoteDevice = getTestDevice(42);
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
-    private final MockContentResolver mMockContentResolver =
-            new MockContentResolver(mTargetContext);
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+    private final MockContentResolver mMockContentResolver = new MockContentResolver(mContext);
 
     private BluetoothPbapService mService;
     private TestLooper mTestLooper;
@@ -93,8 +91,8 @@ public class BluetoothPbapServiceTest {
         doReturn(mSharedPreferences)
                 .when(mAdapterService)
                 .getSharedPreferences(anyString(), anyInt());
-        doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
-        doReturn(mTargetContext.getPackageManager()).when(mAdapterService).getPackageManager();
+        doReturn(mContext.getPackageName()).when(mAdapterService).getPackageName();
+        doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(mMockContentResolver).when(mAdapterService).getContentResolver();
         UserManager manager = TestUtils.mockGetSystemService(mAdapterService, UserManager.class);
         doReturn(List.of()).when(manager).getAllProfiles();
@@ -109,7 +107,7 @@ public class BluetoothPbapServiceTest {
         mService = new BluetoothPbapService(mAdapterService, mNotificationManager);
         mService.setAvailable(true);
 
-        PackageManager pm = mTargetContext.getPackageManager();
+        PackageManager pm = mContext.getPackageManager();
         assumeNotNull(pm);
         assumeTrue(pm.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION));
     }

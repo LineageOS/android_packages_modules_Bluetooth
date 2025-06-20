@@ -68,22 +68,21 @@ public class AtPhonebookTest {
 
     private static final String INVALID_COMMAND = "invalid_command";
 
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothDevice mDevice = getTestDevice(198);
 
     private AtPhonebook mAtPhonebook;
 
     @Before
     public void setUp() throws Exception {
-        doReturn(mTargetContext.getSystemService(UserManager.class))
+        doReturn(mContext.getSystemService(UserManager.class))
                 .when(mAdapterService)
                 .getSystemService(UserManager.class);
-        doReturn(mTargetContext.getSystemService(DevicePolicyManager.class))
+        doReturn(mContext.getSystemService(DevicePolicyManager.class))
                 .when(mAdapterService)
                 .getSystemService(DevicePolicyManager.class);
-        doReturn(mTargetContext.getContentResolver()).when(mAdapterService).getContentResolver();
-        doReturn(mTargetContext.getString(R.string.unknownNumber))
+        doReturn(mContext.getContentResolver()).when(mAdapterService).getContentResolver();
+        doReturn(mContext.getString(R.string.unknownNumber))
                 .when(mAdapterService)
                 .getString(R.string.unknownNumber);
 
@@ -297,7 +296,7 @@ public class AtPhonebookTest {
                         + "\","
                         + PhoneNumberUtils.toaFromString(number)
                         + ",\""
-                        + mTargetContext.getString(R.string.unknownNumber)
+                        + mContext.getString(R.string.unknownNumber)
                         + "\""
                         + "\r\n\r\n";
         verify(mNativeInterface).atResponseString(mDevice, expected);

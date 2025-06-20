@@ -66,29 +66,28 @@ import java.util.List;
 public class DataMigrationTest {
     private static final String TAG = DataMigrationTest.class.getSimpleName();
 
-    private static final String AUTHORITY = "bluetooth_legacy.provider";
-
-    private static final String TEST_PREF = "DatabaseTestPref";
-
-    private MockContentResolver mMockContentResolver;
-
-    private Context mTargetContext;
-    private SharedPreferences mPrefs;
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private Context mMockContext;
 
+    private static final String AUTHORITY = "bluetooth_legacy.provider";
+
+    private static final String TEST_PREF = "DatabaseTestPref";
+
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+
+    private MockContentResolver mMockContentResolver;
+    private SharedPreferences mPrefs;
+
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
-        mTargetContext.deleteSharedPreferences(TEST_PREF);
-        mPrefs = mTargetContext.getSharedPreferences(TEST_PREF, Context.MODE_PRIVATE);
+        mContext.deleteSharedPreferences(TEST_PREF);
+        mPrefs = mContext.getSharedPreferences(TEST_PREF, Context.MODE_PRIVATE);
         mPrefs.edit().clear().apply();
 
-        mMockContentResolver = new MockContentResolver(mTargetContext);
+        mMockContentResolver = new MockContentResolver(mContext);
         when(mMockContext.getContentResolver()).thenReturn(mMockContentResolver);
-        when(mMockContext.getCacheDir()).thenReturn(mTargetContext.getCacheDir());
+        when(mMockContext.getCacheDir()).thenReturn(mContext.getCacheDir());
 
         when(mMockContext.getSharedPreferences(anyString(), anyInt())).thenReturn(mPrefs);
     }
@@ -96,9 +95,9 @@ public class DataMigrationTest {
     @After
     public void tearDown() throws Exception {
         mPrefs.edit().clear().apply();
-        mTargetContext.deleteSharedPreferences(TEST_PREF);
-        mTargetContext.deleteDatabase("TestBluetoothDb");
-        mTargetContext.deleteDatabase("TestOppDb");
+        mContext.deleteSharedPreferences(TEST_PREF);
+        mContext.deleteDatabase("TestBluetoothDb");
+        mContext.deleteDatabase("TestOppDb");
     }
 
     private void assertRunStatus(int status) {
@@ -282,9 +281,9 @@ public class DataMigrationTest {
     @Test
     public void testIncompleteDbMigration() {
         when(mMockContext.getDatabasePath("btopp.db"))
-                .thenReturn(mTargetContext.getDatabasePath("TestOppDb"));
+                .thenReturn(mContext.getDatabasePath("TestOppDb"));
         when(mMockContext.getDatabasePath("bluetooth_db"))
-                .thenReturn(mTargetContext.getDatabasePath("TestBluetoothDb"));
+                .thenReturn(mContext.getDatabasePath("TestBluetoothDb"));
 
         BluetoothLegacyDbContentProvider fakeContentProvider =
                 new BluetoothLegacyDbContentProvider(mMockContext);
@@ -304,7 +303,7 @@ public class DataMigrationTest {
     @Test
     public void testBluetoothDbMigration() {
         when(mMockContext.getDatabasePath("bluetooth_db"))
-                .thenReturn(mTargetContext.getDatabasePath("TestBluetoothDb"));
+                .thenReturn(mContext.getDatabasePath("TestBluetoothDb"));
 
         BluetoothLegacyDbContentProvider fakeContentProvider =
                 new BluetoothLegacyDbContentProvider(mMockContext);
@@ -392,7 +391,7 @@ public class DataMigrationTest {
     @Test
     public void testOppDbMigration() {
         when(mMockContext.getDatabasePath("btopp.db"))
-                .thenReturn(mTargetContext.getDatabasePath("TestOppDb"));
+                .thenReturn(mContext.getDatabasePath("TestOppDb"));
 
         BluetoothLegacyDbContentProvider fakeContentProvider =
                 new BluetoothLegacyDbContentProvider(mMockContext);

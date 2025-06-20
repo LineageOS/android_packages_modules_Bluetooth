@@ -52,8 +52,7 @@ import org.mockito.Mock;
 public class BluetoothMapServiceTest {
     private BluetoothMapService mService = null;
     private final BluetoothDevice mDevice = getTestDevice(32);
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
@@ -62,9 +61,9 @@ public class BluetoothMapServiceTest {
 
     @Before
     public void setUp() {
-        doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
-        doReturn(mTargetContext.getPackageManager()).when(mAdapterService).getPackageManager();
-        doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();
+        doReturn(mContext.getPackageName()).when(mAdapterService).getPackageName();
+        doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
+        doReturn(mContext.getResources()).when(mAdapterService).getResources();
 
         mockGetSystemService(mAdapterService, TelephonyManager.class);
         mockGetSystemService(mAdapterService, AlarmManager.class);

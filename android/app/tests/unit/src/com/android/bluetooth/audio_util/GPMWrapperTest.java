@@ -43,12 +43,11 @@ import java.util.List;
 @RunWith(AndroidJUnit4.class)
 public class GPMWrapperTest {
 
-    private Context mContext;
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
     private MediaController mMediaController;
 
     @Before
     public void setUp() throws Exception {
-        mContext = InstrumentationRegistry.getInstrumentation().getContext();
         mMediaController = mock(MediaController.class);
     }
 
