@@ -36,7 +36,6 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.gatt.GattServiceConfig;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Collections;
@@ -54,8 +53,7 @@ import java.util.stream.Collectors;
 /** Manages Bluetooth LE Periodic scans */
 @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
 public class PeriodicScanManager {
-    private static final String TAG =
-            GattServiceConfig.TAG_PREFIX + PeriodicScanManager.class.getSimpleName();
+    private static final String TAG = PeriodicScanManager.class.getSimpleName();
 
     private static final long RUN_SYNC_WAIT_TIME_MS = 2000L;
 

@@ -25,9 +25,9 @@
 #include <future>
 
 #include "common/bind.h"
+#include "hci/acl_manager/acl_manager_le_impl.h"
 #include "hci/acl_manager/connection_callbacks_mock.h"
 #include "hci/acl_manager/connection_management_callbacks_mock.h"
-#include "hci/acl_manager_impl.h"
 #include "hci/address.h"
 #include "hci/controller_mock.h"
 #include "hci/hci_layer_fake.h"
@@ -128,7 +128,7 @@ protected:
     acl_manager_classic_ = std::make_unique<AclManagerClassicImpl>(
             client_handler_, *test_hci_layer_, *test_acl_scheduler_, *test_rnr_,
             *test_round_robin_scheduler_);
-    acl_manager_ = std::make_unique<AclManagerImpl>(
+    acl_manager_ = std::make_unique<AclManagerLeImpl>(
             client_handler_, *test_hci_layer_, *test_controller_, *test_storage_,
             *test_round_robin_scheduler_, *acl_manager_classic_);
 
@@ -201,7 +201,7 @@ protected:
   std::unique_ptr<storage::StorageModule> test_storage_ = nullptr;
   std::unique_ptr<RoundRobinScheduler> test_round_robin_scheduler_ = nullptr;
   std::unique_ptr<AclManagerClassicImpl> acl_manager_classic_ = nullptr;
-  std::unique_ptr<AclManagerImpl> acl_manager_ = nullptr;
+  std::unique_ptr<AclManagerLeImpl> acl_manager_ = nullptr;
 
   FakeLeAclDataConsumer fakeLeAclDataConsumer_;
   Address remote;
@@ -791,7 +791,7 @@ protected:
     acl_manager_classic_ = std::make_unique<AclManagerClassicImpl>(
             client_handler_, *test_hci_layer_, *test_acl_scheduler_, *test_rnr_,
             *test_round_robin_scheduler_);
-    acl_manager_ = std::make_unique<AclManagerImpl>(
+    acl_manager_ = std::make_unique<AclManagerLeImpl>(
             client_handler_, *test_hci_layer_, *test_controller_, *test_storage_,
             *test_round_robin_scheduler_, *acl_manager_classic_);
 

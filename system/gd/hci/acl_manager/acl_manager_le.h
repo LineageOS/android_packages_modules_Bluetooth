@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "hci/acl_manager/connection_callbacks.h"
 #include "hci/acl_manager/le_connection_callbacks.h"
 #include "hci/address.h"
 #include "hci/address_with_type.h"
@@ -27,9 +26,9 @@
 namespace bluetooth {
 namespace hci {
 
-class AclManager {
+class AclManagerLe {
 public:
-  virtual ~AclManager() = default;
+  virtual ~AclManagerLe() = default;
 
   virtual void Dump(int /*fd*/) const = 0;
 
@@ -65,11 +64,6 @@ public:
                                         const std::array<uint8_t, 16>& local_irk) = 0;
   virtual void RemoveDeviceFromResolvingList(AddressWithType address_with_type) = 0;
   virtual void ClearResolvingList() = 0;
-
-  // Callback from Advertising Manager to notify the advitiser (local) address
-  virtual void OnAdvertisingSetTerminated(ErrorCode status, uint16_t conn_handle,
-                                          uint8_t adv_set_id, hci::AddressWithType adv_address,
-                                          bool is_discoverable) = 0;
 
   virtual LeAddressManager* GetLeAddressManager() = 0;
 

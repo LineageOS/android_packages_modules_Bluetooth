@@ -585,7 +585,7 @@ package android.bluetooth {
     field @FlaggedApi("com.android.bluetooth.flags.encryption_change_broadcast") public static final int ENCRYPTION_ALGORITHM_AES = 2; // 0x2
     field @FlaggedApi("com.android.bluetooth.flags.encryption_change_broadcast") public static final int ENCRYPTION_ALGORITHM_E0 = 1; // 0x1
     field @FlaggedApi("com.android.bluetooth.flags.encryption_change_broadcast") public static final int ENCRYPTION_ALGORITHM_NONE = 0; // 0x0
-    field @FlaggedApi("com.android.bluetooth.flags.encryption_change_broadcast") public static final int ENCRYPTION_ALGORITHM_UNKNOWN = 3; // 0x3
+    field @FlaggedApi("com.android.bluetooth.flags.link_status_api") public static final int ENCRYPTION_ALGORITHM_UNKNOWN = 3; // 0x3
     field public static final int ERROR = -2147483648; // 0x80000000
     field @FlaggedApi("com.android.bluetooth.flags.add_bond_loss_reason") public static final String EXTRA_BOND_LOSS_REASON = "android.bluetooth.device.extra.BOND_LOSS_REASON";
     field public static final String EXTRA_BOND_STATE = "android.bluetooth.device.extra.BOND_STATE";

@@ -204,6 +204,11 @@ void bluetooth::stack::l2cap::Impl::L2CA_LockBleConnParamsForProfileConnection(
   ::L2CA_LockBleConnParamsForProfileConnection(rem_bda, lock);
 }
 
+void bluetooth::stack::l2cap::Impl::L2CA_LockBleConnParamsForLeAudioSubrate(
+        const RawAddress& rem_bda, bool lock) {
+  ::L2CA_LockBleConnParamsForLeAudioSubrate(rem_bda, lock);
+}
+
 void bluetooth::stack::l2cap::Impl::L2CA_Consolidate(const RawAddress& identity_addr,
                                                      const RawAddress& rpa) {
   ::L2CA_Consolidate(identity_addr, rpa);

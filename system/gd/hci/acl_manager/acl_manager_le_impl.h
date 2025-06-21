@@ -19,7 +19,7 @@
 #include <future>
 #include <memory>
 
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/acl_manager_le.h"
 #include "hci/acl_manager/classic_acl_count_provider.h"
 #include "hci/acl_manager/le_connection_callbacks.h"
 #include "hci/acl_manager/le_impl.h"
@@ -45,29 +45,29 @@ class Btm;
 bool L2CA_SetAclPriority(uint16_t, bool);
 }  // namespace shim
 
-namespace hci {
+namespace hci::acl_manager {
 
-class AclManagerImpl : public AclManager,
-                       public hci::OnAdvertisingSetTerminatedInterface,
-                       public LeAclDataConsumer {
+class AclManagerLeImpl : public AclManagerLe,
+                         public hci::OnAdvertisingSetTerminatedInterface,
+                         public LeAclDataConsumer {
   friend class bluetooth::shim::legacy::Acl;
   friend bool bluetooth::shim::L2CA_SetAclPriority(uint16_t, bool);
 
 public:
-  AclManagerImpl(os::Handler* handler, hci::HciInterface& hci_interface,
-                 hci::Controller& controller, storage::StorageModule& storage_module,
-                 acl_manager::RoundRobinScheduler& round_robin_scheduler,
-                 acl_manager::ClassicAclCountProvider& classic_acl_count_provider);
-  AclManagerImpl(const AclManagerImpl&) = delete;
-  AclManagerImpl& operator=(const AclManagerImpl&) = delete;
+  AclManagerLeImpl(os::Handler* handler, hci::HciInterface& hci_interface,
+                   hci::Controller& controller, storage::StorageModule& storage_module,
+                   acl_manager::RoundRobinScheduler& round_robin_scheduler,
+                   acl_manager::ClassicAclCountProvider& classic_acl_count_provider);
+  AclManagerLeImpl(const AclManagerLeImpl&) = delete;
+  AclManagerLeImpl& operator=(const AclManagerLeImpl&) = delete;
 
   // NOTE: It is necessary to forward declare a default destructor that
   // overrides the base class one, because "struct impl" is forwarded declared
   // in .cc and compiler needs a concrete definition of "struct impl" when
-  // compiling AclManagerImpl's destructor. Hence we need to forward declare the
-  // destructor for AclManagerImpl to delay compiling AclManagerImpl's destructor until
+  // compiling AclManagerLeImpl's destructor. Hence we need to forward declare the
+  // destructor for AclManagerLeImpl to delay compiling AclManagerLeImpl's destructor until
   // it starts linking the .cc file.
-  virtual ~AclManagerImpl() {}
+  virtual ~AclManagerLeImpl() {}
 
   void Dump(int fd) const override;
 
@@ -135,5 +135,5 @@ private:
   acl_manager::le_impl le_impl_;
 };
 
-}  // namespace hci
+}  // namespace hci::acl_manager
 }  // namespace bluetooth

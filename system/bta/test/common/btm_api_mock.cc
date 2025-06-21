@@ -102,6 +102,16 @@ void acl_disconnect_from_handle(uint16_t handle, tHCI_STATUS reason, std::string
   return btm_interface->AclDisconnectFromHandle(handle, reason);
 }
 
+bool acl_peer_supports_ble_connection_subrating(const RawAddress& random_pseudo) {
+  log::assert_that(btm_interface != nullptr, "Mock btm interface not set!");
+  return btm_interface->AclPeerSupportsBleConnectionSubrating(random_pseudo);
+}
+
+bool acl_peer_supports_ble_connection_subrating_host(const RawAddress& random_pseudo) {
+  log::assert_that(btm_interface != nullptr, "Mock btm interface not set!");
+  return btm_interface->AclPeerSupportsBleConnectionSubratingHost(random_pseudo);
+}
+
 tBTM_INQ_INFO* BTM_InqDbFirst(void) {
   log::assert_that(btm_interface != nullptr, "Mock btm interface not set!");
   return btm_interface->BTM_InqDbFirst();

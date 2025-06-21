@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hci/acl_manager_impl.h"
+#include "hci/acl_manager/acl_manager_le_impl.h"
 
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
@@ -123,7 +123,7 @@ protected:
     test_round_robin_scheduler_ = std::make_unique<RoundRobinScheduler>(
             client_handler_, *test_controller_, test_hci_layer_->GetAclQueueEnd());
 
-    acl_manager_ = std::make_unique<AclManagerImpl>(
+    acl_manager_ = std::make_unique<AclManagerLeImpl>(
             client_handler_, *test_hci_layer_, *test_controller_, *test_storage_,
             *test_round_robin_scheduler_, acl_count_provider_mock);
 
@@ -181,7 +181,7 @@ protected:
   std::unique_ptr<TestController> test_controller_ = nullptr;
   std::unique_ptr<storage::StorageModule> test_storage_ = nullptr;
   std::unique_ptr<RoundRobinScheduler> test_round_robin_scheduler_ = nullptr;
-  std::unique_ptr<AclManagerImpl> acl_manager_ = nullptr;
+  std::unique_ptr<AclManagerLeImpl> acl_manager_ = nullptr;
   Address remote;
   AddressWithType my_initiating_address;
   const bool use_accept_list_ = true;  // gd currently only supports connect list
@@ -624,7 +624,7 @@ protected:
 
     test_round_robin_scheduler_ = std::make_unique<RoundRobinScheduler>(
             client_handler_, *test_controller_, test_hci_layer_->GetAclQueueEnd());
-    acl_manager_ = std::make_unique<AclManagerImpl>(
+    acl_manager_ = std::make_unique<AclManagerLeImpl>(
             client_handler_, *test_hci_layer_, *test_controller_, *test_storage_,
             *test_round_robin_scheduler_, acl_count_provider_mock);
 

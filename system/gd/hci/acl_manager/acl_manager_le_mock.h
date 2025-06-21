@@ -17,7 +17,7 @@
 
 #include <gmock/gmock.h>
 
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/acl_manager_le.h"
 
 // Unit test interfaces
 namespace bluetooth {
@@ -41,7 +41,7 @@ public:
   mutable common::BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder> acl_queue_{10};
 };
 
-class MockAclManager : public AclManager {
+class MockAclManager : public AclManagerLe {
 public:
   MOCK_METHOD(void, Dump, (int /*fd*/), (const override));
   MOCK_METHOD(void, RegisterLeCallbacks,
@@ -70,10 +70,6 @@ public:
               (override));
   MOCK_METHOD(void, RemoveDeviceFromResolvingList, (AddressWithType address_with_type), (override));
   MOCK_METHOD(void, ClearResolvingList, (), (override));
-  MOCK_METHOD(void, OnAdvertisingSetTerminated,
-              (ErrorCode status, uint16_t conn_handle, uint8_t adv_set_id,
-               hci::AddressWithType adv_address, bool is_discoverable),
-              (override));
   MOCK_METHOD(LeAddressManager*, GetLeAddressManager, (), (override));
   MOCK_METHOD(void, OnLeSuspendInitiatedDisconnect, (uint16_t handle, ErrorCode reason),
               (override));

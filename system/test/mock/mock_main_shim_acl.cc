@@ -20,7 +20,7 @@
 #include <optional>
 #include <string>
 
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/acl_manager_le.h"
 #include "hci/acl_manager/classic_acl_connection.h"
 #include "hci/acl_manager/le_acl_connection.h"
 #include "hci/address.h"

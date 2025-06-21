@@ -403,6 +403,8 @@ enum tCONN_UPDATE_MASK : uint8_t {
   L2C_BLE_NOT_DEFAULT_PARAM = (1u << 3),
   /* Aggressive initial connection parameters are used */
   L2C_BLE_AGGRESSIVE_INITIAL_PARAM = (1u << 4),
+  /* Connection parameters are used for LE Audio subrate*/
+  L2C_BLE_AUDIO_PARAM_SUBRATE = (1u << 5),
 };
 
 /* Define a link control block. There is one link control block between
@@ -531,6 +533,7 @@ public:
 
   bool conn_update_blocked_by_service_discovery;
   bool conn_update_blocked_by_profile_connection;
+  bool conn_update_blocked_by_lea_subrate_device;
 
   uint16_t min_interval; /* parameters as requested by peripheral */
   uint16_t max_interval;

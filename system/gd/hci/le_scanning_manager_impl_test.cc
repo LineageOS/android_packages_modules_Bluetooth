@@ -31,7 +31,7 @@
 #include <vector>
 
 #include "common/bind.h"
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/acl_manager_le.h"
 #include "hci/address.h"
 #include "hci/controller_mock.h"
 #include "hci/hci_layer.h"

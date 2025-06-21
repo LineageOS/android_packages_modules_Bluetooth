@@ -131,7 +131,7 @@ bluetooth::hci::DistanceMeasurementManager* bluetooth::shim::GetDistanceMeasurem
 }
 bluetooth::hal::SnoopLogger* bluetooth::shim::GetSnoopLogger() { return nullptr; }
 bluetooth::lpp::LppOffloadInterface* bluetooth::shim::GetLppOffloadManager() { return nullptr; }
-bluetooth::hci::AclManager* bluetooth::shim::GetAclManager() { return nullptr; }
+bluetooth::hci::AclManagerLe* bluetooth::shim::GetAclManagerLe() { return nullptr; }
 bluetooth::hci::acl_manager::AclManagerClassic* bluetooth::shim::GetAclManagerClassic() {
   return nullptr;
 }

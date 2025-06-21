@@ -101,30 +101,30 @@ public class AdapterSuspend {
                     int nextState = DEVICE_STATE_NONE;
                     if (state.hasProperty(PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_DOCKED)) {
                         nextState = DEVICE_STATE_DOCKED;
-                    }
-                    if (state.hasProperty(PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_LID_CLOSED)) {
+                    } else if (state.hasProperty(
+                            PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_LID_CLOSED)) {
                         nextState = DEVICE_STATE_LID_CLOSED;
-                    }
-                    if (state.hasProperty(PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_LID_OPEN)) {
+                    } else if (state.hasProperty(PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_LID_OPEN)) {
                         nextState = DEVICE_STATE_LID_OPEN;
-                    }
-                    if (state.hasProperty(PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_SLATE)) {
+                    } else if (state.hasProperty(PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_SLATE)) {
                         nextState = DEVICE_STATE_TABLET;
+                    } else {
+                        Log.w(TAG, "device state does not have a valid property");
                     }
 
                     switch (nextState) {
-                        case DEVICE_STATE_LID_OPEN, DEVICE_STATE_DOCKED, DEVICE_STATE_TABLET -> {
-                            switch (nextState) {
-                                case DEVICE_STATE_LID_OPEN, DEVICE_STATE_DOCKED ->
-                                        mSuspendStateMachine.setTabletMode(false);
-                                case DEVICE_STATE_TABLET ->
-                                        mSuspendStateMachine.setTabletMode(true);
-                                default -> Log.e(TAG, "Unknown form factor " + nextState);
-                            }
+                        case DEVICE_STATE_LID_OPEN -> {
+                            Log.d(TAG, "lid open, screen on");
+                            mSuspendStateMachine.setTabletMode(false);
+                            mSuspendStateMachine.sendMessage(
+                                    AdapterSuspendStateMachine.MSG_SCREEN_ON);
                         }
-                        case DEVICE_STATE_LID_CLOSED ->
-                                mSuspendStateMachine.sendMessage(
-                                        AdapterSuspendStateMachine.MSG_CLOSED);
+                        case DEVICE_STATE_DOCKED -> mSuspendStateMachine.setTabletMode(false);
+                        case DEVICE_STATE_TABLET -> mSuspendStateMachine.setTabletMode(true);
+                        case DEVICE_STATE_LID_CLOSED -> {
+                            Log.d(TAG, "lid closed");
+                            mSuspendStateMachine.sendMessage(AdapterSuspendStateMachine.MSG_CLOSED);
+                        }
                         default -> Log.d(TAG, "Unknown state " + nextState);
                     }
                 }
@@ -209,6 +209,9 @@ public class AdapterSuspend {
             mAdapterService.setScanMode(SCAN_MODE_NONE, "handleSuspend");
         }
         if (mDisconnectAclOnSuspend) {
+            mAdapterService
+                    .getLeAudioService()
+                    .ifPresent(leAudio -> leAudio.setSystemSuspended(true));
             mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
             mAdapterNativeInterface.clearEventFilter();
             mAdapterNativeInterface.clearFilterAcceptList();
@@ -225,6 +228,9 @@ public class AdapterSuspend {
         long mask = 0;
         long leMask = 0;
         if (mDisconnectAclOnSuspend) {
+            mAdapterService
+                    .getLeAudioService()
+                    .ifPresent(leAudio -> leAudio.setSystemSuspended(false));
             mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
             mAdapterNativeInterface.clearEventFilter();
             mAdapterNativeInterface.restoreFilterAcceptList();
@@ -254,7 +260,12 @@ public class AdapterSuspend {
             devices = devices.stream().filter(d -> d != null).collect(Collectors.toList());
             if (!devices.isEmpty()) {
                 mLastActiveAudioDevices = devices;
-                Log.i(TAG, "store " + devices + " for reconnection for profile=" + audioProfile);
+                Log.i(
+                        TAG,
+                        "store "
+                                + devices
+                                + " for reconnection for profile="
+                                + BluetoothProfile.getProfileName(audioProfile));
                 break;
             }
         }

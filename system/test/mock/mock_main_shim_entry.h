@@ -18,7 +18,7 @@
 #include <memory>
 
 #include "hci/acl_manager/acl_manager_classic_mock.h"
-#include "hci/acl_manager_mock.h"
+#include "hci/acl_manager/acl_manager_le_mock.h"
 #include "hci/controller_mock.h"
 #include "hci/distance_measurement_manager_mock.h"
 #include "hci/hci_layer_mock.h"
