@@ -81,7 +81,6 @@ public class MetadataTest {
     private static final String SONG_GENRE = "BT Music";
     private static final String SONG_DURATION = "5000";
 
-    private Context mTargetContext;
     private MockContentResolver mTestContentResolver;
     private Image mSongImage = null; /* to be set to Image(mTestBitmap) once context is set */
     private Bitmap mTestBitmap = null;
@@ -89,8 +88,8 @@ public class MetadataTest {
     @Before
     public void setUp() throws Exception {
         mTestBitmap = loadImage(R.raw.image_200_200);
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
-        mTestContentResolver = new MockContentResolver(mTargetContext);
+        final var context = InstrumentationRegistry.getInstrumentation().getContext();
+        mTestContentResolver = new MockContentResolver(context);
         mTestContentResolver.addProvider(
                 TEST_AUTHORITY,
                 new MockContentProvider() {
@@ -115,7 +114,6 @@ public class MetadataTest {
         mSongImage = null;
         mTestContentResolver = null;
         mTestBitmap = null;
-        mTargetContext = null;
         mMockContext = null;
         Util.UriImagesSupport.sValue = false;
     }

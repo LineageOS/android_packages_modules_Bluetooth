@@ -159,8 +159,7 @@ public class MapClientStateMachineTest {
             "com.android.bluetooth.mapclient.MapClientStateMachineTest.action.MESSAGE_DELIVERED";
 
     private final BluetoothDevice mDevice = getTestDevice(74);
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
 
     private Bmessage mTestIncomingSmsBmessage;
     private Bmessage mTestIncomingMmsBmessage;
@@ -223,7 +222,7 @@ public class MapClientStateMachineTest {
 
         when(mService.getContentResolver()).thenReturn(contentResolver);
 
-        doReturn(mTargetContext.getResources()).when(mService).getResources();
+        doReturn(mContext.getResources()).when(mService).getResources();
 
         when(mMasClient.makeRequest(any(Request.class))).thenReturn(true);
         mStateMachine =
@@ -256,7 +255,7 @@ public class MapClientStateMachineTest {
         filter.addAction(ACTION_MESSAGE_DELIVERED);
         filter.addAction(ACTION_MESSAGE_SENT);
         mSentDeliveryReceiver = new SentDeliveryReceiver();
-        mTargetContext.registerReceiver(mSentDeliveryReceiver, filter, Context.RECEIVER_EXPORTED);
+        mContext.registerReceiver(mSentDeliveryReceiver, filter, Context.RECEIVER_EXPORTED);
     }
 
     @After
@@ -265,7 +264,7 @@ public class MapClientStateMachineTest {
             mStateMachine.doQuit();
         }
 
-        mTargetContext.unregisterReceiver(mSentDeliveryReceiver);
+        mContext.unregisterReceiver(mSentDeliveryReceiver);
     }
 
     /** Test that default state is STATE_CONNECTING */
@@ -903,7 +902,7 @@ public class MapClientStateMachineTest {
 
     private PendingIntent createPendingIntent(String action) {
         return PendingIntent.getBroadcast(
-                mTargetContext, 1, new Intent(action), PendingIntent.FLAG_IMMUTABLE);
+                mContext, 1, new Intent(action), PendingIntent.FLAG_IMMUTABLE);
     }
 
     private void sendMapMessageWithPendingIntents(

@@ -86,8 +86,7 @@ public class AvrcpControllerServiceTest {
 
     private final BluetoothDevice mDevice1 = getTestDevice(89);
     private final BluetoothDevice mDevice2 = getTestDevice(41);
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
 
     private AvrcpControllerService mService = null;
 
@@ -95,9 +94,9 @@ public class AvrcpControllerServiceTest {
     public void setUp() throws Exception {
         doReturn(mAdapterService).when(mAdapterService).getApplicationContext();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
-        doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
-        doReturn(mTargetContext.getPackageManager()).when(mAdapterService).getPackageManager();
-        doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();
+        doReturn(mContext.getPackageName()).when(mAdapterService).getPackageName();
+        doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
+        doReturn(mContext.getResources()).when(mAdapterService).getResources();
         mockGetSystemService(mAdapterService, AudioManager.class);
 
         mService = new AvrcpControllerService(mAdapterService, mNativeInterface);

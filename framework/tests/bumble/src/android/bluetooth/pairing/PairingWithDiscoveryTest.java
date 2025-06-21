@@ -101,6 +101,7 @@ import java.util.concurrent.TimeUnit;
 public class PairingWithDiscoveryTest {
     private static final String TAG = PairingWithDiscoveryTest.class.getSimpleName();
     private static final String BUMBLE_DEVICE_NAME = "Bumble";
+    private static final String BUMBLE_DEVICE_NAME_2 = "Bumble_2";
     private static final Duration BOND_INTENT_TIMEOUT = Duration.ofSeconds(10);
     private static final int DISCOVERY_TIMEOUT = 2000; // 2 seconds
     private static final int LE_GENERAL_DISCOVERABLE = 2;
@@ -122,12 +123,17 @@ public class PairingWithDiscoveryTest {
     @Rule(order = 2)
     public final PandoraDevice mBumble = new PandoraDevice();
 
+    @Rule(order = 3)
+    public final PandoraDevice mSecondBumble = PandoraDevice.createSecondPandoraDevice();
+
     private final BluetoothLeScanner mLeScanner = mAdapter.getBluetoothLeScanner();
 
     private BluetoothDevice mBumbleDevice;
     private BluetoothDevice mRemoteLeDevice;
+    private BluetoothDevice mSecondBumbleDevice;
     private InOrder mInOrder = null;
     private CompletableFuture<BluetoothDevice> mDeviceFound;
+    private CompletableFuture<BluetoothDevice> mSecondDeviceFound;
     private String mCfName;
     @Mock private BroadcastReceiver mReceiver;
 
@@ -149,6 +155,10 @@ public class PairingWithDiscoveryTest {
                                 && BUMBLE_DEVICE_NAME.equals(deviceName)
                                 && mDeviceFound != null) {
                             mDeviceFound.complete(device);
+                        } else if (deviceName != null
+                                && BUMBLE_DEVICE_NAME_2.equals(deviceName)
+                                && mSecondDeviceFound != null) {
+                            mSecondDeviceFound.complete(device);
                         }
                         break;
                     default:
@@ -170,6 +180,7 @@ public class PairingWithDiscoveryTest {
         mRemoteLeDevice =
                 mAdapter.getRemoteLeDevice(
                         Utils.BUMBLE_RANDOM_ADDRESS, BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        mSecondBumbleDevice = mSecondBumble.getRemoteDevice();
 
         for (BluetoothDevice device : mAdapter.getBondedDevices()) {
             removeBond(device);
@@ -841,6 +852,67 @@ public class PairingWithDiscoveryTest {
         assertThat(leDevice.getAddressType()).isEqualTo(BluetoothDevice.ADDRESS_TYPE_RANDOM);
 
         intentReceiver.close();
+    }
+
+    /**
+     * Test that two separate Bumble devices are discovered by the Android device during a single
+     * discovery scan.
+     *
+     * <p>Steps:
+     *
+     * <ol>
+     *   <li>Make the first Bumble device ({@code mBumble}) discoverable in general mode.
+     *   <li>Make the second Bumble device ({@code mSecondBumble}) discoverable in general mode.
+     *   <li>Start device discovery on the Android adapter.
+     *   <li>Wait for both Bumble devices to be discovered within a timeout period.
+     *   <li>Cancel the device discovery on the Android adapter.
+     * </ol>
+     *
+     * <p>Expectation:
+     *
+     * <ul>
+     *   <li>Both {@code mBumbleDevice} and {@code mSecondBumbleDevice} are not null, indicating
+     *       that both Bumble devices were successfully discovered during the scan.
+     * </ul>
+     */
+    @Test
+    public void testSecondBumbleDevice_onScan() throws Exception {
+        registerIntentActions(BluetoothDevice.ACTION_FOUND);
+
+        // Make Bumble discoverable
+        mBumble.hostBlocking()
+                .setDiscoverabilityMode(
+                        SetDiscoverabilityModeRequest.newBuilder()
+                                .setMode(DiscoverabilityMode.DISCOVERABLE_GENERAL)
+                                .build());
+        // Make Second Bumble device discoverable
+        mSecondBumble
+                .hostBlocking()
+                .setDiscoverabilityMode(
+                        SetDiscoverabilityModeRequest.newBuilder()
+                                .setMode(DiscoverabilityMode.DISCOVERABLE_GENERAL)
+                                .build());
+
+        mBumbleDevice = null;
+        mSecondBumbleDevice = null;
+        // Start device discovery from Android
+        mDeviceFound = new CompletableFuture<>();
+        mSecondDeviceFound = new CompletableFuture<>();
+        assertThat(mAdapter.startDiscovery()).isTrue();
+        mBumbleDevice =
+                mDeviceFound
+                        .completeOnTimeout(null, DISCOVERY_TIMEOUT, TimeUnit.MILLISECONDS)
+                        .join();
+        mSecondBumbleDevice =
+                mSecondDeviceFound
+                        .completeOnTimeout(null, DISCOVERY_TIMEOUT, TimeUnit.MILLISECONDS)
+                        .join();
+
+        assertThat(mBumbleDevice).isNotNull();
+        assertThat(mSecondBumbleDevice).isNotNull();
+        assertThat(mAdapter.cancelDiscovery()).isTrue();
+
+        unregisterIntentActions(BluetoothDevice.ACTION_FOUND);
     }
 
     /** Helper/testStep functions go here */
