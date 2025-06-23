@@ -45,6 +45,7 @@ import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -65,6 +66,11 @@ public class AdapterSuspend {
     private static final int DEVICE_STATE_LID_OPEN = 3;
     private static final int DEVICE_STATE_TABLET = 4;
 
+    enum SuspendTasks {
+        PROFILE_DISCONNECTION,
+        ADVERTISEMENT,
+    }
+
     @VisibleForTesting
     static final String BLUETOOTH_SUSPEND_DISCONNECT_ACL =
             "bluetooth.power.suspend.disconnect_acl.enabled";
@@ -75,6 +81,10 @@ public class AdapterSuspend {
 
     static final String BLUETOOTH_SUSPEND_STOP_LE_SCAN =
             "bluetooth.power.suspend.stop_le_scan.enabled";
+
+    @VisibleForTesting
+    static final String BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT =
+            "bluetooth.power.suspend.pause_advertisement.enabled";
 
     private static final int[] AUDIO_PROFILES = {
         BluetoothProfile.A2DP,
@@ -91,17 +101,19 @@ public class AdapterSuspend {
     private final PowerManager mPowerManager;
     private final AdapterSuspendStateMachine mSuspendStateMachine;
     private final DisplayManager mDisplayManager;
+    private final Handler mHandler;
 
     private final boolean mDisconnectAclOnSuspend;
     private final boolean mScanModeNoneOnSuspend;
     private final boolean mStopLeScanOnSuspend;
+    private final boolean mPauseAdvertisementOnSuspend;
 
     private int mScanModeOnLastSuspend;
     private List<BluetoothDevice> mLastActiveAudioDevices = new ArrayList<>();
 
     private final Set<BluetoothDevice> mDisconnectProfileDevices = new HashSet<>();
     private boolean mAllowWakeByHid;
-    private boolean mDelaySuspendReady = false;
+    private EnumSet<SuspendTasks> mDelayedSuspendTasks = EnumSet.noneOf(SuspendTasks.class);
 
     @VisibleForTesting
     void setLastScanModeForTest(int val) {
@@ -202,16 +214,18 @@ public class AdapterSuspend {
         mSuspendStateMachine =
                 new AdapterSuspendStateMachine(adapterService, this, requireNonNull(looper));
         mDisplayManager = requireNonNull(displayManager);
-        Handler handler = new Handler(looper);
-        mDisplayManager.registerDisplayListener(mDisplayListener, handler);
+        mHandler = new Handler(looper);
+        mDisplayManager.registerDisplayListener(mDisplayListener, mHandler);
         mDeviceStateManager = requireNonNull(deviceStateManager);
-        mDeviceStateManager.registerCallback(handler::post, mDeviceStateCallback);
+        mDeviceStateManager.registerCallback(mHandler::post, mDeviceStateCallback);
 
         mDisconnectAclOnSuspend =
                 SystemProperties.getBoolean(BLUETOOTH_SUSPEND_DISCONNECT_ACL, false);
         mScanModeNoneOnSuspend =
                 SystemProperties.getBoolean(BLUETOOTH_SUSPEND_SCAN_MODE_NONE, false);
         mStopLeScanOnSuspend = SystemProperties.getBoolean(BLUETOOTH_SUSPEND_STOP_LE_SCAN, false);
+        mPauseAdvertisementOnSuspend =
+                SystemProperties.getBoolean(BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT, false);
     }
 
     void profileConnectionStateChanged(
@@ -227,6 +241,7 @@ public class AdapterSuspend {
             mDisconnectProfileDevices.remove(device);
             if (mDisconnectProfileDevices.isEmpty()) {
                 disconnectAllAcls();
+                onSuspendTaskCompleted(SuspendTasks.PROFILE_DISCONNECTION);
             } else {
                 Log.d(TAG, "remaining devices to disconnect " + mDisconnectProfileDevices);
             }
@@ -242,6 +257,7 @@ public class AdapterSuspend {
         long mask = MASK_DISCONNECT_CMPLT | MASK_MODE_CHANGE;
         long leMask = 0;
 
+        mDelayedSuspendTasks = EnumSet.noneOf(SuspendTasks.class);
         mAllowWakeByHid = allowWakeByHid;
         if (mScanModeNoneOnSuspend) {
             if (Flags.adapterSuspendDiscoverability()) {
@@ -268,11 +284,25 @@ public class AdapterSuspend {
 
             if (!mDisconnectProfileDevices.isEmpty()) {
                 Log.d(TAG, "disconnect profiles for " + mDisconnectProfileDevices);
-                delaySuspendReady();
+                mDelayedSuspendTasks.add(SuspendTasks.PROFILE_DISCONNECTION);
                 disconnectProfiles();
             } else {
                 disconnectAllAcls();
             }
+        }
+
+        if (mPauseAdvertisementOnSuspend && Flags.adapterSuspendAdvertisement()) {
+            mAdapterService
+                    .getGattService()
+                    .ifPresent(
+                            gattService -> {
+                                mDelayedSuspendTasks.add(SuspendTasks.ADVERTISEMENT);
+                                gattService.getAdvertiseManager().enterSuspend();
+                            });
+        }
+
+        if (!isSuspendReady()) {
+            mAdapterService.acquireWakeLock("bt_suspend_ready");
         }
     }
 
@@ -310,6 +340,15 @@ public class AdapterSuspend {
             } else if (mAdapterService.getScanMode() != mScanModeOnLastSuspend) {
                 mAdapterService.setScanMode(mScanModeOnLastSuspend, "handleResume");
             }
+        }
+
+        if (Flags.adapterSuspendAdvertisement()) {
+            mAdapterService
+                    .getGattService()
+                    .ifPresent(
+                            gattService -> {
+                                gattService.getAdvertiseManager().exitSuspend();
+                            });
         }
     }
 
@@ -371,17 +410,18 @@ public class AdapterSuspend {
         }
     }
 
-    private void delaySuspendReady() {
-        mDelaySuspendReady = true;
-        mAdapterService.acquireWakeLock("bt_suspend_ready");
-    }
+    private void onSuspendTaskCompleted(SuspendTasks task) {
+        if (isSuspendReady()) {
+            Log.w(TAG, "task " + task + " is completed after wakelock was released");
+            return;
+        }
 
-    private void suspendReady() {
-        if (mDelaySuspendReady) {
-            mDelaySuspendReady = false;
+        mDelayedSuspendTasks.remove(task);
+        Log.v(TAG, "suspend remaining tasks: " + mDelayedSuspendTasks);
+        if (isSuspendReady()) {
+            Log.i(TAG, "suspend ready");
             mAdapterService.releaseWakeLock("bt_suspend_ready");
         }
-        Log.i(TAG, "suspend ready");
     }
 
     private void disconnectAllAcls() {
@@ -389,7 +429,17 @@ public class AdapterSuspend {
         if (mAllowWakeByHid) {
             mAdapterNativeInterface.allowWakeByHid();
         }
-        suspendReady();
+    }
+
+    /**
+     * Called by the advertising thread to notify that it has finished the preparation for suspend.
+     */
+    public void advertiseSuspendReady() {
+        mHandler.post(() -> onSuspendTaskCompleted(SuspendTasks.ADVERTISEMENT));
+    }
+
+    private boolean isSuspendReady() {
+        return mDelayedSuspendTasks.isEmpty();
     }
 
     protected void dump(FileDescriptor fd, PrintWriter writer, String[] args) {

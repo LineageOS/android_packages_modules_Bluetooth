@@ -794,6 +794,10 @@ public class AdapterService extends Service {
         return mBluetoothHciVendorSpecificNativeInterface;
     }
 
+    public AdapterSuspend getAdapterSuspend() {
+        return mAdapterSuspend;
+    }
+
     public Optional<A2dpService> getA2dpService() {
         return getStartedProfile(BluetoothProfile.A2DP, A2dpService.class);
     }
