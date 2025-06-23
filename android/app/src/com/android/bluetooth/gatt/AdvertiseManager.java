@@ -106,6 +106,7 @@ public class AdvertiseManager {
                     mAdvertiseBinder.cleanup();
                     mNativeInterface.cleanup();
                     mAdvertisers.clear();
+                    mAdvertiseSuspendManager.cleanup();
                 });
     }
 
@@ -162,6 +163,7 @@ public class AdvertiseManager {
         if (entry == null) {
             Log.i(TAG, "onAdvertisingSetStarted() - no callback found for regId " + regId);
             // Advertising set was stopped before it was properly registered.
+            mAdvertiseSuspendManager.onAdvertisingSetStarted(regId, advertiserId, status);
             mNativeInterface.stopAdvertisingSet(advertiserId);
             return;
         }
@@ -169,6 +171,7 @@ public class AdvertiseManager {
         final var advertiserInfo = entry.getValue();
         final var deathRecipient = advertiserInfo.deathRecipient;
         final var callback = advertiserInfo.callback;
+
         if (status == 0) {
             entry.setValue(new AdvertiserInfo(advertiserId, deathRecipient, callback));
             mAdvertiserMap.setAdvertiserIdByRegId(regId, advertiserId);
@@ -184,6 +187,8 @@ public class AdvertiseManager {
             }
             mAdvertiserMap.removeAppAdvertiseStats(regId);
         }
+
+        mAdvertiseSuspendManager.onAdvertisingSetStarted(regId, advertiserId, status);
 
         callbackToApp(
                 () ->
@@ -211,14 +216,17 @@ public class AdvertiseManager {
             return;
         }
 
-        final var callback = entry.getValue().callback;
-        callbackToApp(() -> callback.onAdvertisingEnabled(advertiserId, enable, status));
-
         if (!enable && status != 0) {
             final var appAdvertiseStats = mAdvertiserMap.getAppAdvertiseStatsById(advertiserId);
             if (appAdvertiseStats != null) {
                 appAdvertiseStats.recordAdvertiseStop(mAdvertisers.size());
             }
+        }
+
+        mAdvertiseSuspendManager.onAdvertisingEnabled(advertiserId, enable, status);
+        if (!mAdvertiseSuspendManager.shouldSkipCallback()) {
+            final var callback = entry.getValue().callback;
+            callbackToApp(() -> callback.onAdvertisingEnabled(advertiserId, enable, status));
         }
     }
 
@@ -322,6 +330,7 @@ public class AdvertiseManager {
 
             final int cbId = --mTempRegistrationId;
             mAdvertisers.put(binder, new AdvertiserInfo(cbId, deathRecipient, callback));
+            mAdvertiseSuspendManager.onStartAdvertisingSet(cbId, duration, maxExtAdvEvents);
 
             Log.d(TAG, "startAdvertisingSet() - reg_id=" + cbId + ", callback: " + binder);
 
@@ -418,6 +427,7 @@ public class AdvertiseManager {
             return;
         }
 
+        mAdvertiseSuspendManager.onStopAdvertisingSet(advertiserId);
         mNativeInterface.stopAdvertisingSet(advertiserId);
 
         try {
@@ -443,6 +453,9 @@ public class AdvertiseManager {
             Log.w(TAG, "enableAdvertisingSet() - bad advertiserId " + advertiserId);
             return;
         }
+
+        mAdvertiseSuspendManager.onEnableAdvertisingSet(advertiserId);
+
         fetchAppForegroundState(advertiserId);
         mNativeInterface.enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents);
         mAdvertiserMap.enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents);

@@ -22,12 +22,15 @@ import android.bluetooth.le.AdvertisingSetParameters
 import android.bluetooth.le.IAdvertisingSetCallback
 import android.bluetooth.le.PeriodicAdvertisingParameters
 import android.content.AttributionSource
+import android.util.Log
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.flags.Flags
 
 /**
  * Manages the queueing of advertisement commands during Bluetooth suspend state. This class is
  * responsible for holding commands when the adapter is suspending or suspended, and processing them
- * upon resume.
+ * upon resume. All methods in this class are run inside the advertisement thread of
+ * AdvertiseManager.
  */
 class AdvertiseSuspendManager(
     private val advertiseManager: AdvertiseManager,
@@ -44,8 +47,26 @@ class AdvertiseSuspendManager(
         RESUMING, // Enable all paused advertisements.
     }
 
+    class AdvertiserSuspendInfo(var mDuration: Int, var mMaxExtAdvEvents: Int) {
+        var currentlyEnabled: Boolean = false
+        var needEnableOnResume: Boolean = false
+        // The number of ongoing start/enable/disable operations for this advertiser.
+        // Initially, this advertiser is waiting to be started.
+        var numOfOngoingOperations: Int = 1
+    }
+
     private var suspendState = SuspendState.NORMAL
     private val pendingCommands = mutableListOf<PendingAdvertiseCommand>()
+
+    private val suspendInfoMap = mutableMapOf<Int, AdvertiserSuspendInfo>()
+    // The number of advertisers still in transition state. This indicates #adv with ongoing request
+    // on RESOLVING, #adv not yet paused on PAUSING, and #adv not yet resumed on RESUMING.
+    private var suspendAdvCounter = 0
+    // To skip the shouldQueue check - used when en/disabling advertisements internally
+    private var forceNoQueue = false
+    // Indicates whether onAdvertisingEnabled callback should be skipped. We should skip it if the
+    // enablement event is purely due to suspend activity.
+    private var skipCallback = false
 
     sealed interface PendingAdvertiseCommand
 
@@ -140,7 +161,7 @@ class AdvertiseSuspendManager(
 
     /** Returns whether advertising commands should be queued, which is true during suspend. */
     fun shouldQueueCommand(): Boolean {
-        return suspendState != SuspendState.NORMAL
+        return suspendState != SuspendState.NORMAL && !forceNoQueue
     }
 
     /** Queue a Start Advertising Set command (during suspend). */
@@ -227,11 +248,70 @@ class AdvertiseSuspendManager(
         pendingCommands.add(SetPeriodicAdvertisingEnableCommand(advertiserId, enable))
     }
 
+    private fun enableAdvertisingSet(
+        advertiserId: Int,
+        enable: Boolean,
+        duration: Int,
+        maxExtAdvEvents: Int,
+    ) {
+        // skip the state check when en/disabling advertisement internally.
+        forceNoQueue = true
+        advertiseManager.enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents)
+        forceNoQueue = false
+    }
+
     /** Initiates suspend sequence. Resolve ongoing operations then pause all advertisements. */
     fun enterSuspend() {
+        Log.i(TAG, "Enter suspend. Current state = $suspendState")
+
+        if (suspendState == SuspendState.NORMAL || suspendState == SuspendState.RESUMING) {
+            // Here (re)start the suspend flow from the beginning.
+            waitAdvertisementsToResolve()
+        } else if (suspendState == SuspendState.SUSPENDED) {
+            // We're told to suspend but we're already suspended. Just report ready.
+            finalizeSuspend()
+        } // Otherwise just continue the ongoing suspend flow.
+    }
+
+    private fun waitAdvertisementsToResolve() {
+        // Wait for all ongoing start/enable/disable operations to complete before proceeding to
+        // pause the advertisements.
+        suspendState = SuspendState.RESOLVING
+        suspendAdvCounter = 0
+
+        for (entry in suspendInfoMap.entries) {
+            val suspendInfo = entry.value
+            if (suspendInfo.numOfOngoingOperations > 0) {
+                suspendAdvCounter += 1
+            }
+        }
+
+        if (suspendAdvCounter == 0) {
+            pauseAdvertisements()
+        }
+    }
+
+    private fun pauseAdvertisements() {
         suspendState = SuspendState.PAUSING
-        // later we pause the advertisements here then call finalizeSuspend
-        finalizeSuspend()
+        if (suspendAdvCounter != 0) {
+            Log.w(TAG, "Suspend state is PAUSING but counter isn't zero")
+            suspendAdvCounter = 0
+        }
+
+        for ((advertiserId, suspendInfo) in suspendInfoMap) {
+            // In case of a quick suspend -> resume -> suspend, it's possible to have
+            // needEnableOnResume flag still on and currentlyEnabled is off.
+            suspendInfo.needEnableOnResume =
+                suspendInfo.needEnableOnResume or suspendInfo.currentlyEnabled
+            if (suspendInfo.needEnableOnResume) {
+                suspendAdvCounter += 1
+                enableAdvertisingSet(advertiserId, false, 0, 0)
+            }
+        }
+
+        if (suspendAdvCounter == 0) {
+            finalizeSuspend()
+        }
     }
 
     private fun finalizeSuspend() {
@@ -241,16 +321,166 @@ class AdvertiseSuspendManager(
 
     /** Initiates resume sequence. Enable all paused advertisements. */
     fun exitSuspend() {
+        Log.i(TAG, "Exit suspend. Current state = $suspendState")
+        resumeAdvertisements()
+    }
+
+    private fun resumeAdvertisements() {
         suspendState = SuspendState.RESUMING
-        // later we reenable the advertisements here then call finalizeResume
-        finalizeResume()
+        suspendAdvCounter = 0
+
+        for ((advertiserId, suspendInfo) in suspendInfoMap) {
+            if (suspendInfo.needEnableOnResume) {
+                suspendAdvCounter += 1
+                enableAdvertisingSet(
+                    advertiserId,
+                    true,
+                    suspendInfo.mDuration,
+                    suspendInfo.mMaxExtAdvEvents,
+                )
+            }
+        }
+
+        if (suspendAdvCounter == 0) {
+            finalizeResume()
+        }
     }
 
     private fun finalizeResume() {
         suspendState = SuspendState.NORMAL
+
         for (command in pendingCommands) {
             runPendingCommand(command)
         }
+        pendingCommands.clear()
+    }
+
+    /** To be called from AdvertiseManager when starting an advertising set. */
+    fun onStartAdvertisingSet(regId: Int, duration: Int, maxExtAdvEvents: Int) {
+        if (!Flags.adapterSuspendAdvertisement()) {
+            return
+        }
+        suspendInfoMap[regId] = AdvertiserSuspendInfo(duration, maxExtAdvEvents)
+    }
+
+    /** To be called from AdvertiseManager when stopping an advertising set. */
+    fun onStopAdvertisingSet(advertiserId: Int) {
+        if (!Flags.adapterSuspendAdvertisement()) {
+            return
+        }
+        suspendInfoMap.remove(advertiserId)
+    }
+
+    /** To be called from AdvertiseManager when enabling an advertising set. */
+    fun onEnableAdvertisingSet(advertiserId: Int) {
+        if (!Flags.adapterSuspendAdvertisement()) {
+            return
+        }
+        val suspendInfo = suspendInfoMap[advertiserId]
+        if (suspendInfo == null) {
+            Log.wtf(TAG, "onEnableAdvertisingSet: suspendInfo is null for id $advertiserId")
+            return
+        }
+        suspendInfo.numOfOngoingOperations += 1
+    }
+
+    /** To be called from AdvertiseManager when an advertising set is started. */
+    fun onAdvertisingSetStarted(regId: Int, advertiserId: Int, status: Int) {
+        if (!Flags.adapterSuspendAdvertisement()) {
+            return
+        }
+        val suspendInfo = suspendInfoMap.remove(regId)
+        if (suspendInfo == null) {
+            Log.wtf(TAG, "onAdvertisingSetStarted: suspendInfo is null for id $regId")
+            return
+        }
+        if (status == 0) {
+            suspendInfo.numOfOngoingOperations -= 1
+            suspendInfo.currentlyEnabled = true
+            suspendInfoMap[advertiserId] = suspendInfo
+        }
+        if (suspendState == SuspendState.RESOLVING) {
+            suspendAdvCounter -= 1
+            if (suspendAdvCounter == 0) {
+                Log.i(TAG, "All ongoing operations resolved, pausing advertisements.")
+                pauseAdvertisements()
+            }
+        }
+    }
+
+    /** To be called from AdvertiseManager when an advertising set is enabled. */
+    fun onAdvertisingEnabled(advertiserId: Int, enable: Boolean, status: Int) {
+        if (!Flags.adapterSuspendAdvertisement()) {
+            return
+        }
+
+        val suspendInfo = suspendInfoMap[advertiserId]
+        if (suspendInfo == null) {
+            Log.wtf(TAG, "onAdvertisingEnabled: suspendInfo is null for id $advertiserId")
+            return
+        }
+        val wasEnabled = suspendInfo.currentlyEnabled
+        var skipCallback = false
+
+        if (suspendState == SuspendState.PAUSING) {
+            if (wasEnabled && !enable) {
+                // Normal disablement - don't invoke callback
+                suspendAdvCounter -= 1
+                skipCallback = true
+                if (suspendAdvCounter == 0) {
+                    finalizeSuspend()
+                }
+            } else {
+                Log.w(TAG, "Unexpected event when pausing: was $wasEnabled now $enable")
+            }
+        } else if (suspendState == SuspendState.RESUMING) {
+            val needEnable = suspendInfo.needEnableOnResume
+            if (!wasEnabled && enable && needEnable) {
+                // Normal re-enablement - don't invoke callback.
+                suspendAdvCounter -= 1
+                suspendInfo.needEnableOnResume = false
+                skipCallback = true
+            } else if (!wasEnabled && !enable && status != 0 && needEnable) {
+                // Re-enablement failed! Let's invoke callback to let the app know.
+                suspendAdvCounter -= 1
+                suspendInfo.needEnableOnResume = false
+            } else {
+                Log.w(
+                    TAG,
+                    "Unexpected event when resuming: need " +
+                        needEnable +
+                        " was " +
+                        wasEnabled +
+                        " now " +
+                        enable,
+                )
+            }
+
+            if (suspendAdvCounter == 0) {
+                finalizeResume()
+            }
+        }
+
+        suspendInfo.currentlyEnabled = enable
+        suspendInfo.numOfOngoingOperations -= 1
+        if (suspendState == SuspendState.RESOLVING && suspendInfo.numOfOngoingOperations == 0) {
+            suspendAdvCounter -= 1
+            if (suspendAdvCounter == 0) {
+                pauseAdvertisements()
+            }
+        }
+
+        skipCallback = skipCallback
+    }
+
+    /** Returns whether we should call the callback of AdvertiseManager's onAdvertisingEnabled. */
+    fun shouldSkipCallback(): Boolean {
+        return skipCallback
+    }
+
+    /** Frees structures. */
+    fun cleanup() {
+        suspendInfoMap.clear()
         pendingCommands.clear()
     }
 }
