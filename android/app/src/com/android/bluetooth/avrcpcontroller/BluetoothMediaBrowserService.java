@@ -144,8 +144,8 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
      */
     @Override
     public void onCreate() {
-        Log.d(TAG, "Service Created");
         super.onCreate();
+        Log.d(TAG, "Service Created");
 
         // Create and configure the MediaSessionCompat
         mSession = new MediaSessionCompat(this, TAG);

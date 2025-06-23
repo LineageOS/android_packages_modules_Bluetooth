@@ -122,7 +122,8 @@ public class HeadsetServiceAndStateMachineTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(FLAG_SCO_MANAGED_BY_AUDIO);
+        return FlagsWrapper.progressionOf(
+                FLAG_SCO_MANAGED_BY_AUDIO, Flags.FLAG_VOICE_RECOGNITION_FIXES);
     }
 
     public HeadsetServiceAndStateMachineTest(FlagsWrapper flags) {
@@ -219,6 +220,9 @@ public class HeadsetServiceAndStateMachineTest {
                 .when(mNativeInterface)
                 .startVoiceRecognition(any(BluetoothDevice.class), anyBoolean());
         doReturn(true).when(mNativeInterface).stopVoiceRecognition(any(BluetoothDevice.class));
+        doReturn(true)
+                .when(mNativeInterface)
+                .isVoiceRecognitionSupported(any(BluetoothDevice.class));
         doReturn(true)
                 .when(mNativeInterface)
                 .atResponseCode(any(BluetoothDevice.class), anyInt(), anyInt());
@@ -1031,7 +1035,11 @@ public class HeadsetServiceAndStateMachineTest {
         BluetoothDevice disconnectedDevice = getTestDevice(0);
         assertThat(mHeadsetService.startVoiceRecognition(disconnectedDevice)).isFalse();
         mTestLooper.dispatchAll();
-        verifyNoMoreInteractions(mNativeInterface);
+        if (Flags.voiceRecognitionFixes()) {
+            verify(mNativeInterface).isVoiceRecognitionSupported(disconnectedDevice);
+        } else {
+            verifyNoMoreInteractions(mNativeInterface);
+        }
         verifyNoMoreInteractions(mAudioManager);
     }
 
@@ -1833,6 +1841,37 @@ public class HeadsetServiceAndStateMachineTest {
         assertThat(mHeadsetService.stopVoiceRecognition(device)).isFalse();
         mTestLooper.dispatchAll();
         verify(mNativeInterface).atResponseCode(device, HeadsetHalConstants.AT_RESPONSE_ERROR, 0);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_VOICE_RECOGNITION_FIXES)
+    public void testStartVoiceRecognitionNotSupported_returnsFalse() {
+        BluetoothDevice device = getTestDevice(0);
+        doReturn(false).when(mNativeInterface).isVoiceRecognitionSupported(device);
+
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
+        } else {
+            assertThat(mHeadsetService.mFactory).isNotNull();
+            mHeadsetService.mFactory = mServiceFactory;
+            doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
+        }
+
+        doReturn(List.of(device)).when(mLeAudioService).getConnectedDevices();
+        List<BluetoothDevice> activeDeviceList = new ArrayList<>();
+        activeDeviceList.add(null);
+        doReturn(activeDeviceList).when(mLeAudioService).getActiveDevices();
+
+        // Connect HF
+        connectTestDevice(device);
+        // Make device active
+        assertThat(mHeadsetService.setActiveDevice(device)).isTrue();
+        mTestLooper.dispatchAll();
+        verify(mNativeInterface).setActiveDevice(device);
+        assertThat(mHeadsetService.getActiveDevice()).isEqualTo(device);
+
+        assertThat(mHeadsetService.startVoiceRecognition(device)).isFalse();
+        mTestLooper.dispatchAll();
     }
 
     private void startVoiceRecognitionFromHf(BluetoothDevice device) {
