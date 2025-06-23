@@ -516,18 +516,17 @@ public class AvrcpTargetService extends ProfileService {
     /** Informs {@link AudioManager} of an incoming key event from a remote device. */
     void sendMediaKeyEvent(int key, boolean pushed) {
         MediaPlayerWrapper activePlayer = mMediaPlayerList.getActivePlayer();
-        if (Flags.setAddressedPlayer()) {
-            MediaPlayerWrapper addressedPlayer = mMediaPlayerList.getAddressedPlayer();
-            // A/V controls should be sent to the addressed player.
-            // We don't have a way to set a media player as the active session so we
-            // keep the active device playing until we receive a PLAY event for the
-            // addressed player. Other events will still be broadcasted to active player.
-            if (addressedPlayer != null
-                    && KeyEvent.KEYCODE_MEDIA_PLAY == AvrcpPassthrough.toKeyCode(key)
-                    && activePlayer != addressedPlayer) {
-                addressedPlayer.playCurrent();
-                return;
-            }
+
+        MediaPlayerWrapper addressedPlayer = mMediaPlayerList.getAddressedPlayer();
+        // A/V controls should be sent to the addressed player.
+        // We don't have a way to set a media player as the active session so we
+        // keep the active device playing until we receive a PLAY event for the
+        // addressed player. Other events will still be broadcasted to active player.
+        if (addressedPlayer != null
+                && KeyEvent.KEYCODE_MEDIA_PLAY == AvrcpPassthrough.toKeyCode(key)
+                && activePlayer != addressedPlayer) {
+            addressedPlayer.playCurrent();
+            return;
         }
 
         BluetoothDevice activeDevice = getA2dpActiveDevice();

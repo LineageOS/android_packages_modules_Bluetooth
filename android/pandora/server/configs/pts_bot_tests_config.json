@@ -2656,8 +2656,6 @@
     },
     {
       "flags": [
-        "set_addressed_player",
-        "browsing_refactor",
         "avrcp_16_default"
       ],
       "tests": [
