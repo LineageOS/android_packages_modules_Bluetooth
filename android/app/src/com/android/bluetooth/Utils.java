@@ -741,7 +741,7 @@ public final class Utils {
         }
         final boolean res = checkCallerIsSystem();
         if (!res) {
-            Log.w(TAG, tag + "." + method + "()" + " - Not allowed outside system server");
+            Log.w(TAG, tag + "." + method + "() - Not allowed outside system server");
         }
         return res;
     }

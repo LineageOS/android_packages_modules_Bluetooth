@@ -75,7 +75,7 @@ public final class BluetoothServerSocket implements Closeable {
     private static final boolean DBG = Log.isLoggable("bluetooth", Log.DEBUG);
 
     @UnsupportedAppUsage(
-            publicAlternatives = "Use public {@link BluetoothServerSocket} API " + "instead.")
+            publicAlternatives = "Use public {@link BluetoothServerSocket} API instead.")
     /*package*/ final BluetoothSocket mSocket;
 
     private int mChannel;

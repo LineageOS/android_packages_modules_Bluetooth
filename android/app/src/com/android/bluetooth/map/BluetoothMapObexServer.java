@@ -391,7 +391,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
             mMessageVersion = BluetoothMapUtils.MAP_V11_STR;
         }
 
-        Log.v(TAG, "onConnect(): uuid is ok, will send out " + "MSG_SESSION_ESTABLISHED msg.");
+        Log.v(TAG, "onConnect(): uuid is ok, will send out MSG_SESSION_ESTABLISHED msg.");
 
         if (mCallback != null) {
             Message msg = Message.obtain(mCallback);

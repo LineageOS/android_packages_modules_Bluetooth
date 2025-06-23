@@ -1341,8 +1341,7 @@ public class MediaPlayerList {
                                         + (isActive ? "Active" : "Non-active"));
                         if (isActive) {
                             mAudioPlaybackStateLogger.logd(
-                                    TAG,
-                                    "onPlaybackConfigChanged: " + "active config: " + activeConfig);
+                                    TAG, "onPlaybackConfigChanged: active config: " + activeConfig);
                         }
                         mAudioPlaybackIsActive = isActive;
                         updateMediaForAudioPlayback();

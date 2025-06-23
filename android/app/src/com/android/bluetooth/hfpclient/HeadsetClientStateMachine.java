@@ -752,7 +752,7 @@ public class HeadsetClientStateMachine extends StateMachine {
                 mCurrentDevice, HeadsetClientHalConstants.CALL_ACTION_CHLD_2X, idx)) {
             addQueuedAction(ENTER_PRIVATE_MODE, c);
         } else {
-            error("ERROR: Couldn't enter private " + " id:" + idx);
+            error("ERROR: Couldn't enter private id:" + idx);
         }
     }
 

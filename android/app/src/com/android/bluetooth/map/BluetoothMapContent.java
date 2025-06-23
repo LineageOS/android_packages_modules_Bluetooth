@@ -2687,7 +2687,7 @@ public class BluetoothMapContent {
      */
     BluetoothMapConvoListing convoListing(BluetoothMapAppParams ap, boolean sizeOnly) {
 
-        Log.d(TAG, "convoListing: " + " messageType = " + ap.getFilterMessageType());
+        Log.d(TAG, "convoListing: messageType = " + ap.getFilterMessageType());
         BluetoothMapConvoListing convoList = new BluetoothMapConvoListing();
 
         /* We overwrite the parameter mask here if it is 0 or not present, as this
@@ -3961,7 +3961,7 @@ public class BluetoothMapContent {
         int msgBox, threadId;
         if (appParams.getCharset() == MAP_MESSAGE_CHARSET_NATIVE) {
             throw new IllegalArgumentException(
-                    "MMS charset native not allowed for MMS" + " - must be utf-8");
+                    "MMS charset native not allowed for MMS - must be utf-8");
         }
 
         BluetoothMapbMessageMime message = new BluetoothMapbMessageMime();

@@ -295,7 +295,7 @@ public final class BluetoothGatt implements BluetoothProfile {
             mClientRegistered = status == GATT_SUCCESS;
             synchronized (mStateLock) {
                 if (mConnState == CONN_STATE_CLOSED) {
-                    Log.d(TAG, "Client registration completed after closed," + " unregistering");
+                    Log.d(TAG, "Client registration completed after closed, unregistering");
                     unregisterApp();
                     if (Flags.unregisterGattClientDisconnected()) {
                         mCallback = null;

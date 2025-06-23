@@ -852,7 +852,7 @@ public class SapServer extends Thread implements Handler.Callback {
                     if (mState == SAP_STATE.DISCONNECTING) {
                         /* Close the RIL-BT output Stream and signal to SapRilReceiver to close
                          * down the input stream. */
-                        Log.d(TAG, "ID_DISCONNECT_RESP received in SAP_STATE." + "DISCONNECTING.");
+                        Log.d(TAG, "ID_DISCONNECT_RESP received in SAP_STATE. DISCONNECTING.");
 
                         /* Send the disconnect resp, and wait for the client to close the Rfcomm,
                          * but start a timeout timer, just to be sure. Use alarm, to ensure we wake
