@@ -175,19 +175,18 @@ impl UInputDev {
         let mut fd = -1;
 
         unsafe {
+            let mut error_string = String::new();
             for path in ["/dev/uinput", "/dev/input/uinput", "/dev/misc/uinput"] {
                 fd = libc::open(CString::new(path).unwrap().as_ptr().cast(), libc::O_RDWR);
                 if fd >= 0 {
                     break;
                 }
+
+                error_string.push_str(&format!("{}: {}, ", path, std::io::Error::last_os_error()));
             }
 
-            if fd < -1 {
-                return Err(format!(
-                    "Failed to open uinput for {}: {}",
-                    addr,
-                    std::io::Error::last_os_error()
-                ));
+            if fd == -1 {
+                return Err(format!("Failed to open uinput for {}: {}", addr, error_string));
             }
 
             let device_serialized = self.device.serialize();
