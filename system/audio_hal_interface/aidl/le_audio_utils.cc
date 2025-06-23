@@ -685,46 +685,28 @@ GetStackUnicastConfigurationFromAidlFormat(
   return stack_config;
 }
 
-static bool isAsymmetricConfigurationSupported(
-        IBluetoothAudioProviderFactory::ProviderInfo const& provider_info) {
-  for (auto& codec_info : provider_info.codecInfos) {
+static void fillStackProviderInfoDetails(
+        IBluetoothAudioProviderFactory::ProviderInfo const& hal_provider_info,
+        bluetooth::le_audio::ProviderInfo& stack_provider_info) {
+  for (auto& codec_info : hal_provider_info.codecInfos) {
     if (codec_info.transport.getTag() != CodecInfo::Transport::leAudio) {
-      return false;
+      break;
     }
 
+    // Check provider info flags
     auto flags = codec_info.transport.get<CodecInfo::Transport::leAudio>().flags;
-
     if (!flags) {
       continue;
     }
 
     if (flags->bitmask & ConfigurationFlags::ALLOW_ASYMMETRIC_CONFIGURATIONS) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-static bool isLowLatencyConfigurationSupported(
-        IBluetoothAudioProviderFactory::ProviderInfo const& provider_info) {
-  for (auto& codec_info : provider_info.codecInfos) {
-    if (codec_info.transport.getTag() != CodecInfo::Transport::leAudio) {
-      return false;
-    }
-
-    auto flags = codec_info.transport.get<CodecInfo::Transport::leAudio>().flags;
-
-    if (!flags) {
-      continue;
+      stack_provider_info.allowAsymmetric = true;
     }
 
     if (flags->bitmask & ConfigurationFlags::LOW_LATENCY) {
-      return true;
+      stack_provider_info.lowLatency = true;
     }
   }
-
-  return false;
 }
 
 std::optional<bluetooth::le_audio::ProviderInfo> GetStackProviderInfoFromAidl(
@@ -738,31 +720,18 @@ std::optional<bluetooth::le_audio::ProviderInfo> GetStackProviderInfoFromAidl(
     return std::nullopt;
   }
 
-  std::optional<bluetooth::le_audio::ProviderInfo> result = bluetooth::le_audio::ProviderInfo();
+  auto result = bluetooth::le_audio::ProviderInfo();
   if (encoding_provider_info.has_value()) {
     log::debug("Encoding: {}", encoding_provider_info->toString());
-    if (isAsymmetricConfigurationSupported(encoding_provider_info.value())) {
-      result->allowAsymmetric = true;
-    }
-
-    if (isLowLatencyConfigurationSupported(encoding_provider_info.value())) {
-      result->lowLatency = true;
-    }
+    fillStackProviderInfoDetails(encoding_provider_info.value(), result);
   }
 
   if (decoding_provider_info.has_value()) {
-    // Iterate and print for the debugging purpose
     log::debug("Decoding: {}", decoding_provider_info->toString());
-    if (isAsymmetricConfigurationSupported(decoding_provider_info.value())) {
-      result->allowAsymmetric = true;
-    }
-
-    if (isLowLatencyConfigurationSupported(decoding_provider_info.value())) {
-      result->lowLatency = true;
-    }
+    fillStackProviderInfoDetails(decoding_provider_info.value(), result);
   }
 
-  log::debug("Stack: {}", result->toString());
+  log::debug("Stack: {}", result.toString());
   return result;
 }
 
