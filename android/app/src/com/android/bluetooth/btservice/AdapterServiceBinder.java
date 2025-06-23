@@ -725,6 +725,13 @@ class AdapterServiceBinder extends IBluetooth.Stub {
                 TAG,
                 "disconnectAllEnabledProfiles: device=" + device + ", from " + getUidPidString());
 
+        if (Flags.vcpOnMainLooper()) {
+            return service.syncPost(
+                    () -> {
+                        return service.disconnectAllEnabledProfiles(device);
+                    },
+                    BluetoothStatusCodes.ERROR_TIMEOUT);
+        }
         try {
             return service.disconnectAllEnabledProfiles(device);
         } catch (Exception e) {
