@@ -460,7 +460,6 @@ public final class BluetoothA2dp implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public @BtProfileState int getConnectionState(BluetoothDevice device) {
-        if (VDBG) log("getState(" + device + ")");
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
