@@ -693,6 +693,11 @@ static void fillStackProviderInfoDetails(
       break;
     }
 
+    // Check if any non-mandatory (other than LC3) codec is supported
+    if (codec_info.id != ::aidl::android::hardware::bluetooth::audio::CodecId::Core::LC3) {
+      stack_provider_info.isMulticodecSupported = true;
+    }
+
     // Check provider info flags
     auto flags = codec_info.transport.get<CodecInfo::Transport::leAudio>().flags;
     if (!flags) {
