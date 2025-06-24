@@ -258,18 +258,6 @@ tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat, uin
 
 /*******************************************************************************
  *
- * Function         BTM_PM_ReadControllerState
- *
- * Description      This function is called to obtain the controller state
- *
- * Returns          Controller state (BTM_CONTRL_ACTIVE, BTM_CONTRL_SCAN, and
- *                                    BTM_CONTRL_IDLE)
- *
- ******************************************************************************/
-tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void);
-
-/*******************************************************************************
- *
  * Function         BTM_PM_ReadSniffLinkCount
  *
  * Description      Return the number of BT connection in sniff mode
