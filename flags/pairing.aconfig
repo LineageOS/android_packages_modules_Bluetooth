@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "donot_queue_dup_rnr"
-    namespace: "bluetooth"
-    description: "Avoid queueing second RNR as part of ssp process"
-    bug: "361839492"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "clear_pairing_state_when_no_devrec"
     namespace: "bluetooth"
     description: "Clear pairing state on early bond failure due to connection timeout and devrec is not created"
