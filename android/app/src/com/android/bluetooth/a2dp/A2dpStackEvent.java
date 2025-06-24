@@ -31,6 +31,7 @@ public class A2dpStackEvent {
     public static final int EVENT_TYPE_CONNECTION_STATE_CHANGED = 1;
     public static final int EVENT_TYPE_AUDIO_STATE_CHANGED = 2;
     public static final int EVENT_TYPE_CODEC_CONFIG_CHANGED = 3;
+    public static final int EVENT_TYPE_AUDIO_DELAY_REPORTED = 4;
 
     // Match up with btav_audio_state_t enum of bt_av.h
     static final int AUDIO_STATE_REMOTE_SUSPEND = 0;
@@ -67,6 +68,7 @@ public class A2dpStackEvent {
             case EVENT_TYPE_CONNECTION_STATE_CHANGED -> "EVENT_TYPE_CONNECTION_STATE_CHANGED";
             case EVENT_TYPE_AUDIO_STATE_CHANGED -> "EVENT_TYPE_AUDIO_STATE_CHANGED";
             case EVENT_TYPE_CODEC_CONFIG_CHANGED -> "EVENT_TYPE_CODEC_CONFIG_CHANGED";
+            case EVENT_TYPE_AUDIO_DELAY_REPORTED -> "EVENT_TYPE_AUDIO_DELAY_REPORTED";
             default -> "EVENT_TYPE_UNKNOWN:" + type;
         };
     }

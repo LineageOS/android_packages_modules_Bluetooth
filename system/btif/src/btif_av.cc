@@ -786,6 +786,7 @@ static void btif_report_connection_state(const RawAddress& peer_address,
                                          uint8_t error_code, const A2dpType local_a2dp_type);
 static void btif_report_audio_state(const RawAddress& peer_address, btav_audio_state_t state,
                                     const A2dpType local_a2dp_type);
+static void btif_report_audio_delay(const RawAddress& peer_address, int delay);
 static void btif_av_report_sink_audio_config_state(const RawAddress& peer_address, int sample_rate,
                                                    int channel_count);
 static void btif_av_query_mandatory_codec_priority(const RawAddress& peer_address);
@@ -2925,6 +2926,18 @@ static void btif_report_audio_state(const RawAddress& peer_address, btav_audio_s
   bluetooth::metrics::LogMetricA2dpPlaybackEvent(peer_address, playback_state, audio_coding_mode);
 }
 
+/**
+ * Report the audio delay of the A2DP connection.
+ * @param peer_address the peer address
+ * @param delay the audio delay measured in 1/10ms
+ */
+static void btif_report_audio_delay(const RawAddress& peer_address, int delay) {
+  if (btif_av_source.Enabled()) {
+    do_in_jni_thread(base::BindOnce(btif_av_source.Callbacks()->audio_delay_reported_cb,
+                                    peer_address, delay));
+  }
+}
+
 void btif_av_report_source_codec_state(
         const RawAddress& peer_address, const btav_a2dp_codec_config_t& codec_config,
         const std::vector<btav_a2dp_codec_config_t>& codecs_local_capabilities,
@@ -4022,6 +4035,9 @@ void btif_av_set_audio_delay(const RawAddress& peer_address, uint16_t delay,
 
   BtifAvPeer* peer = btif_av_find_peer(peer_address, local_a2dp_type);
   if (peer != nullptr && peer->IsSink()) {
+    if (com::android::bluetooth::flags::a2dp_delay_report_in_dumpsys()) {
+      btif_report_audio_delay(peer_address, delay);
+    }
     peer->SetDelayReport(delay);
     if (peer->IsActivePeer()) {
       bluetooth::audio::a2dp::set_remote_delay(peer->GetDelayReport());

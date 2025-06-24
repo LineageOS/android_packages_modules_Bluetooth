@@ -35,3 +35,10 @@ flag {
     description: "TbsGatt will avoid BluetoothGattServerProxy and use GattServer directly"
     bug: "422544191"
 }
+
+flag {
+    name: "gatt_offload_api"
+    namespace: "bluetooth"
+    description: "New gatt API to offload characteristics"
+    bug: "427099808"
+}

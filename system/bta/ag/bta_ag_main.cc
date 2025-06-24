@@ -224,6 +224,24 @@ void bta_ag_scb_dealloc(tBTA_AG_SCB* p_scb) {
 
 /*******************************************************************************
  *
+ * Function         bta_ag_sco_reset
+ *
+ * Description      reset the sco data.
+ *
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void bta_ag_sco_reset(tBTA_AG_SCB* p_scb) {
+  tBTA_AG_SCO_CB* p_sco = &bta_ag_cb.sco;
+  if (p_scb == p_sco->p_curr_scb) {
+    log::verbose("bta_ag_sco_reset {}", bta_ag_scb_to_idx(p_scb));
+    *p_sco = {};
+  }
+}
+
+/*******************************************************************************
+ *
  * Function         bta_ag_scb_to_idx
  *
  * Description      Given a pointer to an scb, return its index.

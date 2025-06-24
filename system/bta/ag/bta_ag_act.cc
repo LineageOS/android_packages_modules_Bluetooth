@@ -162,6 +162,10 @@ void bta_ag_deregister(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /*data*/) {
   /* remove rfcomm servers */
   bta_ag_close_servers(p_scb, p_scb->reg_services);
 
+  if (com::android::bluetooth::flags::hfp_sco_state_reset_when_profile_restart()) {
+    /* reset sco state */
+    bta_ag_sco_reset(p_scb);
+  }
   /* dealloc */
   bta_ag_scb_dealloc(p_scb);
 }
@@ -484,6 +488,10 @@ void bta_ag_rfc_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
     if (RFCOMM_RemoveServer(p_scb->conn_handle) != PORT_SUCCESS) {
       log::warn("Unable to remove RFCOMM server peer:{} handle:{}", p_scb->peer_addr,
                 p_scb->conn_handle);
+    }
+    if (com::android::bluetooth::flags::hfp_sco_state_reset_when_profile_restart()) {
+      /* reset sco state */
+      bta_ag_sco_reset(p_scb);
     }
     bta_ag_scb_dealloc(p_scb);
   }

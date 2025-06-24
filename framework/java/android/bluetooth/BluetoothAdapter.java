@@ -5442,7 +5442,6 @@ public final class BluetoothAdapter {
      * @hide
      */
     @SystemApi
-    @FlaggedApi(Flags.FLAG_HCI_VENDOR_SPECIFIC_EXTENSION)
     public interface BluetoothHciVendorSpecificCallback {
         /**
          * Invoked when an `HCI_Command_Status`, in response to a Vendor Command is received.
@@ -5549,10 +5548,8 @@ public final class BluetoothAdapter {
                 @RequiresNoPermission
                 public void onCommandStatus(int ocf, int status) {
                     synchronized (mHciVendorSpecificCallbackRegistration) {
-                        if (Flags.hciVendorSpecificExtension()) {
-                            mHciVendorSpecificCallbackRegistration.execute(
-                                    (cb) -> cb.onCommandStatus(ocf, status));
-                        }
+                        mHciVendorSpecificCallbackRegistration.execute(
+                                (cb) -> cb.onCommandStatus(ocf, status));
                     }
                 }
 
@@ -5560,10 +5557,8 @@ public final class BluetoothAdapter {
                 @RequiresNoPermission
                 public void onCommandComplete(int ocf, byte[] returnParameters) {
                     synchronized (mHciVendorSpecificCallbackRegistration) {
-                        if (Flags.hciVendorSpecificExtension()) {
-                            mHciVendorSpecificCallbackRegistration.execute(
-                                    (cb) -> cb.onCommandComplete(ocf, returnParameters));
-                        }
+                        mHciVendorSpecificCallbackRegistration.execute(
+                                (cb) -> cb.onCommandComplete(ocf, returnParameters));
                     }
                 }
 
@@ -5571,10 +5566,8 @@ public final class BluetoothAdapter {
                 @RequiresNoPermission
                 public void onEvent(int code, byte[] data) {
                     synchronized (mHciVendorSpecificCallbackRegistration) {
-                        if (Flags.hciVendorSpecificExtension()) {
-                            mHciVendorSpecificCallbackRegistration.execute(
-                                    (cb) -> cb.onEvent(code, data));
-                        }
+                        mHciVendorSpecificCallbackRegistration.execute(
+                                (cb) -> cb.onEvent(code, data));
                     }
                 }
             };
@@ -5592,7 +5585,6 @@ public final class BluetoothAdapter {
      * @hide
      */
     @SystemApi
-    @FlaggedApi(Flags.FLAG_HCI_VENDOR_SPECIFIC_EXTENSION)
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     public void registerBluetoothHciVendorSpecificCallback(
             @NonNull Set<Integer> eventCodeSet,
@@ -5636,7 +5628,6 @@ public final class BluetoothAdapter {
      * @hide
      */
     @SystemApi
-    @FlaggedApi(Flags.FLAG_HCI_VENDOR_SPECIFIC_EXTENSION)
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     public void unregisterBluetoothHciVendorSpecificCallback(
             @NonNull BluetoothHciVendorSpecificCallback callback) {
@@ -5671,7 +5662,6 @@ public final class BluetoothAdapter {
      * @hide
      */
     @SystemApi
-    @FlaggedApi(Flags.FLAG_HCI_VENDOR_SPECIFIC_EXTENSION)
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     public void sendBluetoothHciVendorSpecificCommand(
             @IntRange(from = 0x000, to = 0x3ff) int ocf, @NonNull byte[] parameters) {

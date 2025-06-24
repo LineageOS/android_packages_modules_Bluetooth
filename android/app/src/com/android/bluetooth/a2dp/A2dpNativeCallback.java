@@ -86,6 +86,15 @@ class A2dpNativeCallback {
         mA2dpService.messageFromNative(event);
     }
 
+    void onAudioDelayReported(byte[] address, int audioDelay) {
+        A2dpStackEvent event = new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_AUDIO_DELAY_REPORTED);
+        event.device = getDevice(address);
+        event.valueInt = audioDelay;
+
+        Log.d(TAG, "onAudioDelayReported: " + event);
+        mA2dpService.messageFromNative(event);
+    }
+
     @VisibleForTesting
     boolean isMandatoryCodecPreferred(byte[] address) {
         int enabled = mA2dpService.getOptionalCodecsEnabled(getDevice(address));
