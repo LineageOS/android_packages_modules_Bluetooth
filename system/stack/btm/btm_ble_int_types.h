@@ -229,10 +229,8 @@ public:
   tBTM_PRIVACY_MODE privacy_mode;           /* privacy mode */
   uint8_t resolving_list_avail_size;        /* resolving list available size */
   tBTM_BLE_RESOLVE_Q resolving_list_pend_q; /* Resolving list queue */
-  tBTM_BLE_RL_STATE suspended_rl_state;     /* Suspended resolving list state */
   /* IRK list availability mask, up to max entry bits */
   uint8_t* irk_list_mask{nullptr};
-  tBTM_BLE_RL_STATE rl_state; /* Resolving list state */
 
   /* current BLE link state */
   tBTM_BLE_STATE_MASK cur_states; /* bit mask of tBTM_BLE_STATE */
