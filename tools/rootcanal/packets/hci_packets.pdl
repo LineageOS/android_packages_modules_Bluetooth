@@ -4029,18 +4029,6 @@ struct EnabledSet {
   max_extended_advertising_events : 8,
 }
 
-struct DisabledSet {
-  advertising_handle : 8,
-  _fixed_ = 0x00 : 16, // duration
-  _fixed_ = 0x00 : 8, // max_extended_advertising_events
-}
-
-packet LeSetExtendedAdvertisingDisable : Command (op_code = LE_SET_EXTENDED_ADVERTISING_ENABLE) {
-  _fixed_ = 0x00 : 8, // Enable::DISABLED
-  _count_(disabled_sets) : 8,
-  disabled_sets : DisabledSet[],
-}
-
 packet LeSetExtendedAdvertisingEnable : Command (op_code = LE_SET_EXTENDED_ADVERTISING_ENABLE) {
   enable : Enable,
   _count_(enabled_sets) : 8,
@@ -4051,7 +4039,7 @@ test LeSetExtendedAdvertisingEnable {
   "\x39\x20\x06\x01\x01\x01\x00\x00\x00",
 }
 
-test LeSetExtendedAdvertisingDisable {
+test LeSetExtendedAdvertisingEnable {
   "\x39\x20\x06\x00\x01\x01\x00\x00\x00",
 }
 
@@ -6528,12 +6516,6 @@ enum BatchScanDataRead : 8 {
 
 packet LeBatchScanReadResultParameters : LeBatchScan (batch_scan_opcode = READ_RESULT_PARAMETERS) {
   batch_scan_data_read : BatchScanDataRead,
-}
-
-packet LeBatchScanReadResultParametersCompleteRaw : LeBatchScanComplete (batch_scan_opcode = READ_RESULT_PARAMETERS) {
-  batch_scan_data_read : BatchScanDataRead,
-  num_of_records : 8,
-  raw_data : 8[],
 }
 
 packet LeBatchScanReadResultParametersComplete : LeBatchScanComplete (batch_scan_opcode = READ_RESULT_PARAMETERS) {
