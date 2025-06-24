@@ -405,6 +405,7 @@ void bta_ag_api_result(uint16_t handle, tBTA_AG_RES result, const tBTA_AG_RES_DA
 
 /* main functions */
 void bta_ag_scb_dealloc(tBTA_AG_SCB* p_scb);
+void bta_ag_sco_reset(tBTA_AG_SCB* p_scb);
 uint16_t bta_ag_scb_to_idx(tBTA_AG_SCB* p_scb);
 tBTA_AG_SCB* bta_ag_scb_by_idx(uint16_t idx);
 uint8_t bta_ag_service_to_idx(tBTA_SERVICE_MASK services);
