@@ -83,10 +83,6 @@ tBTM_STATUS btm_ble_read_remote_name(const RawAddress& /* remote_bda */,
   inc_func_call_count(__func__);
   return tBTM_STATUS::BTM_SUCCESS;
 }
-tBTM_STATUS btm_ble_set_connectability(uint16_t /* combined_mode */) {
-  inc_func_call_count(__func__);
-  return tBTM_STATUS::BTM_SUCCESS;
-}
 tBTM_STATUS btm_ble_set_discoverability(uint16_t /* combined_mode */) {
   inc_func_call_count(__func__);
   return tBTM_STATUS::BTM_SUCCESS;
