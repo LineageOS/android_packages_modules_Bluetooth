@@ -57,3 +57,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "implement_get_image_from_descriptor_for_cover_art"
+    namespace: "bluetooth"
+    description: "Implement getImage from descriptor for cover art in AVRCP for IOP, some devices request image not 200*200"
+    bug: "427472266"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
