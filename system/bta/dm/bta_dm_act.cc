@@ -283,11 +283,9 @@ void BTA_dm_on_hw_on() {
     }
   }
 
-  if (com::android::bluetooth::flags::socket_settings_api()) {
-    /* Read low power processor offload features */
-    if (bta_dm_acl_cb.p_acl_cback) {
-      bta_dm_acl_cb.p_acl_cback(BTA_DM_LPP_OFFLOAD_FEATURES_READ, NULL);
-    }
+  /* Read low power processor offload features */
+  if (bta_dm_acl_cb.p_acl_cback) {
+    bta_dm_acl_cb.p_acl_cback(BTA_DM_LPP_OFFLOAD_FEATURES_READ, NULL);
   }
 
   btm_ble_scanner_init();

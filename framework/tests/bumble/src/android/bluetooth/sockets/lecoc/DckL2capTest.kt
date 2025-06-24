@@ -434,7 +434,6 @@ public class DckL2capTest() : Closeable {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_SOCKET_SETTINGS_API)
     /**
      * Test:
      * - Create Bond between Phone and Bumble (Just works)
@@ -472,7 +471,6 @@ public class DckL2capTest() : Closeable {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_SOCKET_SETTINGS_API)
     /**
      * Test:
      * - Create Bond between Phone and Bumble (Just works)
@@ -911,7 +909,7 @@ public class DckL2capTest() : Closeable {
         socket =
             bluetoothAdapter.listenUsingSocketSettings(
                 BluetoothSocketSettings.Builder()
-                    .setSocketType(BluetoothSocket.TYPE_L2CAP_LE)
+                    .setSocketType(BluetoothSocket.TYPE_LE)
                     .setEncryptionRequired(isEncrypted)
                     .setAuthenticationRequired(isAuthenticated)
                     .build()
@@ -931,7 +929,7 @@ public class DckL2capTest() : Closeable {
         socket =
             remoteDevice.createUsingSocketSettings(
                 BluetoothSocketSettings.Builder()
-                    .setSocketType(BluetoothSocket.TYPE_L2CAP_LE)
+                    .setSocketType(BluetoothSocket.TYPE_LE)
                     .setEncryptionRequired(isEncrypted)
                     .setAuthenticationRequired(isAuthenticated)
                     .setL2capPsm(psm)
@@ -950,7 +948,7 @@ public class DckL2capTest() : Closeable {
         var expectedType: Int
         if (isSecure) {
             socket = remoteDevice.createL2capChannel(psm)
-            expectedType = BluetoothSocket.TYPE_L2CAP_LE
+            expectedType = BluetoothSocket.TYPE_LE
         } else {
             socket = remoteDevice.createInsecureL2capChannel(psm)
             expectedType = BluetoothSocket.TYPE_L2CAP

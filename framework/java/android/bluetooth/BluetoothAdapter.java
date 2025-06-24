@@ -35,7 +35,6 @@ import static java.util.Objects.requireNonNull;
 
 import android.annotation.BroadcastBehavior;
 import android.annotation.CallbackExecutor;
-import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
@@ -4279,7 +4278,7 @@ public final class BluetoothAdapter {
     public @NonNull BluetoothServerSocket listenUsingL2capChannel() throws IOException {
         BluetoothServerSocket socket =
                 new BluetoothServerSocket(
-                        BluetoothSocket.TYPE_L2CAP_LE,
+                        BluetoothSocket.TYPE_LE,
                         true,
                         true,
                         SOCKET_CHANNEL_AUTO_STATIC_NO_SDP,
@@ -4332,7 +4331,7 @@ public final class BluetoothAdapter {
     public @NonNull BluetoothServerSocket listenUsingInsecureL2capChannel() throws IOException {
         BluetoothServerSocket socket =
                 new BluetoothServerSocket(
-                        BluetoothSocket.TYPE_L2CAP_LE,
+                        BluetoothSocket.TYPE_LE,
                         false,
                         false,
                         SOCKET_CHANNEL_AUTO_STATIC_NO_SDP,
@@ -4389,7 +4388,6 @@ public final class BluetoothAdapter {
     @RequiresPermission(
             allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
             conditional = true)
-    @FlaggedApi(Flags.FLAG_SOCKET_SETTINGS_API)
     public @NonNull BluetoothServerSocket listenUsingSocketSettings(
             @NonNull BluetoothSocketSettings settings) throws IOException {
 
@@ -5725,7 +5723,6 @@ public final class BluetoothAdapter {
      * @hide
      */
     @SystemApi
-    @FlaggedApi(Flags.FLAG_SOCKET_SETTINGS_API)
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     public boolean isLeCocSocketOffloadSupported() {
         if (!isEnabled()) {
@@ -5772,7 +5769,6 @@ public final class BluetoothAdapter {
      * @hide
      */
     @SystemApi
-    @FlaggedApi(Flags.FLAG_SOCKET_SETTINGS_API)
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     public boolean isRfcommSocketOffloadSupported() {
         if (!isEnabled()) {

@@ -213,12 +213,8 @@ uint16_t GAP_ConnOpen(const char* /* p_serv_name */, uint8_t service_id, bool is
 
   /* Configure L2CAP COC, if transport is LE */
   if (transport == BT_TRANSPORT_LE) {
-    if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3349376
-      p_ccb->local_coc_cfg.credits =
-              (p_ccb->cfg.init_credit_present) ? p_ccb->cfg.init_credit : L2CA_LeCreditDefault();
-    } else {
-      p_ccb->local_coc_cfg.credits = L2CA_LeCreditDefault();
-    }
+    p_ccb->local_coc_cfg.credits =
+            (p_ccb->cfg.init_credit_present) ? p_ccb->cfg.init_credit : L2CA_LeCreditDefault();
     p_ccb->local_coc_cfg.mtu = p_cfg->mtu;
 
     uint16_t max_mps = bluetooth::shim::GetController()->GetLeBufferSize().le_data_packet_length_;
@@ -756,10 +752,8 @@ static void gap_checks_con_flags(tGAP_CCB* p_ccb) {
       cb_data.l2cap_cids.remote_cid = l2cap_remote_cid;
       cb_data_ptr = &cb_data;
     }
-    if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3367197
-      stack::l2cap::get_interface().L2CA_GetRemoteChannelId(p_ccb->local_cid, &p_ccb->remote_cid);
-      stack::l2cap::get_interface().L2CA_GetAclHandle(p_ccb->local_cid, &p_ccb->acl_handle);
-    }
+    stack::l2cap::get_interface().L2CA_GetRemoteChannelId(p_ccb->local_cid, &p_ccb->remote_cid);
+    stack::l2cap::get_interface().L2CA_GetAclHandle(p_ccb->local_cid, &p_ccb->acl_handle);
     p_ccb->con_state = GAP_CCB_STATE_CONNECTED;
 
     p_ccb->p_callback(p_ccb->gap_handle, GAP_EVT_CONN_OPENED, cb_data_ptr);

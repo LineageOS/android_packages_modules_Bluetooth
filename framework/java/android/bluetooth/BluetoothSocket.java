@@ -113,26 +113,7 @@ public final class BluetoothSocket implements Closeable {
     /** L2CAP socket */
     public static final int TYPE_L2CAP = 3;
 
-    /**
-     * L2CAP socket on BR/EDR transport
-     *
-     * <p>To be removed once Flags.FLAG_SOCKET_SETTINGS_API is removed
-     *
-     * @hide
-     */
-    public static final int TYPE_L2CAP_BREDR = TYPE_L2CAP;
-
-    /**
-     * L2CAP socket on LE transport
-     *
-     * <p>To be removed once Flags.FLAG_SOCKET_SETTINGS_API is removed
-     *
-     * @hide
-     */
-    public static final int TYPE_L2CAP_LE = 4;
-
     /** L2CAP socket on LE transport */
-    @FlaggedApi(Flags.FLAG_SOCKET_SETTINGS_API)
     public static final int TYPE_LE = 4;
 
     /** @hide */
@@ -641,7 +622,6 @@ public final class BluetoothSocket implements Closeable {
      * @throws BluetoothSocketException in case of failure, with the corresponding error code.
      * @throws IOException for other errors (eg: InputStream read failures etc.).
      */
-    @FlaggedApi(Flags.FLAG_SOCKET_SETTINGS_API)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
             allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
@@ -968,7 +948,7 @@ public final class BluetoothSocket implements Closeable {
         }
 
         int available = mSocketIS.available();
-        if ((mType == TYPE_L2CAP || mType == TYPE_L2CAP_LE)
+        if ((mType == TYPE_L2CAP || mType == TYPE_LE)
                 && mL2capBuffer != null
                 && mL2capBuffer.remaining() > 0) {
             // as L2CAP sockets are of SOCK_SEQPACKET type, App has to read one packet
@@ -986,7 +966,7 @@ public final class BluetoothSocket implements Closeable {
     /*package*/ int read(byte[] b, int offset, int length) throws IOException {
         int ret = 0;
         if (VDBG) Log.d(TAG, "read in:  " + mSocketIS + " len: " + length);
-        if ((mType == TYPE_L2CAP) || (mType == TYPE_L2CAP_LE)) {
+        if ((mType == TYPE_L2CAP) || (mType == TYPE_LE)) {
             int bytesToRead = length;
             if (VDBG) {
                 Log.v(
@@ -1036,7 +1016,7 @@ public final class BluetoothSocket implements Closeable {
         //      splitting the write into multiple smaller writes.
         //      Rfcomm uses dynamic allocation, and should not have any bindings
         //      to the actual message length.
-        if ((mType == TYPE_L2CAP) || (mType == TYPE_L2CAP_LE)) {
+        if ((mType == TYPE_L2CAP) || (mType == TYPE_LE)) {
             if (length <= mMaxTxPacketSize) {
                 mSocketOS.write(b, offset, length);
             } else {
@@ -1146,7 +1126,7 @@ public final class BluetoothSocket implements Closeable {
      */
     @RequiresNoPermission
     public int getConnectionType() {
-        if (mType == TYPE_L2CAP_LE) {
+        if (mType == TYPE_LE) {
             // Treat the LE CoC to be the same type as L2CAP.
             return TYPE_L2CAP;
         }
@@ -1212,7 +1192,7 @@ public final class BluetoothSocket implements Closeable {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public int getL2capLocalChannelId() throws IOException {
-        if (mType != TYPE_L2CAP_LE) {
+        if (mType != TYPE_LE) {
             throw new BluetoothSocketException(BluetoothSocketException.L2CAP_UNKNOWN);
         }
         if (mSocketState != SocketState.CONNECTED || mConnectionUuid == null) {
@@ -1253,7 +1233,7 @@ public final class BluetoothSocket implements Closeable {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public int getL2capRemoteChannelId() throws IOException {
-        if (mType != TYPE_L2CAP_LE) {
+        if (mType != TYPE_LE) {
             throw new BluetoothSocketException(BluetoothSocketException.L2CAP_UNKNOWN);
         }
         if (mSocketState != SocketState.CONNECTED || mConnectionUuid == null) {
@@ -1292,7 +1272,6 @@ public final class BluetoothSocket implements Closeable {
      * @hide
      */
     @SystemApi
-    @FlaggedApi(Flags.FLAG_SOCKET_SETTINGS_API)
     @RequiresNoPermission
     public long getSocketId() throws IOException {
         if (mSocketState != SocketState.CONNECTED || mSocketId == INVALID_SOCKET_ID) {
@@ -1406,7 +1385,7 @@ public final class BluetoothSocket implements Closeable {
     }
 
     private void createL2capRxBuffer() {
-        if ((mType == TYPE_L2CAP) || (mType == TYPE_L2CAP_LE)) {
+        if ((mType == TYPE_L2CAP) || (mType == TYPE_LE)) {
             // Allocate the buffer to use for reads.
             if (VDBG) Log.v(TAG, "  Creating mL2capBuffer: mMaxPacketSize: " + mMaxRxPacketSize);
             mL2capBuffer = ByteBuffer.wrap(new byte[mMaxRxPacketSize]);
