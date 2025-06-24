@@ -41,12 +41,19 @@
 #include "hci/hci_packets.h"
 #include "hci/le_address_manager.h"
 #include "macros.h"
+#include "main/shim/helpers.h"
 #include "os/alarm.h"
 #include "os/handler.h"
 #include "os/system_properties.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "storage/config_keys.h"
 #include "storage/storage_module.h"
+
+extern bool btm_random_pseudo_to_identity_addr(RawAddress* random_pseudo,
+                                               tBLE_ADDR_TYPE* p_identity_addr_type);
+
+extern bool btm_identity_addr_to_random_pseudo(RawAddress* bd_addr, tBLE_ADDR_TYPE* p_addr_type,
+                                               bool refresh);
 
 namespace bluetooth {
 namespace hci {
@@ -583,8 +590,25 @@ public:
       arm_on_resume_ = true;
       add_device_to_accept_list(remote_address);
     }
+
     bluetooth::metrics::LogMetricLeConnectionStatus(remote_address.GetAddress(),
                                                     false /* is_connect */, reason);
+
+    tBLE_BD_ADDR legacy_addr = ToLegacyAddressWithType(remote_address);
+    if (com::android::bluetooth::flags::prevent_adding_both_pseudo_and_identity_addr() &&
+        remote_address.IsRpa() &&
+        btm_random_pseudo_to_identity_addr(&legacy_addr.bda, &legacy_addr.type)) {
+      log::info("connection with pseudo address is disconnected");
+
+      legacy_addr.type &= ~BLE_ADDR_TYPE_ID_BIT;
+      AddressWithType identity_addr = ToAddressWithTypeFromLegacy(legacy_addr);
+
+      if (background_connections_.contains(identity_addr)) {
+        log::info("re-add device to accept list with identity address");
+        arm_on_resume_ = true;
+        add_device_to_accept_list(identity_addr);
+      }
+    }
   }
 
   void on_le_connection_update_complete(LeMetaEventView view) {
@@ -1100,6 +1124,19 @@ public:
     if (connections.alreadyConnected(address_with_type)) {
       log::info("Device already connected, return");
       return;
+    }
+
+    if (com::android::bluetooth::flags::prevent_adding_both_pseudo_and_identity_addr()) {
+      tBLE_BD_ADDR legacy_addr = ToLegacyAddressWithType(address_with_type);
+      if (address_with_type.GetAddress() != Address::kEmpty &&
+          btm_identity_addr_to_random_pseudo(&legacy_addr.bda, &legacy_addr.type, false)) {
+        AddressWithType pseudo_addr = ToAddressWithTypeFromLegacy(legacy_addr);
+        if (connections.alreadyConnected(pseudo_addr)) {
+          log::info("Device already connected as pseudo address. Skip adding public addr to "
+                    "accept list");
+          return;
+        }
+      }
     }
 
     bool already_in_accept_list = accept_list.find(address_with_type) != accept_list.end();
