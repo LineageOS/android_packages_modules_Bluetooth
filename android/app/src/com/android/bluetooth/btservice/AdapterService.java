@@ -440,16 +440,12 @@ public class AdapterService extends Service {
                 requireNonNullElseGet(
                         bluetoothQualityReportNativeInterface,
                         () -> new BluetoothQualityReportNativeInterface(this));
-        if (Flags.hciVendorSpecificExtension()) {
-            mBluetoothHciVendorSpecificNativeInterface =
-                    requireNonNullElseGet(
-                            bluetoothHciVendorSpecificNativeInterface,
-                            () ->
-                                    new BluetoothHciVendorSpecificNativeInterface(
-                                            mBluetoothHciVendorSpecificDispatcher));
-        } else {
-            mBluetoothHciVendorSpecificNativeInterface = null;
-        }
+        mBluetoothHciVendorSpecificNativeInterface =
+                requireNonNullElseGet(
+                        bluetoothHciVendorSpecificNativeInterface,
+                        () ->
+                                new BluetoothHciVendorSpecificNativeInterface(
+                                        mBluetoothHciVendorSpecificDispatcher));
         mGattNativeInterface = gattNativeInterface;
         mAdvertiseManagerNativeInterface = advertiseManagerNativeInterface;
         mDistanceMeasurementNativeInterface = distanceMeasurementNativeInterface;
@@ -989,9 +985,7 @@ public class AdapterService extends Service {
 
         mBluetoothQualityReportNativeInterface.init();
 
-        if (Flags.hciVendorSpecificExtension()) {
-            mBluetoothHciVendorSpecificNativeInterface.init();
-        }
+        mBluetoothHciVendorSpecificNativeInterface.init();
 
         mSdpManager = Optional.of(new SdpManager(this, mSdpManagerNativeInterface, mLooper));
 
