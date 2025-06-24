@@ -223,21 +223,6 @@ public:
   /* target announcement observer */
   tBTM_INQ_RESULTS_CB* p_target_announcement_obs_results_cb;
 
-private:
-  enum : uint8_t { /* BLE connection state */
-                   BLE_CONN_IDLE = 0,
-                   BLE_CONNECTING = 2,
-                   BLE_CONN_CANCEL = 3,
-  } conn_state_{BLE_CONN_IDLE};
-
-public:
-  bool is_connection_state_idle() const { return conn_state_ == BLE_CONN_IDLE; }
-  bool is_connection_state_connecting() const { return conn_state_ == BLE_CONNECTING; }
-  bool is_connection_state_cancelled() const { return conn_state_ == BLE_CONN_CANCEL; }
-  void set_connection_state_idle() { conn_state_ = BLE_CONN_IDLE; }
-  void set_connection_state_connecting() { conn_state_ = BLE_CONNECTING; }
-  void set_connection_state_cancelled() { conn_state_ = BLE_CONN_CANCEL; }
-
   /* random address management control block */
   tBTM_LE_RANDOM_CB addr_mgnt_cb;
 

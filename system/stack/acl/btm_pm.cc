@@ -809,12 +809,6 @@ static bool btm_pm_device_in_active_or_sniff_mode(void) {
     return true;
   }
 
-  /* Check BLE states */
-  if (!btm_cb.ble_ctr_cb.is_connection_state_idle()) {
-    log::verbose("- BLE state is not idle");
-    return true;
-  }
-
   return false;
 }
 
