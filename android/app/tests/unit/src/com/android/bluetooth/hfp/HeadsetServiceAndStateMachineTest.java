@@ -2142,7 +2142,7 @@ public class HeadsetServiceAndStateMachineTest {
                         device);
         mHeadsetService.messageFromNative(atBccEvent);
         mTestLooper.dispatchAll();
-        assertThat(mHeadsetService.mPendingScoConnection).isEqualTo(device);
+        assertThat(mHeadsetService.mPendingScoConnectionDevice).isEqualTo(device);
 
         verifyActiveDeviceChanged_scoManagement(device);
 
@@ -2179,7 +2179,7 @@ public class HeadsetServiceAndStateMachineTest {
                         device);
         mHeadsetService.messageFromNative(atBccEvent);
         mTestLooper.dispatchAll();
-        assertThat(mHeadsetService.mPendingScoConnection).isEqualTo(device);
+        assertThat(mHeadsetService.mPendingScoConnectionDevice).isEqualTo(device);
 
         // Now disconnect the device
         HeadsetStackEvent connectingEvent =
@@ -2192,7 +2192,7 @@ public class HeadsetServiceAndStateMachineTest {
 
         verifyConnectionStateIntent(device, STATE_DISCONNECTED, STATE_CONNECTED);
 
-        assertThat(mHeadsetService.mPendingScoConnection).isEqualTo(null);
+        assertThat(mHeadsetService.mPendingScoConnectionDevice).isEqualTo(null);
         verify(mAudioManager, times(0)).setCommunicationDevice(mAudioDeviceInfo);
     }
 
@@ -2226,7 +2226,7 @@ public class HeadsetServiceAndStateMachineTest {
                         device);
         mHeadsetService.messageFromNative(atBccEvent);
         mTestLooper.dispatchAll();
-        assertThat(mHeadsetService.mPendingScoConnection).isEqualTo(device);
+        assertThat(mHeadsetService.mPendingScoConnectionDevice).isEqualTo(device);
 
         // Transition to AUDIO_STATE_CONNECTED as if SCO is connected
         doReturn(true).when(mSystemInterface).isInCall();
@@ -2237,7 +2237,7 @@ public class HeadsetServiceAndStateMachineTest {
                         device));
         mTestLooper.dispatchAll();
 
-        assertThat(mHeadsetService.mPendingScoConnection).isEqualTo(null);
+        assertThat(mHeadsetService.mPendingScoConnectionDevice).isEqualTo(null);
     }
 
     /*

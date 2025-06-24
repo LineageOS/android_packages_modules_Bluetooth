@@ -583,9 +583,9 @@ class HeadsetStateMachine extends StateMachine {
             mHasSwbAptXEnabled = false;
             mHasRfcommConnectionCompleted = false;
 
-            if (mHeadsetService.mPendingScoConnection != null
-                    && mHeadsetService.mPendingScoConnection.equals(mDevice)) {
-                mHeadsetService.mPendingScoConnection = null;
+            if (mHeadsetService.mPendingScoConnectionDevice != null
+                    && mHeadsetService.mPendingScoConnectionDevice.equals(mDevice)) {
+                mHeadsetService.mPendingScoConnectionDevice = null;
             }
 
             broadcastStateTransitions();
@@ -1500,9 +1500,9 @@ class HeadsetStateMachine extends StateMachine {
                 mHeadsetService.setActiveDevice(mDevice);
             }
 
-            if (mHeadsetService.mPendingScoConnection != null
-                    && mHeadsetService.mPendingScoConnection.equals(mDevice)) {
-                mHeadsetService.mPendingScoConnection = null;
+            if (mHeadsetService.mPendingScoConnectionDevice != null
+                    && mHeadsetService.mPendingScoConnectionDevice.equals(mDevice)) {
+                mHeadsetService.mPendingScoConnectionDevice = null;
             }
 
             setAudioParameters();
