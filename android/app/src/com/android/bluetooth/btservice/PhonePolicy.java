@@ -1068,16 +1068,13 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                 bassClient.get().connect(device);
             }
         }
-        if (Flags.connectHapOnOtherProfileConnect()) {
-            if (hapClient.isPresent()) {
-                List<BluetoothDevice> connectedDevices = hapClient.get().getConnectedDevices();
-                if (!connectedDevices.contains(device)
-                        && (hapClient.get().getConnectionPolicy(device)
-                                == CONNECTION_POLICY_ALLOWED)
-                        && (hapClient.get().getConnectionState(device) == STATE_DISCONNECTED)) {
-                    Log.d(TAG, log + "Retrying HAP connection");
-                    hapClient.get().connect(device);
-                }
+        if (hapClient.isPresent()) {
+            List<BluetoothDevice> connectedDevices = hapClient.get().getConnectedDevices();
+            if (!connectedDevices.contains(device)
+                    && (hapClient.get().getConnectionPolicy(device) == CONNECTION_POLICY_ALLOWED)
+                    && (hapClient.get().getConnectionState(device) == STATE_DISCONNECTED)) {
+                Log.d(TAG, log + "Retrying HAP connection");
+                hapClient.get().connect(device);
             }
         }
     }
