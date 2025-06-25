@@ -223,31 +223,14 @@ public:
   /* target announcement observer */
   tBTM_INQ_RESULTS_CB* p_target_announcement_obs_results_cb;
 
-private:
-  enum : uint8_t { /* BLE connection state */
-                   BLE_CONN_IDLE = 0,
-                   BLE_CONNECTING = 2,
-                   BLE_CONN_CANCEL = 3,
-  } conn_state_{BLE_CONN_IDLE};
-
-public:
-  bool is_connection_state_idle() const { return conn_state_ == BLE_CONN_IDLE; }
-  bool is_connection_state_connecting() const { return conn_state_ == BLE_CONNECTING; }
-  bool is_connection_state_cancelled() const { return conn_state_ == BLE_CONN_CANCEL; }
-  void set_connection_state_idle() { conn_state_ = BLE_CONN_IDLE; }
-  void set_connection_state_connecting() { conn_state_ = BLE_CONNECTING; }
-  void set_connection_state_cancelled() { conn_state_ = BLE_CONN_CANCEL; }
-
   /* random address management control block */
   tBTM_LE_RANDOM_CB addr_mgnt_cb;
 
   tBTM_PRIVACY_MODE privacy_mode;           /* privacy mode */
   uint8_t resolving_list_avail_size;        /* resolving list available size */
   tBTM_BLE_RESOLVE_Q resolving_list_pend_q; /* Resolving list queue */
-  tBTM_BLE_RL_STATE suspended_rl_state;     /* Suspended resolving list state */
   /* IRK list availability mask, up to max entry bits */
   uint8_t* irk_list_mask{nullptr};
-  tBTM_BLE_RL_STATE rl_state; /* Resolving list state */
 
   /* current BLE link state */
   tBTM_BLE_STATE_MASK cur_states; /* bit mask of tBTM_BLE_STATE */

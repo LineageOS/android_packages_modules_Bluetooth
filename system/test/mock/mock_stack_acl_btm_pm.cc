@@ -36,10 +36,6 @@ bool BTM_SetLinkPolicyActiveMode(const RawAddress& /* remote_bda */) {
   inc_func_call_count(__func__);
   return false;
 }
-tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void) {
-  inc_func_call_count(__func__);
-  return BTM_CONTRL_UNKNOWN;
-}
 uint8_t BTM_PM_ReadSniffLinkCount(void) {
   inc_func_call_count(__func__);
   return 0;

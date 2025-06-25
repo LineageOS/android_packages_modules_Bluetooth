@@ -341,7 +341,6 @@ void bta_dm_eir_update_cust_uuid(const tBTA_CUSTOM_UUID& curr, bool adding);
 void bta_dm_ble_subrate_request(const RawAddress& bd_addr, uint16_t subrate_min,
                                 uint16_t subrate_max, uint16_t max_latency, uint16_t cont_num,
                                 uint16_t timeout);
-tBTM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void);
 
 namespace bluetooth::legacy::testing {
 
