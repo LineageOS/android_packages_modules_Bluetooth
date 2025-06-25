@@ -27,7 +27,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.State;
@@ -59,7 +58,6 @@ public class BluetoothShellCommandTest {
     @Rule public final Expect expect = Expect.create();
 
     @Mock BluetoothManagerService mManagerService;
-
     @Mock BluetoothServiceBinder mBinder;
 
     BluetoothShellCommand mShellCommand;
@@ -67,9 +65,8 @@ public class BluetoothShellCommandTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        doReturn(mBinder).when(mManagerService).getBinder();
 
-        mShellCommand = new BluetoothShellCommand(mManagerService);
+        mShellCommand = new BluetoothShellCommand(mManagerService, mBinder);
         mShellCommand.init(
                 mock(Binder.class),
                 mock(FileDescriptor.class),
@@ -93,7 +90,7 @@ public class BluetoothShellCommandTest {
         assertThat(enableCmd.getName()).isEqualTo(cmdName);
         assertThat(enableCmd.isMatch(cmdName)).isTrue();
         assertThat(enableCmd.isPrivileged()).isFalse();
-        when(mBinder.enable(any())).thenReturn(true);
+        doReturn(true).when(mBinder).enable(any());
         assertThat(enableCmd.exec(cmdName)).isEqualTo(0);
         verify(mBinder).enable(any());
     }
@@ -106,7 +103,7 @@ public class BluetoothShellCommandTest {
         assertThat(disableCmd.getName()).isEqualTo(cmdName);
         assertThat(disableCmd.isMatch(cmdName)).isTrue();
         assertThat(disableCmd.isPrivileged()).isFalse();
-        when(mBinder.disable(any(), anyBoolean())).thenReturn(true);
+        doReturn(true).when(mBinder).disable(any(), anyBoolean());
         assertThat(disableCmd.exec(cmdName)).isEqualTo(0);
         verify(mBinder).disable(any(), anyBoolean());
     }
@@ -139,7 +136,7 @@ public class BluetoothShellCommandTest {
         }
 
         expect.that(waitCmd.isPrivileged()).isFalse();
-        when(mManagerService.waitForManagerState(eq(State.OFF))).thenReturn(true);
+        doReturn(true).when(mManagerService).waitForState(eq(State.OFF));
 
         expect.that(waitCmd.exec(validCmd[0])).isEqualTo(0);
     }
