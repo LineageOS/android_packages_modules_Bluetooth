@@ -28,6 +28,7 @@
 
 #include <android_bluetooth_sysprop.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/hci_role.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -79,7 +80,6 @@
 #include "stack/include/l2cap_interface.h"
 #include "storage/config_keys.h"
 #include "types/bt_transport.h"
-#include "types/hci_role.h"
 #include "types/raw_address.h"
 
 using namespace bluetooth;

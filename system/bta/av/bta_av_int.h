@@ -25,6 +25,7 @@
 #define BTA_AV_INT_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/hci_role.h>
 
 #include <cstdint>
 #include <string>
@@ -42,7 +43,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/sdp/sdp_discovery_db.h"
-#include "types/hci_role.h"
 #include "types/raw_address.h"
 
 /*****************************************************************************

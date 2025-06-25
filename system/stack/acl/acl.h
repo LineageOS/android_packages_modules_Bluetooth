@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <bluetooth/types/hci_role.h>
 #include <bluetooth/types/remote_version.h>
 
 #include <cstdint>
@@ -29,7 +30,6 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/hcimsgs.h"
 #include "types/ble_address_with_type.h"
-#include "types/hci_role.h"
 
 enum btm_acl_encrypt_state_t {
   BTM_ACL_ENCRYPT_STATE_IDLE = 0,
