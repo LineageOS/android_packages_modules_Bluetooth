@@ -30,12 +30,12 @@ import static org.mockito.Mockito.verify;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.IAudioInputCallback;
 import android.content.AttributionSource;
-import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
 
 import com.android.bluetooth.flags.Flags;
+import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
@@ -63,16 +63,15 @@ public class VolumeControlServiceBinderTest {
 
     private final BluetoothDevice mDevice = getTestDevice(25);
 
-    // private TestLooper mLooper;
     private VolumeControlServiceBinder mBinder;
 
     @Parameters(name = "{0}")
-    public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.progressionOf(Flags.FLAG_VCP_ON_MAIN_LOOPER);
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(Flags.FLAG_VCP_ON_MAIN_LOOPER);
     }
 
-    public VolumeControlServiceBinderTest(FlagsParameterization flags) {
-        mSetFlagsRule = new SetFlagsRule(flags);
+    public VolumeControlServiceBinderTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
     }
 
     @Before
