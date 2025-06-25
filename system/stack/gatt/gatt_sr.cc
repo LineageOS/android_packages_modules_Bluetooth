@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <string.h>
 
@@ -39,7 +40,6 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/l2cap_types.h"
-#include "types/bluetooth/uuid.h"
 
 #define GATT_MTU_REQ_MIN_LEN 2
 #define L2CAP_PKT_OVERHEAD 4

@@ -22,6 +22,7 @@
 
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_sock.h>
@@ -38,7 +39,6 @@
 #include "btif_uid.h"
 #include "osi/include/osi.h"  // INVALID_FD
 #include "osi/include/thread.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 using bluetooth::Uuid;

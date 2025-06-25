@@ -26,13 +26,13 @@
 #define PAN_INT_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 
 #include <cstdint>
 
 #include "internal_include/bt_target.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/pan_api.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 /*

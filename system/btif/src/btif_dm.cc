@@ -35,6 +35,7 @@
 #include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/metrics/metric_id_api.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_csis.h>
@@ -101,7 +102,6 @@
 #include "stack/include/srvc_api.h"  // tDIS_VALUE
 #include "storage/config_keys.h"
 #include "types/ble_address_with_type.h"
-#include "types/bluetooth/uuid.h"
 
 #ifdef __ANDROID__
 #include <android/sysprop/BluetoothProperties.sysprop.h>

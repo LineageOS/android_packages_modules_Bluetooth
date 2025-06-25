@@ -25,6 +25,7 @@
 #define LOG_TAG "avrcp"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <string.h>
 
 #include <cstdint>
@@ -41,7 +42,6 @@
 #include "stack/include/sdp_api.h"
 #include "stack/include/sdpdefs.h"
 #include "stack/sdp/sdp_discovery_db.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 using namespace bluetooth;

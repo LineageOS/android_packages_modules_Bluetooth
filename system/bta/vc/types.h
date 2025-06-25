@@ -18,6 +18,7 @@
 #pragma once
 
 #include <aics/api.h>
+#include <bluetooth/types/uuid.h>
 #include <hardware/bt_vc.h>
 
 #include <algorithm>
@@ -27,7 +28,6 @@
 
 #include "bta/include/bta_groups.h"
 #include "osi/include/alarm.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 namespace bluetooth {

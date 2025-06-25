@@ -32,6 +32,7 @@
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <unistd.h>
@@ -63,7 +64,6 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/hidh_api.h"
 #include "types/ble_address_with_type.h"
-#include "types/bluetooth/uuid.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 

@@ -19,6 +19,7 @@
 #include <base/functional/callback.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <hardware/bt_gatt_types.h>
 #include <hardware/bt_has.h>
@@ -60,7 +61,6 @@
 #include "osi/include/properties.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_types.h"
-#include "types/bluetooth/uuid.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 

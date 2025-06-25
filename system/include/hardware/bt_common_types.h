@@ -23,10 +23,11 @@
 #ifndef ANDROID_INCLUDE_BT_COMMON_TYPES_H
 #define ANDROID_INCLUDE_BT_COMMON_TYPES_H
 
+#include <bluetooth/types/uuid.h>
+
 #include <vector>
 
 #include "bluetooth.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 typedef struct {

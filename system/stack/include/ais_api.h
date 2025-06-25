@@ -18,7 +18,7 @@
 #ifndef SYSTEM_STACK_INCLUDE_AIS_API_H_
 #define SYSTEM_STACK_INCLUDE_AIS_API_H_
 
-#include "types/bluetooth/uuid.h"
+#include <bluetooth/types/uuid.h>
 
 #define ANDROID_INFORMATION_SERVICE_UUID_STRING "e73e0001-ef1b-4e74-8291-2e4f3164f3b5"
 /* Android Information Service characteristic */

@@ -15,6 +15,7 @@
  */
 
 #include <base/functional/bind.h>
+#include <bluetooth/types/uuid.h>
 
 #include <cstdint>
 #include <cstring>
@@ -22,7 +23,6 @@
 
 #include "bluetooth/log.h"
 #include "bta/ras/ras_types.h"
-#include "types/bluetooth/uuid.h"
 
 using namespace bluetooth;
 using namespace ::ras;

@@ -20,6 +20,7 @@
 
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <dirent.h>
 #include <sys/stat.h>
 
@@ -29,7 +30,6 @@
 #include "bta/gatt/bta_gattc_int.h"
 #include "gatt/database.h"
 #include "stack/include/gattdefs.h"
-#include "types/bluetooth/uuid.h"
 
 using namespace bluetooth;
 

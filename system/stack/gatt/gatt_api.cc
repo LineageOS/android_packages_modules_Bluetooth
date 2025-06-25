@@ -29,6 +29,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <string>
@@ -50,7 +51,6 @@
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/l2cdefs.h"
 #include "stack/include/sdp_api.h"
-#include "types/bluetooth/uuid.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 

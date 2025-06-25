@@ -16,8 +16,7 @@
  *
  ******************************************************************************/
 
-#include "uuid.h"
-
+#include <bluetooth/types/uuid.h>
 #include <string.h>
 
 #include <algorithm>

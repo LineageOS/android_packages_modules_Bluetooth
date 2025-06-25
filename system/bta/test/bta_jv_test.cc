@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/uuid.h>
 #include <gtest/gtest.h>
 
 #include <memory>
@@ -25,7 +26,6 @@
 #include "test/common/mock_functions.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_stack_sdp_legacy_api.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 namespace {

@@ -17,6 +17,7 @@
 
 #include "bta/vc/devices.h"
 
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -30,7 +31,6 @@
 #include "bta/test/common/btm_api_mock.h"
 #include "gatt/database_builder.h"
 #include "stack/include/bt_uuid16.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 namespace bluetooth {

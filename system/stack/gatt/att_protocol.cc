@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 
 #include "gatt_int.h"
 #include "internal_include/bt_target.h"
@@ -31,7 +32,6 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/l2cdefs.h"
-#include "types/bluetooth/uuid.h"
 
 #define GATT_HDR_FIND_TYPE_VALUE_LEN 21
 #define GATT_OP_CODE_SIZE 1

@@ -26,6 +26,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 
 #include <ios>
 #include <list>
@@ -37,7 +38,6 @@
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/main_thread.h"
-#include "types/bluetooth/uuid.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 

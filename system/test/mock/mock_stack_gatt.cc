@@ -19,12 +19,13 @@
  *   Functions generated:27
  */
 
+#include <bluetooth/types/uuid.h>
+
 #include <cstdint>
 
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/gatt_api.h"
 #include "test/common/mock_functions.h"
-#include "types/bluetooth/uuid.h"
 
 using namespace bluetooth;
 
