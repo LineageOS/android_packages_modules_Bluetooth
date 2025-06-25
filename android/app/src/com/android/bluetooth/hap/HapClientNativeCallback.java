@@ -26,6 +26,7 @@ import android.bluetooth.BluetoothStatusCodes;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.List;
@@ -48,6 +49,10 @@ public class HapClientNativeCallback {
     }
 
     private void sendMessageToService(Consumer<HapClientService> action) {
+        if (Flags.hapOnMainLooper()) {
+            mHapClientService.syncPost(action);
+            return;
+        }
         if (!mHapClientService.isAvailable()) {
             Log.e(TAG, "Action ignored, service not available. " + inlineStackTrace());
             return;

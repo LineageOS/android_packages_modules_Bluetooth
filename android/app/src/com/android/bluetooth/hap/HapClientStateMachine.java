@@ -111,7 +111,7 @@ final class HapClientStateMachine extends StateMachine {
         addState(mConnected);
 
         setInitialState(mDisconnected);
-        start();
+        start(!Flags.hapOnMainLooper());
     }
 
     private static String messageWhatToString(int what) {
@@ -126,7 +126,7 @@ final class HapClientStateMachine extends StateMachine {
 
     public void doQuit() {
         Log.d(TAG, "doQuit for " + mDevice);
-        quitNow();
+        quitNow(!Flags.hapOnMainLooper());
     }
 
     int getConnectionState() {
@@ -288,6 +288,10 @@ final class HapClientStateMachine extends StateMachine {
                 case MESSAGE_CONNECT_TIMEOUT -> {
                     Log.w(TAG, mStateLog + "connection timeout");
                     mNativeInterface.disconnectHapClient(mDevice);
+                    if (Flags.hapOnMainLooper()) {
+                        transitionTo(mDisconnected);
+                        break;
+                    }
                     sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_DISCONNECTED);
                 }
                 case MESSAGE_DISCONNECT -> {
@@ -349,6 +353,10 @@ final class HapClientStateMachine extends StateMachine {
                 case MESSAGE_CONNECT_TIMEOUT -> {
                     Log.w(TAG, mStateLog + "connection timeout");
                     mNativeInterface.disconnectHapClient(mDevice);
+                    if (Flags.hapOnMainLooper()) {
+                        transitionTo(mDisconnected);
+                        break;
+                    }
                     sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_DISCONNECTED);
                 }
                 case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(message.arg1);

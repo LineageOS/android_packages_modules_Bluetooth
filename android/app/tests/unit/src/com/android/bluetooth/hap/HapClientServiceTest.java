@@ -67,7 +67,6 @@ import android.os.RemoteException;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.Utils;
@@ -76,12 +75,11 @@ import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
+import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -90,15 +88,18 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
+import platform.test.runner.parameterized.Parameters;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 /** Test cases for {@link HapClientService}. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
+@RunWith(ParameterizedAndroidJunit4.class)
 public class HapClientServiceTest {
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+    @Rule public final SetFlagsRule mSetFlagsRule;
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
@@ -117,8 +118,19 @@ public class HapClientServiceTest {
     private InOrder mInOrder;
     private TestLooper mLooper;
 
-    @Before
-    public void setUp() {
+    @Parameters(name = "{0}")
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(Flags.FLAG_HAP_ON_MAIN_LOOPER);
+    }
+
+    public HapClientServiceTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
+    }
+
+    // Don't use @Before because the setUp and the test would be running on different thread. This
+    // creates issues with the TestLooper, as it overrides Looper.myLooper for the current thread
+    // only.
+    public void initTest() {
         final byte[] byteAddress1 = getByteAddress(mDevice1);
         doReturn(mDevice1).when(mAdapterService).getDeviceFromByte(eq(byteAddress1));
         final byte[] byteAddress2 = getByteAddress(mDevice2);
@@ -184,23 +196,17 @@ public class HapClientServiceTest {
         }
     }
 
-    @After
-    public void tearDown() {
-        synchronized (mService.mCallbacks) {
-            mService.mCallbacks.unregister(mFrameworkCallback);
-        }
-
+    @Test
+    public void getHapService() {
+        initTest();
+        assertThat(HapClientService.getHapClientService()).isEqualTo(mService);
         mService.cleanup();
         assertThat(HapClientService.getHapClientService()).isNull();
     }
 
     @Test
-    public void getHapService() {
-        assertThat(HapClientService.getHapClientService()).isEqualTo(mService);
-    }
-
-    @Test
     public void getConnectionPolicy() {
+        initTest();
         for (int policy :
                 List.of(
                         CONNECTION_POLICY_UNKNOWN,
@@ -213,6 +219,7 @@ public class HapClientServiceTest {
 
     @Test
     public void canConnect_whenNotBonded_returnFalse() {
+        initTest();
         int badPolicyValue = 1024;
         int badBondState = 42;
         for (int bondState : List.of(BOND_NONE, BOND_BONDING, badBondState)) {
@@ -231,6 +238,7 @@ public class HapClientServiceTest {
 
     @Test
     public void canConnect_whenBonded() {
+        initTest();
         int badPolicyValue = 1024;
         doReturn(BOND_BONDED).when(mAdapterService).getBondState(any());
 
@@ -246,6 +254,7 @@ public class HapClientServiceTest {
 
     @Test
     public void connectToDevice_whenUuidIsMissing_returnFalse() {
+        initTest();
         doReturn(new ParcelUuid[] {})
                 .when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
@@ -255,6 +264,7 @@ public class HapClientServiceTest {
 
     @Test
     public void connectToDevice_whenPolicyForbid_returnFalse() {
+        initTest();
         doReturn(CONNECTION_POLICY_FORBIDDEN)
                 .when(mDatabaseManager)
                 .getProfileConnectionPolicy(any(), anyInt());
@@ -264,6 +274,7 @@ public class HapClientServiceTest {
 
     @Test
     public void outgoingConnect_whenTimeOut_isDisconnected() {
+        initTest();
         assertThat(mService.connect(mDevice1)).isTrue();
         mLooper.dispatchAll();
 
@@ -277,6 +288,7 @@ public class HapClientServiceTest {
 
     @Test
     public void connectTwoDevices() {
+        initTest();
         testConnectingDevice(mDevice1);
         testConnectingDevice(mDevice2);
 
@@ -285,11 +297,13 @@ public class HapClientServiceTest {
 
     @Test
     public void getActivePresetIndex_whenNoConnected_isUnavailable() {
+        initTest();
         assertThat(mService.getActivePresetIndex(mDevice1)).isEqualTo(PRESET_INDEX_UNAVAILABLE);
     }
 
     @Test
     public void testGetHapGroupCoordinatedOps() {
+        initTest();
         testConnectingDevice(mDevice1);
         testConnectingDevice(mDevice2);
         testConnectingDevice(mDevice3);
@@ -314,6 +328,7 @@ public class HapClientServiceTest {
 
     @Test
     public void testSelectPresetNative() throws RemoteException {
+        initTest();
         testConnectingDevice(mDevice1);
 
         // Verify Native Interface call
@@ -328,6 +343,7 @@ public class HapClientServiceTest {
 
     @Test
     public void testGroupSelectActivePresetNative() throws RemoteException {
+        initTest();
         testConnectingDevice(mDevice3);
 
         int flags = 0x01;
@@ -344,6 +360,7 @@ public class HapClientServiceTest {
 
     @Test
     public void testSwitchToNextPreset() {
+        initTest();
         testConnectingDevice(mDevice1);
 
         // Verify Native Interface call
@@ -353,6 +370,7 @@ public class HapClientServiceTest {
 
     @Test
     public void testSwitchToNextPresetForGroup() {
+        initTest();
         testConnectingDevice(mDevice3);
         int flags = 0x01;
         mService.onFeaturesUpdate(mDevice3, flags);
@@ -364,6 +382,7 @@ public class HapClientServiceTest {
 
     @Test
     public void testSwitchToPreviousPreset() {
+        initTest();
         testConnectingDevice(mDevice1);
 
         // Verify Native Interface call
@@ -373,6 +392,7 @@ public class HapClientServiceTest {
 
     @Test
     public void testSwitchToPreviousPresetForGroup() {
+        initTest();
         testConnectingDevice(mDevice1);
         testConnectingDevice(mDevice2);
 
@@ -386,6 +406,7 @@ public class HapClientServiceTest {
 
     @Test
     public void testGetActivePresetIndex() throws RemoteException {
+        initTest();
         testConnectingDevice(mDevice1);
         testOnPresetSelected(mDevice1, 0x01);
 
@@ -394,6 +415,7 @@ public class HapClientServiceTest {
 
     @Test
     public void testGetPresetInfoAndActivePresetInfo() throws RemoteException {
+        initTest();
         testConnectingDevice(mDevice2);
 
         // Check when active preset is not known yet
@@ -418,6 +440,7 @@ public class HapClientServiceTest {
 
     @Test
     public void testSetPresetNameNative() throws RemoteException {
+        initTest();
         testConnectingDevice(mDevice1);
 
         mService.setPresetName(mDevice1, 0x00, "ExamplePresetName");
@@ -433,6 +456,7 @@ public class HapClientServiceTest {
 
     @Test
     public void testSetPresetNameForGroup() throws RemoteException {
+        initTest();
         int test_group = 0x02;
 
         testConnectingDevice(mDevice1);
@@ -457,6 +481,7 @@ public class HapClientServiceTest {
 
     @Test
     public void onPresetSelected() throws RemoteException {
+        initTest();
         int presetIndex = 0x01;
 
         mService.onPresetSelected(mDevice1, presetIndex);
@@ -468,6 +493,7 @@ public class HapClientServiceTest {
 
     @Test
     public void onPresetSelectionFailed() throws RemoteException {
+        initTest();
         mService.onPresetSelectionFailed(mDevice1, ERROR_HAP_INVALID_PRESET_INDEX);
 
         verify(mFrameworkCallback)
@@ -476,6 +502,7 @@ public class HapClientServiceTest {
 
     @Test
     public void updatePreset_whenPresent_isBroadcast() throws RemoteException {
+        initTest();
         testConnectingDevice(mDevice1);
 
         int infoReason = PRESET_INFO_REASON_PRESET_INFO_UPDATE;
@@ -507,12 +534,14 @@ public class HapClientServiceTest {
 
     @Test
     public void onSetPresetNameFailed_broadcastToClient() throws RemoteException {
+        initTest();
         mService.onSetPresetNameFailed(mDevice1, 1);
         verify(mFrameworkCallback).onSetPresetNameFailed(eq(mDevice1), eq(1));
     }
 
     @Test
     public void onSetPresetNameFailedForGroup_broadcastToClient() throws RemoteException {
+        initTest();
         int groupId = 0x01;
         mService.onSetPresetNameForGroupFailed(groupId, 1);
         verify(mFrameworkCallback).onSetPresetNameForGroupFailed(eq(groupId), eq(1));
@@ -520,11 +549,13 @@ public class HapClientServiceTest {
 
     @Test
     public void getDevicesMatchingConnectionStates_whenNull_isEmpty() {
+        initTest();
         assertThat(mService.getDevicesMatchingConnectionStates(null)).isEmpty();
     }
 
     @Test
     public void setConnectionPolicy() {
+        initTest();
         assertThat(mService.setConnectionPolicy(mDevice1, CONNECTION_POLICY_UNKNOWN)).isTrue();
         verify(mDatabaseManager)
                 .setProfileConnectionPolicy(
@@ -533,11 +564,13 @@ public class HapClientServiceTest {
 
     @Test
     public void getFeatures() {
+        initTest();
         assertThat(mService.getFeatures(mDevice1)).isEqualTo(0x00);
     }
 
     @Test
     public void registerUnregisterCallback() {
+        initTest();
         IBluetoothHapClientCallback callback = Mockito.mock(IBluetoothHapClientCallback.class);
         Binder binder = Mockito.mock(Binder.class);
         when(callback.asBinder()).thenReturn(binder);
@@ -554,6 +587,7 @@ public class HapClientServiceTest {
 
     @Test
     public void dumpDoesNotCrash() {
+        initTest();
         // Add state machine for testing dump()
         mService.connect(mDevice1);
         mLooper.dispatchAll();
@@ -634,7 +668,9 @@ public class HapClientServiceTest {
     private void generateConnectionMessageFromNative(
             BluetoothDevice device, int newState, int oldState) {
         mService.onConnectionStateChanged(device, newState);
-        mLooper.dispatchAll();
+        if (!Flags.hapOnMainLooper()) {
+            mLooper.dispatchAll();
+        }
 
         verifyConnectionStateIntent(device, newState, oldState);
     }

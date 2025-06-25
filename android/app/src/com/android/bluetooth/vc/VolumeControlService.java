@@ -204,7 +204,7 @@ public class VolumeControlService extends ConnectableProfile {
                         Log.e(TAG, "Service is no longer available");
                         return;
                     }
-                    consumer.accept(VolumeControlService.this);
+                    consumer.accept(this);
                 });
     }
 
