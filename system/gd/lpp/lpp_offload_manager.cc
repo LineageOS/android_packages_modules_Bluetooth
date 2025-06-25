@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 #include "lpp_offload_manager.h"
-
+#include <com_android_bluetooth_flags.h>
 #include <bluetooth/log.h>
 
 #include <string>
@@ -30,6 +30,14 @@ struct LppOffloadManager::impl {
       : handler_(handler), socket_hal_(socket_hal) {
     log::info("");
     socket_capabilities_ = socket_hal_->GetSocketCapabilities();
+  }
+
+  ~impl() {
+    if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+      handler_->Clear();
+      handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
+      delete handler_;
+    }
   }
 
   bool register_socket_hal_callbacks(hal::SocketHalCallback* callbacks) {

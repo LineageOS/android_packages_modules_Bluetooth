@@ -17,6 +17,7 @@
 #include "hci/acl_manager/acl_manager_classic_impl.h"
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <future>
 
@@ -46,7 +47,13 @@ AclManagerClassicImpl::AclManagerClassicImpl(os::Handler* handler, HciInterface&
   hci.SetClassicAclDataConsumer(this);
 }
 
-AclManagerClassicImpl::~AclManagerClassicImpl() {}
+AclManagerClassicImpl::~AclManagerClassicImpl() {
+  if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+    handler_->Clear();
+    handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
+    delete handler_;
+  }
+}
 
 void AclManagerClassicImpl::RegisterCallbacks(ConnectionCallbacks* callbacks,
                                               os::Handler* handler) {
