@@ -23,16 +23,6 @@ flag {
 }
 
 flag {
-    name: "bta_ag_cmd_brsf_allow_uint32"
-    namespace: "bluetooth"
-    description: "Allow and ignore the RFU bits set to 0b1 rather than responding ERROR"
-    bug: "331129986"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "fix_hfp_qual_1_9"
     namespace: "bluetooth"
     description: "Fix multiple issues in CVSD fallback logics, which are blocking PTS HFP Qualification 1.9"
