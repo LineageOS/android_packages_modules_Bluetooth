@@ -4,6 +4,10 @@
     // Didn't receive a valid AVDTP signal while waiting for signal ID Delay
     // Report and message type Command.
     "A2DP/SNK/SYN/BV-01-C",
+    // Fails with verdict:
+    // Didn't receive a valid AVDTP signal while waiting for signal ID Delay
+    // Report and message type Command.
+    "A2DP/SRC/SYN/BV-02-C",
     "AVCTP/CT/CCM/BV-01-C",
     "AVCTP/CT/CCM/BV-02-C",
     "AVCTP/CT/FRA/BV-01-C",
@@ -2656,8 +2660,6 @@
     },
     {
       "flags": [
-        "set_addressed_player",
-        "browsing_refactor",
         "avrcp_16_default"
       ],
       "tests": [

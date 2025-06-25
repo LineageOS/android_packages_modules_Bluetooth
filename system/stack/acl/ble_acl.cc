@@ -43,7 +43,6 @@ static bool acl_ble_common_connection(const tBLE_BD_ADDR& address_with_type, uin
                                       uint16_t conn_timeout,
                                       bool can_read_discoverable_characteristics) {
   if (role == HCI_ROLE_CENTRAL) {
-    btm_cb.ble_ctr_cb.set_connection_state_idle();
     btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
   }
 
@@ -125,7 +124,6 @@ void acl_ble_connection_fail(const tBLE_BD_ADDR& address_with_type, uint16_t /* 
   btm_acl_create_failed(link_spec, status);
 
   if (status != HCI_ERR_ADVERTISING_TIMEOUT) {
-    btm_cb.ble_ctr_cb.set_connection_state_idle();
     btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
     tBLE_BD_ADDR resolved_address_with_type;
     maybe_resolve_received_address(address_with_type, &resolved_address_with_type);

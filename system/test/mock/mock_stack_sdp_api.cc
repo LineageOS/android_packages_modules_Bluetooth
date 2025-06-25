@@ -23,12 +23,13 @@
 // Mock include file to share data between tests and mock
 #include "test/mock/mock_stack_sdp_api.h"
 
+#include <bluetooth/types/uuid.h>
+
 #include <cstdint>
 
 #include "stack/include/sdp_api.h"
 #include "stack/sdp/internal/sdp_api.h"
 #include "test/common/mock_functions.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 // Mocked compile conditionals, if any

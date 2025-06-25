@@ -16,10 +16,13 @@ cc_library_static {
         "bluetooth_tidy",
     ],
     srcs: [
-        "bluetooth/uuid.cc",
         "raw_address.cc",
+        "src/uuid.cc",
     ],
-    export_include_dirs: ["./"],
+    export_include_dirs: [
+        "./",
+        "include",
+    ],
     apex_available: ["com.android.bt"],
     min_sdk_version: "36",
 }

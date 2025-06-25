@@ -22,6 +22,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -51,7 +52,6 @@
 #include "osi/include/osi.h"  // INVALID_FD
 #include "stack/include/bt_hdr.h"
 #include "stack/include/port_api.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 using bluetooth::Uuid;

@@ -29,9 +29,6 @@
 namespace bluetooth {
 namespace hci::acl_manager {
 
-using common::Bind;
-using common::BindOnce;
-
 using acl_manager::le_impl;
 using acl_manager::LeConnectionCallbacks;
 

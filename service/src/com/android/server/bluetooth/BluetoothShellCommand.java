@@ -37,6 +37,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
     private static final String TAG = BluetoothShellCommand.class.getSimpleName();
 
     private final BluetoothManagerService mManagerService;
+    private final BluetoothServiceBinder mBinder;
 
     @VisibleForTesting
     final BluetoothCommand[] mBluetoothCommands = {
@@ -84,13 +85,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         @Override
         @RequiresPermission(BLUETOOTH_CONNECT)
         public int exec(String cmd) throws RemoteException {
-            return mManagerService
-                            .getBinder()
-                            .enableBle(
-                                    AttributionSource.myAttributionSource(),
-                                    mManagerService.getBinder())
-                    ? 0
-                    : -1;
+            return mBinder.enableBle(AttributionSource.myAttributionSource(), mBinder) ? 0 : -1;
         }
 
         @Override
@@ -109,9 +104,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         @Override
         @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
         public int exec(String cmd) throws RemoteException {
-            return mManagerService.getBinder().factoryReset(AttributionSource.myAttributionSource())
-                    ? 0
-                    : -1;
+            return mBinder.factoryReset(AttributionSource.myAttributionSource()) ? 0 : -1;
         }
 
         @Override
@@ -130,13 +123,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         @Override
         @RequiresPermission(BLUETOOTH_CONNECT)
         public int exec(String cmd) throws RemoteException {
-            return mManagerService
-                            .getBinder()
-                            .disableBle(
-                                    AttributionSource.myAttributionSource(),
-                                    mManagerService.getBinder())
-                    ? 0
-                    : -1;
+            return mBinder.disableBle(AttributionSource.myAttributionSource(), mBinder) ? 0 : -1;
         }
 
         @Override
@@ -155,9 +142,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         @Override
         @RequiresPermission(BLUETOOTH_CONNECT)
         public int exec(String cmd) throws RemoteException {
-            return mManagerService.getBinder().enable(AttributionSource.myAttributionSource())
-                    ? 0
-                    : -1;
+            return mBinder.enable(AttributionSource.myAttributionSource()) ? 0 : -1;
         }
 
         @Override
@@ -176,11 +161,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         @Override
         @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
         public int exec(String cmd) throws RemoteException {
-            return mManagerService
-                            .getBinder()
-                            .disable(AttributionSource.myAttributionSource(), true)
-                    ? 0
-                    : -1;
+            return mBinder.disable(AttributionSource.myAttributionSource(), true) ? 0 : -1;
         }
 
         @Override
@@ -228,7 +209,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
 
         @Override
         public int exec(String cmd) throws RemoteException {
-            int ret = mManagerService.waitForManagerState(getWaitingState(cmd)) ? 0 : -1;
+            int ret = mManagerService.waitForState(getWaitingState(cmd)) ? 0 : -1;
             Log.d(TAG, cmd + ": Return value is " + ret); // logging as this method can take time
             return ret;
         }
@@ -243,8 +224,9 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         }
     }
 
-    BluetoothShellCommand(BluetoothManagerService managerService) {
+    BluetoothShellCommand(BluetoothManagerService managerService, BluetoothServiceBinder binder) {
         mManagerService = managerService;
+        mBinder = binder;
     }
 
     @Override

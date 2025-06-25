@@ -27,9 +27,10 @@
 #ifndef BTA_SDP_INT_H
 #define BTA_SDP_INT_H
 
+#include <bluetooth/types/uuid.h>
+
 #include "bta/include/bta_sdp_api.h"
 #include "stack/include/sdp_status.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 /*****************************************************************************

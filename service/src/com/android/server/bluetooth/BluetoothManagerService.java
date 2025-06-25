@@ -2069,12 +2069,8 @@ class BluetoothManagerService {
         }
     }
 
-    boolean waitForManagerState(int state) {
-        return mState.waitForState(STATE_TIMEOUT, state);
-    }
-
-    private boolean waitForState(int... states) {
-        Log.d(TAG, "Waiting " + STATE_TIMEOUT + " for state: " + Arrays.toString(states));
+    boolean waitForState(int... states) {
+        Log.v(TAG, "Waiting " + STATE_TIMEOUT + " for state: " + Arrays.toString(states));
         return mState.waitForState(STATE_TIMEOUT, states);
     }
 

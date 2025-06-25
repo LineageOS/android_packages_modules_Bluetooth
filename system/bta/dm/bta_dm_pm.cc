@@ -1188,25 +1188,3 @@ static int bta_dm_get_sco_index() {
   }
   return -1;
 }
-
-/*******************************************************************************
- *
- * Function         bta_dm_pm_obtain_controller_state
- *
- * Description      This function obtains the consolidated controller power
- *                  state
- *
- * Parameters:
- *
- ******************************************************************************/
-tBTM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void) {
-  /*   Did not use counts as it is not sure, how accurate the count values are
-   *in
-   **  bta_dm_cb.device_list.count > 0 || bta_dm_cb.device_list.le_count > 0 */
-
-  tBTM_CONTRL_STATE cur_state = BTM_CONTRL_UNKNOWN;
-  cur_state = BTM_PM_ReadControllerState();
-
-  log::verbose("cur_state: {}", cur_state);
-  return cur_state;
-}

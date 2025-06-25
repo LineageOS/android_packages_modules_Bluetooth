@@ -16,10 +16,10 @@
  *
  ******************************************************************************/
 
+#include <bluetooth/types/uuid.h>
 #include <gtest/gtest.h>
 
 #include "stack/gatt/gatt_int.h"
-#include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
 

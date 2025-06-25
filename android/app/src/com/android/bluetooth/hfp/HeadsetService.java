@@ -2327,11 +2327,6 @@ public class HeadsetService extends ConnectableProfile {
     class AudioManagerAudioDeviceCallback extends AudioDeviceCallback {
         @Override
         public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
-            if (mSystemInterface.getAudioManager() == null || mAdapterService == null) {
-                Log.e(TAG, "Callback called when A2dpService is stopped");
-                return;
-            }
-
             synchronized (mStateMachines) {
                 for (AudioDeviceInfo deviceInfo : addedDevices) {
                     if (deviceInfo.getType() != AudioDeviceInfo.TYPE_BLUETOOTH_SCO) {
@@ -2403,11 +2398,6 @@ public class HeadsetService extends ConnectableProfile {
 
         @Override
         public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
-            if (mSystemInterface.getAudioManager() == null || mAdapterService == null) {
-                Log.e(TAG, "Callback called when LeAudioService is stopped");
-                return;
-            }
-
             synchronized (mStateMachines) {
                 for (AudioDeviceInfo deviceInfo : removedDevices) {
                     if (deviceInfo.getType() != AudioDeviceInfo.TYPE_BLUETOOTH_SCO) {

@@ -22,13 +22,13 @@
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <base/location.h>
+#include <bluetooth/types/uuid.h>
 
 #include <cstdint>
 #include <vector>
 
 #include "bta/include/bta_gatt_api.h"
 #include "test/common/mock_functions.h"
-#include "types/bluetooth/uuid.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 

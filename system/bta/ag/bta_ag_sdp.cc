@@ -28,6 +28,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/uuid.h>
 
 #include <cstdint>
 #include <cstring>
@@ -57,7 +58,6 @@
 #include "stack/include/sdp_api.h"
 #include "stack/sdp/sdp_discovery_db.h"
 #include "storage/config_keys.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 using namespace bluetooth::legacy::stack::sdp;

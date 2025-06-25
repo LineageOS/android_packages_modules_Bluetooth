@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <bluetooth/types/uuid.h>
 #include <gmock/gmock.h>
 
 #include <type_traits>
@@ -26,7 +27,6 @@
 #include "stack/include/a2dp_api.h"
 #include "stack/include/bt_hdr.h"
 #include "tests/packet_test_helper.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 namespace bluetooth {

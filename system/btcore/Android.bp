@@ -26,6 +26,7 @@ cc_library_static {
     header_libs: ["libbluetooth_headers"],
     static_libs: [
         "libbluetooth_log",
+        "libbluetooth_types",
     ],
     target: {
         host_linux: {

@@ -19,10 +19,11 @@
  *   Functions generated:11
  */
 
+#include <bluetooth/types/uuid.h>
+
 #include "stack/include/bnep_api.h"
 #include "stack/include/bt_hdr.h"
 #include "test/common/mock_functions.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 using namespace bluetooth;

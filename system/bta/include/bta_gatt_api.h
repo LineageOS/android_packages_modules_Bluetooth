@@ -27,6 +27,7 @@
 
 #include <base/functional/callback_forward.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 
 #include <list>
 #include <string>
@@ -36,7 +37,6 @@
 #include "hardware/bt_gatt_types.h"
 #include "macros.h"
 #include "stack/include/gatt_api.h"
-#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 #ifndef BTA_GATT_DEBUG

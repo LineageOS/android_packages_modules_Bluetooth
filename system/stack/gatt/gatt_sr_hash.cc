@@ -18,13 +18,13 @@
 
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 
 #include <list>
 
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "gatt_int.h"
 #include "stack/include/bt_types.h"
-#include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;

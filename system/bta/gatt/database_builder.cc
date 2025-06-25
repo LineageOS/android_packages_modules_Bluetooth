@@ -19,6 +19,7 @@
 #include "bta/gatt/database_builder.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 
 #include <algorithm>
 #include <cstdint>
@@ -31,7 +32,6 @@
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
 #include "stack/include/gattdefs.h"
-#include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;

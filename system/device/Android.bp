@@ -34,6 +34,7 @@ cc_library_static {
         "libaconfig_storage_read_api_cc",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_types",
         "libflatbuffers-cpp",
         "server_configurable_flags",
     ],

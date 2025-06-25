@@ -18,12 +18,13 @@
 
 #pragma once
 
+#include <bluetooth/types/uuid.h>
+
 #include <set>
 #include <utility>
 #include <vector>
 
 #include "bta/gatt/database.h"
-#include "types/bluetooth/uuid.h"
 
 namespace gatt {
 

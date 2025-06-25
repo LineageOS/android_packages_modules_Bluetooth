@@ -27,6 +27,7 @@
 
 // Original included files, if any
 
+#include <bluetooth/types/uuid.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,7 +36,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_status.h"
 #include "stack/rnr/remote_name_request.h"
-#include "types/bluetooth/uuid.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
