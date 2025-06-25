@@ -602,18 +602,6 @@ public final class Utils {
      * Returns true if the BLUETOOTH_SCAN permission is granted for the calling app. Returns false
      * if the result is a soft denial. Throws SecurityException if the result is a hard denial.
      *
-     * <p>Should be used in situations where the app op should not be noted.
-     */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // This method enforce the permission
-    @RequiresPermission(BLUETOOTH_SCAN)
-    public static boolean checkScanPermissionForPreflight(Context context) {
-        return checkPermissionForPreflight(context, BLUETOOTH_SCAN);
-    }
-
-    /**
-     * Returns true if the BLUETOOTH_SCAN permission is granted for the calling app. Returns false
-     * if the result is a soft denial. Throws SecurityException if the result is a hard denial.
-     *
      * <p>Should be used in situations where data will be delivered and hence the app op should be
      * noted.
      */
