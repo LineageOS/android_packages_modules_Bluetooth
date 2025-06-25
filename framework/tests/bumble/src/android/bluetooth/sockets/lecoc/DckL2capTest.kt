@@ -88,12 +88,12 @@ public class DckL2capTest() : Closeable {
     private lateinit var connectionResponse: WaitConnectionResponse
     private lateinit var host: Host
 
-    @Rule
+    @Rule(order = 0)
     @JvmField
     val mCheckFlagsRule: CheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
 
     // Gives shell permissions during the test.
-    @Rule(order = 0)
+    @Rule(order = 1)
     @JvmField
     val mPermissionRule =
         AdoptShellPermissionsRule(
@@ -104,10 +104,10 @@ public class DckL2capTest() : Closeable {
         )
 
     // Setup a Bumble Pandora device for the duration of the test.
-    @Rule(order = 1) @JvmField val mBumble = PandoraDevice()
+    @Rule(order = 2) @JvmField val mBumble = PandoraDevice()
 
     // Toggles Bluetooth.
-    @Rule(order = 2) @JvmField val EnableBluetoothRule = EnableBluetoothRule(false, true)
+    @Rule(order = 3) @JvmField val EnableBluetoothRule = EnableBluetoothRule(false, true)
 
     /** Wrapper for [BluetoothGatt] along with its [state] and [status] */
     data class GattState(val gatt: BluetoothGatt, val status: Int, val state: Int)
