@@ -44,7 +44,7 @@ import java.io.PrintWriter;
 class BluetoothServiceBinder extends IBluetoothManager.Stub {
     private static final String TAG = BluetoothServiceBinder.class.getSimpleName();
 
-    private final BluetoothManagerService mBluetoothManagerService;
+    private final BluetoothManagerService mService;
     private final Context mContext;
     private final UserManager mUserManager;
     private final AppOpsManager mAppOpsManager;
@@ -52,7 +52,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     private final BtPermissionUtils mPermissionUtils;
 
     BluetoothServiceBinder(BluetoothManagerService bms, Context ctx, UserManager userManager) {
-        mBluetoothManagerService = bms;
+        mService = bms;
         mContext = ctx;
         mUserManager = userManager;
         mAppOpsManager =
@@ -70,13 +70,13 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     @Nullable
     public IBinder registerAdapter(@NonNull IBluetoothManagerCallback callback) {
         requireNonNull(callback, "Callback cannot be null in registerAdapter");
-        return mBluetoothManagerService.registerAdapter(callback);
+        return mService.registerAdapter(callback);
     }
 
     @Override
     public void unregisterAdapter(@NonNull IBluetoothManagerCallback callback) {
         requireNonNull(callback, "Callback cannot be null in unregisterAdapter");
-        mBluetoothManagerService.unregisterAdapter(callback);
+        mService.unregisterAdapter(callback);
     }
 
     @Override
@@ -98,7 +98,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
         }
 
         Log.d(TAG, "enable()");
-        return mBluetoothManagerService.enableFromBinder(source.getPackageName());
+        return mService.enableFromBinder(source.getPackageName());
     }
 
     @Override
@@ -124,7 +124,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
         }
 
         Log.d(TAG, "enableNoAutoConnect()");
-        return mBluetoothManagerService.enableNoAutoConnectFromBinder(source.getPackageName());
+        return mService.enableNoAutoConnectFromBinder(source.getPackageName());
     }
 
     @Override
@@ -150,12 +150,12 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
         }
 
         Log.d(TAG, "disable(" + persist + ")");
-        return mBluetoothManagerService.disableFromBinder(source.getPackageName(), persist);
+        return mService.disableFromBinder(source.getPackageName(), persist);
     }
 
     @Override
     public int getState() {
-        return mBluetoothManagerService.getState();
+        return mService.getState();
     }
 
     @Override
@@ -179,7 +179,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return IBluetoothManager.DEFAULT_MAC_ADDRESS;
         }
 
-        return mBluetoothManagerService.getAddress();
+        return mService.getAddress();
     }
 
     @Override
@@ -197,7 +197,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return null;
         }
 
-        return mBluetoothManagerService.getName();
+        return mService.getName();
     }
 
     @Override
@@ -211,7 +211,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return false;
         }
 
-        return mBluetoothManagerService.factoryResetFromBinder();
+        return mService.factoryResetFromBinder();
     }
 
     @Override
@@ -225,12 +225,12 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return false;
         }
 
-        return mBluetoothManagerService.onFactoryResetFromBinder();
+        return mService.onFactoryResetFromBinder();
     }
 
     @Override
     public boolean isBleScanAvailable() {
-        return mBluetoothManagerService.isBleScanAvailable();
+        return mService.isBleScanAvailable();
     }
 
     @Override
@@ -253,7 +253,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
         }
 
         Log.d(TAG, "enableBle(" + token + ")");
-        return mBluetoothManagerService.enableBleFromBinder(source.getPackageName(), token);
+        return mService.enableBleFromBinder(source.getPackageName(), token);
     }
 
     @Override
@@ -276,26 +276,26 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
         }
 
         Log.d(TAG, "disableBle(" + token + ")");
-        return mBluetoothManagerService.disableBleFromBinder(source.getPackageName(), token);
+        return mService.disableBleFromBinder(source.getPackageName(), token);
     }
 
     @Override
     public boolean isHearingAidProfileSupported() {
-        return mBluetoothManagerService.isHearingAidProfileSupported();
+        return mService.isHearingAidProfileSupported();
     }
 
     @Override
     public int setBtHciSnoopLogMode(int mode) {
         BtPermissionUtils.enforcePrivileged(mContext);
 
-        return mBluetoothManagerService.setBtHciSnoopLogMode(mode);
+        return mService.setBtHciSnoopLogMode(mode);
     }
 
     @Override
     public int getBtHciSnoopLogMode() {
         BtPermissionUtils.enforcePrivileged(mContext);
 
-        return mBluetoothManagerService.getBtHciSnoopLogMode();
+        return mService.getBtHciSnoopLogMode();
     }
 
     @Override
@@ -304,7 +304,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             @NonNull ParcelFileDescriptor out,
             @NonNull ParcelFileDescriptor err,
             @NonNull String[] args) {
-        return new BluetoothShellCommand(mBluetoothManagerService)
+        return new BluetoothShellCommand(mService, this)
                 .exec(
                         this,
                         in.getFileDescriptor(),
@@ -316,19 +316,19 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     @Override
     public boolean isAutoOnSupported() {
         BtPermissionUtils.enforcePrivileged(mContext);
-        return mBluetoothManagerService.isAutoOnSupported();
+        return mService.isAutoOnSupported();
     }
 
     @Override
     public boolean isAutoOnEnabled() {
         BtPermissionUtils.enforcePrivileged(mContext);
-        return mBluetoothManagerService.isAutoOnEnabled();
+        return mService.isAutoOnEnabled();
     }
 
     @Override
     public void setAutoOnEnabled(boolean status) {
         BtPermissionUtils.enforcePrivileged(mContext);
-        mBluetoothManagerService.setAutoOnEnabled(status);
+        mService.setAutoOnEnabled(status);
     }
 
     @Override
@@ -339,6 +339,6 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return;
         }
 
-        mBluetoothManagerService.dump(fd, writer, args);
+        mService.dump(fd, writer, args);
     }
 }
