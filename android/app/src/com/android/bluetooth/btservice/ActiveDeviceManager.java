@@ -444,7 +444,8 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
 
             if (mHearingAidActiveDevices.isEmpty()
                     && mLeHearingAidActiveDevice == null
-                    && mPendingLeHearingAidActiveDevice.isEmpty()) {
+                    && mPendingLeHearingAidActiveDevice.isEmpty()
+                    && Objects.equals(device, leAudio.get().getLeadDevice(device))) {
                 // New connected device: select it as active
                 boolean leAudioMadeActive = setLeAudioActiveDevice(device);
                 if (leAudioMadeActive && !Utils.isDualModeAudioEnabled()) {
