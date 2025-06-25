@@ -569,7 +569,7 @@ public final class DatabaseManagerTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE)
+    @EnableFlags(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE)
     public void testSetConnectionHeadset() {
         // Verify pre-conditions to ensure a fresh test
         assertThat(mDatabaseManager.mMetadataCache).isEmpty();
@@ -593,7 +593,7 @@ public final class DatabaseManagerTest {
         // Wait for database update
         TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
         assertThat(mDatabaseManager.mMetadataCache.get(mDevice1.getAddress()).isActiveHfpDevice)
-                .isFalse();
+                .isTrue();
         assertThat(mDatabaseManager.mMetadataCache.get(mDevice2.getAddress()).isActiveHfpDevice)
                 .isTrue();
         assertThat(mDatabaseManager.getMostRecentlyActiveHfpDevice()).isEqualTo(mDevice2);

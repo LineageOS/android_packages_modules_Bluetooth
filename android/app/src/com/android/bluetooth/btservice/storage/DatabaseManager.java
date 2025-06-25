@@ -51,6 +51,7 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -780,7 +781,7 @@ public class DatabaseManager {
             entry =
                     mMetadataCache.entrySet().stream()
                             .filter(x -> x.getValue().isActiveHfpDevice)
-                            .findFirst()
+                            .max(Comparator.comparing(x -> x.getValue().last_active_time))
                             .orElse(null);
         }
         if (entry != null) {
