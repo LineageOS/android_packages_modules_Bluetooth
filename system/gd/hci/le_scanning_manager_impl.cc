@@ -765,6 +765,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         if (entry != remove_me_later_map_.end()) {
           // Don't want to remove for a bonded device
           if (!is_bonded(entry->second.GetAddress())) {
+            log::info("{} not bonded, removing from resolving list", entry->second.GetAddress());
             le_address_manager_->RemoveDeviceFromResolvingList(
                     static_cast<PeerAddressType>(entry->second.GetAddressType()),
                     entry->second.GetAddress());
@@ -781,6 +782,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         if (entry != remove_me_later_map_.end()) {
           // Don't want to remove for a bonded device
           if (!is_bonded(entry->second.GetAddress())) {
+            log::info("{} not bonded, removing from resolving list", entry->second.GetAddress());
             le_address_manager_->RemoveDeviceFromResolvingList(
                     static_cast<PeerAddressType>(entry->second.GetAddressType()),
                     entry->second.GetAddress());
@@ -885,6 +887,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         if (entry != remove_me_later_map_.end()) {
           // Don't want to remove for a bonded device
           if (!is_bonded(entry->second.GetAddress())) {
+            log::info("{} not bonded, removing from resolving list", entry->second.GetAddress());
             le_address_manager_->RemoveDeviceFromResolvingList(
                     static_cast<PeerAddressType>(entry->second.GetAddressType()),
                     entry->second.GetAddress());
