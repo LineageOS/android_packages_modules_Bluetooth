@@ -1831,49 +1831,6 @@ class BluetoothManagerService {
         sendEnableMsg(false, ENABLE_DISABLE_REASON_USER_SWITCH);
     }
 
-    private void bindToAdapterForCurrentUser() {
-        requireNonNull(mCurrentUser, "There is no user to start for.");
-        int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
-        Intent intent = new Intent(IAdapter.class.getName());
-        intent.setComponent(resolveSystemService(intent));
-
-        Log.d(TAG, "Start binding to the Bluetooth service with intent=" + intent);
-        if (!mContext.bindServiceAsUser(intent, mConnection, flags, mCurrentUser)) {
-            Log.e(TAG, "Fail to bind to intent=" + intent);
-            mContext.unbindService(mConnection);
-            if (Flags.userSwitchDuringBleOn()) {
-                bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
-                clearBleApps();
-                ActiveLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false);
-            }
-            return;
-        }
-        mHandler.sendEmptyMessageDelayed(MESSAGE_TIMEOUT_BIND, TIMEOUT_BIND_MS);
-    }
-
-    private void bindToAdapter() {
-        if (Flags.limitUserSwitchPropagation()) {
-            bindToAdapterForCurrentUser();
-            return;
-        }
-        UserHandle user = UserHandle.CURRENT;
-        int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
-        Intent intent = new Intent(IAdapter.class.getName());
-        intent.setComponent(resolveSystemService(intent));
-
-        mHandler.sendEmptyMessageDelayed(MESSAGE_TIMEOUT_BIND, TIMEOUT_BIND_MS);
-        Log.d(TAG, "Start binding to the Bluetooth service with intent=" + intent);
-        if (!mContext.bindServiceAsUser(intent, mConnection, flags, user)) {
-            Log.e(TAG, "Fail to bind to intent=" + intent);
-            mContext.unbindService(mConnection);
-            mHandler.removeMessages(MESSAGE_TIMEOUT_BIND);
-            if (Flags.userSwitchDuringBleOn()) {
-                bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
-                clearBleApps();
-            }
-        }
-    }
-
     private boolean resetAdapter() {
         if (mAdapter == null) {
             return false;
@@ -1914,6 +1871,49 @@ class BluetoothManagerService {
             bindToAdapter();
         }
         return Unit.INSTANCE;
+    }
+
+    private void bindToAdapter() {
+        if (Flags.limitUserSwitchPropagation()) {
+            bindToAdapterForCurrentUser();
+            return;
+        }
+        UserHandle user = UserHandle.CURRENT;
+        int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
+        Intent intent = new Intent(IAdapter.class.getName());
+        intent.setComponent(resolveSystemService(intent));
+
+        mHandler.sendEmptyMessageDelayed(MESSAGE_TIMEOUT_BIND, TIMEOUT_BIND_MS);
+        Log.d(TAG, "Start binding to the Bluetooth service with intent=" + intent);
+        if (!mContext.bindServiceAsUser(intent, mConnection, flags, user)) {
+            Log.e(TAG, "Fail to bind to intent=" + intent);
+            mContext.unbindService(mConnection);
+            mHandler.removeMessages(MESSAGE_TIMEOUT_BIND);
+            if (Flags.userSwitchDuringBleOn()) {
+                bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
+                clearBleApps();
+            }
+        }
+    }
+
+    private void bindToAdapterForCurrentUser() {
+        requireNonNull(mCurrentUser, "There is no user to start for.");
+        int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
+        Intent intent = new Intent(IAdapter.class.getName());
+        intent.setComponent(resolveSystemService(intent));
+
+        Log.d(TAG, "Start binding to the Bluetooth service with intent=" + intent);
+        if (!mContext.bindServiceAsUser(intent, mConnection, flags, mCurrentUser)) {
+            Log.e(TAG, "Fail to bind to intent=" + intent);
+            mContext.unbindService(mConnection);
+            if (Flags.userSwitchDuringBleOn()) {
+                bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
+                clearBleApps();
+                ActiveLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false);
+            }
+            return;
+        }
+        mHandler.sendEmptyMessageDelayed(MESSAGE_TIMEOUT_BIND, TIMEOUT_BIND_MS);
     }
 
     private void handleDisableDelayed() {
