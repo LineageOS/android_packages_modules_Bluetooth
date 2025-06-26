@@ -1884,17 +1884,23 @@ class BluetoothManagerService {
     }
 
     private void handleEnable() {
-        if (mAdapter == null && !isBinding()) {
-            if (Flags.userSwitchDuringBleOn()) {
-                bluetoothStateChangeHandler(State.OFF, State.BLE_TURNING_ON);
-            }
-            if (Flags.waitStackRoleBeforeStarting()) {
-                RolePermissionListener.registerForUser(
-                        mLooper, mCurrentUserContext, mCurrentUser, this::onRoleGranted);
-                return;
-            }
-            bindToAdapter();
+        if (mAdapter != null) {
+            Log.w(TAG, "handleEnable: Adapter already created");
+            return;
+        } else if (isBinding()) {
+            Log.w(TAG, "handleEnable: Binding in progress");
+            return;
         }
+
+        if (Flags.userSwitchDuringBleOn()) {
+            bluetoothStateChangeHandler(State.OFF, State.BLE_TURNING_ON);
+        }
+        if (Flags.waitStackRoleBeforeStarting()) {
+            RolePermissionListener.registerForUser(
+                    mLooper, mCurrentUserContext, mCurrentUser, this::onRoleGranted);
+            return;
+        }
+        bindToAdapter();
     }
 
     private Unit onRoleGranted() {
