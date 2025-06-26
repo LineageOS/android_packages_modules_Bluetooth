@@ -154,7 +154,6 @@ public class UtilsTest {
         Context context = InstrumentationRegistry.getInstrumentation().getContext();
         try {
             Utils.checkAdvertisePermissionForDataDelivery(context, null, "message");
-            Utils.checkAdvertisePermissionForPreflight(context);
             Utils.checkCallerHasWriteSmsPermission(context);
             Utils.checkConnectPermissionForPreflight(context);
         } catch (SecurityException e) {
