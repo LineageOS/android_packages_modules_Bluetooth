@@ -180,6 +180,12 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
       le_address_manager_->Unregister(this);
     }
     advertising_sets_.clear();
+
+    if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+      handler_->Clear();
+      handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
+      delete handler_;
+    }
   }
 
   int8_t get_tx_path_loss_compensation() {
