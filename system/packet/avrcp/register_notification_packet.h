@@ -134,6 +134,7 @@ public:
   // Getter Functions
   Event GetEventRegistered() const;
   uint32_t GetInterval() const;
+  uint16_t GetLength() const;
 
   // Overloaded Functions
   virtual bool IsValid() const override;

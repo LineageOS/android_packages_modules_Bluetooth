@@ -253,6 +253,8 @@ uint32_t RegisterNotificationRequest::GetInterval() const {
   return it.extractBE<uint32_t>();
 }
 
+uint16_t RegisterNotificationRequest::GetLength() const { return GetParameterLength(); }
+
 bool RegisterNotificationRequest::IsValid() const { return size() == kMinSize(); }
 
 std::string RegisterNotificationRequest::ToString() const {
