@@ -56,7 +56,6 @@ bool btm_ble_clear_topology_mask(tBTM_BLE_STATE_MASK request_state);
 bool btm_ble_set_topology_mask(tBTM_BLE_STATE_MASK request_state);
 tBTM_STATUS btm_ble_start_inquiry(uint8_t duration);
 void btm_ble_stop_inquiry(void);
-tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode);
 
 void btm_ble_scanner_init(void);
 void btm_ble_scanner_cleanup(void);

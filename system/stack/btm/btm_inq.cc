@@ -266,15 +266,6 @@ tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode) {
   bool is_limited;
   bool cod_limited;
 
-  log::verbose("");
-  if (bluetooth::shim::GetController()->SupportsBle()) {
-    if (btm_ble_set_discoverability((uint16_t)(inq_mode)) == tBTM_STATUS::BTM_SUCCESS) {
-      btm_cb.btm_inq_vars.discoverable_mode &= (~BTM_BLE_DISCOVERABLE_MASK);
-      btm_cb.btm_inq_vars.discoverable_mode |= (inq_mode & BTM_BLE_DISCOVERABLE_MASK);
-    }
-  }
-  inq_mode &= ~BTM_BLE_DISCOVERABLE_MASK;
-
   /*** Check mode parameter ***/
   if (inq_mode > BTM_MAX_DISCOVERABLE) {
     return tBTM_STATUS::BTM_ILLEGAL_VALUE;
@@ -951,8 +942,6 @@ void btm_inq_db_reset(void) {
   btm_cb.btm_inq_vars.connectable_mode = BTM_NON_CONNECTABLE;
   btm_cb.btm_inq_vars.page_scan_type = BTM_SCAN_TYPE_STANDARD;
   btm_cb.btm_inq_vars.inq_scan_type = BTM_SCAN_TYPE_STANDARD;
-
-  btm_cb.btm_inq_vars.discoverable_mode |= BTM_BLE_NON_DISCOVERABLE;
   return;
 }
 
