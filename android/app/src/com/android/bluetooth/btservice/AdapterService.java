@@ -1524,7 +1524,7 @@ public class AdapterService extends Service {
             mBluetoothSocketManagerBinder = null;
         }
 
-        if (Flags.adapterSuspendMgmt()) {
+        if (Flags.adapterSuspendMgmt() && mAdapterSuspend != null) {
             mAdapterSuspend.cleanup();
         }
 
@@ -4410,7 +4410,7 @@ public class AdapterService extends Service {
             return;
         }
 
-        if (Flags.adapterSuspendMgmt()) {
+        if (Flags.adapterSuspendMgmt() && mAdapterSuspend != null) {
             mAdapterSuspend.dump(fd, writer, args);
         }
 
