@@ -537,7 +537,7 @@ public class LeScanningTest {
 
                     @Override
                     public void onScanFailed(int errorCode) {
-                        Log.i(TAG, "onScanFailed " + "errorCode: " + errorCode);
+                        Log.i(TAG, "onScanFailed errorCode: " + errorCode);
                         future.complete(null);
                     }
                 };

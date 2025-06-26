@@ -959,7 +959,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                             responseNeeded,
                             offset,
                             value);
-                    Log.d(TAG, "BluetoothGattServerCallback: " + "onCharacteristicWriteRequest");
+                    Log.d(TAG, "BluetoothGattServerCallback: onCharacteristicWriteRequest");
 
                     if ((characteristic.getProperties() & PROPERTY_WRITE) == 0) {
                         mBluetoothGattServer.sendResponse(
@@ -1001,7 +1001,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                         int offset,
                         BluetoothGattDescriptor descriptor) {
                     super.onDescriptorReadRequest(device, requestId, offset, descriptor);
-                    Log.d(TAG, "BluetoothGattServerCallback: " + "onDescriptorReadRequest");
+                    Log.d(TAG, "BluetoothGattServerCallback: onDescriptorReadRequest");
 
                     if ((descriptor.getPermissions()
                                     & BluetoothGattDescriptor.PERMISSION_READ_ENCRYPTED)
@@ -1052,7 +1052,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                             responseNeeded,
                             offset,
                             value);
-                    Log.d(TAG, "BluetoothGattServerCallback: " + "onDescriptorWriteRequest");
+                    Log.d(TAG, "BluetoothGattServerCallback: onDescriptorWriteRequest");
 
                     if ((descriptor.getPermissions()
                                     & BluetoothGattDescriptor.PERMISSION_WRITE_ENCRYPTED)

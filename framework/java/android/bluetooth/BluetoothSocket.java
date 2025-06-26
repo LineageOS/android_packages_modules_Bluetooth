@@ -1340,7 +1340,7 @@ public final class BluetoothSocket implements Closeable {
             if (mDataPath == BluetoothSocketSettings.DATA_PATH_NO_OFFLOAD) {
                 return;
             }
-            Log.d(TAG, "sendSocketAcceptSignal" + " isAccepting " + isAccepting);
+            Log.d(TAG, "sendSocketAcceptSignal isAccepting " + isAccepting);
             byte[] sig = new byte[SOCK_ACCEPT_SIGNAL_SIZE];
             ByteBuffer bb = ByteBuffer.wrap(sig);
             bb.order(ByteOrder.nativeOrder());

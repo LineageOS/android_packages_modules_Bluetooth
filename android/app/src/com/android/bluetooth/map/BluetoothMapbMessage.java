@@ -554,7 +554,7 @@ public abstract class BluetoothMapbMessage {
                             && type != TYPE.SMS_CDMA
                             && type != TYPE.SMS_GSM) {
                         throw new IllegalArgumentException(
-                                "Native appParamsCharset " + "only supported for SMS");
+                                "Native appParamsCharset only supported for SMS");
                     }
                     switch (type) {
                         case SMS_CDMA:
@@ -588,7 +588,7 @@ public abstract class BluetoothMapbMessage {
         }
         if (newBMsg == null) {
             throw new IllegalArgumentException(
-                    "Missing bMessage TYPE: " + "- unable to parse body-content");
+                    "Missing bMessage TYPE: - unable to parse body-content");
         }
         newBMsg.setType(type);
         newBMsg.mAppParamCharset = appParamCharset;

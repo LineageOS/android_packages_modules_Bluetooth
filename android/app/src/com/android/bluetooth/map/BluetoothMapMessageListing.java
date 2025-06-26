@@ -110,7 +110,7 @@ public class BluetoothMapMessageListing {
             XmlSerializer xmlMsgElement = Xml.newSerializer();
             xmlMsgElement.setOutput(sw);
             if (isBenzCarkit) {
-                Log.d(TAG, "java_interop: Remote is Mercedes Benz, " + "using Xml Workaround.");
+                Log.d(TAG, "java_interop: Remote is Mercedes Benz, using Xml Workaround.");
                 xmlMsgElement.text("\n");
             } else {
                 xmlMsgElement.startDocument("UTF-8", true);

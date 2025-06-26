@@ -283,7 +283,7 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean connect(BluetoothDevice device) {
-        if (DBG) Log.d(TAG, "connect(" + device + ")" + "for MAPS MCE");
+        if (DBG) Log.d(TAG, "connect(" + device + ") for MAPS MCE");
         final IBluetoothMapClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");

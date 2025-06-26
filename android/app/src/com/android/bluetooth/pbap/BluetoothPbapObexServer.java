@@ -322,7 +322,7 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
             return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
         }
 
-        Log.v(TAG, "onConnect(): uuid is ok, will send out " + "MSG_SESSION_ESTABLISHED msg.");
+        Log.v(TAG, "onConnect(): uuid is ok, will send out MSG_SESSION_ESTABLISHED msg.");
 
         return ResponseCodes.OBEX_HTTP_OK;
     }
@@ -1326,9 +1326,7 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
         if (TextUtils.isEmpty(orderPara)) {
             // If order parameter is not set by PCE, set default value per spec.
             orderPara = "0";
-            Log.d(
-                    TAG,
-                    "Order parameter is not set by PCE. " + "Assume order by 'Indexed' by default");
+            Log.d(TAG, "Order parameter is not set by PCE. Assume order by 'Indexed' by default");
         } else if (!orderPara.equals("0") && !orderPara.equals("1")) {
             Log.d(TAG, "Order parameter is not supported: " + appParamValue.order);
             if (orderPara.equals("2")) {
