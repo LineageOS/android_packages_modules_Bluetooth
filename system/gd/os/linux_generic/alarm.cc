@@ -74,7 +74,8 @@ void Alarm::Cancel() {
   std::lock_guard<std::mutex> lock(mutex_);
   itimerspec disarm_itimerspec{/* disarm timer */};
   int result = TIMERFD_SETTIME(fd_, 0, &disarm_itimerspec, nullptr);
-  log::assert_that(result == 0, "assert failed: result == 0");
+  log::assert_that(result == 0 || errno == EAGAIN,
+                   "Failed to disarm the timer: result: {}, errno: {}", result, strerror(errno));
 }
 
 void Alarm::on_fire() {
