@@ -450,6 +450,11 @@ void bta_av_ssm_execute(tBTA_AV_SCB* p_scb, uint16_t event, tBTA_AV_DATA* p_data
                  bta_av_sst_code(p_scb->state));
   }
 
+  if (event_handler1 == nullptr) {
+    log::info("peer={} event=0x{:x}({}) state={}({}) ignored", p_scb->PeerAddress(), event,
+              bta_av_evt_code(event), p_scb->state, bta_av_sst_code(p_scb->state));
+  }
+
   if (event_handler1 != nullptr) {
     event_handler1(p_scb, p_data);
   }
