@@ -134,9 +134,7 @@ int btif_is_enabled(void) {
 
 void btif_init_ok() {
   btif_dm_load_ble_local_keys();
-  if (com::android::bluetooth::flags::separate_service_storage()) {
-    btif_storage_migrate_services();
-  }
+  btif_storage_migrate_services();
 }
 
 /*******************************************************************************
@@ -377,12 +375,10 @@ static bt_status_t btif_in_get_remote_device_properties(RawAddress* bd_addr) {
   btif_storage_get_remote_device_property(bd_addr, &remote_properties[num_props]);
   num_props++;
 
-  if (com::android::bluetooth::flags::separate_service_storage()) {
-    BTIF_STORAGE_FILL_PROPERTY(&remote_properties[num_props], BT_PROPERTY_UUIDS_LE,
-                               sizeof(remote_uuids_le), &remote_uuids_le);
-    btif_storage_get_remote_device_property(bd_addr, &remote_properties[num_props]);
-    num_props++;
-  }
+  BTIF_STORAGE_FILL_PROPERTY(&remote_properties[num_props], BT_PROPERTY_UUIDS_LE,
+                             sizeof(remote_uuids_le), &remote_uuids_le);
+  btif_storage_get_remote_device_property(bd_addr, &remote_properties[num_props]);
+  num_props++;
 
   tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
   BTIF_STORAGE_FILL_PROPERTY(&remote_properties[num_props], BT_PROPERTY_REMOTE_ADDR_TYPE,

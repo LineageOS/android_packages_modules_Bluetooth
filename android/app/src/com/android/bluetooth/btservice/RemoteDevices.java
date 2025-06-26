@@ -645,7 +645,7 @@ public class RemoteDevices {
                 int combinedUuidsLength =
                         (mUuidsBrEdr != null ? mUuidsBrEdr.length : 0)
                                 + (mUuidsLe != null ? mUuidsLe.length : 0);
-                if (!Flags.separateServiceStorage() || combinedUuidsLength == 0) {
+                if (combinedUuidsLength == 0) {
                     return mUuidsBrEdr;
                 }
 
