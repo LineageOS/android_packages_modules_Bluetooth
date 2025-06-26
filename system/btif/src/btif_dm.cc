@@ -1326,6 +1326,11 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
   }
 }
 
+inline static bool ble_evt_type_is_connectable(uint16_t evt_type) {
+  constexpr uint8_t BLE_EVT_CONNECTABLE_BIT = 0;
+  return evt_type & (1 << BLE_EVT_CONNECTABLE_BIT);
+}
+
 /******************************************************************************
  *
  * Function         btif_dm_search_devices_evt
@@ -1359,7 +1364,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
         bool restrict_report =
                 osi_property_get_bool("bluetooth.restrict_discovered_device.enabled", false);
         if (restrict_report && p_search_data->inq_res.device_type == BT_DEVICE_TYPE_BLE &&
-            !(p_search_data->inq_res.ble_evt_type & BTM_BLE_CONNECTABLE_MASK)) {
+            !ble_evt_type_is_connectable(p_search_data->inq_res.ble_evt_type)) {
           log::debug("Ble device {}[{}] is not connectable", bdaddr, AddressTypeText(addr_type));
           break;
         }
@@ -1573,7 +1578,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
         bool restrict_report =
                 osi_property_get_bool("bluetooth.restrict_discovered_device.enabled", false);
         if (restrict_report && p_search_data->inq_res.device_type == BT_DEVICE_TYPE_BLE &&
-            !(p_search_data->inq_res.ble_evt_type & BTM_BLE_CONNECTABLE_MASK)) {
+            !ble_evt_type_is_connectable(p_search_data->inq_res.ble_evt_type)) {
           log::debug("Ble device {}[{}] is not connectable", bdaddr, AddressTypeText(addr_type));
           break;
         }
