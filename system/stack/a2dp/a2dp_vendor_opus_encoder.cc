@@ -164,18 +164,6 @@ void a2dp_vendor_opus_encoder_init(const tA2DP_ENCODER_INIT_PEER_PARAMS* p_peer_
   return;
 }
 
-bool A2dpCodecConfigOpusSource::updateEncoderUserConfig(
-        const tA2DP_ENCODER_INIT_PEER_PARAMS* /* p_peer_params */, bool* p_restart_input,
-        bool* p_restart_output, bool* p_config_updated) {
-  if (a2dp_opus_encoder_cb.peer_mtu == 0) {
-    log::error("Cannot update the codec encoder for {}: invalid peer MTU", name());
-    return false;
-  }
-
-  return a2dp_vendor_opus_encoder_update(a2dp_opus_encoder_cb.peer_mtu, this, p_restart_input,
-                                         p_restart_output, p_config_updated);
-}
-
 static bool a2dp_vendor_opus_encoder_update(uint16_t peer_mtu, A2dpCodecConfig* a2dp_codec_config,
                                             bool* p_restart_input, bool* p_restart_output,
                                             bool* p_config_updated) {
@@ -458,10 +446,6 @@ void a2dp_vendor_opus_set_transmit_queue_length(size_t transmit_queue_length) {
   a2dp_opus_encoder_cb.TxQueueLength = transmit_queue_length;
 
   return;
-}
-
-uint64_t A2dpCodecConfigOpusSource::encoderIntervalMs() const {
-  return a2dp_vendor_opus_get_encoder_interval_ms();
 }
 
 int a2dp_vendor_opus_get_effective_frame_size() { return a2dp_opus_encoder_cb.TxAaMtuSize; }
