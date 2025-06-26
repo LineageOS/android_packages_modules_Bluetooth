@@ -1875,8 +1875,7 @@ public class RemoteDevices {
             return;
         }
 
-        if (Flags.keyMissingAsOrderedBroadcast()
-                && android.os.Flags.orderedBroadcastMultiplePermissions()) {
+        if (android.os.Flags.orderedBroadcastMultiplePermissions()) {
             mAdapterService.sendOrderedBroadcastMultiplePermissions(
                     intent,
                     new String[] {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
