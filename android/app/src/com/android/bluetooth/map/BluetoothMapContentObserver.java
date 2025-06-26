@@ -3410,7 +3410,7 @@ public class BluetoothMapContentObserver {
         } else {
             /* not allowed to push mms to anything but outbox/draft */
             throw new IllegalArgumentException(
-                    "Cannot push message to other " + "folders than outbox/draft");
+                    "Cannot push message to other folders than outbox/draft");
         }
     }
 

@@ -509,9 +509,7 @@ public class BatteryStateMachine extends StateMachine {
                     gatt.setCharacteristicNotification(characteristic, /* enable= */ true);
                     gatt.writeDescriptor(cccd, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                 } else {
-                    Log.w(
-                            TAG,
-                            "No CCCD for battery level characteristic, " + "it won't be notified");
+                    Log.w(TAG, "No CCCD for battery level characteristic, it won't be notified");
                 }
             }
         }

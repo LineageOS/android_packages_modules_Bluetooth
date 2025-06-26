@@ -65,7 +65,13 @@ struct MsftExtensionManager::impl {
             handler_->BindOnceOn(this, &impl::on_msft_read_supported_features_complete));
   }
 
-  ~impl() {}
+  ~impl() {
+    if(!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+      handler_->Clear();
+      handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
+      delete handler_;
+    }
+  }
 
   void handle_rssi_event(MsftRssiEventPayloadView /* view */) {
     log::warn("The Microsoft MSFT_RSSI_EVENT is not supported yet.");

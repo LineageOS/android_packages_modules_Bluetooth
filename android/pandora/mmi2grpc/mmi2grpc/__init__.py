@@ -96,15 +96,20 @@ class IUT:
 
     def __enter__(self):
         """Resets the IUT when starting a PTS test."""
+
+        print(f"Connecting to RootCanal at port {self.rootcanal_control_port}", file=sys.stderr)
         self.rootcanal = RootCanal(port=self.rootcanal_control_port)
         self.rootcanal.move_in_range()
 
+        print(f"Connecting to Modem at port {self.modem_simulator_port}", file=sys.stderr)
         self.modem = Modem(port=self.modem_simulator_port)
 
         try:
             # Note: we don't keep a single gRPC channel instance in the IUT class
             # because reset is allowed to close the gRPC server.
+            print(f"Connecting to Pandora server at port {self.pandora_server_port}", file=sys.stderr)
             with grpc.insecure_channel(f'localhost:{self.pandora_server_port}') as channel:
+                print("Executing FactoryReset", file=sys.stderr)
                 Host(channel).FactoryReset(wait_for_ready=True, timeout=15.0)
         except grpc.RpcError as exn:
             # FactoryReset might be cancelled before completion by the gRPC server
