@@ -194,6 +194,23 @@ public class VolumeControlService extends ConnectableProfile {
                 null);
     }
 
+    public void post(Consumer<VolumeControlService> consumer) {
+        Utils.enforceMainLooperIsNotUsed();
+
+        var runnable =
+                new Runnable() {
+                    public void run() {
+                        // Service can become unavailable while the message is being posted
+                        if (!isAvailable()) {
+                            Log.e(TAG, "Service is no longer available");
+                            return;
+                        }
+                        consumer.accept(VolumeControlService.this);
+                    }
+                };
+        mHandler.post(runnable);
+    }
+
     public <T> T syncPost(Function<VolumeControlService, T> function, T defaultValue) {
         Utils.enforceMainLooperIsNotUsed();
 

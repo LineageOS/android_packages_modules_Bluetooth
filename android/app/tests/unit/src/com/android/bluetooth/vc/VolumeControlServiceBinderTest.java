@@ -23,7 +23,6 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -49,6 +48,7 @@ import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
 import platform.test.runner.parameterized.Parameters;
 
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /** Test cases for {@link VolumeControlServiceBinder}. */
@@ -78,7 +78,13 @@ public class VolumeControlServiceBinderTest {
     @Before
     public void setUp() throws Exception {
         doReturn(true).when(mService).isAvailable();
-        doCallRealMethod().when(mService).syncPost(any());
+        doAnswer(
+                        inv -> {
+                            ((Consumer) inv.getArgument(0)).accept(mService);
+                            return null;
+                        })
+                .when(mService)
+                .post(any());
         doAnswer(
                         inv -> {
                             return ((Function) inv.getArgument(0)).apply(mService);
