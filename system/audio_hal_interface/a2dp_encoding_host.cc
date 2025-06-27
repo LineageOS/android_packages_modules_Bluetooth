@@ -393,6 +393,8 @@ tA2DP_STATUS parse_a2dp_configuration(::bluetooth::a2dp::CodecId /* codec_id */,
 
 }  // namespace provider
 
+std::optional<btav_a2dp_hal_provider_info_t> get_provider_info() { return std::nullopt; }
+
 }  // namespace a2dp
 }  // namespace audio
 }  // namespace bluetooth
