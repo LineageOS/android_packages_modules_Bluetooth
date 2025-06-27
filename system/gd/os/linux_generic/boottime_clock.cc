@@ -19,6 +19,7 @@
 #include <time.h>
 
 #include <chrono>
+#include <cstring>
 #include <ctime>
 
 namespace bluetooth {
