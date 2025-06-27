@@ -10,6 +10,16 @@ flag {
 }
 
 flag {
+    name: "hap_on_main_looper"
+    namespace: "bluetooth"
+    description: "Run HAP on the main looper to avoid race condition"
+    bug: "427562751"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "settings_can_control_hap_preset"
     is_exported: true
     namespace: "bluetooth"
