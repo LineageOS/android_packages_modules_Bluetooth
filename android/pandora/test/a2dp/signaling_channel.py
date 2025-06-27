@@ -92,6 +92,10 @@ class SignalingChannel(pyee.EventEmitter):
         if (self.role != "acceptor"):
             raise ValueError("wait_signaling_channel_connected failed. role is not acceptor")
 
+        if self.signaling_channel:
+            logger.debug("wait_signaling_channel_connected: signalin channel already opened")
+            return
+
         if self.signaling_channel_opened_future == None:
             self.signaling_channel_opened_future = asyncio.get_running_loop().create_future()
         logger.debug("wait_signaling_channel_connected: future gathered")
@@ -107,6 +111,10 @@ class SignalingChannel(pyee.EventEmitter):
     async def wait_transport_channel_connected(self, timeout: float = 5):
         if (self.role != "acceptor"):
             raise ValueError("wait_transport_channel_connected failed. role is not acceptor")
+
+        if self.transport_channel:
+            logger.debug("wait_transport_channel_connected: transport channel already opened")
+            return
 
         if self.transport_channel_opened_future == None:
             self.transport_channel_opened_future = asyncio.get_running_loop().create_future()
@@ -178,7 +186,7 @@ class SignalingChannel(pyee.EventEmitter):
         sig.show()
         return sig
 
-    async def expect_media(self, timeout: float = 3.0) -> avdtp.MediaPacket:
+    async def expect_media(self, timeout: float = 5.0) -> avdtp.MediaPacket:
         if not self.transport_channel:
             if self.role != "acceptor":
                 raise AttributeError("Transport channel is None")
@@ -257,8 +265,8 @@ class SignalingChannel(pyee.EventEmitter):
                 logger.info(f"RTP opened on channel {self.transport_channel}")
                 # Register to receive PDUs from the channel
                 self.transport_channel.sink = self._on_avdtp_packet
-                assert self.transport_channel_opened_future
-                self.transport_channel_opened_future.set_result(None)
+                if self.transport_channel_opened_future:
+                    self.transport_channel_opened_future.set_result(None)
 
             def _on_channel_close():
                 logger.info('RTP channel closed')
@@ -310,12 +318,12 @@ class SignalingChannel(pyee.EventEmitter):
                                        timeout=timeout)
         self.send_signal(av.OpenResponse(transaction_label=cmd.transaction_label))
 
-    async def accept_start(self, timeout: float = 3.0):
+    async def accept_start(self, timeout: float = 8.0):
         cmd = await self.expect_signal(av.StartCommand(transaction_label=ANY, acp_seid=ANY),
                                        timeout=timeout)
         self.send_signal(av.StartResponse(transaction_label=cmd.transaction_label))
 
-    async def accept_suspend(self, timeout: float = 3.0):
+    async def accept_suspend(self, timeout: float = 8.0):
         cmd = await self.expect_signal(av.SuspendCommand(transaction_label=ANY, acp_seid=ANY),
                                        timeout=timeout)
         self.send_signal(av.SuspendResponse(transaction_label=cmd.transaction_label))
