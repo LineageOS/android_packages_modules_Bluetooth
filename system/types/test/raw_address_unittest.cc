@@ -20,8 +20,8 @@
 
 #include <gtest/gtest.h>
 
-static const char* test_addr = "12:34:56:78:9A:BC";
-static const char* test_addr2 = "CB:A9:87:65:43:21";
+static const char* test_addr = "12:34:56:78:9a:bc";
+static const char* test_addr2 = "cb:a9:87:65:43:21";
 
 TEST(RawAddressUnittest, test_constructor_array) {
   RawAddress bdaddr({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
@@ -172,7 +172,7 @@ TEST(RawAddressTest, IsValidAddress) {
   EXPECT_FALSE(RawAddress::IsValidAddress("00:00:00:00:00:0;"));
   EXPECT_TRUE(RawAddress::IsValidAddress("00:00:00:00:00:00"));
   EXPECT_TRUE(RawAddress::IsValidAddress("AB:cd:00:00:00:00"));
-  EXPECT_FALSE(RawAddress::IsValidAddress("AB:CD:EF:GH:IJ:KL"));
+  EXPECT_FALSE(RawAddress::IsValidAddress("aB:cD:eF:Gh:iJ:Kl"));
 }
 
 TEST(RawAddressTest, BdAddrFromString) {
@@ -183,7 +183,7 @@ TEST(RawAddressTest, BdAddrFromString) {
   const RawAddress result0 = {{0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
   EXPECT_EQ(0, memcmp(&addr, &result0, sizeof(addr)));
 
-  EXPECT_TRUE(RawAddress::FromString("AB:01:4C:D5:21:9F", addr));
+  EXPECT_TRUE(RawAddress::FromString("ab:01:4C:d5:21:9f", addr));
   const RawAddress result1 = {{0xab, 0x01, 0x4c, 0xd5, 0x21, 0x9f}};
   EXPECT_EQ(0, memcmp(&addr, &result1, sizeof(addr)));
 }
@@ -202,8 +202,8 @@ TEST(RawAddressTest, BdAddrFromArray) {
 TEST(RawAddress, ToStringForLoggingTest) {
   std::array<uint8_t, 6> addr_bytes = {0x11, 0x22, 0x33, 0x44, 0x55, 0xab};
   RawAddress addr(addr_bytes);
-  const std::string redacted_loggable_str = "XX:XX:XX:XX:55:AB";
-  const std::string loggbable_str = "11:22:33:44:55:AB";
+  const std::string redacted_loggable_str = "xx:xx:xx:xx:55:ab";
+  const std::string loggbable_str = "11:22:33:44:55:ab";
   std::string ret1 = addr.ToStringForLogging();
   ASSERT_STREQ(ret1.c_str(), loggbable_str.c_str());
   std::string ret2 = addr.ToRedactedStringForLogging();
