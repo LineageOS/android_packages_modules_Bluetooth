@@ -10,6 +10,7 @@ poahlo@google.com
 siyuanh@google.com
 wescande@google.com
 rwt@google.com
+ssrinivaz@google.com
 
 # Reviewers for Channel Sounding related files
 per-file /src/com/android/bluetooth/gatt/DistanceMeasurement*.java=file:/OWNERS_channel_sounding
