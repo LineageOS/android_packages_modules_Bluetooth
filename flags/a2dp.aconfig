@@ -129,3 +129,13 @@ flag {
     description: "Log AVDTP delay report events in dumpsys"
     bug: "426021684"
 }
+
+flag {
+    name: "a2dp_pm_app_id"
+    namespace: "bluetooth"
+    description: "Use one PM service for each A2DP device"
+    bug: "427802783"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
