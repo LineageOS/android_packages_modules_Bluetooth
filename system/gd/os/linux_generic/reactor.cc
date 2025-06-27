@@ -73,9 +73,8 @@ void Reactor::Event::Close() {
   log::assert_that(close_status != -1, "assert failed: close_status != -1");
   pimpl_->fd_ = -1;
 }
-void Reactor::Event::Notify() {
-  uint64_t val = 1;
-  auto write_result = eventfd_write(pimpl_->fd_, val);
+void Reactor::Event::Notify(uint64_t num_events_generated) {
+  auto write_result = eventfd_write(pimpl_->fd_, num_events_generated);
   log::assert_that(write_result != -1, "assert failed: write_result != -1");
 }
 
