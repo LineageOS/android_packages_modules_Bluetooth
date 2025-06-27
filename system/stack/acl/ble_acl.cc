@@ -130,8 +130,6 @@ void acl_ble_connection_fail(const tBLE_BD_ADDR& address_with_type, uint16_t /* 
     connection_manager::on_connection_timed_out_from_shim(resolved_address_with_type.bda);
     log::warn("LE connection fail peer:{} bd_addr:{} hci_status:{}", address_with_type,
               resolved_address_with_type.bda, hci_status_code_text(status));
-  } else {
-    btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
   }
   btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, &address_with_type.bda, status);
 }

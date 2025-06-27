@@ -2145,9 +2145,6 @@ static void btm_ble_update_link_topology_mask(uint8_t link_role, bool increase) 
   }
 
   if (link_role == HCI_ROLE_PERIPHERAL && increase) {
-    btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
-    /* make device fall back into undirected adv mode by default */
-    btm_cb.ble_ctr_cb.inq_var.directed_conn = BTM_BLE_ADV_IND_EVT;
     /* clear all adv states */
     btm_ble_clear_topology_mask(BTM_BLE_STATE_ALL_ADV_MASK);
   }
@@ -2174,9 +2171,6 @@ void btm_ble_decrement_link_topology_mask(uint8_t link_role) {
 void btm_ble_update_mode_operation(uint8_t /* link_role */, const RawAddress* /* bd_addr */,
                                    tHCI_STATUS status) {
   if (status == HCI_ERR_ADVERTISING_TIMEOUT) {
-    btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
-    /* make device fall back into undirected adv mode by default */
-    btm_cb.ble_ctr_cb.inq_var.directed_conn = BTM_BLE_ADV_IND_EVT;
     /* clear all adv states */
     btm_ble_clear_topology_mask(BTM_BLE_STATE_ALL_ADV_MASK);
   }
@@ -2195,7 +2189,6 @@ void btm_ble_init(void) {
   log::verbose("");
 
   alarm_free(btm_cb.ble_ctr_cb.observer_timer);
-  alarm_free(btm_cb.ble_ctr_cb.inq_var.fast_adv_timer);
   memset(&btm_cb.ble_ctr_cb, 0, sizeof(tBTM_BLE_CB));
   memset(&(btm_cb.cmn_ble_vsc_cb), 0, sizeof(tBTM_BLE_VSC_CB));
   btm_cb.cmn_ble_vsc_cb.values_read = false;
@@ -2203,12 +2196,10 @@ void btm_ble_init(void) {
   btm_cb.ble_ctr_cb.observer_timer = alarm_new("btm_ble.observer_timer");
   btm_cb.ble_ctr_cb.cur_states = 0;
 
-  btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
   btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_NONE;
   btm_cb.ble_ctr_cb.inq_var.adv_chnl_map = BTM_BLE_DEFAULT_ADV_CHNL_MAP;
   btm_cb.ble_ctr_cb.inq_var.afp = BTM_BLE_DEFAULT_AFP;
   btm_cb.ble_ctr_cb.inq_var.sfp = BTM_BLE_DEFAULT_SFP;
-  btm_cb.ble_ctr_cb.inq_var.fast_adv_timer = alarm_new("btm_ble_inq.fast_adv_timer");
   btm_cb.ble_ctr_cb.inq_var.inquiry_timer = alarm_new("btm_ble_inq.inquiry_timer");
 
   btm_cb.ble_ctr_cb.inq_var.evt_type = BTM_BLE_NON_CONNECT_EVT;
