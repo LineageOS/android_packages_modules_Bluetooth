@@ -25,6 +25,9 @@ private const val TAG = "BluetoothSystemServer"
 
 object Log {
 
+    private val DATE_TIME_FORMATTER =
+        DateTimeFormatter.ofPattern("MM-dd HH:mm:ss.SSS").withZone(ZoneId.systemDefault())
+
     // Kotlin could shorten below method by having a Throwable? that is default to null but the
     // current implementation of util.Log is behaving differently depending if it is called with
     // 2 or 3 parameters. We do not want to change the behavior in this class, just add a common
@@ -56,7 +59,5 @@ object Log {
 
     @JvmStatic
     fun timeToStringWithZone(timestamp: Long) =
-        DateTimeFormatter.ofPattern("MM-dd HH:mm:ss.SSS")
-            .withZone(ZoneId.systemDefault())
-            .format(Instant.ofEpochMilli(timestamp))
+        DATE_TIME_FORMATTER.format(Instant.ofEpochMilli(timestamp))
 }
