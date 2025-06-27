@@ -44,15 +44,11 @@ void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
                        bool can_read_discoverable_characteristics);
 void btm_ble_connection_established(const RawAddress& bda);
 
-/* background connection function */
-void btm_ble_update_mode_operation(uint8_t link_role, const RawAddress* bda, tHCI_STATUS status);
 /* BLE address management */
 tBTM_SEC_DEV_REC* btm_ble_resolve_random_addr(const RawAddress& random_bda);
 
 void btm_ble_batchscan_init(void);
 void btm_ble_adv_filter_init(void);
-bool btm_ble_clear_topology_mask(tBTM_BLE_STATE_MASK request_state);
-bool btm_ble_set_topology_mask(tBTM_BLE_STATE_MASK request_state);
 tBTM_STATUS btm_ble_start_inquiry(uint8_t duration);
 void btm_ble_stop_inquiry(void);
 

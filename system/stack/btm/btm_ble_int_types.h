@@ -223,9 +223,6 @@ public:
   /* IRK list availability mask, up to max entry bits */
   uint8_t* irk_list_mask{nullptr};
 
-  /* current BLE link state */
-  tBTM_BLE_STATE_MASK cur_states; /* bit mask of tBTM_BLE_STATE */
-
   uint8_t link_count[kCentralAndPeripheralCount]; /* total link count central
                                                      and peripheral*/
 } tBTM_BLE_CB;

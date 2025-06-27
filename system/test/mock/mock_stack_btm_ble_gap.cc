@@ -60,14 +60,6 @@ bool btm_ble_cancel_remote_name(const RawAddress& /* remote_bda */) {
   inc_func_call_count(__func__);
   return false;
 }
-bool btm_ble_clear_topology_mask(tBTM_BLE_STATE_MASK /* request_state_mask */) {
-  inc_func_call_count(__func__);
-  return false;
-}
-bool btm_ble_set_topology_mask(tBTM_BLE_STATE_MASK /* request_state_mask */) {
-  inc_func_call_count(__func__);
-  return false;
-}
 void BTM_BleOpportunisticObserve(bool /* enable */, tBTM_INQ_RESULTS_CB* /* p_results_cb */) {
   inc_func_call_count(__func__);
 }
@@ -123,10 +115,6 @@ void btm_ble_read_remote_features_complete(uint8_t* /* p */, uint8_t /* length *
   inc_func_call_count(__func__);
 }
 void btm_ble_stop_inquiry(void) { inc_func_call_count(__func__); }
-void btm_ble_update_mode_operation(uint8_t /* link_role */, const RawAddress* /* bd_addr */,
-                                   tHCI_STATUS /* status */) {
-  inc_func_call_count(__func__);
-}
 void btm_send_hci_set_scan_params(uint8_t /* scan_type */, uint16_t /* scan_int_1m */,
                                   uint16_t /* scan_win_1m */, uint16_t /* scan_int_coded */,
                                   uint16_t /* scan_win_coded */, uint8_t /* scan_phy */,
