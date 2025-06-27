@@ -131,9 +131,6 @@ void btm_ble_update_mode_operation(uint8_t /* link_role */, const RawAddress* /*
                                    tHCI_STATUS /* status */) {
   inc_func_call_count(__func__);
 }
-void btm_ble_write_adv_enable_complete(uint8_t* /* p */, uint16_t /* evt_len */) {
-  inc_func_call_count(__func__);
-}
 void btm_send_hci_set_scan_params(uint8_t /* scan_type */, uint16_t /* scan_int_1m */,
                                   uint16_t /* scan_win_1m */, uint16_t /* scan_int_coded */,
                                   uint16_t /* scan_win_coded */, uint8_t /* scan_phy */,

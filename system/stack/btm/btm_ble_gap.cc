@@ -2090,23 +2090,6 @@ err_out:
 
 /*******************************************************************************
  *
- * Function         btm_ble_write_adv_enable_complete
- *
- * Description      This function process the write adv enable command complete.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_ble_write_adv_enable_complete(uint8_t* p, uint16_t evt_len) {
-  /* if write adv enable/disbale not succeed */
-  if (evt_len < 1 || *p != HCI_SUCCESS) {
-    /* toggle back the adv mode */
-    btm_cb.ble_ctr_cb.inq_var.adv_mode = !btm_cb.ble_ctr_cb.inq_var.adv_mode;
-  }
-}
-
-/*******************************************************************************
- *
  * Function         btm_ble_set_topology_mask
  *
  * Description      set BLE topology mask
