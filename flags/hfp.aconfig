@@ -161,13 +161,6 @@ flag {
 }
 
 flag {
-    name: "hfp_connection_failures_api"
-    namespace: "bluetooth"
-    description: "Add api support for api to collect hfp connection failures"
-    bug: "418829893"
-}
-
-flag {
     name: "send_ok_clcc_before_slc"
     namespace: "bluetooth"
     description: "Send clcc response ok before slc is completed to avoid remote issues"
