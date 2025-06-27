@@ -41,7 +41,7 @@ std::string RawAddress::ToString() const { return ToColonSepHexString(); }
 
 std::string RawAddress::ToColonSepHexString() const {
   std::stringstream addr;
-  addr << std::uppercase << std::hex << std::setfill('0');
+  addr << std::hex << std::setfill('0');
   for (size_t i = 0; i < 6; i++) {
     addr << std::setw(2) << +address[i];
     if (i != 5) {
@@ -58,8 +58,8 @@ std::string RawAddress::ToRedactedStringForLogging() const {
     return ToStringForLogging();
   }
   std::stringstream addr;
-  addr << std::uppercase << std::hex << std::setfill('0');
-  addr << "XX:XX:XX:XX:";
+  addr << std::hex << std::setfill('0');
+  addr << "xx:xx:xx:xx:";
   addr << std::setw(2) << +address[4] << ":";
   addr << std::setw(2) << +address[5];
   return addr.str();
