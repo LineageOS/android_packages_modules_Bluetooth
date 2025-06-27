@@ -242,6 +242,9 @@ public class HeadsetService extends ConnectableProfile {
         if (!unifyAbsoluteVolumeManagement()) {
             filter.addAction(AudioManager.ACTION_VOLUME_CHANGED);
         }
+        if (Flags.microphoneMuteStatusSync()) {
+            filter.addAction(AudioManager.ACTION_MICROPHONE_MUTE_CHANGED);
+        }
         filter.addAction(BluetoothDevice.ACTION_CONNECTION_ACCESS_REPLY);
         registerReceiver(mHeadsetReceiver, filter);
     }
@@ -536,6 +539,18 @@ public class HeadsetService extends ConnectableProfile {
                                     }
                                 }
 
+                                break;
+                            }
+                        case AudioManager.ACTION_MICROPHONE_MUTE_CHANGED:
+                            {
+                                if (Flags.microphoneMuteStatusSync()) {
+                                    Log.i(TAG, "received microphone mute status changed");
+                                    doForEachConnectedStateMachine(
+                                            stateMachine ->
+                                                    stateMachine.sendMessage(
+                                                            HeadsetStateMachine
+                                                                    .MICROPHONE_VOL_MUTE_CHANGED));
+                                }
                                 break;
                             }
                         case BluetoothDevice.ACTION_CONNECTION_ACCESS_REPLY:

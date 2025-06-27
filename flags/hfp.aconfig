@@ -196,3 +196,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "microphone_mute_status_sync"
+    namespace: "bluetooth"
+    description: "Synchronize microphone Mute status of phone with peripheral"
+    bug: "391258154"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
