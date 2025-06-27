@@ -158,6 +158,13 @@ filegroup {
     srcs: ["jarjar-rules.txt"],
 }
 
+// Test is using a different jarjar to enforce that there is no class conflict
+// with the currently installed apex
+filegroup {
+    name: "bluetooth-jarjar-rules-tests",
+    srcs: ["jarjar-rules-tests.txt"],
+}
+
 platform_compat_config {
     name: "framework-bluetooth-compat-config",
     src: ":framework-bluetooth",
