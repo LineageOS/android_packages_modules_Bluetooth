@@ -6797,6 +6797,24 @@ public:
           return;
         }
 
+        if ((audio_sender_state_ != AudioState::READY_TO_START &&
+             audio_sender_state_ != AudioState::STARTED) &&
+            audio_receiver_state_ == AudioState::READY_TO_START &&
+            !audio_hal_is_capable_to_send_empty_metadata_) {
+          /*
+           * Warning - sending additional Local Source configuration for the Audio HAL which is
+           * not capable to send empty metadata, as it has another issue with being not able to
+           * start Recording scenarios when there is no configuration update on the Encoding
+           * session first.
+           */
+          log::info("Sending additional UpdateConfig signal on encoding session");
+          CodecManager::GetInstance()->UpdateActiveAudioConfig(
+                  group->stream_conf.stream_params,
+                  std::bind(&LeAudioClientImpl::UpdateAudioConfigToHal, weak_factory_.GetWeakPtr(),
+                            std::placeholders::_1, std::placeholders::_2),
+                  ::bluetooth::le_audio::types::kLeAudioDirectionSink);
+        }
+
         if (audio_sender_state_ == AudioState::READY_TO_START) {
           startSendingAudioWrapper(group);
         } else if (audio_sender_state_ == AudioState::STARTED) {
