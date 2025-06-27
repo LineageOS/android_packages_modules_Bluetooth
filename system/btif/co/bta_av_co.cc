@@ -136,7 +136,12 @@ A2dpCodecConfig* BtaAvCo::GetActivePeerCurrentCodec() {
   std::lock_guard<std::recursive_mutex> lock(peer_cache_->codec_lock_);
 
   BtaAvCoPeer* active_peer = bta_av_source_state_.getActivePeer();
-  if (active_peer == nullptr || active_peer->GetCodecs() == nullptr) {
+  if (active_peer == nullptr) {
+    log::error("active_peer is null");
+    return nullptr;
+  }
+  if (active_peer->GetCodecs() == nullptr) {
+    log::error("active_peer codecs are null");
     return nullptr;
   }
   return active_peer->GetCodecs()->getCurrentCodecConfig();
@@ -146,7 +151,12 @@ A2dpCodecConfig* BtaAvCo::GetPeerCurrentCodec(const RawAddress& peer_address) {
   std::lock_guard<std::recursive_mutex> lock(peer_cache_->codec_lock_);
 
   BtaAvCoPeer* peer = peer_cache_->FindPeer(peer_address);
-  if (peer == nullptr || peer->GetCodecs() == nullptr) {
+  if (peer == nullptr) {
+    log::error("peer {} not found", peer_address);
+    return nullptr;
+  }
+  if (peer->GetCodecs() == nullptr) {
+    log::error("peer {} codecs are null", peer_address);
     return nullptr;
   }
   return peer->GetCodecs()->getCurrentCodecConfig();
