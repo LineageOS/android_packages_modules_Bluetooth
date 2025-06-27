@@ -97,7 +97,7 @@ MATCHER_P(BtHdrEqual, expected, DumpBtHdrToString(expected)) {
   return memcmp(arg_data, expected_data, sizeof(*expected_data)) == 0;
 }
 
-class StackRfcommCollisionTest : public ::testing::Test {
+class StackRfcommTest : public ::testing::Test {
 public:
   /*
    * Start Collision steps:
@@ -158,7 +158,7 @@ protected:
 };
 
 // TODO: b/406250389 - Remove when deleting flag donot_collide_with_closed_port
-TEST_F(StackRfcommCollisionTest, PORT_IsCollisionDetected_basic) {
+TEST_F(StackRfcommTest, PORT_IsCollisionDetected_basic) {
   RawAddress test_bd_addr(kRawAddress);
   RawAddress different_bd_addr(kRawAddress2);
 
@@ -200,7 +200,7 @@ TEST_F(StackRfcommCollisionTest, PORT_IsCollisionDetected_basic) {
   ASSERT_FALSE(PORT_IsCollisionDetected(test_bd_addr));
 }
 
-TEST_F_WITH_FLAGS(StackRfcommCollisionTest, test_PORT_IsCollisionDetected,
+TEST_F_WITH_FLAGS(StackRfcommTest, test_PORT_IsCollisionDetected,
                   REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT, donot_collide_with_closed_port))) {
   RawAddress test_bd_addr(kRawAddress);
   RawAddress different_bd_addr(kRawAddress2);
@@ -257,7 +257,7 @@ TEST_F_WITH_FLAGS(StackRfcommCollisionTest, test_PORT_IsCollisionDetected,
  * - Send UA and PN in response to SABME
  * - Verify mux connected
  */
-TEST_F_WITH_FLAGS(StackRfcommCollisionTest, establish_incoming_conn,
+TEST_F_WITH_FLAGS(StackRfcommTest, collide_then_establish_incoming_conn,
                   REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
                                                       rfcomm_fix_mux_collision_handling))) {
   uint16_t server_handle = 0;
@@ -301,7 +301,7 @@ TEST_F_WITH_FLAGS(StackRfcommCollisionTest, establish_incoming_conn,
  * - Receive UA in response to SABME
  * - Verify mux connected
  */
-TEST_F_WITH_FLAGS(StackRfcommCollisionTest, establish_outgoing_conn,
+TEST_F_WITH_FLAGS(StackRfcommTest, collide_then_establish_outgoing_conn,
                   REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
                                                       rfcomm_fix_mux_collision_handling))) {
   uint16_t server_handle = 0;
@@ -355,7 +355,7 @@ TEST_F_WITH_FLAGS(StackRfcommCollisionTest, establish_outgoing_conn,
  * - Receive error for outgoing connection
  * - Verify nothing cached anymore
  */
-TEST_F_WITH_FLAGS(StackRfcommCollisionTest, err_outgoing_after_collision,
+TEST_F_WITH_FLAGS(StackRfcommTest, collide_then_err_outgoing_conn,
                   REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
                                                       rfcomm_fix_mux_collision_handling))) {
   uint16_t server_handle = 0;
@@ -377,7 +377,7 @@ TEST_F_WITH_FLAGS(StackRfcommCollisionTest, err_outgoing_after_collision,
  * - Receive Disconnect request for outgoing connection
  * - Verify nothing cached anymore
  */
-TEST_F_WITH_FLAGS(StackRfcommCollisionTest, close_outgoing_after_collision,
+TEST_F_WITH_FLAGS(StackRfcommTest, collide_then_close_outgoing_conn,
                   REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
                                                       rfcomm_fix_mux_collision_handling))) {
   uint16_t server_handle = 0;
@@ -400,7 +400,7 @@ TEST_F_WITH_FLAGS(StackRfcommCollisionTest, close_outgoing_after_collision,
  * - Receive error from peer
  * - Verify PORT_START_FAILED and mux now IDLE
  */
-TEST_F_WITH_FLAGS(StackRfcommCollisionTest, err_outgoing_after_timeout,
+TEST_F_WITH_FLAGS(StackRfcommTest, collide_then_err_outgoing_after_timeout,
                   REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
                                                       rfcomm_fix_mux_collision_handling))) {
   uint16_t server_handle = 0;
@@ -440,7 +440,7 @@ TEST_F_WITH_FLAGS(StackRfcommCollisionTest, err_outgoing_after_timeout,
  * - Close outgoing connection
  * - Verify PORT_PEER_CONNECTION_FAILED and mux now IDLE
  */
-TEST_F_WITH_FLAGS(StackRfcommCollisionTest, close_outgoing_after_timeout,
+TEST_F_WITH_FLAGS(StackRfcommTest, collide_then_close_outgoing_after_timeout,
                   REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
                                                       rfcomm_fix_mux_collision_handling))) {
   uint16_t server_handle = 0;
