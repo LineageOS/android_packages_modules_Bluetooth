@@ -68,10 +68,6 @@ bool btm_ble_set_topology_mask(tBTM_BLE_STATE_MASK /* request_state_mask */) {
   inc_func_call_count(__func__);
   return false;
 }
-bool btm_ble_topology_check(tBTM_BLE_STATE_MASK /* request_state_mask */) {
-  inc_func_call_count(__func__);
-  return false;
-}
 void BTM_BleOpportunisticObserve(bool /* enable */, tBTM_INQ_RESULTS_CB* /* p_results_cb */) {
   inc_func_call_count(__func__);
 }

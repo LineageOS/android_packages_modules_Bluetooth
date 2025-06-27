@@ -455,12 +455,6 @@ const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX] = {
                 UNSUPPORTED                             /* scanable adv */
         }};
 
-/* check LE combo state supported */
-static bool BTM_LE_STATES_SUPPORTED(const uint64_t x, uint8_t bit_num) {
-  uint64_t mask = 1 << bit_num;
-  return (x)&mask;
-}
-
 void BTM_BleOpportunisticObserve(bool enable, tBTM_INQ_RESULTS_CB* p_results_cb) {
   if (enable) {
     btm_cb.ble_ctr_cb.p_opportunistic_obs_results_cb = p_results_cb;
@@ -2215,62 +2209,3 @@ void btm_ble_init(void) {
 
 // Clean up btm ble control block
 void btm_ble_free() { alarm_free(btm_cb.ble_ctr_cb.addr_mgnt_cb.refresh_raddr_timer); }
-
-/*******************************************************************************
- *
- * Function         btm_ble_topology_check
- *
- * Description      check to see requested state is supported. One state check
- *                  at a time is supported
- *
- * Returns          true is request is allowed, false otherwise.
- *
- ******************************************************************************/
-bool btm_ble_topology_check(tBTM_BLE_STATE_MASK request_state_mask) {
-  bool rt = false;
-
-  uint8_t state_offset = 0;
-  uint16_t cur_states = btm_cb.ble_ctr_cb.cur_states;
-  uint8_t request_state = 0;
-
-  /* check only one bit is set and within valid range */
-  if (request_state_mask == BTM_BLE_STATE_INVALID ||
-      request_state_mask > BTM_BLE_STATE_SCAN_ADV_BIT ||
-      (request_state_mask & (request_state_mask - 1)) != 0) {
-    log::error("illegal state requested: {}", request_state_mask);
-    return rt;
-  }
-
-  while (request_state_mask) {
-    request_state_mask >>= 1;
-    request_state++;
-  }
-
-  /* check if the requested state is supported or not */
-  uint8_t bit_num = btm_le_state_combo_tbl[0][request_state - 1];
-  uint64_t ble_supported_states = bluetooth::shim::GetController()->GetLeSupportedStates();
-
-  if (!BTM_LE_STATES_SUPPORTED(ble_supported_states, bit_num)) {
-    log::error("state requested not supported: {}", request_state);
-    return rt;
-  }
-
-  rt = true;
-  /* make sure currently active states are all supported in conjunction with the
-     requested state. If the bit in table is UNSUPPORTED, the combination is not
-     supported */
-  while (cur_states != 0) {
-    if (cur_states & 0x01) {
-      uint8_t bit_num = btm_le_state_combo_tbl[request_state][state_offset];
-      if (bit_num != UNSUPPORTED) {
-        if (!BTM_LE_STATES_SUPPORTED(ble_supported_states, bit_num)) {
-          rt = false;
-          break;
-        }
-      }
-    }
-    cur_states >>= 1;
-    state_offset++;
-  }
-  return rt;
-}
