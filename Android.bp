@@ -81,11 +81,6 @@ cc_defaults {
     ],
     c_std: "c99",
     cpp_std: "c++20",
-    arch: {
-        riscv64: {
-            ldflags: ["-Wl,--no-relax"],
-        },
-    },
 }
 
 // List of tidy checks that are enabled for cc targets.
