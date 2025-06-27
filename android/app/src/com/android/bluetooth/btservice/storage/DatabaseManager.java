@@ -607,9 +607,6 @@ public class DatabaseManager {
             if (isA2dpDevice) {
                 resetActiveA2dpDevice();
             }
-            if (isHfpDevice && !Flags.autoConnectOnMultipleHfpWhenNoA2dpDevice()) {
-                resetActiveHfpDevice();
-            }
 
             setConnection(device, isA2dpDevice, isHfpDevice);
         }
@@ -670,20 +667,6 @@ public class DatabaseManager {
             if (metadata.is_active_a2dp_device) {
                 Log.d(TAG, "resetActiveA2dpDevice");
                 metadata.is_active_a2dp_device = false;
-                updateDatabase(metadata);
-            }
-        }
-    }
-
-    /** Remove hfpActiveDevice from the current active device in the connection order table */
-    @GuardedBy("mMetadataCache")
-    private void resetActiveHfpDevice() {
-        Log.d(TAG, "resetActiveHfpDevice()");
-        for (Map.Entry<String, Metadata> entry : mMetadataCache.entrySet()) {
-            Metadata metadata = entry.getValue();
-            if (metadata.isActiveHfpDevice) {
-                Log.d(TAG, "resetActiveHfpDevice");
-                metadata.isActiveHfpDevice = false;
                 updateDatabase(metadata);
             }
         }
