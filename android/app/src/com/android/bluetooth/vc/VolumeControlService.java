@@ -197,18 +197,15 @@ public class VolumeControlService extends ConnectableProfile {
     public void post(Consumer<VolumeControlService> consumer) {
         Utils.enforceMainLooperIsNotUsed();
 
-        var runnable =
-                new Runnable() {
-                    public void run() {
-                        // Service can become unavailable while the message is being posted
-                        if (!isAvailable()) {
-                            Log.e(TAG, "Service is no longer available");
-                            return;
-                        }
-                        consumer.accept(VolumeControlService.this);
+        mHandler.post(
+                () -> {
+                    // Service can become unavailable while the message is being posted
+                    if (!isAvailable()) {
+                        Log.e(TAG, "Service is no longer available");
+                        return;
                     }
-                };
-        mHandler.post(runnable);
+                    consumer.accept(VolumeControlService.this);
+                });
     }
 
     public <T> T syncPost(Function<VolumeControlService, T> function, T defaultValue) {
@@ -1644,7 +1641,11 @@ public class VolumeControlService extends ConnectableProfile {
 
     @Override
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
-        mHandler.post(() -> bondStateChanged(device, toState));
+        if (Flags.vcpOnMainLooper() && Flags.bondStateMachineLooper()) {
+            bondStateChanged(device, toState);
+        } else {
+            mHandler.post(() -> bondStateChanged(device, toState));
+        }
     }
 
     /** Remove state machine if the bonding for a device is removed */
@@ -1688,7 +1689,11 @@ public class VolumeControlService extends ConnectableProfile {
     }
 
     void handleConnectionStateChanged(BluetoothDevice device, int fromState, int toState) {
-        mHandler.post(() -> connectionStateChanged(device, fromState, toState));
+        if (Flags.vcpOnMainLooper()) {
+            connectionStateChanged(device, fromState, toState);
+        } else {
+            mHandler.post(() -> connectionStateChanged(device, fromState, toState));
+        }
     }
 
     @VisibleForTesting

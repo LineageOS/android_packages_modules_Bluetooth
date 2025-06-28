@@ -134,7 +134,7 @@ public class A2dpService extends ConnectableProfile {
         mMaxConnectedAudioDevices = mAdapterService.getMaxConnectedAudioDevices();
         Log.i(TAG, "Max connected audio devices set to " + mMaxConnectedAudioDevices);
 
-        mA2dpCodecConfig = new A2dpCodecConfig(this, mNativeInterface);
+        mA2dpCodecConfig = new A2dpCodecConfig(this, mNativeInterface, mAudioManager);
 
         mNativeInterface.init(
                 mMaxConnectedAudioDevices,

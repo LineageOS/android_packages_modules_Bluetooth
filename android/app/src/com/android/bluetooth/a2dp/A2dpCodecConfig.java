@@ -59,16 +59,11 @@ class A2dpCodecConfig {
 
     private BluetoothCodecConfig[] mCodecConfigOffloading = new BluetoothCodecConfig[0];
 
-    A2dpCodecConfig(Context context, A2dpNativeInterface a2dpNativeInterface) {
+    A2dpCodecConfig(
+            Context context, A2dpNativeInterface a2dpNativeInterface, AudioManager audioManager) {
         mContext = context;
         mA2dpNativeInterface = a2dpNativeInterface;
         mCodecConfigPriorities = assignCodecConfigPriorities();
-
-        AudioManager audioManager = mContext.getSystemService(AudioManager.class);
-        if (audioManager == null) {
-            Log.w(TAG, "Can't obtain the codec offloading preference from null AudioManager");
-            return;
-        }
         mCodecConfigOffloading =
                 audioManager.getHwOffloadFormatsSupportedForA2dp().toArray(mCodecConfigOffloading);
     }

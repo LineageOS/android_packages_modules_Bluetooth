@@ -32,6 +32,7 @@ import android.bluetooth.BluetoothCodecStatus;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.res.Resources;
+import android.media.AudioManager;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
@@ -51,15 +52,12 @@ import java.util.Arrays;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class A2dpCodecConfigTest {
-
-    private final BluetoothDevice mDevice = getTestDevice(56);
-    private A2dpCodecConfig mA2dpCodecConfig;
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private Context mMockContext;
-    @Mock private Resources mMockResources;
+    @Mock private Context mContext;
+    @Mock private Resources mResources;
     @Mock private A2dpNativeInterface mA2dpNativeInterface;
+    @Mock private AudioManager mAudioManager;
 
     private static final int[] sOptionalCodecTypes =
             new int[] {
@@ -215,23 +213,27 @@ public class A2dpCodecConfigTest {
                         0) // Codec-specific fields
             };
 
+    private final BluetoothDevice mDevice = getTestDevice(56);
+
+    private A2dpCodecConfig mA2dpCodecConfig;
+
     @Before
     public void setUp() throws Exception {
-        when(mMockContext.getResources()).thenReturn(mMockResources);
-        when(mMockResources.getInteger(R.integer.a2dp_source_codec_priority_sbc))
+        when(mContext.getResources()).thenReturn(mResources);
+        when(mResources.getInteger(R.integer.a2dp_source_codec_priority_sbc))
                 .thenReturn(SBC_PRIORITY_DEFAULT);
-        when(mMockResources.getInteger(R.integer.a2dp_source_codec_priority_aac))
+        when(mResources.getInteger(R.integer.a2dp_source_codec_priority_aac))
                 .thenReturn(AAC_PRIORITY_DEFAULT);
-        when(mMockResources.getInteger(R.integer.a2dp_source_codec_priority_aptx))
+        when(mResources.getInteger(R.integer.a2dp_source_codec_priority_aptx))
                 .thenReturn(APTX_PRIORITY_DEFAULT);
-        when(mMockResources.getInteger(R.integer.a2dp_source_codec_priority_aptx_hd))
+        when(mResources.getInteger(R.integer.a2dp_source_codec_priority_aptx_hd))
                 .thenReturn(APTX_HD_PRIORITY_DEFAULT);
-        when(mMockResources.getInteger(R.integer.a2dp_source_codec_priority_ldac))
+        when(mResources.getInteger(R.integer.a2dp_source_codec_priority_ldac))
                 .thenReturn(LDAC_PRIORITY_DEFAULT);
-        when(mMockResources.getInteger(R.integer.a2dp_source_codec_priority_opus))
+        when(mResources.getInteger(R.integer.a2dp_source_codec_priority_opus))
                 .thenReturn(OPUS_PRIORITY_DEFAULT);
 
-        mA2dpCodecConfig = new A2dpCodecConfig(mMockContext, mA2dpNativeInterface);
+        mA2dpCodecConfig = new A2dpCodecConfig(mContext, mA2dpNativeInterface, mAudioManager);
 
         doReturn(true)
                 .when(mA2dpNativeInterface)

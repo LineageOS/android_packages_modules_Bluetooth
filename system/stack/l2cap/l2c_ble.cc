@@ -36,6 +36,7 @@
 #include "common/le_conn_params.h"
 #include "hci/controller.h"
 #include "hci/hci_interface.h"
+#include "hci/hci_packets.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"
@@ -256,14 +257,13 @@ static void l2cble_handle_connect_rsp_neg(tL2C_LCB* p_lcb, tL2C_CONN_INFO* con_i
  * Returns          true if valid, false otherwise
  *
  ******************************************************************************/
-static bool validate_l2cap_params (int mtu, int mps) {
-    /* validate the parameters */
-    if (mtu < L2CAP_LE_MIN_MTU || mps < L2CAP_LE_MIN_MPS ||
-        mps > L2CAP_LE_MAX_MPS) {
-        log::error("L2CAP invalid params, mtu: {}, mps: {}", mtu, mps);
-        return false;
-    }
-    return true;
+static bool validate_l2cap_params(int mtu, int mps) {
+  /* validate the parameters */
+  if (mtu < L2CAP_LE_MIN_MTU || mps < L2CAP_LE_MIN_MPS || mps > L2CAP_LE_MAX_MPS) {
+    log::error("L2CAP invalid params, mtu: {}, mps: {}", mtu, mps);
+    return false;
+  }
+  return true;
 }
 
 /*******************************************************************************
@@ -1512,6 +1512,13 @@ void L2CA_AdjustConnectionIntervals(uint16_t* /* min_interval */, uint16_t* max_
 }
 
 void L2CA_SetEcosystemBaseInterval(uint32_t base_interval) {
+  if (com::android::bluetooth::flags::leaudio_check_ecosystem_base_interval_support() &&
+      !bluetooth::shim::GetController()->IsSupported(
+              bluetooth::hci::OpCode::SET_ECOSYSTEM_BASE_INTERVAL)) {
+    // Command not supported! Just exit, no need to update the BLE conn parameter.
+    return;
+  }
+
   log::info("base_interval: {}ms", base_interval);
   bluetooth::shim::GetHciLayer()->EnqueueCommand(
           bluetooth::hci::SetEcosystemBaseIntervalBuilder::Create(base_interval),

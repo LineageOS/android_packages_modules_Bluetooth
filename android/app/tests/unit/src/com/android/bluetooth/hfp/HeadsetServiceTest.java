@@ -22,8 +22,7 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
-import static android.media.audio.Flags.FLAG_DEPRECATE_STREAM_BT_SCO;
-import static android.media.audio.Flags.FLAG_UNIFY_ABSOLUTE_VOLUME_MANAGEMENT;
+import static android.platform.test.flag.junit.DeviceFlagsValueProvider.createCheckFlagsRule;
 
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
@@ -64,6 +63,8 @@ import android.os.ParcelUuid;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.platform.test.annotations.EnableFlags;
+import android.platform.test.annotations.RequiresFlagsEnabled;
+import android.platform.test.flag.junit.CheckFlagsRule;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
@@ -99,6 +100,7 @@ import java.util.Set;
 public class HeadsetServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+    @Rule public final CheckFlagsRule mCheckFlagsRule = createCheckFlagsRule();
 
     @Spy private HeadsetObjectsFactory mObjectsFactory = HeadsetObjectsFactory.getInstance();
 
@@ -1346,7 +1348,10 @@ public class HeadsetServiceTest {
     }
 
     @Test
-    @EnableFlags({FLAG_UNIFY_ABSOLUTE_VOLUME_MANAGEMENT, FLAG_DEPRECATE_STREAM_BT_SCO})
+    @RequiresFlagsEnabled({
+        android.media.audio.Flags.FLAG_UNIFY_ABSOLUTE_VOLUME_MANAGEMENT,
+        android.media.audio.Flags.FLAG_DEPRECATE_STREAM_BT_SCO
+    })
     public void testVolumeChange_sendsMessageToStateMachine() {
         int volumeIndex = 7; // sample value used for testing volume change
         when(mDatabaseManager.getProfileConnectionPolicy(

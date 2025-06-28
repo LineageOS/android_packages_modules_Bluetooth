@@ -2036,7 +2036,7 @@ void bta_ag_send_qcs(tBTA_AG_SCB* p_scb) {
  *
  ******************************************************************************/
 void bta_ag_send_qac(tBTA_AG_SCB* p_scb) {
-  if (!get_swb_codec_status(bluetooth::headset::BTHF_SWB_CODEC_VENDOR_APTX, &p_scb->peer_addr)) {
+  if (!get_swb_codec_status(bluetooth::headset::BTHF_SWB_CODEC_VENDOR_APTX, p_scb->peer_addr)) {
     log::verbose("send +QAC codecs unsupported");
     bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_QAC, SWB_CODECS_UNSUPPORTED, 0);
     return;

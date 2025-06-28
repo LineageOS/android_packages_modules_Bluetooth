@@ -573,20 +573,13 @@ static void bta_dm_gatt_disc_complete(tCONN_ID conn_id, tGATT_STATUS status) {
 
 /* This function close the GATT connection after delay timeout */
 static void bta_dm_close_gatt_conn(uint16_t conn_id) {
-  if (com::android::bluetooth::flags::bta_dm_disc_close_proper_conn_id()) {
-    if (conn_id != GATT_INVALID_CONN_ID) {
-      BTA_GATTC_Close(conn_id);
-    }
-  } else {
-    if (bta_dm_discovery_cb.conn_id != GATT_INVALID_CONN_ID) {
-      BTA_GATTC_Close(bta_dm_discovery_cb.conn_id);
-    }
+  if (conn_id != GATT_INVALID_CONN_ID) {
+    BTA_GATTC_Close(conn_id);
   }
 
   bta_dm_discovery_cb.pending_close_bda = RawAddress::kEmpty;
 
-  if (!com::android::bluetooth::flags::bta_dm_disc_close_proper_conn_id() ||
-      bta_dm_discovery_cb.conn_id == conn_id) {
+  if (bta_dm_discovery_cb.conn_id == conn_id) {
     bta_dm_discovery_cb.conn_id = GATT_INVALID_CONN_ID;
   }
 }

@@ -133,7 +133,7 @@ BluetoothAudioCtrlAck HfpTransport::StartRequest() {
   /* Post start SCO event and wait for sco to open */
   hfp_pending_cmd_ = HFP_CTRL_CMD_START;
   bool is_call_idle = bluetooth::headset::IsCallIdle();
-  bool is_during_vr = bluetooth::headset::IsDuringVoiceRecognition(&(cb->peer_addr));
+  bool is_during_vr = bluetooth::headset::IsDuringVoiceRecognition(cb->peer_addr);
   if (is_call_idle && !is_during_vr) {
     log::warn("Call ongoing={}, voice recognition ongoing={}, wait for retry", !is_call_idle,
               is_during_vr);
@@ -142,7 +142,7 @@ BluetoothAudioCtrlAck HfpTransport::StartRequest() {
   }
   // as ConnectAudio only queues the command into main thread, keep PENDING
   // status
-  auto status = bluetooth::headset::GetInterface()->ConnectAudio(&cb->peer_addr, 0);
+  auto status = bluetooth::headset::GetInterface()->ConnectAudio(cb->peer_addr, 0);
   log::info("ConnectAudio status = {} - {}", status, bt_status_text(status));
   auto ctrl_ack = status_to_ack_map.find(status);
   if (ctrl_ack == status_to_ack_map.end()) {
@@ -170,7 +170,7 @@ void HfpTransport::StopRequest() {
     return;
   }
   hfp_pending_cmd_ = HFP_CTRL_CMD_STOP;
-  auto status = bluetooth::headset::GetInterface()->DisconnectAudio(&addr);
+  auto status = bluetooth::headset::GetInterface()->DisconnectAudio(addr);
   log::info("DisconnectAudio status = {} - {}", status, bt_status_text(status));
   hfp_pending_cmd_ = HFP_CTRL_CMD_NONE;
   return;
@@ -202,7 +202,7 @@ BluetoothAudioCtrlAck HfpTransport::SuspendRequest() {
     log::error("headset instance is nullptr");
     return BluetoothAudioCtrlAck::FAILURE;
   }
-  auto status = instance->DisconnectAudio(&addr);
+  auto status = instance->DisconnectAudio(addr);
   log::info("DisconnectAudio status = {} - {}", status, bt_status_text(status));
   // once disconnect audio is queued, not waiting on that
   // because disconnect audio request can come when audio is disconnected

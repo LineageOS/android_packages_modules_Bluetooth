@@ -18,6 +18,8 @@ package com.android.bluetooth.le_scan;
 
 import static com.android.bluetooth.le_scan.ScanController.DEFAULT_REPORT_DELAY_FLOOR;
 
+import static java.util.Objects.requireNonNull;
+
 import android.os.SystemProperties;
 import android.provider.DeviceConfig;
 
@@ -57,20 +59,19 @@ class BatchScanThrottler {
     @VisibleForTesting static final int[] BACKOFF_MULTIPLIERS = {1, 1, 2, 2, 4};
 
     private final TimeProvider mTimeProvider;
+    private final int mScreenOffMinimumDelayFloorMs;
+    private final int mUnfilteredDelayFloorMs;
+    private final int mUnfilteredScreenOffDelayFloorMs;
+    private final int mScreenOffDelayMs;
     private final long mDelayFloor;
     private final long mScreenOffDelayFloor;
+
     private int mBackoffStage = 0;
     private long mScreenOffTriggerTime = 0L;
     private boolean mScreenOffThrottling = false;
 
-    private int mScreenOffMinimumDelayFloorMs;
-    private int mUnfilteredDelayFloorMs;
-    private int mUnfilteredScreenOffDelayFloorMs;
-    private int mScreenOffDelayMs;
-
     BatchScanThrottler(TimeProvider timeProvider, boolean screenOn) {
-        mTimeProvider = timeProvider;
-
+        mTimeProvider = requireNonNull(timeProvider);
         mScreenOffMinimumDelayFloorMs =
                 SystemProperties.getInt(
                         SCREEN_OFF_MINIMUM_DELAY_FLOOR_PROP,
@@ -84,7 +85,6 @@ class BatchScanThrottler {
                         UNFILTERED_SCREEN_OFF_DELAY_FLOOR_DEFAULT);
         mScreenOffDelayMs =
                 SystemProperties.getInt(SCREEN_OFF_DELAY_PROP, SCREEN_OFF_DELAY_DEFAULT);
-
         mDelayFloor =
                 DeviceConfig.getLong(
                         DeviceConfig.NAMESPACE_BLUETOOTH,

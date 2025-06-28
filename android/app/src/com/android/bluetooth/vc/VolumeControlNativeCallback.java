@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.vc;
 
+import static android.bluetooth.BluetoothUtils.inlineStackTrace;
+
 import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED;
 import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_DEVICE_AVAILABLE;
 import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_EXT_AUDIO_OUT_DESCRIPTION_CHANGED;
@@ -36,7 +38,6 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
-import java.util.Arrays;
 import java.util.function.Consumer;
 
 class VolumeControlNativeCallback {
@@ -61,11 +62,7 @@ class VolumeControlNativeCallback {
             return;
         }
         if (!mVolumeControlService.isAvailable()) {
-            StringBuilder sb = new StringBuilder();
-            Arrays.stream(new Throwable().getStackTrace())
-                    .skip(1) // skip the inlineStackTrace method in the outputted stack trace
-                    .forEach(trace -> sb.append(" [at ").append(trace).append("]"));
-            Log.e(TAG, "Action ignored, service not available: " + sb.toString());
+            Log.e(TAG, "Action ignored, service not available: " + inlineStackTrace());
             return;
         }
         action.accept(mVolumeControlService);

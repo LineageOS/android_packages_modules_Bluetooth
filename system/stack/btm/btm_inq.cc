@@ -442,15 +442,6 @@ tBTM_STATUS BTM_SetInquiryMode(uint8_t mode) {
 tBTM_STATUS BTM_SetConnectability(uint16_t page_mode) {
   uint8_t scan_mode = 0;
 
-  if (bluetooth::shim::GetController()->SupportsBle()) {
-    if (btm_ble_set_connectability(page_mode) != tBTM_STATUS::BTM_SUCCESS) {
-      return tBTM_STATUS::BTM_NO_RESOURCES;
-    }
-    btm_cb.btm_inq_vars.connectable_mode &= (~BTM_BLE_CONNECTABLE_MASK);
-    btm_cb.btm_inq_vars.connectable_mode |= (page_mode & BTM_BLE_CONNECTABLE_MASK);
-  }
-  page_mode &= ~BTM_BLE_CONNECTABLE_MASK;
-
   /*** Check mode parameter ***/
   if (page_mode != BTM_NON_CONNECTABLE && page_mode != BTM_CONNECTABLE) {
     return tBTM_STATUS::BTM_ILLEGAL_VALUE;
@@ -962,7 +953,6 @@ void btm_inq_db_reset(void) {
   btm_cb.btm_inq_vars.inq_scan_type = BTM_SCAN_TYPE_STANDARD;
 
   btm_cb.btm_inq_vars.discoverable_mode |= BTM_BLE_NON_DISCOVERABLE;
-  btm_cb.btm_inq_vars.connectable_mode |= BTM_BLE_NON_CONNECTABLE;
   return;
 }
 
