@@ -991,8 +991,8 @@ public final class BluetoothAdapter {
 
     private static final class OnBluetoothActivityEnergyInfoProxy
             extends IBluetoothActivityEnergyInfoListener.Stub {
-        private Executor mExecutor;
-        private OnBluetoothActivityEnergyInfoCallback mCallback;
+        private final Executor mExecutor;
+        private final OnBluetoothActivityEnergyInfoCallback mCallback;
 
         OnBluetoothActivityEnergyInfoProxy(
                 Executor executor, OnBluetoothActivityEnergyInfoCallback callback) {
