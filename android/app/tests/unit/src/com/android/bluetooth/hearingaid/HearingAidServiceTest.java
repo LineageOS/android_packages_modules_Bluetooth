@@ -52,6 +52,8 @@ import android.media.AudioManager;
 import android.media.BluetoothProfileConnectionInfo;
 import android.os.ParcelUuid;
 import android.os.UserHandle;
+import android.platform.test.annotations.DisableFlags;
+import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
@@ -62,6 +64,7 @@ import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.hamcrest.Matcher;
@@ -181,6 +184,26 @@ public class HearingAidServiceTest {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_VALIDATE_CONNECTION_POLICY_BEFORE_ACCEPTING_CONNECTION)
+    public void okToConnect_whenNotBonded_returnFalse() {
+        int badPolicyValue = 1024;
+        int badBondState = 42;
+        for (int bondState : List.of(BOND_NONE, BOND_BONDING, badBondState)) {
+            doReturn(bondState).when(mAdapterService).getBondState(any());
+            for (int policy :
+                    List.of(
+                            CONNECTION_POLICY_UNKNOWN,
+                            CONNECTION_POLICY_ALLOWED,
+                            CONNECTION_POLICY_FORBIDDEN,
+                            badPolicyValue)) {
+                doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
+                assertThat(mService.okToConnect(mSingleDevice)).isFalse();
+            }
+        }
+    }
+
+    @Test
+    @DisableFlags(Flags.FLAG_VALIDATE_CONNECTION_POLICY_BEFORE_ACCEPTING_CONNECTION)
     public void okToConnect_whenInvalidBonded_returnFalse() {
         int badPolicyValue = 1024;
         int badBondState = 42;
@@ -192,6 +215,7 @@ public class HearingAidServiceTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_VALIDATE_CONNECTION_POLICY_BEFORE_ACCEPTING_CONNECTION)
     public void okToConnect_whenNotBonded_returnTrue() {
         // allow connect Due to desync between BondStateMachine and AdapterProperties
         for (int bondState : List.of(BOND_NONE, BOND_BONDING)) {
