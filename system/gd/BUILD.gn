@@ -83,6 +83,7 @@ static_library("libbluetooth_gd") {
     "os/linux_generic/repeating_alarm.cc",
     "os/linux_generic/thread.cc",
     "os/linux_generic/wakelock_manager.cc",
+    "os/linux_generic/boottime_clock.cc",
     "os/system_properties_common.cc",
     "storage/classic_device.cc",
     "storage/config_cache.cc",
