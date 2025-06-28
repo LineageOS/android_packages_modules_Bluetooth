@@ -92,7 +92,7 @@ public:
     int Id() const;
     void Clear();
     void Close();
-    void Notify();
+    void Notify(uint64_t num_events_generated = 1);
 
   private:
     Event(const Event& handler) = default;

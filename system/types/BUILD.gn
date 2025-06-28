@@ -18,8 +18,8 @@ static_library("types") {
   cflags = [ "-fvisibility=default" ]
 
   sources = [
-    "bluetooth/uuid.cc",
     "raw_address.cc",
+    "src/uuid.cc",
   ]
 
   include_dirs = [ "//bt/system/" ]

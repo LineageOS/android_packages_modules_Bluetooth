@@ -1608,11 +1608,6 @@ bool A2DP_InitCodecConfig(btav_a2dp_codec_index_t codec_index, AvdtpSepConfig* p
   p_cfg->num_protect = 0;
   p_cfg->protect_info[0] = 0;
 
-  if (::bluetooth::audio::a2dp::provider::supports_codec(codec_index)) {
-    return ::bluetooth::audio::a2dp::provider::codec_info(codec_index, nullptr, p_cfg->codec_info,
-                                                          nullptr);
-  }
-
   switch (codec_index) {
     case BTAV_A2DP_CODEC_INDEX_SOURCE_SBC:
       return A2DP_InitCodecConfigSbc(p_cfg);

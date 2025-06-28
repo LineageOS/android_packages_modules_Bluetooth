@@ -183,6 +183,7 @@ bool tBTM_SEC_CB::IsDeviceAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT 
 bool tBTM_SEC_CB::IsDeviceBonded(const RawAddress bd_addr, tBT_TRANSPORT transport) {
   tBTM_SEC_REC* sec_rec = getSecRec(bd_addr);
   if (sec_rec == nullptr) {
+    log::verbose("No record for {}", bd_addr);
     return false;
   }
 
@@ -348,6 +349,7 @@ bool tBTM_SEC_REC::is_bonded(tBT_TRANSPORT transport) const {
 
   // Check BR/EDR bond status if requested transport is BT_TRANSPORT_BR_EDR or BT_TRANSPORT_AUTO
   if (transport != BT_TRANSPORT_LE) {
+    log::verbose("BREDR bond status - bond_type: {}, sec_flags: {}", bond_type, sec_flags);
     if (com::android::bluetooth::flags::temporary_pairing_tracking()) {
       bonded = is_bond_type_persistent() && is_link_key_known();
     } else {
@@ -357,6 +359,7 @@ bool tBTM_SEC_REC::is_bonded(tBT_TRANSPORT transport) const {
 
   // Check LE bond status if requested transport is BT_TRANSPORT_LE or BT_TRANSPORT_AUTO
   if (transport != BT_TRANSPORT_BR_EDR) {
+    log::verbose("BLE bond status - key_type: {}, sec_flags: {}", ble_keys.key_type, sec_flags);
     bonded |= (ble_keys.key_type != BTM_LE_KEY_NONE && is_le_link_key_known());
   }
 

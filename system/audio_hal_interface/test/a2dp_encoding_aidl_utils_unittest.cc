@@ -68,6 +68,14 @@ TEST_F(A2dpEncodingAidlUtilsTest, StackChannelMode) {
   ASSERT_EQ(convertChannelMode(ChannelMode::UNKNOWN), BTAV_A2DP_CODEC_CHANNEL_MODE_NONE);
 }
 
+TEST_F(A2dpEncodingAidlUtilsTest, StackChannelModeVector) {
+  std::vector<ChannelMode> aidl_channel_modes = {ChannelMode::MONO, ChannelMode::STEREO,
+                                                 ChannelMode::DUALMONO};
+  btav_a2dp_codec_channel_mode_t stack_channel_modes = convertChannelMode(aidl_channel_modes);
+  ASSERT_EQ(stack_channel_modes,
+            BTAV_A2DP_CODEC_CHANNEL_MODE_MONO | BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO);
+}
+
 TEST_F(A2dpEncodingAidlUtilsTest, StackSampleRateSample) {
   ASSERT_EQ(convertSampleRate(16000), BTAV_A2DP_CODEC_SAMPLE_RATE_16000);
   ASSERT_EQ(convertSampleRate(24000), BTAV_A2DP_CODEC_SAMPLE_RATE_24000);
@@ -80,11 +88,31 @@ TEST_F(A2dpEncodingAidlUtilsTest, StackSampleRateSample) {
   ASSERT_EQ(convertSampleRate(123456), BTAV_A2DP_CODEC_SAMPLE_RATE_NONE);
 }
 
+TEST_F(A2dpEncodingAidlUtilsTest, StackSampleRateVector) {
+  std::vector<int32_t> aidl_sample_rate = {16000, 24000,  44100,  48000, 88200,
+                                           96000, 176400, 192000, 123456};
+  btav_a2dp_codec_sample_rate_t stack_sample_rate = convertSampleRate(aidl_sample_rate);
+  ASSERT_EQ(stack_sample_rate,
+            BTAV_A2DP_CODEC_SAMPLE_RATE_16000 | BTAV_A2DP_CODEC_SAMPLE_RATE_24000 |
+                    BTAV_A2DP_CODEC_SAMPLE_RATE_44100 | BTAV_A2DP_CODEC_SAMPLE_RATE_48000 |
+                    BTAV_A2DP_CODEC_SAMPLE_RATE_88200 | BTAV_A2DP_CODEC_SAMPLE_RATE_96000 |
+                    BTAV_A2DP_CODEC_SAMPLE_RATE_176400 | BTAV_A2DP_CODEC_SAMPLE_RATE_192000);
+}
+
 TEST_F(A2dpEncodingAidlUtilsTest, StackBitsPerSample) {
   ASSERT_EQ(convertBitsPerSample(16), BTAV_A2DP_CODEC_BITS_PER_SAMPLE_16);
   ASSERT_EQ(convertBitsPerSample(24), BTAV_A2DP_CODEC_BITS_PER_SAMPLE_24);
   ASSERT_EQ(convertBitsPerSample(32), BTAV_A2DP_CODEC_BITS_PER_SAMPLE_32);
   ASSERT_EQ(convertBitsPerSample(123), BTAV_A2DP_CODEC_BITS_PER_SAMPLE_NONE);
+}
+
+TEST_F(A2dpEncodingAidlUtilsTest, StackBitsPerSampleVector) {
+  std::vector<int32_t> aidl_bits_per_sample = {16, 24, 32, 123};
+  btav_a2dp_codec_bits_per_sample_t stack_bits_per_sample =
+          convertBitsPerSample(aidl_bits_per_sample);
+  ASSERT_EQ(stack_bits_per_sample,
+            BTAV_A2DP_CODEC_BITS_PER_SAMPLE_16 | BTAV_A2DP_CODEC_BITS_PER_SAMPLE_24 |
+                    BTAV_A2DP_CODEC_BITS_PER_SAMPLE_32 | BTAV_A2DP_CODEC_BITS_PER_SAMPLE_NONE);
 }
 
 TEST_F(A2dpEncodingAidlUtilsTest, StackCodecCapabilitiesSbc) {
@@ -190,5 +218,126 @@ TEST_F(A2dpEncodingAidlUtilsTest, AidlCodecId) {
   }
 
   auto result = convertCodecId(static_cast<::bluetooth::a2dp::CodecId>(0x1234));
+  ASSERT_EQ(result, std::nullopt);
+}
+
+TEST_F(A2dpEncodingAidlUtilsTest, StackCodecId) {
+  // Stack known codecs
+  CodecId sbc =
+          CodecId::make<CodecId::a2dp>(static_cast<CodecId::A2dp>(::bluetooth::a2dp::CodecId::SBC));
+  CodecId aac =
+          CodecId::make<CodecId::a2dp>(static_cast<CodecId::A2dp>(::bluetooth::a2dp::CodecId::AAC));
+  CodecId aptx = CodecId::make<CodecId::vendor>(CodecId::Vendor(
+          {.id = (int32_t)A2DP_APTX_VENDOR_ID, .codecId = A2DP_APTX_CODEC_ID_BLUETOOTH}));
+  CodecId aptx_hd = CodecId::make<CodecId::vendor>(CodecId::Vendor(
+          {.id = (int32_t)A2DP_APTX_HD_VENDOR_ID, .codecId = A2DP_APTX_HD_CODEC_ID_BLUETOOTH}));
+  CodecId ldac = CodecId::make<CodecId::vendor>(
+          CodecId::Vendor({.id = (int32_t)A2DP_LDAC_VENDOR_ID, .codecId = A2DP_LDAC_CODEC_ID}));
+  CodecId opus = CodecId::make<CodecId::vendor>(
+          CodecId::Vendor({.id = (int32_t)A2DP_OPUS_VENDOR_ID, .codecId = A2DP_OPUS_CODEC_ID}));
+
+  // Vendor unknown codec
+  uint32_t foobar_vendor_id = 0x1234;
+  uint16_t foobar_codec_id = 0x4321;
+  ::bluetooth::a2dp::CodecId foobar_codec = static_cast<::bluetooth::a2dp::CodecId>(
+          ::bluetooth::a2dp::VendorCodecId(foobar_vendor_id, foobar_codec_id));
+  CodecId foobar = CodecId::make<CodecId::vendor>(
+          CodecId::Vendor({.id = (int32_t)foobar_vendor_id, .codecId = foobar_codec_id}));
+
+  // Unsupported codec
+  CodecId core = CodecId::make<CodecId::core>(static_cast<CodecId::Core>(0));
+
+  std::vector<CodecId> aidl_codecs = {sbc, aac, aptx, aptx_hd, ldac, opus, foobar};
+  std::vector<::bluetooth::a2dp::CodecId> stack_codecs = {::bluetooth::a2dp::CodecId::SBC,
+                                                          ::bluetooth::a2dp::CodecId::AAC,
+                                                          ::bluetooth::a2dp::CodecId::APTX,
+                                                          ::bluetooth::a2dp::CodecId::APTX_HD,
+                                                          ::bluetooth::a2dp::CodecId::LDAC,
+                                                          ::bluetooth::a2dp::CodecId::OPUS,
+                                                          foobar_codec};
+
+  for (size_t i = 0; i < aidl_codecs.size(); i++) {
+    bluetooth::log::info("aidl codec: {}", aidl_codecs[i].toString());
+    auto result = convertCodecId(aidl_codecs[i]);
+    ASSERT_TRUE(result.has_value());
+    bluetooth::log::info("result codec: {}, expected codec: {}",
+                         ::bluetooth::a2dp::CodecIdToString(result.value()),
+                         ::bluetooth::a2dp::CodecIdToString(stack_codecs[i]));
+    ASSERT_EQ(result.value(), stack_codecs[i]);
+  }
+
+  auto result = convertCodecId(core);
+  ASSERT_EQ(result, std::nullopt);
+}
+
+TEST_F(A2dpEncodingAidlUtilsTest, StackCodecInfo) {
+  btav_a2dp_codec_info_t stack_codec_info = {
+          .codec_id = ::bluetooth::a2dp::CodecId::SBC,
+          .name = "SBC",
+          .media_codec_capabilites =
+                  {0x06,  // Length of service category: 6
+                   0x00,  // Media Type: Audio
+                   0x00,  // Media codec audio type: SBC
+                   0x3A,  // Sampling Frequency: 44100Hz|48000Hz, Chanel mode: Mono|Stereo
+                   0xFF,  // Block length: 4|8|12|16, Subbands: 4|8, Allocation method: SNR|Loudness
+                   0x02,  // Minimum bitpool
+                   0x35,  // Maximum bitpool
+                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+          .codec_capabilities =
+                  {.codec_type = BTAV_A2DP_CODEC_INDEX_SOURCE_MIN,
+                   .codec_priority = BTAV_A2DP_CODEC_PRIORITY_DEFAULT,
+                   .sample_rate = static_cast<btav_a2dp_codec_sample_rate_t>(
+                           BTAV_A2DP_CODEC_SAMPLE_RATE_44100 | BTAV_A2DP_CODEC_SAMPLE_RATE_48000),
+                   .bits_per_sample = static_cast<btav_a2dp_codec_bits_per_sample_t>(
+                           BTAV_A2DP_CODEC_BITS_PER_SAMPLE_16 | BTAV_A2DP_CODEC_BITS_PER_SAMPLE_24 |
+                           BTAV_A2DP_CODEC_BITS_PER_SAMPLE_32),
+                   .channel_mode = static_cast<btav_a2dp_codec_channel_mode_t>(
+                           BTAV_A2DP_CODEC_CHANNEL_MODE_MONO | BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO),
+                   .codec_specific_1 = 0,
+                   .codec_specific_2 = 0,
+                   .codec_specific_3 = 0,
+                   .codec_specific_4 = 0},
+          .lossless = false};
+
+  CodecInfo aidl_codec_info;
+  aidl_codec_info.id = CodecId::A2dp::SBC;
+  aidl_codec_info.name = "SBC";
+  aidl_codec_info.transport = CodecInfo::Transport::make<CodecInfo::Transport::Tag::a2dp>();
+  auto& transport = aidl_codec_info.transport.get<CodecInfo::Transport::Tag::a2dp>();
+  transport.capabilities = {
+          0x3A,  // Sampling Frequency: 44100Hz|48000Hz, Chanel mode: Mono|Stereo
+          0xFF,  // Block length: 4|8|12|16, Subbands: 4|8, Allocation method: SNR|Loudness
+          0x02,  // Minimum bitpool
+          0x35,  // Maximum bitpool
+  };
+  transport.channelMode = {ChannelMode::MONO, ChannelMode::STEREO};
+  transport.samplingFrequencyHz = {44100, 48000};
+  transport.bitdepth = {16, 24, 32};
+  transport.lossless = false;
+
+  auto result = convertCodecInfo(aidl_codec_info);
+  ASSERT_TRUE(result.has_value());
+  btav_a2dp_codec_info_t stack_codec_info_result = result.value();
+  ASSERT_EQ(stack_codec_info_result.codec_id, stack_codec_info.codec_id);
+  ASSERT_EQ(stack_codec_info_result.codec_id, stack_codec_info.codec_id);
+  ASSERT_EQ(stack_codec_info_result.name, stack_codec_info.name);
+  bluetooth::log::info("stack_codec_info: \n{}",
+                       codecInfoToString(stack_codec_info.media_codec_capabilites));
+  bluetooth::log::info("stack_codec_info_result: \n{}",
+                       codecInfoToString(stack_codec_info_result.media_codec_capabilites));
+  ASSERT_EQ(memcmp(stack_codec_info_result.media_codec_capabilites,
+                   stack_codec_info.media_codec_capabilites,
+                   sizeof(stack_codec_info_result.media_codec_capabilites)),
+            0);
+  ASSERT_EQ(stack_codec_info_result.codec_capabilities, stack_codec_info.codec_capabilities);
+  ASSERT_EQ(stack_codec_info_result.lossless, stack_codec_info.lossless);
+}
+
+TEST_F(A2dpEncodingAidlUtilsTest, StackCodecInfo_Failure) {
+  CodecInfo aidl_codec_info;
+  aidl_codec_info.id = CodecId::make<CodecId::core>(static_cast<CodecId::Core>(0));
+  aidl_codec_info.name = "FAIL";
+  aidl_codec_info.transport = CodecInfo::Transport::make<CodecInfo::Transport::Tag::a2dp>();
+  auto result = convertCodecInfo(aidl_codec_info);
   ASSERT_EQ(result, std::nullopt);
 }

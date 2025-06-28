@@ -717,18 +717,14 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   }
 
   bool is_bonded(Address target_address) {
-    if (com::android::bluetooth::flags::irk_scan_bond_check_update()) {
-      return BTM_IsBonded(RawAddress(target_address.address), BT_TRANSPORT_LE);
-    } else {
-      for (auto device : storage_module_->GetBondedDevices()) {
-        if (device.GetAddress() == target_address) {
-          log::debug("Addresses match!");
-          return true;
-        }
+    for (auto device : storage_module_->GetBondedDevices()) {
+      if (device.GetAddress() == target_address) {
+        log::debug("Addresses match!");
+        return true;
       }
-      log::debug("Addresses don't match!");
-      return false;
     }
+    log::debug("Addresses don't match!");
+    return false;
   }
 
   void scan_filter_parameter_setup(ApcfAction action, uint8_t filter_index,
@@ -765,6 +761,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         if (entry != remove_me_later_map_.end()) {
           // Don't want to remove for a bonded device
           if (!is_bonded(entry->second.GetAddress())) {
+            log::info("{} not bonded, removing from resolving list", entry->second.GetAddress());
             le_address_manager_->RemoveDeviceFromResolvingList(
                     static_cast<PeerAddressType>(entry->second.GetAddressType()),
                     entry->second.GetAddress());
@@ -781,6 +778,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         if (entry != remove_me_later_map_.end()) {
           // Don't want to remove for a bonded device
           if (!is_bonded(entry->second.GetAddress())) {
+            log::info("{} not bonded, removing from resolving list", entry->second.GetAddress());
             le_address_manager_->RemoveDeviceFromResolvingList(
                     static_cast<PeerAddressType>(entry->second.GetAddressType()),
                     entry->second.GetAddress());
@@ -885,6 +883,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         if (entry != remove_me_later_map_.end()) {
           // Don't want to remove for a bonded device
           if (!is_bonded(entry->second.GetAddress())) {
+            log::info("{} not bonded, removing from resolving list", entry->second.GetAddress());
             le_address_manager_->RemoveDeviceFromResolvingList(
                     static_cast<PeerAddressType>(entry->second.GetAddressType()),
                     entry->second.GetAddress());

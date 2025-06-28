@@ -73,6 +73,7 @@ public class NotificationHelperServiceTest {
     public void setUp() {
         final var context = InstrumentationRegistry.getInstrumentation().getContext();
         final var mockContentResolver = new MockContentResolver(context);
+        NotificationHelperService.factoryReset(mockContentResolver);
         doReturn(mockContentResolver).when(mContext).getContentResolver();
         doReturn(context.getResources()).when(mContext).getResources();
         doReturn(context.getPackageName()).when(mContext).getPackageName();

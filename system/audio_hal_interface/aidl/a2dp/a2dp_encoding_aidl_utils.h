@@ -28,9 +28,16 @@ namespace bluetooth::audio::aidl::a2dp {
 btav_a2dp_codec_channel_mode_t convertChannelMode(
         ::aidl::android::hardware::bluetooth::audio::ChannelMode channel_mode);
 
+btav_a2dp_codec_channel_mode_t convertChannelMode(
+        const std::vector<::aidl::android::hardware::bluetooth::audio::ChannelMode>& channel_mode);
+
 btav_a2dp_codec_sample_rate_t convertSampleRate(int32_t sampling_frequency_hz);
 
+btav_a2dp_codec_sample_rate_t convertSampleRate(const std::vector<int32_t>& sampling_frequency_hz);
+
 btav_a2dp_codec_bits_per_sample_t convertBitsPerSample(int32_t bitdepth);
+
+btav_a2dp_codec_bits_per_sample_t convertBitsPerSample(const std::vector<int32_t>& bitdepth);
 
 bool convertCodecCapabilities(const ::aidl::android::hardware::bluetooth::audio::CodecId& codec_id,
                               const std::vector<uint8_t>& capabilities, uint8_t* codec_info);
@@ -44,5 +51,11 @@ void convertCodecParameters(
 
 std::optional<::aidl::android::hardware::bluetooth::audio::CodecId> convertCodecId(
         bluetooth::a2dp::CodecId codec_id);
+
+std::optional<bluetooth::a2dp::CodecId> convertCodecId(
+        ::aidl::android::hardware::bluetooth::audio::CodecId codec_id);
+
+std::optional<btav_a2dp_codec_info_t> convertCodecInfo(
+        const ::aidl::android::hardware::bluetooth::audio::CodecInfo& codec_info);
 
 }  // namespace bluetooth::audio::aidl::a2dp

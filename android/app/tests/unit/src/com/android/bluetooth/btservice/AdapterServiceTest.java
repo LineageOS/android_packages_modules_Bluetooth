@@ -66,6 +66,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PermissionInfo;
 import android.content.res.Resources;
+import android.hardware.devicestate.DeviceStateManager;
 import android.hardware.display.DisplayManager;
 import android.media.AudioManager;
 import android.os.BatteryStatsManager;
@@ -169,6 +170,7 @@ public class AdapterServiceTest {
 
     // SystemService that are not mocked
     private BluetoothManager mBluetoothManager;
+    private DeviceStateManager mDeviceStateManager;
     private DisplayManager mDisplayManager;
     private PowerManager mPowerManager;
     private PermissionManager mPermissionManager;
@@ -306,6 +308,7 @@ public class AdapterServiceTest {
         when(mMockContext.getPackageManager()).thenReturn(mMockPackageManager);
 
         mBluetoothManager = getBluetoothManager();
+        mDeviceStateManager = context.getSystemService(DeviceStateManager.class);
         mDisplayManager = context.getSystemService(DisplayManager.class);
         mPermissionManager = context.getSystemService(PermissionManager.class);
         mPowerManager = context.getSystemService(PowerManager.class);
@@ -320,6 +323,7 @@ public class AdapterServiceTest {
         mockGetSystemService(mMockContext, BatteryStatsManager.class);
         mockGetSystemService(mMockContext, BluetoothManager.class, mBluetoothManager);
         mockGetSystemService(mMockContext, CompanionDeviceManager.class);
+        mockGetSystemService(mMockContext, DeviceStateManager.class, mDeviceStateManager);
         mockGetSystemService(mMockContext, DisplayManager.class, mDisplayManager);
         mockGetSystemService(mMockContext, PermissionManager.class, mPermissionManager);
         mockGetSystemService(mMockContext, PowerManager.class, mPowerManager);
@@ -423,8 +427,17 @@ public class AdapterServiceTest {
             AdapterNativeInterface nativeInterface) {
         adapter.offToBleOn(false, "default");
         TestUtils.syncHandler(looper, 0); // `init` need to be run first
+        if (Flags.adapterSuspendMgmt()) {
+            TestUtils.syncHandler(looper, -2); // Init AdapterSuspendStateMachine
+        }
         TestUtils.syncHandler(looper, AdapterState.BLE_TURN_ON);
         verifyStateChange(callback, STATE_OFF, STATE_BLE_TURNING_ON);
+
+        if (Flags.adapterSuspendMgmt()) {
+            // Called after callbacks are registered in DeviceStateManager
+            TestUtils.syncHandler(looper, 0); // notifySupportedDeviceStateChanged
+            TestUtils.syncHandler(looper, 0); // notifyDeviceStateChanged
+        }
 
         if (!Flags.onlyStartScanDuringBleOn()) {
             TestUtils.syncHandler(looper, MESSAGE_PROFILE_SERVICE_REGISTERED);
@@ -635,9 +648,17 @@ public class AdapterServiceTest {
 
         mAdapterService.offToBleOn(false, "default");
         syncHandler(0); // `init` need to be run first
+        if (Flags.adapterSuspendMgmt()) {
+            syncHandler(-2); // Init AdapterSuspendStateMachine
+        }
         syncHandler(AdapterState.BLE_TURN_ON);
         verifyStateChange(STATE_OFF, STATE_BLE_TURNING_ON);
         assertThat(mAdapterService.getBluetoothGatt()).isNotNull();
+        if (Flags.adapterSuspendMgmt()) {
+            // Called after callbacks are registered in DeviceStateManager
+            syncHandler(0); // notifySupportedDeviceStateChanged
+            syncHandler(0); // notifyDeviceStateChanged
+        }
         syncHandler(MESSAGE_PROFILE_SERVICE_REGISTERED);
 
         // Fetch next message and never process it to simulate a timeout.

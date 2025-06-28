@@ -375,7 +375,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # Stop streaming to RD1.
         await asyncio.gather(self.dut_a2dp.Suspend(source=dut_ref1_source),
-                             channel.accept_suspend(timeout=8.0))
+                             channel.accept_suspend())
 
     @avatar.asynchronous
     async def test_avdtp_autoconnect_when_only_avctp_connected(self) -> None:
@@ -556,14 +556,13 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
             open_source(self.dut_a2dp, dut_ref1))
 
         # Start streaming to RD1.
-        await asyncio.gather(self.dut_a2dp.Start(source=dut_ref1_source),
-                             channel.accept_start(timeout=5.0))
+        await asyncio.gather(self.dut_a2dp.Start(source=dut_ref1_source), channel.accept_start())
 
         generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
         await self.dut_a2dp.PlaybackAudio(generated_audio)
 
         # Verify that at least one audio frame is received on the transport channel.
-        await channel.expect_media(timeout=5.0)
+        await channel.expect_media()
 
         # Stop streaming to RD1.
         _, cmd = await asyncio.gather(
@@ -993,11 +992,11 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         await self.dut_a2dp.PlaybackAudio(generated_audio)
 
         # Verify that at least one audio frame is received on the transport channel.
-        await channel.expect_media(timeout=5.0)
+        await channel.expect_media()
 
         # Stop streaming to RD1.
         await asyncio.gather(self.dut_a2dp.Suspend(source=dut_ref1_source),
-                             channel.accept_suspend(timeout=8.0))
+                             channel.accept_suspend())
 
     @avatar.asynchronous
     @enableFlag(AVDT_WAIT_FOR_INITIAL_DELAY_REPORT_AS_INITIATOR)
@@ -1063,11 +1062,11 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         await self.dut_a2dp.PlaybackAudio(generated_audio)
 
         # Verify that at least one audio frame is received on the transport channel.
-        await channel.expect_media(timeout=5.0)
+        await channel.expect_media()
 
         # Stop streaming to RD1.
         await asyncio.gather(self.dut_a2dp.Suspend(source=dut_ref1_source),
-                             channel.accept_suspend(timeout=8.0))
+                             channel.accept_suspend())
 
     @avatar.asynchronous
     async def test_dut_disconnects_after_no_avdt_start_response(self) -> None:
@@ -1211,8 +1210,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         logger.info("<< 3. Start streaming >>")
         # Start streaming to RD1.
-        await asyncio.gather(self.dut_a2dp.Start(source=dut_ref1_source),
-                             channel.accept_start(timeout=5.0))
+        await asyncio.gather(self.dut_a2dp.Start(source=dut_ref1_source), channel.accept_start())
 
         # Verify that audio is received on the transport channel.
         generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
@@ -1252,7 +1250,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
             ]
             await channel.accept_set_configuration(acceptor_configuration_sbc)
             await channel.accept_open()
-            await channel.accept_start(timeout=8.0)
+            await channel.accept_start()
 
         logger.info("4. Reconfigure codec from AAC to SBC")
         # Set new codec
@@ -1275,7 +1273,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # # Stop streaming to RD1.
         await asyncio.gather(self.dut_a2dp.Suspend(source=dut_ref1_source),
-                             channel.accept_suspend(timeout=8.0))
+                             channel.accept_suspend())
 
     @avatar.asynchronous
     async def test_delay_report_after_full_codec_reconfiguration(self) -> None:

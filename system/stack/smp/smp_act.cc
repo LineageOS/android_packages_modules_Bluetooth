@@ -543,18 +543,16 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   /* erase all keys if it is peripheral proc pairing req */
   if (p_dev_rec && (p_cb->role == HCI_ROLE_PERIPHERAL)) {
-    if (com::android::bluetooth::flags::key_missing_ble_peripheral()) {
-      /* If we bonded, but not encrypted, it's a key missing - disconnect.
-       * If we are bonded, its key upgrade and ok to continue.
-       * If we are not bonded, its new device pairing and ok.
-       */
-      if (BTM_IsBonded(p_cb->pairing_bda, BT_TRANSPORT_LE) &&
-          !BTM_IsEncrypted(p_cb->pairing_bda, BT_TRANSPORT_LE)) {
-        get_btm_client_interface().security.BTM_SecReportBondLoss(p_cb->pairing_bda,
-                                                                  BT_TRANSPORT_LE);
-        return;
-      }
+    /* If we bonded, but not encrypted, it's a key missing - disconnect.
+     * If we are bonded, its key upgrade and ok to continue.
+     * If we are not bonded, its new device pairing and ok.
+     */
+    if (BTM_IsBonded(p_cb->pairing_bda, BT_TRANSPORT_LE) &&
+        !BTM_IsEncrypted(p_cb->pairing_bda, BT_TRANSPORT_LE)) {
+      get_btm_client_interface().security.BTM_SecReportBondLoss(p_cb->pairing_bda, BT_TRANSPORT_LE);
+      return;
     }
+
     btm_sec_clear_ble_keys(p_dev_rec);
   }
 

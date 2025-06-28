@@ -936,7 +936,7 @@ impl From<SupportedProfiles> for Vec<u8> {
 /// mod ffi {
 ///     unsafe extern "C++" {
 ///         include!("types/raw_address.h");
-///         include!("types/bluetooth/uuid.h");
+///         include!("bluetooth/types/uuid.h");
 ///
 ///         #[namespace = ""]
 ///         type RawAddress = crate::btif::RawAddress;

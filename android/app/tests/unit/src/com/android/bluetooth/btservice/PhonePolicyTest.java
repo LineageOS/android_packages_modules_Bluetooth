@@ -47,7 +47,6 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
 import android.os.ParcelUuid;
 import android.os.SystemProperties;
-import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
@@ -891,7 +890,6 @@ public class PhonePolicyTest {
      * pairing process).
      */
     @Test
-    @DisableFlags(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE)
     public void testAutoConnectHfpOnly() {
 
         // Return desired values from the mocked object(s)
@@ -924,7 +922,6 @@ public class PhonePolicyTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE)
     public void autoConnect_whenMultiHfp_startConnection() {
         // Return desired values from the mocked object(s)
         doReturn(false).when(mAdapterService).isQuietModeEnabled();
@@ -961,7 +958,6 @@ public class PhonePolicyTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE)
     public void autoConnect_whenMultiHfpAndDisconnection_startConnection() {
         // Return desired values from the mocked object(s)
         doReturn(false).when(mAdapterService).isQuietModeEnabled();

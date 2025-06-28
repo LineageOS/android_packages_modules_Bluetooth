@@ -1831,24 +1831,46 @@ class BluetoothManagerService {
         sendEnableMsg(false, ENABLE_DISABLE_REASON_USER_SWITCH);
     }
 
-    private void bindToAdapterForCurrentUser() {
-        requireNonNull(mCurrentUser, "There is no user to start for.");
-        int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
-        Intent intent = new Intent(IAdapter.class.getName());
-        intent.setComponent(resolveSystemService(intent));
+    private boolean resetAdapter() {
+        if (mAdapter == null) {
+            return false;
+        }
+        mAdapter = null;
+        mContext.unbindService(mConnection);
+        return true;
+    }
 
-        Log.d(TAG, "Start binding to the Bluetooth service with intent=" + intent);
-        if (!mContext.bindServiceAsUser(intent, mConnection, flags, mCurrentUser)) {
-            Log.e(TAG, "Fail to bind to intent=" + intent);
-            mContext.unbindService(mConnection);
-            if (Flags.userSwitchDuringBleOn()) {
-                bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
-                clearBleApps();
-                ActiveLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false);
-            }
+    private void handleEnable() {
+        if (mAdapter != null) {
+            Log.w(TAG, "handleEnable: Adapter already created");
+            return;
+        } else if (isBinding()) {
+            Log.w(TAG, "handleEnable: Binding in progress");
             return;
         }
-        mHandler.sendEmptyMessageDelayed(MESSAGE_TIMEOUT_BIND, TIMEOUT_BIND_MS);
+
+        if (Flags.userSwitchDuringBleOn()) {
+            bluetoothStateChangeHandler(State.OFF, State.BLE_TURNING_ON);
+        }
+        if (Flags.waitStackRoleBeforeStarting()) {
+            RolePermissionListener.registerForUser(
+                    mLooper, mCurrentUserContext, mCurrentUser, this::onRoleGranted);
+            return;
+        }
+        bindToAdapter();
+    }
+
+    private Unit onRoleGranted() {
+        if (!(mEnableExternal || isBleAppPresent())) {
+            Log.w(TAG, "onRoleGranted: external=" + mEnableExternal + " ble=" + isBleAppPresent());
+        } else if (mAdapter != null) {
+            Log.w(TAG, "onRoleGranted: Adapter already created");
+        } else if (isBinding()) {
+            Log.w(TAG, "onRoleGranted: Binding in progress");
+        } else {
+            bindToAdapter();
+        }
+        return Unit.INSTANCE;
     }
 
     private void bindToAdapter() {
@@ -1874,40 +1896,24 @@ class BluetoothManagerService {
         }
     }
 
-    private boolean resetAdapter() {
-        if (mAdapter == null) {
-            return false;
-        }
-        mAdapter = null;
-        mContext.unbindService(mConnection);
-        return true;
-    }
+    private void bindToAdapterForCurrentUser() {
+        requireNonNull(mCurrentUser, "There is no user to start for.");
+        int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
+        Intent intent = new Intent(IAdapter.class.getName());
+        intent.setComponent(resolveSystemService(intent));
 
-    private void handleEnable() {
-        if (mAdapter == null && !isBinding()) {
+        Log.d(TAG, "Start binding to the Bluetooth service with intent=" + intent);
+        if (!mContext.bindServiceAsUser(intent, mConnection, flags, mCurrentUser)) {
+            Log.e(TAG, "Fail to bind to intent=" + intent);
+            mContext.unbindService(mConnection);
             if (Flags.userSwitchDuringBleOn()) {
-                bluetoothStateChangeHandler(State.OFF, State.BLE_TURNING_ON);
+                bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
+                clearBleApps();
+                ActiveLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false);
             }
-            if (Flags.waitStackRoleBeforeStarting()) {
-                RolePermissionListener.registerForUser(
-                        mLooper, mCurrentUserContext, mCurrentUser, this::onRoleGranted);
-                return;
-            }
-            bindToAdapter();
+            return;
         }
-    }
-
-    private Unit onRoleGranted() {
-        if (!(mEnableExternal || isBleAppPresent())) {
-            Log.w(TAG, "onRoleGranted: external=" + mEnableExternal + " ble=" + isBleAppPresent());
-        } else if (mAdapter != null) {
-            Log.w(TAG, "onRoleGranted: Adapter already created");
-        } else if (isBinding()) {
-            Log.w(TAG, "onRoleGranted: Binding in progress");
-        } else {
-            bindToAdapter();
-        }
-        return Unit.INSTANCE;
+        mHandler.sendEmptyMessageDelayed(MESSAGE_TIMEOUT_BIND, TIMEOUT_BIND_MS);
     }
 
     private void handleDisableDelayed() {

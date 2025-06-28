@@ -11,7 +11,7 @@ use log::warn;
 pub mod ffi {
     unsafe extern "C++" {
         include!("types/raw_address.h");
-        include!("types/bluetooth/uuid.h");
+        include!("bluetooth/types/uuid.h");
         #[namespace = ""]
         type RawAddress = crate::btif::RawAddress;
         #[namespace = "bluetooth"]

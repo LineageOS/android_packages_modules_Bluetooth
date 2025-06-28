@@ -221,10 +221,21 @@ uint16_t GAP_ConnOpen(const char* /* p_serv_name */, uint8_t service_id, bool is
     }
     p_ccb->local_coc_cfg.mtu = p_cfg->mtu;
 
-    uint16_t max_mps = bluetooth::shim::GetController()->GetLeBufferSize().le_data_packet_length_;
-    if (le_mps > max_mps) {
-      log::info("Limiting MPS to one buffer size - {}", max_mps);
-      le_mps = max_mps;
+    if (com::android::bluetooth::flags::consider_l2c_header_bytes_for_mps_selection()) {
+      uint16_t max_le_buf_size =
+              bluetooth::shim::GetController()->GetLeBufferSize().le_data_packet_length_ -
+              L2CAP_PKT_OVERHEAD;
+
+      if (le_mps > max_le_buf_size) {
+        log::info("Limiting MPS to one buffer size - {}", max_le_buf_size);
+        le_mps = max_le_buf_size;
+      }
+    } else {
+      uint16_t max_mps = bluetooth::shim::GetController()->GetLeBufferSize().le_data_packet_length_;
+      if (le_mps > max_mps) {
+        log::info("Limiting MPS to one buffer size - {}", max_mps);
+        le_mps = max_mps;
+      }
     }
     p_ccb->local_coc_cfg.mps = le_mps;
   }
