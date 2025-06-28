@@ -60,9 +60,9 @@ struct IsCallIdle {
 extern struct IsCallIdle IsCallIdle;
 
 struct IsDuringVoiceRecognition {
-  std::function<bool(RawAddress* bd_addr)> body{
-          [](RawAddress* bd_addr) { return bd_addr != nullptr; }};
-  bool operator()(RawAddress* bd_addr) { return body(bd_addr); }
+  std::function<bool(RawAddress bd_addr)> body{
+          [](RawAddress bd_addr) { return !bd_addr.IsEmpty(); }};
+  bool operator()(RawAddress bd_addr) { return body(bd_addr); }
 };
 extern struct IsDuringVoiceRecognition IsDuringVoiceRecognition;
 
