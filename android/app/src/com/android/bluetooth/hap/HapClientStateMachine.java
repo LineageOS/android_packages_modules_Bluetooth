@@ -73,7 +73,7 @@ final class HapClientStateMachine extends StateMachine {
 
     static final int MESSAGE_CONNECT = 1;
     static final int MESSAGE_DISCONNECT = 2;
-    static final int MESSAGE_STACK_EVENT = 101;
+    static final int MESSAGE_CONNECTION_STATE_CHANGED = 102;
     @VisibleForTesting static final int MESSAGE_CONNECT_TIMEOUT = 201;
 
     @VisibleForTesting static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(30);
@@ -117,7 +117,7 @@ final class HapClientStateMachine extends StateMachine {
         return switch (what) {
             case MESSAGE_CONNECT -> "CONNECT";
             case MESSAGE_DISCONNECT -> "DISCONNECT";
-            case MESSAGE_STACK_EVENT -> "STACK_EVENT";
+            case MESSAGE_CONNECTION_STATE_CHANGED -> "CONNECTION_STATE_CHANGED";
             case MESSAGE_CONNECT_TIMEOUT -> "CONNECT_TIMEOUT";
             default -> Integer.toString(what);
         };
@@ -221,15 +221,7 @@ final class HapClientStateMachine extends StateMachine {
                 case MESSAGE_DISCONNECT -> {
                     mNativeInterface.disconnectHapClient(mDevice);
                 }
-                case MESSAGE_STACK_EVENT -> {
-                    HapClientStackEvent event = (HapClientStackEvent) message.obj;
-                    switch (event.type) {
-                        case HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED -> {
-                            processConnectionEvent(event.valueInt1);
-                        }
-                        default -> Log.e(TAG, mStateLog + "ignoring stack event: " + event);
-                    }
-                }
+                case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(message.arg1);
                 default -> {
                     Log.e(TAG, mStateLog + "not handled: " + messageWhatToString(message.what));
                     return NOT_HANDLED;
@@ -295,27 +287,14 @@ final class HapClientStateMachine extends StateMachine {
                 case MESSAGE_CONNECT_TIMEOUT -> {
                     Log.w(TAG, mStateLog + "connection timeout");
                     mNativeInterface.disconnectHapClient(mDevice);
-                    HapClientStackEvent disconnectEvent =
-                            new HapClientStackEvent(
-                                    HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-                    disconnectEvent.device = mDevice;
-                    disconnectEvent.valueInt1 = STATE_DISCONNECTED;
-                    sendMessage(MESSAGE_STACK_EVENT, disconnectEvent);
+                    sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_DISCONNECTED);
                 }
                 case MESSAGE_DISCONNECT -> {
                     Log.d(TAG, mStateLog + "connection canceled");
                     mNativeInterface.disconnectHapClient(mDevice);
                     transitionTo(mDisconnected);
                 }
-                case MESSAGE_STACK_EVENT -> {
-                    HapClientStackEvent event = (HapClientStackEvent) message.obj;
-                    switch (event.type) {
-                        case HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED -> {
-                            processConnectionEvent(event.valueInt1);
-                        }
-                        default -> Log.e(TAG, mStateLog + "ignoring stack event: " + event);
-                    }
-                }
+                case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(message.arg1);
                 default -> {
                     Log.e(TAG, mStateLog + "not handled: " + messageWhatToString(message.what));
                     return NOT_HANDLED;
@@ -369,23 +348,9 @@ final class HapClientStateMachine extends StateMachine {
                 case MESSAGE_CONNECT_TIMEOUT -> {
                     Log.w(TAG, mStateLog + "connection timeout");
                     mNativeInterface.disconnectHapClient(mDevice);
-
-                    HapClientStackEvent disconnectEvent =
-                            new HapClientStackEvent(
-                                    HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-                    disconnectEvent.device = mDevice;
-                    disconnectEvent.valueInt1 = STATE_DISCONNECTED;
-                    sendMessage(MESSAGE_STACK_EVENT, disconnectEvent);
+                    sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_DISCONNECTED);
                 }
-                case MESSAGE_STACK_EVENT -> {
-                    HapClientStackEvent event = (HapClientStackEvent) message.obj;
-                    switch (event.type) {
-                        case HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED -> {
-                            processConnectionEvent(event.valueInt1);
-                        }
-                        default -> Log.e(TAG, mStateLog + "ignoring stack event: " + event);
-                    }
-                }
+                case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(message.arg1);
                 default -> {
                     Log.e(TAG, mStateLog + "not handled: " + messageWhatToString(message.what));
                     return NOT_HANDLED;
@@ -458,14 +423,7 @@ final class HapClientStateMachine extends StateMachine {
                     }
                     transitionTo(mDisconnecting);
                 }
-                case MESSAGE_STACK_EVENT -> {
-                    HapClientStackEvent event = (HapClientStackEvent) message.obj;
-                    switch (event.type) {
-                        case HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED ->
-                                processConnectionEvent(event.valueInt1);
-                        default -> Log.e(TAG, mStateLog + "ignoring stack event: " + event);
-                    }
-                }
+                case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(message.arg1);
                 default -> {
                     Log.e(TAG, mStateLog + "not handled: " + messageWhatToString(message.what));
                     return NOT_HANDLED;

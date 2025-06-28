@@ -29,11 +29,10 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
 import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED;
 import static com.android.bluetooth.hap.HapClientStateMachine.CONNECT_TIMEOUT;
 import static com.android.bluetooth.hap.HapClientStateMachine.MESSAGE_CONNECT;
+import static com.android.bluetooth.hap.HapClientStateMachine.MESSAGE_CONNECTION_STATE_CHANGED;
 import static com.android.bluetooth.hap.HapClientStateMachine.MESSAGE_DISCONNECT;
-import static com.android.bluetooth.hap.HapClientStateMachine.MESSAGE_STACK_EVENT;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -260,22 +259,14 @@ public class HapClientStateMachineTest {
     }
 
     private void generateConnectionMessageFromNative(int newState, int oldState) {
-        HapClientStackEvent event = new HapClientStackEvent(EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        event.device = mDevice;
-        event.valueInt1 = newState;
-
-        mStateMachine.sendMessage(MESSAGE_STACK_EVENT, event);
+        mStateMachine.sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, newState);
         mLooper.dispatchAll();
 
         verifyConnectionStateIntent(newState, oldState);
     }
 
     private void generateUnexpectedConnectionMessageFromNative(int newConnectionState) {
-        HapClientStackEvent event = new HapClientStackEvent(EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        event.device = mDevice;
-        event.valueInt1 = newConnectionState;
-
-        mStateMachine.sendMessage(MESSAGE_STACK_EVENT, event);
+        mStateMachine.sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, newConnectionState);
         mLooper.dispatchAll();
 
         mInOrder.verify(mService, never()).sendBroadcast(any(), any(), any());
