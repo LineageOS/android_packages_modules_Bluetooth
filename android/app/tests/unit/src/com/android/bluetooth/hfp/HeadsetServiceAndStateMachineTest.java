@@ -2404,7 +2404,7 @@ public class HeadsetServiceAndStateMachineTest {
                 hasExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState));
     }
 
-    /*
+    /**
      * Verify the series of invocations after {@link
      * BluetoothHeadset#startScoUsingVirtualVoiceCall()}
      *

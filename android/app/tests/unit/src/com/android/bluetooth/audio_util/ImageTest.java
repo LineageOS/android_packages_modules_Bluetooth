@@ -109,7 +109,6 @@ public class ImageTest {
     public void tearDown() throws Exception {
         mTestContentResolver = null;
         mTestBitmap = null;
-        mMockContext = null;
         Util.UriImagesSupport.sValue = false;
     }
 

@@ -77,7 +77,6 @@ public class PeriodicScanManagerTest {
         mPeriodicScanManager = new PeriodicScanManager(mAdapterService, looper.getLooper());
 
         mScanResult = new ScanResult(mDevice, 0, 0, 0, 0, 0, 0, 0, null, 0);
-        mCallback = mock(IPeriodicAdvertisingCallback.class);
 
         doReturn(mBinder).when(mCallback).asBinder();
         doNothing().when(mBinder).linkToDeath(any(), eq(0));

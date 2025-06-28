@@ -1402,13 +1402,13 @@ public class HeadsetServiceTest {
         assertThat(mHeadsetService.getConnectedDevices()).contains(device);
     }
 
-    /*
-     *  Helper function to test okToAcceptConnection() method
+    /**
+     * Helper function to test okToAcceptConnection() method
      *
-     *  @param device test device
-     *  @param bondState bond state value, could be invalid
-     *  @param priority value, could be invalid, could be invalid
-     *  @param expected expected result from okToAcceptConnection()
+     * @param device test device
+     * @param bondState bond state value, could be invalid
+     * @param priority value, could be invalid, could be invalid
+     * @param expected expected result from okToAcceptConnection()
      */
     private void testOkToAcceptConnectionCase(
             BluetoothDevice device, int bondState, int priority, boolean expected) {
