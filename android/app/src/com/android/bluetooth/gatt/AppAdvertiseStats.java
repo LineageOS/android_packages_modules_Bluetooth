@@ -35,12 +35,11 @@ import android.util.SparseArray;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.bluetooth.BluetoothStatsLog;
+import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.MetricsLogger;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -49,9 +48,6 @@ import java.util.Map;
 class AppAdvertiseStats {
     private static final String TAG =
             GattServiceConfig.TAG_PREFIX + AppAdvertiseStats.class.getSimpleName();
-
-    private static final DateTimeFormatter sDateFormat =
-            DateTimeFormatter.ofPattern("MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
 
     static final String[] PHY_LE_STRINGS = {"LE_1M", "LE_2M", "LE_CODED"};
     static final int UUID_STRING_FILTER_LEN = 8;
@@ -580,7 +576,7 @@ class AppAdvertiseStats {
 
             sb.append("\n      ").append((i + 1)).append(":");
             sb.append("\n        └Start time                                     : ")
-                    .append(sDateFormat.format(record.startTime));
+                    .append(Utils.formatInstant(record.startTime));
             if (record.stopTime == null) {
                 Duration timeElapsed = Duration.between(record.startTime, currentTime);
                 sb.append("\n        └Elapsed time                                   : ")
@@ -588,7 +584,7 @@ class AppAdvertiseStats {
                         .append("ms");
             } else {
                 sb.append("\n        └Stop time                                      : ")
-                        .append(sDateFormat.format(record.stopTime));
+                        .append(Utils.formatInstant(record.stopTime));
             }
             sb.append("\n        └Duration(10ms unit)                            : ")
                     .append(record.duration);

@@ -1027,7 +1027,17 @@ public final class Utils {
      * @return A formatted string representing the current time ("MM-dd HH:mm:ss.SSS")
      */
     public static String getLocalTimeString() {
-        return DATE_TIME_FORMATTER.format(Instant.now());
+        return formatInstant(Instant.now());
+    }
+
+    /**
+     * Formats a specific Instant into a system local time string.
+     *
+     * @param instant The Instant to format
+     * @return A formatted string representing the given Instant ("MM-dd HH:mm:ss.SSS")
+     */
+    public static String formatInstant(Instant instant) {
+        return DATE_TIME_FORMATTER.format(instant);
     }
 
     public static void skipCurrentTag(XmlPullParser parser)
