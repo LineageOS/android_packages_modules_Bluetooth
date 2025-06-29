@@ -521,7 +521,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
             Log.v(TAG, "Handler(): got msg=" + msg.what);
 
             switch (msg.what) {
-                case START_LISTENER:
+                case START_LISTENER -> {
                     mServerSockets =
                             ObexServerSockets.create(mAdapterService, BluetoothPbapService.this);
                     if (mServerSockets == null) {
@@ -537,8 +537,8 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
                     createSdpRecord();
                     // fetch Pbap Params to check if significant change has happened to Database
                     BluetoothPbapUtils.fetchPbapParams(BluetoothPbapService.this);
-                    break;
-                case USER_TIMEOUT:
+                }
+                case USER_TIMEOUT -> {
                     Intent intent = new Intent(BluetoothDevice.ACTION_CONNECTION_ACCESS_CANCEL);
                     intent.setPackage(
                             SystemProperties.get(
@@ -552,8 +552,8 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
                     BluetoothPbapService.this.sendBroadcast(
                             intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
                     stateMachine.sendMessage(PbapStateMachine.REJECTED);
-                    break;
-                case MSG_ACQUIRE_WAKE_LOCK:
+                }
+                case MSG_ACQUIRE_WAKE_LOCK -> {
                     if (mWakeLock == null) {
                         PowerManager pm = obtainSystemService(PowerManager.class);
                         mWakeLock =
@@ -574,49 +574,34 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
                     mSessionStatusHandler.sendMessageDelayed(
                             mSessionStatusHandler.obtainMessage(MSG_RELEASE_WAKE_LOCK),
                             RELEASE_WAKE_LOCK_DELAY_MS);
-                    break;
-                case MSG_RELEASE_WAKE_LOCK:
+                }
+                case MSG_RELEASE_WAKE_LOCK -> {
                     if (mWakeLock != null) {
                         mWakeLock.release();
                         mWakeLock = null;
                     }
-                    break;
-                case SHUTDOWN:
-                    closeService();
-                    break;
-                case LOAD_CONTACTS:
-                    loadAllContacts();
-                    break;
-                case CONTACTS_LOADED:
-                    mContactsLoaded = true;
-                    break;
-                case CHECK_SECONDARY_VERSION_COUNTER:
-                    updateSecondaryVersion();
-                    break;
-                case ROLLOVER_COUNTERS:
-                    BluetoothPbapUtils.rolloverCounters();
-                    break;
-                case MSG_STATE_MACHINE_DONE:
+                }
+                case SHUTDOWN -> closeService();
+                case LOAD_CONTACTS -> loadAllContacts();
+                case CONTACTS_LOADED -> mContactsLoaded = true;
+                case CHECK_SECONDARY_VERSION_COUNTER -> updateSecondaryVersion();
+                case ROLLOVER_COUNTERS -> BluetoothPbapUtils.rolloverCounters();
+                case MSG_STATE_MACHINE_DONE -> {
                     PbapStateMachine sm = (PbapStateMachine) msg.obj;
                     BluetoothDevice remoteDevice = sm.getRemoteDevice();
                     sm.quitNow();
                     synchronized (mPbapStateMachineMap) {
                         mPbapStateMachineMap.remove(remoteDevice);
                     }
-                    break;
-                case GET_LOCAL_TELEPHONY_DETAILS:
-                    getLocalTelephonyDetails();
-                    break;
-                case HANDLE_VERSION_UPDATE_NOTIFICATION:
+                }
+                case GET_LOCAL_TELEPHONY_DETAILS -> getLocalTelephonyDetails();
+                case HANDLE_VERSION_UPDATE_NOTIFICATION -> {
                     BluetoothDevice remoteDev = (BluetoothDevice) msg.obj;
 
                     handleNotificationTask(remoteDev);
-                    break;
-                case HANDLE_ACCEPT_FAILED:
-                    handleAcceptFailed();
-                    break;
-                default:
-                    break;
+                }
+                case HANDLE_ACCEPT_FAILED -> handleAcceptFailed();
+                default -> {}
             }
         }
     }

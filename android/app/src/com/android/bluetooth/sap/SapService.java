@@ -466,28 +466,23 @@ public class SapService extends ConnectableProfile
                     Log.v(TAG, "Handler(): got msg=" + msg.what);
 
                     switch (msg.what) {
-                        case START_LISTENER:
+                        case START_LISTENER -> {
                             if (mAdapterService.isEnabled()) {
                                 startRfcommSocketListener();
                             }
-                            break;
-                        case USER_TIMEOUT:
+                        }
+                        case USER_TIMEOUT -> {
                             if (mIsWaitingAuthorization) {
                                 sendCancelUserConfirmationIntent(mRemoteDevice);
                                 cancelUserTimeoutAlarm();
                                 mIsWaitingAuthorization = false;
                                 stopSapServerSession(); // And restart RfcommListener if needed
                             }
-                            break;
-                        case MSG_SERVERSESSION_CLOSE:
-                            stopSapServerSession();
-                            break;
-                        case MSG_SESSION_ESTABLISHED:
-                            break;
-                        case MSG_SESSION_DISCONNECTED:
-                            // handled elsewhere
-                            break;
-                        case MSG_ACQUIRE_WAKE_LOCK:
+                        }
+                        case MSG_SERVERSESSION_CLOSE -> stopSapServerSession();
+                        case MSG_SESSION_ESTABLISHED -> {}
+                        case MSG_SESSION_DISCONNECTED -> {} // handled elsewhere
+                        case MSG_ACQUIRE_WAKE_LOCK -> {
                             Log.v(TAG, "Acquire Wake Lock request message");
                             if (mWakeLock == null) {
                                 PowerManager pm = obtainSystemService(PowerManager.class);
@@ -505,25 +500,24 @@ public class SapService extends ConnectableProfile
                             mSessionStatusHandler.sendMessageDelayed(
                                     mSessionStatusHandler.obtainMessage(MSG_RELEASE_WAKE_LOCK),
                                     RELEASE_WAKE_LOCK_DELAY);
-                            break;
-                        case MSG_RELEASE_WAKE_LOCK:
+                        }
+                        case MSG_RELEASE_WAKE_LOCK -> {
                             Log.v(TAG, "Release Wake Lock request message");
                             if (mWakeLock != null) {
                                 mWakeLock.release();
                                 Log.d(TAG, "  Released Wake Lock by message");
                             }
-                            break;
-                        case MSG_CHANGE_STATE:
+                        }
+                        case MSG_CHANGE_STATE -> {
                             Log.d(TAG, "change state message: newState = " + msg.arg1);
                             setState(msg.arg1);
-                            break;
-                        case SHUTDOWN:
+                        }
+                        case SHUTDOWN -> {
                             /* Ensure to call close from this handler to avoid starting new stuff
                             because of pending messages */
                             closeService();
-                            break;
-                        default:
-                            break;
+                        }
+                        default -> {}
                     }
                 }
             };
@@ -563,21 +557,16 @@ public class SapService extends ConnectableProfile
 
     @Override
     public boolean disconnect(BluetoothDevice device) {
-        boolean result = false;
         synchronized (SapService.this) {
-            if (mRemoteDevice != null && mRemoteDevice.equals(device)) {
-                switch (mState) {
-                    case BluetoothSap.STATE_CONNECTED:
-                        closeConnectionSocket();
-                        setState(BluetoothSap.STATE_DISCONNECTED, BluetoothSap.RESULT_CANCELED);
-                        result = true;
-                        break;
-                    default:
-                        break;
-                }
+            if (mRemoteDevice == null
+                    || !mRemoteDevice.equals(device)
+                    || mState != BluetoothSap.STATE_CONNECTED) {
+                return false;
             }
+            closeConnectionSocket();
+            setState(BluetoothSap.STATE_DISCONNECTED, BluetoothSap.RESULT_CANCELED);
+            return true;
         }
-        return result;
     }
 
     public List<BluetoothDevice> getConnectedDevices() {

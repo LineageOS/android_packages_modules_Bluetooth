@@ -671,7 +671,7 @@ class BluetoothManagerService {
                         @Override
                         public void onReceive(Context context, Intent intent) {
                             switch (intent.getAction()) {
-                                case Intent.ACTION_USER_SWITCHED:
+                                case Intent.ACTION_USER_SWITCHED -> {
                                     if (Flags.limitUserSwitchPropagation()) {
                                         throw new IllegalStateException(
                                                 "limitUserSwitchPropagation is activated");
@@ -679,15 +679,16 @@ class BluetoothManagerService {
                                     int foregroundUserId =
                                             intent.getIntExtra(Intent.EXTRA_USER_HANDLE, 0);
                                     propagateForegroundUserId(foregroundUserId);
-                                    break;
-                                case UserManager.ACTION_USER_RESTRICTIONS_CHANGED:
+                                }
+                                case UserManager.ACTION_USER_RESTRICTIONS_CHANGED -> {
                                     onUserRestrictionsChanged(getSendingUser());
-                                    break;
-                                default:
+                                }
+                                default -> {
                                     Log.e(
                                             TAG,
                                             "Unknown broadcast received in BluetoothManagerService"
                                                     + " receiver registered across all users");
+                                }
                             }
                         }
                     },

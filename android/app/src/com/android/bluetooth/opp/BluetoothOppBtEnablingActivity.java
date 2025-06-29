@@ -120,14 +120,11 @@ public class BluetoothOppBtEnablingActivity extends AlertActivity {
             new Handler() {
                 @Override
                 public void handleMessage(Message msg) {
-                    switch (msg.what) {
-                        case BT_ENABLING_TIMEOUT:
-                            Log.v(TAG, "Received BT_ENABLING_TIMEOUT msg.");
-                            cancelSendingProgress();
-                            break;
-                        default:
-                            break;
+                    if (msg.what != BT_ENABLING_TIMEOUT) {
+                        return;
                     }
+                    Log.v(TAG, "Received BT_ENABLING_TIMEOUT msg.");
+                    cancelSendingProgress();
                 }
             };
 
@@ -136,19 +133,16 @@ public class BluetoothOppBtEnablingActivity extends AlertActivity {
             new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
-                    String action = intent.getAction();
-                    Log.v(TAG, "Received intent: " + action);
-                    if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
-                        switch (intent.getIntExtra(
-                                BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)) {
-                            case BluetoothAdapter.STATE_ON:
-                                mTimeoutHandler.removeMessages(BT_ENABLING_TIMEOUT);
-                                finish();
-                                break;
-                            default:
-                                break;
-                        }
+                    Log.v(TAG, "Received intent: " + intent);
+                    if (!BluetoothAdapter.ACTION_STATE_CHANGED.equals(intent.getAction())) {
+                        return;
                     }
+                    var state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1);
+                    if (BluetoothAdapter.STATE_ON != state) {
+                        return;
+                    }
+                    mTimeoutHandler.removeMessages(BT_ENABLING_TIMEOUT);
+                    finish();
                 }
             };
 

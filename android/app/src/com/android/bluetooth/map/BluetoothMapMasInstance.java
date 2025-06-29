@@ -341,21 +341,22 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
         int masVersion;
 
         switch (currentValue) {
-            case "map12":
+            case "map12" -> {
                 masVersion = SDP_MAP_MAS_VERSION_1_2;
                 sFeatureMask = SDP_MAP_MAS_FEATURES_1_2;
-                break;
-            case "map13":
+            }
+            case "map13" -> {
                 masVersion = SDP_MAP_MAS_VERSION_1_3;
                 sFeatureMask = SDP_MAP_MAS_FEATURES_1_3;
-                break;
-            case "map14":
+            }
+            case "map14" -> {
                 masVersion = SDP_MAP_MAS_VERSION_1_4;
                 sFeatureMask = SDP_MAP_MAS_FEATURES_1_4;
-                break;
-            default:
+            }
+            default -> {
                 masVersion = SDP_MAP_MAS_VERSION_1_4;
                 sFeatureMask = SDP_MAP_MAS_FEATURES_1_4;
+            }
         }
 
         final var nativeInterface = mAdapterService.getSdpManagerNativeInterface();

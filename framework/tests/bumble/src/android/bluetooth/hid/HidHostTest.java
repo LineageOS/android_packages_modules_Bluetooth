@@ -146,7 +146,7 @@ public class HidHostTest {
                 String action = intent.getAction();
                 BluetoothDevice device;
                 switch (action) {
-                    case BluetoothHidHost.ACTION_CONNECTION_STATE_CHANGED:
+                    case BluetoothHidHost.ACTION_CONNECTION_STATE_CHANGED -> {
                         device =
                                 intent.getParcelableExtra(
                                         BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
@@ -167,21 +167,21 @@ public class HidHostTest {
                                         + state
                                         + "), transport: "
                                         + transport);
-                        break;
-                    case BluetoothDevice.ACTION_PAIRING_REQUEST:
+                    }
+                    case BluetoothDevice.ACTION_PAIRING_REQUEST -> {
                         device =
                                 intent.getParcelableExtra(
                                         BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
                         mBumble.getRemoteDevice().setPairingConfirmation(true);
                         Log.i(TAG, "onReceive(): setPairingConfirmation(true) for " + device);
-                        break;
-                    case BluetoothAdapter.ACTION_STATE_CHANGED:
+                    }
+                    case BluetoothAdapter.ACTION_STATE_CHANGED -> {
                         int adapterState =
                                 intent.getIntExtra(
                                         BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
                         Log.i(TAG, "Adapter state change:" + adapterState);
-                        break;
-                    case BluetoothDevice.ACTION_BOND_STATE_CHANGED:
+                    }
+                    case BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
                         device =
                                 intent.getParcelableExtra(
                                         BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
@@ -200,8 +200,8 @@ public class HidHostTest {
                                         + prevBondState
                                         + " to "
                                         + bondState);
-                        break;
-                    case BluetoothHidHost.ACTION_PROTOCOL_MODE_CHANGED:
+                    }
+                    case BluetoothHidHost.ACTION_PROTOCOL_MODE_CHANGED -> {
                         device =
                                 intent.getParcelableExtra(
                                         BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
@@ -212,8 +212,8 @@ public class HidHostTest {
                         Log.i(
                                 TAG,
                                 "onReceive(): device " + device + " protocol mode " + protocolMode);
-                        break;
-                    case BluetoothHidHost.ACTION_HANDSHAKE:
+                    }
+                    case BluetoothHidHost.ACTION_HANDSHAKE -> {
                         device =
                                 intent.getParcelableExtra(
                                         BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
@@ -224,15 +224,15 @@ public class HidHostTest {
                         Log.i(
                                 TAG,
                                 "onReceive(): device " + device + " handshake status:" + handShake);
-                        break;
-                    case BluetoothHidHost.ACTION_VIRTUAL_UNPLUG_STATUS:
+                    }
+                    case BluetoothHidHost.ACTION_VIRTUAL_UNPLUG_STATUS -> {
                         int virtualUnplug =
                                 intent.getIntExtra(
                                         BluetoothHidHost.EXTRA_VIRTUAL_UNPLUG_STATUS,
                                         BluetoothHidHost.VIRTUAL_UNPLUG_STATUS_FAIL);
                         Log.i(TAG, "onReceive(): Virtual Unplug status:" + virtualUnplug);
-                        break;
-                    case BluetoothHidHost.ACTION_REPORT:
+                    }
+                    case BluetoothHidHost.ACTION_REPORT -> {
                         device =
                                 intent.getParcelableExtra(
                                         BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
@@ -248,16 +248,14 @@ public class HidHostTest {
                         if (mIsReportUpdated != null) {
                             mIsReportUpdated.complete(true);
                         }
-                        break;
-                    case BluetoothDevice.ACTION_ACL_DISCONNECTED:
+                    }
+                    case BluetoothDevice.ACTION_ACL_DISCONNECTED -> {
                         device =
                                 intent.getParcelableExtra(
                                         BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
                         Log.i(TAG, "onReceive(): ACL Disconnected with device: " + device);
-                        break;
-                    default:
-                        Log.i(TAG, "onReceive(): unknown intent action " + action);
-                        break;
+                    }
+                    default -> Log.i(TAG, "onReceive(): unknown intent action " + action);
                 }
                 return null;
             };

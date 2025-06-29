@@ -145,7 +145,7 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                             + messageWhatToString(message.what));
 
             switch (message.what) {
-                case CONNECT:
+                case CONNECT -> {
                     log("Connecting to " + mDevice);
                     if (!mNativeInterface.connect(mDevice)) {
                         Log.e(TAG, "Disconnected: error connecting to " + mDevice);
@@ -160,27 +160,23 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                                 "Outgoing CsipSetCoordinator Connecting request rejected: "
                                         + mDevice);
                     }
-                    break;
-                case DISCONNECT:
-                    Log.w(TAG, "Disconnected: DISCONNECT ignored: " + mDevice);
-                    break;
-                case STACK_EVENT:
+                }
+                case DISCONNECT -> Log.w(TAG, "Disconnected: DISCONNECT ignored: " + mDevice);
+                case STACK_EVENT -> {
                     CsipSetCoordinatorStackEvent event = (CsipSetCoordinatorStackEvent) message.obj;
                     Log.d(TAG, "Disconnected: stack event: " + event);
                     if (!mDevice.equals(event.device)) {
                         Log.wtf(TAG, "Device(" + mDevice + "): event mismatch: " + event);
                     }
                     switch (event.type) {
-                        case CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                            processConnectionEvent(event.valueInt1);
-                            break;
-                        default:
-                            Log.e(TAG, "Disconnected: ignoring stack event: " + event);
-                            break;
+                        case CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED ->
+                                processConnectionEvent(event.valueInt1);
+                        default -> Log.e(TAG, "Disconnected: ignoring stack event: " + event);
                     }
-                    break;
-                default:
+                }
+                default -> {
                     return NOT_HANDLED;
+                }
             }
             return HANDLED;
         }
@@ -188,10 +184,9 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
         // in Disconnected state
         private void processConnectionEvent(int state) {
             switch (state) {
-                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED:
-                    Log.w(TAG, "Ignore CsipSetCoordinator DISCONNECTED event: " + mDevice);
-                    break;
-                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTING:
+                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED ->
+                        Log.w(TAG, "Ignore CsipSetCoordinator DISCONNECTED event: " + mDevice);
+                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTING -> {
                     if (mService.okToConnect(mDevice)) {
                         Log.i(
                                 TAG,
@@ -206,8 +201,8 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                                         + mDevice);
                         mNativeInterface.disconnect(mDevice);
                     }
-                    break;
-                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED:
+                }
+                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED -> {
                     Log.w(TAG, "CsipSetCoordinator Connected from Disconnected state: " + mDevice);
                     if (mService.okToConnect(mDevice)) {
                         Log.i(
@@ -223,13 +218,10 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                                         + mDevice);
                         mNativeInterface.disconnect(mDevice);
                     }
-                    break;
-                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTING:
-                    Log.w(TAG, "Ignore CsipSetCoordinator DISCONNECTING event: " + mDevice);
-                    break;
-                default:
-                    Log.e(TAG, "Incorrect state: " + state + " device: " + mDevice);
-                    break;
+                }
+                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTING ->
+                        Log.w(TAG, "Ignore CsipSetCoordinator DISCONNECTING event: " + mDevice);
+                default -> Log.e(TAG, "Incorrect state: " + state + " device: " + mDevice);
             }
         }
     }
@@ -269,10 +261,8 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                             + messageWhatToString(message.what));
 
             switch (message.what) {
-                case CONNECT:
-                    deferMessage(message);
-                    break;
-                case CONNECT_TIMEOUT:
+                case CONNECT -> deferMessage(message);
+                case CONNECT_TIMEOUT -> {
                     Log.w(TAG, "Connecting connection timeout: " + mDevice);
                     mNativeInterface.disconnect(mDevice);
                     CsipSetCoordinatorStackEvent disconnectEvent =
@@ -283,29 +273,27 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                     disconnectEvent.valueInt1 =
                             CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED;
                     sendMessage(STACK_EVENT, disconnectEvent);
-                    break;
-                case DISCONNECT:
+                }
+                case DISCONNECT -> {
                     log("Connecting: connection canceled to " + mDevice);
                     mNativeInterface.disconnect(mDevice);
                     transitionTo(mDisconnected);
-                    break;
-                case STACK_EVENT:
+                }
+                case STACK_EVENT -> {
                     CsipSetCoordinatorStackEvent event = (CsipSetCoordinatorStackEvent) message.obj;
                     log("Connecting: stack event: " + event);
                     if (!mDevice.equals(event.device)) {
                         Log.wtf(TAG, "Device(" + mDevice + "): event mismatch: " + event);
                     }
                     switch (event.type) {
-                        case CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                            processConnectionEvent(event.valueInt1);
-                            break;
-                        default:
-                            Log.e(TAG, "Connecting: ignoring stack event: " + event);
-                            break;
+                        case CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED ->
+                                processConnectionEvent(event.valueInt1);
+                        default -> Log.e(TAG, "Connecting: ignoring stack event: " + event);
                     }
-                    break;
-                default:
+                }
+                default -> {
                     return NOT_HANDLED;
+                }
             }
             return HANDLED;
         }
@@ -313,22 +301,18 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
         // in Connecting state
         private void processConnectionEvent(int state) {
             switch (state) {
-                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED:
+                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED -> {
                     Log.w(TAG, "Connecting device disconnected: " + mDevice);
                     transitionTo(mDisconnected);
-                    break;
-                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED:
-                    transitionTo(mConnected);
-                    break;
-                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTING:
-                    break;
-                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTING:
+                }
+                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED ->
+                        transitionTo(mConnected);
+                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTING -> {}
+                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTING -> {
                     Log.w(TAG, "Connecting interrupted: device is disconnecting: " + mDevice);
                     transitionTo(mDisconnecting);
-                    break;
-                default:
-                    Log.e(TAG, "Incorrect state: " + state);
-                    break;
+                }
+                default -> Log.e(TAG, "Incorrect state: " + state);
             }
         }
     }
@@ -368,27 +352,21 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                             + messageWhatToString(message.what));
 
             switch (message.what) {
-                case CONNECT:
-                    deferMessage(message);
-                    break;
-                case CONNECT_TIMEOUT:
-                    {
-                        Log.w(TAG, "Disconnecting connection timeout: " + mDevice);
-                        mNativeInterface.disconnect(mDevice);
-                        CsipSetCoordinatorStackEvent disconnectEvent =
-                                new CsipSetCoordinatorStackEvent(
-                                        CsipSetCoordinatorStackEvent
-                                                .EVENT_TYPE_CONNECTION_STATE_CHANGED);
-                        disconnectEvent.device = mDevice;
-                        disconnectEvent.valueInt1 =
-                                CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED;
-                        sendMessage(STACK_EVENT, disconnectEvent);
-                        break;
-                    }
-                case DISCONNECT:
-                    deferMessage(message);
-                    break;
-                case STACK_EVENT:
+                case CONNECT -> deferMessage(message);
+                case CONNECT_TIMEOUT -> {
+                    Log.w(TAG, "Disconnecting connection timeout: " + mDevice);
+                    mNativeInterface.disconnect(mDevice);
+                    CsipSetCoordinatorStackEvent disconnectEvent =
+                            new CsipSetCoordinatorStackEvent(
+                                    CsipSetCoordinatorStackEvent
+                                            .EVENT_TYPE_CONNECTION_STATE_CHANGED);
+                    disconnectEvent.device = mDevice;
+                    disconnectEvent.valueInt1 =
+                            CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED;
+                    sendMessage(STACK_EVENT, disconnectEvent);
+                }
+                case DISCONNECT -> deferMessage(message);
+                case STACK_EVENT -> {
                     CsipSetCoordinatorStackEvent event = (CsipSetCoordinatorStackEvent) message.obj;
                     log("Disconnecting: stack event: " + event);
                     if (!mDevice.equals(event.device)) {
@@ -402,9 +380,10 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                             Log.e(TAG, "Disconnecting: ignoring stack event: " + event);
                             break;
                     }
-                    break;
-                default:
+                }
+                default -> {
                     return NOT_HANDLED;
+                }
             }
             return HANDLED;
         }
@@ -412,11 +391,11 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
         // in Disconnecting state
         private void processConnectionEvent(int state) {
             switch (state) {
-                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED:
+                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED -> {
                     Log.i(TAG, "Disconnected: " + mDevice);
                     transitionTo(mDisconnected);
-                    break;
-                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED:
+                }
+                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED -> {
                     if (mService.okToConnect(mDevice)) {
                         Log.w(TAG, "Disconnecting interrupted: device is connected: " + mDevice);
                         transitionTo(mConnected);
@@ -428,8 +407,8 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                                         + mDevice);
                         mNativeInterface.disconnect(mDevice);
                     }
-                    break;
-                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTING:
+                }
+                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTING -> {
                     if (mService.okToConnect(mDevice)) {
                         Log.i(TAG, "Disconnecting interrupted: try to reconnect: " + mDevice);
                         transitionTo(mConnecting);
@@ -441,12 +420,9 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                                         + mDevice);
                         mNativeInterface.disconnect(mDevice);
                     }
-                    break;
-                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTING:
-                    break;
-                default:
-                    Log.e(TAG, "Incorrect state: " + state);
-                    break;
+                }
+                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTING -> {}
+                default -> Log.e(TAG, "Incorrect state: " + state);
             }
         }
     }
@@ -481,10 +457,8 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
             log("Connected process message(" + mDevice + "): " + messageWhatToString(message.what));
 
             switch (message.what) {
-                case CONNECT:
-                    Log.w(TAG, "Connected: CONNECT ignored: " + mDevice);
-                    break;
-                case DISCONNECT:
+                case CONNECT -> Log.w(TAG, "Connected: CONNECT ignored: " + mDevice);
+                case DISCONNECT -> {
                     log("Disconnecting from " + mDevice);
                     if (!mNativeInterface.disconnect(mDevice)) {
                         // If error in the native stack, transition directly to Disconnected state.
@@ -493,24 +467,22 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                         break;
                     }
                     transitionTo(mDisconnecting);
-                    break;
-                case STACK_EVENT:
+                }
+                case STACK_EVENT -> {
                     CsipSetCoordinatorStackEvent event = (CsipSetCoordinatorStackEvent) message.obj;
                     log("Connected: stack event: " + event);
                     if (!mDevice.equals(event.device)) {
                         Log.wtf(TAG, "Device(" + mDevice + "): event mismatch: " + event);
                     }
                     switch (event.type) {
-                        case CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                            processConnectionEvent(event.valueInt1);
-                            break;
-                        default:
-                            Log.e(TAG, "Connected: ignoring stack event: " + event);
-                            break;
+                        case CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED ->
+                                processConnectionEvent(event.valueInt1);
+                        default -> Log.e(TAG, "Connected: ignoring stack event: " + event);
                     }
-                    break;
-                default:
+                }
+                default -> {
                     return NOT_HANDLED;
+                }
             }
             return HANDLED;
         }
@@ -518,17 +490,16 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
         // in Connected state
         private void processConnectionEvent(int state) {
             switch (state) {
-                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED:
+                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED -> {
                     Log.i(TAG, "Disconnected from " + mDevice);
                     transitionTo(mDisconnected);
-                    break;
-                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTING:
+                }
+                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTING -> {
                     Log.i(TAG, "Disconnecting from " + mDevice);
                     transitionTo(mDisconnecting);
-                    break;
-                default:
-                    Log.e(TAG, "Connection State Device: " + mDevice + " bad state: " + state);
-                    break;
+                }
+                default ->
+                        Log.e(TAG, "Connection State Device: " + mDevice + " bad state: " + state);
             }
         }
     }

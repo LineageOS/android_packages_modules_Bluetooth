@@ -556,23 +556,14 @@ public abstract class BluetoothMapbMessage {
                         throw new IllegalArgumentException(
                                 "Native appParamsCharset only supported for SMS");
                     }
-                    switch (type) {
-                        case SMS_CDMA:
-                        case SMS_GSM:
-                            newBMsg = new BluetoothMapbMessageSms(mapService);
-                            break;
-                        case MMS:
-                            newBMsg = new BluetoothMapbMessageMime();
-                            break;
-                        case EMAIL:
-                            newBMsg = new BluetoothMapbMessageEmail();
-                            break;
-                        case IM:
-                            newBMsg = new BluetoothMapbMessageMime();
-                            break;
-                        default:
-                            break;
-                    }
+                    newBMsg =
+                            switch (type) {
+                                case SMS_CDMA, SMS_GSM -> new BluetoothMapbMessageSms(mapService);
+                                case MMS -> new BluetoothMapbMessageMime();
+                                case EMAIL -> new BluetoothMapbMessageEmail();
+                                case IM -> new BluetoothMapbMessageMime();
+                                default -> null;
+                            };
                 } else {
                     throw new IllegalArgumentException("Missing value for 'TYPE':" + line);
                 }

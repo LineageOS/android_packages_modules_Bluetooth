@@ -222,7 +222,7 @@ public class BluetoothMapAppParams {
             tagId = appParams[i++] & 0xff; // Convert to unsigned to support values above 127
             tagLength = appParams[i++] & 0xff; // Convert to unsigned to support values above 127
             switch (tagId) {
-                case MAX_LIST_COUNT:
+                case MAX_LIST_COUNT -> {
                     if (tagLength != MAX_LIST_COUNT_LEN) {
                         Log.w(
                                 TAG,
@@ -239,8 +239,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setMaxListCount(appParamBuf.getShort(i) & 0xffff); // Make it unsigned
                     }
-                    break;
-                case START_OFFSET:
+                }
+                case START_OFFSET -> {
                     if (tagLength != START_OFFSET_LEN) {
                         Log.w(
                                 TAG,
@@ -257,8 +257,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setStartOffset(appParamBuf.getShort(i) & 0xffff); // Make it unsigned
                     }
-                    break;
-                case FILTER_MESSAGE_TYPE:
+                }
+                case FILTER_MESSAGE_TYPE -> {
                     if (tagLength != FILTER_MESSAGE_TYPE_LEN) {
                         Log.w(
                                 TAG,
@@ -275,8 +275,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setFilterMessageType(appParams[i] & 0x1f);
                     }
-                    break;
-                case FILTER_PERIOD_BEGIN:
+                }
+                case FILTER_PERIOD_BEGIN -> {
                     if (tagLength != 0) {
                         setFilterPeriodBegin(new String(appParams, i, tagLength));
                     } else {
@@ -292,8 +292,8 @@ public class BluetoothMapAppParams {
                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                                 3);
                     }
-                    break;
-                case FILTER_PERIOD_END:
+                }
+                case FILTER_PERIOD_END -> {
                     if (tagLength != 0) {
                         setFilterPeriodEnd(new String(appParams, i, tagLength));
                     } else {
@@ -309,8 +309,8 @@ public class BluetoothMapAppParams {
                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                                 4);
                     }
-                    break;
-                case FILTER_READ_STATUS:
+                }
+                case FILTER_READ_STATUS -> {
                     if (tagLength != FILTER_READ_STATUS_LEN) {
                         Log.w(
                                 TAG,
@@ -327,8 +327,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setFilterReadStatus(appParams[i] & 0x03); // Lower two bits
                     }
-                    break;
-                case FILTER_RECIPIENT:
+                }
+                case FILTER_RECIPIENT -> {
                     if (tagLength != 0) {
                         setFilterRecipient(new String(appParams, i, tagLength));
                     } else {
@@ -344,8 +344,8 @@ public class BluetoothMapAppParams {
                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                                 6);
                     }
-                    break;
-                case FILTER_ORIGINATOR:
+                }
+                case FILTER_ORIGINATOR -> {
                     if (tagLength != 0) {
                         setFilterOriginator(new String(appParams, i, tagLength));
                     } else {
@@ -361,8 +361,8 @@ public class BluetoothMapAppParams {
                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                                 7);
                     }
-                    break;
-                case FILTER_PRIORITY:
+                }
+                case FILTER_PRIORITY -> {
                     if (tagLength != FILTER_PRIORITY_LEN) {
                         Log.w(
                                 TAG,
@@ -379,8 +379,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setFilterPriority(appParams[i] & 0x03); // Lower two bits
                     }
-                    break;
-                case ATTACHMENT:
+                }
+                case ATTACHMENT -> {
                     if (tagLength != ATTACHMENT_LEN) {
                         Log.w(
                                 TAG,
@@ -397,8 +397,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setAttachment(appParams[i] & 0x01); // Lower bit
                     }
-                    break;
-                case TRANSPARENT:
+                }
+                case TRANSPARENT -> {
                     if (tagLength != TRANSPARENT_LEN) {
                         Log.w(
                                 TAG,
@@ -415,8 +415,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setTransparent(appParams[i] & 0x01); // Lower bit
                     }
-                    break;
-                case RETRY:
+                }
+                case RETRY -> {
                     if (tagLength != RETRY_LEN) {
                         Log.w(
                                 TAG,
@@ -433,8 +433,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setRetry(appParams[i] & 0x01); // Lower bit
                     }
-                    break;
-                case NEW_MESSAGE:
+                }
+                case NEW_MESSAGE -> {
                     if (tagLength != NEW_MESSAGE_LEN) {
                         Log.w(
                                 TAG,
@@ -451,8 +451,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setNewMessage(appParams[i] & 0x01); // Lower bit
                     }
-                    break;
-                case NOTIFICATION_STATUS:
+                }
+                case NOTIFICATION_STATUS -> {
                     if (tagLength != NOTIFICATION_STATUS_LEN) {
                         Log.w(
                                 TAG,
@@ -469,8 +469,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setNotificationStatus(appParams[i] & 0x01); // Lower bit
                     }
-                    break;
-                case NOTIFICATION_FILTER:
+                }
+                case NOTIFICATION_FILTER -> {
                     if (tagLength != NOTIFICATION_FILTER_LEN) {
                         Log.w(
                                 TAG,
@@ -487,8 +487,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setNotificationFilter(appParamBuf.getInt(i) & 0xffffffffL); // 4 bytes
                     }
-                    break;
-                case MAS_INSTANCE_ID:
+                }
+                case MAS_INSTANCE_ID -> {
                     if (tagLength != MAS_INSTANCE_ID_LEN) {
                         Log.w(
                                 TAG,
@@ -505,8 +505,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setMasInstanceId(appParams[i] & 0xff);
                     }
-                    break;
-                case PARAMETER_MASK:
+                }
+                case PARAMETER_MASK -> {
                     if (tagLength != PARAMETER_MASK_LEN) {
                         Log.w(
                                 TAG,
@@ -523,8 +523,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setParameterMask(appParamBuf.getInt(i) & 0xffffffffL); // Make it unsigned
                     }
-                    break;
-                case FOLDER_LISTING_SIZE:
+                }
+                case FOLDER_LISTING_SIZE -> {
                     if (tagLength != FOLDER_LISTING_SIZE_LEN) {
                         Log.w(
                                 TAG,
@@ -541,8 +541,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setFolderListingSize(appParamBuf.getShort(i) & 0xffff); // Make it unsigned
                     }
-                    break;
-                case MESSAGE_LISTING_SIZE:
+                }
+                case MESSAGE_LISTING_SIZE -> {
                     if (tagLength != MESSAGE_LISTING_SIZE_LEN) {
                         Log.w(
                                 TAG,
@@ -559,8 +559,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setMessageListingSize(appParamBuf.getShort(i) & 0xffff); // Make it unsigned
                     }
-                    break;
-                case SUBJECT_LENGTH:
+                }
+                case SUBJECT_LENGTH -> {
                     if (tagLength != SUBJECT_LENGTH_LEN) {
                         Log.w(
                                 TAG,
@@ -577,8 +577,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setSubjectLength(appParams[i] & 0xff);
                     }
-                    break;
-                case CHARSET:
+                }
+                case CHARSET -> {
                     if (tagLength != CHARSET_LEN) {
                         Log.w(
                                 TAG,
@@ -595,8 +595,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setCharset(appParams[i] & 0x01); // Lower bit
                     }
-                    break;
-                case FRACTION_REQUEST:
+                }
+                case FRACTION_REQUEST -> {
                     if (tagLength != FRACTION_REQUEST_LEN) {
                         Log.w(
                                 TAG,
@@ -613,8 +613,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setFractionRequest(appParams[i] & 0x01); // Lower bit
                     }
-                    break;
-                case FRACTION_DELIVER:
+                }
+                case FRACTION_DELIVER -> {
                     if (tagLength != FRACTION_DELIVER_LEN) {
                         Log.w(
                                 TAG,
@@ -631,8 +631,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setFractionDeliver(appParams[i] & 0x01); // Lower bit
                     }
-                    break;
-                case STATUS_INDICATOR:
+                }
+                case STATUS_INDICATOR -> {
                     if (tagLength != STATUS_INDICATOR_LEN) {
                         Log.w(
                                 TAG,
@@ -649,8 +649,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setStatusIndicator(appParams[i] & 0x01); // Lower bit
                     }
-                    break;
-                case STATUS_VALUE:
+                }
+                case STATUS_VALUE -> {
                     if (tagLength != STATUS_VALUE_LEN) {
                         Log.w(
                                 TAG,
@@ -667,11 +667,9 @@ public class BluetoothMapAppParams {
                     } else {
                         setStatusValue(appParams[i] & 0x01); // Lower bit
                     }
-                    break;
-                case MSE_TIME:
-                    setMseTime(new String(appParams, i, tagLength));
-                    break;
-                case DATABASE_IDENTIFIER:
+                }
+                case MSE_TIME -> setMseTime(new String(appParams, i, tagLength));
+                case DATABASE_IDENTIFIER -> {
                     if ((tagLength != DATABASE_IDENTIFIER_LEN)) {
                         Log.w(
                                 TAG,
@@ -689,8 +687,8 @@ public class BluetoothMapAppParams {
                         setDatabaseIdentifier(
                                 appParamBuf.getLong(i) /*MSB*/, appParamBuf.getLong(i + 8) /*LSB*/);
                     }
-                    break;
-                case CONVO_LIST_VER_COUNTER:
+                }
+                case CONVO_LIST_VER_COUNTER -> {
                     if ((tagLength != CONVO_LIST_VER_COUNTER_LEN)) {
                         Log.w(
                                 TAG,
@@ -708,8 +706,8 @@ public class BluetoothMapAppParams {
                         setConvoListingVerCounter(
                                 appParamBuf.getLong(i) /*MSB*/, appParamBuf.getLong(i + 8) /*LSB*/);
                     }
-                    break;
-                case PRESENCE_AVAILABLE:
+                }
+                case PRESENCE_AVAILABLE -> {
                     if ((tagLength != PRESENCE_AVAILABLE_LEN)) {
                         Log.w(
                                 TAG,
@@ -726,8 +724,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setPresenceAvailability(appParams[i]);
                     }
-                    break;
-                case PRESENCE_TEXT:
+                }
+                case PRESENCE_TEXT -> {
                     if (tagLength != 0) {
                         setPresenceStatus(new String(appParams, i, tagLength));
                     } else {
@@ -743,8 +741,8 @@ public class BluetoothMapAppParams {
                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                                 28);
                     }
-                    break;
-                case LAST_ACTIVITY:
+                }
+                case LAST_ACTIVITY -> {
                     if (tagLength != 0) {
                         setLastActivity(new String(appParams, i, tagLength));
                     } else {
@@ -760,8 +758,8 @@ public class BluetoothMapAppParams {
                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                                 29);
                     }
-                    break;
-                case CHAT_STATE:
+                }
+                case CHAT_STATE -> {
                     if ((tagLength != CHAT_STATE_LEN)) {
                         Log.w(
                                 TAG,
@@ -778,8 +776,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setChatState(appParams[i]);
                     }
-                    break;
-                case FILTER_CONVO_ID:
+                }
+                case FILTER_CONVO_ID -> {
                     if ((tagLength != 0) && (tagLength <= FILTER_CONVO_ID_LEN)) {
                         setFilterConvoId(new String(appParams, i, tagLength));
                     } else {
@@ -796,8 +794,8 @@ public class BluetoothMapAppParams {
                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                                 31);
                     }
-                    break;
-                case CONVO_LISTING_SIZE:
+                }
+                case CONVO_LISTING_SIZE -> {
                     if (tagLength != CONVO_LISTING_SIZE_LEN) {
                         Log.w(
                                 TAG,
@@ -814,8 +812,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setConvoListingSize(appParamBuf.getShort(i) & 0xffff);
                     }
-                    break;
-                case FILTER_PRESENCE:
+                }
+                case FILTER_PRESENCE -> {
                     if ((tagLength != FILTER_PRESENCE_LEN)) {
                         Log.w(
                                 TAG,
@@ -832,8 +830,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setFilterPresence(appParams[i]);
                     }
-                    break;
-                case FILTER_UID_PRESENT:
+                }
+                case FILTER_UID_PRESENT -> {
                     if ((tagLength != FILTER_UID_PRESENT_LEN)) {
                         Log.w(
                                 TAG,
@@ -850,8 +848,8 @@ public class BluetoothMapAppParams {
                     } else {
                         setFilterUidPresent(appParams[i] & 0x1);
                     }
-                    break;
-                case CHAT_STATE_CONVO_ID:
+                }
+                case CHAT_STATE_CONVO_ID -> {
                     if ((tagLength != CHAT_STATE_CONVO_ID_LEN)) {
                         Log.w(
                                 TAG,
@@ -878,10 +876,9 @@ public class BluetoothMapAppParams {
                                         + BluetoothMapUtils.getLongAsString(
                                                 appParamBuf.getLong(i + 8)));
                     }
-                    break;
-                case FOLDER_VER_COUNTER:
-                    break;
-                case FILTER_MESSAGE_HANDLE:
+                }
+                case FOLDER_VER_COUNTER -> {}
+                case FILTER_MESSAGE_HANDLE -> {
                     if ((tagLength != 0 && tagLength <= FILTER_MESSAGE_HANDLE_LEN)) {
                         setFilterMsgHandle(new String(appParams, i, tagLength));
                     } else {
@@ -898,9 +895,8 @@ public class BluetoothMapAppParams {
                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                                 36);
                     }
-
-                    break;
-                case CONVO_PARAMETER_MASK:
+                }
+                case CONVO_PARAMETER_MASK -> {
                     if (tagLength != CONVO_PARAMETER_MASK_LEN) {
                         Log.w(
                                 TAG,
@@ -918,8 +914,8 @@ public class BluetoothMapAppParams {
                         setConvoParameterMask(
                                 appParamBuf.getInt(i) & 0xffffffffL); // Make it unsigned
                     }
-                    break;
-                default:
+                }
+                default -> {
                     // Just skip unknown Tags, no need to report error
                     Log.w(
                             TAG,
@@ -932,7 +928,7 @@ public class BluetoothMapAppParams {
                             BluetoothStatsLog
                                     .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                             38);
-                    break;
+                }
             }
             i += tagLength; // Offset to next TagId
         }

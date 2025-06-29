@@ -216,23 +216,24 @@ public class AvrcpNativeInterface {
     void listPlayerSettingValuesRequest(byte settingRequest) {
         byte[] valuesArray;
         switch (settingRequest) {
-            case (byte) PlayerSettingsValues.SETTING_REPEAT:
+            case (byte) PlayerSettingsValues.SETTING_REPEAT -> {
                 valuesArray = new byte[4];
                 valuesArray[0] = PlayerSettingsValues.STATE_REPEAT_OFF;
                 valuesArray[1] = PlayerSettingsValues.STATE_REPEAT_SINGLE_TRACK;
                 valuesArray[2] = PlayerSettingsValues.STATE_REPEAT_ALL_TRACK;
                 valuesArray[3] = PlayerSettingsValues.STATE_REPEAT_GROUP;
-                break;
-            case (byte) PlayerSettingsValues.SETTING_SHUFFLE:
+            }
+            case (byte) PlayerSettingsValues.SETTING_SHUFFLE -> {
                 valuesArray = new byte[3];
                 valuesArray[0] = PlayerSettingsValues.STATE_SHUFFLE_OFF;
                 valuesArray[1] = PlayerSettingsValues.STATE_SHUFFLE_ALL_TRACK;
                 valuesArray[2] = PlayerSettingsValues.STATE_SHUFFLE_GROUP;
-                break;
-            default:
+            }
+            default -> {
                 // For settings we don't support yet, return only state off.
                 valuesArray = new byte[1];
                 valuesArray[0] = PlayerSettingsValues.STATE_DEFAULT_OFF;
+            }
         }
         listPlayerSettingValuesResponseNative(settingRequest, valuesArray);
     }
@@ -241,17 +242,14 @@ public class AvrcpNativeInterface {
     void getCurrentPlayerSettingValuesRequest(byte[] settingsRequest) {
         byte[] valuesArray = new byte[settingsRequest.length];
         for (int i = 0; i < settingsRequest.length; i++) {
-            switch (settingsRequest[i]) {
-                case (byte) PlayerSettingsValues.SETTING_REPEAT:
-                    valuesArray[i] = (byte) mAvrcpService.getRepeatMode();
-                    break;
-                case (byte) PlayerSettingsValues.SETTING_SHUFFLE:
-                    valuesArray[i] = (byte) mAvrcpService.getShuffleMode();
-                    break;
-                default:
-                    valuesArray[i] = (byte) PlayerSettingsValues.STATE_DEFAULT_OFF;
-                    break;
-            }
+            valuesArray[i] =
+                    switch (settingsRequest[i]) {
+                        case (byte) PlayerSettingsValues.SETTING_REPEAT ->
+                                (byte) mAvrcpService.getRepeatMode();
+                        case (byte) PlayerSettingsValues.SETTING_SHUFFLE ->
+                                (byte) mAvrcpService.getShuffleMode();
+                        default -> (byte) PlayerSettingsValues.STATE_DEFAULT_OFF;
+                    };
         }
         getPlayerSettingsResponseNative(settingsRequest, valuesArray);
     }

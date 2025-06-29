@@ -520,27 +520,17 @@ public final class BluetoothCodecConfig implements Parcelable {
      */
     @RequiresNoPermission
     public static @NonNull String getCodecName(@SourceCodecType int codecType) {
-        switch (codecType) {
-            case SOURCE_CODEC_TYPE_SBC:
-                return "SBC";
-            case SOURCE_CODEC_TYPE_AAC:
-                return "AAC";
-            case SOURCE_CODEC_TYPE_APTX:
-                return "aptX";
-            case SOURCE_CODEC_TYPE_APTX_HD:
-                return "aptX HD";
-            case SOURCE_CODEC_TYPE_LDAC:
-                return "LDAC";
-            case SOURCE_CODEC_TYPE_LC3:
-                return "LC3";
-            case SOURCE_CODEC_TYPE_OPUS:
-                return "Opus";
-            case SOURCE_CODEC_TYPE_INVALID:
-                return "INVALID CODEC";
-            default:
-                break;
-        }
-        return "UNKNOWN CODEC(" + codecType + ")";
+        return switch (codecType) {
+            case SOURCE_CODEC_TYPE_SBC -> "SBC";
+            case SOURCE_CODEC_TYPE_AAC -> "AAC";
+            case SOURCE_CODEC_TYPE_APTX -> "aptX";
+            case SOURCE_CODEC_TYPE_APTX_HD -> "aptX HD";
+            case SOURCE_CODEC_TYPE_LDAC -> "LDAC";
+            case SOURCE_CODEC_TYPE_LC3 -> "LC3";
+            case SOURCE_CODEC_TYPE_OPUS -> "Opus";
+            case SOURCE_CODEC_TYPE_INVALID -> "INVALID CODEC";
+            default -> "UNKNOWN CODEC(" + codecType + ")";
+        };
     }
 
     /**

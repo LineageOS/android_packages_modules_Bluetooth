@@ -651,8 +651,7 @@ public class GattService extends ProfileService {
 
         for (GattDbElement el : db) {
             switch (el.type) {
-                case GattDbElement.TYPE_PRIMARY_SERVICE:
-                case GattDbElement.TYPE_SECONDARY_SERVICE:
+                case GattDbElement.TYPE_PRIMARY_SERVICE, GattDbElement.TYPE_SECONDARY_SERVICE -> {
                     Log.d(TAG, "got service with UUID=" + el.uuid + " id: " + el.id);
 
                     currSrvc = new BluetoothGattService(el.uuid, el.id, el.type);
@@ -662,8 +661,8 @@ public class GattService extends ProfileService {
                     if (isRestrictedSrvc) {
                         restrictedIds.add(el.id);
                     }
-                    break;
-                case GattDbElement.TYPE_CHARACTERISTIC:
+                }
+                case GattDbElement.TYPE_CHARACTERISTIC -> {
                     Log.d(TAG, "got characteristic with UUID=" + el.uuid + " id: " + el.id);
 
                     currChar = new BluetoothGattCharacteristic(el.uuid, el.id, el.properties, 0);
@@ -672,16 +671,16 @@ public class GattService extends ProfileService {
                     if (isRestrictedChar) {
                         restrictedIds.add(el.id);
                     }
-                    break;
-                case GattDbElement.TYPE_DESCRIPTOR:
+                }
+                case GattDbElement.TYPE_DESCRIPTOR -> {
                     Log.d(TAG, "got descriptor with UUID=" + el.uuid + " id: " + el.id);
 
                     currChar.addDescriptor(new BluetoothGattDescriptor(el.uuid, el.id, 0));
                     if (isRestrictedChar) {
                         restrictedIds.add(el.id);
                     }
-                    break;
-                case GattDbElement.TYPE_INCLUDED_SERVICE:
+                }
+                case GattDbElement.TYPE_INCLUDED_SERVICE -> {
                     Log.d(
                             TAG,
                             "got included service with UUID="
@@ -693,8 +692,8 @@ public class GattService extends ProfileService {
 
                     currSrvc.addIncludedService(
                             new BluetoothGattService(el.uuid, el.startHandle, el.type));
-                    break;
-                default:
+                }
+                default -> {
                     Log.e(
                             TAG,
                             "got unknown element with type="
@@ -703,6 +702,7 @@ public class GattService extends ProfileService {
                                     + el.uuid
                                     + " id: "
                                     + el.id);
+                }
             }
         }
 

@@ -834,19 +834,18 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
             if (stackEvent.type
                     == CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED) {
                 if (sm == null) {
-                    switch (stackEvent.valueInt1) {
-                        case CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED:
-                        case CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTING:
-                            sm = getOrCreateStateMachine(device);
-                            break;
-                        default:
-                            break;
-                    }
-                }
+                    sm =
+                            switch (stackEvent.valueInt1) {
+                                case CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED,
+                                        CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTING ->
+                                        getOrCreateStateMachine(device);
+                                default -> null;
+                            };
 
-                if (sm == null) {
-                    Log.e(TAG, "Cannot process stack event: no state machine: " + stackEvent);
-                    return;
+                    if (sm == null) {
+                        Log.e(TAG, "Cannot process stack event: no state machine: " + stackEvent);
+                        return;
+                    }
                 }
                 sm.sendMessage(CsipSetCoordinatorStateMachine.STACK_EVENT, stackEvent);
             }

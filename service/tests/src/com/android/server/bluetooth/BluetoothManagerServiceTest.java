@@ -587,9 +587,7 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_ENABLE_BLE_WHILE_DISABLING_AIRPLANE
-    })
+    @EnableFlags({Flags.FLAG_ENABLE_BLE_WHILE_DISABLING_AIRPLANE})
     public void enableBle_whenDisableAirplaneIsDelayed_startBluetooth() throws Exception {
         mManagerService.enable(0, "enableBle_whenDisableAirplaneIsDelayed_startBluetooth");
         IBluetoothCallback btCallback = transition_offToOn();
@@ -649,9 +647,7 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_FACTORY_RESET_AT_BLUETOOTH_START
-    })
+    @EnableFlags({Flags.FLAG_FACTORY_RESET_AT_BLUETOOTH_START})
     public void factoryReset_whileBtOn_restartWithProperty() throws Exception {
         mManagerService.enable(0, "factoryReset_whileBtOn_restartWithProperty");
         IBluetoothCallback btCallback = transition_offToOn();

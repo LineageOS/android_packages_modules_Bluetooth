@@ -1229,21 +1229,18 @@ public class DatabaseManager {
         String hardwareVersion = "";
         String softwareVersion = "";
         switch (key) {
-            case BluetoothDevice.METADATA_MANUFACTURER_NAME:
-                manufacturerName = Utils.byteArrayToUtf8String(bytesValue);
-                break;
-            case BluetoothDevice.METADATA_MODEL_NAME:
-                modelName = Utils.byteArrayToUtf8String(bytesValue);
-                break;
-            case BluetoothDevice.METADATA_HARDWARE_VERSION:
-                hardwareVersion = Utils.byteArrayToUtf8String(bytesValue);
-                break;
-            case BluetoothDevice.METADATA_SOFTWARE_VERSION:
-                softwareVersion = Utils.byteArrayToUtf8String(bytesValue);
-                break;
-            default:
+            case BluetoothDevice.METADATA_MANUFACTURER_NAME ->
+                    manufacturerName = Utils.byteArrayToUtf8String(bytesValue);
+            case BluetoothDevice.METADATA_MODEL_NAME ->
+                    modelName = Utils.byteArrayToUtf8String(bytesValue);
+            case BluetoothDevice.METADATA_HARDWARE_VERSION ->
+                    hardwareVersion = Utils.byteArrayToUtf8String(bytesValue);
+            case BluetoothDevice.METADATA_SOFTWARE_VERSION ->
+                    softwareVersion = Utils.byteArrayToUtf8String(bytesValue);
+            default -> {
                 // Do not log anything if metadata doesn't fall into above categories
                 return;
+            }
         }
         String[] macAddress = device.getAddress().split(":");
         BluetoothStatsLog.write(
