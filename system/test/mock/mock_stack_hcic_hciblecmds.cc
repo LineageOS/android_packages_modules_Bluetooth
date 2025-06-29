@@ -54,8 +54,6 @@ struct btsnd_hcic_ble_rand btsnd_hcic_ble_rand;
 struct btsnd_hcic_ble_read_remote_feat btsnd_hcic_ble_read_remote_feat;
 struct btsnd_hcic_ble_read_resolvable_addr_peer btsnd_hcic_ble_read_resolvable_addr_peer;
 struct btsnd_hcic_ble_receiver_test btsnd_hcic_ble_receiver_test;
-struct btsnd_hcic_ble_set_adv_data btsnd_hcic_ble_set_adv_data;
-struct btsnd_hcic_ble_set_adv_enable btsnd_hcic_ble_set_adv_enable;
 struct btsnd_hcic_ble_set_data_length btsnd_hcic_ble_set_data_length;
 struct btsnd_hcic_ble_set_default_periodic_advertising_sync_transfer_params
         btsnd_hcic_ble_set_default_periodic_advertising_sync_transfer_params;
@@ -71,7 +69,6 @@ struct btsnd_hcic_ble_set_scan_params btsnd_hcic_ble_set_scan_params;
 struct btsnd_hcic_ble_start_enc btsnd_hcic_ble_start_enc;
 struct btsnd_hcic_ble_test_end btsnd_hcic_ble_test_end;
 struct btsnd_hcic_ble_transmitter_test btsnd_hcic_ble_transmitter_test;
-struct btsnd_hcic_ble_write_adv_params btsnd_hcic_ble_write_adv_params;
 struct btsnd_hcic_create_big btsnd_hcic_create_big;
 struct btsnd_hcic_create_cis btsnd_hcic_create_cis;
 struct btsnd_hcic_read_iso_link_quality btsnd_hcic_read_iso_link_quality;
@@ -171,14 +168,6 @@ void btsnd_hcic_ble_receiver_test(uint8_t rx_freq) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_receiver_test(rx_freq);
 }
-void btsnd_hcic_ble_set_adv_data(uint8_t data_len, uint8_t* p_data) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_set_adv_data(data_len, p_data);
-}
-void btsnd_hcic_ble_set_adv_enable(uint8_t adv_enable) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_set_adv_enable(adv_enable);
-}
 void btsnd_hcic_ble_set_data_length(uint16_t conn_handle, uint16_t tx_octets, uint16_t tx_time) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_set_data_length(conn_handle, tx_octets,
@@ -245,15 +234,6 @@ void btsnd_hcic_ble_transmitter_test(uint8_t tx_freq, uint8_t test_data_len, uin
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_transmitter_test(tx_freq, test_data_len,
                                                                      payload);
-}
-void btsnd_hcic_ble_write_adv_params(uint16_t adv_int_min, uint16_t adv_int_max, uint8_t adv_type,
-                                     tBLE_ADDR_TYPE addr_type_own, tBLE_ADDR_TYPE addr_type_dir,
-                                     const RawAddress& direct_bda, uint8_t channel_map,
-                                     uint8_t adv_filter_policy) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_write_adv_params(
-          adv_int_min, adv_int_max, adv_type, addr_type_own, addr_type_dir, direct_bda, channel_map,
-          adv_filter_policy);
 }
 void btsnd_hcic_create_big(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
                            uint32_t sdu_itv, uint16_t max_sdu_size, uint16_t transport_latency,
