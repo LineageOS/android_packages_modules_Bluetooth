@@ -1018,15 +1018,16 @@ public final class Utils {
         return "uid/pid=" + Binder.getCallingUid() + "/" + Binder.getCallingPid();
     }
 
+    private static final DateTimeFormatter DATE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("MM-dd HH:mm:ss.SSS").withZone(ZoneId.systemDefault());
+
     /**
-     * Get system local time
+     * Get the current system local time as a formatted string.
      *
-     * @return "MM-dd HH:mm:ss.SSS"
+     * @return A formatted string representing the current time ("MM-dd HH:mm:ss.SSS")
      */
     public static String getLocalTimeString() {
-        return DateTimeFormatter.ofPattern("MM-dd HH:mm:ss.SSS")
-                .withZone(ZoneId.systemDefault())
-                .format(Instant.now());
+        return DATE_TIME_FORMATTER.format(Instant.now());
     }
 
     public static void skipCurrentTag(XmlPullParser parser)
