@@ -20,6 +20,7 @@ import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE;
 import static android.Manifest.permission.LOCAL_MAC_ADDRESS;
+import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -51,6 +52,7 @@ import android.os.IBinder;
 import android.os.Process;
 import android.os.UserHandle;
 import android.os.UserManager;
+import android.os.test.TestLooper;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
@@ -109,6 +111,7 @@ public class BluetoothServiceBinderTest {
             spy(new AttributionSource.Builder(Process.myUid()).build());
 
     private BluetoothServiceBinder mBinder;
+    private TestLooper mLooper;
     private InOrder mInOrder;
 
     @Parameters(name = "{0}")
@@ -124,6 +127,8 @@ public class BluetoothServiceBinderTest {
     public void setUp() throws Exception {
         mInOrder = inOrder(mUserManager);
         lenient().doReturn(TAG).when(mSource).getPackageName();
+        mLooper = new TestLooper();
+        mLooper.startAutoDispatch();
 
         InstrumentationRegistry.getInstrumentation()
                 .getUiAutomation()
@@ -135,7 +140,7 @@ public class BluetoothServiceBinderTest {
         doReturn(mDevicePolicyManager).when(mContext).getSystemService(eq(devicePolicy));
         doReturn(mUserManager).when(mContext).getSystemService(UserManager.class);
 
-        mBinder = new BluetoothServiceBinder(mManagerService, mContext, mUserManager);
+        mBinder = new BluetoothServiceBinder(mLooper.getLooper(), mManagerService, mContext);
     }
 
     @After
@@ -169,10 +174,10 @@ public class BluetoothServiceBinderTest {
 
         checkDisabled(() -> mBinder.enable(mSource));
         checkHardDenied(() -> mBinder.enable(mSource), true);
-        doReturn(true).when(mManagerService).enableFromBinder(any());
+        doReturn(true).when(mManagerService).enable(anyInt(), any());
         checkGranted(() -> mBinder.enable(mSource), true);
         verify(mUserManager).getProfileParent(any());
-        verify(mManagerService).enableFromBinder(eq(TAG));
+        verify(mManagerService).enable(eq(ENABLE_DISABLE_REASON_APPLICATION_REQUEST), eq(TAG));
         verifyMock();
     }
 
@@ -219,10 +224,10 @@ public class BluetoothServiceBinderTest {
 
         checkDisabled(() -> mBinder.disable(mSource, true));
         checkHardDenied(() -> mBinder.disable(mSource, true), true);
-        doReturn(true).when(mManagerService).disableFromBinder(any(), anyBoolean());
+        doReturn(true).when(mManagerService).disable(any(), anyBoolean());
         checkGranted(() -> mBinder.disable(mSource, true), true);
         verify(mUserManager).getProfileParent(any());
-        verify(mManagerService).disableFromBinder(eq(TAG), anyBoolean());
+        verify(mManagerService).disable(eq(TAG), anyBoolean());
         verifyMock();
     }
 
@@ -310,7 +315,8 @@ public class BluetoothServiceBinderTest {
                 .adoptShellPermissionIdentity(BLUETOOTH_PRIVILEGED, BLUETOOTH_CONNECT);
 
         assertThat(mBinder.onFactoryReset(mSource)).isFalse();
-        verify(mManagerService).onFactoryResetFromBinder();
+        verify(mManagerService).getState();
+        verify(mManagerService).onFactoryReset();
         verifyMock();
     }
 
@@ -330,9 +336,9 @@ public class BluetoothServiceBinderTest {
 
         checkDisabled(() -> mBinder.enableBle(mSource, token));
         checkHardDenied(() -> mBinder.enableBle(mSource, token), false);
-        doReturn(true).when(mManagerService).enableBleFromBinder(eq(TAG), eq(token));
+        doReturn(true).when(mManagerService).enableBle(eq(TAG), eq(token));
         checkGranted(() -> mBinder.enableBle(mSource, token), true);
-        verify(mManagerService).enableBleFromBinder(eq(TAG), eq(token));
+        verify(mManagerService).enableBle(eq(TAG), eq(token));
         verifyMock();
     }
 
@@ -344,9 +350,9 @@ public class BluetoothServiceBinderTest {
 
         checkDisabled(() -> mBinder.disableBle(mSource, token));
         checkHardDenied(() -> mBinder.disableBle(mSource, token), false);
-        doReturn(true).when(mManagerService).disableBleFromBinder(eq(TAG), eq(token));
+        doReturn(true).when(mManagerService).disableBle(eq(TAG), eq(token));
         checkGranted(() -> mBinder.disableBle(mSource, token), true);
-        verify(mManagerService).disableBleFromBinder(eq(TAG), eq(token));
+        verify(mManagerService).disableBle(eq(TAG), eq(token));
         verifyMock();
     }
 
