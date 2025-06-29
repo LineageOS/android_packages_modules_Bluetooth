@@ -31,20 +31,18 @@ import android.os.Binder;
 import android.os.WorkSource;
 
 import com.android.bluetooth.BluetoothStatsLog;
+import com.android.bluetooth.Utils;
 import com.android.bluetooth.Utils.TimeProvider;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.util.WorkSourceUtil;
 import com.android.internal.annotations.VisibleForTesting;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -662,10 +660,7 @@ class AppScanStats {
         };
     }
 
-    @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
     public synchronized void dumpToString(StringBuilder sb) {
-        DateFormat dateFormat = new SimpleDateFormat("MM-dd HH:mm:ss", Locale.ROOT);
-
         long currentTime = System.currentTimeMillis();
         long currTime = mTimeProvider.elapsedRealtime();
         long scanDuration = 0;
@@ -765,8 +760,8 @@ class AppScanStats {
 
             for (int i = 0; i < mLastScans.size(); i++) {
                 LastScan scan = mLastScans.get(i);
-                Date timestamp = new Date(currentTime - currTime + scan.timestamp);
-                sb.append("\n    ").append(dateFormat.format(timestamp)).append(" - ");
+                final var timestamp = Instant.ofEpochMilli(currentTime - currTime + scan.timestamp);
+                sb.append("\n    ").append(Utils.formatInstant(timestamp)).append(" - ");
                 sb.append(scan.duration).append("ms ");
                 if (scan.isOpportunisticScan) {
                     sb.append("Opp ");
@@ -828,8 +823,8 @@ class AppScanStats {
         if (!mOngoingScans.isEmpty()) {
             sb.append("\n  Ongoing scans                                               :");
             for (LastScan scan : mOngoingScans.values()) {
-                Date timestamp = new Date(currentTime - currTime + scan.timestamp);
-                sb.append("\n    ").append(dateFormat.format(timestamp)).append(" - ");
+                final var timestamp = Instant.ofEpochMilli(currentTime - currTime + scan.timestamp);
+                sb.append("\n    ").append(Utils.formatInstant(timestamp)).append(" - ");
                 sb.append((currTime - scan.timestamp)).append("ms ");
                 if (scan.isOpportunisticScan) {
                     sb.append("Opp ");
