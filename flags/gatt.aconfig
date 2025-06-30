@@ -42,3 +42,10 @@ flag {
     description: "New gatt API to offload characteristics"
     bug: "427099808"
 }
+
+flag {
+    name: "gatt_messaging_permissions"
+    namespace: "bluetooth"
+    description: "Add GATT method to set messaging services access permission"
+    bug: "428743016"
+}
