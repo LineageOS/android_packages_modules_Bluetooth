@@ -3,7 +3,7 @@ use crate::btif::{BluetoothInterface, BtStatus, RawAddress, SupportedProfiles, T
 use crate::ccall;
 use crate::profiles::hf_client::bindings::bthf_client_interface_t;
 use crate::topstack::get_dispatchers;
-use crate::utils::{LTCheckedPtr, LTCheckedPtrMut};
+use crate::utils::LTCheckedPtrMut;
 
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::cast::FromPrimitive;
@@ -182,29 +182,25 @@ impl HfClient {
     #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn connect(&self, addr: RawAddress) -> BtStatus {
-        let addr_ptr = LTCheckedPtr::from_ref(&addr);
-        BtStatus::from(ccall!(self, connect, addr_ptr.into()))
+        BtStatus::from(ccall!(self, connect, addr))
     }
 
     #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn disconnect(&self, addr: RawAddress) -> BtStatus {
-        let addr_ptr = LTCheckedPtr::from_ref(&addr);
-        BtStatus::from(ccall!(self, disconnect, addr_ptr.into()))
+        BtStatus::from(ccall!(self, disconnect, addr))
     }
 
     #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn connect_audio(&mut self, addr: RawAddress) -> BtStatus {
-        let addr_ptr = LTCheckedPtr::from_ref(&addr);
-        BtStatus::from(ccall!(self, connect_audio, addr_ptr.into()))
+        BtStatus::from(ccall!(self, connect_audio, addr))
     }
 
     #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn disconnect_audio(&mut self, addr: RawAddress) -> BtStatus {
-        let addr_ptr = LTCheckedPtr::from_ref(&addr);
-        BtStatus::from(ccall!(self, disconnect_audio, addr_ptr.into()))
+        BtStatus::from(ccall!(self, disconnect_audio, addr))
     }
 
     #[log_args]
