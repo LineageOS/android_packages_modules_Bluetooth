@@ -2379,9 +2379,10 @@ public class LeAudioService extends ConnectableProfile {
         }
     }
 
-    /*
+    /**
      * Report the active broadcast device change to the active device manager and the media
      * framework.
+     *
      * @param newDevice new supported broadcast audio device
      * @param previousDevice previous no longer supported broadcast audio device
      */

@@ -35,7 +35,6 @@ import android.os.IBinder;
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -54,6 +53,7 @@ public class PeriodicScanManagerTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
+    @Mock private ScanController mScanController;
     @Mock private PeriodicScanNativeInterface mPeriodicScanNativeInterface;
     @Mock private IPeriodicAdvertisingCallback mCallback;
     @Mock private IBinder mBinder;
@@ -69,15 +69,13 @@ public class PeriodicScanManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        PeriodicScanNativeInterface.setInstance(mPeriodicScanNativeInterface);
-
         mockGetBluetoothManager(mAdapterService);
 
-        final TestLooper looper = new TestLooper();
-        mPeriodicScanManager = new PeriodicScanManager(mAdapterService, looper.getLooper());
+        mPeriodicScanManager =
+                new PeriodicScanManager(
+                        mAdapterService, mScanController, mPeriodicScanNativeInterface);
 
         mScanResult = new ScanResult(mDevice, 0, 0, 0, 0, 0, 0, 0, null, 0);
-        mCallback = mock(IPeriodicAdvertisingCallback.class);
 
         doReturn(mBinder).when(mCallback).asBinder();
         doNothing().when(mBinder).linkToDeath(any(), eq(0));
@@ -88,7 +86,6 @@ public class PeriodicScanManagerTest {
     @After
     public void tearDown() throws Exception {
         mPeriodicScanManager.cleanup();
-        PeriodicScanNativeInterface.setInstance(null);
     }
 
     @Test

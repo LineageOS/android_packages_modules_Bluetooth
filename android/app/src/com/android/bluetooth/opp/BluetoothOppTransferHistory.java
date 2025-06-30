@@ -314,7 +314,7 @@ public class BluetoothOppTransferHistory extends Activity
 
     /*
      * (non-Javadoc)
-     * @see
+     * see
      * android.widget.AdapterView.OnItemClickListener#onItemClick(android.widget
      * .AdapterView, android.view.View, int, long)
      */

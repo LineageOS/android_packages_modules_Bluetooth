@@ -31,7 +31,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -58,14 +57,14 @@ import android.platform.test.flag.junit.SetFlagsRule;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils.FakeTimeProvider;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
+import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.protobuf.ByteString;
-import com.google.testing.junit.testparameterinjector.TestParameter;
-import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 import org.junit.After;
 import org.junit.Before;
@@ -76,25 +75,32 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
+import platform.test.runner.parameterized.Parameters;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
 /** Test cases for {@link ScanController}. */
 @SmallTest
-@RunWith(TestParameterInjector.class)
+@RunWith(ParameterizedAndroidJunit4.class)
 public class ScanControllerTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+
+    @Rule public final SetFlagsRule mSetFlagsRule;
 
     @Mock private AttributionSource mAttributionSource;
     @Mock private AdapterService mAdapterService;
-    @Mock private PeriodicScanManager mPeriodicScanManager;
-    @Mock private Resources mResources;
     @Mock private ScanManager mScanManager;
+    @Mock private ScanNativeInterface mScanNativeInterface;
+    @Mock private PeriodicScanManager mPeriodicScanManager;
+    @Mock private PeriodicScanNativeInterface mPeriodicScanNativeInterface;
+    @Mock private Resources mResources;
     @Mock private ScannerMap mScannerMap;
     @Mock private ScannerMap.ScannerApp mApp;
 
@@ -107,16 +113,19 @@ public class ScanControllerTest {
     private final BluetoothDevice mDevice = getTestDevice(89);
 
     private ScanController mScanController;
+    private TestLooper mLooper;
+
+    @Parameters(name = "{0}")
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(Flags.FLAG_SCAN_CONTROLLER_THREAD);
+    }
+
+    public ScanControllerTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
+    }
 
     @Before
     public void setUp() throws Exception {
-        doAnswer(
-                        invocation -> {
-                            ((Runnable) invocation.getArgument(0)).run();
-                            return null;
-                        })
-                .when(mPeriodicScanManager)
-                .doOnScanThread(any());
         doReturn(mResources).when(mAdapterService).getResources();
 
         final Context context = InstrumentationRegistry.getInstrumentation().getContext();
@@ -129,12 +138,16 @@ public class ScanControllerTest {
         mockGetBluetoothManager(mAdapterService);
         mockGetSystemService(mAdapterService, LocationManager.class);
 
+        mLooper = new TestLooper();
         mScanController =
                 new ScanController(
                         mAdapterService,
                         mScanManager,
+                        mScanNativeInterface,
                         mPeriodicScanManager,
+                        mPeriodicScanNativeInterface,
                         mScannerMap,
+                        mLooper.getLooper(),
                         mTimeProvider);
     }
 
@@ -147,6 +160,7 @@ public class ScanControllerTest {
     public void notifyProfileConnectionStateChange_notify_scanManager() {
         mScanController.notifyProfileConnectionStateChange(
                 BluetoothProfile.A2DP, STATE_CONNECTING, STATE_CONNECTED);
+        dispatchAllIfFlagScanControllerThread(1);
         verify(mScanManager)
                 .handleBluetoothProfileConnectionStateChanged(
                         BluetoothProfile.A2DP, STATE_CONNECTING, STATE_CONNECTED);
@@ -223,6 +237,7 @@ public class ScanControllerTest {
     @Test
     public void onScanFilterEnableDisabled_callbackDone_scanManager() {
         mScanController.onScanFilterEnableDisabled(TEST_ACTION, TEST_STATUS, TEST_CLIENT_IF);
+        dispatchAllIfFlagScanControllerThread(1);
         verify(mScanManager).callbackDone(TEST_CLIENT_IF, TEST_STATUS);
     }
 
@@ -232,6 +247,7 @@ public class ScanControllerTest {
 
         mScanController.onScanFilterParamsConfigured(
                 TEST_ACTION, TEST_STATUS, TEST_CLIENT_IF, availableSpace);
+        dispatchAllIfFlagScanControllerThread(1);
         verify(mScanManager).callbackDone(TEST_CLIENT_IF, TEST_STATUS);
     }
 
@@ -242,12 +258,14 @@ public class ScanControllerTest {
 
         mScanController.onScanFilterConfig(
                 TEST_ACTION, TEST_STATUS, TEST_CLIENT_IF, filterType, availableSpace);
+        dispatchAllIfFlagScanControllerThread(1);
         verify(mScanManager).callbackDone(TEST_CLIENT_IF, TEST_STATUS);
     }
 
     @Test
     public void onBatchScanStorageConfigured_callbackDone_scanManager() {
         mScanController.onBatchScanStorageConfigured(TEST_STATUS, TEST_CLIENT_IF);
+        dispatchAllIfFlagScanControllerThread(1);
         verify(mScanManager).callbackDone(TEST_CLIENT_IF, TEST_STATUS);
     }
 
@@ -256,18 +274,40 @@ public class ScanControllerTest {
         int startStopAction = 0;
 
         mScanController.onBatchScanStartStopped(startStopAction, TEST_STATUS, TEST_CLIENT_IF);
+        dispatchAllIfFlagScanControllerThread(1);
         verify(mScanManager).callbackDone(TEST_CLIENT_IF, TEST_STATUS);
     }
 
     @Test
-    public void onBatchScanReportsInternal_deliverBatchScan(
-            @TestParameter boolean expectResults, @TestParameter boolean isTruncated)
+    public void onBatchScanReportsInternal_deliverTruncatedBatchScan_expectResults()
             throws RemoteException {
-        int reportType =
+        verifyOnBatchScanReportsInternal(/* expectResults= */ true, /* isTruncated= */ true);
+    }
+
+    @Test
+    public void onBatchScanReportsInternal_deliverTruncatedBatchScan_noResults()
+            throws RemoteException {
+        verifyOnBatchScanReportsInternal(/* expectResults= */ false, /* isTruncated= */ true);
+    }
+
+    @Test
+    public void onBatchScanReportsInternal_deliverFullBatchScan_expectResults()
+            throws RemoteException {
+        verifyOnBatchScanReportsInternal(/* expectResults= */ true, /* isTruncated= */ false);
+    }
+
+    @Test
+    public void onBatchScanReportsInternal_deliverFullBatchScan_noResults() throws RemoteException {
+        verifyOnBatchScanReportsInternal(/* expectResults= */ false, /* isTruncated= */ false);
+    }
+
+    private void verifyOnBatchScanReportsInternal(boolean expectResults, boolean isTruncated)
+            throws RemoteException {
+        final int reportType =
                 isTruncated
                         ? ScanManager.SCAN_RESULT_TYPE_TRUNCATED
                         : ScanManager.SCAN_RESULT_TYPE_FULL;
-        int numRecords = 1;
+        final int numRecords = 1;
         final byte[] recordData;
         if (isTruncated) {
             recordData =
@@ -306,6 +346,11 @@ public class ScanControllerTest {
 
         mScanController.onBatchScanReportsInternal(
                 TEST_STATUS, TEST_SCANNER_ID, reportType, numRecords, recordData);
+        if (expectResults) {
+            dispatchAllIfFlagScanControllerThread(2);
+        } else {
+            dispatchAllIfFlagScanControllerThread(1);
+        }
         verify(mScanManager).callbackDone(TEST_SCANNER_ID, TEST_STATUS);
         if (expectResults) {
             verify(callback).onBatchScanResults(any());
@@ -441,6 +486,7 @@ public class ScanControllerTest {
                         eq(callback),
                         any(),
                         eq(mScanController));
+        dispatchAllIfFlagScanControllerThread(1);
         verify(mScanManager).registerScanner(any());
     }
 
@@ -449,6 +495,7 @@ public class ScanControllerTest {
         mScanController.unregisterScanner(TEST_SCANNER_ID);
 
         verify(mScannerMap).remove(TEST_SCANNER_ID);
+        dispatchAllIfFlagScanControllerThread(1);
         verify(mScanManager).unregisterScanner(TEST_SCANNER_ID);
     }
 
@@ -463,7 +510,7 @@ public class ScanControllerTest {
         doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(TEST_SCANNER_ID);
 
         mScanController.continuePiStartScan(TEST_SCANNER_ID, mApp);
-
+        dispatchAllIfFlagScanControllerThread(2);
         verify(appScanStats)
                 .recordScanStart(
                         pii.settings(), pii.filters(), false, false, TEST_SCANNER_ID, null);
@@ -481,7 +528,7 @@ public class ScanControllerTest {
         doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(TEST_SCANNER_ID);
 
         mScanController.continuePiStartScan(TEST_SCANNER_ID, mApp);
-
+        dispatchAllIfFlagScanControllerThread(2);
         verify(appScanStats)
                 .recordScanStart(
                         pii.settings(), pii.filters(), false, false, TEST_SCANNER_ID, null);
@@ -499,6 +546,7 @@ public class ScanControllerTest {
     @Test
     public void flushPendingBatchResults() {
         mScanController.flushPendingBatchResults(TEST_SCANNER_ID);
+        dispatchAllIfFlagScanControllerThread(1);
         verify(mScanManager).flushBatchScanResults(new ScanClient(TEST_SCANNER_ID));
     }
 
@@ -510,6 +558,7 @@ public class ScanControllerTest {
         IPeriodicAdvertisingCallback callback = mock(IPeriodicAdvertisingCallback.class);
 
         mScanController.registerSync(scanResult, skip, timeout, callback, mAttributionSource);
+        dispatchAllIfFlagScanControllerThread(1);
         verify(mPeriodicScanManager).startSync(scanResult, skip, timeout, callback);
     }
 
@@ -518,6 +567,7 @@ public class ScanControllerTest {
         IPeriodicAdvertisingCallback callback = mock(IPeriodicAdvertisingCallback.class);
 
         mScanController.unregisterSync(callback, mAttributionSource);
+        dispatchAllIfFlagScanControllerThread(1);
         verify(mPeriodicScanManager).stopSync(callback);
     }
 
@@ -527,6 +577,7 @@ public class ScanControllerTest {
         int syncHandle = 2;
 
         mScanController.transferSync(mDevice, serviceData, syncHandle, mAttributionSource);
+        dispatchAllIfFlagScanControllerThread(1);
         verify(mPeriodicScanManager).transferSync(mDevice, serviceData, syncHandle);
     }
 
@@ -538,6 +589,7 @@ public class ScanControllerTest {
 
         mScanController.transferSetInfo(
                 mDevice, serviceData, advHandle, callback, mAttributionSource);
+        dispatchAllIfFlagScanControllerThread(1);
         verify(mPeriodicScanManager).transferSetInfo(mDevice, serviceData, advHandle, callback);
     }
 
@@ -591,5 +643,12 @@ public class ScanControllerTest {
         StringBuilder sb = new StringBuilder();
         mScanController.dump(sb);
         assertThat(sb.toString()).isNotNull();
+    }
+
+    // TODO(b/397863857) Inline on flag cleanup
+    private void dispatchAllIfFlagScanControllerThread(int dispatchCount) {
+        if (Flags.scanControllerThread()) {
+            assertThat(mLooper.dispatchAll()).isEqualTo(dispatchCount);
+        }
     }
 }

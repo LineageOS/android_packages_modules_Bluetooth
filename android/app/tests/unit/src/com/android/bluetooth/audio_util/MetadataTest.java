@@ -114,7 +114,6 @@ public class MetadataTest {
         mSongImage = null;
         mTestContentResolver = null;
         mTestBitmap = null;
-        mMockContext = null;
         Util.UriImagesSupport.sValue = false;
     }
 
