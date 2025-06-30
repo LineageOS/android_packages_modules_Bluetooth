@@ -83,6 +83,8 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.server.bluetooth.airplane.AirplaneModeListener;
 import com.android.server.bluetooth.satellite.SatelliteModeListener;
 
+import libcore.util.SneakyThrow;
+
 import kotlin.Unit;
 import kotlin.time.TimeSource;
 
@@ -97,9 +99,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
@@ -313,6 +318,11 @@ class BluetoothManagerService {
         }
     }
 
+    boolean factoryResetFromBinder() {
+        return postAndWait(() -> factoryReset(0));
+    }
+
+    @VisibleForTesting
     boolean factoryReset(int count) {
         if (Flags.factoryResetClearAdditionalData()) {
             AutoOnFeature.factoryResetAutoOn(mCurrentUserContext);
@@ -354,14 +364,29 @@ class BluetoothManagerService {
         return true;
     }
 
+    boolean onFactoryResetFromBinder() {
+        // Wait for stable state if bluetooth is temporary state.
+        int state = getState();
+        if (state == State.BLE_TURNING_ON
+                || state == State.TURNING_ON
+                || state == State.TURNING_OFF) {
+            if (!waitForState(State.BLE_ON, State.ON)) {
+                return false;
+            }
+        }
+        return postAndWait(() -> onFactoryReset());
+    }
+
+    @VisibleForTesting
     boolean onFactoryReset() {
         // Clear registered LE apps to force shut-off Bluetooth
         clearBleApps();
-        if (mState.oneOf(State.BLE_ON)) {
+        int state = getState();
+        if (state == State.BLE_ON) {
             ActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false);
             bleOnToOff();
             return true;
-        } else if (mState.oneOf(State.ON)) {
+        } else if (state == State.ON) {
             ActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false);
             onToBleOn();
             return true;
@@ -369,11 +394,11 @@ class BluetoothManagerService {
         return false;
     }
 
-    private int estimateBusyTime() {
-        if (mState.oneOf(State.BLE_ON) && isBluetoothPersistedStateOn()) {
+    private int estimateBusyTime(int state) {
+        if (state == State.BLE_ON && isBluetoothPersistedStateOn()) {
             // Bluetooth is in BLE and is starting classic
             return SERVICE_RESTART_TIME_MS;
-        } else if (!mState.oneOf(State.ON, State.OFF, State.BLE_ON)) {
+        } else if (state != State.ON && state != State.OFF && state != State.BLE_ON) {
             // Bluetooth is turning state
             return ADD_PROXY_DELAY_MS;
         } else if (mHandler.hasMessages(MESSAGE_HANDLE_DISABLE_DELAYED)
@@ -396,11 +421,12 @@ class BluetoothManagerService {
     }
 
     private void delayModeChangedIfNeeded(Object token, Runnable r, String modeChanged) {
-        final int delayMs = estimateBusyTime();
+        final int state = getState();
+        final int delayMs = estimateBusyTime(state);
         Log.d(
                 TAG,
                 ("delayModeChangedIfNeeded(" + modeChanged + "):")
-                        + (" state=" + mState)
+                        + (" state=" + State.$.toString(state))
                         + (" Airplane.isOnOverrode=" + AirplaneModeListener.isOnOverrode())
                         + (" Airplane.isOn=" + AirplaneModeListener.isOn())
                         + (" isSatelliteModeOn()=" + isSatelliteModeOn())
@@ -458,7 +484,7 @@ class BluetoothManagerService {
                                 "onSwitchUser"));
     }
 
-    private void forceToOffFromModeChange(int reason) {
+    private void forceToOffFromModeChange(int currentState, int reason) {
         // Clear registered LE apps to force shut-off
         clearBleApps();
 
@@ -468,12 +494,12 @@ class BluetoothManagerService {
             AutoOnFeature.pause();
         }
 
-        if (mState.oneOf(State.ON)) {
+        if (currentState == State.ON) {
             mEnable = false;
             ActiveLogs.add(reason, false);
             onToBleOn();
-        } else if (mState.oneOf(State.BLE_ON)) {
-            // In BLE_ON make sure to trigger stopBle
+        } else if (currentState == State.BLE_ON) {
+            // If currentState is BLE_ON make sure we trigger stopBle
             mEnable = false;
             mEnableExternal = false;
             ActiveLogs.add(reason, false);
@@ -491,31 +517,35 @@ class BluetoothManagerService {
             }
         }
 
+        int currentState = mState.get();
+
         Log.d(
                 TAG,
                 ("handleAirplaneModeChanged(" + isAirplaneModeOn + "):")
                         + (" mEnableExternal=" + mEnableExternal)
                         + (" isPersistStateOn=" + isPersistStateOn)
-                        + (" state=" + mState));
+                        + (" currentState=" + State.$.toString(currentState)));
 
         if (isAirplaneModeOn) {
-            forceToOffFromModeChange(ENABLE_DISABLE_REASON_AIRPLANE_MODE);
-        } else if (mEnableExternal && !mState.oneOf(State.ON) && isPersistStateOn) {
+            forceToOffFromModeChange(currentState, ENABLE_DISABLE_REASON_AIRPLANE_MODE);
+        } else if (mEnableExternal && currentState != State.ON && isPersistStateOn) {
             // isPersistStateOn is checked to prevent race with RESTORE_USER_SETTING
             sendEnableMsg(mQuietEnableExternal, ENABLE_DISABLE_REASON_AIRPLANE_MODE);
-        } else if (!mState.oneOf(State.ON)) {
+        } else if (currentState != State.ON) {
             autoOnSetupTimer();
         }
     }
 
     private void handleSatelliteModeChanged(boolean isSatelliteModeOn) {
-        if (shouldBluetoothBeOn(isSatelliteModeOn) && !mState.oneOf(State.ON)) {
+        final int currentState = mState.get();
+
+        if (shouldBluetoothBeOn(isSatelliteModeOn) && currentState != State.ON) {
             sendEnableMsg(mQuietEnableExternal, ENABLE_DISABLE_REASON_SATELLITE_MODE);
-        } else if (!shouldBluetoothBeOn(isSatelliteModeOn) && !mState.oneOf(State.OFF)) {
-            forceToOffFromModeChange(ENABLE_DISABLE_REASON_SATELLITE_MODE);
+        } else if (!shouldBluetoothBeOn(isSatelliteModeOn) && currentState != State.OFF) {
+            forceToOffFromModeChange(currentState, ENABLE_DISABLE_REASON_SATELLITE_MODE);
         } else if (!isSatelliteModeOn
                 && !shouldBluetoothBeOn(isSatelliteModeOn)
-                && !mState.oneOf(State.ON)) {
+                && currentState != State.ON) {
             autoOnSetupTimer();
         }
     }
@@ -596,7 +626,7 @@ class BluetoothManagerService {
                         mContext.getSystemService(UserManager.class),
                         "UserManager system service cannot be null");
 
-        mBinder = new BluetoothServiceBinder(looper, this, mContext);
+        mBinder = new BluetoothServiceBinder(this, mContext, mUserManager);
         mHandler = new BluetoothHandler(mLooper);
 
         // Observe BLE scan only mode settings change.
@@ -779,16 +809,20 @@ class BluetoothManagerService {
         return "XX:XX:XX:XX:" + address.substring(address.length() - 5);
     }
 
+    // Called from unsafe binder thread
     IBinder registerAdapter(IBluetoothManagerCallback callback) {
         mCallbacks.register(callback);
-        if (mAdapter == null) {
-            return null;
-        }
-        return mAdapter.getAdapterServiceBinder();
+        // Copy to local variable to avoid race condition when checking for null
+        AdapterBinder adapter = mAdapter;
+        return adapter != null ? adapter.getAdapterServiceBinder() : null;
     }
 
     void unregisterAdapter(IBluetoothManagerCallback callback) {
         mCallbacks.unregister(callback);
+    }
+
+    boolean isEnabled() {
+        return getState() == State.ON;
     }
 
     /**
@@ -950,6 +984,11 @@ class BluetoothManagerService {
         return appCount;
     }
 
+    boolean enableBleFromBinder(String packageName, IBinder token) {
+        return postAndWait(() -> enableBle(packageName, token));
+    }
+
+    @VisibleForTesting
     boolean enableBle(String packageName, IBinder token) {
         Log.i(
                 TAG,
@@ -997,6 +1036,11 @@ class BluetoothManagerService {
         return true;
     }
 
+    boolean disableBleFromBinder(String packageName, IBinder token) {
+        return postAndWait(() -> disableBle(packageName, token));
+    }
+
+    @VisibleForTesting
     boolean disableBle(String packageName, IBinder token) {
         Log.i(
                 TAG,
@@ -1118,6 +1162,11 @@ class BluetoothManagerService {
         return Unit.INSTANCE;
     }
 
+    boolean enableNoAutoConnectFromBinder(String packageName) {
+        return postAndWait(() -> enableNoAutoConnect(packageName));
+    }
+
+    @VisibleForTesting
     boolean enableNoAutoConnect(String packageName) {
         if (isSatelliteModeOn()) {
             Log.d(TAG, "enableNoAutoConnect(" + packageName + "): Blocked by satellite mode");
@@ -1135,6 +1184,11 @@ class BluetoothManagerService {
         return true;
     }
 
+    boolean enableFromBinder(String packageName) {
+        return postAndWait(() -> enable(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName));
+    }
+
+    @VisibleForTesting
     boolean enable(int reason, String packageName) {
         Log.d(
                 TAG,
@@ -1161,6 +1215,11 @@ class BluetoothManagerService {
         return true;
     }
 
+    boolean disableFromBinder(String packageName, boolean persist) {
+        return postAndWait(() -> disable(packageName, persist));
+    }
+
+    @VisibleForTesting
     boolean disable(String packageName, boolean persist) {
         Log.d(
                 TAG,
@@ -1346,10 +1405,12 @@ class BluetoothManagerService {
                 IBluetoothManagerCallback::onBluetoothServiceDown);
     }
 
+    // Called from unsafe binder thread
     String getAddress() {
         return mAddress;
     }
 
+    // Called from unsafe binder thread
     String getName() {
         return mName;
     }
@@ -1741,7 +1802,7 @@ class BluetoothManagerService {
         mEnableExternal = false;
 
         ActiveLogs.add(ENABLE_DISABLE_REASON_USER_SWITCH, false);
-        switch (getState()) {
+        switch (mState.get()) {
             case State.ON -> onToBleOn();
             case State.BLE_ON -> bleOnToOff();
             default -> throw new IllegalStateException("From impossible state: " + mState);
@@ -2203,6 +2264,7 @@ class BluetoothManagerService {
         String errorMsg = null;
 
         writer.println("Bluetooth Status");
+        writer.println("  enabled: " + isEnabled());
         writer.println("  state: " + mState);
         writer.println("  address: " + logAddress(mAddress));
         writer.println("  name: " + mName);
@@ -2360,24 +2422,52 @@ class BluetoothManagerService {
                 mLooper, mCurrentUserContext, mState, this::enableFromAutoOn);
     }
 
+    private <T> T postAndWait(Callable<T> callable) {
+        FutureTask<T> task = new FutureTask(callable);
+
+        mHandler.post(task);
+        try {
+            // Any method calling postAndWait should most likely be done in under 1 seconds.
+            // But real life shows that the system server thread may sometimes be unwillingly busy.
+            // By putting a 10 seconds timeout we make sure this will generate an ANR (on purpose),
+            // and investigation on what is happening in the system server thread and be fixed
+            return task.get(10, TimeUnit.SECONDS);
+        } catch (TimeoutException | InterruptedException e) {
+            SneakyThrow.sneakyThrow(e);
+        } catch (ExecutionException e) {
+            SneakyThrow.sneakyThrow(e.getCause());
+        }
+        return null;
+    }
+
     boolean isAutoOnSupported() {
         return mDeviceConfigAllowAutoOn
-                && AutoOnFeature.isUserSupported(mCurrentUserContext.getContentResolver());
+                && postAndWait(
+                        () ->
+                                AutoOnFeature.isUserSupported(
+                                        mCurrentUserContext.getContentResolver()));
     }
 
     boolean isAutoOnEnabled() {
         if (!mDeviceConfigAllowAutoOn) {
             throw new IllegalStateException("AutoOnFeature is not supported in current config");
         }
-        return AutoOnFeature.isUserEnabled(mCurrentUserContext);
+        return postAndWait(() -> AutoOnFeature.isUserEnabled(mCurrentUserContext));
     }
 
     void setAutoOnEnabled(boolean status) {
         if (!mDeviceConfigAllowAutoOn) {
             throw new IllegalStateException("AutoOnFeature is not supported in current config");
         }
-        AutoOnFeature.setUserEnabled(
-                mLooper, mCurrentUserContext, mState, status, this::enableFromAutoOn);
+        postAndWait(
+                Executors.callable(
+                        () ->
+                                AutoOnFeature.setUserEnabled(
+                                        mLooper,
+                                        mCurrentUserContext,
+                                        mState,
+                                        status,
+                                        this::enableFromAutoOn)));
     }
 
     /** Check if BLE is supported by this platform */
