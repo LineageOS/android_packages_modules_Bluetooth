@@ -374,7 +374,6 @@ public class ScanManager {
         return mRegularScanClients;
     }
 
-    @VisibleForTesting
     Set<ScanClient> getSuspendedScanQueue() {
         return mSuspendedScanClients;
     }
