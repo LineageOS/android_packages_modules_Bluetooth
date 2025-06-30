@@ -2171,10 +2171,11 @@ public class LeAudioService extends ConnectableProfile {
             }
 
             mScannerId = SCANNER_INITIALIZING;
-
-            mAdapterService
-                    .getBluetoothScanController()
-                    .registerScannerInternal(this, null, getAttributionSource());
+            final var scanController = mAdapterService.getBluetoothScanController();
+            scanController.doOnScanThread(
+                    () -> {
+                        scanController.registerScannerInternal(this, null, getAttributionSource());
+                    });
         }
 
         synchronized void stopBackgroundScan() {
@@ -2182,8 +2183,12 @@ public class LeAudioService extends ConnectableProfile {
                 Log.d(TAG, "Scanner is not running (mScannerId=" + mScannerId + ")");
                 return;
             }
-            mAdapterService.getBluetoothScanController().stopScan(mScannerId);
-            mAdapterService.getBluetoothScanController().unregisterScanner(mScannerId);
+            final var scanController = mAdapterService.getBluetoothScanController();
+            scanController.doOnScanThread(
+                    () -> {
+                        scanController.stopScan(mScannerId);
+                        scanController.unregisterScanner(mScannerId);
+                    });
             mScannerId = SCANNER_NOT_INITIALIZED;
         }
 
@@ -2209,9 +2214,11 @@ public class LeAudioService extends ConnectableProfile {
                             .setPhy(BluetoothDevice.PHY_LE_1M)
                             .build();
 
-            mAdapterService
-                    .getBluetoothScanController()
-                    .startScanInternal(scannerId, settings, List.of(filter));
+            final var scanController = mAdapterService.getBluetoothScanController();
+            scanController.doOnScanThread(
+                    () -> {
+                        scanController.startScanInternal(scannerId, settings, List.of(filter));
+                    });
         }
 
         @Override

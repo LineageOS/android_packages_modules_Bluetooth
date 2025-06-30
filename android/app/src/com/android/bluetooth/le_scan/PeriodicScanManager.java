@@ -73,12 +73,9 @@ public class PeriodicScanManager {
 
     void cleanup() {
         Log.i(TAG, "cleanup()");
-        mScanController.forceRunSyncOnScanThread(
-                () -> {
-                    mNativeInterface.cleanup();
-                    mSyncs.clear();
-                    mTempRegistrationId = -1;
-                });
+        mNativeInterface.cleanup();
+        mSyncs.clear();
+        mTempRegistrationId = -1;
     }
 
     private record SyncTransferInfo(String address, IPeriodicAdvertisingCallback callback) {}

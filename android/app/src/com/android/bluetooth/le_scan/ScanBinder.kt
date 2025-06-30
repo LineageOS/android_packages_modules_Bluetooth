@@ -50,6 +50,17 @@ class ScanBinder(
     }
 
     @RequiresPermission(BLUETOOTH_SCAN)
+    private fun withControllerRunOnScanThread(
+        source: AttributionSource,
+        method: String,
+        block: ScanController.() -> Unit,
+    ) {
+        getController(source, method)?.let { controller ->
+            controller.doOnScanThread { controller.block() }
+        }
+    }
+
+    @RequiresPermission(BLUETOOTH_SCAN)
     private fun getController(source: AttributionSource, method: String): ScanController? {
         if (
             !isAvailable || !checkScanPermissionForDataDelivery(adapterService, source, TAG, method)
@@ -68,11 +79,13 @@ class ScanBinder(
         if (workSource != null) {
             adapterService.enforceCallingOrSelfPermission(UPDATE_DEVICE_STATS, null)
         }
-        getController(source, "registerScanner")?.registerScanner(callback, workSource, source)
+        withControllerRunOnScanThread(source, "registerScanner") {
+            registerScanner(callback, workSource, source)
+        }
     }
 
     override fun unregisterScanner(scannerId: Int, source: AttributionSource) {
-        getController(source, "unregisterScanner")?.unregisterScanner(scannerId)
+        withControllerRunOnScanThread(source, "unregisterScanner") { unregisterScanner(scannerId) }
     }
 
     override fun startScan(
@@ -83,7 +96,9 @@ class ScanBinder(
     ) {
         enforcePrivilegedPermissionIfNeeded(settings)
         enforcePrivilegedPermissionIfNeeded(filters)
-        getController(source, "startScan")?.startScan(scannerId, settings, filters, source)
+        withControllerRunOnScanThread(source, "startScan") {
+            startScan(scannerId, settings, filters, source)
+        }
     }
 
     override fun registerPiAndStartScan(
@@ -94,20 +109,23 @@ class ScanBinder(
     ) {
         enforcePrivilegedPermissionIfNeeded(settings)
         enforcePrivilegedPermissionIfNeeded(filters)
-        getController(source, "registerPiAndStartScan")
-            ?.registerPiAndStartScan(intent, settings, filters, source)
+        withControllerRunOnScanThread(source, "registerPiAndStartScan") {
+            registerPiAndStartScan(intent, settings, filters, source)
+        }
     }
 
     override fun stopScan(scannerId: Int, source: AttributionSource) {
-        getController(source, "stopScan")?.stopScan(scannerId)
+        withControllerRunOnScanThread(source, "stopScan") { stopScan(scannerId) }
     }
 
     override fun stopScanForIntent(intent: PendingIntent, source: AttributionSource) {
-        getController(source, "stopScanForIntent")?.stopScan(intent)
+        withControllerRunOnScanThread(source, "stopScanForIntent") { stopScan(intent) }
     }
 
     override fun flushPendingBatchResults(scannerId: Int, source: AttributionSource) {
-        getController(source, "flushPendingBatchResults")?.flushPendingBatchResults(scannerId)
+        withControllerRunOnScanThread(source, "flushPendingBatchResults") {
+            flushPendingBatchResults(scannerId)
+        }
     }
 
     override fun registerSync(
@@ -117,12 +135,13 @@ class ScanBinder(
         callback: IPeriodicAdvertisingCallback,
         source: AttributionSource,
     ) {
-        getController(source, "registerSync")
-            ?.registerSync(scanResult, skip, timeout, callback, source)
+        withControllerRunOnScanThread(source, "registerSync") {
+            registerSync(scanResult, skip, timeout, callback, source)
+        }
     }
 
     override fun unregisterSync(callback: IPeriodicAdvertisingCallback, source: AttributionSource) {
-        getController(source, "unregisterSync")?.unregisterSync(callback, source)
+        withControllerRunOnScanThread(source, "unregisterSync") { unregisterSync(callback, source) }
     }
 
     override fun transferSync(
@@ -131,7 +150,9 @@ class ScanBinder(
         syncHandle: Int,
         source: AttributionSource,
     ) {
-        getController(source, "transferSync")?.transferSync(device, serviceData, syncHandle, source)
+        withControllerRunOnScanThread(source, "transferSync") {
+            transferSync(device, serviceData, syncHandle, source)
+        }
     }
 
     override fun transferSetInfo(
@@ -141,13 +162,14 @@ class ScanBinder(
         callback: IPeriodicAdvertisingCallback,
         source: AttributionSource,
     ) {
-        getController(source, "transferSetInfo")
-            ?.transferSetInfo(device, serviceData, advHandle, callback, source)
+        withControllerRunOnScanThread(source, "transferSetInfo") {
+            transferSetInfo(device, serviceData, advHandle, callback, source)
+        }
     }
 
     override fun numHwTrackFiltersAvailable(source: AttributionSource): Int {
-        return getController(source, "numHwTrackFiltersAvailable")
-            ?.numHwTrackFiltersAvailable(source) ?: 0
+        val controller = getController(source, "numHwTrackFiltersAvailable") ?: return 0
+        return controller.fetchOnScanThread({ controller.numHwTrackFiltersAvailable(source) }, 0)
     }
 
     @SuppressLint("AndroidFrameworkRequiresPermission")

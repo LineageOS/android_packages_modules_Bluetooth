@@ -272,6 +272,14 @@ public class LeAudioServiceTest {
         doAnswer(invocation -> mBondedDevices.toArray(new BluetoothDevice[] {}))
                 .when(mAdapterService)
                 .getBondedDevices();
+        doAnswer(
+                        invocation -> {
+                            Runnable runnable = invocation.getArgument(0);
+                            runnable.run();
+                            return null;
+                        })
+                .when(mScanController)
+                .doOnScanThread(any(Runnable.class));
         doReturn(mScanController).when(mAdapterService).getBluetoothScanController();
         mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
         doAnswer(invocation -> mBondedDevices.toArray(new BluetoothDevice[] {}))

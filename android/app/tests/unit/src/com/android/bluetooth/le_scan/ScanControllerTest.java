@@ -164,7 +164,6 @@ public class ScanControllerTest {
     public void notifyProfileConnectionStateChange_notify_scanManager() {
         mScanController.notifyProfileConnectionStateChange(
                 BluetoothProfile.A2DP, STATE_CONNECTING, STATE_CONNECTED);
-        dispatchAllIfFlagScanControllerThread(1);
         verify(mScanManager)
                 .handleBluetoothProfileConnectionStateChanged(
                         BluetoothProfile.A2DP, STATE_CONNECTING, STATE_CONNECTED);
@@ -241,7 +240,6 @@ public class ScanControllerTest {
     @Test
     public void onScanFilterEnableDisabled_callbackDone_scanManager() {
         mScanController.onScanFilterEnableDisabled(TEST_ACTION, TEST_STATUS, TEST_CLIENT_IF);
-        dispatchAllIfFlagScanControllerThread(1);
         verify(mScanManager).callbackDone(TEST_CLIENT_IF, TEST_STATUS);
     }
 
@@ -251,7 +249,6 @@ public class ScanControllerTest {
 
         mScanController.onScanFilterParamsConfigured(
                 TEST_ACTION, TEST_STATUS, TEST_CLIENT_IF, availableSpace);
-        dispatchAllIfFlagScanControllerThread(1);
         verify(mScanManager).callbackDone(TEST_CLIENT_IF, TEST_STATUS);
     }
 
@@ -262,14 +259,12 @@ public class ScanControllerTest {
 
         mScanController.onScanFilterConfig(
                 TEST_ACTION, TEST_STATUS, TEST_CLIENT_IF, filterType, availableSpace);
-        dispatchAllIfFlagScanControllerThread(1);
         verify(mScanManager).callbackDone(TEST_CLIENT_IF, TEST_STATUS);
     }
 
     @Test
     public void onBatchScanStorageConfigured_callbackDone_scanManager() {
         mScanController.onBatchScanStorageConfigured(TEST_STATUS, TEST_CLIENT_IF);
-        dispatchAllIfFlagScanControllerThread(1);
         verify(mScanManager).callbackDone(TEST_CLIENT_IF, TEST_STATUS);
     }
 
@@ -278,7 +273,6 @@ public class ScanControllerTest {
         int startStopAction = 0;
 
         mScanController.onBatchScanStartStopped(startStopAction, TEST_STATUS, TEST_CLIENT_IF);
-        dispatchAllIfFlagScanControllerThread(1);
         verify(mScanManager).callbackDone(TEST_CLIENT_IF, TEST_STATUS);
     }
 
@@ -351,11 +345,6 @@ public class ScanControllerTest {
 
         mScanController.onBatchScanReportsInternal(
                 TEST_STATUS, TEST_SCANNER_ID, reportType, numRecords, recordData);
-        if (expectResults) {
-            dispatchAllIfFlagScanControllerThread(2);
-        } else {
-            dispatchAllIfFlagScanControllerThread(1);
-        }
         verify(mScanManager).callbackDone(TEST_SCANNER_ID, TEST_STATUS);
         if (expectResults) {
             verify(callback).onBatchScanResults(any());
@@ -492,7 +481,6 @@ public class ScanControllerTest {
                         eq(callback),
                         any(),
                         eq(mScanController));
-        dispatchAllIfFlagScanControllerThread(1);
         verify(mScanManager).registerScanner(any());
     }
 
@@ -501,7 +489,6 @@ public class ScanControllerTest {
         mScanController.unregisterScanner(TEST_SCANNER_ID);
 
         verify(mScannerMap).remove(TEST_SCANNER_ID);
-        dispatchAllIfFlagScanControllerThread(1);
         verify(mScanManager).unregisterScanner(TEST_SCANNER_ID);
     }
 
@@ -516,7 +503,6 @@ public class ScanControllerTest {
         doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(TEST_SCANNER_ID);
 
         mScanController.continuePiStartScan(TEST_SCANNER_ID, mApp);
-        dispatchAllIfFlagScanControllerThread(2);
         verify(appScanStats)
                 .recordScanStart(
                         pii.settings(), pii.filters(), false, false, TEST_SCANNER_ID, null);
@@ -534,7 +520,6 @@ public class ScanControllerTest {
         doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(TEST_SCANNER_ID);
 
         mScanController.continuePiStartScan(TEST_SCANNER_ID, mApp);
-        dispatchAllIfFlagScanControllerThread(2);
         verify(appScanStats)
                 .recordScanStart(
                         pii.settings(), pii.filters(), false, false, TEST_SCANNER_ID, null);
@@ -559,7 +544,6 @@ public class ScanControllerTest {
         doReturn(scanClientSet).when(mScanManager).getBatchScanQueue();
 
         mScanController.flushPendingBatchResults(TEST_SCANNER_ID);
-        dispatchAllIfFlagScanControllerThread(1);
         verify(mScanManager).flushBatchScanResults(scanClient);
     }
 
@@ -571,7 +555,6 @@ public class ScanControllerTest {
         IPeriodicAdvertisingCallback callback = mock(IPeriodicAdvertisingCallback.class);
 
         mScanController.registerSync(scanResult, skip, timeout, callback, mAttributionSource);
-        dispatchAllIfFlagScanControllerThread(1);
         verify(mPeriodicScanManager).startSync(scanResult, skip, timeout, callback);
     }
 
@@ -580,7 +563,6 @@ public class ScanControllerTest {
         IPeriodicAdvertisingCallback callback = mock(IPeriodicAdvertisingCallback.class);
 
         mScanController.unregisterSync(callback, mAttributionSource);
-        dispatchAllIfFlagScanControllerThread(1);
         verify(mPeriodicScanManager).stopSync(callback);
     }
 
@@ -590,7 +572,6 @@ public class ScanControllerTest {
         int syncHandle = 2;
 
         mScanController.transferSync(mDevice, serviceData, syncHandle, mAttributionSource);
-        dispatchAllIfFlagScanControllerThread(1);
         verify(mPeriodicScanManager).transferSync(mDevice, serviceData, syncHandle);
     }
 
@@ -602,7 +583,6 @@ public class ScanControllerTest {
 
         mScanController.transferSetInfo(
                 mDevice, serviceData, advHandle, callback, mAttributionSource);
-        dispatchAllIfFlagScanControllerThread(1);
         verify(mPeriodicScanManager).transferSetInfo(mDevice, serviceData, advHandle, callback);
     }
 
@@ -668,12 +648,5 @@ public class ScanControllerTest {
         StringBuilder sb = new StringBuilder();
         mScanController.dump(sb);
         assertThat(sb.toString()).isNotNull();
-    }
-
-    // TODO(b/397863857) Inline on flag cleanup
-    private void dispatchAllIfFlagScanControllerThread(int dispatchCount) {
-        if (Flags.scanControllerThread()) {
-            assertThat(mLooper.dispatchAll()).isEqualTo(dispatchCount);
-        }
     }
 }

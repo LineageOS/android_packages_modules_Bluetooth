@@ -269,7 +269,6 @@ public class BassClientServiceTest {
                 .when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
 
-        // Mock methods in AdapterService
         doReturn(FAKE_SERVICE_UUIDS)
                 .when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
@@ -284,12 +283,19 @@ public class BassClientServiceTest {
                         })
                 .when(mAdapterService)
                 .getBondedDevices();
-        doReturn(mScanController).when(mAdapterService).getBluetoothScanController();
         mockGetSystemService(mAdapterService, BluetoothManager.class, mBluetoothManager);
         doReturn(mAdapter).when(mBluetoothManager).getAdapter();
         doReturn(mPeriodicAdvertisingManager).when(mAdapter).getPeriodicAdvertisingManager();
+        doAnswer(
+                        invocation -> {
+                            Runnable runnable = invocation.getArgument(0);
+                            runnable.run();
+                            return null;
+                        })
+                .when(mScanController)
+                .doOnScanThread(any(Runnable.class));
+        doReturn(mScanController).when(mAdapterService).getBluetoothScanController();
 
-        // Mock methods in BassObjectsFactory
         doAnswer(
                         invocation -> {
                             assertThat(mCurrentDevice).isNotNull();

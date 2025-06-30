@@ -74,7 +74,6 @@ import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
-import com.android.bluetooth.le_scan.ScanController;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -229,8 +228,8 @@ public class BassClientService extends ConnectableProfile {
                     }
                     return;
                 }
-                ScanController controller = mAdapterService.getBluetoothScanController();
-                if (controller == null) {
+                final var scanController = mAdapterService.getBluetoothScanController();
+                if (scanController == null) {
                     Log.d(TAG, "registerAndStartScan: ScanController is null");
                     if (mIsForegroundScan) {
                         mCallbacks.notifySearchStartFailed(BluetoothStatusCodes.ERROR_UNKNOWN);
@@ -255,20 +254,26 @@ public class BassClientService extends ConnectableProfile {
                 }
 
                 mScannerId = SCANNER_ID_INITIALIZING;
-                controller.registerScannerInternal(this, null, getAttributionSource());
+                scanController.doOnScanThread(
+                        () ->
+                                scanController.registerScannerInternal(
+                                        this, null, getAttributionSource()));
             }
         }
 
         void stopScanAndUnregister() {
             synchronized (this) {
-                ScanController controller = mAdapterService.getBluetoothScanController();
-                if (controller == null) {
+                final var scanController = mAdapterService.getBluetoothScanController();
+                if (scanController == null) {
                     Log.d(TAG, "stopScanAndUnregister: ScanController is null");
                     mCallbacks.notifySearchStopFailed(BluetoothStatusCodes.ERROR_UNKNOWN);
                     return;
                 }
-                controller.stopScan(mScannerId);
-                controller.unregisterScanner(mScannerId);
+                scanController.doOnScanThread(
+                        () -> {
+                            scanController.stopScan(mScannerId);
+                            scanController.unregisterScanner(mScannerId);
+                        });
                 mBaasUuidFilters.clear();
                 mScannerId = SCANNER_ID_NOT_INITIALIZED;
             }
@@ -303,15 +308,18 @@ public class BassClientService extends ConnectableProfile {
                                 .setLegacy(false)
                                 .build();
 
-                ScanController controller = mAdapterService.getBluetoothScanController();
-                if (controller == null) {
+                final var scanController = mAdapterService.getBluetoothScanController();
+                if (scanController == null) {
                     Log.d(TAG, "onScannerRegistered: ScanController is null");
                     if (mIsForegroundScan) {
                         mCallbacks.notifySearchStartFailed(BluetoothStatusCodes.ERROR_UNKNOWN);
                     }
                     return;
                 }
-                controller.startScanInternal(scannerId, settings, mBaasUuidFilters);
+                scanController.doOnScanThread(
+                        () ->
+                                scanController.startScanInternal(
+                                        scannerId, settings, mBaasUuidFilters));
                 if (mIsForegroundScan) {
                     mCallbacks.notifySearchStarted(BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST);
                 }

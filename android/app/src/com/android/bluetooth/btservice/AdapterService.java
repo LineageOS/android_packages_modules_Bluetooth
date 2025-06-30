@@ -4092,9 +4092,11 @@ public class AdapterService extends Service {
      */
     public void notifyProfileConnectionStateChangeToScan(int profile, int fromState, int toState) {
         final var scanController = getBluetoothScanController();
-        if (scanController != null) {
-            scanController.notifyProfileConnectionStateChange(profile, fromState, toState);
-        }
+        if (scanController == null) return;
+        scanController.doOnScanThread(
+                () -> {
+                    scanController.notifyProfileConnectionStateChange(profile, fromState, toState);
+                });
     }
 
     /**
@@ -4413,21 +4415,21 @@ public class AdapterService extends Service {
 
         mAdapterStateMachine.dump(fd, writer, args);
 
-        sb = new StringBuilder();
+        final var stringBuilder = new StringBuilder();
 
-        mSilenceDeviceManager.dump(sb);
-        mDatabaseManager.dump(sb);
+        mSilenceDeviceManager.dump(stringBuilder);
+        mDatabaseManager.dump(stringBuilder);
 
         for (ProfileService profile : mRegisteredProfiles) {
-            profile.dump(sb);
+            profile.dump(stringBuilder);
         }
 
         final var scanController = getBluetoothScanController();
         if (scanController != null) {
-            scanController.dump(sb);
+            scanController.forceRunSyncOnScanThread(() -> scanController.dump(stringBuilder));
         }
 
-        writer.write(sb.toString());
+        writer.write(stringBuilder.toString());
 
         final int currentState = mAdapterProperties.getState();
         if (currentState == BluetoothAdapter.STATE_OFF
