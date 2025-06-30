@@ -500,6 +500,16 @@ protected:
             base::Unretained(this->gatt_callback), event_data));
   }
 
+  void InjectServiceDiscoveryDone(const RawAddress& address) {
+    tBTA_GATTC_SERVICE_DISCOVERY_DONE event_data = {.remote_bda = address};
+
+    do_in_main_thread(base::BindOnce(
+            [](tBTA_GATTC_CBACK* gatt_callback, tBTA_GATTC_SERVICE_DISCOVERY_DONE event_data) {
+              gatt_callback(BTA_GATTC_SRVC_DISC_DONE_EVT, (tBTA_GATTC*)&event_data);
+            },
+            base::Unretained(this->gatt_callback), event_data));
+  }
+
   void InjectConnectedEvent(const RawAddress& address, uint16_t conn_id,
                             tGATT_STATUS status = GATT_SUCCESS) {
     ASSERT_NE(conn_id, GATT_INVALID_CONN_ID);
@@ -804,6 +814,7 @@ protected:
                                                            (handle <= svc.end_handle);
                                                   });
                           if (svc == device.services.end()) {
+                            log::info("ReadMultiCharacteristic error, no svc");
                             return std::make_pair(GATT_ERROR, std::vector<uint8_t>());
                           }
 
@@ -5855,6 +5866,66 @@ TEST_F(UnicastTest, HandleRemoteDeviceWithoutSourceAses) {
 
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+}
+
+TEST_F(UnicastTest, HandleDeviceReconfiguredToSinkOnlyAseRemoved) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  int group_size = 1;
+  int group_id = 1;
+  default_channel_cnt = 1;
+
+  EXPECT_CALL(mock_btif_storage_, AddLeaudioAutoconnect(test_address0, true)).Times(1);
+
+  uint8_t expected_direction = bluetooth::le_audio::types::kLeAudioDirectionBoth;
+  EXPECT_CALL(mock_audio_hal_client_callbacks_, OnAudioConf(expected_direction, _, _, _, _));
+
+  ConnectCsisDevice(test_address0, 1 /*conn_id*/, codec_spec_conf::kLeAudioLocationStereo,
+                    codec_spec_conf::kLeAudioLocationStereo, group_size, group_id, 1 /* rank*/);
+
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+
+  /* Device will disconnect, and do not reconnect automatically */
+  ON_CALL(mock_gatt_interface_, Open(_, test_address0, BTM_BLE_DIRECT_CONNECTION, _))
+          .WillByDefault(Return());
+
+  /* Disconnect device */
+  InjectDisconnectedEvent(1, GATT_CONN_TERMINATE_PEER_USER);
+  SyncOnMainLoop();
+
+  /* For background connect, test needs to Inject Connected Event.
+   * Expect Audio Config to be invalidated first, then updated second.
+   */
+  /* Reconfigure device so it's missing Source ASE and Source PACS*/
+
+  EXPECT_CALL(mock_audio_hal_client_callbacks_, OnAudioConf(0, _, _, _, _));
+  EXPECT_CALL(mock_audio_hal_client_callbacks_, OnAudioConf(expected_direction, _, _, _, _));
+  InjectConnectedEvent(test_address0, 1);
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+
+  /* Simulate service change - remove old GATT database, and recreate it
+   * without Source ASE
+   */
+  no_source_ases_ = true;
+  peer_devices.clear();
+
+  SetSampleDatabaseEarbudsValid(
+          1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+          codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt, default_channel_cnt, 0x0004,
+          /* source sample freq 16khz */ false /*add_csis*/, true /*add_cas*/, true /*add_pacs*/,
+          default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/, 0 /*rank*/);
+  peer_devices.at(1)->connected = true;
+
+  EXPECT_CALL(mock_gatt_interface_, ServiceSearchRequest(_, _)).Times(1);
+  expected_direction = bluetooth::le_audio::types::kLeAudioDirectionSink;
+  std::optional<std::bitset<32>> expected_src_location = std::nullopt;
+  EXPECT_CALL(mock_audio_hal_client_callbacks_, OnAudioConf(0, _, _, _, _));
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnAudioConf(expected_direction, _, _, expected_src_location, _));
+  InjectServiceChangedEvent(test_address0, 1);
+  InjectServiceDiscoveryDone(test_address0);
+  SyncOnMainLoop();
 }
 
 TEST_F(UnicastTest, TestUpdateConfigurationCallbackWhileStreaming) {
