@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/remote_version.h>
 
 #include <cstdint>
 #include <string>
@@ -31,7 +32,6 @@
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/hci_error_code.h"
 #include "types/ble_address_with_type.h"
-#include "types/remote_version_type.h"
 
 typedef struct {
   uint16_t min_conn_int;
