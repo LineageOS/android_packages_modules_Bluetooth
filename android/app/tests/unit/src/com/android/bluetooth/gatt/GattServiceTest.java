@@ -801,6 +801,37 @@ public class GattServiceTest {
         assertThat(mService.mRestrictedHandles).doesNotContainKey(CLIENT_CONN_ID);
     }
 
+    @Test
+    @EnableFlags(Flags.FLAG_GATT_MESSAGING_PERMISSIONS)
+    public void clientAncsAccessPermissionRejected() throws Exception {
+        ArrayList<GattDbElement> db = new ArrayList<>();
+
+        ContextMap<IBluetoothGattCallback>.App app = mock(ContextMap.App.class);
+        IBluetoothGattCallback callback = mock(IBluetoothGattCallback.class);
+
+        doReturn(app).when(mClientMap).getByConnId(CLIENT_CONN_ID);
+        doReturn(callback).when(app).getCallback();
+
+        GattDbElement ancsService =
+                GattDbElement.createPrimaryService(
+                        UUID.fromString("7905F431-B5CE-4E99-A40F-4B1E122D00D0"));
+        ancsService.id = 1;
+
+        db.add(ancsService);
+
+        doReturn(BluetoothDevice.ACCESS_REJECTED)
+                .when(mAdapterService)
+                .getMessageAccessPermission(any(BluetoothDevice.class));
+
+        mService.onGetGattDbFromNative(CLIENT_CONN_ID, db);
+        // ANCS should be restricted
+        assertThat(mService.mRestrictedHandles.get(CLIENT_CONN_ID)).contains(ancsService.id);
+
+        mService.onDisconnectedFromNative(
+                CLIENT_IF, CLIENT_CONN_ID, TRANSPORT_LE, BluetoothGatt.GATT_SUCCESS, mDevice);
+        assertThat(mService.mRestrictedHandles).doesNotContainKey(CLIENT_CONN_ID);
+    }
+
     // ---------------------------------------------------------------------------------------------
     // GATT Server Tests
     // ---------------------------------------------------------------------------------------------

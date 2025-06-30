@@ -111,6 +111,9 @@ public class GattService extends ProfileService {
         UUID.fromString("00001846-0000-1000-8000-00805F9B34FB"), // CSIS
     };
 
+    private static final UUID APPLE_NOTIFICATION_CENTER_SERVICE_UUID =
+            UUID.fromString("7905F431-B5CE-4E99-A40F-4B1E122D00D0");
+
     private final int[] mSubrateHighParameters;
     private final int[] mSubrateBalancedParameters;
     private final int[] mSubrateLowParameters;
@@ -656,7 +659,7 @@ public class GattService extends ProfileService {
 
                     currSrvc = new BluetoothGattService(el.uuid, el.id, el.type);
                     dbOut.add(currSrvc);
-                    isRestrictedSrvc = isRestrictedSrvcUuid(el.uuid);
+                    isRestrictedSrvc = isRestrictedSrvcUuid(el.uuid, device);
                     isHidSrvc = isHidSrvcUuid(el.uuid);
                     if (isRestrictedSrvc) {
                         restrictedIds.add(el.id);
@@ -2522,11 +2525,19 @@ public class GattService extends ProfileService {
         return HidHostService.ANDROID_HEADTRACKER_UUID.getUuid().equals(uuid);
     }
 
-    private static boolean isRestrictedSrvcUuid(final UUID uuid) {
+    private static boolean isAppleNotificationCenterSrvcUuid(final UUID uuid) {
+        return APPLE_NOTIFICATION_CENTER_SERVICE_UUID.equals(uuid);
+    }
+
+    private boolean isRestrictedSrvcUuid(final UUID uuid, BluetoothDevice device) {
         return isFidoSrvcUuid(uuid)
                 || isAndroidTvRemoteSrvcUuid(uuid)
                 || isLeAudioSrvcUuid(uuid)
-                || isAndroidHeadtrackerSrvcUuid(uuid);
+                || isAndroidHeadtrackerSrvcUuid(uuid)
+                || (Flags.gattMessagingPermissions()
+                        && isAppleNotificationCenterSrvcUuid(uuid)
+                        && mAdapterService.getMessageAccessPermission(device)
+                                != BluetoothDevice.ACCESS_ALLOWED);
     }
 
     private int getDeviceType(BluetoothDevice device) {
