@@ -46,6 +46,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 
+import java.util.Collections;
 import java.util.UUID;
 
 /** Test cases for {@link ScannerMap}. */
@@ -170,6 +171,6 @@ public class ScannerMapTest {
                 mAdapterService,
                 mMockScanController);
         scannerMap.dump(sb);
-        scannerMap.dumpApps(sb, ProfileService::println);
+        scannerMap.dumpApps(sb, ProfileService::println, Collections.emptyMap());
     }
 }

@@ -1689,7 +1689,25 @@ public class ScanController {
 
     public void dumpRegisterId(StringBuilder sb) {
         sb.append("  Scanner:\n");
-        mScannerMap.dumpApps(sb, ProfileService::println);
+
+        Map<Integer, ScanSettings> settingsMap = new HashMap<>();
+        for (ScanClient client : mScanManager.getRegularScanQueue()) {
+            if (client.mSettings != null) {
+                settingsMap.put(client.mScannerId, client.mSettings);
+            }
+        }
+        for (ScanClient client : mScanManager.getBatchScanQueue()) {
+            if (client.mSettings != null) {
+                settingsMap.put(client.mScannerId, client.mSettings);
+            }
+        }
+        for (ScanClient client : mScanManager.getSuspendedScanQueue()) {
+            if (client.mSettings != null) {
+                settingsMap.put(client.mScannerId, client.mSettings);
+            }
+        }
+
+        mScannerMap.dumpApps(sb, ProfileService::println, settingsMap);
     }
 
     public void dump(StringBuilder sb) {
