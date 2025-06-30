@@ -35,7 +35,6 @@ import android.os.IBinder;
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -54,6 +53,7 @@ public class PeriodicScanManagerTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
+    @Mock private ScanController mScanController;
     @Mock private PeriodicScanNativeInterface mPeriodicScanNativeInterface;
     @Mock private IPeriodicAdvertisingCallback mCallback;
     @Mock private IBinder mBinder;
@@ -73,8 +73,7 @@ public class PeriodicScanManagerTest {
 
         mockGetBluetoothManager(mAdapterService);
 
-        final TestLooper looper = new TestLooper();
-        mPeriodicScanManager = new PeriodicScanManager(mAdapterService, looper.getLooper());
+        mPeriodicScanManager = new PeriodicScanManager(mAdapterService, mScanController);
 
         mScanResult = new ScanResult(mDevice, 0, 0, 0, 0, 0, 0, 0, null, 0);
         mCallback = mock(IPeriodicAdvertisingCallback.class);

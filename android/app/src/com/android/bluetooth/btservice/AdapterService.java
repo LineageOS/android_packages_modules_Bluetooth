@@ -467,8 +467,7 @@ public class AdapterService extends Service {
                             return supplier.get();
                         });
         if (!mHandler.post(task)) {
-            Log.w(TAG, "Failed to post task to handler");
-            Log.d(TAG, Log.getStackTraceString(new Throwable()));
+            Log.w(TAG, "Failed to post task\n" + Log.getStackTraceString(new Throwable()));
             return defaultValue;
         }
         try {

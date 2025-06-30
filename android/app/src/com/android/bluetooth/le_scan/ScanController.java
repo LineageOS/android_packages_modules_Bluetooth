@@ -25,6 +25,7 @@ import static com.android.bluetooth.flags.Flags.leaudioBassScanWithInternalScanC
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
+import android.annotation.Nullable;
 import android.app.AppOpsManager;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
@@ -81,12 +82,19 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class ScanController {
     private static final String TAG = ScanController.class.getSimpleName();
+
+    private static final long RUN_SYNC_WAIT_TIME_MS = 2000L;
 
     /** The default floor value for LE batch scan report delays greater than 0 */
     static final long DEFAULT_REPORT_DELAY_FLOOR = 5000L;
@@ -116,23 +124,29 @@ public class ScanController {
 
     private final AdapterService mAdapterService;
     private final BluetoothAdapter mAdapter;
+    private final AppOpsManager mAppOps;
+    private final CompanionDeviceManager mCompanionManager;
+    private final ScanBinder mBinder;
+    private final ScannerMap mScannerMap;
     private final ScanRadioStats mScanRadioStats;
     private final String mExposureNotificationPackage;
     private final Predicate<ScanResult> mLocationDenylistPredicate;
-    private final Looper mMainLooper;
-    private final ScanBinder mBinder;
+
+    // TODO(b/397863857) Used when `Flags.scanControllerThread()` is false. Delete on flag cleanup
+    @Nullable private final Looper mMainLooper;
+
     private final HandlerThread mScanThread;
-    private final AppOpsManager mAppOps;
-    private final CompanionDeviceManager mCompanionManager;
-    private final ScannerMap mScannerMap;
+    private final Looper mScanLooper;
+    private final Handler mScanHandler;
     private final ScanManager mScanManager;
     private final PeriodicScanManager mPeriodicScanManager;
 
+    private volatile boolean mIsAvailable = true;
     private volatile boolean mTestModeEnabled = false;
     private Handler mTestModeHandler;
 
     public ScanController(AdapterService service) {
-        this(service, null, null, new ScannerMap(), getSystemClock());
+        this(service, null, null, new ScannerMap(), null, getSystemClock());
     }
 
     @VisibleForTesting
@@ -141,10 +155,15 @@ public class ScanController {
             ScanManager scanManager,
             PeriodicScanManager periodicScanManager,
             ScannerMap scannerMap,
+            @Nullable Looper looper,
             TimeProvider timeProvider) {
         Log.d(TAG, "Created with Flags.scanControllerThread: " + Flags.scanControllerThread());
         mAdapterService = requireNonNull(service);
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
+        mAppOps = mAdapterService.getSystemService(AppOpsManager.class);
+        mCompanionManager = mAdapterService.getSystemService(CompanionDeviceManager.class);
+        mBinder = new ScanBinder(mAdapterService, this);
+        mScannerMap = scannerMap;
         mScanRadioStats = new ScanRadioStats(timeProvider);
         mExposureNotificationPackage =
                 mAdapterService.getString(R.string.exposure_notification_package);
@@ -166,39 +185,48 @@ public class ScanController {
                     }
                     return false;
                 };
-        mMainLooper = mAdapterService.getMainLooper();
-        mBinder = new ScanBinder(mAdapterService, this);
+        if (!Flags.scanControllerThread()) {
+            mMainLooper = mAdapterService.getMainLooper();
+        } else {
+            mMainLooper = null;
+        }
         mScanThread = new HandlerThread("BluetoothScanManager");
         mScanThread.start();
-        mAppOps = mAdapterService.getSystemService(AppOpsManager.class);
-        mCompanionManager = mAdapterService.getSystemService(CompanionDeviceManager.class);
-        mScannerMap = scannerMap;
-
-        final var scanThreadLooper = mScanThread.getLooper();
+        mScanLooper = requireNonNullElseGet(looper, () -> mScanThread.getLooper());
+        mScanHandler = new Handler(mScanLooper);
         mScanManager =
                 requireNonNullElseGet(
                         scanManager,
-                        () ->
-                                new ScanManager(
-                                        mAdapterService, this, scanThreadLooper, timeProvider));
+                        () -> new ScanManager(mAdapterService, this, mScanLooper, timeProvider));
         mPeriodicScanManager =
                 requireNonNullElseGet(
-                        periodicScanManager,
-                        () -> new PeriodicScanManager(mAdapterService, scanThreadLooper));
+                        periodicScanManager, () -> new PeriodicScanManager(mAdapterService, this));
     }
 
     public void cleanup() {
         Log.i(TAG, "cleanup()");
+        mIsAvailable = false;
         mBinder.cleanup();
-        mScanThread.quitSafely();
         mScannerMap.clear();
-        mScanManager.cleanup();
-        mPeriodicScanManager.cleanup();
+        if (Flags.scanControllerThread()) {
+            mScanHandler.removeCallbacksAndMessages(null);
+            mScanManager.cleanup();
+            mPeriodicScanManager.cleanup();
+            mScanThread.quitSafely();
+        } else {
+            mScanThread.quitSafely();
+            mScanManager.cleanup();
+            mPeriodicScanManager.cleanup();
+        }
     }
 
     /** Notify Scan manager of bluetooth profile connection state changes */
     public void notifyProfileConnectionStateChange(int profile, int fromState, int toState) {
-        mScanManager.handleBluetoothProfileConnectionStateChanged(profile, fromState, toState);
+        doOnScanThread(
+                () -> {
+                    mScanManager.handleBluetoothProfileConnectionStateChanged(
+                            profile, fromState, toState);
+                });
     }
 
     public IBinder getBinder() {
@@ -226,8 +254,9 @@ public class ScanController {
     public void setTestModeEnabled(boolean enableTestMode) {
         synchronized (mTestModeLock) {
             if (mTestModeHandler == null) {
+                final var looper = Flags.scanControllerThread() ? mScanLooper : mMainLooper;
                 mTestModeHandler =
-                        new Handler(mMainLooper) {
+                        new Handler(looper) {
                             public void handleMessage(Message msg) {
                                 synchronized (mTestModeLock) {
                                     if (!mTestModeEnabled) {
@@ -663,7 +692,10 @@ public class ScanController {
                         + (" clientIf=" + clientIf)
                         + (", status=" + status)
                         + (", action=" + action));
-        mScanManager.callbackDone(clientIf, status);
+        doOnScanThread(
+                () -> {
+                    mScanManager.callbackDone(clientIf, status);
+                });
     }
 
     /** Callback method for configuration of scan filter params. */
@@ -675,7 +707,10 @@ public class ScanController {
                         + (", status=" + status)
                         + (", action=" + action)
                         + (", availableSpace=" + availableSpace));
-        mScanManager.callbackDone(clientIf, status);
+        doOnScanThread(
+                () -> {
+                    mScanManager.callbackDone(clientIf, status);
+                });
     }
 
     /** Callback method for configuration of scan filter. */
@@ -690,13 +725,19 @@ public class ScanController {
                         + (", filterType=" + filterType)
                         + (", availableSpace=" + availableSpace));
 
-        mScanManager.callbackDone(clientIf, status);
+        doOnScanThread(
+                () -> {
+                    mScanManager.callbackDone(clientIf, status);
+                });
     }
 
     /** Callback method for configuration of batch scan storage. */
     void onBatchScanStorageConfigured(int status, int clientIf) {
         Log.d(TAG, "onBatchScanStorageConfigured() - clientIf=" + clientIf + ", status=" + status);
-        mScanManager.callbackDone(clientIf, status);
+        doOnScanThread(
+                () -> {
+                    mScanManager.callbackDone(clientIf, status);
+                });
     }
 
     /** Callback method for start/stop of batch scan. */
@@ -708,7 +749,10 @@ public class ScanController {
                         + (" clientIf=" + clientIf)
                         + (", status=" + status)
                         + (", startStopAction=" + startStopAction));
-        mScanManager.callbackDone(clientIf, status);
+        doOnScanThread(
+                () -> {
+                    mScanManager.callbackDone(clientIf, status);
+                });
     }
 
     private ScanClient findScanClientById(int clientIf) {
@@ -776,13 +820,19 @@ public class ScanController {
                 permittedResults.removeIf(mLocationDenylistPredicate);
             }
             if (permittedResults.isEmpty()) {
-                mScanManager.callbackDone(scannerId, status);
+                doOnScanThread(
+                        () -> {
+                            mScanManager.callbackDone(scannerId, status);
+                        });
                 return;
             }
 
             if (app.mCallback != null) {
                 app.mCallback.onBatchScanResults(permittedResults);
-                mScanManager.batchScanResultDelivered();
+                doOnScanThread(
+                        () -> {
+                            mScanManager.batchScanResultDelivered();
+                        });
             } else {
                 // PendingIntent based
                 try {
@@ -799,7 +849,10 @@ public class ScanController {
                 deliverBatchScan(client, results);
             }
         }
-        mScanManager.callbackDone(scannerId, status);
+        doOnScanThread(
+                () -> {
+                    mScanManager.callbackDone(scannerId, status);
+                });
     }
 
     private void sendBatchScanResults(
@@ -809,7 +862,7 @@ public class ScanController {
         }
         try {
             if (app.mCallback != null) {
-                if (mScanManager.isAutoBatchScanClientEnabled(client)) {
+                if (ScanManager.isAutoBatchScanClientEnabled(client)) {
                     Log.d(TAG, "sendBatchScanResults() to onScanResult()" + client);
                     for (ScanResult result : results) {
                         app.mAppScanStats.addResult(client.mScannerId);
@@ -827,7 +880,10 @@ public class ScanController {
             Log.e(TAG, "Exception: " + e);
             handleDeadScanClient(client);
         }
-        mScanManager.batchScanResultDelivered();
+        doOnScanThread(
+                () -> {
+                    mScanManager.batchScanResultDelivered();
+                });
     }
 
     // Check and deliver scan results for different scan clients.
@@ -1127,13 +1183,19 @@ public class ScanController {
         Log.d(TAG, "registerScanner() - UUID=" + uuid);
 
         mScannerMap.add(uuid, source, workSource, callback, mAdapterService, this);
-        mScanManager.registerScanner(uuid);
+        doOnScanThread(
+                () -> {
+                    mScanManager.registerScanner(uuid);
+                });
     }
 
     public void unregisterScanner(int scannerId) {
         Log.d(TAG, "unregisterScanner() - scannerId=" + scannerId);
         mScannerMap.remove(scannerId);
-        mScanManager.unregisterScanner(scannerId);
+        doOnScanThread(
+                () -> {
+                    mScanManager.unregisterScanner(scannerId);
+                });
     }
 
     private List<String> getAssociatedDevices(String callingPackage) {
@@ -1226,7 +1288,10 @@ public class ScanController {
         AppScanStats app = mScannerMap.getAppScanStatsById(scannerId);
         if (app != null) {
             scanClient.mStats = Optional.of(app);
-            mScanManager.fetchAppForegroundState(scanClient);
+            doOnScanThread(
+                    () -> {
+                        mScanManager.fetchAppForegroundState(scanClient);
+                    });
             boolean isFilteredScan = (filters != null) && !filters.isEmpty();
             boolean isCallbackScan = false;
 
@@ -1242,8 +1307,10 @@ public class ScanController {
                     scannerId,
                     cbApp == null ? null : cbApp.mAttributionTag);
         }
-
-        mScanManager.startScan(scanClient);
+        doOnScanThread(
+                () -> {
+                    mScanManager.startScan(scanClient);
+                });
     }
 
     void registerPiAndStartScan(
@@ -1304,7 +1371,10 @@ public class ScanController {
         app.mHasScanWithoutLocationPermission =
                 Utils.checkCallerHasScanWithoutLocationPermission(mAdapterService);
         app.mAssociatedDevices = getAssociatedDevices(callingPackage);
-        mScanManager.registerScanner(uuid);
+        doOnScanThread(
+                () -> {
+                    mScanManager.registerScanner(uuid);
+                });
 
         // If this fails, we should stop the scan immediately.
         if (!pendingIntent.addCancelListener(Runnable::run, mScanIntentCancelListener)) {
@@ -1334,7 +1404,10 @@ public class ScanController {
         AppScanStats scanStats = mScannerMap.getAppScanStatsById(scannerId);
         if (scanStats != null) {
             scanClient.mStats = Optional.of(scanStats);
-            mScanManager.fetchAppForegroundState(scanClient);
+            doOnScanThread(
+                    () -> {
+                        mScanManager.fetchAppForegroundState(scanClient);
+                    });
             boolean isFilteredScan = (piInfo.filters != null) && !piInfo.filters.isEmpty();
             scanStats.recordScanStart(
                     piInfo.settings,
@@ -1344,13 +1417,18 @@ public class ScanController {
                     scannerId,
                     app.mAttributionTag);
         }
-
-        mScanManager.startScan(scanClient);
+        doOnScanThread(
+                () -> {
+                    mScanManager.startScan(scanClient);
+                });
     }
 
     void flushPendingBatchResults(int scannerId) {
         Log.d(TAG, "flushPendingBatchResults - scannerId=" + scannerId);
-        mScanManager.flushBatchScanResults(new ScanClient(scannerId));
+        doOnScanThread(
+                () -> {
+                    mScanManager.flushBatchScanResults(new ScanClient(scannerId));
+                });
     }
 
     public void stopScan(int scannerId) {
@@ -1362,8 +1440,10 @@ public class ScanController {
         if (app != null) {
             app.recordScanStop(scannerId);
         }
-
-        mScanManager.stopScan(scannerId);
+        doOnScanThread(
+                () -> {
+                    mScanManager.stopScan(scannerId);
+                });
     }
 
     void stopScan(PendingIntent intent) {
@@ -1388,18 +1468,16 @@ public class ScanController {
             int timeout,
             IPeriodicAdvertisingCallback callback,
             AttributionSource source) {
-        mPeriodicScanManager.doOnScanThread(
-                () -> mPeriodicScanManager.startSync(scanResult, skip, timeout, callback));
+        doOnScanThread(() -> mPeriodicScanManager.startSync(scanResult, skip, timeout, callback));
     }
 
     void unregisterSync(IPeriodicAdvertisingCallback callback, AttributionSource source) {
-        mPeriodicScanManager.doOnScanThread(() -> mPeriodicScanManager.stopSync(callback));
+        doOnScanThread(() -> mPeriodicScanManager.stopSync(callback));
     }
 
     void transferSync(
             BluetoothDevice bda, int serviceData, int syncHandle, AttributionSource source) {
-        mPeriodicScanManager.doOnScanThread(
-                () -> mPeriodicScanManager.transferSync(bda, serviceData, syncHandle));
+        doOnScanThread(() -> mPeriodicScanManager.transferSync(bda, serviceData, syncHandle));
     }
 
     void transferSetInfo(
@@ -1408,13 +1486,16 @@ public class ScanController {
             int advHandle,
             IPeriodicAdvertisingCallback callback,
             AttributionSource source) {
-        mPeriodicScanManager.doOnScanThread(
+        doOnScanThread(
                 () -> mPeriodicScanManager.transferSetInfo(bda, serviceData, advHandle, callback));
     }
 
     int numHwTrackFiltersAvailable(AttributionSource source) {
-        return (mAdapterService.getTotalNumOfTrackableAdvertisements()
-                - mScanManager.getCurrentUsedTrackingAdvertisement());
+        return fetchOnScanThread(
+                () ->
+                        mAdapterService.getTotalNumOfTrackableAdvertisements()
+                                - mScanManager.getCurrentUsedTrackingAdvertisement(),
+                0);
     }
 
     /**
@@ -1485,6 +1566,103 @@ public class ScanController {
         } finally {
             Binder.restoreCallingIdentity(callerToken);
         }
+    }
+
+    void enforceScanThread() {
+        if (!Flags.scanControllerThread() || Utils.isInstrumentationTestMode()) return;
+
+        if (!mScanHandler.getLooper().isCurrentThread()) {
+            throw new IllegalStateException("Not on scan thread");
+        }
+    }
+
+    private void enforceScanThreadIsNotUsed() {
+        if (!Flags.scanControllerThread() || Utils.isInstrumentationTestMode()) return;
+
+        if (mScanHandler.getLooper().isCurrentThread()) {
+            throw new IllegalStateException("Must NOT be on scan thread");
+        }
+    }
+
+    void doOnScanThread(Runnable r) {
+        if (!Flags.scanControllerThread()) {
+            r.run();
+            return;
+        }
+
+        enforceScanThreadIsNotUsed();
+
+        if (!mIsAvailable) return;
+
+        final var posted =
+                mScanHandler.post(
+                        () -> {
+                            if (mIsAvailable) {
+                                r.run();
+                            }
+                        });
+        if (!posted) {
+            Log.w(TAG, "Failed to post async task\n" + Log.getStackTraceString(new Throwable()));
+        }
+    }
+
+    void forceRunSyncOnScanThread(Runnable r) {
+        if (!Flags.scanControllerThread()) {
+            r.run();
+            return;
+        }
+
+        enforceScanThreadIsNotUsed();
+
+        final var future = new CompletableFuture<>();
+        final var posted =
+                mScanHandler.postAtFrontOfQueue(
+                        () -> {
+                            r.run();
+                            future.complete(null);
+                        });
+        if (!posted) {
+            Log.w(TAG, "Failed to post sync task\n" + Log.getStackTraceString(new Throwable()));
+            return;
+        }
+        try {
+            future.get(RUN_SYNC_WAIT_TIME_MS, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | TimeoutException | ExecutionException e) {
+            Log.w(TAG, "Failed to complete sync task: " + e);
+        }
+    }
+
+    private <T> T fetchOnScanThread(Supplier<T> supplier, T defaultValue) {
+        if (!Flags.scanControllerThread()) {
+            return supplier.get();
+        }
+
+        enforceScanThreadIsNotUsed();
+
+        if (!mIsAvailable) return defaultValue;
+
+        final var task =
+                new FutureTask<>(
+                        () -> {
+                            if (!mIsAvailable) {
+                                return defaultValue;
+                            }
+                            return supplier.get();
+                        });
+        if (!mScanHandler.post(task)) {
+            Log.w(TAG, "Failed to post async task\n" + Log.getStackTraceString(new Throwable()));
+            return defaultValue;
+        }
+        try {
+            return task.get(RUN_SYNC_WAIT_TIME_MS, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            Log.w(TAG, "Failed to complete fetch sync task: " + e);
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            task.cancel(true);
+        }
+        return defaultValue;
     }
 
     public void dumpRegisterId(StringBuilder sb) {
