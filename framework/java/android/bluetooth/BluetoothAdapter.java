@@ -3151,28 +3151,29 @@ public final class BluetoothAdapter {
             return null;
         }
 
-        switch (socketInfo.status) {
-            case BluetoothStatusCodes.SUCCESS:
+        return switch (socketInfo.status) {
+            case BluetoothStatusCodes.SUCCESS -> {
                 try {
-                    return BluetoothSocket.createSocketFromOpenFd(
+                    yield BluetoothSocket.createSocketFromOpenFd(
                             socketInfo.pfd, socketInfo.bluetoothDevice, new ParcelUuid(uuid));
                 } catch (IOException e) {
-                    return null;
+                    yield null;
                 }
-            case BluetoothStatusCodes.RFCOMM_LISTENER_OPERATION_FAILED_DIFFERENT_APP:
-                throw new IllegalStateException(
-                        "RFCOMM listener for UUID " + uuid + " was not registered by this app");
-            case BluetoothStatusCodes.RFCOMM_LISTENER_NO_SOCKET_AVAILABLE:
-                return null;
-            default:
+            }
+            case BluetoothStatusCodes.RFCOMM_LISTENER_OPERATION_FAILED_DIFFERENT_APP ->
+                    throw new IllegalStateException(
+                            "RFCOMM listener for UUID " + uuid + " was not registered by this app");
+            case BluetoothStatusCodes.RFCOMM_LISTENER_NO_SOCKET_AVAILABLE -> null;
+            default -> {
                 Log.e(
                         TAG,
                         "Unexpected result: ("
                                 + socketInfo.status
                                 + "), from the adapter service"
                                 + " while retrieving an rfcomm socket");
-                return null;
-        }
+                yield null;
+            }
+        };
     }
 
     /**

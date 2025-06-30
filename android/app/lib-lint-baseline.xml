@@ -19,7 +19,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppIncomingFileConfirmActivity.java"
-            line="178"
+            line="177"
             column="24"/>
     </issue>
 
@@ -63,7 +63,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/a2dp/A2dpStateMachine.java"
-            line="677"
+            line="682"
             column="9"/>
     </issue>
 
@@ -74,7 +74,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/a2dp/A2dpStateMachine.java"
-            line="677"
+            line="682"
             column="9"/>
     </issue>
 
@@ -85,7 +85,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/a2dp/A2dpStateMachine.java"
-            line="677"
+            line="682"
             column="9"/>
     </issue>
 
@@ -96,7 +96,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="777"
+            line="763"
             column="9"/>
     </issue>
 
@@ -107,7 +107,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="777"
+            line="763"
             column="9"/>
     </issue>
 
@@ -118,7 +118,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="777"
+            line="763"
             column="9"/>
     </issue>
 
@@ -129,7 +129,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="777"
+            line="763"
             column="9"/>
     </issue>
 
@@ -140,7 +140,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapbMessage.java"
-            line="922"
+            line="918"
             column="9"/>
     </issue>
 
@@ -151,7 +151,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppProvider.java"
-            line="394"
+            line="391"
             column="9"/>
     </issue>
 
@@ -162,7 +162,7 @@
         errorLine2="            ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/audio_util/MediaPlayerWrapper.java"
-            line="575"
+            line="573"
             column="13"/>
     </issue>
 
@@ -206,7 +206,7 @@
         errorLine2="                                                                          ~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppIncomingFileConfirmActivity.java"
-            line="139"
+            line="138"
             column="75"/>
     </issue>
 
@@ -228,7 +228,7 @@
         errorLine2="                                                                   ~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/pbap/BluetoothPbapActivity.java"
-            line="149"
+            line="144"
             column="68"/>
     </issue>
 
@@ -289,12 +289,12 @@
 
     <issue
         id="Wakelock"
-        message="The `release()` call is not always reached (can exit the method via path acquire() → d() → removeMessages() → sendMessageDelayed() → obtainMessage() → break → exit; use try/finally to ensure `release` is always called)"
+        message="The `release()` call is not always reached (because of a possible exception in the path acquire() → d() → removeMessages() → sendMessageDelayed() → obtainMessage() → v() → exit; use try/finally to ensure `release` is always called)"
         errorLine1="                        mWakeLock.release();"
         errorLine2="                                  ~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="457"
+            line="445"
             column="35"/>
     </issue>
 
@@ -311,23 +311,23 @@
 
     <issue
         id="Wakelock"
-        message="The `release()` call is not always reached (can exit the method via path acquire() → w() → report() → removeMessages() → sendMessageDelayed() → obtainMessage() → break → exit; use try/finally to ensure `release` is always called)"
+        message="The `release()` call is not always reached (because of a possible exception in the path acquire() → w() → report() → removeMessages() → sendMessageDelayed() → obtainMessage() → exit; use try/finally to ensure `release` is always called)"
         errorLine1="                        mWakeLock.release();"
         errorLine2="                                  ~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/pbap/BluetoothPbapService.java"
-            line="568"
+            line="580"
             column="35"/>
     </issue>
 
     <issue
         id="Wakelock"
-        message="The `release()` call is not always reached (can exit the method via path acquire() → d() → removeMessages() → sendMessageDelayed() → obtainMessage() → break → exit; use try/finally to ensure `release` is always called)"
+        message="The `release()` call is not always reached (because of a possible exception in the path acquire() → d() → removeMessages() → sendMessageDelayed() → obtainMessage() → v() → exit; use try/finally to ensure `release` is always called)"
         errorLine1="                                mWakeLock.release();"
         errorLine2="                                          ~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
-            line="506"
+            line="507"
             column="43"/>
     </issue>
 
@@ -338,7 +338,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/AdapterService.java"
-            line="4098"
+            line="4254"
             column="17"/>
     </issue>
 
@@ -349,7 +349,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="262"
+            line="263"
             column="13"/>
     </issue>
 
@@ -360,7 +360,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="446"
+            line="434"
             column="25"/>
     </issue>
 
@@ -393,7 +393,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/pbap/BluetoothPbapService.java"
-            line="552"
+            line="564"
             column="25"/>
     </issue>
 
@@ -404,7 +404,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
-            line="297"
+            line="303"
             column="13"/>
     </issue>
 
@@ -415,7 +415,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
-            line="495"
+            line="496"
             column="33"/>
     </issue>
 
@@ -426,7 +426,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/AdapterService.java"
-            line="936"
+            line="1034"
             column="9"/>
     </issue>
 
@@ -481,7 +481,7 @@
         errorLine2="            ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppIncomingFileConfirmActivity.java"
-            line="227"
+            line="226"
             column="13"/>
     </issue>
 
@@ -492,7 +492,7 @@
         errorLine2="            ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppNotification.java"
-            line="222"
+            line="219"
             column="13"/>
     </issue>
 
@@ -503,7 +503,7 @@
         errorLine2="            ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppService.java"
-            line="363"
+            line="365"
             column="13"/>
     </issue>
 
@@ -514,7 +514,7 @@
         errorLine2="            ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/pbap/BluetoothPbapActivity.java"
-            line="259"
+            line="254"
             column="13"/>
     </issue>
 
@@ -525,7 +525,7 @@
         errorLine2="            ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hid/HidHostService.java"
-            line="319"
+            line="325"
             column="13"/>
     </issue>
 
@@ -536,7 +536,7 @@
         errorLine2="            ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
-            line="457"
+            line="463"
             column="13"/>
     </issue>
 

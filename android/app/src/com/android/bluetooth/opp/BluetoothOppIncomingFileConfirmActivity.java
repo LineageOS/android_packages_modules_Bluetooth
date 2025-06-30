@@ -226,14 +226,11 @@ public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
             new Handler() {
                 @Override
                 public void handleMessage(Message msg) {
-                    switch (msg.what) {
-                        case DISMISS_TIMEOUT_DIALOG:
-                            Log.v(TAG, "Received DISMISS_TIMEOUT_DIALOG msg.");
-                            finish();
-                            break;
-                        default:
-                            break;
+                    if (msg.what != DISMISS_TIMEOUT_DIALOG) {
+                        return;
                     }
+                    Log.v(TAG, "Received DISMISS_TIMEOUT_DIALOG msg.");
+                    finish();
                 }
             };
 }

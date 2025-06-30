@@ -1207,7 +1207,7 @@ class BassClientStateMachine extends StateMachine {
                             + "): "
                             + messageWhatToString(message.what));
             switch (message.what) {
-                case CONNECT:
+                case CONNECT -> {
                     Log.d(TAG, "Connecting to " + mDevice);
                     if (mBluetoothGatt != null) {
                         Log.d(TAG, "clear off, pending wl connection");
@@ -1221,8 +1221,8 @@ class BassClientStateMachine extends StateMachine {
                     } else {
                         Log.e(TAG, "Disconnected: error connecting to " + mDevice);
                     }
-                    break;
-                case DISCONNECT:
+                }
+                case DISCONNECT -> {
                     // Disconnect if there's an ongoing background connection
                     mAllowReconnect = false;
                     if (mBluetoothGatt != null) {
@@ -1233,8 +1233,8 @@ class BassClientStateMachine extends StateMachine {
                     } else {
                         Log.d(TAG, "Disconnected: DISCONNECT ignored: " + mDevice);
                     }
-                    break;
-                case CONNECTION_STATE_CHANGED:
+                }
+                case CONNECTION_STATE_CHANGED -> {
                     int state = (int) message.obj;
                     Log.w(TAG, "connection state changed:" + state);
                     if (state == STATE_CONNECTED) {
@@ -1243,10 +1243,11 @@ class BassClientStateMachine extends StateMachine {
                     } else {
                         Log.w(TAG, "Disconnected: Connection failed to " + mDevice);
                     }
-                    break;
-                default:
+                }
+                default -> {
                     Log.d(TAG, "DISCONNECTED: not handled message:" + message.what);
                     return NOT_HANDLED;
+                }
             }
             return HANDLED;
         }
@@ -1288,19 +1289,16 @@ class BassClientStateMachine extends StateMachine {
                             + "): "
                             + messageWhatToString(message.what));
             switch (message.what) {
-                case CONNECT:
-                    Log.d(TAG, "Already Connecting to " + mDevice);
-                    Log.d(TAG, "Ignore this connection request " + mDevice);
-                    break;
-                case DISCONNECT:
+                case CONNECT -> Log.d(TAG, "Already Connecting to " + mDevice);
+                case DISCONNECT -> {
                     Log.w(TAG, "Connecting: DISCONNECT deferred: " + mDevice);
                     deferMessage(message);
-                    break;
-                case READ_BASS_CHARACTERISTICS:
+                }
+                case READ_BASS_CHARACTERISTICS -> {
                     Log.w(TAG, "defer READ_BASS_CHARACTERISTICS requested!: " + mDevice);
                     deferMessage(message);
-                    break;
-                case CONNECTION_STATE_CHANGED:
+                }
+                case CONNECTION_STATE_CHANGED -> {
                     int state = (int) message.obj;
                     Log.w(TAG, "Connecting: connection state changed:" + state);
                     if (state == STATE_CONNECTED) {
@@ -1310,8 +1308,8 @@ class BassClientStateMachine extends StateMachine {
                         resetBluetoothGatt();
                         transitionTo(mDisconnected);
                     }
-                    break;
-                case CONNECT_TIMEOUT:
+                }
+                case CONNECT_TIMEOUT -> {
                     Log.w(TAG, "CONNECT_TIMEOUT");
                     BluetoothDevice device = (BluetoothDevice) message.obj;
                     if (!mDevice.equals(device)) {
@@ -1320,10 +1318,11 @@ class BassClientStateMachine extends StateMachine {
                     }
                     resetBluetoothGatt();
                     transitionTo(mDisconnected);
-                    break;
-                default:
+                }
+                default -> {
                     Log.d(TAG, "CONNECTING: not handled message:" + message.what);
                     return NOT_HANDLED;
+                }
             }
             return HANDLED;
         }
@@ -1780,10 +1779,8 @@ class BassClientStateMachine extends StateMachine {
                             + messageWhatToString(message.what));
             BluetoothLeBroadcastMetadata metaData;
             switch (message.what) {
-                case CONNECT:
-                    Log.w(TAG, "Connected: CONNECT ignored: " + mDevice);
-                    break;
-                case DISCONNECT:
+                case CONNECT -> Log.w(TAG, "Connected: CONNECT ignored: " + mDevice);
+                case DISCONNECT -> {
                     Log.d(TAG, "Disconnecting from " + mDevice);
                     mAllowReconnect = false;
                     if (mBluetoothGatt != null) {
@@ -1795,8 +1792,8 @@ class BassClientStateMachine extends StateMachine {
                     } else {
                         Log.d(TAG, "mBluetoothGatt is null");
                     }
-                    break;
-                case CONNECTION_STATE_CHANGED:
+                }
+                case CONNECTION_STATE_CHANGED -> {
                     int state = (int) message.obj;
                     Log.w(TAG, "Connected:connection state changed:" + state);
                     if (state == STATE_CONNECTED) {
@@ -1807,8 +1804,8 @@ class BassClientStateMachine extends StateMachine {
                         resetBluetoothGatt();
                         transitionTo(mDisconnected);
                     }
-                    break;
-                case READ_BASS_CHARACTERISTICS:
+                }
+                case READ_BASS_CHARACTERISTICS -> {
                     BluetoothGattCharacteristic characteristic =
                             (BluetoothGattCharacteristic) message.obj;
                     if (mBluetoothGatt != null) {
@@ -1817,8 +1814,8 @@ class BassClientStateMachine extends StateMachine {
                     } else {
                         Log.e(TAG, "READ_BASS_CHARACTERISTICS is ignored, Gatt handle is null");
                     }
-                    break;
-                case START_SCAN_OFFLOAD:
+                }
+                case START_SCAN_OFFLOAD -> {
                     if (mBluetoothGatt != null && mBroadcastScanControlPoint != null) {
                         writeBassControlPoint(REMOTE_SCAN_START);
                         mPendingOperation = message.what;
@@ -1826,8 +1823,8 @@ class BassClientStateMachine extends StateMachine {
                     } else {
                         Log.d(TAG, "no Bluetooth Gatt handle, may need to fetch write");
                     }
-                    break;
-                case STOP_SCAN_OFFLOAD:
+                }
+                case STOP_SCAN_OFFLOAD -> {
                     if (mBluetoothGatt != null && mBroadcastScanControlPoint != null) {
                         writeBassControlPoint(REMOTE_SCAN_STOP);
                         mPendingOperation = message.what;
@@ -1835,8 +1832,8 @@ class BassClientStateMachine extends StateMachine {
                     } else {
                         Log.d(TAG, "no Bluetooth Gatt handle, may need to fetch write");
                     }
-                    break;
-                case SWITCH_BCAST_SOURCE:
+                }
+                case SWITCH_BCAST_SOURCE -> {
                     metaData = (BluetoothLeBroadcastMetadata) message.obj;
                     int sourceIdToRemove = message.arg1;
                     // Save pending source to be added once existing source got removed
@@ -1859,8 +1856,8 @@ class BassClientStateMachine extends StateMachine {
                         msg.arg1 = sourceIdToRemove;
                         sendMessage(msg);
                     }
-                    break;
-                case ADD_BCAST_SOURCE:
+                }
+                case ADD_BCAST_SOURCE -> {
                     metaData = (BluetoothLeBroadcastMetadata) message.obj;
                     byte[] addSourceInfo = convertMetadataToAddSourceByteArray(metaData);
                     if (addSourceInfo == null) {
@@ -1903,8 +1900,8 @@ class BassClientStateMachine extends StateMachine {
                         // Clear pending source to switch when starting to add this new source
                         mPendingSourceToSwitch = null;
                     }
-                    break;
-                case UPDATE_BCAST_SOURCE:
+                }
+                case UPDATE_BCAST_SOURCE -> {
                     if (leaudioBisSyncControl()) {
                         boolean paSync = (message.arg2 & BassConstants.FLAG_SYNC_PA) != 0;
                         boolean hasChannelPreference =
@@ -1960,8 +1957,8 @@ class BassClientStateMachine extends StateMachine {
                                             mDevice, sourceId, BluetoothStatusCodes.ERROR_UNKNOWN);
                         }
                     }
-                    break;
-                case SET_BCAST_CODE:
+                }
+                case SET_BCAST_CODE -> {
                     int argType = message.arg1;
                     mSetBroadcastCodePending = false;
                     BluetoothLeBroadcastReceiveState recvState = null;
@@ -1994,8 +1991,8 @@ class BassClientStateMachine extends StateMachine {
                                 SET_BCAST_CODE,
                                 BassConstants.GATT_TXN_TIMEOUT_MS);
                     }
-                    break;
-                case REMOVE_BCAST_SOURCE:
+                }
+                case REMOVE_BCAST_SOURCE -> {
                     if (leaudioBisSyncControl()) {
                         int sourceId = message.arg1;
 
@@ -2049,45 +2046,40 @@ class BassClientStateMachine extends StateMachine {
                             }
                         }
                     }
-                    break;
-                case CANCEL_PENDING_SOURCE_OPERATION:
+                }
+                case CANCEL_PENDING_SOURCE_OPERATION -> {
                     int broadcastId = message.arg1;
                     cancelPendingSourceOperation(broadcastId);
-                    break;
-                case INITIATE_PA_SYNC_TRANSFER:
+                }
+                case INITIATE_PA_SYNC_TRANSFER -> {
                     int syncHandle = message.arg1;
                     int sourceIdForPast = message.arg2;
                     initiatePaSyncTransfer(syncHandle, sourceIdForPast);
-                    break;
-                default:
+                }
+                default -> {
                     Log.d(TAG, "CONNECTED: not handled message:" + message.what);
                     return NOT_HANDLED;
+                }
             }
             return HANDLED;
         }
     }
 
     private static boolean isSuccess(int status) {
-        boolean ret = false;
-        switch (status) {
-            case BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST:
-            case BluetoothStatusCodes.REASON_LOCAL_STACK_REQUEST:
-            case BluetoothStatusCodes.REASON_REMOTE_REQUEST:
-            case BluetoothStatusCodes.REASON_SYSTEM_POLICY:
-                ret = true;
-                break;
-            default:
-                break;
-        }
-        return ret;
+        return switch (status) {
+            case BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST,
+                    BluetoothStatusCodes.REASON_LOCAL_STACK_REQUEST,
+                    BluetoothStatusCodes.REASON_REMOTE_REQUEST,
+                    BluetoothStatusCodes.REASON_SYSTEM_POLICY ->
+                    true;
+            default -> false;
+        };
     }
 
     void sendPendingCallbacks(int pendingOp, int status) {
         switch (pendingOp) {
-            case START_SCAN_OFFLOAD:
-                Log.d(TAG, "sendPendingCallbacks: START_SCAN_OFFLOAD");
-                break;
-            case ADD_BCAST_SOURCE:
+            case START_SCAN_OFFLOAD -> Log.d(TAG, "sendPendingCallbacks: START_SCAN_OFFLOAD");
+            case ADD_BCAST_SOURCE -> {
                 if (!isSuccess(status)) {
                     if (mPendingMetadata != null) {
                         mService.getCallbacks()
@@ -2096,16 +2088,16 @@ class BassClientStateMachine extends StateMachine {
                     }
                     removeMessages(CANCEL_PENDING_SOURCE_OPERATION);
                 }
-                break;
-            case UPDATE_BCAST_SOURCE:
+            }
+            case UPDATE_BCAST_SOURCE -> {
                 if (!isSuccess(status)) {
                     mService.getCallbacks()
                             .notifySourceModifyFailed(mDevice, mPendingSourceId, status);
                     mPendingMetadata = null;
                     removeMessages(CANCEL_PENDING_SOURCE_OPERATION);
                 }
-                break;
-            case REMOVE_BCAST_SOURCE:
+            }
+            case REMOVE_BCAST_SOURCE -> {
                 if (!isSuccess(status)) {
                     mService.getCallbacks()
                             .notifySourceRemoveFailed(mDevice, mPendingSourceId, status);
@@ -2117,13 +2109,9 @@ class BassClientStateMachine extends StateMachine {
                         mPendingSourceToSwitch = null;
                     }
                 }
-                break;
-            case SET_BCAST_CODE:
-                Log.d(TAG, "sendPendingCallbacks: SET_BCAST_CODE");
-                break;
-            default:
-                Log.d(TAG, "sendPendingCallbacks: unhandled case");
-                break;
+            }
+            case SET_BCAST_CODE -> Log.d(TAG, "sendPendingCallbacks: SET_BCAST_CODE");
+            default -> Log.d(TAG, "sendPendingCallbacks: unhandled case");
         }
     }
 
@@ -2165,10 +2153,8 @@ class BassClientStateMachine extends StateMachine {
                             + "): "
                             + messageWhatToString(message.what));
             switch (message.what) {
-                case CONNECT:
-                    Log.w(TAG, "CONNECT request is ignored" + mDevice);
-                    break;
-                case DISCONNECT:
+                case CONNECT -> Log.w(TAG, "CONNECT request is ignored" + mDevice);
+                case DISCONNECT -> {
                     Log.w(TAG, "DISCONNECT requested!: " + mDevice);
                     mAllowReconnect = false;
                     if (mBluetoothGatt != null) {
@@ -2180,12 +2166,12 @@ class BassClientStateMachine extends StateMachine {
                     } else {
                         Log.d(TAG, "mBluetoothGatt is null");
                     }
-                    break;
-                case READ_BASS_CHARACTERISTICS:
+                }
+                case READ_BASS_CHARACTERISTICS -> {
                     Log.w(TAG, "defer READ_BASS_CHARACTERISTICS requested!: " + mDevice);
                     deferMessage(message);
-                    break;
-                case CONNECTION_STATE_CHANGED:
+                }
+                case CONNECTION_STATE_CHANGED -> {
                     int state = (int) message.obj;
                     Log.w(TAG, "ConnectedProcessing: connection state changed:" + state);
                     if (state == STATE_CONNECTED) {
@@ -2196,8 +2182,8 @@ class BassClientStateMachine extends StateMachine {
                         resetBluetoothGatt();
                         transitionTo(mDisconnected);
                     }
-                    break;
-                case GATT_TXN_PROCESSED:
+                }
+                case GATT_TXN_PROCESSED -> {
                     removeMessages(GATT_TXN_TIMEOUT);
                     int status = (int) message.arg1;
                     Log.d(TAG, "GATT transaction processed for" + mDevice);
@@ -2208,8 +2194,8 @@ class BassClientStateMachine extends StateMachine {
                         sendPendingCallbacks(mPendingOperation, BluetoothStatusCodes.ERROR_UNKNOWN);
                     }
                     transitionTo(mConnected);
-                    break;
-                case GATT_TXN_TIMEOUT:
+                }
+                case GATT_TXN_TIMEOUT -> {
                     Log.d(TAG, "GATT transaction timeout for" + mDevice);
                     sendPendingCallbacks(mPendingOperation, BluetoothStatusCodes.ERROR_UNKNOWN);
                     mPendingOperation = -1;
@@ -2219,28 +2205,29 @@ class BassClientStateMachine extends StateMachine {
                         mPendingMetadata = null;
                     }
                     transitionTo(mConnected);
-                    break;
-                case START_SCAN_OFFLOAD:
-                case STOP_SCAN_OFFLOAD:
-                case ADD_BCAST_SOURCE:
-                case SET_BCAST_CODE:
-                case REMOVE_BCAST_SOURCE:
-                case SWITCH_BCAST_SOURCE:
-                case INITIATE_PA_SYNC_TRANSFER:
+                }
+                case START_SCAN_OFFLOAD,
+                        STOP_SCAN_OFFLOAD,
+                        ADD_BCAST_SOURCE,
+                        SET_BCAST_CODE,
+                        REMOVE_BCAST_SOURCE,
+                        SWITCH_BCAST_SOURCE,
+                        INITIATE_PA_SYNC_TRANSFER -> {
                     Log.d(
                             TAG,
                             "defer the message: "
                                     + messageWhatToString(message.what)
                                     + ", so that it will be processed later");
                     deferMessage(message);
-                    break;
-                case CANCEL_PENDING_SOURCE_OPERATION:
+                }
+                case CANCEL_PENDING_SOURCE_OPERATION -> {
                     int broadcastId = message.arg1;
                     cancelPendingSourceOperation(broadcastId);
-                    break;
-                default:
+                }
+                default -> {
                     Log.d(TAG, "ConnectedProcessing: not handled message:" + message.what);
                     return NOT_HANDLED;
+                }
             }
             return HANDLED;
         }
@@ -2302,41 +2289,24 @@ class BassClientStateMachine extends StateMachine {
     }
 
     public static String messageWhatToString(int what) {
-        switch (what) {
-            case CONNECT:
-                return "CONNECT";
-            case DISCONNECT:
-                return "DISCONNECT";
-            case CONNECTION_STATE_CHANGED:
-                return "CONNECTION_STATE_CHANGED";
-            case GATT_TXN_PROCESSED:
-                return "GATT_TXN_PROCESSED";
-            case READ_BASS_CHARACTERISTICS:
-                return "READ_BASS_CHARACTERISTICS";
-            case START_SCAN_OFFLOAD:
-                return "START_SCAN_OFFLOAD";
-            case STOP_SCAN_OFFLOAD:
-                return "STOP_SCAN_OFFLOAD";
-            case ADD_BCAST_SOURCE:
-                return "ADD_BCAST_SOURCE";
-            case UPDATE_BCAST_SOURCE:
-                return "UPDATE_BCAST_SOURCE";
-            case SET_BCAST_CODE:
-                return "SET_BCAST_CODE";
-            case REMOVE_BCAST_SOURCE:
-                return "REMOVE_BCAST_SOURCE";
-            case SWITCH_BCAST_SOURCE:
-                return "SWITCH_BCAST_SOURCE";
-            case CONNECT_TIMEOUT:
-                return "CONNECT_TIMEOUT";
-            case CANCEL_PENDING_SOURCE_OPERATION:
-                return "CANCEL_PENDING_SOURCE_OPERATION";
-            case INITIATE_PA_SYNC_TRANSFER:
-                return "INITIATE_PA_SYNC_TRANSFER";
-            default:
-                break;
-        }
-        return Integer.toString(what);
+        return switch (what) {
+            case CONNECT -> "CONNECT";
+            case DISCONNECT -> "DISCONNECT";
+            case CONNECTION_STATE_CHANGED -> "CONNECTION_STATE_CHANGED";
+            case GATT_TXN_PROCESSED -> "GATT_TXN_PROCESSED";
+            case READ_BASS_CHARACTERISTICS -> "READ_BASS_CHARACTERISTICS";
+            case START_SCAN_OFFLOAD -> "START_SCAN_OFFLOAD";
+            case STOP_SCAN_OFFLOAD -> "STOP_SCAN_OFFLOAD";
+            case ADD_BCAST_SOURCE -> "ADD_BCAST_SOURCE";
+            case UPDATE_BCAST_SOURCE -> "UPDATE_BCAST_SOURCE";
+            case SET_BCAST_CODE -> "SET_BCAST_CODE";
+            case REMOVE_BCAST_SOURCE -> "REMOVE_BCAST_SOURCE";
+            case SWITCH_BCAST_SOURCE -> "SWITCH_BCAST_SOURCE";
+            case CONNECT_TIMEOUT -> "CONNECT_TIMEOUT";
+            case CANCEL_PENDING_SOURCE_OPERATION -> "CANCEL_PENDING_SOURCE_OPERATION";
+            case INITIATE_PA_SYNC_TRANSFER -> "INITIATE_PA_SYNC_TRANSFER";
+            default -> Integer.toString(what);
+        };
     }
 
     /** Dump info */

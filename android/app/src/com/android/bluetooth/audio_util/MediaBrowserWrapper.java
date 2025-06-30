@@ -223,16 +223,12 @@ class MediaBrowserWrapper {
         mRunHandler.post(
                 () -> {
                     switch (mBrowserConnectionState) {
-                        case CONNECTED:
-                            callback.run();
-                            break;
-                        case DISCONNECTED:
+                        case CONNECTED -> callback.run();
+                        case DISCONNECTED -> {
                             connect();
                             mRequestsList.add(callback);
-                            break;
-                        case CONNECTING:
-                            mRequestsList.add(callback);
-                            break;
+                        }
+                        case CONNECTING -> mRequestsList.add(callback);
                     }
                 });
     }

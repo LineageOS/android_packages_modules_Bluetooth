@@ -282,14 +282,9 @@ class PbapClientAccountManager {
         public void handleMessage(Message msg) {
             Log.v(TAG, "Process message=" + messageToString(msg.what));
             switch (msg.what) {
-                case MSG_USER_UNLOCKED:
-                    handleUserUnlocked();
-                    break;
-                case MSG_ACCOUNT_CHECK:
-                    handleAccountCheck();
-                    break;
-                default:
-                    Log.e(TAG, "received an unknown message : " + msg.what);
+                case MSG_USER_UNLOCKED -> handleUserUnlocked();
+                case MSG_ACCOUNT_CHECK -> handleAccountCheck();
+                default -> Log.e(TAG, "received an unknown message : " + msg.what);
             }
         }
 

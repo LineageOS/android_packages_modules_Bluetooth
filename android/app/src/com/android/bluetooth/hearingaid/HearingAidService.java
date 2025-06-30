@@ -584,19 +584,17 @@ public class HearingAidService extends ConnectableProfile {
             HearingAidStateMachine sm = mStateMachines.get(device);
             if (sm == null) {
                 if (stackEvent.type == HearingAidStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED) {
-                    switch (stackEvent.valueInt1) {
-                        case STATE_CONNECTED:
-                        case STATE_CONNECTING:
-                            sm = getOrCreateStateMachine(device);
-                            break;
-                        default:
-                            break;
-                    }
+                    sm =
+                            switch (stackEvent.valueInt1) {
+                                case STATE_CONNECTED, STATE_CONNECTING ->
+                                        getOrCreateStateMachine(device);
+                                default -> null;
+                            };
                 }
-            }
-            if (sm == null) {
-                Log.e(TAG, "Cannot process stack event: no state machine: " + stackEvent);
-                return;
+                if (sm == null) {
+                    Log.e(TAG, "Cannot process stack event: no state machine: " + stackEvent);
+                    return;
+                }
             }
             sm.sendMessage(HearingAidStateMachine.MESSAGE_STACK_EVENT, stackEvent);
         }

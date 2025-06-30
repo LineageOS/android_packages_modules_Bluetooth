@@ -234,15 +234,9 @@ class MapClientContent {
                         + message.getFolder());
 
         switch (message.getType()) {
-            case MMS:
-                storeMms(message, handle, timestamp, seen);
-                return;
-            case SMS_CDMA:
-            case SMS_GSM:
-                storeSms(message, handle, timestamp, seen);
-                return;
-            default:
-                debug("Request to store unsupported message type: " + message.getType());
+            case MMS -> storeMms(message, handle, timestamp, seen);
+            case SMS_CDMA, SMS_GSM -> storeSms(message, handle, timestamp, seen);
+            default -> debug("Request to store unsupported message type: " + message.getType());
         }
     }
 

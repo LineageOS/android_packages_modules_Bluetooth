@@ -496,94 +496,82 @@ public class HeadsetService extends ConnectableProfile {
                         return;
                     }
                     switch (action) {
-                        case Intent.ACTION_BATTERY_CHANGED:
-                            {
-                                int batteryLevel =
-                                        intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-                                int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-                                if (batteryLevel < 0 || scale <= 0) {
-                                    Log.e(
-                                            TAG,
-                                            "Bad Battery Changed intent: batteryLevel="
-                                                    + batteryLevel
-                                                    + ", scale="
-                                                    + scale);
+                        case Intent.ACTION_BATTERY_CHANGED -> {
+                            int batteryLevel = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                            int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+                            if (batteryLevel < 0 || scale <= 0) {
+                                Log.e(
+                                        TAG,
+                                        "Bad Battery Changed intent: batteryLevel="
+                                                + batteryLevel
+                                                + ", scale="
+                                                + scale);
+                                return;
+                            }
+                            int cindBatteryLevel = Math.round(batteryLevel * 5 / ((float) scale));
+                            mSystemInterface
+                                    .getHeadsetPhoneState()
+                                    .setCindBatteryCharge(cindBatteryLevel);
+                        }
+                        case AudioManager.ACTION_VOLUME_CHANGED -> {
+                            if (unifyAbsoluteVolumeManagement()) {
+                                break;
+                            }
+                            Log.i(TAG, "received action volume changed");
+                            int streamType =
+                                    intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_TYPE, -1);
+                            int volStream = AudioManager.STREAM_BLUETOOTH_SCO;
+                            if (deprecateStreamBtSco()) {
+                                volStream = AudioManager.STREAM_VOICE_CALL;
+                            }
+                            if (streamType == volStream) {
+                                Log.i(TAG, "sending message to HSSM");
+                                doForEachConnectedStateMachine(
+                                        stateMachine ->
+                                                stateMachine.sendMessage(
+                                                        HeadsetStateMachine
+                                                                .INTENT_SCO_VOLUME_CHANGED,
+                                                        intent));
+                            }
+                        }
+                        case AudioManager.ACTION_MICROPHONE_MUTE_CHANGED -> {
+                            if (!Flags.microphoneMuteStatusSync()) {
+                                break;
+                            }
+                            Log.i(TAG, "received microphone mute status changed");
+                            doForEachConnectedStateMachine(
+                                    stateMachine ->
+                                            stateMachine.sendMessage(
+                                                    HeadsetStateMachine
+                                                            .MICROPHONE_VOL_MUTE_CHANGED));
+                        }
+                        case BluetoothDevice.ACTION_CONNECTION_ACCESS_REPLY -> {
+                            int requestType =
+                                    intent.getIntExtra(
+                                            BluetoothDevice.EXTRA_ACCESS_REQUEST_TYPE,
+                                            BluetoothDevice.REQUEST_TYPE_PHONEBOOK_ACCESS);
+                            BluetoothDevice device =
+                                    intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                            logD(
+                                    "Received BluetoothDevice.ACTION_CONNECTION_ACCESS_REPLY,"
+                                            + " device="
+                                            + device
+                                            + ", type="
+                                            + requestType);
+                            if (requestType != BluetoothDevice.REQUEST_TYPE_PHONEBOOK_ACCESS) {
+                                break;
+                            }
+                            synchronized (mStateMachines) {
+                                final HeadsetStateMachine stateMachine = mStateMachines.get(device);
+                                if (stateMachine == null) {
+                                    Log.wtf(TAG, "Cannot find state machine for " + device);
                                     return;
                                 }
-                                int cindBatteryLevel =
-                                        Math.round(batteryLevel * 5 / ((float) scale));
-                                mSystemInterface
-                                        .getHeadsetPhoneState()
-                                        .setCindBatteryCharge(cindBatteryLevel);
-                                break;
+                                stateMachine.sendMessage(
+                                        HeadsetStateMachine.INTENT_CONNECTION_ACCESS_REPLY, intent);
                             }
-                        case AudioManager.ACTION_VOLUME_CHANGED:
-                            {
-                                if (!unifyAbsoluteVolumeManagement()) {
-                                    Log.i(TAG, "received action volume changed");
-                                    int streamType =
-                                            intent.getIntExtra(
-                                                    AudioManager.EXTRA_VOLUME_STREAM_TYPE, -1);
-                                    int volStream = AudioManager.STREAM_BLUETOOTH_SCO;
-                                    if (deprecateStreamBtSco()) {
-                                        volStream = AudioManager.STREAM_VOICE_CALL;
-                                    }
-                                    if (streamType == volStream) {
-                                        Log.i(TAG, "sending message to HSSM");
-                                        doForEachConnectedStateMachine(
-                                                stateMachine ->
-                                                        stateMachine.sendMessage(
-                                                                HeadsetStateMachine
-                                                                        .INTENT_SCO_VOLUME_CHANGED,
-                                                                intent));
-                                    }
-                                }
-
-                                break;
-                            }
-                        case AudioManager.ACTION_MICROPHONE_MUTE_CHANGED:
-                            {
-                                if (Flags.microphoneMuteStatusSync()) {
-                                    Log.i(TAG, "received microphone mute status changed");
-                                    doForEachConnectedStateMachine(
-                                            stateMachine ->
-                                                    stateMachine.sendMessage(
-                                                            HeadsetStateMachine
-                                                                    .MICROPHONE_VOL_MUTE_CHANGED));
-                                }
-                                break;
-                            }
-                        case BluetoothDevice.ACTION_CONNECTION_ACCESS_REPLY:
-                            {
-                                int requestType =
-                                        intent.getIntExtra(
-                                                BluetoothDevice.EXTRA_ACCESS_REQUEST_TYPE,
-                                                BluetoothDevice.REQUEST_TYPE_PHONEBOOK_ACCESS);
-                                BluetoothDevice device =
-                                        intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                                logD(
-                                        "Received BluetoothDevice.ACTION_CONNECTION_ACCESS_REPLY,"
-                                                + " device="
-                                                + device
-                                                + ", type="
-                                                + requestType);
-                                if (requestType == BluetoothDevice.REQUEST_TYPE_PHONEBOOK_ACCESS) {
-                                    synchronized (mStateMachines) {
-                                        final HeadsetStateMachine stateMachine =
-                                                mStateMachines.get(device);
-                                        if (stateMachine == null) {
-                                            Log.wtf(TAG, "Cannot find state machine for " + device);
-                                            return;
-                                        }
-                                        stateMachine.sendMessage(
-                                                HeadsetStateMachine.INTENT_CONNECTION_ACCESS_REPLY,
-                                                intent);
-                                    }
-                                }
-                                break;
-                            }
-                        default:
-                            Log.w(TAG, "Unknown action " + action);
+                        }
+                        default -> Log.w(TAG, "Unknown action " + action);
                     }
                 }
             };
