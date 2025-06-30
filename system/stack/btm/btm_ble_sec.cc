@@ -1677,10 +1677,7 @@ static bool btm_ble_complete_evt_ignore(const tBTM_SEC_DEV_REC* p_dev_rec,
   // 2) Link may get disconnected after the SMP security request was sent.
   //
   // Central role: SMP may generate a SMP_COMPLT_EVT if encryption refresh fails.
-  if (p_data->complt.reason != SMP_SUCCESS &&
-      (com::android::bluetooth::flags::le_encryption_refresh_failure_handling() ||
-       !p_dev_rec->role_central) &&
-      btm_sec_cb.pairing_bda != p_dev_rec->bd_addr &&
+  if (p_data->complt.reason != SMP_SUCCESS && btm_sec_cb.pairing_bda != p_dev_rec->bd_addr &&
       btm_sec_cb.pairing_bda != p_dev_rec->ble.pseudo_addr &&
       p_dev_rec->sec_rec.is_le_link_key_known() &&
       p_dev_rec->sec_rec.ble_keys.key_type != BTM_LE_KEY_NONE) {
