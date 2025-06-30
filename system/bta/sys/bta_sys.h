@@ -25,6 +25,7 @@
 #define BTA_SYS_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/hci_role.h>
 #include <bluetooth/types/uuid.h>
 
 #include <chrono>
@@ -36,7 +37,6 @@
 #include "osi/include/alarm.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/hci_error_code.h"
-#include "types/hci_role.h"
 #include "types/raw_address.h"
 
 /*****************************************************************************

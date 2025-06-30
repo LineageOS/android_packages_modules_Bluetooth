@@ -19,11 +19,12 @@
  *   Functions generated:19
  */
 
+#include <bluetooth/types/hci_role.h>
+
 #include <cstdint>
 
 #include "bta/sys/bta_sys.h"
 #include "test/common/mock_functions.h"
-#include "types/hci_role.h"
 #include "types/raw_address.h"
 
 void bta_sys_app_close(tBTA_SYS_ID /* id */, uint8_t /* app_id */,
