@@ -53,35 +53,35 @@ interface IBluetoothManager
     IBinder registerAdapter(in IBluetoothManagerCallback callback);
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     void unregisterAdapter(in IBluetoothManagerCallback callback);
-
-    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
-    int getState();
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.LOCAL_MAC_ADDRESS})")
-    String getAddress(in AttributionSource attributionSource);
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    String getName(in AttributionSource attributionSource);
-    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
-    boolean isBleScanAvailable();
-    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
-    boolean isHearingAidProfileSupported();
-
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     boolean enable(in AttributionSource attributionSource);
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    boolean enableBle(in AttributionSource attributionSource, IBinder b);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     boolean enableNoAutoConnect(in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED}, conditional=true)")
     boolean disable(in AttributionSource attributionSource, boolean persist);
+
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
+    int getState();
+
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.LOCAL_MAC_ADDRESS})")
+    String getAddress(in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    boolean disableBle(in AttributionSource attributionSource, IBinder b);
+    String getName(in AttributionSource attributionSource);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     boolean factoryReset(in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     boolean onFactoryReset(in AttributionSource attributionSource);
 
-    // SnoopLogMode
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
+    boolean isBleScanAvailable();
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    boolean enableBle(in AttributionSource attributionSource, IBinder b);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    boolean disableBle(in AttributionSource attributionSource, IBinder b);
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
+    boolean isHearingAidProfileSupported();
+
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
     int setBtHciSnoopLogMode(int mode);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")

@@ -18,7 +18,6 @@ package com.android.server.bluetooth;
 
 import static android.Manifest.permission.DUMP;
 import static android.Manifest.permission.LOCAL_MAC_ADDRESS;
-import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
 import static com.android.server.bluetooth.BtPermissionUtils.checkConnectPermissionForDataDelivery;
@@ -32,25 +31,15 @@ import android.annotation.Nullable;
 import android.app.AppOpsManager;
 import android.bluetooth.IBluetoothManager;
 import android.bluetooth.IBluetoothManagerCallback;
-import android.bluetooth.State;
 import android.content.AttributionSource;
 import android.content.Context;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.os.UserManager;
 import android.permission.PermissionManager;
 
-import libcore.util.SneakyThrow;
-
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 class BluetoothServiceBinder extends IBluetoothManager.Stub {
     private static final String TAG = BluetoothServiceBinder.class.getSimpleName();
@@ -61,117 +50,38 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     private final AppOpsManager mAppOpsManager;
     private final PermissionManager mPermissionManager;
     private final BtPermissionUtils mPermissionUtils;
-    private final Handler mHandler;
 
-    BluetoothServiceBinder(Looper looper, BluetoothManagerService bms, Context ctx) {
+    BluetoothServiceBinder(BluetoothManagerService bms, Context ctx, UserManager userManager) {
         mService = bms;
         mContext = ctx;
-        mUserManager = requireNonNull(ctx.getSystemService(UserManager.class));
-        mAppOpsManager = requireNonNull(ctx.getSystemService(AppOpsManager.class));
-        mPermissionManager = requireNonNull(ctx.getSystemService(PermissionManager.class));
+        mUserManager = userManager;
+        mAppOpsManager =
+                requireNonNull(
+                        ctx.getSystemService(AppOpsManager.class),
+                        "AppOpsManager system service cannot be null");
+        mPermissionManager =
+                requireNonNull(
+                        ctx.getSystemService(PermissionManager.class),
+                        "PermissionManager system service cannot be null");
         mPermissionUtils = new BtPermissionUtils(ctx);
-        mHandler = new Handler(looper);
-    }
-
-    private void postFromBinder(Runnable runnable) {
-        postFromBinder(
-                () -> {
-                    runnable.run();
-                    return null;
-                });
-    }
-
-    private <T> T postFromBinder(Callable<T> callable) {
-        FutureTask<T> task = new FutureTask(callable);
-
-        mHandler.post(task);
-        try {
-            // Any method calling postFromBinder should most likely be done in under 1 seconds.
-            // But real life shows that the system server thread may sometimes be unwillingly busy.
-            // By putting a 10 seconds timeout we make sure this will generate an ANR (on purpose),
-            // and investigation on what is happening in the system server thread and be fixed
-            return task.get(10, TimeUnit.SECONDS);
-        } catch (TimeoutException | InterruptedException e) {
-            SneakyThrow.sneakyThrow(e);
-        } catch (ExecutionException e) {
-            SneakyThrow.sneakyThrow(e.getCause());
-        }
-        return null; // Unreachable due to SneakyThrow
     }
 
     @Override
     @Nullable
     public IBinder registerAdapter(@NonNull IBluetoothManagerCallback callback) {
-        requireNonNull(callback);
-        return postFromBinder(() -> mService.registerAdapter(callback));
+        requireNonNull(callback, "Callback cannot be null in registerAdapter");
+        return mService.registerAdapter(callback);
     }
 
     @Override
     public void unregisterAdapter(@NonNull IBluetoothManagerCallback callback) {
-        requireNonNull(callback);
-        postFromBinder(() -> mService.unregisterAdapter(callback));
-    }
-
-    @Override
-    public int getState() {
-        return postFromBinder(() -> mService.getState());
-    }
-
-    @Override
-    public String getAddress(AttributionSource source) {
-        requireNonNull(source);
-
-        if (!checkConnectPermissionForDataDelivery(
-                mContext, mPermissionManager, source, "getAddress")) {
-            return null;
-        }
-
-        if (!isCallerSystem(getCallingAppId())
-                && !mPermissionUtils.checkIfCallerIsForegroundUser(mUserManager)) {
-            Log.w(TAG, "getAddress(): Not allowed for non-active and non system user");
-            return null;
-        }
-
-        if (mContext.checkCallingOrSelfPermission(LOCAL_MAC_ADDRESS) != PERMISSION_GRANTED) {
-            // TODO(b/280890575): Throws a SecurityException instead
-            Log.w(TAG, "getAddress(): Client does not have LOCAL_MAC_ADDRESS permission");
-            return IBluetoothManager.DEFAULT_MAC_ADDRESS;
-        }
-
-        return postFromBinder(() -> mService.getAddress());
-    }
-
-    @Override
-    public String getName(AttributionSource source) {
-        requireNonNull(source);
-
-        if (!checkConnectPermissionForDataDelivery(
-                mContext, mPermissionManager, source, "getName")) {
-            return null;
-        }
-
-        if (!isCallerSystem(getCallingAppId())
-                && !mPermissionUtils.checkIfCallerIsForegroundUser(mUserManager)) {
-            Log.w(TAG, "getName(): not allowed for non-active and non system user");
-            return null;
-        }
-
-        return postFromBinder(() -> mService.getName());
-    }
-
-    @Override
-    public boolean isBleScanAvailable() {
-        return postFromBinder(() -> mService.isBleScanAvailable());
-    }
-
-    @Override
-    public boolean isHearingAidProfileSupported() {
-        return postFromBinder(() -> mService.isHearingAidProfileSupported());
+        requireNonNull(callback, "Callback cannot be null in unregisterAdapter");
+        mService.unregisterAdapter(callback);
     }
 
     @Override
     public boolean enable(@NonNull AttributionSource source) {
-        requireNonNull(source);
+        requireNonNull(source, "AttributionSource cannot be null in enable");
 
         final String errorMsg =
                 mPermissionUtils.callerCanToggle(
@@ -188,40 +98,12 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
         }
 
         Log.d(TAG, "enable()");
-
-        var reason = ENABLE_DISABLE_REASON_APPLICATION_REQUEST;
-        var packageName = source.getPackageName();
-
-        return postFromBinder(() -> mService.enable(reason, packageName));
-    }
-
-    @Override
-    public boolean enableBle(AttributionSource source, IBinder token) {
-        requireNonNull(source);
-        requireNonNull(token);
-
-        final String errorMsg =
-                mPermissionUtils.callerCanToggle(
-                        mContext,
-                        source,
-                        mUserManager,
-                        mAppOpsManager,
-                        mPermissionManager,
-                        "enableBle",
-                        false);
-        if (!errorMsg.isEmpty()) {
-            Log.d(TAG, "enableBle(): FAILED: " + errorMsg);
-            return false;
-        }
-
-        var packageName = source.getPackageName();
-
-        return postFromBinder(() -> mService.enableBle(packageName, token));
+        return mService.enableFromBinder(source.getPackageName());
     }
 
     @Override
     public boolean enableNoAutoConnect(AttributionSource source) {
-        requireNonNull(source);
+        requireNonNull(source, "AttributionSource cannot be null in enableNoAutoConnect");
 
         final String errorMsg =
                 mPermissionUtils.callerCanToggle(
@@ -242,14 +124,12 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
         }
 
         Log.d(TAG, "enableNoAutoConnect()");
-        var packageName = source.getPackageName();
-
-        return postFromBinder(() -> mService.enableNoAutoConnect(packageName));
+        return mService.enableNoAutoConnectFromBinder(source.getPackageName());
     }
 
     @Override
     public boolean disable(AttributionSource source, boolean persist) {
-        requireNonNull(source);
+        requireNonNull(source, "AttributionSource cannot be null in disable");
 
         if (!persist) {
             BtPermissionUtils.enforcePrivileged(mContext);
@@ -270,15 +150,116 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
         }
 
         Log.d(TAG, "disable(" + persist + ")");
-        var packageName = source.getPackageName();
+        return mService.disableFromBinder(source.getPackageName(), persist);
+    }
 
-        return postFromBinder(() -> mService.disable(packageName, persist));
+    @Override
+    public int getState() {
+        return mService.getState();
+    }
+
+    @Override
+    public String getAddress(AttributionSource source) {
+        requireNonNull(source, "AttributionSource cannot be null in getAddress");
+
+        if (!checkConnectPermissionForDataDelivery(
+                mContext, mPermissionManager, source, "getAddress")) {
+            return null;
+        }
+
+        if (!isCallerSystem(getCallingAppId())
+                && !mPermissionUtils.checkIfCallerIsForegroundUser(mUserManager)) {
+            Log.w(TAG, "getAddress(): Not allowed for non-active and non system user");
+            return null;
+        }
+
+        if (mContext.checkCallingOrSelfPermission(LOCAL_MAC_ADDRESS) != PERMISSION_GRANTED) {
+            // TODO(b/280890575): Throws a SecurityException instead
+            Log.w(TAG, "getAddress(): Client does not have LOCAL_MAC_ADDRESS permission");
+            return IBluetoothManager.DEFAULT_MAC_ADDRESS;
+        }
+
+        return mService.getAddress();
+    }
+
+    @Override
+    public String getName(AttributionSource source) {
+        requireNonNull(source, "AttributionSource cannot be null in getName");
+
+        if (!checkConnectPermissionForDataDelivery(
+                mContext, mPermissionManager, source, "getName")) {
+            return null;
+        }
+
+        if (!isCallerSystem(getCallingAppId())
+                && !mPermissionUtils.checkIfCallerIsForegroundUser(mUserManager)) {
+            Log.w(TAG, "getName(): not allowed for non-active and non system user");
+            return null;
+        }
+
+        return mService.getName();
+    }
+
+    @Override
+    public boolean factoryReset(AttributionSource source) {
+        requireNonNull(source);
+
+        BtPermissionUtils.enforcePrivileged(mContext);
+
+        if (!checkConnectPermissionForDataDelivery(
+                mContext, mPermissionManager, source, "factoryReset")) {
+            return false;
+        }
+
+        return mService.factoryResetFromBinder();
+    }
+
+    @Override
+    public boolean onFactoryReset(AttributionSource source) {
+        requireNonNull(source, "AttributionSource cannot be null in onFactoryReset");
+
+        BtPermissionUtils.enforcePrivileged(mContext);
+
+        if (!checkConnectPermissionForDataDelivery(
+                mContext, mPermissionManager, source, "onFactoryReset")) {
+            return false;
+        }
+
+        return mService.onFactoryResetFromBinder();
+    }
+
+    @Override
+    public boolean isBleScanAvailable() {
+        return mService.isBleScanAvailable();
+    }
+
+    @Override
+    public boolean enableBle(AttributionSource source, IBinder token) {
+        requireNonNull(source, "AttributionSource cannot be null in enableBle");
+        requireNonNull(token, "IBinder cannot be null in enableBle");
+
+        final String errorMsg =
+                mPermissionUtils.callerCanToggle(
+                        mContext,
+                        source,
+                        mUserManager,
+                        mAppOpsManager,
+                        mPermissionManager,
+                        "enableBle",
+                        false);
+        if (!errorMsg.isEmpty()) {
+            Log.d(TAG, "enableBle(): FAILED: " + errorMsg);
+            return false;
+        }
+
+        Log.d(TAG, "enableBle(" + token + ")");
+        return mService.enableBleFromBinder(source.getPackageName(), token);
     }
 
     @Override
     public boolean disableBle(AttributionSource source, IBinder token) {
-        requireNonNull(source);
-        requireNonNull(token);
+        requireNonNull(source, "AttributionSource cannot be null in disableBle");
+        requireNonNull(token, "IBinder cannot be null in disableBle");
 
         final String errorMsg =
                 mPermissionUtils.callerCanToggle(
@@ -294,77 +275,27 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return false;
         }
 
-        var packageName = source.getPackageName();
-
-        return postFromBinder(() -> mService.disableBle(packageName, token));
+        Log.d(TAG, "disableBle(" + token + ")");
+        return mService.disableBleFromBinder(source.getPackageName(), token);
     }
 
     @Override
-    public boolean factoryReset(AttributionSource source) {
-        requireNonNull(source);
-
-        BtPermissionUtils.enforcePrivileged(mContext);
-
-        if (!checkConnectPermissionForDataDelivery(
-                mContext, mPermissionManager, source, "factoryReset")) {
-            return false;
-        }
-
-        return postFromBinder(() -> mService.factoryReset(0));
-    }
-
-    @Override
-    public boolean onFactoryReset(AttributionSource source) {
-        requireNonNull(source);
-
-        BtPermissionUtils.enforcePrivileged(mContext);
-
-        if (!checkConnectPermissionForDataDelivery(
-                mContext, mPermissionManager, source, "onFactoryReset")) {
-            return false;
-        }
-
-        int state = mService.getState();
-        if (state == State.BLE_TURNING_ON
-                || state == State.TURNING_ON
-                || state == State.TURNING_OFF) {
-            if (!mService.waitForState(State.BLE_ON, State.ON)) {
-                return false;
-            }
-        }
-        return postFromBinder(() -> mService.onFactoryReset());
+    public boolean isHearingAidProfileSupported() {
+        return mService.isHearingAidProfileSupported();
     }
 
     @Override
     public int setBtHciSnoopLogMode(int mode) {
         BtPermissionUtils.enforcePrivileged(mContext);
 
-        return postFromBinder(() -> mService.setBtHciSnoopLogMode(mode));
+        return mService.setBtHciSnoopLogMode(mode);
     }
 
     @Override
     public int getBtHciSnoopLogMode() {
         BtPermissionUtils.enforcePrivileged(mContext);
 
-        return postFromBinder(() -> mService.getBtHciSnoopLogMode());
-    }
-
-    @Override
-    public boolean isAutoOnSupported() {
-        BtPermissionUtils.enforcePrivileged(mContext);
-        return postFromBinder(() -> mService.isAutoOnSupported());
-    }
-
-    @Override
-    public boolean isAutoOnEnabled() {
-        BtPermissionUtils.enforcePrivileged(mContext);
-        return postFromBinder(() -> mService.isAutoOnEnabled());
-    }
-
-    @Override
-    public void setAutoOnEnabled(boolean status) {
-        BtPermissionUtils.enforcePrivileged(mContext);
-        postFromBinder(() -> mService.setAutoOnEnabled(status));
+        return mService.getBtHciSnoopLogMode();
     }
 
     @Override
@@ -383,6 +314,24 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     }
 
     @Override
+    public boolean isAutoOnSupported() {
+        BtPermissionUtils.enforcePrivileged(mContext);
+        return mService.isAutoOnSupported();
+    }
+
+    @Override
+    public boolean isAutoOnEnabled() {
+        BtPermissionUtils.enforcePrivileged(mContext);
+        return mService.isAutoOnEnabled();
+    }
+
+    @Override
+    public void setAutoOnEnabled(boolean status) {
+        BtPermissionUtils.enforcePrivileged(mContext);
+        mService.setAutoOnEnabled(status);
+    }
+
+    @Override
     public void dump(FileDescriptor fd, PrintWriter writer, String[] args) {
         if (mContext.checkCallingOrSelfPermission(DUMP) != PERMISSION_GRANTED) {
             // TODO(b/280890575): Throws SecurityException instead
@@ -390,6 +339,6 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
             return;
         }
 
-        postFromBinder(() -> mService.dump(fd, writer, args));
+        mService.dump(fd, writer, args);
     }
 }
