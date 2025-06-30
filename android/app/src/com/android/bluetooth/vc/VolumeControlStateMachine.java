@@ -33,6 +33,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -136,6 +137,10 @@ class VolumeControlStateMachine extends StateMachine {
                     log("Connecting to " + mDevice);
                     if (!mNativeInterface.connectVolumeControl(mDevice)) {
                         Log.e(TAG, "Disconnected: error connecting to " + mDevice);
+                        break;
+                    }
+                    if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
+                        transitionTo(mConnecting);
                         break;
                     }
                     if (mService.okToConnect(mDevice)) {
