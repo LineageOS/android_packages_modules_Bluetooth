@@ -258,10 +258,6 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
 
     boolean isLeAudioOnlyGroup(BluetoothDevice device) {
         String log = "isLeAudioOnlyGroup(" + device + "): ";
-        if (!Flags.leaudioAllowLeaudioOnlyDevices()) {
-            Log.d(TAG, log + "missing flag leaudio_allow_leaudio_only_devices");
-            return false;
-        }
 
         final var csipSetCoordinator = getCsipSetCoordinatorService();
         if (csipSetCoordinator.isEmpty()) {
@@ -316,11 +312,6 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
          * Note, that we need to have all set bonded to take the decision.
          * If the set is not bonded, we cannot assume that.
          */
-
-        if (!Flags.leaudioAllowLeaudioOnlyDevices()) {
-            Log.d(TAG, log + "missing flag leaudio_allow_leaudio_only_devices");
-            return false;
-        }
 
         if (!Utils.arrayContains(uuids, BluetoothUuid.LE_AUDIO)) {
             Log.d(TAG, log + "Device does not supports LE_AUDIO");
