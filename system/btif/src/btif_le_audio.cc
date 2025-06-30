@@ -328,6 +328,18 @@ class LeAudioClientInterfaceImpl : public LeAudioClientInterface, public LeAudio
                            source_context_types));
   }
 
+  void GroupConfirmActive(int group_id) {
+    if (!initialized || !LeAudioClient::IsLeAudioClientRunning()) {
+      log::verbose(
+              "call ignored, due to already started cleanup procedure or service "
+              "being not read");
+      return;
+    }
+
+    do_in_main_thread(
+            Bind(&LeAudioClient::GroupConfirmActive, Unretained(LeAudioClient::Get()), group_id));
+  }
+
 private:
   LeAudioClientCallbacks* callbacks;
 };
