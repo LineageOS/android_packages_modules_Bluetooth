@@ -373,8 +373,10 @@ private:
 
   // Labels used for messages currently in flight.
   std::set<uint8_t> active_labels_;
+  bool set_vol_cmd_in_progress_ = false;
 
   int8_t volume_ = -1;
+  std::optional<int8_t> pending_volume_ = {};
 };
 
 }  // namespace avrcp
