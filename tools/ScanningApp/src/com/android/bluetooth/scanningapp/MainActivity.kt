@@ -32,7 +32,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.CheckBox
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
@@ -46,6 +45,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.android.bluetooth.scanningapp.extensions.toScanErrorMessage
 import com.android.bluetooth.scanningapp.extensions.toScanModeString
+import com.android.bluetooth.scanningapp.extensions.toast
 import com.google.android.material.slider.Slider
 
 private const val TAG = "MainActivity"
@@ -206,12 +206,6 @@ class MainActivity : AppCompatActivity() {
                 .setScanMode(scanMode)
                 .build()
 
-        Toast.makeText(
-                this@MainActivity,
-                "Scan started: ${scanMode.toScanModeString()}",
-                Toast.LENGTH_SHORT,
-            )
-            .show()
         isScanning = true
         scanButton.text = "Stop Scan"
         scanButton.backgroundTintList =
@@ -232,7 +226,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        Toast.makeText(this@MainActivity, "Scan stopped", Toast.LENGTH_SHORT).show()
+        toast("Scan stopped")
         isScanning = false
         scanButton.text = "Start Scan"
         scanButton.backgroundTintList =
@@ -259,12 +253,7 @@ class MainActivity : AppCompatActivity() {
                 Log.e(TAG, "Scan Failed with error code: $errorCode")
 
                 runOnUiThread {
-                    Toast.makeText(
-                            this@MainActivity,
-                            "Scan failed: ${errorCode.toScanErrorMessage()}",
-                            Toast.LENGTH_LONG,
-                        )
-                        .show()
+                    toast("Scan failed: ${errorCode.toScanErrorMessage()}")
                     stopScan()
                 }
             }
