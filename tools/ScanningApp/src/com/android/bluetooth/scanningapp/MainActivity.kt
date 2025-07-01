@@ -28,11 +28,13 @@ import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.Toast
+import android.widget.CheckBox
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.PopupMenu
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -41,12 +43,19 @@ import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.android.bluetooth.scanningapp.extensions.toScanErrorMessage
+import com.android.bluetooth.scanningapp.extensions.toScanModeString
+import com.android.bluetooth.scanningapp.extensions.toast
 import com.google.android.material.slider.Slider
 
 private const val TAG = "MainActivity"
 
 @SuppressLint("SetTextI18n")
 class MainActivity : AppCompatActivity() {
+
+    private val bluetoothLeScanner: BluetoothLeScanner by lazy {
+        getSystemService(BluetoothManager::class.java).adapter.bluetoothLeScanner
+    }
 
     private val REQUIRED_PERMISSIONS =
         arrayOf(
@@ -59,13 +68,11 @@ class MainActivity : AppCompatActivity() {
     private val requestBluetoothPermissions =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
             permissions ->
-            var allPermissionsGranted = true
-            permissions.entries.forEach {
-                if (!it.value) {
-                    allPermissionsGranted = false
-                    Log.w(TAG, "Permission not granted: ${it.key}")
-                }
-            }
+            val allPermissionsGranted =
+                permissions.entries
+                    .filter { !it.value }
+                    .onEach { Log.w(TAG, "Permission not granted: ${it.key}") }
+                    .isEmpty()
 
             if (allPermissionsGranted) {
                 startScan()
@@ -73,25 +80,28 @@ class MainActivity : AppCompatActivity() {
         }
 
     private val scanResultAdapter = ScanResultAdapter()
-    private val bluetoothLeScanner: BluetoothLeScanner by lazy {
-        getSystemService(BluetoothManager::class.java).adapter.bluetoothLeScanner
-    }
 
-    private var isScanning = false
     private var rssiThreshold = -100f
+    private var batchScan = false
+    private var scanMode = ScanSettings.SCAN_MODE_LOW_POWER
+    private var isScanning = false
 
-    private lateinit var scanButton: Button
     private lateinit var scanResultsRecyclerView: RecyclerView
     private lateinit var rssiSlider: Slider
+    private lateinit var batchScanCheckbox: CheckBox
+    private lateinit var scanModeButton: Button
+    private lateinit var scanButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
 
-        scanButton = findViewById(R.id.scanButton)
         scanResultsRecyclerView = findViewById(R.id.scanResultsRecyclerView)
         rssiSlider = findViewById(R.id.rssiSlider)
+        batchScanCheckbox = findViewById(R.id.batchScanCheckbox)
+        scanModeButton = findViewById(R.id.scanModeButton)
+        scanButton = findViewById(R.id.scanButton)
 
         ViewCompat.setOnApplyWindowInsetsListener(scanButton) { v, windowInsets ->
             val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -114,6 +124,9 @@ class MainActivity : AppCompatActivity() {
             WindowInsetsCompat.CONSUMED
         }
 
+        scanResultsRecyclerView.adapter = scanResultAdapter
+        scanResultsRecyclerView.layoutManager = LinearLayoutManager(this)
+
         rssiSlider.setLabelFormatter { value: Float -> "RSSI threshold: $value dBm" }
 
         rssiSlider.addOnChangeListener { slider, value, fromUser ->
@@ -123,6 +136,10 @@ class MainActivity : AppCompatActivity() {
                 stopScan()
             }
         }
+
+        batchScanCheckbox.setOnCheckedChangeListener { _, isChecked -> batchScan = isChecked }
+
+        scanModeButton.setOnClickListener { configureScanMode(it) }
 
         scanButton.setOnClickListener {
             if (isScanning) {
@@ -135,14 +152,30 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-
-        scanResultsRecyclerView.adapter = scanResultAdapter
-        scanResultsRecyclerView.layoutManager = LinearLayoutManager(this)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         stopScan()
+    }
+
+    private fun configureScanMode(anchorView: View) {
+        val popup = PopupMenu(this, anchorView)
+
+        popup.menu.add(0, ScanSettings.SCAN_MODE_LOW_POWER, 0, "Low Power")
+        popup.menu.add(0, ScanSettings.SCAN_MODE_BALANCED, 1, "Balanced")
+        popup.menu.add(0, ScanSettings.SCAN_MODE_LOW_LATENCY, 2, "Low Latency")
+
+        popup.setOnMenuItemClickListener { menuItem ->
+            scanMode = menuItem.itemId
+            scanModeButton.text = scanMode.toScanModeString()
+            if (isScanning) {
+                stopScan()
+            }
+            true
+        }
+
+        popup.show()
     }
 
     private fun checkPermissions(): Boolean {
@@ -166,9 +199,13 @@ class MainActivity : AppCompatActivity() {
         scanResultAdapter.clearResults()
 
         val scanFilters: List<ScanFilter> = emptyList()
-        val scanSettings = ScanSettings.Builder().setRssiThreshold(rssiThreshold.toInt()).build()
+        val scanSettings =
+            ScanSettings.Builder()
+                .setReportDelay(if (batchScan) 5000 else 0)
+                .setRssiThreshold(rssiThreshold.toInt())
+                .setScanMode(scanMode)
+                .build()
 
-        Log.i(TAG, "Scan started...")
         isScanning = true
         scanButton.text = "Stop Scan"
         scanButton.backgroundTintList =
@@ -189,9 +226,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val scanStoppedMessage = "Scan stopped."
-        Log.i(TAG, scanStoppedMessage)
-        Toast.makeText(this@MainActivity, scanStoppedMessage, Toast.LENGTH_SHORT).show()
+        toast("Scan stopped")
         isScanning = false
         scanButton.text = "Start Scan"
         scanButton.backgroundTintList =
@@ -218,24 +253,9 @@ class MainActivity : AppCompatActivity() {
                 Log.e(TAG, "Scan Failed with error code: $errorCode")
 
                 runOnUiThread {
-                    Toast.makeText(
-                            this@MainActivity,
-                            "Scan failed: ${mapScanErrorCodeToMessage(errorCode)}",
-                            Toast.LENGTH_LONG,
-                        )
-                        .show()
+                    toast("Scan failed: ${errorCode.toScanErrorMessage()}")
                     stopScan()
                 }
             }
         }
-
-    private fun mapScanErrorCodeToMessage(errorCode: Int): String {
-        return when (errorCode) {
-            ScanCallback.SCAN_FAILED_ALREADY_STARTED -> "Scan already started."
-            ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> "App registration failed."
-            ScanCallback.SCAN_FAILED_INTERNAL_ERROR -> "Internal error."
-            ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED -> "Feature unsupported."
-            else -> "Unknown error ($errorCode)."
-        }
-    }
 }
