@@ -1688,8 +1688,7 @@ static bool btm_ble_complete_evt_ignore(const tBTM_SEC_DEV_REC* p_dev_rec,
                 p_dev_rec->bd_addr);
       l2cu_start_post_bond_timer(p_dev_rec->ble_hci_handle);
       return true;
-    } else if (com::android::bluetooth::flags::le_peripheral_enc_failure() &&
-               !p_dev_rec->role_central) {
+    } else if (!p_dev_rec->role_central) {
       log::warn("Peripheral encryption request failed for the bonded device {} with reason {}",
                 p_dev_rec->bd_addr, smp_status_text(p_data->complt.reason));
       btm_sec_disconnect(p_dev_rec->ble_hci_handle, HCI_ERR_AUTH_FAILURE,
