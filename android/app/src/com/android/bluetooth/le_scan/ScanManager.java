@@ -455,7 +455,8 @@ public class ScanManager {
             throw new IllegalStateException(
                     "sendMessage using `mClientHandler` should not be called on scan thread");
         }
-        Log.d(TAG, "sendMessage called() with what = " + what + " client = " + client);
+        final var message = mClientHandler.messageToString(what);
+        Log.d(TAG, "Sending message " + message + " for client: " + client);
         mClientHandler.obtainMessage(what, client).sendToTarget();
     }
 
@@ -572,6 +573,24 @@ public class ScanManager {
 
         void handleClearConnectingStateClientHandlerImpl() {
             handleClearConnectingState();
+        }
+
+        private static String messageToString(int msg) {
+            return switch (msg) {
+                case MSG_START_BLE_SCAN -> "MSG_START_BLE_SCAN";
+                case MSG_STOP_BLE_SCAN -> "MSG_STOP_BLE_SCAN";
+                case MSG_FLUSH_BATCH_RESULTS -> "MSG_FLUSH_BATCH_RESULTS";
+                case MSG_SCAN_TIMEOUT -> "MSG_SCAN_TIMEOUT";
+                case MSG_SUSPEND_SCANS -> "MSG_SUSPEND_SCANS";
+                case MSG_RESUME_SCANS -> "MSG_RESUME_SCANS";
+                case MSG_IMPORTANCE_CHANGE -> "MSG_IMPORTANCE_CHANGE";
+                case MSG_SCREEN_ON -> "MSG_SCREEN_ON";
+                case MSG_SCREEN_OFF -> "MSG_SCREEN_OFF";
+                case MSG_REVERT_SCAN_MODE_UPGRADE -> "MSG_REVERT_SCAN_MODE_UPGRADE";
+                case MSG_START_CONNECTING -> "MSG_START_CONNECTING";
+                case MSG_STOP_CONNECTING -> "MSG_STOP_CONNECTING";
+                default -> "UNKNOWN(" + msg + ")";
+            };
         }
     }
 
@@ -1559,38 +1578,44 @@ public class ScanManager {
     // parameter set as follows.
     private int getBatchScanWindowMillis(int scanMode) {
         ContentResolver resolver = mAdapterService.getContentResolver();
-        return switch (scanMode) {
-            case ScanSettings.SCAN_MODE_LOW_LATENCY ->
-                    Settings.Global.getInt(
-                            resolver,
-                            Settings.Global.BLE_SCAN_BALANCED_WINDOW_MS,
-                            SCAN_MODE_BALANCED_WINDOW_MS);
-            case ScanSettings.SCAN_MODE_SCREEN_OFF ->
-                    mAdapterService.getScreenOffLowPowerWindowMillis();
-            default ->
-                    Settings.Global.getInt(
-                            resolver,
-                            Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
-                            SCAN_MODE_LOW_POWER_WINDOW_MS);
-        };
+        final var windowMs =
+                switch (scanMode) {
+                    case ScanSettings.SCAN_MODE_LOW_LATENCY ->
+                            Settings.Global.getInt(
+                                    resolver,
+                                    Settings.Global.BLE_SCAN_BALANCED_WINDOW_MS,
+                                    SCAN_MODE_BALANCED_WINDOW_MS);
+                    case ScanSettings.SCAN_MODE_SCREEN_OFF ->
+                            mAdapterService.getScreenOffLowPowerWindowMillis();
+                    default ->
+                            Settings.Global.getInt(
+                                    resolver,
+                                    Settings.Global.BLE_SCAN_LOW_POWER_WINDOW_MS,
+                                    SCAN_MODE_LOW_POWER_WINDOW_MS);
+                };
+        Log.d(TAG, "Scan window is " + windowMs + "ms for mode " + getScanModeString(scanMode));
+        return windowMs;
     }
 
     private int getBatchScanIntervalMillis(int scanMode) {
         ContentResolver resolver = mAdapterService.getContentResolver();
-        return switch (scanMode) {
-            case ScanSettings.SCAN_MODE_LOW_LATENCY ->
-                    Settings.Global.getInt(
-                            resolver,
-                            Settings.Global.BLE_SCAN_BALANCED_INTERVAL_MS,
-                            SCAN_MODE_BALANCED_INTERVAL_MS);
-            case ScanSettings.SCAN_MODE_SCREEN_OFF ->
-                    mAdapterService.getScreenOffLowPowerIntervalMillis();
-            default ->
-                    Settings.Global.getInt(
-                            resolver,
-                            Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
-                            SCAN_MODE_LOW_POWER_INTERVAL_MS);
-        };
+        final var internalMs =
+                switch (scanMode) {
+                    case ScanSettings.SCAN_MODE_LOW_LATENCY ->
+                            Settings.Global.getInt(
+                                    resolver,
+                                    Settings.Global.BLE_SCAN_BALANCED_INTERVAL_MS,
+                                    SCAN_MODE_BALANCED_INTERVAL_MS);
+                    case ScanSettings.SCAN_MODE_SCREEN_OFF ->
+                            mAdapterService.getScreenOffLowPowerIntervalMillis();
+                    default ->
+                            Settings.Global.getInt(
+                                    resolver,
+                                    Settings.Global.BLE_SCAN_LOW_POWER_INTERVAL_MS,
+                                    SCAN_MODE_LOW_POWER_INTERVAL_MS);
+                };
+        Log.d(TAG, "Scan interval is " + internalMs + "ms for mode " + getScanModeString(scanMode));
+        return internalMs;
     }
 
     // Set the batch alarm to be triggered within a short window after batch interval. This
