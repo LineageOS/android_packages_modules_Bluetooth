@@ -72,16 +72,6 @@ flag {
 }
 
 flag {
-    name: "le_encryption_refresh_failure_handling"
-    namespace: "bluetooth"
-    description: "Don't remove bond on LE encryption refresh failure"
-    bug: "393396710"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "donot_mandate_auth_along_with_encryption"
     namespace: "bluetooth"
     description: "Don't mandate authentication along with encryption"
