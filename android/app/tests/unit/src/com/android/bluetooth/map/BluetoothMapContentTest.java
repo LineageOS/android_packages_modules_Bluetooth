@@ -678,7 +678,7 @@ public class BluetoothMapContentTest {
                         new String[] {
                             "MessageColFromAddress", BluetoothMapContract.ConvoContactColumns.UCI
                         });
-        cursor.addRow(new Object[] {(long) 1, TEST_ADDRESS});
+        cursor.addRow(new Object[] {1L, TEST_ADDRESS});
         cursor.moveToFirst();
         doReturn(cursor)
                 .when(mMapMethodProxy)
@@ -796,7 +796,7 @@ public class BluetoothMapContentTest {
                         new String[] {
                             "MessageColFromAddress", BluetoothMapContract.ConvoContactColumns.NAME
                         });
-        cursor.addRow(new Object[] {(long) 1, TEST_NAME});
+        cursor.addRow(new Object[] {1L, TEST_NAME});
         cursor.moveToFirst();
         doReturn(cursor)
                 .when(mMapMethodProxy)
