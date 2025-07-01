@@ -17,6 +17,7 @@
 package com.android.bluetooth.scanningapp.extensions
 
 import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanSettings
 
 fun Int.toScanErrorMessage(): String {
     return when (this) {
@@ -25,5 +26,14 @@ fun Int.toScanErrorMessage(): String {
         ScanCallback.SCAN_FAILED_INTERNAL_ERROR -> "Internal error"
         ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED -> "Feature unsupported"
         else -> "Unknown error ($this)"
+    }
+}
+
+fun Int.toScanModeString(): String {
+    return when (this) {
+        ScanSettings.SCAN_MODE_LOW_POWER -> "Low Power"
+        ScanSettings.SCAN_MODE_BALANCED -> "Balanced"
+        ScanSettings.SCAN_MODE_LOW_LATENCY -> "Low Latency"
+        else -> "Unknown scan mode ($this)"
     }
 }
