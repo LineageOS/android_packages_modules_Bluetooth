@@ -41,6 +41,7 @@ import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.android.bluetooth.scanningapp.extensions.toScanErrorMessage
 import com.google.android.material.slider.Slider
 
 private const val TAG = "MainActivity"
@@ -59,13 +60,11 @@ class MainActivity : AppCompatActivity() {
     private val requestBluetoothPermissions =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
             permissions ->
-            var allPermissionsGranted = true
-            permissions.entries.forEach {
-                if (!it.value) {
-                    allPermissionsGranted = false
-                    Log.w(TAG, "Permission not granted: ${it.key}")
-                }
-            }
+            val allPermissionsGranted =
+                permissions.entries
+                    .filter { !it.value }
+                    .onEach { Log.w(TAG, "Permission not granted: ${it.key}") }
+                    .isEmpty()
 
             if (allPermissionsGranted) {
                 startScan()
@@ -220,7 +219,7 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     Toast.makeText(
                             this@MainActivity,
-                            "Scan failed: ${mapScanErrorCodeToMessage(errorCode)}",
+                            "Scan failed: ${errorCode.toScanErrorMessage()}",
                             Toast.LENGTH_LONG,
                         )
                         .show()
@@ -228,14 +227,4 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-
-    private fun mapScanErrorCodeToMessage(errorCode: Int): String {
-        return when (errorCode) {
-            ScanCallback.SCAN_FAILED_ALREADY_STARTED -> "Scan already started."
-            ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> "App registration failed."
-            ScanCallback.SCAN_FAILED_INTERNAL_ERROR -> "Internal error."
-            ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED -> "Feature unsupported."
-            else -> "Unknown error ($errorCode)."
-        }
-    }
 }
