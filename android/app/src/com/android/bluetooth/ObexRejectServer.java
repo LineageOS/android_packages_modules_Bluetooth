@@ -83,12 +83,11 @@ public class ObexRejectServer extends ServerRequestHandler implements Handler.Ca
     public boolean handleMessage(Message msg) {
         Log.i(TAG, "Handling message ID: " + msg.what);
         switch (msg.what) {
-            case MSG_ID_TIMEOUT:
-                shutdown();
-                break;
-            default:
+            case MSG_ID_TIMEOUT -> shutdown();
+            default -> {
                 // Message not handled
                 return false;
+            }
         }
         return true; // Message handled
     }

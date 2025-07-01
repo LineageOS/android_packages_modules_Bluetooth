@@ -209,6 +209,10 @@ final class A2dpStateMachine extends StateMachine {
                         Log.e(TAG, "Disconnected: error connecting to " + mDevice);
                         break;
                     }
+                    if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
+                        transitionTo(mConnecting);
+                        break;
+                    }
                     if (mA2dpService.okToConnect(mDevice, true)) {
                         transitionTo(mConnecting);
                     } else {

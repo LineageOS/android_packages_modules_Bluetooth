@@ -1395,45 +1395,6 @@ static bool bta_dm_dev_connected(const RawAddress& bd_addr,
 
 /*******************************************************************************
  *
- * Function         bta_dm_get_conn_info_
- *
- * Description      This function retrieves the connection information.
- *
- * Returns          connection information
- *
- ******************************************************************************/
-// Remove when le_disconnect_notification_handling is shipped
-static tBTA_DM_CONNECTION_INFO bta_dm_get_conn_info_(const RawAddress& target) {
-  // Find all aliases and connection status on all transports
-  RawAddress pseudo_addr = target;
-  RawAddress identity_addr = target;
-  bool le_connected = false;
-  bool bredr_connected = false;
-  tBTA_DM_CONNECTION_INFO conn_info;
-
-  le_connected = get_btm_client_interface().peer.BTM_ReadConnectedTransportAddress(
-          &pseudo_addr, BT_TRANSPORT_LE);
-  if (pseudo_addr.IsEmpty()) {
-    pseudo_addr = target;
-  }
-
-  bredr_connected = get_btm_client_interface().peer.BTM_ReadConnectedTransportAddress(
-          &identity_addr, BT_TRANSPORT_BR_EDR);
-  /* If connection not found with identity address, check with pseudo address if different */
-  if (!bredr_connected && identity_addr != pseudo_addr) {
-    identity_addr = pseudo_addr;
-    bredr_connected = get_btm_client_interface().peer.BTM_ReadConnectedTransportAddress(
-            &identity_addr, BT_TRANSPORT_BR_EDR);
-  }
-  if (identity_addr.IsEmpty()) {
-    identity_addr = target;
-  }
-  conn_info = {pseudo_addr, identity_addr, le_connected, bredr_connected};
-  return conn_info;
-}
-
-/*******************************************************************************
- *
  * Function         bta_dm_get_conn_info
  *
  * Description      This function retrieves the connection information.
@@ -1448,10 +1409,6 @@ static tBTA_DM_CONNECTION_INFO bta_dm_get_conn_info(const RawAddress& target) {
   bool le_connected = false;
   bool bredr_connected = false;
   tBTA_DM_CONNECTION_INFO conn_info;
-
-  if (!com::android::bluetooth::flags::le_disconnect_notification_handling()) {
-    return bta_dm_get_conn_info_(target);
-  }
 
   // Get identity and pseudo address
   std::pair<RawAddress, RawAddress> pseudo_identity_addr_pair =

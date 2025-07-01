@@ -25,6 +25,7 @@
 #define SMP_INT_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/hci_role.h>
 
 #include <cstdint>
 
@@ -33,7 +34,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/smp_api_types.h"
-#include "types/hci_role.h"
 #include "types/raw_address.h"
 
 typedef enum : uint16_t {

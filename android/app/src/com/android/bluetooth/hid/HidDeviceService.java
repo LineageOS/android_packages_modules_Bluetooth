@@ -114,7 +114,7 @@ public class HidDeviceService extends ConnectableProfile {
 
         @Override
         public void handleMessage(Message msg) {
-            Log.d(TAG, "handleMessage(): msg.what=" + msg.what);
+            Log.d(TAG, "handleMessage: " + messageToString(msg.what));
 
             switch (msg.what) {
                 case MESSAGE_APPLICATION_STATE_CHANGED -> {
@@ -263,6 +263,20 @@ public class HidDeviceService extends ConnectableProfile {
                 }
                 default -> {} // Nothing to do
             }
+        }
+
+        private static String messageToString(int msg) {
+            return switch (msg) {
+                case MESSAGE_APPLICATION_STATE_CHANGED -> "MESSAGE_APPLICATION_STATE_CHANGED";
+                case MESSAGE_CONNECT_STATE_CHANGED -> "MESSAGE_CONNECT_STATE_CHANGED";
+                case MESSAGE_GET_REPORT -> "MESSAGE_GET_REPORT";
+                case MESSAGE_SET_REPORT -> "MESSAGE_SET_REPORT";
+                case MESSAGE_SET_PROTOCOL -> "MESSAGE_SET_PROTOCOL";
+                case MESSAGE_INTR_DATA -> "MESSAGE_INTR_DATA";
+                case MESSAGE_VC_UNPLUG -> "MESSAGE_VC_UNPLUG";
+                case MESSAGE_IMPORTANCE_CHANGE -> "MESSAGE_IMPORTANCE_CHANGE";
+                default -> "UNKNOWN_MESSAGE(" + msg + ")";
+            };
         }
     }
 

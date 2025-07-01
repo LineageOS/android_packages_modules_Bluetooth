@@ -60,18 +60,10 @@ public class BipTransformation {
         String[] tokens = transformations.split(" ");
         for (String token : tokens) {
             switch (token) {
-                case "stretch":
-                    addTransformation(STRETCH);
-                    break;
-                case "fill":
-                    addTransformation(FILL);
-                    break;
-                case "crop":
-                    addTransformation(CROP);
-                    break;
-                default:
-                    Log.e(TAG, "Found unknown transformation '" + token + "'");
-                    break;
+                case "stretch" -> addTransformation(STRETCH);
+                case "fill" -> addTransformation(FILL);
+                case "crop" -> addTransformation(CROP);
+                default -> Log.e(TAG, "Found unknown transformation '" + token + "'");
             }
         }
     }

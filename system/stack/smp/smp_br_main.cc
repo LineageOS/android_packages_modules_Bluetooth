@@ -19,9 +19,9 @@
 #define LOG_TAG "smp"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/hci_role.h>
 
 #include "smp_int.h"
-#include "types/hci_role.h"
 
 using namespace bluetooth;
 

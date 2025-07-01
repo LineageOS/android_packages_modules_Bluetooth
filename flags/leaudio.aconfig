@@ -383,3 +383,10 @@ flag {
     description: "Support LE audio connection subrating to speed up the reconfiguration process"
     bug: "423028406"
 }
+
+flag {
+    name: "leaudio_peripheral_feature"
+    namespace: "bluetooth"
+    description: "LE Audio peripheral feature"
+    bug: "428719427"
+}

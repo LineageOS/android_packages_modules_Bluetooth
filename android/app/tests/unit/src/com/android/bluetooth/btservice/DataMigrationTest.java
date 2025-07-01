@@ -247,31 +247,18 @@ public class DataMigrationTest {
             Bundle b = new Bundle();
             b.putStringArrayList(DataMigration.KEY_LIST, new ArrayList<String>(Arrays.asList(key)));
             switch (arg) {
-                case "Boolean":
-                    b.putBoolean(key, true);
-                    break;
-                case "Long":
-                    b.putLong(key, Long.valueOf(42));
-                    break;
-                case "Int":
-                    b.putInt(key, 42);
-                    break;
-                case "String":
-                    b.putString(key, "42");
-                    break;
-                case "String2":
-                    b.putString(key, "42");
-                    break;
-                case "Invalid":
-                    // Put anything different from Boolean/Long/Integer/String
-                    b.putFloat(key, 42f);
-                    break;
-                case "empty":
-                    // Do not put anything in the bundle and remove the key
-                    b = new Bundle();
-                    break;
-                default:
+                case "Boolean" -> b.putBoolean(key, true);
+                case "Long" -> b.putLong(key, Long.valueOf(42));
+                case "Int" -> b.putInt(key, 42);
+                case "String" -> b.putString(key, "42");
+                case "String2" -> b.putString(key, "42");
+                // Put anything different from Boolean/Long/Integer/String
+                case "Invalid" -> b.putFloat(key, 42f);
+                // Do not put anything in the bundle and remove the key
+                case "empty" -> b = new Bundle();
+                default -> {
                     return null;
+                }
             }
             return b;
         }

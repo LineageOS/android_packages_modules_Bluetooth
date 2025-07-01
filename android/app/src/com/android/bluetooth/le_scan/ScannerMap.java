@@ -22,6 +22,7 @@ import static com.android.bluetooth.util.AttributionSourceUtil.getLastAttributio
 import android.annotation.Nullable;
 import android.app.PendingIntent;
 import android.bluetooth.le.IScannerCallback;
+import android.bluetooth.le.ScanSettings;
 import android.content.AttributionSource;
 import android.os.Binder;
 import android.os.IBinder;
@@ -36,6 +37,7 @@ import com.android.bluetooth.btservice.AdapterService;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -224,17 +226,25 @@ public class ScannerMap {
     }
 
     /** Logs all apps for debugging. */
-    public void dumpApps(StringBuilder sb, BiConsumer<StringBuilder, String> bf) {
+    public void dumpApps(
+            StringBuilder sb,
+            BiConsumer<StringBuilder, String> bf,
+            Map<Integer, ScanSettings> settingsMap) {
         for (ScannerApp entry : mApps) {
-            bf.accept(
-                    sb,
-                    "    app_if: "
-                            + entry.mId
-                            + ", appName: "
-                            + entry.mName
-                            + (entry.mAttributionTag == null
-                                    ? ""
-                                    : ", tag: " + entry.mAttributionTag));
+            StringBuilder line = new StringBuilder();
+            line.append("    app_if: ").append(entry.mId).append(", appName: ").append(entry.mName);
+            if (entry.mAttributionTag != null) {
+                line.append(", tag: ").append(entry.mAttributionTag);
+            }
+
+            ScanSettings settings = settingsMap.get(entry.mId);
+            if (settings != null) {
+                long reportDelayMillis = settings.getReportDelayMillis();
+                if (reportDelayMillis > 0) {
+                    line.append(", reportDelayMillis: ").append(reportDelayMillis);
+                }
+            }
+            bf.accept(sb, line.toString());
         }
     }
 

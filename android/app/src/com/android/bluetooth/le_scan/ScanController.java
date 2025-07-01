@@ -97,7 +97,7 @@ public class ScanController {
     private static final long RUN_SYNC_WAIT_TIME_MS = 2000L;
 
     /** The default floor value for LE batch scan report delays greater than 0 */
-    static final long DEFAULT_REPORT_DELAY_FLOOR = 5000L;
+    static final long DEFAULT_REPORT_DELAY_FLOOR_MS = 5000L;
 
     // Batch scan related constants.
     private static final int TRUNCATED_RESULT_SIZE = 11;
@@ -937,7 +937,15 @@ public class ScanController {
         if (numRecords == 0) {
             return Collections.emptySet();
         }
-        Log.d(TAG, "current time is " + SystemClock.elapsedRealtimeNanos());
+        Log.d(
+                TAG,
+                "Parsing "
+                        + numRecords
+                        + " batch scan results at "
+                        + Utils.getLocalTimeString()
+                        + " (elapsed: "
+                        + SystemClock.elapsedRealtime()
+                        + "ms)");
         if (reportType == ScanManager.SCAN_RESULT_TYPE_TRUNCATED) {
             return parseTruncatedResults(numRecords, batchRecord);
         } else {
@@ -1569,7 +1577,7 @@ public class ScanController {
                     DeviceConfig.getLong(
                             DeviceConfig.NAMESPACE_BLUETOOTH,
                             "report_delay",
-                            DEFAULT_REPORT_DELAY_FLOOR);
+                            DEFAULT_REPORT_DELAY_FLOOR_MS);
 
             if (settings.getReportDelayMillis() > floor) {
                 return settings;
@@ -1689,7 +1697,25 @@ public class ScanController {
 
     public void dumpRegisterId(StringBuilder sb) {
         sb.append("  Scanner:\n");
-        mScannerMap.dumpApps(sb, ProfileService::println);
+
+        Map<Integer, ScanSettings> settingsMap = new HashMap<>();
+        for (ScanClient client : mScanManager.getRegularScanQueue()) {
+            if (client.mSettings != null) {
+                settingsMap.put(client.mScannerId, client.mSettings);
+            }
+        }
+        for (ScanClient client : mScanManager.getBatchScanQueue()) {
+            if (client.mSettings != null) {
+                settingsMap.put(client.mScannerId, client.mSettings);
+            }
+        }
+        for (ScanClient client : mScanManager.getSuspendedScanQueue()) {
+            if (client.mSettings != null) {
+                settingsMap.put(client.mScannerId, client.mSettings);
+            }
+        }
+
+        mScannerMap.dumpApps(sb, ProfileService::println, settingsMap);
     }
 
     public void dump(StringBuilder sb) {

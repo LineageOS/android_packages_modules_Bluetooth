@@ -16,12 +16,13 @@
 
 package com.android.bluetooth.le_scan;
 
-import static com.android.bluetooth.le_scan.ScanController.DEFAULT_REPORT_DELAY_FLOOR;
+import static com.android.bluetooth.le_scan.ScanController.DEFAULT_REPORT_DELAY_FLOOR_MS;
 
 import static java.util.Objects.requireNonNull;
 
 import android.os.SystemProperties;
 import android.provider.DeviceConfig;
+import android.util.Log;
 
 import com.android.bluetooth.Utils.TimeProvider;
 import com.android.internal.annotations.VisibleForTesting;
@@ -34,6 +35,8 @@ import java.util.Set;
  * longer when the screen is off.
  */
 class BatchScanThrottler {
+    private static final String TAG = BatchScanThrottler.class.getSimpleName();
+
     // Minimum batch trigger interval to check for batched results when the screen is off
     private static final String SCREEN_OFF_MINIMUM_DELAY_FLOOR_PROP =
             "bluetooth.ble.batch_scan.screen_off_minimum_delay_floor_ms.config";
@@ -63,8 +66,8 @@ class BatchScanThrottler {
     private final int mUnfilteredDelayFloorMs;
     private final int mUnfilteredScreenOffDelayFloorMs;
     private final int mScreenOffDelayMs;
-    private final long mDelayFloor;
-    private final long mScreenOffDelayFloor;
+    private final long mDelayFloorMs;
+    private final long mScreenOffDelayFloorMs;
 
     private int mBackoffStage = 0;
     private long mScreenOffTriggerTime = 0L;
@@ -85,16 +88,31 @@ class BatchScanThrottler {
                         UNFILTERED_SCREEN_OFF_DELAY_FLOOR_DEFAULT);
         mScreenOffDelayMs =
                 SystemProperties.getInt(SCREEN_OFF_DELAY_PROP, SCREEN_OFF_DELAY_DEFAULT);
-        mDelayFloor =
+        mDelayFloorMs =
                 DeviceConfig.getLong(
                         DeviceConfig.NAMESPACE_BLUETOOTH,
                         "report_delay",
-                        DEFAULT_REPORT_DELAY_FLOOR);
-        mScreenOffDelayFloor = Math.max(mDelayFloor, mScreenOffMinimumDelayFloorMs);
+                        DEFAULT_REPORT_DELAY_FLOOR_MS);
+        mScreenOffDelayFloorMs = Math.max(mDelayFloorMs, mScreenOffMinimumDelayFloorMs);
+        Log.d(
+                TAG,
+                "Initialized with: mScreenOffMinimumDelayFloorMs="
+                        + mScreenOffMinimumDelayFloorMs
+                        + ", mUnfilteredDelayFloorMs="
+                        + mUnfilteredDelayFloorMs
+                        + ", mUnfilteredScreenOffDelayFloorMs="
+                        + mUnfilteredScreenOffDelayFloorMs
+                        + ", mScreenOffDelayMs="
+                        + mScreenOffDelayMs
+                        + ", mDelayFloorMs="
+                        + mDelayFloorMs
+                        + ", mScreenOffDelayFloorMs="
+                        + mScreenOffDelayFloorMs);
         onScreenOn(screenOn);
     }
 
     void resetBackoff() {
+        Log.d(TAG, "resetBackoff() called");
         mBackoffStage = 0;
     }
 
@@ -117,7 +135,7 @@ class BatchScanThrottler {
             mScreenOffThrottling = true;
             resetBackoff();
         }
-        long unfilteredFloor =
+        final long unfilteredFloor =
                 mScreenOffThrottling ? mUnfilteredScreenOffDelayFloorMs : mUnfilteredDelayFloorMs;
         long intervalMillis = Long.MAX_VALUE;
         for (ScanClient client : batchClients) {
@@ -129,13 +147,16 @@ class BatchScanThrottler {
                 intervalMillis = Math.min(intervalMillis, clientIntervalMillis);
             }
         }
-        int backoffIndex =
+        final int backoffIndex =
                 mBackoffStage >= BACKOFF_MULTIPLIERS.length
                         ? BACKOFF_MULTIPLIERS.length - 1
                         : mBackoffStage++;
-        return Math.max(
-                intervalMillis,
-                (mScreenOffThrottling ? mScreenOffDelayFloor : mDelayFloor)
-                        * BACKOFF_MULTIPLIERS[backoffIndex]);
+        final long finalInterval =
+                Math.max(
+                        intervalMillis,
+                        (mScreenOffThrottling ? mScreenOffDelayFloorMs : mDelayFloorMs)
+                                * BACKOFF_MULTIPLIERS[backoffIndex]);
+        Log.d(TAG, "Batch trigger interval: " + finalInterval + "ms");
+        return finalInterval;
     }
 }

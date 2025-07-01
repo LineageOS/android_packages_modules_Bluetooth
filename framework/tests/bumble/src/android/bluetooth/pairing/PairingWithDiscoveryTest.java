@@ -151,7 +151,7 @@ public class PairingWithDiscoveryTest {
                 Intent intent = inv.getArgument(1);
                 String action = intent.getAction();
                 switch (action) {
-                    case BluetoothDevice.ACTION_FOUND:
+                    case BluetoothDevice.ACTION_FOUND -> {
                         BluetoothDevice device =
                                 intent.getParcelableExtra(
                                         BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
@@ -167,10 +167,8 @@ public class PairingWithDiscoveryTest {
                                 && mSecondDeviceFound != null) {
                             mSecondDeviceFound.complete(device);
                         }
-                        break;
-                    default:
-                        Log.i(TAG, "onReceive(): unknown intent action " + action);
-                        break;
+                    }
+                    default -> Log.i(TAG, "onReceive(): unknown intent action " + action);
                 }
                 return null;
             };

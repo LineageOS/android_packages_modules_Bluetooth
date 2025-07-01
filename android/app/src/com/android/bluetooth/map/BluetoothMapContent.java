@@ -2900,27 +2900,23 @@ public class BluetoothMapContent {
                 BluetoothMapConvoListingElement ele = list.get(x);
                 TYPE type = ele.getType();
                 switch (type) {
-                    case SMS_CDMA:
-                    case SMS_GSM:
-                    case MMS:
-                        {
-                            tmpCursor = null; // SMS/MMS needs special treatment
-                            if (smsMmsCursor != null) {
-                                populateSmsMmsConvoElement(ele, smsMmsCursor, ap, contacts);
-                            }
-                            break;
+                    case SMS_CDMA, SMS_GSM, MMS -> {
+                        tmpCursor = null; // SMS/MMS needs special treatment
+                        if (smsMmsCursor != null) {
+                            populateSmsMmsConvoElement(ele, smsMmsCursor, ap, contacts);
                         }
-                    case EMAIL:
+                    }
+                    case EMAIL -> {
                         tmpCursor = imEmailCursor;
                         fi.mMsgType = FilterInfo.TYPE_EMAIL;
-                        break;
-                    case IM:
+                    }
+                    case IM -> {
                         tmpCursor = imEmailCursor;
                         fi.mMsgType = FilterInfo.TYPE_IM;
-                        break;
-                    default:
+                    }
+                    default -> {
                         tmpCursor = null;
-                        break;
+                    }
                 }
 
                 Log.d(TAG, "Working on cursor of type " + fi.mMsgType);

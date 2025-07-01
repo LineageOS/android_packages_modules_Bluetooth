@@ -262,7 +262,7 @@ final class BondStateMachine extends StateMachine {
             }
 
             switch (msg.what) {
-                case CREATE_BOND:
+                case CREATE_BOND -> {
                     OobData p192Data =
                             (msg.getData() != null)
                                     ? msg.getData().getParcelable(OOBDATAP192)
@@ -272,14 +272,10 @@ final class BondStateMachine extends StateMachine {
                                     ? msg.getData().getParcelable(OOBDATAP256)
                                     : null;
                     result = createBond(dev, msg.arg1, p192Data, p256Data, false);
-                    break;
-                case REMOVE_BOND:
-                    result = removeBond(dev, false);
-                    break;
-                case CANCEL_BOND:
-                    result = cancelBond(dev);
-                    break;
-                case BONDING_STATE_CHANGE:
+                }
+                case REMOVE_BOND -> result = removeBond(dev, false);
+                case CANCEL_BOND -> result = cancelBond(dev);
+                case BONDING_STATE_CHANGE -> {
                     int newState = msg.arg1;
                     int reason = getUnbondReasonFromHALCode(msg.arg2);
                     // Bond is explicitly removed if we are in pending command state
@@ -309,8 +305,8 @@ final class BondStateMachine extends StateMachine {
                     } else if (!mDevices.contains(dev)) {
                         result = true;
                     }
-                    break;
-                case SSP_REQUEST:
+                }
+                case SSP_REQUEST -> {
                     if (devProp == null) {
                         errorLog("devProp is null, maybe the device is disconnected");
                         break;
@@ -326,8 +322,8 @@ final class BondStateMachine extends StateMachine {
                             devProp.getDevice(),
                             displayPasskey ? Optional.of(passkey) : Optional.empty(),
                             variant);
-                    break;
-                case PIN_REQUEST:
+                }
+                case PIN_REQUEST -> {
                     if (devProp == null) {
                         errorLog("devProp is null, maybe the device is disconnected");
                         break;
@@ -367,10 +363,11 @@ final class BondStateMachine extends StateMachine {
                                 Optional.empty(),
                                 BluetoothDevice.PAIRING_VARIANT_PIN);
                     }
-                    break;
-                default:
+                }
+                default -> {
                     Log.e(TAG, "Received unhandled event:" + msg.what);
                     return false;
+                }
             }
             if (result) {
                 mDevices.add(dev);
@@ -671,27 +668,26 @@ final class BondStateMachine extends StateMachine {
         int variant;
         boolean displayPasskey = false;
         switch (pairingVariant) {
-            case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_CONFIRMATION:
+            case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_CONFIRMATION -> {
                 variant = BluetoothDevice.PAIRING_VARIANT_PASSKEY_CONFIRMATION;
                 displayPasskey = true;
-                break;
+            }
 
-            case AbstractionLayer.BT_SSP_VARIANT_CONSENT:
-                variant = BluetoothDevice.PAIRING_VARIANT_CONSENT;
-                break;
+            case AbstractionLayer.BT_SSP_VARIANT_CONSENT ->
+                    variant = BluetoothDevice.PAIRING_VARIANT_CONSENT;
 
-            case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_ENTRY:
-                variant = BluetoothDevice.PAIRING_VARIANT_PASSKEY;
-                break;
+            case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_ENTRY ->
+                    variant = BluetoothDevice.PAIRING_VARIANT_PASSKEY;
 
-            case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_NOTIFICATION:
+            case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_NOTIFICATION -> {
                 variant = BluetoothDevice.PAIRING_VARIANT_DISPLAY_PASSKEY;
                 displayPasskey = true;
-                break;
+            }
 
-            default:
+            default -> {
                 errorLog("SSP Pairing variant not present");
                 return;
+            }
         }
         BluetoothDevice device = mRemoteDevices.getDevice(address);
         if (device == null) {

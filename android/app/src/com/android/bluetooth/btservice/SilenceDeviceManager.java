@@ -77,14 +77,11 @@ public class SilenceDeviceManager {
      */
     public void profileActiveDeviceChanged(int profile, BluetoothDevice device) {
         switch (profile) {
-            case BluetoothProfile.A2DP:
-                mHandler.obtainMessage(MSG_A2DP_ACTIVE_DEVICE_CHANGED, device).sendToTarget();
-                break;
-            case BluetoothProfile.HEADSET:
-                mHandler.obtainMessage(MSG_HFP_ACTIVE_DEVICE_CHANGED, device).sendToTarget();
-                break;
-            default:
-                break;
+            case BluetoothProfile.A2DP ->
+                    mHandler.obtainMessage(MSG_A2DP_ACTIVE_DEVICE_CHANGED, device).sendToTarget();
+            case BluetoothProfile.HEADSET ->
+                    mHandler.obtainMessage(MSG_HFP_ACTIVE_DEVICE_CHANGED, device).sendToTarget();
+            default -> {}
         }
     }
 
@@ -122,15 +119,13 @@ public class SilenceDeviceManager {
         public void handleMessage(Message msg) {
             Log.d(TAG, "handleMessage: " + msg.what);
             switch (msg.what) {
-                case MSG_SILENCE_DEVICE_STATE_CHANGED:
-                    {
-                        BluetoothDevice device = (BluetoothDevice) msg.obj;
-                        boolean state = (msg.arg1 == ENABLE_SILENCE);
-                        handleSilenceDeviceStateChanged(device, state);
-                    }
-                    break;
+                case MSG_SILENCE_DEVICE_STATE_CHANGED -> {
+                    BluetoothDevice device = (BluetoothDevice) msg.obj;
+                    boolean state = (msg.arg1 == ENABLE_SILENCE);
+                    handleSilenceDeviceStateChanged(device, state);
+                }
 
-                case MSG_A2DP_CONNECTION_STATE_CHANGED:
+                case MSG_A2DP_CONNECTION_STATE_CHANGED -> {
                     BluetoothDevice device = (BluetoothDevice) msg.obj;
                     int prevState = msg.arg1;
                     int nextState = msg.arg2;
@@ -149,9 +144,9 @@ public class SilenceDeviceManager {
                             mSilenceDevices.remove(device);
                         }
                     }
-                    break;
+                }
 
-                case MSG_HFP_CONNECTION_STATE_CHANGED:
+                case MSG_HFP_CONNECTION_STATE_CHANGED -> {
                     BluetoothDevice bluetoothDevice = (BluetoothDevice) msg.obj;
                     int prev = msg.arg1;
                     int next = msg.arg2;
@@ -170,27 +165,25 @@ public class SilenceDeviceManager {
                             mSilenceDevices.remove(bluetoothDevice);
                         }
                     }
-                    break;
+                }
 
-                case MSG_A2DP_ACTIVE_DEVICE_CHANGED:
+                case MSG_A2DP_ACTIVE_DEVICE_CHANGED -> {
                     BluetoothDevice a2dpActiveDevice = (BluetoothDevice) msg.obj;
                     if (getSilenceMode(a2dpActiveDevice)) {
                         // Resume the device from silence mode.
                         setSilenceMode(a2dpActiveDevice, false);
                     }
-                    break;
+                }
 
-                case MSG_HFP_ACTIVE_DEVICE_CHANGED:
+                case MSG_HFP_ACTIVE_DEVICE_CHANGED -> {
                     BluetoothDevice hfpActiveDevice = (BluetoothDevice) msg.obj;
                     if (getSilenceMode(hfpActiveDevice)) {
                         // Resume the device from silence mode.
                         setSilenceMode(hfpActiveDevice, false);
                     }
-                    break;
+                }
 
-                default:
-                    Log.e(TAG, "Unknown message: " + msg.what);
-                    break;
+                default -> Log.e(TAG, "Unknown message: " + msg.what);
             }
         }
     }

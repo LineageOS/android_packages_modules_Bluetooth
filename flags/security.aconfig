@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-  name: "le_enc_on_reconnect"
-  namespace: "bluetooth"
-  description: "Encrypt LE link on reconnection with bonded devices"
-  bug: "388864535"
-  metadata {
-    purpose: PURPOSE_BUGFIX
-  }
-}
-
-flag {
   name: "btsec_cycle_irks"
   namespace: "bluetooth"
   description: "Change the IRK per BT spec when all devices are unbonded"

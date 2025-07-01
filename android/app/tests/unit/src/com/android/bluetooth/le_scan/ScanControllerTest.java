@@ -595,7 +595,7 @@ public class ScanControllerTest {
 
     @Test
     public void enforceReportDelayFloor() {
-        long reportDelayFloorHigher = ScanController.DEFAULT_REPORT_DELAY_FLOOR + 1;
+        long reportDelayFloorHigher = ScanController.DEFAULT_REPORT_DELAY_FLOOR_MS + 1;
         ScanSettings scanSettings =
                 new ScanSettings.Builder().setReportDelay(reportDelayFloorHigher).build();
         ScanSettings newScanSettings = mScanController.enforceReportDelayFloor(scanSettings);
@@ -608,7 +608,7 @@ public class ScanControllerTest {
                 mScanController.enforceReportDelayFloor(scanSettingsFloor);
 
         assertThat(newScanSettingsFloor.getReportDelayMillis())
-                .isEqualTo(ScanController.DEFAULT_REPORT_DELAY_FLOOR);
+                .isEqualTo(ScanController.DEFAULT_REPORT_DELAY_FLOOR_MS);
     }
 
     @Test

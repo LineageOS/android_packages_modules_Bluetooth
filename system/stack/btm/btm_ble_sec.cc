@@ -1620,7 +1620,6 @@ void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t /* enc_mo
       p_dev_rec->ble.cur_rand_addr = bda;
     }
   }
-  btm_cb.ble_ctr_cb.inq_var.directed_conn = BTM_BLE_ADV_IND_EVT;
 }
 
 /*******************************************************************************
@@ -1640,8 +1639,7 @@ void btm_ble_connection_established(const RawAddress& bda) {
   }
 
   // Encrypt the link if device is bonded
-  if (com::android::bluetooth::flags::le_enc_on_reconnect() &&
-      p_dev_rec->sec_rec.is_le_link_key_known()) {
+  if (p_dev_rec->sec_rec.is_le_link_key_known()) {
     btm_ble_set_encryption(bda, BTM_BLE_SEC_ENCRYPT,
                            p_dev_rec->role_central ? HCI_ROLE_CENTRAL : HCI_ROLE_PERIPHERAL);
   }
@@ -1677,10 +1675,7 @@ static bool btm_ble_complete_evt_ignore(const tBTM_SEC_DEV_REC* p_dev_rec,
   // 2) Link may get disconnected after the SMP security request was sent.
   //
   // Central role: SMP may generate a SMP_COMPLT_EVT if encryption refresh fails.
-  if (p_data->complt.reason != SMP_SUCCESS &&
-      (com::android::bluetooth::flags::le_encryption_refresh_failure_handling() ||
-       !p_dev_rec->role_central) &&
-      btm_sec_cb.pairing_bda != p_dev_rec->bd_addr &&
+  if (p_data->complt.reason != SMP_SUCCESS && btm_sec_cb.pairing_bda != p_dev_rec->bd_addr &&
       btm_sec_cb.pairing_bda != p_dev_rec->ble.pseudo_addr &&
       p_dev_rec->sec_rec.is_le_link_key_known() &&
       p_dev_rec->sec_rec.ble_keys.key_type != BTM_LE_KEY_NONE) {
@@ -1692,8 +1687,7 @@ static bool btm_ble_complete_evt_ignore(const tBTM_SEC_DEV_REC* p_dev_rec,
                 p_dev_rec->bd_addr);
       l2cu_start_post_bond_timer(p_dev_rec->ble_hci_handle);
       return true;
-    } else if (com::android::bluetooth::flags::le_peripheral_enc_failure() &&
-               !p_dev_rec->role_central) {
+    } else if (!p_dev_rec->role_central) {
       log::warn("Peripheral encryption request failed for the bonded device {} with reason {}",
                 p_dev_rec->bd_addr, smp_status_text(p_data->complt.reason));
       btm_sec_disconnect(p_dev_rec->ble_hci_handle, HCI_ERR_AUTH_FAILURE,
