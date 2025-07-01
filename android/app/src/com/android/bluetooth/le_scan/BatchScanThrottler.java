@@ -16,7 +16,7 @@
 
 package com.android.bluetooth.le_scan;
 
-import static com.android.bluetooth.le_scan.ScanController.DEFAULT_REPORT_DELAY_FLOOR;
+import static com.android.bluetooth.le_scan.ScanController.DEFAULT_REPORT_DELAY_FLOOR_MS;
 
 import static java.util.Objects.requireNonNull;
 
@@ -66,8 +66,8 @@ class BatchScanThrottler {
     private final int mUnfilteredDelayFloorMs;
     private final int mUnfilteredScreenOffDelayFloorMs;
     private final int mScreenOffDelayMs;
-    private final long mDelayFloor;
-    private final long mScreenOffDelayFloor;
+    private final long mDelayFloorMs;
+    private final long mScreenOffDelayFloorMs;
 
     private int mBackoffStage = 0;
     private long mScreenOffTriggerTime = 0L;
@@ -88,12 +88,12 @@ class BatchScanThrottler {
                         UNFILTERED_SCREEN_OFF_DELAY_FLOOR_DEFAULT);
         mScreenOffDelayMs =
                 SystemProperties.getInt(SCREEN_OFF_DELAY_PROP, SCREEN_OFF_DELAY_DEFAULT);
-        mDelayFloor =
+        mDelayFloorMs =
                 DeviceConfig.getLong(
                         DeviceConfig.NAMESPACE_BLUETOOTH,
                         "report_delay",
-                        DEFAULT_REPORT_DELAY_FLOOR);
-        mScreenOffDelayFloor = Math.max(mDelayFloor, mScreenOffMinimumDelayFloorMs);
+                        DEFAULT_REPORT_DELAY_FLOOR_MS);
+        mScreenOffDelayFloorMs = Math.max(mDelayFloorMs, mScreenOffMinimumDelayFloorMs);
         Log.d(
                 TAG,
                 "Initialized with: mScreenOffMinimumDelayFloorMs="
@@ -104,10 +104,10 @@ class BatchScanThrottler {
                         + mUnfilteredScreenOffDelayFloorMs
                         + ", mScreenOffDelayMs="
                         + mScreenOffDelayMs
-                        + ", mDelayFloor="
-                        + mDelayFloor
-                        + ", mScreenOffDelayFloor="
-                        + mScreenOffDelayFloor);
+                        + ", mDelayFloorMs="
+                        + mDelayFloorMs
+                        + ", mScreenOffDelayFloorMs="
+                        + mScreenOffDelayFloorMs);
         onScreenOn(screenOn);
     }
 
@@ -154,7 +154,7 @@ class BatchScanThrottler {
         final long finalInterval =
                 Math.max(
                         intervalMillis,
-                        (mScreenOffThrottling ? mScreenOffDelayFloor : mDelayFloor)
+                        (mScreenOffThrottling ? mScreenOffDelayFloorMs : mDelayFloorMs)
                                 * BACKOFF_MULTIPLIERS[backoffIndex]);
         Log.d(TAG, "Batch trigger interval: " + finalInterval + "ms");
         return finalInterval;

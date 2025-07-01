@@ -97,7 +97,7 @@ public class ScanController {
     private static final long RUN_SYNC_WAIT_TIME_MS = 2000L;
 
     /** The default floor value for LE batch scan report delays greater than 0 */
-    static final long DEFAULT_REPORT_DELAY_FLOOR = 5000L;
+    static final long DEFAULT_REPORT_DELAY_FLOOR_MS = 5000L;
 
     // Batch scan related constants.
     private static final int TRUNCATED_RESULT_SIZE = 11;
@@ -1569,7 +1569,7 @@ public class ScanController {
                     DeviceConfig.getLong(
                             DeviceConfig.NAMESPACE_BLUETOOTH,
                             "report_delay",
-                            DEFAULT_REPORT_DELAY_FLOOR);
+                            DEFAULT_REPORT_DELAY_FLOOR_MS);
 
             if (settings.getReportDelayMillis() > floor) {
                 return settings;
