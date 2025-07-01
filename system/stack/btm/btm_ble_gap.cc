@@ -307,160 +307,6 @@ static bool ble_evt_type_is_legacy(uint16_t evt_type) {
 
 static uint8_t ble_evt_type_data_status(uint16_t evt_type) { return (evt_type >> 5) & 3; }
 
-constexpr uint8_t UNSUPPORTED = 255;
-
-/* LE states combo bit to check */
-const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX] = {
-        {
-                /* single state support */
-                HCI_LE_STATES_CONN_ADV_BIT,        /* conn_adv */
-                HCI_LE_STATES_INIT_BIT,            /* init */
-                HCI_LE_STATES_INIT_BIT,            /* central */
-                HCI_LE_STATES_PERIPHERAL_BIT,      /* peripheral */
-                UNSUPPORTED,                       /* todo: lo du dir adv, not covered ? */
-                HCI_LE_STATES_HI_DUTY_DIR_ADV_BIT, /* hi duty dir adv */
-                HCI_LE_STATES_NON_CONN_ADV_BIT,    /* non connectable adv */
-                HCI_LE_STATES_PASS_SCAN_BIT,       /*  passive scan */
-                HCI_LE_STATES_ACTIVE_SCAN_BIT,     /*   active scan */
-                HCI_LE_STATES_SCAN_ADV_BIT         /* scanable adv */
-        },
-        {
-                /* conn_adv =0 */
-                UNSUPPORTED,                            /* conn_adv */
-                HCI_LE_STATES_CONN_ADV_INIT_BIT,        /* init: 32 */
-                HCI_LE_STATES_CONN_ADV_CENTRAL_BIT,     /* central: 35 */
-                HCI_LE_STATES_CONN_ADV_PERIPHERAL_BIT,  /* peripheral: 38,*/
-                UNSUPPORTED,                            /* lo du dir adv */
-                UNSUPPORTED,                            /* hi duty dir adv */
-                UNSUPPORTED,                            /* non connectable adv */
-                HCI_LE_STATES_CONN_ADV_PASS_SCAN_BIT,   /*  passive scan */
-                HCI_LE_STATES_CONN_ADV_ACTIVE_SCAN_BIT, /*   active scan */
-                UNSUPPORTED                             /* scanable adv */
-        },
-        {
-                /* init */
-                HCI_LE_STATES_CONN_ADV_INIT_BIT,           /* conn_adv: 32 */
-                UNSUPPORTED,                               /* init */
-                HCI_LE_STATES_INIT_CENTRAL_BIT,            /* central 28 */
-                HCI_LE_STATES_INIT_CENTRAL_PERIPHERAL_BIT, /* peripheral 41 */
-                HCI_LE_STATES_LO_DUTY_DIR_ADV_INIT_BIT,    /* lo du dir adv 34 */
-                HCI_LE_STATES_HI_DUTY_DIR_ADV_INIT_BIT,    /* hi duty dir adv 33 */
-                HCI_LE_STATES_NON_CONN_INIT_BIT,           /*  non connectable adv */
-                HCI_LE_STATES_PASS_SCAN_INIT_BIT,          /* passive scan */
-                HCI_LE_STATES_ACTIVE_SCAN_INIT_BIT,        /*  active scan */
-                HCI_LE_STATES_SCAN_ADV_INIT_BIT            /* scanable adv */
-        },
-        {
-                /* central */
-                HCI_LE_STATES_CONN_ADV_CENTRAL_BIT,        /* conn_adv: 35 */
-                HCI_LE_STATES_INIT_CENTRAL_BIT,            /* init 28 */
-                HCI_LE_STATES_INIT_CENTRAL_BIT,            /* central 28 */
-                HCI_LE_STATES_CONN_ADV_INIT_BIT,           /* peripheral: 32 */
-                HCI_LE_STATES_LO_DUTY_DIR_ADV_CENTRAL_BIT, /* lo duty cycle adv 37 */
-                HCI_LE_STATES_HI_DUTY_DIR_ADV_CENTRAL_BIT, /* hi duty cycle adv 36 */
-                HCI_LE_STATES_NON_CONN_ADV_CENTRAL_BIT,    /*  non connectable adv*/
-                HCI_LE_STATES_PASS_SCAN_CENTRAL_BIT,       /*  passive scan */
-                HCI_LE_STATES_ACTIVE_SCAN_CENTRAL_BIT,     /*   active scan */
-                HCI_LE_STATES_SCAN_ADV_CENTRAL_BIT         /*  scanable adv */
-        },
-        {
-                /* peripheral */
-                HCI_LE_STATES_CONN_ADV_PERIPHERAL_BIT,        /* conn_adv: 38,*/
-                HCI_LE_STATES_INIT_CENTRAL_PERIPHERAL_BIT,    /* init 41 */
-                HCI_LE_STATES_INIT_CENTRAL_PERIPHERAL_BIT,    /* central 41 */
-                HCI_LE_STATES_CONN_ADV_PERIPHERAL_BIT,        /* peripheral: 38,*/
-                HCI_LE_STATES_LO_DUTY_DIR_ADV_PERIPHERAL_BIT, /* lo duty cycle adv 40 */
-                HCI_LE_STATES_HI_DUTY_DIR_ADV_PERIPHERAL_BIT, /* hi duty cycle adv 39 */
-                HCI_LE_STATES_NON_CONN_ADV_PERIPHERAL_BIT,    /* non connectable adv */
-                HCI_LE_STATES_PASS_SCAN_PERIPHERAL_BIT,       /* passive scan */
-                HCI_LE_STATES_ACTIVE_SCAN_PERIPHERAL_BIT,     /*  active scan */
-                HCI_LE_STATES_SCAN_ADV_PERIPHERAL_BIT         /* scanable adv */
-        },
-        {
-                /* lo duty cycle adv */
-                UNSUPPORTED,                                  /* conn_adv: 38,*/
-                HCI_LE_STATES_LO_DUTY_DIR_ADV_INIT_BIT,       /* init 34 */
-                HCI_LE_STATES_LO_DUTY_DIR_ADV_CENTRAL_BIT,    /* central 37 */
-                HCI_LE_STATES_LO_DUTY_DIR_ADV_PERIPHERAL_BIT, /* peripheral: 40 */
-                UNSUPPORTED,                                  /* lo duty cycle adv 40 */
-                UNSUPPORTED,                                  /* hi duty cycle adv 39 */
-                UNSUPPORTED,                                  /*  non connectable adv */
-                UNSUPPORTED,                                  /* TODO: passive scan, not covered? */
-                UNSUPPORTED,                                  /* TODO:  active scan, not covered? */
-                UNSUPPORTED                                   /*  scanable adv */
-        },
-        {
-                /* hi duty cycle adv */
-                UNSUPPORTED,                                   /* conn_adv: 38,*/
-                HCI_LE_STATES_HI_DUTY_DIR_ADV_INIT_BIT,        /* init 33 */
-                HCI_LE_STATES_HI_DUTY_DIR_ADV_CENTRAL_BIT,     /* central 36 */
-                HCI_LE_STATES_HI_DUTY_DIR_ADV_PERIPHERAL_BIT,  /* peripheral: 39*/
-                UNSUPPORTED,                                   /* lo duty cycle adv 40 */
-                UNSUPPORTED,                                   /* hi duty cycle adv 39 */
-                UNSUPPORTED,                                   /* non connectable adv */
-                HCI_LE_STATES_HI_DUTY_DIR_ADV_PASS_SCAN_BIT,   /* passive scan */
-                HCI_LE_STATES_HI_DUTY_DIR_ADV_ACTIVE_SCAN_BIT, /* active scan */
-                UNSUPPORTED                                    /* scanable adv */
-        },
-        {
-                /* non connectable adv */
-                UNSUPPORTED,                                /* conn_adv: */
-                HCI_LE_STATES_NON_CONN_INIT_BIT,            /* init  */
-                HCI_LE_STATES_NON_CONN_ADV_CENTRAL_BIT,     /* central  */
-                HCI_LE_STATES_NON_CONN_ADV_PERIPHERAL_BIT,  /* peripheral: */
-                UNSUPPORTED,                                /* lo duty cycle adv */
-                UNSUPPORTED,                                /* hi duty cycle adv */
-                UNSUPPORTED,                                /* non connectable adv */
-                HCI_LE_STATES_NON_CONN_ADV_PASS_SCAN_BIT,   /* passive scan */
-                HCI_LE_STATES_NON_CONN_ADV_ACTIVE_SCAN_BIT, /* active scan */
-                UNSUPPORTED                                 /* scanable adv */
-        },
-        {
-                /* passive scan */
-                HCI_LE_STATES_CONN_ADV_PASS_SCAN_BIT,        /* conn_adv: */
-                HCI_LE_STATES_PASS_SCAN_INIT_BIT,            /* init  */
-                HCI_LE_STATES_PASS_SCAN_CENTRAL_BIT,         /* central  */
-                HCI_LE_STATES_PASS_SCAN_PERIPHERAL_BIT,      /* peripheral: */
-                UNSUPPORTED,                                 /* lo duty cycle adv */
-                HCI_LE_STATES_HI_DUTY_DIR_ADV_PASS_SCAN_BIT, /* hi duty cycle adv */
-                HCI_LE_STATES_NON_CONN_ADV_PASS_SCAN_BIT,    /* non connectable adv */
-                UNSUPPORTED,                                 /* passive scan */
-                UNSUPPORTED,                                 /* active scan */
-                HCI_LE_STATES_SCAN_ADV_PASS_SCAN_BIT         /* scanable adv */
-        },
-        {
-                /* active scan */
-                HCI_LE_STATES_CONN_ADV_ACTIVE_SCAN_BIT,        /* conn_adv: */
-                HCI_LE_STATES_ACTIVE_SCAN_INIT_BIT,            /* init  */
-                HCI_LE_STATES_ACTIVE_SCAN_CENTRAL_BIT,         /* central  */
-                HCI_LE_STATES_ACTIVE_SCAN_PERIPHERAL_BIT,      /* peripheral: */
-                UNSUPPORTED,                                   /* lo duty cycle adv */
-                HCI_LE_STATES_HI_DUTY_DIR_ADV_ACTIVE_SCAN_BIT, /* hi duty cycle adv */
-                HCI_LE_STATES_NON_CONN_ADV_ACTIVE_SCAN_BIT,    /*  non connectable adv */
-                UNSUPPORTED,                                   /* TODO: passive scan */
-                UNSUPPORTED,                                   /* TODO:  active scan */
-                HCI_LE_STATES_SCAN_ADV_ACTIVE_SCAN_BIT         /*  scanable adv */
-        },
-        {
-                /* scanable adv */
-                UNSUPPORTED,                            /* conn_adv: */
-                HCI_LE_STATES_SCAN_ADV_INIT_BIT,        /* init  */
-                HCI_LE_STATES_SCAN_ADV_CENTRAL_BIT,     /* central  */
-                HCI_LE_STATES_SCAN_ADV_PERIPHERAL_BIT,  /* peripheral: */
-                UNSUPPORTED,                            /* lo duty cycle adv */
-                UNSUPPORTED,                            /* hi duty cycle adv */
-                UNSUPPORTED,                            /* non connectable adv */
-                HCI_LE_STATES_SCAN_ADV_PASS_SCAN_BIT,   /*  passive scan */
-                HCI_LE_STATES_SCAN_ADV_ACTIVE_SCAN_BIT, /*  active scan */
-                UNSUPPORTED                             /* scanable adv */
-        }};
-
-/* check LE combo state supported */
-static bool BTM_LE_STATES_SUPPORTED(const uint64_t x, uint8_t bit_num) {
-  uint64_t mask = 1 << bit_num;
-  return (x)&mask;
-}
-
 void BTM_BleOpportunisticObserve(bool enable, tBTM_INQ_RESULTS_CB* p_results_cb) {
   if (enable) {
     btm_cb.ble_ctr_cb.p_opportunistic_obs_results_cb = p_results_cb;
@@ -1879,12 +1725,6 @@ static void btm_ble_start_scan() {
 
   /* start scan, disable duplicate filtering */
   btm_send_hci_scan_enable(BTM_BLE_SCAN_ENABLE, BTM_BLE_DUPLICATE_DISABLE);
-
-  if (btm_cb.ble_ctr_cb.inq_var.scan_type == BTM_BLE_SCAN_MODE_ACTI) {
-    btm_ble_set_topology_mask(BTM_BLE_STATE_ACTIVE_SCAN_BIT);
-  } else {
-    btm_ble_set_topology_mask(BTM_BLE_STATE_PASSIVE_SCAN_BIT);
-  }
 }
 
 /*******************************************************************************
@@ -1933,12 +1773,6 @@ static void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy) {
  *
  ******************************************************************************/
 static void btm_ble_stop_scan(void) {
-  if (btm_cb.ble_ctr_cb.inq_var.scan_type == BTM_BLE_SCAN_MODE_ACTI) {
-    btm_ble_clear_topology_mask(BTM_BLE_STATE_ACTIVE_SCAN_BIT);
-  } else {
-    btm_ble_clear_topology_mask(BTM_BLE_STATE_PASSIVE_SCAN_BIT);
-  }
-
   /* Clear the inquiry callback if set */
   btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_NONE;
 
@@ -2088,114 +1922,13 @@ err_out:
   log::error("Bogus event packet, too short");
 }
 
-/*******************************************************************************
- *
- * Function         btm_ble_write_adv_enable_complete
- *
- * Description      This function process the write adv enable command complete.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_ble_write_adv_enable_complete(uint8_t* p, uint16_t evt_len) {
-  /* if write adv enable/disbale not succeed */
-  if (evt_len < 1 || *p != HCI_SUCCESS) {
-    /* toggle back the adv mode */
-    btm_cb.ble_ctr_cb.inq_var.adv_mode = !btm_cb.ble_ctr_cb.inq_var.adv_mode;
-  }
-}
-
-/*******************************************************************************
- *
- * Function         btm_ble_set_topology_mask
- *
- * Description      set BLE topology mask
- *
- * Returns          true is request is allowed, false otherwise.
- *
- ******************************************************************************/
-bool btm_ble_set_topology_mask(tBTM_BLE_STATE_MASK request_state_mask) {
-  request_state_mask &= BTM_BLE_STATE_ALL_MASK;
-  btm_cb.ble_ctr_cb.cur_states |= (request_state_mask & BTM_BLE_STATE_ALL_MASK);
-  return true;
-}
-
-/*******************************************************************************
- *
- * Function         btm_ble_clear_topology_mask
- *
- * Description      Clear BLE topology bit mask
- *
- * Returns          true is request is allowed, false otherwise.
- *
- ******************************************************************************/
-bool btm_ble_clear_topology_mask(tBTM_BLE_STATE_MASK request_state_mask) {
-  request_state_mask &= BTM_BLE_STATE_ALL_MASK;
-  btm_cb.ble_ctr_cb.cur_states &= ~request_state_mask;
-  return true;
-}
-
-/*******************************************************************************
- *
- * Function         btm_ble_update_link_topology_mask
- *
- * Description      This function update the link topology mask
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btm_ble_update_link_topology_mask(uint8_t link_role, bool increase) {
-  btm_ble_clear_topology_mask(BTM_BLE_STATE_ALL_CONN_MASK);
-
-  if (increase) {
-    btm_cb.ble_ctr_cb.link_count[link_role]++;
-  } else if (btm_cb.ble_ctr_cb.link_count[link_role] > 0) {
-    btm_cb.ble_ctr_cb.link_count[link_role]--;
-  }
-
-  if (btm_cb.ble_ctr_cb.link_count[HCI_ROLE_CENTRAL]) {
-    btm_ble_set_topology_mask(BTM_BLE_STATE_CENTRAL_BIT);
-  }
-
-  if (btm_cb.ble_ctr_cb.link_count[HCI_ROLE_PERIPHERAL]) {
-    btm_ble_set_topology_mask(BTM_BLE_STATE_PERIPHERAL_BIT);
-  }
-
-  if (link_role == HCI_ROLE_PERIPHERAL && increase) {
-    btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
-    /* make device fall back into undirected adv mode by default */
-    btm_cb.ble_ctr_cb.inq_var.directed_conn = BTM_BLE_ADV_IND_EVT;
-    /* clear all adv states */
-    btm_ble_clear_topology_mask(BTM_BLE_STATE_ALL_ADV_MASK);
-  }
-}
-
 void btm_ble_increment_link_topology_mask(uint8_t link_role) {
-  btm_ble_update_link_topology_mask(link_role, true);
+  btm_cb.ble_ctr_cb.link_count[link_role]++;
 }
 
 void btm_ble_decrement_link_topology_mask(uint8_t link_role) {
-  btm_ble_update_link_topology_mask(link_role, false);
-}
-
-/*******************************************************************************
- *
- * Function         btm_ble_update_mode_operation
- *
- * Description      This function update the GAP role operation when a link
- *                  status is updated.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_ble_update_mode_operation(uint8_t /* link_role */, const RawAddress* /* bd_addr */,
-                                   tHCI_STATUS status) {
-  if (status == HCI_ERR_ADVERTISING_TIMEOUT) {
-    btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
-    /* make device fall back into undirected adv mode by default */
-    btm_cb.ble_ctr_cb.inq_var.directed_conn = BTM_BLE_ADV_IND_EVT;
-    /* clear all adv states */
-    btm_ble_clear_topology_mask(BTM_BLE_STATE_ALL_ADV_MASK);
+  if (btm_cb.ble_ctr_cb.link_count[link_role] > 0) {
+    btm_cb.ble_ctr_cb.link_count[link_role]--;
   }
 }
 
@@ -2212,20 +1945,16 @@ void btm_ble_init(void) {
   log::verbose("");
 
   alarm_free(btm_cb.ble_ctr_cb.observer_timer);
-  alarm_free(btm_cb.ble_ctr_cb.inq_var.fast_adv_timer);
   memset(&btm_cb.ble_ctr_cb, 0, sizeof(tBTM_BLE_CB));
   memset(&(btm_cb.cmn_ble_vsc_cb), 0, sizeof(tBTM_BLE_VSC_CB));
   btm_cb.cmn_ble_vsc_cb.values_read = false;
 
   btm_cb.ble_ctr_cb.observer_timer = alarm_new("btm_ble.observer_timer");
-  btm_cb.ble_ctr_cb.cur_states = 0;
 
-  btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
   btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_NONE;
   btm_cb.ble_ctr_cb.inq_var.adv_chnl_map = BTM_BLE_DEFAULT_ADV_CHNL_MAP;
   btm_cb.ble_ctr_cb.inq_var.afp = BTM_BLE_DEFAULT_AFP;
   btm_cb.ble_ctr_cb.inq_var.sfp = BTM_BLE_DEFAULT_SFP;
-  btm_cb.ble_ctr_cb.inq_var.fast_adv_timer = alarm_new("btm_ble_inq.fast_adv_timer");
   btm_cb.ble_ctr_cb.inq_var.inquiry_timer = alarm_new("btm_ble_inq.inquiry_timer");
 
   btm_cb.ble_ctr_cb.inq_var.evt_type = BTM_BLE_NON_CONNECT_EVT;
@@ -2241,62 +1970,3 @@ void btm_ble_init(void) {
 
 // Clean up btm ble control block
 void btm_ble_free() { alarm_free(btm_cb.ble_ctr_cb.addr_mgnt_cb.refresh_raddr_timer); }
-
-/*******************************************************************************
- *
- * Function         btm_ble_topology_check
- *
- * Description      check to see requested state is supported. One state check
- *                  at a time is supported
- *
- * Returns          true is request is allowed, false otherwise.
- *
- ******************************************************************************/
-bool btm_ble_topology_check(tBTM_BLE_STATE_MASK request_state_mask) {
-  bool rt = false;
-
-  uint8_t state_offset = 0;
-  uint16_t cur_states = btm_cb.ble_ctr_cb.cur_states;
-  uint8_t request_state = 0;
-
-  /* check only one bit is set and within valid range */
-  if (request_state_mask == BTM_BLE_STATE_INVALID ||
-      request_state_mask > BTM_BLE_STATE_SCAN_ADV_BIT ||
-      (request_state_mask & (request_state_mask - 1)) != 0) {
-    log::error("illegal state requested: {}", request_state_mask);
-    return rt;
-  }
-
-  while (request_state_mask) {
-    request_state_mask >>= 1;
-    request_state++;
-  }
-
-  /* check if the requested state is supported or not */
-  uint8_t bit_num = btm_le_state_combo_tbl[0][request_state - 1];
-  uint64_t ble_supported_states = bluetooth::shim::GetController()->GetLeSupportedStates();
-
-  if (!BTM_LE_STATES_SUPPORTED(ble_supported_states, bit_num)) {
-    log::error("state requested not supported: {}", request_state);
-    return rt;
-  }
-
-  rt = true;
-  /* make sure currently active states are all supported in conjunction with the
-     requested state. If the bit in table is UNSUPPORTED, the combination is not
-     supported */
-  while (cur_states != 0) {
-    if (cur_states & 0x01) {
-      uint8_t bit_num = btm_le_state_combo_tbl[request_state][state_offset];
-      if (bit_num != UNSUPPORTED) {
-        if (!BTM_LE_STATES_SUPPORTED(ble_supported_states, bit_num)) {
-          rt = false;
-          break;
-        }
-      }
-    }
-    cur_states >>= 1;
-    state_offset++;
-  }
-  return rt;
-}

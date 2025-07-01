@@ -3831,8 +3831,6 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason, std::string comme
              p_dev_rec->sec_rec.sec_flags, bond_type_text(p_dev_rec->sec_rec.bond_type),
              p_dev_rec->sec_rec.security_required);
 
-  // TODO Should this be gated by the transport check below ?
-  btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, &p_dev_rec->bd_addr, HCI_SUCCESS);
   /* see sec_flags processing in btm_acl_removed */
 
   if (transport == BT_TRANSPORT_LE) {

@@ -919,10 +919,6 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p, uint16_t 
     case HCI_READ_INQ_TX_POWER_LEVEL:
       break;
 
-    case HCI_BLE_WRITE_ADV_ENABLE:
-      btm_ble_write_adv_enable_complete(p, evt_len);
-      break;
-
     case HCI_BLE_CREATE_LL_CONN:
     case HCI_LE_EXTENDED_CREATE_CONNECTION:
       // No command complete event for those commands according to spec

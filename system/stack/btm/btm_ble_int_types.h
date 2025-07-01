@@ -98,17 +98,8 @@ typedef struct {
   tBLE_ADDR_TYPE adv_addr_type;
   uint8_t evt_type;
 
-  uint8_t adv_mode;
-  void enable_advertising_mode() { adv_mode = BTM_BLE_ADV_ENABLE; }
-  void disable_advertising_mode() { adv_mode = BTM_BLE_ADV_DISABLE; }
-  bool is_advertising_mode_enabled() const { return adv_mode == BTM_BLE_ADV_ENABLE; }
   bool is_1m_phy_configured() const { return (scan_phy & BTM_BLE_1M_PHY_MASK) != 0; }
   bool is_coded_phy_configured() const { return (scan_phy & BTM_BLE_CODED_PHY_MASK) != 0; }
-
-  tBLE_BD_ADDR direct_bda;
-  tBTM_BLE_EVT directed_conn;
-  bool fast_adv_on;
-  alarm_t* fast_adv_timer;
 
   /* inquiry BD addr database */
   tBTM_BLE_LOCAL_ADV_DATA adv_data;
@@ -231,9 +222,6 @@ public:
   tBTM_BLE_RESOLVE_Q resolving_list_pend_q; /* Resolving list queue */
   /* IRK list availability mask, up to max entry bits */
   uint8_t* irk_list_mask{nullptr};
-
-  /* current BLE link state */
-  tBTM_BLE_STATE_MASK cur_states; /* bit mask of tBTM_BLE_STATE */
 
   uint8_t link_count[kCentralAndPeripheralCount]; /* total link count central
                                                      and peripheral*/
