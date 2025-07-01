@@ -64,7 +64,8 @@ class AshaTest(navi_test_base.TwoDevicesTestBase):
 
     async def _setup_paired_devices(self) -> None:
         with self.dut.bl4a.register_callback(bl4a_api.Module.ASHA) as dut_cb:
-            await self.le_connect_and_pair(ref_address_type=hci.OwnAddressType.RANDOM)
+            await self.le_connect_and_pair(ref_address_type=hci.OwnAddressType.RANDOM,
+                                           connect_profiles=True)
 
             self.logger.info("[DUT] Wait for ASHA connected.")
             await dut_cb.wait_for_event(
@@ -168,6 +169,12 @@ class AshaTest(navi_test_base.TwoDevicesTestBase):
             async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
                 self.logger.info("[REF] Wait for audio stopped")
                 await stop_events.get()
+
+            if (self.user_params.get(navi_test_base.RECORD_FULL_DATA) and sink_buffer):
+                self.write_test_output_data(
+                    "asha_data.g722",
+                    sink_buffer,
+                )
 
             if audio.SUPPORT_AUDIO_PROCESSING:
                 dominant_frequency = audio.get_dominant_frequency(sink_buffer, format="g722")

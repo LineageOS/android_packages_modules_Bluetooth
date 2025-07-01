@@ -154,6 +154,11 @@ constants {
 }
 
 constants {
+  name: "UUID_CHANGED"
+  string_value: "UUID_CHANGED"
+}
+
+constants {
   name: "ACL_CONNECTED"
   string_value: "ACL_CONNECTED"
 }
@@ -935,4 +940,23 @@ constants {
 constants {
   name: "SECURITY_LEVEL"
   string_value: "security_level"
+}
+
+# ============================ #
+# BluetoothHapClientSnippet    #
+# ============================ #
+
+constants {
+  name: "PRESET_INFO_CHANGED"
+  string_value: "PRESET_INFO_CHANGED"
+}
+
+constants {
+  name: "PRESET_SELECTED"
+  string_value: "PRESET_SELECTED"
+}
+
+constants {
+  name: "SET_PRESET_NAME_FAILED"
+  string_value: "SET_PRESET_NAME_FAILED"
 }

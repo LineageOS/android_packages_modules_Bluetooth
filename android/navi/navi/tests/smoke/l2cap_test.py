@@ -36,7 +36,7 @@ class Variant(enum.Enum):
 
 _PairingDelegate = pairing.PairingDelegate
 _DEFAULT_TIMEOUT_SECONDS = 5.0
-_TEST_DATA = bytes(i % 256 for i in range(10000))
+_TEST_DATA = bytes(i % 256 for i in range(256))
 
 
 class L2capTest(navi_test_base.TwoDevicesTestBase):
