@@ -76,7 +76,6 @@ import android.os.IBinder;
 import android.os.IpcDataCache;
 import android.os.Looper;
 import android.os.ParcelUuid;
-import android.os.Process;
 import android.os.RemoteException;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
@@ -1097,16 +1096,8 @@ public final class BluetoothAdapter {
      * SecurityException is lost (they are just logged). That mean, any android app developer will
      * not be notified of the missing permission.
      */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // Enforcement in framework is never valid
     private void enforcePermissionInFramework(String... permissions) {
-        mContext.ifPresent(
-                ctx -> {
-                    final int pid = Process.myPid();
-                    final int uid = Process.myUid();
-                    for (String permission : permissions) {
-                        ctx.enforcePermission(permission, pid, uid, null);
-                    }
-                });
+        mContext.ifPresent(ctx -> BluetoothUtils.enforcePermissionInFramework(ctx, permissions));
     }
 
     /**
