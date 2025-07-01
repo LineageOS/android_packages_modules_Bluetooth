@@ -31,6 +31,7 @@ namespace bluetooth::hci {
 class HciDataRouter {
   static constexpr uint16_t kQualcommDebugHandle = 0xedc;
   static constexpr uint16_t kSamsungDebugHandle = 0xeef;
+  static constexpr uint16_t kMtkDebugHandle = 0x5ff;
   static constexpr std::chrono::seconds kWaitBeforeDroppingUnknownAcl{1};
 
 public:
@@ -98,7 +99,8 @@ private:
       return;
     }
     uint16_t handle = packet->GetHandle();
-    if (handle == kQualcommDebugHandle || handle == kSamsungDebugHandle) {
+    if (handle == kQualcommDebugHandle || handle == kSamsungDebugHandle ||
+        handle == kMtkDebugHandle) {
       return;
     }
     if (classic_acl_data_consumer_->SendPacketUpward(
