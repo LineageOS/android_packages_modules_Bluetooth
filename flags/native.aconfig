@@ -37,3 +37,10 @@ flag {
     description: "Use GD Handler and Reactor Thread instead of MessageLoopThread in legacy stack"
     bug: "418119118"
 }
+
+flag {
+    name: "remove_handler_clear"
+    namespace: "bluetooth"
+    description: "Remove Handler::Clear(), and use the destructor instead."
+    bug: "428667010"
+}
