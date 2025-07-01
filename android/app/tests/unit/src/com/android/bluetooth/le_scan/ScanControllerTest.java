@@ -545,9 +545,14 @@ public class ScanControllerTest {
 
     @Test
     public void flushPendingBatchResults() {
+        Set<ScanClient> scanClientSet = new HashSet<>();
+        ScanClient scanClient = new ScanClient(TEST_SCANNER_ID);
+        scanClientSet.add(scanClient);
+        doReturn(scanClientSet).when(mScanManager).getBatchScanQueue();
+
         mScanController.flushPendingBatchResults(TEST_SCANNER_ID);
         dispatchAllIfFlagScanControllerThread(1);
-        verify(mScanManager).flushBatchScanResults(new ScanClient(TEST_SCANNER_ID));
+        verify(mScanManager).flushBatchScanResults(scanClient);
     }
 
     @Test

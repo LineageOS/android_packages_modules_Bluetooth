@@ -1446,10 +1446,15 @@ public class ScanController {
     }
 
     void flushPendingBatchResults(int scannerId) {
-        Log.d(TAG, "flushPendingBatchResults - scannerId=" + scannerId);
+        final var scanClient = findBatchScanClientById(scannerId);
+        if (scanClient == null) {
+            Log.e(TAG, "Unexpectedly cannot find batch scan client for scannerId=" + scannerId);
+            return;
+        }
+        Log.d(TAG, "flushPendingBatchResults for client: " + scanClient);
         doOnScanThread(
                 () -> {
-                    mScanManager.flushBatchScanResults(new ScanClient(scannerId));
+                    mScanManager.flushBatchScanResults(scanClient);
                 });
     }
 
