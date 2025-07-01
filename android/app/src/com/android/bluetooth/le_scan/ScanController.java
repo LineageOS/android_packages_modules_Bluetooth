@@ -937,7 +937,15 @@ public class ScanController {
         if (numRecords == 0) {
             return Collections.emptySet();
         }
-        Log.d(TAG, "current time is " + SystemClock.elapsedRealtimeNanos());
+        Log.d(
+                TAG,
+                "Parsing "
+                        + numRecords
+                        + " batch scan results at "
+                        + Utils.getLocalTimeString()
+                        + " (elapsed: "
+                        + SystemClock.elapsedRealtime()
+                        + "ms)");
         if (reportType == ScanManager.SCAN_RESULT_TYPE_TRUNCATED) {
             return parseTruncatedResults(numRecords, batchRecord);
         } else {
