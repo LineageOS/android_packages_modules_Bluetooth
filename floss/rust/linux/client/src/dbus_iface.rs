@@ -1393,6 +1393,11 @@ impl IBluetoothAdmin for BluetoothAdminDBus {
         dbus_generated!()
     }
 
+    #[dbus_method("SetAcceptSspRequest")]
+    fn set_accept_ssp_request(&mut self, enable: bool) -> bool {
+        dbus_generated!()
+    }
+
     #[dbus_method("RegisterAdminPolicyCallback")]
     fn register_admin_policy_callback(
         &mut self,
