@@ -1639,8 +1639,7 @@ void btm_ble_connection_established(const RawAddress& bda) {
   }
 
   // Encrypt the link if device is bonded
-  if (com::android::bluetooth::flags::le_enc_on_reconnect() &&
-      p_dev_rec->sec_rec.is_le_link_key_known()) {
+  if (p_dev_rec->sec_rec.is_le_link_key_known()) {
     btm_ble_set_encryption(bda, BTM_BLE_SEC_ENCRYPT,
                            p_dev_rec->role_central ? HCI_ROLE_CENTRAL : HCI_ROLE_PERIPHERAL);
   }
