@@ -267,7 +267,9 @@ public class ScanManager {
                 new BroadcastReceiver() {
                     @Override
                     public void onReceive(Context context, Intent intent) {
-                        Log.d(TAG, "awakened up at time " + mTimeProvider.elapsedRealtime());
+                        final var elapsed = mTimeProvider.elapsedRealtime();
+                        final var elapsedReadable = Utils.formatElapsedRealtime(elapsed);
+                        Log.d(TAG, "Awakened up at=" + elapsedReadable + " (" + elapsed + "ms)");
                         String action = intent.getAction();
 
                         if (action.equals(ACTION_REFRESH_BATCHED_SCAN)) {
@@ -1621,20 +1623,24 @@ public class ScanManager {
     // Set the batch alarm to be triggered within a short window after batch interval. This
     // allows system to optimize wake up time while still allows a degree of precise control.
     private void setBatchAlarm() {
-        // Cancel any pending alarm just in case.
+        Log.d(TAG, "setBatchAlarm(): Canceling pending batch scan alarm");
         mAlarmManager.cancel(mBatchScanIntervalIntent);
+
         if (mBatchClients.isEmpty()) {
+            Log.d(TAG, "setBatchAlarm(): No batch clients; skipping alarm setup");
             return;
         }
-        long batchTriggerIntervalMillis =
+        final long batchTriggerIntervalMillis =
                 mBatchScanThrottler.getBatchTriggerIntervalMillis(mBatchClients);
         // Allows the alarm to be triggered within
         // [batchTriggerIntervalMillis, 1.1 * batchTriggerIntervalMillis]
-        long windowLengthMillis = batchTriggerIntervalMillis / 10;
-        long windowStartMillis = mTimeProvider.elapsedRealtime() + batchTriggerIntervalMillis;
+        final long windowLengthMillis = batchTriggerIntervalMillis / 10;
+        final long windowStartMs = mTimeProvider.elapsedRealtime() + batchTriggerIntervalMillis;
+        final var windowStartReadable = Utils.formatElapsedRealtime(windowStartMs);
+        Log.d(TAG, "setBatchAlarm(): at=" + windowStartReadable + " (" + windowStartMs + "ms)");
         mAlarmManager.setWindow(
                 AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                windowStartMillis,
+                windowStartMs,
                 windowLengthMillis,
                 mBatchScanIntervalIntent);
     }
