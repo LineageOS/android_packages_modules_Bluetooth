@@ -292,3 +292,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "get_svc_uuids_bugfix"
+    namespace: "bluetooth"
+    description: "Bug fixes for the flag get_svc_uuids_from_ble_adv_data"
+    bug: "428792613"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
