@@ -1244,7 +1244,7 @@ static void btm_process_inq_results_standard(EventView event) {
       }
 
       p_cur->inq_result_type |= BT_DEVICE_TYPE_BREDR;
-      p_cur->last_inq_result_from_type = BT_DEVICE_TYPE_BREDR;
+      p_cur->last_inq_result_transport = BT_TRANSPORT_BR_EDR;
       if (p_i->inq_count != btm_cb.btm_inq_vars.inq_counter) {
         p_cur->device_type = BT_DEVICE_TYPE_BREDR;
         p_i->scan_rsp = false;
@@ -1388,7 +1388,7 @@ static void btm_process_inq_results_rssi(EventView event) {
       }
 
       p_cur->inq_result_type |= BT_DEVICE_TYPE_BREDR;
-      p_cur->last_inq_result_from_type = BT_DEVICE_TYPE_BREDR;
+      p_cur->last_inq_result_transport = BT_TRANSPORT_BR_EDR;
       if (p_i->inq_count != btm_cb.btm_inq_vars.inq_counter) {
         p_cur->device_type = BT_DEVICE_TYPE_BREDR;
         p_i->scan_rsp = false;
@@ -1538,7 +1538,7 @@ static void btm_process_inq_results_extended(EventView event) {
       }
 
       p_cur->inq_result_type |= BT_DEVICE_TYPE_BREDR;
-      p_cur->last_inq_result_from_type = BT_DEVICE_TYPE_BREDR;
+      p_cur->last_inq_result_transport = BT_TRANSPORT_BR_EDR;
       if (p_i->inq_count != btm_cb.btm_inq_vars.inq_counter) {
         p_cur->device_type = BT_DEVICE_TYPE_BREDR;
         p_i->scan_rsp = false;

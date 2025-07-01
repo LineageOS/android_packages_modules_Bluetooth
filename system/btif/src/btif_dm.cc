@@ -1546,7 +1546,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
               }
 
               bt_property_type_t property_type =
-                      (p_search_data->inq_res.last_inq_result_from_type == BT_DEVICE_TYPE_BLE)
+                      (p_search_data->inq_res.last_inq_result_transport == BT_TRANSPORT_LE)
                               ? BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA
                               : BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE;
 
