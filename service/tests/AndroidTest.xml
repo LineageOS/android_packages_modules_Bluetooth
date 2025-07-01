@@ -23,6 +23,7 @@
 
     <target_preparer class="com.android.tradefed.targetprep.RunCommandTargetPreparer">
         <option name="throw-if-cmd-fail" value="true" />
+        <option name="run-command" value="settings put global airplane_mode_on 0"/>
         <option name="run-command" value="settings put global ble_scan_always_enabled 1"/>
     </target_preparer>
 
