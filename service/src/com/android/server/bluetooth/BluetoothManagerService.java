@@ -2338,6 +2338,10 @@ class BluetoothManagerService {
                         (Method m) -> {
                             String name =
                                     m.getName().replaceAll("([A-Z])", "_$1").toLowerCase(Locale.US);
+                            if (name.equals("$jacoco_init")) {
+                                // On coverage run, jacoco inject a method into Flags. Skip it.
+                                return;
+                            }
                             boolean flagValue;
                             try {
                                 flagValue = (boolean) m.invoke(null);
