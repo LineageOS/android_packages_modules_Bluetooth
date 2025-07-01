@@ -51,3 +51,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "map_client_check_access_permission"
+    namespace: "bluetooth"
+    description: "Check if message access permission is allowed before connecting"
+    bug: "428760494"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
