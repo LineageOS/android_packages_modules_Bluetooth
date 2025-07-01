@@ -41,6 +41,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.IPeriodicAdvertisingCallback;
 import android.bluetooth.le.IScannerCallback;
+import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
@@ -108,6 +109,7 @@ public class ScanControllerTest {
     private static final int TEST_STATUS = 0;
     private static final int TEST_ACTION = 1;
     private static final int TEST_CLIENT_IF = 2;
+    private static final String TEST_ADDRESS = "00:11:22:33:FF:EE";
 
     private final FakeTimeProvider mTimeProvider = new FakeTimeProvider();
     private final BluetoothDevice mDevice = getTestDevice(89);
@@ -133,6 +135,7 @@ public class ScanControllerTest {
         doReturn(context.getSharedPreferences("ScanControllerTest", Context.MODE_PRIVATE))
                 .when(mAdapterService)
                 .getSharedPreferences(anyString(), anyInt());
+        doReturn(TEST_ADDRESS).when(mDevice).getAddress();
 
         mockGetRemoteDevice(mAdapterService, mDevice);
         mockGetBluetoothManager(mAdapterService);
@@ -171,7 +174,6 @@ public class ScanControllerTest {
         // scannable and scan response
         int eventType = 0x0A;
         int addressType = 0;
-        String address = "02:00:00:00:00:00";
         int primaryPhy = 0;
         int secondPhy = 0;
         int advertisingSid = 0;
@@ -193,7 +195,7 @@ public class ScanControllerTest {
         mApp.mAppScanStats = appScanStats;
         scanClient.mStats = Optional.of(appScanStats);
         Set<ScanClient> scanClientSet = Collections.singleton(scanClient);
-        doReturn(address).when(mAdapterService).getIdentityAddress(anyString());
+        doReturn(TEST_ADDRESS).when(mAdapterService).getIdentityAddress(anyString());
         doReturn(scanClientSet).when(mScanManager).getRegularScanQueue();
         doReturn(mApp).when(mScannerMap).getById(scanClient.mScannerId);
         doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(scanClient.mScannerId);
@@ -204,7 +206,7 @@ public class ScanControllerTest {
         mScanController.onScanResult(
                 eventType,
                 addressType,
-                address,
+                TEST_ADDRESS,
                 primaryPhy,
                 secondPhy,
                 advertisingSid,
@@ -212,7 +214,7 @@ public class ScanControllerTest {
                 rssi,
                 periodicAdvInt,
                 advData,
-                address);
+                TEST_ADDRESS);
 
         assertThat(scanClient.mAppDied).isTrue();
         verify(appScanStats).recordScanStop(TEST_SCANNER_ID);
@@ -374,7 +376,6 @@ public class ScanControllerTest {
         int filtIndex = 5;
         int advState = ScanController.ADVT_STATE_ONFOUND;
         int advInfoPresent = 7;
-        String address = "00:11:22:33:FF:EE";
         int addrType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
         int txPower = 9;
         int rssiValue = 10;
@@ -390,7 +391,7 @@ public class ScanControllerTest {
                         filtIndex,
                         advState,
                         advInfoPresent,
-                        address,
+                        TEST_ADDRESS,
                         addrType,
                         txPower,
                         rssiValue,
@@ -406,7 +407,7 @@ public class ScanControllerTest {
                         filtIndex,
                         advState,
                         advInfoPresent,
-                        address,
+                        TEST_ADDRESS,
                         addrType,
                         txPower,
                         rssiValue,
@@ -424,7 +425,6 @@ public class ScanControllerTest {
         int filtIndex = 5;
         int advState = ScanController.ADVT_STATE_ONFOUND;
         int advInfoPresent = 7;
-        String address = "00:11:22:33:FF:EE";
         int addrType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
         int txPower = 9;
         int rssiValue = 10;
@@ -456,7 +456,7 @@ public class ScanControllerTest {
                         filtIndex,
                         advState,
                         advInfoPresent,
-                        address,
+                        TEST_ADDRESS,
                         addrType,
                         txPower,
                         rssiValue,
@@ -466,7 +466,7 @@ public class ScanControllerTest {
         ArgumentCaptor<ScanResult> result = ArgumentCaptor.forClass(ScanResult.class);
         verify(callback).onFoundOrLost(eq(true), result.capture());
         assertThat(result.getValue().getDevice()).isNotNull();
-        assertThat(result.getValue().getDevice().getAddress()).isEqualTo(address);
+        assertThat(result.getValue().getDevice().getAddress()).isEqualTo(TEST_ADDRESS);
         assertThat(result.getValue().getDevice().getAddressType()).isEqualTo(addrType);
     }
 
@@ -634,6 +634,23 @@ public class ScanControllerTest {
         ScanResult resultBelowThreshold =
                 new ScanResult(mDevice, 0, 0, 0, 0, 0, rssiBelowThreshold, 0, mockScanRecord, 0);
         assertThat(mScanController.matchesFilters(client, resultBelowThreshold)).isFalse();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_ORIGINAL_ADDRESS_FILTER_MATCH)
+    public void matchesFilters_originalAddress() {
+        // This address is different from mDevice.getAddress()
+        String originalAddress = "00:11:22:33:CC:DD";
+        ScanFilter filter = new ScanFilter.Builder().setDeviceAddress(originalAddress).build();
+        List<ScanFilter> filterList = new ArrayList<>();
+        filterList.add(filter);
+        ScanSettings settings = new ScanSettings.Builder().build();
+        ScanRecord mockScanRecord = mock(ScanRecord.class);
+
+        ScanClient client = new ScanClient(TEST_SCANNER_ID, settings, filterList);
+        ScanResult scanResult = new ScanResult(mDevice, 0, 0, 0, 0, 0, 0, 0, mockScanRecord, 0);
+
+        assertThat(mScanController.matchesFilters(client, scanResult, originalAddress)).isTrue();
     }
 
     @Test
