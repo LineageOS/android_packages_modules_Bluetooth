@@ -1975,22 +1975,46 @@ public class ScanManager {
     // Get delivery mode based on scan settings.
     private static int getDeliveryMode(ScanClient client) {
         if (client == null) {
+            Log.d(TAG, "getDeliveryMode(): Client is null, defaulting to DELIVERY_MODE_IMMEDIATE");
             return DELIVERY_MODE_IMMEDIATE;
         }
-        ScanSettings settings = client.mSettings;
+        final var settings = client.mSettings;
         if (settings == null) {
+            Log.d(
+                    TAG,
+                    "getDeliveryMode(): Settings for "
+                            + client
+                            + " are null, defaulting to DELIVERY_MODE_IMMEDIATE");
             return DELIVERY_MODE_IMMEDIATE;
         }
         if ((settings.getCallbackType() & ScanSettings.CALLBACK_TYPE_FIRST_MATCH) != 0
                 || (settings.getCallbackType() & ScanSettings.CALLBACK_TYPE_MATCH_LOST) != 0) {
+            Log.d(
+                    TAG,
+                    "getDeliveryMode(): Callback type is CALLBACK_TYPE_FIRST_MATCH OR"
+                            + " CALLBACK_TYPE_MATCH_LOST, using DELIVERY_MODE_ON_FOUND_LOST");
             return DELIVERY_MODE_ON_FOUND_LOST;
         }
         if (isAllMatchesAutoBatchScanClient(client)) {
-            return isAutoBatchScanClientEnabled(client)
-                    ? DELIVERY_MODE_BATCH
-                    : DELIVERY_MODE_IMMEDIATE;
+            final boolean isEnabled = isAutoBatchScanClientEnabled(client);
+            final int mode = isEnabled ? DELIVERY_MODE_BATCH : DELIVERY_MODE_IMMEDIATE;
+            Log.d(
+                    TAG,
+                    "getDeliveryMode(): Client is auto-batch (enabled="
+                            + isEnabled
+                            + "), using delivery mode "
+                            + (isEnabled ? "DELIVERY_MODE_BATCH" : "DELIVERY_MODE_IMMEDIATE"));
+            return mode;
         }
-        return settings.getReportDelayMillis() == 0 ? DELIVERY_MODE_IMMEDIATE : DELIVERY_MODE_BATCH;
+        final long delay = settings.getReportDelayMillis();
+        final int mode = delay == 0 ? DELIVERY_MODE_IMMEDIATE : DELIVERY_MODE_BATCH;
+        Log.d(
+                TAG,
+                "getDeliveryMode(): Using report delay ("
+                        + delay
+                        + "ms) to set delivery mode to "
+                        + ((delay == 0) ? "DELIVERY_MODE_IMMEDIATE" : "DELIVERY_MODE_BATCH"));
+        return mode;
     }
 
     private int getScanWindowMillis(ScanSettings settings) {
