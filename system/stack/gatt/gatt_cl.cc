@@ -292,7 +292,7 @@ void gatt_send_queue_write_cancel(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, tGATT_EXEC
   gatt_cl_msg.exec_write = flag;
   rt = attp_send_cl_msg(tcb, p_clcb, GATT_REQ_EXEC_WRITE, &gatt_cl_msg);
 
-  if (rt != GATT_SUCCESS) {
+  if (rt != GATT_SUCCESS && rt != GATT_CMD_STARTED) {
     gatt_end_operation(p_clcb, rt, NULL);
   }
 }
