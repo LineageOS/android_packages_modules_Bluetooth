@@ -164,6 +164,16 @@ flag {
 }
 
 flag {
+    name: "hold_conference_call_from_remote"
+    namespace: "bluetooth"
+    description: "hold conference call from remote"
+    bug: "422315662"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "send_ok_on_no_action_on_chld"
     namespace: "bluetooth"
     description: "Send OK on no action perfomed on CHLD instead of ERROR"
