@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.le_scan;
 
+import static android.bluetooth.le.ScanSettings.getScanModeString;
+
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanSettings;
 import android.os.Binder;
@@ -86,22 +88,16 @@ class ScanClient {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(" [ScanClient");
-        sb.append(" scanModeApp ")
-                .append(mScanModeApp)
-                .append(" scanModeUsed ")
-                .append(mSettings.getScanMode())
-                .append(" scannerId ")
-                .append(mScannerId);
+        StringBuilder sb = new StringBuilder("ScanClient {");
+        sb.append(" scanModeApp=").append(getScanModeString(mScanModeApp));
+        sb.append(", scanModeUsed=").append(getScanModeString(mSettings.getScanMode()));
+        sb.append(", scannerId=").append(mScannerId);
 
-        mStats.ifPresent(
-                stats -> {
-                    if (stats.mAppName != null) {
-                        sb.append(" [appScanStats ").append(stats.mAppName).append("]");
-                    }
-                });
+        mStats.map(stats -> stats.mAppName)
+                .filter(appName -> appName != null)
+                .ifPresent(appName -> sb.append(", appScanStats.appName=").append(appName));
 
-        return sb.append("]").toString();
+        return sb.append(" }").toString();
     }
 
     /**
