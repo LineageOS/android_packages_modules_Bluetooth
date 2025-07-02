@@ -221,21 +221,6 @@ public class BassClientStateMachineTest {
     }
 
     @Test
-    @Ignore("b/418311373") // There is an intent sent and it goes to connecting
-    public void testOkToConnectFails() {
-        allowConnection(false);
-        allowConnectGatt(true);
-
-        mStateMachine.sendMessage(CONNECT);
-        mLooper.dispatchAll();
-
-        verifyNoIntentSent();
-
-        assertThat(mStateMachine.getCurrentState())
-                .isInstanceOf(BassClientStateMachine.Disconnected.class);
-    }
-
-    @Test
     public void testFailToConnectGatt() {
         allowConnection(true);
         allowConnectGatt(false);

@@ -208,13 +208,13 @@ public class HearingAidService extends ConnectableProfile {
                 return false;
             }
         } else {
-        if (device == null) {
-            return false;
-        }
+            if (device == null) {
+                return false;
+            }
 
-        if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN) {
-            return false;
-        }
+            if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN) {
+                return false;
+            }
         }
 
         final ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
