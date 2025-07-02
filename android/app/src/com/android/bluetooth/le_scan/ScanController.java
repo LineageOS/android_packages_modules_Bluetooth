@@ -963,7 +963,6 @@ public class ScanController {
     }
 
     private Set<ScanResult> parseTruncatedResults(int numRecords, byte[] batchRecord) {
-        Log.d(TAG, "batch record " + Arrays.toString(batchRecord));
         Set<ScanResult> results = new HashSet<ScanResult>(numRecords);
         long now = SystemClock.elapsedRealtimeNanos();
         for (int i = 0; i < numRecords; ++i) {
@@ -990,7 +989,6 @@ public class ScanController {
     }
 
     private Set<ScanResult> parseFullResults(int numRecords, byte[] batchRecord) {
-        Log.d(TAG, "Batch record : " + Arrays.toString(batchRecord));
         Set<ScanResult> results = new HashSet<ScanResult>(numRecords);
         int position = 0;
         long now = SystemClock.elapsedRealtimeNanos();
@@ -1020,7 +1018,6 @@ public class ScanController {
             System.arraycopy(advertiseBytes, 0, scanRecord, 0, advertisePacketLen);
             System.arraycopy(
                     scanResponseBytes, 0, scanRecord, advertisePacketLen, scanResponsePacketLen);
-            Log.d(TAG, "ScanRecord : " + Arrays.toString(scanRecord));
             results.add(
                     new ScanResult(
                             device, ScanRecord.parseFromBytes(scanRecord), rssi, timestampNanos));
