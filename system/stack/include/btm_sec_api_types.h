@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_transport.h>
 
 #include <cstdint>
 #include <string>
@@ -30,7 +31,6 @@
 #include "stack/include/hcidefs.h"
 #include "stack/include/smp_api_types.h"
 #include "stack/include/smp_status.h"
-#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 typedef enum : uint8_t {

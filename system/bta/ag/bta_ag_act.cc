@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_transport.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -40,7 +41,6 @@
 #include "device/include/device_iot_conf_defs.h"
 #include "osi/include/alarm.h"
 #include "sdp_status.h"
-#include "types/bt_transport.h"
 
 #ifdef __ANDROID__
 #endif

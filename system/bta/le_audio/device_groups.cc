@@ -19,6 +19,7 @@
 #include "device_groups.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_transport.h>
 #include <stdio.h>
 
 #include <algorithm>
@@ -57,7 +58,6 @@
 #include "main/shim/entry.h"
 #include "metrics_collector.h"
 #include "stack/include/btm_client_interface.h"
-#include "types/bt_transport.h"
 
 namespace bluetooth::le_audio {
 

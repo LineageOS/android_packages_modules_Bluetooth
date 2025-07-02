@@ -27,6 +27,7 @@
 #include <string>
 
 // Original included files, if any
+#include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/hci_role.h>
 
 #include "stack/btm/security_device_record.h"
@@ -35,7 +36,6 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/security_client_callbacks.h"
-#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 // Original usings

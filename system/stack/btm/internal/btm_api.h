@@ -24,6 +24,8 @@
 #ifndef BTM_API_H
 #define BTM_API_H
 
+#include <bluetooth/types/bt_transport.h>
+
 #include <cstdint>
 
 #include "device/include/esco_parameters.h"
@@ -32,7 +34,6 @@
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/rnr/remote_name_request.h"
-#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 /* Global BTM control block structure. */

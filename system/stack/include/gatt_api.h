@@ -19,6 +19,7 @@
 #define GATT_API_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/uuid.h>
 
 #include <cstdint>
@@ -33,7 +34,6 @@
 #include "macros.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/hci_error_code.h"
-#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 /*****************************************************************************

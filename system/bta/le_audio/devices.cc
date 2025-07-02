@@ -20,6 +20,7 @@
 #include <android_bluetooth_sysprop.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_transport.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
 
@@ -60,7 +61,6 @@
 #include "osi/include/properties.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/l2cap_interface.h"
-#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 using bluetooth::hci::kIsoCigPhy1M;
