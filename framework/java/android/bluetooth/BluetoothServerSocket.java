@@ -82,7 +82,7 @@ public final class BluetoothServerSocket implements Closeable {
     private long mSocketCreationTimeMillis = 0;
     private long mSocketCreationLatencyMillis = 0;
 
-    // BluetoothSocket.getConnectionType() will hide L2CAP_LE.
+    // BluetoothSocket.getConnectionType() will hide LE.
     // Therefore a new variable need to be maintained here.
     private final int mType;
 
@@ -335,7 +335,7 @@ public final class BluetoothServerSocket implements Closeable {
         switch (mSocket.getConnectionType()) {
             case BluetoothSocket.TYPE_RFCOMM -> sb.append("TYPE_RFCOMM");
             case BluetoothSocket.TYPE_L2CAP -> sb.append("TYPE_L2CAP");
-            case BluetoothSocket.TYPE_L2CAP_LE -> sb.append("TYPE_L2CAP_LE");
+            case BluetoothSocket.TYPE_LE -> sb.append("TYPE_LE");
             case BluetoothSocket.TYPE_SCO -> sb.append("TYPE_SCO");
             default -> {} // Nothing to do
         }

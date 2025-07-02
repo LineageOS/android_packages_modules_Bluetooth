@@ -76,7 +76,7 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
                 mService.getNative()
                         .connectSocket(
                                 Utils.getBytesFromAddress(
-                                        type == BluetoothSocket.TYPE_L2CAP_LE
+                                        type == BluetoothSocket.TYPE_LE
                                                 ? device.getAddress()
                                                 : brEdrAddress),
                                 type,
@@ -134,7 +134,7 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
                 mService.getNative()
                         .connectSocket(
                                 Utils.getBytesFromAddress(
-                                        type == BluetoothSocket.TYPE_L2CAP_LE
+                                        type == BluetoothSocket.TYPE_LE
                                                 ? device.getAddress()
                                                 : brEdrAddress),
                                 type,
