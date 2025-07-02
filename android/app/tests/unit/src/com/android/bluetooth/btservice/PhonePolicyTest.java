@@ -47,7 +47,6 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
 import android.os.ParcelUuid;
 import android.os.SystemProperties;
-import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.room.Room;
@@ -285,7 +284,6 @@ public class PhonePolicyTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_ALLOW_LEAUDIO_ONLY_DEVICES)
     public void testConnectLeAudioOnlyDevices_BandedHeadphones() {
         // Single device, no CSIP
         processInitProfilePriorities_LeAudioOnlyHelper(
@@ -295,7 +293,6 @@ public class PhonePolicyTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_ALLOW_LEAUDIO_ONLY_DEVICES)
     public void testConnectLeAudioOnlyDevices_CsipSet() {
         // CSIP Le Audio only devices
         processInitProfilePriorities_LeAudioOnlyHelper(1, 2, false, false);
@@ -304,7 +301,6 @@ public class PhonePolicyTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_ALLOW_LEAUDIO_ONLY_DEVICES)
     public void testConnectLeAudioOnlyDevices_DualModeCsipSet() {
         // CSIP Dual mode devices
         processInitProfilePriorities_LeAudioOnlyHelper(1, 2, true, false);
@@ -313,7 +309,6 @@ public class PhonePolicyTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_ALLOW_LEAUDIO_ONLY_DEVICES)
     public void testConnectLeAudioOnlyDevices_AshaAndCsipSet() {
         // CSIP Dual mode devices
         processInitProfilePriorities_LeAudioOnlyHelper(1, 2, false, true);

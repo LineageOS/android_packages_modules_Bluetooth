@@ -2617,14 +2617,6 @@
     },
     {
       "flags": [
-        "leaudio_allow_leaudio_only_devices"
-      ],
-      "tests": [
-        "HAP"
-      ]
-    },
-    {
-      "flags": [
         "leaudio_add_aics_support"
       ],
       "tests": [
