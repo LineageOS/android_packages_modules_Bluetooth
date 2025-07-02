@@ -146,15 +146,13 @@ public class BluetoothInCallService extends InCallService {
     // Add all held calls to a conference
     private static final int CHLD_TYPE_ADDHELDTOCONF = 3;
 
-    // Indicates that no BluetoothCall is ringing
-    private static final int DEFAULT_RINGING_ADDRESS_TYPE = 128;
-
     private int mNumActiveCalls = 0;
     private int mNumHeldCalls = 0;
     private int mNumChildrenOfActiveCall = 0;
     private int mBluetoothCallState = CallState.IDLE;
     private String mRingingAddress = "";
-    private int mRingingAddressType = DEFAULT_RINGING_ADDRESS_TYPE;
+    // Default is indicating no BluetoothCall is ringing
+    private int mRingingAddressType = PhoneNumberUtils.TOA_Unknown;
     private BluetoothCall mOldHeldCall = null;
     private boolean mHeadsetUpdatedRecently = false;
 
@@ -1278,7 +1276,7 @@ public class BluetoothInCallService extends InCallService {
         int bluetoothCallState = getBluetoothCallStateForUpdate();
 
         String ringingAddress = null;
-        int ringingAddressType = DEFAULT_RINGING_ADDRESS_TYPE;
+        int ringingAddressType = PhoneNumberUtils.TOA_Unknown;
         String ringingName = null;
         if (!mCallInfo.isNullCall(ringingCall)
                 && ringingCall.getHandle() != null
