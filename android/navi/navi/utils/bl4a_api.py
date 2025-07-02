@@ -18,7 +18,7 @@ from __future__ import annotations
 import abc
 import asyncio
 import base64
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Coroutine, Mapping, Sequence
 import contextlib
 import dataclasses
 import datetime
@@ -90,6 +90,8 @@ class Module(enum.Enum):
     SAP = enum.auto()
     PLAYER = enum.auto()
     BQR = enum.auto()
+    A2DP_SINK = enum.auto()
+    AVRCP_CONTROLLER = enum.auto()
 
 
 @dataclasses.dataclass
@@ -158,6 +160,11 @@ class CallbackHandler:
                 handler = snippet.registerPlayerListener()
             case Module.BQR:
                 handler = snippet.registerBluetoothQualityReportCallback()
+            case Module.A2DP_SINK:
+                handler = snippet.registerProfileCallback(android_constants.Profile.A2DP_SINK)
+            case Module.AVRCP_CONTROLLER:
+                handler = snippet.registerProfileCallback(
+                    android_constants.Profile.AVRCP_CONTROLLER)
             case _:
                 raise ValueError(f'Unsupported module: {module}')
         return cls(snippet=snippet, handler=handler, module=module)
@@ -185,7 +192,8 @@ class CallbackHandler:
                 self.snippet.unregisterHidHostCallback(self.handler.callback_id)
             case Module.PAN:
                 self.snippet.unregisterPanCallback(self.handler.callback_id)
-            case Module.ASHA | Module.PBAP | Module.MAP | Module.SAP:
+            case (Module.ASHA | Module.PBAP | Module.MAP | Module.SAP | Module.A2DP_SINK |
+                  Module.AVRCP_CONTROLLER):
                 self.snippet.unregisterProfileCallback(self.handler.callback_id)
             case Module.BASS:
                 self.snippet.unregisterBassCallback(self.handler.callback_id)
@@ -411,7 +419,7 @@ class KeyEvent(JsonDeserializableEvent):
     key_code: int
     action: int
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.KEY_EVENT
+    EVENT_NAME = snippet_constants.KEY_EVENT
 
     @override
     @classmethod
@@ -429,7 +437,7 @@ class MotionEvent(JsonDeserializableEvent):
     x: float
     y: float
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.MOTION_EVENT
+    EVENT_NAME = snippet_constants.MOTION_EVENT
 
     @override
     @classmethod
@@ -451,13 +459,12 @@ class AclConnected(JsonDeserializableEvent):
   Attributes:
     address: mac address of remote device in string format.
     transport: transport of the connected connection.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
     address: str
     transport: android_constants.Transport
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.ACL_CONNECTED
+    EVENT_NAME = snippet_constants.ACL_CONNECTED
 
     @override
     @classmethod
@@ -475,13 +482,12 @@ class AclDisconnected(JsonDeserializableEvent):
   Attributes:
     address: mac address of remote device in string format.
     transport: transport of the disconnected connection.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
     address: str
     transport: android_constants.Transport
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.ACL_DISCONNECTED
+    EVENT_NAME = snippet_constants.ACL_DISCONNECTED
 
     @override
     @classmethod
@@ -499,13 +505,12 @@ class BondStateChanged(JsonDeserializableEvent):
   Attributes:
     address: mac address of remote device in string format.
     state: new bond state of remote device.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
     address: str
     state: android_constants.BondState
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.BOND_STATE_CHANGE
+    EVENT_NAME = snippet_constants.BOND_STATE_CHANGE
 
     @override
     @classmethod
@@ -517,8 +522,24 @@ class BondStateChanged(JsonDeserializableEvent):
 
 
 @dataclasses.dataclass
+class UuidChanged(JsonDeserializableEvent):
+    address: str
+    uuids: list[str] | None
+
+    EVENT_NAME = snippet_constants.UUID_CHANGED
+
+    @override
+    @classmethod
+    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
+        return cls(
+            address=mapping[snippet_constants.FIELD_DEVICE],
+            uuids=mapping.get(snippet_constants.FIELD_UUID),
+        )
+
+
+@dataclasses.dataclass
 class A2dpPlayingStateChanged(JsonDeserializableEvent):
-    EVENT_NAME: ClassVar[str] = snippet_constants.A2DP_PLAYING_STATE_CHANGED
+    EVENT_NAME = snippet_constants.A2DP_PLAYING_STATE_CHANGED
 
     address: str
     state: android_constants.A2dpState
@@ -540,14 +561,13 @@ class PairingRequest(JsonDeserializableEvent):
     address: mac address of remote device in string format.
     variant: variant of pairing procedure.
     pin: pairing confirmation pin code.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
     address: str
     variant: android_constants.PairingVariant
     pin: int
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.PAIRING_REQUEST
+    EVENT_NAME = snippet_constants.PAIRING_REQUEST
 
     @override
     @classmethod
@@ -566,13 +586,12 @@ class DeviceFound(JsonDeserializableEvent):
   Attributes:
     address: mac address of remote device in string format.
     name: name of remote device.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
     address: str
     name: str
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.DEVICE_FOUND
+    EVENT_NAME = snippet_constants.DEVICE_FOUND
 
     @override
     @classmethod
@@ -590,13 +609,12 @@ class AudioDeviceAdded(JsonDeserializableEvent):
   Attributes:
     address: mac address of remote device in string format.
     device_type: type of audio device.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
     address: str
     device_type: android_constants.AudioDeviceType
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.AUDIO_DEVICE_ADDED
+    EVENT_NAME = snippet_constants.AUDIO_DEVICE_ADDED
 
     @override
     @classmethod
@@ -612,8 +630,7 @@ class AudioDeviceAdded(JsonDeserializableEvent):
 class CommunicationDeviceChanged(JsonDeserializableEvent):
     address: str
     device_type: android_constants.AudioDeviceType
-
-    EVENT_NAME: ClassVar[str] = (snippet_constants.AUDIO_COMMUNICATION_DEVICE_CHANGED)
+    EVENT_NAME = snippet_constants.AUDIO_COMMUNICATION_DEVICE_CHANGED
 
     @override
     @classmethod
@@ -632,13 +649,12 @@ class GattConnectionStateChanged(JsonDeserializableEvent):
   Attributes:
     state: new state of GATT connection.
     status: status or reason of state transition.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
     state: android_constants.ConnectionState
     status: android_constants.GattStatus
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.GATT_CONNECTION_STATE_CHANGE
+    EVENT_NAME = snippet_constants.GATT_CONNECTION_STATE_CHANGE
 
     @override
     @classmethod
@@ -658,7 +674,6 @@ class GattCharacteristicReadRequest(JsonDeserializableEvent):
     characteristic_uuid: Characteristic UUID in string format.
     request_id: request ID required by send_response method.
     offset: offset of value in the request.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
     address: str
@@ -666,7 +681,7 @@ class GattCharacteristicReadRequest(JsonDeserializableEvent):
     request_id: int
     offset: int
 
-    EVENT_NAME: ClassVar[str] = (snippet_constants.GATT_SERVER_CHARACTERISTIC_READ_REQUEST)
+    EVENT_NAME = snippet_constants.GATT_SERVER_CHARACTERISTIC_READ_REQUEST
 
     @override
     @classmethod
@@ -691,7 +706,6 @@ class GattCharacteristicWriteRequest(JsonDeserializableEvent):
     value: what the remote wants to write.
     response_needed: whether response is required for this request.
     prepared_write: whether this is a prepared write.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
     address: str
@@ -702,7 +716,7 @@ class GattCharacteristicWriteRequest(JsonDeserializableEvent):
     response_needed: bool
     prepared_write: bool
 
-    EVENT_NAME: ClassVar[str] = (snippet_constants.GATT_SERVER_CHARACTERISTIC_WRITE_REQUEST)
+    EVENT_NAME = snippet_constants.GATT_SERVER_CHARACTERISTIC_WRITE_REQUEST
 
     @override
     @classmethod
@@ -731,7 +745,6 @@ class GattDescriptorWriteRequest(JsonDeserializableEvent):
     value: what the remote wants to write.
     response_needed: whether response is required for this request.
     prepared_write: whether this is a prepared write.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
     address: str
@@ -743,7 +756,7 @@ class GattDescriptorWriteRequest(JsonDeserializableEvent):
     response_needed: bool
     prepared_write: bool
 
-    EVENT_NAME: ClassVar[str] = (snippet_constants.GATT_SERVER_DESCRIPTOR_WRITE_REQUEST)
+    EVENT_NAME = snippet_constants.GATT_SERVER_DESCRIPTOR_WRITE_REQUEST
 
     @override
     @classmethod
@@ -766,7 +779,7 @@ class GattCharacteristicChanged(JsonDeserializableEvent):
     handle: int
     value: bytes
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.GATT_CHARACTERISTIC_CHANGED
+    EVENT_NAME = snippet_constants.GATT_CHARACTERISTIC_CHANGED
 
     @classmethod
     def from_mapping(cls: Type[Self], mapping: Mapping[str, Any]) -> Self:
@@ -784,13 +797,12 @@ class VolumeChanged(JsonDeserializableEvent):
   Attributes:
     stream_type: type of stream.
     volume_value: index of volume for stream_type.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
     stream_type: android_constants.StreamType
     volume_value: int
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.VOLUME_CHANGED
+    EVENT_NAME = snippet_constants.VOLUME_CHANGED
 
     @override
     @classmethod
@@ -809,14 +821,13 @@ class CallStateChanged(JsonDeserializableEvent):
     handle: uri handle of the call.
     name: displayed name of caller.
     state: state of the call.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
     handle: str
     name: str
     state: android_constants.CallState
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.CALL_STATE_CHANGED
+    EVENT_NAME = snippet_constants.CALL_STATE_CHANGED
 
     @override
     @classmethod
@@ -835,13 +846,12 @@ class ProfileConnectionStateChanged(JsonDeserializableEvent):
   Attributes:
     address: mac address of remote device in string format.
     state: new bond state of remote device.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
     address: str
     state: android_constants.ConnectionState
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.PROFILE_CONNECTION_STATE_CHANGE
+    EVENT_NAME = snippet_constants.PROFILE_CONNECTION_STATE_CHANGE
 
     @override
     @classmethod
@@ -856,7 +866,7 @@ class ProfileConnectionStateChanged(JsonDeserializableEvent):
 class ProfileActiveDeviceChanged(JsonDeserializableEvent):
     address: str | None = None
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.ACTIVE_DEVICE_CHANGED
+    EVENT_NAME = snippet_constants.ACTIVE_DEVICE_CHANGED
 
     @override
     @classmethod
@@ -871,10 +881,9 @@ class HfpAgAudioStateChanged(JsonDeserializableEvent):
   Attributes:
     address: mac address of remote device in string format.
     state: new bond state of remote device.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.HFP_AG_AUDIO_STATE_CHANGED
+    EVENT_NAME = snippet_constants.HFP_AG_AUDIO_STATE_CHANGED
 
     address: str
     state: android_constants.ScoState
@@ -895,13 +904,12 @@ class HfpHfAudioStateChanged(JsonDeserializableEvent):
   Attributes:
     address: mac address of remote device in string format.
     state: new bond state of remote device.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
     address: str
     state: android_constants.ConnectionState
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.HFP_HF_AUDIO_STATE_CHANGED
+    EVENT_NAME = snippet_constants.HFP_HF_AUDIO_STATE_CHANGED
 
     @override
     @classmethod
@@ -919,7 +927,7 @@ class BatteryLevelChanged(JsonDeserializableEvent):
     address: str
     level: int
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.BATTERY_LEVEL_CHANGED
+    EVENT_NAME = snippet_constants.BATTERY_LEVEL_CHANGED
 
     @override
     @classmethod
@@ -933,7 +941,7 @@ class BatteryLevelChanged(JsonDeserializableEvent):
 @dataclasses.dataclass
 class BroadcastSourceFound(JsonDeserializableEvent):
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.BASS_SOURCE_FOUND
+    EVENT_NAME = snippet_constants.BASS_SOURCE_FOUND
 
     source: auracast_uri.BroadcastAudioUri
 
@@ -947,7 +955,7 @@ class BroadcastSourceFound(JsonDeserializableEvent):
 @dataclasses.dataclass
 class PlayerIsPlayingChanged(JsonDeserializableEvent):
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.PLAYER_IS_PLAYING_CHANGED
+    EVENT_NAME = snippet_constants.PLAYER_IS_PLAYING_CHANGED
 
     is_playing: bool
 
@@ -960,7 +968,7 @@ class PlayerIsPlayingChanged(JsonDeserializableEvent):
 @dataclasses.dataclass
 class PlayerMediaItemTransition(JsonDeserializableEvent):
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.PLAYER_MEDIA_ITEM_TRANSITION
+    EVENT_NAME = snippet_constants.PLAYER_MEDIA_ITEM_TRANSITION
 
     uri: str | None
 
@@ -986,7 +994,7 @@ class DistanceMeasurementResult(JsonDeserializableEvent):
     detected_attack_level: int | None = None
     measurement_timestamp_nanos: int | None = None
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.DISTANCE_MEASUREMENT_RESULT
+    EVENT_NAME = snippet_constants.DISTANCE_MEASUREMENT_RESULT
 
     @override
     @classmethod
@@ -1026,7 +1034,7 @@ class ScanResult(JsonDeserializableEvent):
     service_data: dict[str, bytes] | None = None
     manufacturer_data: dict[int, bytes] | None = None
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.SCAN_RESULT
+    EVENT_NAME = snippet_constants.SCAN_RESULT
 
     @override
     @classmethod
@@ -1148,7 +1156,7 @@ class BatchScanResults(JsonDeserializableEvent):
 
     results: Sequence[ScanResult]
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.BATCH_SCAN_RESULTS
+    EVENT_NAME = snippet_constants.BATCH_SCAN_RESULTS
 
     @override
     @classmethod
@@ -1285,8 +1293,6 @@ class LegacyAdvertiser:
                 _make_json_object(advertising_data),
                 _make_json_object(scan_response),
             ),)
-        if not cookie:
-            raise RuntimeError('Failed to start advertising.')
         return cls(cookie=cookie, snippet=snippet)
 
     def stop(self) -> None:
@@ -1473,6 +1479,26 @@ def find_characteristic_by_uuid(characteristic_uuid: str,
     if not characteristic:
         raise errors.NotFoundError(f'Characteristic with {characteristic_uuid} not found.')
     return characteristic
+
+
+def _schedule_rpc(
+    snippet: snippet_stub.BluetoothSnippet,
+    method_name: str,
+    args: Sequence[Any],
+    delay_ms: int = 0,
+) -> Coroutine[None, None, str]:
+    """Calls a snippet method asynchronously."""
+    handler = snippet.scheduleRpc(method_name, delay_ms, args)
+
+    async def wait_for_result() -> str:
+        response: callback_event.CallbackEvent = await asyncio.to_thread(
+            lambda: handler.waitAndGet(method_name))
+        # Mobly doesn't parse JSON events, so they are remained as strings.
+        if (error := response.data['error']) != 'null':
+            raise errors.SnippetError(error)
+        return response.data['result']
+
+    return wait_for_result()
 
 
 class PhoneCall:
@@ -1681,12 +1707,12 @@ class RfcommChannel:
     cookie: str
 
     @classmethod
-    async def connect_with_channel_number(
+    async def connect(
         cls: Type[Self],
         snippet: snippet_stub.BluetoothSnippet,
         address: str,
         secure: bool,
-        channel: int,
+        channel_or_uuid: int | str,
         retry_count: int = _DEFAULT_RETRY_COUNT,
     ) -> Self:
         """Connects an RFCOMM channel.
@@ -1695,7 +1721,7 @@ class RfcommChannel:
       snippet: snippet client instance.
       address: address of target device.
       secure: whether encryption is required.
-      channel: channel number of the RFCOMM channel.
+      channel_or_uuid: channel number or UUID of the RFCOMM channel.
       retry_count: allowed retry count of connect attempts.
 
     Returns:
@@ -1704,65 +1730,61 @@ class RfcommChannel:
     Raises:
       ConnectionError: RFCOMM is not connected after allowed retry counts.
     """
+        if isinstance(channel_or_uuid, int):
+            method = lambda: snippet.rfcommConnectWithChannel(address, secure, channel_or_uuid)
+        elif isinstance(channel_or_uuid, str):
+            method = lambda: snippet.rfcommConnectWithUuid(address, secure, channel_or_uuid)
+        else:
+            raise ValueError(f'Unsupported channel_or_uuid: {channel_or_uuid}')
 
         @retry.retry_on_exception(
             initial_delay_sec=_DEFAULT_RETRY_DELAY_SECONDS,
             num_retries=retry_count,
         )
-        async def inner():
-            with contextlib.suppress(mobly.snippet.errors.ApiError):
-                cookie = await asyncio.to_thread(
-                    snippet.rfcommConnectWithChannel,
-                    address,
-                    secure,
-                    channel,
-                )
+        async def inner() -> Self:
+            try:
+                cookie = await asyncio.to_thread(method)
                 return cls(snippet=snippet, cookie=cookie)
-            raise errors.ConnectionError('Unable to connect RFCOMM')
+            except mobly.snippet.errors.ApiError as e:
+                raise errors.ConnectionError('Unable to connect RFCOMM') from e
 
         return await inner()
 
     @classmethod
-    async def connect_with_service_record(
+    def connect_async(
         cls: Type[Self],
         snippet: snippet_stub.BluetoothSnippet,
         address: str,
         secure: bool,
-        uuid: str,
-        retry_count: int = _DEFAULT_RETRY_COUNT,
-    ) -> Self:
-        """Connects an RFCOMM channel with Service Record UUID.
+        channel_or_uuid: int | str,
+    ) -> Coroutine[None, None, Self]:
+        """Connects an RFCOMM channel asynchronously.
 
     Args:
-      snippet: Snippet client instance.
-      address: Address of target device.
-      secure: Whether encryption is required.
-      uuid: Service record UUID.
-      retry_count: Allowed retry count of connect attempts.
+      snippet: snippet client instance.
+      address: address of target device.
+      secure: whether encryption is required.
+      channel_or_uuid: channel number or UUID of the RFCOMM channel.
 
     Returns:
-      RFCOMM client wrapper instance.
-
-    Raises:
-      ConnectionError: RFCOMM is not connected after allowed retry counts.
+      A coroutine that will return the RFCOMM client wrapper instance.
     """
+        if isinstance(channel_or_uuid, int):
+            method = 'rfcommConnectWithChannel'
+        else:
+            method = 'rfcommConnectWithUuid'
 
-        @retry.retry_on_exception(
-            initial_delay_sec=_DEFAULT_RETRY_DELAY_SECONDS,
-            num_retries=retry_count,
+        coro = _schedule_rpc(
+            snippet,
+            method,
+            (address, secure, channel_or_uuid),
         )
-        async def inner():
-            with contextlib.suppress(mobly.snippet.errors.ApiError):
-                cookie = await asyncio.to_thread(
-                    snippet.rfcommConnectWithUuid,
-                    address,
-                    secure,
-                    uuid,
-                )
-                return cls(snippet=snippet, cookie=cookie)
-            raise errors.ConnectionError('Unable to connect RFCOMM')
 
-        return await inner()
+        async def inner() -> Self:
+            cookie = await coro
+            return cls(snippet=snippet, cookie=cookie)
+
+        return inner()
 
     async def close(self) -> None:
         """Closes the RFCOMM channel."""
@@ -2453,12 +2475,26 @@ class SnippetWrapper:
     Returns:
       The RFCOMM channel control block.
     """
-        if isinstance(channel_or_uuid, int):
-            return await RfcommChannel.connect_with_channel_number(self.snippet, address, secure,
-                                                                   channel_or_uuid, retry_count)
-        else:
-            return await RfcommChannel.connect_with_service_record(self.snippet, address, secure,
-                                                                   channel_or_uuid, retry_count)
+        return await RfcommChannel.connect(self.snippet, address, secure, channel_or_uuid,
+                                           retry_count)
+
+    def create_rfcomm_channel_async(
+        self,
+        address: str,
+        secure: bool,
+        channel_or_uuid: int | str,
+    ) -> Coroutine[None, None, RfcommChannel]:
+        """Creates an RFCOMM channel.
+
+    Args:
+      address: Address of target device.
+      secure: Whether encryption is required.
+      channel_or_uuid: Channel number or UUID of the RFCOMM service.
+
+    Returns:
+      The RFCOMM channel control block.
+    """
+        return RfcommChannel.connect_async(self.snippet, address, secure, channel_or_uuid)
 
     async def start_legacy_advertiser(
         self,

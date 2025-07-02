@@ -25,7 +25,7 @@ import pathlib
 import re
 import secrets
 import sys
-from typing import Any, cast, ClassVar, final, Never, TypeAlias
+from typing import Any, ClassVar, Never, TypeAlias, cast, final
 
 from absl.testing import absltest
 from bumble import pairing
@@ -39,6 +39,7 @@ from mobly import signals
 from mobly.controllers import android_device
 from mobly.controllers.android_device_lib import adb
 from mobly.controllers.android_device_lib import apk_utils
+import mobly.snippet.errors
 from snippet_uiautomator import uiautomator
 from typing_extensions import override
 
@@ -46,6 +47,7 @@ from navi.bumble_ext import crown
 from navi.utils import adb_snippets
 from navi.utils import android_constants
 from navi.utils import bl4a_api
+from navi.utils import constants
 from navi.utils import errors
 from navi.utils import logcat
 from navi.utils import matcher
@@ -56,6 +58,8 @@ _NAVI_PARAMETERIZED = "_NAVI_PARAMETERIZED"
 _SETUP_TIMEOUT_SECONDS = 10.0
 # 100 * 0.625ms = 62.5ms
 _DEFAULT_ADVERTISING_INTERVAL = 100
+RECORD_FULL_DATA = "record_full_data"
+_DEFAULT_STEP_TIMEOUT_SECONDS = 10.0
 
 
 class CrownDriver(enum.StrEnum):
@@ -699,6 +703,18 @@ class AndroidBumbleTestBase(BaseTestBase):
                     "run_identifier": f"[{manufacturer}-{self.dut.device.model}]",
                 }))
 
+    def write_test_output_data(self, filename: str, data: bytes | bytearray | memoryview) -> None:
+        """Writes the data to a file in the test output directory.
+
+    Args:
+      filename: The name of the file to save the data to.
+      data: The data to save.
+    """
+        self.logger.info("[DUT] Saving data to file.")
+        file_path = pathlib.Path(self.current_test_info.output_path, filename)
+        with open(file_path, "wb") as f:
+            f.write(data)
+
     def _get_btsnoop_and_dumpsys(self) -> None:
         adb_snippets.download_btsnoop(
             device=self.dut.device,
@@ -746,6 +762,18 @@ class AndroidBumbleTestBase(BaseTestBase):
         self.assertTrue(self.dut.bt.enable())
 
     @override
+    async def async_teardown_test(self) -> None:
+        try:
+            self.dut.bt.ping()
+        except (BrokenPipeError, mobly.snippet.errors.Error) as e:
+            if self.dut.device.is_adb_detectable():
+                self.logger.exception("Snippet is broken, reloading")
+                self.dut.reload_snippet()
+            else:
+                raise signals.TestAbortAll("DUT is disconnected, cannot continue the test.") from e
+        await super().async_teardown_test()
+
+    @override
     def on_fail(self, record: records.TestResultRecord) -> None:
         self._get_btsnoop_and_dumpsys()
 
@@ -763,9 +791,11 @@ class AndroidBumbleTestBase(BaseTestBase):
             ref.adapter.stop()
 
     @retry_lib.retry_on_exception(initial_delay_sec=1, num_retries=3)
-    async def classic_connect_and_pair(self,
-                                       ref: crown.CrownDevice | None = None
-                                      ) -> bumble.device.Connection:
+    async def classic_connect_and_pair(
+        self,
+        ref: crown.CrownDevice | None = None,
+        direction: constants.Direction = constants.Direction.OUTGOING,
+    ) -> bumble.device.Connection:
         """Connects and creates bond from DUT over BR/EDR.
 
     This is the most common pairing scenario between Android and headsets,
@@ -777,12 +807,15 @@ class AndroidBumbleTestBase(BaseTestBase):
     Args:
       ref: The Bumble device to pair with. If None, first Bumble device will be
         used.
+      direction: The direction of the pairing.
 
     Returns:
       REF->DUT ACL connection instance.
     """
         if ref is None:
             ref = self._refs[0]
+
+        auth_task: asyncio.Task[None] | None = None
 
         with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as dut_cb:
             match self.dut.bt.getBondState(ref.address):
@@ -806,16 +839,32 @@ class AndroidBumbleTestBase(BaseTestBase):
                     )
 
         with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as dut_cb:
-            self.assertTrue(
-                self.dut.bt.createBond(ref.address, android_constants.Transport.CLASSIC),
-                "Failed to create bond.",
-            )
+            if direction == constants.Direction.OUTGOING:
+                self.assertTrue(
+                    self.dut.bt.createBond(ref.address, android_constants.Transport.CLASSIC),
+                    "Failed to create bond.",
+                )
+            else:
+                self.logger.info("[REF] Connect to DUT.")
+                ref_dut = await ref.device.connect(
+                    f"{self.dut.address}/P",
+                    transport=bumble.core.BT_BR_EDR_TRANSPORT,
+                    timeout=_SETUP_TIMEOUT_SECONDS,
+                )
+                self.logger.info("[REF] Create bond.")
+                auth_task = asyncio.tasks.create_task(ref_dut.authenticate())
+
             self.logger.info("[DUT] Wait for pairing request.")
             await dut_cb.wait_for_event(
-                bl4a_api.PairingRequest(address=ref.address, variant=matcher.ANY, pin=matcher.ANY),
-                timeout=_SETUP_TIMEOUT_SECONDS,
-            )
+                bl4a_api.PairingRequest(address=ref.address, variant=matcher.ANY, pin=matcher.ANY),)
+
+            self.logger.info("[DUT] Handle pairing confirmation.")
             self.assertTrue(self.dut.bt.setPairingConfirmation(ref.address, True))
+
+            if auth_task is not None:
+                async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+                    await auth_task
+
             self.logger.info("[DUT] Wait for bond state change.")
             BondState: TypeAlias = android_constants.BondState
             pairing_complete_event = await dut_cb.wait_for_event(
@@ -840,6 +889,8 @@ class AndroidBumbleTestBase(BaseTestBase):
         self,
         ref_address_type: bumble.hci.OwnAddressType,
         ref: crown.CrownDevice | None = None,
+        direction: constants.Direction = constants.Direction.OUTGOING,
+        connect_profiles: bool = False,
     ) -> None:
         """Connects and creates bond from DUT over LE.
 
@@ -851,6 +902,9 @@ class AndroidBumbleTestBase(BaseTestBase):
       ref_address_type: OwnAddressType advertised by ref.
       ref: The Bumble device to pair with. If None, first Bumble device will be
         used.
+      direction: The direction of the pairing.
+      connect_profiles: Whether to connect profiles after pairing. This may
+        fails if REF has no known service UUIDs.
 
     Returns:
       None.
@@ -893,12 +947,31 @@ class AndroidBumbleTestBase(BaseTestBase):
                                                  DISPLAY_OUTPUT_AND_YES_NO_INPUT),
             )
 
-            async with self.assert_not_timeout(_SETUP_TIMEOUT_SECONDS):
-                await ref.device.start_advertising(own_address_type=ref_address_type,
-                                                   auto_restart=False)
+            pair_task: asyncio.Task[None] | None = None
+            if direction == constants.Direction.OUTGOING:
+                async with self.assert_not_timeout(_SETUP_TIMEOUT_SECONDS):
+                    await ref.device.start_advertising(own_address_type=ref_address_type,
+                                                       auto_restart=False)
 
-            self.assertTrue(
-                self.dut.bt.createBond(ref_addr, android_constants.Transport.LE, dut_scan_type))
+                self.assertTrue(
+                    self.dut.bt.createBond(ref_addr, android_constants.Transport.LE, dut_scan_type))
+            else:
+                advertiser = await self.dut.bl4a.start_legacy_advertiser(
+                    bl4a_api.LegacyAdvertiseSettings(
+                        own_address_type=android_constants.AddressTypeStatus.PUBLIC,
+                        connectable=True,
+                    ))
+                with advertiser:
+                    ref_dut_acl = await ref.device.connect(
+                        f"{self.dut.address}/P",
+                        transport=bumble.core.PhysicalTransport.LE,
+                        own_address_type=ref_address_type,
+                        timeout=_SETUP_TIMEOUT_SECONDS,
+                    )
+                    async with self.assert_not_timeout(_SETUP_TIMEOUT_SECONDS):
+                        await ref_dut_acl.get_remote_le_features()
+                    pair_task = asyncio.create_task(ref_dut_acl.pair())
+
             self.logger.info("[DUT] Wait for pairing request.")
             await dut_cb.wait_for_event(
                 bl4a_api.PairingRequest(address=ref_addr, variant=matcher.ANY, pin=matcher.ANY),
@@ -919,6 +992,20 @@ class AndroidBumbleTestBase(BaseTestBase):
             self.logger.info("[DUT] Pairing complete.")
             async with self.assert_not_timeout(_SETUP_TIMEOUT_SECONDS):
                 await ref.device.stop_advertising()
+
+            if pair_task:
+                async with self.assert_not_timeout(_SETUP_TIMEOUT_SECONDS):
+                    self.logger.info("[REF] Wait for pairing complete.")
+                    await pair_task
+
+            if connect_profiles:
+                self.logger.info("[DUT] Wait for UUID changed.")
+                await dut_cb.wait_for_event(
+                    bl4a_api.UuidChanged(address=ref_addr, uuids=matcher.ANY),
+                    timeout=_SETUP_TIMEOUT_SECONDS,
+                )
+                # Trigger profile connections.
+                self.dut.bt.connect(ref_addr)
 
 
 class OneDeviceTestBase(AndroidBumbleTestBase):

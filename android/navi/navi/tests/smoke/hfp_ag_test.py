@@ -407,6 +407,12 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
             f"/data/media/{self.dut.adb.current_user_id}/Recordings/record.wav",
         ])
 
+        if (self.user_params.get(navi_test_base.RECORD_FULL_DATA) and rx_received_buffer):
+            self.write_test_output_data(
+                f"hfp_ag_data.{preferred_codec.name.lower()}",
+                rx_received_buffer,
+            )
+
         if check_audio_correctness:
             tx_dominant_frequency = audio.get_dominant_frequency(
                 ref_sink_buffer,
@@ -732,6 +738,15 @@ class HfpAgTest(navi_test_base.TwoDevicesTestBase):
                     msg="[REF] Wait for HFP connected.",
             ):
                 ref_hfp_protocol = await ref_hfp_protocol_queue.get()
+
+            if not self.dut.device.is_emulator:
+                self.logger.info("[DUT] Wait for SCO active.")
+                await dut_audio_cb.wait_for_event(
+                    bl4a_api.CommunicationDeviceChanged(
+                        self.ref.address,
+                        device_type=android_constants.AudioDeviceType.BLUETOOTH_SCO,
+                    ))
+
             # Somehow volume change cannot be broadcasted to Bluetooth at the moment
             # when SCO becomes active.
             await asyncio.sleep(0.5)

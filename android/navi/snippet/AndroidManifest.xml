@@ -46,6 +46,7 @@
                        com.google.android.bluetooth.snippet.BluetoothAdapterSnippet,
                        com.google.android.bluetooth.snippet.BluetoothGattClientSnippet,
                        com.google.android.bluetooth.snippet.BluetoothGattServerSnippet,
+                       com.google.android.bluetooth.snippet.BluetoothHapClientSnippet,
                        com.google.android.bluetooth.snippet.BluetoothHfpAgSnippet,
                        com.google.android.bluetooth.snippet.BluetoothHfpHfSnippet,
                        com.google.android.bluetooth.snippet.BluetoothHidHostSnippet,
@@ -59,6 +60,7 @@
                        com.google.android.bluetooth.snippet.BluetoothRfcommSnippet,
                        com.google.android.bluetooth.snippet.DistanceMeasurementSnippet,
                        com.google.android.bluetooth.snippet.InputSnippet,
+                       com.google.android.bluetooth.snippet.OtherSnippet,
                        com.google.android.bluetooth.snippet.TelecomSnippet" />
     <service
         android:name=".InCallServiceImpl"

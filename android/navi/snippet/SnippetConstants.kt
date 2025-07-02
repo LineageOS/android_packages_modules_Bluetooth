@@ -45,6 +45,7 @@ object SnippetConstants {
     const val ACTIVE_DEVICE_CHANGED = "ACTIVE_DEVICE_CHANGED"
     const val PAIRING_REQUEST = "PAIRING_REQUEST"
     const val BOND_STATE_CHANGE = "BOND_STATE_CHANGE"
+    const val UUID_CHANGED = "UUID_CHANGED"
     const val ACL_CONNECTED = "ACL_CONNECTED"
     const val ACL_DISCONNECTED = "ACL_DISCONNECTED"
     const val DEVICE_FOUND = "DEVICE_FOUND"
@@ -192,4 +193,7 @@ object SnippetConstants {
     const val SIGHT_TYPE = "sight_type"
     const val LOCATION_TYPE = "location_type"
     const val SECURITY_LEVEL = "security_level"
+    const val PRESET_INFO_CHANGED = "PRESET_INFO_CHANGED"
+    const val PRESET_SELECTED = "PRESET_SELECTED"
+    const val SET_PRESET_NAME_FAILED = "SET_PRESET_NAME_FAILED"
 }

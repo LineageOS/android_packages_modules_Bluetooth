@@ -294,7 +294,7 @@ class HogpTest(navi_test_base.TwoDevicesTestBase):
         self._setup_hid_service()
         with self.dut.bl4a.register_callback(bl4a_api.Module.HID_HOST) as dut_hid_cb:
             self.logger.info("[DUT] Pair with REF")
-            await self.le_connect_and_pair(hci.OwnAddressType.RANDOM)
+            await self.le_connect_and_pair(hci.OwnAddressType.RANDOM, connect_profiles=True)
             self.logger.info("[DUT] Wait for HID connected")
             await dut_hid_cb.wait_for_event(
                 bl4a_api.ProfileConnectionStateChanged(
