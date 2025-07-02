@@ -126,11 +126,9 @@ struct Stack::impl {
         distance_measurement_manager_(new os::Handler(thread), &hci_layer_, &controller_,
                                       &acl_manager_, &ranging_hal_) {
 #ifndef TARGET_FLOSS
-    if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3286716
-      socket_hal_ = std::make_unique<hal::SocketHalImpl>();
-      lpp_offload_manager_ =
-              std::make_unique<lpp::LppOffloadManager>(new os::Handler(thread), socket_hal_.get());
-    }
+    socket_hal_ = std::make_unique<hal::SocketHalImpl>();
+    lpp_offload_manager_ =
+            std::make_unique<lpp::LppOffloadManager>(new os::Handler(thread), socket_hal_.get());
 #endif
   }
 
