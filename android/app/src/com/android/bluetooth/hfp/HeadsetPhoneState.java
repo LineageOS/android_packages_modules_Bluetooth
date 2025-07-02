@@ -350,14 +350,17 @@ public class HeadsetPhoneState {
 
         @Override
         public void onSignalStrengthsChanged(SignalStrength signalStrength) {
-            int prevSignal = mCindSignal;
             if (mCindService == HeadsetHalConstants.NETWORK_STATE_NOT_AVAILABLE) {
                 mCindSignal = 0;
-            } else {
-                mCindSignal = signalStrength.getLevel() + 1;
+                // sendDeviceStateChanged is sent in onServiceStateChanged for this case
+                return;
             }
+
+            int prevSignal = mCindSignal;
+
             // +CIND "signal" indicator is always between 0 to 5
-            mCindSignal = Integer.max(Integer.min(mCindSignal, 5), 0);
+            mCindSignal = Integer.max(Integer.min(signalStrength.getLevel() + 1, 5), 0);
+
             // This results in a lot of duplicate messages, hence this check
             if (prevSignal != mCindSignal) {
                 sendDeviceStateChanged();
