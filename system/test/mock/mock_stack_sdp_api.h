@@ -22,6 +22,7 @@
  */
 
 #include <base/functional/callback.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 
 #include <cstdint>
@@ -30,7 +31,6 @@
 #include "stack/include/sdp_callback.h"
 #include "stack/include/sdp_device_id.h"
 #include "stack/sdp/sdp_discovery_db.h"
-#include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
 namespace test {

@@ -31,6 +31,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/remote_version.h>
 #include <com_android_bluetooth_flags.h>
@@ -81,7 +82,6 @@
 #include "stack/include/rnr_interface.h"
 #include "stack/include/smp_api.h"
 #include "stack/include/smp_status.h"
-#include "types/raw_address.h"
 
 namespace {
 constexpr char kBtmLogTag[] = "SEC";

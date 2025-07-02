@@ -27,6 +27,7 @@
 #include "stack/include/port_api.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -40,7 +41,6 @@
 #include "stack/include/btm_log_history.h"
 #include "stack/include/rfcdefs.h"
 #include "stack/rfcomm/rfc_int.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

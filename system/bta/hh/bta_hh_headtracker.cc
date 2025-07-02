@@ -17,6 +17,7 @@
 #define LOG_TAG "bta_hh_headtracker"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 
@@ -29,7 +30,6 @@
 #include "gatt_api.h"
 #include "gattdefs.h"
 #include "hardware/bluetooth.h"
-#include "types/raw_address.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;

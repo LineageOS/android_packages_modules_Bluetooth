@@ -19,12 +19,13 @@
  *   Functions generated:8
  */
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "bta/hf_client/bta_hf_client_int.h"
 #include "bta/include/bta_hf_client_api.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 tBTA_STATUS BTA_HfClientEnable(tBTA_HF_CLIENT_CBACK* /* p_cback */,
                                tBTA_HF_CLIENT_FEAT /* features */,

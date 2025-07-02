@@ -15,13 +15,14 @@
  */
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "stack/include/bt_name.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/security_client_callbacks.h"
-#include "types/raw_address.h"
 
 /* Structure returned with remote name request */
 struct tBTM_REMOTE_DEV_NAME {

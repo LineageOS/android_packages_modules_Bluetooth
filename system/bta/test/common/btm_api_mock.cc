@@ -18,6 +18,7 @@
 #include "btm_api_mock.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <optional>
 
@@ -28,7 +29,6 @@
 #include "stack/include/btm_ble_addr.h"
 #include "stack/include/btm_ble_sec_api.h"
 #include "test/mock/mock_stack_btm_interface.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

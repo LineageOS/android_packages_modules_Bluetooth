@@ -15,6 +15,7 @@
  */
 
 // #include <dlfcn.h>
+#include <bluetooth/types/address.h>
 #include <gtest/gtest.h>
 #include <sys/types.h>
 
@@ -27,7 +28,6 @@
 #include "stack/include/main_thread.h"
 #include "stack/test/common/mock_stack_avdt_msg.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 bluetooth::common::MessageLoopThread* get_main_thread() { return nullptr; }
 

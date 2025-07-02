@@ -18,13 +18,13 @@
 
 #include "hci/address.h"
 
+#include <bluetooth/types/address.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <iomanip>
 #include <sstream>
-
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace hci {

@@ -46,16 +46,17 @@
 #ifdef __ANDROID__
 #endif
 
+#include <bluetooth/types/address.h>
+
 #include "btif/include/btif_config.h"
-#include "device/include/interop_config.h"
 #include "device/include/device_iot_config.h"
+#include "device/include/interop_config.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/port_api.h"
 #include "stack/include/sdp_api.h"
 #include "storage/config_keys.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 using namespace bluetooth::legacy::stack::sdp;

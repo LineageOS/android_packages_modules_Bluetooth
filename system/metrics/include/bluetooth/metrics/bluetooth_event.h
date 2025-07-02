@@ -17,6 +17,7 @@
 #pragma once
 
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 
 #include "bta/include/bta_ag_api.h"
 #include "bta/include/bta_sec_api.h"
@@ -24,7 +25,6 @@
 #include "hci/hci_packets.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
-#include "types/raw_address.h"
 
 namespace bluetooth::metrics {
 

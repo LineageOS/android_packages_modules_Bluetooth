@@ -24,8 +24,9 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/main_thread.h"
 #undef LOG_TAG
+#include <bluetooth/types/address.h>
+
 #include "stack/gatt/gatt_sr.cc"
-#include "types/raw_address.h"
 
 #define MAX_UINT16 ((uint16_t)0xffff)
 

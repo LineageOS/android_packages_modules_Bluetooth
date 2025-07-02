@@ -16,13 +16,14 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 #include <string>
 
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hci_mode.h"
-#include "types/raw_address.h"
 
 /* BTM Power manager status codes */
 enum : uint8_t {

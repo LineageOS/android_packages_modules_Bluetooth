@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <hardware/bt_le_audio.h>
 
 #include <chrono>
@@ -24,7 +25,6 @@
 #include <unordered_map>
 
 #include "le_audio_types.h"
-#include "types/raw_address.h"
 
 namespace bluetooth::le_audio {
 

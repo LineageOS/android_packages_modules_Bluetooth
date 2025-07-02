@@ -32,10 +32,10 @@
 //       for this effort.  This compilation unit may compile as-is, or
 //       may need attention to prune from (or add to ) the inclusion set.
 
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 
 #include "stack/include/avrc_api.h"
-#include "types/raw_address.h"
 
 // Original usings
 using bluetooth::Uuid;

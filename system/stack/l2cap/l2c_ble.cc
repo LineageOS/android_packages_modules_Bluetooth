@@ -31,6 +31,8 @@
 #include <android/sysprop/BluetoothProperties.sysprop.h>
 #endif
 
+#include <bluetooth/types/address.h>
+
 #include "btif/include/core_callbacks.h"
 #include "btif/include/stack_manager_t.h"
 #include "common/le_conn_params.h"
@@ -61,7 +63,6 @@
 #include "stack/include/l2cdefs.h"
 #include "stack/include/main_thread.h"
 #include "stack/l2cap/l2c_int.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

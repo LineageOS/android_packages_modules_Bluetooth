@@ -17,6 +17,7 @@
 #ifndef ANDROID_INCLUDE_BLE_SCANNER_H
 #define ANDROID_INCLUDE_BLE_SCANNER_H
 
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 #include <stdint.h>
 
@@ -26,7 +27,6 @@
 #include "bt_common_types.h"
 #include "bt_gatt_client.h"
 #include "bt_gatt_types.h"
-#include "types/raw_address.h"
 
 class AdvertisingTrackInfo {
 public:

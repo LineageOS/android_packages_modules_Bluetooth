@@ -26,6 +26,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstddef>
@@ -58,7 +59,6 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/main_thread.h"
-#include "types/raw_address.h"
 
 using HfpInterface = bluetooth::audio::hfp::HfpClientInterface;
 using namespace bluetooth;

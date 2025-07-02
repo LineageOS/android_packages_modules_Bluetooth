@@ -24,12 +24,12 @@
 #define A2DP_API_H
 
 #include <base/functional/callback.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 
 #include "stack/include/a2dp_constants.h"
 #include "stack/include/sdp_api.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  constants

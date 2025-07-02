@@ -32,6 +32,7 @@
 #define LOG_TAG "bt_btm_pm"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 #include <unordered_map>
@@ -50,7 +51,6 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/l2cap_hci_link_interface.h"
 #include "stack/include/sco_hci_link_interface.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

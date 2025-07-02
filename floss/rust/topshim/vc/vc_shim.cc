@@ -18,12 +18,12 @@
 
 #include <aics/api.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <hardware/bluetooth.h>
 
 #include <string>
 
 #include "src/profiles/vc.rs.h"
-#include "types/raw_address.h"
 
 namespace rusty = ::bluetooth::topshim::rust;
 

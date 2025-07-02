@@ -21,6 +21,7 @@
 
 #include "test/mock/mock_stack_btm_dev.h"
 
+#include <bluetooth/types/address.h>
 #include <stddef.h>
 #include <stdlib.h>
 
@@ -32,7 +33,6 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_sec_api.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 namespace test {
 namespace mock {

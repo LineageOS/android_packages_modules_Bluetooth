@@ -16,7 +16,7 @@ cc_library_static {
         "bluetooth_tidy",
     ],
     srcs: [
-        "raw_address.cc",
+        "src/address.cc",
         "src/uuid.cc",
     ],
     export_include_dirs: [
@@ -47,10 +47,10 @@ cc_test {
     ],
     host_supported: true,
     srcs: [
+        "test/address_unittest.cc",
         "test/ble_address_with_type_unittest.cc",
-        "test/bluetooth/uuid_unittest.cc",
         "test/bt_name_test.cc",
-        "test/raw_address_unittest.cc",
+        "test/uuid_unittest.cc",
     ],
     shared_libs: ["liblog"],
 }

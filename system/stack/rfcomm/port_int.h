@@ -25,6 +25,8 @@
 #ifndef PORT_INT_H
 #define PORT_INT_H
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "include/macros.h"
@@ -36,7 +38,6 @@
 #include "stack/include/rfcdefs.h"
 #include "stack/rfcomm/rfc_event.h"
 #include "stack/rfcomm/rfc_state.h"
-#include "types/raw_address.h"
 
 /*
  * Flow control configuration values for the mux

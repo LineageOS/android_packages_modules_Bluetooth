@@ -19,11 +19,12 @@
 #ifndef BTM_BLE_INT_TYPES_H
 #define BTM_BLE_INT_TYPES_H
 
+#include <bluetooth/types/address.h>
+
 #include "macros.h"
 #include "osi/include/alarm.h"
 #include "stack/btm/neighbor_inquiry.h"
 #include "stack/include/btm_ble_api_types.h"
-#include "types/raw_address.h"
 
 /* scanning enable status */
 #define BTM_BLE_SCAN_ENABLE 0x01

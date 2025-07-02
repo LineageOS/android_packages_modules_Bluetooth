@@ -17,9 +17,8 @@
 #ifndef ANDROID_INCLUDE_BT_HEARING_AID_H
 #define ANDROID_INCLUDE_BT_HEARING_AID_H
 
+#include <bluetooth/types/address.h>
 #include <hardware/bluetooth.h>
-
-#include "types/raw_address.h"
 
 namespace bluetooth::asha {
 

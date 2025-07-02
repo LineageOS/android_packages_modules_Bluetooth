@@ -18,6 +18,7 @@
 #define ANDROID_INCLUDE_BT_AV_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <hardware/bluetooth.h>
 
 #include <optional>
@@ -25,7 +26,6 @@
 #include <vector>
 
 #include "stack/include/a2dp_constants.h"
-#include "types/raw_address.h"
 
 __BEGIN_DECLS
 

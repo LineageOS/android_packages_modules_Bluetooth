@@ -24,6 +24,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <string.h>
 
 #include <cstdint>
@@ -31,7 +32,6 @@
 #include "avct_api.h"
 #include "avct_int.h"
 #include "internal_include/bt_target.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

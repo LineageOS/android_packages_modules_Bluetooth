@@ -16,10 +16,10 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 #include <memory>
-
-#include "types/raw_address.h"
 
 namespace power_telemetry {
 

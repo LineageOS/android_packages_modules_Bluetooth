@@ -25,6 +25,7 @@
 #define BTA_AG_INT_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 #include <string>
@@ -39,7 +40,6 @@
 #include "stack/include/btm_api_types.h"
 #include "stack/include/sdp_status.h"
 #include "stack/sdp/sdp_discovery_db.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants

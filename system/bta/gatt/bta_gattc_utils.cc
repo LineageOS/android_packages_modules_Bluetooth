@@ -25,6 +25,7 @@
 #define LOG_TAG "bt_bta_gattc"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/hci_role.h>
 
@@ -36,7 +37,6 @@
 #include "internal_include/bt_trace.h"
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

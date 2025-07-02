@@ -17,9 +17,9 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include "hardware/bluetooth.h"
-#include "types/raw_address.h"
 
 #define BTPAN_ROLE_NONE 0
 #define BTPAN_ROLE_PANNAP 1

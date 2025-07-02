@@ -20,6 +20,7 @@
 
 #include "mock_stack_btm_interface.h"
 
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
 
 #include "stack/include/btm_ble_api.h"
@@ -28,7 +29,6 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
-#include "types/raw_address.h"
 
 // Test accessible feature page
 uint8_t hci_feature_bytes_per_page[HCI_FEATURE_BYTES_PER_PAGE] = {};

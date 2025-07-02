@@ -24,6 +24,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/hci_role.h>
 #include <stdbool.h>
 
@@ -40,7 +41,6 @@
 #include "stack/include/hci_error_code.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/l2cap/internal/l2c_api.h"
-#include "types/raw_address.h"
 
 #define L2CAP_MIN_MTU 48 /* Minimum acceptable MTU is 48 bytes */
 

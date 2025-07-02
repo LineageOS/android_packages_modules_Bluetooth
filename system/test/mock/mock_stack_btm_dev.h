@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/address.h>
+
 #include <functional>
 
 #include "stack/btm/btm_dev.h"
-#include "types/raw_address.h"
 
 namespace test {
 namespace mock {

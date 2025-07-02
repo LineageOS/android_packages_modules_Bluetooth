@@ -41,6 +41,7 @@ cc_library_static {
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
+        "packages/modules/Bluetooth/system/types/include",
     ],
     host_supported: true,
     visibility: [

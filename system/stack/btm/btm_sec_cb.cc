@@ -20,6 +20,7 @@
 #include "stack/btm/btm_sec_cb.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -32,7 +33,6 @@
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/security_device_record.h"
 #include "stack/include/bt_psm_types.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

@@ -17,11 +17,11 @@
  ******************************************************************************/
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <gmock/gmock.h>
 
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace manager {

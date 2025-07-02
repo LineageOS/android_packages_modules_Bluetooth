@@ -19,13 +19,14 @@
  *   Functions generated:8
  */
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "bta/include/bta_ar_api.h"
 #include "bta/sys/bta_sys.h"
 #include "stack/include/avdt_api.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 void bta_ar_dereg_avct() { inc_func_call_count(__func__); }
 void bta_ar_dereg_avdt() { inc_func_call_count(__func__); }

@@ -17,13 +17,13 @@
 #pragma once
 
 #include <base/functional/callback_forward.h>
+#include <bluetooth/types/address.h>
 
 #include <set>
 #include <string>
 #include <vector>
 
 #include "avrcp_common.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace avrcp {

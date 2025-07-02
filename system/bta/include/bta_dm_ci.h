@@ -24,10 +24,11 @@
 #ifndef BTA_DM_CI_H
 #define BTA_DM_CI_H
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "stack/include/bt_octets.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Function Declarations

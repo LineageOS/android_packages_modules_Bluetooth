@@ -19,6 +19,7 @@
 #include "le_advertising_manager.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_gatt.h>
@@ -31,7 +32,6 @@
 #include "main/shim/helpers.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/main_thread.h"
-#include "types/raw_address.h"
 #include "utils.h"
 
 using bluetooth::hci::Address;

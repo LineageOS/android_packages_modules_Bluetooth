@@ -25,6 +25,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -38,7 +39,6 @@
 #include "stack/include/bt_octets.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btu_hcif.h"
-#include "types/raw_address.h"
 
 /*******************************************************************************
  * BLE Commands

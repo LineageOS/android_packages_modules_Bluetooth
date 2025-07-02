@@ -21,17 +21,17 @@
 
 #include <base/functional/callback_forward.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <hardware/bt_common_types.h>
 
 #include <cstdint>
 #include <vector>
 
+#include "stack/include/ble_appearance.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
-#include "stack/include/ble_appearance.h"
 #include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 
 #define CHNL_MAP_LEN 5
 typedef uint8_t tBTM_BLE_CHNL_MAP[CHNL_MAP_LEN];

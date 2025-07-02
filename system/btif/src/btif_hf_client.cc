@@ -47,6 +47,7 @@
 #include "btif_hf_client.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_hf_client.h>
 
@@ -62,7 +63,6 @@
 #include "osi/include/properties.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/bt_uuid16.h"
-#include "types/raw_address.h"
 
 /*******************************************************************************
  *  Constants & Macros

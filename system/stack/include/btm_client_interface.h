@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
 
 #include <cstdint>
@@ -30,7 +31,6 @@
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/security_client_callbacks.h"
-#include "types/raw_address.h"
 
 struct btm_client_interface_t {
   struct {

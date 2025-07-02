@@ -16,8 +16,7 @@
  *
  ******************************************************************************/
 
-#include "raw_address.h"
-
+#include <bluetooth/types/address.h>
 #include <stdint.h>
 
 #include <algorithm>

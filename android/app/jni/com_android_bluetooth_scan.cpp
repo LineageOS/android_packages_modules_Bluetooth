@@ -19,6 +19,7 @@
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 #include <jni.h>
 #include <nativehelper/JNIHelp.h>
@@ -44,7 +45,6 @@
 #include "hardware/bt_common_types.h"
 #include "hardware/bt_gatt.h"
 #include "main/shim/le_scanning_manager.h"
-#include "types/raw_address.h"
 
 using bluetooth::Uuid;
 

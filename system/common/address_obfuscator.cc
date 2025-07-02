@@ -19,12 +19,12 @@
 #include "address_obfuscator.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <openssl/hmac.h>
 
 #include <algorithm>
 
 #include "internal_include/bt_trace.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace common {

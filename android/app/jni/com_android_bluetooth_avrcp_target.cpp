@@ -19,6 +19,7 @@
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <jni.h>
 
 #include <cerrno>
@@ -35,7 +36,6 @@
 #include "hardware/avrcp/avrcp.h"
 #include "hardware/avrcp/avrcp_common.h"
 #include "hardware/bluetooth.h"
-#include "types/raw_address.h"
 
 using bluetooth::avrcp::Attribute;
 using bluetooth::avrcp::AttributeEntry;

@@ -18,6 +18,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
 
@@ -38,7 +39,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/sdp_api.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;

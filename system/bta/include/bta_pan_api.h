@@ -26,9 +26,9 @@
 #ifndef BTA_PAN_API_H
 #define BTA_PAN_API_H
 
-#include <cstdint>
+#include <bluetooth/types/address.h>
 
-#include "types/raw_address.h"
+#include <cstdint>
 
 /*****************************************************************************
  *  Constants and data types

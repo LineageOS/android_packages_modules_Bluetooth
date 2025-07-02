@@ -21,6 +21,7 @@
 
 #include <android_bluetooth_sysprop.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstddef>
@@ -62,7 +63,6 @@
 #include "stack/include/smp_api_types.h"
 #include "stack/l2cap/l2c_api.h"
 #include "stack/l2cap/l2c_int.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

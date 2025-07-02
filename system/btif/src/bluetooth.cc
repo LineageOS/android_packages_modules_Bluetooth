@@ -33,7 +33,9 @@
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/metric_id_api.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <cstdlib>
@@ -131,8 +133,6 @@
 #include "stack/include/sdp_api.h"
 #include "storage/config_keys.h"
 #include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
-#include "com_android_bluetooth_flags.h"
 
 using namespace bluetooth;
 

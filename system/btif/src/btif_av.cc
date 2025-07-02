@@ -23,6 +23,7 @@
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/a2dp/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
@@ -76,7 +77,6 @@
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/main_thread.h"
-#include "types/raw_address.h"
 
 #ifdef __ANDROID__
 #include <android/sysprop/BluetoothProperties.sysprop.h>

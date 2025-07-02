@@ -19,6 +19,7 @@
 #include "main/shim/btm_api.h"
 
 #include <base/functional/callback.h>
+#include <bluetooth/types/address.h>
 
 #include "hci/acl_manager/acl_manager_le.h"
 #include "hci/controller.h"
@@ -29,7 +30,6 @@
 #include "stack/btm/btm_ble_sec.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/include/btm_status.h"
-#include "types/raw_address.h"
 
 tBTM_STATUS bluetooth::shim::BTM_ClearEventFilter() {
   GetController()->SetEventFilterClearAll();

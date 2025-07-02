@@ -27,9 +27,10 @@
 
 // Original included files, if any
 
+#include <bluetooth/types/address.h>
+
 #include "device/include/interop.h"
 #include "osi/include/list.h"
-#include "types/raw_address.h"
 
 // Original usings
 

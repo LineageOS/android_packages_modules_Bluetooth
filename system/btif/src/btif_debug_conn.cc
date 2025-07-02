@@ -18,10 +18,10 @@
 
 #include "btif/include/btif_debug_conn.h"
 
+#include <bluetooth/types/address.h>
 #include <time.h>
 
 #include "common/time_util.h"
-#include "types/raw_address.h"
 
 #define NUM_CONNECTION_EVENTS 16
 #define TEMP_BUFFER_SIZE 30

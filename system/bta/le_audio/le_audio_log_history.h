@@ -16,9 +16,9 @@
 
 #pragma once
 
-#include <string>
+#include <bluetooth/types/address.h>
 
-#include "types/raw_address.h"
+#include <string>
 
 /* Some predefined tags */
 static std::string kLogConnectionTag("CONN_STATE");

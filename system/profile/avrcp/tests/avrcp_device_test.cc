@@ -16,6 +16,7 @@
 
 #include <base/functional/bind.h>
 #include <base/threading/thread.h>
+#include <bluetooth/types/address.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -29,7 +30,6 @@
 #include "internal_include/stack_config.h"
 #include "tests/avrcp/avrcp_test_packets.h"
 #include "tests/packet_test_helper.h"
-#include "types/raw_address.h"
 
 bool btif_av_src_sink_coexist_enabled(void) { return true; }
 

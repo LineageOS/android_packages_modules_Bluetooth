@@ -24,6 +24,7 @@
 #ifndef BTA_GATTS_INT_H
 #define BTA_GATTS_INT_H
 
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 
 #include <cstdint>
@@ -35,7 +36,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/gatt_api.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants and data types

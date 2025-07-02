@@ -26,6 +26,7 @@
 #define LOG_TAG "pan"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 #include <string.h>  // memset
 
@@ -38,7 +39,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/pan/pan_int.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 using bluetooth::Uuid;

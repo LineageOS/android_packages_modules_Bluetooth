@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/hci_role.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -29,7 +30,6 @@
 #include "stack/include/hcidefs.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_main_shim_entry.h"
-#include "types/raw_address.h"
 
 tBTM_CB btm_cb;
 

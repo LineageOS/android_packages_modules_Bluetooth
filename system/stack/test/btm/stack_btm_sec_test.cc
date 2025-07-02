@@ -15,6 +15,7 @@
  *
  */
 
+#include <bluetooth/types/address.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -35,7 +36,6 @@
 #include "stack/include/sec_hci_link_interface.h"
 #include "stack/test/btm/btm_test_fixtures.h"
 #include "test/mock/mock_main_shim_entry.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

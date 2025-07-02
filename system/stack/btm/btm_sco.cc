@@ -29,6 +29,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 #include <cstring>
@@ -62,7 +63,6 @@
 #include "stack/include/main_thread.h"
 #include "stack/include/sco_hci_link_interface.h"
 #include "stack/include/sdpdefs.h"
-#include "types/raw_address.h"
 
 /* Default to allow enhanced connections where supported. */
 constexpr bool kDefaultDisableEnhancedConnection = false;

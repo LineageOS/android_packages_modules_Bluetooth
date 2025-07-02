@@ -27,6 +27,7 @@
 
 // Original included files, if any
 #include <base/functional/bind.h>
+#include <bluetooth/types/address.h>
 
 #include <vector>
 
@@ -36,7 +37,6 @@
 #include "stack/include/bt_device_type.h"
 #include "stack/include/bt_octets.h"
 #include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 
 // Original usings
 

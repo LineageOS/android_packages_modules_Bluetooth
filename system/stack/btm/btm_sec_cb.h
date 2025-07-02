@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 #include <list>
 
@@ -28,8 +30,6 @@
 #include "stack/btm/security_device_record.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/security_client_callbacks.h"
-#include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 
 class tBTM_SEC_CB {
 public:

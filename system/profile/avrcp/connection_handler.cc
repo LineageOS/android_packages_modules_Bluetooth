@@ -20,6 +20,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <map>
@@ -36,7 +37,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/sdp_status.h"
-#include "types/raw_address.h"
 
 extern bool btif_av_peer_is_connected_sink(const RawAddress& peer_address);
 extern bool btif_av_peer_is_connected_source(const RawAddress& peer_address);

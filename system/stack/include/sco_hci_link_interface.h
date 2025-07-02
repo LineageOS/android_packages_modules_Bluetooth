@@ -17,12 +17,13 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "hci/class_of_device.h"
 #include "stack/include/bt_dev_class.h"
 #include "stack/include/hci_error_code.h"
-#include "types/raw_address.h"
 
 struct tBTM_ESCO_DATA;
 

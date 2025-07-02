@@ -31,13 +31,14 @@
 //       still applies, but crafting proper inclusion is out of scope
 //       for this effort.  This compilation unit may compile as-is, or
 //       may need attention to prune from (or add to ) the inclusion set.
+#include <bluetooth/types/address.h>
+
 #include "bta/av/bta_av_int.h"
 #include "btif/include/btif_av.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
-#include "types/raw_address.h"
 
 // Original usings
 

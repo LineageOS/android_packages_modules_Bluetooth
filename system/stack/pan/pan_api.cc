@@ -28,6 +28,7 @@
 #include "stack/include/pan_api.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 
 #include <cstdint>
@@ -44,7 +45,6 @@
 #include "stack/include/btm_log_history.h"
 #include "stack/include/sdp_api.h"
 #include "stack/pan/pan_int.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 using namespace bluetooth::legacy::stack::sdp;

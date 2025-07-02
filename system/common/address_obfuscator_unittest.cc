@@ -18,9 +18,8 @@
 
 #include "address_obfuscator.h"
 
+#include <bluetooth/types/address.h>
 #include <gtest/gtest.h>
-
-#include "types/raw_address.h"
 
 using bluetooth::common::AddressObfuscator;
 
