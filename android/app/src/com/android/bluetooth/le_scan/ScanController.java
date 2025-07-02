@@ -671,7 +671,8 @@ public class ScanController {
     }
 
     // Check if a scan record matches a specific filters or original address
-    private static boolean matchesFilters(
+    @VisibleForTesting
+    static boolean matchesFilters(
             ScanClient client, ScanResult scanResult, String originalAddress) {
         if (Flags.rssiScanFilter()) {
             ScanSettings settings = client.mSettings;
@@ -688,9 +689,17 @@ public class ScanController {
             if (filter.matches(scanResult)) {
                 return true;
             }
-            if (originalAddress != null
-                    && originalAddress.equalsIgnoreCase(filter.getDeviceAddress())) {
-                return true;
+            if (Flags.originalAddressFilterMatch()) {
+                if (originalAddress != null
+                        && originalAddress.equalsIgnoreCase(filter.getDeviceAddress())
+                        && filter.matchesWithoutAddress(scanResult)) {
+                    return true;
+                }
+            } else {
+                if (originalAddress != null
+                        && originalAddress.equalsIgnoreCase(filter.getDeviceAddress())) {
+                    return true;
+                }
             }
         }
         return false;
@@ -1454,10 +1463,15 @@ public class ScanController {
     }
 
     void flushPendingBatchResults(int scannerId) {
-        Log.d(TAG, "flushPendingBatchResults - scannerId=" + scannerId);
+        final var scanClient = findBatchScanClientById(scannerId);
+        if (scanClient == null) {
+            Log.e(TAG, "Unexpectedly cannot find batch scan client for scannerId=" + scannerId);
+            return;
+        }
+        Log.d(TAG, "flushPendingBatchResults for client: " + scanClient);
         doOnScanThread(
                 () -> {
-                    mScanManager.flushBatchScanResults(new ScanClient(scannerId));
+                    mScanManager.flushBatchScanResults(scanClient);
                 });
     }
 
@@ -1557,7 +1571,8 @@ public class ScanController {
     }
 
     /**
-     * Ensures the report delay is either 0 or at least the floor value (5000ms)
+     * Ensures the report delay is either 0 or at least the floor value ({@link
+     * #DEFAULT_REPORT_DELAY_FLOOR_MS}).
      *
      * @param settings are the scan settings passed into a request to start le scanning
      * @return the passed in ScanSettings object if the report delay is 0 or above the floor value;
@@ -1566,22 +1581,37 @@ public class ScanController {
      */
     @VisibleForTesting
     ScanSettings enforceReportDelayFloor(ScanSettings settings) {
-        if (settings.getReportDelayMillis() == 0) {
+        final long originalDelay = settings.getReportDelayMillis();
+        if (originalDelay == 0) {
+            Log.d(TAG, "enforceReportDelayFloor(): Report delay is 0, skipping floor enforcement.");
             return settings;
         }
 
         // Need to clear identity to pass device config permission check
         final long callerToken = Binder.clearCallingIdentity();
         try {
-            long floor =
+            final long floor =
                     DeviceConfig.getLong(
                             DeviceConfig.NAMESPACE_BLUETOOTH,
                             "report_delay",
                             DEFAULT_REPORT_DELAY_FLOOR_MS);
-
-            if (settings.getReportDelayMillis() > floor) {
+            if (originalDelay >= floor) {
+                Log.d(
+                        TAG,
+                        "enforceReportDelayFloor(): Report delay "
+                                + originalDelay
+                                + "ms is above or equal to floor "
+                                + floor
+                                + "ms, no changes.");
                 return settings;
             } else {
+                Log.d(
+                        TAG,
+                        "enforceReportDelayFloor(): Enforcing floor: original delay "
+                                + originalDelay
+                                + "ms is below floor, setting to "
+                                + floor
+                                + "ms.");
                 return new ScanSettings.Builder()
                         .setCallbackType(settings.getCallbackType())
                         .setLegacy(settings.getLegacy())

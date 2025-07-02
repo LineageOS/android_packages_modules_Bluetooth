@@ -28,15 +28,18 @@ import static com.android.bluetooth.hap.HapClientNativeCallback.STATUS_OPERATION
 import static com.android.bluetooth.hap.HapClientNativeCallback.STATUS_OPERATION_NOT_SUPPORTED;
 import static com.android.bluetooth.hap.HapClientNativeCallback.STATUS_SET_NAME_NOT_ALLOWED;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothHapPresetInfo;
-
-import androidx.test.runner.AndroidJUnit4;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
+import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.common.truth.Expect;
@@ -48,11 +51,16 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
+import platform.test.runner.parameterized.Parameters;
+
 import java.util.List;
+import java.util.function.Consumer;
 
 /** Test cases for {@link HapClientNativeCallback}. */
-@RunWith(AndroidJUnit4.class)
+@RunWith(ParameterizedAndroidJunit4.class)
 public class HapClientNativeCallbackTest {
+    @Rule public final SetFlagsRule mSetFlagsRule;
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Rule public Expect expect = Expect.create();
 
@@ -62,10 +70,26 @@ public class HapClientNativeCallbackTest {
     private InOrder mInOrder;
     private HapClientNativeCallback mNativeCallback;
 
+    @Parameters(name = "{0}")
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(Flags.FLAG_HAP_ON_MAIN_LOOPER);
+    }
+
+    public HapClientNativeCallbackTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
+    }
+
     @Before
     public void setUp() throws Exception {
         mInOrder = inOrder(mService);
         doReturn(true).when(mService).isAvailable();
+        doAnswer(
+                        inv -> {
+                            ((Consumer<HapClientService>) inv.getArgument(0)).accept(mService);
+                            return null;
+                        })
+                .when(mService)
+                .syncPost(any());
         mNativeCallback = new HapClientNativeCallback(mAdapterService, mService);
     }
 

@@ -447,6 +447,7 @@ public final class ScanFilter implements Parcelable {
         if (scanResult == null) {
             return false;
         }
+
         BluetoothDevice device = scanResult.getDevice();
         // Device match.
         if (mDeviceAddress != null
@@ -454,70 +455,7 @@ public final class ScanFilter implements Parcelable {
             return false;
         }
 
-        ScanRecord scanRecord = scanResult.getScanRecord();
-
-        // Scan record is null but there exist filters on it.
-        if (scanRecord == null
-                && (mDeviceName != null
-                        || mServiceUuid != null
-                        || mManufacturerData != null
-                        || mServiceData != null
-                        || mServiceSolicitationUuid != null
-                        || mAdvertisingData != null)) {
-            return false;
-        }
-
-        // Local name match.
-        if (mDeviceName != null && !mDeviceName.equals(scanRecord.getDeviceName())) {
-            return false;
-        }
-
-        // UUID match.
-        if (mServiceUuid != null
-                && !matchesServiceUuids(
-                        mServiceUuid, mServiceUuidMask, scanRecord.getServiceUuids())) {
-            return false;
-        }
-
-        // solicitation UUID match.
-        if (mServiceSolicitationUuid != null
-                && !matchesServiceSolicitationUuids(
-                        mServiceSolicitationUuid,
-                        mServiceSolicitationUuidMask,
-                        scanRecord.getServiceSolicitationUuids())) {
-            return false;
-        }
-
-        // Service data match
-        if (mServiceDataUuid != null) {
-            if (!matchesPartialData(
-                    mServiceData, mServiceDataMask, scanRecord.getServiceData(mServiceDataUuid))) {
-                return false;
-            }
-        }
-
-        // Manufacturer data match.
-        if (mManufacturerId >= 0 && mManufacturerData != null) {
-            if (!matchesPartialData(
-                    mManufacturerData,
-                    mManufacturerDataMask,
-                    scanRecord.getManufacturerSpecificData(mManufacturerId))) {
-                return false;
-            }
-        }
-
-        // Advertising data type match
-        if (mAdvertisingDataType > 0) {
-            byte[] advertisingData = scanRecord.getAdvertisingDataMap().get(mAdvertisingDataType);
-            if (advertisingData == null
-                    || !matchesPartialData(
-                            mAdvertisingData, mAdvertisingDataMask, advertisingData)) {
-                return false;
-            }
-        }
-
-        // Transport Discovery data match
-        if (mTransportBlockFilter != null && !mTransportBlockFilter.matches(scanResult)) {
+        if (!matchesWithoutAddress(scanResult)) {
             return false;
         }
 
@@ -599,6 +537,89 @@ public final class ScanFilter implements Parcelable {
                 return false;
             }
         }
+        return true;
+    }
+
+    /**
+     * Check if the scan filter matches a {@code scanResult}. A scan result is considered as a match
+     * if it matches all the field filters except address filter.
+     *
+     * @hide
+     */
+    @RequiresNoPermission
+    public boolean matchesWithoutAddress(ScanResult scanResult) {
+        if (scanResult == null) {
+            return false;
+        }
+
+        ScanRecord scanRecord = scanResult.getScanRecord();
+
+        // Scan record is null but there exist filters on it.
+        if (scanRecord == null
+                && (mDeviceName != null
+                        || mServiceUuid != null
+                        || mManufacturerData != null
+                        || mServiceData != null
+                        || mServiceSolicitationUuid != null
+                        || mAdvertisingData != null)) {
+            return false;
+        }
+
+        // Local name match.
+        if (mDeviceName != null && !mDeviceName.equals(scanRecord.getDeviceName())) {
+            return false;
+        }
+
+        // UUID match.
+        if (mServiceUuid != null
+                && !matchesServiceUuids(
+                        mServiceUuid, mServiceUuidMask, scanRecord.getServiceUuids())) {
+            return false;
+        }
+
+        // solicitation UUID match.
+        if (mServiceSolicitationUuid != null
+                && !matchesServiceSolicitationUuids(
+                        mServiceSolicitationUuid,
+                        mServiceSolicitationUuidMask,
+                        scanRecord.getServiceSolicitationUuids())) {
+            return false;
+        }
+
+        // Service data match
+        if (mServiceDataUuid != null) {
+            if (!matchesPartialData(
+                    mServiceData, mServiceDataMask, scanRecord.getServiceData(mServiceDataUuid))) {
+                return false;
+            }
+        }
+
+        // Manufacturer data match.
+        if (mManufacturerId >= 0 && mManufacturerData != null) {
+            if (!matchesPartialData(
+                    mManufacturerData,
+                    mManufacturerDataMask,
+                    scanRecord.getManufacturerSpecificData(mManufacturerId))) {
+                return false;
+            }
+        }
+
+        // Advertising data type match
+        if (mAdvertisingDataType > 0) {
+            byte[] advertisingData = scanRecord.getAdvertisingDataMap().get(mAdvertisingDataType);
+            if (advertisingData == null
+                    || !matchesPartialData(
+                            mAdvertisingData, mAdvertisingDataMask, advertisingData)) {
+                return false;
+            }
+        }
+
+        // Transport Discovery data match
+        if (mTransportBlockFilter != null && !mTransportBlockFilter.matches(scanResult)) {
+            return false;
+        }
+
+        // All filters match.
         return true;
     }
 

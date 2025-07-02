@@ -1031,6 +1031,21 @@ public final class Utils {
     }
 
     /**
+     * Converts a time value from {@link android.os.SystemClock#elapsedRealtime()} to a
+     * human-readable string.
+     *
+     * <p>To get a `long` time value, see {@link SystemClockTimeProvider#elapsedRealtime()}
+     *
+     * @param elapsedRealtimeMillis The timestamp from elapsedRealtime() to convert.
+     * @return A formatted string representing the given time ("MM-dd HH:mm:ss.SSS").
+     */
+    public static String formatElapsedRealtime(long elapsedRealtimeMillis) {
+        final long timeDeltaMillis = elapsedRealtimeMillis - sSystemClock.elapsedRealtime();
+        final long eventTimeEpochMillis = System.currentTimeMillis() + timeDeltaMillis;
+        return formatInstant(Instant.ofEpochMilli(eventTimeEpochMillis));
+    }
+
+    /**
      * Formats a specific Instant into a system local time string.
      *
      * @param instant The Instant to format

@@ -267,7 +267,9 @@ public class ScanManager {
                 new BroadcastReceiver() {
                     @Override
                     public void onReceive(Context context, Intent intent) {
-                        Log.d(TAG, "awakened up at time " + mTimeProvider.elapsedRealtime());
+                        final var elapsed = mTimeProvider.elapsedRealtime();
+                        final var elapsedReadable = Utils.formatElapsedRealtime(elapsed);
+                        Log.d(TAG, "Awakened up at=" + elapsedReadable + " (" + elapsed + "ms)");
                         String action = intent.getAction();
 
                         if (action.equals(ACTION_REFRESH_BATCHED_SCAN)) {
@@ -1621,20 +1623,24 @@ public class ScanManager {
     // Set the batch alarm to be triggered within a short window after batch interval. This
     // allows system to optimize wake up time while still allows a degree of precise control.
     private void setBatchAlarm() {
-        // Cancel any pending alarm just in case.
+        Log.d(TAG, "setBatchAlarm(): Canceling pending batch scan alarm");
         mAlarmManager.cancel(mBatchScanIntervalIntent);
+
         if (mBatchClients.isEmpty()) {
+            Log.d(TAG, "setBatchAlarm(): No batch clients; skipping alarm setup");
             return;
         }
-        long batchTriggerIntervalMillis =
+        final long batchTriggerIntervalMillis =
                 mBatchScanThrottler.getBatchTriggerIntervalMillis(mBatchClients);
         // Allows the alarm to be triggered within
         // [batchTriggerIntervalMillis, 1.1 * batchTriggerIntervalMillis]
-        long windowLengthMillis = batchTriggerIntervalMillis / 10;
-        long windowStartMillis = mTimeProvider.elapsedRealtime() + batchTriggerIntervalMillis;
+        final long windowLengthMillis = batchTriggerIntervalMillis / 10;
+        final long windowStartMs = mTimeProvider.elapsedRealtime() + batchTriggerIntervalMillis;
+        final var windowStartReadable = Utils.formatElapsedRealtime(windowStartMs);
+        Log.d(TAG, "setBatchAlarm(): at=" + windowStartReadable + " (" + windowStartMs + "ms)");
         mAlarmManager.setWindow(
                 AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                windowStartMillis,
+                windowStartMs,
                 windowLengthMillis,
                 mBatchScanIntervalIntent);
     }
@@ -2000,22 +2006,46 @@ public class ScanManager {
     // Get delivery mode based on scan settings.
     private static int getDeliveryMode(ScanClient client) {
         if (client == null) {
+            Log.d(TAG, "getDeliveryMode(): Client is null, defaulting to DELIVERY_MODE_IMMEDIATE");
             return DELIVERY_MODE_IMMEDIATE;
         }
-        ScanSettings settings = client.mSettings;
+        final var settings = client.mSettings;
         if (settings == null) {
+            Log.d(
+                    TAG,
+                    "getDeliveryMode(): Settings for "
+                            + client
+                            + " are null, defaulting to DELIVERY_MODE_IMMEDIATE");
             return DELIVERY_MODE_IMMEDIATE;
         }
         if ((settings.getCallbackType() & ScanSettings.CALLBACK_TYPE_FIRST_MATCH) != 0
                 || (settings.getCallbackType() & ScanSettings.CALLBACK_TYPE_MATCH_LOST) != 0) {
+            Log.d(
+                    TAG,
+                    "getDeliveryMode(): Callback type is CALLBACK_TYPE_FIRST_MATCH OR"
+                            + " CALLBACK_TYPE_MATCH_LOST, using DELIVERY_MODE_ON_FOUND_LOST");
             return DELIVERY_MODE_ON_FOUND_LOST;
         }
         if (isAllMatchesAutoBatchScanClient(client)) {
-            return isAutoBatchScanClientEnabled(client)
-                    ? DELIVERY_MODE_BATCH
-                    : DELIVERY_MODE_IMMEDIATE;
+            final boolean isEnabled = isAutoBatchScanClientEnabled(client);
+            final int mode = isEnabled ? DELIVERY_MODE_BATCH : DELIVERY_MODE_IMMEDIATE;
+            Log.d(
+                    TAG,
+                    "getDeliveryMode(): Client is auto-batch (enabled="
+                            + isEnabled
+                            + "), using delivery mode "
+                            + (isEnabled ? "DELIVERY_MODE_BATCH" : "DELIVERY_MODE_IMMEDIATE"));
+            return mode;
         }
-        return settings.getReportDelayMillis() == 0 ? DELIVERY_MODE_IMMEDIATE : DELIVERY_MODE_BATCH;
+        final long delay = settings.getReportDelayMillis();
+        final int mode = delay == 0 ? DELIVERY_MODE_IMMEDIATE : DELIVERY_MODE_BATCH;
+        Log.d(
+                TAG,
+                "getDeliveryMode(): Using report delay ("
+                        + delay
+                        + "ms) to set delivery mode to "
+                        + ((delay == 0) ? "DELIVERY_MODE_IMMEDIATE" : "DELIVERY_MODE_BATCH"));
+        return mode;
     }
 
     private int getScanWindowMillis(ScanSettings settings) {
