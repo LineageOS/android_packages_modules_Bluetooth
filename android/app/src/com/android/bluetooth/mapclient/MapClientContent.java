@@ -27,6 +27,7 @@ import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.UserManager;
 import android.provider.BaseColumns;
 import android.provider.Telephony;
 import android.provider.Telephony.Mms;
@@ -41,6 +42,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.map.BluetoothMapbMessageMime;
 import com.android.bluetooth.map.BluetoothMapbMessageMime.MimePart;
 import com.android.vcard.VCardConstants;
@@ -232,6 +234,15 @@ class MapClientContent {
                         + message.getType()
                         + ", folder="
                         + message.getFolder());
+
+        if (Flags.ignoreMessageSmsDisallowed()) {
+            UserManager userManager = mContext.getSystemService(UserManager.class);
+            if (userManager != null
+                    && userManager.getUserRestrictions().getBoolean(UserManager.DISALLOW_SMS)) {
+                warn("SMS is disallowed for the user, skip storing message");
+                return;
+            }
+        }
 
         switch (message.getType()) {
             case MMS -> storeMms(message, handle, timestamp, seen);
