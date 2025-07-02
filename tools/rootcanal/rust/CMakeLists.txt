@@ -40,3 +40,7 @@ add_dependencies(cargo-build_rootcanal-rs lmp_rust_packets)
 target_link_libraries(libbt-rootcanal PUBLIC rootcanal-rs)
 target_include_directories(libbt-rootcanal
     PUBLIC ${ROOTCANAL_ROOT}/rust/include)
+
+target_link_libraries(lib-rootcanal-ffi PUBLIC rootcanal-rs)
+target_include_directories(lib-rootcanal-ffi
+    PUBLIC ${ROOTCANAL_ROOT}/rust/include)

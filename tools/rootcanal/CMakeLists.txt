@@ -168,6 +168,45 @@ target_include_directories(
     ${AOSP_ROOT}/external/fmtlib/include)
 
 android_add_library(
+  TARGET lib-rootcanal-ffi
+  LICENSE Apache-2.0
+  SOURCE_DIR ${ROOTCANAL_ROOT}
+  SRC ${BluetoothGeneratedPackets_h}
+      ${RootCanalGeneratedPackets_h}
+      lib/crypto/crypto.cc
+      lib/hci/address.cc
+      lib/hci/pcap_filter.cc
+      lib/log.cc
+      model/controller/acl_connection.cc
+      model/controller/acl_connection_handler.cc
+      model/controller/controller_properties.cc
+      model/controller/dual_mode_controller.cc
+      model/controller/ffi.cc
+      model/controller/le_advertiser.cc
+      model/controller/link_layer_controller.cc
+      model/controller/sco_connection.cc
+      model/controller/vendor_commands/le_apcf.cc
+      model/devices/device.cc
+  DEPS android-emu-base
+       android-emu-base-headers
+       android-emu-base-logging
+       crypto
+       librootcanal_log
+       librootcanal_config
+       librootcanal_rs)
+
+target_include_directories(
+  lib-rootcanal-ffi
+  PUBLIC ${ROOTCANAL_ROOT}/include
+         ${ROOTCANAL_ROOT}
+         ${PDL_ROOT}/scripts
+         ${CMAKE_CURRENT_BINARY_DIR}/pdl_gen
+         ${CMAKE_CURRENT_BINARY_DIR}/config)
+
+target_compile_options(lib-rootcanal-ffi
+                       PUBLIC -Wno-inconsistent-missing-override)
+
+android_add_library(
   TARGET libbt-rootcanal
   LICENSE Apache-2.0
   SOURCE_DIR ${ROOTCANAL_ROOT}
@@ -214,6 +253,10 @@ android_add_library(
 
 target_link_libraries(
   libbt-rootcanal
+  PUBLIC librootcanal_log)
+
+target_link_libraries(
+  lib-rootcanal-ffi
   PUBLIC librootcanal_log)
 
 target_include_directories(
