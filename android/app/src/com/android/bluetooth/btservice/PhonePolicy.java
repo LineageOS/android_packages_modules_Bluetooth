@@ -583,8 +583,13 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                 && (hapClient.get().getConnectionPolicy(device) == CONNECTION_POLICY_UNKNOWN)) {
             Log.d(TAG, log + "Setting HAP priority");
             if (isLeAudioProfileAllowed) {
-                if (mAutoConnectProfilesSupported) {
+                if (mAutoConnectProfilesSupported && !Flags.hapOnMainLooper()) {
                     hapClient.get().setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
+                } else if (mAutoConnectProfilesSupported && Flags.hapOnMainLooper()) {
+                    hapClient
+                            .get()
+                            .syncPost(
+                                    h -> h.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED));
                 } else {
                     mDatabaseManager.setProfileConnectionPolicy(
                             device, BluetoothProfile.HAP_CLIENT, CONNECTION_POLICY_ALLOWED);
@@ -1054,7 +1059,19 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                 bassClient.get().connect(device);
             }
         }
-        if (hapClient.isPresent()) {
+        if (Flags.hapOnMainLooper()) {
+            hapClient.ifPresent(
+                    hap -> {
+                        List<BluetoothDevice> connectedDevices = hap.getConnectedDevices();
+                        if (!connectedDevices.contains(device)
+                                && (hap.getConnectionPolicy(device) == CONNECTION_POLICY_ALLOWED)
+                                && (hap.getConnectionState(device) == STATE_DISCONNECTED)) {
+                            Log.d(TAG, log + "Retrying HAP connection");
+                            hap.connect(device);
+                        }
+                    });
+        }
+        if (!Flags.hapOnMainLooper() && hapClient.isPresent()) {
             List<BluetoothDevice> connectedDevices = hapClient.get().getConnectedDevices();
             if (!connectedDevices.contains(device)
                     && (hapClient.get().getConnectionPolicy(device) == CONNECTION_POLICY_ALLOWED)

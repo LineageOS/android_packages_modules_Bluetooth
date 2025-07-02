@@ -60,12 +60,20 @@ import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
+import libcore.util.SneakyThrow;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -96,10 +104,6 @@ public class HapClientService extends ConnectableProfile {
     // TODO(b/422543753) Delete on flag cleanup
     @VisibleForTesting ServiceFactory mFactory = new ServiceFactory();
 
-    public static boolean isEnabled() {
-        return BluetoothProperties.isProfileHapClientEnabled().orElse(false);
-    }
-
     @VisibleForTesting
     @Deprecated // TODO(b/422543753) Delete on flag cleanup
     static synchronized void setHapClient(HapClientService instance) {
@@ -127,7 +131,7 @@ public class HapClientService extends ConnectableProfile {
     }
 
     public HapClientService(AdapterService adapterService) {
-        this(adapterService, null, null);
+        this(adapterService, Flags.hapOnMainLooper() ? Looper.getMainLooper() : null, null);
     }
 
     @VisibleForTesting
@@ -143,15 +147,21 @@ public class HapClientService extends ConnectableProfile {
                                 new HapClientNativeInterface(
                                         new HapClientNativeCallback(adapterService, this)));
 
-        if (looper == null) {
-            mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
-            mStateMachinesThread = new HandlerThread("HapClientService.StateMachines");
-            mStateMachinesThread.start();
-            mStateMachinesLooper = mStateMachinesThread.getLooper();
-        } else {
+        if (Flags.hapOnMainLooper()) {
+            mStateMachinesLooper = requireNonNull(looper);
             mHandler = new Handler(looper);
             mStateMachinesThread = null;
-            mStateMachinesLooper = looper;
+        } else {
+            if (looper == null) {
+                mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
+                mStateMachinesThread = new HandlerThread("HapClientService.StateMachines");
+                mStateMachinesThread.start();
+                mStateMachinesLooper = mStateMachinesThread.getLooper();
+            } else {
+                mHandler = new Handler(looper);
+                mStateMachinesThread = null;
+                mStateMachinesLooper = looper;
+            }
         }
 
         // Initialize native interface
@@ -168,6 +178,66 @@ public class HapClientService extends ConnectableProfile {
         } else {
             return Optional.ofNullable(mFactory.getCsipSetCoordinatorService());
         }
+    }
+
+    public void syncPost(Consumer<HapClientService> consumer) {
+        syncPost(
+                (s) -> {
+                    consumer.accept(s);
+                    return null;
+                },
+                null);
+    }
+
+    public void post(Consumer<HapClientService> consumer) {
+        Utils.enforceMainLooperIsNotUsed();
+
+        mHandler.post(
+                () -> {
+                    // Service can become unavailable while the message is being posted
+                    if (!isAvailable()) {
+                        Log.e(TAG, "Service is no longer available.");
+                        return;
+                    }
+                    consumer.accept(this);
+                });
+    }
+
+    public <T> T syncPost(Function<HapClientService, T> function, T defaultValue) {
+        Utils.enforceMainLooperIsNotUsed();
+
+        FutureTask<T> task =
+                new FutureTask(
+                        () -> {
+                            // Service can become unavailable while the message is being posted
+                            if (!isAvailable()) {
+                                Log.e(TAG, "Service is no longer available.");
+                                return defaultValue;
+                            }
+                            return function.apply(this);
+                        });
+        mHandler.post(task);
+        try {
+            // Any method calling postAndWait should most likely be done in under 1 seconds.
+            return task.get(1, TimeUnit.SECONDS);
+        } catch (TimeoutException | InterruptedException e) {
+            SneakyThrow.sneakyThrow(e);
+        } catch (ExecutionException e) {
+            SneakyThrow.sneakyThrow(e.getCause());
+        }
+        return defaultValue;
+    }
+
+    void enforceMainLooperIsUsed() {
+        if (!Flags.hapOnMainLooper()) {
+            return;
+        }
+        // inline below once flag is rollout
+        Utils.enforceMainLooperIsUsed();
+    }
+
+    public static boolean isEnabled() {
+        return BluetoothProperties.isProfileHapClientEnabled().orElse(false);
     }
 
     @Override
@@ -222,11 +292,16 @@ public class HapClientService extends ConnectableProfile {
 
     @Override
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
-        mHandler.post(() -> bondStateChanged(device, toState));
+        if (Flags.hapOnMainLooper() && Flags.bondStateMachineLooper()) {
+            bondStateChanged(device, toState);
+        } else {
+            mHandler.post(() -> bondStateChanged(device, toState));
+        }
     }
 
     @VisibleForTesting
     void bondStateChanged(BluetoothDevice device, int bondState) {
+        enforceMainLooperIsUsed();
         Log.d(TAG, "Bond state changed for device: " + device + " state: " + bondState);
 
         // Remove state machine if the bonding for a device is removed
@@ -268,6 +343,7 @@ public class HapClientService extends ConnectableProfile {
     }
 
     List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
+        enforceMainLooperIsUsed();
         ArrayList<BluetoothDevice> devices = new ArrayList<>();
         if (states == null) {
             return devices;
@@ -302,6 +378,7 @@ public class HapClientService extends ConnectableProfile {
      * @return A list of connected {@link BluetoothDevice}.
      */
     public List<BluetoothDevice> getConnectedDevices() {
+        enforceMainLooperIsUsed();
         synchronized (mStateMachines) {
             List<BluetoothDevice> devices = new ArrayList<>();
             for (HapClientStateMachine sm : mStateMachines.values()) {
@@ -324,6 +401,7 @@ public class HapClientService extends ConnectableProfile {
      */
     @Override
     public int getConnectionState(BluetoothDevice device) {
+        enforceMainLooperIsUsed();
         synchronized (mStateMachines) {
             HapClientStateMachine sm = mStateMachines.get(device);
             if (sm == null) {
@@ -349,6 +427,7 @@ public class HapClientService extends ConnectableProfile {
      */
     @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
+        enforceMainLooperIsUsed();
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -362,6 +441,7 @@ public class HapClientService extends ConnectableProfile {
     /** Check whether it can connect to a peer device. */
     @Override
     public boolean okToConnect(BluetoothDevice device) {
+        enforceMainLooperIsUsed();
         if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
             return super.okToConnect(device);
         }
@@ -388,6 +468,7 @@ public class HapClientService extends ConnectableProfile {
     }
 
     void connectionStateChanged(BluetoothDevice device, int fromState, int toState) {
+        enforceMainLooperIsUsed();
         if ((device == null) || (fromState == toState)) {
             Log.e(
                     TAG,
@@ -416,6 +497,7 @@ public class HapClientService extends ConnectableProfile {
 
     @Override
     public boolean connect(BluetoothDevice device) {
+        enforceMainLooperIsUsed();
         Log.d(TAG, "connect(): " + device);
         if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
             requireNonNull(device);
@@ -449,6 +531,10 @@ public class HapClientService extends ConnectableProfile {
                 Log.e(TAG, "Cannot connect to " + device + " : no state machine");
                 return false;
             }
+            if (Flags.hapOnMainLooper()) {
+                smConnect.dispatchMessage(HapClientStateMachine.MESSAGE_CONNECT);
+                return true;
+            }
             smConnect.sendMessage(HapClientStateMachine.MESSAGE_CONNECT);
         }
 
@@ -464,6 +550,7 @@ public class HapClientService extends ConnectableProfile {
      */
     @Override
     public boolean disconnect(BluetoothDevice device) {
+        enforceMainLooperIsUsed();
         Log.d(TAG, "disconnect(): " + device);
         if (device == null) {
             return false;
@@ -471,6 +558,10 @@ public class HapClientService extends ConnectableProfile {
         synchronized (mStateMachines) {
             HapClientStateMachine sm = mStateMachines.get(device);
             if (sm != null) {
+                if (Flags.hapOnMainLooper()) {
+                    sm.dispatchMessage(HapClientStateMachine.MESSAGE_DISCONNECT);
+                    return true;
+                }
                 sm.sendMessage(HapClientStateMachine.MESSAGE_DISCONNECT);
             }
         }
@@ -773,6 +864,10 @@ public class HapClientService extends ConnectableProfile {
                 return;
             }
             Log.d(TAG, log);
+            if (Flags.hapOnMainLooper()) {
+                sm.dispatchMessage(HapClientStateMachine.MESSAGE_CONNECTION_STATE_CHANGED, state);
+                return;
+            }
             sm.sendMessage(HapClientStateMachine.MESSAGE_CONNECTION_STATE_CHANGED, state);
         }
     }

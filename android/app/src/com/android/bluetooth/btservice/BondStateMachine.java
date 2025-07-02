@@ -18,6 +18,7 @@ package com.android.bluetooth.btservice;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+import static android.bluetooth.BluetoothProfile.HAP_CLIENT;
 import static android.bluetooth.BluetoothProfile.VOLUME_CONTROL;
 
 import static com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__BOND_RETRY;
@@ -788,6 +789,15 @@ final class BondStateMachine extends StateMachine {
                                                             vcs.setConnectionPolicy(
                                                                     device,
                                                                     CONNECTION_POLICY_UNKNOWN));
+                                } else if (profile.getProfileId() == HAP_CLIENT
+                                        && Flags.hapOnMainLooper()
+                                        && !Flags.bondStateMachineLooper()) {
+                                    ((HapClientService) profile)
+                                            .syncPost(
+                                                    hap ->
+                                                            hap.setConnectionPolicy(
+                                                                    device,
+                                                                    CONNECTION_POLICY_UNKNOWN));
                                 } else {
                                     profile.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
                                 }
@@ -840,7 +850,12 @@ final class BondStateMachine extends StateMachine {
                 }
             }
             if (hapClientService != null) {
-                hapClientService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
+                if (Flags.hapOnMainLooper() && !Flags.bondStateMachineLooper()) {
+                    hapClientService.syncPost(
+                            hap -> hap.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN));
+                } else {
+                    hapClientService.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
+                }
             }
         }
     }
