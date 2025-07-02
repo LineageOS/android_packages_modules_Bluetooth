@@ -1257,7 +1257,7 @@ static uint8_t btm_ble_is_discoverable(const RawAddress& /* bda */,
                                        std::vector<uint8_t> const& adv_data) {
   uint8_t scan_state = BTM_BLE_NOT_SCANNING;
 
-  /* for observer, always "discoverable */
+  /* Set observe bit to 1 when observe is active */
   if (btm_cb.ble_ctr_cb.is_ble_observe_active()) {
     scan_state |= BTM_BLE_OBS_RESULT;
   }
@@ -1270,6 +1270,8 @@ static uint8_t btm_ble_is_discoverable(const RawAddress& /* bda */,
     if (p_flag != NULL && data_len != 0) {
       flag = *p_flag;
 
+      /* Set inquiry bit to 1 when inquiry is active, and GENERAL DISCOVERABLE or LIMITED
+       * DISCOVERABLE is true */
       if ((btm_cb.btm_inq_vars.inq_active & BTM_BLE_GENERAL_INQUIRY) &&
           (flag & (BTM_BLE_LIMIT_DISC_FLAG | BTM_BLE_GEN_DISC_FLAG)) != 0) {
         scan_state |= BTM_BLE_INQ_RESULT;
@@ -1630,10 +1632,11 @@ void btm_ble_process_adv_pkt_cont_for_inquiry(uint16_t evt_type, tBLE_ADDR_TYPE 
 
   /* Check if this address has already been processed for this inquiry */
   if (btm_inq_find_bdaddr(bda)) {
-    /* never been report as an LE device */
+    /* never been reported as an LE device */
     if (p_i && (!(p_i->inq_info.results.device_type & BT_DEVICE_TYPE_BLE) ||
                 /* scan response to be updated */
                 (!p_i->scan_rsp) || (!p_i->inq_info.results.include_rsi && include_rsi) ||
+                /* previous report had null flag and current report has flag value */
                 (!p_i->inq_info.results.flag && p_flag && *p_flag))) {
       update = true;
     } else if (btm_cb.ble_ctr_cb.is_ble_observe_active()) {
@@ -1641,12 +1644,12 @@ void btm_ble_process_adv_pkt_cont_for_inquiry(uint16_t evt_type, tBLE_ADDR_TYPE 
       update = false;
     } else {
       /* if yes, skip it */
-      log::debug("Address has already benn processed for this inquiry");
+      log::debug("Address has already been processed for this inquiry, and no update on flag");
       return; /* assumption: one result per event */
     }
   }
 
-  /* If existing entry, use that, else get  a new one (possibly reusing the
+  /* If existing entry, use that, else get a new one (possibly reusing the
    * oldest) */
   if (p_i == NULL) {
     p_i = btm_inq_db_new(bda, true);
@@ -1697,6 +1700,8 @@ void btm_ble_process_adv_pkt_cont_for_inquiry(uint16_t evt_type, tBLE_ADDR_TYPE 
   }
 
   if (!update) {
+    /* This will result in no inquiry result callback being sent */
+    log::verbose("There was no update from the previous inquiry result, so removing inquiry bit");
     result &= ~BTM_BLE_INQ_RESULT;
   }
 
