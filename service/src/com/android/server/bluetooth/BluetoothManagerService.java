@@ -1418,6 +1418,7 @@ class BluetoothManagerService {
 
     @VisibleForTesting
     class BluetoothServiceConnection implements ServiceConnection {
+        @Override
         public void onServiceConnected(ComponentName componentName, IBinder service) {
             String name = componentName.getClassName();
             Log.d(TAG, "ServiceConnection.onServiceConnected(" + name + ", " + service + ")");
@@ -1428,6 +1429,7 @@ class BluetoothManagerService {
             mHandler.obtainMessage(MESSAGE_BLUETOOTH_SERVICE_CONNECTED, service).sendToTarget();
         }
 
+        @Override
         public void onServiceDisconnected(ComponentName componentName) {
             // Called if we unexpectedly disconnect.
             String name = componentName.getClassName();
@@ -1445,6 +1447,18 @@ class BluetoothManagerService {
             } else {
                 mHandler.sendEmptyMessage(MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED);
             }
+        }
+
+        @Override
+        public void onBindingDied(ComponentName componentName) {
+            String name = componentName.getClassName();
+            Log.wtf(TAG, "ServiceConnection.onBindingDied(" + name + ")");
+        }
+
+        @Override
+        public void onNullBinding(ComponentName componentName) {
+            String name = componentName.getClassName();
+            Log.wtf(TAG, "ServiceConnection.onNullBinding(" + name + ")");
         }
     }
 
