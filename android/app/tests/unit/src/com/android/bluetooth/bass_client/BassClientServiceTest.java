@@ -36,6 +36,7 @@ import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -396,13 +397,51 @@ public class BassClientServiceTest {
     /** Test connecting to a null device. - service.connect() should return false. */
     @Test
     public void testConnect_nullDevice() {
+        if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
+            assertThrows(NullPointerException.class, () -> mBassClientService.connect(null));
+        } else {
+            when(mDatabaseManager.getProfileConnectionPolicy(
+                            any(BluetoothDevice.class),
+                            eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)))
+                    .thenReturn(CONNECTION_POLICY_ALLOWED);
+
+            BluetoothDevice nullDevice = null;
+            assertThat(mBassClientService.connect(nullDevice)).isFalse();
+        }
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_VALIDATE_CONNECTION_POLICY_BEFORE_ACCEPTING_CONNECTION)
+    public void testConnect_isQuietMode() {
+        doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService).getBondState(any());
         when(mDatabaseManager.getProfileConnectionPolicy(
                         any(BluetoothDevice.class),
                         eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)))
                 .thenReturn(CONNECTION_POLICY_ALLOWED);
-        BluetoothDevice nullDevice = null;
 
-        assertThat(mBassClientService.connect(nullDevice)).isFalse();
+        doReturn(true).when(mAdapterService).isQuietModeEnabled();
+        assertThat(mBassClientService.connect(mCurrentDevice)).isFalse();
+
+        doReturn(false).when(mAdapterService).isQuietModeEnabled();
+        assertThat(mBassClientService.connect(mCurrentDevice)).isTrue();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_VALIDATE_CONNECTION_POLICY_BEFORE_ACCEPTING_CONNECTION)
+    public void testConnect_notBonded_bonding_bonded() {
+        when(mDatabaseManager.getProfileConnectionPolicy(
+                        any(BluetoothDevice.class),
+                        eq(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT)))
+                .thenReturn(CONNECTION_POLICY_ALLOWED);
+
+        doReturn(BluetoothDevice.BOND_NONE).when(mAdapterService).getBondState(any());
+        assertThat(mBassClientService.connect(mCurrentDevice)).isFalse();
+
+        doReturn(BluetoothDevice.BOND_BONDING).when(mAdapterService).getBondState(any());
+        assertThat(mBassClientService.connect(mCurrentDevice)).isFalse();
+
+        doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService).getBondState(any());
+        assertThat(mBassClientService.connect(mCurrentDevice)).isTrue();
     }
 
     /**
