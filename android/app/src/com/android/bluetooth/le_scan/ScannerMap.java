@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -217,34 +216,31 @@ public class ScannerMap {
         return null;
     }
 
-    /** Logs debug information. */
-    public void dump(StringBuilder sb) {
-        sb.append("  Entries: ").append(mAppScanStatsMap.size()).append("\n\n");
-        for (AppScanStats appScanStats : mAppScanStatsMap.values()) {
-            appScanStats.dumpToString(sb);
-        }
-    }
-
-    /** Logs all apps for debugging. */
-    public void dumpApps(
-            StringBuilder sb,
-            BiConsumer<StringBuilder, String> bf,
-            Map<Integer, ScanSettings> settingsMap) {
+    /** Logs debug information for registered apps and their scan statistics. */
+    void dump(StringBuilder sb, Map<Integer, ScanSettings> settingsMap) {
+        sb.append("LE Scanner:\n");
         for (ScannerApp entry : mApps) {
             StringBuilder line = new StringBuilder();
-            line.append("    app_if: ").append(entry.mId).append(", appName: ").append(entry.mName);
+            line.append("  app_if: ").append(entry.mId).append(", appName: ").append(entry.mName);
+
             if (entry.mAttributionTag != null) {
                 line.append(", tag: ").append(entry.mAttributionTag);
             }
 
-            ScanSettings settings = settingsMap.get(entry.mId);
+            final var settings = settingsMap.get(entry.mId);
             if (settings != null) {
                 long reportDelayMillis = settings.getReportDelayMillis();
                 if (reportDelayMillis > 0) {
                     line.append(", reportDelayMillis: ").append(reportDelayMillis);
                 }
             }
-            bf.accept(sb, line.toString());
+            sb.append(line).append("\n");
+        }
+
+        sb.append("\nLE Scanner Map:\n");
+        sb.append("  Entries: ").append(mAppScanStatsMap.size()).append("\n\n");
+        for (AppScanStats appScanStats : mAppScanStatsMap.values()) {
+            appScanStats.dump(sb);
         }
     }
 

@@ -35,7 +35,6 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
@@ -170,7 +169,6 @@ public class ScannerMapTest {
                 mMockScannerCallback,
                 mAdapterService,
                 mMockScanController);
-        scannerMap.dump(sb);
-        scannerMap.dumpApps(sb, ProfileService::println, Collections.emptyMap());
+        scannerMap.dump(sb, Collections.emptyMap());
     }
 }
