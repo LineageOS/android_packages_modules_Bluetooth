@@ -30,7 +30,7 @@
 #include "bta/include/bta_ag_swb_aptx.h"
 #include "hci/controller_mock.h"
 #include "stack/include/btm_status.h"
-#include "test/common/main_handler.h"
+#include "stack/include/main_thread.h"
 #include "test/common/mock_functions.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_bta_sys_main.h"
