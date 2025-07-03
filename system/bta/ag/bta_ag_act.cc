@@ -46,6 +46,7 @@
 #endif
 
 #include "btif/include/btif_config.h"
+#include "device/include/interop_config.h"
 #include "device/include/device_iot_config.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_sec_api_types.h"
@@ -68,6 +69,8 @@ using namespace bluetooth::legacy::stack::sdp;
 /* maximum AT command length */
 #define BTA_AG_CMD_MAX 512
 
+/* SLC TIMER exception for IOT devices */
+#define SLC_EXCEPTION_TIMEOUT_MS 10000
 const uint16_t bta_ag_uuid[BTA_AG_NUM_IDX] = {UUID_SERVCLASS_HEADSET_AUDIO_GATEWAY,
                                               UUID_SERVCLASS_AG_HANDSFREE};
 
@@ -553,10 +556,17 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
 
   bta_ag_cback_open(p_scb, p_scb->peer_addr, BTA_AG_SUCCESS);
 
+  int ag_conn_timeout = p_bta_ag_cfg->conn_tout;
+  if (interop_match_addr(INTEROP_INCREASE_AG_CONN_TIMEOUT, &p_scb->peer_addr)) {
+    /* use higher value for ag conn timeout */
+    ag_conn_timeout = SLC_EXCEPTION_TIMEOUT_MS;
+  }
+
+  log::verbose("bta_ag_rfc_open: ag_conn_timeout: {}", ag_conn_timeout);
   if (p_scb->conn_service == BTA_AG_HFP) {
     /* if hfp start timer for service level conn */
-    bta_sys_start_timer(p_scb->ring_timer, p_bta_ag_cfg->conn_tout, BTA_AG_SVC_TIMEOUT_EVT,
-                        bta_ag_scb_to_idx(p_scb));
+    bta_sys_start_timer(p_scb->ring_timer,ag_conn_timeout,
+                        BTA_AG_SVC_TIMEOUT_EVT, bta_ag_scb_to_idx(p_scb));
   } else {
     /* else service level conn is open */
     bta_ag_svc_conn_open(p_scb, data);
