@@ -108,7 +108,6 @@ public class BluetoothManagerServiceTest {
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
         return FlagsWrapper.progressionOf(
-                Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
                 Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD,
                 Flags.FLAG_CLEANUP_STARTING_USER,
                 Flags.FLAG_USER_SWITCH_DURING_BLE_ON,
@@ -709,7 +708,6 @@ public class BluetoothManagerServiceTest {
 
     @Test
     @EnableFlags({
-        Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
         Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD,
         Flags.FLAG_CLEANUP_STARTING_USER,
         Flags.FLAG_USER_SWITCH_DURING_BLE_ON
@@ -731,7 +729,6 @@ public class BluetoothManagerServiceTest {
 
     @Test
     @EnableFlags({
-        Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
         Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD,
         Flags.FLAG_CLEANUP_STARTING_USER,
         Flags.FLAG_USER_SWITCH_DURING_BLE_ON
@@ -754,7 +751,6 @@ public class BluetoothManagerServiceTest {
 
     @Test
     @EnableFlags({
-        Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
         Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD,
         Flags.FLAG_CLEANUP_STARTING_USER,
         Flags.FLAG_USER_SWITCH_DURING_BLE_ON
@@ -776,7 +772,6 @@ public class BluetoothManagerServiceTest {
 
     @Test
     @EnableFlags({
-        Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
         Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD,
         Flags.FLAG_CLEANUP_STARTING_USER,
         Flags.FLAG_USER_SWITCH_DURING_BLE_ON

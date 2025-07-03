@@ -1850,12 +1850,8 @@ class BluetoothManagerService {
         if (Flags.userSwitchDuringBleOn()) {
             bluetoothStateChangeHandler(State.OFF, State.BLE_TURNING_ON);
         }
-        if (Flags.waitStackRoleBeforeStarting()) {
-            RolePermissionListener.registerForUser(
-                    mLooper, mCurrentUserContext, mCurrentUser, this::onRoleGranted);
-            return;
-        }
-        bindToAdapter();
+        RolePermissionListener.registerForUser(
+                mLooper, mCurrentUserContext, mCurrentUser, this::onRoleGranted);
     }
 
     private Unit onRoleGranted() {

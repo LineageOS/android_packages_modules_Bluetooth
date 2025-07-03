@@ -79,16 +79,6 @@ flag {
 }
 
 flag {
-    name: "wait_stack_role_before_starting"
-    namespace: "bluetooth"
-    description: "RoleManager is racing to give the SYSTEM_BLUETOOTH_STACK role prior to Bluetooth being started."
-    bug: "408242259"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "watch_device_override_airplane_mode"
     namespace: "bluetooth"
     description: "If there is a watch connected, keep Bluetooth on"
