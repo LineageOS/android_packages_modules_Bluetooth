@@ -1612,8 +1612,9 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
         }
       } else {
         advertising_sets_[enabled_set.advertising_handle_].started = true;
-        advertising_callbacks_->OnAdvertisingSetStarted(reg_id, id, le_physical_channel_tx_power_,
-                                                        advertising_status);
+        advertising_callbacks_->OnAdvertisingSetStarted(
+                reg_id, id, advertising_sets_[enabled_set.advertising_handle_].tx_power,
+                advertising_status);
       }
     }
   }
