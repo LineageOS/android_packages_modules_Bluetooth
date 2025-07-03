@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "enable_ble_while_disabling_airplane"
-    namespace: "bluetooth"
-    description: "Fix a race between enabling and handling airplane event"
-    bug: "402563502"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "ble_death_recipient_thread"
     namespace: "bluetooth"
     description: "Fix a race between death recipient and ble count"

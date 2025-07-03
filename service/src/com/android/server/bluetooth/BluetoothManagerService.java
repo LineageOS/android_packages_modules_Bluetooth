@@ -1554,22 +1554,15 @@ class BluetoothManagerService {
                     // wait for the BT process to fully tear down and then force a restart
                     // here. This is a bit of a hack (b/29363429).
                     if (prevState == State.BLE_TURNING_OFF && newState == State.OFF) {
-                        if (Flags.enableBleWhileDisablingAirplane()) {
-                            if (mHandler.hasMessages(0, ON_AIRPLANE_MODE_CHANGED_TOKEN)) {
-                                mHandler.removeCallbacksAndMessages(ON_AIRPLANE_MODE_CHANGED_TOKEN);
-                                Log.d(TAG, "Handling delayed airplane mode event");
-                                handleAirplaneModeChanged(AirplaneModeListener.isOnOverrode());
-                            }
-                            // When performing FactoryReset, we currently depend on this to restart
-                            if (mEnable && !isBinding()) {
-                                Log.d(TAG, "Entering State.OFF but mEnabled is true; restarting.");
-                                handleRestartMessage();
-                            }
-                        } else {
-                            if (mEnable) {
-                                Log.d(TAG, "Entering State.OFF but mEnabled is true; restarting.");
-                                handleRestartMessage();
-                            }
+                        if (mHandler.hasMessages(0, ON_AIRPLANE_MODE_CHANGED_TOKEN)) {
+                            mHandler.removeCallbacksAndMessages(ON_AIRPLANE_MODE_CHANGED_TOKEN);
+                            Log.d(TAG, "Handling delayed airplane mode event");
+                            handleAirplaneModeChanged(AirplaneModeListener.isOnOverrode());
+                        }
+                        // When performing FactoryReset, we currently depend on this to restart
+                        if (mEnable && !isBinding()) {
+                            Log.d(TAG, "Entering State.OFF but mEnabled is true; restarting.");
+                            handleRestartMessage();
                         }
                     }
                     if (newState == State.ON || newState == State.BLE_ON) {
