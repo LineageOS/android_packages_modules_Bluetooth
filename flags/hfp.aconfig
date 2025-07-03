@@ -9,13 +9,6 @@ flag {
 }
 
 flag {
-    name: "hfp_software_datapath"
-    namespace: "bluetooth"
-    description: "enable HFP software decode/encode data path"
-    bug: "362865563"
-}
-
-flag {
     name: "fix_hfp_qual_1_9"
     namespace: "bluetooth"
     description: "Fix multiple issues in CVSD fallback logics, which are blocking PTS HFP Qualification 1.9"
