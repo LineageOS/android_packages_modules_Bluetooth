@@ -809,14 +809,13 @@ class BassClientStateMachine extends StateMachine {
         if (isSourceAbsent(prevRecvState) && isSourcePresent(recvState)) {
             Log.d(TAG, "processBroadcastReceiverState: Source Addition");
             removeMessages(CANCEL_PENDING_SOURCE_OPERATION);
-            if (mPendingMetadata != null) {
+            if ((mPendingMetadata != null)
+                    && (mPendingMetadata.getBroadcastId() == recvState.getBroadcastId())) {
                 setCurrentBroadcastMetadata(sourceId, mPendingMetadata);
-                mPendingMetadata = null;
-            }
-            if (mPendingOperation == ADD_BCAST_SOURCE) {
                 mService.getCallbacks()
                         .notifySourceAdded(
                                 mDevice, recvState, BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST);
+                mPendingMetadata = null;
             } else {
                 mService.getCallbacks()
                         .notifySourceAdded(
@@ -828,7 +827,8 @@ class BassClientStateMachine extends StateMachine {
         } else if (isSourcePresent(prevRecvState) && isSourcePresent(recvState)) {
             Log.d(TAG, "processBroadcastReceiverState: Source Update");
             removeMessages(CANCEL_PENDING_SOURCE_OPERATION);
-            if (mPendingMetadata != null) {
+            if ((mPendingMetadata != null)
+                    && (mPendingMetadata.getBroadcastId() == recvState.getBroadcastId())) {
                 setCurrentBroadcastMetadata(sourceId, mPendingMetadata);
                 mPendingMetadata = null;
             }

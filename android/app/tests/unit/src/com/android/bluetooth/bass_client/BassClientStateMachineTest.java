@@ -608,7 +608,7 @@ public class BassClientStateMachineTest {
                     Utils.getByteAddress(mSourceTestDevice)[1],
                     Utils.getByteAddress(mSourceTestDevice)[0], // sourceAddress
                     0x00, // sourceAdvSid
-                    0x00,
+                    (byte) (TEST_BROADCAST_ID & 0xFF),
                     0x00,
                     0x00, // broadcastIdBytes
                     (byte) BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
@@ -723,7 +723,7 @@ public class BassClientStateMachineTest {
                     Utils.getByteAddress(mSourceTestDevice)[1],
                     Utils.getByteAddress(mSourceTestDevice)[0], // sourceAddress
                     0x00, // sourceAdvSid
-                    0x00,
+                    (byte) (TEST_BROADCAST_ID & 0xFF),
                     0x00,
                     0x00, // broadcastIdBytes
                     (byte) BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
@@ -787,6 +787,8 @@ public class BassClientStateMachineTest {
 
         // Sync value again
         mStateMachine.mPendingOperation = ADD_BCAST_SOURCE;
+        BluetoothLeBroadcastMetadata metadata = createBroadcastMetadata();
+        mStateMachine.mPendingMetadata = metadata;
         when(characteristic.getValue()).thenReturn(value);
         cb.onCharacteristicChanged(null, characteristic);
         mLooper.dispatchAll();
@@ -818,6 +820,7 @@ public class BassClientStateMachineTest {
 
         // Sync value again
         mStateMachine.mPendingOperation = ADD_BCAST_SOURCE;
+        mStateMachine.mPendingMetadata = metadata;
         when(characteristic.getValue()).thenReturn(value);
         cb.onCharacteristicChanged(null, characteristic);
         mLooper.dispatchAll();
@@ -832,7 +835,6 @@ public class BassClientStateMachineTest {
         assertThat(receiveStateCaptor.getValue().getSourceDevice()).isEqualTo(mSourceTestDevice);
 
         // Empty value to indicates removing source from device by stack (source switch)
-        BluetoothLeBroadcastMetadata metadata = createBroadcastMetadata();
         mStateMachine.mPendingSourceToSwitch = metadata;
         when(characteristic.getValue()).thenReturn(new byte[] {});
         cb.onCharacteristicChanged(null, characteristic);
@@ -852,6 +854,7 @@ public class BassClientStateMachineTest {
 
         // Sync value again
         mStateMachine.mPendingOperation = ADD_BCAST_SOURCE;
+        mStateMachine.mPendingMetadata = metadata;
         when(characteristic.getValue()).thenReturn(value);
         cb.onCharacteristicChanged(null, characteristic);
         mLooper.dispatchAll();
@@ -892,7 +895,7 @@ public class BassClientStateMachineTest {
         assertThat(receiveStateCaptor.getValue().getSourceDevice()).isEqualTo(mSourceTestDevice);
 
         // Update value - PA SyncInfo Request, local broadcast
-        mStateMachine.mPendingMetadata = createBroadcastMetadata();
+        mStateMachine.mPendingMetadata = metadata;
         when(mBassClientService.isLocalBroadcast(any(BluetoothLeBroadcastReceiveState.class)))
                 .thenReturn(true);
         cb.onCharacteristicChanged(null, characteristic);
@@ -1332,7 +1335,7 @@ public class BassClientStateMachineTest {
                     Utils.getByteAddress(mSourceTestDevice)[1],
                     Utils.getByteAddress(mSourceTestDevice)[0], // sourceAddress
                     0x00, // sourceAdvSid
-                    0x00,
+                    (byte) (TEST_BROADCAST_ID & 0xFF),
                     0x00,
                     0x00, // broadcastIdBytes
                     (byte) paSync,
@@ -1457,7 +1460,7 @@ public class BassClientStateMachineTest {
                     Utils.getByteAddress(mSourceTestDevice)[1],
                     Utils.getByteAddress(mSourceTestDevice)[0], // sourceAddress
                     0x00, // sourceAdvSid
-                    0x00,
+                    (byte) (TEST_BROADCAST_ID & 0xFF),
                     0x00,
                     0x00, // broadcastIdBytes
                     (byte) BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
