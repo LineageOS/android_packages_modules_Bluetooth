@@ -96,6 +96,6 @@ public class AppScanStatsTest {
         appScanStats.mIsRegistered = true;
 
         StringBuilder stringBuilder = new StringBuilder();
-        appScanStats.dumpToString(stringBuilder);
+        appScanStats.dump(stringBuilder);
     }
 }

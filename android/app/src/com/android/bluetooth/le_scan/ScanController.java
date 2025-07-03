@@ -63,7 +63,6 @@ import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.Utils.TimeProvider;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.util.NumberUtils;
 import com.android.internal.annotations.VisibleForTesting;
@@ -1722,31 +1721,19 @@ public class ScanController {
         return defaultValue;
     }
 
-    public void dumpRegisterId(StringBuilder sb) {
-        sb.append("  Scanner:\n");
-
-        Map<Integer, ScanSettings> settingsMap = new HashMap<>();
-        for (ScanClient client : mScanManager.getRegularScanQueue()) {
-            if (client.mSettings != null) {
-                settingsMap.put(client.mScannerId, client.mSettings);
-            }
-        }
-        for (ScanClient client : mScanManager.getBatchScanQueue()) {
-            if (client.mSettings != null) {
-                settingsMap.put(client.mScannerId, client.mSettings);
-            }
-        }
-        for (ScanClient client : mScanManager.getSuspendedScanQueue()) {
-            if (client.mSettings != null) {
-                settingsMap.put(client.mScannerId, client.mSettings);
-            }
-        }
-
-        mScannerMap.dumpApps(sb, ProfileService::println, settingsMap);
-    }
-
     public void dump(StringBuilder sb) {
-        sb.append("GATT Scanner Map\n");
-        mScannerMap.dump(sb);
+        final List<ScanClient> clients = new ArrayList<>();
+        clients.addAll(mScanManager.getRegularScanQueue());
+        clients.addAll(mScanManager.getBatchScanQueue());
+        clients.addAll(mScanManager.getSuspendedScanQueue());
+
+        final Map<Integer, ScanSettings> settingsMap = new HashMap<>();
+        for (ScanClient client : clients) {
+            if (client.mSettings != null) {
+                settingsMap.put(client.mScannerId, client.mSettings);
+            }
+        }
+
+        mScannerMap.dump(sb, settingsMap);
     }
 }

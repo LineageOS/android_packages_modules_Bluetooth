@@ -654,13 +654,6 @@ public class ScanControllerTest {
     }
 
     @Test
-    public void dumpRegisterId_doesNotCrash() {
-        StringBuilder sb = new StringBuilder();
-        mScanController.dumpRegisterId(sb);
-        assertThat(sb.toString()).isNotNull();
-    }
-
-    @Test
     public void dump_doesNotCrash() {
         StringBuilder sb = new StringBuilder();
         mScanController.dump(sb);
