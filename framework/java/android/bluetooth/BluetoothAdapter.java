@@ -1684,34 +1684,11 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean clearBluetooth() {
-        if (Flags.factoryResetFromTheSystemServer()) {
-            try {
-                return mManagerService.factoryReset(mAttributionSource);
-            } catch (RemoteException e) {
-                throw e.rethrowFromSystemServer();
-            }
-        }
-        mServiceLock.readLock().lock();
         try {
-            if (mService != null) {
-                if (Flags.gattClearCacheOnFactoryReset()) {
-                    BluetoothProperties.factory_reset(true);
-                }
-                if (mService.factoryReset(mAttributionSource)
-                        && mManagerService.onFactoryReset(mAttributionSource)) {
-                    return true;
-                }
-            }
-            if (!Flags.gattClearCacheOnFactoryReset()) {
-                Log.e(TAG, "factoryReset(): Setting persist.bluetooth.factoryreset to retry later");
-                BluetoothProperties.factory_reset(true);
-            }
+            return mManagerService.factoryReset(mAttributionSource);
         } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
+            throw e.rethrowFromSystemServer();
         }
-        return false;
     }
 
     /**
