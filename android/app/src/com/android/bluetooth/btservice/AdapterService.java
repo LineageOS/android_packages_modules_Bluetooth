@@ -601,9 +601,6 @@ public class AdapterService extends Service {
                                     && !Flags.onlyStartScanDuringBleOn())
                             && mRegisteredProfiles.size() == Config.getSupportedProfiles().length
                             && mRegisteredProfiles.size() == mRunningProfiles.size()) {
-                        if (!Flags.callBluetoothReadyBeforeProfilesStart()) {
-                            mAdapterProperties.onBluetoothReady();
-                        }
                         setScanMode(SCAN_MODE_CONNECTABLE, "processProfileServiceStateChanged");
                         updateUuids();
                         mNativeInterface.getAdapterProperty(
@@ -937,19 +934,10 @@ public class AdapterService extends Service {
         Log.d(TAG, "init() instance = " + hciInstanceName);
 
         factoryResetIfNeeded();
-        if (Flags.factoryResetAtBluetoothStart()) {
-            try {
-                DataMigration.run(this);
-            } catch (Exception e) {
-                Log.e(TAG, "Migration failure: ", e);
-            }
-        }
-
-        if (!Flags.factoryResetAtBluetoothStart()) {
-            if (Flags.gattClearCacheOnFactoryReset()
-                    && BluetoothProperties.factory_reset().orElse(false)) {
-                clearStorage();
-            }
+        try {
+            DataMigration.run(this);
+        } catch (Exception e) {
+            Log.e(TAG, "Migration failure: ", e);
         }
 
         Config.init(this);
@@ -1072,9 +1060,6 @@ public class AdapterService extends Service {
     }
 
     private void factoryResetIfNeeded() {
-        if (!Flags.factoryResetAtBluetoothStart()) {
-            return;
-        }
         if (!BluetoothProperties.factory_reset().orElse(false)) {
             return;
         }
@@ -1182,17 +1167,12 @@ public class AdapterService extends Service {
 
     void startProfileServices() {
         Log.d(TAG, "startProfileServices()");
-        if (Flags.callBluetoothReadyBeforeProfilesStart()) {
-            mAdapterProperties.onBluetoothReady();
-        }
+        mAdapterProperties.onBluetoothReady();
         final int[] supportedProfiles = Config.getSupportedProfiles();
         if (Flags.onlyStartScanDuringBleOn()) {
             // Scanning is always supported, started separately, and is not a profile service.
             // This will check other profile services.
             if (supportedProfiles.length == 0) {
-                if (!Flags.callBluetoothReadyBeforeProfilesStart()) {
-                    mAdapterProperties.onBluetoothReady();
-                }
                 setScanMode(SCAN_MODE_CONNECTABLE, "startProfileServices");
                 updateUuids();
                 mAdapterStateMachine.sendMessage(AdapterState.BREDR_STARTED);
@@ -1204,9 +1184,6 @@ public class AdapterService extends Service {
             // just move on to BREDR_STARTED. Note that configuring GATT to NOT supported will cause
             // adapter initialization failures
             if (supportedProfiles.length == 1 && supportedProfiles[0] == BluetoothProfile.GATT) {
-                if (!Flags.callBluetoothReadyBeforeProfilesStart()) {
-                    mAdapterProperties.onBluetoothReady();
-                }
                 setScanMode(SCAN_MODE_CONNECTABLE, "startProfileServices");
                 updateUuids();
                 mAdapterStateMachine.sendMessage(AdapterState.BREDR_STARTED);
@@ -3937,23 +3914,6 @@ public class AdapterService extends Service {
             Log.i(TAG, "Deleting empty directory: " + file.getPath());
             file.delete();
         }
-    }
-
-    boolean factoryReset() {
-        if (Flags.factoryResetAtBluetoothStart()) {
-            throw new IllegalStateException("flag factoryResetAtBluetoothStart is enabled");
-        }
-        mDatabaseManager.factoryReset();
-
-        if (mBluetoothKeystoreService != null) {
-            mBluetoothKeystoreService.factoryReset();
-        }
-
-        if (mBtCompanionManager != null) {
-            mBtCompanionManager.factoryReset();
-        }
-
-        return mNativeInterface.factoryReset();
     }
 
     int getScanMode() {

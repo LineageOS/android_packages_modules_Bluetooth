@@ -109,17 +109,6 @@ class AdapterBinder extends IAdapter.Stub {
     }
 
     @Override
-    public void onewayFactoryReset() {
-        AdapterService service = getService();
-        if (service == null) {
-            return;
-        }
-
-        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        service.factoryReset();
-    }
-
-    @Override
     public void registerCallback(IBluetoothCallback callback) {
         AdapterService service = getService();
         if (service == null
