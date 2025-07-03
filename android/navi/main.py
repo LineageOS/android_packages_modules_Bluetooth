@@ -32,6 +32,7 @@ from navi.tests.smoke import opp_test
 from navi.tests.smoke import pan_test
 from navi.tests.smoke import pbap_test
 from navi.tests.smoke import rfcomm_test
+from navi.tests.functionality import a2dp_sink_test
 
 if __name__ == "__main__":
     # Take test args
@@ -40,6 +41,7 @@ if __name__ == "__main__":
         sys.argv = sys.argv[:1] + sys.argv[index + 1:]
     suite_runner.run_suite([
         a2dp_test.A2dpTest,
+        a2dp_sink_test.A2dpSinkTest,
         asha_test.AshaTest,
         classic_host_test.ClassicHostTest,
         classic_pairing_test.ClassicPairingTest,

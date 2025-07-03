@@ -35,7 +35,6 @@ import static java.util.Objects.requireNonNull;
 
 import android.annotation.BroadcastBehavior;
 import android.annotation.CallbackExecutor;
-import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
@@ -1685,34 +1684,11 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean clearBluetooth() {
-        if (Flags.factoryResetFromTheSystemServer()) {
-            try {
-                return mManagerService.factoryReset(mAttributionSource);
-            } catch (RemoteException e) {
-                throw e.rethrowFromSystemServer();
-            }
-        }
-        mServiceLock.readLock().lock();
         try {
-            if (mService != null) {
-                if (Flags.gattClearCacheOnFactoryReset()) {
-                    BluetoothProperties.factory_reset(true);
-                }
-                if (mService.factoryReset(mAttributionSource)
-                        && mManagerService.onFactoryReset(mAttributionSource)) {
-                    return true;
-                }
-            }
-            if (!Flags.gattClearCacheOnFactoryReset()) {
-                Log.e(TAG, "factoryReset(): Setting persist.bluetooth.factoryreset to retry later");
-                BluetoothProperties.factory_reset(true);
-            }
+            return mManagerService.factoryReset(mAttributionSource);
         } catch (RemoteException e) {
-            logRemoteException(TAG, e);
-        } finally {
-            mServiceLock.readLock().unlock();
+            throw e.rethrowFromSystemServer();
         }
-        return false;
     }
 
     /**
@@ -4280,7 +4256,7 @@ public final class BluetoothAdapter {
     public @NonNull BluetoothServerSocket listenUsingL2capChannel() throws IOException {
         BluetoothServerSocket socket =
                 new BluetoothServerSocket(
-                        BluetoothSocket.TYPE_L2CAP_LE,
+                        BluetoothSocket.TYPE_LE,
                         true,
                         true,
                         SOCKET_CHANNEL_AUTO_STATIC_NO_SDP,
@@ -4333,7 +4309,7 @@ public final class BluetoothAdapter {
     public @NonNull BluetoothServerSocket listenUsingInsecureL2capChannel() throws IOException {
         BluetoothServerSocket socket =
                 new BluetoothServerSocket(
-                        BluetoothSocket.TYPE_L2CAP_LE,
+                        BluetoothSocket.TYPE_LE,
                         false,
                         false,
                         SOCKET_CHANNEL_AUTO_STATIC_NO_SDP,
@@ -4390,7 +4366,6 @@ public final class BluetoothAdapter {
     @RequiresPermission(
             allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
             conditional = true)
-    @FlaggedApi(Flags.FLAG_SOCKET_SETTINGS_API)
     public @NonNull BluetoothServerSocket listenUsingSocketSettings(
             @NonNull BluetoothSocketSettings settings) throws IOException {
 
@@ -5726,7 +5701,6 @@ public final class BluetoothAdapter {
      * @hide
      */
     @SystemApi
-    @FlaggedApi(Flags.FLAG_SOCKET_SETTINGS_API)
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     public boolean isLeCocSocketOffloadSupported() {
         if (!isEnabled()) {
@@ -5773,7 +5747,6 @@ public final class BluetoothAdapter {
      * @hide
      */
     @SystemApi
-    @FlaggedApi(Flags.FLAG_SOCKET_SETTINGS_API)
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
     public boolean isRfcommSocketOffloadSupported() {
         if (!isEnabled()) {

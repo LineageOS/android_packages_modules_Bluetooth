@@ -323,7 +323,7 @@ class BroadcastTest(navi_test_base.TwoDevicesTestBase):
             self.ref.device.add_service(
                 ascs.AudioStreamControlService(self.ref.device, sink_ase_id=[1]))
             self.ref.device.add_service(self._ref_bass_service)
-            await self.le_connect_and_pair(hci.OwnAddressType.RANDOM)
+            await self.le_connect_and_pair(hci.OwnAddressType.RANDOM, connect_profiles=True)
             self.logger.info("[DUT] Wait for LE Audio connected")
             await dut_lea_cb.wait_for_event(
                 bl4a_api.ProfileConnectionStateChanged(

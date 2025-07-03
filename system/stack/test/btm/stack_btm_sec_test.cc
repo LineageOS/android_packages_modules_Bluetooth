@@ -31,9 +31,9 @@
 #include "stack/btm/internal/btm_api.h"
 #include "stack/btm/security_device_record.h"
 #include "stack/include/btm_status.h"
+#include "stack/include/main_thread.h"
 #include "stack/include/sec_hci_link_interface.h"
 #include "stack/test/btm/btm_test_fixtures.h"
-#include "test/common/main_handler.h"
 #include "test/mock/mock_main_shim_entry.h"
 #include "types/raw_address.h"
 

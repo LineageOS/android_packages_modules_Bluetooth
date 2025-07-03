@@ -2,11 +2,21 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "battery_service_unified_thread"
+    name: "hap_on_main_looper"
     namespace: "bluetooth"
-    description: "Fix race with Bluetooth lifecycle"
-    bug: "409334857"
+    description: "Run HAP on the main looper to avoid race condition"
+    bug: "427562751"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
+}
+
+flag {
+    name: "vcp_on_main_looper"
+    namespace: "bluetooth"
+    description: "Run on the main looper instead of yet another thread"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+    bug: "381275568"
 }

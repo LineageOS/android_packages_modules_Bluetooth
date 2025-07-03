@@ -341,18 +341,8 @@ class BluetoothManagerService {
             return false;
         }
 
-        if (Flags.factoryResetAtBluetoothStart()) {
-            Log.d(TAG, "factoryReset: Will perform service restart after setting reset property");
-            BluetoothProperties.factory_reset(true);
-        } else {
-            Log.d(TAG, "factoryReset: Now performing service reset & restart");
-            try {
-                mAdapter.factoryReset();
-            } catch (RemoteException e) {
-                mHandler.postDelayed(() -> factoryReset(count + 1), 1_000);
-                return false;
-            }
-        }
+        Log.d(TAG, "factoryReset: Will perform service restart after setting reset property");
+        BluetoothProperties.factory_reset(true);
 
         clearBleApps();
         ActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false);
@@ -856,18 +846,8 @@ class BluetoothManagerService {
             mBinder = binder;
         }
 
-        ClientDeathRecipient(String packageName) {
-            if (Flags.bleDeathRecipientThread()) {
-                throw new IllegalStateException(
-                        "bleDeathRecipientThread flag is deprecating this constructor");
-            }
-            mPackageName = packageName;
-            mBinder = null;
-        }
-
         @Override
         public void binderDied() {
-            if (Flags.bleDeathRecipientThread()) {
                 Log.w(TAG, "Binder is dead - posting the unregister of " + mPackageName);
                 mHandler.post(
                         () ->
@@ -875,18 +855,6 @@ class BluetoothManagerService {
                                         ENABLE_DISABLE_REASON_APPLICATION_DIED,
                                         mBinder,
                                         mPackageName));
-                return;
-            }
-            Log.w(TAG, "Binder is dead - unregister " + mPackageName);
-
-            for (Map.Entry<IBinder, ClientDeathRecipient> entry : mBleApps.entrySet()) {
-                IBinder token = entry.getKey();
-                ClientDeathRecipient deathRec = entry.getValue();
-                if (deathRec.equals(this)) {
-                    updateBleAppCount(token, false, mPackageName);
-                    break;
-                }
-            }
         }
 
         @Override
@@ -962,29 +930,6 @@ class BluetoothManagerService {
         bleOnToOffIfNeeded(reason, packageName);
     }
 
-    private int updateBleAppCount(IBinder token, boolean enable, String packageName) {
-        String header = "updateBleAppCount(" + token + ", " + enable + ", " + packageName + ")";
-        ClientDeathRecipient r = mBleApps.get(token);
-        if (r == null && enable) {
-            ClientDeathRecipient deathRec = new ClientDeathRecipient(packageName);
-            try {
-                token.linkToDeath(deathRec, 0);
-            } catch (RemoteException ex) {
-                throw new IllegalArgumentException("BLE app (" + packageName + ") already dead!");
-            }
-            mBleApps.put(token, deathRec);
-            Log.d(TAG, header + " linkToDeath");
-        } else if (!enable && r != null) {
-            // Unregister death recipient as the app goes away.
-            token.unlinkToDeath(r, 0);
-            mBleApps.remove(token);
-            Log.d(TAG, header + " unlinkToDeath");
-        }
-        int appCount = mBleApps.size();
-        Log.d(TAG, header + " Number of BLE app registered: appCount=" + appCount);
-        return appCount;
-    }
-
     boolean enableBleFromBinder(String packageName, IBinder token) {
         return postAndWait(() -> enableBle(packageName, token));
     }
@@ -1018,11 +963,7 @@ class BluetoothManagerService {
             return false;
         }
 
-        if (Flags.bleDeathRecipientThread()) {
-            addBleApp(token, packageName);
-        } else {
-            updateBleAppCount(token, true, packageName);
-        }
+        addBleApp(token, packageName);
 
         if (mState.oneOf(
                 State.ON,
@@ -1055,12 +996,7 @@ class BluetoothManagerService {
             return false;
         }
 
-        if (Flags.bleDeathRecipientThread()) {
-            removeBleApp(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, token, packageName);
-        } else {
-            updateBleAppCount(token, false, packageName);
-            bleOnToOffIfNeeded(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName);
-        }
+        removeBleApp(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, token, packageName);
         return true;
     }
 
@@ -1090,9 +1026,7 @@ class BluetoothManagerService {
 
     // Clear all apps using BLE scan only mode.
     private void clearBleApps() {
-        if (Flags.bleDeathRecipientThread()) {
-            mBleApps.entrySet().stream().forEach(e -> e.getKey().unlinkToDeath(e.getValue(), 0));
-        }
+        mBleApps.entrySet().stream().forEach(e -> e.getKey().unlinkToDeath(e.getValue(), 0));
         mBleApps.clear();
     }
 
@@ -1418,6 +1352,7 @@ class BluetoothManagerService {
 
     @VisibleForTesting
     class BluetoothServiceConnection implements ServiceConnection {
+        @Override
         public void onServiceConnected(ComponentName componentName, IBinder service) {
             String name = componentName.getClassName();
             Log.d(TAG, "ServiceConnection.onServiceConnected(" + name + ", " + service + ")");
@@ -1428,6 +1363,7 @@ class BluetoothManagerService {
             mHandler.obtainMessage(MESSAGE_BLUETOOTH_SERVICE_CONNECTED, service).sendToTarget();
         }
 
+        @Override
         public void onServiceDisconnected(ComponentName componentName) {
             // Called if we unexpectedly disconnect.
             String name = componentName.getClassName();
@@ -1445,6 +1381,18 @@ class BluetoothManagerService {
             } else {
                 mHandler.sendEmptyMessage(MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED);
             }
+        }
+
+        @Override
+        public void onBindingDied(ComponentName componentName) {
+            String name = componentName.getClassName();
+            Log.wtf(TAG, "ServiceConnection.onBindingDied(" + name + ")");
+        }
+
+        @Override
+        public void onNullBinding(ComponentName componentName) {
+            String name = componentName.getClassName();
+            Log.wtf(TAG, "ServiceConnection.onNullBinding(" + name + ")");
         }
     }
 
@@ -1540,22 +1488,15 @@ class BluetoothManagerService {
                     // wait for the BT process to fully tear down and then force a restart
                     // here. This is a bit of a hack (b/29363429).
                     if (prevState == State.BLE_TURNING_OFF && newState == State.OFF) {
-                        if (Flags.enableBleWhileDisablingAirplane()) {
-                            if (mHandler.hasMessages(0, ON_AIRPLANE_MODE_CHANGED_TOKEN)) {
-                                mHandler.removeCallbacksAndMessages(ON_AIRPLANE_MODE_CHANGED_TOKEN);
-                                Log.d(TAG, "Handling delayed airplane mode event");
-                                handleAirplaneModeChanged(AirplaneModeListener.isOnOverrode());
-                            }
-                            // When performing FactoryReset, we currently depend on this to restart
-                            if (mEnable && !isBinding()) {
-                                Log.d(TAG, "Entering State.OFF but mEnabled is true; restarting.");
-                                handleRestartMessage();
-                            }
-                        } else {
-                            if (mEnable) {
-                                Log.d(TAG, "Entering State.OFF but mEnabled is true; restarting.");
-                                handleRestartMessage();
-                            }
+                        if (mHandler.hasMessages(0, ON_AIRPLANE_MODE_CHANGED_TOKEN)) {
+                            mHandler.removeCallbacksAndMessages(ON_AIRPLANE_MODE_CHANGED_TOKEN);
+                            Log.d(TAG, "Handling delayed airplane mode event");
+                            handleAirplaneModeChanged(AirplaneModeListener.isOnOverrode());
+                        }
+                        // When performing FactoryReset, we currently depend on this to restart
+                        if (mEnable && !isBinding()) {
+                            Log.d(TAG, "Entering State.OFF but mEnabled is true; restarting.");
+                            handleRestartMessage();
                         }
                     }
                     if (newState == State.ON || newState == State.BLE_ON) {
@@ -1853,12 +1794,8 @@ class BluetoothManagerService {
         if (Flags.userSwitchDuringBleOn()) {
             bluetoothStateChangeHandler(State.OFF, State.BLE_TURNING_ON);
         }
-        if (Flags.waitStackRoleBeforeStarting()) {
-            RolePermissionListener.registerForUser(
-                    mLooper, mCurrentUserContext, mCurrentUser, this::onRoleGranted);
-            return;
-        }
-        bindToAdapter();
+        RolePermissionListener.registerForUser(
+                mLooper, mCurrentUserContext, mCurrentUser, this::onRoleGranted);
     }
 
     private Unit onRoleGranted() {

@@ -108,8 +108,6 @@ public class BluetoothManagerServiceTest {
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
         return FlagsWrapper.progressionOf(
-                Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
-                Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD,
                 Flags.FLAG_CLEANUP_STARTING_USER,
                 Flags.FLAG_USER_SWITCH_DURING_BLE_ON,
                 Flags.FLAG_USER_RESTRICTION_REFACTOR);
@@ -587,7 +585,6 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    @EnableFlags({Flags.FLAG_ENABLE_BLE_WHILE_DISABLING_AIRPLANE})
     public void enableBle_whenDisableAirplaneIsDelayed_startBluetooth() throws Exception {
         mManagerService.enable(0, "enableBle_whenDisableAirplaneIsDelayed_startBluetooth");
         IBluetoothCallback btCallback = transition_offToOn();
@@ -627,27 +624,6 @@ public class BluetoothManagerServiceTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_FACTORY_RESET_AT_BLUETOOTH_START)
-    public void factoryReset_whileBtOn_clearAndRestart() throws Exception {
-        mManagerService.enable(0, "factoryReset_whileBtOn_clearAndRestart");
-        IBluetoothCallback btCallback = transition_offToOn();
-        assertThat(mManagerService.getState()).isEqualTo(State.ON);
-
-        mManagerService.factoryReset(0);
-        if (Flags.factoryResetClearAdditionalData()) {
-            ExtendedMockito.verify(() -> BluetoothProperties.snoop_log_mode(null));
-        }
-        verify(mAdapterBinder).factoryReset();
-
-        transition_onToOff(btCallback);
-        transition_offToOn();
-        assertThat(mManagerService.getState()).isEqualTo(State.ON);
-
-        endTest();
-    }
-
-    @Test
-    @EnableFlags({Flags.FLAG_FACTORY_RESET_AT_BLUETOOTH_START})
     public void factoryReset_whileBtOn_restartWithProperty() throws Exception {
         mManagerService.enable(0, "factoryReset_whileBtOn_restartWithProperty");
         IBluetoothCallback btCallback = transition_offToOn();
@@ -684,7 +660,6 @@ public class BluetoothManagerServiceTest {
 
     @Test
     @EnableFlags({
-        Flags.FLAG_FACTORY_RESET_AT_BLUETOOTH_START,
         Flags.FLAG_CLEANUP_STARTING_USER,
         Flags.FLAG_USER_SWITCH_DURING_BLE_ON
     })
@@ -697,7 +672,6 @@ public class BluetoothManagerServiceTest {
 
     @Test
     @EnableFlags({
-        Flags.FLAG_FACTORY_RESET_AT_BLUETOOTH_START,
         Flags.FLAG_CLEANUP_STARTING_USER,
         Flags.FLAG_USER_SWITCH_DURING_BLE_ON
     })
@@ -714,7 +688,6 @@ public class BluetoothManagerServiceTest {
 
     @Test
     @EnableFlags({
-        Flags.FLAG_FACTORY_RESET_AT_BLUETOOTH_START,
         Flags.FLAG_CLEANUP_STARTING_USER,
         Flags.FLAG_USER_SWITCH_DURING_BLE_ON
     })
@@ -734,8 +707,6 @@ public class BluetoothManagerServiceTest {
 
     @Test
     @EnableFlags({
-        Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
-        Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD,
         Flags.FLAG_CLEANUP_STARTING_USER,
         Flags.FLAG_USER_SWITCH_DURING_BLE_ON
     })
@@ -756,8 +727,6 @@ public class BluetoothManagerServiceTest {
 
     @Test
     @EnableFlags({
-        Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
-        Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD,
         Flags.FLAG_CLEANUP_STARTING_USER,
         Flags.FLAG_USER_SWITCH_DURING_BLE_ON
     })
@@ -779,8 +748,6 @@ public class BluetoothManagerServiceTest {
 
     @Test
     @EnableFlags({
-        Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
-        Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD,
         Flags.FLAG_CLEANUP_STARTING_USER,
         Flags.FLAG_USER_SWITCH_DURING_BLE_ON
     })
@@ -801,8 +768,6 @@ public class BluetoothManagerServiceTest {
 
     @Test
     @EnableFlags({
-        Flags.FLAG_WAIT_STACK_ROLE_BEFORE_STARTING,
-        Flags.FLAG_BLE_DEATH_RECIPIENT_THREAD,
         Flags.FLAG_CLEANUP_STARTING_USER,
         Flags.FLAG_USER_SWITCH_DURING_BLE_ON
     })

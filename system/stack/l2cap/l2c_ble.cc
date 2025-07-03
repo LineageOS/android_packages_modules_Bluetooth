@@ -820,22 +820,10 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       p_ccb->p_rcb = p_rcb;
       p_ccb->remote_cid = rcid;
 
-      if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3349377
-        p_ccb->local_conn_cfg.mtu = p_rcb->coc_cfg.mtu;
-        p_ccb->local_conn_cfg.mps = p_rcb->coc_cfg.mps;
-      } else {
-        p_ccb->local_conn_cfg.mtu = L2CAP_SDU_LENGTH_LE_MAX;
-        p_ccb->local_conn_cfg.mps =
-                bluetooth::shim::GetController()->GetLeBufferSize().le_data_packet_length_;
-      }
-      if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3349376
-        p_ccb->local_conn_cfg.credits = p_rcb->coc_cfg.credits;
-        p_ccb->remote_credit_count = p_rcb->coc_cfg.credits;
-      } else {
-        p_ccb->local_conn_cfg.credits = L2CA_LeCreditDefault();
-        p_ccb->remote_credit_count = L2CA_LeCreditDefault();
-      }
-
+      p_ccb->local_conn_cfg.mtu = p_rcb->coc_cfg.mtu;
+      p_ccb->local_conn_cfg.mps = p_rcb->coc_cfg.mps;
+      p_ccb->local_conn_cfg.credits = p_rcb->coc_cfg.credits;
+      p_ccb->remote_credit_count = p_rcb->coc_cfg.credits;
       p_ccb->peer_conn_cfg.mtu = mtu;
       p_ccb->peer_conn_cfg.mps = mps;
       p_ccb->peer_conn_cfg.credits = initial_credit;

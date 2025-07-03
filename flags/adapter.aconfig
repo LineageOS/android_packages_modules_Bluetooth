@@ -9,40 +9,10 @@ flag {
 }
 
 flag {
-    name: "call_bluetooth_ready_before_profiles_start"
-    namespace: "bluetooth"
-    description: "Initiates the adapter properties before starting profiles"
-    bug: "405437771"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "factory_reset_at_bluetooth_start"
-    namespace: "bluetooth"
-    description: "Regroup all data deletion to happen when Bluetooth start instead of sometimes at start and sometimes with a direct call"
-    bug: "406868063"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "factory_reset_clear_additional_data"
     namespace: "bluetooth"
     description: "Factory reset will now clear the notification history and reset snoop log mode"
     bug: "416520754"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "remove_legacy_management_thread"
-    namespace: "bluetooth"
-    description: "Remove non-necessary management_thread"
-    bug: "406345320"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

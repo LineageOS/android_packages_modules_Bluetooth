@@ -58,19 +58,7 @@ class BluetoothService(context: Context) : SystemService(context) {
     }
 
     override fun onStart() {
-        if (!Flags.publishBinderOnStart()) {
-            return
-        }
         publishBinderService(SERVICE_NAME, mBluetoothManagerService.getBinder())
-    }
-
-    override fun onBootPhase(phase: Int) {
-        if (Flags.publishBinderOnStart()) {
-            return
-        }
-        if (phase == SystemService.PHASE_SYSTEM_SERVICES_READY) {
-            publishBinderService(SERVICE_NAME, mBluetoothManagerService.getBinder())
-        }
     }
 
     private fun shouldInitializeBluetooth(): Boolean {

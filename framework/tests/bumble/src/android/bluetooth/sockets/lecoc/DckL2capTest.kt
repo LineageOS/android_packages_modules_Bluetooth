@@ -435,7 +435,6 @@ public class DckL2capTest() : Closeable {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_SOCKET_SETTINGS_API)
     /**
      * Test:
      * - Create Bond between Phone and Bumble (Just works)
@@ -473,7 +472,6 @@ public class DckL2capTest() : Closeable {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_SOCKET_SETTINGS_API)
     /**
      * Test:
      * - Create Bond between Phone and Bumble (Just works)

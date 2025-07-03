@@ -201,7 +201,7 @@ public class HeadsetServiceAndStateMachineTest {
         doReturn(mPhoneState).when(mSystemInterface).getHeadsetPhoneState();
         doReturn(mAudioManager).when(mSystemInterface).getAudioManager();
         doReturn(mAudioDeviceVolumeManager).when(mSystemInterface).getAudioDeviceVolumeManager();
-        doReturn(true).when(mSystemInterface).activateVoiceRecognition();
+        doReturn(true).when(mSystemInterface).activateVoiceRecognition(any(BluetoothDevice.class));
         doReturn(true).when(mSystemInterface).deactivateVoiceRecognition();
         doReturn(mVoiceRecognitionWakeLock).when(mSystemInterface).getVoiceRecognitionWakeLock();
         doReturn(true).when(mSystemInterface).isCallIdle();
@@ -861,10 +861,10 @@ public class HeadsetServiceAndStateMachineTest {
      */
     @Test
     public void testVoiceRecognition_SingleHfInitiatedFailedToActivate() {
-        doReturn(false).when(mSystemInterface).activateVoiceRecognition();
         // Connect HF
         BluetoothDevice device = getTestDevice(0);
         connectTestDevice(device);
+        doReturn(false).when(mSystemInterface).activateVoiceRecognition(device);
         // Make device active
         assertThat(mHeadsetService.setActiveDevice(device)).isTrue();
         mTestLooper.dispatchAll();
@@ -882,7 +882,7 @@ public class HeadsetServiceAndStateMachineTest {
         if (android.media.audio.Flags.scoManagedByAudio()) {
             verifyActiveDeviceChanged_scoManagement(device);
         }
-        verify(mSystemInterface).activateVoiceRecognition();
+        verify(mSystemInterface).activateVoiceRecognition(device);
         verify(mNativeInterface).atResponseCode(device, HeadsetHalConstants.AT_RESPONSE_ERROR, 0);
         verifyNoMoreInteractions(ignoreStubs(mNativeInterface));
         if (!android.media.audio.Flags.unifyAbsoluteVolumeManagement()
@@ -917,7 +917,7 @@ public class HeadsetServiceAndStateMachineTest {
                         device);
         mHeadsetService.messageFromNative(startVrEvent);
         mTestLooper.dispatchAll();
-        verify(mSystemInterface).activateVoiceRecognition();
+        verify(mSystemInterface).activateVoiceRecognition(device);
         if (android.media.audio.Flags.scoManagedByAudio()) {
             verifyActiveDeviceChanged_scoManagement(device);
         }
@@ -1092,7 +1092,7 @@ public class HeadsetServiceAndStateMachineTest {
                         deviceA);
         mHeadsetService.messageFromNative(startVrEventA);
         mTestLooper.dispatchAll();
-        verify(mSystemInterface).activateVoiceRecognition();
+        verify(mSystemInterface).activateVoiceRecognition(deviceA);
         // Active device should have been swapped to device A
         verify(mNativeInterface).setActiveDevice(deviceA);
         assertThat(mHeadsetService.getActiveDevice()).isEqualTo(deviceA);
@@ -1155,7 +1155,7 @@ public class HeadsetServiceAndStateMachineTest {
                         deviceA);
         mHeadsetService.messageFromNative(startVrEventA);
         mTestLooper.dispatchAll();
-        verify(mSystemInterface).activateVoiceRecognition();
+        verify(mSystemInterface).activateVoiceRecognition(deviceA);
         // Active device should have been swapped to device A
         verify(mNativeInterface).setActiveDevice(deviceA);
         assertThat(mHeadsetService.getActiveDevice()).isEqualTo(deviceA);
@@ -1886,7 +1886,7 @@ public class HeadsetServiceAndStateMachineTest {
                         device);
         mHeadsetService.messageFromNative(startVrEvent);
         mTestLooper.dispatchAll();
-        verify(mSystemInterface).activateVoiceRecognition();
+        verify(mSystemInterface).activateVoiceRecognition(device);
         assertThat(mHeadsetService.startVoiceRecognition(device)).isTrue();
         mTestLooper.dispatchAll();
         verify(mNativeInterface).atResponseCode(device, HeadsetHalConstants.AT_RESPONSE_OK, 0);
@@ -1931,7 +1931,7 @@ public class HeadsetServiceAndStateMachineTest {
                         device);
         mHeadsetService.messageFromNative(startVrEvent);
         mTestLooper.dispatchAll();
-        verify(mSystemInterface).activateVoiceRecognition();
+        verify(mSystemInterface).activateVoiceRecognition(device);
         // has not add verification AudioDeviceInfo because it is final, unless add a wrapper
         mHeadsetService.startVoiceRecognition(device);
         mTestLooper.dispatchAll();

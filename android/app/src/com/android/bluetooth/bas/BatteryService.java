@@ -27,7 +27,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.ParcelUuid;
 import android.sysprop.BluetoothProperties;
@@ -36,7 +35,6 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -49,14 +47,10 @@ import java.util.Map;
 public class BatteryService extends ConnectableProfile {
     private static final String TAG = BatteryService.class.getSimpleName();
 
-    // Timeout for state machine thread join, to prevent potential ANR.
-    private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1_000;
-
     @Deprecated // TODO(b/422543753) Delete on flag cleanup
     private static BatteryService sBatteryService;
 
-    private final HandlerThread mStateMachinesThread;
-    private final Looper mStateMachinesLooper;
+    private final Looper mLooper;
     private final Handler mHandler;
 
     @GuardedBy("mStateMachines")
@@ -70,15 +64,7 @@ public class BatteryService extends ConnectableProfile {
     BatteryService(AdapterService adapterService, Looper looper) {
         super(BluetoothProfile.BATTERY, requireNonNull(adapterService));
         mHandler = new Handler(requireNonNull(looper));
-
-        if (Flags.batteryServiceUnifiedThread()) {
-            mStateMachinesThread = null;
-            mStateMachinesLooper = looper;
-        } else {
-            mStateMachinesThread = new HandlerThread("BatteryService.StateMachines");
-            mStateMachinesThread.start();
-            mStateMachinesLooper = mStateMachinesThread.getLooper();
-        }
+        mLooper = looper;
         setBatteryService(this);
     }
 
@@ -104,15 +90,6 @@ public class BatteryService extends ConnectableProfile {
                 sm.cleanup();
             }
             mStateMachines.clear();
-        }
-
-        if (!Flags.batteryServiceUnifiedThread()) {
-            try {
-                mStateMachinesThread.quitSafely();
-                mStateMachinesThread.join(SM_THREAD_JOIN_TIMEOUT_MS);
-            } catch (InterruptedException e) {
-                // Do not rethrow as we are shutting down anyway
-            }
         }
 
         mHandler.removeCallbacksAndMessages(null);
@@ -357,7 +334,7 @@ public class BatteryService extends ConnectableProfile {
             }
 
             Log.d(TAG, "Creating a new state machine for " + device);
-            sm = new BatteryStateMachine(this, device, mStateMachinesLooper);
+            sm = new BatteryStateMachine(this, device, mLooper);
             mStateMachines.put(device, sm);
             return sm;
         }

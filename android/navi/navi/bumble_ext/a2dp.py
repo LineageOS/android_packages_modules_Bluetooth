@@ -28,6 +28,7 @@ from bumble import a2dp
 from bumble import avdtp
 from bumble import codecs
 
+from navi.bumble_ext import ogg
 from navi.utils import constants
 
 
@@ -54,21 +55,6 @@ class LdacChannelMode(enum.IntFlag):
     MONO = 0x04
     DUAL = 0x02
     STEREO = 0x01
-
-
-class OpusChannelMode(enum.IntFlag):
-    MONO = 0x01
-    STEREO = 0x02
-    DUAL_MONO = 0x04
-
-
-class OpusFrameSize(enum.IntFlag):
-    SIZE_10_MILLISECONDS = 0x08
-    SIZE_20_MILLISECONDS = 0x10
-
-
-class OpusSamplingRate(enum.IntFlag):
-    RATE_48000 = 0x80
 
 
 @dataclasses.dataclass(frozen=True)
@@ -130,26 +116,6 @@ class LdacCodecInformation:
         )
 
 
-@dataclasses.dataclass(frozen=True)
-class OpusCodecInformation:
-    """OPUS codec information."""
-
-    sample_rate: OpusSamplingRate
-    channel_mode: OpusChannelMode
-    frame_size: OpusFrameSize
-
-    VENDOR_ID: ClassVar[int] = 0xE0
-    CODEC_ID: ClassVar[int] = 0x01
-
-    def __bytes__(self) -> bytes:
-        return struct.pack(
-            '<IHB',
-            self.VENDOR_ID,
-            self.CODEC_ID,
-            self.sample_rate | self.channel_mode | self.frame_size,
-        )
-
-
 @enum.unique
 class A2dpCodec(constants.ShortReprEnum):
     """A2DP codecs.
@@ -158,6 +124,7 @@ class A2dpCodec(constants.ShortReprEnum):
   packages/modules/Bluetooth/android/app/res/values/config.xml
   """
 
+    OPUS = enum.auto()
     LDAC = enum.auto()
     APTX_HD = enum.auto()
     APTX = enum.auto()
@@ -234,6 +201,44 @@ class A2dpCodec(constants.ShortReprEnum):
                         channel_mode=LdacChannelMode.STEREO,
                     ),
                 )
+            case A2dpCodec.OPUS:
+                return avdtp.MediaCodecCapabilities(
+                    media_type=avdtp.AVDTP_AUDIO_MEDIA_TYPE,
+                    media_codec_type=avdtp.A2DP_NON_A2DP_CODEC_TYPE,
+                    media_codec_information=a2dp.OpusMediaCodecInformation(
+                        sampling_frequency=a2dp.OpusMediaCodecInformation.SamplingFrequency.
+                        SF_48000,
+                        channel_mode=a2dp.OpusMediaCodecInformation.ChannelMode.STEREO,
+                        frame_size=a2dp.OpusMediaCodecInformation.FrameSize.FS_20MS,
+                    ),
+                )
+
+    def get_media_packet_pump(self, peer_mtu: int) -> avdtp.MediaPacketPump:
+        """Returns an empty packet pump for the given codec."""
+
+        # Empty packet source.
+        async def read(size: int) -> bytes:
+            return bytes(size)
+
+        source: a2dp.SbcPacketSource | a2dp.AacPacketSource
+        match self:
+            case A2dpCodec.SBC:
+                source = a2dp.SbcPacketSource(read, peer_mtu)
+            case A2dpCodec.AAC:
+                source = a2dp.AacPacketSource(read, peer_mtu)
+            case _:
+                raise ValueError(f'Unsupported codec: {self}')
+        return avdtp.MediaPacketPump(source.packets)
+
+    @property
+    def format(self) -> str:
+        """Container format of the codec.
+
+    Older ffmpeg doesn't support "opus" format and so we use "ogg" instead.
+    """
+        if self == A2dpCodec.OPUS:
+            return 'ogg'
+        return self.name.lower()
 
 
 def register_sink_buffer(sink: avdtp.LocalSink, codec: A2dpCodec) -> bytearray | None:
@@ -248,7 +253,7 @@ def register_sink_buffer(sink: avdtp.LocalSink, codec: A2dpCodec) -> bytearray |
   """
     buffer = bytearray()
     match codec:
-        case A2dpCodec.SBC:
+        case A2dpCodec.SBC | A2dpCodec.LDAC:
 
             @sink.on(avdtp.LocalSink.EVENT_RTP_PACKET)
             def _(packet: avdtp.MediaPacket) -> None:
@@ -275,13 +280,57 @@ def register_sink_buffer(sink: avdtp.LocalSink, codec: A2dpCodec) -> bytearray |
             def _(packet: avdtp.MediaPacket) -> None:
                 buffer.extend(packet.payload)
 
-        case A2dpCodec.LDAC:
+        case A2dpCodec.OPUS:
+
+            # https://datatracker.ietf.org/doc/html/rfc7845#section-3
+            # First page must be the ID header.
+            buffer.extend(
+                ogg.Page(
+                    # Change this when we support other codec configurations.
+                    payload=ogg.OpusIdHeader(sample_rate=48000, channel_count=2),
+                    header_type=ogg.Page.HeaderType.IS_FIRST_PAGE,
+                    page_sequence_number=0,
+                ).to_bytes())
+            # Second page must be the comment header. It can be empty.
+            buffer.extend(
+                ogg.Page(
+                    payload=ogg.OpusCommentHeader(),
+                    page_sequence_number=1,
+                ).to_bytes())
+            page_sequence_number = 2
 
             @sink.on(avdtp.LocalSink.EVENT_RTP_PACKET)
             def _(packet: avdtp.MediaPacket) -> None:
-                buffer.extend(packet.payload[1:])
+                nonlocal page_sequence_number
+                buffer.extend(
+                    ogg.Page(
+                        payload=packet.payload[1:],
+                        page_sequence_number=page_sequence_number,
+                    ).to_bytes())
+                page_sequence_number += 1
 
         case _:
             # Unexpected codec or no decoder.
             return None
     return buffer
+
+
+def find_local_source_by_codec(
+    protocol: avdtp.Protocol,
+    codec_type: int,
+    vendor_id: int = 0,
+    codec_id: int = 0,
+) -> avdtp.LocalSource | None:
+    """Finds the local source by codec type and vendor/codec ID."""
+    for endpoint in protocol.local_endpoints:
+        if not isinstance(endpoint, avdtp.LocalSource):
+            continue
+        for capability in endpoint.capabilities:
+            if not (isinstance(capability, avdtp.MediaCodecCapabilities) and capability.media_type
+                    == avdtp.AVDTP_AUDIO_MEDIA_TYPE and capability.media_codec_type == codec_type):
+                continue
+            codec_info = capability.media_codec_information
+            if not isinstance(codec_info, avdtp.VendorSpecificMediaCodecInformation) or (
+                    codec_info.vendor_id == vendor_id and codec_info.codec_id == codec_id):
+                return endpoint
+    return None

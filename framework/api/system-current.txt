@@ -127,9 +127,9 @@ package android.bluetooth {
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED) public boolean isAutoOnSupported();
     method public boolean isBleScanAlwaysAvailable();
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int isDistanceMeasurementSupported();
-    method @FlaggedApi("com.android.bluetooth.flags.socket_settings_api") @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED) public boolean isLeCocSocketOffloadSupported();
+    method @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED) public boolean isLeCocSocketOffloadSupported();
     method public boolean isLeEnabled();
-    method @FlaggedApi("com.android.bluetooth.flags.socket_settings_api") @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED) public boolean isRfcommSocketOffloadSupported();
+    method @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED) public boolean isRfcommSocketOffloadSupported();
     method @NonNull public static String nameForState(int);
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int notifyActiveDeviceChangeApplied(@NonNull android.bluetooth.BluetoothDevice);
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public boolean registerBluetoothConnectionCallback(@NonNull java.util.concurrent.Executor, @NonNull android.bluetooth.BluetoothAdapter.BluetoothConnectionCallback);
@@ -1153,10 +1153,10 @@ package android.bluetooth {
   public final class BluetoothSocket implements java.io.Closeable {
     method @FlaggedApi("com.android.bluetooth.flags.bt_socket_api_l2cap_cid") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int getL2capLocalChannelId() throws java.io.IOException;
     method @FlaggedApi("com.android.bluetooth.flags.bt_socket_api_l2cap_cid") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int getL2capRemoteChannelId() throws java.io.IOException;
-    method @FlaggedApi("com.android.bluetooth.flags.socket_settings_api") public long getSocketId() throws java.io.IOException;
+    method public long getSocketId() throws java.io.IOException;
   }
 
-  @FlaggedApi("com.android.bluetooth.flags.socket_settings_api") public final class BluetoothSocketSettings {
+  public final class BluetoothSocketSettings {
     method public int getDataPath();
     method public long getEndpointId();
     method public long getHubId();
@@ -1166,7 +1166,7 @@ package android.bluetooth {
     field public static final int DATA_PATH_NO_OFFLOAD = 0; // 0x0
   }
 
-  @FlaggedApi("com.android.bluetooth.flags.socket_settings_api") public static final class BluetoothSocketSettings.Builder {
+  public static final class BluetoothSocketSettings.Builder {
     method @NonNull public android.bluetooth.BluetoothSocketSettings.Builder setDataPath(int);
     method @NonNull public android.bluetooth.BluetoothSocketSettings.Builder setEndpointId(long);
     method @NonNull public android.bluetooth.BluetoothSocketSettings.Builder setHubId(long);

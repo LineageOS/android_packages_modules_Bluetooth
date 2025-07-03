@@ -73,8 +73,8 @@ cc_test {
         "packages/modules/Bluetooth/system/stack/include",
     ],
     srcs: [
-        ":TestCommonMainHandler",
         ":TestCommonMockFunctions",
+        ":TestCommonSyncMainHandler",
         ":TestFakeOsi",
         ":TestMockBta",
         ":TestMockBtif",
@@ -110,6 +110,7 @@ cc_test {
         "libbluetooth_log",
         "libbluetooth_metrics",
         "libbluetooth_types",
+        "libbt-btu-main-thread",
         "libbt-common",
         "libbtdevice",
         "libchrome",

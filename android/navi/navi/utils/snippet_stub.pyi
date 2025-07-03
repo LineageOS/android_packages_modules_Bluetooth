@@ -6,6 +6,15 @@ from mobly.controllers.android_device_lib import snippet_client_v2
 
 
 class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
+    # Mobly
+    def scheduleRpc(self, method_name: str, delay_ms: int,
+                    args: Sequence[Any]) -> callback_handler_v2.CallbackHandlerV2:
+        ...
+
+    # Other
+    def ping(self) -> str:
+        ...
+
     # Adapter
     def factoryReset(self) -> bool:
         ...
@@ -66,7 +75,7 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
         advertise_settings: dict[str, Any],
         advertise_data: dict[str, Any] | None = None,
         scan_response: dict[str, Any] | None = None,
-    ) -> str | None:
+    ) -> str:
         ...
 
     def stopAdvertising(self, cookie: str) -> None:
@@ -541,4 +550,20 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
         ...
 
     def getSupportedDistanceMeasurementMethods(self) -> list[int]:
+        ...
+
+    # HAP Client
+    def registerHapClientCallback(self,) -> callback_handler_v2.CallbackHandlerV2:
+        ...
+
+    def unregisterHapClientCallback(self, callback_id: str) -> None:
+        ...
+
+    def getAllHapPresetInfo(self, address: str) -> dict[str, str]:
+        ...
+
+    def getActiveHapPresetIndex(self, address: str) -> int:
+        ...
+
+    def selectHapPreset(self, address: str, index: int) -> None:
         ...

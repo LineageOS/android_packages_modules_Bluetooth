@@ -3421,7 +3421,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             throw new IOException();
         }
         if (DBG) Log.d(TAG, "createL2capChannel: psm=" + psm);
-        return new BluetoothSocket(this, BluetoothSocket.TYPE_L2CAP_LE, true, true, psm, null);
+        return new BluetoothSocket(this, BluetoothSocket.TYPE_LE, true, true, psm, null);
     }
 
     /**
@@ -3454,7 +3454,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
         if (DBG) {
             Log.d(TAG, "createInsecureL2capChannel: psm=" + psm);
         }
-        return new BluetoothSocket(this, BluetoothSocket.TYPE_L2CAP_LE, false, false, psm, null);
+        return new BluetoothSocket(this, BluetoothSocket.TYPE_LE, false, false, psm, null);
     }
 
     /**
@@ -3480,7 +3480,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *     as input or if BluetoothSocket#TYPE_LE with invalid PSM is passed.
      * @throws IOException on error, for example Bluetooth not available.
      */
-    @FlaggedApi(Flags.FLAG_SOCKET_SETTINGS_API)
     @RequiresNoPermission
     public @NonNull BluetoothSocket createUsingSocketSettings(
             @NonNull BluetoothSocketSettings settings) throws IOException {

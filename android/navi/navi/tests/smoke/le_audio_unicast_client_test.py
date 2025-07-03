@@ -12,12 +12,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from __future__ import annotations
+
 import asyncio
 from collections.abc import Sequence
 import contextlib
 import decimal
 import struct
-from typing import TypeAlias
+from typing import TYPE_CHECKING, TypeAlias
 
 from bumble import core
 from bumble import device
@@ -38,9 +40,20 @@ from navi.bumble_ext import ccp
 from navi.bumble_ext import gatt_helper
 from navi.tests import navi_test_base
 from navi.utils import android_constants
+from navi.utils import audio
 from navi.utils import bl4a_api
 from navi.utils import constants
 from navi.utils import pyee_extensions
+
+# pylint: disable=g-import-not-at-top
+if TYPE_CHECKING:
+    from navi.utils import lc3  # pylint: disable=g-bad-import-order
+else:
+    try:
+        # LC3 may not be present in the external repo.
+        from navi.utils import lc3
+    except ImportError:
+        lc3 = None
 
 _DEFAUILT_ADVERTISING_PARAMETERS = device.AdvertisingParameters(
     own_address_type=hci.OwnAddressType.RANDOM,
@@ -58,6 +71,7 @@ _SAMPLE_AUDIO_FILE_RESOURCE_PATH = resources.GetResourceFilename(_SAMPLE_AUDIO_F
 _SAMPLE_AUDIO_FILE_DEVICE_PATH = "/storage/self/primary/Music/sample.mp3"
 _SINK_ASE_ID = 1
 _SOURCE_ASE_ID = 2
+_DEFAULT_FRAME_RATE = 48000
 
 _ConnectionState = android_constants.ConnectionState
 _Direction = constants.Direction
@@ -72,10 +86,27 @@ async def _wait_for_ase_state(ase: ascs.AseStateMachine, state: ascs.AseStateMac
     """Waits for the ASE state to be changed to the specified state."""
     with pyee_extensions.EventTriggeredValueObserver(
             ase,
-            event="state_change",
+            event=ase.EVENT_STATE_CHANGE,
             value_producer=lambda: ase.state,
     ) as observer:
         await observer.wait_for_target_value(state)
+
+
+def decoder_for_ase(ase: ascs.AseStateMachine) -> lc3.Decoder:
+    """Returns the decoder for the ASE."""
+    if not lc3:
+        raise RuntimeError("LC3 is not available")
+    codec_config = ase.codec_specific_configuration
+    assert isinstance(codec_config, bap.CodecSpecificConfiguration)
+    assert codec_config.frame_duration is not None
+    assert codec_config.sampling_frequency is not None
+    assert codec_config.audio_channel_allocation is not None
+    return lc3.Decoder(
+        frame_duration_us=codec_config.frame_duration.us,
+        sample_rate_hz=codec_config.sampling_frequency.hz,
+        pcm_sample_rate_hz=_DEFAULT_FRAME_RATE,
+        num_channels=codec_config.audio_channel_allocation.channel_count,
+    )
 
 
 class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
@@ -161,7 +192,8 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
     async def _prepare_paired_devices(self) -> None:
         with self.dut.bl4a.register_callback(bl4a_api.Module.LE_AUDIO) as dut_lea_cb:
             self.logger.info("[DUT] Pair with REF")
-            await self.le_connect_and_pair(ref_address_type=hci.OwnAddressType.RANDOM)
+            await self.le_connect_and_pair(ref_address_type=hci.OwnAddressType.RANDOM,
+                                           connect_profiles=True)
 
             self.logger.info("[DUT] Wait for LE Audio connected")
             event = await dut_lea_cb.wait_for_event(
@@ -241,16 +273,16 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
       is_active: True if reconnect is actively initialized by DUT, otherwise TA
         will be used to perform the reconnection passively.
     """
+        if not is_active and self.dut.device.is_emulator:
+            self.skipTest("b/425668688 - TA filter reconnection is not supported on rootcanal"
+                          " yet.")
+
         with self.dut.bl4a.register_callback(bl4a_api.Module.LE_AUDIO) as dut_cb:
             self.logger.info("[DUT] Disconnect REF")
             self.dut.bt.disconnect(self.ref.random_address)
 
             self.logger.info("[DUT] Wait for LE Audio disconnected")
-            await dut_cb.wait_for_event(
-                bl4a_api.ProfileConnectionStateChanged(
-                    address=self.ref.random_address,
-                    state=android_constants.ConnectionState.DISCONNECTED,
-                ),)
+            await dut_cb.wait_for_event(bl4a_api.ProfileActiveDeviceChanged(address=None),)
 
             self.logger.info("[REF] Start advertising")
             await self.ref.device.create_advertising_set(
@@ -266,10 +298,7 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
 
             self.logger.info("[DUT] Wait for LE Audio connected")
             await dut_cb.wait_for_event(
-                bl4a_api.ProfileConnectionStateChanged(
-                    address=self.ref.random_address,
-                    state=android_constants.ConnectionState.CONNECTED,
-                ),)
+                bl4a_api.ProfileActiveDeviceChanged(address=self.ref.random_address),)
 
     async def test_unidirectional_audio_stream(self) -> None:
         """Tests unidirectional audio stream between DUT and REF.
@@ -298,16 +327,43 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
         ):
             await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.STREAMING)
 
+        # Setup audio sink.
+        sink_frames = list[bytes]()
+        decoder = decoder_for_ase(sink_ase) if lc3 else None
+
+        def sink(pdu: hci.HCI_IsoDataPacket):
+            if pdu.iso_sdu_fragment:
+                sink_frames.append(pdu.iso_sdu_fragment)
+
+        assert (cis_link := sink_ase.cis_link)
+        cis_link.sink = sink
+
         # Streaming for 1 second.
         await asyncio.sleep(_STREAMING_TIME_SECONDS)
 
         self.logger.info("[DUT] Stop audio streaming")
+        cis_link.sink = None
         await asyncio.to_thread(self.dut.bt.audioStop)
         async with self.assert_not_timeout(
                 _DEFAULT_STEP_TIMEOUT_SECONDS,
                 msg="[REF] Wait for audio to stop",
         ):
             await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.IDLE)
+
+        if self.user_params.get(navi_test_base.RECORD_FULL_DATA):
+            self.write_test_output_data("sink.lc3", b"".join(sink_frames))
+        if lc3 and decoder and audio.SUPPORT_AUDIO_PROCESSING:
+            pcm_format = lc3.PcmFormat.SIGNED_16
+            decoded_frames = [decoder.decode(frame, pcm_format) for frame in sink_frames]
+            dominant_frequency = audio.get_dominant_frequency(
+                buffer=b"".join(decoded_frames),
+                format="pcm",
+                sample_width=pcm_format.sample_width,
+                frame_rate=_DEFAULT_FRAME_RATE,
+                channels=decoder.num_channels,
+            )
+            self.logger.info("dominant_frequency: %.2f", dominant_frequency)
+            self.assertAlmostEqual(dominant_frequency, 1000, delta=10)
 
     async def test_gaming_context(self) -> None:
         """Tests streaming with gaming context.
@@ -395,6 +451,7 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
             _CALLER_NUMBER,
             constants.Direction.OUTGOING,
         )
+        sink_ase = self.ref_ascs.ase_state_machines[_SINK_ASE_ID]
 
         with call:
             await dut_telecom_cb.wait_for_event(
@@ -422,10 +479,22 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                 for ase in self.ref_ascs.ase_state_machines.values():
                     await _wait_for_ase_state(ase, ascs.AseStateMachine.State.STREAMING)
 
+            # Setup audio sink.
+            sink_frames = list[bytes]()
+            decoder = decoder_for_ase(sink_ase) if lc3 else None
+
+            def sink(pdu: hci.HCI_IsoDataPacket):
+                if pdu.iso_sdu_fragment:
+                    sink_frames.append(pdu.iso_sdu_fragment)
+
+            assert (cis_link := sink_ase.cis_link)
+            cis_link.sink = sink
+
             # Streaming for 1 second.
             await asyncio.sleep(_STREAMING_TIME_SECONDS)
 
             self.logger.info("[DUT] Stop audio streaming")
+            cis_link.sink = None
             await asyncio.to_thread(self.dut.bt.audioStop)
 
         async with self.assert_not_timeout(
@@ -434,6 +503,21 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
         ):
             for ase in self.ref_ascs.ase_state_machines.values():
                 await _wait_for_ase_state(ase, ascs.AseStateMachine.State.IDLE)
+
+        if self.user_params.get(navi_test_base.RECORD_FULL_DATA):
+            self.write_test_output_data("sink.lc3", b"".join(sink_frames))
+        if lc3 and decoder and audio.SUPPORT_AUDIO_PROCESSING:
+            pcm_format = lc3.PcmFormat.SIGNED_16
+            decoded_frames = [decoder.decode(frame, pcm_format) for frame in sink_frames]
+            dominant_frequency = audio.get_dominant_frequency(
+                buffer=b"".join(decoded_frames),
+                format="pcm",
+                sample_width=pcm_format.sample_width,
+                frame_rate=_DEFAULT_FRAME_RATE,
+                channels=decoder.num_channels,
+            )
+            self.logger.info("dominant_frequency: %.2f", dominant_frequency)
+            self.assertAlmostEqual(dominant_frequency, 1000, delta=10)
 
     async def test_reconnect_during_call(self) -> None:
         """Tests reconnecting during a call. Call audio should be routed to Unicast.
@@ -444,16 +528,16 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
       3. Reconnect REF.
       4. Wait for audio streaming to start from REF.
     """
+        if self.dut.device.is_emulator:
+            self.skipTest("b/425668688 - TA filter reconnection is not supported on rootcanal"
+                          " yet.")
+
         with self.dut.bl4a.register_callback(bl4a_api.Module.LE_AUDIO) as dut_cb:
             self.logger.info("[DUT] Disconnect REF")
             self.dut.bt.disconnect(self.ref.random_address)
 
             self.logger.info("[DUT] Wait for LE Audio disconnected")
-            await dut_cb.wait_for_event(
-                bl4a_api.ProfileConnectionStateChanged(
-                    address=self.ref.random_address,
-                    state=android_constants.ConnectionState.DISCONNECTED,
-                ),)
+            await dut_cb.wait_for_event(bl4a_api.ProfileActiveDeviceChanged(address=None),)
 
         with contextlib.ExitStack() as stack:
             dut_telecom_cb = self.dut.bl4a.register_callback(bl4a_api.Module.TELECOM)
@@ -486,10 +570,7 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                 )
             self.logger.info("[DUT] Wait for LE Audio connected")
             await dut_leaudio_cb.wait_for_event(
-                bl4a_api.ProfileConnectionStateChanged(
-                    address=self.ref.random_address,
-                    state=android_constants.ConnectionState.CONNECTED,
-                ),)
+                bl4a_api.ProfileActiveDeviceChanged(address=self.ref.random_address),)
 
             self.logger.info("[REF] Wait for streaming to start")
             async with self.assert_not_timeout(
@@ -562,7 +643,7 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
         if self.dut.bluetooth_flags.get("vcp_device_volume_api_improvements", True):
             vcs_volume = pyee_extensions.EventTriggeredValueObserver[int](
                 self.ref_vcs,
-                "volume_state_change",
+                self.ref_vcs.EVENT_VOLUME_STATE_CHANGE,
                 lambda: self.ref_vcs.volume_setting,
             )
             ref_expected_volume = decimal.Decimal(
@@ -614,7 +695,7 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
         with (self.dut.bl4a.register_callback(bl4a_api.Module.AUDIO) as dut_audio_cb,):
             vcs_volume = pyee_extensions.EventTriggeredValueObserver[int](
                 self.ref_vcs,
-                "volume_state_change",
+                self.ref_vcs.EVENT_VOLUME_STATE_CHANGE,
                 lambda: self.ref_vcs.volume_setting,
             )
             if issuer == _TestRole.DUT:

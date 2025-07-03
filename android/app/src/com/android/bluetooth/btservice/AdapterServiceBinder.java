@@ -1195,18 +1195,6 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
-    public boolean factoryReset(AttributionSource source) {
-        AdapterService service = getService();
-        if (service == null
-                || !checkConnectPermissionForDataDelivery(service, source, TAG, "factoryReset")) {
-            return false;
-        }
-
-        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-        return service.factoryReset();
-    }
-
-    @Override
     public void registerBluetoothConnectionCallback(
             IBluetoothConnectionCallback callback, AttributionSource source) {
         AdapterService service = getService();

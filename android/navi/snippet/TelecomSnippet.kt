@@ -112,7 +112,7 @@ class TelecomSnippet : Snippet {
                 override fun onCallStateChanged(call: Call, state: Int) {
                     postSnippetEvent(callbackId, SnippetConstants.CALL_STATE_CHANGED) {
                         putString(SnippetConstants.FIELD_NAME, call.details.callerDisplayName)
-                        putString(SnippetConstants.FIELD_HANDLE, call.details.handle.toString())
+                        putString(SnippetConstants.FIELD_HANDLE, call.details.handle?.toString())
                         putInt(SnippetConstants.FIELD_STATE, state)
                     }
                 }

@@ -34,13 +34,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_allow_leaudio_only_devices"
-    namespace: "bluetooth"
-    description: "Enable Le Audio for LeAudio only devices"
-    bug: "328471369"
-}
-
-flag {
     name: "leaudio_mono_location_errata_api"
     is_exported: true
     namespace: "bluetooth"

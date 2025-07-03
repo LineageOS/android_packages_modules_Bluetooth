@@ -708,7 +708,6 @@ class RfcommTest {
      * - Verify bumble received that data
      */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_SOCKET_SETTINGS_API)
     fun clientSendDataOverInsecureSocketUsingSocketSettings() {
         updateSecurityConfig()
         startServer { serverId ->
@@ -736,7 +735,6 @@ class RfcommTest {
      * - Verify bumble received that data
      */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_SOCKET_SETTINGS_API)
     fun clientSendDataOverEncryptedOnlySocketUsingSocketSettings() {
         updateSecurityConfig(true, false)
         startServer { serverId ->
@@ -767,7 +765,6 @@ class RfcommTest {
      * - Verify bumble received that data
      */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_SOCKET_SETTINGS_API)
     fun clientSendDataOverSecureSocketUsingSocketSettings() {
         updateSecurityConfig(true, true)
         startServer { serverId ->

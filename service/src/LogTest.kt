@@ -59,6 +59,13 @@ class LogTest {
     }
 
     @Test
+    fun log_whatATerribleFailure() {
+        Log.wtf(TAG, "Logging error")
+        Log.wtf("Logging error")
+        Log.wtf(TAG, "Logging error... ", RuntimeException("With a Throwable"))
+    }
+
+    @Test
     fun log_timeToStringWithZone() {
         assertThat(Log.timeToStringWithZone(123456789)).isEqualTo("01-02 02:17:36.789")
     }

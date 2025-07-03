@@ -1452,8 +1452,8 @@ cc_test {
     ],
     srcs: [
         ":BtaDmSources",
-        ":TestCommonMainHandler",
         ":TestCommonMockFunctions",
+        ":TestCommonSyncMainHandler",
         ":TestMockBtaGatt",
         ":TestMockBtaLeAudio",
         ":TestMockBtaSdp",
@@ -1486,8 +1486,8 @@ cc_test {
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
         "libbluetooth_types",
+        "libbt-btu-main-thread",
         "libbt-common",
-
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
@@ -1526,8 +1526,8 @@ cc_test {
     ],
     srcs: [
         ":BtaDmSources",
-        ":TestCommonMainHandler",
         ":TestCommonMockFunctions",
+        ":TestCommonSyncMainHandler",
         ":TestMockBtaGatt",
         ":TestMockBtaLeAudio",
         ":TestMockBtaSdp",
@@ -1563,8 +1563,8 @@ cc_test {
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_types",
+        "libbt-btu-main-thread",
         "libbt-common",
-
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
@@ -1600,8 +1600,8 @@ cc_test {
     ],
     srcs: [
         ":BtaDmSources",
-        ":TestCommonMainHandler",
         ":TestCommonMockFunctions",
+        ":TestCommonSyncMainHandler",
         ":TestFakeOsi",
         ":TestMockBtaGatt",
         ":TestMockBtaLeAudio",
@@ -1632,8 +1632,8 @@ cc_test {
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_types",
+        "libbt-btu-main-thread",
         "libbt-common",
-
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",

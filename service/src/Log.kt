@@ -51,6 +51,13 @@ object Log {
 
     @JvmStatic fun w(subtag: String, msg: String, tr: Throwable) = Log.w(TAG, "$subtag: $msg", tr)
 
+    @JvmStatic fun wtf(subtag: String, msg: String) = Log.wtf(TAG, "$subtag: $msg")
+
+    @JvmStatic fun wtf(msg: String) = Log.wtf(TAG, msg)
+
+    @JvmStatic
+    fun wtf(subtag: String, msg: String, tr: Throwable) = Log.wtf(TAG, "$subtag: $msg", tr)
+
     @JvmStatic fun e(subtag: String, msg: String) = Log.e(TAG, "$subtag: $msg")
 
     @JvmStatic fun e(msg: String) = Log.e(TAG, msg)

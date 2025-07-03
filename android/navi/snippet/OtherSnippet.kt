@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.btservice;
+package com.google.android.bluetooth.snippet
 
-import android.app.Application;
-import android.util.Log;
+import com.google.android.mobly.snippet.Snippet
+import com.google.android.mobly.snippet.rpc.Rpc
 
-import com.android.bluetooth.Utils;
+/** Other snippet for testing. */
+class OtherSnippet : Snippet {
 
-public class AdapterApp extends Application {
-    private static final String TAG = Utils.BT_PREFIX + AdapterApp.class.getSimpleName();
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        Log.d(TAG, "onCreate");
-    }
+    /** Ping. */
+    @Rpc(description = "Ping") fun ping(): String = "pong"
 }
