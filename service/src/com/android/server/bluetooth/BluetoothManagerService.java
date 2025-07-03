@@ -846,18 +846,8 @@ class BluetoothManagerService {
             mBinder = binder;
         }
 
-        ClientDeathRecipient(String packageName) {
-            if (Flags.bleDeathRecipientThread()) {
-                throw new IllegalStateException(
-                        "bleDeathRecipientThread flag is deprecating this constructor");
-            }
-            mPackageName = packageName;
-            mBinder = null;
-        }
-
         @Override
         public void binderDied() {
-            if (Flags.bleDeathRecipientThread()) {
                 Log.w(TAG, "Binder is dead - posting the unregister of " + mPackageName);
                 mHandler.post(
                         () ->
@@ -865,18 +855,6 @@ class BluetoothManagerService {
                                         ENABLE_DISABLE_REASON_APPLICATION_DIED,
                                         mBinder,
                                         mPackageName));
-                return;
-            }
-            Log.w(TAG, "Binder is dead - unregister " + mPackageName);
-
-            for (Map.Entry<IBinder, ClientDeathRecipient> entry : mBleApps.entrySet()) {
-                IBinder token = entry.getKey();
-                ClientDeathRecipient deathRec = entry.getValue();
-                if (deathRec.equals(this)) {
-                    updateBleAppCount(token, false, mPackageName);
-                    break;
-                }
-            }
         }
 
         @Override
@@ -952,29 +930,6 @@ class BluetoothManagerService {
         bleOnToOffIfNeeded(reason, packageName);
     }
 
-    private int updateBleAppCount(IBinder token, boolean enable, String packageName) {
-        String header = "updateBleAppCount(" + token + ", " + enable + ", " + packageName + ")";
-        ClientDeathRecipient r = mBleApps.get(token);
-        if (r == null && enable) {
-            ClientDeathRecipient deathRec = new ClientDeathRecipient(packageName);
-            try {
-                token.linkToDeath(deathRec, 0);
-            } catch (RemoteException ex) {
-                throw new IllegalArgumentException("BLE app (" + packageName + ") already dead!");
-            }
-            mBleApps.put(token, deathRec);
-            Log.d(TAG, header + " linkToDeath");
-        } else if (!enable && r != null) {
-            // Unregister death recipient as the app goes away.
-            token.unlinkToDeath(r, 0);
-            mBleApps.remove(token);
-            Log.d(TAG, header + " unlinkToDeath");
-        }
-        int appCount = mBleApps.size();
-        Log.d(TAG, header + " Number of BLE app registered: appCount=" + appCount);
-        return appCount;
-    }
-
     boolean enableBleFromBinder(String packageName, IBinder token) {
         return postAndWait(() -> enableBle(packageName, token));
     }
@@ -1008,11 +963,7 @@ class BluetoothManagerService {
             return false;
         }
 
-        if (Flags.bleDeathRecipientThread()) {
-            addBleApp(token, packageName);
-        } else {
-            updateBleAppCount(token, true, packageName);
-        }
+        addBleApp(token, packageName);
 
         if (mState.oneOf(
                 State.ON,
@@ -1045,12 +996,7 @@ class BluetoothManagerService {
             return false;
         }
 
-        if (Flags.bleDeathRecipientThread()) {
-            removeBleApp(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, token, packageName);
-        } else {
-            updateBleAppCount(token, false, packageName);
-            bleOnToOffIfNeeded(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName);
-        }
+        removeBleApp(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, token, packageName);
         return true;
     }
 
@@ -1080,9 +1026,7 @@ class BluetoothManagerService {
 
     // Clear all apps using BLE scan only mode.
     private void clearBleApps() {
-        if (Flags.bleDeathRecipientThread()) {
-            mBleApps.entrySet().stream().forEach(e -> e.getKey().unlinkToDeath(e.getValue(), 0));
-        }
+        mBleApps.entrySet().stream().forEach(e -> e.getKey().unlinkToDeath(e.getValue(), 0));
         mBleApps.clear();
     }
 
