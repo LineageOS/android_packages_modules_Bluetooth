@@ -149,6 +149,7 @@ class AppScanStats {
     private int mAmbientDiscoveryScan = 0;
     private long startTime = 0;
     private int results = 0;
+    private int mScheduledBatchAlarmCount = 0;
 
     AppScanStats(
             String name,
@@ -576,6 +577,10 @@ class AppScanStats {
                 < LARGE_SCAN_TIME_GAP_MS);
     }
 
+    synchronized void recordBatchAlarmScheduled() {
+        mScheduledBatchAlarmCount++;
+    }
+
     String getAttributionTagFromScannerId(int scannerId) {
         LastScan scan = getScanFromScannerId(scannerId);
         return scan == null ? "" : scan.getAttributionTag();
@@ -765,6 +770,11 @@ class AppScanStats {
         sb.append("\n    Total number of results")
                 .append("                                                      : ")
                 .append(results);
+        if (mScheduledBatchAlarmCount > 0) {
+            sb.append("\n    Number of batch alarms scheduled")
+                    .append("                                             : ")
+                    .append(mScheduledBatchAlarmCount);
+        }
 
         if (!mLastScans.isEmpty()) {
             sb.append("\n    Last ").append(mLastScans.size()).append(" scans:");

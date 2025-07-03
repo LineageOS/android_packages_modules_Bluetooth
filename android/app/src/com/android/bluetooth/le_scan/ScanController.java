@@ -1468,7 +1468,6 @@ public class ScanController {
             Log.e(TAG, "Unexpectedly cannot find batch scan client for scannerId=" + scannerId);
             return;
         }
-        Log.d(TAG, "flushPendingBatchResults for client: " + scanClient);
         doOnScanThread(
                 () -> {
                     mScanManager.flushBatchScanResults(scanClient);

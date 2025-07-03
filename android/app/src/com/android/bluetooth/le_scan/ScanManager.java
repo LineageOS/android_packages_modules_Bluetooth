@@ -427,6 +427,7 @@ public class ScanManager {
 
     void flushBatchScanResults(ScanClient client) {
         mScanController.enforceScanThread();
+        Log.d(TAG, "flushBatchScanResults for client: " + client);
         if (Flags.scanControllerThread()) {
             handleFlushBatchResults(client);
         } else {
@@ -767,12 +768,11 @@ public class ScanManager {
     }
 
     private void handleFlushBatchResults(ScanClient client) {
-        Log.d(TAG, "handleFlushBatchResults() " + client);
         if (!mBatchClients.contains(client)) {
             Log.d(TAG, "There is no batch scan client to flush " + client);
             return;
         }
-        flushBatchResults(client.mScannerId);
+        flushBatchResults(client);
     }
 
     private static boolean isBatchClient(ScanClient client) {
@@ -1489,13 +1489,13 @@ public class ScanManager {
         BatchScanParams batchScanParams = fetchBatchScanParams();
         // Stop batch if batch scan params changed and previous params is not null.
         if (mBatchScanParams != null && (!mBatchScanParams.equals(batchScanParams))) {
-            Log.d(TAG, "stopping BLe Batch");
+            Log.d(TAG, "Stopping BLE Batch");
             resetCountDownLatch();
             mNativeInterface.gattClientStopBatchScan(scannerId);
             waitForCallback();
             // Clear pending results as it's illegal to config storage if there are still
             // pending results.
-            flushBatchResults(scannerId);
+            flushBatchResults(client);
         }
         // Start batch if batchScanParams changed and current params is not null.
         if (batchScanParams != null && (!batchScanParams.equals(mBatchScanParams))) {
@@ -1522,7 +1522,7 @@ public class ScanManager {
             waitForCallback();
         }
         mBatchScanParams = batchScanParams;
-        setBatchAlarm();
+        setBatchAlarm(client);
     }
 
     private static int getFullScanStoragePercent(int resultType) {
@@ -1608,12 +1608,12 @@ public class ScanManager {
 
     // Set the batch alarm to be triggered within a short window after batch interval. This
     // allows system to optimize wake up time while still allows a degree of precise control.
-    private void setBatchAlarm() {
-        Log.d(TAG, "setBatchAlarm(): Canceling pending batch scan alarm");
+    private void setBatchAlarm(ScanClient client) {
+        Log.d(TAG, "setBatchAlarm(): Caller: " + client + ". Canceling pending batch scan alarm");
         mAlarmManager.cancel(mBatchScanIntervalIntent);
 
         if (mBatchClients.isEmpty()) {
-            Log.d(TAG, "setBatchAlarm(): No batch clients; skipping alarm setup");
+            Log.d(TAG, "setBatchAlarm(): No batch clients; Skipping alarm setup");
             return;
         }
         final long batchTriggerIntervalMillis =
@@ -1623,7 +1623,8 @@ public class ScanManager {
         final long windowLengthMillis = batchTriggerIntervalMillis / 10;
         final long windowStartMs = mTimeProvider.elapsedRealtime() + batchTriggerIntervalMillis;
         final var windowStartReadable = Utils.formatElapsedRealtime(windowStartMs);
-        Log.d(TAG, "setBatchAlarm(): at=" + windowStartReadable + " (" + windowStartMs + "ms)");
+        Log.d(TAG, "setBatchAlarm(): for:" + windowStartReadable + " (" + windowStartMs + "ms)");
+        client.mStats.ifPresent(stats -> stats.recordBatchAlarmScheduled());
         mAlarmManager.setWindow(
                 AlarmManager.ELAPSED_REALTIME_WAKEUP,
                 windowStartMs,
@@ -1753,8 +1754,7 @@ public class ScanManager {
         }
     }
 
-    private void flushBatchResults(int scannerId) {
-        Log.d(TAG, "flushBatchResults - scannerId = " + scannerId);
+    private void flushBatchResults(ScanClient client) {
         if (mBatchScanParams.fullScanScannerId != -1) {
             resetCountDownLatch();
             mNativeInterface.gattClientReadScanReports(
@@ -1767,7 +1767,7 @@ public class ScanManager {
                     mBatchScanParams.truncatedScanScannerId, SCAN_RESULT_TYPE_TRUNCATED);
             waitForCallback();
         }
-        setBatchAlarm();
+        setBatchAlarm(client);
     }
 
     // Add scan filters. The logic is:
