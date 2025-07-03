@@ -934,19 +934,10 @@ public class AdapterService extends Service {
         Log.d(TAG, "init() instance = " + hciInstanceName);
 
         factoryResetIfNeeded();
-        if (Flags.factoryResetAtBluetoothStart()) {
-            try {
-                DataMigration.run(this);
-            } catch (Exception e) {
-                Log.e(TAG, "Migration failure: ", e);
-            }
-        }
-
-        if (!Flags.factoryResetAtBluetoothStart()) {
-            if (Flags.gattClearCacheOnFactoryReset()
-                    && BluetoothProperties.factory_reset().orElse(false)) {
-                clearStorage();
-            }
+        try {
+            DataMigration.run(this);
+        } catch (Exception e) {
+            Log.e(TAG, "Migration failure: ", e);
         }
 
         Config.init(this);
@@ -1069,9 +1060,6 @@ public class AdapterService extends Service {
     }
 
     private void factoryResetIfNeeded() {
-        if (!Flags.factoryResetAtBluetoothStart()) {
-            return;
-        }
         if (!BluetoothProperties.factory_reset().orElse(false)) {
             return;
         }
@@ -3926,23 +3914,6 @@ public class AdapterService extends Service {
             Log.i(TAG, "Deleting empty directory: " + file.getPath());
             file.delete();
         }
-    }
-
-    boolean factoryReset() {
-        if (Flags.factoryResetAtBluetoothStart()) {
-            throw new IllegalStateException("flag factoryResetAtBluetoothStart is enabled");
-        }
-        mDatabaseManager.factoryReset();
-
-        if (mBluetoothKeystoreService != null) {
-            mBluetoothKeystoreService.factoryReset();
-        }
-
-        if (mBtCompanionManager != null) {
-            mBtCompanionManager.factoryReset();
-        }
-
-        return mNativeInterface.factoryReset();
     }
 
     int getScanMode() {

@@ -115,7 +115,7 @@ public final class DatabaseManagerTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_FACTORY_RESET_AT_BLUETOOTH_START);
+        return FlagsWrapper.progressionOf();
     }
 
     public DatabaseManagerTest(FlagsWrapper flags) {
@@ -166,15 +166,6 @@ public final class DatabaseManagerTest {
         for (int id = 0; id < MAX_META_ID; id++) {
             assertThat(mDatabaseManager.getCustomMeta(mDevice1, id)).isNull();
         }
-
-        if (Flags.factoryResetAtBluetoothStart()) {
-            return;
-        }
-
-        mDatabaseManager.factoryReset();
-        mDatabaseManager.mMetadataCache.clear();
-        // Wait for clear database
-        TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
     }
 
     private boolean setConnectionPolicy(int newConnectionPolicy) {
@@ -384,15 +375,6 @@ public final class DatabaseManagerTest {
         // Check whether the device is in database
         Metadata checkData = list.get(0);
         assertThat(checkData.getAddress()).isEqualTo(mDevice1.getAddress());
-
-        if (Flags.factoryResetAtBluetoothStart()) {
-            return;
-        }
-
-        mDatabaseManager.factoryReset();
-        mDatabaseManager.mMetadataCache.clear();
-        // Wait for clear database
-        TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
     }
 
     @Test
@@ -437,15 +419,6 @@ public final class DatabaseManagerTest {
         assertThat(checkData1.getAddress()).isEqualTo(mDevice3.getAddress());
         Metadata checkData2 = list.get(1);
         assertThat(checkData2.getAddress()).isEqualTo(mDevice2.getAddress());
-
-        if (Flags.factoryResetAtBluetoothStart()) {
-            return;
-        }
-
-        mDatabaseManager.factoryReset();
-        mDatabaseManager.mMetadataCache.clear();
-        // Wait for clear database
-        TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
     }
 
     @Test
@@ -612,15 +585,6 @@ public final class DatabaseManagerTest {
         assertThat(mostRecentlyConnectedDevicesOrdered)
                 .containsExactly(mDevice2, mDevice1)
                 .inOrder();
-
-        if (Flags.factoryResetAtBluetoothStart()) {
-            return;
-        }
-
-        mDatabaseManager.factoryReset();
-        mDatabaseManager.mMetadataCache.clear();
-        // Wait for clear database
-        TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
     }
 
     @Test
@@ -779,15 +743,6 @@ public final class DatabaseManagerTest {
         assertThat(mostRecentlyConnectedDevicesOrdered)
                 .containsExactly(mDevice3, mDevice1, mDevice2)
                 .inOrder();
-
-        if (Flags.factoryResetAtBluetoothStart()) {
-            return;
-        }
-
-        mDatabaseManager.factoryReset();
-        mDatabaseManager.mMetadataCache.clear();
-        // Wait for clear database
-        TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
     }
 
     @Test
@@ -1892,15 +1847,6 @@ public final class DatabaseManagerTest {
             assertThat(mDatabaseManager.getA2dpOptionalCodecsEnabled(mDevice1))
                     .isEqualTo(expectedValue);
         }
-
-        if (Flags.factoryResetAtBluetoothStart()) {
-            return;
-        }
-
-        mDatabaseManager.factoryReset();
-        mDatabaseManager.mMetadataCache.clear();
-        // Wait for clear database
-        TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
     }
 
     void testSetGetCustomMetaCase(boolean stored, int key, byte[] value, boolean expectedResult) {
@@ -1930,15 +1876,6 @@ public final class DatabaseManagerTest {
         // Check whether the value is saved in database
         restartDatabaseManagerHelper();
         assertThat(mDatabaseManager.getCustomMeta(mDevice1, key)).isEqualTo(value);
-
-        if (Flags.factoryResetAtBluetoothStart()) {
-            return;
-        }
-
-        mDatabaseManager.factoryReset();
-        mDatabaseManager.mMetadataCache.clear();
-        // Wait for clear database
-        TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
     }
 
     void testSetGetAudioPolicyMetadataCase(
@@ -1966,15 +1903,6 @@ public final class DatabaseManagerTest {
         // Check whether the value is saved in database
         restartDatabaseManagerHelper();
         assertThat(mDatabaseManager.getAudioPolicyMetadata(mDevice1)).isEqualTo(policy);
-
-        if (Flags.factoryResetAtBluetoothStart()) {
-            return;
-        }
-
-        mDatabaseManager.factoryReset();
-        mDatabaseManager.mMetadataCache.clear();
-        // Wait for clear database
-        TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
     }
 
     void testSetGetPreferredAudioProfilesCase(
@@ -2035,15 +1963,6 @@ public final class DatabaseManagerTest {
         assertThat(testDevice2Preferences.getInt(BluetoothAdapter.AUDIO_MODE_OUTPUT_ONLY))
                 .isEqualTo(0);
         assertThat(testDevice2Preferences.getInt(BluetoothAdapter.AUDIO_MODE_DUPLEX)).isEqualTo(0);
-
-        if (Flags.factoryResetAtBluetoothStart()) {
-            return;
-        }
-
-        mDatabaseManager.factoryReset();
-        mDatabaseManager.mMetadataCache.clear();
-        // Wait for clear database
-        TestUtils.waitForLooperToFinishScheduledTask(mDatabaseManager.getHandlerLooper());
     }
 
     @Test
