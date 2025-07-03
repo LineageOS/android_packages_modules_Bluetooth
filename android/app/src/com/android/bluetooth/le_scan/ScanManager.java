@@ -1368,6 +1368,9 @@ public class ScanManager {
             if (!isBatch && !isPhyConfigured(client, use1mPhy)) {
                 continue;
             }
+            if (isOpportunisticScanClient(client)) {
+                continue;
+            }
             int priority = mPriorityMap.get(client.mSettings.getScanMode());
             if (priority > currentScanModePriority) {
                 result = client;
