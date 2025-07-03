@@ -528,8 +528,14 @@ public:
               connection_complete.GetPeerResolvablePrivateAddress();
     }
 
-    auto connection_callbacks = connection->GetEventCallbacks(
-            [this](uint16_t handle) { this->connections.invalidate(handle); });
+    auto connection_callbacks = connection->GetEventCallbacks([this](uint16_t handle) {
+      this->connections.invalidate(handle);
+      if (round_robin_scheduler_.IsRegistered(handle)) {
+        log::warn("Unregistering scheduler for invalidated handle {}", handle);
+        round_robin_scheduler_.Unregister(handle);
+      }
+    });
+
     if (std::holds_alternative<DataAsUninitializedPeripheral>(role_specific_data)) {
       // the OnLeConnectSuccess event will be sent after receiving the On Advertising Set Terminated
       // event, since we need it to know what local_address / advertising set the peer connected to.
