@@ -45,7 +45,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /** List of our registered scanners. */
-public class ScannerMap {
+class ScannerMap {
     private static final String TAG = ScannerMap.class.getSimpleName();
 
     /** Internal map to keep track of logging information by app name */
@@ -134,7 +134,7 @@ public class ScannerMap {
     }
 
     /** Remove the context for a given UUID */
-    public void remove(UUID uuid) {
+    void remove(UUID uuid) {
         Log.d(TAG, "remove() - uuid: " + uuid);
 
         Iterator<ScannerApp> i = mApps.iterator();
@@ -149,7 +149,7 @@ public class ScannerMap {
     }
 
     /** Erases all application context entries. */
-    public void clear() {
+    void clear() {
         for (ScannerApp entry : mApps) {
             entry.cleanup();
         }
@@ -244,7 +244,7 @@ public class ScannerMap {
         }
     }
 
-    public static class ScannerApp {
+    static class ScannerApp {
         /** Context information */
         @Nullable ScanController.PendingIntentInfo mInfo;
 

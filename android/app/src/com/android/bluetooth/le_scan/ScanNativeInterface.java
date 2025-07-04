@@ -109,22 +109,22 @@ public class ScanNativeInterface {
     private native void gattClientReadScanReportsNative(int clientIf, int scanType);
 
     /** Register BLE scanner */
-    public void registerScanner(long appUuidLsb, long appUuidMsb) {
+    void registerScanner(long appUuidLsb, long appUuidMsb) {
         registerScannerNative(appUuidLsb, appUuidMsb);
     }
 
     /** Unregister BLE scanner */
-    public void unregisterScanner(int scannerId) {
+    void unregisterScanner(int scannerId) {
         unregisterScannerNative(scannerId);
     }
 
     /** Enable/disable BLE scan */
-    public void gattClientScan(boolean start) {
+    void gattClientScan(boolean start) {
         gattClientScanNative(start);
     }
 
     /** Configure BLE scan parameters */
-    public void gattSetScanParameters(
+    void gattSetScanParameters(
             int clientIf1m,
             int scanInterval1m,
             int scanWindow1m,
@@ -143,44 +143,43 @@ public class ScanNativeInterface {
     }
 
     /** Add BLE scan filter */
-    public void gattClientScanFilterAdd(
-            int clientId, ScanFilterQueue.Entry[] entries, int filterIndex) {
+    void gattClientScanFilterAdd(int clientId, ScanFilterQueue.Entry[] entries, int filterIndex) {
         gattClientScanFilterAddNative(clientId, entries, filterIndex);
     }
 
     /** Add BLE scan filter parameters */
-    public void gattClientScanFilterParamAdd(FilterParams filtValue) {
+    void gattClientScanFilterParamAdd(FilterParams filtValue) {
         gattClientScanFilterParamAddNative(filtValue);
     }
 
     /** Clear all BLE scan filter parameters */
     // Note this effectively remove scan filters for ALL clients.
-    public void gattClientScanFilterParamClearAll(int clientIf) {
+    void gattClientScanFilterParamClearAll(int clientIf) {
         gattClientScanFilterParamClearAllNative(clientIf);
     }
 
     /** Delete BLE scan filter parameters */
-    public void gattClientScanFilterParamDelete(int clientIf, int filtIndex) {
+    void gattClientScanFilterParamDelete(int clientIf, int filtIndex) {
         gattClientScanFilterParamDeleteNative(clientIf, filtIndex);
     }
 
     /** Clear BLE scan filter */
-    public void gattClientScanFilterClear(int clientIf, int filterIndex) {
+    void gattClientScanFilterClear(int clientIf, int filterIndex) {
         gattClientScanFilterClearNative(clientIf, filterIndex);
     }
 
     /** Enable/disable BLE scan filter */
-    public void gattClientScanFilterEnable(int clientIf, boolean enable) {
+    void gattClientScanFilterEnable(int clientIf, boolean enable) {
         gattClientScanFilterEnableNative(clientIf, enable);
     }
 
     /** Check if MSFT HCI extension is supported */
-    public boolean gattClientIsMsftSupported() {
+    boolean gattClientIsMsftSupported() {
         return gattClientIsMsftSupportedNative();
     }
 
     /** Add a MSFT Advertisement Monitor */
-    public void gattClientMsftAdvMonitorAdd(
+    void gattClientMsftAdvMonitorAdd(
             MsftAdvMonitor.Monitor msft_adv_monitor,
             MsftAdvMonitor.Pattern[] msft_adv_monitor_patterns,
             MsftAdvMonitor.Address msft_adv_monitor_address,
@@ -193,19 +192,19 @@ public class ScanNativeInterface {
     }
 
     /** Remove a MSFT Advertisement Monitor */
-    public void gattClientMsftAdvMonitorRemove(int filter_index) {
+    void gattClientMsftAdvMonitorRemove(int filter_index) {
         int monitor_handle = mScanController.msftMonitorHandleFromFilterIndex(filter_index);
         if (monitor_handle < 0) return;
         gattClientMsftAdvMonitorRemoveNative(filter_index, monitor_handle);
     }
 
     /** Enable a MSFT Advertisement Monitor */
-    public void gattClientMsftAdvMonitorEnable(boolean enable) {
+    void gattClientMsftAdvMonitorEnable(boolean enable) {
         gattClientMsftAdvMonitorEnableNative(enable);
     }
 
     /** Configure BLE batch scan storage */
-    public void gattClientConfigBatchScanStorage(
+    void gattClientConfigBatchScanStorage(
             int clientIf,
             int maxFullReportsPercent,
             int maxTruncatedReportsPercent,
@@ -218,7 +217,7 @@ public class ScanNativeInterface {
     }
 
     /** Enable BLE batch scan with the parameters */
-    public void gattClientStartBatchScan(
+    void gattClientStartBatchScan(
             int clientIf,
             int scanMode,
             int scanIntervalUnit,
@@ -230,12 +229,12 @@ public class ScanNativeInterface {
     }
 
     /** Disable BLE batch scan */
-    public void gattClientStopBatchScan(int clientIf) {
+    void gattClientStopBatchScan(int clientIf) {
         gattClientStopBatchScanNative(clientIf);
     }
 
     /** Read BLE batch scan reports */
-    public void gattClientReadScanReports(int clientIf, int scanType) {
+    void gattClientReadScanReports(int clientIf, int scanType) {
         gattClientReadScanReportsNative(clientIf, scanType);
     }
 
