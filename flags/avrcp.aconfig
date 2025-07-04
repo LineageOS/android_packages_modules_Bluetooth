@@ -47,3 +47,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "use_returned_absolute_volume"
+    namespace: "bluetooth"
+    description: "Use the volume returned in an accepted SetAbsoluteVolume command"
+    bug: "429364070"
+}
