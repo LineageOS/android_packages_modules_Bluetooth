@@ -284,7 +284,8 @@ final class HapClientStateMachine extends StateMachine {
             Log.d(TAG, mStateLog + "processMessage: " + messageWhatToString(message.what));
 
             switch (message.what) {
-                case MESSAGE_CONNECT -> Log.w(TAG, mStateLog + "CONNECT ignored");
+                case MESSAGE_CONNECT -> Log.w(TAG, mStateLog + "CONNECT ignored ");
+
                 case MESSAGE_CONNECT_TIMEOUT -> {
                     Log.w(TAG, mStateLog + "connection timeout");
                     mNativeInterface.disconnectHapClient(mDevice);
@@ -349,7 +350,29 @@ final class HapClientStateMachine extends StateMachine {
             Log.d(TAG, mStateLog + "processMessage: " + messageWhatToString(message.what));
 
             switch (message.what) {
-                case MESSAGE_CONNECT, MESSAGE_DISCONNECT -> deferMessage(message);
+                case MESSAGE_CONNECT -> {
+                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
+                        if (!hasDeferredMessages(MESSAGE_CONNECT)) {
+                            deferMessage(message);
+                        } else {
+                            Log.w(TAG, mStateLog + "CONNECT already scheduled");
+                        }
+                    } else {
+                        deferMessage(message);
+                    }
+                }
+                case MESSAGE_DISCONNECT -> {
+                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
+                        if (hasDeferredMessages(MESSAGE_CONNECT)) {
+                            Log.w(TAG, mStateLog + "removing scheduled CONNECT");
+                            removeDeferredMessages(MESSAGE_CONNECT);
+                        } else {
+                            Log.w(TAG, mStateLog + "ignore DISCONNECT");
+                        }
+                    } else {
+                        deferMessage(message);
+                    }
+                }
                 case MESSAGE_CONNECT_TIMEOUT -> {
                     Log.w(TAG, mStateLog + "connection timeout");
                     mNativeInterface.disconnectHapClient(mDevice);
