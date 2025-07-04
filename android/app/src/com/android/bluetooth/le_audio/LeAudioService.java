@@ -336,7 +336,6 @@ public class LeAudioService extends ConnectableProfile {
         }
     }
 
-    // OFYTODO
     // TODO(b/422543753) Delete on flag cleanup
     Optional<BassClientService> getBassClientService() {
         if (Flags.adapterServiceProfilesUseOptional()) {
