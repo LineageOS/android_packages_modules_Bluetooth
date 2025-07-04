@@ -1360,6 +1360,7 @@ public class BassClientService extends ConnectableProfile {
                                     device,
                                     this,
                                     mAdapterService,
+                                    mPeriodicAdvertisingManager,
                                     mStateMachinesThread.getLooper());
             if (stateMachine != null) {
                 mStateMachines.put(device, stateMachine);

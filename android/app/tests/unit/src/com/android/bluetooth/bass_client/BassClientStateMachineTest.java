@@ -62,7 +62,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
@@ -85,6 +84,7 @@ import android.bluetooth.BluetoothLeBroadcastReceiveState;
 import android.bluetooth.BluetoothLeBroadcastSubgroup;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothStatusCodes;
+import android.bluetooth.le.PeriodicAdvertisingManager;
 import android.content.Intent;
 import android.os.Looper;
 import android.os.Message;
@@ -94,7 +94,6 @@ import android.platform.test.flag.junit.SetFlagsRule;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
@@ -108,7 +107,6 @@ import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -131,9 +129,9 @@ public class BassClientStateMachineTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
+    @Mock private PeriodicAdvertisingManager mPeriodicAdvertisingManager;
     @Mock private AdapterService mAdapterService;
     @Mock private BassClientService mBassClientService;
-    @Mock private BluetoothMethodProxy mMethodProxy;
     @Mock private MetricsLogger mMetricsLogger;
     @Mock private BassClientStateMachine.BluetoothGattTestableWrapper mBluetoothGatt;
     @Mock private BluetoothGattCharacteristic mBroadcastScanControlPoint;
@@ -158,22 +156,21 @@ public class BassClientStateMachineTest {
         mLooper = new TestLooper();
         mInOrder = inOrder(mAdapterService);
 
-        BluetoothMethodProxy.setInstanceForTesting(mMethodProxy);
-        doNothing()
-                .when(mMethodProxy)
-                .periodicAdvertisingManagerTransferSync(any(), any(), anyInt(), anyInt());
         MetricsLogger.setInstanceForTesting(mMetricsLogger);
 
         doReturn(mEmptyTestDevice)
                 .when(mAdapterService)
                 .getDeviceFromByte(Utils.getBytesFromAddress(EMPTY_BLUETOOTH_DEVICE_ADDRESS));
         doReturn(mAdapterService).when(mBassClientService).getBaseContext();
-
         mockGetBluetoothManager(mAdapterService);
 
         mStateMachine =
                 new StubBassClientStateMachine(
-                        mDevice, mBassClientService, mAdapterService, mLooper.getLooper());
+                        mDevice,
+                        mBassClientService,
+                        mAdapterService,
+                        mPeriodicAdvertisingManager,
+                        mLooper.getLooper());
         mStateMachine.start();
     }
 
@@ -888,9 +885,7 @@ public class BassClientStateMachineTest {
         // also matches source address (as we would have written)
         serviceData = serviceData & (~BassConstants.ADV_ADDRESS_DONT_MATCHES_EXT_ADV_ADDRESS);
         serviceData = serviceData & (~BassConstants.ADV_ADDRESS_DONT_MATCHES_SOURCE_ADV_ADDRESS);
-        verify(mMethodProxy)
-                .periodicAdvertisingManagerTransferSync(
-                        any(), any(), eq(serviceData), eq(syncHandle));
+        verify(mPeriodicAdvertisingManager).transferSync(any(), eq(serviceData), eq(syncHandle));
         inOrderCallbacks
                 .verify(callbacks)
                 .notifyReceiveStateChanged(any(), eq(sourceId), receiveStateCaptor.capture());
@@ -910,9 +905,8 @@ public class BassClientStateMachineTest {
         serviceData = serviceData << 8;
         // Address we set in the Source Address can differ from the address in the air
         serviceData = serviceData | BassConstants.ADV_ADDRESS_DONT_MATCHES_SOURCE_ADV_ADDRESS;
-        verify(mMethodProxy)
-                .periodicAdvertisingManagerTransferSetInfo(
-                        any(), any(), eq(serviceData), anyInt(), any());
+        verify(mPeriodicAdvertisingManager)
+                .transferSetInfo(any(), eq(serviceData), anyInt(), any());
         inOrderCallbacks
                 .verify(callbacks)
                 .notifyReceiveStateChanged(any(), eq(sourceId), receiveStateCaptor.capture());
@@ -1603,9 +1597,7 @@ public class BassClientStateMachineTest {
         // also matches source address (as we would have written)
         serviceData = serviceData & (~BassConstants.ADV_ADDRESS_DONT_MATCHES_EXT_ADV_ADDRESS);
         serviceData = serviceData & (~BassConstants.ADV_ADDRESS_DONT_MATCHES_SOURCE_ADV_ADDRESS);
-        verify(mMethodProxy)
-                .periodicAdvertisingManagerTransferSync(
-                        any(), any(), eq(serviceData), eq(syncHandle));
+        verify(mPeriodicAdvertisingManager).transferSync(any(), eq(serviceData), eq(syncHandle));
     }
 
     @Test
@@ -2746,8 +2738,9 @@ public class BassClientStateMachineTest {
                 BluetoothDevice device,
                 BassClientService service,
                 AdapterService adapterService,
+                PeriodicAdvertisingManager periodicAdvertisingManager,
                 Looper looper) {
-            super(device, service, adapterService, looper);
+            super(device, service, adapterService, periodicAdvertisingManager, looper);
         }
 
         @Override

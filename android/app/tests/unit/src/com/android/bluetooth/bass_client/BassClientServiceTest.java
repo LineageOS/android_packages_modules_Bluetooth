@@ -319,7 +319,7 @@ public class BassClientServiceTest {
                             return stateMachine;
                         })
                 .when(mObjectsFactory)
-                .makeStateMachine(any(), any(), any(), any());
+                .makeStateMachine(any(), any(), any(), any(), any());
         doReturn(mBluetoothLeScannerWrapper)
                 .when(mObjectsFactory)
                 .getBluetoothLeScannerWrapper(any());
@@ -404,7 +404,11 @@ public class BassClientServiceTest {
         assertThat(mBassClientService.connect(mCurrentDevice)).isTrue();
         verify(mObjectsFactory)
                 .makeStateMachine(
-                        eq(mCurrentDevice), eq(mBassClientService), eq(mAdapterService), any());
+                        eq(mCurrentDevice),
+                        eq(mBassClientService),
+                        eq(mAdapterService),
+                        eq(mPeriodicAdvertisingManager),
+                        any());
         BassClientStateMachine stateMachine = mStateMachines.get(mCurrentDevice);
         assertThat(stateMachine).isNotNull();
         verify(stateMachine).sendMessage(BassClientStateMachine.CONNECT);
