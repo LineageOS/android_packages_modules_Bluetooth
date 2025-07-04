@@ -183,17 +183,20 @@ public class LeAudioServiceTest {
     private static final BluetoothLeAudioCodecConfig LC3_16KHZ_CONFIG =
             new BluetoothLeAudioCodecConfig.Builder()
                     .setCodecType(BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3)
+                    .setCodecPriority(BluetoothLeAudioCodecConfig.CODEC_PRIORITY_DEFAULT)
                     .setSampleRate(BluetoothLeAudioCodecConfig.SAMPLE_RATE_16000)
                     .build();
     private static final BluetoothLeAudioCodecConfig LC3_48KHZ_CONFIG =
             new BluetoothLeAudioCodecConfig.Builder()
                     .setCodecType(BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3)
+                    .setCodecPriority(BluetoothLeAudioCodecConfig.CODEC_PRIORITY_DEFAULT)
                     .setSampleRate(BluetoothLeAudioCodecConfig.SAMPLE_RATE_48000)
                     .build();
 
     private static final BluetoothLeAudioCodecConfig LC3_48KHZ_16KHZ_CONFIG =
             new BluetoothLeAudioCodecConfig.Builder()
                     .setCodecType(BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3)
+                    .setCodecPriority(BluetoothLeAudioCodecConfig.CODEC_PRIORITY_DEFAULT)
                     .setSampleRate(
                             BluetoothLeAudioCodecConfig.SAMPLE_RATE_48000
                                     | BluetoothLeAudioCodecConfig.SAMPLE_RATE_16000)
@@ -215,7 +218,7 @@ public class LeAudioServiceTest {
     private static final BluetoothLeAudioCodecConfig OPUS_HI_RES_96KHZ_CONFIG =
             new BluetoothLeAudioCodecConfig.Builder()
                     .setCodecType(BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_OPUS_HI_RES)
-                    .setCodecPriority(BluetoothLeAudioCodecConfig.CODEC_PRIORITY_HIGHEST)
+                    .setCodecPriority(BluetoothLeAudioCodecConfig.CODEC_PRIORITY_DEFAULT + 1)
                     .setSampleRate(BluetoothLeAudioCodecConfig.SAMPLE_RATE_96000)
                     .setBitsPerSample(BluetoothLeAudioCodecConfig.BITS_PER_SAMPLE_24)
                     .setChannelCount(BluetoothLeAudioCodecConfig.CHANNEL_COUNT_2)
@@ -3443,11 +3446,11 @@ public class LeAudioServiceTest {
         assertThat(outputCodecDatabase.getValue().size()).isEqualTo(2);
         assertThat(inputCodecDatabase.getValue().size()).isEqualTo(2);
 
-        // Make sure that Opus Hi-res preference with a higher prio than Opus was not overridden
+        // Make sure that Opus Hi-res preference with the same prio as Opus will override it
         verify(mNativeInterface, times(1))
                 .setCodecConfigPreference(
                         TEST_GROUP_ID, OPUS_HI_RES_96KHZ_CONFIG, OPUS_HI_RES_96KHZ_CONFIG);
-        verify(mNativeInterface, times(0))
+        verify(mNativeInterface, times(1))
                 .setCodecConfigPreference(TEST_GROUP_ID, OPUS_48KHZ_CONFIG, OPUS_48KHZ_CONFIG);
 
         reset(mNativeInterface);
@@ -3473,13 +3476,15 @@ public class LeAudioServiceTest {
         // Verify if preferences were retrieved and reapplied to native
         verify(mDatabaseManager).getLeAudioUnicastInputCodecPreferenceList(mSingleDevice);
         verify(mDatabaseManager).getLeAudioUnicastOutputCodecPreferenceList(mSingleDevice);
-        // Make sure the regular Opus does not override the higher prio Opus Hi-res preference
-        verify(mNativeInterface, times(0))
+        // Make sure the regular Opus does override the equal prio Opus Hi-res preference
+        verify(mNativeInterface, times(1))
                 .setCodecConfigPreference(TEST_GROUP_ID, OPUS_48KHZ_CONFIG, OPUS_48KHZ_CONFIG);
         verify(mNativeInterface)
                 .setCodecConfigPreference(
                         TEST_GROUP_ID, OPUS_HI_RES_96KHZ_CONFIG, OPUS_HI_RES_96KHZ_CONFIG);
     }
+
+    // TODO: Add test with different codec priorities
 
     /** Test managing broadcast to unicast fallback group */
     @Test

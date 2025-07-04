@@ -5422,12 +5422,9 @@ public class LeAudioService extends ConnectableProfile {
     private boolean shouldUpdateCodecConfigPreference(BluetoothLeAudioCodecConfig codecConfig) {
         // Note: Opus and Opus Hi-res are a different codecs at the API level, but still
         // the same codec at the Bluetooth specification level. If we have both flavors of the Opus
-        // codec
-        // configuration priorities set by the API, we should call to native only with the higher
-        // codec
-        // priority of the two, since the BT Audio HAL receives the same Bluetooth domain codec
-        // identifier
-        // when setting the priority for both.
+        // codec configuration priorities set by the API, we should call to native only with an
+        // equal or higher codec priority of the two, since the BT Audio HAL receives the same
+        // Bluetooth domain codec identifier when setting the priority for both.
         if (codecConfig.getCodecType() != BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_OPUS
                 && codecConfig.getCodecType()
                         != BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_OPUS_HI_RES) {
@@ -5441,7 +5438,7 @@ public class LeAudioService extends ConnectableProfile {
                         : BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_OPUS_HI_RES;
         if (mActiveGroupCodecPreferences.containsKey(checkAgainstCodecType)) {
             return mActiveGroupCodecPreferences.get(checkAgainstCodecType).second.getCodecPriority()
-                    < codecConfig.getCodecPriority();
+                    <= codecConfig.getCodecPriority();
         }
         return true;
     }
