@@ -70,7 +70,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -237,6 +236,8 @@ public class ScanManager {
     private int mProfilesDisconnecting;
     // Whether or not MSFT-based scanning is currently enabled in the controller
     private boolean mScanEnabledMsft = false;
+
+    record BatchScanParams(int scanMode, int fullScanScannerId, int truncatedScanScannerId) {}
 
     @VisibleForTesting
     record UidImportance(int uid, int importance) {}
@@ -1243,36 +1244,6 @@ public class ScanManager {
         }
     }
 
-    static class BatchScanParams {
-        @VisibleForTesting int mScanMode;
-        private int mFullScanScannerId;
-        private int mTruncatedScanScannerId;
-
-        BatchScanParams() {
-            mScanMode = -1;
-            mFullScanScannerId = -1;
-            mTruncatedScanScannerId = -1;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (!(obj instanceof BatchScanParams other)) {
-                return false;
-            }
-            return mScanMode == other.mScanMode
-                    && mFullScanScannerId == other.mFullScanScannerId
-                    && mTruncatedScanScannerId == other.mTruncatedScanScannerId;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(mScanMode, mFullScanScannerId, mTruncatedScanScannerId);
-        }
-    }
-
     private void resetCountDownLatch() {
         mNativeInterface.resetCountDownLatch();
     }
@@ -1538,8 +1509,8 @@ public class ScanManager {
             waitForCallback();
             resetCountDownLatch();
             int scanInterval =
-                    Utils.millsToUnit(getBatchScanIntervalMillis(batchScanParams.mScanMode));
-            int scanWindow = Utils.millsToUnit(getBatchScanWindowMillis(batchScanParams.mScanMode));
+                    Utils.millsToUnit(getBatchScanIntervalMillis(batchScanParams.scanMode));
+            int scanWindow = Utils.millsToUnit(getBatchScanWindowMillis(batchScanParams.scanMode));
             mNativeInterface.gattClientStartBatchScan(
                     scannerId,
                     resultType,
@@ -1566,21 +1537,27 @@ public class ScanManager {
         if (mBatchClients.isEmpty()) {
             return null;
         }
-        BatchScanParams params = new BatchScanParams();
+
+        int scanMode = -1;
+        int fullScanScannerId = -1;
+        int truncatedScanScannerId = -1;
+
         ScanClient winner = getAggressiveClient(mBatchClients, true, true);
         if (winner != null) {
-            params.mScanMode = winner.mSettings.getScanMode();
+            scanMode = winner.mSettings.getScanMode();
         }
+
         // TODO: split full batch scan results and truncated batch scan results to different
         // collections.
         for (ScanClient client : mBatchClients) {
             if (client.mSettings.getScanResultType() == ScanSettings.SCAN_RESULT_TYPE_FULL) {
-                params.mFullScanScannerId = client.mScannerId;
+                fullScanScannerId = client.mScannerId;
             } else {
-                params.mTruncatedScanScannerId = client.mScannerId;
+                truncatedScanScannerId = client.mScannerId;
             }
         }
-        return params;
+
+        return new BatchScanParams(scanMode, fullScanScannerId, truncatedScanScannerId);
     }
 
     // Batched scan doesn't require high duty cycle scan because scan result is reported
@@ -1777,16 +1754,16 @@ public class ScanManager {
 
     private void flushBatchResults(int scannerId) {
         Log.d(TAG, "flushBatchResults - scannerId = " + scannerId);
-        if (mBatchScanParams.mFullScanScannerId != -1) {
+        if (mBatchScanParams.fullScanScannerId != -1) {
             resetCountDownLatch();
             mNativeInterface.gattClientReadScanReports(
-                    mBatchScanParams.mFullScanScannerId, SCAN_RESULT_TYPE_FULL);
+                    mBatchScanParams.fullScanScannerId, SCAN_RESULT_TYPE_FULL);
             waitForCallback();
         }
-        if (mBatchScanParams.mTruncatedScanScannerId != -1) {
+        if (mBatchScanParams.truncatedScanScannerId != -1) {
             resetCountDownLatch();
             mNativeInterface.gattClientReadScanReports(
-                    mBatchScanParams.mTruncatedScanScannerId, SCAN_RESULT_TYPE_TRUNCATED);
+                    mBatchScanParams.truncatedScanScannerId, SCAN_RESULT_TYPE_TRUNCATED);
             waitForCallback();
         }
         setBatchAlarm();
@@ -1920,13 +1897,13 @@ public class ScanManager {
 
     /** Return batch scan result type value defined in bt stack. */
     private static int getResultType(BatchScanParams params) {
-        if (params.mFullScanScannerId != -1 && params.mTruncatedScanScannerId != -1) {
+        if (params.fullScanScannerId != -1 && params.truncatedScanScannerId != -1) {
             return SCAN_RESULT_TYPE_BOTH;
         }
-        if (params.mTruncatedScanScannerId != -1) {
+        if (params.truncatedScanScannerId != -1) {
             return SCAN_RESULT_TYPE_TRUNCATED;
         }
-        if (params.mFullScanScannerId != -1) {
+        if (params.fullScanScannerId != -1) {
             return SCAN_RESULT_TYPE_FULL;
         }
         return -1;
@@ -2384,15 +2361,14 @@ public class ScanManager {
                 @Override
                 public void onUidImportance(final int uid, final int importance) {
                     if (mScanController.getScannerMap().getAppScanStatsByUid(uid) != null) {
+                        final var uidImportance = new UidImportance(uid, importance);
                         if (Flags.scanControllerThread()) {
                             mScanController.doOnScanThread(
-                                    () ->
-                                            handleImportanceChange(
-                                                    new UidImportance(uid, importance)));
+                                    () -> handleImportanceChange(uidImportance));
                         } else {
                             Message message = new Message();
                             message.what = MSG_IMPORTANCE_CHANGE;
-                            message.obj = new UidImportance(uid, importance);
+                            message.obj = uidImportance;
                             mClientHandler.sendMessage(message);
                         }
                     }
