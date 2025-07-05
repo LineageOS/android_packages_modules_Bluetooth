@@ -59,7 +59,6 @@ protected:
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com::android::bluetooth::flags::provider_->reset_flags();
 
-    com::android::bluetooth::flags::provider_->leaudio_add_aics_support(true);
     com::android::bluetooth::flags::provider_->vcp_handle_group_id_internally(true);
     devices_ = new VolumeControlDevices();
     gatt::SetMockBtaGattInterface(&gatt_interface);
@@ -223,7 +222,6 @@ protected:
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com::android::bluetooth::flags::provider_->reset_flags();
 
-    com::android::bluetooth::flags::provider_->leaudio_add_aics_support(true);
     com::android::bluetooth::flags::provider_->vcp_handle_group_id_internally(true);
     device = new VolumeControlDevice(GetTestAddress(1), true);
     gatt::SetMockBtaGattInterface(&gatt_interface);

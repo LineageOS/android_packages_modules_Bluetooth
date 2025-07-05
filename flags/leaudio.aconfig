@@ -69,13 +69,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_add_aics_support"
-    namespace: "bluetooth"
-    description: "Add AICS support"
-    bug: "361263965"
-}
-
-flag {
     name: "metadata_api_microphone_for_call_enabled"
     is_exported: true
     namespace: "bluetooth"

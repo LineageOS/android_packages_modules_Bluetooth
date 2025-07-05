@@ -272,11 +272,7 @@ bool VolumeControlDevice::UpdateHandles(void) {
 
         } else if (included.uuid == kVolumeAudioInputUuid) {
           log::info("{}, found AICS, handle={:#x}", address, service->handle);
-          if (com::android::bluetooth::flags::leaudio_add_aics_support()) {
-            set_audio_input_control_service_handles(*service);
-          } else {
-            log::info("Flag leaudio_add_aics_support is not enabled");
-          }
+          set_audio_input_control_service_handles(*service);
         } else {
           log::warn("{}, unknown service={}", address, service->uuid);
         }
