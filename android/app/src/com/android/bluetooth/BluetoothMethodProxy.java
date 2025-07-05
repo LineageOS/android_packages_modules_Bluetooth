@@ -20,10 +20,6 @@ import android.annotation.NonNull;
 import android.annotation.SuppressLint;
 import android.app.ComponentCaller;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.le.PeriodicAdvertisingCallback;
-import android.bluetooth.le.PeriodicAdvertisingManager;
-import android.bluetooth.le.ScanResult;
 import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -216,49 +212,6 @@ public class BluetoothMethodProxy {
     /** Proxies {@link Telephony.Threads#getOrCreateThreadId(Context, Set <String>)}. */
     public long telephonyGetOrCreateThreadId(Context context, Set<String> recipients) {
         return Telephony.Threads.getOrCreateThreadId(context, recipients);
-    }
-
-    /**
-     * Proxies {@link PeriodicAdvertisingManager#registerSync(ScanResult, int, int,
-     * PeriodicAdvertisingCallback, Handler)}.
-     */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786
-    public void periodicAdvertisingManagerRegisterSync(
-            PeriodicAdvertisingManager manager,
-            ScanResult scanResult,
-            int skip,
-            int timeout,
-            PeriodicAdvertisingCallback callback,
-            Handler handler) {
-        manager.registerSync(scanResult, skip, timeout, callback, handler);
-    }
-
-    /** Proxies {@link PeriodicAdvertisingManager#unregisterSync(PeriodicAdvertisingCallback)}. */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786
-    public void periodicAdvertisingManagerUnregisterSync(
-            PeriodicAdvertisingManager manager, PeriodicAdvertisingCallback callback) {
-        manager.unregisterSync(callback);
-    }
-
-    /** Proxies {@link PeriodicAdvertisingManager#transferSync}. */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786
-    public void periodicAdvertisingManagerTransferSync(
-            PeriodicAdvertisingManager manager,
-            BluetoothDevice bda,
-            int serviceData,
-            int syncHandle) {
-        manager.transferSync(bda, serviceData, syncHandle);
-    }
-
-    /** Proxies {@link PeriodicAdvertisingManager#transferSetInfo}. */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786
-    public void periodicAdvertisingManagerTransferSetInfo(
-            PeriodicAdvertisingManager manager,
-            BluetoothDevice bda,
-            int serviceData,
-            int advHandle,
-            PeriodicAdvertisingCallback callback) {
-        manager.transferSetInfo(bda, serviceData, advHandle, callback);
     }
 
     /** Proxies {@link Thread#start()}. */

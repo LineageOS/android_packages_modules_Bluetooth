@@ -69,7 +69,6 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.bluetooth.BluetoothEventLogger;
-import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
@@ -1361,6 +1360,7 @@ public class BassClientService extends ConnectableProfile {
                                     device,
                                     this,
                                     mAdapterService,
+                                    mPeriodicAdvertisingManager,
                                     mStateMachinesThread.getLooper());
             if (stateMachine != null) {
                 mStateMachines.put(device, stateMachine);
@@ -2669,10 +2669,8 @@ public class BassClientService extends ConnectableProfile {
         synchronized (mSourceSyncRequestsQueue) {
             if (mPeriodicAdvCallbacksMap.containsKey(syncHandle)) {
                 try {
-                    BluetoothMethodProxy.getInstance()
-                            .periodicAdvertisingManagerUnregisterSync(
-                                    mPeriodicAdvertisingManager,
-                                    mPeriodicAdvCallbacksMap.get(syncHandle));
+                    mPeriodicAdvertisingManager.unregisterSync(
+                            mPeriodicAdvCallbacksMap.get(syncHandle));
                 } catch (IllegalArgumentException ex) {
                     Log.e(TAG, "unregisterSync:IllegalArgumentException");
                     return false;
@@ -2847,14 +2845,8 @@ public class BassClientService extends ConnectableProfile {
             }
 
             try {
-                BluetoothMethodProxy.getInstance()
-                        .periodicAdvertisingManagerRegisterSync(
-                                mPeriodicAdvertisingManager,
-                                scanRes,
-                                0,
-                                BassConstants.PSYNC_TIMEOUT,
-                                paCb,
-                                null);
+                mPeriodicAdvertisingManager.registerSync(
+                        scanRes, 0, BassConstants.PSYNC_TIMEOUT, paCb, null);
             } catch (IllegalArgumentException ex) {
                 Log.e(TAG, "registerSync:IllegalArgumentException");
                 clearAllDataForSyncHandle(BassConstants.PENDING_SYNC_HANDLE);

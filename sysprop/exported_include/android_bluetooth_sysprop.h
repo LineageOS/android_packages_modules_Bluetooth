@@ -27,3 +27,4 @@
 #include <hci.sysprop.h>
 #include <hfp.sysprop.h>
 #include <le_audio.sysprop.h>
+#include <tmap.sysprop.h>

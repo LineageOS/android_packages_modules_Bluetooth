@@ -153,6 +153,7 @@ java_defaults {
             "-Xep:IncrementInForLoopAndHeader:ERROR",
             "-Xep:InlineFormatString:ERROR",
             "-Xep:InlineMeInliner:ERROR",
+            "-Xep:IntLiteralCast:ERROR",
             "-Xep:InvalidBlockTag:ERROR",
             "-Xep:InvalidInlineTag:ERROR",
             "-Xep:InvalidLink:ERROR",

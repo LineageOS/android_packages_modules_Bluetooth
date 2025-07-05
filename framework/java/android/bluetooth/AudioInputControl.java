@@ -19,6 +19,7 @@ package android.bluetooth;
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.bluetooth.BluetoothUtils.callService;
+import static android.bluetooth.BluetoothUtils.enforcePermissionInFramework;
 import static android.bluetooth.BluetoothUtils.logRemoteException;
 
 import static java.util.Objects.requireNonNull;
@@ -32,6 +33,7 @@ import android.annotation.RequiresPermission;
 import android.annotation.SystemApi;
 import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
 import android.content.AttributionSource;
+import android.content.Context;
 import android.os.RemoteException;
 
 import java.lang.annotation.Retention;
@@ -222,16 +224,19 @@ public class AudioInputControl {
     /** Local identifier of the AICS */
     private final int mInstanceId;
 
+    private final Context mContext;
     private final IBluetoothVolumeControl mService;
     private final BluetoothDevice mDevice;
     private final AttributionSource mAttributionSource;
     private final CallbackWrapper<AudioInputCallback, IBluetoothVolumeControl> mCallbackWrapper;
 
     AudioInputControl(
+            @NonNull Context context,
             @NonNull BluetoothDevice device,
             int id,
             @NonNull IBluetoothVolumeControl service,
             @NonNull AttributionSource source) {
+        mContext = context;
         mDevice = requireNonNull(device);
         mInstanceId = id;
         mService = requireNonNull(service);
@@ -304,6 +309,7 @@ public class AudioInputControl {
 
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     static List<AudioInputControl> getAudioInputControlServices(
+            @NonNull Context context,
             @NonNull IBluetoothVolumeControl service,
             @NonNull AttributionSource source,
             @NonNull BluetoothDevice device) {
@@ -317,7 +323,7 @@ public class AudioInputControl {
             logRemoteException(TAG, e);
         }
         return IntStream.range(0, numberOfAics)
-                .mapToObj(i -> new AudioInputControl(device, i, service, source))
+                .mapToObj(i -> new AudioInputControl(context, device, i, service, source))
                 .collect(Collectors.toList());
     }
 
@@ -370,6 +376,7 @@ public class AudioInputControl {
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public void registerCallback(
             @NonNull @CallbackExecutor Executor executor, @NonNull AudioInputCallback callback) {
+        enforcePermissionInFramework(mContext, BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED);
         mCallbackWrapper.registerCallback(mService, callback, executor);
     }
 
@@ -387,6 +394,7 @@ public class AudioInputControl {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public void unregisterCallback(@NonNull AudioInputCallback callback) {
+        enforcePermissionInFramework(mContext, BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED);
         mCallbackWrapper.unregisterCallback(mService, callback);
     }
 
