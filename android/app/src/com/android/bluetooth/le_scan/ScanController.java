@@ -609,23 +609,24 @@ public class ScanController {
                         + (", status=" + status));
 
         // First check the callback map
-        ScannerMap.ScannerApp cbApp = mScannerMap.getByUuid(uuid);
-        if (cbApp != null) {
-            if (status == 0) {
-                cbApp.mId = scannerId;
-                // If app is callback based, setup a death recipient. App will initiate the start.
-                // Otherwise, if PendingIntent based, start the scan directly.
-                if (cbApp.mCallback != null) {
-                    cbApp.linkToDeath(new ScannerDeathRecipient(scannerId, cbApp.mName));
-                } else {
-                    continuePiStartScan(scannerId, cbApp);
-                }
-            } else {
-                mScannerMap.remove(uuid);
-            }
-            if (cbApp.mCallback != null) {
-                cbApp.mCallback.onScannerRegistered(status, scannerId);
-            }
+        ScannerMap.ScannerApp scannerApp = mScannerMap.getByUuid(uuid);
+        if (scannerApp == null) {
+            return;
+        }
+        if (scannerApp.mCallback != null) {
+            scannerApp.mCallback.onScannerRegistered(status, scannerId);
+        }
+        if (status != ScanCallback.NO_ERROR) {
+            mScannerMap.remove(uuid);
+            return;
+        }
+        scannerApp.mId = scannerId;
+        // If app is callback based, setup a death recipient. App will initiate the start.
+        // Otherwise, if PendingIntent based, start the scan directly.
+        if (scannerApp.mCallback != null) {
+            scannerApp.linkToDeath(new ScannerDeathRecipient(scannerId, scannerApp.mName));
+        } else {
+            continuePiStartScan(scannerId, scannerApp);
         }
     }
 
