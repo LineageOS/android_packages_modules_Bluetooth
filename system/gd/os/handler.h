@@ -37,7 +37,7 @@ using TimePoint = os::boottime_clock::time_point;
 using DelayedTask = std::pair<TimePoint, common::OnceClosure>;
 
 // Define the lambda comparator
-auto compare_task_by_time = [](const DelayedTask& a, const DelayedTask& b) {
+inline auto compare_task_by_time = [](const DelayedTask& a, const DelayedTask& b) {
   // For a min-heap of time_points (earliest time has highest priority),
   // this returns true if 'a' should come after 'b' (i.e., 'a' has a later time).
   return a.first > b.first;
