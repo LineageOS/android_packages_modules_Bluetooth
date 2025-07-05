@@ -1196,7 +1196,7 @@ public class ScanController {
 
     void registerScanner(
             IScannerCallback callback, WorkSource workSource, AttributionSource source) {
-        AppScanStats app = mScannerMap.getAppScanStatsByUid(Binder.getCallingUid());
+        final AppScanStats app = mScannerMap.getAppScanStatsByUid(Binder.getCallingUid());
         if (app != null
                 && app.isScanningTooFrequently()
                 && !Utils.checkCallerHasPrivilegedPermission(mAdapterService)) {
@@ -1217,7 +1217,8 @@ public class ScanController {
         UUID uuid = UUID.randomUUID();
         Log.d(TAG, "registerScanner() - UUID=" + uuid);
 
-        mScannerMap.add(uuid, source, workSource, callback, mAdapterService, this);
+        final int uid = Binder.getCallingUid();
+        mScannerMap.add(uuid, source, workSource, uid, callback, mAdapterService, this);
         doOnScanThread(
                 () -> {
                     mScanManager.registerScanner(uuid);
@@ -1266,9 +1267,10 @@ public class ScanController {
         Log.d(TAG, "Start scan with filters");
         String callingPackage = source.getPackageName();
         settings = enforceReportDelayFloor(settings);
-        final ScanClient scanClient = new ScanClient(scannerId, settings, filters);
+        final int uid = Binder.getCallingUid();
+        final ScanClient scanClient = new ScanClient(scannerId, settings, filters, uid);
         scanClient.mUserHandle = Binder.getCallingUserHandle();
-        mAppOps.checkPackage(Binder.getCallingUid(), callingPackage);
+        mAppOps.checkPackage(uid, callingPackage);
         scanClient.mEligibleForSanitizedExposureNotification =
                 callingPackage.equals(mExposureNotificationPackage);
 
@@ -1301,7 +1303,9 @@ public class ScanController {
 
     /** Intended for internal use within the Bluetooth app. Bypass permission check */
     public void startScanInternal(int scannerId, ScanSettings settings, List<ScanFilter> filters) {
-        final ScanClient scanClient = new ScanClient(scannerId, settings, filters);
+        // This ScanClient will be billed to the Bluetooth app due to its internal usage
+        final ScanClient scanClient =
+                new ScanClient(scannerId, settings, filters, Binder.getCallingUid());
         scanClient.mIsInternalClient = true;
         scanClient.mUserHandle = Binder.getCallingUserHandle();
         scanClient.mEligibleForSanitizedExposureNotification = false;
@@ -1374,9 +1378,9 @@ public class ScanController {
         }
 
         ScannerMap.ScannerApp app = mScannerMap.add(uuid, source, piInfo, mAdapterService, this);
-
-        app.mUserHandle = UserHandle.getUserHandleForUid(Binder.getCallingUid());
-        mAppOps.checkPackage(Binder.getCallingUid(), callingPackage);
+        final int uid = Binder.getCallingUid();
+        app.mUserHandle = UserHandle.getUserHandleForUid(uid);
+        mAppOps.checkPackage(uid, callingPackage);
         app.mEligibleForSanitizedExposureNotification =
                 callingPackage.equals(mExposureNotificationPackage);
 

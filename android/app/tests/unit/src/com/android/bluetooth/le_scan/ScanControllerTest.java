@@ -182,13 +182,14 @@ public class ScanControllerTest {
         int periodicAdvInt = 0;
         byte[] advData = new byte[0];
 
-        ScanClient scanClient = new ScanClient(TEST_SCANNER_ID);
-        scanClient.mHasNetworkSettingsPermission = true;
-        scanClient.mSettings =
+        final int appUid = 1234;
+        ScanSettings scanSettings =
                 new ScanSettings.Builder()
                         .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
                         .setLegacy(false)
                         .build();
+        ScanClient scanClient = new ScanClient(TEST_SCANNER_ID, scanSettings, null, appUid);
+        scanClient.mHasNetworkSettingsPermission = true;
         AppScanStats appScanStats = mock(AppScanStats.class);
         IScannerCallback callback = mock(IScannerCallback.class);
         mApp.mCallback = callback;
@@ -327,7 +328,9 @@ public class ScanControllerTest {
         mockGetRemoteDevice(mAdapterService, device);
 
         Set<ScanClient> scanClientSet = new HashSet<>();
-        ScanClient scanClient = new ScanClient(TEST_SCANNER_ID);
+        final int appUid = 1234;
+        ScanSettings scanSettings = new ScanSettings.Builder().build();
+        ScanClient scanClient = new ScanClient(TEST_SCANNER_ID, scanSettings, null, appUid);
         scanClient.mAssociatedDevices = new ArrayList<>();
         if (expectResults) {
             if (isTruncated) {
@@ -430,7 +433,9 @@ public class ScanControllerTest {
         int rssiValue = 10;
         int timeStamp = 11;
 
-        ScanClient scanClient = new ScanClient(TEST_SCANNER_ID);
+        final int appUid = 1234;
+        ScanSettings scanSettings = new ScanSettings.Builder().build();
+        ScanClient scanClient = new ScanClient(TEST_SCANNER_ID, scanSettings, null, appUid);
         scanClient.mHasNetworkSettingsPermission = true;
         scanClient.mSettings =
                 new ScanSettings.Builder()
@@ -483,6 +488,7 @@ public class ScanControllerTest {
                         any(),
                         eq(mAttributionSource),
                         eq(workSource),
+                        anyInt(),
                         eq(callback),
                         any(),
                         eq(mScanController));
@@ -546,7 +552,9 @@ public class ScanControllerTest {
     @Test
     public void flushPendingBatchResults() {
         Set<ScanClient> scanClientSet = new HashSet<>();
-        ScanClient scanClient = new ScanClient(TEST_SCANNER_ID);
+        final int appUid = 1234;
+        ScanSettings scanSettings = new ScanSettings.Builder().build();
+        ScanClient scanClient = new ScanClient(TEST_SCANNER_ID, scanSettings, null, appUid);
         scanClientSet.add(scanClient);
         doReturn(scanClientSet).when(mScanManager).getBatchScanQueue();
 
@@ -624,7 +632,8 @@ public class ScanControllerTest {
         final int rssiBelowThreshold = -60;
 
         ScanSettings settings = new ScanSettings.Builder().setRssiThreshold(rssiThreshold).build();
-        ScanClient client = new ScanClient(TEST_SCANNER_ID, settings, null);
+        final int appUid = 1234;
+        ScanClient client = new ScanClient(TEST_SCANNER_ID, settings, null, appUid);
 
         ScanRecord mockScanRecord = mock(ScanRecord.class);
         ScanResult resultAboveThreshold =
@@ -647,7 +656,8 @@ public class ScanControllerTest {
         ScanSettings settings = new ScanSettings.Builder().build();
         ScanRecord mockScanRecord = mock(ScanRecord.class);
 
-        ScanClient client = new ScanClient(TEST_SCANNER_ID, settings, filterList);
+        final int appUid = 1234;
+        ScanClient client = new ScanClient(TEST_SCANNER_ID, settings, filterList, appUid);
         ScanResult scanResult = new ScanResult(mDevice, 0, 0, 0, 0, 0, 0, 0, mockScanRecord, 0);
 
         assertThat(mScanController.matchesFilters(client, scanResult, originalAddress)).isTrue();
