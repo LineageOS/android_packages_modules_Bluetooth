@@ -2995,14 +2995,6 @@ public class AdapterService extends Service {
 
     private void addGattClientToControlAutoActiveMode(
             LeAudioService leAudio, int clientIf, BluetoothDevice device) {
-        if (!Flags.allowGattConnectFromTheAppsWithoutMakingLeaudioDeviceActive()) {
-            Log.i(
-                    TAG,
-                    "flag: allowGattConnectFromTheAppsWithoutMakingLeaudioDeviceActive is not"
-                            + " enabled");
-            return;
-        }
-
         /* When GATT client is connecting to LeAudio device, stack should not assume that
          * LeAudio device should be automatically connected to Audio Framework.
          * e.g. given LeAudio device might be busy with audio streaming from another device.
