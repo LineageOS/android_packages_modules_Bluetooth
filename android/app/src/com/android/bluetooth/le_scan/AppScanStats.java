@@ -702,12 +702,11 @@ class AppScanStats {
         }
 
         final long score =
-                (oppScanTime * ScanRadioStats.OPPORTUNISTIC_WEIGHT
-                                + lowPowerScanTime * ScanRadioStats.LOW_POWER_WEIGHT
-                                + balancedScanTime * ScanRadioStats.BALANCED_WEIGHT
-                                + lowLatencyScanTime * ScanRadioStats.LOW_LATENCY_WEIGHT
-                                + ambientDiscoveryScanTime
-                                        * ScanRadioStats.AMBIENT_DISCOVERY_WEIGHT)
+                (oppScanTime * ScanUtil.WEIGHT_OPPORTUNISTIC
+                                + lowPowerScanTime * ScanUtil.WEIGHT_LOW_POWER
+                                + balancedScanTime * ScanUtil.WEIGHT_BALANCED
+                                + lowLatencyScanTime * ScanUtil.WEIGHT_LOW_LATENCY
+                                + ambientDiscoveryScanTime * ScanUtil.WEIGHT_AMBIENT_DISCOVERY)
                         / 100;
 
         sb.append("  ").append(mAppName);

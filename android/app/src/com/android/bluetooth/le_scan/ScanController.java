@@ -21,6 +21,8 @@ import static android.bluetooth.BluetoothUtils.extractBytes;
 import static com.android.bluetooth.Utils.checkCallerTargetSdk;
 import static com.android.bluetooth.Utils.getSystemClock;
 import static com.android.bluetooth.flags.Flags.leaudioBassScanWithInternalScanController;
+import static com.android.bluetooth.le_scan.ScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS;
+import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_TRUNCATED;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
@@ -94,9 +96,6 @@ public class ScanController {
     private static final String TAG = ScanController.class.getSimpleName();
 
     private static final long RUN_SYNC_WAIT_TIME_MS = 2000L;
-
-    /** The default floor value for LE batch scan report delays greater than 0 */
-    static final long DEFAULT_REPORT_DELAY_FLOOR_MS = 5000L;
 
     // Batch scan related constants.
     private static final int TRUNCATED_RESULT_SIZE = 11;
@@ -832,7 +831,7 @@ public class ScanController {
                         + (", numRecords=" + numRecords));
 
         Set<ScanResult> results = parseBatchScanResults(numRecords, reportType, recordData);
-        if (reportType == ScanManager.SCAN_RESULT_TYPE_TRUNCATED) {
+        if (reportType == SCAN_RESULT_TYPE_TRUNCATED) {
             // We only support single client for truncated mode.
             ScannerMap.ScannerApp app = mScannerMap.getById(scannerId);
             if (app == null) {
@@ -892,7 +891,7 @@ public class ScanController {
         }
         try {
             if (app.mCallback != null) {
-                if (ScanManager.isAutoBatchScanClientEnabled(client)) {
+                if (ScanUtil.isAutoBatchScanClientEnabled(client)) {
                     Log.d(TAG, "sendBatchScanResults() to onScanResult()" + client);
                     for (ScanResult result : results) {
                         app.mAppScanStats.addResult(client.mScannerId);
@@ -954,7 +953,7 @@ public class ScanController {
                         + " (elapsed: "
                         + SystemClock.elapsedRealtime()
                         + "ms)");
-        if (reportType == ScanManager.SCAN_RESULT_TYPE_TRUNCATED) {
+        if (reportType == SCAN_RESULT_TYPE_TRUNCATED) {
             return parseTruncatedResults(numRecords, batchRecord);
         } else {
             return parseFullResults(numRecords, batchRecord);
@@ -1571,9 +1570,9 @@ public class ScanController {
     }
 
     /**
-     * Ensures the report delay is either 0 or at least the floor value ({@link
-     * #DEFAULT_REPORT_DELAY_FLOOR_MS}).
+     * Ensures the report delay is either 0 or at least the floor value.
      *
+     * @see ScanUtil#DEFAULT_REPORT_DELAY_FLOOR_MS
      * @param settings are the scan settings passed into a request to start le scanning
      * @return the passed in ScanSettings object if the report delay is 0 or above the floor value;
      *     a new ScanSettings object with the report delay being the floor value if the original

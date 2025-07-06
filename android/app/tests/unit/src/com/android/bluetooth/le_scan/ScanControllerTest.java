@@ -23,6 +23,7 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
+import static com.android.bluetooth.le_scan.ScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -307,9 +308,7 @@ public class ScanControllerTest {
     private void verifyOnBatchScanReportsInternal(boolean expectResults, boolean isTruncated)
             throws RemoteException {
         final int reportType =
-                isTruncated
-                        ? ScanManager.SCAN_RESULT_TYPE_TRUNCATED
-                        : ScanManager.SCAN_RESULT_TYPE_FULL;
+                isTruncated ? ScanUtil.SCAN_RESULT_TYPE_TRUNCATED : ScanUtil.SCAN_RESULT_TYPE_FULL;
         final int numRecords = 1;
         final byte[] recordData;
         if (isTruncated) {
@@ -608,7 +607,7 @@ public class ScanControllerTest {
 
     @Test
     public void enforceReportDelayFloor() {
-        long reportDelayFloorHigher = ScanController.DEFAULT_REPORT_DELAY_FLOOR_MS + 1;
+        long reportDelayFloorHigher = DEFAULT_REPORT_DELAY_FLOOR_MS + 1;
         ScanSettings scanSettings =
                 new ScanSettings.Builder().setReportDelay(reportDelayFloorHigher).build();
         ScanSettings newScanSettings = mScanController.enforceReportDelayFloor(scanSettings);
@@ -621,7 +620,7 @@ public class ScanControllerTest {
                 mScanController.enforceReportDelayFloor(scanSettingsFloor);
 
         assertThat(newScanSettingsFloor.getReportDelayMillis())
-                .isEqualTo(ScanController.DEFAULT_REPORT_DELAY_FLOOR_MS);
+                .isEqualTo(DEFAULT_REPORT_DELAY_FLOOR_MS);
     }
 
     @Test

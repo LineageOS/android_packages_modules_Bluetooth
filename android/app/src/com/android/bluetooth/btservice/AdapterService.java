@@ -150,8 +150,8 @@ import com.android.bluetooth.hid.HidHostService;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.le_scan.PeriodicScanNativeInterface;
 import com.android.bluetooth.le_scan.ScanController;
-import com.android.bluetooth.le_scan.ScanManager;
 import com.android.bluetooth.le_scan.ScanNativeInterface;
+import com.android.bluetooth.le_scan.ScanUtil;
 import com.android.bluetooth.map.BluetoothMapService;
 import com.android.bluetooth.mapclient.MapClientService;
 import com.android.bluetooth.mcp.McpService;
@@ -4513,20 +4513,18 @@ public class AdapterService extends Service {
             DeviceConfigListener.DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING_MILLIS;
 
     @GuardedBy("mDeviceConfigLock")
-    private int mScreenOffLowPowerWindowMillis =
-            ScanManager.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS;
+    private int mScreenOffLowPowerWindowMillis = ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS;
 
     @GuardedBy("mDeviceConfigLock")
     private int mScreenOffLowPowerIntervalMillis =
-            ScanManager.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS;
+            ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS;
 
     @GuardedBy("mDeviceConfigLock")
-    private int mScreenOffBalancedWindowMillis =
-            ScanManager.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW_MS;
+    private int mScreenOffBalancedWindowMillis = ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW_MS;
 
     @GuardedBy("mDeviceConfigLock")
     private int mScreenOffBalancedIntervalMillis =
-            ScanManager.SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS;
+            ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS;
 
     @GuardedBy("mDeviceConfigLock")
     private String mLeAudioAllowList;
@@ -4691,19 +4689,19 @@ public class AdapterService extends Service {
                 mScreenOffLowPowerWindowMillis =
                         properties.getInt(
                                 SCREEN_OFF_LOW_POWER_WINDOW_MILLIS,
-                                ScanManager.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS);
+                                ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS);
                 mScreenOffLowPowerIntervalMillis =
                         properties.getInt(
                                 SCREEN_OFF_LOW_POWER_INTERVAL_MILLIS,
-                                ScanManager.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS);
+                                ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS);
                 mScreenOffBalancedWindowMillis =
                         properties.getInt(
                                 SCREEN_OFF_BALANCED_WINDOW_MILLIS,
-                                ScanManager.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW_MS);
+                                ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW_MS);
                 mScreenOffBalancedIntervalMillis =
                         properties.getInt(
                                 SCREEN_OFF_BALANCED_INTERVAL_MILLIS,
-                                ScanManager.SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS);
+                                ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS);
                 mLeAudioAllowList = properties.getString(LE_AUDIO_ALLOW_LIST, "");
 
                 if (!mLeAudioAllowList.isEmpty()) {
