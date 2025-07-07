@@ -36,6 +36,8 @@ import android.util.Log
 import com.android.bluetooth.Utils.checkScanPermissionForDataDelivery
 import com.android.bluetooth.btservice.AdapterService
 
+private val TAG = ScanBinder::class.java.simpleName
+
 class ScanBinder(
     private val adapterService: AdapterService,
     private val scanController: ScanController,
@@ -210,9 +212,5 @@ class ScanBinder(
                 }
             }
         }
-    }
-
-    companion object {
-        private val TAG = ScanBinder::class.java.simpleName
     }
 }

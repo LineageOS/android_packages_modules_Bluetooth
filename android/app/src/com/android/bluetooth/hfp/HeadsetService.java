@@ -1375,6 +1375,9 @@ public class HeadsetService extends ConnectableProfile {
      */
     public BluetoothDevice getActiveDevice() {
         synchronized (mStateMachines) {
+            if (mSystemInterface.isScoManagedByAudioEnabled()) {
+                return mExposedActiveDevice;
+            }
             return mActiveDevice;
         }
     }
@@ -1657,8 +1660,12 @@ public class HeadsetService extends ConnectableProfile {
             if (!mSystemInterface.isScoManagedByAudioEnabled()) {
                 startDialingOutActivity(fromDevice, intent);
             } else {
-                mPendingDialingOutIntent = intent;
-                mPendingDialingOutDevice = fromDevice;
+                if (fromDevice.equals(mExposedActiveDevice)) {
+                    startDialingOutActivity(fromDevice, intent);
+                } else {
+                    mPendingDialingOutIntent = intent;
+                    mPendingDialingOutDevice = fromDevice;
+                }
             }
 
             return true;

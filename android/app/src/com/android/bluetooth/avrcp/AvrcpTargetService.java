@@ -208,7 +208,7 @@ public class AvrcpTargetService extends ProfileService {
 
     /**
      * Listens for {@link AudioManager.ACTION_VOLUME_CHANGED} events to update {@link
-     * AvrcpVolumeManager}.
+     * AvrcpVolumeManager} in case the remote device doesn't support absolute volume.
      */
     private class AvrcpBroadcastReceiver extends BroadcastReceiver {
         @Override

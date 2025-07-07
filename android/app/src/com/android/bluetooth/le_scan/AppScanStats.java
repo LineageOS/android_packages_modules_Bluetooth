@@ -27,7 +27,6 @@ import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanSettings;
 import android.os.BatteryStatsManager;
-import android.os.Binder;
 import android.os.WorkSource;
 
 import com.android.bluetooth.BluetoothStatsLog;
@@ -154,15 +153,14 @@ class AppScanStats {
     AppScanStats(
             String name,
             WorkSource source,
+            int uid,
             ScannerMap map,
             AdapterService adapterService,
             ScanController scanController,
             TimeProvider timeProvider) {
         mAppName = name;
-        mWorkSource =
-                requireNonNullElseGet(
-                        // Bill the caller if the work source isn't passed through
-                        source, () -> new WorkSource(Binder.getCallingUid(), mAppName));
+        // Bill the caller uid if the work source isn't passed through
+        mWorkSource = requireNonNullElseGet(source, () -> new WorkSource(uid, mAppName));
         mWorkSourceUtil = new WorkSourceUtil(mWorkSource);
         mScannerMap = map;
         mAdapterService = requireNonNull(adapterService);

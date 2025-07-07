@@ -247,11 +247,13 @@ public class ScanManagerTest {
                         mTimeProvider);
 
         mScanReportDelay = DEFAULT_BATCH_SCAN_REPORT_DELAY_MS;
+        final int appUid = 1234;
         mMockAppScanStats =
                 spy(
                         new AppScanStats(
                                 TEST_APP_NAME,
                                 null,
+                                appUid,
                                 null,
                                 mAdapterService,
                                 mScanController,
@@ -467,7 +469,8 @@ public class ScanManagerTest {
         List<ScanFilter> scanFilterList = createScanFilterList(isFiltered, isEmptyFilter);
         ScanSettings scanSettings = createScanSettingsWithPhy(scanMode, phy);
 
-        ScanClient client = new ScanClient(id, scanSettings, scanFilterList);
+        final int appUid = 1234;
+        ScanClient client = new ScanClient(id, scanSettings, scanFilterList, appUid);
         client.mStats = Optional.of(mMockAppScanStats);
         client.mStats
                 .get()
@@ -1324,11 +1327,13 @@ public class ScanManagerTest {
             final String PACKAGE_NAME = TEST_PACKAGE_NAME + i;
             WorkSource source = new WorkSource(UID, PACKAGE_NAME);
             // Create app scan stats for the app
+            final int appUid = 1234;
             AppScanStats appScanStats =
                     spy(
                             new AppScanStats(
                                     APP_NAME,
                                     source,
+                                    appUid,
                                     null,
                                     mAdapterService,
                                     mScanController,
@@ -1400,11 +1405,13 @@ public class ScanManagerTest {
         final String PACKAGE_NAME_1 = TEST_PACKAGE_NAME + UID_1;
         WorkSource source1 = new WorkSource(UID_1, PACKAGE_NAME_1);
         // Create app scan stats for the first app
+        final int appUid1 = 12341;
         AppScanStats appScanStats1 =
                 spy(
                         new AppScanStats(
                                 APP_NAME_1,
                                 source1,
+                                appUid1,
                                 null,
                                 mAdapterService,
                                 mScanController,
@@ -1424,11 +1431,13 @@ public class ScanManagerTest {
         final String PACKAGE_NAME_2 = TEST_PACKAGE_NAME + UID_2;
         WorkSource source2 = new WorkSource(UID_2, PACKAGE_NAME_2);
         // Create app scan stats for the second app
+        final int appUid2 = 12342;
         AppScanStats appScanStats2 =
                 spy(
                         new AppScanStats(
                                 APP_NAME_2,
                                 source2,
+                                appUid2,
                                 null,
                                 mAdapterService,
                                 mScanController,
@@ -1464,11 +1473,13 @@ public class ScanManagerTest {
         final String PACKAGE_NAME_3 = TEST_PACKAGE_NAME + UID_3;
         WorkSource source3 = new WorkSource(UID_3, PACKAGE_NAME_3);
         // Create app scan stats for the third app
+        final int appUid3 = 12343;
         AppScanStats appScanStats3 =
                 spy(
                         new AppScanStats(
                                 APP_NAME_3,
                                 source3,
+                                appUid3,
                                 null,
                                 mAdapterService,
                                 mScanController,
@@ -1505,11 +1516,13 @@ public class ScanManagerTest {
         final String PACKAGE_NAME_4 = TEST_PACKAGE_NAME + UID_4;
         WorkSource source4 = new WorkSource(UID_4, PACKAGE_NAME_4);
         // Create app scan stats for the fourth app
+        final int appUid4 = 12344;
         AppScanStats appScanStats4 =
                 spy(
                         new AppScanStats(
                                 APP_NAME_4,
                                 source4,
+                                appUid4,
                                 null,
                                 mAdapterService,
                                 mScanController,
