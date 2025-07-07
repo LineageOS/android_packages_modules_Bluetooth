@@ -285,10 +285,8 @@ static void event_start_up_stack(bluetooth::core::CoreInterface* interface,
     return;
   }
 
-  if (com::android::bluetooth::flags::channel_sounding_in_stack()) {
-    bluetooth::ras::GetRasServer()->Initialize();
-    bluetooth::ras::GetRasClient()->Initialize();
-  }
+  bluetooth::ras::GetRasServer()->Initialize();
+  bluetooth::ras::GetRasClient()->Initialize();
 
   stack_is_running = true;
   info("finished");
