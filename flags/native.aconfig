@@ -44,3 +44,13 @@ flag {
     description: "Remove Handler::Clear(), and use the destructor instead."
     bug: "428667010"
 }
+
+flag {
+    name: "protect_dumpsys_during_stack_shutdown"
+    namespace: "bluetooth"
+    description: "Do not proceed with dumpsys if the stack is not running."
+    bug: "429999031"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
