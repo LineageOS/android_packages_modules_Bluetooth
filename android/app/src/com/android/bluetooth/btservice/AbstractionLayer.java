@@ -74,6 +74,9 @@ public final class AbstractionLayer {
     static final int BT_ACL_STATE_CONNECTED = 0x00;
     static final int BT_ACL_STATE_DISCONNECTED = 0x01;
 
+    static final int BT_REASON_FOR_NO_UUIDS_EMPTY_UUID_LIST = 0x01;
+    static final int BT_REASON_FOR_NO_UUIDS_NO_UUID_TYPES_EXIST = 0x02;
+
     static final int BT_UUID_SIZE = 16; // bytes
 
     public static final int BT_STATUS_SUCCESS = 0;

@@ -42,6 +42,7 @@ import com.android.bluetooth.flags.Flags;
 import com.android.compatibility.common.util.AdoptShellPermissionsRule;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Empty;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
@@ -97,8 +98,7 @@ public class GetUuidsFromLeAdvertisingDataTest {
 
     @RequiresFlagsEnabled(Flags.FLAG_GET_SVC_UUIDS_FROM_BLE_ADV_DATA)
     @Test
-    public void getUuidsInBleAdvertisingData_fromServiceUuid(
-            @TestParameter boolean usePublicAddress) throws Exception {
+    public void getUuidsFromServiceUuid(@TestParameter boolean usePublicAddress) {
         DataTypes dataType =
                 DataTypes.newBuilder()
                         .addCompleteServiceClassUuids16(TEST_16_BIT_SERVICE_UUID)
@@ -117,8 +117,7 @@ public class GetUuidsFromLeAdvertisingDataTest {
 
     @RequiresFlagsEnabled(Flags.FLAG_GET_SVC_UUIDS_FROM_BLE_ADV_DATA)
     @Test
-    public void getUuidsInBleAdvertisingData_fromServiceData(
-            @TestParameter boolean usePublicAddress) throws Exception {
+    public void getUuidsFromServiceData(@TestParameter boolean usePublicAddress) {
         DataTypes dataType =
                 DataTypes.newBuilder()
                         .putServiceDataUuid16(
@@ -138,8 +137,7 @@ public class GetUuidsFromLeAdvertisingDataTest {
     // Due to packet size limit in legacy advertising, separate test for 128 bit UUID.
     @RequiresFlagsEnabled(Flags.FLAG_GET_SVC_UUIDS_FROM_BLE_ADV_DATA)
     @Test
-    public void getUuidsInBleAdvertisingData_fromServiceData_128BitUuid(
-            @TestParameter boolean usePublicAddress) throws Exception {
+    public void getUuidsFromServiceData_128BitUuid(@TestParameter boolean usePublicAddress) {
         DataTypes dataType =
                 DataTypes.newBuilder()
                         .putServiceDataUuid128(
@@ -155,8 +153,7 @@ public class GetUuidsFromLeAdvertisingDataTest {
 
     @RequiresFlagsEnabled(Flags.FLAG_GET_SVC_UUIDS_FROM_BLE_ADV_DATA)
     @Test
-    public void getUuidsInBleAdvertisingData_fromBothServiceUuidAndData(
-            @TestParameter boolean usePublicAddress) throws Exception {
+    public void getUuidsFromBothServiceUuidAndData(@TestParameter boolean usePublicAddress) {
         DataTypes dataType =
                 DataTypes.newBuilder()
                         .addCompleteServiceClassUuids16(TEST_16_BIT_SERVICE_UUID)
@@ -172,10 +169,13 @@ public class GetUuidsFromLeAdvertisingDataTest {
         verifyDiscoveryBroadcastUuids(dataType, usePublicAddress, expectedUuids);
     }
 
-    @RequiresFlagsEnabled(Flags.FLAG_GET_SVC_UUIDS_FROM_BLE_ADV_DATA)
+    @RequiresFlagsEnabled({
+        Flags.FLAG_GET_SVC_UUIDS_FROM_BLE_ADV_DATA,
+        Flags.FLAG_GET_SVC_UUIDS_BUGFIX
+    })
     @Test
-    public void getUuidsInBleAdvertisingData_doesNotContainUuidDataType_shouldReturnNullUuid(
-            @TestParameter boolean usePublicAddress) throws Exception {
+    public void doesNotContainAnyUuidDataType_shouldReturnNullUuid(
+            @TestParameter boolean usePublicAddress) {
         DataTypes dataType =
                 DataTypes.newBuilder()
                         // No UUID data types are used.
@@ -188,6 +188,33 @@ public class GetUuidsFromLeAdvertisingDataTest {
         verifyDiscoveryBroadcastUuids(dataType, usePublicAddress, expectedUuids);
     }
 
+    @RequiresFlagsEnabled({
+        Flags.FLAG_GET_SVC_UUIDS_FROM_BLE_ADV_DATA,
+        Flags.FLAG_GET_SVC_UUIDS_BUGFIX
+    })
+    @Test
+    public void uuidTypesAreRemovedFromAdvertisement_shouldReturnNullUuid(
+            @TestParameter boolean usePublicAddress) throws Exception {
+        DataTypes dataType =
+                DataTypes.newBuilder()
+                        .addCompleteServiceClassUuids16(TEST_16_BIT_SERVICE_UUID)
+                        .setLeDiscoverabilityModeValue(DISCOVERABLE_GENERAL_VALUE)
+                        .build();
+        ParcelUuid[] expectedUuids = {
+            new ParcelUuid(Utils.uuidFromString(TEST_16_BIT_SERVICE_UUID)),
+        };
+        verifyDiscoveryBroadcastUuids(dataType, usePublicAddress, expectedUuids);
+
+        // Now, start a new advertisement with no UUIDs. ACTION_FOUND should have null UUIDs.
+        mBumble.hostBlocking().factoryReset(Empty.getDefaultInstance());
+        dataType =
+                DataTypes.newBuilder()
+                        .setLeDiscoverabilityModeValue(DISCOVERABLE_GENERAL_VALUE)
+                        .build();
+        expectedUuids = null;
+        verifyDiscoveryBroadcastUuids(dataType, usePublicAddress, expectedUuids);
+    }
+
     void verifyDiscoveryBroadcastUuids(
             DataTypes dataTypes, boolean usePublicAddress, ParcelUuid[] expectedUuids) {
         AdvertiseRequest request =
@@ -197,6 +224,7 @@ public class GetUuidsFromLeAdvertisingDataTest {
                         .setData(dataTypes)
                         .setLegacy(true) // Bumble only supports legacy advertising
                         .build();
+
         // Collect and ignore responses.
         mBumble.host().advertise(request, new StreamObserverSpliterator<>());
 
