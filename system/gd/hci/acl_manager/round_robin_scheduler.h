@@ -61,6 +61,7 @@ public:
   void SetLinkPriority(uint16_t handle, bool high_priority);
   uint16_t GetCredits();
   uint16_t GetLeCredits();
+  bool IsRegistered(uint16_t handle);
 
 private:
   void start_round_robin();

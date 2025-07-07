@@ -102,6 +102,10 @@ void RoundRobinScheduler::Unregister(uint16_t handle) {
   }
 }
 
+bool RoundRobinScheduler::IsRegistered(uint16_t handle) {
+  return acl_queue_handlers_.count(handle) != 0;
+}
+
 void RoundRobinScheduler::SetLinkPriority(uint16_t handle, bool high_priority) {
   auto acl_queue_handler = acl_queue_handlers_.find(handle);
   if (acl_queue_handler == acl_queue_handlers_.end()) {
