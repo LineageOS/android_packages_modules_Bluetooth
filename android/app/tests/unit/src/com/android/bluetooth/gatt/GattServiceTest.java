@@ -820,8 +820,9 @@ public class GattServiceTest {
 
     @Test
     public void serverDisconnect_oneBearerConnected_bearerDisconnectRequested() {
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
 
         mService.serverDisconnect(mGattServerCallback, mDevice);
 
@@ -831,9 +832,10 @@ public class GattServiceTest {
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
     public void serverDisconnect_multipleBearersConnected_allBearersDisconnected() {
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID_2, TRANSPORT_LE, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID_2, TRANSPORT_LE, mDevice);
 
         mService.serverDisconnect(mGattServerCallback, mDevice);
 
@@ -868,8 +870,9 @@ public class GattServiceTest {
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
     public void serverClientConnects_bearerExistsForSameDevice_stateDoesNotChange()
             throws Exception {
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
 
         mService.onClientConnectedFromNative(
                 mDevice, TRANSPORT_LE, true, SERVER_CONN_ID_2, SERVER_IF);
@@ -882,8 +885,9 @@ public class GattServiceTest {
     @Test
     public void serverClientDisconnects_noMoreBearersExistsForDevice_stateChangedToDisconnected()
             throws Exception {
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
 
         mService.onClientConnectedFromNative(
                 mDevice, TRANSPORT_LE, false, SERVER_CONN_ID, SERVER_IF);
@@ -897,9 +901,10 @@ public class GattServiceTest {
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
     public void serverClientDisconnects_bearerStillExistsForDevice_stateDoesNotChange()
             throws Exception {
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID_2, TRANSPORT_LE, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID_2, TRANSPORT_LE, mDevice);
 
         mService.onClientConnectedFromNative(
                 mDevice, TRANSPORT_LE, false, SERVER_CONN_ID, SERVER_IF);
@@ -911,8 +916,9 @@ public class GattServiceTest {
 
     @Test
     public void serverServiceAdded_forRegisteredApp_serviceAdded() throws Exception {
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
 
         GattDbElement service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1);
         mService.onServiceAddedFromNative(0, SERVER_IF, Arrays.asList(service));
@@ -922,7 +928,8 @@ public class GattServiceTest {
 
     @Test
     public void serverServiceAdded_forUnregisteredApp_serviceNotAdded() throws Exception {
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+        addClientConnectionRecordForUnregisteredApp(
+                SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
 
         GattDbElement service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1);
         mService.onServiceAddedFromNative(0, SERVER_IF, Arrays.asList(service));
@@ -933,8 +940,9 @@ public class GattServiceTest {
 
     @Test
     public void serverServiceAdded_statusNotSuccess_serviceNotAdded() throws Exception {
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
 
         GattDbElement service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1);
         mService.onServiceAddedFromNative(1, SERVER_IF, Arrays.asList(service));
@@ -958,8 +966,9 @@ public class GattServiceTest {
         int rxPhy = 1;
         int phyOptions = 3;
 
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
 
         mService.serverSetPreferredPhy(mGattServerCallback, mDevice, txPhy, rxPhy, phyOptions);
 
@@ -969,8 +978,9 @@ public class GattServiceTest {
 
     @Test
     public void serverReadPhy() {
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
 
         mService.serverReadPhy(mGattServerCallback, mDevice);
 
@@ -981,8 +991,9 @@ public class GattServiceTest {
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
     public void serverReadCharacteristic_AppAndCharacteristicExist_requestSentToApp()
             throws Exception {
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
         GattDbElement service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1);
         GattDbElement characteristic = createCharacteristic(SERVER_TEST_CHAR_UUID, 2, 0, 0);
         List<GattDbElement> serviceList = Arrays.asList(service, characteristic);
@@ -1009,8 +1020,9 @@ public class GattServiceTest {
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
     public void serverReadDescriptor_AppAndDescriptorExist_requestSentToApp() throws Exception {
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
         GattDbElement service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1);
         GattDbElement characteristic = createCharacteristic(SERVER_TEST_CHAR_UUID, 2, 0, 0);
         GattDbElement descriptor = createDescriptor(SERVER_TEST_DESC_UUID, 3, 0);
@@ -1039,8 +1051,9 @@ public class GattServiceTest {
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
     public void serverWriteCharacteristic_AppAndCharacteristicExist_requestSentToApp()
             throws Exception {
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
         GattDbElement service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1);
         GattDbElement characteristic = createCharacteristic(SERVER_TEST_CHAR_UUID, 2, 0, 0);
         List<GattDbElement> serviceList = Arrays.asList(service, characteristic);
@@ -1074,8 +1087,9 @@ public class GattServiceTest {
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
     public void serverWriteDescriptor_AppAndDescriptorExist_requestSentToApp() throws Exception {
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
         GattDbElement service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1);
         GattDbElement characteristic = createCharacteristic(SERVER_TEST_CHAR_UUID, 2, 0, 0);
         GattDbElement descriptor = createDescriptor(SERVER_TEST_DESC_UUID, 3, 0);
@@ -1105,6 +1119,82 @@ public class GattServiceTest {
                         /* needRsp */ eq(false),
                         /* handle */ eq(2),
                         eq(data));
+    }
+
+    @Test
+    public void serverExecuteWrite_writePreparedWrite_writeSentAndAppResponds() throws Exception {
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+
+        mService.onExecuteWriteFromNative(
+                mDevice,
+                SERVER_CONN_ID,
+                SERVER_REQUEST_TRANSACTION_ID,
+                /* write = 1, cancel = 0 */ 1);
+
+        verify(mGattServerCallback)
+                .onExecuteWrite(
+                        eq(mDevice),
+                        /* requestId */ eq(0),
+                        /* write = true, cancel = false */ eq(true));
+
+        mService.sendResponse(
+                mGattServerCallback,
+                mDevice,
+                /* request ID */ 0,
+                /* status */ 0,
+                /* offset */ 0,
+                /* Data null for a preprared write response */ null);
+
+        verify(mNativeInterface)
+                .gattServerSendResponse(
+                        eq(SERVER_IF),
+                        eq(SERVER_CONN_ID),
+                        eq(SERVER_REQUEST_TRANSACTION_ID),
+                        /* status */ eq(0),
+                        /* prepared write executes don't use a handle, use 0x0 */ eq(0),
+                        /* offset */ eq(0),
+                        eq(null),
+                        /* authReq */ eq(0));
+    }
+
+    @Test
+    public void serverExecuteWrite_cancelPreparedWrite_cancelSentAndAppResponds() throws Exception {
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+
+        mService.onExecuteWriteFromNative(
+                mDevice,
+                SERVER_CONN_ID,
+                SERVER_REQUEST_TRANSACTION_ID,
+                /* write = 1, cancel = 0 */ 0);
+
+        verify(mGattServerCallback)
+                .onExecuteWrite(
+                        eq(mDevice),
+                        /* requestId */ eq(0),
+                        /* write = true, cancel = false */ eq(false));
+
+        mService.sendResponse(
+                mGattServerCallback,
+                mDevice,
+                /* request ID */ 0,
+                /* status */ 0,
+                /* offset */ 0,
+                /* Data null for a preprared write cancel response */ null);
+
+        verify(mNativeInterface)
+                .gattServerSendResponse(
+                        eq(SERVER_IF),
+                        eq(SERVER_CONN_ID),
+                        eq(SERVER_REQUEST_TRANSACTION_ID),
+                        /* status */ eq(0),
+                        /* prepared write executes don't use a handle, use 0x0 */ eq(0),
+                        /* offset */ eq(0),
+                        eq(null),
+                        /* authReq */ eq(0));
     }
 
     @Test
@@ -1187,9 +1277,10 @@ public class GattServiceTest {
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
     public void serverSendResponse_withSameTransactionIdAndDifferentBearers_responsesSent() {
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID_2, TRANSPORT_BREDR, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID_2, TRANSPORT_BREDR, mDevice);
         GattDbElement service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1);
         GattDbElement characteristic1 = createCharacteristic(SERVER_TEST_CHAR_UUID, 2, 0, 0);
         GattDbElement characteristic2 = createCharacteristic(SERVER_TEST_CHAR_UUID, 3, 0, 0);
@@ -1283,8 +1374,9 @@ public class GattServiceTest {
         boolean confirm = true;
         byte[] value = new byte[] {5, 6};
 
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
 
         mService.sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
 
@@ -1297,8 +1389,9 @@ public class GattServiceTest {
         boolean confirm = false;
         byte[] value = new byte[] {5, 6};
 
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
 
         mService.sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
 
@@ -1312,9 +1405,10 @@ public class GattServiceTest {
         int handle = 2;
         byte[] value = new byte[] {5, 6};
 
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_BREDR, mDevice);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID_2, TRANSPORT_LE, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_BREDR, mDevice);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID_2, TRANSPORT_LE, mDevice);
 
         mService.sendNotification(mGattServerCallback, mDevice, handle, false, value);
 
@@ -1329,9 +1423,10 @@ public class GattServiceTest {
         boolean confirm = false;
         byte[] value = new byte[] {5, 6};
 
-        addServerAppRecord(SERVER_IF, TRANSPORT_BREDR, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_BREDR, mDevice);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID_2, TRANSPORT_LE, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_BREDR, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_BREDR, mDevice);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID_2, TRANSPORT_LE, mDevice);
 
         mService.sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
 
@@ -1346,9 +1441,10 @@ public class GattServiceTest {
         boolean confirm = false;
         byte[] value = new byte[] {5, 6};
 
-        addServerAppRecord(SERVER_IF, TRANSPORT_AUTO, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_BREDR, mDevice);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID_2, TRANSPORT_LE, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_AUTO, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_BREDR, mDevice);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID_2, TRANSPORT_LE, mDevice);
 
         mService.sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
 
@@ -1363,9 +1459,10 @@ public class GattServiceTest {
         boolean confirm = false;
         byte[] value = new byte[] {5, 6};
 
-        addServerAppRecord(SERVER_IF, TRANSPORT_AUTO, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID_2, TRANSPORT_BREDR, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_AUTO, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, mDevice);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID_2, TRANSPORT_BREDR, mDevice);
 
         mService.sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
 
@@ -1394,9 +1491,10 @@ public class GattServiceTest {
         boolean confirm = false;
         byte[] value = new byte[] {5, 6};
 
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID, TRANSPORT_BREDR, mDevice);
-        addClientConnectionRecord(SERVER_IF, SERVER_CONN_ID_2, TRANSPORT_BREDR, mDevice);
+        ContextMap<IBluetoothGattServerCallback>.App serverApp =
+                addServerAppRecord(SERVER_IF, TRANSPORT_LE, mGattServerCallback);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_BREDR, mDevice);
+        addClientConnectionRecord(serverApp, SERVER_CONN_ID_2, TRANSPORT_BREDR, mDevice);
 
         mService.sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
 
@@ -1408,13 +1506,15 @@ public class GattServiceTest {
     // GATT Server Utilities
     // ---------------------------------------------------------------------------------------------
 
-    private void addServerAppRecord(int serverIf, int transport, IBluetoothGattServerCallback cb) {
+    private ContextMap<IBluetoothGattServerCallback>.App addServerAppRecord(
+            int serverIf, int transport, IBluetoothGattServerCallback cb) {
         ContextMap<IBluetoothGattServerCallback>.App serverApp = mock(ContextMap.App.class);
         serverApp.id = serverIf;
         doReturn(transport).when(serverApp).getTransport();
         doReturn(cb).when(serverApp).getCallback();
         doReturn(serverApp).when(mServerMap).getByCallbackId(mGattServerCallback);
         doReturn(serverApp).when(mServerMap).getById(serverIf);
+        return serverApp;
     }
 
     private static GattDbElement createPrimaryService(UUID uuid, int handle) {
@@ -1436,9 +1536,20 @@ public class GattServiceTest {
         return descriptor;
     }
 
-    private void addClientConnectionRecord(
-            int id, int connId, int transport, BluetoothDevice device) {
-        ContextMap.Connection conn = new ContextMap.Connection(connId, device, transport, id);
+    private void addClientConnectionRecordForUnregisteredApp(
+            int serverIf, int connId, int transport, BluetoothDevice device) {
+        ContextMap.Connection conn = new ContextMap.Connection(connId, device, transport, serverIf);
         mServerConnections.add(conn);
+    }
+
+    private void addClientConnectionRecord(
+            ContextMap<IBluetoothGattServerCallback>.App serverApp,
+            int connId,
+            int transport,
+            BluetoothDevice device) {
+        int serverIf = serverApp.id;
+        ContextMap.Connection conn = new ContextMap.Connection(connId, device, transport, serverIf);
+        mServerConnections.add(conn);
+        doReturn(serverApp).when(mServerMap).getByConnId(eq(connId));
     }
 }
