@@ -179,23 +179,40 @@ class AppScanStats {
     }
 
     synchronized void addResult(int scannerId) {
-        LastScan scan = getScanFromScannerId(scannerId);
-        if (scan != null) {
-            scan.results++;
-
-            // Only update battery stats after receiving 100 new results in order
-            // to lower the cost of the binder transaction
-            if (scan.results % 100 == 0) {
-                mBatteryStatsManager.reportBleScanResults(mWorkSource, 100);
-                BluetoothStatsLog.write(
-                        BluetoothStatsLog.BLE_SCAN_RESULT_RECEIVED,
-                        mWorkSourceUtil.getUids(),
-                        mWorkSourceUtil.getTags(),
-                        100);
-            }
-        }
-
         results++;
+
+        LastScan scan = getScanFromScannerId(scannerId);
+        if (scan == null) return;
+        scan.results++;
+
+        // Only update battery stats every 100 results to lower the high-cost of binder transactions
+        if (scan.results % 100 == 0) {
+            reportScanResults(100);
+        }
+    }
+
+    synchronized void addResults(int scannerId, int numberOfNewResults) {
+        results += numberOfNewResults;
+
+        LastScan scan = getScanFromScannerId(scannerId);
+        if (scan == null) return;
+
+        final int resultsBeforeUpdate = scan.results;
+        scan.results += numberOfNewResults;
+
+        // Only update battery stats every 100 results to lower the high-cost of binder transactions
+        if ((scan.results / 100) > (resultsBeforeUpdate / 100)) {
+            reportScanResults(100);
+        }
+    }
+
+    private void reportScanResults(int numberOfNewResults) {
+        mBatteryStatsManager.reportBleScanResults(mWorkSource, numberOfNewResults);
+        BluetoothStatsLog.write(
+                BluetoothStatsLog.BLE_SCAN_RESULT_RECEIVED,
+                mWorkSourceUtil.getUids(),
+                mWorkSourceUtil.getTags(),
+                numberOfNewResults);
     }
 
     synchronized boolean isScanning() {

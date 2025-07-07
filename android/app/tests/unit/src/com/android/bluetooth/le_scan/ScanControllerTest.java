@@ -191,10 +191,10 @@ public class ScanControllerTest {
         ScanClient scanClient = new ScanClient(TEST_SCANNER_ID, scanSettings, null, appUid);
         scanClient.mHasNetworkSettingsPermission = true;
         AppScanStats appScanStats = mock(AppScanStats.class);
-        IScannerCallback callback = mock(IScannerCallback.class);
-        mApp.mCallback = callback;
         mApp.mAppScanStats = appScanStats;
         scanClient.mStats = Optional.of(appScanStats);
+        IScannerCallback callback = mock(IScannerCallback.class);
+        mApp.mCallback = callback;
         Set<ScanClient> scanClientSet = Collections.singleton(scanClient);
         doReturn(TEST_ADDRESS).when(mAdapterService).getIdentityAddress(anyString());
         doReturn(scanClientSet).when(mScanManager).getRegularScanQueue();
@@ -346,6 +346,7 @@ public class ScanControllerTest {
             doReturn(scanClientSet).when(mScanManager).getFullBatchScanQueue();
         }
         doReturn(mApp).when(mScannerMap).getById(scanClient.mScannerId);
+        mApp.mAppScanStats = mock(AppScanStats.class);
         IScannerCallback callback = mock(IScannerCallback.class);
         mApp.mCallback = callback;
 
