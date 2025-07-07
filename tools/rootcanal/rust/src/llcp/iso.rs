@@ -141,10 +141,10 @@ impl CisParameters {
     fn new(cig_config: &CigConfig, cis_config: &CisConfig) -> CisParameters {
         let bn_c_to_p: u8 = cis_config
             .bn_c_to_p
-            .unwrap_or_else(|| ((cis_config.max_sdu_c_to_p + 250) / 251).try_into().unwrap());
+            .unwrap_or_else(|| cis_config.max_sdu_c_to_p.div_ceil(251).try_into().unwrap());
         let bn_p_to_c: u8 = cis_config
             .bn_p_to_c
-            .unwrap_or_else(|| ((cis_config.max_sdu_p_to_c + 250) / 251).try_into().unwrap());
+            .unwrap_or_else(|| cis_config.max_sdu_p_to_c.div_ceil(251).try_into().unwrap());
         let nse = cis_config.nse.unwrap_or(std::cmp::max(bn_c_to_p, bn_p_to_c));
         let max_pdu_c_to_p = cis_config.max_pdu_c_to_p.unwrap_or(251);
         let max_pdu_p_to_c = cis_config.max_pdu_p_to_c.unwrap_or(251);
@@ -1504,7 +1504,7 @@ fn iso_interval(
 ) -> Option<slots> {
     if framed {
         let iso_interval = std::cmp::max(sdu_interval_c_to_p, sdu_interval_p_to_c);
-        Some(((iso_interval + 1249) / 1250) as u16)
+        Some(iso_interval.div_ceil(1250) as u16)
     } else {
         // Unframed PDUs shall only be used when the ISO_Interval is equal to
         // or an integer multiple of the SDU_Interval and a constant time offset
