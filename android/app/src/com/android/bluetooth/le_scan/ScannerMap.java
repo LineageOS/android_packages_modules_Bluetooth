@@ -24,7 +24,6 @@ import android.app.PendingIntent;
 import android.bluetooth.le.IScannerCallback;
 import android.bluetooth.le.ScanSettings;
 import android.content.AttributionSource;
-import android.os.Binder;
 import android.os.IBinder;
 import android.os.IInterface;
 import android.os.RemoteException;
@@ -58,26 +57,36 @@ class ScannerMap {
             UUID uuid,
             AttributionSource source,
             WorkSource workSource,
+            int uid,
             IScannerCallback callback,
             AdapterService adapterService,
             ScanController scanController) {
-        return add(uuid, source, workSource, callback, null, adapterService, scanController);
+        return add(uuid, source, workSource, uid, callback, null, adapterService, scanController);
     }
 
     /** Add an entry to the application context list with a pending intent. */
     ScannerApp add(
             UUID uuid,
             AttributionSource source,
-            ScanController.PendingIntentInfo piInfo,
+            ScanController.PendingIntentInfo pendingIntentInfo,
             AdapterService adapterService,
             ScanController scanController) {
-        return add(uuid, source, null, null, piInfo, adapterService, scanController);
+        return add(
+                uuid,
+                source,
+                null,
+                0, // uid is not considered from here as the pendingIntentInfo is set
+                null,
+                pendingIntentInfo,
+                adapterService,
+                scanController);
     }
 
     private ScannerApp add(
             UUID uuid,
             AttributionSource source,
             @Nullable WorkSource workSource,
+            int uid,
             @Nullable IScannerCallback callback,
             @Nullable ScanController.PendingIntentInfo piInfo,
             AdapterService adapterService,
@@ -88,7 +97,7 @@ class ScannerMap {
             appUid = piInfo.callingUid();
             appName = piInfo.callingPackage();
         } else {
-            appUid = Binder.getCallingUid();
+            appUid = uid;
             appName = adapterService.getPackageManager().getNameForUid(appUid);
         }
         if (appName == null) {
@@ -101,6 +110,7 @@ class ScannerMap {
                     new AppScanStats(
                             appName,
                             workSource,
+                            appUid,
                             this,
                             adapterService,
                             scanController,

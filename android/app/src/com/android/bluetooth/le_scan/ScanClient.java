@@ -20,7 +20,6 @@ import static android.bluetooth.le.ScanSettings.getScanModeString;
 
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanSettings;
-import android.os.Binder;
 import android.os.UserHandle;
 
 import java.util.Collections;
@@ -30,9 +29,6 @@ import java.util.Optional;
 
 /** Helper class identifying a client that has requested LE scan results. */
 class ScanClient {
-    private static final ScanSettings DEFAULT_SCAN_SETTINGS =
-            new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
-
     final int mScannerId;
     final int mScanModeApp;
     final List<ScanFilter> mFilters;
@@ -53,14 +49,6 @@ class ScanClient {
     boolean mHasDisavowedLocation;
     List<String> mAssociatedDevices;
     Optional<AppScanStats> mStats = Optional.empty();
-
-    ScanClient(int scannerId) {
-        this(scannerId, DEFAULT_SCAN_SETTINGS, null);
-    }
-
-    ScanClient(int scannerId, ScanSettings settings, List<ScanFilter> filters) {
-        this(scannerId, settings, filters, Binder.getCallingUid());
-    }
 
     ScanClient(int scannerId, ScanSettings settings, List<ScanFilter> filters, int appUid) {
         mScannerId = scannerId;

@@ -112,15 +112,16 @@ public class ScannerMapTest {
     public void getByMethodsWithoutPii() {
         ScannerMap scannerMap = new ScannerMap();
         UUID uuid = UUID.randomUUID();
+        final int appUid = Binder.getCallingUid();
         ScannerMap.ScannerApp app =
                 scannerMap.add(
                         uuid,
                         mAttributionSource,
                         null,
+                        appUid,
                         mMockScannerCallback,
                         mAdapterService,
                         mMockScanController);
-        int appUid = Binder.getCallingUid();
         app.mId = SCANNER_ID;
 
         ScannerMap.ScannerApp scannerMapById = scannerMap.getById(SCANNER_ID);
@@ -141,11 +142,13 @@ public class ScannerMapTest {
     public void removeById() {
         ScannerMap scannerMap = new ScannerMap();
         UUID uuid = UUID.randomUUID();
+        final int appUid = 1234;
         ScannerMap.ScannerApp app =
                 scannerMap.add(
                         uuid,
                         mAttributionSource,
                         null,
+                        appUid,
                         mMockScannerCallback,
                         mAdapterService,
                         mMockScanController);
@@ -162,10 +165,12 @@ public class ScannerMapTest {
     public void testDump_doesNotCrash() throws Exception {
         StringBuilder sb = new StringBuilder();
         ScannerMap scannerMap = new ScannerMap();
+        final int appUid = 1234;
         scannerMap.add(
                 UUID.randomUUID(),
                 mAttributionSource,
                 null,
+                appUid,
                 mMockScannerCallback,
                 mAdapterService,
                 mMockScanController);
