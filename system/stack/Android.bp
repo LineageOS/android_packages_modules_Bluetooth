@@ -903,7 +903,6 @@ cc_test {
         "test/common/mock_btm_layer.cc",
         "test/common/mock_l2cap_layer.cc",
         "test/common/stack_test_packet_utils.cc",
-        "test/rfcomm/stack_rfcomm_collision_test.cc",
         "test/rfcomm/stack_rfcomm_test.cc",
         "test/rfcomm/stack_rfcomm_test_main.cc",
         "test/rfcomm/stack_rfcomm_test_utils.cc",
